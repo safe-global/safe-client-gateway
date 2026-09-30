@@ -30,6 +30,7 @@ import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__test
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { relayerBuilder } from '@/modules/chains/domain/entities/__tests__/relayer.builder';
+import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
 import {
   addOwnerWithThresholdEncoder,
   execTransactionEncoder,
@@ -44,7 +45,9 @@ import { QUOTA_EXCEEDED_ERROR_CODE } from '@/modules/entitlements/domain/errors/
 import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
 import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
 import { createSignerEncoder } from '@/modules/relay/domain/contracts/__tests__/encoders/signer-factory-encoder.builder';
+import { GasPaymentOption } from '@/modules/relay/domain/entities/gas-payment-option.entity';
 import { SpaceRelayController } from '@/modules/relay/routes/space-relay.controller';
+import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import { SpacesCreationRateLimitGuard } from '@/modules/spaces/routes/guards/spaces-creation-rate-limit.guard';
 import { rawify } from '@/validation/entities/raw.entity';
 
@@ -76,6 +79,7 @@ describe('SpaceRelayController', () => {
     .with(
       'relayer',
       relayerBuilder()
+        .with('gasPaymentOptions', [GasPaymentOption.SUBSCRIPTION])
         .with('enableTenderlySimulationBeforeRelay', false)
         .build(),
     )
@@ -245,6 +249,21 @@ describe('SpaceRelayController', () => {
     };
   }
 
+  /** An execTransaction sent to `safe` itself, whose Safe the lookup resolves. */
+  function transactionOf(args: { safe: `0x${string}`; gasPrice: bigint }): {
+    to: `0x${string}`;
+    data: `0x${string}`;
+  } {
+    mockNetwork({ safe: args.safe });
+    return {
+      to: args.safe,
+      data: execTransactionEncoder()
+        .with('value', faker.number.bigInt())
+        .with('gasPrice', args.gasPrice)
+        .encode(),
+    };
+  }
+
   /** Calldata deploying a passkey signer: no Safe to attribute it to. */
   function signerDeployment(): { to: `0x${string}`; data: `0x${string}` } {
     mockNetwork({});
@@ -261,14 +280,25 @@ describe('SpaceRelayController', () => {
   const taskId = (): string => faker.string.uuid();
 
   function mockNetwork(args: {
+    chain?: Chain;
     moduleAddress?: `0x${string}`;
     safes?: Array<`0x${string}`>;
+    safe?: `0x${string}`;
     relayTaskId?: string;
   }): void {
+    // Official mastercopy
+    const safe = args.safe && safeBuilder().with('address', args.safe).build();
     networkService.get.mockImplementation(({ url }) => {
       switch (url) {
         case `${safeConfigUrl}/api/v1/chains/${CHAIN_ID}`:
-          return Promise.resolve({ data: rawify(chain), status: 200 });
+          return Promise.resolve({
+            data: rawify(args.chain ?? chain),
+            status: 200,
+          });
+        case `${chain.transactionService}/api/v1/safes/${args.safe}`:
+          return safe
+            ? Promise.resolve({ data: rawify(safe), status: 200 })
+            : Promise.reject(`No matching rule for url: ${url}`);
         case `${chain.transactionService}/api/v1/modules/${args.moduleAddress}/safes/`:
           return Promise.resolve({
             data: rawify({ safes: args.safes ?? [] }),
@@ -374,17 +404,83 @@ describe('SpaceRelayController', () => {
     await expect(usedOf({ spaceId, accessToken })).resolves.toBe(0);
   });
 
-  it('should relay a call with no Safe to attribute', async () => {
+  it('should refuse a call with no Safe to attribute', async () => {
     const { accessToken, spaceId } = await createSpaceForSigner();
+    const { to, data } = signerDeployment();
 
-    await relay({ spaceId, accessToken, ...signerDeployment() }).expect(201);
+    await relay({ spaceId, accessToken, to, data })
+      .expect(HttpStatus.FORBIDDEN)
+      .expect({
+        message: `Relay denied for ${to}: not a Safe of this workspace`,
+        statusCode: HttpStatus.FORBIDDEN,
+      });
 
-    await expect(usedOf({ spaceId, accessToken })).resolves.toBe(1);
+    await expect(usedOf({ spaceId, accessToken })).resolves.toBe(0);
+  });
+
+  it('should refuse a refunding transaction', async () => {
+    const { accessToken, spaceId } = await createSpaceForSigner();
+    const safe = getAddress(faker.finance.ethereumAddress());
+    await addSafe({ spaceId, accessToken, address: safe });
+    const { to, data } = transactionOf({
+      safe,
+      gasPrice: faker.number.bigInt({ min: BigInt(1) }),
+    });
+
+    await relay({ spaceId, accessToken, to, data })
+      .expect(HttpStatus.FORBIDDEN)
+      .expect({
+        message: 'No relayer defined',
+        statusCode: HttpStatus.FORBIDDEN,
+      });
+
+    await expect(usedOf({ spaceId, accessToken })).resolves.toBe(0);
+  });
+
+  it('should refuse a relay on a chain that does not list SUBSCRIPTION', async () => {
+    const { accessToken, spaceId } = await createSpaceForSigner();
+    const safe = getAddress(faker.finance.ethereumAddress());
+    await addSafe({ spaceId, accessToken, address: safe });
+    const { to, data } = recoveryOf(safe);
+    mockNetwork({
+      chain: chainBuilder()
+        .with('chainId', CHAIN_ID)
+        .with(
+          'relayer',
+          relayerBuilder()
+            .with(
+              'gasPaymentOptions',
+              faker.helpers.arrayElements(
+                [
+                  GasPaymentOption.FREE_DAILY_LIMIT,
+                  GasPaymentOption.NO_FEE_CAMPAIGN,
+                  GasPaymentOption.PAY_FROM_SAFE,
+                ],
+                { min: 0, max: 3 },
+              ),
+            )
+            .build(),
+        )
+        .build(),
+      moduleAddress: to,
+      safes: [safe],
+    });
+
+    await relay({ spaceId, accessToken, to, data })
+      .expect(HttpStatus.FORBIDDEN)
+      .expect({
+        message: 'No relayer defined',
+        statusCode: HttpStatus.FORBIDDEN,
+      });
+
+    await expect(usedOf({ spaceId, accessToken })).resolves.toBe(0);
   });
 
   it('should ignore a gasLimit a client still sends', async () => {
     const { accessToken, spaceId } = await createSpaceForSigner();
-    const { to, data } = signerDeployment();
+    const safe = getAddress(faker.finance.ethereumAddress());
+    await addSafe({ spaceId, accessToken, address: safe });
+    const { to, data } = recoveryOf(safe);
 
     // Dropped from the schema rather than rejected, so a client migrating
     // from the chain-scoped route is not broken by a field it used to send.
@@ -397,12 +493,14 @@ describe('SpaceRelayController', () => {
 
   it('should answer 402 once the allowance is spent', async () => {
     const { accessToken, spaceId } = await createSpaceForSigner();
-    await relay({ spaceId, accessToken, ...signerDeployment() }).expect(201);
+    const safe = getAddress(faker.finance.ethereumAddress());
+    await addSafe({ spaceId, accessToken, address: safe });
+    await relay({ spaceId, accessToken, ...recoveryOf(safe) }).expect(201);
 
     const response = await relay({
       spaceId,
       accessToken,
-      ...signerDeployment(),
+      ...recoveryOf(safe),
     }).expect(HttpStatus.PAYMENT_REQUIRED);
 
     expect(response.body).toMatchObject({

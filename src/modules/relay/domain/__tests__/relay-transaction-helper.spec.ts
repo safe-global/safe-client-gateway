@@ -508,6 +508,66 @@ describe('RelayTransactionHelper', () => {
     });
   });
 
+  describe('hasRefundingTransaction', () => {
+    function batchOf(gasPrices: Array<bigint>): Hex {
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      return multiSendEncoder()
+        .with(
+          'transactions',
+          multiSendTransactionsEncoder(
+            gasPrices.map((gasPrice) => ({
+              to: safeAddress,
+              value: BigInt(0),
+              data: execTransactionEncoder()
+                .with('gasPrice', gasPrice)
+                .encode(),
+              operation: 0,
+            })),
+          ),
+        )
+        .encode();
+    }
+
+    it('should return true for a refunding execTransaction', () => {
+      const data = execTransactionEncoder()
+        .with('gasPrice', faker.number.bigInt({ min: BigInt(1) }))
+        .encode();
+
+      expect(helper.hasRefundingTransaction(data)).toBe(true);
+    });
+
+    it('should return true for a batch with any refunding execTransaction', () => {
+      const data = batchOf(
+        faker.helpers.shuffle([
+          faker.number.bigInt({ min: BigInt(1) }),
+          BigInt(0),
+        ]),
+      );
+
+      expect(helper.hasRefundingTransaction(data)).toBe(true);
+    });
+
+    it('should return false for a batch of gasless execTransactions', () => {
+      const data = batchOf([BigInt(0), BigInt(0)]);
+
+      expect(helper.hasRefundingTransaction(data)).toBe(false);
+    });
+
+    it('should return false for a gasless execTransaction', () => {
+      const data = execTransactionEncoder()
+        .with('gasPrice', BigInt(0))
+        .encode();
+
+      expect(helper.hasRefundingTransaction(data)).toBe(false);
+    });
+
+    it('should return false for non-execTransaction calldata', () => {
+      const data = erc20TransferEncoder().encode();
+
+      expect(helper.hasRefundingTransaction(data)).toBe(false);
+    });
+  });
+
   describe('isOwnerManagementTransaction', () => {
     it.each([
       ['addOwnerWithThreshold', addOwnerWithThresholdEncoder],

@@ -19,6 +19,7 @@ import type {
   IEntitlementEnforcement,
 } from '@/modules/entitlements/domain/entitlement-enforcement.interface';
 import { QuotaExceededError } from '@/modules/entitlements/domain/errors/quota-exceeded.error';
+import { GasPaymentOption } from '@/modules/relay/domain/entities/gas-payment-option.entity';
 import { RelayerType } from '@/modules/relay/domain/entities/relayer-type.entity';
 import { NoRelayerDefinedError } from '@/modules/relay/domain/errors/no-relayer-defined.error';
 import { RelayDeniedError } from '@/modules/relay/domain/errors/relay-denied.error';
@@ -27,6 +28,7 @@ import { RelaySimulationIndeterminateError } from '@/modules/relay/domain/errors
 import { RelayerTypeNotImplementedError } from '@/modules/relay/domain/errors/relayer-type-not-implemented.error';
 import type { LimitAddressesMapper } from '@/modules/relay/domain/limit-addresses.mapper';
 import { RelaySimulationService } from '@/modules/relay/domain/relay-simulation.service';
+import type { RelayTransactionHelper } from '@/modules/relay/domain/relay-transaction-helper';
 import { WorkspaceRelayer } from '@/modules/relay/domain/relayers/workspace.relayer';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 import type { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
@@ -69,6 +71,10 @@ const mockTenderlySimulationApi = vi.mocked({
   simulate: vi.fn(),
 } as MockedObject<ITenderlySimulationApi>);
 
+const mockRelayTransactionHelper = {
+  hasRefundingTransaction: vi.fn(),
+} as unknown as MockedObject<RelayTransactionHelper>;
+
 describe('WorkspaceRelayer', () => {
   let target: WorkspaceRelayer;
 
@@ -103,6 +109,7 @@ describe('WorkspaceRelayer', () => {
     relayerConfig(
       relayerBuilder()
         .with('type', RelayerType.DAILY_LIMIT)
+        .with('gasPaymentOptions', [GasPaymentOption.SUBSCRIPTION])
         .with('enableTenderlySimulationBeforeRelay', enabled)
         .build(),
     );
@@ -145,6 +152,7 @@ describe('WorkspaceRelayer', () => {
       mockSpaceSafesRepository,
       mockChainsRepository,
       relaySimulationService,
+      mockRelayTransactionHelper,
       mockLoggingService,
     );
   });
@@ -196,22 +204,39 @@ describe('WorkspaceRelayer', () => {
     expect(mockRelayApi.relay).not.toHaveBeenCalled();
   });
 
-  it('should relay a call with no Safe to attribute', async () => {
+  it('should deny a call with no Safe to attribute', async () => {
     const args = relayArgs();
-    const taskId = faker.string.uuid();
-    // A Safe creation or a passkey signer deployment: nothing to hold yet.
+    // A Safe creation or a passkey signer deployment: not a Safe the
+    // workspace holds, so not something its allowance pays for.
     recognises(null);
-    mockRelayApi.relay.mockResolvedValue({ taskId });
 
-    await expect(target.relay(args)).resolves.toStrictEqual({ taskId });
+    await expect(target.relay(args)).rejects.toThrow(
+      new RelayDeniedError(args.to, 'not a Safe of this workspace'),
+    );
 
-    expect(mockSpaceSafesRepository.existsInSpace).not.toHaveBeenCalled();
-    expect(mockEntitlementEnforcement.consumeQuota).toHaveBeenCalledTimes(1);
+    expect(mockEntitlementEnforcement.consumeQuota).not.toHaveBeenCalled();
+    expect(mockRelayApi.relay).not.toHaveBeenCalled();
+  });
+
+  it('should refuse a refunding transaction before spending', async () => {
+    const args = relayArgs();
+    recognises(address());
+    mockSpaceSafesRepository.existsInSpace.mockResolvedValue(true);
+    mockRelayTransactionHelper.hasRefundingTransaction.mockReturnValue(true);
+
+    await expect(target.relay(args)).rejects.toThrow(NoRelayerDefinedError);
+
+    expect(
+      mockRelayTransactionHelper.hasRefundingTransaction,
+    ).toHaveBeenCalledWith(args.data);
+    expect(mockEntitlementEnforcement.consumeQuota).not.toHaveBeenCalled();
+    expect(mockRelayApi.relay).not.toHaveBeenCalled();
   });
 
   it('should not relay once the allowance is spent', async () => {
     const args = relayArgs();
-    recognises(null);
+    recognises(address());
+    mockSpaceSafesRepository.existsInSpace.mockResolvedValue(true);
     const quotaExceeded = new QuotaExceededError({
       feature: 'sponsored_transactions',
       quota: faker.number.int({ min: 1, max: 10 }),
@@ -232,7 +257,8 @@ describe('WorkspaceRelayer', () => {
 
   it('should refuse a chain with no relayer before spending', async () => {
     const args = relayArgs();
-    recognises(null);
+    recognises(address());
+    mockSpaceSafesRepository.existsInSpace.mockResolvedValue(true);
     relayerConfig(null);
 
     await expect(target.relay(args)).rejects.toThrow(NoRelayerDefinedError);
@@ -243,7 +269,8 @@ describe('WorkspaceRelayer', () => {
 
   it('should refuse a relayer type that is not implemented', async () => {
     const args = relayArgs();
-    recognises(null);
+    recognises(address());
+    mockSpaceSafesRepository.existsInSpace.mockResolvedValue(true);
     relayerConfig(relayerBuilder().with('type', RelayerType.GTF).build());
 
     await expect(target.relay(args)).rejects.toThrow(
@@ -251,6 +278,49 @@ describe('WorkspaceRelayer', () => {
     );
 
     expect(mockEntitlementEnforcement.consumeQuota).not.toHaveBeenCalled();
+  });
+
+  it('should refuse a relay on a chain that does not list SUBSCRIPTION before spending', async () => {
+    const args = relayArgs();
+    recognises(address());
+    mockSpaceSafesRepository.existsInSpace.mockResolvedValue(true);
+    relayerConfig(
+      relayerBuilder()
+        .with(
+          'gasPaymentOptions',
+          faker.helpers.arrayElements(
+            [
+              GasPaymentOption.FREE_DAILY_LIMIT,
+              GasPaymentOption.NO_FEE_CAMPAIGN,
+              GasPaymentOption.PAY_FROM_SAFE,
+            ],
+            { min: 0, max: 3 },
+          ),
+        )
+        .build(),
+    );
+
+    await expect(target.relay(args)).rejects.toThrow(NoRelayerDefinedError);
+
+    expect(mockEntitlementEnforcement.consumeQuota).not.toHaveBeenCalled();
+    expect(mockRelayApi.relay).not.toHaveBeenCalled();
+  });
+
+  it('should relay on a chain that lists SUBSCRIPTION without a relayer type', async () => {
+    const args = relayArgs();
+    const taskId = faker.string.uuid();
+    recognises(address());
+    mockSpaceSafesRepository.existsInSpace.mockResolvedValue(true);
+    relayerConfig(
+      relayerBuilder()
+        .with('type', null)
+        .with('gasPaymentOptions', [GasPaymentOption.SUBSCRIPTION])
+        .with('enableTenderlySimulationBeforeRelay', false)
+        .build(),
+    );
+    mockRelayApi.relay.mockResolvedValue({ taskId });
+
+    await expect(target.relay(args)).resolves.toStrictEqual({ taskId });
   });
 
   it('should simulate the transaction against the Safe itself', async () => {
@@ -279,19 +349,6 @@ describe('WorkspaceRelayer', () => {
     await target.relay(args);
 
     expect(mockTenderlySimulationApi.simulate).not.toHaveBeenCalled();
-  });
-
-  it('should not simulate a call with no Safe to attribute', async () => {
-    const args = relayArgs();
-    // A Safe creation or a signer deployment.
-    recognises(null);
-    simulationEnabled(true);
-    mockRelayApi.relay.mockResolvedValue({ taskId: faker.string.uuid() });
-
-    await target.relay(args);
-
-    expect(mockTenderlySimulationApi.simulate).not.toHaveBeenCalled();
-    expect(mockEntitlementEnforcement.consumeQuota).toHaveBeenCalledTimes(1);
   });
 
   it('should not simulate where the chain has it switched off', async () => {
@@ -367,7 +424,8 @@ describe('WorkspaceRelayer', () => {
 
   it('should give the allowance back when the relay fails', async () => {
     const args = relayArgs();
-    recognises(null);
+    recognises(address());
+    mockSpaceSafesRepository.existsInSpace.mockResolvedValue(true);
     // Whatever it answered, no taskId came back.
     const failed = new DataSourceError(
       faker.lorem.sentence(),
@@ -392,7 +450,8 @@ describe('WorkspaceRelayer', () => {
 
   it('should keep a relay whose refund could not be written', async () => {
     const args = relayArgs();
-    recognises(null);
+    recognises(address());
+    mockSpaceSafesRepository.existsInSpace.mockResolvedValue(true);
     mockRelayApi.relay.mockRejectedValue(
       new DataSourceError(faker.lorem.sentence()),
     );
