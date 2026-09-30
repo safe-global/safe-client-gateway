@@ -5,12 +5,12 @@ import type {
   ActivePolicy,
   SpendingLimitAllowance,
   SpendingLimitPolicyData,
-  SpendingLimitToken,
 } from '@/modules/policies/domain/entities/active-policy.entity';
 import type { PolicyIndexerSafeAllowance } from '@/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 import { moduleEnforcement } from '@/modules/policies/domain/entities/policy-enforcement.entity';
 import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
 import type { SafeRef } from '@/modules/policies/domain/entities/safe-ref.entity';
+import type { Token } from '@/modules/policies/domain/entities/token.entity';
 import {
   type TokenMetadataKey,
   tokenMetadataKey,
@@ -44,7 +44,7 @@ export class SpendingLimitMapper {
      * here, never fetched - a Safe's allowances can repeat a token across
      * spenders, and fetching per-entry would repeat the same lookup.
      */
-    tokenMetadata: ReadonlyMap<TokenMetadataKey, SpendingLimitToken>;
+    tokenMetadata: ReadonlyMap<TokenMetadataKey, Token>;
   }): Array<ActivePolicy> {
     const nonZeroAllowances = args.allowances.filter(
       (allowance) => BigInt(allowance.amount) > 0n,
@@ -76,7 +76,7 @@ export class SpendingLimitMapper {
    */
   private toSpenders(
     allowances: ReadonlyArray<PolicyIndexerSafeAllowance>,
-    tokenMetadata: ReadonlyMap<TokenMetadataKey, SpendingLimitToken>,
+    tokenMetadata: ReadonlyMap<TokenMetadataKey, Token>,
   ): SpendingLimitPolicyData['spenders'] {
     const limitsBySpender = this.groupByDelegate(allowances);
 
@@ -102,7 +102,7 @@ export class SpendingLimitMapper {
    */
   private toAllowance(
     allowance: PolicyIndexerSafeAllowance,
-    tokenMetadata: ReadonlyMap<TokenMetadataKey, SpendingLimitToken>,
+    tokenMetadata: ReadonlyMap<TokenMetadataKey, Token>,
   ): SpendingLimitAllowance {
     const resetsPeriodically = allowance.resetTimeMinutes > 0;
     const hasReset = resetsPeriodically && this.hasWindowElapsed(allowance);

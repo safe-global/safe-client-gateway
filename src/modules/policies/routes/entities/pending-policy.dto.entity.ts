@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 import type { Address, Hex } from 'viem';
-import type { SpendingLimitToken } from '@/modules/policies/domain/entities/active-policy.entity';
 import {
   type PendingPolicy,
   type PendingQueuedPolicy,
@@ -11,6 +10,7 @@ import {
 } from '@/modules/policies/domain/entities/pending-policy.entity';
 import type { ModuleEnforcement } from '@/modules/policies/domain/entities/policy-enforcement.entity';
 import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
+import type { Token } from '@/modules/policies/domain/entities/token.entity';
 import {
   Erc20TokenMetadataDto,
   ModuleEnforcementDto,
@@ -61,7 +61,7 @@ export class SetAllowanceChangeDto {
     nullable: true,
     description: 'Metadata of `token`; null when it could not be resolved',
   })
-  public readonly tokenMetadata!: SpendingLimitToken | null;
+  public readonly tokenMetadata!: Token | null;
   @ApiProperty({ description: 'Per-window ceiling, in base units' })
   public readonly amount!: string;
   @ApiProperty({ description: 'Window length in minutes; 0 never resets' })
@@ -81,7 +81,7 @@ export class ResetAllowanceChangeDto {
     nullable: true,
     description: 'Metadata of `token`; null when it could not be resolved',
   })
-  public readonly tokenMetadata!: SpendingLimitToken | null;
+  public readonly tokenMetadata!: Token | null;
 }
 
 @ApiExtraModels(NativeTokenMetadataDto, Erc20TokenMetadataDto)
@@ -97,7 +97,7 @@ export class DeleteAllowanceChangeDto {
     nullable: true,
     description: 'Metadata of `token`; null when it could not be resolved',
   })
-  public readonly tokenMetadata!: SpendingLimitToken | null;
+  public readonly tokenMetadata!: Token | null;
 }
 
 const PendingSpendingLimitChangeSchema = {

@@ -17,10 +17,7 @@ import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authen
 import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
 import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
 import { IDelegatesV3Repository } from '@/modules/delegate/domain/v3/delegates.v3.repository.interface';
-import type {
-  ActivePolicy,
-  SpendingLimitToken,
-} from '@/modules/policies/domain/entities/active-policy.entity';
+import type { ActivePolicy } from '@/modules/policies/domain/entities/active-policy.entity';
 import type { PolicyIndexerSafeAllowance } from '@/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 import {
   type PendingPolicy,
@@ -28,6 +25,10 @@ import {
 } from '@/modules/policies/domain/entities/pending-policy.entity';
 import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
 import type { SafeRef } from '@/modules/policies/domain/entities/safe-ref.entity';
+import type {
+  Token,
+  TokenReference,
+} from '@/modules/policies/domain/entities/token.entity';
 import { IPolicyIndexerRepository } from '@/modules/policies/domain/policy-indexer.repository.interface';
 import {
   type TokenMetadataKey,
@@ -200,7 +201,7 @@ export class PoliciesService {
       : null;
     const tokenMetadata = state
       ? await this.getTokenMetadata(state.allowances)
-      : new Map<TokenMetadataKey, SpendingLimitToken>();
+      : new Map<TokenMetadataKey, Token>();
     const delegatesPerSafe = proposersRequested
       ? await this.delegatesPerSafe(safes)
       : null;
@@ -237,67 +238,55 @@ export class PoliciesService {
     return policies;
   }
 
-  /**
-   * The metadata of every token referenced by an allowance in
-   * {@link allowances}, keyed by {@link tokenMetadataKey} so the mapper can
-   * look up each allowance's token without fetching it again.
-   *
-   * The native currency (`address(0)`) has no ERC20 metadata to fetch: the
-   * transaction service's token endpoint only indexes ERC20/ERC721 and 404s on
-   * the zero address, so it is represented as a `NativeToken` built from the
-   * chain's own config (`chain.nativeCurrency`) instead of one read through
-   * `ITokenRepository`.
-   *
-   */
   private async getTokenMetadata(
-    allowances: ReadonlyArray<PolicyIndexerSafeAllowance>,
-  ): Promise<Map<TokenMetadataKey, SpendingLimitToken>> {
+    references: ReadonlyArray<TokenReference>,
+  ): Promise<Map<TokenMetadataKey, Token>> {
     const nativeTokens = await this.fetchNativeTokens(
-      this.nativeCurrencyChainIds(allowances),
+      this.nativeCurrencyChainIds(references),
     );
     const erc20Tokens = await this.fetchErc20Tokens(
-      this.erc20TokensToFetch(allowances),
+      this.erc20TokensToFetch(references),
     );
 
     return new Map([...nativeTokens, ...erc20Tokens]);
   }
 
-  private isNativeCurrency(allowance: PolicyIndexerSafeAllowance): boolean {
-    return isAddressEqual(allowance.token, zeroAddress);
+  private isNativeCurrency(reference: TokenReference): boolean {
+    return isAddressEqual(reference.token, zeroAddress);
   }
 
-  /** The distinct chains a native-currency allowance in {@link allowances} is on. */
+  /** The distinct chains a native-currency reference in {@link references} is on. */
   private nativeCurrencyChainIds(
-    allowances: ReadonlyArray<PolicyIndexerSafeAllowance>,
+    references: ReadonlyArray<TokenReference>,
   ): Array<string> {
     return [
       ...new Set(
-        allowances
-          .filter((allowance) => this.isNativeCurrency(allowance))
-          .map((allowance) => allowance.chainId),
+        references
+          .filter((reference) => this.isNativeCurrency(reference))
+          .map((reference) => reference.chainId),
       ),
     ];
   }
 
   /**
-   * The distinct `(chainId, address)` pairs an ERC20 allowance in
-   * {@link allowances} references.
+   * The distinct `(chainId, address)` pairs an ERC20 reference in
+   * {@link references} names.
    */
   private erc20TokensToFetch(
-    allowances: ReadonlyArray<PolicyIndexerSafeAllowance>,
+    references: ReadonlyArray<TokenReference>,
   ): Array<{ chainId: string; address: Address }> {
     // Keyed by the same `chainId:address` the fetched token is later stored
-    // under, so an allowance repeating a token - another spender, another
+    // under, so a reference repeating a token - another spender, another
     // Safe, same chain - collapses to the one pair fetched here.
     const byKey = new Map<
       TokenMetadataKey,
       { chainId: string; address: Address }
     >();
-    for (const allowance of allowances) {
-      if (this.isNativeCurrency(allowance)) {
+    for (const reference of references) {
+      if (this.isNativeCurrency(reference)) {
         continue;
       }
-      const pair = { chainId: allowance.chainId, address: allowance.token };
+      const pair = { chainId: reference.chainId, address: reference.token };
       byKey.set(tokenMetadataKey(pair), pair);
     }
     return [...byKey.values()];
@@ -305,8 +294,8 @@ export class PoliciesService {
 
   private async fetchNativeTokens(
     chainIds: ReadonlyArray<string>,
-  ): Promise<Map<TokenMetadataKey, SpendingLimitToken>> {
-    const tokens = new Map<TokenMetadataKey, SpendingLimitToken>();
+  ): Promise<Map<TokenMetadataKey, Token>> {
+    const tokens = new Map<TokenMetadataKey, Token>();
 
     const results = await batched(chainIds, this.batchSize, (chainId) =>
       this.chainsRepository.getChain(chainId),
@@ -340,8 +329,8 @@ export class PoliciesService {
 
   private async fetchErc20Tokens(
     pairs: ReadonlyArray<{ chainId: string; address: Address }>,
-  ): Promise<Map<TokenMetadataKey, SpendingLimitToken>> {
-    const tokens = new Map<TokenMetadataKey, SpendingLimitToken>();
+  ): Promise<Map<TokenMetadataKey, Token>> {
+    const tokens = new Map<TokenMetadataKey, Token>();
 
     const results = await batched(pairs, this.batchSize, (pair) =>
       this.tokenRepository.getToken(pair),
@@ -411,7 +400,9 @@ export class PoliciesService {
       });
     }
 
-    const tokenMetadata = await this.getPendingTokenMetadata(policies);
+    const tokenMetadata = await this.getTokenMetadata(
+      this.pendingTokenReferences(policies),
+    );
     return this.pendingSpendingLimitMapper.attachTokenMetadata(
       policies,
       tokenMetadata,
@@ -419,63 +410,18 @@ export class PoliciesService {
   }
 
   /**
-   * The metadata of every token a change in {@link policies} references.
-   *
-   * Unlike {@link getTokenMetadata}, the tokens to fetch are only known once
-   * every Safe's queue has already been decoded - decoding calldata is what
-   * reveals a change's token in the first place - so this always runs after
-   * {@link pendingPoliciesForSafe} has settled for every Safe, never before.
+   * Every decoded change in {@link policies}, reduced to
+   * {@link TokenReference} so {@link getTokenMetadata} can fetch it.
    */
-  private async getPendingTokenMetadata(
+  private pendingTokenReferences(
     policies: ReadonlyArray<PendingPolicy>,
-  ): Promise<Map<TokenMetadataKey, SpendingLimitToken>> {
-    const nativeTokens = await this.fetchNativeTokens(
-      this.pendingNativeCurrencyChainIds(policies),
+  ): Array<TokenReference> {
+    return policies.flatMap((policy) =>
+      policy.data.changes.filter(pendingChangeHasToken).map((change) => ({
+        chainId: policy.safe.chainId,
+        token: change.token,
+      })),
     );
-    const erc20Tokens = await this.fetchErc20Tokens(
-      this.pendingErc20TokensToFetch(policies),
-    );
-
-    return new Map([...nativeTokens, ...erc20Tokens]);
-  }
-
-  /** The distinct chains a native-currency change in {@link policies} is on. */
-  private pendingNativeCurrencyChainIds(
-    policies: ReadonlyArray<PendingPolicy>,
-  ): Array<string> {
-    return [
-      ...new Set(
-        policies.flatMap((policy) =>
-          policy.data.changes
-            .filter(pendingChangeHasToken)
-            .filter((change) => isAddressEqual(change.token, zeroAddress))
-            .map(() => policy.safe.chainId),
-        ),
-      ),
-    ];
-  }
-
-  /**
-   * The distinct `(chainId, address)` pairs an ERC20 change in
-   * {@link policies} references.
-   */
-  private pendingErc20TokensToFetch(
-    policies: ReadonlyArray<PendingPolicy>,
-  ): Array<{ chainId: string; address: Address }> {
-    const byKey = new Map<
-      TokenMetadataKey,
-      { chainId: string; address: Address }
-    >();
-    for (const policy of policies) {
-      for (const change of policy.data.changes.filter(pendingChangeHasToken)) {
-        if (isAddressEqual(change.token, zeroAddress)) {
-          continue;
-        }
-        const pair = { chainId: policy.safe.chainId, address: change.token };
-        byKey.set(tokenMetadataKey(pair), pair);
-      }
-    }
-    return [...byKey.values()];
   }
 
   /**

@@ -7,7 +7,6 @@ import type {
   ProposerPolicyData,
   SpendingLimitAllowance,
   SpendingLimitPolicyData,
-  SpendingLimitToken,
 } from '@/modules/policies/domain/entities/active-policy.entity';
 import type {
   GuardSlots,
@@ -20,6 +19,7 @@ import {
   PolicyEnforcementKind,
   PolicyType,
 } from '@/modules/policies/domain/entities/policy-type.entity';
+import type { Token } from '@/modules/policies/domain/entities/token.entity';
 import type {
   Erc20Token,
   NativeToken,
@@ -169,7 +169,7 @@ export class SpendingLimitAllowanceDto implements SpendingLimitAllowance {
     description:
       'Metadata of `tokenAddress`; null when it could not be resolved',
   })
-  public readonly tokenMetadata!: SpendingLimitToken | null;
+  public readonly tokenMetadata!: Token | null;
   @ApiProperty({ description: 'Per-window ceiling, in base units' })
   public readonly amount!: string;
   @ApiProperty({ description: 'Spent in the current window, in base units' })

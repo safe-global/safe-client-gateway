@@ -5,12 +5,12 @@ import type { IBuilder } from '@/__tests__/builder';
 import type {
   ActivePolicy,
   SpendingLimitPolicyData,
-  SpendingLimitToken,
 } from '@/modules/policies/domain/entities/active-policy.entity';
 import { policyIndexerSafeAllowanceBuilder } from '@/modules/policies/domain/entities/indexer/__tests__/safe-allowance.builder';
 import type { PolicyIndexerSafeAllowance } from '@/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
 import type { SafeRef } from '@/modules/policies/domain/entities/safe-ref.entity';
+import type { Token } from '@/modules/policies/domain/entities/token.entity';
 import {
   type TokenMetadataKey,
   tokenMetadataKey,
@@ -65,10 +65,7 @@ describe('SpendingLimitMapper', () => {
   function map(
     allowances: Array<PolicyIndexerSafeAllowance>,
     enabledModules: Array<Address> = [allowanceModule],
-    tokenMetadata: ReadonlyMap<
-      TokenMetadataKey,
-      SpendingLimitToken
-    > = new Map(),
+    tokenMetadata: ReadonlyMap<TokenMetadataKey, Token> = new Map(),
   ): Array<ActivePolicy> {
     return target.map({ safe, allowances, enabledModules, tokenMetadata });
   }

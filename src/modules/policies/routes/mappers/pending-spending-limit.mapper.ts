@@ -5,7 +5,6 @@ import { getAllowanceModuleDeployments } from '@/domain/common/utils/deployments
 import { AllowanceModuleDecoder } from '@/modules/contracts/domain/decoders/allowance-module-decoder.helper';
 import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
 import { SafeDecoder } from '@/modules/contracts/domain/decoders/safe-decoder.helper';
-import type { SpendingLimitToken } from '@/modules/policies/domain/entities/active-policy.entity';
 import {
   type PendingQueuedPolicy,
   type PendingSpendingLimitChange,
@@ -15,6 +14,7 @@ import {
 import { moduleEnforcement } from '@/modules/policies/domain/entities/policy-enforcement.entity';
 import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
 import type { SafeRef } from '@/modules/policies/domain/entities/safe-ref.entity';
+import type { Token } from '@/modules/policies/domain/entities/token.entity';
 import type { TokenMetadataKey } from '@/modules/policies/domain/utils/token-metadata-key.utils';
 import { tokenMetadataKey } from '@/modules/policies/domain/utils/token-metadata-key.utils';
 import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
@@ -69,7 +69,7 @@ export class PendingSpendingLimitMapper {
    */
   public attachTokenMetadata(
     policies: ReadonlyArray<PendingQueuedPolicy>,
-    tokenMetadata: ReadonlyMap<TokenMetadataKey, SpendingLimitToken>,
+    tokenMetadata: ReadonlyMap<TokenMetadataKey, Token>,
   ): Array<PendingQueuedPolicy> {
     return policies.map((policy) => ({
       ...policy,
