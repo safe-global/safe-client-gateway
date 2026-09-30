@@ -1961,9 +1961,82 @@ describe('MembersRepository', () => {
             id: userId,
             status: userStatus,
             updatedAt: expect.any(Date),
+            // The SIWE user's wallet, attached by the read path.
+            address: authPayload.signer_address,
           },
         },
       ]);
+    });
+
+    it('should attach the lowest-id wallet address for a member with several wallets', async () => {
+      const { user, authPayload } = await createSiweUser();
+      // A later wallet on the same account: higher serial id, so the
+      // first (SIWE) wallet must win deterministically.
+      await dbWalletRepo.insert({
+        user,
+        address: getAddress(faker.finance.ethereumAddress()),
+      });
+      const space = await dbSpacesRepository.insert({
+        name: nameBuilder(),
+        status: 'ACTIVE',
+      });
+      const spaceId = space.generatedMaps[0].id;
+      await dbMembersRepository.insert({
+        user,
+        space: space.generatedMaps[0],
+        name: nameBuilder(),
+        role: 'ADMIN',
+        status: 'ACTIVE',
+        invitedBy: null,
+      });
+
+      const [member] = await membersRepository.findAuthorizedMembersOrFail({
+        authPayload,
+        spaceId,
+      });
+
+      expect(member.user.address).toBe(authPayload.signer_address);
+    });
+
+    it('should attach a null address for a member without wallets', async () => {
+      const { user: admin, authPayload } = await createSiweUser();
+      const { user: walletless, userId: walletlessUserId } =
+        await createOidcUser();
+      const space = await dbSpacesRepository.insert({
+        name: nameBuilder(),
+        status: 'ACTIVE',
+      });
+      const spaceId = space.generatedMaps[0].id;
+      await dbMembersRepository.insert({
+        user: admin,
+        space: space.generatedMaps[0],
+        name: nameBuilder(),
+        role: 'ADMIN',
+        status: 'ACTIVE',
+        invitedBy: null,
+      });
+      await dbMembersRepository.insert({
+        user: walletless,
+        space: space.generatedMaps[0],
+        name: nameBuilder(),
+        role: 'MEMBER',
+        status: 'ACTIVE',
+        invitedBy: null,
+      });
+
+      const members = await membersRepository.findAuthorizedMembersOrFail({
+        authPayload,
+        spaceId,
+      });
+
+      const walletlessMember = members.find(
+        (member) => member.user.id === walletlessUserId,
+      );
+      expect(walletlessMember?.user.address).toBeNull();
+      const adminMember = members.find(
+        (member) => member.user.id !== walletlessUserId,
+      );
+      expect(adminMember?.user.address).toBe(authPayload.signer_address);
     });
 
     it('should find members by space id for OIDC user', async () => {
@@ -2239,6 +2312,39 @@ describe('MembersRepository', () => {
             invitedBy: memberInvitedBy,
             user: expect.objectContaining({ id: userId }),
           }),
+        );
+      },
+    );
+
+    it.each([
+      ['SIWE', createSiweUser],
+      ['OIDC', createOidcUser],
+    ] as const)(
+      'should attach the %s caller’s wallet address, or null without wallets',
+      async (authLabel, createUser) => {
+        const { user, authPayload } = await createUser();
+        const space = await dbSpacesRepository.insert({
+          name: nameBuilder(),
+          status: 'ACTIVE',
+        });
+        const spaceId = space.generatedMaps[0].id;
+        await dbMembersRepository.insert({
+          user,
+          space: space.generatedMaps[0],
+          name: nameBuilder(),
+          role: faker.helpers.arrayElement(MemberRoleKeys),
+          status: 'ACTIVE',
+          invitedBy: null,
+        });
+
+        const member = await membersRepository.findSelfMembershipOrFail({
+          authPayload,
+          spaceId,
+        });
+
+        // A SIWE account carries its signer wallet; an OIDC account has none.
+        expect(member.user.address).toBe(
+          authLabel === 'SIWE' ? authPayload.signer_address : null,
         );
       },
     );

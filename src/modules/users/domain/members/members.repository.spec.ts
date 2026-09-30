@@ -497,6 +497,38 @@ describe('MembersRepository', () => {
         alias: 'plain-alias',
       });
     });
+
+    it('should attach the decrypted wallet address to the returned membership', async () => {
+      const member = memberBuilder().with('status', 'ACTIVE').build();
+      member.user.id = authenticatedUserId;
+      dbMembersRepository.findOne.mockResolvedValue(member);
+      const wallet = walletBuilder().with('user', member.user).build();
+      walletsRepository.find.mockResolvedValue([wallet]);
+
+      const result = await target.findSelfMembershipOrFail({
+        authPayload,
+        spaceId: space.id,
+      });
+
+      expect(walletsRepository.find).toHaveBeenCalledWith({
+        where: { user: { id: In([member.user.id]) } },
+        relations: { user: true },
+      });
+      expect(result.user.address).toBe(wallet.address);
+    });
+
+    it('should attach a null address when the user has no wallets', async () => {
+      const member = memberBuilder().with('status', 'ACTIVE').build();
+      member.user.id = authenticatedUserId;
+      dbMembersRepository.findOne.mockResolvedValue(member);
+
+      const result = await target.findSelfMembershipOrFail({
+        authPayload,
+        spaceId: space.id,
+      });
+
+      expect(result.user.address).toBeNull();
+    });
   });
 
   describe('findAuthorizedMembersOrFail', () => {
@@ -530,6 +562,48 @@ describe('MembersRepository', () => {
       expect(
         result.every((m) => m.name === 'plain' && m.alias === 'plain'),
       ).toBe(true);
+    });
+
+    it('should attach the decrypted lowest-id wallet address of each roster member', async () => {
+      const self = memberBuilder().with('status', 'ACTIVE').build();
+      self.user.id = authenticatedUserId;
+      const other = memberBuilder().with('status', 'ACTIVE').build();
+      dbMembersRepository.findOne.mockResolvedValue(self);
+      const rosterSpace = spaceBuilder().with('members', [self, other]).build();
+      spacesRepository.findOneOrFail.mockResolvedValue(rosterSpace);
+      const lowWallet = walletBuilder()
+        .with('id', 1)
+        .with('user', other.user)
+        .build();
+      const highWallet = walletBuilder()
+        .with('id', 2)
+        .with('user', other.user)
+        .build();
+      // The own-row authorization check attaches addresses too and queries
+      // only the caller's id; the roster query comes second. Returned in
+      // the "wrong" order to prove the lowest-id sort, not a query-side
+      // ORDER BY (the query has none).
+      walletsRepository.find
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([highWallet, lowWallet]);
+
+      const result = await target.findAuthorizedMembersOrFail({
+        authPayload,
+        spaceId: rosterSpace.id,
+      });
+
+      expect(walletsRepository.find).toHaveBeenLastCalledWith({
+        where: { user: { id: In([self.user.id, other.user.id]) } },
+        relations: { user: true },
+      });
+      // One KMS decryption per user, for the chosen wallet only.
+      expect(walletEncryptionService.decryptAddress).toHaveBeenCalledTimes(1);
+      expect(walletEncryptionService.decryptAddress).toHaveBeenCalledWith(
+        other.user.id,
+        lowWallet.address,
+      );
+      expect(result[0].user.address).toBeNull();
+      expect(result[1].user.address).toBe(lowWallet.address);
     });
   });
 

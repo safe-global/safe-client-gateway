@@ -96,12 +96,12 @@ describe('MembersController', () => {
     spaceId: string;
     spaceUuid: string;
     userId: number;
+    signerAddress: `0x${string}`;
   }> => {
+    const authPayloadDto = siweAuthPayloadDtoBuilder().build();
     const walletResponse = await request(app.getHttpServer())
       .post('/v1/users/wallet')
-      .set('Cookie', [
-        `access_token=${jwtService.sign(siweAuthPayloadDtoBuilder().build())}`,
-      ])
+      .set('Cookie', [`access_token=${jwtService.sign(authPayloadDto)}`])
       .expect(201);
     const userId = walletResponse.body.id;
     const accessToken = accessTokenForUserId(userId);
@@ -115,6 +115,7 @@ describe('MembersController', () => {
       spaceId: createSpaceResponse.body.uuid,
       spaceUuid: createSpaceResponse.body.uuid,
       userId,
+      signerAddress: authPayloadDto.signer_address,
     };
   };
 
@@ -1074,7 +1075,7 @@ describe('MembersController', () => {
       const user1Name = faker.person.firstName();
       const user2 = getAddress(faker.finance.ethereumAddress());
       const user2Name = faker.person.firstName();
-      const { accessToken, spaceId, userId } =
+      const { accessToken, spaceId, userId, signerAddress } =
         await createSpaceForSigner(spaceName);
       const adminUserId = userId;
 
@@ -1118,6 +1119,7 @@ describe('MembersController', () => {
                   id: adminUserId,
                   status: 'ACTIVE',
                   email: null,
+                  address: signerAddress,
                 },
               },
               {
@@ -1134,6 +1136,8 @@ describe('MembersController', () => {
                   id: expect.any(Number),
                   status: 'PENDING',
                   email: null,
+                  // Visible to the caller: they are the active admin.
+                  address: user1,
                 },
               },
               {
@@ -1150,6 +1154,7 @@ describe('MembersController', () => {
                   id: expect.any(Number),
                   status: 'PENDING',
                   email: null,
+                  address: user2,
                 },
               },
             ],

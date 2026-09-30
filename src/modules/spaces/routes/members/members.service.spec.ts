@@ -6,6 +6,7 @@ import {
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
+import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import {
@@ -23,6 +24,7 @@ import { MembersService } from '@/modules/spaces/routes/members/members.service'
 import type { SpaceInviteEmailService } from '@/modules/spaces/routes/members/space-invite-email.service';
 import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
 import { userBuilder } from '@/modules/users/datasources/entities/__tests__/users.entity.db.builder';
+import type { Member } from '@/modules/users/domain/entities/member.entity';
 import { createMockMemberEncryptionService } from '@/modules/users/domain/members/__tests__/member-encryption.service.mock';
 import type { MemberEncryptionService } from '@/modules/users/domain/members/member-encryption.service';
 import type { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
@@ -35,12 +37,24 @@ const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const membersRepositoryMock = {
   findOne: vi.fn(),
   findAuthorizedMembersOrFail: vi.fn(),
+  findSelfMembershipOrFail: vi.fn(),
   findOneOrFail: vi.fn(),
   inviteUsers: vi.fn(),
   renewInvite: vi.fn(),
   updateRole: vi.fn(),
   removeUser: vi.fn(),
 } as MockedObject<IMembersRepository>;
+
+/**
+ * The repository attaches the derived `address` to the domain user; the DB
+ * entity deliberately has no such column, so the builders cannot carry it.
+ */
+function memberWithAddress(
+  member: ReturnType<ReturnType<typeof memberBuilder>['build']>,
+  address: string | null,
+): Member {
+  return { ...member, user: { ...member.user, address } };
+}
 
 const configurationServiceMock = {
   getOrThrow: vi.fn(),
@@ -102,6 +116,7 @@ describe('MembersService', () => {
               id: invitedMember.user.id,
               status: invitedMember.user.status,
               email: null,
+              address: null,
             },
           },
         ],
@@ -139,6 +154,7 @@ describe('MembersService', () => {
               id: callerMember.user.id,
               status: callerMember.user.status,
               email: callerMember.user.email,
+              address: null,
             },
           },
           {
@@ -147,9 +163,147 @@ describe('MembersService', () => {
               id: invitedMember.user.id,
               status: invitedMember.user.status,
               email,
+              address: null,
             },
           },
         ],
+      });
+    });
+
+    it('should expose the wallet address of an ACTIVE member to a non-admin caller', async () => {
+      const walletAddress = getAddress(faker.finance.ethereumAddress());
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const callerMember = memberBuilder()
+        .with('role', 'MEMBER')
+        .with('status', 'ACTIVE')
+        .with('user', userBuilder().with('id', Number(authPayload.sub)).build())
+        .build();
+      const walletMember = memberWithAddress(
+        memberBuilder()
+          .with('role', 'MEMBER')
+          .with('status', 'ACTIVE')
+          .with(
+            'user',
+            userBuilder().with('email', null).with('status', 'ACTIVE').build(),
+          )
+          .build(),
+        walletAddress,
+      );
+      const spaceId = faker.number.int({ min: 1 });
+
+      membersRepositoryMock.findAuthorizedMembersOrFail.mockResolvedValue([
+        callerMember,
+        walletMember,
+      ]);
+
+      const result = await service.get({ authPayload, spaceId });
+
+      expect(result.members[1].user).toEqual({
+        id: walletMember.user.id,
+        status: walletMember.user.status,
+        email: null,
+        address: walletAddress,
+      });
+    });
+
+    it('should hide the wallet address of an invited member when the caller is not an active admin', async () => {
+      const walletAddress = getAddress(faker.finance.ethereumAddress());
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const callerMember = memberBuilder()
+        .with('role', 'MEMBER')
+        .with('status', 'ACTIVE')
+        .with('user', userBuilder().with('id', Number(authPayload.sub)).build())
+        .build();
+      const invitedWalletMember = memberWithAddress(
+        memberBuilder()
+          .with('role', 'MEMBER')
+          .with('status', 'INVITED')
+          .with(
+            'user',
+            userBuilder().with('email', null).with('status', 'PENDING').build(),
+          )
+          .build(),
+        walletAddress,
+      );
+      const spaceId = faker.number.int({ min: 1 });
+
+      membersRepositoryMock.findAuthorizedMembersOrFail.mockResolvedValue([
+        callerMember,
+        invitedWalletMember,
+      ]);
+
+      const result = await service.get({ authPayload, spaceId });
+
+      expect(result.members[1].user).toEqual({
+        id: invitedWalletMember.user.id,
+        status: invitedWalletMember.user.status,
+        email: null,
+        address: null,
+      });
+    });
+
+    it('should expose the wallet address of an invited member to an active admin', async () => {
+      const walletAddress = getAddress(faker.finance.ethereumAddress());
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const callerAdmin = memberBuilder()
+        .with('role', 'ADMIN')
+        .with('status', 'ACTIVE')
+        .with('user', userBuilder().with('id', Number(authPayload.sub)).build())
+        .build();
+      const invitedWalletMember = memberWithAddress(
+        memberBuilder()
+          .with('role', 'MEMBER')
+          .with('status', 'INVITED')
+          .with(
+            'user',
+            userBuilder().with('email', null).with('status', 'PENDING').build(),
+          )
+          .build(),
+        walletAddress,
+      );
+      const spaceId = faker.number.int({ min: 1 });
+
+      membersRepositoryMock.findAuthorizedMembersOrFail.mockResolvedValue([
+        callerAdmin,
+        invitedWalletMember,
+      ]);
+
+      const result = await service.get({ authPayload, spaceId });
+
+      expect(result.members[1].user).toEqual({
+        id: invitedWalletMember.user.id,
+        status: invitedWalletMember.user.status,
+        email: null,
+        address: walletAddress,
+      });
+    });
+
+    it('should return null email and address for an ACTIVE member with neither', async () => {
+      const authPayload = new AuthPayload(oidcAuthPayloadDtoBuilder().build());
+      const member = memberBuilder()
+        .with('role', 'MEMBER')
+        .with('status', 'ACTIVE')
+        .with(
+          'user',
+          userBuilder()
+            .with('id', Number(authPayload.sub))
+            .with('email', null)
+            .build(),
+        )
+        .build();
+      const spaceId = faker.number.int({ min: 1 });
+
+      membersRepositoryMock.findAuthorizedMembersOrFail.mockResolvedValue([
+        member,
+      ]);
+
+      const result = await service.get({ authPayload, spaceId });
+
+      expect(result.members[0].user).toEqual({
+        id: member.user.id,
+        status: member.user.status,
+        email: null,
+        address: null,
       });
     });
 
@@ -175,6 +329,63 @@ describe('MembersService', () => {
       const result = await service.get({ authPayload, spaceId });
 
       expect(result.members[0].user).not.toHaveProperty('extUserId');
+    });
+  });
+
+  describe('getSelfMembership', () => {
+    it('should return the caller’s own wallet address even while INVITED', async () => {
+      // Contrast with get(): the caller reads their own row, so the
+      // pending-invite visibility gate does not apply.
+      const walletAddress = getAddress(faker.finance.ethereumAddress());
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const member = memberWithAddress(
+        memberBuilder()
+          .with('role', 'MEMBER')
+          .with('status', 'INVITED')
+          .with(
+            'user',
+            userBuilder()
+              .with('id', Number(authPayload.sub))
+              .with('email', null)
+              .with('status', 'PENDING')
+              .build(),
+          )
+          .build(),
+        walletAddress,
+      );
+      const spaceId = faker.number.int({ min: 1 });
+
+      membersRepositoryMock.findSelfMembershipOrFail.mockResolvedValue(member);
+
+      const result = await service.getSelfMembership({ authPayload, spaceId });
+
+      expect(result.user).toEqual({
+        id: member.user.id,
+        status: member.user.status,
+        email: null,
+        address: walletAddress,
+      });
+    });
+
+    it('should map a missing address to null', async () => {
+      const authPayload = new AuthPayload(oidcAuthPayloadDtoBuilder().build());
+      const member = memberBuilder()
+        .with('role', 'MEMBER')
+        .with('status', 'ACTIVE')
+        .with('user', userBuilder().with('id', Number(authPayload.sub)).build())
+        .build();
+      const spaceId = faker.number.int({ min: 1 });
+
+      membersRepositoryMock.findSelfMembershipOrFail.mockResolvedValue(member);
+
+      const result = await service.getSelfMembership({ authPayload, spaceId });
+
+      expect(result.user).toEqual({
+        id: member.user.id,
+        status: member.user.status,
+        email: member.user.email,
+        address: null,
+      });
     });
   });
 
