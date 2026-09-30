@@ -2,12 +2,18 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import type { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
 import { IAddressBookItemsRepository } from '@/modules/spaces/domain/address-books/address-book-items.repository.interface';
 import type { AddressBookDbItem } from '@/modules/spaces/domain/address-books/entities/address-book-item.db.entity';
+import {
+  assertAdmin,
+  assertMember,
+} from '@/modules/spaces/domain/space-assert.utils';
 import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
 import type { SpaceAddressBookDto } from '@/modules/spaces/routes/address-books/entities/space-address-book.dto.entity';
 import type { UpsertAddressBookItemsDto } from '@/modules/spaces/routes/address-books/entities/upsert-address-book-items.dto.entity';
+import { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
 import { UserIdentityResolverService } from '@/modules/users/domain/user-identity-resolver/user-identity-resolver.service';
 
 @Injectable()
@@ -25,6 +31,8 @@ export class AddressBooksService {
     private readonly configurationService: IConfigurationService,
     @Inject(ISpacesRepository)
     private readonly spacesRepository: ISpacesRepository,
+    @Inject(IMembersRepository)
+    private readonly membersRepository: IMembersRepository,
   ) {
     this.maxItems = this.configurationService.getOrThrow<number>(
       'spaces.addressBooks.maxItems',
@@ -35,10 +43,10 @@ export class AddressBooksService {
     authPayload: AuthPayload,
     spaceId: Space['id'],
   ): Promise<SpaceAddressBookDto> {
-    const items = await this.repository.findAllBySpaceId({
-      authPayload,
-      spaceId,
-    });
+    const userId = getAuthenticatedUserIdOrFail(authPayload);
+    await assertMember(this.membersRepository, spaceId, userId);
+
+    const items = await this.repository.findAllBySpaceId(spaceId);
     return this.mapAddressBookItems(spaceId, items);
   }
 
@@ -47,8 +55,11 @@ export class AddressBooksService {
     spaceId: Space['id'],
     addressBookItems: UpsertAddressBookItemsDto,
   ): Promise<SpaceAddressBookDto> {
+    const userId = getAuthenticatedUserIdOrFail(authPayload);
+    await assertAdmin(this.membersRepository, spaceId, userId);
+
     const updated = await this.repository.upsertMany({
-      authPayload,
+      userId,
       spaceId,
       addressBookItems: addressBookItems.items,
     });
@@ -60,7 +71,14 @@ export class AddressBooksService {
     spaceId: Space['id'];
     address: AddressBookDbItem['address'];
   }): Promise<void> {
-    await this.repository.deleteByAddress(args);
+    const userId = getAuthenticatedUserIdOrFail(args.authPayload);
+    await assertAdmin(this.membersRepository, args.spaceId, userId);
+
+    await this.repository.deleteByAddress({
+      userId,
+      spaceId: args.spaceId,
+      address: args.address,
+    });
   }
 
   private async mapAddressBookItems(

@@ -461,6 +461,6 @@ export class BillingService {
     authPayload: AuthPayload,
   ): Promise<void> {
     const userId = getAuthenticatedUserIdOrFail(authPayload);
-    await assertAdmin(this.spacesRepository, spaceId, userId);
+    await assertAdmin(this.membersRepository, spaceId, userId);
   }
 }

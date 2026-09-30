@@ -42,7 +42,6 @@ import { toCheckoutSessionDto } from '@/modules/billing/routes/entities/checkout
 import { spaceSubscriptionBuilder } from '@/modules/entitlements/domain/entities/__tests__/space-subscription.builder';
 import type { ISubscriptionSyncService } from '@/modules/entitlements/domain/subscription-sync.service.interface';
 import type { ISubscriptionsRepository } from '@/modules/entitlements/domain/subscriptions.repository.interface';
-import { spaceBuilder } from '@/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 import type { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
 import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
@@ -76,7 +75,6 @@ const subscriptionsRepositoryMock = {
 
 const spacesRepositoryMock = {
   findCreatedAtById: vi.fn(),
-  findOne: vi.fn(),
 } as MockedObject<ISpacesRepository>;
 
 const spaceSafesRepositoryMock = {
@@ -147,7 +145,9 @@ describe('BillingService', () => {
     spaceSafesRepositoryMock.countSeatsBySpaceId.mockResolvedValue(0);
     // Default for the checkout/plan-change specs, which are admin-gated: an
     // admin found unless a spec overrides this to test the rejection.
-    spacesRepositoryMock.findOne.mockResolvedValue(spaceBuilder().build());
+    membersRepositoryMock.findOne.mockResolvedValue(
+      memberBuilder().with('role', 'ADMIN').with('status', 'ACTIVE').build(),
+    );
 
     service = new BillingService(
       billingRepositoryMock,
@@ -306,7 +306,7 @@ describe('BillingService', () => {
 
     it('should throw when the user is not a space admin', async () => {
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
-      spacesRepositoryMock.findOne.mockResolvedValue(null);
+      membersRepositoryMock.findOne.mockResolvedValue(null);
 
       await expect(
         service.getSessionUrl({
@@ -614,7 +614,7 @@ describe('BillingService', () => {
 
     it('should throw when the user is not a space admin', async () => {
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
-      spacesRepositoryMock.findOne.mockResolvedValue(null);
+      membersRepositoryMock.findOne.mockResolvedValue(null);
 
       await expect(
         service.createCheckoutUrl({
@@ -878,7 +878,7 @@ describe('BillingService', () => {
     it('should throw when the user is not a space admin', async () => {
       const { spaceId, spaceUuid, planId, subscription } = subscribedSpace();
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
-      spacesRepositoryMock.findOne.mockResolvedValue(null);
+      membersRepositoryMock.findOne.mockResolvedValue(null);
 
       await expect(
         service.previewSubscriptionUpdate({
@@ -1005,7 +1005,7 @@ describe('BillingService', () => {
     it('should throw when the user is not a space admin', async () => {
       const { spaceId, spaceUuid, planId, subscription } = subscribedSpace();
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
-      spacesRepositoryMock.findOne.mockResolvedValue(null);
+      membersRepositoryMock.findOne.mockResolvedValue(null);
 
       await expect(
         service.updateSubscription({
