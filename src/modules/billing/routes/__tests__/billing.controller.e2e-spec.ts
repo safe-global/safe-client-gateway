@@ -731,6 +731,24 @@ describe('BillingController', () => {
       expect(networkService.patch).not.toHaveBeenCalled();
     });
 
+    it('PATCH .../subscriptions/:subscriptionId returns 422 for a malformed removedSafes entry', async () => {
+      const { accessToken, spaceId } = await registerAndCreateSpace();
+      await request(app.getHttpServer())
+        .patch(
+          `/v1/billing/spaces/${spaceId}/subscriptions/${faker.string.alphanumeric(20)}`,
+        )
+        .send({
+          planId: faker.string.alphanumeric(20),
+          removedSafes: [
+            { chainId: faker.string.numeric(), address: faker.word.noun() },
+          ],
+        })
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(422);
+
+      expect(networkService.patch).not.toHaveBeenCalled();
+    });
+
     it('PATCH .../subscriptions/:subscriptionId returns 422 without a planId', async () => {
       const { accessToken, spaceId } = await registerAndCreateSpace();
       await request(app.getHttpServer())
