@@ -10,6 +10,7 @@ import {
   UnauthorizedException,
   UnprocessableEntityException,
 } from '@nestjs/common';
+import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
 import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
 import {
@@ -37,6 +38,7 @@ import {
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import type { IBillingRepository } from '@/modules/billing/domain/billing.repository.interface';
 import { webhookEventBuilder } from '@/modules/billing/domain/entities/__tests__/webhook-event.builder';
+import { SAFES_REMOVED_PLAN_UNCHANGED_MESSAGE } from '@/modules/billing/domain/subscription.constants';
 import { BillingService } from '@/modules/billing/routes/billing.service';
 import { toCheckoutSessionDto } from '@/modules/billing/routes/entities/checkout-session.entity';
 import { spaceSubscriptionBuilder } from '@/modules/entitlements/domain/entities/__tests__/space-subscription.builder';
@@ -79,6 +81,7 @@ const spacesRepositoryMock = {
 
 const spaceSafesRepositoryMock = {
   countSeatsBySpaceId: vi.fn(),
+  delete: vi.fn(),
 } as MockedObject<ISpaceSafesRepository>;
 
 const loggingServiceMock = {
@@ -848,6 +851,18 @@ describe('BillingService', () => {
     };
   }
 
+  function removedSafes(
+    count = faker.number.int({ min: 1, max: 3 }),
+  ): Array<{ chainId: string; address: `0x${string}` }> {
+    return faker.helpers.multiple(
+      () => ({
+        chainId: faker.string.numeric(),
+        address: getAddress(faker.finance.ethereumAddress()),
+      }),
+      { count },
+    );
+  }
+
   describe('previewSubscriptionUpdate', () => {
     it('should return the preview for a space admin', async () => {
       const { spaceId, spaceUuid, planId, subscription } = subscribedSpace();
@@ -1300,6 +1315,232 @@ describe('BillingService', () => {
       });
 
       expect(result).toBe(updateResult);
+    });
+
+    describe('with removedSafes', () => {
+      function planInForce(planId: string): {
+        spaceId: Space['id'];
+        spaceUuid: Space['uuid'];
+        subscription: Subscription;
+      } {
+        const { spaceId, spaceUuid, subscription } = subscribedSpace({
+          planId,
+        });
+        billingRepositoryMock.getSubscriptionsByCustomerId.mockResolvedValue([
+          { ...subscription, plan: { ...subscription.plan, id: planId } },
+        ]);
+        return { spaceId, spaceUuid, subscription };
+      }
+
+      it('removes the Safes, then checks the seats, then moves the plan', async () => {
+        const { spaceId, spaceUuid, planId, paymentLink, subscription } =
+          subscribedSpace({ metadata: { FEATURE_SAFE_SEATS: '1' } });
+        const authPayload = new AuthPayload(
+          siweAuthPayloadDtoBuilder().build(),
+        );
+        const safes = removedSafes();
+        const updateResult = updateSubscriptionResultBuilder().build();
+        spaceSafesRepositoryMock.countSeatsBySpaceId.mockResolvedValue(1);
+        billingRepositoryMock.updateSubscription.mockResolvedValue(
+          updateResult,
+        );
+
+        const result = await service.updateSubscription({
+          spaceId,
+          spaceUuid,
+          subscriptionId: subscription.id,
+          planId,
+          removedSafes: safes,
+          authPayload,
+        });
+
+        expect(result).toBe(updateResult);
+        expect(spaceSafesRepositoryMock.delete).toHaveBeenCalledWith({
+          spaceId,
+          actorUserId: Number(authPayload.sub),
+          payload: safes,
+        });
+        expect(spaceSafesRepositoryMock.delete).toHaveBeenCalledBefore(
+          spaceSafesRepositoryMock.countSeatsBySpaceId,
+        );
+        expect(
+          spaceSafesRepositoryMock.countSeatsBySpaceId,
+        ).toHaveBeenCalledBefore(billingRepositoryMock.updateSubscription);
+        expect(billingRepositoryMock.updateSubscription).toHaveBeenCalledWith(
+          expect.objectContaining({ paymentLinkId: paymentLink.id }),
+        );
+      });
+
+      it('keeps the plan when the Safes left still do not fit', async () => {
+        const { spaceId, spaceUuid, planId, subscription } = subscribedSpace({
+          metadata: { FEATURE_SAFE_SEATS: '1' },
+        });
+        const authPayload = new AuthPayload(
+          siweAuthPayloadDtoBuilder().build(),
+        );
+        spaceSafesRepositoryMock.countSeatsBySpaceId.mockResolvedValue(2);
+
+        await expect(
+          service.updateSubscription({
+            spaceId,
+            spaceUuid,
+            subscriptionId: subscription.id,
+            planId,
+            removedSafes: removedSafes(),
+            authPayload,
+          }),
+        ).rejects.toThrow(ConflictException);
+
+        expect(billingRepositoryMock.updateSubscription).not.toHaveBeenCalled();
+      });
+
+      it('moves the plan when the Safes are already gone', async () => {
+        const { spaceId, spaceUuid, planId, subscription } = subscribedSpace();
+        const authPayload = new AuthPayload(
+          siweAuthPayloadDtoBuilder().build(),
+        );
+        const updateResult = updateSubscriptionResultBuilder().build();
+        spaceSafesRepositoryMock.delete.mockRejectedValue(
+          new NotFoundException(),
+        );
+        billingRepositoryMock.updateSubscription.mockResolvedValue(
+          updateResult,
+        );
+
+        await expect(
+          service.updateSubscription({
+            spaceId,
+            spaceUuid,
+            subscriptionId: subscription.id,
+            planId,
+            removedSafes: removedSafes(),
+            authPayload,
+          }),
+        ).resolves.toBe(updateResult);
+
+        expect(loggingServiceMock.debug).toHaveBeenCalled();
+      });
+
+      it('keeps the plan when the removal fails', async () => {
+        const { spaceId, spaceUuid, planId, subscription } = subscribedSpace();
+        const authPayload = new AuthPayload(
+          siweAuthPayloadDtoBuilder().build(),
+        );
+        const error = new Error(faker.lorem.sentence());
+        spaceSafesRepositoryMock.delete.mockRejectedValue(error);
+
+        await expect(
+          service.updateSubscription({
+            spaceId,
+            spaceUuid,
+            subscriptionId: subscription.id,
+            planId,
+            removedSafes: removedSafes(),
+            authPayload,
+          }),
+        ).rejects.toThrow(error);
+
+        expect(billingRepositoryMock.updateSubscription).not.toHaveBeenCalled();
+      });
+
+      it('answers 502 with the retry message when the upstream fails after the removal', async () => {
+        const { spaceId, spaceUuid, planId, subscription } = subscribedSpace();
+        const authPayload = new AuthPayload(
+          siweAuthPayloadDtoBuilder().build(),
+        );
+        const safes = removedSafes();
+        billingRepositoryMock.updateSubscription.mockRejectedValue(
+          new Error(faker.lorem.sentence()),
+        );
+
+        await expect(
+          service.updateSubscription({
+            spaceId,
+            spaceUuid,
+            subscriptionId: subscription.id,
+            planId,
+            removedSafes: safes,
+            authPayload,
+          }),
+        ).rejects.toThrow(
+          new BadGatewayException(SAFES_REMOVED_PLAN_UNCHANGED_MESSAGE),
+        );
+
+        expect(loggingServiceMock.error).toHaveBeenCalledWith(
+          expect.stringContaining(`after removing ${safes.length} Safe(s)`),
+        );
+      });
+
+      it('answers 502 with the retry message when the upstream reports failure after the removal', async () => {
+        const { spaceId, spaceUuid, planId, subscription } = subscribedSpace();
+        const authPayload = new AuthPayload(
+          siweAuthPayloadDtoBuilder().build(),
+        );
+        const safes = removedSafes();
+        billingRepositoryMock.updateSubscription.mockResolvedValue(
+          updateSubscriptionResultBuilder().with('success', false).build(),
+        );
+
+        await expect(
+          service.updateSubscription({
+            spaceId,
+            spaceUuid,
+            subscriptionId: subscription.id,
+            planId,
+            removedSafes: safes,
+            authPayload,
+          }),
+        ).rejects.toThrow(
+          new BadGatewayException(SAFES_REMOVED_PLAN_UNCHANGED_MESSAGE),
+        );
+
+        expect(loggingServiceMock.error).toHaveBeenCalledWith(
+          expect.stringContaining(`after removing ${safes.length} Safe(s)`),
+        );
+      });
+
+      it('answers 409 on the plan in force without removing anything', async () => {
+        const planId = faker.string.alphanumeric(32);
+        const { spaceId, spaceUuid, subscription } = planInForce(planId);
+        const authPayload = new AuthPayload(
+          siweAuthPayloadDtoBuilder().build(),
+        );
+
+        await expect(
+          service.updateSubscription({
+            spaceId,
+            spaceUuid,
+            subscriptionId: subscription.id,
+            planId,
+            removedSafes: removedSafes(),
+            authPayload,
+          }),
+        ).rejects.toThrow(ConflictException);
+
+        expect(spaceSafesRepositoryMock.delete).not.toHaveBeenCalled();
+      });
+
+      it('treats an empty list as no removal', async () => {
+        const { spaceId, spaceUuid, planId, subscription } = subscribedSpace();
+        const authPayload = new AuthPayload(
+          siweAuthPayloadDtoBuilder().build(),
+        );
+        const error = new Error(faker.lorem.sentence());
+        billingRepositoryMock.updateSubscription.mockRejectedValue(error);
+
+        await expect(
+          service.updateSubscription({
+            spaceId,
+            spaceUuid,
+            subscriptionId: subscription.id,
+            planId,
+            removedSafes: [],
+            authPayload,
+          }),
+        ).rejects.toThrow(error);
+
+        expect(spaceSafesRepositoryMock.delete).not.toHaveBeenCalled();
+      });
     });
   });
 });

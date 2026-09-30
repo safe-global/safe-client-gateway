@@ -21,6 +21,7 @@ import type {
 } from '@/datasources/billing-api/entities/subscription-update.entity';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { LoggingService } from '@/logging/logging.interface';
+import { asError } from '@/logging/utils';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import {
@@ -29,6 +30,7 @@ import {
   resolveAndValidateRedirectUrl,
 } from '@/modules/auth/utils/auth-redirect.helper';
 import { IBillingRepository } from '@/modules/billing/domain/billing.repository.interface';
+import type { SafeRef } from '@/modules/billing/domain/entities/safe-ref.entity';
 import type { WebhookEvent } from '@/modules/billing/domain/entities/webhook-event.entity';
 import type { SpaceOfferEligibility } from '@/modules/billing/domain/payment-link-offer.rules';
 import {
@@ -36,7 +38,10 @@ import {
   isUnclassifiedTrialLink,
   offersPlan,
 } from '@/modules/billing/domain/payment-link-offer.rules';
-import { UPDATABLE_SUBSCRIPTION_STATUSES } from '@/modules/billing/domain/subscription.constants';
+import {
+  SAFES_REMOVED_PLAN_UNCHANGED_MESSAGE,
+  UPDATABLE_SUBSCRIPTION_STATUSES,
+} from '@/modules/billing/domain/subscription.constants';
 import type { CheckoutSession } from '@/modules/billing/routes/entities/checkout-session.entity';
 import { toCheckoutSessionDto } from '@/modules/billing/routes/entities/checkout-session.entity';
 import type { CheckoutSessionResult } from '@/modules/billing/routes/entities/checkout-session-result.entity';
@@ -221,7 +226,8 @@ export class BillingService {
   }
 
   /**
-   * Moves the workspace onto another plan.
+   * Moves the workspace onto another plan, removing `removedSafes` first so
+   * it fits the new one.
    *
    * Admin-only, and gated by `ElevationGuard`.
    *
@@ -236,6 +242,7 @@ export class BillingService {
     subscriptionId: string;
     planId: string;
     paymentLinkId?: string;
+    removedSafes?: Array<SafeRef>;
     authPayload: AuthPayload;
   }): Promise<UpdateSubscriptionResult> {
     await this.assertSpaceAdmin(args.spaceId, args.authPayload);
@@ -252,6 +259,30 @@ export class BillingService {
       throw new NotFoundException('Subscription not found');
     }
 
+    this.assertPlanChangeable(subscription, args.planId);
+
+    const paymentLink = this.paymentLinkForPlanOrFail(offeredLinks, args);
+
+    const userId = getAuthenticatedUserIdOrFail(args.authPayload);
+    await this.removeSafes({ ...args, actorUserId: userId });
+
+    await this.assertSafeSeatCapacity({
+      spaceId: args.spaceId,
+      paymentLink,
+    });
+
+    return await this.changePlanUpstream({
+      ...args,
+      paymentLinkId: paymentLink.id,
+    }).catch((error: unknown) =>
+      this.rethrowPlanChangeFailure({ ...args, error }),
+    );
+  }
+
+  private assertPlanChangeable(
+    subscription: Subscription,
+    planId: string,
+  ): void {
     // Upstream rejects this too, but as a 400 after a round trip.
     if (!UPDATABLE_SUBSCRIPTION_STATUSES.includes(subscription.status)) {
       throw new ConflictException(
@@ -259,21 +290,22 @@ export class BillingService {
       );
     }
 
-    if (subscription.plan.id === args.planId) {
+    if (subscription.plan.id === planId) {
       throw new ConflictException('The workspace is already on this plan');
     }
+  }
 
-    const paymentLink = this.paymentLinkForPlanOrFail(offeredLinks, args);
-    await this.assertSafeSeatCapacity({
-      spaceId: args.spaceId,
-      paymentLink,
-    });
-
+  private async changePlanUpstream(args: {
+    spaceUuid: Space['uuid'];
+    subscriptionId: string;
+    planId: string;
+    paymentLinkId: string;
+  }): Promise<UpdateSubscriptionResult> {
     const result = await this.billingRepository.updateSubscription({
       upstreamCustomerId: args.spaceUuid,
       subscriptionId: args.subscriptionId,
       planId: args.planId,
-      paymentLinkId: paymentLink.id,
+      paymentLinkId: args.paymentLinkId,
     });
 
     // Relaying a 200 would say the workspace moved plan when it did not, and
@@ -286,6 +318,50 @@ export class BillingService {
     }
 
     return result;
+  }
+
+  private async removeSafes(args: {
+    spaceId: Space['id'];
+    actorUserId: number;
+    removedSafes?: Array<SafeRef>;
+  }): Promise<void> {
+    if (!args.removedSafes || args.removedSafes.length === 0) {
+      return;
+    }
+    try {
+      await this.spaceSafesRepository.delete({
+        spaceId: args.spaceId,
+        actorUserId: args.actorUserId,
+        payload: args.removedSafes,
+      });
+    } catch (error) {
+      if (!(error instanceof NotFoundException)) {
+        throw error;
+      }
+      this.loggingService.debug(
+        `None of the ${args.removedSafes.length} Safe(s) to remove are left in workspace ${args.spaceId}`,
+      );
+    }
+  }
+
+  /**
+   * A plan change that carried `removedSafes` failed with those Safes already
+   * out of the workspace, so the caller is told to retry.
+   */
+  private rethrowPlanChangeFailure(args: {
+    error: unknown;
+    removedSafes?: Array<SafeRef>;
+    spaceUuid: Space['uuid'];
+    subscriptionId: string;
+    planId: string;
+  }): never {
+    if (!args.removedSafes || args.removedSafes.length === 0) {
+      throw args.error;
+    }
+    this.loggingService.error(
+      `Plan change to ${args.planId} failed for subscription ${args.subscriptionId} of workspace ${args.spaceUuid} after removing ${args.removedSafes.length} Safe(s): ${asError(args.error).message}`,
+    );
+    throw new BadGatewayException(SAFES_REMOVED_PLAN_UNCHANGED_MESSAGE);
   }
 
   /**
