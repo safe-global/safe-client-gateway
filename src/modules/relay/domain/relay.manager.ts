@@ -16,7 +16,7 @@ import { RelayFeeRelayer } from '@/modules/relay/domain/relayers/relay-fee.relay
 
 type Relayer = NonNullable<Chain['relayer']>;
 
-/** What a relayed calldata does, which decides who may pay for it. */
+/** What a relayed calldata does, which determines who may pay for it. */
 const RelayCall = {
   SIGNER_CREATION: 'SIGNER_CREATION',
   SAFE_CREATION: 'SAFE_CREATION',
@@ -38,7 +38,7 @@ export class RelayManager implements IRelayManager {
 
   /**
    * Returns the relayer that pays for the calldata on the chain:
-   * - signer creation → {@link DailyLimitRelayer}, whatever the chain config
+   * - signer creation → {@link DailyLimitRelayer}, regardless of chain config
    * - Safe creation → {@link DailyLimitRelayer} if `safeCreationSponsored`
    * - refunding transaction → {@link RelayFeeRelayer} if `PAY_FROM_SAFE` is listed
    * - any other transaction → the free relayer, see {@link getFreeRelayer}
@@ -46,32 +46,26 @@ export class RelayManager implements IRelayManager {
    * @throws NoRelayerDefinedError when the chain offers no option for the calldata.
    * @throws RelayerTypeNotImplementedError when the relayer type is GTF.
    */
-  public getRelayer(args: { relayer: Chain['relayer']; data: Hex }): IRelayer {
-    switch (this.getRelayCall(args.data)) {
-      case RelayCall.SIGNER_CREATION: {
-        // Passkey signer deployment is always sponsored. The factory address
-        // is verified downstream in LimitAddressesMapper.
+  public getRelayer({
+    relayer,
+    data,
+  }: {
+    relayer: Chain['relayer'];
+    data: Hex;
+  }): IRelayer {
+    switch (this.getRelayCall(data)) {
+      // Always sponsored.
+      case RelayCall.SIGNER_CREATION:
         return this.dailyLimitRelayer;
-      }
-      case RelayCall.SAFE_CREATION: {
-        const relayer = this.getAvailableRelayer(args.relayer);
-        if (!relayer.safeCreationSponsored) {
-          throw new NoRelayerDefinedError();
-        }
-        return this.dailyLimitRelayer;
-      }
-      case RelayCall.REFUNDING_TRANSACTION: {
-        const relayer = this.getAvailableRelayer(args.relayer);
-        if (
-          !relayer.gasPaymentOptions.includes(GasPaymentOption.PAY_FROM_SAFE)
-        ) {
-          throw new NoRelayerDefinedError();
-        }
-        return this.relayFeeRelayer;
-      }
-      case RelayCall.TRANSACTION: {
-        return this.getFreeRelayer(args.relayer);
-      }
+      // Sponsored only when the chain sets `safeCreationSponsored`.
+      case RelayCall.SAFE_CREATION:
+        return this.getSafeCreationRelayer(this.requireRelayer(relayer));
+      // Paid by the Safe only when the chain lists `PAY_FROM_SAFE`.
+      case RelayCall.REFUNDING_TRANSACTION:
+        return this.getRefundingRelayer(this.requireRelayer(relayer));
+      // Free only when the chain lists a free option.
+      case RelayCall.TRANSACTION:
+        return this.getFreeRelayer(relayer);
     }
   }
 
@@ -82,7 +76,7 @@ export class RelayManager implements IRelayManager {
    * @throws RelayerTypeNotImplementedError when the relayer type is GTF.
    */
   public getFreeRelayer(relayer: Chain['relayer']): IRelayer {
-    const { gasPaymentOptions } = this.getAvailableRelayer(relayer);
+    const { gasPaymentOptions } = this.requireRelayer(relayer);
     // The no-fee campaign takes precedence over the daily limit.
     if (gasPaymentOptions.includes(GasPaymentOption.NO_FEE_CAMPAIGN)) {
       return this.noFeeCampaignRelayer;
@@ -91,6 +85,20 @@ export class RelayManager implements IRelayManager {
       return this.dailyLimitRelayer;
     }
     throw new NoRelayerDefinedError();
+  }
+
+  private getSafeCreationRelayer(relayer: Relayer): IRelayer {
+    if (!relayer.safeCreationSponsored) {
+      throw new NoRelayerDefinedError();
+    }
+    return this.dailyLimitRelayer;
+  }
+
+  private getRefundingRelayer(relayer: Relayer): IRelayer {
+    if (!relayer.gasPaymentOptions.includes(GasPaymentOption.PAY_FROM_SAFE)) {
+      throw new NoRelayerDefinedError();
+    }
+    return this.relayFeeRelayer;
   }
 
   private getRelayCall(data: Hex): RelayCall {
@@ -106,7 +114,7 @@ export class RelayManager implements IRelayManager {
     return RelayCall.TRANSACTION;
   }
 
-  private getAvailableRelayer(relayer: Chain['relayer']): Relayer {
+  private requireRelayer(relayer: Chain['relayer']): Relayer {
     if (!relayer) {
       throw new NoRelayerDefinedError();
     }
