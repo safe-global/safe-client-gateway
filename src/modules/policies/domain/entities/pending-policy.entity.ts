@@ -75,13 +75,3 @@ export type PendingSpendingLimitChange =
       token: Address;
       tokenMetadata: Token | null;
     };
-
-/**
- * Narrows to the three change kinds that reference a token - the ones a
- * spending limit's ceiling, reset, or removal is actually about.
- */
-export function pendingChangeHasToken(
-  change: PendingSpendingLimitChange,
-): change is Extract<PendingSpendingLimitChange, { token: Address }> {
-  return 'token' in change;
-}

@@ -9,12 +9,14 @@ import {
   type PendingQueuedPolicy,
   type PendingSpendingLimitChange,
   PendingSpendingLimitChangeKind,
-  pendingChangeHasToken,
 } from '@/modules/policies/domain/entities/pending-policy.entity';
 import { moduleEnforcement } from '@/modules/policies/domain/entities/policy-enforcement.entity';
 import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
 import type { SafeRef } from '@/modules/policies/domain/entities/safe-ref.entity';
-import type { Token } from '@/modules/policies/domain/entities/token.entity';
+import type {
+  Token,
+  TokenReference,
+} from '@/modules/policies/domain/entities/token.entity';
 import type { TokenMetadataKey } from '@/modules/policies/domain/utils/token-metadata-key.utils';
 import { tokenMetadataKey } from '@/modules/policies/domain/utils/token-metadata-key.utils';
 import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
@@ -61,6 +63,20 @@ export class PendingSpendingLimitMapper {
     );
   }
 
+  public getTokenReferences(
+    policies: ReadonlyArray<PendingQueuedPolicy>,
+  ): Array<TokenReference> {
+    return policies.flatMap((policy) => {
+      const tokenChanges = policy.data.changes.filter(
+        (change) => 'token' in change,
+      );
+      return tokenChanges.map((change) => ({
+        chainId: policy.safe.chainId,
+        token: change.token,
+      }));
+    });
+  }
+
   /**
    * {@link policies}, with every allowance change's `tokenMetadata` filled in from
    * {@link tokenMetadata}.
@@ -74,7 +90,7 @@ export class PendingSpendingLimitMapper {
       data: {
         ...policy.data,
         changes: policy.data.changes.map((change) => {
-          if (!pendingChangeHasToken(change)) {
+          if (!('token' in change)) {
             return change;
           }
           return {

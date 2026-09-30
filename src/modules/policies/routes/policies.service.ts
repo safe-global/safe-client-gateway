@@ -19,10 +19,7 @@ import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entit
 import { IDelegatesV3Repository } from '@/modules/delegate/domain/v3/delegates.v3.repository.interface';
 import type { ActivePolicy } from '@/modules/policies/domain/entities/active-policy.entity';
 import type { PolicyIndexerSafeAllowance } from '@/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
-import {
-  type PendingPolicy,
-  pendingChangeHasToken,
-} from '@/modules/policies/domain/entities/pending-policy.entity';
+import type { PendingPolicy } from '@/modules/policies/domain/entities/pending-policy.entity';
 import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
 import type { SafeRef } from '@/modules/policies/domain/entities/safe-ref.entity';
 import type {
@@ -399,26 +396,11 @@ export class PoliciesService {
     }
 
     const tokenMetadata = await this.getTokenMetadata(
-      this.pendingSpendingLimitTokenReferences(policies),
+      this.pendingSpendingLimitMapper.getTokenReferences(policies),
     );
     return this.pendingSpendingLimitMapper.attachTokenMetadata(
       policies,
       tokenMetadata,
-    );
-  }
-
-  /**
-   * Every decoded change in {@link policies}, reduced to
-   * {@link TokenReference} so {@link getTokenMetadata} can fetch it.
-   */
-  private pendingSpendingLimitTokenReferences(
-    policies: ReadonlyArray<PendingPolicy>,
-  ): Array<TokenReference> {
-    return policies.flatMap((policy) =>
-      policy.data.changes.filter(pendingChangeHasToken).map((change) => ({
-        chainId: policy.safe.chainId,
-        token: change.token,
-      })),
     );
   }
 
