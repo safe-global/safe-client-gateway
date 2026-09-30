@@ -229,7 +229,9 @@ describe('CircuitBreakerService', () => {
         CircuitBreakerException,
       );
       expect(circuit.metrics.state).toBe(CircuitState.HALF_OPEN);
-      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+      expect(circuit.metrics.blockedRequests).toBe(2);
+      expect(mockLoggingService.warn).not.toHaveBeenCalled();
+      expect(mockLoggingService.debug).toHaveBeenCalledWith(
         expect.objectContaining({
           type: LogType.CircuitBreakerRequestBlocked,
           state: CircuitState.HALF_OPEN,
@@ -309,6 +311,211 @@ describe('CircuitBreakerService', () => {
 
       service.recordFailure(circuitName);
       expect(circuit.metrics.state).toBe(CircuitState.OPEN);
+    });
+  });
+
+  describe('Logging', () => {
+    // threshold=5, halfOpenFailureRateThreshold=40
+    // → 2 failures reopen a HALF_OPEN circuit, 5 successes close it
+    const threshold = 5;
+    const timeout = 1000;
+
+    function createOpenService(): CircuitBreakerService {
+      const service = createService({
+        threshold,
+        timeout,
+        halfOpenFailureRateThreshold: 40,
+      });
+      for (let i = 0; i < threshold; i++) {
+        service.recordFailure(circuitName);
+      }
+      return service;
+    }
+
+    function reopenFromHalfOpen(service: CircuitBreakerService): void {
+      vi.advanceTimersByTime(timeout);
+      service.canProceed(circuitName);
+      service.recordFailure(circuitName);
+      service.recordFailure(circuitName);
+    }
+
+    it('should log the first trip from CLOSED to OPEN as an error once', () => {
+      createOpenService();
+
+      expect(mockLoggingService.error).toHaveBeenCalledTimes(1);
+      expect(mockLoggingService.error).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: LogType.CircuitBreakerStateTransition,
+          circuit: circuitName,
+          from: CircuitState.CLOSED,
+          to: CircuitState.OPEN,
+          failureCount: threshold,
+          threshold,
+        }),
+      );
+    });
+
+    it('should not log failures below the threshold above debug', () => {
+      const service = createService({ threshold });
+
+      for (let i = 0; i < threshold - 1; i++) {
+        service.recordFailure(circuitName);
+      }
+
+      expect(mockLoggingService.warn).not.toHaveBeenCalled();
+      expect(mockLoggingService.error).not.toHaveBeenCalled();
+      expect(mockLoggingService.debug).toHaveBeenCalledTimes(threshold - 1);
+      expect(mockLoggingService.debug).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: LogType.CircuitBreakerFailureRecorded,
+          circuit: circuitName,
+        }),
+      );
+    });
+
+    it('should count blocked requests while OPEN without logging them above debug', () => {
+      const service = createOpenService();
+      const blocked = faker.number.int({ min: 1, max: 50 });
+
+      for (let i = 0; i < blocked; i++) {
+        expect(service.canProceed(circuitName)).toBe(false);
+      }
+
+      const circuit = getRegisteredCircuit(service, circuitName);
+      expect(circuit.metrics.blockedRequests).toBe(blocked);
+      expect(mockLoggingService.warn).not.toHaveBeenCalled();
+      expect(mockLoggingService.error).toHaveBeenCalledTimes(1);
+      expect(mockLoggingService.debug).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: LogType.CircuitBreakerRequestBlocked,
+          state: CircuitState.OPEN,
+        }),
+      );
+    });
+
+    it('should log the OPEN to HALF_OPEN transition at debug', () => {
+      const service = createOpenService();
+
+      vi.advanceTimersByTime(timeout);
+      service.canProceed(circuitName);
+
+      expect(mockLoggingService.debug).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: LogType.CircuitBreakerStateTransition,
+          from: CircuitState.OPEN,
+          to: CircuitState.HALF_OPEN,
+        }),
+      );
+      expect(mockLoggingService.info).not.toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: LogType.CircuitBreakerStateTransition,
+        }),
+      );
+    });
+
+    it('should log a re-trip from HALF_OPEN as a warning with the outage so far', () => {
+      const service = createOpenService();
+      const blocked = faker.number.int({ min: 1, max: 50 });
+      for (let i = 0; i < blocked; i++) {
+        service.canProceed(circuitName);
+      }
+
+      reopenFromHalfOpen(service);
+
+      expect(mockLoggingService.error).toHaveBeenCalledTimes(1);
+      expect(mockLoggingService.warn).toHaveBeenCalledTimes(1);
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: LogType.CircuitBreakerStateTransition,
+          circuit: circuitName,
+          from: CircuitState.HALF_OPEN,
+          to: CircuitState.OPEN,
+          reopenCount: 1,
+          blockedRequests: blocked,
+          openForSeconds: timeout / 1000,
+        }),
+      );
+    });
+
+    it('should keep the outage start across re-trips', () => {
+      const service = createOpenService();
+      const circuit = getRegisteredCircuit(service, circuitName);
+      const openedAt = circuit.metrics.openedAt;
+      // Not a power of two, so the last re-trip is logged at debug
+      const reopens = faker.helpers.arrayElement([3, 5, 6, 7]);
+
+      for (let i = 0; i < reopens; i++) {
+        reopenFromHalfOpen(service);
+      }
+
+      expect(circuit.metrics.openedAt).toBe(openedAt);
+      expect(circuit.metrics.reopenCount).toBe(reopens);
+      expect(mockLoggingService.debug).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          type: LogType.CircuitBreakerStateTransition,
+          from: CircuitState.HALF_OPEN,
+          to: CircuitState.OPEN,
+          reopenCount: reopens,
+          openForSeconds: (reopens * timeout) / 1000,
+        }),
+      );
+    });
+
+    it('should back off re-trip warnings to the 1st, 2nd, 4th, 8th, … re-trip', () => {
+      const service = createOpenService();
+      const reopens = 20;
+
+      for (let i = 0; i < reopens; i++) {
+        reopenFromHalfOpen(service);
+      }
+
+      const heartbeats = [1, 2, 4, 8, 16];
+      expect(mockLoggingService.warn).toHaveBeenCalledTimes(heartbeats.length);
+      heartbeats.forEach((reopenCount, i) => {
+        expect(mockLoggingService.warn).toHaveBeenNthCalledWith(
+          i + 1,
+          expect.objectContaining({
+            to: CircuitState.OPEN,
+            reopenCount,
+            openForSeconds: (reopenCount * timeout) / 1000,
+          }),
+        );
+      });
+      expect(mockLoggingService.debug).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: LogType.CircuitBreakerStateTransition,
+          to: CircuitState.OPEN,
+          reopenCount: 3,
+        }),
+      );
+    });
+
+    it('should log recovery with an outage summary', () => {
+      const service = createOpenService();
+      const blocked = faker.number.int({ min: 1, max: 50 });
+      for (let i = 0; i < blocked; i++) {
+        service.canProceed(circuitName);
+      }
+      reopenFromHalfOpen(service);
+
+      vi.advanceTimersByTime(timeout);
+      service.canProceed(circuitName);
+      for (let i = 0; i < threshold; i++) {
+        service.recordSuccess(circuitName);
+      }
+
+      expect(service.get(circuitName)).toBeUndefined();
+      expect(mockLoggingService.info).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: LogType.CircuitBreakerStateTransition,
+          circuit: circuitName,
+          from: CircuitState.HALF_OPEN,
+          to: CircuitState.CLOSED,
+          reopenCount: 1,
+          blockedRequests: blocked,
+          openForSeconds: (2 * timeout) / 1000,
+        }),
+      );
     });
   });
 
