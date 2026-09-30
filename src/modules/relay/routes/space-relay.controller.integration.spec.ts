@@ -18,6 +18,8 @@ import { createTestModule } from '@/__tests__/testing-module';
 import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
+import type { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
+import { CacheService } from '@/datasources/cache/cache.service.interface';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
@@ -68,6 +70,7 @@ describe('SpaceRelayController', () => {
   let networkService: MockedObject<INetworkService>;
   let safeConfigUrl: string;
   let relayUrl: string;
+  let cacheService: FakeCacheService;
 
   // Not faker: a fixed FAKER_SEED would hand every spec file the same name.
   const testDatabaseName = `test_${randomUUID().replaceAll('-', '')}`;
@@ -141,6 +144,7 @@ describe('SpaceRelayController', () => {
     jwtService = moduleFixture.get<IJwtService>(IJwtService);
     postgresDatabaseService = moduleFixture.get(PostgresDatabaseService);
     networkService = moduleFixture.get(NetworkService);
+    cacheService = moduleFixture.get(CacheService);
 
     app = await new TestAppProvider().provide(moduleFixture);
     await initTestApplication(app);
@@ -177,6 +181,8 @@ describe('SpaceRelayController', () => {
   });
 
   afterEach(async () => {
+    // A chain cached by one test would shadow the chain the next one mocks.
+    cacheService.clear();
     await clearFeatureCatalog();
   });
 
