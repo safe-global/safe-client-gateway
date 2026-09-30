@@ -3222,6 +3222,69 @@ describe('Relay controller', () => {
       expect(networkService.post).not.toHaveBeenCalled();
     });
 
+    it('should return 403 for a MultiSend carrying a refunding execTransaction when PAY_FROM_SAFE is not listed', async () => {
+      const chain = chainBuilder()
+        .with('chainId', chainId)
+        .with('relayer', relayerForChainId(chainId))
+        .build();
+      const safe = safeBuilder().build();
+      const safeAddress = getAddress(safe.address);
+      const to = getAddress(
+        faker.helpers.arrayElement(
+          getMultiSendCallOnlyDeployments({ version, chainId }),
+        ),
+      );
+      const data = multiSendEncoder()
+        .with(
+          'transactions',
+          multiSendTransactionsEncoder(
+            faker.helpers
+              .shuffle([BigInt(0), faker.number.bigInt({ min: BigInt(1) })])
+              .map((gasPrice) => ({
+                operation: 0,
+                to: safeAddress,
+                value: BigInt(0),
+                data: execTransactionEncoder()
+                  .with('value', faker.number.bigInt())
+                  .with('gasPrice', gasPrice)
+                  .encode(),
+              })),
+          ),
+        )
+        .encode();
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${safeConfigUrl}/api/v1/chains/${chainId}`:
+            return Promise.resolve({ data: rawify(chain), status: 200 });
+          case `${chain.transactionService}/api/v1/safes/${safeAddress}`:
+            // Official mastercopy
+            return Promise.resolve({ data: rawify(safe), status: 200 });
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+      networkService.post.mockImplementation(({ url }) => {
+        switch (url) {
+          case `${relayUrl}/safe-transactions`:
+            return Promise.resolve({
+              data: rawify({ taskId: faker.string.uuid() }),
+              status: 201,
+            });
+          default:
+            return Promise.reject(`No matching rule for url: ${url}`);
+        }
+      });
+
+      await request(app.getHttpServer())
+        .post(`/v1/chains/${chainId}/relay`)
+        .send({ version, to, data })
+        .expect(403)
+        .expect({ message: 'No relayer defined', statusCode: 403 });
+      expect(networkService.post).not.toHaveBeenCalledWith(
+        expect.objectContaining({ url: `${relayUrl}/safe-transactions` }),
+      );
+    });
+
     describe('with no free option listed', () => {
       let chain: Chain;
 

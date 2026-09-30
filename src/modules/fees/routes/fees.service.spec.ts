@@ -7,11 +7,11 @@ import type { IFeeServiceApi } from '@/domain/interfaces/fee-service-api.interfa
 import type { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { relayerBuilder } from '@/modules/chains/domain/entities/__tests__/relayer.builder';
-import { gtfFeesResponseBuilder } from '@/modules/fees/domain/entities/__tests__/gtf-fees-response.builder';
 import { txFeesResponseBuilder } from '@/modules/fees/domain/entities/__tests__/tx-fees-response.builder';
 import type { IGasTokensRepository } from '@/modules/fees/domain/gas-tokens.repository.interface';
 import { feePreviewTransactionDtoBuilder } from '@/modules/fees/routes/entities/__tests__/fee-preview-transaction.dto.builder';
 import { FeesService } from '@/modules/fees/routes/fees.service';
+import { GasPaymentOption } from '@/modules/relay/domain/entities/gas-payment-option.entity';
 import { RelayerType } from '@/modules/relay/domain/entities/relayer-type.entity';
 
 const mockFeeServiceApi = vi.mocked({
@@ -45,12 +45,23 @@ describe('FeesService', () => {
     const safeAddress = getAddress(faker.finance.ethereumAddress());
     const feePreviewDto = feePreviewTransactionDtoBuilder().build();
 
-    it('should call getRelayFees and return a relay fee preview for RELAY_FEE chains', async () => {
+    it('should call getRelayFees and return a relay fee preview when PAY_FROM_SAFE is listed, whatever the relayer type is', async () => {
       const chain = chainBuilder()
         .with('chainId', chainId)
         .with(
           'relayer',
-          relayerBuilder().with('type', RelayerType.RELAY_FEE).build(),
+          relayerBuilder()
+            .with(
+              'type',
+              faker.helpers.arrayElement([
+                RelayerType.GTF,
+                RelayerType.DAILY_LIMIT,
+                RelayerType.NO_FEE_CAMPAIGN,
+                null,
+              ]),
+            )
+            .with('gasPaymentOptions', [GasPaymentOption.PAY_FROM_SAFE])
+            .build(),
         )
         .build();
       const txFeesResponse = txFeesResponseBuilder().build();
@@ -71,35 +82,34 @@ describe('FeesService', () => {
       expect(mockFeeServiceApi.getGtfFees).not.toHaveBeenCalled();
     });
 
-    it('should call getGtfFees and return a GTF fee preview for GTF chains', async () => {
-      const chain = chainBuilder()
-        .with('chainId', chainId)
-        .with('relayer', relayerBuilder().with('type', RelayerType.GTF).build())
-        .build();
-      const gtfFeesResponse = gtfFeesResponseBuilder().build();
-      mockChainsRepository.getChain.mockResolvedValueOnce(chain);
-      mockFeeServiceApi.getGtfFees.mockResolvedValueOnce(gtfFeesResponse);
-
-      await target.getFeePreview({
-        chainId,
-        safeAddress,
-        feePreviewDto,
-      });
-
-      expect(mockFeeServiceApi.getGtfFees).toHaveBeenCalledWith({
-        chainId,
-        safeAddress,
-        request: feePreviewDto,
-      });
-      expect(mockFeeServiceApi.getRelayFees).not.toHaveBeenCalled();
-    });
-
-    it.each([[RelayerType.DAILY_LIMIT], [RelayerType.NO_FEE_CAMPAIGN]])(
-      'should throw a BadRequestException for unsupported relayer type %s',
+    it.each([
+      [RelayerType.RELAY_FEE],
+      [RelayerType.GTF],
+      [RelayerType.DAILY_LIMIT],
+      [RelayerType.NO_FEE_CAMPAIGN],
+      [null],
+    ])(
+      'should throw a BadRequestException when PAY_FROM_SAFE is not listed for relayer type %s',
       async (type) => {
         const chain = chainBuilder()
           .with('chainId', chainId)
-          .with('relayer', relayerBuilder().with('type', type).build())
+          .with(
+            'relayer',
+            relayerBuilder()
+              .with('type', type)
+              .with(
+                'gasPaymentOptions',
+                faker.helpers.arrayElements(
+                  [
+                    GasPaymentOption.FREE_DAILY_LIMIT,
+                    GasPaymentOption.NO_FEE_CAMPAIGN,
+                    GasPaymentOption.SUBSCRIPTION,
+                  ],
+                  { min: 0, max: 3 },
+                ),
+              )
+              .build(),
+          )
           .build();
         mockChainsRepository.getChain.mockResolvedValueOnce(chain);
 
@@ -127,18 +137,6 @@ describe('FeesService', () => {
       ).rejects.toThrow(BadRequestException);
       expect(mockFeeServiceApi.getRelayFees).not.toHaveBeenCalled();
       expect(mockFeeServiceApi.getGtfFees).not.toHaveBeenCalled();
-    });
-
-    it('should throw a BadRequestException when the relayer has no type', async () => {
-      const chain = chainBuilder()
-        .with('chainId', chainId)
-        .with('relayer', relayerBuilder().with('type', null).build())
-        .build();
-      mockChainsRepository.getChain.mockResolvedValueOnce(chain);
-
-      await expect(
-        target.getFeePreview({ chainId, safeAddress, feePreviewDto }),
-      ).rejects.toThrow(BadRequestException);
     });
   });
 });

@@ -430,7 +430,7 @@ export class RelayTransactionHelper {
   }
 
   /** Whether an execTransaction has the Safe repay gas to the relayer (`gasPrice > 0`). */
-  isRefundingExecTransaction(data: Hex): boolean {
+  private isRefundingExecTransaction(data: Hex): boolean {
     const decoded = this.decodeExecTransaction(data);
     return decoded !== null && decoded.gasPrice > BigInt(0);
   }

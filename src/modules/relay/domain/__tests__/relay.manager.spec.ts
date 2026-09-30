@@ -2,11 +2,15 @@
 
 import { faker } from '@faker-js/faker';
 import type { Hex } from 'viem';
+import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { DelayModifierDecoder } from '@/modules/alerts/domain/contracts/decoders/delay-modifier-decoder.helper';
 import { relayerBuilder } from '@/modules/chains/domain/entities/__tests__/relayer.builder';
-import { multiSendEncoder } from '@/modules/contracts/domain/__tests__/encoders/multi-send-encoder.builder';
+import {
+  multiSendEncoder,
+  multiSendTransactionsEncoder,
+} from '@/modules/contracts/domain/__tests__/encoders/multi-send-encoder.builder';
 import { execTransactionEncoder } from '@/modules/contracts/domain/__tests__/encoders/safe-encoder.builder';
 import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
 import { SafeDecoder } from '@/modules/contracts/domain/decoders/safe-decoder.helper';
@@ -71,6 +75,20 @@ function gaslessExecTransaction(): Hex {
 
 function gaslessMultiSend(): Hex {
   return multiSendEncoder().encode();
+}
+
+function refundingMultiSend(): Hex {
+  const safe = getAddress(faker.finance.ethereumAddress());
+  return multiSendEncoder()
+    .with(
+      'transactions',
+      multiSendTransactionsEncoder(
+        faker.helpers
+          .shuffle([gaslessExecTransaction(), refundingExecTransaction()])
+          .map((data) => ({ operation: 0, to: safe, value: BigInt(0), data })),
+      ),
+    )
+    .encode();
 }
 
 describe('RelayManager', () => {
@@ -177,7 +195,10 @@ describe('RelayManager', () => {
       });
     });
 
-    describe('execTransaction with gasPrice > 0', () => {
+    describe.each([
+      ['an execTransaction with gasPrice > 0', refundingExecTransaction],
+      ['a MultiSend batch carrying one', refundingMultiSend],
+    ])('%s', (_, encode) => {
       it('should route to the relay-fee relayer when PAY_FROM_SAFE is listed', () => {
         const relayer = relayerBuilder()
           .with('gasPaymentOptions', [
@@ -185,7 +206,7 @@ describe('RelayManager', () => {
             GasPaymentOption.PAY_FROM_SAFE,
           ])
           .build();
-        const data = refundingExecTransaction();
+        const data = encode();
 
         expect(manager.getRelayer({ relayer, data })).toBe(mockRelayFeeRelayer);
       });
@@ -198,7 +219,7 @@ describe('RelayManager', () => {
             GasPaymentOption.SUBSCRIPTION,
           ])
           .build();
-        const data = refundingExecTransaction();
+        const data = encode();
 
         expect(() => manager.getRelayer({ relayer, data })).toThrow(
           NoRelayerDefinedError,

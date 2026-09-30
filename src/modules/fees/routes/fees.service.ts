@@ -8,7 +8,7 @@ import { IGasTokensRepository } from '@/modules/fees/domain/gas-tokens.repositor
 import { FeePreviewResponse } from '@/modules/fees/routes/entities/fee-preview-response.entity';
 import type { FeePreviewTransactionDto } from '@/modules/fees/routes/entities/fee-preview-transaction.dto.entity';
 import { GasToken } from '@/modules/fees/routes/entities/gas-token.entity';
-import { RelayerType } from '@/modules/relay/domain/entities/relayer-type.entity';
+import { GasPaymentOption } from '@/modules/relay/domain/entities/gas-payment-option.entity';
 import {
   cursorUrlFromLimitAndOffset,
   type PaginationData,
@@ -54,27 +54,19 @@ export class FeesService {
   }): Promise<FeePreviewResponse> {
     const chain = await this.chainsRepository.getChain(args.chainId);
 
-    switch (chain.relayer?.type) {
-      case RelayerType.RELAY_FEE: {
-        const txFeesResponse = await this.feeServiceApi.getRelayFees({
-          chainId: args.chainId,
-          safeAddress: args.safeAddress,
-          request: args.feePreviewDto,
-        });
-        return FeePreviewResponse.fromRelayFees(txFeesResponse);
-      }
-      case RelayerType.GTF: {
-        const gtfFeesResponse = await this.feeServiceApi.getGtfFees({
-          chainId: args.chainId,
-          safeAddress: args.safeAddress,
-          request: args.feePreviewDto,
-        });
-        return FeePreviewResponse.fromGtfFees(gtfFeesResponse);
-      }
-      default:
-        throw new BadRequestException(
-          'Fee preview is not available for this chain',
-        );
+    // The relay fee is what the Safe pays when the chain offers PAY_FROM_SAFE.
+    if (
+      !chain.relayer?.gasPaymentOptions.includes(GasPaymentOption.PAY_FROM_SAFE)
+    ) {
+      throw new BadRequestException(
+        'Fee preview is not available for this chain',
+      );
     }
+    const txFeesResponse = await this.feeServiceApi.getRelayFees({
+      chainId: args.chainId,
+      safeAddress: args.safeAddress,
+      request: args.feePreviewDto,
+    });
+    return FeePreviewResponse.fromRelayFees(txFeesResponse);
   }
 }

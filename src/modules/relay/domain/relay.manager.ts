@@ -100,7 +100,7 @@ export class RelayManager implements IRelayManager {
     if (this.proxyFactoryDecoder.helpers.isCreateProxyWithNonce(data)) {
       return RelayCall.SAFE_CREATION;
     }
-    if (this.relayTransactionHelper.isRefundingExecTransaction(data)) {
+    if (this.relayTransactionHelper.hasRefundingTransaction(data)) {
       return RelayCall.REFUNDING_TRANSACTION;
     }
     return RelayCall.TRANSACTION;

@@ -17,9 +17,9 @@ import type { INetworkService } from '@/datasources/network/network.service.inte
 import { NetworkService } from '@/datasources/network/network.service.interface';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { relayerBuilder } from '@/modules/chains/domain/entities/__tests__/relayer.builder';
-import { gtfFeesResponseBuilder } from '@/modules/fees/domain/entities/__tests__/gtf-fees-response.builder';
 import { txFeesResponseBuilder } from '@/modules/fees/domain/entities/__tests__/tx-fees-response.builder';
 import { feePreviewTransactionDtoBuilder } from '@/modules/fees/routes/entities/__tests__/fee-preview-transaction.dto.builder';
+import { GasPaymentOption } from '@/modules/relay/domain/entities/gas-payment-option.entity';
 import { RelayerType } from '@/modules/relay/domain/entities/relayer-type.entity';
 import { rawify } from '@/validation/entities/raw.entity';
 
@@ -65,7 +65,13 @@ describe('Fees Controller', () => {
 
   it('should return 400 if relay-fee is not available for the chain', async () => {
     const chain = chainBuilder()
-      .with('relayer', relayerBuilder().with('type', null).build())
+      .with(
+        'relayer',
+        relayerBuilder()
+          .with('type', null)
+          .with('gasPaymentOptions', [])
+          .build(),
+      )
       .build();
     const safeAddress = getAddress(faker.finance.ethereumAddress());
 
@@ -91,7 +97,10 @@ describe('Fees Controller', () => {
     const chain = chainBuilder()
       .with(
         'relayer',
-        relayerBuilder().with('type', RelayerType.RELAY_FEE).build(),
+        relayerBuilder()
+          .with('type', RelayerType.RELAY_FEE)
+          .with('gasPaymentOptions', [GasPaymentOption.PAY_FROM_SAFE])
+          .build(),
       )
       .build();
     const safeAddress = getAddress(faker.finance.ethereumAddress());
@@ -123,7 +132,10 @@ describe('Fees Controller', () => {
     const chain = chainBuilder()
       .with(
         'relayer',
-        relayerBuilder().with('type', RelayerType.RELAY_FEE).build(),
+        relayerBuilder()
+          .with('type', RelayerType.RELAY_FEE)
+          .with('gasPaymentOptions', [GasPaymentOption.PAY_FROM_SAFE])
+          .build(),
       )
       .build();
     const safeAddress = getAddress(faker.finance.ethereumAddress());
@@ -165,13 +177,23 @@ describe('Fees Controller', () => {
       });
   });
 
-  it('should return fee preview with feeBreakdown when chain resolves to the GTF relayer', async () => {
+  it('should return 400 for a chain that does not list PAY_FROM_SAFE, whatever its relayer type', async () => {
     const chain = chainBuilder()
-      .with('relayer', relayerBuilder().with('type', RelayerType.GTF).build())
+      .with(
+        'relayer',
+        relayerBuilder()
+          .with(
+            'type',
+            faker.helpers.arrayElement([
+              RelayerType.RELAY_FEE,
+              RelayerType.GTF,
+            ]),
+          )
+          .with('gasPaymentOptions', [GasPaymentOption.FREE_DAILY_LIMIT])
+          .build(),
+      )
       .build();
     const safeAddress = getAddress(faker.finance.ethereumAddress());
-    const feePreviewDto = feePreviewTransactionDtoBuilder().build();
-    const mockGtfFeeResponse = gtfFeesResponseBuilder().build();
 
     networkService.get.mockImplementation(({ url }) => {
       if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
@@ -180,56 +202,26 @@ describe('Fees Controller', () => {
       return Promise.reject(new Error(`Could not match ${url}`));
     });
 
-    networkService.post.mockImplementation(({ url }) => {
-      if (
-        url ===
-        `${feeServiceBaseUri}/v1/chains/${chain.chainId}/safes/${safeAddress}/transactions/gtf/fees`
-      ) {
-        return Promise.resolve({
-          data: rawify(mockGtfFeeResponse),
-          status: 200,
-        });
-      }
-      return Promise.reject(new Error(`Could not match ${url}`));
-    });
-
     await request(app.getHttpServer())
       .post(`/v1/chains/${chain.chainId}/fees/${safeAddress}/preview`)
-      .send(feePreviewDto)
-      .expect(200)
+      .send(feePreviewTransactionDtoBuilder().build())
+      .expect(400)
       .expect(({ body }) => {
-        expect(body.safeTxHash).toBeUndefined();
-        expect(body.relayCost).toBeUndefined();
-        expect(body.feeBreakdown).toEqual({
-          txValueUsd: mockGtfFeeResponse.feeBreakdown.txValueUsd,
-          trailingVolumeUsd: mockGtfFeeResponse.feeBreakdown.trailingVolumeUsd,
-          tierBps: mockGtfFeeResponse.feeBreakdown.tierBps,
-          gtfFeeUsd: mockGtfFeeResponse.feeBreakdown.gtfFeeUsd,
-          relayCostUsd: mockGtfFeeResponse.feeBreakdown.relayCostUsd,
-          totalUsd: mockGtfFeeResponse.feeBreakdown.totalUsd,
-          numberSignatures: mockGtfFeeResponse.feeBreakdown.numberSignatures,
-          valuationDetails: mockGtfFeeResponse.feeBreakdown.valuationDetails,
-        });
-        expect(body.maxFeeCapUsd).toBe(
-          mockGtfFeeResponse.pricingContextSnapshot.maxFeeCapUsd,
+        expect(body.message).toBe(
+          'Fee preview is not available for this chain',
         );
-        expect(body.txData).toEqual(
-          expect.objectContaining({
-            chainId: mockGtfFeeResponse.txData.chainId,
-            safeAddress: mockGtfFeeResponse.txData.safeAddress,
-            numberSignatures: mockGtfFeeResponse.feeBreakdown.numberSignatures,
-          }),
-        );
-        expect(body.txData.to).toBeUndefined();
-        expect(body.txData.nonce).toBeUndefined();
       });
+    expect(networkService.post).not.toHaveBeenCalled();
   });
 
   it('should throw a validation error for invalid numberSignatures', async () => {
     const chain = chainBuilder()
       .with(
         'relayer',
-        relayerBuilder().with('type', RelayerType.RELAY_FEE).build(),
+        relayerBuilder()
+          .with('type', RelayerType.RELAY_FEE)
+          .with('gasPaymentOptions', [GasPaymentOption.PAY_FROM_SAFE])
+          .build(),
       )
       .build();
     const safeAddress = getAddress(faker.finance.ethereumAddress());
