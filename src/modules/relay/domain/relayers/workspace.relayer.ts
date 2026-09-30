@@ -76,13 +76,18 @@ export class WorkspaceRelayer {
       this.chainsRepository.getChain(args.chainId),
     ]);
 
-    // Only a chain that offers the workspace allowance as a way to pay. A
-    // missing relayer, or a chain without relaying, lists no options.
     if (!relayer?.gasPaymentOptions.includes(GasPaymentOption.SUBSCRIPTION)) {
       throw new NoRelayerDefinedError();
     }
 
-    const sponsoredSafe = await this.getSponsoredSafe({ ...args, safe });
+    // The Safe would repay gas to the relayer on top of the credit spent.
+    if (this.relayTransactionHelper.hasRefundingTransaction(args.data)) {
+      throw new NoRelayerDefinedError();
+    }
+
+    if (safe !== null) {
+      await this.assertHoldsSafe({ ...args, safe });
+    }
 
     // Refused early; `consumeQuota` below is what decides.
     await this.entitlementEnforcement.assertWithinQuota({
@@ -94,10 +99,10 @@ export class WorkspaceRelayer {
     // Only a transaction sent to the Safe itself, as on the public route: a
     // batch is addressed to MultiSend and a recovery to the DelayModifier,
     // and neither takes the direct call a simulation makes.
-    if (sponsoredSafe === args.to) {
+    if (safe !== null && safe === args.to) {
       await this.assertSimulates({
         ...args,
-        safe: sponsoredSafe,
+        safe,
         enabled: relayer.enableTenderlySimulationBeforeRelay,
       });
     }
@@ -122,36 +127,6 @@ export class WorkspaceRelayer {
       }
       throw error;
     }
-  }
-
-  /**
-   * The Safe whose workspace allowance pays for the call. Throws when the
-   * allowance does not pay for it.
-   */
-  private async getSponsoredSafe(args: {
-    spaceId: Space['id'];
-    chainId: string;
-    to: Address;
-    data: Hex;
-    safe: Address | null;
-  }): Promise<Address> {
-    // A Safe creation or a passkey signer deployment has no Safe to hold yet.
-    if (args.safe === null) {
-      throw new RelayDeniedError(args.to, 'not a Safe of this workspace');
-    }
-    // The Safe would repay gas to the relayer on top of the credit spent.
-    if (this.relayTransactionHelper.hasRefundingTransaction(args.data)) {
-      throw new NoRelayerDefinedError();
-    }
-    const holdsSafe = await this.spaceSafesRepository.existsInSpace({
-      spaceId: args.spaceId,
-      chainId: args.chainId,
-      address: args.safe,
-    });
-    if (!holdsSafe) {
-      throw new RelayDeniedError(args.safe, 'not a Safe of this workspace');
-    }
-    return args.safe;
   }
 
   /** Best effort: the error that sent us here is the one worth surfacing. */
@@ -194,5 +169,25 @@ export class WorkspaceRelayer {
       safeTxHash: args.safeTxHash,
       acceptUnverifiedSimulation: args.acceptUnverifiedSimulation,
     });
+  }
+
+  /**
+   * A workspace sponsors the Safes it holds. Calls with no Safe to attribute —
+   * a Safe creation, a passkey signer deployment — are admitted as they are on
+   * the public route: there is nothing to hold yet.
+   */
+  private async assertHoldsSafe(args: {
+    spaceId: Space['id'];
+    chainId: string;
+    safe: Address;
+  }): Promise<void> {
+    const holdsSafe = await this.spaceSafesRepository.existsInSpace({
+      spaceId: args.spaceId,
+      chainId: args.chainId,
+      address: args.safe,
+    });
+    if (!holdsSafe) {
+      throw new RelayDeniedError(args.safe, 'not a Safe of this workspace');
+    }
   }
 }

@@ -203,22 +203,20 @@ describe('WorkspaceRelayer', () => {
     expect(mockRelayApi.relay).not.toHaveBeenCalled();
   });
 
-  it('should deny a call with no Safe to attribute', async () => {
+  it('should relay a call with no Safe to attribute', async () => {
     const args = relayArgs();
-    // A Safe creation or a passkey signer deployment: not a Safe the
-    // workspace holds, so not something its allowance pays for.
+    const taskId = faker.string.uuid();
+    // A Safe creation or a passkey signer deployment: nothing to hold yet.
     recognises(null);
+    mockRelayApi.relay.mockResolvedValue({ taskId });
 
-    await expect(target.relay(args)).rejects.toThrow(
-      new RelayDeniedError(args.to, 'not a Safe of this workspace'),
-    );
+    await expect(target.relay(args)).resolves.toStrictEqual({ taskId });
 
     expect(
       mockRelayTransactionHelper.hasRefundingTransaction,
-    ).not.toHaveBeenCalled();
+    ).toHaveBeenCalledWith(args.data);
     expect(mockSpaceSafesRepository.existsInSpace).not.toHaveBeenCalled();
-    expect(mockEntitlementEnforcement.consumeQuota).not.toHaveBeenCalled();
-    expect(mockRelayApi.relay).not.toHaveBeenCalled();
+    expect(mockEntitlementEnforcement.consumeQuota).toHaveBeenCalledTimes(1);
   });
 
   it('should refuse a refunding transaction before spending', async () => {
@@ -383,6 +381,19 @@ describe('WorkspaceRelayer', () => {
     await target.relay(args);
 
     expect(mockTenderlySimulationApi.simulate).not.toHaveBeenCalled();
+  });
+
+  it('should not simulate a call with no Safe to attribute', async () => {
+    const args = relayArgs();
+    // A Safe creation or a signer deployment.
+    recognises(null);
+    simulationEnabled(true);
+    mockRelayApi.relay.mockResolvedValue({ taskId: faker.string.uuid() });
+
+    await target.relay(args);
+
+    expect(mockTenderlySimulationApi.simulate).not.toHaveBeenCalled();
+    expect(mockEntitlementEnforcement.consumeQuota).toHaveBeenCalledTimes(1);
   });
 
   it('should not simulate where the chain has it switched off', async () => {

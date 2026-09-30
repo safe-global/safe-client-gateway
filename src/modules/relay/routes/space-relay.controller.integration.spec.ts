@@ -410,18 +410,12 @@ describe('SpaceRelayController', () => {
     await expect(usedOf({ spaceId, accessToken })).resolves.toBe(0);
   });
 
-  it('should refuse a call with no Safe to attribute', async () => {
+  it('should relay a call with no Safe to attribute', async () => {
     const { accessToken, spaceId } = await createSpaceForSigner();
-    const { to, data } = signerDeployment();
 
-    await relay({ spaceId, accessToken, to, data })
-      .expect(HttpStatus.FORBIDDEN)
-      .expect({
-        message: `Relay denied for ${to}: not a Safe of this workspace`,
-        statusCode: HttpStatus.FORBIDDEN,
-      });
+    await relay({ spaceId, accessToken, ...signerDeployment() }).expect(201);
 
-    await expect(usedOf({ spaceId, accessToken })).resolves.toBe(0);
+    await expect(usedOf({ spaceId, accessToken })).resolves.toBe(1);
   });
 
   it('should refuse a refunding transaction', async () => {
