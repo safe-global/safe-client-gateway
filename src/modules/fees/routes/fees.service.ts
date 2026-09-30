@@ -9,6 +9,7 @@ import { FeePreviewResponse } from '@/modules/fees/routes/entities/fee-preview-r
 import type { FeePreviewTransactionDto } from '@/modules/fees/routes/entities/fee-preview-transaction.dto.entity';
 import { GasToken } from '@/modules/fees/routes/entities/gas-token.entity';
 import { GasPaymentOption } from '@/modules/relay/domain/entities/gas-payment-option.entity';
+import { RelayerType } from '@/modules/relay/domain/entities/relayer-type.entity';
 import {
   cursorUrlFromLimitAndOffset,
   type PaginationData,
@@ -53,6 +54,15 @@ export class FeesService {
     feePreviewDto: FeePreviewTransactionDto;
   }): Promise<FeePreviewResponse> {
     const chain = await this.chainsRepository.getChain(args.chainId);
+
+    if (chain.relayer?.type === RelayerType.GTF) {
+      const gtfFeesResponse = await this.feeServiceApi.getGtfFees({
+        chainId: args.chainId,
+        safeAddress: args.safeAddress,
+        request: args.feePreviewDto,
+      });
+      return FeePreviewResponse.fromGtfFees(gtfFeesResponse);
+    }
 
     // The relay fee is what the Safe pays when the chain offers PAY_FROM_SAFE.
     if (

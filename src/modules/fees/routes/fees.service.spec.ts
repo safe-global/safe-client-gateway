@@ -7,6 +7,7 @@ import type { IFeeServiceApi } from '@/domain/interfaces/fee-service-api.interfa
 import type { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { relayerBuilder } from '@/modules/chains/domain/entities/__tests__/relayer.builder';
+import { gtfFeesResponseBuilder } from '@/modules/fees/domain/entities/__tests__/gtf-fees-response.builder';
 import { txFeesResponseBuilder } from '@/modules/fees/domain/entities/__tests__/tx-fees-response.builder';
 import type { IGasTokensRepository } from '@/modules/fees/domain/gas-tokens.repository.interface';
 import { feePreviewTransactionDtoBuilder } from '@/modules/fees/routes/entities/__tests__/fee-preview-transaction.dto.builder';
@@ -54,7 +55,7 @@ describe('FeesService', () => {
             .with(
               'type',
               faker.helpers.arrayElement([
-                RelayerType.GTF,
+                RelayerType.RELAY_FEE,
                 RelayerType.DAILY_LIMIT,
                 RelayerType.NO_FEE_CAMPAIGN,
                 null,
@@ -82,9 +83,40 @@ describe('FeesService', () => {
       expect(mockFeeServiceApi.getGtfFees).not.toHaveBeenCalled();
     });
 
+    it('should call getGtfFees and return a GTF fee preview for GTF chains, whatever gas payment options are listed', async () => {
+      const chain = chainBuilder()
+        .with('chainId', chainId)
+        .with(
+          'relayer',
+          relayerBuilder()
+            .with('type', RelayerType.GTF)
+            .with(
+              'gasPaymentOptions',
+              faker.helpers.arrayElements(Object.values(GasPaymentOption)),
+            )
+            .build(),
+        )
+        .build();
+      const gtfFeesResponse = gtfFeesResponseBuilder().build();
+      mockChainsRepository.getChain.mockResolvedValueOnce(chain);
+      mockFeeServiceApi.getGtfFees.mockResolvedValueOnce(gtfFeesResponse);
+
+      await target.getFeePreview({
+        chainId,
+        safeAddress,
+        feePreviewDto,
+      });
+
+      expect(mockFeeServiceApi.getGtfFees).toHaveBeenCalledWith({
+        chainId,
+        safeAddress,
+        request: feePreviewDto,
+      });
+      expect(mockFeeServiceApi.getRelayFees).not.toHaveBeenCalled();
+    });
+
     it.each([
       [RelayerType.RELAY_FEE],
-      [RelayerType.GTF],
       [RelayerType.DAILY_LIMIT],
       [RelayerType.NO_FEE_CAMPAIGN],
       [null],
