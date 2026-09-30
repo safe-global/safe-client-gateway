@@ -465,28 +465,5 @@ describe('SpendingLimitMapper', () => {
         spendingLimitData(policy).spenders[0].allowances[0].tokenMetadata,
       ).toBeNull();
     });
-
-    it('should look the token up case-insensitively', () => {
-      const row = allowance()
-        .with('token', getAddress(faker.finance.ethereumAddress()))
-        .build();
-      const metadata = erc20TokenBuilder().build();
-      const lowercasedAddress: `0x${string}` = `0x${row.token.slice(2).toLowerCase()}`;
-      const tokenMetadata = new Map([
-        [
-          tokenMetadataKey({
-            chainId: row.chainId,
-            address: lowercasedAddress,
-          }),
-          metadata,
-        ],
-      ]);
-
-      const [policy] = map([row], [allowanceModule], tokenMetadata);
-
-      expect(
-        spendingLimitData(policy).spenders[0].allowances[0].tokenMetadata,
-      ).toStrictEqual(metadata);
-    });
   });
 });

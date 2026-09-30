@@ -245,49 +245,71 @@ export class PoliciesService {
    * chain's own config (`chain.nativeCurrency`) instead of one read through
    * `ITokenRepository`.
    *
-   * A lookup failure - an unknown token, a chain that could not be read, an
-   * ERC721 (an allowance is always a fungible amount, so this should never
-   * happen), any other error - is left out of the map rather than failing
-   * the request; the affected allowances report `tokenMetadata: null`.
    */
   private async getTokenMetadata(
     allowances: ReadonlyArray<PolicyIndexerSafeAllowance>,
   ): Promise<Map<TokenMetadataKey, SpendingLimitToken>> {
-    const isNativeCurrency = (allowance: PolicyIndexerSafeAllowance): boolean =>
-      isAddressEqual(allowance.token, zeroAddress);
+    const nativeTokens = await this.fetchNativeTokens(
+      this.nativeCurrencyChainIds(allowances),
+    );
+    const erc20Tokens = await this.fetchErc20Tokens(
+      this.erc20TokensToFetch(allowances),
+    );
 
-    const nativeCurrencyChainIds = [
+    return new Map([...nativeTokens, ...erc20Tokens]);
+  }
+
+  private isNativeCurrency(allowance: PolicyIndexerSafeAllowance): boolean {
+    return isAddressEqual(allowance.token, zeroAddress);
+  }
+
+  /** The distinct chains a native-currency allowance in {@link allowances} is on. */
+  private nativeCurrencyChainIds(
+    allowances: ReadonlyArray<PolicyIndexerSafeAllowance>,
+  ): Array<string> {
+    return [
       ...new Set(
         allowances
-          .filter(isNativeCurrency)
+          .filter((allowance) => this.isNativeCurrency(allowance))
           .map((allowance) => allowance.chainId),
       ),
     ];
+  }
 
-    // Keyed by the same `chainId:address` the result is stored under, so an
-    // allowance repeating a token - another spender, another Safe, same chain
-    // - collapses to the one pair fetched here.
-    const erc20TokensByKey = new Map<
+  /**
+   * The distinct `(chainId, address)` pairs an ERC20 allowance in
+   * {@link allowances} references.
+   */
+  private erc20TokensToFetch(
+    allowances: ReadonlyArray<PolicyIndexerSafeAllowance>,
+  ): Array<{ chainId: string; address: Address }> {
+    // Keyed by the same `chainId:address` the fetched token is later stored
+    // under, so an allowance repeating a token - another spender, another
+    // Safe, same chain - collapses to the one pair fetched here.
+    const byKey = new Map<
       TokenMetadataKey,
       { chainId: string; address: Address }
     >();
     for (const allowance of allowances) {
-      if (isNativeCurrency(allowance)) {
+      if (this.isNativeCurrency(allowance)) {
         continue;
       }
       const pair = { chainId: allowance.chainId, address: allowance.token };
-      erc20TokensByKey.set(tokenMetadataKey(pair), pair);
+      byKey.set(tokenMetadataKey(pair), pair);
     }
+    return [...byKey.values()];
+  }
 
-    const tokenMetadata = new Map<TokenMetadataKey, SpendingLimitToken>();
+  private async fetchNativeTokens(
+    chainIds: ReadonlyArray<string>,
+  ): Promise<Map<TokenMetadataKey, SpendingLimitToken>> {
+    const tokens = new Map<TokenMetadataKey, SpendingLimitToken>();
 
-    const chainResults = await batched(
-      nativeCurrencyChainIds,
-      this.batchSize,
-      (chainId) => this.chainsRepository.getChain(chainId),
+    const results = await batched(chainIds, this.batchSize, (chainId) =>
+      this.chainsRepository.getChain(chainId),
     );
-    chainResults.forEach((result, index) => {
-      const chainId = nativeCurrencyChainIds[index];
+    results.forEach((result, index) => {
+      const chainId = chainIds[index];
       if (result.status !== 'fulfilled') {
         this.loggingService.debug({
           message: "Could not read a chain's native currency",
@@ -304,18 +326,25 @@ export class PoliciesService {
         // currency is trusted by definition.
         trusted: true,
       };
-      tokenMetadata.set(
+      tokens.set(
         tokenMetadataKey({ chainId, address: zeroAddress }),
         nativeToken,
       );
     });
 
-    const erc20Pairs = [...erc20TokensByKey.values()];
-    const tokenResults = await batched(erc20Pairs, this.batchSize, (pair) =>
+    return tokens;
+  }
+
+  private async fetchErc20Tokens(
+    pairs: ReadonlyArray<{ chainId: string; address: Address }>,
+  ): Promise<Map<TokenMetadataKey, SpendingLimitToken>> {
+    const tokens = new Map<TokenMetadataKey, SpendingLimitToken>();
+
+    const results = await batched(pairs, this.batchSize, (pair) =>
       this.tokenRepository.getToken(pair),
     );
-    tokenResults.forEach((result, index) => {
-      const pair = erc20Pairs[index];
+    results.forEach((result, index) => {
+      const pair = pairs[index];
       if (result.status !== 'fulfilled') {
         this.loggingService.debug({
           message: 'Could not read a token',
@@ -326,10 +355,6 @@ export class PoliciesService {
         return;
       }
       if (result.value.type === 'ERC721') {
-        // An allowance is always a fungible amount, so an address the
-        // allowance module points at should never resolve to an NFT - if it
-        // does, the token repository's answer is not usable as a spending
-        // limit's metadata.
         this.loggingService.debug({
           message:
             "An allowance's token resolved to an ERC721, not a fungible token",
@@ -338,10 +363,10 @@ export class PoliciesService {
         });
         return;
       }
-      tokenMetadata.set(tokenMetadataKey(pair), result.value);
+      tokens.set(tokenMetadataKey(pair), result.value);
     });
 
-    return tokenMetadata;
+    return tokens;
   }
 
   /**
