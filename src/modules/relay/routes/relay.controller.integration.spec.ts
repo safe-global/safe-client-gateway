@@ -35,6 +35,7 @@ import { BalancesService } from '@/modules/balances/routes/balances.service';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import { relayerBuilder } from '@/modules/chains/domain/entities/__tests__/relayer.builder';
 import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
+import type { Relayer } from '@/modules/chains/domain/entities/relayer.entity';
 import {
   multiSendEncoder,
   multiSendTransactionsEncoder,
@@ -101,7 +102,7 @@ function relayerTypeForChainId(chainId: string): RelayerType | null {
 // option matching relayerTypeForChainId, and sponsored Safe creation. Tenderly
 // simulation is left disabled since these tests do not exercise the simulation
 // gate.
-function relayerForChainId(chainId: string): NonNullable<Chain['relayer']> {
+function relayerForChainId(chainId: string): Relayer {
   const type = relayerTypeForChainId(chainId);
   return relayerBuilder()
     .with('type', type)

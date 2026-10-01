@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Injectable } from '@nestjs/common';
 import type { Hex } from 'viem';
-import type {
-  Chain,
-  ChainRelayer,
-} from '@/modules/chains/domain/entities/chain.entity';
+import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
+import type { Relayer } from '@/modules/chains/domain/entities/relayer.entity';
 import { ProxyFactoryDecoder } from '@/modules/relay/domain/contracts/decoders/proxy-factory-decoder.helper';
 import { GasPaymentOption } from '@/modules/relay/domain/entities/gas-payment-option.entity';
 import { RelayCall } from '@/modules/relay/domain/entities/relay-call.entity';
@@ -83,7 +81,7 @@ export class RelayManager implements IRelayManager {
     throw new NoRelayerDefinedError();
   }
 
-  private getSafeCreationRelayer(relayer: ChainRelayer): IRelayer {
+  private getSafeCreationRelayer(relayer: Relayer): IRelayer {
     if (!relayer.safeCreationSponsored) {
       throw new NoRelayerDefinedError();
     }
@@ -122,7 +120,7 @@ export class RelayManager implements IRelayManager {
     return RelayCall.TRANSACTION;
   }
 
-  private requireRelayer(relayer: Chain['relayer']): ChainRelayer {
+  private requireRelayer(relayer: Chain['relayer']): Relayer {
     if (!relayer) {
       throw new NoRelayerDefinedError();
     }
