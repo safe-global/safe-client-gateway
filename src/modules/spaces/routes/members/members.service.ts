@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { ConflictException, Inject } from '@nestjs/common';
+import type { Address } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
@@ -174,9 +175,8 @@ export class MembersService {
     );
     return {
       members: members.map((member) => {
-        // Until the member accepted the invite, only expose their
-        // identifiers (email, wallet address) to active admins. One
-        // predicate feeds both fields: a single rule, not two.
+        // Until the member accepts the invite, their identifiers (email,
+        // wallet address) are only exposed to active admins.
         const isVisible = member.status === 'ACTIVE' || isActiveAdmin;
         return {
           ...member,
@@ -202,8 +202,7 @@ export class MembersService {
       ...member,
       user: this.toMemberUser(
         member.user,
-        // The caller is reading their own row, so both identifiers are
-        // exposed unconditionally.
+        // The caller reads their own row, so identifiers are not gated.
         member.user.email,
         member.user.address ?? null,
       ),
@@ -217,7 +216,7 @@ export class MembersService {
   private toMemberUser(
     user: User,
     email: User['email'],
-    address: string | null,
+    address: Address | null,
   ): MemberDto['user'] {
     return {
       id: user.id,

@@ -4,7 +4,7 @@ import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 import {
   initTestApplication,
   TestAppProvider,
@@ -96,7 +96,7 @@ describe('MembersController', () => {
     spaceId: string;
     spaceUuid: string;
     userId: number;
-    signerAddress: `0x${string}`;
+    signerAddress: Address;
   }> => {
     const authPayloadDto = siweAuthPayloadDtoBuilder().build();
     const walletResponse = await request(app.getHttpServer())

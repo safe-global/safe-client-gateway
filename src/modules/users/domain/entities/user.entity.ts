@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import type { Address } from 'viem';
 import { z } from 'zod';
 import { RowSchema } from '@/datasources/db/v2/entities/row.entity';
 import { getStringEnumKeys } from '@/domain/common/utils/enum';
@@ -23,12 +24,11 @@ export const UserSchema: z.ZodType<
     status: keyof typeof UserStatus;
     extUserId: string | null;
     email: EmailAddress | null;
-    // Derived on read paths that resolve a user's wallet (currently the
-    // members roster): the decrypted address of the user's lowest-`id`
-    // wallet. Optional deliberately — no `users` column backs it, and the
-    // DB entity's `implements DomainUser` clause must stay satisfiable
-    // without it.
-    address?: string | null;
+    // Derived at read time — no `users` column backs it. Optional so the
+    // DB entity's `implements DomainUser` stays satisfiable without it.
+    // Unlike `Wallet.address`, this never holds KMS ciphertext: it is
+    // attached post-decryption, so the checksummed `Address` type applies.
+    address?: Address | null;
     wallets: Array<Wallet>;
     members: Array<Member>;
   }
@@ -36,10 +36,7 @@ export const UserSchema: z.ZodType<
   status: z.enum(getStringEnumKeys(UserStatus)),
   extUserId: z.string().min(1).max(255).nullable(),
   email: EmailAddressSchema.nullable(),
-  // Decrypted to a checksummed address before it is attached, so the
-  // inferred type is a plain string; the AddressSchema runtime validation
-  // is retained (same idiom as WalletSchema.address).
-  address: (AddressSchema as z.ZodType<string>).nullable().optional(),
+  address: AddressSchema.nullable().optional(),
   wallets: z.array(WalletSchema),
   members: z.array(z.lazy(() => MemberSchema)),
 });

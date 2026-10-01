@@ -15,7 +15,7 @@ import type {
   FindOptionsWhere,
 } from 'typeorm';
 import { In, IsNull } from 'typeorm';
-import type { Address } from 'viem';
+import { type Address, getAddress } from 'viem';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { isUniqueConstraintError } from '@/datasources/errors/helpers/is-unique-constraint-error.helper';
 import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-error';
@@ -80,13 +80,9 @@ export class MembersRepository implements IMembersRepository {
   }
 
   /**
-   * Returns copies of loaded members whose hydrated users carry a decrypted
-   * wallet `address` — deterministically the user's lowest-`id` wallet — or
-   * `null` for users without one.
-   *
-   * The members query does not hydrate `User.wallets`; addresses are fetched
-   * through the wallets repository keyed on user ids instead, mirroring
-   * `UserIdentityResolverService.resolveMany`.
+   * Attaches to each member's user the decrypted address of their lowest-`id`
+   * wallet, or `null` without one — fetched via the wallets repository, as
+   * the members query does not hydrate `User.wallets`.
    */
   private async attachMemberUserAddresses(
     members: Array<Member>,
@@ -99,8 +95,7 @@ export class MembersRepository implements IMembersRepository {
       where: { user: { id: In(userIds) } },
       relations: { user: true },
     });
-    // Lowest wallet id per user so the address does not shift between
-    // requests for a user holding several wallets.
+    // Lowest wallet id per user so the address is stable across requests.
     const walletByUserId = new Map<User['id'], Wallet>();
     for (const wallet of [...wallets].sort((a, b) => a.id - b.id)) {
       if (!walletByUserId.has(wallet.user.id)) {
@@ -109,11 +104,13 @@ export class MembersRepository implements IMembersRepository {
     }
     const addressEntries = await Promise.all(
       [...walletByUserId.entries()].map(
-        async ([userId, wallet]): Promise<[User['id'], string]> => [
+        async ([userId, wallet]): Promise<[User['id'], Address]> => [
           userId,
-          await this.walletEncryptionService.decryptAddress(
-            userId,
-            wallet.address,
+          getAddress(
+            await this.walletEncryptionService.decryptAddress(
+              userId,
+              wallet.address,
+            ),
           ),
         ],
       ),

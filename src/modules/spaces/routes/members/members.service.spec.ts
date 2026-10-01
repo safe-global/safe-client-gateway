@@ -6,7 +6,7 @@ import {
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import {
@@ -45,13 +45,10 @@ const membersRepositoryMock = {
   removeUser: vi.fn(),
 } as MockedObject<IMembersRepository>;
 
-/**
- * The repository attaches the derived `address` to the domain user; the DB
- * entity deliberately has no such column, so the builders cannot carry it.
- */
+/** The builders cannot carry the derived `address` — no DB column backs it. */
 function memberWithAddress(
   member: ReturnType<ReturnType<typeof memberBuilder>['build']>,
-  address: string | null,
+  address: Address | null,
 ): Member {
   return { ...member, user: { ...member.user, address } };
 }
@@ -334,8 +331,7 @@ describe('MembersService', () => {
 
   describe('getSelfMembership', () => {
     it('should return the caller’s own wallet address even while INVITED', async () => {
-      // Contrast with get(): the caller reads their own row, so the
-      // pending-invite visibility gate does not apply.
+      // Unlike get(), the own-row read is not gated by invite status.
       const walletAddress = getAddress(faker.finance.ethereumAddress());
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
       const member = memberWithAddress(
