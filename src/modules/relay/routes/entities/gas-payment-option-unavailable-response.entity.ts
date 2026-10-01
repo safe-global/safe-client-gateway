@@ -5,7 +5,7 @@ import {
   GAS_PAYMENT_OPTION_UNAVAILABLE_CODE,
   GAS_PAYMENT_OPTION_UNAVAILABLE_REASONS,
   type GasPaymentOptionUnavailableReason,
-} from '@/modules/relay/domain/errors/gas-payment-option-unavailable.error';
+} from '@/modules/relay/domain/entities/gas-payment-option-unavailable.entity';
 
 export class GasPaymentOptionUnavailableResponse {
   @ApiProperty({ enum: [GAS_PAYMENT_OPTION_UNAVAILABLE_CODE] })

@@ -1,9 +1,13 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Injectable } from '@nestjs/common';
 import type { Hex } from 'viem';
-import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
+import type {
+  Chain,
+  ChainRelayer,
+} from '@/modules/chains/domain/entities/chain.entity';
 import { ProxyFactoryDecoder } from '@/modules/relay/domain/contracts/decoders/proxy-factory-decoder.helper';
 import { GasPaymentOption } from '@/modules/relay/domain/entities/gas-payment-option.entity';
+import { RelayCall } from '@/modules/relay/domain/entities/relay-call.entity';
 import { RelayerType } from '@/modules/relay/domain/entities/relayer-type.entity';
 import { GasPaymentOptionUnavailableError } from '@/modules/relay/domain/errors/gas-payment-option-unavailable.error';
 import { NoRelayerDefinedError } from '@/modules/relay/domain/errors/no-relayer-defined.error';
@@ -14,18 +18,6 @@ import { RelayTransactionHelper } from '@/modules/relay/domain/relay-transaction
 import { DailyLimitRelayer } from '@/modules/relay/domain/relayers/daily-limit.relayer';
 import { NoFeeCampaignRelayer } from '@/modules/relay/domain/relayers/no-fee-campaign.relayer';
 import { RelayFeeRelayer } from '@/modules/relay/domain/relayers/relay-fee.relayer';
-
-type ChainRelayer = NonNullable<Chain['relayer']>;
-
-/** What a relayed calldata does, which determines who may pay for it. */
-const RelayCall = {
-  SIGNER_CREATION: 'SIGNER_CREATION',
-  SAFE_CREATION: 'SAFE_CREATION',
-  REFUNDING_TRANSACTION: 'REFUNDING_TRANSACTION',
-  TRANSACTION: 'TRANSACTION',
-} as const;
-
-type RelayCall = (typeof RelayCall)[keyof typeof RelayCall];
 
 @Injectable()
 export class RelayManager implements IRelayManager {

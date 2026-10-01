@@ -1,20 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { ConflictException, HttpStatus } from '@nestjs/common';
 import type { GasPaymentOption } from '@/modules/relay/domain/entities/gas-payment-option.entity';
-
-export const GAS_PAYMENT_OPTION_UNAVAILABLE_CODE =
-  'GAS_PAYMENT_OPTION_UNAVAILABLE';
-
-/** Why the requested gas payment option can't pay for the request. */
-export const GAS_PAYMENT_OPTION_UNAVAILABLE_REASONS = [
-  'NOT_LISTED',
-  'NO_RELAYER',
-  'NOT_A_WORKSPACE_SAFE',
-  'REFUNDING_TRANSACTION',
-] as const;
-
-export type GasPaymentOptionUnavailableReason =
-  (typeof GAS_PAYMENT_OPTION_UNAVAILABLE_REASONS)[number];
+import {
+  GAS_PAYMENT_OPTION_UNAVAILABLE_CODE,
+  type GasPaymentOptionUnavailableReason,
+} from '@/modules/relay/domain/entities/gas-payment-option-unavailable.entity';
 
 /** The requested option isn't offered for this request. */
 export class GasPaymentOptionUnavailableError extends ConflictException {
