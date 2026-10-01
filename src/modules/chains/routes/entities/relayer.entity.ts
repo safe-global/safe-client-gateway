@@ -11,7 +11,10 @@ export class Relayer implements DomainRelayer {
   type!: RelayerType | null;
   @ApiProperty()
   safeCreationSponsored!: boolean;
-  @ApiProperty()
+  @ApiProperty({
+    deprecated: true,
+    description: 'Use gasPaymentOptions instead.',
+  })
   safeTransactionSponsored!: boolean;
   @ApiProperty()
   enableTenderlySimulationBeforeRelay!: boolean;
