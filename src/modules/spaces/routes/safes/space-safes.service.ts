@@ -1,22 +1,32 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
-import { Inject, Injectable } from '@nestjs/common';
+import { BadGatewayException, Inject, Injectable } from '@nestjs/common';
 import { groupBy, mapValues } from 'lodash';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
+import type { ILoggingService } from '@/logging/logging.interface';
+import { LoggingService } from '@/logging/logging.interface';
+import { asError } from '@/logging/utils';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import { IEntitlementEnforcement } from '@/modules/entitlements/domain/entitlement-enforcement.interface';
 import type { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
 import type { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
+import { IAddressBookItemsRepository } from '@/modules/spaces/domain/address-books/address-book-items.repository.interface';
 import { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
 import {
   assertAdmin,
   assertMember,
 } from '@/modules/spaces/domain/space-assert.utils';
-import type { CreateSpaceSafeDto } from '@/modules/spaces/routes/safes/entities/create-space-safe.dto.entity';
+import type {
+  CreateSpaceSafeDto,
+  CreateSpaceSafesDto,
+} from '@/modules/spaces/routes/safes/entities/create-space-safe.dto.entity';
 import type { DeleteSpaceSafeDto } from '@/modules/spaces/routes/safes/entities/delete-space-safe.dto.entity';
 import type { GetSpaceSafeResponse } from '@/modules/spaces/routes/safes/entities/get-space-safe.dto.entity';
 import { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
+
+export const SAFES_ADDED_NAMES_UNSAVED_MESSAGE =
+  'Your Safes were added, but their names were not saved. Please name them in the address book.';
 
 @Injectable()
 export class SpaceSafesService {
@@ -29,12 +39,17 @@ export class SpaceSafesService {
     private readonly entitlementEnforcement: IEntitlementEnforcement,
     @Inject(PostgresDatabaseService)
     private readonly postgresDatabaseService: PostgresDatabaseService,
+    @Inject(IAddressBookItemsRepository)
+    private readonly addressBookItemsRepository: IAddressBookItemsRepository,
+    @Inject(LoggingService)
+    private readonly loggingService: ILoggingService,
   ) {}
 
   public async create(args: {
     spaceId: Space['id'];
     authPayload: AuthPayload;
     payload: Array<CreateSpaceSafeDto>;
+    addressBookItems?: CreateSpaceSafesDto['addressBookItems'];
   }): Promise<void> {
     const userId = getAuthenticatedUserIdOrFail(args.authPayload);
     await assertAdmin(this.membersRepository, args.spaceId, userId);
@@ -77,6 +92,30 @@ export class SpaceSafesService {
         entityManager,
       });
     });
+
+    await this.upsertNames({ ...args, userId });
+  }
+
+  private async upsertNames(args: {
+    spaceId: Space['id'];
+    userId: number;
+    addressBookItems?: CreateSpaceSafesDto['addressBookItems'];
+  }): Promise<void> {
+    if (!args.addressBookItems || args.addressBookItems.length === 0) {
+      return;
+    }
+    try {
+      await this.addressBookItemsRepository.upsertMany({
+        userId: args.userId,
+        spaceId: args.spaceId,
+        addressBookItems: args.addressBookItems,
+      });
+    } catch (error) {
+      this.loggingService.error(
+        `Naming ${args.addressBookItems.length} Safe(s) failed after adding them to space ${args.spaceId}: ${asError(error).message}`,
+      );
+      throw new BadGatewayException(SAFES_ADDED_NAMES_UNSAVED_MESSAGE);
+    }
   }
 
   public async get(

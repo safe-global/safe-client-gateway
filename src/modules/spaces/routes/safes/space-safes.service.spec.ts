@@ -1,12 +1,17 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
-import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
+import {
+  BadGatewayException,
+  ForbiddenException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import type { EntityManager } from 'typeorm';
 import type { Address } from 'viem';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
 import type { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
+import type { ILoggingService } from '@/logging/logging.interface';
 import {
   oidcAuthPayloadDtoBuilder,
   siweAuthPayloadDtoBuilder,
@@ -14,11 +19,15 @@ import {
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import type { IEntitlementEnforcement } from '@/modules/entitlements/domain/entitlement-enforcement.interface';
 import { QuotaExceededError } from '@/modules/entitlements/domain/errors/quota-exceeded.error';
+import type { IAddressBookItemsRepository } from '@/modules/spaces/domain/address-books/address-book-items.repository.interface';
 import type {
   ISpaceSafesRepository,
   PreparedSpaceSafe,
 } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
-import { SpaceSafesService } from '@/modules/spaces/routes/safes/space-safes.service';
+import {
+  SAFES_ADDED_NAMES_UNSAVED_MESSAGE,
+  SpaceSafesService,
+} from '@/modules/spaces/routes/safes/space-safes.service';
 import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
 import type { Member } from '@/modules/users/domain/entities/member.entity';
 import type { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
@@ -59,6 +68,14 @@ const membersRepositoryMock = {
 const adminMember = (): Member =>
   memberBuilder().with('role', 'ADMIN').with('status', 'ACTIVE').build();
 
+const addressBookItemsRepositoryMock = {
+  upsertMany: vi.fn(),
+} as MockedObject<IAddressBookItemsRepository>;
+
+const loggingServiceMock = {
+  error: vi.fn(),
+} as MockedObject<ILoggingService>;
+
 const entitlementEnforcementMock = {
   assertWithinQuota: vi.fn(),
   prepareQuotaCheck: vi.fn(),
@@ -74,6 +91,8 @@ describe('SpaceSafesService', () => {
       membersRepositoryMock,
       entitlementEnforcementMock,
       postgresDatabaseServiceMock,
+      addressBookItemsRepositoryMock,
+      loggingServiceMock,
     );
   });
 
@@ -250,6 +269,102 @@ describe('SpaceSafesService', () => {
       ).rejects.toThrow(quotaExceeded);
 
       expect(spaceSafesRepositoryMock.insertRows).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('create with addressBookItems', () => {
+    const arrange = (): {
+      spaceId: number;
+      authPayload: AuthPayload;
+      payload: Array<{ address: Address; chainId: string }>;
+      addressBookItems: Array<{
+        name: string;
+        address: Address;
+        chainIds: Array<string>;
+      }>;
+    } => {
+      const spaceId = faker.number.int();
+      const address = addr();
+      const chainId = faker.number.int().toString();
+      membersRepositoryMock.findOne.mockResolvedValue(adminMember());
+      entitlementEnforcementMock.prepareQuotaCheck.mockResolvedValue(vi.fn());
+      spaceSafesRepositoryMock.encryptRows.mockResolvedValue([
+        preparedRow(spaceId, address),
+      ]);
+      spaceSafesRepositoryMock.countSeatsBySpaceId.mockResolvedValue(0);
+      spaceSafesRepositoryMock.countNewSeats.mockResolvedValue(1);
+      return {
+        spaceId,
+        authPayload: new AuthPayload(oidcAuthPayloadDtoBuilder().build()),
+        payload: [{ address, chainId }],
+        addressBookItems: [
+          { name: faker.word.noun(), address, chainIds: [chainId] },
+        ],
+      };
+    };
+
+    it('writes the names once the Safes are inserted', async () => {
+      const { spaceId, authPayload, payload, addressBookItems } = arrange();
+
+      await service.create({ spaceId, authPayload, payload, addressBookItems });
+
+      expect(
+        addressBookItemsRepositoryMock.upsertMany,
+      ).toHaveBeenCalledExactlyOnceWith({
+        userId: Number(authPayload.sub),
+        spaceId,
+        addressBookItems,
+      });
+      expect(
+        spaceSafesRepositoryMock.insertRows.mock.invocationCallOrder[0],
+      ).toBeLessThan(
+        addressBookItemsRepositoryMock.upsertMany.mock.invocationCallOrder[0],
+      );
+    });
+
+    it.each([
+      ['absent', undefined],
+      ['empty', []],
+    ])('writes no names when they are %s', async (_label, items) => {
+      const { spaceId, authPayload, payload } = arrange();
+
+      await service.create({
+        spaceId,
+        authPayload,
+        payload,
+        addressBookItems: items,
+      });
+
+      expect(addressBookItemsRepositoryMock.upsertMany).not.toHaveBeenCalled();
+    });
+
+    it('writes no names when the Safes are not added', async () => {
+      const { spaceId, authPayload, payload, addressBookItems } = arrange();
+      spaceSafesRepositoryMock.insertRows.mockRejectedValue(new Error('boom'));
+
+      await expect(
+        service.create({ spaceId, authPayload, payload, addressBookItems }),
+      ).rejects.toThrow('boom');
+
+      expect(addressBookItemsRepositoryMock.upsertMany).not.toHaveBeenCalled();
+    });
+
+    it('answers 502 and logs when the names fail after the Safes were added', async () => {
+      const { spaceId, authPayload, payload, addressBookItems } = arrange();
+      addressBookItemsRepositoryMock.upsertMany.mockRejectedValue(
+        new Error('kms down'),
+      );
+
+      await expect(
+        service.create({ spaceId, authPayload, payload, addressBookItems }),
+      ).rejects.toThrow(
+        new BadGatewayException(SAFES_ADDED_NAMES_UNSAVED_MESSAGE),
+      );
+
+      expect(spaceSafesRepositoryMock.insertRows).toHaveBeenCalledOnce();
+      expect(loggingServiceMock.error).toHaveBeenCalledExactlyOnceWith(
+        expect.stringContaining('kms down'),
+      );
     });
   });
 
