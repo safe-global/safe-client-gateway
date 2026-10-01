@@ -146,6 +146,42 @@ describe('GtfFeeBreakdownSchema', () => {
     expect(result.success).toBe(true);
   });
 
+  it('should keep the Safenet fee line when the fee service sends it', () => {
+    const result = GtfFeeBreakdownSchema.safeParse({
+      txValueUsd: 1000,
+      trailingVolumeUsd: 0,
+      tierBps: 5,
+      gtfFeeUsd: 0.5,
+      relayCostUsd: 38.22,
+      totalUsd: 38.72,
+      numberSignatures: 2,
+      valuationDetails: [],
+      safenetFeeUsd: 1,
+      // Fields this gateway does not declare must not survive the parse.
+      safenetFeeSponsored: true,
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.data?.safenetFeeUsd).toBe(1);
+    expect(result.data).not.toHaveProperty('safenetFeeSponsored');
+  });
+
+  it('should accept a fee breakdown without the Safenet fee line', () => {
+    const result = GtfFeeBreakdownSchema.safeParse({
+      txValueUsd: 1000,
+      trailingVolumeUsd: 0,
+      tierBps: 5,
+      gtfFeeUsd: 0.5,
+      relayCostUsd: 38.22,
+      totalUsd: 38.72,
+      numberSignatures: 2,
+      valuationDetails: [],
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.data).not.toHaveProperty('safenetFeeUsd');
+  });
+
   it('should not allow a missing valuationDetails', () => {
     const result = GtfFeeBreakdownSchema.safeParse({
       txValueUsd: 1000,

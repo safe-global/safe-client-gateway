@@ -94,6 +94,139 @@ describe('FeesService', () => {
       expect(mockFeeServiceApi.getRelayFees).not.toHaveBeenCalled();
     });
 
+    it('should forward safenetCheck when the user opts in on a chain with Safenet checks', async () => {
+      const chain = chainBuilder()
+        .with('chainId', chainId)
+        .with('relayer', relayerBuilder().with('type', RelayerType.GTF).build())
+        .with('features', ['ERC721', 'SAFENET_CHECKS'])
+        .build();
+      mockChainsRepository.getChain.mockResolvedValueOnce(chain);
+      mockFeeServiceApi.getGtfFees.mockResolvedValueOnce(
+        gtfFeesResponseBuilder().build(),
+      );
+
+      await target.getFeePreview({
+        chainId,
+        safeAddress,
+        feePreviewDto: { ...feePreviewDto, safenetCheck: true },
+      });
+
+      expect(mockFeeServiceApi.getGtfFees).toHaveBeenCalledWith({
+        chainId,
+        safeAddress,
+        request: { ...feePreviewDto, safenetCheck: true },
+      });
+    });
+
+    it.each([
+      ['the user opts in but the chain lacks the feature', ['ERC721'], true],
+      [
+        'the user does not choose on a chain with the feature',
+        ['SAFENET_CHECKS'],
+        undefined,
+      ],
+      [
+        'the user opts out on a chain with the feature',
+        ['SAFENET_CHECKS'],
+        false,
+      ],
+      ['neither the user nor the chain opts in', ['ERC721'], undefined],
+    ] as const)(
+      'should omit safenetCheck when %s',
+      async (_label, features, choice) => {
+        const chain = chainBuilder()
+          .with('chainId', chainId)
+          .with(
+            'relayer',
+            relayerBuilder().with('type', RelayerType.GTF).build(),
+          )
+          .with('features', [...features])
+          .build();
+        mockChainsRepository.getChain.mockResolvedValueOnce(chain);
+        mockFeeServiceApi.getGtfFees.mockResolvedValueOnce(
+          gtfFeesResponseBuilder().build(),
+        );
+
+        await target.getFeePreview({
+          chainId,
+          safeAddress,
+          feePreviewDto:
+            choice === undefined
+              ? feePreviewDto
+              : { ...feePreviewDto, safenetCheck: choice },
+        });
+
+        expect(mockFeeServiceApi.getGtfFees).toHaveBeenCalledWith({
+          chainId,
+          safeAddress,
+          request: feePreviewDto,
+        });
+      },
+    );
+
+    it('should not reach the fee service when the chain cannot be read', async () => {
+      mockChainsRepository.getChain.mockRejectedValueOnce(
+        new Error('Config Service unavailable'),
+      );
+
+      await expect(
+        target.getFeePreview({ chainId, safeAddress, feePreviewDto }),
+      ).rejects.toThrow('Config Service unavailable');
+      expect(mockFeeServiceApi.getGtfFees).not.toHaveBeenCalled();
+    });
+
+    it('should drop a route DTO field that is outside the gtf/fees contract', async () => {
+      const chain = chainBuilder()
+        .with('chainId', chainId)
+        .with('relayer', relayerBuilder().with('type', RelayerType.GTF).build())
+        .with('features', ['SAFENET_CHECKS'])
+        .build();
+      mockChainsRepository.getChain.mockResolvedValueOnce(chain);
+      mockFeeServiceApi.getGtfFees.mockResolvedValueOnce(
+        gtfFeesResponseBuilder().build(),
+      );
+
+      await target.getFeePreview({
+        chainId,
+        safeAddress,
+        // fiatCode belongs to the relay flow, not to gtf/fees.
+        feePreviewDto: {
+          ...feePreviewDto,
+          fiatCode: 'EUR',
+          safenetCheck: true,
+        },
+      });
+
+      expect(mockFeeServiceApi.getGtfFees).toHaveBeenCalledWith({
+        chainId,
+        safeAddress,
+        request: { ...feePreviewDto, safenetCheck: true },
+      });
+    });
+
+    it('should not send safenetCheck on the relay flow of a Safenet chain', async () => {
+      const chain = chainBuilder()
+        .with('chainId', chainId)
+        .with(
+          'relayer',
+          relayerBuilder().with('type', RelayerType.RELAY_FEE).build(),
+        )
+        .with('features', ['SAFENET_CHECKS'])
+        .build();
+      mockChainsRepository.getChain.mockResolvedValueOnce(chain);
+      mockFeeServiceApi.getRelayFees.mockResolvedValueOnce(
+        txFeesResponseBuilder().build(),
+      );
+
+      await target.getFeePreview({ chainId, safeAddress, feePreviewDto });
+
+      expect(mockFeeServiceApi.getRelayFees).toHaveBeenCalledWith({
+        chainId,
+        safeAddress,
+        request: feePreviewDto,
+      });
+    });
+
     it.each([[RelayerType.DAILY_LIMIT], [RelayerType.NO_FEE_CAMPAIGN]])(
       'should throw a BadRequestException for unsupported relayer type %s',
       async (type) => {
