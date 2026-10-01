@@ -3,6 +3,7 @@
 import { faker } from '@faker-js/faker';
 import type { ConfigService } from '@nestjs/config';
 import { DataSource } from 'typeorm';
+import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
@@ -156,6 +157,7 @@ describe('SpaceAuditRepository', () => {
       createMockUserEncryptionService(),
       createMockWalletEncryptionService(),
       createMockMemberEncryptionService(),
+      mockLoggingService,
     );
   });
 
@@ -233,7 +235,7 @@ describe('SpaceAuditRepository', () => {
       users: [
         {
           type: InviteType.Wallet,
-          address: wallet.address,
+          address: getAddress(wallet.address),
           role: args.role ?? 'MEMBER',
           name: nameBuilder(),
         },
@@ -371,7 +373,7 @@ describe('SpaceAuditRepository', () => {
           users: [
             {
               type: InviteType.Wallet,
-              address: wallet.address,
+              address: getAddress(wallet.address),
               role: 'MEMBER',
               name: nameBuilder(),
             },

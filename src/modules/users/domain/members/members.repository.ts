@@ -19,6 +19,7 @@ import { type Address, getAddress } from 'viem';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { isUniqueConstraintError } from '@/datasources/errors/helpers/is-unique-constraint-error.helper';
 import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-error';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import { Space as DbSpace } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
@@ -58,6 +59,8 @@ export class MembersRepository implements IMembersRepository {
     private readonly userEncryptionService: UserEncryptionService,
     private readonly walletEncryptionService: WalletEncryptionService,
     private readonly memberEncryptionService: MemberEncryptionService,
+    @Inject(LoggingService)
+    private readonly loggingService: ILoggingService,
   ) {}
 
   /**
@@ -83,6 +86,9 @@ export class MembersRepository implements IMembersRepository {
    * Attaches to each member's user the decrypted address of their lowest-`id`
    * wallet, or `null` without one — fetched via the wallets repository, as
    * the members query does not hydrate `User.wallets`.
+   *
+   * A failed decryption only nulls that member's address (logged as a
+   * warning) — one corrupt wallet row must not fail the whole roster.
    */
   private async attachMemberUserAddresses(
     members: Array<Member>,
@@ -104,18 +110,29 @@ export class MembersRepository implements IMembersRepository {
     }
     const addressEntries = await Promise.all(
       [...walletByUserId.entries()].map(
-        async ([userId, wallet]): Promise<[User['id'], Address]> => [
-          userId,
-          getAddress(
-            await this.walletEncryptionService.decryptAddress(
+        async ([userId, wallet]): Promise<[User['id'], Address] | null> => {
+          try {
+            return [
               userId,
-              wallet.address,
-            ),
-          ),
-        ],
+              getAddress(
+                await this.walletEncryptionService.decryptAddress(
+                  userId,
+                  wallet.address,
+                ),
+              ),
+            ];
+          } catch (error) {
+            this.loggingService.warn(
+              `Failed to decrypt member wallet address; omitting it. userId=${userId}, walletId=${wallet.id}, error=${error}`,
+            );
+            return null;
+          }
+        },
       ),
     );
-    const addressByUserId = new Map(addressEntries);
+    const addressByUserId = new Map(
+      addressEntries.filter((entry) => entry !== null),
+    );
     return members.map((member) => ({
       ...member,
       user: {

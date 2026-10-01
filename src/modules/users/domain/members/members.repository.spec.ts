@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
-import type { EntityManager } from 'typeorm';
 import { In, QueryFailedError } from 'typeorm';
-import type { Mocked, MockedObject } from 'vitest';
+import { getAddress } from 'viem';
+import type { Mock, MockedObject } from 'vitest';
 import type { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-error';
 import { nameBuilder } from '@/domain/common/entities/name.builder';
+import type { ILoggingService } from '@/logging/logging.interface';
 import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { createMockSpaceAuditRepository } from '@/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
@@ -38,10 +39,19 @@ describe('MembersRepository', () => {
   const walletsRepository = {
     find: vi.fn(),
   } as MockedObject<IWalletsRepository>;
+  const loggingService = {
+    debug: vi.fn(),
+    error: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+  } as MockedObject<ILoggingService>;
 
-  let entityManager: Mocked<
-    Pick<EntityManager, 'find' | 'findOne' | 'insert' | 'update'>
-  >;
+  let entityManager: {
+    find: Mock;
+    findOne: Mock;
+    insert: Mock;
+    update: Mock;
+  };
   let dbMembersRepository: {
     find: ReturnType<typeof vi.fn>;
     findOne: ReturnType<typeof vi.fn>;
@@ -90,6 +100,7 @@ describe('MembersRepository', () => {
       createMockUserEncryptionService(),
       walletEncryptionService,
       memberEncryptionService,
+      loggingService,
     );
   });
 
@@ -98,7 +109,7 @@ describe('MembersRepository', () => {
       const wallet = walletBuilder().build();
       const userToInvite = {
         type: InviteType.Wallet,
-        address: wallet.address,
+        address: getAddress(wallet.address),
         role: 'MEMBER' as const,
         name: nameBuilder(),
       };
@@ -148,7 +159,7 @@ describe('MembersRepository', () => {
       const wallet = walletBuilder().with('user', existingMember.user).build();
       const userToInvite = {
         type: InviteType.Wallet,
-        address: wallet.address,
+        address: getAddress(wallet.address),
         role: 'ADMIN' as const,
         name: nameBuilder(),
       };
@@ -200,7 +211,7 @@ describe('MembersRepository', () => {
       const wallet = walletBuilder().with('user', existingMember.user).build();
       const userToInvite = {
         type: InviteType.Wallet,
-        address: wallet.address,
+        address: getAddress(wallet.address),
         role: 'ADMIN' as const,
         name: nameBuilder(),
       };
@@ -231,7 +242,7 @@ describe('MembersRepository', () => {
       const wallet = walletBuilder().with('user', existingMember.user).build();
       const userToInvite = {
         type: InviteType.Wallet,
-        address: wallet.address,
+        address: getAddress(wallet.address),
         role: 'ADMIN' as const,
         name: nameBuilder(),
       };
@@ -258,7 +269,7 @@ describe('MembersRepository', () => {
       const wallet = walletBuilder().build();
       const userToInvite = {
         type: InviteType.Wallet,
-        address: wallet.address,
+        address: getAddress(wallet.address),
         role: 'MEMBER' as const,
         name: nameBuilder(),
       };
@@ -295,7 +306,7 @@ describe('MembersRepository', () => {
       } as Wallet;
       const userToInvite = {
         type: InviteType.Wallet,
-        address: wallet.address,
+        address: getAddress(wallet.address),
         role: 'MEMBER' as const,
         name: nameBuilder(),
       };
@@ -328,7 +339,7 @@ describe('MembersRepository', () => {
       const wallet = walletBuilder().build();
       const userToInvite = {
         type: InviteType.Wallet,
-        address: wallet.address,
+        address: getAddress(wallet.address),
         role: 'MEMBER' as const,
         name: nameBuilder(),
       };
@@ -362,7 +373,7 @@ describe('MembersRepository', () => {
       const wallet = walletBuilder().with('user', existingMember.user).build();
       const userToInvite = {
         type: InviteType.Wallet,
-        address: wallet.address,
+        address: getAddress(wallet.address),
         role: 'ADMIN' as const,
         name: nameBuilder(),
       };
@@ -600,6 +611,33 @@ describe('MembersRepository', () => {
       );
       expect(result[0].user.address).toBeNull();
       expect(result[1].user.address).toBe(lowWallet.address);
+    });
+
+    it('should null the address of a member whose decryption fails without failing the roster', async () => {
+      const self = memberBuilder().with('status', 'ACTIVE').build();
+      self.user.id = authenticatedUserId;
+      const other = memberBuilder().with('status', 'ACTIVE').build();
+      dbMembersRepository.findOne.mockResolvedValue(self);
+      const rosterSpace = spaceBuilder().with('members', [self, other]).build();
+      spacesRepository.findOneOrFail.mockResolvedValue(rosterSpace);
+      const selfWallet = walletBuilder().with('user', self.user).build();
+      const otherWallet = walletBuilder().with('user', other.user).build();
+      walletsRepository.find.mockResolvedValue([selfWallet, otherWallet]);
+      walletEncryptionService.decryptAddress.mockImplementation(
+        (userId, value) =>
+          userId === other.user.id
+            ? Promise.reject(new Error('KMS decryption failed'))
+            : Promise.resolve(value),
+      );
+
+      const result = await target.findAuthorizedMembersOrFail({
+        authPayload,
+        spaceId: rosterSpace.id,
+      });
+
+      expect(result[0].user.address).toBe(selfWallet.address);
+      expect(result[1].user.address).toBeNull();
+      expect(loggingService.warn).toHaveBeenCalledTimes(1);
     });
   });
 

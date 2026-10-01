@@ -162,6 +162,7 @@ describe('MembersRepository', () => {
       createMockUserEncryptionService(),
       createMockWalletEncryptionService(),
       createMockMemberEncryptionService(),
+      mockLoggingService,
     );
   });
 
@@ -3546,6 +3547,7 @@ describe('MembersRepository', () => {
         userEncryptionService,
         createMockWalletEncryptionService(),
         createMockMemberEncryptionService(),
+        mockLoggingService,
       );
     });
 
