@@ -361,4 +361,88 @@ describe('UsersRepository concurrency', () => {
 
     await promotion;
   });
+
+  // The actor's admin check ran in the route service, before the space lock -
+  // by the time the change runs, the actor may be gone. Here their account
+  // deletion is mid-commit: holding the space lock, their membership deleted
+  // but uncommitted. Acting on the only remaining admin must then be refused.
+  it.each([
+    {
+      name: 'demotion',
+      act: (args: {
+        actorUserId: User['id'];
+        userId: User['id'];
+        spaceId: Space['id'];
+      }): Promise<void> => {
+        return membersRepository.updateRole({ ...args, role: 'MEMBER' });
+      },
+    },
+    {
+      name: 'removal',
+      act: (args: {
+        actorUserId: User['id'];
+        userId: User['id'];
+        spaceId: Space['id'];
+      }): Promise<void> => {
+        return membersRepository.removeUser(args);
+      },
+    },
+  ])(
+    'refuses a $name of the co-admin while the actor is leaving',
+    async ({ act }) => {
+      const actorUserId = await insertUser();
+      const coAdminUserId = await insertUser();
+      const spaceId = await insertSpace();
+      const actorMemberId = await insertActiveAdmin({
+        userId: actorUserId,
+        spaceId,
+      });
+      await insertActiveAdmin({ userId: coAdminUserId, spaceId });
+
+      const queryRunner = dataSource.createQueryRunner();
+      let change: Promise<void> | undefined;
+      try {
+        await queryRunner.connect();
+        await queryRunner.startTransaction();
+        await queryRunner.manager.findOne(Space, {
+          where: { id: spaceId },
+          select: { id: true },
+          lock: { mode: 'pessimistic_write' },
+        });
+        await queryRunner.manager.delete(Member, actorMemberId);
+
+        change = act({ actorUserId, userId: coAdminUserId, spaceId });
+        let timer: ReturnType<typeof setTimeout> | undefined;
+        const outcome = await Promise.race([
+          change.then(
+            () => 'decided',
+            () => 'decided',
+          ),
+          new Promise((resolve) => {
+            timer = setTimeout(() => resolve('waiting'), 500);
+          }),
+        ]);
+        clearTimeout(timer);
+
+        expect(outcome).toBe('waiting');
+
+        await queryRunner.commitTransaction();
+      } finally {
+        if (queryRunner.isTransactionActive) {
+          await queryRunner.rollbackTransaction();
+        }
+        await queryRunner.release();
+      }
+
+      await expect(change).rejects.toThrow(
+        new ConflictException('Cannot remove last admin.'),
+      );
+      await expect(
+        dataSource.getRepository(Member).findOneBy({
+          user: { id: coAdminUserId },
+          space: { id: spaceId },
+        }),
+      ).resolves.toMatchObject({ role: 'ADMIN', status: 'ACTIVE' });
+    },
+  );
 });
