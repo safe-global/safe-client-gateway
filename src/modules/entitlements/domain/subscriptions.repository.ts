@@ -31,18 +31,40 @@ export class SubscriptionsRepository implements ISubscriptionsRepository {
     spaceId: Space['id'],
     entityManager?: EntityManager,
   ): Promise<SpaceSubscription | null> {
+    const subscriptions = await this.getActiveSubscriptionsBySpaceIds(
+      [spaceId],
+      entityManager,
+    );
+    return subscriptions.get(spaceId) ?? null;
+  }
+
+  public async getActiveSubscriptionsBySpaceIds(
+    spaceIds: Array<Space['id']>,
+    entityManager?: EntityManager,
+  ): Promise<Map<Space['id'], SpaceSubscription>> {
+    if (spaceIds.length === 0) {
+      return new Map();
+    }
     const repository = await getScopedRepository(
       this.postgresDatabaseService,
       SpaceSubscription,
       entityManager,
     );
-    return await repository.findOne({
+    const subscriptions = await repository.find({
       where: {
-        space: { id: spaceId },
+        space: In(spaceIds),
         status: In([...ACTIVE_SUBSCRIPTION_STATUSES]),
       },
       relations: { entitlements: { feature: true } },
+      loadRelationIds: { relations: ['space'], disableMixedMap: true },
     });
+    return new Map(
+      subscriptions.flatMap((subscription) =>
+        subscription.space
+          ? [[subscription.space.id, subscription] as const]
+          : [],
+      ),
+    );
   }
 
   public async getSubscriptionSummary(

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
-import type { EntityManager } from 'typeorm';
+import { type EntityManager, Equal } from 'typeorm';
 import { z } from 'zod';
 import { getScopedRepository } from '@/datasources/db/v2/get-scoped-repository.util';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
@@ -29,7 +29,18 @@ export class SpaceFeatureUsageRepository
     args: { spaceId: Space['id']; periods: Array<UsageKey> },
     entityManager?: EntityManager,
   ): Promise<Map<number, number>> {
-    if (args.periods.length === 0) {
+    const usage = await this.getUsageBySpaceIds([args], entityManager);
+    return usage.get(args.spaceId) ?? new Map();
+  }
+
+  public async getUsageBySpaceIds(
+    args: Array<{ spaceId: Space['id']; periods: Array<UsageKey> }>,
+    entityManager?: EntityManager,
+  ): Promise<Map<Space['id'], Map<number, number>>> {
+    const counters = args.flatMap(({ spaceId, periods }) =>
+      periods.map((period) => ({ spaceId, ...period })),
+    );
+    if (counters.length === 0) {
       return new Map();
     }
     const repository = await getScopedRepository(
@@ -38,20 +49,27 @@ export class SpaceFeatureUsageRepository
       entityManager,
     );
     const rows = await repository.find({
-      where: args.periods.map((period) => ({
-        space: { id: args.spaceId },
-        feature: { id: period.featureId },
-        periodStart: period.periodStart,
+      where: counters.map((counter) => ({
+        space: Equal(counter.spaceId),
+        feature: Equal(counter.featureId),
+        periodStart: counter.periodStart,
       })),
-      // Only the FK is needed; hydrating the feature row would be wasted work.
-      loadRelationIds: { relations: ['feature'] },
+      // Only the FKs are needed; hydrating the rows would be wasted work.
+      loadRelationIds: {
+        relations: ['space', 'feature'],
+        disableMixedMap: true,
+      },
     });
-    return new Map(
-      rows.flatMap((row) =>
-        // With `loadRelationIds` the relation holds the raw id.
-        row.feature ? [[Number(row.feature), row.used] as const] : [],
-      ),
-    );
+    const usage = new Map<Space['id'], Map<number, number>>();
+    for (const row of rows) {
+      if (!(row.space && row.feature)) {
+        continue;
+      }
+      const spaceUsage = usage.get(row.space.id) ?? new Map<number, number>();
+      spaceUsage.set(row.feature.id, row.used);
+      usage.set(row.space.id, spaceUsage);
+    }
+    return usage;
   }
 
   public async incrementUsage(

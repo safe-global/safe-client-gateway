@@ -2,7 +2,11 @@
 
 import { randomUUID } from 'node:crypto';
 import { faker } from '@faker-js/faker';
-import { HttpStatus, NotFoundException } from '@nestjs/common';
+import {
+  HttpStatus,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
 import { DataSource, type ObjectLiteral } from 'typeorm';
 import { getAddress } from 'viem';
@@ -191,6 +195,8 @@ describe('EntitlementsService', () => {
   const membersRepositoryStub = {
     findOne: async (where: Parameters<IMembersRepository['findOne']>[0]) =>
       await dataSource.getRepository(Member).findOne({ where }),
+    find: async (args: Parameters<IMembersRepository['find']>[0]) =>
+      await dataSource.getRepository(Member).find(args),
   } as unknown as IMembersRepository;
 
   beforeAll(async () => {
@@ -374,6 +380,28 @@ describe('EntitlementsService', () => {
       inviteExpiresAt: null,
     });
     return userId;
+  }
+
+  async function joinSpace(args: {
+    userId: number;
+    spaceId: number;
+    status: Member['status'];
+  }): Promise<void> {
+    await dataSource.getRepository(Member).insert({
+      user: { id: args.userId },
+      space: { id: args.spaceId },
+      name: faker.person.firstName(),
+      role: 'MEMBER',
+      status: args.status,
+      inviteExpiresAt: null,
+    });
+  }
+
+  async function spaceUuidOf(spaceId: number): Promise<Space['uuid']> {
+    const space = await dataSource
+      .getRepository(Space)
+      .findOneByOrFail({ id: spaceId });
+    return space.uuid;
   }
 
   function authPayloadFor(userId: number): AuthPayload {
@@ -1766,6 +1794,113 @@ describe('EntitlementsService', () => {
           authPayload: authPayloadFor(outsiderUserId),
         }),
       ).rejects.toThrow('User is not a member of this workspace');
+    });
+  });
+
+  describe('getAllEntitlements', () => {
+    it("keys each active workspace's entitlements by UUID, as getEntitlements returns them", async () => {
+      const [subscribedSpaceId, freeSpaceId] = await Promise.all([
+        createSpace(),
+        createSpace(),
+      ]);
+      const userId = await addActiveMember(subscribedSpaceId);
+      await joinSpace({ userId, spaceId: freeSpaceId, status: 'ACTIVE' });
+      const purchasedSeats = parsedEntitlementBuilder()
+        .with('featureKey', 'safe_seats')
+        .build();
+      await materializeFromEvent({
+        spaceId: subscribedSpaceId,
+        subscription: materializedSubscriptionBuilder()
+          .with('status', 'active')
+          .with('entitlements', [purchasedSeats])
+          .build(),
+      });
+      const safeCount = faker.number.int({ min: 1, max: 3 });
+      await addSafes(freeSpaceId, safeCount);
+      await recordUsage({
+        spaceId: freeSpaceId,
+        featureKey: 'sponsored_transactions',
+        used: faker.number.int({ min: 1, max: 10 }),
+      });
+      const authPayload = authPayloadFor(userId);
+      const [subscribedSpaceUuid, freeSpaceUuid] = await Promise.all([
+        spaceUuidOf(subscribedSpaceId),
+        spaceUuidOf(freeSpaceId),
+      ]);
+
+      const result = await service.getAllEntitlements(authPayload);
+
+      expect(result).toStrictEqual({
+        [subscribedSpaceUuid]: await service.getEntitlements({
+          spaceId: subscribedSpaceId,
+          authPayload,
+        }),
+        [freeSpaceUuid]: await service.getEntitlements({
+          spaceId: freeSpaceId,
+          authPayload,
+        }),
+      });
+      expect(seatsOf(result[subscribedSpaceUuid])).toMatchObject({
+        quota: purchasedSeats.quota,
+        used: 0,
+      });
+      expect(result[freeSpaceUuid].plan).toBeNull();
+      expect(seatsOf(result[freeSpaceUuid])).toMatchObject({
+        quota: FREE_SAFE_SEATS,
+        used: safeCount,
+      });
+    });
+
+    it('leaves out workspaces the caller is only invited to or not in', async () => {
+      const [memberSpaceId, invitedSpaceId, otherSpaceId] = await Promise.all([
+        createSpace(),
+        createSpace(),
+        createSpace(),
+      ]);
+      const userId = await addActiveMember(memberSpaceId);
+      await joinSpace({ userId, spaceId: invitedSpaceId, status: 'INVITED' });
+      await addActiveMember(otherSpaceId);
+
+      const result = await service.getAllEntitlements(authPayloadFor(userId));
+
+      expect(Object.keys(result)).toStrictEqual([
+        await spaceUuidOf(memberSpaceId),
+      ]);
+    });
+
+    it('returns an empty object for a caller with no active workspace', async () => {
+      const userId = await dataSource
+        .getRepository(User)
+        .insert({ status: 'ACTIVE' })
+        .then((inserted) => inserted.generatedMaps[0].id as number);
+      await joinSpace({
+        userId,
+        spaceId: await createSpace(),
+        status: 'INVITED',
+      });
+
+      await expect(
+        service.getAllEntitlements(authPayloadFor(userId)),
+      ).resolves.toStrictEqual({});
+    });
+
+    it('warns about unpublished features once for the whole request', async () => {
+      const [spaceId, otherSpaceId] = await Promise.all([
+        createSpace(),
+        createSpace(),
+      ]);
+      const userId = await addActiveMember(spaceId);
+      await joinSpace({ userId, spaceId: otherSpaceId, status: 'ACTIVE' });
+
+      await service.getAllEntitlements(authPayloadFor(userId));
+
+      expect(mockLoggingService.warn).toHaveBeenCalledTimes(1);
+    });
+
+    it('rejects an unauthenticated caller', async () => {
+      await expect(
+        service.getAllEntitlements(new AuthPayload()),
+      ).rejects.toThrow(new UnauthorizedException('Not authenticated'));
     });
   });
 });
