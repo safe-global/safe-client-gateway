@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
-import type { EntityManager } from 'typeorm';
 import { In, QueryFailedError } from 'typeorm';
-import type { Mocked, MockedObject } from 'vitest';
+import { getAddress } from 'viem';
+import type { Mock, MockedObject } from 'vitest';
 import type { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-error';
 import { nameBuilder } from '@/domain/common/entities/name.builder';
+import type { ILoggingService } from '@/logging/logging.interface';
 import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { createMockSpaceAuditRepository } from '@/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
@@ -24,6 +25,7 @@ import { walletBuilder } from '@/modules/wallets/datasources/entities/__tests__/
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
 import { createMockWalletEncryptionService } from '@/modules/wallets/domain/__tests__/wallet-encryption.service.mock';
 import type { WalletEncryptionService } from '@/modules/wallets/domain/wallet-encryption.service';
+import type { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
 
 describe('MembersRepository', () => {
   const usersRepository = {
@@ -34,10 +36,22 @@ describe('MembersRepository', () => {
   const spacesRepository = {
     findOneOrFail: vi.fn(),
   } as MockedObject<ISpacesRepository>;
+  const walletsRepository = {
+    find: vi.fn(),
+  } as MockedObject<IWalletsRepository>;
+  const loggingService = {
+    debug: vi.fn(),
+    error: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+  } as MockedObject<ILoggingService>;
 
-  let entityManager: Mocked<
-    Pick<EntityManager, 'find' | 'findOne' | 'insert' | 'update'>
-  >;
+  let entityManager: {
+    find: Mock;
+    findOne: Mock;
+    insert: Mock;
+    update: Mock;
+  };
   let dbMembersRepository: {
     find: ReturnType<typeof vi.fn>;
     findOne: ReturnType<typeof vi.fn>;
@@ -70,6 +84,8 @@ describe('MembersRepository', () => {
       getRepository: vi.fn().mockResolvedValue(dbMembersRepository),
     } as MockedObject<PostgresDatabaseService>;
     spacesRepository.findOneOrFail.mockResolvedValue(space);
+    // No wallets by default: read paths attach `address: null`.
+    walletsRepository.find.mockResolvedValue([]);
 
     // Created after resetAllMocks so the passthrough implementations survive.
     walletEncryptionService = createMockWalletEncryptionService();
@@ -80,9 +96,11 @@ describe('MembersRepository', () => {
       usersRepository,
       spacesRepository,
       createMockSpaceAuditRepository(),
+      walletsRepository,
       createMockUserEncryptionService(),
       walletEncryptionService,
       memberEncryptionService,
+      loggingService,
     );
   });
 
@@ -91,7 +109,7 @@ describe('MembersRepository', () => {
       const wallet = walletBuilder().build();
       const userToInvite = {
         type: InviteType.Wallet,
-        address: wallet.address,
+        address: getAddress(wallet.address),
         role: 'MEMBER' as const,
         name: nameBuilder(),
       };
@@ -141,7 +159,7 @@ describe('MembersRepository', () => {
       const wallet = walletBuilder().with('user', existingMember.user).build();
       const userToInvite = {
         type: InviteType.Wallet,
-        address: wallet.address,
+        address: getAddress(wallet.address),
         role: 'ADMIN' as const,
         name: nameBuilder(),
       };
@@ -193,7 +211,7 @@ describe('MembersRepository', () => {
       const wallet = walletBuilder().with('user', existingMember.user).build();
       const userToInvite = {
         type: InviteType.Wallet,
-        address: wallet.address,
+        address: getAddress(wallet.address),
         role: 'ADMIN' as const,
         name: nameBuilder(),
       };
@@ -224,7 +242,7 @@ describe('MembersRepository', () => {
       const wallet = walletBuilder().with('user', existingMember.user).build();
       const userToInvite = {
         type: InviteType.Wallet,
-        address: wallet.address,
+        address: getAddress(wallet.address),
         role: 'ADMIN' as const,
         name: nameBuilder(),
       };
@@ -251,7 +269,7 @@ describe('MembersRepository', () => {
       const wallet = walletBuilder().build();
       const userToInvite = {
         type: InviteType.Wallet,
-        address: wallet.address,
+        address: getAddress(wallet.address),
         role: 'MEMBER' as const,
         name: nameBuilder(),
       };
@@ -288,7 +306,7 @@ describe('MembersRepository', () => {
       } as Wallet;
       const userToInvite = {
         type: InviteType.Wallet,
-        address: wallet.address,
+        address: getAddress(wallet.address),
         role: 'MEMBER' as const,
         name: nameBuilder(),
       };
@@ -321,7 +339,7 @@ describe('MembersRepository', () => {
       const wallet = walletBuilder().build();
       const userToInvite = {
         type: InviteType.Wallet,
-        address: wallet.address,
+        address: getAddress(wallet.address),
         role: 'MEMBER' as const,
         name: nameBuilder(),
       };
@@ -355,7 +373,7 @@ describe('MembersRepository', () => {
       const wallet = walletBuilder().with('user', existingMember.user).build();
       const userToInvite = {
         type: InviteType.Wallet,
-        address: wallet.address,
+        address: getAddress(wallet.address),
         role: 'ADMIN' as const,
         name: nameBuilder(),
       };
@@ -490,6 +508,38 @@ describe('MembersRepository', () => {
         alias: 'plain-alias',
       });
     });
+
+    it('should attach the decrypted wallet address to the returned membership', async () => {
+      const member = memberBuilder().with('status', 'ACTIVE').build();
+      member.user.id = authenticatedUserId;
+      dbMembersRepository.findOne.mockResolvedValue(member);
+      const wallet = walletBuilder().with('user', member.user).build();
+      walletsRepository.find.mockResolvedValue([wallet]);
+
+      const result = await target.findSelfMembershipOrFail({
+        authPayload,
+        spaceId: space.id,
+      });
+
+      expect(walletsRepository.find).toHaveBeenCalledWith({
+        where: { user: { id: In([member.user.id]) } },
+        relations: { user: true },
+      });
+      expect(result.user.address).toBe(wallet.address);
+    });
+
+    it('should attach a null address when the user has no wallets', async () => {
+      const member = memberBuilder().with('status', 'ACTIVE').build();
+      member.user.id = authenticatedUserId;
+      dbMembersRepository.findOne.mockResolvedValue(member);
+
+      const result = await target.findSelfMembershipOrFail({
+        authPayload,
+        spaceId: space.id,
+      });
+
+      expect(result.user.address).toBeNull();
+    });
   });
 
   describe('findAuthorizedMembersOrFail', () => {
@@ -523,6 +573,71 @@ describe('MembersRepository', () => {
       expect(
         result.every((m) => m.name === 'plain' && m.alias === 'plain'),
       ).toBe(true);
+    });
+
+    it('should attach the decrypted lowest-id wallet address of each roster member', async () => {
+      const self = memberBuilder().with('status', 'ACTIVE').build();
+      self.user.id = authenticatedUserId;
+      const other = memberBuilder().with('status', 'ACTIVE').build();
+      dbMembersRepository.findOne.mockResolvedValue(self);
+      const rosterSpace = spaceBuilder().with('members', [self, other]).build();
+      spacesRepository.findOneOrFail.mockResolvedValue(rosterSpace);
+      const lowWallet = walletBuilder()
+        .with('id', 1)
+        .with('user', other.user)
+        .build();
+      const highWallet = walletBuilder()
+        .with('id', 2)
+        .with('user', other.user)
+        .build();
+      // Returned in the "wrong" order to prove the lowest-id sort, not a
+      // query-side ORDER BY (the query has none).
+      walletsRepository.find.mockResolvedValue([highWallet, lowWallet]);
+
+      const result = await target.findAuthorizedMembersOrFail({
+        authPayload,
+        spaceId: rosterSpace.id,
+      });
+
+      expect(walletsRepository.find).toHaveBeenLastCalledWith({
+        where: { user: { id: In([self.user.id, other.user.id]) } },
+        relations: { user: true },
+      });
+      // One KMS decryption per user, for the chosen wallet only.
+      expect(walletEncryptionService.decryptAddress).toHaveBeenCalledTimes(1);
+      expect(walletEncryptionService.decryptAddress).toHaveBeenCalledWith(
+        other.user.id,
+        lowWallet.address,
+      );
+      expect(result[0].user.address).toBeNull();
+      expect(result[1].user.address).toBe(lowWallet.address);
+    });
+
+    it('should null the address of a member whose decryption fails without failing the roster', async () => {
+      const self = memberBuilder().with('status', 'ACTIVE').build();
+      self.user.id = authenticatedUserId;
+      const other = memberBuilder().with('status', 'ACTIVE').build();
+      dbMembersRepository.findOne.mockResolvedValue(self);
+      const rosterSpace = spaceBuilder().with('members', [self, other]).build();
+      spacesRepository.findOneOrFail.mockResolvedValue(rosterSpace);
+      const selfWallet = walletBuilder().with('user', self.user).build();
+      const otherWallet = walletBuilder().with('user', other.user).build();
+      walletsRepository.find.mockResolvedValue([selfWallet, otherWallet]);
+      walletEncryptionService.decryptAddress.mockImplementation(
+        (userId, value) =>
+          userId === other.user.id
+            ? Promise.reject(new Error('KMS decryption failed'))
+            : Promise.resolve(value),
+      );
+
+      const result = await target.findAuthorizedMembersOrFail({
+        authPayload,
+        spaceId: rosterSpace.id,
+      });
+
+      expect(result[0].user.address).toBe(selfWallet.address);
+      expect(result[1].user.address).toBeNull();
+      expect(loggingService.warn).toHaveBeenCalledTimes(1);
     });
   });
 
