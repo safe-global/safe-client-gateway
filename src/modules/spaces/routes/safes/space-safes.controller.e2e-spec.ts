@@ -893,15 +893,17 @@ describe('SpaceSafesController', () => {
 
   describe('GET /v1/spaces/safes', () => {
     const buildSafes = (): Array<{ chainId: string; address: Address }> =>
-      faker.helpers.multiple(
-        () => ({
-          chainId: faker.string.numeric({ length: { min: 1, max: 4 } }),
+      faker.helpers
+        .uniqueArray(
+          () => faker.string.numeric({ length: { min: 1, max: 4 } }),
+          faker.number.int({ min: 1, max: 3 }),
+        )
+        .map((chainId) => ({
+          chainId,
           address: getAddress(faker.finance.ethereumAddress()),
-        }),
-        { count: { min: 1, max: 3 } },
-      );
+        }));
 
-    it('Should return the safes of every space the user is an active member of, keyed by space UUID', async () => {
+    it('Should return the safes of every space the user is an active member of, keyed by space UUID and grouped by chain', async () => {
       const userAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
       const userAccessToken = jwtService.sign(userAuthPayloadDto);
       const otherAdminAccessToken = jwtService.sign(
@@ -957,12 +959,12 @@ describe('SpaceSafesController', () => {
         .set('Cookie', [`access_token=${userAccessToken}`])
         .expect(200)
         .expect(({ body }) => {
-          expect(Object.keys(body).sort()).toEqual(
-            [spaceId, emptySpaceId].sort(),
-          );
-          expect(body[spaceId]).toHaveLength(spaceSafes.length);
-          expect(body[spaceId]).toEqual(expect.arrayContaining(spaceSafes));
-          expect(body[emptySpaceId]).toEqual([]);
+          expect(body).toEqual({
+            [spaceId]: Object.fromEntries(
+              spaceSafes.map(({ chainId, address }) => [chainId, [address]]),
+            ),
+            [emptySpaceId]: {},
+          });
         });
     });
 

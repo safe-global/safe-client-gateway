@@ -228,8 +228,8 @@ describe('Safe address encryption', () => {
       .expect(200);
 
     expect(response.body).toStrictEqual({
-      [spaceUuid]: [safe],
-      [emptySpaceUuid]: [],
+      [spaceUuid]: { [safe.chainId]: [safe.address] },
+      [emptySpaceUuid]: {},
     });
   });
 

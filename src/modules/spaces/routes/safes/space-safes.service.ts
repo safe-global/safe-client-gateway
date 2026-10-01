@@ -2,6 +2,7 @@
 
 import { Inject, Injectable } from '@nestjs/common';
 import { groupBy, mapValues } from 'lodash';
+import { Equal } from 'typeorm';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
@@ -101,7 +102,7 @@ export class SpaceSafesService {
 
     const members = await this.membersRepository.find({
       select: { id: true, space: { id: true, uuid: true } },
-      where: { user: { id: userId }, status: 'ACTIVE' },
+      where: { user: Equal(userId), status: 'ACTIVE' },
       relations: { space: true },
     });
     const spaceSafesBySpaceId = await this.spaceSafesRepository.findBySpaceIds(
@@ -111,7 +112,9 @@ export class SpaceSafesService {
     return Object.fromEntries(
       members.map(({ space }) => [
         space.uuid,
-        spaceSafesBySpaceId.get(space.id) ?? [],
+        this.transformSpaceSafesResponse(
+          spaceSafesBySpaceId.get(space.id) ?? [],
+        ),
       ]),
     );
   }

@@ -3,6 +3,7 @@
 import { faker } from '@faker-js/faker';
 import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import type { EntityManager } from 'typeorm';
+import { Equal } from 'typeorm';
 import type { Address } from 'viem';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
@@ -321,19 +322,16 @@ describe('SpaceSafesService', () => {
       ['SIWE', siweAuthPayloadDtoBuilder],
       ['OIDC', oidcAuthPayloadDtoBuilder],
     ] as const)(
-      'should return the safes of every space of a %s member, keyed by space UUID',
+      'should return the safes of every space of a %s member, keyed by space UUID and grouped by chain',
       async (_label, builder) => {
         const authPayload = new AuthPayload(builder().build());
         const space1 = spaceBuilder().build();
         const space2 = spaceBuilder().build();
-        const space1Safes = faker.helpers.multiple(
-          () => ({ chainId: faker.string.numeric(), address: addr() }),
-          { count: { min: 1, max: 3 } },
+        const [chainId1, chainId2] = faker.helpers.uniqueArray(
+          () => faker.number.int().toString(),
+          2,
         );
-        const space2Safes = faker.helpers.multiple(
-          () => ({ chainId: faker.string.numeric(), address: addr() }),
-          { count: { min: 1, max: 3 } },
-        );
+        const [addr1, addr2, addr3, addr4] = [addr(), addr(), addr(), addr()];
 
         membersRepositoryMock.find.mockResolvedValue([
           memberBuilder().with('space', space1).build(),
@@ -341,8 +339,15 @@ describe('SpaceSafesService', () => {
         ]);
         spaceSafesRepositoryMock.findBySpaceIds.mockResolvedValue(
           new Map([
-            [space1.id, space1Safes],
-            [space2.id, space2Safes],
+            [
+              space1.id,
+              [
+                { chainId: chainId1, address: addr1 },
+                { chainId: chainId1, address: addr2 },
+                { chainId: chainId2, address: addr3 },
+              ],
+            ],
+            [space2.id, [{ chainId: chainId2, address: addr4 }]],
           ]),
         );
 
@@ -350,20 +355,20 @@ describe('SpaceSafesService', () => {
 
         expect(membersRepositoryMock.find).toHaveBeenCalledExactlyOnceWith({
           select: { id: true, space: { id: true, uuid: true } },
-          where: { user: { id: Number(authPayload.sub) }, status: 'ACTIVE' },
+          where: { user: Equal(Number(authPayload.sub)), status: 'ACTIVE' },
           relations: { space: true },
         });
         expect(
           spaceSafesRepositoryMock.findBySpaceIds,
         ).toHaveBeenCalledExactlyOnceWith([space1.id, space2.id]);
         expect(result).toStrictEqual({
-          [space1.uuid]: space1Safes,
-          [space2.uuid]: space2Safes,
+          [space1.uuid]: { [chainId1]: [addr1, addr2], [chainId2]: [addr3] },
+          [space2.uuid]: { [chainId2]: [addr4] },
         });
       },
     );
 
-    it('should return an empty array for a space without safes', async () => {
+    it('should return an empty object for a space without safes', async () => {
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
       const space = spaceBuilder().build();
 
@@ -375,7 +380,7 @@ describe('SpaceSafesService', () => {
       );
 
       await expect(service.getAll(authPayload)).resolves.toStrictEqual({
-        [space.uuid]: [],
+        [space.uuid]: {},
       });
     });
 
