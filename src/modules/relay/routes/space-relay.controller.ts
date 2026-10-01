@@ -11,6 +11,7 @@ import {
 import {
   ApiBadRequestResponse,
   ApiBody,
+  ApiConflictResponse,
   ApiCreatedResponse,
   ApiForbiddenResponse,
   ApiNotFoundResponse,
@@ -26,6 +27,7 @@ import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import { ChainIdSchema } from '@/modules/chains/domain/entities/schemas/chain-id.schema';
 import { QuotaExceededExceptionFilter } from '@/modules/entitlements/domain/exception-filters/quota-exceeded.exception-filter';
 import { RelayCalldataExceptionFilters } from '@/modules/relay/domain/exception-filters/relay-calldata.exception-filters';
+import { GasPaymentOptionUnavailableResponse } from '@/modules/relay/routes/entities/gas-payment-option-unavailable-response.entity';
 import { Relay } from '@/modules/relay/routes/entities/relay.entity';
 import {
   SpaceRelayDto,
@@ -49,7 +51,7 @@ export class SpaceRelayController {
     summary: "Relay a transaction at a workspace's expense",
     description:
       "Relays a Safe transaction against the workspace's sponsored-transaction allowance, which its plan grants and this spends one unit of per call — a batch included. " +
-      "Unlike the chain-scoped relay endpoint, the chain's own relayer policy does not apply: the allowance is the only limit. " +
+      'The chain must list SUBSCRIPTION among its gas payment options; no other option applies here. ' +
       'A call acting on an existing Safe is admitted only for a Safe the workspace holds; a Safe creation or a passkey signer deployment, having no Safe yet, is admitted as it is there.',
   })
   @ApiParam({
@@ -69,18 +71,18 @@ export class SpaceRelayController {
   @ApiBadRequestResponse({ description: 'Malformed workspace identifier' })
   @ApiUnauthorizedResponse({ description: 'Authentication required' })
   @ApiForbiddenResponse({
+    description: 'Not a member of the workspace, or the transaction was denied',
+  })
+  @ApiConflictResponse({
+    type: GasPaymentOptionUnavailableResponse,
     description:
-      'Not a member of the workspace, the Safe is not one it holds, the chain has no relayer, or the transaction was denied',
+      'SUBSCRIPTION cannot pay for this request: the chain does not list it or has no relayer, the Safe is not one the workspace holds, or the transaction refunds gas (`gasPrice` > 0).',
   })
   @ApiNotFoundResponse({ description: 'Workspace not found' })
   @ApiResponse({
     status: HttpStatus.PAYMENT_REQUIRED,
     description:
       "The workspace's sponsored-transaction allowance is spent. The body carries `quota`, `used` and `resetsAt` so a client can offer to pay for the transaction itself.",
-  })
-  @ApiResponse({
-    status: HttpStatus.NOT_IMPLEMENTED,
-    description: "The chain's relayer type is not supported",
   })
   @ApiUnprocessableEntityResponse({
     description:
