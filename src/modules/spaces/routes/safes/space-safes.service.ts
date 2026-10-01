@@ -16,6 +16,7 @@ import {
 import type { CreateSpaceSafeDto } from '@/modules/spaces/routes/safes/entities/create-space-safe.dto.entity';
 import type { DeleteSpaceSafeDto } from '@/modules/spaces/routes/safes/entities/delete-space-safe.dto.entity';
 import type { GetSpaceSafeResponse } from '@/modules/spaces/routes/safes/entities/get-space-safe.dto.entity';
+import type { GetSpacesSafesResponse } from '@/modules/spaces/routes/safes/entities/get-spaces-safes.dto.entity';
 import { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
 
 @Injectable()
@@ -91,6 +92,28 @@ export class SpaceSafesService {
     return {
       safes: this.transformSpaceSafesResponse(spaceSafes),
     };
+  }
+
+  public async getAll(
+    authPayload: AuthPayload,
+  ): Promise<GetSpacesSafesResponse> {
+    const userId = getAuthenticatedUserIdOrFail(authPayload);
+
+    const members = await this.membersRepository.find({
+      select: { id: true, space: { id: true, uuid: true } },
+      where: { user: { id: userId }, status: 'ACTIVE' },
+      relations: { space: true },
+    });
+    const spaceSafesBySpaceId = await this.spaceSafesRepository.findBySpaceIds(
+      members.map(({ space }) => space.id),
+    );
+
+    return Object.fromEntries(
+      members.map(({ space }) => [
+        space.uuid,
+        spaceSafesBySpaceId.get(space.id) ?? [],
+      ]),
+    );
   }
 
   public async delete(args: {

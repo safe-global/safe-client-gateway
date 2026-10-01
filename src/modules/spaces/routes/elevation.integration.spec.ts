@@ -158,6 +158,11 @@ const UNGATED_ROUTES: Array<Route> = [
     path: (id) => `/v1/spaces/${id}/members`,
   },
   {
+    name: 'GET /v1/spaces/safes',
+    method: 'get',
+    path: () => '/v1/spaces/safes',
+  },
+  {
     name: 'GET /v1/spaces/:spaceId/safes',
     method: 'get',
     path: (id) => `/v1/spaces/${id}/safes`,

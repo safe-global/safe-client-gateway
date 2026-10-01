@@ -746,6 +746,88 @@ describe('SpaceSafesRepository', () => {
     });
   });
 
+  describe('findBySpaceIds', () => {
+    it('should return the Safes of each space, keyed by space id', async () => {
+      const insertSpace = async (): Promise<Space['id']> => {
+        const space = await dbSpaceRepository.insert({
+          status: faker.helpers.arrayElement(getStringEnumKeys(SpaceStatus)),
+          name: faker.word.noun(),
+        });
+        return space.identifiers[0].id as Space['id'];
+      };
+      const buildSafes = (): Array<{ chainId: string; address: Address }> =>
+        faker.helpers.multiple(
+          () => ({
+            chainId: faker.string.numeric(),
+            address: getAddress(faker.finance.ethereumAddress()),
+          }),
+          { count: { min: 1, max: 4 } },
+        );
+      const [spaceId, otherSpaceId, emptySpaceId, unrequestedSpaceId] =
+        await Promise.all([
+          insertSpace(),
+          insertSpace(),
+          insertSpace(),
+          insertSpace(),
+        ]);
+      const spaceSafes = buildSafes();
+      const otherSpaceSafes = buildSafes();
+      await Promise.all(
+        [
+          ...spaceSafes.map((safe) => ({ ...safe, spaceId })),
+          ...otherSpaceSafes.map((safe) => ({
+            ...safe,
+            spaceId: otherSpaceId,
+          })),
+          ...buildSafes().map((safe) => ({
+            ...safe,
+            spaceId: unrequestedSpaceId,
+          })),
+        ].map(({ chainId, address, spaceId }) =>
+          dbSpaceSafesRepository.insert({
+            chainId,
+            address,
+            space: { id: spaceId },
+          }),
+        ),
+      );
+
+      const result = await spaceSafesRepo.findBySpaceIds([
+        spaceId,
+        otherSpaceId,
+        emptySpaceId,
+      ]);
+
+      expect([...result.keys()]).toEqual([spaceId, otherSpaceId, emptySpaceId]);
+      expect(result.get(spaceId)).toHaveLength(spaceSafes.length);
+      expect(result.get(spaceId)).toEqual(expect.arrayContaining(spaceSafes));
+      expect(result.get(otherSpaceId)).toHaveLength(otherSpaceSafes.length);
+      expect(result.get(otherSpaceId)).toEqual(
+        expect.arrayContaining(otherSpaceSafes),
+      );
+      expect(result.get(emptySpaceId)).toEqual([]);
+      expect(encryptionService.decryptSpaceSafes).toHaveBeenCalledTimes(3);
+      expect(encryptionService.decryptSpaceSafes).toHaveBeenCalledWith(
+        spaceId,
+        expect.arrayContaining(spaceSafes),
+      );
+      expect(encryptionService.decryptSpaceSafes).toHaveBeenCalledWith(
+        otherSpaceId,
+        expect.arrayContaining(otherSpaceSafes),
+      );
+      expect(encryptionService.decryptSpaceSafes).toHaveBeenCalledWith(
+        emptySpaceId,
+        [],
+      );
+    });
+
+    it('should return an empty map if no space is requested', async () => {
+      await expect(spaceSafesRepo.findBySpaceIds([])).resolves.toEqual(
+        new Map(),
+      );
+    });
+  });
+
   describe('findOrFail', () => {
     it('should return found spaces Safes', async () => {
       const spaceSafes = faker.helpers.multiple(

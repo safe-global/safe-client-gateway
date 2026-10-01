@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, NotFoundException } from '@nestjs/common';
+import { groupBy } from 'lodash';
 import {
   type EntityManager,
   type FindOptionsRelations,
   type FindOptionsSelect,
   type FindOptionsWhere,
+  In,
   IsNull,
 } from 'typeorm';
 import { z } from 'zod';
@@ -17,9 +19,10 @@ import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity
 import { SpaceAuditEventType } from '@/modules/spaces/domain/audit/entities/space-audit-event.entity';
 import { ISpaceAuditRepository } from '@/modules/spaces/domain/audit/space-audit.repository.interface';
 import type {
-  ISpaceSafesRepository,
   PreparedSpaceSafe,
-} from '@/modules/spaces/domain/safes/space-safes.repository.interface';
+  SpaceSafesBySpaceId,
+} from '@/modules/spaces/domain/safes/entities/space-safe.entity';
+import type { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
 import { SpaceEncryptionService } from '@/modules/spaces/domain/space-encryption.service';
 
 /** Own namespace: the single-int lock key space is shared process-wide. */
@@ -154,6 +157,43 @@ export class SpaceSafesRepository implements ISpaceSafesRepository {
     return await this.spaceEncryptionService.decryptSpaceSafes(
       spaceId,
       spaceSafes,
+    );
+  }
+
+  public async findBySpaceIds(
+    spaceIds: Array<Space['id']>,
+  ): Promise<SpaceSafesBySpaceId> {
+    if (spaceIds.length === 0) {
+      return new Map();
+    }
+    const spaceSafeRepository =
+      await this.postgresDatabaseService.getRepository(SpaceSafe);
+
+    const spaceSafes = await spaceSafeRepository.find({
+      where: { space: In(spaceIds) },
+      loadRelationIds: { relations: ['space'], disableMixedMap: true },
+    });
+    const spaceSafesBySpaceId = groupBy(
+      spaceSafes,
+      (spaceSafe) => spaceSafe.space?.id,
+    );
+
+    // Repository boundary: callers receive plaintext addresses.
+    const decryptedBySpace = await Promise.all(
+      spaceIds.map(async (spaceId) => ({
+        spaceId,
+        safes: await this.spaceEncryptionService.decryptSpaceSafes(
+          spaceId,
+          (spaceSafesBySpaceId[spaceId] ?? []).map(({ chainId, address }) => ({
+            chainId,
+            address,
+          })),
+        ),
+      })),
+    );
+
+    return new Map(
+      decryptedBySpace.map(({ spaceId, safes }) => [spaceId, safes]),
     );
   }
 

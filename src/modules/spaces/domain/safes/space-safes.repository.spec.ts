@@ -174,6 +174,71 @@ describe('SpaceSafesRepository', () => {
     });
   });
 
+  describe('findBySpaceIds', () => {
+    it('loads every space in one query and decrypts each space under its own context', async () => {
+      const otherSpaceId = spaceId + 1;
+      const emptySpaceId = spaceId + 2;
+      const encryptedSafe = (): { chainId: string; address: string } => ({
+        chainId: faker.string.numeric({ length: { min: 1, max: 6 } }),
+        address: `kms:v1:${faker.string.alphanumeric(16)}`,
+      });
+      const plaintextSafe = (): { chainId: string; address: string } => ({
+        chainId: faker.string.numeric({ length: { min: 1, max: 6 } }),
+        address: getAddress(faker.finance.ethereumAddress()),
+      });
+      const spaceRows = [encryptedSafe()];
+      const otherSpaceRows = [encryptedSafe(), encryptedSafe()];
+      spaceSafeRepository.find.mockResolvedValue([
+        { ...otherSpaceRows[0], space: { id: otherSpaceId } },
+        { ...spaceRows[0], space: { id: spaceId } },
+        { ...otherSpaceRows[1], space: { id: otherSpaceId } },
+      ]);
+      const decrypted = [plaintextSafe()];
+      const otherDecrypted = [plaintextSafe(), plaintextSafe()];
+      spaceEncryptionService.decryptSpaceSafes
+        .mockResolvedValueOnce(decrypted)
+        .mockResolvedValueOnce(otherDecrypted)
+        .mockResolvedValueOnce([]);
+
+      const result = await target.findBySpaceIds([
+        spaceId,
+        otherSpaceId,
+        emptySpaceId,
+      ]);
+
+      expect(spaceSafeRepository.find).toHaveBeenCalledOnce();
+      expect(result).toStrictEqual(
+        new Map([
+          [spaceId, decrypted],
+          [otherSpaceId, otherDecrypted],
+          [emptySpaceId, []],
+        ]),
+      );
+      expect(spaceEncryptionService.decryptSpaceSafes).toHaveBeenCalledTimes(3);
+      expect(spaceEncryptionService.decryptSpaceSafes).toHaveBeenNthCalledWith(
+        1,
+        spaceId,
+        spaceRows,
+      );
+      expect(spaceEncryptionService.decryptSpaceSafes).toHaveBeenNthCalledWith(
+        2,
+        otherSpaceId,
+        otherSpaceRows,
+      );
+      expect(spaceEncryptionService.decryptSpaceSafes).toHaveBeenNthCalledWith(
+        3,
+        emptySpaceId,
+        [],
+      );
+    });
+
+    it('does not query when no space is requested', async () => {
+      await expect(target.findBySpaceIds([])).resolves.toStrictEqual(new Map());
+
+      expect(spaceSafeRepository.find).not.toHaveBeenCalled();
+    });
+  });
+
   describe('find', () => {
     it('decrypts encrypted rows via their loaded space relation', async () => {
       const plaintextAddress = getAddress(faker.finance.ethereumAddress());

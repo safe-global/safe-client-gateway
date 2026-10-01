@@ -891,6 +891,107 @@ describe('SpaceSafesController', () => {
     });
   });
 
+  describe('GET /v1/spaces/safes', () => {
+    const buildSafes = (): Array<{ chainId: string; address: Address }> =>
+      faker.helpers.multiple(
+        () => ({
+          chainId: faker.string.numeric({ length: { min: 1, max: 4 } }),
+          address: getAddress(faker.finance.ethereumAddress()),
+        }),
+        { count: { min: 1, max: 3 } },
+      );
+
+    it('Should return the safes of every space the user is an active member of, keyed by space UUID', async () => {
+      const userAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
+      const userAccessToken = jwtService.sign(userAuthPayloadDto);
+      const otherAdminAccessToken = jwtService.sign(
+        siweAuthPayloadDtoBuilder().build(),
+      );
+      const spaceSafes = buildSafes();
+      const invitedSpaceSafes = buildSafes();
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${userAccessToken}`]);
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${otherAdminAccessToken}`]);
+
+      const createSpace = async (accessToken: string): Promise<string> => {
+        const response = await request(app.getHttpServer())
+          .post('/v1/spaces')
+          .set('Cookie', [`access_token=${accessToken}`])
+          .send({ name: nameBuilder() });
+        return response.body.uuid;
+      };
+      const spaceId = await createSpace(userAccessToken);
+      const emptySpaceId = await createSpace(userAccessToken);
+      const invitedSpaceId = await createSpace(otherAdminAccessToken);
+
+      await request(app.getHttpServer())
+        .post(`/v1/spaces/${spaceId}/safes`)
+        .set('Cookie', [`access_token=${userAccessToken}`])
+        .send({ safes: spaceSafes })
+        .expect(201);
+      await request(app.getHttpServer())
+        .post(`/v1/spaces/${invitedSpaceId}/safes`)
+        .set('Cookie', [`access_token=${otherAdminAccessToken}`])
+        .send({ safes: invitedSpaceSafes })
+        .expect(201);
+      await request(app.getHttpServer())
+        .post(`/v1/spaces/${invitedSpaceId}/members/invite`)
+        .set('Cookie', [`access_token=${otherAdminAccessToken}`])
+        .send({
+          users: [
+            {
+              address: userAuthPayloadDto.signer_address,
+              name: faker.person.firstName(),
+              role: 'MEMBER',
+            },
+          ],
+        })
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .get('/v1/spaces/safes')
+        .set('Cookie', [`access_token=${userAccessToken}`])
+        .expect(200)
+        .expect(({ body }) => {
+          expect(Object.keys(body).sort()).toEqual(
+            [spaceId, emptySpaceId].sort(),
+          );
+          expect(body[spaceId]).toHaveLength(spaceSafes.length);
+          expect(body[spaceId]).toEqual(expect.arrayContaining(spaceSafes));
+          expect(body[emptySpaceId]).toEqual([]);
+        });
+    });
+
+    it('Should return an empty object if the user is a member of no space', async () => {
+      const accessToken = jwtService.sign(siweAuthPayloadDtoBuilder().build());
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`]);
+
+      await request(app.getHttpServer())
+        .get('/v1/spaces/safes')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200)
+        .expect({});
+    });
+
+    it('should return a 403 if not authenticated', async () => {
+      await request(app.getHttpServer())
+        .get('/v1/spaces/safes')
+        .expect(403)
+        .expect({
+          statusCode: 403,
+          message: 'Forbidden resource',
+          error: 'Forbidden',
+        });
+    });
+  });
+
   describe('DELETE /v1/spaces/:spaceId/safes', () => {
     it('Should delete a space safe', async () => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
