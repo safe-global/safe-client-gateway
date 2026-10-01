@@ -24,7 +24,7 @@ export class CreateSpaceSafesDto
     type: AddressBookItem,
     isArray: true,
     description:
-      'Address book entries to upsert for the added Safes. They are written after the Safes are added; if that write fails, the Safes stay added and the request fails with 502.',
+      'Address book entries to upsert for the added Safes, in the same transaction: if either write fails, neither is kept.',
   })
   public readonly addressBookItems?: Array<AddressBookItem>;
 }

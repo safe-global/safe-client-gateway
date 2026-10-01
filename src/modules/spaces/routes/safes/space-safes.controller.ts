@@ -92,11 +92,6 @@ export class SpaceSafesController {
     description:
       'The space is at its plan\'s Safe seat limit. The body carries `{ code: "QUOTA_EXCEEDED", feature, quota, used, resetsAt }`',
   })
-  @ApiResponse({
-    status: HttpStatus.BAD_GATEWAY,
-    description:
-      'The Safes were added, but writing `addressBookItems` to the address book failed',
-  })
   @Post()
   @UseGuards(ElevationGuard)
   @UseFilters(QuotaExceededExceptionFilter)

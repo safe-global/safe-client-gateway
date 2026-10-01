@@ -1,11 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
-import { BadGatewayException, Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { groupBy, mapValues } from 'lodash';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import type { ILoggingService } from '@/logging/logging.interface';
-import { LoggingService } from '@/logging/logging.interface';
-import { asError } from '@/logging/utils';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import { IEntitlementEnforcement } from '@/modules/entitlements/domain/entitlement-enforcement.interface';
@@ -25,9 +22,6 @@ import type { DeleteSpaceSafeDto } from '@/modules/spaces/routes/safes/entities/
 import type { GetSpaceSafeResponse } from '@/modules/spaces/routes/safes/entities/get-space-safe.dto.entity';
 import { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
 
-export const SAFES_ADDED_NAMES_UNSAVED_MESSAGE =
-  'Your Safes were added, but their names were not saved. Please name them in the address book.';
-
 @Injectable()
 export class SpaceSafesService {
   public constructor(
@@ -41,8 +35,6 @@ export class SpaceSafesService {
     private readonly postgresDatabaseService: PostgresDatabaseService,
     @Inject(IAddressBookItemsRepository)
     private readonly addressBookItemsRepository: IAddressBookItemsRepository,
-    @Inject(LoggingService)
-    private readonly loggingService: ILoggingService,
   ) {}
 
   public async create(args: {
@@ -57,7 +49,7 @@ export class SpaceSafesService {
     // The use case owns the transaction, so the seat check and the insert it
     // admits share one. What each step needs is resolved before it opens:
     // the plan (cache and database reads) and the ciphertext (a KMS round-trip
-    // per Safe), leaving the locked section free of external I/O.
+    // per Safe). Only the names are encrypted inside, so they commit with the Safes.
     const assertSeats = await this.entitlementEnforcement.prepareQuotaCheck({
       spaceId: args.spaceId,
       featureKey: 'safe_seats',
@@ -91,31 +83,15 @@ export class SpaceSafesService {
         rows,
         entityManager,
       });
+      if (args.addressBookItems && args.addressBookItems.length > 0) {
+        await this.addressBookItemsRepository.upsertMany({
+          userId,
+          spaceId: args.spaceId,
+          addressBookItems: args.addressBookItems,
+          entityManager,
+        });
+      }
     });
-
-    await this.upsertNames({ ...args, userId });
-  }
-
-  private async upsertNames(args: {
-    spaceId: Space['id'];
-    userId: number;
-    addressBookItems?: CreateSpaceSafesDto['addressBookItems'];
-  }): Promise<void> {
-    if (!args.addressBookItems || args.addressBookItems.length === 0) {
-      return;
-    }
-    try {
-      await this.addressBookItemsRepository.upsertMany({
-        userId: args.userId,
-        spaceId: args.spaceId,
-        addressBookItems: args.addressBookItems,
-      });
-    } catch (error) {
-      this.loggingService.error(
-        `Naming ${args.addressBookItems.length} Safe(s) failed after adding them to space ${args.spaceId}: ${asError(error).message}`,
-      );
-      throw new BadGatewayException(SAFES_ADDED_NAMES_UNSAVED_MESSAGE);
-    }
   }
 
   public async get(

@@ -1,17 +1,12 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
-import {
-  BadGatewayException,
-  ForbiddenException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import type { EntityManager } from 'typeorm';
 import type { Address } from 'viem';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
 import type { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import type { ILoggingService } from '@/logging/logging.interface';
 import {
   oidcAuthPayloadDtoBuilder,
   siweAuthPayloadDtoBuilder,
@@ -24,10 +19,7 @@ import type {
   ISpaceSafesRepository,
   PreparedSpaceSafe,
 } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
-import {
-  SAFES_ADDED_NAMES_UNSAVED_MESSAGE,
-  SpaceSafesService,
-} from '@/modules/spaces/routes/safes/space-safes.service';
+import { SpaceSafesService } from '@/modules/spaces/routes/safes/space-safes.service';
 import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
 import type { Member } from '@/modules/users/domain/entities/member.entity';
 import type { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
@@ -72,10 +64,6 @@ const addressBookItemsRepositoryMock = {
   upsertMany: vi.fn(),
 } as MockedObject<IAddressBookItemsRepository>;
 
-const loggingServiceMock = {
-  error: vi.fn(),
-} as MockedObject<ILoggingService>;
-
 const entitlementEnforcementMock = {
   assertWithinQuota: vi.fn(),
   prepareQuotaCheck: vi.fn(),
@@ -92,7 +80,6 @@ describe('SpaceSafesService', () => {
       entitlementEnforcementMock,
       postgresDatabaseServiceMock,
       addressBookItemsRepositoryMock,
-      loggingServiceMock,
     );
   });
 
@@ -303,7 +290,7 @@ describe('SpaceSafesService', () => {
       };
     };
 
-    it('writes the names once the Safes are inserted', async () => {
+    it('writes the names after the Safes, in the same transaction', async () => {
       const { spaceId, authPayload, payload, addressBookItems } = arrange();
 
       await service.create({ spaceId, authPayload, payload, addressBookItems });
@@ -314,6 +301,7 @@ describe('SpaceSafesService', () => {
         userId: Number(authPayload.sub),
         spaceId,
         addressBookItems,
+        entityManager,
       });
       expect(
         spaceSafesRepositoryMock.insertRows.mock.invocationCallOrder[0],
@@ -349,22 +337,20 @@ describe('SpaceSafesService', () => {
       expect(addressBookItemsRepositoryMock.upsertMany).not.toHaveBeenCalled();
     });
 
-    it('answers 502 and logs when the names fail after the Safes were added', async () => {
+    it('fails the whole write when the names fail, so the Safes roll back with them', async () => {
       const { spaceId, authPayload, payload, addressBookItems } = arrange();
-      addressBookItemsRepositoryMock.upsertMany.mockRejectedValue(
-        new Error('kms down'),
-      );
+      const error = new Error('kms down');
+      addressBookItemsRepositoryMock.upsertMany.mockRejectedValue(error);
 
       await expect(
         service.create({ spaceId, authPayload, payload, addressBookItems }),
-      ).rejects.toThrow(
-        new BadGatewayException(SAFES_ADDED_NAMES_UNSAVED_MESSAGE),
-      );
+      ).rejects.toBe(error);
 
-      expect(spaceSafesRepositoryMock.insertRows).toHaveBeenCalledOnce();
-      expect(loggingServiceMock.error).toHaveBeenCalledExactlyOnceWith(
-        expect.stringContaining('kms down'),
+      // Both writes ran on the transaction's manager, so its rollback undoes the insert.
+      expect(spaceSafesRepositoryMock.insertRows).toHaveBeenCalledWith(
+        expect.objectContaining({ entityManager }),
       );
+      expect(postgresDatabaseServiceMock.transaction).toHaveBeenCalledOnce();
     });
   });
 
