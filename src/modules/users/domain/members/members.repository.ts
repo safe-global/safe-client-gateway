@@ -509,7 +509,7 @@ export class MembersRepository implements IMembersRepository {
       user: true,
     });
     if (own.status !== 'ACTIVE') {
-      return [own];
+      return await this.attachMemberUserAddresses([own]);
     }
 
     const space = await this.spacesRepository.findOneOrFail({
@@ -529,9 +529,11 @@ export class MembersRepository implements IMembersRepository {
     authPayload: AuthPayload;
     spaceId: Space['id'];
   }): Promise<Member> {
-    return await this.findActiveOrInvitedMemberOrFail(args, {
+    const member = await this.findActiveOrInvitedMemberOrFail(args, {
       user: true,
     });
+    const [memberWithAddress] = await this.attachMemberUserAddresses([member]);
+    return memberWithAddress;
   }
 
   private findActiveAdminsOrFail(spaceId: Space['id']): Promise<Array<Member>> {
@@ -748,9 +750,6 @@ export class MembersRepository implements IMembersRepository {
       args.spaceId,
       [emailDecrypted],
     );
-    const [memberWithAddress] = await this.attachMemberUserAddresses([
-      decryptedMember,
-    ]);
-    return memberWithAddress;
+    return decryptedMember;
   }
 }

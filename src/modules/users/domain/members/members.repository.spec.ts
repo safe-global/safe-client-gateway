@@ -579,13 +579,9 @@ describe('MembersRepository', () => {
         .with('id', 2)
         .with('user', other.user)
         .build();
-      // The own-row authorization check attaches addresses too and queries
-      // only the caller's id; the roster query comes second. Returned in
-      // the "wrong" order to prove the lowest-id sort, not a query-side
-      // ORDER BY (the query has none).
-      walletsRepository.find
-        .mockResolvedValueOnce([])
-        .mockResolvedValueOnce([highWallet, lowWallet]);
+      // Returned in the "wrong" order to prove the lowest-id sort, not a
+      // query-side ORDER BY (the query has none).
+      walletsRepository.find.mockResolvedValue([highWallet, lowWallet]);
 
       const result = await target.findAuthorizedMembersOrFail({
         authPayload,
