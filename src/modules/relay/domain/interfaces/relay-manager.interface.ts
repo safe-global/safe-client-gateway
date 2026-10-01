@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { Hex } from 'viem';
 import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
-import type { IRelayer } from '@/modules/relay/domain/interfaces/relayer.interface';
+import type {
+  IRelayer,
+  RelaySubmitter,
+} from '@/modules/relay/domain/interfaces/relayer.interface';
 
 export const IRelayManager = Symbol('IRelayManager');
 
@@ -13,13 +16,19 @@ export interface IRelayManager {
    * @param args.relayer - The chain's relayer (from config service), or `null`
    *   when the chain has no relayer configured.
    * @param args.data - Transaction calldata.
-   * @returns The relayer instance to use.
+   * @param args.relaySubmitter - A workspace's submitter to fall back on, where
+   *   the chain lists `SUBSCRIPTION`.
+   * @returns The relayer to submit with.
    * @throws GasPaymentOptionUnavailableError when a refunding transaction can't
    *   use `PAY_FROM_SAFE`.
    * @throws NoRelayerDefinedError when the chain offers no option for the calldata.
    * @throws RelayerTypeNotImplementedError when the relayer type is GTF.
    */
-  getRelayer(args: { relayer: Chain['relayer']; data: Hex }): IRelayer;
+  getRelayer(args: {
+    relayer: Chain['relayer'];
+    data: Hex;
+    relaySubmitter?: RelaySubmitter | null;
+  }): RelaySubmitter;
 
   /**
    * Gets the relayer whose free quota the chain offers, for relays remaining.

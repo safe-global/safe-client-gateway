@@ -9,11 +9,15 @@ import { GasPaymentOptionUnavailableError } from '@/modules/relay/domain/errors/
 import { NoRelayerDefinedError } from '@/modules/relay/domain/errors/no-relayer-defined.error';
 import { RelayerTypeNotImplementedError } from '@/modules/relay/domain/errors/relayer-type-not-implemented.error';
 import { IRelayManager } from '@/modules/relay/domain/interfaces/relay-manager.interface';
-import { IRelayer } from '@/modules/relay/domain/interfaces/relayer.interface';
+import {
+  IRelayer,
+  type RelaySubmitter,
+} from '@/modules/relay/domain/interfaces/relayer.interface';
 import { RelayTransactionHelper } from '@/modules/relay/domain/relay-transaction-helper';
 import { DailyLimitRelayer } from '@/modules/relay/domain/relayers/daily-limit.relayer';
 import { NoFeeCampaignRelayer } from '@/modules/relay/domain/relayers/no-fee-campaign.relayer';
 import { RelayFeeRelayer } from '@/modules/relay/domain/relayers/relay-fee.relayer';
+import { SubscriptionFallbackRelayer } from '@/modules/relay/domain/relayers/subscription-fallback.relayer';
 
 type ChainRelayer = NonNullable<Chain['relayer']>;
 
@@ -44,6 +48,9 @@ export class RelayManager implements IRelayManager {
    * - refunding transaction → {@link RelayFeeRelayer} if `PAY_FROM_SAFE` is listed
    * - any other transaction → the free relayer, see {@link getFreeRelayer}
    *
+   * With a `relaySubmitter` on a chain listing `SUBSCRIPTION`, a non-refunding
+   * call falls back to it when the free path is unavailable or spent.
+   *
    * @throws GasPaymentOptionUnavailableError when a refunding transaction can't
    *   use `PAY_FROM_SAFE`.
    * @throws NoRelayerDefinedError when the chain offers no option for the calldata.
@@ -53,23 +60,40 @@ export class RelayManager implements IRelayManager {
   public getRelayer({
     relayer,
     data,
+    relaySubmitter = null,
   }: {
     relayer: Chain['relayer'];
     data: Hex;
-  }): IRelayer {
+    relaySubmitter?: RelaySubmitter | null;
+  }): RelaySubmitter {
+    const relaySubscription = relayer?.gasPaymentOptions.includes(
+      GasPaymentOption.SUBSCRIPTION,
+    )
+      ? relaySubmitter
+      : null;
     switch (this.getRelayCall(data)) {
       // Always sponsored.
       case RelayCall.SIGNER_CREATION:
-        return this.dailyLimitRelayer;
+        return this.withSubscription(
+          () => this.dailyLimitRelayer,
+          relaySubscription,
+        );
       // Sponsored only when the chain sets `safeCreationSponsored`.
       case RelayCall.SAFE_CREATION:
-        return this.getSafeCreationRelayer(this.requireRelayer(relayer));
-      // Paid by the Safe only when the chain lists `PAY_FROM_SAFE`.
+        return this.withSubscription(
+          () => this.getSafeCreationRelayer(this.requireRelayer(relayer)),
+          relaySubscription,
+        );
+      // Paid by the Safe only when the chain lists `PAY_FROM_SAFE`; the Safe
+      // repays gas, so a subscription never pays for it.
       case RelayCall.REFUNDING_TRANSACTION:
         return this.getRefundingRelayer(relayer);
       // Free only when the chain lists a free option.
       case RelayCall.TRANSACTION:
-        return this.getFreeRelayer(relayer);
+        return this.withSubscription(
+          () => this.getFreeRelayer(relayer),
+          relaySubscription,
+        );
     }
   }
 
@@ -89,6 +113,30 @@ export class RelayManager implements IRelayManager {
       return this.dailyLimitRelayer;
     }
     throw new NoRelayerDefinedError();
+  }
+
+  /** The free relayer, falling back to `relaySubscription` when it is unavailable or spent. */
+  private withSubscription(
+    getFreeRelayer: () => IRelayer,
+    relaySubscription: RelaySubmitter | null,
+  ): RelaySubmitter {
+    if (!relaySubscription) {
+      return getFreeRelayer();
+    }
+    try {
+      return new SubscriptionFallbackRelayer(
+        getFreeRelayer(),
+        relaySubscription,
+      );
+    } catch (error) {
+      if (
+        error instanceof NoRelayerDefinedError ||
+        error instanceof RelayerTypeNotImplementedError
+      ) {
+        return relaySubscription;
+      }
+      throw error;
+    }
   }
 
   private getSafeCreationRelayer(relayer: ChainRelayer): IRelayer {

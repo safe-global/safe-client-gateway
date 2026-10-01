@@ -7,6 +7,7 @@ import type { MockedObject } from 'vitest';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { DelayModifierDecoder } from '@/modules/alerts/domain/contracts/decoders/delay-modifier-decoder.helper';
 import { relayerBuilder } from '@/modules/chains/domain/entities/__tests__/relayer.builder';
+import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
 import {
   multiSendEncoder,
   multiSendTransactionsEncoder,
@@ -14,6 +15,7 @@ import {
 import { execTransactionEncoder } from '@/modules/contracts/domain/__tests__/encoders/safe-encoder.builder';
 import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
 import { SafeDecoder } from '@/modules/contracts/domain/decoders/safe-decoder.helper';
+import { QuotaExceededError } from '@/modules/entitlements/domain/errors/quota-exceeded.error';
 import { createProxyWithNonceEncoder } from '@/modules/relay/domain/contracts/__tests__/encoders/proxy-factory-encoder.builder';
 import { createSignerEncoder } from '@/modules/relay/domain/contracts/__tests__/encoders/signer-factory-encoder.builder';
 import { Erc20Decoder } from '@/modules/relay/domain/contracts/decoders/erc-20-decoder.helper';
@@ -23,7 +25,9 @@ import { GasPaymentOption } from '@/modules/relay/domain/entities/gas-payment-op
 import { RelayerType } from '@/modules/relay/domain/entities/relayer-type.entity';
 import { GasPaymentOptionUnavailableError } from '@/modules/relay/domain/errors/gas-payment-option-unavailable.error';
 import { NoRelayerDefinedError } from '@/modules/relay/domain/errors/no-relayer-defined.error';
+import { RelayLimitReachedError } from '@/modules/relay/domain/errors/relay-limit-reached.error';
 import { RelayerTypeNotImplementedError } from '@/modules/relay/domain/errors/relayer-type-not-implemented.error';
+import type { RelaySubmitter } from '@/modules/relay/domain/interfaces/relayer.interface';
 import { RelayManager } from '@/modules/relay/domain/relay.manager';
 import { RelayTransactionHelper } from '@/modules/relay/domain/relay-transaction-helper';
 import type { DailyLimitRelayer } from '@/modules/relay/domain/relayers/daily-limit.relayer';
@@ -289,6 +293,248 @@ describe('RelayManager', () => {
           NoRelayerDefinedError,
         );
       });
+    });
+  });
+
+  describe('getRelayer with a subscription', () => {
+    const relaySubmitter = {
+      relay: vi.fn(),
+    } as MockedObject<RelaySubmitter>;
+
+    function relayArgs(data: Hex): Parameters<RelaySubmitter['relay']>[0] {
+      return {
+        version: faker.system.semver(),
+        chainId: faker.string.numeric(),
+        to: getAddress(faker.finance.ethereumAddress()),
+        data,
+        gasLimit: null,
+      };
+    }
+
+    function limitReached(): RelayLimitReachedError {
+      return new RelayLimitReachedError(
+        getAddress(faker.finance.ethereumAddress()),
+        faker.number.int({ min: 1 }),
+        faker.number.int({ min: 1 }),
+      );
+    }
+
+    it.each([
+      [
+        'a transaction on a chain listing no free option',
+        gaslessExecTransaction,
+        relayerBuilder()
+          .with('gasPaymentOptions', [
+            GasPaymentOption.SUBSCRIPTION,
+            GasPaymentOption.PAY_FROM_SAFE,
+          ])
+          .build(),
+      ],
+      [
+        'a Safe creation the chain does not sponsor',
+        (): Hex => createProxyWithNonceEncoder().encode(),
+        relayerBuilder()
+          .with('safeCreationSponsored', false)
+          .with('gasPaymentOptions', [
+            GasPaymentOption.FREE_DAILY_LIMIT,
+            GasPaymentOption.SUBSCRIPTION,
+          ])
+          .build(),
+      ],
+      [
+        'a transaction on a GTF chain',
+        gaslessExecTransaction,
+        relayerBuilder()
+          .with('type', RelayerType.GTF)
+          .with('gasPaymentOptions', [
+            GasPaymentOption.FREE_DAILY_LIMIT,
+            GasPaymentOption.SUBSCRIPTION,
+          ])
+          .build(),
+      ],
+    ])('should route %s to the subscription', (_, encode, relayer) => {
+      expect(
+        manager.getRelayer({ relayer, data: encode(), relaySubmitter }),
+      ).toBe(relaySubmitter);
+    });
+
+    it('should not fall back on a chain that does not list SUBSCRIPTION', () => {
+      const relayer = relayerBuilder()
+        .with(
+          'gasPaymentOptions',
+          faker.helpers.arrayElements([GasPaymentOption.PAY_FROM_SAFE], {
+            min: 0,
+            max: 1,
+          }),
+        )
+        .build();
+
+      expect(() =>
+        manager.getRelayer({
+          relayer,
+          data: gaslessExecTransaction(),
+          relaySubmitter,
+        }),
+      ).toThrow(NoRelayerDefinedError);
+    });
+
+    it('should not fall back on a chain without a relayer', () => {
+      expect(() =>
+        manager.getRelayer({
+          relayer: null,
+          data: gaslessExecTransaction(),
+          relaySubmitter,
+        }),
+      ).toThrow(NoRelayerDefinedError);
+    });
+
+    describe.each([
+      ['an execTransaction with gasPrice > 0', refundingExecTransaction],
+      ['a MultiSend batch carrying one', refundingMultiSend],
+    ])('%s', (_, encode) => {
+      it('should route to the relay-fee relayer when PAY_FROM_SAFE is listed', () => {
+        const relayer = relayerBuilder()
+          .with('gasPaymentOptions', [
+            GasPaymentOption.SUBSCRIPTION,
+            GasPaymentOption.PAY_FROM_SAFE,
+          ])
+          .build();
+
+        expect(
+          manager.getRelayer({ relayer, data: encode(), relaySubmitter }),
+        ).toBe(mockRelayFeeRelayer);
+      });
+
+      it('should never route it to the subscription', () => {
+        const relayer = relayerBuilder()
+          .with('gasPaymentOptions', [
+            GasPaymentOption.FREE_DAILY_LIMIT,
+            GasPaymentOption.SUBSCRIPTION,
+          ])
+          .build();
+
+        expect(() =>
+          manager.getRelayer({ relayer, data: encode(), relaySubmitter }),
+        ).toThrow(
+          new GasPaymentOptionUnavailableError({
+            requested: GasPaymentOption.PAY_FROM_SAFE,
+            reason: 'NOT_LISTED',
+            available: relayer.gasPaymentOptions,
+          }),
+        );
+      });
+    });
+
+    describe.each([
+      [
+        'a signer creation',
+        (): Hex => createSignerEncoder().encode(),
+        [GasPaymentOption.SUBSCRIPTION],
+        mockDailyLimitRelayer,
+      ],
+      [
+        'a sponsored Safe creation',
+        (): Hex => createProxyWithNonceEncoder().encode(),
+        [GasPaymentOption.SUBSCRIPTION],
+        mockDailyLimitRelayer,
+      ],
+      [
+        'a transaction on the daily limit',
+        gaslessExecTransaction,
+        [GasPaymentOption.FREE_DAILY_LIMIT, GasPaymentOption.SUBSCRIPTION],
+        mockDailyLimitRelayer,
+      ],
+      [
+        'a transaction on the no-fee campaign',
+        gaslessMultiSend,
+        [GasPaymentOption.NO_FEE_CAMPAIGN, GasPaymentOption.SUBSCRIPTION],
+        mockNoFeeCampaignRelayer,
+      ],
+    ])('%s', (_, encode, gasPaymentOptions, freeRelayer) => {
+      const relayer = (): NonNullable<Chain['relayer']> =>
+        relayerBuilder()
+          .with('safeCreationSponsored', true)
+          .with('gasPaymentOptions', gasPaymentOptions)
+          .build();
+
+      it('should relay on the free quota first', async () => {
+        const args = relayArgs(encode());
+        const relay = { taskId: faker.string.uuid() };
+        freeRelayer.relay.mockResolvedValue(relay);
+
+        await expect(
+          manager
+            .getRelayer({ relayer: relayer(), data: args.data, relaySubmitter })
+            .relay(args),
+        ).resolves.toBe(relay);
+
+        expect(freeRelayer.relay).toHaveBeenCalledExactlyOnceWith(args);
+        expect(relaySubmitter.relay).not.toHaveBeenCalled();
+      });
+
+      it('should fall back to the subscription once the free quota is spent', async () => {
+        const args = relayArgs(encode());
+        const relay = { taskId: faker.string.uuid() };
+        freeRelayer.relay.mockRejectedValue(limitReached());
+        relaySubmitter.relay.mockResolvedValue(relay);
+
+        await expect(
+          manager
+            .getRelayer({ relayer: relayer(), data: args.data, relaySubmitter })
+            .relay(args),
+        ).resolves.toBe(relay);
+
+        expect(relaySubmitter.relay).toHaveBeenCalledExactlyOnceWith(args);
+      });
+
+      it("should answer with the subscription's error once both are spent", async () => {
+        const args = relayArgs(encode());
+        const quotaExceeded = new QuotaExceededError({
+          feature: 'sponsored_transactions',
+          quota: faker.number.int({ min: 1 }),
+          used: faker.number.int({ min: 1 }),
+          resetsAt: faker.date.future(),
+        });
+        freeRelayer.relay.mockRejectedValue(limitReached());
+        relaySubmitter.relay.mockRejectedValue(quotaExceeded);
+
+        await expect(
+          manager
+            .getRelayer({ relayer: relayer(), data: args.data, relaySubmitter })
+            .relay(args),
+        ).rejects.toThrow(quotaExceeded);
+      });
+
+      it('should not fall back on any other error', async () => {
+        const args = relayArgs(encode());
+        const failed = new Error(faker.lorem.sentence());
+        freeRelayer.relay.mockRejectedValue(failed);
+
+        await expect(
+          manager
+            .getRelayer({ relayer: relayer(), data: args.data, relaySubmitter })
+            .relay(args),
+        ).rejects.toThrow(failed);
+
+        expect(relaySubmitter.relay).not.toHaveBeenCalled();
+      });
+    });
+
+    it('should answer with the free error when SUBSCRIPTION is not listed', async () => {
+      const relayer = relayerBuilder()
+        .with('gasPaymentOptions', [GasPaymentOption.FREE_DAILY_LIMIT])
+        .build();
+      const args = relayArgs(gaslessExecTransaction());
+      const error = limitReached();
+      mockDailyLimitRelayer.relay.mockRejectedValue(error);
+
+      await expect(
+        manager
+          .getRelayer({ relayer, data: args.data, relaySubmitter })
+          .relay(args),
+      ).rejects.toThrow(error);
+
+      expect(relaySubmitter.relay).not.toHaveBeenCalled();
     });
   });
 

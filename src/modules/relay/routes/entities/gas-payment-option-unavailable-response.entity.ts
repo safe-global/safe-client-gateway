@@ -30,8 +30,7 @@ export class GasPaymentOptionUnavailableResponse {
     enum: GAS_PAYMENT_OPTION_UNAVAILABLE_REASONS,
     description:
       'NOT_LISTED: the chain does not list the option. NO_RELAYER: the chain has no relayer. ' +
-      'NOT_A_WORKSPACE_SAFE: the Safe is not one the workspace holds. ' +
-      'REFUNDING_TRANSACTION: the transaction would refund gas (`gasPrice` > 0).',
+      'NOT_A_WORKSPACE_SAFE: the Safe is not one the workspace holds.',
   })
   reason!: GasPaymentOptionUnavailableReason;
 

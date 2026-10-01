@@ -40,14 +40,9 @@ import { SafeRepositoryModule } from '@/modules/safe/domain/safe.repository.inte
       useClass: RelayManager,
     },
   ],
-  // The mapper, the simulation gate and the calldata helper are what a relayer
-  // outside this module — `WorkspaceRelayer`, wired under its own feature
-  // flags — reuses instead of restating.
-  exports: [
-    RelayRepository,
-    LimitAddressesMapper,
-    RelaySimulationService,
-    RelayTransactionHelper,
-  ],
+  // The mapper and the simulation gate are what a relayer outside this
+  // module — `WorkspaceRelayer`, wired under its own feature flags — reuses
+  // instead of restating.
+  exports: [RelayRepository, LimitAddressesMapper, RelaySimulationService],
 })
 export class RelayDomainModule {}

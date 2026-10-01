@@ -5,10 +5,8 @@ import type { z } from 'zod';
 import { RelayDtoSchema } from '@/modules/relay/routes/entities/schemas/relay.dto.schema';
 
 /**
- * The chain-scoped request without `gasLimit`: it is only ever read as the
- * no-fee campaign's declared ceiling, which this route does not apply, and a
- * new endpoint has no backward compatibility to keep it for. Derived rather
- * than restated so the fields that remain cannot drift apart.
+ * The chain-scoped request without `gasLimit`: the no-fee campaign then
+ * applies its own ceiling. Derived so the remaining fields cannot drift.
  */
 export const SpaceRelayDtoSchema = RelayDtoSchema.omit({ gasLimit: true });
 

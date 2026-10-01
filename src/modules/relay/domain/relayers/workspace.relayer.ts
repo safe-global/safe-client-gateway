@@ -17,9 +17,9 @@ import {
 import { GasPaymentOption } from '@/modules/relay/domain/entities/gas-payment-option.entity';
 import type { Relay } from '@/modules/relay/domain/entities/relay.entity';
 import { GasPaymentOptionUnavailableError } from '@/modules/relay/domain/errors/gas-payment-option-unavailable.error';
+import type { RelaySubmitter } from '@/modules/relay/domain/interfaces/relayer.interface';
 import { LimitAddressesMapper } from '@/modules/relay/domain/limit-addresses.mapper';
 import { RelaySimulationService } from '@/modules/relay/domain/relay-simulation.service';
-import { RelayTransactionHelper } from '@/modules/relay/domain/relay-transaction-helper';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 import { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
 
@@ -29,12 +29,8 @@ const RELAYS_PER_CALL = 1;
 const SPONSORED_TRANSACTIONS = 'sponsored_transactions';
 
 /**
- * Relays at a workspace's expense, against the allowance its plan grants,
- * rather than against the per-address throttle the chain's own relayer
- * applies. Deliberately not an {@link IRelayer}: that contract is what
- * `RelayManager` dispatches over for a chain-configured relayer, and this one
- * is chosen by the route instead — it needs a workspace, and neither of the
- * contract's other two questions has a caller here.
+ * Relays against a workspace's plan allowance. The route hands `RelayManager`
+ * a bound {@link RelaySubmitter} to fall back on.
  */
 @Injectable()
 export class WorkspaceRelayer {
@@ -48,9 +44,42 @@ export class WorkspaceRelayer {
     @Inject(IChainsRepository)
     private readonly chainsRepository: IChainsRepository,
     private readonly relaySimulationService: RelaySimulationService,
-    private readonly relayTransactionHelper: RelayTransactionHelper,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
   ) {}
+
+  /**
+   * The workspace's submitter for the call, which spends nothing until used.
+   *
+   * @throws GasPaymentOptionUnavailableError for a Safe the workspace doesn't hold.
+   */
+  public async forSpace(args: {
+    spaceId: Space['id'];
+    version: string;
+    chainId: string;
+    to: Address;
+    data: Hex;
+  }): Promise<RelaySubmitter> {
+    // `resolveTarget` also rejects unrecognised calldata and unofficial
+    // deployments: the checks that make a relay safe to pay for.
+    const [{ safe }, { relayer }] = await Promise.all([
+      this.limitAddressesMapper.resolveTarget(args),
+      this.chainsRepository.getChain(args.chainId),
+    ]);
+
+    // Refused whatever the chain lists: no route relays another's Safe here.
+    if (safe !== null && !(await this.holdsSafe({ ...args, safe }))) {
+      throw new GasPaymentOptionUnavailableError({
+        requested: GasPaymentOption.SUBSCRIPTION,
+        reason: 'NOT_A_WORKSPACE_SAFE',
+        available: relayer?.gasPaymentOptions ?? [],
+      });
+    }
+
+    return {
+      relay: (relayArgs): Promise<Relay> =>
+        this.relay({ ...relayArgs, spaceId: args.spaceId, safe }),
+    };
+  }
 
   /**
    * Admitted against the allowance before the call and recorded after it, so a
@@ -59,55 +88,12 @@ export class WorkspaceRelayer {
    * transaction that later reverts is not refunded: the provider only reports
    * that outcome to whoever polls the task.
    */
-  public async relay(args: {
-    spaceId: Space['id'];
-    version: string;
-    chainId: string;
-    to: Address;
-    data: Hex;
-    safeTxHash?: Hex;
-    acceptUnverifiedSimulation?: boolean;
-  }): Promise<Relay> {
-    // `resolveTarget` also rejects unrecognised calldata and unofficial
-    // deployments: the checks that make a relay safe to pay for.
-    const [{ safe }, { relayer }] = await Promise.all([
-      this.limitAddressesMapper.resolveTarget(args),
-      this.chainsRepository.getChain(args.chainId),
-    ]);
-
-    if (!relayer) {
-      throw new GasPaymentOptionUnavailableError({
-        requested: GasPaymentOption.SUBSCRIPTION,
-        reason: 'NO_RELAYER',
-        available: [],
-      });
-    }
-    const available = relayer.gasPaymentOptions;
-    if (!available.includes(GasPaymentOption.SUBSCRIPTION)) {
-      throw new GasPaymentOptionUnavailableError({
-        requested: GasPaymentOption.SUBSCRIPTION,
-        reason: 'NOT_LISTED',
-        available,
-      });
-    }
-
-    // The Safe would repay gas to the relayer on top of the credit spent.
-    if (this.relayTransactionHelper.hasRefundingTransaction(args.data)) {
-      throw new GasPaymentOptionUnavailableError({
-        requested: GasPaymentOption.SUBSCRIPTION,
-        reason: 'REFUNDING_TRANSACTION',
-        available,
-      });
-    }
-
-    if (safe !== null && !(await this.holdsSafe({ ...args, safe }))) {
-      throw new GasPaymentOptionUnavailableError({
-        requested: GasPaymentOption.SUBSCRIPTION,
-        reason: 'NOT_A_WORKSPACE_SAFE',
-        available,
-      });
-    }
-
+  private async relay(
+    args: Parameters<RelaySubmitter['relay']>[0] & {
+      spaceId: Space['id'];
+      safe: Address | null;
+    },
+  ): Promise<Relay> {
     // Refused early; `consumeQuota` below is what decides.
     await this.entitlementEnforcement.assertWithinQuota({
       spaceId: args.spaceId,
@@ -118,11 +104,11 @@ export class WorkspaceRelayer {
     // Only a transaction sent to the Safe itself, as on the public route: a
     // batch is addressed to MultiSend and a recovery to the DelayModifier,
     // and neither takes the direct call a simulation makes.
-    if (safe !== null && safe === args.to) {
+    if (args.safe !== null && args.safe === args.to) {
       await this.assertSimulates({
         ...args,
-        safe,
-        enabled: relayer.enableTenderlySimulationBeforeRelay,
+        safe: args.safe,
+        enabled: args.simulationEnabled ?? false,
       });
     }
 

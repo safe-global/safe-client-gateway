@@ -10,7 +10,6 @@ export const GAS_PAYMENT_OPTION_UNAVAILABLE_REASONS = [
   'NOT_LISTED',
   'NO_RELAYER',
   'NOT_A_WORKSPACE_SAFE',
-  'REFUNDING_TRANSACTION',
 ] as const;
 
 export type GasPaymentOptionUnavailableReason =

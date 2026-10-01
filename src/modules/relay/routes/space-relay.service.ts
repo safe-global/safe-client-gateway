@@ -2,6 +2,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
+import { RelayRepository } from '@/modules/relay/domain/relay.repository';
 import { WorkspaceRelayer } from '@/modules/relay/domain/relayers/workspace.relayer';
 import { Relay } from '@/modules/relay/routes/entities/relay.entity';
 import type { SpaceRelayDto } from '@/modules/relay/routes/entities/space-relay.dto.entity';
@@ -13,13 +14,14 @@ import { IMembersRepository } from '@/modules/users/domain/members/members.repos
 export class SpaceRelayService {
   public constructor(
     private readonly workspaceRelayer: WorkspaceRelayer,
+    private readonly relayRepository: RelayRepository,
     @Inject(IMembersRepository)
     private readonly membersRepository: IMembersRepository,
   ) {}
 
   /**
-   * Spending a workspace's allowance is a member's to do: the plan is the
-   * workspace's, so anyone inside it may relay against what it bought.
+   * Relays on the chain's free options first, then on the workspace's
+   * allowance, which any member may spend.
    */
   public async relay(args: {
     spaceId: Space['id'];
@@ -30,14 +32,22 @@ export class SpaceRelayService {
     const userId = getAuthenticatedUserIdOrFail(args.authPayload);
     await assertMember(this.membersRepository, args.spaceId, userId);
 
-    const relay = await this.workspaceRelayer.relay({
+    const relaySubmitter = await this.workspaceRelayer.forSpace({
       spaceId: args.spaceId,
       version: args.relayDto.version,
       chainId: args.chainId,
       to: args.relayDto.to,
       data: args.relayDto.data,
+    });
+    const relay = await this.relayRepository.relay({
+      version: args.relayDto.version,
+      chainId: args.chainId,
+      to: args.relayDto.to,
+      data: args.relayDto.data,
+      gasLimit: null,
       safeTxHash: args.relayDto.safeTxHash,
       acceptUnverifiedSimulation: args.relayDto.acceptUnverifiedSimulation,
+      relaySubmitter,
     });
 
     return new Relay(relay);

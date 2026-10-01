@@ -59,3 +59,6 @@ export interface IRelayer {
     safeTxHash?: Hex;
   }): Promise<{ remaining: number; limit: number }>;
 }
+
+/** Submits a relay; what a route hands `RelayManager` to fall back on. */
+export type RelaySubmitter = Pick<IRelayer, 'relay'>;

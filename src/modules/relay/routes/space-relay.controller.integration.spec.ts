@@ -56,6 +56,9 @@ import { rawify } from '@/validation/entities/raw.entity';
 /** Small enough that a second relay in a test exhausts it. */
 const FREE_SPONSORED_TRANSACTIONS = 1;
 
+/** The chain's own daily limit, as small for the same reason. */
+const FREE_DAILY_RELAYS = 1;
+
 // Signer factory deployments decide this, not preference: `createSigner` is
 // the calldata this suite relays when it wants no Safe to attribute.
 const CHAIN_ID = '1';
@@ -105,6 +108,10 @@ describe('SpaceRelayController', () => {
             database: testDatabaseName,
           },
         },
+      },
+      relay: {
+        ...defaultConfiguration.relay,
+        limit: FREE_DAILY_RELAYS,
       },
       features: {
         ...defaultConfiguration.features,
@@ -285,6 +292,33 @@ describe('SpaceRelayController', () => {
 
   const taskId = (): string => faker.string.uuid();
 
+  function chainListing(gasPaymentOptions: Array<GasPaymentOption>): Chain {
+    return chainBuilder()
+      .with('chainId', CHAIN_ID)
+      .with(
+        'relayer',
+        relayerBuilder()
+          .with('gasPaymentOptions', gasPaymentOptions)
+          .with('enableTenderlySimulationBeforeRelay', false)
+          .build(),
+      )
+      .build();
+  }
+
+  /** Calldata recovering `safe` on `chain`. */
+  function recoveryOn(args: { chain: Chain; safe: `0x${string}` }): {
+    to: `0x${string}`;
+    data: `0x${string}`;
+  } {
+    const recovery = recoveryOf(args.safe);
+    mockNetwork({
+      chain: args.chain,
+      moduleAddress: recovery.to,
+      safes: [args.safe],
+    });
+    return recovery;
+  }
+
   function mockNetwork(args: {
     chain?: Chain;
     moduleAddress?: `0x${string}`;
@@ -418,15 +452,106 @@ describe('SpaceRelayController', () => {
     await expect(usedOf({ spaceId, accessToken })).resolves.toBe(0);
   });
 
-  it('should relay a call with no Safe to attribute', async () => {
+  it('should relay a signer deployment on the daily limit without spending', async () => {
     const { accessToken, spaceId } = await createSpaceForSigner();
 
     await relay({ spaceId, accessToken, ...signerDeployment() }).expect(201);
 
-    await expect(usedOf({ spaceId, accessToken })).resolves.toBe(1);
+    await expect(usedOf({ spaceId, accessToken })).resolves.toBe(0);
   });
 
-  it('should answer 409 for a refunding transaction', async () => {
+  it('should answer 409 for a Safe the workspace does not hold, whatever the chain lists', async () => {
+    const { accessToken, spaceId } = await createSpaceForSigner();
+    const listed = chainListing([GasPaymentOption.FREE_DAILY_LIMIT]);
+    const { to, data } = recoveryOn({
+      chain: listed,
+      safe: getAddress(faker.finance.ethereumAddress()),
+    });
+
+    await relay({ spaceId, accessToken, to, data })
+      .expect(HttpStatus.CONFLICT)
+      .expect({
+        code: 'GAS_PAYMENT_OPTION_UNAVAILABLE',
+        message:
+          'Gas payment option SUBSCRIPTION is unavailable: NOT_A_WORKSPACE_SAFE',
+        statusCode: HttpStatus.CONFLICT,
+        requested: GasPaymentOption.SUBSCRIPTION,
+        reason: 'NOT_A_WORKSPACE_SAFE',
+        available: [GasPaymentOption.FREE_DAILY_LIMIT],
+      });
+  });
+
+  describe('on a chain listing FREE_DAILY_LIMIT and SUBSCRIPTION', () => {
+    const listed = (): Chain =>
+      chainListing([
+        GasPaymentOption.FREE_DAILY_LIMIT,
+        GasPaymentOption.SUBSCRIPTION,
+      ]);
+
+    it('should relay on the daily limit first, then on the allowance, then answer 402', async () => {
+      const { accessToken, spaceId } = await createSpaceForSigner();
+      const safe = getAddress(faker.finance.ethereumAddress());
+      await addSafe({ spaceId, accessToken, address: safe });
+      const chain = listed();
+
+      await relay({
+        spaceId,
+        accessToken,
+        ...recoveryOn({ chain, safe }),
+      }).expect(201);
+      await expect(usedOf({ spaceId, accessToken })).resolves.toBe(0);
+
+      await relay({
+        spaceId,
+        accessToken,
+        ...recoveryOn({ chain, safe }),
+      }).expect(201);
+      await expect(usedOf({ spaceId, accessToken })).resolves.toBe(1);
+
+      const response = await relay({
+        spaceId,
+        accessToken,
+        ...recoveryOn({ chain, safe }),
+      }).expect(HttpStatus.PAYMENT_REQUIRED);
+      expect(response.body).toMatchObject({
+        code: QUOTA_EXCEEDED_ERROR_CODE,
+        feature: 'sponsored_transactions',
+      });
+      await expect(usedOf({ spaceId, accessToken })).resolves.toBe(
+        FREE_SPONSORED_TRANSACTIONS,
+      );
+    });
+  });
+
+  describe('on a chain listing FREE_DAILY_LIMIT but not SUBSCRIPTION', () => {
+    it('should relay on the daily limit, then answer 429 without spending', async () => {
+      const { accessToken, spaceId } = await createSpaceForSigner();
+      const safe = getAddress(faker.finance.ethereumAddress());
+      await addSafe({ spaceId, accessToken, address: safe });
+      const chain = chainListing([GasPaymentOption.FREE_DAILY_LIMIT]);
+
+      await relay({
+        spaceId,
+        accessToken,
+        ...recoveryOn({ chain, safe }),
+      }).expect(201);
+
+      await relay({
+        spaceId,
+        accessToken,
+        ...recoveryOn({ chain, safe }),
+      })
+        .expect(HttpStatus.TOO_MANY_REQUESTS)
+        .expect({
+          message: `Relay limit reached for ${safe}`,
+          statusCode: HttpStatus.TOO_MANY_REQUESTS,
+        });
+
+      await expect(usedOf({ spaceId, accessToken })).resolves.toBe(0);
+    });
+  });
+
+  it('should answer 409 for a refunding transaction the chain does not let the Safe pay', async () => {
     const { accessToken, spaceId } = await createSpaceForSigner();
     const safe = getAddress(faker.finance.ethereumAddress());
     await addSafe({ spaceId, accessToken, address: safe });
@@ -439,84 +564,52 @@ describe('SpaceRelayController', () => {
       .expect(HttpStatus.CONFLICT)
       .expect({
         code: 'GAS_PAYMENT_OPTION_UNAVAILABLE',
-        message:
-          'Gas payment option SUBSCRIPTION is unavailable: REFUNDING_TRANSACTION',
+        message: 'Gas payment option PAY_FROM_SAFE is unavailable: NOT_LISTED',
         statusCode: HttpStatus.CONFLICT,
-        requested: GasPaymentOption.SUBSCRIPTION,
-        reason: 'REFUNDING_TRANSACTION',
+        requested: GasPaymentOption.PAY_FROM_SAFE,
+        reason: 'NOT_LISTED',
         available: [GasPaymentOption.SUBSCRIPTION],
       });
 
     await expect(usedOf({ spaceId, accessToken })).resolves.toBe(0);
   });
 
-  it('should answer 409 on a chain that does not list SUBSCRIPTION', async () => {
+  it('should answer 403 on a chain listing neither a free option nor SUBSCRIPTION', async () => {
     const { accessToken, spaceId } = await createSpaceForSigner();
     const safe = getAddress(faker.finance.ethereumAddress());
     await addSafe({ spaceId, accessToken, address: safe });
-    const { to, data } = recoveryOf(safe);
-    const unlisted = chainBuilder()
-      .with('chainId', CHAIN_ID)
-      .with(
-        'relayer',
-        relayerBuilder()
-          .with(
-            'gasPaymentOptions',
-            faker.helpers.arrayElements(
-              [
-                GasPaymentOption.FREE_DAILY_LIMIT,
-                GasPaymentOption.NO_FEE_CAMPAIGN,
-                GasPaymentOption.PAY_FROM_SAFE,
-              ],
-              { min: 0, max: 3 },
-            ),
-          )
-          .build(),
-      )
-      .build();
-    mockNetwork({
-      chain: unlisted,
-      moduleAddress: to,
-      safes: [safe],
+    const { to, data } = recoveryOn({
+      chain: chainListing([GasPaymentOption.PAY_FROM_SAFE]),
+      safe,
     });
 
     await relay({ spaceId, accessToken, to, data })
-      .expect(HttpStatus.CONFLICT)
+      .expect(HttpStatus.FORBIDDEN)
       .expect({
-        code: 'GAS_PAYMENT_OPTION_UNAVAILABLE',
-        message: 'Gas payment option SUBSCRIPTION is unavailable: NOT_LISTED',
-        statusCode: HttpStatus.CONFLICT,
-        requested: GasPaymentOption.SUBSCRIPTION,
-        reason: 'NOT_LISTED',
-        available: unlisted.relayer?.gasPaymentOptions,
+        message: 'No relayer defined',
+        statusCode: HttpStatus.FORBIDDEN,
       });
 
     await expect(usedOf({ spaceId, accessToken })).resolves.toBe(0);
   });
 
-  it('should answer 409 on a chain without a relayer', async () => {
+  it('should answer 403 on a chain without a relayer', async () => {
     const { accessToken, spaceId } = await createSpaceForSigner();
     const safe = getAddress(faker.finance.ethereumAddress());
     await addSafe({ spaceId, accessToken, address: safe });
-    const { to, data } = recoveryOf(safe);
-    mockNetwork({
+    const { to, data } = recoveryOn({
       chain: chainBuilder()
         .with('chainId', CHAIN_ID)
         .with('relayer', null)
         .build(),
-      moduleAddress: to,
-      safes: [safe],
+      safe,
     });
 
     await relay({ spaceId, accessToken, to, data })
-      .expect(HttpStatus.CONFLICT)
+      .expect(HttpStatus.FORBIDDEN)
       .expect({
-        code: 'GAS_PAYMENT_OPTION_UNAVAILABLE',
-        message: 'Gas payment option SUBSCRIPTION is unavailable: NO_RELAYER',
-        statusCode: HttpStatus.CONFLICT,
-        requested: GasPaymentOption.SUBSCRIPTION,
-        reason: 'NO_RELAYER',
-        available: [],
+        message: 'No relayer defined',
+        statusCode: HttpStatus.FORBIDDEN,
       });
 
     await expect(usedOf({ spaceId, accessToken })).resolves.toBe(0);

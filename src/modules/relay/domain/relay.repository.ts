@@ -6,6 +6,7 @@ import { IChainsRepository } from '@/modules/chains/domain/chains.repository.int
 import type { Relay } from '@/modules/relay/domain/entities/relay.entity';
 import type { RelayTaskStatus } from '@/modules/relay/domain/entities/relay-task-status.entity';
 import { IRelayManager } from '@/modules/relay/domain/interfaces/relay-manager.interface';
+import type { RelaySubmitter } from '@/modules/relay/domain/interfaces/relayer.interface';
 
 @Injectable()
 export class RelayRepository {
@@ -24,12 +25,17 @@ export class RelayRepository {
     gasLimit: bigint | null;
     safeTxHash?: Hex;
     acceptUnverifiedSimulation?: boolean;
+    relaySubmitter?: RelaySubmitter | null;
   }): Promise<Relay> {
+    const { relaySubmitter, ...relayArgs } = args;
     const { relayer } = await this.chainsRepository.getChain(args.chainId);
-    return this.relayManager.getRelayer({ relayer, data: args.data }).relay({
-      ...args,
-      simulationEnabled: relayer?.enableTenderlySimulationBeforeRelay ?? false,
-    });
+    return this.relayManager
+      .getRelayer({ relayer, data: args.data, relaySubmitter })
+      .relay({
+        ...relayArgs,
+        simulationEnabled:
+          relayer?.enableTenderlySimulationBeforeRelay ?? false,
+      });
   }
 
   getTaskStatus(args: {
