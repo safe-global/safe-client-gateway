@@ -82,8 +82,7 @@ export class MembersRepository implements IMembersRepository {
   /**
    * Returns copies of loaded members whose hydrated users carry a decrypted
    * wallet `address` — deterministically the user's lowest-`id` wallet — or
-   * `null` for users without one. Members loaded without the `user` relation
-   * are returned as-is.
+   * `null` for users without one.
    *
    * The members query does not hydrate `User.wallets`; addresses are fetched
    * through the wallets repository keyed on user ids instead, mirroring
@@ -92,11 +91,7 @@ export class MembersRepository implements IMembersRepository {
   private async attachMemberUserAddresses(
     members: Array<Member>,
   ): Promise<Array<Member>> {
-    const userIds = [
-      ...new Set(
-        members.flatMap((member) => (member.user ? [member.user.id] : [])),
-      ),
-    ];
+    const userIds = [...new Set(members.map((member) => member.user.id))];
     if (userIds.length === 0) {
       return members;
     }
@@ -124,17 +119,13 @@ export class MembersRepository implements IMembersRepository {
       ),
     );
     const addressByUserId = new Map(addressEntries);
-    return members.map((member) =>
-      member.user
-        ? {
-            ...member,
-            user: {
-              ...member.user,
-              address: addressByUserId.get(member.user.id) ?? null,
-            },
-          }
-        : member,
-    );
+    return members.map((member) => ({
+      ...member,
+      user: {
+        ...member.user,
+        address: addressByUserId.get(member.user.id) ?? null,
+      },
+    }));
   }
 
   private async findSpaceForAuditOrFail(
