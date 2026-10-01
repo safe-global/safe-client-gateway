@@ -71,7 +71,7 @@ const mockTenderlySimulationApi = vi.mocked({
 
 const mockRelayTransactionHelper = {
   hasRefundingTransaction: vi.fn(),
-} as unknown as MockedObject<RelayTransactionHelper>;
+} as MockedObject<RelayTransactionHelper>;
 
 describe('WorkspaceRelayer', () => {
   let target: WorkspaceRelayer;
