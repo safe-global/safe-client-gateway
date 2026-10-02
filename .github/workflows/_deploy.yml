@@ -20,7 +20,7 @@ on:
   workflow_call:
     inputs:
       environment:
-        description: Target environment (staging | production). Also selects env-scoped secrets.
+        description: Target environment (devstaging | production). Also selects env-scoped secrets.
         type: string
         required: true
       image_tag:
@@ -52,13 +52,13 @@ on:
           Optional JSON endpoint exposing a `.version` field (e.g. /api/v1/about/).
           After deploy, poll it until `.version` equals image_tag — confirms the
           new image actually rolled out. VPN-free alternative to the ArgoCD wait
-          when the controller is unreachable (e.g. staging behind a separate VPN).
+          when the controller is unreachable (e.g. devstaging behind a separate VPN).
         type: string
         default: ""
       health_gate:
         description: >-
           Enable the full production gate: ArgoCD wait + smoke test + post-deploy
-          checks. Set true for production only. For staging, set health_url
+          checks. Set true for production only. For devstaging, set health_url
           without health_gate to get a non-rolling smoke test.
         type: boolean
         default: false
