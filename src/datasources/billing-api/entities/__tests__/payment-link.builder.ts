@@ -25,7 +25,6 @@ function paymentLinkLineItemBuilder(): IBuilder<PaymentLinkLineItem> {
 export function paymentLinkBuilder(): IBuilder<PaymentLink> {
   return new Builder<PaymentLink>()
     .with('id', faker.string.uuid())
-    .with('url', faker.internet.url())
     .with('active', faker.datatype.boolean())
     .with('metadata', {
       customerGroup: faker.word.noun(),
