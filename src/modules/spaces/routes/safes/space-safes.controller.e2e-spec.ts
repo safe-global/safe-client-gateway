@@ -933,6 +933,47 @@ describe('SpaceSafesController', () => {
     });
   });
 
+  describe('GET /v1/spaces/safes', () => {
+    it('Should return the safes of the spaces the user is a member of, grouped by chain', async () => {
+      const accessToken = jwtService.sign(siweAuthPayloadDtoBuilder().build());
+      const safe = {
+        chainId: faker.string.numeric({ length: { min: 1, max: 4 } }),
+        address: getAddress(faker.finance.ethereumAddress()),
+      };
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`]);
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: nameBuilder() });
+      const spaceUuid = createSpaceResponse.body.uuid;
+      await request(app.getHttpServer())
+        .post(`/v1/spaces/${spaceUuid}/safes`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ safes: [safe] })
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .get('/v1/spaces/safes')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200)
+        .expect([{ spaceUuid, safes: { [safe.chainId]: [safe.address] } }]);
+    });
+
+    it('should return a 403 if not authenticated', async () => {
+      await request(app.getHttpServer())
+        .get('/v1/spaces/safes')
+        .expect(403)
+        .expect({
+          statusCode: 403,
+          message: 'Forbidden resource',
+          error: 'Forbidden',
+        });
+    });
+  });
+
   describe('DELETE /v1/spaces/:spaceId/safes', () => {
     it('Should delete a space safe', async () => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();

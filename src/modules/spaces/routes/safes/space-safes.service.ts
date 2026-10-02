@@ -2,6 +2,7 @@
 
 import { Inject, Injectable } from '@nestjs/common';
 import { groupBy, mapValues } from 'lodash';
+import { Equal } from 'typeorm';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
@@ -20,6 +21,7 @@ import type {
 } from '@/modules/spaces/routes/safes/entities/create-space-safe.dto.entity';
 import type { DeleteSpaceSafeDto } from '@/modules/spaces/routes/safes/entities/delete-space-safe.dto.entity';
 import type { GetSpaceSafeResponse } from '@/modules/spaces/routes/safes/entities/get-space-safe.dto.entity';
+import type { GetSpacesSafesResponse } from '@/modules/spaces/routes/safes/entities/get-spaces-safes.dto.entity';
 import { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
 
 @Injectable()
@@ -106,6 +108,28 @@ export class SpaceSafesService {
     return {
       safes: this.transformSpaceSafesResponse(spaceSafes),
     };
+  }
+
+  public async getAll(
+    authPayload: AuthPayload,
+  ): Promise<Array<GetSpacesSafesResponse>> {
+    const userId = getAuthenticatedUserIdOrFail(authPayload);
+
+    const members = await this.membersRepository.find({
+      select: { id: true, space: { id: true, uuid: true } },
+      where: { user: Equal(userId), status: 'ACTIVE' },
+      relations: { space: true },
+    });
+    const spaceSafesBySpaceId = await this.spaceSafesRepository.findBySpaceIds(
+      members.map(({ space }) => space.id),
+    );
+
+    return members.map(({ space }) => ({
+      spaceUuid: space.uuid,
+      safes: this.transformSpaceSafesResponse(
+        spaceSafesBySpaceId.get(space.id) ?? [],
+      ),
+    }));
   }
 
   public async delete(args: {

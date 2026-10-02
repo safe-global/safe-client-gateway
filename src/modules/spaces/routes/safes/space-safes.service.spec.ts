@@ -3,6 +3,7 @@
 import { faker } from '@faker-js/faker';
 import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import type { EntityManager } from 'typeorm';
+import { Equal } from 'typeorm';
 import type { Address } from 'viem';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
@@ -15,10 +16,9 @@ import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity'
 import type { IEntitlementEnforcement } from '@/modules/entitlements/domain/entitlement-enforcement.interface';
 import { QuotaExceededError } from '@/modules/entitlements/domain/errors/quota-exceeded.error';
 import type { IAddressBookItemsRepository } from '@/modules/spaces/domain/address-books/address-book-items.repository.interface';
-import type {
-  ISpaceSafesRepository,
-  PreparedSpaceSafe,
-} from '@/modules/spaces/domain/safes/space-safes.repository.interface';
+import { spaceBuilder } from '@/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
+import type { PreparedSpaceSafe } from '@/modules/spaces/domain/safes/entities/space-safe.entity';
+import type { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
 import { SpaceSafesService } from '@/modules/spaces/routes/safes/space-safes.service';
 import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
 import type { Member } from '@/modules/users/domain/entities/member.entity';
@@ -42,6 +42,7 @@ const spaceSafesRepositoryMock = {
   countNewSeats: vi.fn(),
   insertRows: vi.fn(),
   findBySpaceId: vi.fn(),
+  findBySpaceIds: vi.fn(),
   delete: vi.fn(),
 } as MockedObject<ISpaceSafesRepository>;
 
@@ -55,6 +56,7 @@ const postgresDatabaseServiceMock = {
 
 const membersRepositoryMock = {
   findOne: vi.fn(),
+  find: vi.fn(),
 } as MockedObject<IMembersRepository>;
 
 const adminMember = (): Member =>
@@ -414,6 +416,98 @@ describe('SpaceSafesService', () => {
         expect(spaceSafesRepositoryMock.findBySpaceId).not.toHaveBeenCalled();
       },
     );
+  });
+
+  describe('getAll', () => {
+    it.each([
+      ['SIWE', siweAuthPayloadDtoBuilder],
+      ['OIDC', oidcAuthPayloadDtoBuilder],
+    ] as const)(
+      'should return the safes of every space of a %s member, one entry per space grouped by chain',
+      async (_label, builder) => {
+        const authPayload = new AuthPayload(builder().build());
+        const space1 = spaceBuilder().build();
+        const space2 = spaceBuilder().build();
+        const [chainId1, chainId2] = faker.helpers.uniqueArray(
+          () => faker.number.int().toString(),
+          2,
+        );
+        const [addr1, addr2, addr3, addr4] = [addr(), addr(), addr(), addr()];
+
+        membersRepositoryMock.find.mockResolvedValue([
+          memberBuilder().with('space', space1).build(),
+          memberBuilder().with('space', space2).build(),
+        ]);
+        spaceSafesRepositoryMock.findBySpaceIds.mockResolvedValue(
+          new Map([
+            [
+              space1.id,
+              [
+                { chainId: chainId1, address: addr1 },
+                { chainId: chainId1, address: addr2 },
+                { chainId: chainId2, address: addr3 },
+              ],
+            ],
+            [space2.id, [{ chainId: chainId2, address: addr4 }]],
+          ]),
+        );
+
+        const result = await service.getAll(authPayload);
+
+        expect(membersRepositoryMock.find).toHaveBeenCalledExactlyOnceWith({
+          select: { id: true, space: { id: true, uuid: true } },
+          where: { user: Equal(Number(authPayload.sub)), status: 'ACTIVE' },
+          relations: { space: true },
+        });
+        expect(
+          spaceSafesRepositoryMock.findBySpaceIds,
+        ).toHaveBeenCalledExactlyOnceWith([space1.id, space2.id]);
+        expect(result).toStrictEqual([
+          {
+            spaceUuid: space1.uuid,
+            safes: { [chainId1]: [addr1, addr2], [chainId2]: [addr3] },
+          },
+          { spaceUuid: space2.uuid, safes: { [chainId2]: [addr4] } },
+        ]);
+      },
+    );
+
+    it('should return empty safes for a space without safes', async () => {
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const space = spaceBuilder().build();
+
+      membersRepositoryMock.find.mockResolvedValue([
+        memberBuilder().with('space', space).build(),
+      ]);
+      spaceSafesRepositoryMock.findBySpaceIds.mockResolvedValue(
+        new Map([[space.id, []]]),
+      );
+
+      await expect(service.getAll(authPayload)).resolves.toStrictEqual([
+        { spaceUuid: space.uuid, safes: {} },
+      ]);
+    });
+
+    it('should return an empty array when the user is a member of no space', async () => {
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+
+      membersRepositoryMock.find.mockResolvedValue([]);
+      spaceSafesRepositoryMock.findBySpaceIds.mockResolvedValue(new Map());
+
+      await expect(service.getAll(authPayload)).resolves.toStrictEqual([]);
+      expect(
+        spaceSafesRepositoryMock.findBySpaceIds,
+      ).toHaveBeenCalledExactlyOnceWith([]);
+    });
+
+    it('should throw when not authenticated', async () => {
+      await expect(service.getAll(new AuthPayload())).rejects.toThrow(
+        UnauthorizedException,
+      );
+
+      expect(membersRepositoryMock.find).not.toHaveBeenCalled();
+      expect(spaceSafesRepositoryMock.findBySpaceIds).not.toHaveBeenCalled();
+    });
   });
 
   describe('delete', () => {
