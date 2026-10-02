@@ -3105,9 +3105,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"bullmq@npm:^6.3.6":
-  version: 6.3.6
-  resolution: "bullmq@npm:6.3.6"
+"bullmq@npm:^6.3.8":
+  version: 6.3.8
+  resolution: "bullmq@npm:6.3.8"
   dependencies:
     cron-parser: "npm:5.10.1"
     msgpackr: "npm:2.1.0"
@@ -3128,7 +3128,7 @@ __metadata:
       optional: true
     redis:
       optional: true
-  checksum: 10/2a21015f0be01af0da296021b1e2f662d622c22b024c0cc9956f429c5eea9dbc24197fb2a7a09137f175b9dd9d2ad8efb963bb1f7ec7b1f044d0a95580676191
+  checksum: 10/90aba5998f6cea623cba50380f88d9425364110235b4e0291c4c772cf7be6130fdf78a4876323a66052927f64c51470f0096bb63ef67fefa2f7165096c7da3c6
   languageName: node
   linkType: hard
 
@@ -5860,7 +5860,7 @@ __metadata:
     amqp-connection-manager: "npm:5.0.0"
     amqplib: "npm:2.0.1"
     aws-sdk-client-mock: "npm:4.1.0"
-    bullmq: "npm:^6.3.6"
+    bullmq: "npm:^6.3.8"
     cache-manager: "npm:7.2.9"
     csv-stringify: "npm:^6.8.3"
     dd-trace: "npm:5.127.0"
