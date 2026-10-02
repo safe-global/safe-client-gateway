@@ -8,23 +8,35 @@ services:
       - 8001:8001
 
   db:
-    image: postgres:14.8-alpine
+    image: postgres:18.6-alpine3.24
     volumes:
-      - ./data/db:/var/lib/postgresql/data
-      - ./db_config/test/server.crt:/var/lib/postgresql/server.crt:ro
-      - ./db_config/test/server.key:/var/lib/postgresql/server.key:ro
-      - ./db_config/test/pg_hba.conf:/etc/pg_hba.conf
+      - db-data:/var/lib/postgresql
+      - ./db_config/test:/db_config:ro
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-safe-client-gateway}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     ports:
       - '${POSTGRES_PORT:-5432}:5432'
-    command: >
-      -c ssl=on
-      -c ssl_cert_file=/var/lib/postgresql/server.crt
-      -c ssl_key_file=/var/lib/postgresql/server.key
-      -c hba_file=/etc/pg_hba.conf
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        set -e
+        install -D -o postgres -g postgres -m 0600 /db_config/server.key /etc/postgresql/ssl/server.key
+        install -D -o postgres -g postgres -m 0644 /db_config/server.crt /etc/postgresql/ssl/server.crt
+        exec docker-entrypoint.sh "$@"
+      - sh
+    command:
+      - postgres
+      - -c
+      - ssl=on
+      - -c
+      - ssl_cert_file=/etc/postgresql/ssl/server.crt
+      - -c
+      - ssl_key_file=/etc/postgresql/ssl/server.key
+      - -c
+      - hba_file=/db_config/pg_hba.conf
 
   db-test:
     image: postgres:14.8-alpine
@@ -35,14 +47,26 @@ services:
     ports:
       - '${POSTGRES_TEST_PORT:-5433}:5432'
     volumes:
-      - ./db_config/test/server.crt:/var/lib/postgresql/server.crt:ro
-      - ./db_config/test/server.key:/var/lib/postgresql/server.key:ro
-      - ./db_config/test/pg_hba.conf:/etc/pg_hba.conf
-    command: >
-      -c ssl=on
-      -c ssl_cert_file=/var/lib/postgresql/server.crt
-      -c ssl_key_file=/var/lib/postgresql/server.key
-      -c hba_file=/etc/pg_hba.conf
+      - ./db_config/test:/db_config:ro
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        set -e
+        install -D -o postgres -g postgres -m 0600 /db_config/server.key /etc/postgresql/ssl/server.key
+        install -D -o postgres -g postgres -m 0644 /db_config/server.crt /etc/postgresql/ssl/server.crt
+        exec docker-entrypoint.sh "$@"
+      - sh
+    command:
+      - postgres
+      - -c
+      - ssl=on
+      - -c
+      - ssl_cert_file=/etc/postgresql/ssl/server.crt
+      - -c
+      - ssl_key_file=/etc/postgresql/ssl/server.key
+      - -c
+      - hba_file=/db_config/pg_hba.conf
 
   rabbitmq:
     image: rabbitmq:management-alpine
@@ -107,4 +131,5 @@ services:
       - web
 
 volumes:
+  db-data:
   pgadmin-data:
