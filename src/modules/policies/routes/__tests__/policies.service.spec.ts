@@ -505,6 +505,37 @@ describe('PoliciesService', () => {
       ]);
     });
 
+    it('should carry a grant’s timestamps from the delegates repository through to the response', async () => {
+      // Exercises the PoliciesService -> ProposerMapper boundary with real
+      // (non-mocked) timestamps, standing in for either backend: this
+      // repository interface is the seam between the Transaction Service
+      // (always null) and the Queue Service (real values) paths, both
+      // already covered individually in delegates.v3.repository.spec.ts.
+      const created = faker.date.past();
+      const modified = faker.date.recent();
+      const registered = delegateBuilder()
+        .with('safe', safeAddress)
+        .with('created', created)
+        .with('modified', modified)
+        .build();
+      withDelegates([registered]);
+
+      const policies = await target.getSpaceActivePolicies(policyRequest);
+
+      expect(policies).toMatchObject([
+        {
+          type: PolicyType.Proposer,
+          data: {
+            proposers: [
+              {
+                delegatedBy: [{ created, modified }],
+              },
+            ],
+          },
+        },
+      ]);
+    });
+
     it('should report proposers alongside the spending limits of the same safe', async () => {
       withDelegates([delegateBuilder().with('safe', safeAddress).build()]);
 
