@@ -204,7 +204,12 @@ export class CacheFirstDataSource {
       data: args.data,
     });
 
-    const shouldBeCached = await this._shouldBeCached(key, startTimeMs);
+    // hSet does not write without a positive TTL, so the invalidation
+    // check is not needed in that case.
+    const isCacheable =
+      args.expireTimeSeconds !== undefined && args.expireTimeSeconds > 0;
+    const shouldBeCached =
+      isCacheable && (await this._shouldBeCached(key, startTimeMs));
     if (shouldBeCached) {
       await this.cacheService.hSet(
         args.cacheDir,
