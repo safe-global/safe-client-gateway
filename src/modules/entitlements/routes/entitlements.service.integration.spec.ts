@@ -36,6 +36,7 @@ import {
 import {
   FEATURE_KEYS,
   FeatureType,
+  isFeatureKey,
 } from '@/modules/entitlements/domain/entities/feature.entity';
 import type { MaterializedSubscription } from '@/modules/entitlements/domain/entities/materialized-subscription.entity';
 import type { ConsumedQuota } from '@/modules/entitlements/domain/entitlement-enforcement.interface';
@@ -1894,7 +1895,13 @@ describe('EntitlementsService', () => {
 
       await service.getAllEntitlements(authPayloadFor(userId));
 
-      expect(mockLoggingService.warn).toHaveBeenCalledTimes(1);
+      expect(mockLoggingService.warn).toHaveBeenCalledExactlyOnceWith(
+        `Features seeded but not published, omitted from the response: ${FEATURE_FIXTURES.map(
+          ({ key }) => key,
+        )
+          .filter((key) => !isFeatureKey(key))
+          .join(', ')}`,
+      );
     });
 
     it('rejects an unauthenticated caller', async () => {

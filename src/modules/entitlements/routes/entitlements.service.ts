@@ -147,47 +147,52 @@ export class EntitlementsService implements IEntitlementEnforcement {
   public async resolveEntitlements(
     spaceId: Space['id'],
   ): Promise<ResolvedEntitlements> {
-    const [resolved] = await this.resolvePlanContext(
-      await this.loadPlanContext(spaceId),
-    );
+    const [resolved] = (
+      await this.resolvePlanContext(await this.loadPlanContext(spaceId))
+    ).values();
     return resolved;
   }
 
   /**
    * {@link resolveEntitlements} for several workspaces, reading each table
-   * once for all of them, in their order.
+   * once for all of them, keyed by workspace id.
    */
   private async resolvePlanContext(
-    context: PlanContext,
-  ): Promise<Array<ResolvedEntitlements>> {
-    const { now, features } = context;
-    const usageBySpaceId = await this.getUsageBySpaceId(context);
+    args: PlanContext,
+  ): Promise<Map<Space['id'], ResolvedEntitlements>> {
+    const { now, features } = args;
+    const usageBySpaceId = await this.getUsageBySpaceId(args);
 
-    return context.spaces.map(
-      ({ spaceId, spaceCreatedAt, activeSubscription, purchased }) => {
-        const usedByFeatureId = usageBySpaceId.get(spaceId);
-        const entitlements = features.map((feature) =>
-          this.resolveFeature({
-            feature,
-            spaceCreatedAt,
-            activeSubscription,
-            purchased: purchased.get(feature.id),
-            used: usedByFeatureId?.get(feature.id) ?? 0,
-            now,
-          }),
-        );
+    return new Map(
+      args.spaces.map(
+        ({ spaceId, spaceCreatedAt, activeSubscription, purchased }) => {
+          const usedByFeatureId = usageBySpaceId.get(spaceId);
+          const entitlements = features.map((feature) =>
+            this.resolveFeature({
+              feature,
+              spaceCreatedAt,
+              activeSubscription,
+              purchased: purchased.get(feature.id),
+              used: usedByFeatureId?.get(feature.id) ?? 0,
+              now,
+            }),
+          );
 
-        return {
-          plan: activeSubscription
-            ? {
-                id: activeSubscription.planId,
-                name: activeSubscription.planName,
-                cycleEndsAt: activeSubscription.currentPeriodEnd,
-              }
-            : null,
-          entitlements,
-        };
-      },
+          return [
+            spaceId,
+            {
+              plan: activeSubscription
+                ? {
+                    id: activeSubscription.planId,
+                    name: activeSubscription.planName,
+                    cycleEndsAt: activeSubscription.currentPeriodEnd,
+                  }
+                : null,
+              entitlements,
+            },
+          ] as const;
+        },
+      ),
     );
   }
 
@@ -578,10 +583,9 @@ export class EntitlementsService implements IEntitlementEnforcement {
     const userId = getAuthenticatedUserIdOrFail(args.authPayload);
     await assertMember(this.membersRepository, args.spaceId, userId);
 
-    const [response] = this.toEntitlementsResponses([
-      await this.resolveEntitlements(args.spaceId),
-    ]);
-    return response;
+    const resolved = await this.resolveEntitlements(args.spaceId);
+    this.warnUnpublished([resolved]);
+    return this.toEntitlementsResponse(resolved);
   }
 
   /**
@@ -601,14 +605,18 @@ export class EntitlementsService implements IEntitlementEnforcement {
     if (members.length === 0) {
       return {};
     }
-    const responses = this.toEntitlementsResponses(
-      await this.resolvePlanContext(
-        await this.loadPlanContextOfSpaces(members.map(({ space }) => space)),
-      ),
+    const resolved = await this.resolvePlanContext(
+      await this.loadPlanContextOfSpaces(members.map(({ space }) => space)),
     );
+    this.warnUnpublished(resolved.values());
 
     return Object.fromEntries(
-      members.map(({ space }, index) => [space.uuid, responses[index]]),
+      members.flatMap(({ space }) => {
+        const entitlements = resolved.get(space.id);
+        return entitlements
+          ? [[space.uuid, this.toEntitlementsResponse(entitlements)] as const]
+          : [];
+      }),
     );
   }
 
@@ -909,15 +917,15 @@ export class EntitlementsService implements IEntitlementEnforcement {
    * by feature id.
    */
   private async getUsageBySpaceId(
-    context: PlanContext,
+    args: PlanContext,
   ): Promise<Map<Space['id'], Map<number, number>>> {
-    const metered = context.features.filter(
+    const metered = args.features.filter(
       (feature) => feature.type === FeatureType.Metered,
     );
-    const spaceIds = context.spaces.map(({ spaceId }) => spaceId);
+    const spaceIds = args.spaces.map(({ spaceId }) => spaceId);
 
     const [eventUsage, stockUsage] = await Promise.all([
-      this.getEventUsage({ ...context, features: metered }),
+      this.getEventUsage({ ...args, features: metered }),
       this.getStockUsage(spaceIds, metered.filter(isStockMeteredFeature)),
     ]);
 
@@ -937,12 +945,12 @@ export class EntitlementsService implements IEntitlementEnforcement {
 
   /** One query covering every event-metered feature's current period. */
   private async getEventUsage(
-    context: PlanContext,
+    args: PlanContext,
   ): Promise<Map<Space['id'], Map<number, number>>> {
-    const eventMetered = context.features.filter(isEventMeteredFeature);
+    const eventMetered = args.features.filter(isEventMeteredFeature);
 
     return await this.spaceFeatureUsageRepository.getUsageBySpaceIds(
-      context.spaces.map(({ spaceId, spaceCreatedAt, activeSubscription }) => ({
+      args.spaces.map(({ spaceId, spaceCreatedAt, activeSubscription }) => ({
         spaceId,
         periods: eventMetered.map((feature) => ({
           featureId: feature.id,
@@ -950,7 +958,7 @@ export class EntitlementsService implements IEntitlementEnforcement {
             feature,
             spaceCreatedAt,
             cycle: activeSubscription,
-            now: context.now,
+            now: args.now,
           }),
         })),
       })),
@@ -993,29 +1001,48 @@ export class EntitlementsService implements IEntitlementEnforcement {
    * `FeatureKey` enum, so a key the contract does not declare is left out
    * rather than served outside it.
    */
-  private toEntitlementsResponses(
-    resolved: Array<ResolvedEntitlements>,
-  ): Array<EntitlementsResponse> {
-    const unpublished = new Set<string>();
-    const responses = resolved.map(({ plan, entitlements }) => ({
-      plan: plan
-        ? { id: plan.id, name: plan.name, cycleEndsAt: plan.cycleEndsAt }
-        : null,
-      entitlements: entitlements.flatMap<EntitlementItem>((entitlement) => {
+  private toEntitlementsResponse(
+    resolved: ResolvedEntitlements,
+  ): EntitlementsResponse {
+    const entitlements = resolved.entitlements.flatMap<EntitlementItem>(
+      (entitlement) => {
         if (!isFeatureKey(entitlement.feature)) {
-          unpublished.add(entitlement.feature);
           return [];
         }
         return [{ ...entitlement, feature: entitlement.feature }];
-      }),
-    }));
+      },
+    );
+
+    return {
+      plan: resolved.plan
+        ? {
+            id: resolved.plan.id,
+            name: resolved.plan.name,
+            cycleEndsAt: resolved.plan.cycleEndsAt,
+          }
+        : null,
+      entitlements,
+    };
+  }
+
+  /**
+   * Logs the keys {@link toEntitlementsResponse} leaves out, once for however
+   * many workspaces were resolved: they all read the same catalog.
+   */
+  private warnUnpublished(resolved: Iterable<ResolvedEntitlements>): void {
+    const unpublished = new Set<string>();
+    for (const { entitlements } of resolved) {
+      for (const { feature } of entitlements) {
+        if (!isFeatureKey(feature)) {
+          unpublished.add(feature);
+        }
+      }
+    }
 
     if (unpublished.size > 0) {
       this.loggingService.warn(
         `Features seeded but not published, omitted from the response: ${[...unpublished].join(', ')}`,
       );
     }
-
-    return responses;
   }
 }
