@@ -549,8 +549,7 @@ export class EntitlementsService implements IEntitlementEnforcement {
             enabled: effective.enabled,
             // A feature the plan does not grant has no allowance at all.
             quota: effective.enabled ? effective.quota : 0,
-            // Cached: only a webhook moves it, and that invalidates this.
-            // A Free `freePeriod` rolling over on its own can lag by a TTL.
+            // Cached; `hasClosedWindow` recomputes once it passes.
             resetsAt: resetsAt({
               feature,
               spaceCreatedAt,

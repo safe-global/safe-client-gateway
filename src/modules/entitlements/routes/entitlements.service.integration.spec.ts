@@ -1549,11 +1549,15 @@ describe('EntitlementsService', () => {
       quota: number | null;
       periodStart: Date;
     }): Promise<void> {
+      // A monthly plan: a longer cycle would split into monthly windows.
+      const currentPeriodEnd = new Date(args.periodStart);
+      currentPeriodEnd.setUTCMonth(currentPeriodEnd.getUTCMonth() + 1);
       await materializeFromEvent({
         spaceId: args.spaceId,
         subscription: materializedSubscriptionBuilder()
           .with('status', 'active')
           .with('currentPeriodStart', args.periodStart)
+          .with('currentPeriodEnd', currentPeriodEnd)
           .with('entitlements', [
             {
               featureKey: 'sponsored_transactions',
@@ -1795,6 +1799,110 @@ describe('EntitlementsService', () => {
           authPayload: authPayloadFor(outsiderUserId),
         }),
       ).rejects.toThrow('User is not a member of this workspace');
+    });
+  });
+
+  describe('monthly quota on a yearly plan', () => {
+    const currentPeriodStart = new Date('2026-01-15T10:30:00Z');
+    const currentPeriodEnd = new Date('2027-01-15T10:30:00Z');
+    const februaryWindow = new Date('2026-02-15T10:30:00Z');
+    const marchWindow = new Date('2026-03-15T10:30:00Z');
+
+    beforeEach(() => {
+      // Only `Date`: the Postgres driver relies on real timers.
+      vi.useFakeTimers({ toFake: ['Date'] });
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    async function annualPlan(spaceId: number, quota: number): Promise<void> {
+      await materializeFromEvent({
+        spaceId,
+        subscription: materializedSubscriptionBuilder()
+          .with('status', 'active')
+          .with('currentPeriodStart', currentPeriodStart)
+          .with('currentPeriodEnd', currentPeriodEnd)
+          .with('entitlements', [
+            {
+              featureKey: 'sponsored_transactions',
+              enabled: true,
+              quota,
+              value: null,
+            },
+          ])
+          .build(),
+      });
+    }
+
+    it("shows only this month's usage and when the quota resets", async () => {
+      const spaceId = await createSpace();
+      const quota = faker.number.int({ min: 2, max: 10 });
+      await annualPlan(spaceId, quota);
+      await recordUsage({
+        spaceId,
+        featureKey: 'sponsored_transactions',
+        used: quota,
+        periodStart: februaryWindow,
+      });
+      vi.setSystemTime(marchWindow);
+
+      const result = await service.resolveEntitlements(spaceId);
+
+      expect(
+        result.entitlements.find(
+          (entitlement) => entitlement.feature === 'sponsored_transactions',
+        ),
+      ).toMatchObject({
+        used: 0,
+        quota,
+        resetsAt: new Date('2026-04-15T10:30:00Z'),
+      });
+      expect(result.plan?.cycleEndsAt).toStrictEqual(currentPeriodEnd);
+    });
+
+    it('allows usage again when a new quota month starts, even with cached limits', async () => {
+      const spaceId = await createSpace();
+      const quota = faker.number.int({ min: 1, max: 10 });
+      await annualPlan(spaceId, quota);
+      vi.setSystemTime(new Date('2026-03-15T10:29:59.999Z'));
+      await recordUsage({
+        spaceId,
+        featureKey: 'sponsored_transactions',
+        used: quota,
+        periodStart: februaryWindow,
+      });
+      await expect(
+        enforcingService.assertWithinQuota({
+          spaceId,
+          featureKey: 'sponsored_transactions',
+          delta: 1,
+        }),
+      ).rejects.toMatchObject({ response: { quota, used: quota } });
+
+      vi.setSystemTime(marchWindow);
+
+      await expect(
+        enforcingService.consumeQuota({
+          spaceId,
+          featureKey: 'sponsored_transactions',
+          delta: 1,
+        }),
+      ).resolves.toMatchObject({
+        period: { periodStart: marchWindow },
+        delta: 1,
+      });
+      const usage = await dataSource.getRepository(SpaceFeatureUsage).find({
+        where: { space: { id: spaceId } },
+        order: { periodStart: 'ASC' },
+      });
+      expect(
+        usage.map(({ periodStart, used }) => ({ periodStart, used })),
+      ).toStrictEqual([
+        { periodStart: februaryWindow, used: quota },
+        { periodStart: marchWindow, used: 1 },
+      ]);
     });
   });
 
