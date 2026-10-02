@@ -68,9 +68,12 @@ export const ACTIVE_SUBSCRIPTION_STATUSES = [
   'trialing',
 ] as const satisfies ReadonlyArray<SubscriptionStatus>;
 
+export type ActiveSubscriptionStatus =
+  (typeof ACTIVE_SUBSCRIPTION_STATUSES)[number];
+
 export function isActiveSubscriptionStatus(
   status: SubscriptionStatus,
-): boolean {
+): status is ActiveSubscriptionStatus {
   return (ACTIVE_SUBSCRIPTION_STATUSES as ReadonlyArray<string>).includes(
     status,
   );

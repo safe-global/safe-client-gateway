@@ -607,6 +607,7 @@ describe('EntitlementsService', () => {
         id: 'business',
         name: 'Business',
         cycleEndsAt: new Date('2026-08-01T00:00:00Z'),
+        status: 'active',
       });
       const byFeature = new Map(
         result.entitlements.map((entitlement) => [
@@ -626,6 +627,29 @@ describe('EntitlementsService', () => {
       });
       // Not purchased → Free defaults.
       expect(byFeature.get('pay_from_safe')).toMatchObject({ enabled: false });
+    });
+
+    it('reports a trialing subscription as the plan with its status', async () => {
+      const spaceId = await createSpace();
+      const subscription = materializedSubscriptionBuilder()
+        .with('status', 'trialing')
+        .with('entitlements', [
+          parsedEntitlementBuilder().with('featureKey', 'safe_seats').build(),
+        ])
+        .build();
+      await materializeAuthoritative({
+        spaceId,
+        subscriptions: [subscription],
+      });
+
+      const result = await service.resolveEntitlements(spaceId);
+
+      expect(result.plan).toStrictEqual({
+        id: subscription.planId,
+        name: subscription.planName,
+        cycleEndsAt: subscription.currentPeriodEnd,
+        status: 'trialing',
+      });
     });
 
     it('reports usage over the Free quota without inflating it', async () => {

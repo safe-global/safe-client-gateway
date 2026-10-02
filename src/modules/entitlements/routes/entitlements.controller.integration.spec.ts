@@ -387,7 +387,9 @@ describe('EntitlementsController', () => {
         .expect(200)
         .expect(({ body }) => {
           expect(body).toStrictEqual(expected);
-          expect(body[subscribedSpaceUuid].plan).not.toBeNull();
+          expect(body[subscribedSpaceUuid].plan).toMatchObject({
+            status: 'active',
+          });
           expect(body[safesSpaceUuid].plan).toBeNull();
           expect(body[safesSpaceUuid].entitlements).toEqual([
             expect.objectContaining({ feature: 'safe_seats', used: 1 }),

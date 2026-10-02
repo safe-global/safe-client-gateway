@@ -10,6 +10,8 @@ import type {
   ResolvedMeteredEntitlement,
   ResolvedValueEntitlement,
 } from '@/modules/entitlements/domain/entities/resolved-entitlements.entity';
+import type { ActiveSubscriptionStatus } from '@/modules/entitlements/domain/entitlements.constants';
+import { ACTIVE_SUBSCRIPTION_STATUSES } from '@/modules/entitlements/domain/entitlements.constants';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 
 export class EntitlementsPlan {
@@ -25,6 +27,13 @@ export class EntitlementsPlan {
     description: 'End of the current billing cycle',
   })
   public readonly cycleEndsAt!: Date | null;
+
+  @ApiProperty({
+    enum: ACTIVE_SUBSCRIPTION_STATUSES,
+    enumName: 'EntitlementsPlanStatus',
+    description: 'Status of the subscription the plan comes from',
+  })
+  public readonly status!: ActiveSubscriptionStatus;
 }
 
 class EntitlementItemBase {
