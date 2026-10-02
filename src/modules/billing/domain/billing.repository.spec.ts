@@ -57,7 +57,7 @@ describe('BillingRepository', () => {
     });
   });
 
-  describe('payment links', () => {
+  describe('schema behaviour', () => {
     it('should drop the upstream payment link url', async () => {
       const paymentLink = paymentLinkBuilder().build();
       billingApiMock.listPaymentLinks.mockResolvedValue(
@@ -70,9 +70,7 @@ describe('BillingRepository', () => {
 
       expect(actual).not.toHaveProperty('url');
     });
-  });
 
-  describe('schema behaviour', () => {
     it('should restore dashes in a hex-only upstreamCustomerId on a subscription', async () => {
       const subscription = subscriptionBuilder().build();
       billingApiMock.getSubscriptionsByCustomerId.mockResolvedValue(
