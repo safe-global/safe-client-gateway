@@ -29,7 +29,10 @@ import {
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import { QuotaExceededExceptionFilter } from '@/modules/entitlements/domain/exception-filters/quota-exceeded.exception-filter';
-import { CreateSpaceSafesDto } from '@/modules/spaces/routes/safes/entities/create-space-safe.dto.entity';
+import {
+  CreateSpaceSafesDto,
+  CreateSpaceSafesSchema,
+} from '@/modules/spaces/routes/safes/entities/create-space-safe.dto.entity';
 import { DeleteSpaceSafesDto } from '@/modules/spaces/routes/safes/entities/delete-space-safe.dto.entity';
 import { GetSpaceSafeResponse } from '@/modules/spaces/routes/safes/entities/get-space-safe.dto.entity';
 import { GetSpacesSafesResponse } from '@/modules/spaces/routes/safes/entities/get-spaces-safes.dto.entity';
@@ -94,7 +97,7 @@ export class SpaceSafesController {
   @UseGuards(ElevationGuard)
   @UseFilters(QuotaExceededExceptionFilter)
   public async create(
-    @Body(new ValidationPipe(SpaceSafesSchema))
+    @Body(new ValidationPipe(CreateSpaceSafesSchema))
     body: CreateSpaceSafesDto,
     @Param('spaceId', SpaceIdPipe) spaceId: number,
     @Auth() authPayload: AuthPayload,
@@ -103,6 +106,7 @@ export class SpaceSafesController {
       spaceId,
       authPayload,
       payload: body.safes,
+      addressBookItems: body.addressBookItems,
     });
   }
 

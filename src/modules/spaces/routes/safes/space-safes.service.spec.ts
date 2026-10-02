@@ -15,6 +15,7 @@ import {
 import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import type { IEntitlementEnforcement } from '@/modules/entitlements/domain/entitlement-enforcement.interface';
 import { QuotaExceededError } from '@/modules/entitlements/domain/errors/quota-exceeded.error';
+import type { IAddressBookItemsRepository } from '@/modules/spaces/domain/address-books/address-book-items.repository.interface';
 import { spaceBuilder } from '@/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
 import type { PreparedSpaceSafe } from '@/modules/spaces/domain/safes/entities/space-safe.entity';
 import type { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
@@ -61,6 +62,10 @@ const membersRepositoryMock = {
 const adminMember = (): Member =>
   memberBuilder().with('role', 'ADMIN').with('status', 'ACTIVE').build();
 
+const addressBookItemsRepositoryMock = {
+  upsertMany: vi.fn(),
+} as MockedObject<IAddressBookItemsRepository>;
+
 const entitlementEnforcementMock = {
   assertWithinQuota: vi.fn(),
   prepareQuotaCheck: vi.fn(),
@@ -76,6 +81,7 @@ describe('SpaceSafesService', () => {
       membersRepositoryMock,
       entitlementEnforcementMock,
       postgresDatabaseServiceMock,
+      addressBookItemsRepositoryMock,
     );
   });
 
@@ -252,6 +258,101 @@ describe('SpaceSafesService', () => {
       ).rejects.toThrow(quotaExceeded);
 
       expect(spaceSafesRepositoryMock.insertRows).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('create with addressBookItems', () => {
+    const arrange = (): {
+      spaceId: number;
+      authPayload: AuthPayload;
+      payload: Array<{ address: Address; chainId: string }>;
+      addressBookItems: Array<{
+        name: string;
+        address: Address;
+        chainIds: Array<string>;
+      }>;
+    } => {
+      const spaceId = faker.number.int();
+      const address = addr();
+      const chainId = faker.number.int().toString();
+      membersRepositoryMock.findOne.mockResolvedValue(adminMember());
+      entitlementEnforcementMock.prepareQuotaCheck.mockResolvedValue(vi.fn());
+      spaceSafesRepositoryMock.encryptRows.mockResolvedValue([
+        preparedRow(spaceId, address),
+      ]);
+      spaceSafesRepositoryMock.countSeatsBySpaceId.mockResolvedValue(0);
+      spaceSafesRepositoryMock.countNewSeats.mockResolvedValue(1);
+      return {
+        spaceId,
+        authPayload: new AuthPayload(oidcAuthPayloadDtoBuilder().build()),
+        payload: [{ address, chainId }],
+        addressBookItems: [
+          { name: faker.word.noun(), address, chainIds: [chainId] },
+        ],
+      };
+    };
+
+    it('writes the names after the Safes, in the same transaction', async () => {
+      const { spaceId, authPayload, payload, addressBookItems } = arrange();
+
+      await service.create({ spaceId, authPayload, payload, addressBookItems });
+
+      expect(
+        addressBookItemsRepositoryMock.upsertMany,
+      ).toHaveBeenCalledExactlyOnceWith({
+        userId: Number(authPayload.sub),
+        spaceId,
+        addressBookItems,
+        entityManager,
+      });
+      expect(
+        spaceSafesRepositoryMock.insertRows.mock.invocationCallOrder[0],
+      ).toBeLessThan(
+        addressBookItemsRepositoryMock.upsertMany.mock.invocationCallOrder[0],
+      );
+    });
+
+    it.each([
+      ['absent', undefined],
+      ['empty', []],
+    ])('writes no names when they are %s', async (_label, items) => {
+      const { spaceId, authPayload, payload } = arrange();
+
+      await service.create({
+        spaceId,
+        authPayload,
+        payload,
+        addressBookItems: items,
+      });
+
+      expect(addressBookItemsRepositoryMock.upsertMany).not.toHaveBeenCalled();
+    });
+
+    it('writes no names when the Safes are not added', async () => {
+      const { spaceId, authPayload, payload, addressBookItems } = arrange();
+      spaceSafesRepositoryMock.insertRows.mockRejectedValue(new Error('boom'));
+
+      await expect(
+        service.create({ spaceId, authPayload, payload, addressBookItems }),
+      ).rejects.toThrow('boom');
+
+      expect(addressBookItemsRepositoryMock.upsertMany).not.toHaveBeenCalled();
+    });
+
+    it('fails the whole write when the names fail, so the Safes roll back with them', async () => {
+      const { spaceId, authPayload, payload, addressBookItems } = arrange();
+      const error = new Error('kms down');
+      addressBookItemsRepositoryMock.upsertMany.mockRejectedValue(error);
+
+      await expect(
+        service.create({ spaceId, authPayload, payload, addressBookItems }),
+      ).rejects.toBe(error);
+
+      // Both writes ran on the transaction's manager, so its rollback undoes the insert.
+      expect(spaceSafesRepositoryMock.insertRows).toHaveBeenCalledWith(
+        expect.objectContaining({ entityManager }),
+      );
+      expect(postgresDatabaseServiceMock.transaction).toHaveBeenCalledOnce();
     });
   });
 
