@@ -13,6 +13,12 @@ import {
 import { moduleEnforcement } from '@/modules/policies/domain/entities/policy-enforcement.entity';
 import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
 import type { SafeRef } from '@/modules/policies/domain/entities/safe-ref.entity';
+import type {
+  Token,
+  TokenReference,
+} from '@/modules/policies/domain/entities/token.entity';
+import type { TokenMetadataKey } from '@/modules/policies/domain/utils/token-metadata-key.utils';
+import { tokenMetadataKey } from '@/modules/policies/domain/utils/token-metadata-key.utils';
 import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
 import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 
@@ -35,6 +41,12 @@ export class PendingSpendingLimitMapper {
     private readonly allowanceModuleDecoder: AllowanceModuleDecoder,
   ) {}
 
+  /**
+   * Decodes {@link args.transactions} into their spending-limit changes.
+   *
+   * A allowance change's `tokenMetadata` is `null` here becauase decoding is what first
+   * reveals which tokens a transaction references.
+   */
   public map(args: {
     safe: SafeRef;
     transactions: ReadonlyArray<MultisigTransaction>;
@@ -49,6 +61,51 @@ export class PendingSpendingLimitMapper {
     return args.transactions.flatMap((transaction) =>
       this.mapTransaction({ safe: args.safe, transaction, knownModules }),
     );
+  }
+
+  public getTokenReferences(
+    policies: ReadonlyArray<PendingQueuedPolicy>,
+  ): Array<TokenReference> {
+    return policies.flatMap((policy) => {
+      const tokenChanges = policy.data.changes.filter(
+        (change) => 'token' in change,
+      );
+      return tokenChanges.map((change) => ({
+        chainId: policy.safe.chainId,
+        token: change.token,
+      }));
+    });
+  }
+
+  /**
+   * {@link policies}, with every allowance change's `tokenMetadata` filled in from
+   * {@link tokenMetadata}.
+   */
+  public attachTokenMetadata(
+    policies: ReadonlyArray<PendingQueuedPolicy>,
+    tokenMetadata: ReadonlyMap<TokenMetadataKey, Token>,
+  ): Array<PendingQueuedPolicy> {
+    return policies.map((policy) => ({
+      ...policy,
+      data: {
+        ...policy.data,
+        changes: policy.data.changes.map((change) => {
+          if (!('token' in change)) {
+            return change;
+          }
+          return {
+            ...change,
+            tokenMetadata:
+              tokenMetadata.get(
+                tokenMetadataKey({
+                  chainId: policy.safe.chainId,
+                  address: change.token,
+                }),
+              ) ?? null,
+          };
+        }),
+      },
+    }));
   }
 
   /**
@@ -195,6 +252,7 @@ export class PendingSpendingLimitMapper {
             kind: PendingSpendingLimitChangeKind.SetAllowance,
             delegate: decoded.args[0],
             token: decoded.args[1],
+            tokenMetadata: null,
             amount: decoded.args[2].toString(),
             resetPeriodMinutes: decoded.args[3],
           };
@@ -203,12 +261,14 @@ export class PendingSpendingLimitMapper {
             kind: PendingSpendingLimitChangeKind.ResetAllowance,
             delegate: decoded.args[0],
             token: decoded.args[1],
+            tokenMetadata: null,
           };
         case 'deleteAllowance':
           return {
             kind: PendingSpendingLimitChangeKind.DeleteAllowance,
             delegate: decoded.args[0],
             token: decoded.args[1],
+            tokenMetadata: null,
           };
         default:
           // A call to a known AllowanceModule function this mapper doesn't

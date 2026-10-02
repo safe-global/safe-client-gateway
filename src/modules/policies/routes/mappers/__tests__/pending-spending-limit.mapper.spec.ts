@@ -16,9 +16,11 @@ import { enableModuleEncoder } from '@/modules/contracts/domain/__tests__/encode
 import { AllowanceModuleDecoder } from '@/modules/contracts/domain/decoders/allowance-module-decoder.helper';
 import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
 import { SafeDecoder } from '@/modules/contracts/domain/decoders/safe-decoder.helper';
+import { tokenMetadataKey } from '@/modules/policies/domain/utils/token-metadata-key.utils';
 import { PendingSpendingLimitMapper } from '@/modules/policies/routes/mappers/pending-spending-limit.mapper';
 import { multisigTransactionBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
 import { Operation } from '@/modules/safe/domain/entities/operation.entity';
+import { erc20TokenBuilder } from '@/modules/tokens/domain/__tests__/token.builder';
 
 // Sepolia's only AllowanceModule deployment (v0.1.0), per @safe-global/safe-modules-deployments.
 const SEPOLIA_CHAIN_ID = '11155111';
@@ -89,6 +91,7 @@ describe('PendingSpendingLimitMapper', () => {
               kind: 'set-allowance',
               delegate: setAllowanceArgs.delegate,
               token: setAllowanceArgs.token,
+              tokenMetadata: null,
               amount: setAllowanceArgs.allowanceAmount.toString(),
               resetPeriodMinutes: setAllowanceArgs.resetTimeMin,
             },
@@ -146,6 +149,7 @@ describe('PendingSpendingLimitMapper', () => {
           kind: 'set-allowance',
           delegate: setAllowanceArgs.delegate,
           token: setAllowanceArgs.token,
+          tokenMetadata: null,
           amount: setAllowanceArgs.allowanceAmount.toString(),
           resetPeriodMinutes: setAllowanceArgs.resetTimeMin,
         },
@@ -297,6 +301,68 @@ describe('PendingSpendingLimitMapper', () => {
           delegate: addDelegateArgs.delegate,
         },
       ],
+    });
+  });
+
+  describe('attachTokenMetadata', () => {
+    const safe = {
+      chainId: SEPOLIA_CHAIN_ID,
+      address: getAddress(faker.finance.ethereumAddress()),
+    };
+
+    it("should attach the token found under the change's chain and address", () => {
+      const setAllowance = setAllowanceEncoder();
+      const setAllowanceArgs = setAllowance.build();
+      const transaction = multisigTransactionBuilder()
+        .with('to', SEPOLIA_ALLOWANCE_MODULE)
+        .with('operation', Operation.CALL)
+        .with('data', setAllowance.encode())
+        .build();
+      const [policy] = target.map({ safe, transactions: [transaction] });
+      const metadata = erc20TokenBuilder().build();
+      const tokenMetadata = new Map([
+        [
+          tokenMetadataKey({
+            chainId: safe.chainId,
+            address: setAllowanceArgs.token,
+          }),
+          metadata,
+        ],
+      ]);
+
+      const [attached] = target.attachTokenMetadata([policy], tokenMetadata);
+
+      expect(attached.data.changes[0]).toMatchObject({
+        tokenMetadata: metadata,
+      });
+    });
+
+    it('should report null when no metadata was fetched for the token', () => {
+      const setAllowance = setAllowanceEncoder();
+      const transaction = multisigTransactionBuilder()
+        .with('to', SEPOLIA_ALLOWANCE_MODULE)
+        .with('operation', Operation.CALL)
+        .with('data', setAllowance.encode())
+        .build();
+      const [policy] = target.map({ safe, transactions: [transaction] });
+
+      const [attached] = target.attachTokenMetadata([policy], new Map());
+
+      expect(attached.data.changes[0]).toMatchObject({ tokenMetadata: null });
+    });
+
+    it('should leave a change with no token untouched', () => {
+      const addDelegate = addDelegateEncoder();
+      const transaction = multisigTransactionBuilder()
+        .with('to', SEPOLIA_ALLOWANCE_MODULE)
+        .with('operation', Operation.CALL)
+        .with('data', addDelegate.encode())
+        .build();
+      const [policy] = target.map({ safe, transactions: [transaction] });
+
+      const [attached] = target.attachTokenMetadata([policy], new Map());
+
+      expect(attached.data.changes[0]).not.toHaveProperty('tokenMetadata');
     });
   });
 });
