@@ -181,13 +181,16 @@ export class EntitlementsService implements IEntitlementEnforcement {
           return [
             spaceId,
             {
-              plan: activeSubscription
-                ? {
-                    id: activeSubscription.planId,
-                    name: activeSubscription.planName,
-                    cycleEndsAt: activeSubscription.currentPeriodEnd,
-                  }
-                : null,
+              plan:
+                activeSubscription &&
+                isActiveSubscriptionStatus(activeSubscription.status)
+                  ? {
+                      id: activeSubscription.planId,
+                      name: activeSubscription.planName,
+                      cycleEndsAt: activeSubscription.currentPeriodEnd,
+                      status: activeSubscription.status,
+                    }
+                  : null,
               entitlements,
             },
           ] as const;
@@ -1018,6 +1021,7 @@ export class EntitlementsService implements IEntitlementEnforcement {
             id: resolved.plan.id,
             name: resolved.plan.name,
             cycleEndsAt: resolved.plan.cycleEndsAt,
+            status: resolved.plan.status,
           }
         : null,
       entitlements,
