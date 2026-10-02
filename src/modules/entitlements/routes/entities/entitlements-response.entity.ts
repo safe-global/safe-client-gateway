@@ -10,6 +10,7 @@ import type {
   ResolvedMeteredEntitlement,
   ResolvedValueEntitlement,
 } from '@/modules/entitlements/domain/entities/resolved-entitlements.entity';
+import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 
 export class EntitlementsPlan {
   @ApiProperty({ description: 'Plan identifier in the billing service' })
@@ -128,3 +129,8 @@ export class EntitlementsResponse {
   })
   public readonly entitlements!: Array<EntitlementItem>;
 }
+
+export type SpacesEntitlementsResponse = Record<
+  Space['uuid'],
+  EntitlementsResponse
+>;

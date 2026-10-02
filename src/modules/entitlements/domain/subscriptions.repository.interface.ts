@@ -25,6 +25,15 @@ export interface ISubscriptionsRepository {
   ): Promise<SpaceSubscription | null>;
 
   /**
+   * {@link getActiveSubscriptionBySpaceId} for several spaces, in one query,
+   * keyed by space id. A space with no active subscription is absent.
+   */
+  getActiveSubscriptionsBySpaceIds(
+    spaceIds: Array<Space['id']>,
+    entityManager?: EntityManager,
+  ): Promise<Map<Space['id'], SpaceSubscription>>;
+
+  /**
    * The space's subscription standing, in one read. Prefer it over
    * `getActiveSubscriptionBySpaceId` when the entitlement package is not needed:
    * this one reads two columns instead of hydrating the relation tree.

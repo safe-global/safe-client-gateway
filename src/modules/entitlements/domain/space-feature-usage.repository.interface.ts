@@ -21,6 +21,15 @@ export interface ISpaceFeatureUsageRepository {
   ): Promise<Map<number, number>>;
 
   /**
+   * {@link getUsageByFeatureId} for several spaces, each with its own periods,
+   * in one query, keyed by space id. A space with no counters is absent.
+   */
+  getUsageBySpaceIds(
+    args: Array<{ spaceId: Space['id']; periods: Array<UsageKey> }>,
+    entityManager?: EntityManager,
+  ): Promise<Map<Space['id'], Map<number, number>>>;
+
+  /**
    * Adds `delta` to one counter, creating it when the period has none yet, and
    * returns what it holds afterwards — subtract `delta` for the `used` a quota
    * check expects. Creating and incrementing are one statement, so concurrent
