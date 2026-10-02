@@ -161,6 +161,111 @@ describe('SpaceFeatureUsageRepository', () => {
     };
   }
 
+  describe('getUsageBySpaceIds', () => {
+    it("should key each space's counters by space id, then by feature id", async () => {
+      const [spaceId, otherSpaceId] = await Promise.all([
+        createSpace(),
+        createSpace(),
+      ]);
+      const [period, otherPeriod] = await Promise.all([usageKey(), usageKey()]);
+      const [used, otherUsed, otherSpaceUsed] = faker.helpers.multiple(
+        () => faker.number.int({ min: 1, max: 10 }),
+        { count: 3 },
+      );
+      await spaceFeatureUsageRepository.incrementUsage({
+        spaceId,
+        period,
+        delta: used,
+      });
+      await spaceFeatureUsageRepository.incrementUsage({
+        spaceId,
+        period: otherPeriod,
+        delta: otherUsed,
+      });
+      await spaceFeatureUsageRepository.incrementUsage({
+        spaceId: otherSpaceId,
+        period,
+        delta: otherSpaceUsed,
+      });
+
+      await expect(
+        spaceFeatureUsageRepository.getUsageBySpaceIds([
+          { spaceId, periods: [period, otherPeriod] },
+          { spaceId: otherSpaceId, periods: [period] },
+        ]),
+      ).resolves.toStrictEqual(
+        new Map([
+          [
+            spaceId,
+            new Map([
+              [period.featureId, used],
+              [otherPeriod.featureId, otherUsed],
+            ]),
+          ],
+          [otherSpaceId, new Map([[period.featureId, otherSpaceUsed]])],
+        ]),
+      );
+    });
+
+    it('should read only the periods requested for each space', async () => {
+      const [spaceId, otherSpaceId] = await Promise.all([
+        createSpace(),
+        createSpace(),
+      ]);
+      const { featureId } = await usageKey();
+      const previous = faker.date.past();
+      const current = faker.date.recent();
+      const used = faker.number.int({ min: 1, max: 10 });
+      await spaceFeatureUsageRepository.incrementUsage({
+        spaceId,
+        period: { featureId, periodStart: previous },
+        delta: used,
+      });
+      await spaceFeatureUsageRepository.incrementUsage({
+        spaceId: otherSpaceId,
+        period: { featureId, periodStart: current },
+        delta: used,
+      });
+
+      await expect(
+        spaceFeatureUsageRepository.getUsageBySpaceIds([
+          { spaceId, periods: [{ featureId, periodStart: current }] },
+          {
+            spaceId: otherSpaceId,
+            periods: [{ featureId, periodStart: previous }],
+          },
+        ]),
+      ).resolves.toStrictEqual(new Map());
+    });
+
+    it('should not leak the counters of a space that was not requested', async () => {
+      const [spaceId, otherSpaceId] = await Promise.all([
+        createSpace(),
+        createSpace(),
+      ]);
+      const period = await usageKey();
+      await spaceFeatureUsageRepository.incrementUsage({
+        spaceId: otherSpaceId,
+        period,
+        delta: faker.number.int({ min: 1, max: 10 }),
+      });
+
+      await expect(
+        spaceFeatureUsageRepository.getUsageBySpaceIds([
+          { spaceId, periods: [period] },
+        ]),
+      ).resolves.toStrictEqual(new Map());
+    });
+
+    it('should return an empty map when no period is requested', async () => {
+      await expect(
+        spaceFeatureUsageRepository.getUsageBySpaceIds([
+          { spaceId: await createSpace(), periods: [] },
+        ]),
+      ).resolves.toStrictEqual(new Map());
+    });
+  });
+
   describe('incrementUsage', () => {
     it('should create the counter when the period has none yet', async () => {
       const spaceId = await createSpace();

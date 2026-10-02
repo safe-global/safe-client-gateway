@@ -158,6 +158,72 @@ describe('SubscriptionsRepository', () => {
     return planId;
   }
 
+  describe('getActiveSubscriptionsBySpaceIds', () => {
+    it("should key each requested space's active subscription by space id", async () => {
+      const [activeSpaceId, trialingSpaceId] = await Promise.all([
+        createSpace(),
+        createSpace(),
+      ]);
+      const activePlanId = await subscribe(activeSpaceId, 'active');
+      const trialingPlanId = await subscribe(trialingSpaceId, 'trialing');
+
+      const subscriptions =
+        await subscriptionsRepository.getActiveSubscriptionsBySpaceIds([
+          activeSpaceId,
+          trialingSpaceId,
+        ]);
+
+      expect(
+        new Map(
+          [...subscriptions].map(([spaceId, subscription]) => [
+            spaceId,
+            subscription.planId,
+          ]),
+        ),
+      ).toStrictEqual(
+        new Map([
+          [activeSpaceId, activePlanId],
+          [trialingSpaceId, trialingPlanId],
+        ]),
+      );
+    });
+
+    it('should leave out a requested space with no active subscription', async () => {
+      const [unsubscribedSpaceId, canceledSpaceId] = await Promise.all([
+        createSpace(),
+        createSpace(),
+      ]);
+      await subscribe(canceledSpaceId, 'canceled');
+
+      await expect(
+        subscriptionsRepository.getActiveSubscriptionsBySpaceIds([
+          unsubscribedSpaceId,
+          canceledSpaceId,
+        ]),
+      ).resolves.toStrictEqual(new Map());
+    });
+
+    it('should not leak the subscription of a space that was not requested', async () => {
+      const [spaceId, otherSpaceId] = await Promise.all([
+        createSpace(),
+        createSpace(),
+      ]);
+      await subscribe(otherSpaceId, 'active');
+
+      await expect(
+        subscriptionsRepository.getActiveSubscriptionsBySpaceIds([spaceId]),
+      ).resolves.toStrictEqual(new Map());
+    });
+
+    it('should return an empty map for no spaces', async () => {
+      await subscribe(await createSpace(), 'active');
+
+      await expect(
+        subscriptionsRepository.getActiveSubscriptionsBySpaceIds([]),
+      ).resolves.toStrictEqual(new Map());
+    });
+  });
+
   describe('getSubscriptionSummary', () => {
     it('should report a space that never subscribed', async () => {
       const spaceId = await createSpace();
