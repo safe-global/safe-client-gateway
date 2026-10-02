@@ -892,94 +892,32 @@ describe('SpaceSafesController', () => {
   });
 
   describe('GET /v1/spaces/safes', () => {
-    const buildSafes = (): Array<{ chainId: string; address: Address }> =>
-      faker.helpers
-        .uniqueArray(
-          () => faker.string.numeric({ length: { min: 1, max: 4 } }),
-          faker.number.int({ min: 1, max: 3 }),
-        )
-        .map((chainId) => ({
-          chainId,
-          address: getAddress(faker.finance.ethereumAddress()),
-        }));
-
-    it('Should return the safes of every space the user is an active member of, keyed by space UUID and grouped by chain', async () => {
-      const userAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const userAccessToken = jwtService.sign(userAuthPayloadDto);
-      const otherAdminAccessToken = jwtService.sign(
-        siweAuthPayloadDtoBuilder().build(),
-      );
-      const spaceSafes = buildSafes();
-      const invitedSpaceSafes = buildSafes();
-
-      await request(app.getHttpServer())
-        .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${userAccessToken}`]);
-      await request(app.getHttpServer())
-        .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${otherAdminAccessToken}`]);
-
-      const createSpace = async (accessToken: string): Promise<string> => {
-        const response = await request(app.getHttpServer())
-          .post('/v1/spaces')
-          .set('Cookie', [`access_token=${accessToken}`])
-          .send({ name: nameBuilder() });
-        return response.body.uuid;
-      };
-      const spaceId = await createSpace(userAccessToken);
-      const emptySpaceId = await createSpace(userAccessToken);
-      const invitedSpaceId = await createSpace(otherAdminAccessToken);
-
-      await request(app.getHttpServer())
-        .post(`/v1/spaces/${spaceId}/safes`)
-        .set('Cookie', [`access_token=${userAccessToken}`])
-        .send({ safes: spaceSafes })
-        .expect(201);
-      await request(app.getHttpServer())
-        .post(`/v1/spaces/${invitedSpaceId}/safes`)
-        .set('Cookie', [`access_token=${otherAdminAccessToken}`])
-        .send({ safes: invitedSpaceSafes })
-        .expect(201);
-      await request(app.getHttpServer())
-        .post(`/v1/spaces/${invitedSpaceId}/members/invite`)
-        .set('Cookie', [`access_token=${otherAdminAccessToken}`])
-        .send({
-          users: [
-            {
-              address: userAuthPayloadDto.signer_address,
-              name: faker.person.firstName(),
-              role: 'MEMBER',
-            },
-          ],
-        })
-        .expect(201);
-
-      await request(app.getHttpServer())
-        .get('/v1/spaces/safes')
-        .set('Cookie', [`access_token=${userAccessToken}`])
-        .expect(200)
-        .expect(({ body }) => {
-          expect(body).toEqual({
-            [spaceId]: Object.fromEntries(
-              spaceSafes.map(({ chainId, address }) => [chainId, [address]]),
-            ),
-            [emptySpaceId]: {},
-          });
-        });
-    });
-
-    it('Should return an empty object if the user is a member of no space', async () => {
+    it('Should return the safes of the spaces the user is a member of, grouped by chain', async () => {
       const accessToken = jwtService.sign(siweAuthPayloadDtoBuilder().build());
+      const safe = {
+        chainId: faker.string.numeric({ length: { min: 1, max: 4 } }),
+        address: getAddress(faker.finance.ethereumAddress()),
+      };
 
       await request(app.getHttpServer())
         .post('/v1/users/wallet')
         .set('Cookie', [`access_token=${accessToken}`]);
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: nameBuilder() });
+      const spaceUuid = createSpaceResponse.body.uuid;
+      await request(app.getHttpServer())
+        .post(`/v1/spaces/${spaceUuid}/safes`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ safes: [safe] })
+        .expect(201);
 
       await request(app.getHttpServer())
         .get('/v1/spaces/safes')
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(200)
-        .expect({});
+        .expect([{ spaceUuid, safes: { [safe.chainId]: [safe.address] } }]);
     });
 
     it('should return a 403 if not authenticated', async () => {

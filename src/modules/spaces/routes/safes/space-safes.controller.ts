@@ -32,7 +32,7 @@ import { QuotaExceededExceptionFilter } from '@/modules/entitlements/domain/exce
 import { CreateSpaceSafesDto } from '@/modules/spaces/routes/safes/entities/create-space-safe.dto.entity';
 import { DeleteSpaceSafesDto } from '@/modules/spaces/routes/safes/entities/delete-space-safe.dto.entity';
 import { GetSpaceSafeResponse } from '@/modules/spaces/routes/safes/entities/get-space-safe.dto.entity';
-import type { GetSpacesSafesResponse } from '@/modules/spaces/routes/safes/entities/get-spaces-safes.dto.entity';
+import { GetSpacesSafesResponse } from '@/modules/spaces/routes/safes/entities/get-spaces-safes.dto.entity';
 import { SpaceSafesSchema } from '@/modules/spaces/routes/safes/entities/space-safe.dto.entity';
 import { SpaceSafesService } from '@/modules/spaces/routes/safes/space-safes.service';
 import { Auth } from '@/routes/common/auth/auth.decorator';
@@ -109,27 +109,12 @@ export class SpaceSafesController {
   @ApiOperation({
     summary: 'Get Safes of all spaces',
     description:
-      'Retrieves the Safes of every space the user is an active member of, keyed by space UUID and grouped by chain like the per-space endpoint. A space without Safes maps to an empty object.',
+      'Retrieves the Safes of every space the user is an active member of, one entry per space with its Safes grouped by chain like the per-space endpoint. A space without Safes has an empty `safes` object.',
   })
   @ApiOkResponse({
     description: 'Safes of all spaces retrieved successfully',
-    schema: {
-      type: 'object',
-      additionalProperties: {
-        type: 'object',
-        additionalProperties: {
-          type: 'array',
-          items: {
-            type: 'string',
-          },
-        },
-      },
-      example: {
-        '{spaceUuid}': {
-          '{chainId}': ['0x...'],
-        },
-      },
-    },
+    type: GetSpacesSafesResponse,
+    isArray: true,
   })
   @ApiUnauthorizedResponse({
     description: 'Authentication required',
@@ -140,7 +125,7 @@ export class SpaceSafesController {
   @Get('safes')
   public async getAll(
     @Auth() authPayload: AuthPayload,
-  ): Promise<GetSpacesSafesResponse> {
+  ): Promise<Array<GetSpacesSafesResponse>> {
     return await this.spaceSafesService.getAll(authPayload);
   }
 

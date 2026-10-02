@@ -322,7 +322,7 @@ describe('SpaceSafesService', () => {
       ['SIWE', siweAuthPayloadDtoBuilder],
       ['OIDC', oidcAuthPayloadDtoBuilder],
     ] as const)(
-      'should return the safes of every space of a %s member, keyed by space UUID and grouped by chain',
+      'should return the safes of every space of a %s member, one entry per space grouped by chain',
       async (_label, builder) => {
         const authPayload = new AuthPayload(builder().build());
         const space1 = spaceBuilder().build();
@@ -361,14 +361,17 @@ describe('SpaceSafesService', () => {
         expect(
           spaceSafesRepositoryMock.findBySpaceIds,
         ).toHaveBeenCalledExactlyOnceWith([space1.id, space2.id]);
-        expect(result).toStrictEqual({
-          [space1.uuid]: { [chainId1]: [addr1, addr2], [chainId2]: [addr3] },
-          [space2.uuid]: { [chainId2]: [addr4] },
-        });
+        expect(result).toStrictEqual([
+          {
+            spaceUuid: space1.uuid,
+            safes: { [chainId1]: [addr1, addr2], [chainId2]: [addr3] },
+          },
+          { spaceUuid: space2.uuid, safes: { [chainId2]: [addr4] } },
+        ]);
       },
     );
 
-    it('should return an empty object for a space without safes', async () => {
+    it('should return empty safes for a space without safes', async () => {
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
       const space = spaceBuilder().build();
 
@@ -379,18 +382,18 @@ describe('SpaceSafesService', () => {
         new Map([[space.id, []]]),
       );
 
-      await expect(service.getAll(authPayload)).resolves.toStrictEqual({
-        [space.uuid]: {},
-      });
+      await expect(service.getAll(authPayload)).resolves.toStrictEqual([
+        { spaceUuid: space.uuid, safes: {} },
+      ]);
     });
 
-    it('should return an empty object when the user is a member of no space', async () => {
+    it('should return an empty array when the user is a member of no space', async () => {
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
 
       membersRepositoryMock.find.mockResolvedValue([]);
       spaceSafesRepositoryMock.findBySpaceIds.mockResolvedValue(new Map());
 
-      await expect(service.getAll(authPayload)).resolves.toStrictEqual({});
+      await expect(service.getAll(authPayload)).resolves.toStrictEqual([]);
       expect(
         spaceSafesRepositoryMock.findBySpaceIds,
       ).toHaveBeenCalledExactlyOnceWith([]);

@@ -97,7 +97,7 @@ export class SpaceSafesService {
 
   public async getAll(
     authPayload: AuthPayload,
-  ): Promise<GetSpacesSafesResponse> {
+  ): Promise<Array<GetSpacesSafesResponse>> {
     const userId = getAuthenticatedUserIdOrFail(authPayload);
 
     const members = await this.membersRepository.find({
@@ -109,14 +109,12 @@ export class SpaceSafesService {
       members.map(({ space }) => space.id),
     );
 
-    return Object.fromEntries(
-      members.map(({ space }) => [
-        space.uuid,
-        this.transformSpaceSafesResponse(
-          spaceSafesBySpaceId.get(space.id) ?? [],
-        ),
-      ]),
-    );
+    return members.map(({ space }) => ({
+      spaceUuid: space.uuid,
+      safes: this.transformSpaceSafesResponse(
+        spaceSafesBySpaceId.get(space.id) ?? [],
+      ),
+    }));
   }
 
   public async delete(args: {

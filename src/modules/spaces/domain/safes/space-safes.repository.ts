@@ -146,18 +146,7 @@ export class SpaceSafesRepository implements ISpaceSafesRepository {
   public async findBySpaceId(
     spaceId: Space['id'],
   ): Promise<Array<Pick<SpaceSafe, 'chainId' | 'address'>>> {
-    const spaceSafeRepository =
-      await this.postgresDatabaseService.getRepository(SpaceSafe);
-
-    const spaceSafes = await spaceSafeRepository.find({
-      select: { chainId: true, address: true },
-      where: { space: { id: spaceId } },
-    });
-    // Repository boundary: callers receive plaintext addresses.
-    return await this.spaceEncryptionService.decryptSpaceSafes(
-      spaceId,
-      spaceSafes,
-    );
+    return (await this.findBySpaceIds([spaceId])).get(spaceId) ?? [];
   }
 
   public async findBySpaceIds(
