@@ -32,7 +32,6 @@ export type PaymentLink = z.infer<typeof PaymentLinkSchema>;
 
 export const PaymentLinkSchema = z.object({
   id: z.string(),
-  url: z.string(),
   active: z.boolean(),
   metadata: StripeMetadataSchema,
   customText: z.record(z.string(), z.unknown()).optional(),

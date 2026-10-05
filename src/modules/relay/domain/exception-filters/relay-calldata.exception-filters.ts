@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { applyDecorators, UseFilters } from '@nestjs/common';
+import { GasPaymentOptionUnavailableExceptionFilter } from '@/modules/relay/domain/exception-filters/gas-payment-option-unavailable.exception-filter';
 import { InvalidMultiSendExceptionFilter } from '@/modules/relay/domain/exception-filters/invalid-multisend.exception-filter';
 import { InvalidTransferExceptionFilter } from '@/modules/relay/domain/exception-filters/invalid-transfer.exception-filter';
 import { RelayDeniedExceptionFilter } from '@/modules/relay/domain/exception-filters/relay-denied.exception-filter';
@@ -15,6 +16,7 @@ import { UnofficialSignerFactoryExceptionFilter } from '@/modules/relay/domain/e
  * validates the calldata to HTTP responses:
  *
  * - the relayer refused the request or is unavailable,
+ * - the chain doesn't offer the gas payment option the request needs,
  * - the calldata is not a recognised Safe transaction (multiSend, transfer),
  * - the calldata targets a contract that is not an official Safe deployment
  *   (master copy, MultiSend, ProxyFactory, signer factory).
@@ -28,6 +30,7 @@ export const RelayCalldataExceptionFilters = (): MethodDecorator &
     UseFilters(
       RelayDeniedExceptionFilter,
       RelayerNotAvailableExceptionFilter,
+      GasPaymentOptionUnavailableExceptionFilter,
       InvalidMultiSendExceptionFilter,
       InvalidTransferExceptionFilter,
       UnofficialMasterCopyExceptionFilter,

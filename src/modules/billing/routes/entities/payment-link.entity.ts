@@ -10,8 +10,6 @@ export class PaymentLink implements DomainPaymentLink {
   @ApiProperty()
   id!: string;
   @ApiProperty()
-  url!: string;
-  @ApiProperty()
   active!: boolean;
   @ApiProperty({ type: Object })
   metadata!: StripeMetadata;

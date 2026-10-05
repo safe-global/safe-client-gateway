@@ -16,12 +16,14 @@ import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
 import {
   addSafes as addSafesFixture,
   createSpaceForSigner as createSpaceForSignerFixture,
+  grantEntitlements,
   safePayload,
 } from '@/__tests__/util/space-fixtures';
 import configuration from '@/config/entities/__tests__/configuration';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
 import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
+import { nameBuilder } from '@/domain/common/entities/name.builder';
 import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import { Feature } from '@/modules/entitlements/datasources/entities/feature.entity.db';
@@ -31,9 +33,12 @@ import { SubscriptionEntitlement } from '@/modules/entitlements/datasources/enti
 import { featureBuilder } from '@/modules/entitlements/domain/entities/__tests__/feature.builder';
 import { FeatureType } from '@/modules/entitlements/domain/entities/feature.entity';
 import { EntitlementsController } from '@/modules/entitlements/routes/entitlements.controller';
+import { EntitlementsService } from '@/modules/entitlements/routes/entitlements.service';
 import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
 import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
+import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
 import { SpacesCreationRateLimitGuard } from '@/modules/spaces/routes/guards/spaces-creation-rate-limit.guard';
+import { Member } from '@/modules/users/datasources/entities/member.entity.db';
 
 // The suite owns its own tiny catalog: only `safe_seats` is signed off and
 // seeded by a migration, so the feature types below come from fixtures (same
@@ -47,6 +52,7 @@ describe('EntitlementsController', () => {
   let app: INestApplication<Server>;
   let jwtService: IJwtService;
   let postgresDatabaseService: PostgresDatabaseService;
+  let entitlementsService: EntitlementsService;
 
   // Its own database, like the repo's repository specs, because `features` is a
   // global table this suite replaces wholesale. Not faker: a fixed FAKER_SEED
@@ -109,6 +115,7 @@ describe('EntitlementsController', () => {
 
     jwtService = moduleFixture.get<IJwtService>(IJwtService);
     postgresDatabaseService = moduleFixture.get(PostgresDatabaseService);
+    entitlementsService = moduleFixture.get(EntitlementsService);
 
     app = await new TestAppProvider().provide(moduleFixture);
     await initTestApplication(app);
@@ -172,7 +179,10 @@ describe('EntitlementsController', () => {
     );
 
   it('should require authentication for every endpoint', () => {
-    const endpoints = [EntitlementsController.prototype.getEntitlements];
+    const endpoints = [
+      EntitlementsController.prototype.getEntitlements,
+      EntitlementsController.prototype.getAllEntitlements,
+    ];
     for (const fn of endpoints) {
       checkGuardIsApplied(AuthGuard, fn);
     }
@@ -275,6 +285,115 @@ describe('EntitlementsController', () => {
               }),
             ]),
           );
+        });
+    });
+  });
+
+  describe('GET /v1/spaces/entitlements', () => {
+    async function createSpace(
+      accessToken: string,
+    ): Promise<{ spaceUuid: string; spaceId: number }> {
+      const response = await request(app.getHttpServer())
+        .post('/v1/spaces')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: nameBuilder() })
+        .expect(201);
+      const spaceRepository =
+        await postgresDatabaseService.getRepository(Space);
+      const space = await spaceRepository.findOneOrFail({
+        where: { uuid: response.body.uuid },
+        select: { id: true },
+      });
+      return { spaceUuid: response.body.uuid, spaceId: space.id };
+    }
+
+    it('returns 403 without an access token', async () => {
+      await request(app.getHttpServer())
+        .get('/v1/spaces/entitlements')
+        .expect(403);
+    });
+
+    it('returns an empty object for a caller in no workspace', async () => {
+      await request(app.getHttpServer())
+        .get('/v1/spaces/entitlements')
+        .set('Cookie', [`access_token=${nonMemberToken()}`])
+        .expect(200)
+        .expect(({ body }) => {
+          expect(body).toStrictEqual({});
+        });
+    });
+
+    it('returns what each active workspace serves on its own, leaving out a pending invite', async () => {
+      const {
+        accessToken,
+        spaceUuid: subscribedSpaceUuid,
+        spaceId: subscribedSpaceId,
+      } = await createSpaceForSignerFixture({
+        app,
+        jwtService,
+        postgresDatabaseService,
+      });
+      const { spaceUuid: safesSpaceUuid } = await createSpace(accessToken);
+      const { spaceId: invitedSpaceId } = await createSpaceForSignerFixture({
+        app,
+        jwtService,
+        postgresDatabaseService,
+      });
+      await grantEntitlements({
+        entitlementsService,
+        spaceId: subscribedSpaceId,
+        entitlements: [
+          {
+            featureKey: 'safe_seats',
+            quota: faker.number.int({ min: FREE_SAFE_SEATS + 1, max: 100 }),
+          },
+        ],
+      });
+      await addSafesFixture({
+        app,
+        spaceUuid: safesSpaceUuid,
+        accessToken,
+        safes: safePayload(1),
+      }).then((response) => expect(response.status).toBe(201));
+      const membersRepository =
+        await postgresDatabaseService.getRepository(Member);
+      const { user } = await membersRepository.findOneOrFail({
+        where: { space: { id: subscribedSpaceId } },
+        relations: { user: true },
+      });
+      await membersRepository.insert({
+        user: { id: user.id },
+        space: { id: invitedSpaceId },
+        name: nameBuilder(),
+        role: 'MEMBER',
+        status: 'INVITED',
+        inviteExpiresAt: null,
+      });
+      const getOwn = async (spaceUuid: string): Promise<unknown> => {
+        const response = await request(app.getHttpServer())
+          .get(`/v1/spaces/${spaceUuid}/entitlements`)
+          .set('Cookie', [`access_token=${accessToken}`])
+          .expect(200);
+        return response.body;
+      };
+      const expected = {
+        [subscribedSpaceUuid]: await getOwn(subscribedSpaceUuid),
+        [safesSpaceUuid]: await getOwn(safesSpaceUuid),
+      };
+
+      await request(app.getHttpServer())
+        .get('/v1/spaces/entitlements')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200)
+        .expect(({ body }) => {
+          expect(body).toStrictEqual(expected);
+          expect(body[subscribedSpaceUuid].plan).toMatchObject({
+            status: 'active',
+          });
+          expect(body[safesSpaceUuid].plan).toBeNull();
+          expect(body[safesSpaceUuid].entitlements).toEqual([
+            expect.objectContaining({ feature: 'safe_seats', used: 1 }),
+          ]);
         });
     });
   });

@@ -148,6 +148,9 @@ export class CircuitBreakerService {
         lastFailureTime: undefined,
         lastActivityTime: undefined,
         nextAttemptTime: undefined,
+        openedAt: undefined,
+        reopenCount: 0,
+        blockedRequests: 0,
       },
     };
 
@@ -189,7 +192,9 @@ export class CircuitBreakerService {
       ? Math.ceil((circuit.metrics.nextAttemptTime - now) / 1000)
       : 0;
 
-    this.loggingService.warn({
+    circuit.metrics.blockedRequests++;
+
+    this.loggingService.debug({
       type: LogType.CircuitBreakerRequestBlocked,
       circuit: circuit.name,
       state: CircuitState.OPEN,
@@ -225,7 +230,9 @@ export class CircuitBreakerService {
       return true;
     }
 
-    this.loggingService.warn({
+    circuit.metrics.blockedRequests++;
+
+    this.loggingService.debug({
       type: LogType.CircuitBreakerRequestBlocked,
       circuit: circuit.name,
       state: CircuitState.HALF_OPEN,
@@ -267,7 +274,7 @@ export class CircuitBreakerService {
     circuit.metrics.halfOpenInFlight = 0;
     circuit.metrics.state = CircuitState.HALF_OPEN;
 
-    this.loggingService.info({
+    this.loggingService.debug({
       type: LogType.CircuitBreakerStateTransition,
       circuit: circuit.name,
       from: CircuitState.OPEN,
@@ -325,13 +332,18 @@ export class CircuitBreakerService {
    * @returns {void}
    */
   private transitionToClosed(circuit: ICircuit): void {
+    const openForSeconds = this.getOpenForSeconds(circuit);
+
     this.loggingService.info({
       type: LogType.CircuitBreakerStateTransition,
       circuit: circuit.name,
       from: CircuitState.HALF_OPEN,
       to: CircuitState.CLOSED,
       totalFailures: circuit.metrics.failureCount,
-      message: `Circuit "${circuit.name}" transitioned from HALF_OPEN to CLOSED. Service recovered successfully`,
+      openForSeconds,
+      reopenCount: circuit.metrics.reopenCount,
+      blockedRequests: circuit.metrics.blockedRequests,
+      message: `Circuit "${circuit.name}" transitioned from HALF_OPEN to CLOSED. Service recovered after ${openForSeconds}s (${circuit.metrics.reopenCount} reopen(s), ${circuit.metrics.blockedRequests} request(s) blocked)`,
     });
 
     this.circuits.delete(circuit.name);
@@ -394,7 +406,7 @@ export class CircuitBreakerService {
 
     const effectiveThreshold = this.getEffectiveFailureThreshold(circuit);
 
-    this.loggingService.warn({
+    this.loggingService.debug({
       type: LogType.CircuitBreakerFailureRecorded,
       circuit: circuit.name,
       state: circuit.metrics.state,
@@ -457,13 +469,13 @@ export class CircuitBreakerService {
   private transitionToOpen(circuit: ICircuit): void {
     const previousState = circuit.metrics.state;
     const effectiveThreshold = this.getEffectiveFailureThreshold(circuit);
+    const now = Date.now();
     circuit.metrics.state = CircuitState.OPEN;
     circuit.metrics.halfOpenInFlight = 0;
-    circuit.metrics.nextAttemptTime = Date.now() + this.config.timeout;
+    circuit.metrics.nextAttemptTime = now + this.config.timeout;
 
     const timeoutSeconds = Math.ceil(this.config.timeout / 1000);
-
-    this.loggingService.error({
+    const transition = {
       type: LogType.CircuitBreakerStateTransition,
       circuit: circuit.name,
       from: previousState,
@@ -472,8 +484,55 @@ export class CircuitBreakerService {
       threshold: effectiveThreshold,
       timeoutSeconds: timeoutSeconds,
       nextAttemptTime: new Date(circuit.metrics.nextAttemptTime).toISOString(),
+    };
+
+    // First trip is an error; re-trips (still down) warn on the 1st, 2nd, 4th, 8th, … (power of 2)
+    if (previousState === CircuitState.HALF_OPEN) {
+      circuit.metrics.reopenCount++;
+      const openForSeconds = this.getOpenForSeconds(circuit);
+      const reopen = {
+        ...transition,
+        openForSeconds,
+        reopenCount: circuit.metrics.reopenCount,
+        blockedRequests: circuit.metrics.blockedRequests,
+        message: `Circuit "${circuit.name}" transitioned from HALF_OPEN to OPEN. Still failing after ${openForSeconds}s (${circuit.metrics.reopenCount} reopen(s), ${circuit.metrics.blockedRequests} request(s) blocked). Will retry in ${timeoutSeconds}s`,
+      };
+
+      if (this.isPowerOfTwo(circuit.metrics.reopenCount)) {
+        this.loggingService.warn(reopen);
+      } else {
+        this.loggingService.debug(reopen);
+      }
+      return;
+    }
+
+    circuit.metrics.openedAt = now;
+
+    this.loggingService.error({
+      ...transition,
       message: `Circuit "${circuit.name}" transitioned from ${previousState} to OPEN. Threshold reached (${circuit.metrics.failureCount}/${effectiveThreshold}). Will retry in ${timeoutSeconds}s`,
     });
+  }
+
+  /**
+   * Returns how long the circuit has been out of CLOSED state in the current outage
+   *
+   * @param {ICircuit} circuit - Circuit instance
+   * @returns {number} Seconds since the circuit first opened, or 0 if it never did
+   */
+  private getOpenForSeconds(circuit: ICircuit): number {
+    if (!circuit.metrics.openedAt) {
+      return 0;
+    }
+    return Math.round((Date.now() - circuit.metrics.openedAt) / 1000);
+  }
+
+  /**
+   * @param {number} value - Positive integer to check
+   * @returns {boolean} True if value is 1, 2, 4, 8, …
+   */
+  private isPowerOfTwo(value: number): boolean {
+    return value > 0 && (value & (value - 1)) === 0;
   }
 
   /**

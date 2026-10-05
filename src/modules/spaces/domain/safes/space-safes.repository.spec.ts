@@ -6,11 +6,18 @@ import { IsNull } from 'typeorm';
 import { getAddress } from 'viem';
 import type { Mock, MockedObject } from 'vitest';
 import type { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
+import { spaceSafeBuilder } from '@/modules/spaces/datasources/safes/entities/__tests__/space-safes.entity.db.builder';
 import { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
 import { createMockSpaceEncryptionService } from '@/modules/spaces/domain/__tests__/space-encryption.service.mock';
 import { createMockSpaceAuditRepository } from '@/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
+import { spaceBuilder } from '@/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
 import { SpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository';
 import { fakeUuid } from '@/validation/entities/schemas/__tests__/uuid.builder';
+
+const toSafe = ({
+  chainId,
+  address,
+}: SpaceSafe): Pick<SpaceSafe, 'chainId' | 'address'> => ({ chainId, address });
 
 describe('SpaceSafesRepository', () => {
   const spaceId = faker.number.int({ min: 1, max: 100_000 });
@@ -155,14 +162,11 @@ describe('SpaceSafesRepository', () => {
 
   describe('findBySpaceId', () => {
     it('routes loaded rows through decryptSpaceSafes (repository boundary)', async () => {
-      const chainId = faker.string.numeric({ length: { min: 1, max: 6 } });
-      const rows = [
-        { chainId, address: `kms:v1:${faker.string.alphanumeric(16)}` },
-      ];
-      spaceSafeRepository.find.mockResolvedValue(rows);
-      const decrypted = [
-        { chainId, address: getAddress(faker.finance.ethereumAddress()) },
-      ];
+      const row = spaceSafeBuilder()
+        .with('space', spaceBuilder().with('id', spaceId).build())
+        .build();
+      spaceSafeRepository.find.mockResolvedValue([row]);
+      const decrypted = [toSafe(spaceSafeBuilder().build())];
       spaceEncryptionService.decryptSpaceSafes.mockResolvedValue(decrypted);
 
       await expect(target.findBySpaceId(spaceId)).resolves.toStrictEqual(
@@ -170,7 +174,71 @@ describe('SpaceSafesRepository', () => {
       );
       expect(
         spaceEncryptionService.decryptSpaceSafes,
-      ).toHaveBeenCalledExactlyOnceWith(spaceId, rows);
+      ).toHaveBeenCalledExactlyOnceWith(spaceId, [toSafe(row)]);
+    });
+  });
+
+  describe('findBySpaceIds', () => {
+    it('loads every space in one query and decrypts each space under its own context', async () => {
+      const space = spaceBuilder().build();
+      const otherSpace = spaceBuilder().build();
+      const emptySpace = spaceBuilder().build();
+      const spaceRows = [spaceSafeBuilder().with('space', space).build()];
+      const otherSpaceRows = [
+        spaceSafeBuilder().with('space', otherSpace).build(),
+        spaceSafeBuilder().with('space', otherSpace).build(),
+      ];
+      spaceSafeRepository.find.mockResolvedValue([
+        otherSpaceRows[0],
+        spaceRows[0],
+        otherSpaceRows[1],
+      ]);
+      const decrypted = [toSafe(spaceSafeBuilder().build())];
+      const otherDecrypted = [
+        toSafe(spaceSafeBuilder().build()),
+        toSafe(spaceSafeBuilder().build()),
+      ];
+      spaceEncryptionService.decryptSpaceSafes
+        .mockResolvedValueOnce(decrypted)
+        .mockResolvedValueOnce(otherDecrypted)
+        .mockResolvedValueOnce([]);
+
+      const result = await target.findBySpaceIds([
+        space.id,
+        otherSpace.id,
+        emptySpace.id,
+      ]);
+
+      expect(spaceSafeRepository.find).toHaveBeenCalledOnce();
+      expect(result).toStrictEqual(
+        new Map([
+          [space.id, decrypted],
+          [otherSpace.id, otherDecrypted],
+          [emptySpace.id, []],
+        ]),
+      );
+      expect(spaceEncryptionService.decryptSpaceSafes).toHaveBeenCalledTimes(3);
+      expect(spaceEncryptionService.decryptSpaceSafes).toHaveBeenNthCalledWith(
+        1,
+        space.id,
+        spaceRows.map(toSafe),
+      );
+      expect(spaceEncryptionService.decryptSpaceSafes).toHaveBeenNthCalledWith(
+        2,
+        otherSpace.id,
+        otherSpaceRows.map(toSafe),
+      );
+      expect(spaceEncryptionService.decryptSpaceSafes).toHaveBeenNthCalledWith(
+        3,
+        emptySpace.id,
+        [],
+      );
+    });
+
+    it('does not query when no space is requested', async () => {
+      await expect(target.findBySpaceIds([])).resolves.toStrictEqual(new Map());
+
+      expect(spaceSafeRepository.find).not.toHaveBeenCalled();
     });
   });
 

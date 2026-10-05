@@ -315,7 +315,7 @@ export class UsersRepository implements IUsersRepository {
         .orIgnore()
         .execute();
 
-      if (insert.identifiers.length > 0) {
+      if (insert.identifiers[0]) {
         return userId;
       }
 
