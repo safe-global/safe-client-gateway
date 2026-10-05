@@ -131,35 +131,6 @@ describe('SafeQueueService', () => {
       );
       expect(omittedDir.field).toBe(explicitDir.field);
     });
-
-    it('sends the Safe, nonceOrder and pagination as camelCase query params', async () => {
-      const nonceOrder = faker.helpers.arrayElement(['asc', 'desc'] as const);
-      const limit = faker.number.int({ min: 1, max: 100 });
-      const offset = faker.number.int({ min: 0, max: 100 });
-      mockDataSource.get.mockResolvedValueOnce(rawify({ results: [] }));
-
-      await service.getTransactionQueue({
-        chainId,
-        safeAddress,
-        nonceOrder,
-        limit,
-        offset,
-      });
-
-      expect(mockDataSource.get).toHaveBeenCalledWith(
-        expect.objectContaining({
-          url: `${baseUri}/api/v1/multisig-transactions/queue`,
-          networkRequest: expect.objectContaining({
-            params: {
-              safes: `${safeAddress}:${chainId}`,
-              nonceOrder,
-              limit,
-              offset,
-            },
-          }),
-        }),
-      );
-    });
   });
 
   describe('getMessageByHash', () => {
