@@ -896,10 +896,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@fingerprintjs/fingerprintjs-pro-server-api@npm:6.12.0":
-  version: 6.12.0
-  resolution: "@fingerprintjs/fingerprintjs-pro-server-api@npm:6.12.0"
-  checksum: 10/92db660534ec714b9fddc298fd6e4de709e728fe9b0b6d521fa0b7989e48d4e539be9ac9492dc3f19aef0b9ec436590241733ac8ac3dfce2e1a3f9def0830e68
+"@fingerprintjs/fingerprintjs-pro-server-api@npm:6.13.1":
+  version: 6.13.1
+  resolution: "@fingerprintjs/fingerprintjs-pro-server-api@npm:6.13.1"
+  checksum: 10/05046bf6bce8557922dcbf835d6a0c9c0a2e9689cdd9e61388ebf650819e2edf6d6e7cf660fdacaced55eb48ae4cde72d87adf7a5fb8010ee5097b8eb4cd2d12
   languageName: node
   linkType: hard
 
@@ -5831,7 +5831,7 @@ __metadata:
     "@faker-js/faker": "npm:10.6.0"
     "@fastify/cookie": "npm:^11.1.2"
     "@fastify/static": "npm:^10.1.3"
-    "@fingerprintjs/fingerprintjs-pro-server-api": "npm:6.12.0"
+    "@fingerprintjs/fingerprintjs-pro-server-api": "npm:6.13.1"
     "@nestjs/bullmq": "npm:^12.0.0"
     "@nestjs/cache-manager": "npm:12.0.0"
     "@nestjs/cli": "npm:12.0.3"
