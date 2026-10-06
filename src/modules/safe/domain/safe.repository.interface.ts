@@ -174,14 +174,6 @@ export interface ISafeRepository {
     offset?: number;
   }): Promise<Page<MultisigTransaction>>;
 
-  getMultisigTransactionsByNonce(args: {
-    chainId: string;
-    safe: Safe;
-    nonce: number;
-    to: Address;
-    value: string;
-  }): Promise<Array<MultisigTransaction>>;
-
   deleteTransaction(args: {
     chainId: string;
     safeTxHash: string;

@@ -18,7 +18,6 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 import configuration from '@/config/entities/__tests__/configuration';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
-import { SAFE_QUEUE_SERVICE_MAX_LIMIT } from '@/domain/common/constants';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
@@ -374,7 +373,7 @@ describe('Multisig transactions - Safe queue service', () => {
   });
 
   describe('GET /v1/chains/:chainId/transactions/:id rejectors', () => {
-    it('reads the rejection of a pending transaction from the queue service', async () => {
+    it('returns no rejectors without listing the queue', async () => {
       const chain = chainBuilder().build();
       const signers = faker.helpers.multiple(
         () => privateKeyToAccount(generatePrivateKey()),
@@ -402,49 +401,6 @@ describe('Multisig transactions - Safe queue service', () => {
           safe,
           signers: [signers[0]],
         });
-      const rejectionTransaction = await multisigTransactionBuilder()
-        .with('safe', safe.address)
-        .with('nonce', nonce)
-        .with('to', safe.address)
-        .with('value', '0')
-        .with('data', null)
-        .with('gasToken', null)
-        .with('operation', Operation.CALL)
-        .with('transactionHash', null)
-        .with('isExecuted', false)
-        .with('isSuccessful', null)
-        .buildWithConfirmations({
-          chainId: chain.chainId,
-          safe,
-          signers: signers.slice(1),
-        });
-      const otherNonceTransaction = await multisigTransactionBuilder()
-        .with('safe', safe.address)
-        .with('nonce', nonce + 1)
-        .with('to', safe.address)
-        .with('value', '0')
-        .with('data', null)
-        .with('gasToken', null)
-        .with('operation', Operation.CALL)
-        .with('transactionHash', null)
-        .with('isExecuted', false)
-        .with('isSuccessful', null)
-        .buildWithConfirmations({
-          chainId: chain.chainId,
-          safe,
-          signers: [signers[0]],
-        });
-      const queueTransactions = [
-        pendingTransaction,
-        rejectionTransaction,
-        otherNonceTransaction,
-      ].map((transaction) => toQueueTransaction(transaction, chain.chainId));
-      const queuePage = pageBuilder()
-        .with('count', queueTransactions.length)
-        .with('next', null)
-        .with('previous', null)
-        .with('results', queueTransactions)
-        .build();
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case getChainUrl(chain):
@@ -460,8 +416,6 @@ describe('Multisig transactions - Safe queue service', () => {
               ),
               status: 200,
             });
-          case getQueueUrl():
-            return Promise.resolve({ data: rawify(queuePage), status: 200 });
           default:
             return Promise.reject(new Error(`Could not match ${url}`));
         }
@@ -479,25 +433,13 @@ describe('Multisig transactions - Safe queue service', () => {
               type: 'MULTISIG',
               nonce,
               safeTxHash: pendingTransaction.safeTxHash,
-              rejectors: (rejectionTransaction.confirmations ?? []).map(
-                (confirmation) =>
-                  expect.objectContaining({ value: confirmation.owner }),
-              ),
+              rejectors: [],
             },
           });
         });
 
-      expect(networkService.get).toHaveBeenCalledWith(
-        expect.objectContaining({
-          url: getQueueUrl(),
-          networkRequest: expect.objectContaining({
-            params: expect.objectContaining({
-              safes: `${safe.address}:${chain.chainId}`,
-              nonceOrder: 'asc',
-              limit: SAFE_QUEUE_SERVICE_MAX_LIMIT,
-            }),
-          }),
-        }),
+      expect(networkService.get).not.toHaveBeenCalledWith(
+        expect.objectContaining({ url: getQueueUrl() }),
       );
       expect(networkService.get).not.toHaveBeenCalledWith(
         expect.objectContaining({

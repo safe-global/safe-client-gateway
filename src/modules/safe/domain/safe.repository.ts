@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import isEmpty from 'lodash/isEmpty';
-import { type Address, isAddressEqual } from 'viem';
+import type { Address } from 'viem';
 import { z } from 'zod';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import {
@@ -743,47 +743,6 @@ export class SafeRepository implements ISafeRepository {
     const parsed = MultisigTransactionPageSchema.parse(page);
     await this.bindQueueOrigins(parsed.results, args.chainId);
     return parsed;
-  }
-
-  async getMultisigTransactionsByNonce(args: {
-    chainId: string;
-    safe: Safe;
-    nonce: number;
-    to: Address;
-    value: string;
-  }): Promise<Array<MultisigTransaction>> {
-    if (!this.safeQueueEnabled) {
-      const transactionService = await this.transactionApiManager.getApi(
-        args.chainId,
-      );
-      const page = await transactionService.getMultisigTransactions({
-        safeAddress: args.safe.address,
-        to: args.to,
-        value: args.value,
-        nonce: args.nonce.toString(),
-        ordering: '-nonce',
-        trusted: true,
-      });
-      return MultisigTransactionPageSchema.parse(page).results;
-    }
-    if (args.nonce < args.safe.nonce) {
-      return [];
-    }
-    const page = await this.safeQueueService.getTransactionQueue({
-      chainId: args.chainId,
-      safeAddress: args.safe.address,
-      nonceOrder: 'asc',
-      limit: SAFE_QUEUE_SERVICE_MAX_LIMIT,
-    });
-    return SafeQueueMultisigTransactionPageSchema.parse(page)
-      .results.filter((tx) => {
-        return (
-          tx.nonce === args.nonce &&
-          isAddressEqual(tx.to, args.to) &&
-          tx.value === args.value
-        );
-      })
-      .map((tx) => mapSafeQueueToMultisigTransaction(tx, args.safe));
   }
 
   async getTransfer(args: {
