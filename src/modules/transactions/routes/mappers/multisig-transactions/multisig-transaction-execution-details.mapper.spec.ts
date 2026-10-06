@@ -5,11 +5,9 @@ import { getAddress } from 'viem';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import type { MockedObject } from 'vitest';
 import { getSafeTxHash } from '@/domain/common/utils/safe';
-import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { multisigTransactionBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
 import { confirmationBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction-confirmation.builder';
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
-import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
 import type { SafeRepository } from '@/modules/safe/domain/safe.repository';
 import { tokenBuilder } from '@/modules/tokens/domain/__tests__/token.builder';
 import type { TokenRepository } from '@/modules/tokens/domain/token.repository';
@@ -29,7 +27,7 @@ const tokenRepository = vi.mocked({
 } as MockedObject<TokenRepository>);
 
 const safeRepository = vi.mocked({
-  getMultisigTransactions: vi.fn(),
+  getMultisigTransactionsByNonce: vi.fn(),
 } as MockedObject<SafeRepository>);
 
 describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
@@ -59,9 +57,7 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
     });
     const addressInfo = addressInfoBuilder().build();
     addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
-    safeRepository.getMultisigTransactions.mockResolvedValue(
-      pageBuilder<MultisigTransaction>().with('results', []).build(),
-    );
+    safeRepository.getMultisigTransactionsByNonce.mockResolvedValue([]);
     const gasTokenInfo = tokenBuilder().build();
     tokenRepository.getToken.mockResolvedValue(gasTokenInfo);
 
@@ -121,9 +117,9 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
     const rejectionTx = multisigTransactionBuilder()
       .with('confirmations', [rejectionTxConfirmation])
       .build();
-    safeRepository.getMultisigTransactions.mockResolvedValue(
-      pageBuilder<MultisigTransaction>().with('results', [rejectionTx]).build(),
-    );
+    safeRepository.getMultisigTransactionsByNonce.mockResolvedValue([
+      rejectionTx,
+    ]);
     const txConfirmations = transaction.confirmations as NonNullable<
       typeof transaction.confirmations
     >;
@@ -198,11 +194,10 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
       .with('confirmations', [confirmationBuilder().build()])
       .build();
 
-    safeRepository.getMultisigTransactions.mockResolvedValue(
-      pageBuilder<MultisigTransaction>()
-        .with('results', [transaction, rejectionTx]) // returns both rejected and rejection txs
-        .build(),
-    );
+    safeRepository.getMultisigTransactionsByNonce.mockResolvedValue([
+      transaction,
+      rejectionTx,
+    ]); // returns both rejected and rejection txs
     const txConfirmations = transaction.confirmations as NonNullable<
       typeof transaction.confirmations
     >;
@@ -253,6 +248,13 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
         proposedByDelegate: null,
       }),
     );
+    expect(safeRepository.getMultisigTransactionsByNonce).toHaveBeenCalledWith({
+      chainId,
+      safe,
+      nonce: transaction.nonce,
+      to: safe.address,
+      value: '0',
+    });
   });
 
   it('should return a MultisigExecutionDetails object with no proposer if not present', async () => {
@@ -270,9 +272,7 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
     });
     const addressInfo = addressInfoBuilder().build();
     addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
-    safeRepository.getMultisigTransactions.mockResolvedValue(
-      pageBuilder<MultisigTransaction>().with('results', []).build(),
-    );
+    safeRepository.getMultisigTransactionsByNonce.mockResolvedValue([]);
     const gasTokenInfo = tokenBuilder().build();
     tokenRepository.getToken.mockResolvedValue(gasTokenInfo);
 
@@ -307,9 +307,7 @@ describe('MultisigTransactionExecutionDetails mapper (Unit)', () => {
     });
     const addressInfo = addressInfoBuilder().build();
     addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
-    safeRepository.getMultisigTransactions.mockResolvedValue(
-      pageBuilder<MultisigTransaction>().with('results', []).build(),
-    );
+    safeRepository.getMultisigTransactionsByNonce.mockResolvedValue([]);
     const gasTokenInfo = tokenBuilder().build();
     tokenRepository.getToken.mockResolvedValue(gasTokenInfo);
 

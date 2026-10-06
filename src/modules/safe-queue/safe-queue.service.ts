@@ -15,6 +15,7 @@ import {
   INetworkService,
   NetworkService,
 } from '@/datasources/network/network.service.interface';
+import { SAFE_QUEUE_SERVICE_MAX_LIMIT } from '@/domain/common/constants';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 import type { Page } from '@/domain/entities/page.entity';
 import {
@@ -161,6 +162,27 @@ export class SafeQueueService implements ISafeQueueService {
     }
   }
 
+  async getMultisigTransactionWithNoCache(args: {
+    safeTxHash: string;
+  }): Promise<Raw<SafeQueueMultisigTransactionEntity>> {
+    try {
+      const url = `${this.baseUri}/api/v1/multisig-transactions/${encodeURIComponent(args.safeTxHash)}`;
+      const { data } = await this.networkService.get<
+        Raw<SafeQueueMultisigTransactionEntity>
+      >({
+        url,
+        networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getSafeQueueServiceKey(),
+          },
+        },
+      });
+      return data;
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
   // Note: unlike its siblings, this returns an already-validated array (each
   // chunk is safeParse'd below), not a Raw<T> — re-parsing an already-parsed
   // chunk at the call site would be a pointless double validation, and would
@@ -250,9 +272,11 @@ export class SafeQueueService implements ISafeQueueService {
       // Normalize before building the cache key, so an omitted nonceOrder
       // and an explicit 'asc' (the same effective request) share one entry.
       const nonceOrder = args.nonceOrder ?? 'asc';
+      const limit = this.capLimit(args.limit);
       const cacheDir = CacheRouter.getSafeQueuedTransactionsCacheDir({
         ...args,
         nonceOrder,
+        limit,
       });
       const url = `${this.baseUri}/api/v1/multisig-transactions/queue`;
       return await this.dataSource.get<
@@ -266,7 +290,7 @@ export class SafeQueueService implements ISafeQueueService {
           params: {
             safes: `${args.safeAddress}:${args.chainId}`,
             nonceOrder,
-            limit: args.limit,
+            limit,
             offset: args.offset,
           },
           circuitBreaker: {
@@ -331,7 +355,11 @@ export class SafeQueueService implements ISafeQueueService {
     offset?: number;
   }): Promise<Raw<Page<Delegate>>> {
     try {
-      const cacheDir = CacheRouter.getSafeQueueDelegatesCacheDir(args);
+      const limit = this.capLimit(args.limit);
+      const cacheDir = CacheRouter.getSafeQueueDelegatesCacheDir({
+        ...args,
+        limit,
+      });
       const url = `${this.baseUri}/api/v1/delegates`;
       const data = await this.dataSource.get({
         cacheDir,
@@ -344,7 +372,8 @@ export class SafeQueueService implements ISafeQueueService {
             safe: args.safeAddress,
             delegate: args.delegate,
             delegator: args.delegator,
-            limit: args.limit,
+            label: args.label,
+            limit,
             offset: args.offset,
           },
           circuitBreaker: {
@@ -483,10 +512,11 @@ export class SafeQueueService implements ISafeQueueService {
     offset?: number;
   }): Promise<Raw<Page<SafeQueueMessage>>> {
     try {
+      const limit = this.capLimit(args.limit);
       const cacheDir = CacheRouter.getSafeQueueMessagesBySafeCacheDir({
         chainId: args.chainId,
         safeAddress: args.safeAddress,
-        limit: args.limit,
+        limit,
         offset: args.offset,
       });
       const url = `${this.baseUri}/api/v1/safes/${encodeURIComponent(args.safeAddress)}/messages`;
@@ -498,7 +528,7 @@ export class SafeQueueService implements ISafeQueueService {
         networkRequest: {
           params: {
             chainId: Number(args.chainId),
-            limit: args.limit,
+            limit,
             offset: args.offset,
           },
           circuitBreaker: {
@@ -621,5 +651,11 @@ export class SafeQueueService implements ISafeQueueService {
       safeAddress: args.safeAddress,
     });
     await this.cacheService.deleteByKey(key);
+  }
+
+  private capLimit(limit: number | undefined): number | undefined {
+    return limit === undefined
+      ? undefined
+      : Math.min(limit, SAFE_QUEUE_SERVICE_MAX_LIMIT);
   }
 }

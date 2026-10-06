@@ -61,7 +61,7 @@ export class MultisigTransactionExecutionDetailsMapper {
           transaction.refundReceiver ?? NULL_ADDRESS,
           ['CONTRACT'],
         ),
-        this._getRejectors(chainId, transaction),
+        this._getRejectors(chainId, transaction, safe),
       ]);
 
     return new MultisigExecutionDetails(
@@ -105,19 +105,21 @@ export class MultisigTransactionExecutionDetailsMapper {
   private async _getRejectors(
     chainId: string,
     transaction: MultisigTransaction,
+    safe: Safe,
   ): Promise<Array<AddressInfo>> {
-    const rejectionTxsPage = await this.safeRepository.getMultisigTransactions({
-      chainId: chainId,
-      safeAddress: transaction.safe,
-      to: transaction.safe,
-      value: '0',
-      nonce: transaction.nonce.toString(),
-    });
+    const nonceSiblings =
+      await this.safeRepository.getMultisigTransactionsByNonce({
+        chainId,
+        safe,
+        nonce: transaction.nonce,
+        to: transaction.safe,
+        value: '0',
+      });
 
     // This only considers one page of nonce-sharing transactions, which
     // would cover the vast majority of the cases. If needed, could be
     // extended by requesting and iterating over multiple pages.
-    const rejectionTx = rejectionTxsPage.results.find(
+    const rejectionTx = nonceSiblings.find(
       (tx) => tx.safeTxHash !== transaction.safeTxHash,
     );
 

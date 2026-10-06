@@ -12,6 +12,7 @@ import type { ILoggingService } from '@/logging/logging.interface';
 import { delegateBuilder } from '@/modules/delegate/domain/entities/__tests__/delegate.builder';
 import { DelegatePageSchema } from '@/modules/delegate/domain/entities/schemas/delegate.schema';
 import { DelegatesV3Repository } from '@/modules/delegate/domain/v3/delegates.v3.repository';
+import { safeQueueDelegateBuilder } from '@/modules/safe-queue/entities/__tests__/safe-queue-delegate.builder';
 import type { SafeQueueDelegate } from '@/modules/safe-queue/entities/delegate.entity';
 import type { ISafeQueueService } from '@/modules/safe-queue/safe-queue.interface';
 import { rawify } from '@/validation/entities/raw.entity';
@@ -234,6 +235,30 @@ describe('DelegatesV3Repository', () => {
 
         expect(result.results[0].safe).toBeNull();
         expect(result.results[0].label).toBe(queueDelegate.label);
+      });
+
+      it('accepts a delegate with a null chainId', async () => {
+        const chainId = faker.string.numeric();
+        const queueDelegates = [
+          safeQueueDelegateBuilder().with('chainId', null).build(),
+          safeQueueDelegateBuilder().with('chainId', chainId).build(),
+        ];
+        const page = pageBuilder<SafeQueueDelegate>()
+          .with('results', queueDelegates)
+          .with('count', queueDelegates.length)
+          .build();
+        mockSafeQueueService.getDelegates.mockResolvedValue(rawify(page));
+
+        const result = await repository.getDelegates({ chainId });
+
+        expect(result.results).toStrictEqual(
+          queueDelegates.map((delegate) => ({
+            safe: delegate.safe,
+            delegate: delegate.delegate,
+            delegator: delegate.delegator,
+            label: delegate.label,
+          })),
+        );
       });
     });
 

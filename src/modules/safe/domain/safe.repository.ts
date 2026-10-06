@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import isEmpty from 'lodash/isEmpty';
-import type { Address } from 'viem';
+import { type Address, isAddressEqual } from 'viem';
 import { z } from 'zod';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import {
@@ -731,17 +731,55 @@ export class SafeRepository implements ISafeRepository {
     limit?: number;
     offset?: number;
   }): Promise<Page<MultisigTransaction>> {
+    if (this.safeQueueEnabled && args.executed === false) {
+      return { count: 0, next: null, previous: null, results: [] };
+    }
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
     );
     const page = await transactionService.getMultisigTransactions({
       ...args,
+      ...(this.safeQueueEnabled && { executed: true }),
       ordering: '-nonce',
       trusted: true,
     });
     const parsed = MultisigTransactionPageSchema.parse(page);
     await this.bindQueueOrigins(parsed.results, args.chainId);
     return parsed;
+  }
+
+  async getMultisigTransactionsByNonce(args: {
+    chainId: string;
+    safe: Safe;
+    nonce: number;
+    to: Address;
+    value: string;
+  }): Promise<Array<MultisigTransaction>> {
+    if (!this.safeQueueEnabled || args.nonce < args.safe.nonce) {
+      const page = await this.getMultisigTransactions({
+        chainId: args.chainId,
+        safeAddress: args.safe.address,
+        to: args.to,
+        value: args.value,
+        nonce: args.nonce.toString(),
+      });
+      return page.results;
+    }
+    const page = await this.safeQueueService.getTransactionQueue({
+      chainId: args.chainId,
+      safeAddress: args.safe.address,
+      nonceOrder: 'asc',
+      limit: SAFE_QUEUE_SERVICE_MAX_LIMIT,
+    });
+    return SafeQueueMultisigTransactionPageSchema.parse(page)
+      .results.filter((tx) => {
+        return (
+          tx.nonce === args.nonce &&
+          isAddressEqual(tx.to, args.to) &&
+          tx.value === args.value
+        );
+      })
+      .map((tx) => mapSafeQueueToMultisigTransaction(tx, args.safe));
   }
 
   async getTransfer(args: {
@@ -938,24 +976,33 @@ export class SafeRepository implements ISafeRepository {
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
     );
-    const [safe, transaction] = await Promise.all([
+    const safeTxHash = args.proposeTransactionDto.safeTxHash;
+    const [safe, txServiceProposal, queueProposal] = await Promise.all([
       this.getSafe({
         chainId: args.chainId,
         address: args.safeAddress,
       }),
-      transactionService
-        .getMultisigTransactionWithNoCache(
-          args.proposeTransactionDto.safeTxHash,
-        )
-        .then(MultisigTransactionSchema.parse)
-        .catch(() => null),
+      this.safeQueueEnabled
+        ? null
+        : transactionService
+            .getMultisigTransactionWithNoCache(safeTxHash)
+            .then(MultisigTransactionSchema.parse)
+            .catch(() => null),
+      this.safeQueueEnabled
+        ? this.safeQueueService
+            .getMultisigTransactionWithNoCache({ safeTxHash })
+            .then(SafeQueueMultisigTransactionSchema.parse)
+            .catch(() => null)
+        : null,
     ]);
 
     await this.transactionVerifier.verifyProposal({
       chainId: args.chainId,
       safe,
       proposal: args.proposeTransactionDto,
-      transaction,
+      transaction: queueProposal
+        ? mapSafeQueueToMultisigTransaction(queueProposal, safe)
+        : txServiceProposal,
     });
 
     if (this.safeQueueEnabled) {

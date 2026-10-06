@@ -11,7 +11,7 @@ import type { IJobQueueService } from '@/domain/interfaces/job-queue.interface';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { delegateBuilder } from '@/modules/delegate/domain/entities/__tests__/delegate.builder';
 import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
-import type { IDelegatesV2Repository } from '@/modules/delegate/domain/v2/delegates.v2.repository.interface';
+import type { IDelegatesV3Repository } from '@/modules/delegate/domain/v3/delegates.v3.repository.interface';
 import { chainUpdateEventBuilder } from '@/modules/hooks/routes/entities/__tests__/chain-update.builder';
 import { deletedMultisigTransactionEventBuilder } from '@/modules/hooks/routes/entities/__tests__/deleted-multisig-transaction.builder';
 import { executedTransactionEventBuilder } from '@/modules/hooks/routes/entities/__tests__/executed-transaction.builder';
@@ -60,7 +60,7 @@ const mockSafeRepository = vi.mocked({
 
 const mockDelegatesRepository = vi.mocked({
   getDelegates: vi.fn(),
-} as MockedObject<IDelegatesV2Repository>);
+} as MockedObject<IDelegatesV3Repository>);
 
 const mockMessagesRepository = vi.mocked({
   getMessageByHash: vi.fn(),

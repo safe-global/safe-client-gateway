@@ -148,9 +148,10 @@ export class TransactionsController {
   @ApiQuery({
     name: 'executed',
     required: false,
+    deprecated: true,
     type: Boolean,
     description:
-      'Filter by execution status (true for executed, false for pending)',
+      'Filter by execution status (true for executed, false for pending). Deprecated: this endpoint is moving to executed transactions only, and once the queue service is enabled for a chain, false returns an empty page. Use the queued transactions endpoint for pending transactions.',
   })
   @ApiQuery({
     name: 'cursor',
