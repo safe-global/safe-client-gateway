@@ -9,8 +9,6 @@ export function amqpClientFactory(queue?: string): {
 } {
   const {
     AMQP_URL,
-    AMQP_EXCHANGE_NAME,
-    AMQP_EXCHANGE_MODE,
     AMQP_QUEUE,
     AMQP_HEARBEAT_INTERVAL_SECONDS,
     AMQP_RECONNECT_TIME_SECONDS,
@@ -19,7 +17,7 @@ export function amqpClientFactory(queue?: string): {
   const heartbeatIntervalInSeconds = +(AMQP_HEARBEAT_INTERVAL_SECONDS || 60);
   const reconnectTimeInSeconds = +(AMQP_RECONNECT_TIME_SECONDS || 5);
 
-  if (!(AMQP_URL && AMQP_EXCHANGE_NAME && AMQP_EXCHANGE_MODE && AMQP_QUEUE)) {
+  if (!(AMQP_URL && AMQP_QUEUE)) {
     throw new Error('Invalid amqpClientFactory configuration');
   }
 
@@ -31,11 +29,9 @@ export function amqpClientFactory(queue?: string): {
   const channel = connection.createChannel({
     json: true,
     setup: async (ch: Channel) => {
-      await ch.assertExchange(AMQP_EXCHANGE_NAME, AMQP_EXCHANGE_MODE, {
-        durable: true,
-      });
+      // Tests publish straight to the queue. The application declares the
+      // exchange and binds the queue to it.
       await ch.assertQueue(queueName, { durable: true });
-      await ch.bindQueue(queueName, AMQP_EXCHANGE_NAME, '');
     },
   });
 
