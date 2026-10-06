@@ -12,34 +12,34 @@ import type { MockedObject } from 'vitest';
 import {
   initTestApplication,
   TestAppProvider,
-} from '@/__tests__/test-app.provider';
-import { createTestModule } from '@/__tests__/testing-module';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import configuration from '@/config/entities/__tests__/configuration';
-import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import { NetworkService } from '@/datasources/network/network.service.interface';
-import { SAFE_QUEUE_SERVICE_MAX_LIMIT } from '@/domain/common/constants';
-import { SignatureType } from '@/domain/common/entities/signature-type.entity';
-import { getSignature } from '@/domain/common/utils/__tests__/signatures.builder';
-import { getSafeTxHash } from '@/domain/common/utils/safe';
-import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
+} from '#/__tests__/test-app.provider';
+import { createTestModule } from '#/__tests__/testing-module';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import configuration from '#/config/entities/__tests__/configuration';
+import { NetworkResponseError } from '#/datasources/network/entities/network.error.entity';
+import type { INetworkService } from '#/datasources/network/network.service.interface';
+import { NetworkService } from '#/datasources/network/network.service.interface';
+import { SAFE_QUEUE_SERVICE_MAX_LIMIT } from '#/domain/common/constants';
+import { SignatureType } from '#/domain/common/entities/signature-type.entity';
+import { getSignature } from '#/domain/common/utils/__tests__/signatures.builder';
+import { getSafeTxHash } from '#/domain/common/utils/safe';
+import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
 import {
   toJson as multisigToJson,
   multisigTransactionBuilder,
-} from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
-import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
-import { Operation } from '@/modules/safe/domain/entities/operation.entity';
-import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
-import { safeQueueMultisigTransactionBuilder } from '@/modules/safe-queue/entities/__tests__/queue-multisig-transaction.builder';
-import type { SafeQueueMultisigTransactionEntity } from '@/modules/safe-queue/entities/multisig-transaction.entity';
-import { tokenBuilder } from '@/modules/tokens/domain/__tests__/token.builder';
-import { addConfirmationDtoBuilder } from '@/modules/transactions/routes/__tests__/entities/add-confirmation.dto.builder';
-import { proposeTransactionDtoBuilder } from '@/modules/transactions/routes/entities/__tests__/propose-transaction.dto.builder';
-import type { ProposeTransactionDto } from '@/modules/transactions/routes/entities/propose-transaction.dto.entity';
-import { GlobalErrorFilter } from '@/routes/common/filters/global-error.filter';
-import { rawify } from '@/validation/entities/raw.entity';
+} from '#/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
+import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
+import { Operation } from '#/modules/safe/domain/entities/operation.entity';
+import type { Safe } from '#/modules/safe/domain/entities/safe.entity';
+import { safeQueueMultisigTransactionBuilder } from '#/modules/safe-queue/entities/__tests__/queue-multisig-transaction.builder';
+import type { SafeQueueMultisigTransactionEntity } from '#/modules/safe-queue/entities/multisig-transaction.entity';
+import { tokenBuilder } from '#/modules/tokens/domain/__tests__/token.builder';
+import { addConfirmationDtoBuilder } from '#/modules/transactions/routes/__tests__/entities/add-confirmation.dto.builder';
+import { proposeTransactionDtoBuilder } from '#/modules/transactions/routes/entities/__tests__/propose-transaction.dto.builder';
+import type { ProposeTransactionDto } from '#/modules/transactions/routes/entities/propose-transaction.dto.entity';
+import { GlobalErrorFilter } from '#/routes/common/filters/global-error.filter';
+import { rawify } from '#/validation/entities/raw.entity';
 
 const NON_ETH_SIGN_SIGNATURE_TYPES = [
   SignatureType.Eoa,

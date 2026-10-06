@@ -2,13 +2,13 @@
 import type { Server } from 'node:net';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { redisClientFactory } from '@/__tests__/redis-client.factory';
+import { redisClientFactory } from '#/__tests__/redis-client.factory';
 import {
   initTestApplication,
   TestAppProvider,
-} from '@/__tests__/test-app.provider';
-import { createBaseTestModule } from '@/__tests__/testing-module';
-import type { RedisClientType } from '@/datasources/cache/cache.module';
+} from '#/__tests__/test-app.provider';
+import { createBaseTestModule } from '#/__tests__/testing-module';
+import type { RedisClientType } from '#/datasources/cache/cache.module';
 
 describe('Get contract e2e test', () => {
   let app: INestApplication<Server>;

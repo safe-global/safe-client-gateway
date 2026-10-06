@@ -4,8 +4,9 @@
 # Production image is unchanged and lives at the repo-root Dockerfile.
 # Microsoft only publishes major-version tags for this image, so we pin by
 # digest to keep dev environments reproducible. Production currently uses
-# Node 24.11.0; refresh the digest periodically (or via Renovate/Dependabot)
-# to pick up the latest 24.x patch.
+# Node 24.21.0 and this digest ships 24.15.0 (`#/` imports need >= 24.14);
+# refresh the digest periodically (or via Renovate/Dependabot) to pick up the
+# latest 24.x patch.
 FROM mcr.microsoft.com/devcontainers/typescript-node:24-bookworm@sha256:14484cf5f183867fbdddd69db1991ee9a82fc50ff378f40344dcc31824eb834e
 
 # Microsoft's image runs as the `node` user by default; switch to root

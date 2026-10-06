@@ -9,33 +9,33 @@ import type { MockedObject } from 'vitest';
 import {
   createTestApplication,
   initTestApplication,
-} from '@/__tests__/test-app.provider';
-import { createTestModule } from '@/__tests__/testing-module';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import configuration from '@/config/entities/__tests__/configuration';
-import type { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
-import { CacheRouter } from '@/datasources/cache/cache.router';
-import { CacheService } from '@/datasources/cache/cache.service.interface';
-import type { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
+} from '#/__tests__/test-app.provider';
+import { createTestModule } from '#/__tests__/testing-module';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import configuration from '#/config/entities/__tests__/configuration';
+import type { FakeCacheService } from '#/datasources/cache/__tests__/fake.cache.service';
+import { CacheRouter } from '#/datasources/cache/cache.router';
+import { CacheService } from '#/datasources/cache/cache.service.interface';
+import type { CacheDir } from '#/datasources/cache/entities/cache-dir.entity';
 import {
   type INetworkService,
   NetworkService,
-} from '@/datasources/network/network.service.interface';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
+} from '#/datasources/network/network.service.interface';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
 import {
   deletedDelegateEventBuilder,
   newDelegateEventBuilder,
   updatedDelegateEventBuilder,
-} from '@/modules/hooks/routes/entities/__tests__/delegate-events.builder';
-import { deletedMultisigTransactionEventBuilder } from '@/modules/hooks/routes/entities/__tests__/deleted-multisig-transaction.builder';
-import { executedTransactionEventBuilder } from '@/modules/hooks/routes/entities/__tests__/executed-transaction.builder';
-import { messageCreatedEventBuilder } from '@/modules/hooks/routes/entities/__tests__/message-created.builder';
-import { newConfirmationEventBuilder } from '@/modules/hooks/routes/entities/__tests__/new-confirmation.builder';
-import { newMessageConfirmationEventBuilder } from '@/modules/hooks/routes/entities/__tests__/new-message-confirmation.builder';
-import { pendingTransactionEventBuilder } from '@/modules/hooks/routes/entities/__tests__/pending-transaction.builder';
-import { TransactionEventType } from '@/modules/hooks/routes/entities/event-type.entity';
-import { IQueuesApiService } from '@/modules/queues/datasources/queues-api.service.interface';
-import { rawify } from '@/validation/entities/raw.entity';
+} from '#/modules/hooks/routes/entities/__tests__/delegate-events.builder';
+import { deletedMultisigTransactionEventBuilder } from '#/modules/hooks/routes/entities/__tests__/deleted-multisig-transaction.builder';
+import { executedTransactionEventBuilder } from '#/modules/hooks/routes/entities/__tests__/executed-transaction.builder';
+import { messageCreatedEventBuilder } from '#/modules/hooks/routes/entities/__tests__/message-created.builder';
+import { newConfirmationEventBuilder } from '#/modules/hooks/routes/entities/__tests__/new-confirmation.builder';
+import { newMessageConfirmationEventBuilder } from '#/modules/hooks/routes/entities/__tests__/new-message-confirmation.builder';
+import { pendingTransactionEventBuilder } from '#/modules/hooks/routes/entities/__tests__/pending-transaction.builder';
+import { TransactionEventType } from '#/modules/hooks/routes/entities/event-type.entity';
+import { IQueuesApiService } from '#/modules/queues/datasources/queues-api.service.interface';
+import { rawify } from '#/validation/entities/raw.entity';
 
 function consumeMessageOf(event: object): ConsumeMessage {
   return {

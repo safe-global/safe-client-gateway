@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
-import { Origin } from '@/modules/fees/domain/entities/origin.entity';
-import { PriceSource } from '@/modules/fees/domain/entities/price-source.entity';
-import { Operation } from '@/modules/safe/domain/entities/operation.entity';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { HexSchema } from '@/validation/entities/schemas/hex.schema';
-import { NonNegativeNumericStringSchema } from '@/validation/entities/schemas/non-negative-numeric-string.schema';
+import { Origin } from '#/modules/fees/domain/entities/origin.entity';
+import { PriceSource } from '#/modules/fees/domain/entities/price-source.entity';
+import { Operation } from '#/modules/safe/domain/entities/operation.entity';
+import { AddressSchema } from '#/validation/entities/schemas/address.schema';
+import { HexSchema } from '#/validation/entities/schemas/hex.schema';
+import { NonNegativeNumericStringSchema } from '#/validation/entities/schemas/non-negative-numeric-string.schema';
 
 export type GtfTxData = z.infer<typeof GtfTxDataSchema>;
 export type GtfValuationDetail = z.infer<typeof GtfValuationDetailSchema>;

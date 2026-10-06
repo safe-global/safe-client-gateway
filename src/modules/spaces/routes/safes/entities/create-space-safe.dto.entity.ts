@@ -4,12 +4,12 @@ import z from 'zod';
 import {
   AddressBookItem,
   UpsertAddressBookItemsSchema,
-} from '@/modules/spaces/routes/address-books/entities/upsert-address-book-items.dto.entity';
+} from '#/modules/spaces/routes/address-books/entities/upsert-address-book-items.dto.entity';
 import {
   SpaceSafeDto,
   SpaceSafesDto,
   SpaceSafesSchema,
-} from '@/modules/spaces/routes/safes/entities/space-safe.dto.entity';
+} from '#/modules/spaces/routes/safes/entities/space-safe.dto.entity';
 
 export const CreateSpaceSafesSchema = SpaceSafesSchema.extend({
   addressBookItems: UpsertAddressBookItemsSchema.shape.items.optional(),

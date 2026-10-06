@@ -1,7 +1,8 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type {
   FunctionSignatureHash,
   HumanDescriptionFragment,
-} from '@/modules/human-description/domain/entities/human-description.entity';
+} from '#/modules/human-description/domain/entities/human-description.entity';
 
 export const IHumanDescriptionRepository = Symbol(
   'IHumanDescriptionRepository',

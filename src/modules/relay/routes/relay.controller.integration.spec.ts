@@ -9,16 +9,16 @@ import type { MockedObject } from 'vitest';
 import {
   getDeploymentVersionsByChainIds,
   RELAY_SUPPORTED_CHAIN_IDS,
-} from '@/__tests__/deployments.helper';
+} from '#/__tests__/deployments.helper';
 import {
   initTestApplication,
   TestAppProvider,
-} from '@/__tests__/test-app.provider';
-import { createTestModule } from '@/__tests__/testing-module';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import configuration from '@/config/entities/__tests__/configuration';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import { NetworkService } from '@/datasources/network/network.service.interface';
+} from '#/__tests__/test-app.provider';
+import { createTestModule } from '#/__tests__/testing-module';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import configuration from '#/config/entities/__tests__/configuration';
+import type { INetworkService } from '#/datasources/network/network.service.interface';
+import { NetworkService } from '#/datasources/network/network.service.interface';
 import {
   getMultiSendCallOnlyDeployments,
   getMultiSendDeployments,
@@ -26,20 +26,20 @@ import {
   getSafeL2SingletonDeployments,
   getSafeSingletonDeployments,
   getSignerFactoryDeployments,
-} from '@/domain/common/utils/deployments';
+} from '#/domain/common/utils/deployments';
 import {
   execTransactionFromModuleEncoder,
   executeNextTxEncoder,
-} from '@/modules/alerts/domain/contracts/__tests__/encoders/delay-modifier-encoder.builder';
-import { BalancesService } from '@/modules/balances/routes/balances.service';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { relayerBuilder } from '@/modules/chains/domain/entities/__tests__/relayer.builder';
-import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
-import type { Relayer } from '@/modules/chains/domain/entities/relayer.entity';
+} from '#/modules/alerts/domain/contracts/__tests__/encoders/delay-modifier-encoder.builder';
+import { BalancesService } from '#/modules/balances/routes/balances.service';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
+import { relayerBuilder } from '#/modules/chains/domain/entities/__tests__/relayer.builder';
+import type { Chain } from '#/modules/chains/domain/entities/chain.entity';
+import type { Relayer } from '#/modules/chains/domain/entities/relayer.entity';
 import {
   multiSendEncoder,
   multiSendTransactionsEncoder,
-} from '@/modules/contracts/domain/__tests__/encoders/multi-send-encoder.builder';
+} from '#/modules/contracts/domain/__tests__/encoders/multi-send-encoder.builder';
 import {
   addOwnerWithThresholdEncoder,
   changeThresholdEncoder,
@@ -51,19 +51,19 @@ import {
   setGuardEncoder,
   setupEncoder,
   swapOwnerEncoder,
-} from '@/modules/contracts/domain/__tests__/encoders/safe-encoder.builder';
+} from '#/modules/contracts/domain/__tests__/encoders/safe-encoder.builder';
 import {
   erc20ApproveEncoder,
   erc20TransferEncoder,
   erc20TransferFromEncoder,
-} from '@/modules/relay/domain/contracts/__tests__/encoders/erc20-encoder.builder';
-import { createProxyWithNonceEncoder } from '@/modules/relay/domain/contracts/__tests__/encoders/proxy-factory-encoder.builder';
-import { createSignerEncoder } from '@/modules/relay/domain/contracts/__tests__/encoders/signer-factory-encoder.builder';
-import { GasPaymentOption } from '@/modules/relay/domain/entities/gas-payment-option.entity';
-import type { NoFeeCampaignConfiguration } from '@/modules/relay/domain/entities/relay.configuration';
-import { RelayerType } from '@/modules/relay/domain/entities/relayer-type.entity';
-import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
-import { rawify } from '@/validation/entities/raw.entity';
+} from '#/modules/relay/domain/contracts/__tests__/encoders/erc20-encoder.builder';
+import { createProxyWithNonceEncoder } from '#/modules/relay/domain/contracts/__tests__/encoders/proxy-factory-encoder.builder';
+import { createSignerEncoder } from '#/modules/relay/domain/contracts/__tests__/encoders/signer-factory-encoder.builder';
+import { GasPaymentOption } from '#/modules/relay/domain/entities/gas-payment-option.entity';
+import type { NoFeeCampaignConfiguration } from '#/modules/relay/domain/entities/relay.configuration';
+import { RelayerType } from '#/modules/relay/domain/entities/relayer-type.entity';
+import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
+import { rawify } from '#/validation/entities/raw.entity';
 
 const allSupportedChainIds = RELAY_SUPPORTED_CHAIN_IDS;
 const noFeeCampaignChains = Object.keys(

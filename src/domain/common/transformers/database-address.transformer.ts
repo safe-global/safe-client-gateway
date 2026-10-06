@@ -4,7 +4,7 @@ import { getAddress } from 'viem';
 
 /**
  * Encrypted address columns hold `kms:v1:…` ciphertext (see
- * `@/datasources/kms/encryption.constants`); checksumming would corrupt it,
+ * `#/datasources/kms/encryption.constants`); checksumming would corrupt it,
  * so ciphertext passes through untouched. The plaintext (EIP-55 checksummed)
  * form is what gets encrypted, and decryption restores it — plaintext-mode
  * behavior is byte-identical to the pre-encryption transformer.

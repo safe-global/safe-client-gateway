@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Injectable } from '@nestjs/common';
 import type { Address } from 'viem';
-import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
+import type { Delegate } from '#/modules/delegate/domain/entities/delegate.entity';
 import type {
   ActivePolicy,
   ProposerPolicyData,
-} from '@/modules/policies/domain/entities/active-policy.entity';
+} from '#/modules/policies/domain/entities/active-policy.entity';
 import {
   OffChainSource,
   offChainEnforcement,
-} from '@/modules/policies/domain/entities/policy-enforcement.entity';
-import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
-import type { SafeRef } from '@/modules/policies/domain/entities/safe-ref.entity';
+} from '#/modules/policies/domain/entities/policy-enforcement.entity';
+import { PolicyType } from '#/modules/policies/domain/entities/policy-type.entity';
+import type { SafeRef } from '#/modules/policies/domain/entities/safe-ref.entity';
 
 /**
  * Builds the `proposer` policies of one Safe from the delegate registrations

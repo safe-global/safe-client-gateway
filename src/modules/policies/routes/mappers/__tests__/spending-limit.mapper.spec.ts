@@ -1,22 +1,22 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress, zeroAddress } from 'viem';
-import type { IBuilder } from '@/__tests__/builder';
+import type { IBuilder } from '#/__tests__/builder';
 import type {
   ActivePolicy,
   SpendingLimitPolicyData,
-} from '@/modules/policies/domain/entities/active-policy.entity';
-import { policyIndexerSafeAllowanceBuilder } from '@/modules/policies/domain/entities/indexer/__tests__/safe-allowance.builder';
-import type { PolicyIndexerSafeAllowance } from '@/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
-import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
-import type { SafeRef } from '@/modules/policies/domain/entities/safe-ref.entity';
-import type { Token } from '@/modules/policies/domain/entities/token.entity';
+} from '#/modules/policies/domain/entities/active-policy.entity';
+import { policyIndexerSafeAllowanceBuilder } from '#/modules/policies/domain/entities/indexer/__tests__/safe-allowance.builder';
+import type { PolicyIndexerSafeAllowance } from '#/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
+import { PolicyType } from '#/modules/policies/domain/entities/policy-type.entity';
+import type { SafeRef } from '#/modules/policies/domain/entities/safe-ref.entity';
+import type { Token } from '#/modules/policies/domain/entities/token.entity';
 import {
   type TokenMetadataKey,
   tokenMetadataKey,
-} from '@/modules/policies/domain/utils/token-metadata-key.utils';
-import { SpendingLimitMapper } from '@/modules/policies/routes/mappers/spending-limit.mapper';
-import { erc20TokenBuilder } from '@/modules/tokens/domain/__tests__/token.builder';
+} from '#/modules/policies/domain/utils/token-metadata-key.utils';
+import { SpendingLimitMapper } from '#/modules/policies/routes/mappers/spending-limit.mapper';
+import { erc20TokenBuilder } from '#/modules/tokens/domain/__tests__/token.builder';
 
 const SEPOLIA = '11155111';
 const DAY_IN_MINUTES = 1440;

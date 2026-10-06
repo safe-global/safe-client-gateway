@@ -3,13 +3,13 @@ import { faker } from '@faker-js/faker';
 import { HttpStatus } from '@nestjs/common';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import { DataSourceError } from '@/domain/errors/data-source.error';
+import { DataSourceError } from '#/domain/errors/data-source.error';
 import {
   erc20TokenBuilder,
   nativeTokenBuilder,
-} from '@/modules/tokens/domain/__tests__/token.builder';
-import type { ITokenRepository } from '@/modules/tokens/domain/token.repository.interface';
-import { TokensService } from '@/modules/tokens/routes/tokens.service';
+} from '#/modules/tokens/domain/__tests__/token.builder';
+import type { ITokenRepository } from '#/modules/tokens/domain/token.repository.interface';
+import { TokensService } from '#/modules/tokens/routes/tokens.service';
 
 const tokenRepository = {
   getToken: vi.fn(),

@@ -1,26 +1,26 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Injectable } from '@nestjs/common';
 import { type Address, type Hex, isAddressEqual } from 'viem';
-import { getAllowanceModuleDeployments } from '@/domain/common/utils/deployments';
-import { AllowanceModuleDecoder } from '@/modules/contracts/domain/decoders/allowance-module-decoder.helper';
-import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
-import { SafeDecoder } from '@/modules/contracts/domain/decoders/safe-decoder.helper';
+import { getAllowanceModuleDeployments } from '#/domain/common/utils/deployments';
+import { AllowanceModuleDecoder } from '#/modules/contracts/domain/decoders/allowance-module-decoder.helper';
+import { MultiSendDecoder } from '#/modules/contracts/domain/decoders/multi-send-decoder.helper';
+import { SafeDecoder } from '#/modules/contracts/domain/decoders/safe-decoder.helper';
 import {
   type PendingQueuedPolicy,
   type PendingSpendingLimitChange,
   PendingSpendingLimitChangeKind,
-} from '@/modules/policies/domain/entities/pending-policy.entity';
-import { moduleEnforcement } from '@/modules/policies/domain/entities/policy-enforcement.entity';
-import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
-import type { SafeRef } from '@/modules/policies/domain/entities/safe-ref.entity';
+} from '#/modules/policies/domain/entities/pending-policy.entity';
+import { moduleEnforcement } from '#/modules/policies/domain/entities/policy-enforcement.entity';
+import { PolicyType } from '#/modules/policies/domain/entities/policy-type.entity';
+import type { SafeRef } from '#/modules/policies/domain/entities/safe-ref.entity';
 import type {
   Token,
   TokenReference,
-} from '@/modules/policies/domain/entities/token.entity';
-import type { TokenMetadataKey } from '@/modules/policies/domain/utils/token-metadata-key.utils';
-import { tokenMetadataKey } from '@/modules/policies/domain/utils/token-metadata-key.utils';
-import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
-import { Operation } from '@/modules/safe/domain/entities/operation.entity';
+} from '#/modules/policies/domain/entities/token.entity';
+import type { TokenMetadataKey } from '#/modules/policies/domain/utils/token-metadata-key.utils';
+import { tokenMetadataKey } from '#/modules/policies/domain/utils/token-metadata-key.utils';
+import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
+import { Operation } from '#/modules/safe/domain/entities/operation.entity';
 
 type ModuleChange = { module: Address; change: PendingSpendingLimitChange };
 

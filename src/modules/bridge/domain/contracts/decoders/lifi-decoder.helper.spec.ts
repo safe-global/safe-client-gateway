@@ -9,8 +9,8 @@ import {
   swapDataStructBuilder,
   swapTokensMultiV3ERC20ToERC20Encoder,
   swapTokensSingleV3ERC20ToERC20Encoder,
-} from '@/modules/bridge/domain/contracts/decoders/__tests__/across-v3-encoder.builder';
-import { LiFiDecoder } from '@/modules/bridge/domain/contracts/decoders/lifi-decoder.helper';
+} from '#/modules/bridge/domain/contracts/decoders/__tests__/across-v3-encoder.builder';
+import { LiFiDecoder } from '#/modules/bridge/domain/contracts/decoders/lifi-decoder.helper';
 
 // Note: whilst the LiFi Diamond contract has multiple facets, the function signatures have
 // common parameters. This means that we can safely rely on AcrossV3 for these tests.

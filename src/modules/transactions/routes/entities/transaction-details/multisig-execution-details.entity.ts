@@ -9,12 +9,12 @@ import {
   Erc20Token,
   Erc721Token,
   NativeToken,
-} from '@/modules/balances/routes/entities/token.entity';
+} from '#/modules/balances/routes/entities/token.entity';
 import {
   ExecutionDetails,
   ExecutionDetailsType,
-} from '@/modules/transactions/routes/entities/transaction-details/execution-details.entity';
-import { AddressInfo } from '@/routes/common/entities/address-info.entity';
+} from '#/modules/transactions/routes/entities/transaction-details/execution-details.entity';
+import { AddressInfo } from '#/routes/common/entities/address-info.entity';
 
 export class MultisigConfirmationDetails {
   @ApiProperty()

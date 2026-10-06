@@ -5,19 +5,19 @@ import { UnauthorizedException } from '@nestjs/common';
 import { QueryFailedError } from 'typeorm';
 import { getAddress } from 'viem';
 import type { Mock, MockedObject } from 'vitest';
-import type { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { createMockSpaceAuditRepository } from '@/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
-import { User as DbUser } from '@/modules/users/datasources/entities/users.entity.db';
-import { UserEmailAlreadyInUseError } from '@/modules/users/domain/errors/user-email-already-in-use.error';
-import type { UserEncryptionService } from '@/modules/users/domain/user-encryption.service';
-import { UsersRepository } from '@/modules/users/domain/users.repository';
-import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
-import { createMockWalletEncryptionService } from '@/modules/wallets/domain/__tests__/wallet-encryption.service.mock';
-import type { WalletEncryptionService } from '@/modules/wallets/domain/wallet-encryption.service';
-import type { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
-import { fakeEmailAddress } from '@/validation/entities/schemas/__tests__/email-address.builder';
+import type { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
+import { siweAuthPayloadDtoBuilder } from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import { createMockSpaceAuditRepository } from '#/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
+import { User as DbUser } from '#/modules/users/datasources/entities/users.entity.db';
+import { UserEmailAlreadyInUseError } from '#/modules/users/domain/errors/user-email-already-in-use.error';
+import type { UserEncryptionService } from '#/modules/users/domain/user-encryption.service';
+import { UsersRepository } from '#/modules/users/domain/users.repository';
+import { Wallet } from '#/modules/wallets/datasources/entities/wallets.entity.db';
+import { createMockWalletEncryptionService } from '#/modules/wallets/domain/__tests__/wallet-encryption.service.mock';
+import type { WalletEncryptionService } from '#/modules/wallets/domain/wallet-encryption.service';
+import type { IWalletsRepository } from '#/modules/wallets/domain/wallets.repository.interface';
+import { fakeEmailAddress } from '#/validation/entities/schemas/__tests__/email-address.builder';
 
 function uniqueConstraintError(constraint: string): QueryFailedError {
   const driverError = Object.assign(new Error('duplicate key value'), {

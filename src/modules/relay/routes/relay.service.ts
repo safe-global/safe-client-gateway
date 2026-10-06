@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Injectable } from '@nestjs/common';
 import type { Address, Hex } from 'viem';
-import { RelayRepository } from '@/modules/relay/domain/relay.repository';
-import type { RelayDto } from '@/modules/relay/routes/entities/relay.dto.entity';
-import { Relay } from '@/modules/relay/routes/entities/relay.entity';
-import { RelayTaskStatus } from '@/modules/relay/routes/entities/relay-task-status.entity';
-import { RelaysRemaining } from '@/modules/relay/routes/entities/relays-remaining.entity';
+import { RelayRepository } from '#/modules/relay/domain/relay.repository';
+import type { RelayDto } from '#/modules/relay/routes/entities/relay.dto.entity';
+import { Relay } from '#/modules/relay/routes/entities/relay.entity';
+import { RelayTaskStatus } from '#/modules/relay/routes/entities/relay-task-status.entity';
+import { RelaysRemaining } from '#/modules/relay/routes/entities/relays-remaining.entity';
 
 @Injectable()
 export class RelayService {

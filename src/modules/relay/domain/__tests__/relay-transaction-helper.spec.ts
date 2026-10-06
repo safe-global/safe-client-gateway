@@ -7,24 +7,24 @@ import type { MockedObject } from 'vitest';
 import {
   getDeploymentVersionsByChainIds,
   RELAY_SUPPORTED_CHAIN_IDS,
-} from '@/__tests__/deployments.helper';
+} from '#/__tests__/deployments.helper';
 import {
   getMultiSendCallOnlyDeployments,
   getMultiSendDeployments,
   getProxyFactoryDeployments,
   getSafeL2SingletonDeployments,
   getSafeSingletonDeployments,
-} from '@/domain/common/utils/deployments';
-import type { ILoggingService } from '@/logging/logging.interface';
+} from '#/domain/common/utils/deployments';
+import type { ILoggingService } from '#/logging/logging.interface';
 import {
   execTransactionFromModuleEncoder,
   executeNextTxEncoder,
-} from '@/modules/alerts/domain/contracts/__tests__/encoders/delay-modifier-encoder.builder';
-import { DelayModifierDecoder } from '@/modules/alerts/domain/contracts/decoders/delay-modifier-decoder.helper';
+} from '#/modules/alerts/domain/contracts/__tests__/encoders/delay-modifier-encoder.builder';
+import { DelayModifierDecoder } from '#/modules/alerts/domain/contracts/decoders/delay-modifier-decoder.helper';
 import {
   multiSendEncoder,
   multiSendTransactionsEncoder,
-} from '@/modules/contracts/domain/__tests__/encoders/multi-send-encoder.builder';
+} from '#/modules/contracts/domain/__tests__/encoders/multi-send-encoder.builder';
 import {
   addOwnerWithThresholdEncoder,
   changeThresholdEncoder,
@@ -32,21 +32,21 @@ import {
   removeOwnerEncoder,
   setupEncoder,
   swapOwnerEncoder,
-} from '@/modules/contracts/domain/__tests__/encoders/safe-encoder.builder';
-import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
-import { SafeDecoder } from '@/modules/contracts/domain/decoders/safe-decoder.helper';
+} from '#/modules/contracts/domain/__tests__/encoders/safe-encoder.builder';
+import { MultiSendDecoder } from '#/modules/contracts/domain/decoders/multi-send-decoder.helper';
+import { SafeDecoder } from '#/modules/contracts/domain/decoders/safe-decoder.helper';
 import {
   erc20TransferEncoder,
   erc20TransferFromEncoder,
-} from '@/modules/relay/domain/contracts/__tests__/encoders/erc20-encoder.builder';
-import { createProxyWithNonceEncoder } from '@/modules/relay/domain/contracts/__tests__/encoders/proxy-factory-encoder.builder';
-import { Erc20Decoder } from '@/modules/relay/domain/contracts/decoders/erc-20-decoder.helper';
-import { ProxyFactoryDecoder } from '@/modules/relay/domain/contracts/decoders/proxy-factory-decoder.helper';
-import { SignerFactoryDecoder } from '@/modules/relay/domain/contracts/decoders/signer-factory-decoder.helper';
-import { InvalidMultiSendError } from '@/modules/relay/domain/errors/invalid-multisend.error';
-import { RelayTransactionHelper } from '@/modules/relay/domain/relay-transaction-helper';
-import { multisigTransactionBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
-import type { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
+} from '#/modules/relay/domain/contracts/__tests__/encoders/erc20-encoder.builder';
+import { createProxyWithNonceEncoder } from '#/modules/relay/domain/contracts/__tests__/encoders/proxy-factory-encoder.builder';
+import { Erc20Decoder } from '#/modules/relay/domain/contracts/decoders/erc-20-decoder.helper';
+import { ProxyFactoryDecoder } from '#/modules/relay/domain/contracts/decoders/proxy-factory-decoder.helper';
+import { SignerFactoryDecoder } from '#/modules/relay/domain/contracts/decoders/signer-factory-decoder.helper';
+import { InvalidMultiSendError } from '#/modules/relay/domain/errors/invalid-multisend.error';
+import { RelayTransactionHelper } from '#/modules/relay/domain/relay-transaction-helper';
+import { multisigTransactionBuilder } from '#/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
+import type { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
 
 const supportedChainIds = RELAY_SUPPORTED_CHAIN_IDS;
 

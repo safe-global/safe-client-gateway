@@ -2,8 +2,8 @@
 import { faker } from '@faker-js/faker';
 import type { Address } from 'viem';
 import { getAddress } from 'viem';
-import { deploymentBuilder } from '@/modules/staking/datasources/entities/__tests__/deployment.entity.builder';
-import { DeploymentSchema } from '@/modules/staking/datasources/entities/deployment.entity';
+import { deploymentBuilder } from '#/modules/staking/datasources/entities/__tests__/deployment.entity.builder';
+import { DeploymentSchema } from '#/modules/staking/datasources/entities/deployment.entity';
 
 describe('DeploymentSchema', () => {
   it('should validate a Deployment object', () => {

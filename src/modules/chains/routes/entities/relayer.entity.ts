@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiProperty } from '@nestjs/swagger';
-import type { Relayer as DomainRelayer } from '@/modules/chains/domain/entities/relayer.entity';
-import { GasPaymentOption } from '@/modules/relay/domain/entities/gas-payment-option.entity';
-import { RelayerType } from '@/modules/relay/domain/entities/relayer-type.entity';
+import type { Relayer as DomainRelayer } from '#/modules/chains/domain/entities/relayer.entity';
+import { GasPaymentOption } from '#/modules/relay/domain/entities/gas-payment-option.entity';
+import { RelayerType } from '#/modules/relay/domain/entities/relayer-type.entity';
 
 export class Relayer implements DomainRelayer {
   @ApiProperty({ enum: RelayerType, nullable: true })

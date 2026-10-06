@@ -2,56 +2,56 @@
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress, zeroAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
+import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
 import {
   SAFE_QUEUE_SERVICE_MAX_LIMIT,
   SAFE_TRANSACTION_SERVICE_MAX_LIMIT,
-} from '@/domain/common/constants';
-import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
-import type { ILoggingService } from '@/logging/logging.interface';
-import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import type { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
+} from '#/domain/common/constants';
+import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
+import type { ILoggingService } from '#/logging/logging.interface';
+import { siweAuthPayloadDtoBuilder } from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import type { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
 import {
   addDelegateEncoder,
   deleteAllowanceEncoder,
   resetAllowanceEncoder,
   setAllowanceEncoder,
-} from '@/modules/contracts/domain/__tests__/encoders/allowance-module-encoder.builder';
-import { AllowanceModuleDecoder } from '@/modules/contracts/domain/decoders/allowance-module-decoder.helper';
-import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
-import { SafeDecoder } from '@/modules/contracts/domain/decoders/safe-decoder.helper';
-import { delegateBuilder } from '@/modules/delegate/domain/entities/__tests__/delegate.builder';
-import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
-import type { IDelegatesV3Repository } from '@/modules/delegate/domain/v3/delegates.v3.repository.interface';
+} from '#/modules/contracts/domain/__tests__/encoders/allowance-module-encoder.builder';
+import { AllowanceModuleDecoder } from '#/modules/contracts/domain/decoders/allowance-module-decoder.helper';
+import { MultiSendDecoder } from '#/modules/contracts/domain/decoders/multi-send-decoder.helper';
+import { SafeDecoder } from '#/modules/contracts/domain/decoders/safe-decoder.helper';
+import { delegateBuilder } from '#/modules/delegate/domain/entities/__tests__/delegate.builder';
+import type { Delegate } from '#/modules/delegate/domain/entities/delegate.entity';
+import type { IDelegatesV3Repository } from '#/modules/delegate/domain/v3/delegates.v3.repository.interface';
 import type {
   ActivePolicy,
   SpendingLimitAllowance,
   SpendingLimitPolicyData,
-} from '@/modules/policies/domain/entities/active-policy.entity';
-import { policyIndexerResponseBuilder } from '@/modules/policies/domain/entities/indexer/__tests__/policy-indexer-state.builder';
-import { policyIndexerSafeAllowanceBuilder } from '@/modules/policies/domain/entities/indexer/__tests__/safe-allowance.builder';
-import type { PolicyIndexerSafeAllowance } from '@/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
-import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
-import type { IPolicyIndexerRepository } from '@/modules/policies/domain/policy-indexer.repository.interface';
-import { PendingSpendingLimitMapper } from '@/modules/policies/routes/mappers/pending-spending-limit.mapper';
-import { ProposerMapper } from '@/modules/policies/routes/mappers/proposer.mapper';
-import { SpendingLimitMapper } from '@/modules/policies/routes/mappers/spending-limit.mapper';
-import { PoliciesService } from '@/modules/policies/routes/policies.service';
-import { multisigTransactionBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
-import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
-import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
-import { Operation } from '@/modules/safe/domain/entities/operation.entity';
-import type { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
-import type { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
+} from '#/modules/policies/domain/entities/active-policy.entity';
+import { policyIndexerResponseBuilder } from '#/modules/policies/domain/entities/indexer/__tests__/policy-indexer-state.builder';
+import { policyIndexerSafeAllowanceBuilder } from '#/modules/policies/domain/entities/indexer/__tests__/safe-allowance.builder';
+import type { PolicyIndexerSafeAllowance } from '#/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
+import { PolicyType } from '#/modules/policies/domain/entities/policy-type.entity';
+import type { IPolicyIndexerRepository } from '#/modules/policies/domain/policy-indexer.repository.interface';
+import { PendingSpendingLimitMapper } from '#/modules/policies/routes/mappers/pending-spending-limit.mapper';
+import { ProposerMapper } from '#/modules/policies/routes/mappers/proposer.mapper';
+import { SpendingLimitMapper } from '#/modules/policies/routes/mappers/spending-limit.mapper';
+import { PoliciesService } from '#/modules/policies/routes/policies.service';
+import { multisigTransactionBuilder } from '#/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
+import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
+import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
+import { Operation } from '#/modules/safe/domain/entities/operation.entity';
+import type { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
+import type { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository.interface';
 import {
   erc20TokenBuilder,
   erc721TokenBuilder,
-} from '@/modules/tokens/domain/__tests__/token.builder';
-import type { ITokenRepository } from '@/modules/tokens/domain/token.repository.interface';
-import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
-import type { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
+} from '#/modules/tokens/domain/__tests__/token.builder';
+import type { ITokenRepository } from '#/modules/tokens/domain/token.repository.interface';
+import { memberBuilder } from '#/modules/users/datasources/entities/__tests__/member.entity.db.builder';
+import type { IMembersRepository } from '#/modules/users/domain/members/members.repository.interface';
 
 const mockPolicyIndexerRepository = {
   getState: vi.fn(),

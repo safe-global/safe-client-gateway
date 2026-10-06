@@ -3,7 +3,7 @@ import type { Job } from 'bullmq';
 import type {
   JobData,
   JobTypeName,
-} from '@/datasources/job-queue/types/job-types';
+} from '#/datasources/job-queue/types/job-types';
 
 export const IJobQueueService = Symbol('IJobQueueService');
 

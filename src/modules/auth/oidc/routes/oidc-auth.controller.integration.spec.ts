@@ -10,29 +10,29 @@ import type { MockedObject, MockInstance } from 'vitest';
 import {
   initTestApplication,
   TestAppProvider,
-} from '@/__tests__/test-app.provider';
-import { createTestModule } from '@/__tests__/testing-module';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import configuration from '@/config/entities/__tests__/configuration';
-import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
+} from '#/__tests__/test-app.provider';
+import { createTestModule } from '#/__tests__/testing-module';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import configuration from '#/config/entities/__tests__/configuration';
+import { IJwtService } from '#/datasources/jwt/jwt.service.interface';
 import {
   type INetworkService,
   NetworkService,
-} from '@/datasources/network/network.service.interface';
-import { getSecondsUntil } from '@/domain/common/utils/time';
-import { oidcAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+} from '#/datasources/network/network.service.interface';
+import { getSecondsUntil } from '#/domain/common/utils/time';
+import { oidcAuthPayloadDtoBuilder } from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import {
   type Auth0JwksFixture,
   getAuth0JwksFixture,
   mockAuth0Jwks,
   signAuth0Jwt,
-} from '@/modules/auth/oidc/auth0/__tests__/auth0-jwks.helper';
-import { TestEmailApiModule } from '@/modules/email/pushwoosh/__tests__/test.email-api.module';
-import { EmailModule } from '@/modules/email/pushwoosh/pushwoosh-email.module';
-import { TestUsersModule } from '@/modules/users/__tests__/test.users.module';
-import { UsersRepositoryModule } from '@/modules/users/domain/users-repository.module';
-import { UsersModule } from '@/modules/users/users.module';
-import { rawify } from '@/validation/entities/raw.entity';
+} from '#/modules/auth/oidc/auth0/__tests__/auth0-jwks.helper';
+import { TestEmailApiModule } from '#/modules/email/pushwoosh/__tests__/test.email-api.module';
+import { EmailModule } from '#/modules/email/pushwoosh/pushwoosh-email.module';
+import { TestUsersModule } from '#/modules/users/__tests__/test.users.module';
+import { UsersRepositoryModule } from '#/modules/users/domain/users-repository.module';
+import { UsersModule } from '#/modules/users/users.module';
+import { rawify } from '#/validation/entities/raw.entity';
 
 describe('OidcAuthController', () => {
   let app: INestApplication<Server>;

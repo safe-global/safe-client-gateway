@@ -31,7 +31,7 @@ Delivery is automatic, not opt-in: each guide above is also a `cgw-*` Claude Cod
 1. Every `@Param`/`@Query`/`@Body` goes through `new ValidationPipe(ZodSchema)` — no bare access. → [security.md](docs/agents/security.md)
 2. Never call `fetch`/HTTP clients directly — outbound calls go through `INetworkService`/`CacheFirstDataSource`. → [caching-and-performance.md](docs/agents/caching-and-performance.md)
 3. Datasources return `Raw<T>`; the owning repository must `Schema.parse()` before returning. → [api-dtos-and-validation.md](docs/agents/api-dtos-and-validation.md)
-4. Imports use the `@/` alias only; import other modules only via their `domain/` — the sole exception being a guard another module applies, which is imported from where it lives. → [module-structure.md](docs/agents/module-structure.md)
+4. Imports use the `#/` alias only; import other modules only via their `domain/` — the sole exception being a guard another module applies, which is imported from where it lives. → [module-structure.md](docs/agents/module-structure.md)
 5. New feature code goes in `src/modules/<kebab>/` following the canonical skeleton — never in `src/routes/`, `src/domain/`, or `src/datasources/`. → [module-structure.md](docs/agents/module-structure.md)
 6. Test data comes from builders + faker — no literal fixtures. → [testing.md](docs/agents/testing.md)
 7. Every env var is declared in `configuration.ts` AND `RootConfigurationSchema`; secrets never get fallback defaults. → [configuration-and-flags.md](docs/agents/configuration-and-flags.md)
@@ -51,7 +51,7 @@ See [docs/agents/ARCHITECTURE.md](docs/agents/ARCHITECTURE.md) for the full requ
 
 ## Testing
 
-- **Never call bare `await app.init()` in tests.** The HTTP platform is Fastify: route contexts only get their lifecycle hooks attached once Fastify's `.ready()` resolves, so a supertest request sent after `init()` alone races app boot and crashes inside Fastify's hook runner (`Cannot read properties of undefined (reading 'length')`), hanging the test until timeout. Always initialize test apps with `initTestApplication(app)` from `@/__tests__/test-app.provider`, which awaits both `app.init()` and the Fastify instance's `.ready()`:
+- **Never call bare `await app.init()` in tests.** The HTTP platform is Fastify: route contexts only get their lifecycle hooks attached once Fastify's `.ready()` resolves, so a supertest request sent after `init()` alone races app boot and crashes inside Fastify's hook runner (`Cannot read properties of undefined (reading 'length')`), hanging the test until timeout. Always initialize test apps with `initTestApplication(app)` from `#/__tests__/test-app.provider`, which awaits both `app.init()` and the Fastify instance's `.ready()`:
 
   ```typescript
   app = await new TestAppProvider().provide(moduleFixture);
@@ -78,7 +78,13 @@ Before creating **EACH** commit, you MUST run the following commands in sequence
 
    If there are any remaining lint errors, fix them manually before proceeding.
 
-3. **Run tests:**
+3. **Type-check (specs included):**
+
+   ```bash
+   yarn typecheck
+   ```
+
+4. **Run tests:**
 
    ```bash
    yarn test
@@ -95,6 +101,7 @@ The correct workflow for making commits is:
 # 2. Run quality checks
 yarn format
 yarn lint --fix
+yarn typecheck
 yarn test
 
 # 3. Only after all checks pass, commit

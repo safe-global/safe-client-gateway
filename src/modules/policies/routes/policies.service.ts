@@ -5,45 +5,45 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { type Address, isAddressEqual, zeroAddress } from 'viem';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { batched } from '@/domain/common/utils/batch';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { batched } from '#/domain/common/utils/batch';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import { asError } from '@/logging/utils';
-import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
-import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
-import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
-import { IDelegatesV3Repository } from '@/modules/delegate/domain/v3/delegates.v3.repository.interface';
-import type { ActivePolicy } from '@/modules/policies/domain/entities/active-policy.entity';
-import type { PolicyIndexerSafeAllowance } from '@/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
-import type { PendingPolicy } from '@/modules/policies/domain/entities/pending-policy.entity';
-import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
-import type { SafeRef } from '@/modules/policies/domain/entities/safe-ref.entity';
+} from '#/logging/logging.interface';
+import { asError } from '#/logging/utils';
+import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import { getAuthenticatedUserIdOrFail } from '#/modules/auth/utils/assert-authenticated.utils';
+import { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
+import type { Delegate } from '#/modules/delegate/domain/entities/delegate.entity';
+import { IDelegatesV3Repository } from '#/modules/delegate/domain/v3/delegates.v3.repository.interface';
+import type { ActivePolicy } from '#/modules/policies/domain/entities/active-policy.entity';
+import type { PolicyIndexerSafeAllowance } from '#/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
+import type { PendingPolicy } from '#/modules/policies/domain/entities/pending-policy.entity';
+import { PolicyType } from '#/modules/policies/domain/entities/policy-type.entity';
+import type { SafeRef } from '#/modules/policies/domain/entities/safe-ref.entity';
 import type {
   Token,
   TokenReference,
-} from '@/modules/policies/domain/entities/token.entity';
-import { IPolicyIndexerRepository } from '@/modules/policies/domain/policy-indexer.repository.interface';
+} from '#/modules/policies/domain/entities/token.entity';
+import { IPolicyIndexerRepository } from '#/modules/policies/domain/policy-indexer.repository.interface';
 import {
   type TokenMetadataKey,
   tokenMetadataKey,
-} from '@/modules/policies/domain/utils/token-metadata-key.utils';
-import { PendingSpendingLimitMapper } from '@/modules/policies/routes/mappers/pending-spending-limit.mapper';
-import { ProposerMapper } from '@/modules/policies/routes/mappers/proposer.mapper';
-import { SpendingLimitMapper } from '@/modules/policies/routes/mappers/spending-limit.mapper';
+} from '#/modules/policies/domain/utils/token-metadata-key.utils';
+import { PendingSpendingLimitMapper } from '#/modules/policies/routes/mappers/pending-spending-limit.mapper';
+import { ProposerMapper } from '#/modules/policies/routes/mappers/proposer.mapper';
+import { SpendingLimitMapper } from '#/modules/policies/routes/mappers/spending-limit.mapper';
 
-import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
-import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
-import type { Space } from '@/modules/spaces/domain/entities/space.entity';
-import { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
-import { assertMember } from '@/modules/spaces/domain/space-assert.utils';
-import type { NativeToken } from '@/modules/tokens/domain/entities/token.entity';
-import { ITokenRepository } from '@/modules/tokens/domain/token.repository.interface';
-import { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
-import type { Caip10Address } from '@/validation/entities/schemas/caip-10-addresses.schema';
+import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
+import { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
+import type { Space } from '#/modules/spaces/domain/entities/space.entity';
+import { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository.interface';
+import { assertMember } from '#/modules/spaces/domain/space-assert.utils';
+import type { NativeToken } from '#/modules/tokens/domain/entities/token.entity';
+import { ITokenRepository } from '#/modules/tokens/domain/token.repository.interface';
+import { IMembersRepository } from '#/modules/users/domain/members/members.repository.interface';
+import type { Caip10Address } from '#/validation/entities/schemas/caip-10-addresses.schema';
 
 type SpacePolicyRequest = {
   spaceId: Space['id'];

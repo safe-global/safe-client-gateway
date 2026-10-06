@@ -3,18 +3,18 @@
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
-import { SAFE_TRANSACTION_SERVICE_MAX_LIMIT as LIMIT } from '@/domain/common/constants';
+import type { IConfigurationService } from '#/config/configuration.service.interface';
+import { SAFE_TRANSACTION_SERVICE_MAX_LIMIT as LIMIT } from '#/domain/common/constants';
 import {
   limitAndOffsetUrlFactory,
   pageBuilder,
-} from '@/domain/entities/__tests__/page.builder';
-import type { IDataDecoderApi } from '@/domain/interfaces/data-decoder-api.interface';
-import type { ILoggingService } from '@/logging/logging.interface';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { ContractsRepository } from '@/modules/contracts/domain/contracts.repository';
-import { contractBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/contract.builder';
-import { rawify } from '@/validation/entities/raw.entity';
+} from '#/domain/entities/__tests__/page.builder';
+import type { IDataDecoderApi } from '#/domain/interfaces/data-decoder-api.interface';
+import type { ILoggingService } from '#/logging/logging.interface';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
+import { ContractsRepository } from '#/modules/contracts/domain/contracts.repository';
+import { contractBuilder } from '#/modules/data-decoder/domain/v2/entities/__tests__/contract.builder';
+import { rawify } from '#/validation/entities/raw.entity';
 
 const mockLoggingService = {
   error: vi.fn(),

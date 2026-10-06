@@ -3,17 +3,17 @@ import { faker } from '@faker-js/faker';
 import { BadRequestException } from '@nestjs/common';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import type { IFeeServiceApi } from '@/domain/interfaces/fee-service-api.interface';
-import type { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { relayerBuilder } from '@/modules/chains/domain/entities/__tests__/relayer.builder';
-import { gtfFeesResponseBuilder } from '@/modules/fees/domain/entities/__tests__/gtf-fees-response.builder';
-import { txFeesResponseBuilder } from '@/modules/fees/domain/entities/__tests__/tx-fees-response.builder';
-import type { IGasTokensRepository } from '@/modules/fees/domain/gas-tokens.repository.interface';
-import { feePreviewTransactionDtoBuilder } from '@/modules/fees/routes/entities/__tests__/fee-preview-transaction.dto.builder';
-import { FeesService } from '@/modules/fees/routes/fees.service';
-import { GasPaymentOption } from '@/modules/relay/domain/entities/gas-payment-option.entity';
-import { RelayerType } from '@/modules/relay/domain/entities/relayer-type.entity';
+import type { IFeeServiceApi } from '#/domain/interfaces/fee-service-api.interface';
+import type { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
+import { relayerBuilder } from '#/modules/chains/domain/entities/__tests__/relayer.builder';
+import { gtfFeesResponseBuilder } from '#/modules/fees/domain/entities/__tests__/gtf-fees-response.builder';
+import { txFeesResponseBuilder } from '#/modules/fees/domain/entities/__tests__/tx-fees-response.builder';
+import type { IGasTokensRepository } from '#/modules/fees/domain/gas-tokens.repository.interface';
+import { feePreviewTransactionDtoBuilder } from '#/modules/fees/routes/entities/__tests__/fee-preview-transaction.dto.builder';
+import { FeesService } from '#/modules/fees/routes/fees.service';
+import { GasPaymentOption } from '#/modules/relay/domain/entities/gas-payment-option.entity';
+import { RelayerType } from '#/modules/relay/domain/entities/relayer-type.entity';
 
 const mockFeeServiceApi = vi.mocked({
   canRelay: vi.fn(),

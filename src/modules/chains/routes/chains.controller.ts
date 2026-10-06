@@ -7,21 +7,21 @@ import {
   ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
-import { ChainsService } from '@/modules/chains/routes/chains.service';
-import { AboutChain } from '@/modules/chains/routes/entities/about-chain.entity';
+import { ChainsService } from '#/modules/chains/routes/chains.service';
+import { AboutChain } from '#/modules/chains/routes/entities/about-chain.entity';
 import {
   Backbone as ApiBackbone,
   type Backbone,
-} from '@/modules/chains/routes/entities/backbone.entity';
-import { Chain } from '@/modules/chains/routes/entities/chain.entity';
-import { ChainPage } from '@/modules/chains/routes/entities/chain-page.entity';
-import { GasPriceResponse } from '@/modules/chains/routes/entities/gas-price-response.entity';
-import { IndexingStatus } from '@/modules/chains/routes/entities/indexing-status.entity';
-import { MasterCopy } from '@/modules/chains/routes/entities/master-copy.entity';
-import { PaginationDataDecorator } from '@/routes/common/decorators/pagination.data.decorator';
-import { RouteUrlDecorator } from '@/routes/common/decorators/route.url.decorator';
-import type { Page } from '@/routes/common/entities/page.entity';
-import type { PaginationData } from '@/routes/common/pagination/pagination.data';
+} from '#/modules/chains/routes/entities/backbone.entity';
+import { Chain } from '#/modules/chains/routes/entities/chain.entity';
+import { ChainPage } from '#/modules/chains/routes/entities/chain-page.entity';
+import { GasPriceResponse } from '#/modules/chains/routes/entities/gas-price-response.entity';
+import { IndexingStatus } from '#/modules/chains/routes/entities/indexing-status.entity';
+import { MasterCopy } from '#/modules/chains/routes/entities/master-copy.entity';
+import { PaginationDataDecorator } from '#/routes/common/decorators/pagination.data.decorator';
+import { RouteUrlDecorator } from '#/routes/common/decorators/route.url.decorator';
+import type { Page } from '#/routes/common/entities/page.entity';
+import type { PaginationData } from '#/routes/common/pagination/pagination.data';
 
 @ApiTags('chains')
 @Controller({

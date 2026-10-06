@@ -6,7 +6,7 @@ import type {
   FingerprintLocationSpoofing,
   FingerprintUnsealedData,
   FingerprintVpn,
-} from '@/datasources/locking-api/entities/fingerprint-unsealed-data.entity';
+} from '#/datasources/locking-api/entities/fingerprint-unsealed-data.entity';
 import type { IBuilder } from '../../../../__tests__/builder';
 import { Builder } from '../../../../__tests__/builder';
 

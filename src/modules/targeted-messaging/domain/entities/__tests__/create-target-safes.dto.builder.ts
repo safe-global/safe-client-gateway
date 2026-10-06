@@ -2,10 +2,10 @@
 
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import type { IBuilder } from '@/__tests__/builder';
-import { Builder } from '@/__tests__/builder';
-import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
-import type { CreateTargetedSafesDto } from '@/modules/targeted-messaging/domain/entities/create-targeted-safes.dto.entity';
+import type { IBuilder } from '#/__tests__/builder';
+import { Builder } from '#/__tests__/builder';
+import { DB_MAX_SAFE_INTEGER } from '#/domain/common/constants';
+import type { CreateTargetedSafesDto } from '#/modules/targeted-messaging/domain/entities/create-targeted-safes.dto.entity';
 
 export function createTargetedSafesDtoBuilder(): IBuilder<CreateTargetedSafesDto> {
   return new Builder<CreateTargetedSafesDto>()

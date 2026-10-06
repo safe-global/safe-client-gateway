@@ -3,20 +3,20 @@
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress, type Hex } from 'viem';
 import type { Mocked, MockedObject } from 'vitest';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
-import type { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import type { GPv2Decoder } from '@/modules/swaps/domain/contracts/decoders/gp-v2-decoder.helper';
-import { orderBuilder } from '@/modules/swaps/domain/entities/__tests__/order.builder';
+import type { IConfigurationService } from '#/config/configuration.service.interface';
+import type { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
+import type { GPv2Decoder } from '#/modules/swaps/domain/contracts/decoders/gp-v2-decoder.helper';
+import { orderBuilder } from '#/modules/swaps/domain/entities/__tests__/order.builder';
 import {
   OrderKind,
   OrderStatus,
-} from '@/modules/swaps/domain/entities/order.entity';
-import type { SwapsRepository } from '@/modules/swaps/domain/swaps.repository';
-import { tokenBuilder } from '@/modules/tokens/domain/__tests__/token.builder';
-import type { ITokenRepository } from '@/modules/tokens/domain/token.repository.interface';
-import { SwapOrderHelper } from '@/modules/transactions/routes/helpers/swap-order.helper';
-import type { TransactionFinder } from '@/modules/transactions/routes/helpers/transaction-finder.helper';
+} from '#/modules/swaps/domain/entities/order.entity';
+import type { SwapsRepository } from '#/modules/swaps/domain/swaps.repository';
+import { tokenBuilder } from '#/modules/tokens/domain/__tests__/token.builder';
+import type { ITokenRepository } from '#/modules/tokens/domain/token.repository.interface';
+import { SwapOrderHelper } from '#/modules/transactions/routes/helpers/swap-order.helper';
+import type { TransactionFinder } from '#/modules/transactions/routes/helpers/transaction-finder.helper';
 
 const swapsRepository = {
   getOrder: vi.fn(),

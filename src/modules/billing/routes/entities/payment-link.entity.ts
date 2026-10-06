@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import type { StripeMetadata } from '@/datasources/billing-api/entities/metadata.entity';
+import type { StripeMetadata } from '#/datasources/billing-api/entities/metadata.entity';
 import type {
   PaymentLink as DomainPaymentLink,
   PaymentLinkLineItem,
-} from '@/datasources/billing-api/entities/payment-link.entity';
+} from '#/datasources/billing-api/entities/payment-link.entity';
 
 export class PaymentLink implements DomainPaymentLink {
   @ApiProperty()

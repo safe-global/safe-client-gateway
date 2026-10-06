@@ -2,7 +2,7 @@
 
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import type { Mocked } from 'vitest';
+import type { MockedObject } from 'vitest';
 import {
   EnvConfigSchema,
   type EnvVariable,
@@ -19,7 +19,7 @@ import { createMockStats, mockProcessExit } from './test-utils';
 
 // Mock fs module
 vi.mock('node:fs');
-const mockFs: Mocked<typeof fs> = vi.mocked(fs);
+const mockFs: MockedObject<typeof fs> = vi.mocked(fs);
 
 describe('env-json-helpers', () => {
   beforeEach(() => {
@@ -167,7 +167,7 @@ describe('env-json-helpers', () => {
     it('should exit with error if file does not exist', () => {
       mockFs.existsSync.mockReturnValue(false);
       const exitSpy = mockProcessExit();
-      const errorSpy = vi.spyOn(console, 'error').mockImplementation();
+      const errorSpy = vi.spyOn(console, 'error').mockReturnValue(undefined);
 
       expect(() => loadEnvJson()).toThrow('process.exit: 1');
       expect(errorSpy).toHaveBeenCalledWith(
@@ -183,7 +183,7 @@ describe('env-json-helpers', () => {
       mockFs.readFileSync.mockReturnValue('invalid json {');
 
       const exitSpy = mockProcessExit();
-      const errorSpy = vi.spyOn(console, 'error').mockImplementation();
+      const errorSpy = vi.spyOn(console, 'error').mockReturnValue(undefined);
 
       expect(() => loadEnvJson()).toThrow('process.exit: 1');
       expect(errorSpy).toHaveBeenCalledWith(
@@ -208,7 +208,7 @@ describe('env-json-helpers', () => {
       mockFs.readFileSync.mockReturnValue(JSON.stringify(invalidData));
 
       const exitSpy = mockProcessExit();
-      const errorSpy = vi.spyOn(console, 'error').mockImplementation();
+      const errorSpy = vi.spyOn(console, 'error').mockReturnValue(undefined);
 
       expect(() => loadEnvJson()).toThrow('process.exit: 1');
       expect(errorSpy).toHaveBeenCalledWith(
@@ -278,7 +278,7 @@ describe('env-json-helpers', () => {
       mockFs.readFileSync.mockReturnValue(JSON.stringify(mockData));
 
       const exitSpy = mockProcessExit();
-      const errorSpy = vi.spyOn(console, 'error').mockImplementation();
+      const errorSpy = vi.spyOn(console, 'error').mockReturnValue(undefined);
 
       expect(() => loadEnvJson()).toThrow('process.exit: 1');
       expect(errorSpy).toHaveBeenCalledWith(

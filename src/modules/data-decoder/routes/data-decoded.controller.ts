@@ -7,13 +7,13 @@ import {
   ApiParam,
   ApiTags,
 } from '@nestjs/swagger';
-import { DataDecodedService } from '@/modules/data-decoder/routes/data-decoded.service';
-import { DataDecoded } from '@/modules/data-decoder/routes/entities/data-decoded.entity';
+import { DataDecodedService } from '#/modules/data-decoder/routes/data-decoded.service';
+import { DataDecoded } from '#/modules/data-decoder/routes/entities/data-decoded.entity';
 import {
   TransactionDataDto,
   TransactionDataDtoSchema,
-} from '@/routes/common/entities/transaction-data.dto.entity';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+} from '#/routes/common/entities/transaction-data.dto.entity';
+import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
 @ApiTags('data-decoded')
 @Controller({

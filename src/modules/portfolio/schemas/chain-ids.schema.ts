@@ -1,5 +1,6 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
-import { ChainIdSchema } from '@/modules/chains/domain/entities/schemas/chain-id.schema';
+import { ChainIdSchema } from '#/modules/chains/domain/entities/schemas/chain-id.schema';
 
 export const ChainIdsSchema = z
   .string()

@@ -3,8 +3,8 @@ import { Injectable } from '@nestjs/common';
 import {
   getSignerFactoryAbi,
   type SignerFactoryAbi,
-} from '@/domain/common/utils/deployments';
-import { AbiDecoder } from '@/modules/contracts/domain/decoders/abi-decoder.helper';
+} from '#/domain/common/utils/deployments';
+import { AbiDecoder } from '#/modules/contracts/domain/decoders/abi-decoder.helper';
 
 @Injectable()
 export class SignerFactoryDecoder extends AbiDecoder<SignerFactoryAbi> {

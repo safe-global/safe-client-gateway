@@ -20,7 +20,7 @@ It provides UI-oriented mappings and data structures for easier integration with
 
 ## Requirements
 
-- Node.js v24.11.0 'Krypton' LTS ([Node.js Release Schedule](https://nodejs.org/en/about/previous-releases)) – https://nodejs.org/en/
+- Node.js v24.21.0 'Krypton' LTS (>= 24.14 is required for the `#/` imports) ([Node.js Release Schedule](https://nodejs.org/en/about/previous-releases)) – https://nodejs.org/en/
 - Docker Compose – https://docs.docker.com/compose/
 
 ## Installation

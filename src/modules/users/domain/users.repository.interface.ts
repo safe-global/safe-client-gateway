@@ -6,14 +6,14 @@ import type {
   FindOptionsWhere,
 } from 'typeorm';
 import type { Address } from 'viem';
-import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import type { User as DbUser } from '@/modules/users/datasources/entities/users.entity.db';
+import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import type { User as DbUser } from '#/modules/users/datasources/entities/users.entity.db';
 import type {
   User,
   UserStatus,
-} from '@/modules/users/domain/entities/user.entity';
-import type { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
-import type { EmailAddress } from '@/validation/entities/schemas/email-address.schema';
+} from '#/modules/users/domain/entities/user.entity';
+import type { Wallet } from '#/modules/wallets/datasources/entities/wallets.entity.db';
+import type { EmailAddress } from '#/validation/entities/schemas/email-address.schema';
 
 export const IUsersRepository = Symbol('IUsersRepository');
 

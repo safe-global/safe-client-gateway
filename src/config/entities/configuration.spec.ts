@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import configuration from '@/config/entities/configuration';
+import configuration from '#/config/entities/configuration';
 
 describe('configuration - httpServer.trustProxy', () => {
   const ENV_KEY = 'HTTP_SERVER_TRUST_PROXY';

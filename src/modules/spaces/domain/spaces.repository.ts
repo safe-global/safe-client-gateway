@@ -13,25 +13,25 @@ import {
   In,
   IsNull,
 } from 'typeorm';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { getEnumKey } from '@/domain/common/utils/enum';
-import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
+import { getEnumKey } from '#/domain/common/utils/enum';
+import { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
 import {
   SpaceAuditEventType,
   type SpaceUpdatedPayload,
-} from '@/modules/spaces/domain/audit/entities/space-audit-event.entity';
-import { ISpaceAuditRepository } from '@/modules/spaces/domain/audit/space-audit.repository.interface';
-import type { SpaceStatus } from '@/modules/spaces/domain/entities/space.entity';
-import { SpaceEncryptionService } from '@/modules/spaces/domain/space-encryption.service';
-import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
-import { Member } from '@/modules/users/datasources/entities/member.entity.db';
-import { User } from '@/modules/users/datasources/entities/users.entity.db';
+} from '#/modules/spaces/domain/audit/entities/space-audit-event.entity';
+import { ISpaceAuditRepository } from '#/modules/spaces/domain/audit/space-audit.repository.interface';
+import type { SpaceStatus } from '#/modules/spaces/domain/entities/space.entity';
+import { SpaceEncryptionService } from '#/modules/spaces/domain/space-encryption.service';
+import type { ISpacesRepository } from '#/modules/spaces/domain/spaces.repository.interface';
+import { Member } from '#/modules/users/datasources/entities/member.entity.db';
+import { User } from '#/modules/users/datasources/entities/users.entity.db';
 import {
   MemberRole,
   MemberStatus,
-} from '@/modules/users/domain/entities/member.entity';
-import { MemberEncryptionService } from '@/modules/users/domain/members/member-encryption.service';
+} from '#/modules/users/domain/entities/member.entity';
+import { MemberEncryptionService } from '#/modules/users/domain/members/member-encryption.service';
 
 @Injectable()
 export class SpacesRepository implements ISpacesRepository {

@@ -6,48 +6,48 @@ import type { ConfigService } from '@nestjs/config';
 import { DataSource, In } from 'typeorm';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
-import configuration from '@/config/entities/__tests__/configuration';
-import { postgresConfig } from '@/config/entities/postgres.config';
-import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
-import { nameBuilder } from '@/domain/common/entities/name.builder';
-import { getStringEnumKeys } from '@/domain/common/utils/enum';
-import type { ILoggingService } from '@/logging/logging.interface';
+import type { IConfigurationService } from '#/config/configuration.service.interface';
+import configuration from '#/config/entities/__tests__/configuration';
+import { postgresConfig } from '#/config/entities/postgres.config';
+import { DatabaseMigrator } from '#/datasources/db/v2/database-migrator.service';
+import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
+import { DB_MAX_SAFE_INTEGER } from '#/domain/common/constants';
+import { nameBuilder } from '#/domain/common/entities/name.builder';
+import { getStringEnumKeys } from '#/domain/common/utils/enum';
+import type { ILoggingService } from '#/logging/logging.interface';
 import {
   oidcAuthPayloadDtoBuilder,
   siweAuthPayloadDtoBuilder,
-} from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
-import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
-import { createMockSpaceEncryptionService } from '@/modules/spaces/domain/__tests__/space-encryption.service.mock';
-import { createMockSpaceAuditRepository } from '@/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
-import { SpaceStatus } from '@/modules/spaces/domain/entities/space.entity';
-import { SpacesRepository } from '@/modules/spaces/domain/spaces.repository';
+} from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import { SpaceSafe } from '#/modules/spaces/datasources/safes/entities/space-safes.entity.db';
+import { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
+import { createMockSpaceEncryptionService } from '#/modules/spaces/domain/__tests__/space-encryption.service.mock';
+import { createMockSpaceAuditRepository } from '#/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
+import { SpaceStatus } from '#/modules/spaces/domain/entities/space.entity';
+import { SpacesRepository } from '#/modules/spaces/domain/spaces.repository';
 import {
   InviteType,
   type InviteUserInput,
-} from '@/modules/spaces/routes/members/entities/invite-users.dto.entity';
-import { Member } from '@/modules/users/datasources/entities/member.entity.db';
-import { User } from '@/modules/users/datasources/entities/users.entity.db';
+} from '#/modules/spaces/routes/members/entities/invite-users.dto.entity';
+import { Member } from '#/modules/users/datasources/entities/member.entity.db';
+import { User } from '#/modules/users/datasources/entities/users.entity.db';
 import {
   createEncryptingMockUserEncryptionService,
   createMockUserEncryptionService,
-} from '@/modules/users/domain/__tests__/user-encryption.service.mock';
+} from '#/modules/users/domain/__tests__/user-encryption.service.mock';
 import {
   MemberRole,
   MemberStatus,
-} from '@/modules/users/domain/entities/member.entity';
-import { UserStatus } from '@/modules/users/domain/entities/user.entity';
-import { createMockMemberEncryptionService } from '@/modules/users/domain/members/__tests__/member-encryption.service.mock';
-import { MembersRepository } from '@/modules/users/domain/members/members.repository';
-import { UsersRepository } from '@/modules/users/domain/users.repository';
-import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
-import { createMockWalletEncryptionService } from '@/modules/wallets/domain/__tests__/wallet-encryption.service.mock';
-import { WalletsRepository } from '@/modules/wallets/domain/wallets.repository';
-import { EmailAddressSchema } from '@/validation/entities/schemas/email-address.schema';
+} from '#/modules/users/domain/entities/member.entity';
+import { UserStatus } from '#/modules/users/domain/entities/user.entity';
+import { createMockMemberEncryptionService } from '#/modules/users/domain/members/__tests__/member-encryption.service.mock';
+import { MembersRepository } from '#/modules/users/domain/members/members.repository';
+import { UsersRepository } from '#/modules/users/domain/users.repository';
+import { Wallet } from '#/modules/wallets/datasources/entities/wallets.entity.db';
+import { createMockWalletEncryptionService } from '#/modules/wallets/domain/__tests__/wallet-encryption.service.mock';
+import { WalletsRepository } from '#/modules/wallets/domain/wallets.repository';
+import { EmailAddressSchema } from '#/validation/entities/schemas/email-address.schema';
 
 const mockLoggingService = {
   debug: vi.fn(),

@@ -12,23 +12,23 @@ import type { MockedObject } from 'vitest';
 import {
   oidcAuthPayloadDtoBuilder,
   siweAuthPayloadDtoBuilder,
-} from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { createMockSpaceEncryptionService } from '@/modules/spaces/domain/__tests__/space-encryption.service.mock';
-import { spaceBuilder } from '@/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
-import type { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
-import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
-import { SpacesService } from '@/modules/spaces/routes/spaces.service';
-import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
-import { userBuilder } from '@/modules/users/datasources/entities/__tests__/users.entity.db.builder';
-import { createMockMemberEncryptionService } from '@/modules/users/domain/members/__tests__/member-encryption.service.mock';
-import type { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
-import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
-import type { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
-import { createMockWalletEncryptionService } from '@/modules/wallets/domain/__tests__/wallet-encryption.service.mock';
-import type { WalletEncryptionService } from '@/modules/wallets/domain/wallet-encryption.service';
-import type { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
-import { fakeUuid } from '@/validation/entities/schemas/__tests__/uuid.builder';
+} from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import { createMockSpaceEncryptionService } from '#/modules/spaces/domain/__tests__/space-encryption.service.mock';
+import { spaceBuilder } from '#/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
+import type { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository.interface';
+import type { ISpacesRepository } from '#/modules/spaces/domain/spaces.repository.interface';
+import { SpacesService } from '#/modules/spaces/routes/spaces.service';
+import { memberBuilder } from '#/modules/users/datasources/entities/__tests__/member.entity.db.builder';
+import { userBuilder } from '#/modules/users/datasources/entities/__tests__/users.entity.db.builder';
+import { createMockMemberEncryptionService } from '#/modules/users/domain/members/__tests__/member-encryption.service.mock';
+import type { IMembersRepository } from '#/modules/users/domain/members/members.repository.interface';
+import type { IUsersRepository } from '#/modules/users/domain/users.repository.interface';
+import type { Wallet } from '#/modules/wallets/datasources/entities/wallets.entity.db';
+import { createMockWalletEncryptionService } from '#/modules/wallets/domain/__tests__/wallet-encryption.service.mock';
+import type { WalletEncryptionService } from '#/modules/wallets/domain/wallet-encryption.service';
+import type { IWalletsRepository } from '#/modules/wallets/domain/wallets.repository.interface';
+import { fakeUuid } from '#/validation/entities/schemas/__tests__/uuid.builder';
 
 const spacesRepositoryMock = {
   create: vi.fn(),

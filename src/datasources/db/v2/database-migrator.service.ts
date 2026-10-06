@@ -2,11 +2,11 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { DataSource } from 'typeorm';
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
+import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
+} from '#/logging/logging.interface';
 
 interface LockSchema {
   id: number;

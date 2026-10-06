@@ -8,24 +8,24 @@ import type { Address } from 'viem';
 import {
   initTestApplication,
   TestAppProvider,
-} from '@/__tests__/test-app.provider';
-import { createTestModule } from '@/__tests__/testing-module';
-import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
-import configuration from '@/config/entities/__tests__/configuration';
-import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
-import { nameBuilder } from '@/domain/common/entities/name.builder';
-import { getEnumKey } from '@/domain/common/utils/enum';
-import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
-import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
-import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
-import { SpaceStatus } from '@/modules/spaces/domain/entities/space.entity';
-import { SpacesController } from '@/modules/spaces/routes/spaces.controller';
+} from '#/__tests__/test-app.provider';
+import { createTestModule } from '#/__tests__/testing-module';
+import { checkGuardIsApplied } from '#/__tests__/util/check-guard';
+import configuration from '#/config/entities/__tests__/configuration';
+import { IJwtService } from '#/datasources/jwt/jwt.service.interface';
+import { nameBuilder } from '#/domain/common/entities/name.builder';
+import { getEnumKey } from '#/domain/common/utils/enum';
+import { siweAuthPayloadDtoBuilder } from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { AuthGuard } from '#/modules/auth/routes/guards/auth.guard';
+import { NotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/notifications.repository.module';
+import { TestNotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/test.notification.repository.module';
+import { SpaceStatus } from '#/modules/spaces/domain/entities/space.entity';
+import { SpacesController } from '#/modules/spaces/routes/spaces.controller';
 import {
   MemberRole,
   MemberStatus,
-} from '@/modules/users/domain/entities/member.entity';
-import { UserStatus } from '@/modules/users/domain/entities/user.entity';
+} from '#/modules/users/domain/entities/member.entity';
+import { UserStatus } from '#/modules/users/domain/entities/user.entity';
 
 describe('SpacesController', () => {
   let app: INestApplication<Server>;

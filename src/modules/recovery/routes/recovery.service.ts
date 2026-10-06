@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import type { Address } from 'viem';
-import type { AlertsRepository } from '@/modules/alerts/domain/alerts.repository';
-import { IAlertsRepository } from '@/modules/alerts/domain/alerts.repository.interface';
-import type { AlertsRegistration } from '@/modules/alerts/domain/entities/alerts-registration.entity';
-import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import type { AddRecoveryModuleDto } from '@/modules/recovery/routes/entities/add-recovery-module.dto.entity';
-import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
+import type { AlertsRepository } from '#/modules/alerts/domain/alerts.repository';
+import { IAlertsRepository } from '#/modules/alerts/domain/alerts.repository.interface';
+import type { AlertsRegistration } from '#/modules/alerts/domain/entities/alerts-registration.entity';
+import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import type { AddRecoveryModuleDto } from '#/modules/recovery/routes/entities/add-recovery-module.dto.entity';
+import { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
 
 @Injectable()
 export class RecoveryService {

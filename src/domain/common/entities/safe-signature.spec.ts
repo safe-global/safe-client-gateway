@@ -4,13 +4,13 @@ import { shuffle } from 'lodash';
 import type { Hash, Hex } from 'viem';
 import * as viem from 'viem';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
-import { SafeSignature } from '@/domain/common/entities/safe-signature';
-import { SignatureType } from '@/domain/common/entities/signature-type.entity';
-import { getSignature } from '@/domain/common/utils/__tests__/signatures.builder';
+import { SafeSignature } from '#/domain/common/entities/safe-signature';
+import { SignatureType } from '#/domain/common/entities/signature-type.entity';
+import { getSignature } from '#/domain/common/utils/__tests__/signatures.builder';
 import {
   DYNAMIC_PART_LENGTH_FIELD_HEX_LENGTH,
   SIGNATURE_HEX_LENGTH,
-} from '@/domain/common/utils/signatures';
+} from '#/domain/common/utils/signatures';
 
 // `vi.spyOn` cannot redefine read-only ESM named exports, so partially mock
 // viem with a spy that wraps the real `getAddress` implementation.

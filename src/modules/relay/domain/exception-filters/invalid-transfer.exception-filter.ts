@@ -6,7 +6,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import type { FastifyReply } from 'fastify';
-import { InvalidTransferError } from '@/modules/relay/domain/errors/invalid-transfer.error';
+import { InvalidTransferError } from '#/modules/relay/domain/errors/invalid-transfer.error';
 
 @Catch(InvalidTransferError)
 export class InvalidTransferExceptionFilter implements ExceptionFilter {

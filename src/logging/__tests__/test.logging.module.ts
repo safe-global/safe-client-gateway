@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Global, Inject, Module } from '@nestjs/common';
-import { IConfigurationService } from '@/config/configuration.service.interface';
+import { IConfigurationService } from '#/config/configuration.service.interface';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
+} from '#/logging/logging.interface';
 
 class TestLoggingService implements ILoggingService {
   private readonly isSilent: boolean;

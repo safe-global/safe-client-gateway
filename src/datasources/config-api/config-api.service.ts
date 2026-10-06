@@ -1,23 +1,23 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
-import { CacheRouter } from '@/datasources/cache/cache.router';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { CacheFirstDataSource } from '#/datasources/cache/cache.first.data.source';
+import { CacheRouter } from '#/datasources/cache/cache.router';
 import {
   CacheService,
   type ICacheService,
-} from '@/datasources/cache/cache.service.interface';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import type { Page } from '@/domain/entities/page.entity';
-import type { IConfigApi } from '@/domain/interfaces/config-api.interface';
+} from '#/datasources/cache/cache.service.interface';
+import { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
+import type { Page } from '#/domain/entities/page.entity';
+import type { IConfigApi } from '#/domain/interfaces/config-api.interface';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
-import type { GasToken } from '@/modules/fees/domain/entities/gas-token.entity';
-import type { SafeApp } from '@/modules/safe-apps/domain/entities/safe-app.entity';
-import type { Raw } from '@/validation/entities/raw.entity';
+} from '#/logging/logging.interface';
+import type { Chain } from '#/modules/chains/domain/entities/chain.entity';
+import type { GasToken } from '#/modules/fees/domain/entities/gas-token.entity';
+import type { SafeApp } from '#/modules/safe-apps/domain/entities/safe-app.entity';
+import type { Raw } from '#/validation/entities/raw.entity';
 
 @Injectable()
 export class ConfigApi implements IConfigApi {

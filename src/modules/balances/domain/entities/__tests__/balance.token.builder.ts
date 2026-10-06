@@ -1,7 +1,8 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import type { IBuilder } from '@/__tests__/builder';
-import { Builder } from '@/__tests__/builder';
-import type { BalanceToken } from '@/modules/balances/domain/entities/balance.token.entity';
+import type { IBuilder } from '#/__tests__/builder';
+import { Builder } from '#/__tests__/builder';
+import type { BalanceToken } from '#/modules/balances/domain/entities/balance.token.entity';
 
 export function balanceTokenBuilder(): IBuilder<BalanceToken> {
   return new Builder<BalanceToken>()

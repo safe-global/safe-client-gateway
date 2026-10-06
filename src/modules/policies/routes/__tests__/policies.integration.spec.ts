@@ -9,47 +9,47 @@ import type { MockedObject } from 'vitest';
 import {
   initTestApplication,
   TestAppProvider,
-} from '@/__tests__/test-app.provider';
-import { createTestModule } from '@/__tests__/testing-module';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import configuration from '@/config/entities/__tests__/configuration';
-import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
-import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import { NetworkService } from '@/datasources/network/network.service.interface';
-import { nameBuilder } from '@/domain/common/entities/name.builder';
-import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
-import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
+} from '#/__tests__/test-app.provider';
+import { createTestModule } from '#/__tests__/testing-module';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import configuration from '#/config/entities/__tests__/configuration';
+import { IJwtService } from '#/datasources/jwt/jwt.service.interface';
+import { NetworkResponseError } from '#/datasources/network/entities/network.error.entity';
+import type { INetworkService } from '#/datasources/network/network.service.interface';
+import { NetworkService } from '#/datasources/network/network.service.interface';
+import { nameBuilder } from '#/domain/common/entities/name.builder';
+import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
+import { siweAuthPayloadDtoBuilder } from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
 import {
   addDelegateEncoder,
   setAllowanceEncoder,
-} from '@/modules/contracts/domain/__tests__/encoders/allowance-module-encoder.builder';
-import { delegateBuilder } from '@/modules/delegate/domain/entities/__tests__/delegate.builder';
-import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
-import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
-import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
+} from '#/modules/contracts/domain/__tests__/encoders/allowance-module-encoder.builder';
+import { delegateBuilder } from '#/modules/delegate/domain/entities/__tests__/delegate.builder';
+import type { Delegate } from '#/modules/delegate/domain/entities/delegate.entity';
+import { NotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/notifications.repository.module';
+import { TestNotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/test.notification.repository.module';
 import {
   rawIndexerMetaBuilder,
   rawPolicyIndexerResponse,
-} from '@/modules/policies/domain/entities/indexer/__tests__/policy-indexer-state.builder';
+} from '#/modules/policies/domain/entities/indexer/__tests__/policy-indexer-state.builder';
 import type {
   RawIndexerSafeAllowance,
   RawIndexerSafeDelegate,
-} from '@/modules/policies/domain/entities/indexer/__tests__/safe-allowance.builder';
+} from '#/modules/policies/domain/entities/indexer/__tests__/safe-allowance.builder';
 import {
   rawIndexerSafeAllowanceBuilder,
   rawIndexerSafeDelegateBuilder,
-} from '@/modules/policies/domain/entities/indexer/__tests__/safe-allowance.builder';
-import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
-import { multisigTransactionBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
-import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
-import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
-import { Operation } from '@/modules/safe/domain/entities/operation.entity';
-import { SpacesCreationRateLimitGuard } from '@/modules/spaces/routes/guards/spaces-creation-rate-limit.guard';
-import { erc20TokenBuilder } from '@/modules/tokens/domain/__tests__/token.builder';
-import type { Token } from '@/modules/tokens/domain/entities/token.entity';
-import { rawify } from '@/validation/entities/raw.entity';
+} from '#/modules/policies/domain/entities/indexer/__tests__/safe-allowance.builder';
+import { PolicyType } from '#/modules/policies/domain/entities/policy-type.entity';
+import { multisigTransactionBuilder } from '#/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
+import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
+import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
+import { Operation } from '#/modules/safe/domain/entities/operation.entity';
+import { SpacesCreationRateLimitGuard } from '#/modules/spaces/routes/guards/spaces-creation-rate-limit.guard';
+import { erc20TokenBuilder } from '#/modules/tokens/domain/__tests__/token.builder';
+import type { Token } from '#/modules/tokens/domain/entities/token.entity';
+import { rawify } from '#/validation/entities/raw.entity';
 
 const SEPOLIA_CHAIN_ID = '11155111';
 const DAY_IN_MINUTES = 1440;

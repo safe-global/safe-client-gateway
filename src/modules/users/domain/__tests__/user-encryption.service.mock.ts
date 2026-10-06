@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { MockedObject } from 'vitest';
-import type { UserEncryptionService } from '@/modules/users/domain/user-encryption.service';
+import type { UserEncryptionService } from '#/modules/users/domain/user-encryption.service';
 
 /**
  * A passthrough {@link UserEncryptionService} double for repository

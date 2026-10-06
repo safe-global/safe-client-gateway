@@ -2,7 +2,7 @@
 import { Injectable } from '@nestjs/common';
 import type { Address } from 'viem';
 import { encodePacked, hashTypedData, type TypedDataDomain } from 'viem';
-import type { GPv2OrderParameters } from '@/modules/swaps/domain/contracts/decoders/gp-v2-decoder.helper';
+import type { GPv2OrderParameters } from '#/modules/swaps/domain/contracts/decoders/gp-v2-decoder.helper';
 
 @Injectable()
 export class GPv2OrderHelper {

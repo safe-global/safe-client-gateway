@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
-import { collectibleBuilder } from '@/modules/collectibles/domain/entities/__tests__/collectible.builder';
-import { CollectibleSchema } from '@/modules/collectibles/domain/entities/schemas/collectible.schema';
+import { collectibleBuilder } from '#/modules/collectibles/domain/entities/__tests__/collectible.builder';
+import { CollectibleSchema } from '#/modules/collectibles/domain/entities/schemas/collectible.schema';
 
 describe('CollectibleSchema', () => {
   it('should validate a valid collectible', () => {

@@ -13,23 +13,23 @@ import {
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
 import type { Address, Hash } from 'viem';
-import { ChainIdSchema } from '@/modules/chains/domain/entities/schemas/chain-id.schema';
-import { CreateMessageDto } from '@/modules/messages/routes/entities/create-message.dto.entity';
-import { Message } from '@/modules/messages/routes/entities/message.entity';
-import type { MessageItem } from '@/modules/messages/routes/entities/message-item.entity';
-import { MessagePage } from '@/modules/messages/routes/entities/messages-page.entity';
-import { CreateMessageDtoSchema } from '@/modules/messages/routes/entities/schemas/create-message.dto.schema';
-import { UpdateMessageSignatureDtoSchema } from '@/modules/messages/routes/entities/schemas/update-message-signature.dto.schema';
-import { UpdateMessageSignatureDto } from '@/modules/messages/routes/entities/update-message-signature.entity';
-import { MessagesService } from '@/modules/messages/routes/messages.service';
-import { PaginationDataDecorator } from '@/routes/common/decorators/pagination.data.decorator';
-import { RouteUrlDecorator } from '@/routes/common/decorators/route.url.decorator';
-import type { DateLabel } from '@/routes/common/entities/date-label.entity';
-import type { Page } from '@/routes/common/entities/page.entity';
-import type { PaginationData } from '@/routes/common/pagination/pagination.data';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { HexSchema } from '@/validation/entities/schemas/hex.schema';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+import { ChainIdSchema } from '#/modules/chains/domain/entities/schemas/chain-id.schema';
+import { CreateMessageDto } from '#/modules/messages/routes/entities/create-message.dto.entity';
+import { Message } from '#/modules/messages/routes/entities/message.entity';
+import type { MessageItem } from '#/modules/messages/routes/entities/message-item.entity';
+import { MessagePage } from '#/modules/messages/routes/entities/messages-page.entity';
+import { CreateMessageDtoSchema } from '#/modules/messages/routes/entities/schemas/create-message.dto.schema';
+import { UpdateMessageSignatureDtoSchema } from '#/modules/messages/routes/entities/schemas/update-message-signature.dto.schema';
+import { UpdateMessageSignatureDto } from '#/modules/messages/routes/entities/update-message-signature.entity';
+import { MessagesService } from '#/modules/messages/routes/messages.service';
+import { PaginationDataDecorator } from '#/routes/common/decorators/pagination.data.decorator';
+import { RouteUrlDecorator } from '#/routes/common/decorators/route.url.decorator';
+import type { DateLabel } from '#/routes/common/entities/date-label.entity';
+import type { Page } from '#/routes/common/entities/page.entity';
+import type { PaginationData } from '#/routes/common/pagination/pagination.data';
+import { AddressSchema } from '#/validation/entities/schemas/address.schema';
+import { HexSchema } from '#/validation/entities/schemas/hex.schema';
+import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
 @ApiTags('messages')
 @Controller({

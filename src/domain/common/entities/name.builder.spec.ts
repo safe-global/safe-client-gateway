@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { nameBuilder } from '@/domain/common/entities/name.builder';
-import { NameSchema, sanitizeName } from '@/domain/common/schemas/name.schema';
+import { nameBuilder } from '#/domain/common/entities/name.builder';
+import { NameSchema, sanitizeName } from '#/domain/common/schemas/name.schema';
 
 describe('nameBuilder', () => {
   it('produces a value that is non-empty after sanitization', () => {

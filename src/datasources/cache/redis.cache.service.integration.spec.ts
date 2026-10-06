@@ -2,18 +2,15 @@
 
 import { faker } from '@faker-js/faker';
 import type { MockedObject } from 'vitest';
-import { fakeJson } from '@/__tests__/faker';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
-import type { RedisClientType } from '@/datasources/cache/cache.module';
-import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
-import { RedisCacheService } from '@/datasources/cache/redis.cache.service';
-import type { ILoggingService } from '@/logging/logging.interface';
-
-import clearAllMocks = vi.clearAllMocks;
-
-import { redisClientFactory } from '@/__tests__/redis-client.factory';
-import { MAX_TTL } from '@/datasources/cache/constants';
-import { offsetByPercentage } from '@/domain/common/utils/number';
+import { fakeJson } from '#/__tests__/faker';
+import { redisClientFactory } from '#/__tests__/redis-client.factory';
+import type { IConfigurationService } from '#/config/configuration.service.interface';
+import type { RedisClientType } from '#/datasources/cache/cache.module';
+import { MAX_TTL } from '#/datasources/cache/constants';
+import { CacheDir } from '#/datasources/cache/entities/cache-dir.entity';
+import { RedisCacheService } from '#/datasources/cache/redis.cache.service';
+import { offsetByPercentage } from '#/domain/common/utils/number';
+import type { ILoggingService } from '#/logging/logging.interface';
 
 const mockLoggingService: MockedObject<ILoggingService> = {
   info: vi.fn(),
@@ -44,7 +41,7 @@ describe('RedisCacheService', () => {
   });
 
   beforeEach(async () => {
-    clearAllMocks();
+    vi.clearAllMocks();
     await redisClient.flushDb();
     defaultExpirationTimeInSeconds = faker.number.int({ min: 1, max: 3600 });
     defaultExpirationDeviatePercent = faker.number.int({ min: 1, max: 99 });

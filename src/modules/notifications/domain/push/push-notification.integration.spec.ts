@@ -10,54 +10,54 @@ import type { MockedObject } from 'vitest';
 import {
   createTestApplication,
   initTestApplication,
-} from '@/__tests__/test-app.provider';
-import { createTestModule } from '@/__tests__/testing-module';
-import { retry } from '@/__tests__/util/retry';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import configuration from '@/config/entities/__tests__/configuration';
-import type { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
-import { CacheService } from '@/datasources/cache/cache.service.interface';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import { NetworkService } from '@/datasources/network/network.service.interface';
-import { TestPushNotificationsApiModule } from '@/datasources/push-notifications-api/__tests__/test.push-notifications-api.module';
-import { PushNotificationsApiModule } from '@/datasources/push-notifications-api/push-notifications-api.module';
-import { PUSH_NOTIFICATION_QUEUE } from '@/domain/common/jobs.constants';
-import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
-import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { delegateBuilder } from '@/modules/delegate/domain/entities/__tests__/delegate.builder';
-import { chainUpdateEventBuilder } from '@/modules/hooks/routes/entities/__tests__/chain-update.builder';
-import { deletedMultisigTransactionEventBuilder } from '@/modules/hooks/routes/entities/__tests__/deleted-multisig-transaction.builder';
-import { executedTransactionEventBuilder } from '@/modules/hooks/routes/entities/__tests__/executed-transaction.builder';
-import { incomingEtherEventBuilder } from '@/modules/hooks/routes/entities/__tests__/incoming-ether.builder';
-import { incomingTokenEventBuilder } from '@/modules/hooks/routes/entities/__tests__/incoming-token.builder';
-import { messageCreatedEventBuilder } from '@/modules/hooks/routes/entities/__tests__/message-created.builder';
-import { moduleTransactionEventBuilder } from '@/modules/hooks/routes/entities/__tests__/module-transaction.builder';
-import { pendingTransactionEventBuilder } from '@/modules/hooks/routes/entities/__tests__/pending-transaction.builder';
-import type { IncomingEtherEvent } from '@/modules/hooks/routes/entities/schemas/incoming-ether.schema';
-import type { IncomingTokenEvent } from '@/modules/hooks/routes/entities/schemas/incoming-token.schema';
-import { messageBuilder } from '@/modules/messages/domain/entities/__tests__/message.builder';
-import { messageConfirmationBuilder } from '@/modules/messages/domain/entities/__tests__/message-confirmation.builder';
+} from '#/__tests__/test-app.provider';
+import { createTestModule } from '#/__tests__/testing-module';
+import { retry } from '#/__tests__/util/retry';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import configuration from '#/config/entities/__tests__/configuration';
+import type { FakeCacheService } from '#/datasources/cache/__tests__/fake.cache.service';
+import { CacheService } from '#/datasources/cache/cache.service.interface';
+import type { INetworkService } from '#/datasources/network/network.service.interface';
+import { NetworkService } from '#/datasources/network/network.service.interface';
+import { TestPushNotificationsApiModule } from '#/datasources/push-notifications-api/__tests__/test.push-notifications-api.module';
+import { PushNotificationsApiModule } from '#/datasources/push-notifications-api/push-notifications-api.module';
+import { PUSH_NOTIFICATION_QUEUE } from '#/domain/common/jobs.constants';
+import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
+import { ITransactionApiManager } from '#/domain/interfaces/transaction-api.manager.interface';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
+import { delegateBuilder } from '#/modules/delegate/domain/entities/__tests__/delegate.builder';
+import { chainUpdateEventBuilder } from '#/modules/hooks/routes/entities/__tests__/chain-update.builder';
+import { deletedMultisigTransactionEventBuilder } from '#/modules/hooks/routes/entities/__tests__/deleted-multisig-transaction.builder';
+import { executedTransactionEventBuilder } from '#/modules/hooks/routes/entities/__tests__/executed-transaction.builder';
+import { incomingEtherEventBuilder } from '#/modules/hooks/routes/entities/__tests__/incoming-ether.builder';
+import { incomingTokenEventBuilder } from '#/modules/hooks/routes/entities/__tests__/incoming-token.builder';
+import { messageCreatedEventBuilder } from '#/modules/hooks/routes/entities/__tests__/message-created.builder';
+import { moduleTransactionEventBuilder } from '#/modules/hooks/routes/entities/__tests__/module-transaction.builder';
+import { pendingTransactionEventBuilder } from '#/modules/hooks/routes/entities/__tests__/pending-transaction.builder';
+import type { IncomingEtherEvent } from '#/modules/hooks/routes/entities/schemas/incoming-ether.schema';
+import type { IncomingTokenEvent } from '#/modules/hooks/routes/entities/schemas/incoming-token.schema';
+import { messageBuilder } from '#/modules/messages/domain/entities/__tests__/message.builder';
+import { messageConfirmationBuilder } from '#/modules/messages/domain/entities/__tests__/message-confirmation.builder';
 import {
   addr,
   createSubscribers,
-} from '@/modules/notifications/domain/push/__tests__/helpers';
-import { PushNotificationConsumer } from '@/modules/notifications/domain/push/consumers/push-notification.consumer';
-import { PushNotificationModule } from '@/modules/notifications/domain/push/push-notification.module';
-import { IPushNotificationService } from '@/modules/notifications/domain/push/push-notification.service.interface';
-import { INotificationsRepositoryV2 } from '@/modules/notifications/domain/v2/notifications.repository.interface';
-import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
-import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
-import { erc20TransferBuilder } from '@/modules/safe/domain/entities/__tests__/erc20-transfer.builder';
-import { multisigTransactionBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
-import { confirmationBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction-confirmation.builder';
-import { nativeTokenTransferBuilder } from '@/modules/safe/domain/entities/__tests__/native-token-transfer.builder';
-import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
+} from '#/modules/notifications/domain/push/__tests__/helpers';
+import { PushNotificationConsumer } from '#/modules/notifications/domain/push/consumers/push-notification.consumer';
+import { PushNotificationModule } from '#/modules/notifications/domain/push/push-notification.module';
+import { IPushNotificationService } from '#/modules/notifications/domain/push/push-notification.service.interface';
+import { INotificationsRepositoryV2 } from '#/modules/notifications/domain/v2/notifications.repository.interface';
+import { NotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/notifications.repository.module';
+import { TestNotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/test.notification.repository.module';
+import { erc20TransferBuilder } from '#/modules/safe/domain/entities/__tests__/erc20-transfer.builder';
+import { multisigTransactionBuilder } from '#/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
+import { confirmationBuilder } from '#/modules/safe/domain/entities/__tests__/multisig-transaction-confirmation.builder';
+import { nativeTokenTransferBuilder } from '#/modules/safe/domain/entities/__tests__/native-token-transfer.builder';
+import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
 import type {
   ERC20Transfer,
   NativeTokenTransfer,
-} from '@/modules/safe/domain/entities/transfer.entity';
-import { rawify } from '@/validation/entities/raw.entity';
+} from '#/modules/safe/domain/entities/transfer.entity';
+import { rawify } from '#/validation/entities/raw.entity';
 
 type IncomingAssetFactory = (safeAddress: Address) => {
   event: IncomingEtherEvent | IncomingTokenEvent;

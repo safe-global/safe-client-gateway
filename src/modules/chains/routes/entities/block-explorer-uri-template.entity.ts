@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiProperty } from '@nestjs/swagger';
-import type { BlockExplorerUriTemplate as DomainBlockExplorerUriTemplate } from '@/modules/chains/domain/entities/block-explorer-uri-template.entity';
+import type { BlockExplorerUriTemplate as DomainBlockExplorerUriTemplate } from '#/modules/chains/domain/entities/block-explorer-uri-template.entity';
 
 export class BlockExplorerUriTemplate
   implements DomainBlockExplorerUriTemplate

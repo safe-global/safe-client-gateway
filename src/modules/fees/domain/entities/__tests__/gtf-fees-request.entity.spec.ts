@@ -2,8 +2,8 @@
 
 import { faker } from '@faker-js/faker';
 import { getAddress, zeroAddress } from 'viem';
-import { GtfFeesRequestSchema } from '@/modules/fees/domain/entities/gtf-fees-request.entity';
-import { Origin } from '@/modules/fees/domain/entities/origin.entity';
+import { GtfFeesRequestSchema } from '#/modules/fees/domain/entities/gtf-fees-request.entity';
+import { Origin } from '#/modules/fees/domain/entities/origin.entity';
 
 describe('GtfFeesRequestSchema', () => {
   it('should validate a valid gtf-fees request', () => {

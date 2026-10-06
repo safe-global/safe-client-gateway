@@ -4,14 +4,14 @@ import {
   unsealEventsResponse,
 } from '@fingerprintjs/fingerprintjs-pro-server-api';
 import { Inject } from '@nestjs/common';
-import { IConfigurationService } from '@/config/configuration.service.interface';
+import { IConfigurationService } from '#/config/configuration.service.interface';
 import {
   type FingerprintUnsealedData,
   FingerprintUnsealedDataSchema,
-} from '@/datasources/locking-api/entities/fingerprint-unsealed-data.entity';
-import type { IIdentityApi } from '@/domain/interfaces/identity-api.interface';
-import type { Eligibility } from '@/modules/community/domain/entities/eligibility.entity';
-import type { EligibilityRequest } from '@/modules/community/domain/entities/eligibility-request.entity';
+} from '#/datasources/locking-api/entities/fingerprint-unsealed-data.entity';
+import type { IIdentityApi } from '#/domain/interfaces/identity-api.interface';
+import type { Eligibility } from '#/modules/community/domain/entities/eligibility.entity';
+import type { EligibilityRequest } from '#/modules/community/domain/entities/eligibility-request.entity';
 
 export class FingerprintApiService implements IIdentityApi {
   private readonly eligibilityEncryptionKey: string;

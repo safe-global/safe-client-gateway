@@ -3,16 +3,16 @@
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import type { ILoggingService } from '@/logging/logging.interface';
-import { threatAnalysisRequestBuilder } from '@/modules/safe-shield/entities/__tests__/builders/analysis-requests.builder';
-import type { IBlockaidApi } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.interface';
-import type { BlockaidScanResponse } from '@/modules/safe-shield/threat-analysis/blockaid/schemas/blockaid-scan-response.schema';
+import type { ILoggingService } from '#/logging/logging.interface';
+import { threatAnalysisRequestBuilder } from '#/modules/safe-shield/entities/__tests__/builders/analysis-requests.builder';
+import type { IBlockaidApi } from '#/modules/safe-shield/threat-analysis/blockaid/blockaid-api.interface';
+import type { BlockaidScanResponse } from '#/modules/safe-shield/threat-analysis/blockaid/schemas/blockaid-scan-response.schema';
 import {
   DESCRIPTION_MAPPING,
   SEVERITY_MAPPING,
   TITLE_MAPPING,
-} from '@/modules/safe-shield/threat-analysis/threat-analysis.constants';
-import { ThreatAnalysisService } from '@/modules/safe-shield/threat-analysis/threat-analysis.service';
+} from '#/modules/safe-shield/threat-analysis/threat-analysis.constants';
+import { ThreatAnalysisService } from '#/modules/safe-shield/threat-analysis/threat-analysis.service';
 
 const mockBlockaidApi = {
   scanTransaction: vi.fn(),

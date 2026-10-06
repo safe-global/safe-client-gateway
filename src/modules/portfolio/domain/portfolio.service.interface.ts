@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { Address } from 'viem';
-import type { Portfolio } from '@/modules/portfolio/domain/entities/portfolio.entity';
+import type { Portfolio } from '#/modules/portfolio/domain/entities/portfolio.entity';
 
 export const IPortfolioService = Symbol('IPortfolioService');
 

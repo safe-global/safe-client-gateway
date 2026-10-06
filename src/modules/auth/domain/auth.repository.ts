@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
-import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
-import type { JwtPayloadWithClaims } from '@/datasources/jwt/jwt-claims.entity';
-import type { IAuthRepository } from '@/modules/auth/domain/auth.repository.interface';
+import { IJwtService } from '#/datasources/jwt/jwt.service.interface';
+import type { JwtPayloadWithClaims } from '#/datasources/jwt/jwt-claims.entity';
+import type { IAuthRepository } from '#/modules/auth/domain/auth.repository.interface';
 import {
   type AuthPayloadDto,
   AuthPayloadDtoSchema,
   AuthPayloadWithClaimsDtoSchema,
-} from '@/modules/auth/domain/entities/auth-payload.entity';
+} from '#/modules/auth/domain/entities/auth-payload.entity';
 
 @Injectable()
 export class AuthRepository implements IAuthRepository {

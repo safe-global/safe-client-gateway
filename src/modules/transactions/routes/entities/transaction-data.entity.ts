@@ -10,10 +10,10 @@ import {
   Erc20Token,
   Erc721Token,
   NativeToken,
-} from '@/modules/balances/routes/entities/token.entity';
-import { DataDecoded } from '@/modules/data-decoder/routes/entities/data-decoded.entity';
-import { Operation } from '@/modules/safe/domain/entities/operation.entity';
-import { AddressInfo } from '@/routes/common/entities/address-info.entity';
+} from '#/modules/balances/routes/entities/token.entity';
+import { DataDecoded } from '#/modules/data-decoder/routes/entities/data-decoded.entity';
+import { Operation } from '#/modules/safe/domain/entities/operation.entity';
+import { AddressInfo } from '#/routes/common/entities/address-info.entity';
 
 @ApiExtraModels(AddressInfo, DataDecoded, Erc20Token, Erc721Token, NativeToken)
 export class TransactionData {

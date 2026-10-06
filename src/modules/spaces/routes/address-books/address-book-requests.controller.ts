@@ -25,21 +25,21 @@ import {
   ApiTooManyRequestsResponse,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { RowSchema } from '@/datasources/db/v2/entities/row.entity';
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
-import { AddressBookRequestsService } from '@/modules/spaces/routes/address-books/address-book-requests.service';
+import { RowSchema } from '#/datasources/db/v2/entities/row.entity';
+import { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import { AuthGuard } from '#/modules/auth/routes/guards/auth.guard';
+import { AddressBookRequestsService } from '#/modules/spaces/routes/address-books/address-book-requests.service';
 import {
   AddressBookRequestItemDto,
   AddressBookRequestsDto,
   CreateAddressBookRequestDto,
   CreateAddressBookRequestSchema,
-} from '@/modules/spaces/routes/address-books/entities/address-book-request.dto.entity';
-import { SpacesAddressBookRequestsRateLimitGuard } from '@/modules/spaces/routes/address-books/guards/spaces-address-book-requests-rate-limit.guard';
-import { Auth } from '@/routes/common/auth/auth.decorator';
-import { ElevationGuard } from '@/routes/common/auth/elevation.guard';
-import { SpaceIdPipe } from '@/routes/common/pipes/space-id.pipe';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+} from '#/modules/spaces/routes/address-books/entities/address-book-request.dto.entity';
+import { SpacesAddressBookRequestsRateLimitGuard } from '#/modules/spaces/routes/address-books/guards/spaces-address-book-requests-rate-limit.guard';
+import { Auth } from '#/routes/common/auth/auth.decorator';
+import { ElevationGuard } from '#/routes/common/auth/elevation.guard';
+import { SpaceIdPipe } from '#/routes/common/pipes/space-id.pipe';
+import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
 @ApiTags('spaces')
 @Controller({ path: 'spaces', version: '1' })

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { MockedObject } from 'vitest';
-import type { SpaceEncryptionService } from '@/modules/spaces/domain/space-encryption.service';
+import type { SpaceEncryptionService } from '#/modules/spaces/domain/space-encryption.service';
 
 /**
  * A passthrough {@link SpaceEncryptionService} double reproducing

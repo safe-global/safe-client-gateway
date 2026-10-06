@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { Address, Hash, Hex } from 'viem';
 import type { z } from 'zod';
-import type { Operation } from '@/modules/safe/domain/entities/operation.entity';
+import type { Operation } from '#/modules/safe/domain/entities/operation.entity';
 import type {
   NestedTransactionDtoSchema,
   ProposeTransactionDtoSchema,
-} from '@/modules/transactions/routes/entities/schemas/propose-transaction.dto.schema';
+} from '#/modules/transactions/routes/entities/schemas/propose-transaction.dto.schema';
 
 export class NestedTransactionDto
   implements z.infer<typeof NestedTransactionDtoSchema>

@@ -2,14 +2,14 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { type EntityManager, Equal } from 'typeorm';
 import { z } from 'zod';
-import { getScopedRepository } from '@/datasources/db/v2/get-scoped-repository.util';
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { SpaceFeatureUsage } from '@/modules/entitlements/datasources/entities/space-feature-usage.entity.db';
+import { getScopedRepository } from '#/datasources/db/v2/get-scoped-repository.util';
+import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
+import { SpaceFeatureUsage } from '#/modules/entitlements/datasources/entities/space-feature-usage.entity.db';
 import type {
   ISpaceFeatureUsageRepository,
   UsageKey,
-} from '@/modules/entitlements/domain/space-feature-usage.repository.interface';
-import type { Space } from '@/modules/spaces/domain/entities/space.entity';
+} from '#/modules/entitlements/domain/space-feature-usage.repository.interface';
+import type { Space } from '#/modules/spaces/domain/entities/space.entity';
 
 /** What the upsert returns: the counter's value after the write. */
 const IncrementedUsageSchema = z

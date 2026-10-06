@@ -6,14 +6,14 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { databaseEnumTransformer } from '@/domain/common/utils/enum';
-import { Member } from '@/modules/users/datasources/entities/member.entity.db';
+import { databaseEnumTransformer } from '#/domain/common/utils/enum';
+import { Member } from '#/modules/users/datasources/entities/member.entity.db';
 import {
   type User as DomainUser,
   UserStatus,
-} from '@/modules/users/domain/entities/user.entity';
-import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
-import type { EmailAddress } from '@/validation/entities/schemas/email-address.schema';
+} from '#/modules/users/domain/entities/user.entity';
+import { Wallet } from '#/modules/wallets/datasources/entities/wallets.entity.db';
+import type { EmailAddress } from '#/validation/entities/schemas/email-address.schema';
 
 @Entity('users')
 export class User implements DomainUser {

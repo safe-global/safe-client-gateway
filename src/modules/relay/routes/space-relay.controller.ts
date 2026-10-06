@@ -22,22 +22,22 @@ import {
   ApiUnauthorizedResponse,
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
-import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
-import { ChainIdSchema } from '@/modules/chains/domain/entities/schemas/chain-id.schema';
-import { QuotaExceededExceptionFilter } from '@/modules/entitlements/domain/exception-filters/quota-exceeded.exception-filter';
-import { RelayCalldataExceptionFilters } from '@/modules/relay/domain/exception-filters/relay-calldata.exception-filters';
-import { GasPaymentOptionUnavailableResponse } from '@/modules/relay/routes/entities/gas-payment-option-unavailable-response.entity';
-import { Relay } from '@/modules/relay/routes/entities/relay.entity';
+import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import { AuthGuard } from '#/modules/auth/routes/guards/auth.guard';
+import { ChainIdSchema } from '#/modules/chains/domain/entities/schemas/chain-id.schema';
+import { QuotaExceededExceptionFilter } from '#/modules/entitlements/domain/exception-filters/quota-exceeded.exception-filter';
+import { RelayCalldataExceptionFilters } from '#/modules/relay/domain/exception-filters/relay-calldata.exception-filters';
+import { GasPaymentOptionUnavailableResponse } from '#/modules/relay/routes/entities/gas-payment-option-unavailable-response.entity';
+import { Relay } from '#/modules/relay/routes/entities/relay.entity';
 import {
   SpaceRelayDto,
   SpaceRelayDtoSchema,
-} from '@/modules/relay/routes/entities/space-relay.dto.entity';
-import { SpaceRelayService } from '@/modules/relay/routes/space-relay.service';
-import type { Space } from '@/modules/spaces/domain/entities/space.entity';
-import { Auth } from '@/routes/common/auth/auth.decorator';
-import { SpaceIdPipe } from '@/routes/common/pipes/space-id.pipe';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+} from '#/modules/relay/routes/entities/space-relay.dto.entity';
+import { SpaceRelayService } from '#/modules/relay/routes/space-relay.service';
+import type { Space } from '#/modules/spaces/domain/entities/space.entity';
+import { Auth } from '#/routes/common/auth/auth.decorator';
+import { SpaceIdPipe } from '#/routes/common/pipes/space-id.pipe';
+import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
 @ApiTags('relay')
 @Controller({

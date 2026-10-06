@@ -1,21 +1,21 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Injectable } from '@nestjs/common';
 import type { Hex } from 'viem';
-import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
-import type { Relayer } from '@/modules/chains/domain/entities/relayer.entity';
-import { ProxyFactoryDecoder } from '@/modules/relay/domain/contracts/decoders/proxy-factory-decoder.helper';
-import { GasPaymentOption } from '@/modules/relay/domain/entities/gas-payment-option.entity';
-import { RelayCall } from '@/modules/relay/domain/entities/relay-call.entity';
-import { RelayerType } from '@/modules/relay/domain/entities/relayer-type.entity';
-import { GasPaymentOptionUnavailableError } from '@/modules/relay/domain/errors/gas-payment-option-unavailable.error';
-import { NoRelayerDefinedError } from '@/modules/relay/domain/errors/no-relayer-defined.error';
-import { RelayerTypeNotImplementedError } from '@/modules/relay/domain/errors/relayer-type-not-implemented.error';
-import { IRelayManager } from '@/modules/relay/domain/interfaces/relay-manager.interface';
-import { IRelayer } from '@/modules/relay/domain/interfaces/relayer.interface';
-import { RelayTransactionHelper } from '@/modules/relay/domain/relay-transaction-helper';
-import { DailyLimitRelayer } from '@/modules/relay/domain/relayers/daily-limit.relayer';
-import { NoFeeCampaignRelayer } from '@/modules/relay/domain/relayers/no-fee-campaign.relayer';
-import { RelayFeeRelayer } from '@/modules/relay/domain/relayers/relay-fee.relayer';
+import type { Chain } from '#/modules/chains/domain/entities/chain.entity';
+import type { Relayer } from '#/modules/chains/domain/entities/relayer.entity';
+import { ProxyFactoryDecoder } from '#/modules/relay/domain/contracts/decoders/proxy-factory-decoder.helper';
+import { GasPaymentOption } from '#/modules/relay/domain/entities/gas-payment-option.entity';
+import { RelayCall } from '#/modules/relay/domain/entities/relay-call.entity';
+import { RelayerType } from '#/modules/relay/domain/entities/relayer-type.entity';
+import { GasPaymentOptionUnavailableError } from '#/modules/relay/domain/errors/gas-payment-option-unavailable.error';
+import { NoRelayerDefinedError } from '#/modules/relay/domain/errors/no-relayer-defined.error';
+import { RelayerTypeNotImplementedError } from '#/modules/relay/domain/errors/relayer-type-not-implemented.error';
+import { IRelayManager } from '#/modules/relay/domain/interfaces/relay-manager.interface';
+import { IRelayer } from '#/modules/relay/domain/interfaces/relayer.interface';
+import { RelayTransactionHelper } from '#/modules/relay/domain/relay-transaction-helper';
+import { DailyLimitRelayer } from '#/modules/relay/domain/relayers/daily-limit.relayer';
+import { NoFeeCampaignRelayer } from '#/modules/relay/domain/relayers/no-fee-campaign.relayer';
+import { RelayFeeRelayer } from '#/modules/relay/domain/relayers/relay-fee.relayer';
 
 @Injectable()
 export class RelayManager implements IRelayManager {

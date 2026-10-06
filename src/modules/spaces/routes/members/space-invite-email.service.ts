@@ -1,27 +1,27 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable, Optional } from '@nestjs/common';
-import { IConfigurationService } from '@/config/configuration.service.interface';
+import { IConfigurationService } from '#/config/configuration.service.interface';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import { asError } from '@/logging/utils';
-import { SesEmailQueueService } from '@/modules/email/ses/ses-email-queue.service';
-import type { Space } from '@/modules/spaces/domain/entities/space.entity';
-import { SpaceEncryptionService } from '@/modules/spaces/domain/space-encryption.service';
-import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
+} from '#/logging/logging.interface';
+import { asError } from '#/logging/utils';
+import { SesEmailQueueService } from '#/modules/email/ses/ses-email-queue.service';
+import type { Space } from '#/modules/spaces/domain/entities/space.entity';
+import { SpaceEncryptionService } from '#/modules/spaces/domain/space-encryption.service';
+import { ISpacesRepository } from '#/modules/spaces/domain/spaces.repository.interface';
 import {
   type EmailInviteUserInput,
   InviteType,
   type InviteUserInput,
-} from '@/modules/spaces/routes/members/entities/invite-users.dto.entity';
+} from '#/modules/spaces/routes/members/entities/invite-users.dto.entity';
 import {
   renderSpaceInviteEmailHtml,
   renderSpaceInviteEmailText,
   SPACE_INVITE_EMAIL_SUBJECT,
   SPACE_INVITE_PATH,
-} from '@/modules/spaces/routes/members/templates/space-invite-email.template';
-import type { EmailAddress } from '@/validation/entities/schemas/email-address.schema';
+} from '#/modules/spaces/routes/members/templates/space-invite-email.template';
+import type { EmailAddress } from '#/validation/entities/schemas/email-address.schema';
 
 interface InviteEmailRecipient {
   name: string;

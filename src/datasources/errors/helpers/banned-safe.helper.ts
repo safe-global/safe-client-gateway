@@ -2,8 +2,8 @@
 import {
   UNAVAILABLE_FOR_LEGAL_REASONS_MESSAGE,
   UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
-} from '@/datasources/errors/constants';
-import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
+} from '#/datasources/errors/constants';
+import { NetworkResponseError } from '#/datasources/network/entities/network.error.entity';
 
 /**
  * Whether a response reports a Safe banned from the indexer for legal reasons.

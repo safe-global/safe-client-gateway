@@ -5,9 +5,9 @@ import type {
   LockEventItem as DomainLockEventItem,
   UnlockEventItem as DomainUnlockEventItem,
   WithdrawEventItem as DomainWithdrawEventItem,
-} from '@/modules/community/domain/entities/locking-event.entity';
-import { LockingEventType } from '@/modules/community/domain/entities/schemas/locking-event.schema';
-import { Page } from '@/routes/common/entities/page.entity';
+} from '#/modules/community/domain/entities/locking-event.entity';
+import { LockingEventType } from '#/modules/community/domain/entities/schemas/locking-event.schema';
+import { Page } from '#/routes/common/entities/page.entity';
 
 class LockEventItem implements DomainLockEventItem {
   @ApiProperty({ enum: [LockingEventType.LOCKED] })

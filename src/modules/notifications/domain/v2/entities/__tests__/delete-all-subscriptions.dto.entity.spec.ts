@@ -2,9 +2,9 @@
 import type { UUID } from 'node:crypto';
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
-import { deleteAllSubscriptionsDtoBuilder } from '@/modules/notifications/domain/v2/entities/__tests__/delete-all-subscriptions.dto.builder';
-import { DeleteAllSubscriptionsDtoSchema } from '@/modules/notifications/domain/v2/entities/delete-all-subscriptions.dto.entity';
-import { fakeUuid } from '@/validation/entities/schemas/__tests__/uuid.builder';
+import { deleteAllSubscriptionsDtoBuilder } from '#/modules/notifications/domain/v2/entities/__tests__/delete-all-subscriptions.dto.builder';
+import { DeleteAllSubscriptionsDtoSchema } from '#/modules/notifications/domain/v2/entities/delete-all-subscriptions.dto.entity';
+import { fakeUuid } from '#/validation/entities/schemas/__tests__/uuid.builder';
 
 describe('DeleteAllSubscriptionsDtoSchema', () => {
   it('should validate a valid DeleteAllSubscriptionsDto', () => {

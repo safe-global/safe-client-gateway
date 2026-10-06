@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { getAddress, toHex } from 'viem';
-import type { IBuilder } from '@/__tests__/builder';
-import { Builder } from '@/__tests__/builder';
-import { SignatureType } from '@/domain/common/entities/signature-type.entity';
-import type { SafeQueueConfirmation } from '@/modules/safe-queue/entities/multisig-transaction.entity';
+import type { IBuilder } from '#/__tests__/builder';
+import { Builder } from '#/__tests__/builder';
+import { SignatureType } from '#/domain/common/entities/signature-type.entity';
+import type { SafeQueueConfirmation } from '#/modules/safe-queue/entities/multisig-transaction.entity';
 
 const SIGNATURE_BYTES = 65;
 

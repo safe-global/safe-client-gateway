@@ -7,7 +7,7 @@ import {
   getRouteParam,
   getRoutePath,
   type RequestLike,
-} from '@/routes/common/http/http-request.utils';
+} from '#/routes/common/http/http-request.utils';
 
 const HEADER_IP_ADDRESS = 'X-Real-IP';
 const HEADER_SAFE_APP_USER_AGENT = 'Safe-App-User-Agent';

@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import type { IBuilder } from '@/__tests__/builder';
-import { Builder } from '@/__tests__/builder';
-import { BridgeStatus } from '@/modules/safe-shield/entities/bridge-status.entity';
-import { ContractStatus } from '@/modules/safe-shield/entities/contract-status.entity';
-import { RecipientStatus } from '@/modules/safe-shield/entities/recipient-status.entity';
+import type { IBuilder } from '#/__tests__/builder';
+import { Builder } from '#/__tests__/builder';
+import { BridgeStatus } from '#/modules/safe-shield/entities/bridge-status.entity';
+import { ContractStatus } from '#/modules/safe-shield/entities/contract-status.entity';
+import { RecipientStatus } from '#/modules/safe-shield/entities/recipient-status.entity';
 import {
   ContractStatusGroup,
   DeadlockStatusGroup,
   RecipientStatusGroup,
   ThreatStatusGroup,
-} from '@/modules/safe-shield/entities/status-group.entity';
+} from '#/modules/safe-shield/entities/status-group.entity';
 import type {
   ContractAnalysisResponse,
   CounterpartyAnalysisResponse,

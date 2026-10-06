@@ -7,13 +7,13 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { databaseEnumTransformer } from '@/domain/common/utils/enum';
-import { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
+import { databaseEnumTransformer } from '#/domain/common/utils/enum';
+import { SpaceSafe } from '#/modules/spaces/datasources/safes/entities/space-safes.entity.db';
 import {
   type Space as DomainSpace,
   SpaceStatus,
-} from '@/modules/spaces/domain/entities/space.entity';
-import { Member } from '@/modules/users/datasources/entities/member.entity.db';
+} from '#/modules/spaces/domain/entities/space.entity';
+import { Member } from '#/modules/users/datasources/entities/member.entity.db';
 
 @Entity('spaces')
 export class Space implements DomainSpace {

@@ -5,12 +5,12 @@ import type { Address } from 'viem';
 import {
   transactionStatusReceiptBuilder,
   transactionStatusReceiptLogBuilder,
-} from '@/modules/staking/datasources/entities/__tests__/transaction-status.entity.builder';
+} from '#/modules/staking/datasources/entities/__tests__/transaction-status.entity.builder';
 import {
   TransactionStatusReceiptLogSchema,
   TransactionStatusReceiptSchema,
   TransactionStatusSchema,
-} from '@/modules/staking/datasources/entities/transaction-status.entity';
+} from '#/modules/staking/datasources/entities/transaction-status.entity';
 
 describe('TransactionStatus', () => {
   describe('TransactionStatusReceiptLogSchema', () => {

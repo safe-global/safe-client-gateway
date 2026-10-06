@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { getStringEnumKeys } from '@/domain/common/utils/enum';
-import type { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
-import type { Member } from '@/modules/users/datasources/entities/member.entity.db';
-import { User } from '@/modules/users/datasources/entities/users.entity.db';
+import { getStringEnumKeys } from '#/domain/common/utils/enum';
+import type { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
+import type { Member } from '#/modules/users/datasources/entities/member.entity.db';
+import { User } from '#/modules/users/datasources/entities/users.entity.db';
 import {
   MemberRole,
   MemberStatus,
-} from '@/modules/users/domain/entities/member.entity';
+} from '#/modules/users/domain/entities/member.entity';
 
 class UserDto extends User {
   @ApiProperty({ type: Number })

@@ -9,12 +9,12 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import type { Address } from 'viem';
-import { EstimationResponse } from '@/modules/estimations/routes/entities/estimation-response.entity';
-import { GetEstimationDto } from '@/modules/estimations/routes/entities/get-estimation.dto.entity';
-import { GetEstimationDtoSchema } from '@/modules/estimations/routes/entities/schemas/get-estimation.dto.schema';
-import { EstimationsService } from '@/modules/estimations/routes/estimations.service';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+import { EstimationResponse } from '#/modules/estimations/routes/entities/estimation-response.entity';
+import { GetEstimationDto } from '#/modules/estimations/routes/entities/get-estimation.dto.entity';
+import { GetEstimationDtoSchema } from '#/modules/estimations/routes/entities/schemas/get-estimation.dto.schema';
+import { EstimationsService } from '#/modules/estimations/routes/estimations.service';
+import { AddressSchema } from '#/validation/entities/schemas/address.schema';
+import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
 @ApiTags('estimations')
 @Controller({

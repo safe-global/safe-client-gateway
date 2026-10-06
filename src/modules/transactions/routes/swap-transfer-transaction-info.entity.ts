@@ -9,22 +9,22 @@ import {
   OrderClass,
   OrderKind,
   OrderStatus,
-} from '@/modules/swaps/domain/entities/order.entity';
-import type { SwapOrderTransactionInfo } from '@/modules/transactions/routes/entities/swaps/swap-order-info.entity';
-import { TokenInfo } from '@/modules/transactions/routes/entities/swaps/token-info.entity';
+} from '#/modules/swaps/domain/entities/order.entity';
+import type { SwapOrderTransactionInfo } from '#/modules/transactions/routes/entities/swaps/swap-order-info.entity';
+import { TokenInfo } from '#/modules/transactions/routes/entities/swaps/token-info.entity';
 import {
   TransactionInfo,
   TransactionInfoType,
-} from '@/modules/transactions/routes/entities/transaction-info.entity';
+} from '#/modules/transactions/routes/entities/transaction-info.entity';
 import type {
   TransferDirection,
   TransferTransactionInfo,
-} from '@/modules/transactions/routes/entities/transfer-transaction-info.entity';
-import { Erc20Transfer } from '@/modules/transactions/routes/entities/transfers/erc20-transfer.entity';
-import { Erc721Transfer } from '@/modules/transactions/routes/entities/transfers/erc721-transfer.entity';
-import { NativeCoinTransfer } from '@/modules/transactions/routes/entities/transfers/native-coin-transfer.entity';
-import { Transfer } from '@/modules/transactions/routes/entities/transfers/transfer.entity';
-import { AddressInfo } from '@/routes/common/entities/address-info.entity';
+} from '#/modules/transactions/routes/entities/transfer-transaction-info.entity';
+import { Erc20Transfer } from '#/modules/transactions/routes/entities/transfers/erc20-transfer.entity';
+import { Erc721Transfer } from '#/modules/transactions/routes/entities/transfers/erc721-transfer.entity';
+import { NativeCoinTransfer } from '#/modules/transactions/routes/entities/transfers/native-coin-transfer.entity';
+import { Transfer } from '#/modules/transactions/routes/entities/transfers/transfer.entity';
+import { AddressInfo } from '#/routes/common/entities/address-info.entity';
 
 export class SwapTransferTransactionInfo
   extends TransactionInfo

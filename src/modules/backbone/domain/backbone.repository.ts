@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
-import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
-import type { IBackboneRepository } from '@/modules/backbone/domain/backbone.repository.interface';
-import type { Backbone } from '@/modules/backbone/domain/entities/backbone.entity';
-import { BackboneSchema } from '@/modules/backbone/domain/entities/schemas/backbone.schema';
+import { ITransactionApiManager } from '#/domain/interfaces/transaction-api.manager.interface';
+import type { IBackboneRepository } from '#/modules/backbone/domain/backbone.repository.interface';
+import type { Backbone } from '#/modules/backbone/domain/entities/backbone.entity';
+import { BackboneSchema } from '#/modules/backbone/domain/entities/schemas/backbone.schema';
 
 @Injectable()
 export class BackboneRepository implements IBackboneRepository {

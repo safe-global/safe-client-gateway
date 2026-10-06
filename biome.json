@@ -114,7 +114,7 @@
           "level": "error",
           "options": {
             "paths": {
-              "@safe-global/safe-deployments": "Please import from @/domain/common/utils/deployments instead."
+              "@safe-global/safe-deployments": "Please import from #/domain/common/utils/deployments instead."
             }
           }
         },

@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { UUID } from 'node:crypto';
 import type { EntityManager } from 'typeorm';
-import type { SpaceAuditLog } from '@/modules/spaces/datasources/audit/entities/space-audit-log.entity.db';
+import type { SpaceAuditLog } from '#/modules/spaces/datasources/audit/entities/space-audit-log.entity.db';
 import type {
   SpaceAuditEvent,
   SpaceAuditEventType,
-} from '@/modules/spaces/domain/audit/entities/space-audit-event.entity';
+} from '#/modules/spaces/domain/audit/entities/space-audit-event.entity';
 
 export type SpaceAuditRecordArgs = {
   spaceId: number;

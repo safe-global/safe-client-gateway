@@ -18,7 +18,7 @@ on:
       node_version:
         description: Node version to lint/type-check/test against.
         type: string
-        default: "24.11.0"
+        default: "24.21.0"
       python_version:
         description: Python version used only to run pre-commit for license headers.
         type: string
@@ -93,14 +93,12 @@ jobs:
       - run: yarn install --immutable
       - run: yarn run format-check
       - run: yarn run lint-check
-      # The full `tsc` build was dropped from the test jobs, which
-      # removed whole-program type-checking on PRs — Vitest transpiles via SWC,
-      # which strips types without type-checking them at all. Run an explicit
-      # no-emit type-check here so type errors fail the PR instead of only
-      # surfacing on the main-only Docker build. Needs the generated ABIs that
-      # the `@/abis` alias resolves to.
+      # Vitest transpiles via SWC, which strips types without checking them,
+      # so this is the only whole-program type-check on PRs. It covers specs
+      # and scripts as well as `src`, unlike the `tsconfig.build.json` build.
+      # Needs the generated ABIs that the `#/abis` import resolves to.
       - run: yarn generate-abis
-      - run: yarn tsc --noEmit -p tsconfig.build.json
+      - run: yarn typecheck
 
   unit-tests:
     runs-on: ubuntu-latest
@@ -155,7 +153,7 @@ jobs:
       - run: yarn install --immutable
       # Tests are transformed straight from `src` by the test runner, so the
       # full `tsc` build (compile to dist) isn't needed here — only the
-      # generated ABIs that the `@/abis` import alias resolves to.
+      # generated ABIs that the `#/abis` import resolves to.
       - run: yarn generate-abis
       - run: yarn run test:unit:cov
         env:

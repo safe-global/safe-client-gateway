@@ -12,8 +12,8 @@ import {
   type DataDecoded as DomainDataDecoded,
   type DataDecodedParameter as DomainDataDecodedParameter,
   type MultiSend as DomainMultiSend,
-} from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
-import { Operation } from '@/modules/safe/domain/entities/operation.entity';
+} from '#/modules/data-decoder/domain/v2/entities/data-decoded.entity';
+import { Operation } from '#/modules/safe/domain/entities/operation.entity';
 
 class BaseDataDecoded implements DomainBaseDataDecoded {
   @ApiProperty()

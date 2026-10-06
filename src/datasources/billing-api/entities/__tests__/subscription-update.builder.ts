@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import type { IBuilder } from '@/__tests__/builder';
-import { Builder } from '@/__tests__/builder';
+import type { IBuilder } from '#/__tests__/builder';
+import { Builder } from '#/__tests__/builder';
 import type {
   PreviewLineItem,
   SubscriptionUpdatePreview,
   UpdateSubscriptionResult,
-} from '@/datasources/billing-api/entities/subscription-update.entity';
-import { toSecondsTimestamp } from '@/domain/common/utils/time';
+} from '#/datasources/billing-api/entities/subscription-update.entity';
+import { toSecondsTimestamp } from '#/domain/common/utils/time';
 
 function previewLineItemBuilder(): IBuilder<PreviewLineItem> {
   return new Builder<PreviewLineItem>()

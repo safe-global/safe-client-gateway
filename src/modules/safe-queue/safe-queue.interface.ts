@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import type { Address, Hex } from 'viem';
-import type { Page } from '@/domain/entities/page.entity';
-import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
-import type { SafeQueueMessage } from '@/modules/safe-queue/entities/message.entity';
-import type { SafeQueueMultisigTransactionEntity } from '@/modules/safe-queue/entities/multisig-transaction.entity';
-import type { ProposeTransactionDto } from '@/modules/transactions/domain/entities/propose-transaction.dto.entity';
-import type { Raw } from '@/validation/entities/raw.entity';
+import type { Page } from '#/domain/entities/page.entity';
+import type { Delegate } from '#/modules/delegate/domain/entities/delegate.entity';
+import type { SafeQueueMessage } from '#/modules/safe-queue/entities/message.entity';
+import type { SafeQueueMultisigTransactionEntity } from '#/modules/safe-queue/entities/multisig-transaction.entity';
+import type { ProposeTransactionDto } from '#/modules/transactions/domain/entities/propose-transaction.dto.entity';
+import type { Raw } from '#/validation/entities/raw.entity';
 
 export const ISafeQueueService = Symbol('ISafeQueueService');
 

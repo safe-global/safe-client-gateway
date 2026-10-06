@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import { tokenMetadataKey } from '@/modules/policies/domain/utils/token-metadata-key.utils';
+import { tokenMetadataKey } from '#/modules/policies/domain/utils/token-metadata-key.utils';
 
 describe('tokenMetadataKey', () => {
   it('should join the chain id and the checksummed address with a colon', () => {

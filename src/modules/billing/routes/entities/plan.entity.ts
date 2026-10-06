@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import type { StripeMetadata } from '@/datasources/billing-api/entities/metadata.entity';
+import type { StripeMetadata } from '#/datasources/billing-api/entities/metadata.entity';
 import type {
   MarketingFeature as DomainMarketingFeature,
   Plan as DomainPlan,
   Product as DomainProduct,
   SubscriptionPlan as DomainSubscriptionPlan,
-} from '@/datasources/billing-api/entities/plan.entity';
+} from '#/datasources/billing-api/entities/plan.entity';
 import {
   PlanBillingCycles,
   PlanCurrencies,
   PlanTypes,
-} from '@/datasources/billing-api/entities/plan.entity';
+} from '#/datasources/billing-api/entities/plan.entity';
 
 export class MarketingFeature implements DomainMarketingFeature {
   @ApiProperty()

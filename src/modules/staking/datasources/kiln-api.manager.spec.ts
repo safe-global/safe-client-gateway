@@ -2,19 +2,19 @@
 import { faker } from '@faker-js/faker';
 import { Test } from '@nestjs/testing';
 import type { MockedObject } from 'vitest';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { CacheFirstDataSource } from '#/datasources/cache/cache.first.data.source';
 import {
   CacheService,
   type ICacheService,
-} from '@/datasources/cache/cache.service.interface';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import { IConfigApi } from '@/domain/interfaces/config-api.interface';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { EarnApiManager } from '@/modules/earn/datasources/earn-api.manager';
-import { KilnApi } from '@/modules/staking/datasources/kiln-api.service';
-import { StakingApiManager } from '@/modules/staking/datasources/staking-api.manager';
-import { rawify } from '@/validation/entities/raw.entity';
+} from '#/datasources/cache/cache.service.interface';
+import { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
+import { IConfigApi } from '#/domain/interfaces/config-api.interface';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
+import { EarnApiManager } from '#/modules/earn/datasources/earn-api.manager';
+import { KilnApi } from '#/modules/staking/datasources/kiln-api.service';
+import { StakingApiManager } from '#/modules/staking/datasources/staking-api.manager';
+import { rawify } from '#/validation/entities/raw.entity';
 
 const configurationService = {
   getOrThrow: vi.fn(),

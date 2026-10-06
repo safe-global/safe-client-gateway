@@ -2,7 +2,7 @@
 
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import { SpaceAuditEventSchema } from '@/modules/spaces/domain/audit/entities/space-audit-event.entity';
+import { SpaceAuditEventSchema } from '#/modules/spaces/domain/audit/entities/space-audit-event.entity';
 
 describe('SpaceAuditEventSchema — plaintext addresses', () => {
   const ciphertext = 'kms:v1:abcDEF012_-';

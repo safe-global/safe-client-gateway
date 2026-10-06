@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { Feature } from '@/modules/entitlements/datasources/entities/feature.entity.db';
-import type { SpaceSubscription } from '@/modules/entitlements/datasources/entities/space-subscription.entity.db';
-import type { SubscriptionEntitlement } from '@/modules/entitlements/datasources/entities/subscription-entitlement.entity.db';
-import type { Space } from '@/modules/spaces/domain/entities/space.entity';
+import type { Feature } from '#/modules/entitlements/datasources/entities/feature.entity.db';
+import type { SpaceSubscription } from '#/modules/entitlements/datasources/entities/space-subscription.entity.db';
+import type { SubscriptionEntitlement } from '#/modules/entitlements/datasources/entities/subscription-entitlement.entity.db';
+import type { Space } from '#/modules/spaces/domain/entities/space.entity';
 
 /** One workspace's share of a {@link PlanContext}. */
 export type SpacePlanContext = {

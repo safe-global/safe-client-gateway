@@ -2,11 +2,11 @@
 import { faker } from '@faker-js/faker';
 import type { Hash } from 'viem';
 import { getAddress } from 'viem';
-import type { IBuilder } from '@/__tests__/builder';
-import { Builder } from '@/__tests__/builder';
-import { messageConfirmationBuilder } from '@/modules/messages/domain/entities/__tests__/message-confirmation.builder';
-import type { SafeQueueMessage } from '@/modules/safe-queue/entities/message.entity';
-import { ProposalRoute } from '@/modules/safe-queue/entities/proposal-route.entity';
+import type { IBuilder } from '#/__tests__/builder';
+import { Builder } from '#/__tests__/builder';
+import { messageConfirmationBuilder } from '#/modules/messages/domain/entities/__tests__/message-confirmation.builder';
+import type { SafeQueueMessage } from '#/modules/safe-queue/entities/message.entity';
+import { ProposalRoute } from '#/modules/safe-queue/entities/proposal-route.entity';
 
 export function safeQueueMessageBuilder(): IBuilder<SafeQueueMessage> {
   return new Builder<SafeQueueMessage>()

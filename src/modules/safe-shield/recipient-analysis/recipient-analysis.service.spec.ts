@@ -5,38 +5,38 @@ import { faker } from '@faker-js/faker';
 import type { Address, Hash, Hex } from 'viem';
 import { getAddress, zeroAddress } from 'viem';
 import type { Mock, MockedObject } from 'vitest';
-import { getVersionsByChainIdByDeploymentMap } from '@/__tests__/deployments.helper';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
-import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
-import { CacheRouter } from '@/datasources/cache/cache.router';
+import { getVersionsByChainIdByDeploymentMap } from '#/__tests__/deployments.helper';
+import type { IConfigurationService } from '#/config/configuration.service.interface';
+import { FakeCacheService } from '#/datasources/cache/__tests__/fake.cache.service';
+import { CacheRouter } from '#/datasources/cache/cache.router';
 import {
   getExtensibleFallbackHandlerDeployments,
   getProxyFactoryDeployments,
   getSafeSingletonDeployments,
-} from '@/domain/common/utils/deployments';
-import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
-import type { Page } from '@/domain/entities/page.entity';
-import { DataSourceError } from '@/domain/errors/data-source.error';
-import type { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
-import type { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
-import type { ILoggingService } from '@/logging/logging.interface';
-import type { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import type { DataDecodedAccuracy } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
-import type { DataDecoded } from '@/modules/data-decoder/routes/entities/data-decoded.entity';
-import type { Erc20Decoder } from '@/modules/relay/domain/contracts/decoders/erc-20-decoder.helper';
-import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
-import type { Transfer } from '@/modules/safe/domain/entities/transfer.entity';
-import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
+} from '#/domain/common/utils/deployments';
+import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
+import type { Page } from '#/domain/entities/page.entity';
+import { DataSourceError } from '#/domain/errors/data-source.error';
+import type { ITransactionApi } from '#/domain/interfaces/transaction-api.interface';
+import type { ITransactionApiManager } from '#/domain/interfaces/transaction-api.manager.interface';
+import type { ILoggingService } from '#/logging/logging.interface';
+import type { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
+import type { DataDecodedAccuracy } from '#/modules/data-decoder/domain/v2/entities/data-decoded.entity';
+import type { DataDecoded } from '#/modules/data-decoder/routes/entities/data-decoded.entity';
+import type { Erc20Decoder } from '#/modules/relay/domain/contracts/decoders/erc-20-decoder.helper';
+import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
+import type { Transfer } from '#/modules/safe/domain/entities/transfer.entity';
+import type { DecodedTransactionData } from '#/modules/safe-shield/entities/transaction-data.entity';
 import type {
   BridgeAndSwapTransactionInfo,
   SwapTransactionInfo,
-} from '@/modules/transactions/routes/entities/bridge/bridge-info.entity';
-import type { CreationTransaction } from '@/modules/transactions/routes/entities/creation-transaction.entity';
-import type { SwapOrderTransactionInfo } from '@/modules/transactions/routes/entities/swaps/swap-order-info.entity';
-import { TransactionInfoType } from '@/modules/transactions/routes/entities/transaction-info.entity';
-import type { TransactionsService } from '@/modules/transactions/routes/transactions.service';
-import { rawify } from '@/validation/entities/raw.entity';
+} from '#/modules/transactions/routes/entities/bridge/bridge-info.entity';
+import type { CreationTransaction } from '#/modules/transactions/routes/entities/creation-transaction.entity';
+import type { SwapOrderTransactionInfo } from '#/modules/transactions/routes/entities/swaps/swap-order-info.entity';
+import { TransactionInfoType } from '#/modules/transactions/routes/entities/transaction-info.entity';
+import type { TransactionsService } from '#/modules/transactions/routes/transactions.service';
+import { rawify } from '#/validation/entities/raw.entity';
 import * as utils from '../utils/extraction.utils';
 import { RecipientAnalysisService } from './recipient-analysis.service';
 

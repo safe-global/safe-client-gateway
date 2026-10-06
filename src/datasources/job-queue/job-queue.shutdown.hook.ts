@@ -4,8 +4,8 @@ import type { Queue } from 'bullmq';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import { asError } from '@/logging/utils';
+} from '#/logging/logging.interface';
+import { asError } from '#/logging/utils';
 
 @Injectable()
 export class JobQueueShutdownHook implements OnModuleDestroy {

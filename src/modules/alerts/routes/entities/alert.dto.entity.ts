@@ -5,7 +5,7 @@ import type {
   AlertLogSchema,
   AlertSchema,
   AlertTransactionSchema,
-} from '@/modules/alerts/routes/entities/schemas/alerts.schema';
+} from '#/modules/alerts/routes/entities/schemas/alerts.schema';
 
 export class AlertLog implements z.infer<typeof AlertLogSchema> {
   address!: Address;

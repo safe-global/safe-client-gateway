@@ -3,35 +3,35 @@ import { Inject, Injectable } from '@nestjs/common';
 import max from 'lodash/max';
 import semver from 'semver';
 import type { Address } from 'viem';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { getNumberString } from '@/domain/common/utils/utils';
-import type { Page } from '@/domain/entities/page.entity';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { getNumberString } from '#/domain/common/utils/utils';
+import type { Page } from '#/domain/entities/page.entity';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import { asError } from '@/logging/utils';
-import { IBalancesRepository } from '@/modules/balances/domain/balances.repository.interface';
-import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
-import type { Singleton } from '@/modules/chains/domain/entities/singleton.entity';
-import type { MessagesRepository } from '@/modules/messages/domain/messages.repository';
-import { IMessagesRepository } from '@/modules/messages/domain/messages.repository.interface';
-import type { ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
-import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
-import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
-import type { Transfer } from '@/modules/safe/domain/entities/transfer.entity';
-import { getLastModified } from '@/modules/safe/domain/helpers/last-modified.helper';
-import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
-import { SafeNonces } from '@/modules/safe/routes/entities/nonces.entity';
+} from '#/logging/logging.interface';
+import { asError } from '#/logging/utils';
+import { IBalancesRepository } from '#/modules/balances/domain/balances.repository.interface';
+import { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
+import type { Singleton } from '#/modules/chains/domain/entities/singleton.entity';
+import type { MessagesRepository } from '#/modules/messages/domain/messages.repository';
+import { IMessagesRepository } from '#/modules/messages/domain/messages.repository.interface';
+import type { ModuleTransaction } from '#/modules/safe/domain/entities/module-transaction.entity';
+import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
+import type { Safe } from '#/modules/safe/domain/entities/safe.entity';
+import type { Transfer } from '#/modules/safe/domain/entities/transfer.entity';
+import { getLastModified } from '#/modules/safe/domain/helpers/last-modified.helper';
+import { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
+import { SafeNonces } from '#/modules/safe/routes/entities/nonces.entity';
 import {
   MasterCopyVersionState,
   SafeState,
-} from '@/modules/safe/routes/entities/safe-info.entity';
-import { SafeOverview } from '@/modules/safe/routes/entities/safe-overview.entity';
-import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
-import { NULL_ADDRESS } from '@/routes/common/constants';
-import { AddressInfo } from '@/routes/common/entities/address-info.entity';
-import type { Caip10Address } from '@/validation/entities/schemas/caip-10-addresses.schema';
+} from '#/modules/safe/routes/entities/safe-info.entity';
+import { SafeOverview } from '#/modules/safe/routes/entities/safe-overview.entity';
+import { AddressInfoHelper } from '#/routes/common/address-info/address-info.helper';
+import { NULL_ADDRESS } from '#/routes/common/constants';
+import { AddressInfo } from '#/routes/common/entities/address-info.entity';
+import type { Caip10Address } from '#/validation/entities/schemas/caip-10-addresses.schema';
 
 @Injectable()
 export class SafesService {

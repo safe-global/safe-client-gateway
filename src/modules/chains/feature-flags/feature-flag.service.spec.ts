@@ -2,10 +2,10 @@
 
 import { faker } from '@faker-js/faker';
 import type { MockedObject } from 'vitest';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
-import type { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { FeatureFlagService } from '@/modules/chains/feature-flags/feature-flag.service';
+import type { IConfigurationService } from '#/config/configuration.service.interface';
+import type { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
+import { FeatureFlagService } from '#/modules/chains/feature-flags/feature-flag.service';
 
 const mockChainsRepository = {
   getChainV2: vi.fn(),

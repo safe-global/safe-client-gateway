@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
+import { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
 import {
   NetworkRequestError,
   NetworkResponseError,
-} from '@/datasources/network/entities/network.error.entity';
+} from '#/datasources/network/entities/network.error.entity';
 
 describe('HttpErrorFactory', () => {
   const httpErrorFactory: HttpErrorFactory = new HttpErrorFactory();

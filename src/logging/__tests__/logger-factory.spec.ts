@@ -3,11 +3,11 @@
 import { faker } from '@faker-js/faker';
 import type { MockedObject, MockInstance } from 'vitest';
 import winston from 'winston';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
+import type { IConfigurationService } from '#/config/configuration.service.interface';
 import {
   winstonFactory,
   winstonTransportsFactory,
-} from '@/logging/logging.module';
+} from '#/logging/logging.module';
 
 const mockConfigurationService = vi.mocked({
   getOrThrow: vi.fn(),

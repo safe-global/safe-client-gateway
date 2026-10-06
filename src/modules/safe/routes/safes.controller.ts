@@ -16,16 +16,16 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import type { Address } from 'viem';
-import { SafeNonces } from '@/modules/safe/routes/entities/nonces.entity';
-import { SafeState } from '@/modules/safe/routes/entities/safe-info.entity';
-import { SafeOverview } from '@/modules/safe/routes/entities/safe-overview.entity';
-import { SafesService } from '@/modules/safe/routes/safes.service';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { SafeNonces } from '#/modules/safe/routes/entities/nonces.entity';
+import { SafeState } from '#/modules/safe/routes/entities/safe-info.entity';
+import { SafeOverview } from '#/modules/safe/routes/entities/safe-overview.entity';
+import { SafesService } from '#/modules/safe/routes/safes.service';
+import { AddressSchema } from '#/validation/entities/schemas/address.schema';
 import {
   type Caip10Addresses,
   Caip10AddressesSchema,
-} from '@/validation/entities/schemas/caip-10-addresses.schema';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+} from '#/validation/entities/schemas/caip-10-addresses.schema';
+import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
 @ApiTags('safes')
 @Controller({

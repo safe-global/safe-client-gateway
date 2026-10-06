@@ -5,11 +5,11 @@ import {
   Inject,
   Injectable,
 } from '@nestjs/common';
-import { IAuthRepository } from '@/modules/auth/domain/auth.repository.interface';
-import type { AuthPayloadDto } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { ACCESS_TOKEN_COOKIE_NAME } from '@/modules/auth/utils/auth-cookie.utils';
-import { AUTH_PAYLOAD_REQUEST_PROPERTY } from '@/routes/common/auth/auth-payload.request';
-import type { HttpRequest } from '@/routes/common/http/http-request.utils';
+import { IAuthRepository } from '#/modules/auth/domain/auth.repository.interface';
+import type { AuthPayloadDto } from '#/modules/auth/domain/entities/auth-payload.entity';
+import { ACCESS_TOKEN_COOKIE_NAME } from '#/modules/auth/utils/auth-cookie.utils';
+import { AUTH_PAYLOAD_REQUEST_PROPERTY } from '#/routes/common/auth/auth-payload.request';
+import type { HttpRequest } from '#/routes/common/http/http-request.utils';
 
 declare module 'fastify' {
   interface FastifyRequest {

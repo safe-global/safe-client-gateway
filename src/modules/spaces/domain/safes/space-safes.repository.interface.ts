@@ -5,13 +5,13 @@ import type {
   FindOptionsSelect,
   FindOptionsWhere,
 } from 'typeorm';
-import type { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
-import type { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
+import type { SpaceSafe } from '#/modules/spaces/datasources/safes/entities/space-safes.entity.db';
+import type { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
 import type {
   PreparedSpaceSafe,
   SpaceSafesBySpaceId,
-} from '@/modules/spaces/domain/safes/entities/space-safe.entity';
-import type { SpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository';
+} from '#/modules/spaces/domain/safes/entities/space-safe.entity';
+import type { SpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository';
 
 export const ISpaceSafesRepository = Symbol('ISpaceSafesRepository');
 

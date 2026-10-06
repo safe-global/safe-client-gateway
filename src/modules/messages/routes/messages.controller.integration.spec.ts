@@ -12,36 +12,36 @@ import type { MockedObject } from 'vitest';
 import {
   initTestApplication,
   TestAppProvider,
-} from '@/__tests__/test-app.provider';
-import { createTestModule } from '@/__tests__/testing-module';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import configuration from '@/config/entities/__tests__/configuration';
-import { IBlocklistService } from '@/config/entities/blocklist.interface';
-import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import { NetworkService } from '@/datasources/network/network.service.interface';
-import { SignatureType } from '@/domain/common/entities/signature-type.entity';
-import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
+} from '#/__tests__/test-app.provider';
+import { createTestModule } from '#/__tests__/testing-module';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import configuration from '#/config/entities/__tests__/configuration';
+import { IBlocklistService } from '#/config/entities/blocklist.interface';
+import { NetworkResponseError } from '#/datasources/network/entities/network.error.entity';
+import type { INetworkService } from '#/datasources/network/network.service.interface';
+import { NetworkService } from '#/datasources/network/network.service.interface';
+import { SignatureType } from '#/domain/common/entities/signature-type.entity';
+import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
+} from '#/logging/logging.interface';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
 import {
   messageBuilder,
   toJson as messageToJson,
-} from '@/modules/messages/domain/entities/__tests__/message.builder';
-import { messageConfirmationBuilder } from '@/modules/messages/domain/entities/__tests__/message-confirmation.builder';
-import type { Message as DomainMessage } from '@/modules/messages/domain/entities/message.entity';
-import { createMessageDtoBuilder } from '@/modules/messages/routes/entities/__tests__/create-message.dto.builder';
-import { updateMessageSignatureDtoBuilder } from '@/modules/messages/routes/entities/__tests__/update-message-signature.dto.builder';
-import { MessageStatus } from '@/modules/messages/routes/entities/message.entity';
-import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
-import { safeAppBuilder } from '@/modules/safe-apps/domain/entities/__tests__/safe-app.builder';
-import type { SafeApp } from '@/modules/safe-apps/routes/entities/safe-app.entity';
-import { parseOrigin } from '@/modules/safe-queue/helpers/origin.helper';
-import { GlobalErrorFilter } from '@/routes/common/filters/global-error.filter';
-import { rawify } from '@/validation/entities/raw.entity';
+} from '#/modules/messages/domain/entities/__tests__/message.builder';
+import { messageConfirmationBuilder } from '#/modules/messages/domain/entities/__tests__/message-confirmation.builder';
+import type { Message as DomainMessage } from '#/modules/messages/domain/entities/message.entity';
+import { createMessageDtoBuilder } from '#/modules/messages/routes/entities/__tests__/create-message.dto.builder';
+import { updateMessageSignatureDtoBuilder } from '#/modules/messages/routes/entities/__tests__/update-message-signature.dto.builder';
+import { MessageStatus } from '#/modules/messages/routes/entities/message.entity';
+import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
+import { safeAppBuilder } from '#/modules/safe-apps/domain/entities/__tests__/safe-app.builder';
+import type { SafeApp } from '#/modules/safe-apps/routes/entities/safe-app.entity';
+import { parseOrigin } from '#/modules/safe-queue/helpers/origin.helper';
+import { GlobalErrorFilter } from '#/routes/common/filters/global-error.filter';
+import { rawify } from '#/validation/entities/raw.entity';
 
 function toQueueMessageJson(
   message: DomainMessage,

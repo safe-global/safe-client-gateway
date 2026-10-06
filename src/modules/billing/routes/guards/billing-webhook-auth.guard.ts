@@ -6,8 +6,8 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { BillingAuthService } from '@/modules/billing/domain/billing-auth.service';
-import type { HttpRequest } from '@/routes/common/http/http-request.utils';
+import { BillingAuthService } from '#/modules/billing/domain/billing-auth.service';
+import type { HttpRequest } from '#/routes/common/http/http-request.utils';
 
 /**
  * Protects the billing-service webhook endpoint with a service-to-service JWT.

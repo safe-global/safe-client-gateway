@@ -1,7 +1,8 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
-import { DefiVaultStatsSchema } from '@/modules/staking/datasources/entities/defi-vault-stats.entity';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
+import { DefiVaultStatsSchema } from '#/modules/staking/datasources/entities/defi-vault-stats.entity';
+import { AddressSchema } from '#/validation/entities/schemas/address.schema';
+import { NumericStringSchema } from '#/validation/entities/schemas/numeric-string.schema';
 
 export const DefiVaultStakeSchema = z.object({
   vault_id: z.string(),

@@ -4,7 +4,7 @@ import { createParamDecorator } from '@nestjs/common';
 import {
   getRouteUrl,
   type HttpRequest,
-} from '@/routes/common/http/http-request.utils';
+} from '#/routes/common/http/http-request.utils';
 
 /**
  * Route decorator which extracts the resulting

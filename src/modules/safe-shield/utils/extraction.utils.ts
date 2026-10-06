@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import uniq from 'lodash/uniq';
 import { type Address, getAddress } from 'viem';
-import type { Erc20Decoder } from '@/modules/relay/domain/contracts/decoders/erc-20-decoder.helper';
-import type { ExtractedContract } from '@/modules/safe-shield/entities/extracted-contract.entity';
-import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
-import { isExecTransaction } from '@/modules/safe-shield/utils/transaction-mapping.utils';
+import type { Erc20Decoder } from '#/modules/relay/domain/contracts/decoders/erc-20-decoder.helper';
+import type { ExtractedContract } from '#/modules/safe-shield/entities/extracted-contract.entity';
+import type { DecodedTransactionData } from '#/modules/safe-shield/entities/transaction-data.entity';
+import { isExecTransaction } from '#/modules/safe-shield/utils/transaction-mapping.utils';
 
 const SET_FALLBACK_HANDLER_METHOD = 'setFallbackHandler';
 const PARAM_NAME_HANDLER = 'handler';

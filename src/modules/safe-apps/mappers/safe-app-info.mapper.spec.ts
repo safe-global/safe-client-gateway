@@ -2,12 +2,12 @@
 
 import { faker } from '@faker-js/faker';
 import type { MockedObject } from 'vitest';
-import type { ILoggingService } from '@/logging/logging.interface';
-import { safeAppBuilder } from '@/modules/safe-apps/domain/entities/__tests__/safe-app.builder';
-import type { SafeApp } from '@/modules/safe-apps/domain/entities/safe-app.entity';
-import type { SafeAppsRepository } from '@/modules/safe-apps/domain/safe-apps.repository';
-import { SafeAppInfoMapper } from '@/modules/safe-apps/mappers/safe-app-info.mapper';
-import { SafeAppInfo } from '@/modules/transactions/routes/entities/safe-app-info.entity';
+import type { ILoggingService } from '#/logging/logging.interface';
+import { safeAppBuilder } from '#/modules/safe-apps/domain/entities/__tests__/safe-app.builder';
+import type { SafeApp } from '#/modules/safe-apps/domain/entities/safe-app.entity';
+import type { SafeAppsRepository } from '#/modules/safe-apps/domain/safe-apps.repository';
+import { SafeAppInfoMapper } from '#/modules/safe-apps/mappers/safe-app-info.mapper';
+import { SafeAppInfo } from '#/modules/transactions/routes/entities/safe-app-info.entity';
 
 describe('SafeAppInfo mapper (Unit)', () => {
   const safeAppsRepositoryMock = vi.mocked({

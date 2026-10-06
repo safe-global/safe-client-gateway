@@ -21,19 +21,19 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import type { Address } from 'viem';
-import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
 import {
   SiweDto,
   SiweDtoSchema,
-} from '@/modules/auth/routes/entities/siwe.dto.entity';
-import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
-import { CreatedUserWithWallet } from '@/modules/users/routes/entities/created-user-with-wallet.entity';
-import { UserWithWallets } from '@/modules/users/routes/entities/user-with-wallets.entity';
-import { WalletAddedToUser } from '@/modules/users/routes/entities/wallet-added-to-user.entity';
-import { UsersService } from '@/modules/users/routes/users.service';
-import { Auth } from '@/routes/common/auth/auth.decorator';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+} from '#/modules/auth/routes/entities/siwe.dto.entity';
+import { AuthGuard } from '#/modules/auth/routes/guards/auth.guard';
+import { CreatedUserWithWallet } from '#/modules/users/routes/entities/created-user-with-wallet.entity';
+import { UserWithWallets } from '#/modules/users/routes/entities/user-with-wallets.entity';
+import { WalletAddedToUser } from '#/modules/users/routes/entities/wallet-added-to-user.entity';
+import { UsersService } from '#/modules/users/routes/users.service';
+import { Auth } from '#/routes/common/auth/auth.decorator';
+import { AddressSchema } from '#/validation/entities/schemas/address.schema';
+import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
 @ApiTags('users')
 @Controller({ path: 'users', version: '1' })

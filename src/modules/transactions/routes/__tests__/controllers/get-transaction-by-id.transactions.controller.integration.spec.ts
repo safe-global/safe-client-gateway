@@ -12,41 +12,41 @@ import type { MockedObject } from 'vitest';
 import {
   initTestApplication,
   TestAppProvider,
-} from '@/__tests__/test-app.provider';
-import { createTestModule } from '@/__tests__/testing-module';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import configuration from '@/config/entities/__tests__/configuration';
-import { IBlocklistService } from '@/config/entities/blocklist.interface';
-import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import { NetworkService } from '@/datasources/network/network.service.interface';
-import { SignatureType } from '@/domain/common/entities/signature-type.entity';
-import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
+} from '#/__tests__/test-app.provider';
+import { createTestModule } from '#/__tests__/testing-module';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import configuration from '#/config/entities/__tests__/configuration';
+import { IBlocklistService } from '#/config/entities/blocklist.interface';
+import { NetworkResponseError } from '#/datasources/network/entities/network.error.entity';
+import type { INetworkService } from '#/datasources/network/network.service.interface';
+import { NetworkService } from '#/datasources/network/network.service.interface';
+import { SignatureType } from '#/domain/common/entities/signature-type.entity';
+import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { contractBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/contract.builder';
-import { dataDecodedBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
+} from '#/logging/logging.interface';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
+import { contractBuilder } from '#/modules/data-decoder/domain/v2/entities/__tests__/contract.builder';
+import { dataDecodedBuilder } from '#/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
 import {
   moduleTransactionBuilder,
   toJson as moduleTransactionToJson,
-} from '@/modules/safe/domain/entities/__tests__/module-transaction.builder';
+} from '#/modules/safe/domain/entities/__tests__/module-transaction.builder';
 import {
   toJson as multisigToJson,
   multisigTransactionBuilder,
-} from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
+} from '#/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
 import {
   nativeTokenTransferBuilder,
   toJson as nativeTokenTransferToJson,
-} from '@/modules/safe/domain/entities/__tests__/native-token-transfer.builder';
-import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
-import { Operation } from '@/modules/safe/domain/entities/operation.entity';
-import { safeAppBuilder } from '@/modules/safe-apps/domain/entities/__tests__/safe-app.builder';
-import { tokenBuilder } from '@/modules/tokens/domain/__tests__/token.builder';
-import { GlobalErrorFilter } from '@/routes/common/filters/global-error.filter';
-import { rawify } from '@/validation/entities/raw.entity';
+} from '#/modules/safe/domain/entities/__tests__/native-token-transfer.builder';
+import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
+import { Operation } from '#/modules/safe/domain/entities/operation.entity';
+import { safeAppBuilder } from '#/modules/safe-apps/domain/entities/__tests__/safe-app.builder';
+import { tokenBuilder } from '#/modules/tokens/domain/__tests__/token.builder';
+import { GlobalErrorFilter } from '#/routes/common/filters/global-error.filter';
+import { rawify } from '#/validation/entities/raw.entity';
 
 describe('Get by id - Transactions Controller', () => {
   let app: INestApplication<Server>;

@@ -3,11 +3,11 @@
 import { faker } from '@faker-js/faker';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import type { MockedObject } from 'vitest';
-import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
+import type { ISpacesRepository } from '#/modules/spaces/domain/spaces.repository.interface';
 import {
   INVALID_SPACE_IDENTIFIER_MESSAGE,
   SpaceIdPipe,
-} from '@/routes/common/pipes/space-id.pipe';
+} from '#/routes/common/pipes/space-id.pipe';
 
 const spacesRepositoryMock = {
   findIdByUuid: vi.fn(),

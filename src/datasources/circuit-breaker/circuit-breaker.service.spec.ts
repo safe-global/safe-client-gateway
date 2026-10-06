@@ -2,13 +2,13 @@
 
 import { faker } from '@faker-js/faker';
 import type { Mocked, MockedObject } from 'vitest';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
-import { CircuitBreakerService } from '@/datasources/circuit-breaker/circuit-breaker.service';
-import { CircuitState } from '@/datasources/circuit-breaker/enums/circuit-state.enum';
-import { CircuitBreakerException } from '@/datasources/circuit-breaker/exceptions/circuit-breaker.exception';
-import type { ICircuit } from '@/datasources/circuit-breaker/interfaces/circuit-breaker.interface';
-import { LogType } from '@/domain/common/entities/log-type.entity';
-import type { ILoggingService } from '@/logging/logging.interface';
+import type { IConfigurationService } from '#/config/configuration.service.interface';
+import { CircuitBreakerService } from '#/datasources/circuit-breaker/circuit-breaker.service';
+import { CircuitState } from '#/datasources/circuit-breaker/enums/circuit-state.enum';
+import { CircuitBreakerException } from '#/datasources/circuit-breaker/exceptions/circuit-breaker.exception';
+import type { ICircuit } from '#/datasources/circuit-breaker/interfaces/circuit-breaker.interface';
+import { LogType } from '#/domain/common/entities/log-type.entity';
+import type { ILoggingService } from '#/logging/logging.interface';
 
 describe('CircuitBreakerService', () => {
   let mockLoggingService: MockedObject<ILoggingService>;

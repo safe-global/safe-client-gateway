@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { Address } from 'viem';
 import { getAddress, isAddressEqual } from 'viem';
-import type { BaseDataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
+import type { BaseDataDecoded } from '#/modules/data-decoder/domain/v2/entities/data-decoded.entity';
 
 export enum OwnerConfigMethod {
   AddOwnerWithThreshold = 'addOwnerWithThreshold',

@@ -4,17 +4,17 @@ import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import type { MockedObject } from 'vitest';
-import { getSafeTxHash } from '@/domain/common/utils/safe';
-import { multisigTransactionBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
-import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
-import { tokenBuilder } from '@/modules/tokens/domain/__tests__/token.builder';
-import type { TokenRepository } from '@/modules/tokens/domain/token.repository';
-import { MultisigConfirmationDetails } from '@/modules/transactions/routes/entities/transaction-details/multisig-execution-details.entity';
-import { MultisigTransactionExecutionDetailsMapper } from '@/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction-execution-details.mapper';
-import { addressInfoBuilder } from '@/routes/common/__tests__/entities/address-info.builder';
-import type { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
-import { NULL_ADDRESS } from '@/routes/common/constants';
-import { AddressInfo } from '@/routes/common/entities/address-info.entity';
+import { getSafeTxHash } from '#/domain/common/utils/safe';
+import { multisigTransactionBuilder } from '#/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
+import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
+import { tokenBuilder } from '#/modules/tokens/domain/__tests__/token.builder';
+import type { TokenRepository } from '#/modules/tokens/domain/token.repository';
+import { MultisigConfirmationDetails } from '#/modules/transactions/routes/entities/transaction-details/multisig-execution-details.entity';
+import { MultisigTransactionExecutionDetailsMapper } from '#/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction-execution-details.mapper';
+import { addressInfoBuilder } from '#/routes/common/__tests__/entities/address-info.builder';
+import type { AddressInfoHelper } from '#/routes/common/address-info/address-info.helper';
+import { NULL_ADDRESS } from '#/routes/common/constants';
+import { AddressInfo } from '#/routes/common/entities/address-info.entity';
 
 const addressInfoHelper = vi.mocked({
   getOrDefault: vi.fn(),

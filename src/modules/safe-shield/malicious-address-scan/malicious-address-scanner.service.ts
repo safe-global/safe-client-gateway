@@ -1,19 +1,19 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { TransactionScanSupportedChain } from '@blockaid/client/resources/evm/evm';
 import { Inject, Injectable } from '@nestjs/common';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { CacheRouter } from '@/datasources/cache/cache.router';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { CacheRouter } from '#/datasources/cache/cache.router';
 import {
   CacheService,
   type ICacheService,
-} from '@/datasources/cache/cache.service.interface';
+} from '#/datasources/cache/cache.service.interface';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import { asError } from '@/logging/utils';
-import { IBlockaidApi } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.interface';
-import { getBlockaidChainName } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-chain-mapping';
+} from '#/logging/logging.interface';
+import { asError } from '#/logging/utils';
+import { IBlockaidApi } from '#/modules/safe-shield/threat-analysis/blockaid/blockaid-api.interface';
+import { getBlockaidChainName } from '#/modules/safe-shield/threat-analysis/blockaid/blockaid-chain-mapping';
 
 type CachedVerdict = 'malicious' | 'safe';
 

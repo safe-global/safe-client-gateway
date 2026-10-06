@@ -19,18 +19,18 @@ import {
 } from '@nestjs/swagger';
 import type { FastifyReply } from 'fastify';
 import type { Address } from 'viem';
-import { TargetedSafeSchema } from '@/modules/targeted-messaging/domain/entities/targeted-safe.entity';
-import { TargetedSafeNotFoundError } from '@/modules/targeted-messaging/domain/errors/targeted-safe-not-found.error';
+import { TargetedSafeSchema } from '#/modules/targeted-messaging/domain/entities/targeted-safe.entity';
+import { TargetedSafeNotFoundError } from '#/modules/targeted-messaging/domain/errors/targeted-safe-not-found.error';
 import {
   CreateSubmissionDto,
   CreateSubmissionDtoSchema,
-} from '@/modules/targeted-messaging/routes/entities/create-submission.dto.entity';
-import { Submission } from '@/modules/targeted-messaging/routes/entities/submission.entity';
-import { TargetedSafe } from '@/modules/targeted-messaging/routes/entities/targeted-safe.entity';
-import { TargetedMessagingService } from '@/modules/targeted-messaging/routes/targeted-messaging.service';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+} from '#/modules/targeted-messaging/routes/entities/create-submission.dto.entity';
+import { Submission } from '#/modules/targeted-messaging/routes/entities/submission.entity';
+import { TargetedSafe } from '#/modules/targeted-messaging/routes/entities/targeted-safe.entity';
+import { TargetedMessagingService } from '#/modules/targeted-messaging/routes/targeted-messaging.service';
+import { AddressSchema } from '#/validation/entities/schemas/address.schema';
+import { NumericStringSchema } from '#/validation/entities/schemas/numeric-string.schema';
+import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
 @ApiTags('targeted-messaging')
 @Controller({

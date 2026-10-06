@@ -2,27 +2,27 @@
 
 import { Inject, Injectable } from '@nestjs/common';
 import { z } from 'zod';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { CacheRouter } from '@/datasources/cache/cache.router';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { CacheRouter } from '#/datasources/cache/cache.router';
 import {
   CacheService,
   type ICacheService,
-} from '@/datasources/cache/cache.service.interface';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
+} from '#/datasources/cache/cache.service.interface';
+import { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
 import {
   type INetworkService,
   NetworkService,
-} from '@/datasources/network/network.service.interface';
+} from '#/datasources/network/network.service.interface';
 import type {
   AuthorizationUrlOptions,
   IAuth0Api,
-} from '@/modules/auth/oidc/auth0/datasources/auth0-api.interface';
+} from '#/modules/auth/oidc/auth0/datasources/auth0-api.interface';
 import {
   type Auth0AuthenticationMethod,
   Auth0AuthenticationMethodsSchema,
-} from '@/modules/auth/oidc/auth0/datasources/entities/auth0-authentication-method.entity';
-import type { Auth0TokenResponse } from '@/modules/auth/oidc/auth0/datasources/entities/auth0-token-response.entity';
-import type { Raw } from '@/validation/entities/raw.entity';
+} from '#/modules/auth/oidc/auth0/datasources/entities/auth0-authentication-method.entity';
+import type { Auth0TokenResponse } from '#/modules/auth/oidc/auth0/datasources/entities/auth0-token-response.entity';
+import type { Raw } from '#/validation/entities/raw.entity';
 
 const ManagementApiTokenResponseSchema = z.object({
   access_token: z.string(),

@@ -18,23 +18,23 @@ import {
   ApiTags,
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
-import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
-import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
-import { PendingPolicyDto } from '@/modules/policies/routes/entities/pending-policy.dto.entity';
-import { ActivePolicyDto } from '@/modules/policies/routes/entities/policy.dto.entity';
+import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import { AuthGuard } from '#/modules/auth/routes/guards/auth.guard';
+import { PolicyType } from '#/modules/policies/domain/entities/policy-type.entity';
+import { PendingPolicyDto } from '#/modules/policies/routes/entities/pending-policy.dto.entity';
+import { ActivePolicyDto } from '#/modules/policies/routes/entities/policy.dto.entity';
 import {
   type PolicyTypes,
   PolicyTypesSchema,
-} from '@/modules/policies/routes/entities/schemas/policy-types.schema';
-import { PoliciesService } from '@/modules/policies/routes/policies.service';
-import { Auth } from '@/routes/common/auth/auth.decorator';
-import { SpaceIdPipe } from '@/routes/common/pipes/space-id.pipe';
+} from '#/modules/policies/routes/entities/schemas/policy-types.schema';
+import { PoliciesService } from '#/modules/policies/routes/policies.service';
+import { Auth } from '#/routes/common/auth/auth.decorator';
+import { SpaceIdPipe } from '#/routes/common/pipes/space-id.pipe';
 import {
   type Caip10Addresses,
   Caip10AddressesSchema,
-} from '@/validation/entities/schemas/caip-10-addresses.schema';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+} from '#/validation/entities/schemas/caip-10-addresses.schema';
+import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
 /**
  * Policies across every Safe of a Space.

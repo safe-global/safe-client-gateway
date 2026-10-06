@@ -1,19 +1,19 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
 import type { Address, Hex } from 'viem';
-import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
-import { IEntitlementEnforcement } from '@/modules/entitlements/domain/entitlement-enforcement.interface';
-import type { Operation } from '@/modules/safe/domain/entities/operation.entity';
-import { ISafeShieldAnalysis } from '@/modules/safe-shield/domain/safe-shield-analysis.interface';
+import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import { getAuthenticatedUserIdOrFail } from '#/modules/auth/utils/assert-authenticated.utils';
+import { IEntitlementEnforcement } from '#/modules/entitlements/domain/entitlement-enforcement.interface';
+import type { Operation } from '#/modules/safe/domain/entities/operation.entity';
+import { ISafeShieldAnalysis } from '#/modules/safe-shield/domain/safe-shield-analysis.interface';
 import type {
   CounterpartyAnalysisResponse,
   SingleRecipientAnalysisResponse,
-} from '@/modules/safe-shield/entities/analysis-responses.entity';
-import type { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
-import { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
-import { assertMember } from '@/modules/spaces/domain/space-assert.utils';
-import { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
+} from '#/modules/safe-shield/entities/analysis-responses.entity';
+import type { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
+import { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository.interface';
+import { assertMember } from '#/modules/spaces/domain/space-assert.utils';
+import { IMembersRepository } from '#/modules/users/domain/members/members.repository.interface';
 
 @Injectable()
 export class SpaceSafeShieldService {

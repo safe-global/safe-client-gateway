@@ -6,8 +6,8 @@ import {
   isAddress,
   type PrivateKeyAccount,
 } from 'viem';
-import { SignatureType } from '@/domain/common/entities/signature-type.entity';
-import { DYNAMIC_PART_LENGTH_FIELD_HEX_LENGTH } from '@/domain/common/utils/signatures';
+import { SignatureType } from '#/domain/common/entities/signature-type.entity';
+import { DYNAMIC_PART_LENGTH_FIELD_HEX_LENGTH } from '#/domain/common/utils/signatures';
 
 export async function getSignature(args: {
   signer: PrivateKeyAccount;

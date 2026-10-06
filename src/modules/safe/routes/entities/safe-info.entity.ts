@@ -1,5 +1,6 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { AddressInfo } from '@/routes/common/entities/address-info.entity';
+import { AddressInfo } from '#/routes/common/entities/address-info.entity';
 
 export enum MasterCopyVersionState {
   UP_TO_DATE = 'UP_TO_DATE',

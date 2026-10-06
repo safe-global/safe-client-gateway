@@ -1,6 +1,7 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import { TransferDirection } from '@/modules/transactions/routes/entities/transfer-transaction-info.entity';
-import { getTransferDirection } from '@/modules/transactions/routes/mappers/common/transfer-direction.helper';
+import { TransferDirection } from '#/modules/transactions/routes/entities/transfer-transaction-info.entity';
+import { getTransferDirection } from '#/modules/transactions/routes/mappers/common/transfer-direction.helper';
 
 describe('Transfer direction helper (Unit)', () => {
   it('should return Outgoing direction when a Safe is in the from direction', () => {

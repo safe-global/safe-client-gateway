@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable, type OnModuleInit } from '@nestjs/common';
 import type { ConsumeMessage } from 'amqplib';
-import { IConfigurationService } from '@/config/configuration.service.interface';
+import { IConfigurationService } from '#/config/configuration.service.interface';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import { EventCacheHelper } from '@/modules/hooks/domain/helpers/event-cache.helper';
-import type { IHooksRepository } from '@/modules/hooks/domain/hooks.repository.interface';
-import type { Event } from '@/modules/hooks/routes/entities/event.entity';
-import { ConfigEventType } from '@/modules/hooks/routes/entities/event-type.entity';
-import { EventSchema } from '@/modules/hooks/routes/entities/schemas/event.schema';
-import { IPushNotificationService } from '@/modules/notifications/domain/push/push-notification.service.interface';
-import { IQueuesRepository } from '@/modules/queues/domain/queues-repository.interface';
+} from '#/logging/logging.interface';
+import { EventCacheHelper } from '#/modules/hooks/domain/helpers/event-cache.helper';
+import type { IHooksRepository } from '#/modules/hooks/domain/hooks.repository.interface';
+import type { Event } from '#/modules/hooks/routes/entities/event.entity';
+import { ConfigEventType } from '#/modules/hooks/routes/entities/event-type.entity';
+import { EventSchema } from '#/modules/hooks/routes/entities/schemas/event.schema';
+import { IPushNotificationService } from '#/modules/notifications/domain/push/push-notification.service.interface';
+import { IQueuesRepository } from '#/modules/queues/domain/queues-repository.interface';
 
 @Injectable()
 export class HooksRepository implements IHooksRepository, OnModuleInit {

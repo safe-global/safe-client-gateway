@@ -4,46 +4,46 @@ import { faker } from '@faker-js/faker';
 import type { Address, Hex } from 'viem';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
+import type { IConfigurationService } from '#/config/configuration.service.interface';
 import {
   SAFE_QUEUE_SERVICE_MAX_LIMIT,
   SAFE_TRANSACTION_SERVICE_MAX_LIMIT,
-} from '@/domain/common/constants';
-import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
-import type { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
-import type { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
-import type { ILoggingService } from '@/logging/logging.interface';
-import type { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
+} from '#/domain/common/constants';
+import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
+import type { ITransactionApi } from '#/domain/interfaces/transaction-api.interface';
+import type { ITransactionApiManager } from '#/domain/interfaces/transaction-api.manager.interface';
+import type { ILoggingService } from '#/logging/logging.interface';
+import type { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
 import {
   ethereumTransactionBuilder,
   toJson as ethereumTransactionToJson,
-} from '@/modules/safe/domain/entities/__tests__/ethereum-transaction.builder';
+} from '#/modules/safe/domain/entities/__tests__/ethereum-transaction.builder';
 import {
   moduleTransactionBuilder,
   toJson as moduleTransactionToJson,
-} from '@/modules/safe/domain/entities/__tests__/module-transaction.builder';
+} from '#/modules/safe/domain/entities/__tests__/module-transaction.builder';
 import {
   multisigTransactionBuilder,
   toJson as multisigTransactionToJson,
-} from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
-import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
-import type { SafeV2 } from '@/modules/safe/domain/entities/safe.entity';
-import { SafeRepository } from '@/modules/safe/domain/safe.repository';
-import { createMockSafeQueueService } from '@/modules/safe-queue/__tests__/safe-queue-service.mock';
+} from '#/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
+import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
+import type { SafeV2 } from '#/modules/safe/domain/entities/safe.entity';
+import { SafeRepository } from '#/modules/safe/domain/safe.repository';
+import { createMockSafeQueueService } from '#/modules/safe-queue/__tests__/safe-queue-service.mock';
 import {
   safeQueueConfirmationBuilder,
   safeQueueMultisigTransactionBuilder,
-} from '@/modules/safe-queue/entities/__tests__/queue-multisig-transaction.builder';
-import type { SafeQueueMultisigTransactionEntity } from '@/modules/safe-queue/entities/multisig-transaction.entity';
-import { buildOrigin } from '@/modules/safe-queue/helpers/origin.helper';
-import { mapSafeQueueToMultisigTransaction } from '@/modules/safe-queue/mappers/transaction.mapper';
+} from '#/modules/safe-queue/entities/__tests__/queue-multisig-transaction.builder';
+import type { SafeQueueMultisigTransactionEntity } from '#/modules/safe-queue/entities/multisig-transaction.entity';
+import { buildOrigin } from '#/modules/safe-queue/helpers/origin.helper';
+import { mapSafeQueueToMultisigTransaction } from '#/modules/safe-queue/mappers/transaction.mapper';
 import {
   nestedTransactionDtoBuilder,
   proposeTransactionDtoBuilder,
-} from '@/modules/transactions/routes/entities/__tests__/propose-transaction.dto.builder';
-import type { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers/transaction-verifier.helper';
-import { rawify } from '@/validation/entities/raw.entity';
+} from '#/modules/transactions/routes/entities/__tests__/propose-transaction.dto.builder';
+import type { TransactionVerifierHelper } from '#/modules/transactions/routes/helpers/transaction-verifier.helper';
+import { rawify } from '#/validation/entities/raw.entity';
 
 const mockTransactionApiManager = {
   getApi: vi.fn(),

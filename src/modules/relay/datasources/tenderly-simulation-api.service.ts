@@ -5,26 +5,26 @@ import { ZodError } from 'zod';
 import {
   NetworkRequestError,
   NetworkResponseError,
-} from '@/datasources/network/entities/network.error.entity';
+} from '#/datasources/network/entities/network.error.entity';
 import {
   type INetworkService,
   NetworkService,
-} from '@/datasources/network/network.service.interface';
-import type { IBlockchainApiManager as IBlockchainApiManagerType } from '@/domain/interfaces/blockchain-api.manager.interface';
-import { IBlockchainApiManager } from '@/domain/interfaces/blockchain-api.manager.interface';
+} from '#/datasources/network/network.service.interface';
+import type { IBlockchainApiManager as IBlockchainApiManagerType } from '#/domain/interfaces/blockchain-api.manager.interface';
+import { IBlockchainApiManager } from '#/domain/interfaces/blockchain-api.manager.interface';
 import type {
   ITenderlySimulationApi,
   TenderlySimulationResult,
-} from '@/domain/interfaces/tenderly-simulation-api.interface';
+} from '#/domain/interfaces/tenderly-simulation-api.interface';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
+} from '#/logging/logging.interface';
 import {
   type TenderlySimulationResponse,
   TenderlySimulationResponseSchema,
-} from '@/modules/relay/datasources/schemas/tenderly-simulation.schema';
-import type { Raw } from '@/validation/entities/raw.entity';
+} from '#/modules/relay/datasources/schemas/tenderly-simulation.schema';
+import type { Raw } from '#/validation/entities/raw.entity';
 
 /**
  * Public Tenderly proxy used by the Safe frontend. No auth required and the

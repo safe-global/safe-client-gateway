@@ -2,15 +2,15 @@
 
 import { faker } from '@faker-js/faker';
 import { getAddress, zeroAddress } from 'viem';
-import { gtfFeesResponseBuilder } from '@/modules/fees/domain/entities/__tests__/gtf-fees-response.builder';
+import { gtfFeesResponseBuilder } from '#/modules/fees/domain/entities/__tests__/gtf-fees-response.builder';
 import {
   GtfFeeBreakdownSchema,
   GtfFeesResponseSchema,
   GtfPricingContextSnapshotSchema,
   GtfTxDataSchema,
   GtfValuationDetailSchema,
-} from '@/modules/fees/domain/entities/gtf-fees-response.entity';
-import { Origin } from '@/modules/fees/domain/entities/origin.entity';
+} from '#/modules/fees/domain/entities/gtf-fees-response.entity';
+import { Origin } from '#/modules/fees/domain/entities/origin.entity';
 
 describe('GtfTxDataSchema', () => {
   const validTxData = {

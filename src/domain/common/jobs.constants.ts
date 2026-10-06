@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import configuration from '@/config/entities/configuration';
+import configuration from '#/config/entities/configuration';
 
 // CSV export queue constants
 export const CSV_EXPORT_QUEUE = 'csv-export';

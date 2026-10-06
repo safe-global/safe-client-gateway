@@ -3,15 +3,15 @@ import { faker } from '@faker-js/faker';
 import { ForbiddenException } from '@nestjs/common';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import type { IEntitlementEnforcement } from '@/modules/entitlements/domain/entitlement-enforcement.interface';
-import { FeatureNotGrantedError } from '@/modules/entitlements/domain/errors/feature-not-granted.error';
-import type { ISafeShieldAnalysis } from '@/modules/safe-shield/domain/safe-shield-analysis.interface';
-import { SpaceSafeShieldService } from '@/modules/safe-shield/routes/space-safe-shield.service';
-import type { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
-import type { Member } from '@/modules/users/domain/entities/member.entity';
-import type { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
+import { siweAuthPayloadDtoBuilder } from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import type { IEntitlementEnforcement } from '#/modules/entitlements/domain/entitlement-enforcement.interface';
+import { FeatureNotGrantedError } from '#/modules/entitlements/domain/errors/feature-not-granted.error';
+import type { ISafeShieldAnalysis } from '#/modules/safe-shield/domain/safe-shield-analysis.interface';
+import { SpaceSafeShieldService } from '#/modules/safe-shield/routes/space-safe-shield.service';
+import type { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository.interface';
+import type { Member } from '#/modules/users/domain/entities/member.entity';
+import type { IMembersRepository } from '#/modules/users/domain/members/members.repository.interface';
 
 describe('SpaceSafeShieldService', () => {
   const spaceId = faker.number.int({ min: 1, max: 100_000 });

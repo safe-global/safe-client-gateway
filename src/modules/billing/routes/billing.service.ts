@@ -8,56 +8,56 @@ import {
   NotFoundException,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import type { PaymentLink } from '@/datasources/billing-api/entities/payment-link.entity';
-import type { Plan } from '@/datasources/billing-api/entities/plan.entity';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import type { PaymentLink } from '#/datasources/billing-api/entities/payment-link.entity';
+import type { Plan } from '#/datasources/billing-api/entities/plan.entity';
 import type {
   Subscription,
   SubscriptionStatusFilter,
-} from '@/datasources/billing-api/entities/subscription.entity';
+} from '#/datasources/billing-api/entities/subscription.entity';
 import type {
   SubscriptionUpdatePreview,
   UpdateSubscriptionResult,
-} from '@/datasources/billing-api/entities/subscription-update.entity';
-import type { ILoggingService } from '@/logging/logging.interface';
-import { LoggingService } from '@/logging/logging.interface';
-import { asError } from '@/logging/utils';
-import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
+} from '#/datasources/billing-api/entities/subscription-update.entity';
+import type { ILoggingService } from '#/logging/logging.interface';
+import { LoggingService } from '#/logging/logging.interface';
+import { asError } from '#/logging/utils';
+import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import { getAuthenticatedUserIdOrFail } from '#/modules/auth/utils/assert-authenticated.utils';
 import {
   getRedirectConfig,
   type RedirectConfig,
   resolveAndValidateRedirectUrl,
-} from '@/modules/auth/utils/auth-redirect.helper';
-import { IBillingRepository } from '@/modules/billing/domain/billing.repository.interface';
-import type { SafeRef } from '@/modules/billing/domain/entities/safe-ref.entity';
-import type { WebhookEvent } from '@/modules/billing/domain/entities/webhook-event.entity';
-import type { SpaceOfferEligibility } from '@/modules/billing/domain/payment-link-offer.rules';
+} from '#/modules/auth/utils/auth-redirect.helper';
+import { IBillingRepository } from '#/modules/billing/domain/billing.repository.interface';
+import type { SafeRef } from '#/modules/billing/domain/entities/safe-ref.entity';
+import type { WebhookEvent } from '#/modules/billing/domain/entities/webhook-event.entity';
+import type { SpaceOfferEligibility } from '#/modules/billing/domain/payment-link-offer.rules';
 import {
   isOfferedToSpace,
   isUnclassifiedTrialLink,
   offersPlan,
-} from '@/modules/billing/domain/payment-link-offer.rules';
+} from '#/modules/billing/domain/payment-link-offer.rules';
 import {
   SAFES_REMOVED_PLAN_UNCHANGED_MESSAGE,
   UPDATABLE_SUBSCRIPTION_STATUSES,
-} from '@/modules/billing/domain/subscription.constants';
-import type { CheckoutSession } from '@/modules/billing/routes/entities/checkout-session.entity';
-import { toCheckoutSessionDto } from '@/modules/billing/routes/entities/checkout-session.entity';
-import type { CheckoutSessionResult } from '@/modules/billing/routes/entities/checkout-session-result.entity';
-import { GRACE_PERIOD_METADATA_KEY } from '@/modules/entitlements/domain/entitlements.constants';
-import { predatesEnforcement } from '@/modules/entitlements/domain/entitlements.rules';
-import { parseSafeSeatQuota } from '@/modules/entitlements/domain/feature-package.mapper';
-import { ISubscriptionSyncService } from '@/modules/entitlements/domain/subscription-sync.service.interface';
-import { ISubscriptionsRepository } from '@/modules/entitlements/domain/subscriptions.repository.interface';
-import type { Space } from '@/modules/spaces/domain/entities/space.entity';
-import { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
+} from '#/modules/billing/domain/subscription.constants';
+import type { CheckoutSession } from '#/modules/billing/routes/entities/checkout-session.entity';
+import { toCheckoutSessionDto } from '#/modules/billing/routes/entities/checkout-session.entity';
+import type { CheckoutSessionResult } from '#/modules/billing/routes/entities/checkout-session-result.entity';
+import { GRACE_PERIOD_METADATA_KEY } from '#/modules/entitlements/domain/entitlements.constants';
+import { predatesEnforcement } from '#/modules/entitlements/domain/entitlements.rules';
+import { parseSafeSeatQuota } from '#/modules/entitlements/domain/feature-package.mapper';
+import { ISubscriptionSyncService } from '#/modules/entitlements/domain/subscription-sync.service.interface';
+import { ISubscriptionsRepository } from '#/modules/entitlements/domain/subscriptions.repository.interface';
+import type { Space } from '#/modules/spaces/domain/entities/space.entity';
+import { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository.interface';
 import {
   assertAdmin,
   assertMember,
-} from '@/modules/spaces/domain/space-assert.utils';
-import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
-import { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
+} from '#/modules/spaces/domain/space-assert.utils';
+import { ISpacesRepository } from '#/modules/spaces/domain/spaces.repository.interface';
+import { IMembersRepository } from '#/modules/users/domain/members/members.repository.interface';
 
 @Injectable()
 export class BillingService {

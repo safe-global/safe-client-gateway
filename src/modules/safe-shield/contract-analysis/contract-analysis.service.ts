@@ -1,53 +1,53 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import type { Address } from 'viem';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { CacheRouter } from '@/datasources/cache/cache.router';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { CacheRouter } from '#/datasources/cache/cache.router';
 import {
   CacheService,
   type ICacheService,
-} from '@/datasources/cache/cache.service.interface';
+} from '#/datasources/cache/cache.service.interface';
 import {
   getExtensibleFallbackHandlerVersions,
   getFallbackHandlerVersions,
   isExtensibleFallbackHandlerDeployed,
   isFallbackHandlerDeployed,
-} from '@/domain/common/utils/deployments';
-import { IDataDecoderApi } from '@/domain/interfaces/data-decoder-api.interface';
-import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
+} from '#/domain/common/utils/deployments';
+import { IDataDecoderApi } from '#/domain/interfaces/data-decoder-api.interface';
+import { ITransactionApiManager } from '#/domain/interfaces/transaction-api.manager.interface';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
+} from '#/logging/logging.interface';
 import {
   type Contract,
   ContractPageSchema,
-} from '@/modules/data-decoder/domain/v2/entities/contract.entity';
-import { Erc20Decoder } from '@/modules/relay/domain/contracts/decoders/erc-20-decoder.helper';
-import { MultisigTransactionPageSchema } from '@/modules/safe/domain/entities/multisig-transaction.entity';
+} from '#/modules/data-decoder/domain/v2/entities/contract.entity';
+import { Erc20Decoder } from '#/modules/relay/domain/contracts/decoders/erc-20-decoder.helper';
+import { MultisigTransactionPageSchema } from '#/modules/safe/domain/entities/multisig-transaction.entity';
 import {
   DESCRIPTION_MAPPING,
   SEVERITY_MAPPING,
   TITLE_MAPPING,
   tWAPFallbackHandlerAddress,
-} from '@/modules/safe-shield/contract-analysis/contract-analysis.constants';
+} from '#/modules/safe-shield/contract-analysis/contract-analysis.constants';
 import type {
   ContractAnalysisResponse,
   ContractVerificationResult,
   GroupedAnalysisResults,
-} from '@/modules/safe-shield/entities/analysis-responses.entity';
+} from '#/modules/safe-shield/entities/analysis-responses.entity';
 import {
   type AnalysisResult,
   CommonStatus,
   type ContractAnalysisResult,
   type UnofficialFallbackHandlerAnalysisResult,
-} from '@/modules/safe-shield/entities/analysis-result.entity';
-import { ContractStatus } from '@/modules/safe-shield/entities/contract-status.entity';
-import type { ExtractedContract } from '@/modules/safe-shield/entities/extracted-contract.entity';
-import { ContractStatusGroup } from '@/modules/safe-shield/entities/status-group.entity';
-import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
-import { logCacheHit, logCacheMiss } from '@/modules/safe-shield/utils/common';
-import { extractContracts } from '@/modules/safe-shield/utils/extraction.utils';
+} from '#/modules/safe-shield/entities/analysis-result.entity';
+import { ContractStatus } from '#/modules/safe-shield/entities/contract-status.entity';
+import type { ExtractedContract } from '#/modules/safe-shield/entities/extracted-contract.entity';
+import { ContractStatusGroup } from '#/modules/safe-shield/entities/status-group.entity';
+import type { DecodedTransactionData } from '#/modules/safe-shield/entities/transaction-data.entity';
+import { logCacheHit, logCacheMiss } from '#/modules/safe-shield/utils/common';
+import { extractContracts } from '#/modules/safe-shield/utils/extraction.utils';
 
 /**
  * Result type for contract metadata fetch operations.

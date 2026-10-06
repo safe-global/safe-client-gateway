@@ -4,32 +4,32 @@ import { faker } from '@faker-js/faker';
 import type { Hex } from 'viem';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import type { ILoggingService } from '@/logging/logging.interface';
-import { DelayModifierDecoder } from '@/modules/alerts/domain/contracts/decoders/delay-modifier-decoder.helper';
-import { relayerBuilder } from '@/modules/chains/domain/entities/__tests__/relayer.builder';
+import type { ILoggingService } from '#/logging/logging.interface';
+import { DelayModifierDecoder } from '#/modules/alerts/domain/contracts/decoders/delay-modifier-decoder.helper';
+import { relayerBuilder } from '#/modules/chains/domain/entities/__tests__/relayer.builder';
 import {
   multiSendEncoder,
   multiSendTransactionsEncoder,
-} from '@/modules/contracts/domain/__tests__/encoders/multi-send-encoder.builder';
-import { execTransactionEncoder } from '@/modules/contracts/domain/__tests__/encoders/safe-encoder.builder';
-import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
-import { SafeDecoder } from '@/modules/contracts/domain/decoders/safe-decoder.helper';
-import { createProxyWithNonceEncoder } from '@/modules/relay/domain/contracts/__tests__/encoders/proxy-factory-encoder.builder';
-import { createSignerEncoder } from '@/modules/relay/domain/contracts/__tests__/encoders/signer-factory-encoder.builder';
-import { Erc20Decoder } from '@/modules/relay/domain/contracts/decoders/erc-20-decoder.helper';
-import { ProxyFactoryDecoder } from '@/modules/relay/domain/contracts/decoders/proxy-factory-decoder.helper';
-import { SignerFactoryDecoder } from '@/modules/relay/domain/contracts/decoders/signer-factory-decoder.helper';
-import { GasPaymentOption } from '@/modules/relay/domain/entities/gas-payment-option.entity';
-import { RelayerType } from '@/modules/relay/domain/entities/relayer-type.entity';
-import { GasPaymentOptionUnavailableError } from '@/modules/relay/domain/errors/gas-payment-option-unavailable.error';
-import { NoRelayerDefinedError } from '@/modules/relay/domain/errors/no-relayer-defined.error';
-import { RelayerTypeNotImplementedError } from '@/modules/relay/domain/errors/relayer-type-not-implemented.error';
-import { RelayManager } from '@/modules/relay/domain/relay.manager';
-import { RelayTransactionHelper } from '@/modules/relay/domain/relay-transaction-helper';
-import type { DailyLimitRelayer } from '@/modules/relay/domain/relayers/daily-limit.relayer';
-import type { NoFeeCampaignRelayer } from '@/modules/relay/domain/relayers/no-fee-campaign.relayer';
-import type { RelayFeeRelayer } from '@/modules/relay/domain/relayers/relay-fee.relayer';
-import type { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
+} from '#/modules/contracts/domain/__tests__/encoders/multi-send-encoder.builder';
+import { execTransactionEncoder } from '#/modules/contracts/domain/__tests__/encoders/safe-encoder.builder';
+import { MultiSendDecoder } from '#/modules/contracts/domain/decoders/multi-send-decoder.helper';
+import { SafeDecoder } from '#/modules/contracts/domain/decoders/safe-decoder.helper';
+import { createProxyWithNonceEncoder } from '#/modules/relay/domain/contracts/__tests__/encoders/proxy-factory-encoder.builder';
+import { createSignerEncoder } from '#/modules/relay/domain/contracts/__tests__/encoders/signer-factory-encoder.builder';
+import { Erc20Decoder } from '#/modules/relay/domain/contracts/decoders/erc-20-decoder.helper';
+import { ProxyFactoryDecoder } from '#/modules/relay/domain/contracts/decoders/proxy-factory-decoder.helper';
+import { SignerFactoryDecoder } from '#/modules/relay/domain/contracts/decoders/signer-factory-decoder.helper';
+import { GasPaymentOption } from '#/modules/relay/domain/entities/gas-payment-option.entity';
+import { RelayerType } from '#/modules/relay/domain/entities/relayer-type.entity';
+import { GasPaymentOptionUnavailableError } from '#/modules/relay/domain/errors/gas-payment-option-unavailable.error';
+import { NoRelayerDefinedError } from '#/modules/relay/domain/errors/no-relayer-defined.error';
+import { RelayerTypeNotImplementedError } from '#/modules/relay/domain/errors/relayer-type-not-implemented.error';
+import { RelayManager } from '#/modules/relay/domain/relay.manager';
+import { RelayTransactionHelper } from '#/modules/relay/domain/relay-transaction-helper';
+import type { DailyLimitRelayer } from '#/modules/relay/domain/relayers/daily-limit.relayer';
+import type { NoFeeCampaignRelayer } from '#/modules/relay/domain/relayers/no-fee-campaign.relayer';
+import type { RelayFeeRelayer } from '#/modules/relay/domain/relayers/relay-fee.relayer';
+import type { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
 
 const mockDailyLimitRelayer = {
   canRelay: vi.fn(),

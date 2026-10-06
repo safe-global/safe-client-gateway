@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import type { IBuilder } from '@/__tests__/builder';
-import { Builder } from '@/__tests__/builder';
-import { SubscriptionStatuses } from '@/datasources/billing-api/entities/subscription.entity';
+import type { IBuilder } from '#/__tests__/builder';
+import { Builder } from '#/__tests__/builder';
+import { SubscriptionStatuses } from '#/datasources/billing-api/entities/subscription.entity';
 import type {
   MaterializedSubscription,
   ParsedEntitlement,
-} from '@/modules/entitlements/domain/entities/materialized-subscription.entity';
+} from '#/modules/entitlements/domain/entities/materialized-subscription.entity';
 
 export function parsedEntitlementBuilder(): IBuilder<ParsedEntitlement> {
   return new Builder<ParsedEntitlement>()

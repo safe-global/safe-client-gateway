@@ -5,11 +5,11 @@ import amqp, {
   type ChannelWrapper,
 } from 'amqp-connection-manager';
 import type { Channel } from 'amqplib';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { QueueReadiness } from '@/domain/interfaces/queue-readiness.interface';
-import { QueueApiService } from '@/modules/queues/datasources/queues-api.service';
-import { IQueuesApiService } from '@/modules/queues/datasources/queues-api.service.interface';
-import { QueuesApiShutdownHook } from '@/modules/queues/datasources/queues-api.shutdown.hook';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { QueueReadiness } from '#/domain/interfaces/queue-readiness.interface';
+import { QueueApiService } from '#/modules/queues/datasources/queues-api.service';
+import { IQueuesApiService } from '#/modules/queues/datasources/queues-api.service.interface';
+import { QueuesApiShutdownHook } from '#/modules/queues/datasources/queues-api.shutdown.hook';
 
 export interface QueueConsumer {
   connection: AmqpConnectionManager;

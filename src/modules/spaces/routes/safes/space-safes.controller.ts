@@ -26,22 +26,22 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
-import { QuotaExceededExceptionFilter } from '@/modules/entitlements/domain/exception-filters/quota-exceeded.exception-filter';
+import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import { AuthGuard } from '#/modules/auth/routes/guards/auth.guard';
+import { QuotaExceededExceptionFilter } from '#/modules/entitlements/domain/exception-filters/quota-exceeded.exception-filter';
 import {
   CreateSpaceSafesDto,
   CreateSpaceSafesSchema,
-} from '@/modules/spaces/routes/safes/entities/create-space-safe.dto.entity';
-import { DeleteSpaceSafesDto } from '@/modules/spaces/routes/safes/entities/delete-space-safe.dto.entity';
-import { GetSpaceSafeResponse } from '@/modules/spaces/routes/safes/entities/get-space-safe.dto.entity';
-import { GetSpacesSafesResponse } from '@/modules/spaces/routes/safes/entities/get-spaces-safes.dto.entity';
-import { SpaceSafesSchema } from '@/modules/spaces/routes/safes/entities/space-safe.dto.entity';
-import { SpaceSafesService } from '@/modules/spaces/routes/safes/space-safes.service';
-import { Auth } from '@/routes/common/auth/auth.decorator';
-import { ElevationGuard } from '@/routes/common/auth/elevation.guard';
-import { SpaceIdPipe } from '@/routes/common/pipes/space-id.pipe';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+} from '#/modules/spaces/routes/safes/entities/create-space-safe.dto.entity';
+import { DeleteSpaceSafesDto } from '#/modules/spaces/routes/safes/entities/delete-space-safe.dto.entity';
+import { GetSpaceSafeResponse } from '#/modules/spaces/routes/safes/entities/get-space-safe.dto.entity';
+import { GetSpacesSafesResponse } from '#/modules/spaces/routes/safes/entities/get-spaces-safes.dto.entity';
+import { SpaceSafesSchema } from '#/modules/spaces/routes/safes/entities/space-safe.dto.entity';
+import { SpaceSafesService } from '#/modules/spaces/routes/safes/space-safes.service';
+import { Auth } from '#/routes/common/auth/auth.decorator';
+import { ElevationGuard } from '#/routes/common/auth/elevation.guard';
+import { SpaceIdPipe } from '#/routes/common/pipes/space-id.pipe';
+import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
 @ApiTags('spaces')
 @Controller({

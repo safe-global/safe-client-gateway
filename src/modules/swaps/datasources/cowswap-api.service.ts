@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { Hex } from 'viem';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import type { ISwapsApi } from '@/domain/interfaces/swaps-api.interface';
-import type { FullAppData } from '@/modules/swaps/domain/entities/full-app-data.entity';
-import type { Order } from '@/modules/swaps/domain/entities/order.entity';
-import type { Raw } from '@/validation/entities/raw.entity';
+import { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
+import type { INetworkService } from '#/datasources/network/network.service.interface';
+import type { ISwapsApi } from '#/domain/interfaces/swaps-api.interface';
+import type { FullAppData } from '#/modules/swaps/domain/entities/full-app-data.entity';
+import type { Order } from '#/modules/swaps/domain/entities/order.entity';
+import type { Raw } from '#/validation/entities/raw.entity';
 
 export class CowSwapApi implements ISwapsApi {
   constructor(

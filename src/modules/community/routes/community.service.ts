@@ -1,19 +1,19 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import type { Address } from 'viem';
-import type { Page } from '@/domain/entities/page.entity';
-import { ICommunityRepository } from '@/modules/community/domain/community.repository.interface';
-import type { Campaign } from '@/modules/community/domain/entities/campaign.entity';
-import type { CampaignActivity } from '@/modules/community/domain/entities/campaign-activity.entity';
-import type { CampaignRank } from '@/modules/community/domain/entities/campaign-rank.entity';
-import type { LockingEvent } from '@/modules/community/domain/entities/locking-event.entity';
-import type { LockingRank } from '@/modules/community/domain/entities/locking-rank.entity';
-import type { Eligibility } from '@/modules/community/routes/entities/eligibility.entity';
-import type { EligibilityRequest } from '@/modules/community/routes/entities/eligibility-request.entity';
+import type { Page } from '#/domain/entities/page.entity';
+import { ICommunityRepository } from '#/modules/community/domain/community.repository.interface';
+import type { Campaign } from '#/modules/community/domain/entities/campaign.entity';
+import type { CampaignActivity } from '#/modules/community/domain/entities/campaign-activity.entity';
+import type { CampaignRank } from '#/modules/community/domain/entities/campaign-rank.entity';
+import type { LockingEvent } from '#/modules/community/domain/entities/locking-event.entity';
+import type { LockingRank } from '#/modules/community/domain/entities/locking-rank.entity';
+import type { Eligibility } from '#/modules/community/routes/entities/eligibility.entity';
+import type { EligibilityRequest } from '#/modules/community/routes/entities/eligibility-request.entity';
 import {
   cursorUrlFromLimitAndOffset,
   type PaginationData,
-} from '@/routes/common/pagination/pagination.data';
+} from '#/routes/common/pagination/pagination.data';
 
 @Injectable()
 export class CommunityService {

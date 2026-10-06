@@ -1,28 +1,28 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { JwtPayloadWithClaims } from '@/datasources/jwt/jwt-claims.entity';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import { IAuthRepository } from '@/modules/auth/domain/auth.repository.interface';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { JwtPayloadWithClaims } from '#/datasources/jwt/jwt-claims.entity';
+import { ILoggingService, LoggingService } from '#/logging/logging.interface';
+import { IAuthRepository } from '#/modules/auth/domain/auth.repository.interface';
 import {
   AuthMethod,
   AuthPayload,
   AuthPayloadDto,
-} from '@/modules/auth/domain/entities/auth-payload.entity';
-import { SiweDto } from '@/modules/auth/routes/entities/siwe.dto.entity';
-import { UserSession } from '@/modules/auth/routes/entities/user-session.entity';
+} from '#/modules/auth/domain/entities/auth-payload.entity';
+import { SiweDto } from '#/modules/auth/routes/entities/siwe.dto.entity';
+import { UserSession } from '#/modules/auth/routes/entities/user-session.entity';
 import {
   buildAuth0LogoutBaseUrl,
   getRedirectConfig,
   type RedirectConfig,
   resolveAndValidateRedirectUrl,
-} from '@/modules/auth/utils/auth-redirect.helper';
+} from '#/modules/auth/utils/auth-redirect.helper';
 import {
   assertExpirationTime,
   getMaxExpirationTime,
-} from '@/modules/auth/utils/token-expiration.utils';
-import { ISiweRepository } from '@/modules/siwe/domain/siwe.repository.interface';
-import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
+} from '#/modules/auth/utils/token-expiration.utils';
+import { ISiweRepository } from '#/modules/siwe/domain/siwe.repository.interface';
+import { IUsersRepository } from '#/modules/users/domain/users.repository.interface';
 
 type AuthTokenResponse = {
   accessToken: string;

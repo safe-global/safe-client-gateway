@@ -3,11 +3,11 @@
 import { faker } from '@faker-js/faker';
 import type { Address } from 'viem';
 import type { MockedObject } from 'vitest';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
-import type { ILoggingService } from '@/logging/logging.interface';
-import { OwnersService } from '@/modules/owners/routes/owners.service';
-import type { SafeRepository } from '@/modules/safe/domain/safe.repository';
-import type { MaliciousAddressScanner } from '@/modules/safe-shield/malicious-address-scan/malicious-address-scanner.service';
+import type { IConfigurationService } from '#/config/configuration.service.interface';
+import type { ILoggingService } from '#/logging/logging.interface';
+import { OwnersService } from '#/modules/owners/routes/owners.service';
+import type { SafeRepository } from '#/modules/safe/domain/safe.repository';
+import type { MaliciousAddressScanner } from '#/modules/safe-shield/malicious-address-scan/malicious-address-scanner.service';
 
 const safeRepositoryMock: MockedObject<SafeRepository> = {
   getSafesByOwner: vi.fn(),

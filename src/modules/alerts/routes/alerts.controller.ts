@@ -12,13 +12,13 @@ import { ApiExcludeController } from '@nestjs/swagger';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import { AlertsService } from '@/modules/alerts/routes/alerts.service';
-import type { Alert } from '@/modules/alerts/routes/entities/alert.dto.entity';
-import { AlertSchema } from '@/modules/alerts/routes/entities/schemas/alerts.schema';
-import { AlertsRouteGuard } from '@/modules/alerts/routes/guards/alerts-route.guard';
-import { TenderlySignatureGuard } from '@/modules/alerts/routes/guards/tenderly-signature.guard';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+} from '#/logging/logging.interface';
+import { AlertsService } from '#/modules/alerts/routes/alerts.service';
+import type { Alert } from '#/modules/alerts/routes/entities/alert.dto.entity';
+import { AlertSchema } from '#/modules/alerts/routes/entities/schemas/alerts.schema';
+import { AlertsRouteGuard } from '#/modules/alerts/routes/guards/alerts-route.guard';
+import { TenderlySignatureGuard } from '#/modules/alerts/routes/guards/tenderly-signature.guard';
+import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
 @Controller({
   path: '/alerts',

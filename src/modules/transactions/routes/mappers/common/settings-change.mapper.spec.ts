@@ -6,23 +6,23 @@ import type { MockedObject } from 'vitest';
 import {
   dataDecodedBuilder,
   dataDecodedParameterBuilder,
-} from '@/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
-import { AddOwner } from '@/modules/transactions/routes/entities/settings-changes/add-owner.entity';
-import { ChangeMasterCopy } from '@/modules/transactions/routes/entities/settings-changes/change-master-copy.entity';
-import { ChangeThreshold } from '@/modules/transactions/routes/entities/settings-changes/change-threshold.entity';
-import { DeleteGuard } from '@/modules/transactions/routes/entities/settings-changes/delete-guard';
-import { DeleteModuleGuard } from '@/modules/transactions/routes/entities/settings-changes/delete-module-guard.entity';
-import { DisableModule } from '@/modules/transactions/routes/entities/settings-changes/disable-module.entity';
-import { EnableModule } from '@/modules/transactions/routes/entities/settings-changes/enable-module.entity';
-import { RemoveOwner } from '@/modules/transactions/routes/entities/settings-changes/remove-owner.entity';
-import { SetFallbackHandler } from '@/modules/transactions/routes/entities/settings-changes/set-fallback-handler.entity';
-import { SetGuard } from '@/modules/transactions/routes/entities/settings-changes/set-guard.entity';
-import { SetModuleGuard } from '@/modules/transactions/routes/entities/settings-changes/set-module-guard.entity';
-import { SwapOwner } from '@/modules/transactions/routes/entities/settings-changes/swap-owner.entity';
-import { DataDecodedParamHelper } from '@/modules/transactions/routes/mappers/common/data-decoded-param.helper';
-import { SettingsChangeMapper } from '@/modules/transactions/routes/mappers/common/settings-change.mapper';
-import type { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
-import { AddressInfo } from '@/routes/common/entities/address-info.entity';
+} from '#/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
+import { AddOwner } from '#/modules/transactions/routes/entities/settings-changes/add-owner.entity';
+import { ChangeMasterCopy } from '#/modules/transactions/routes/entities/settings-changes/change-master-copy.entity';
+import { ChangeThreshold } from '#/modules/transactions/routes/entities/settings-changes/change-threshold.entity';
+import { DeleteGuard } from '#/modules/transactions/routes/entities/settings-changes/delete-guard';
+import { DeleteModuleGuard } from '#/modules/transactions/routes/entities/settings-changes/delete-module-guard.entity';
+import { DisableModule } from '#/modules/transactions/routes/entities/settings-changes/disable-module.entity';
+import { EnableModule } from '#/modules/transactions/routes/entities/settings-changes/enable-module.entity';
+import { RemoveOwner } from '#/modules/transactions/routes/entities/settings-changes/remove-owner.entity';
+import { SetFallbackHandler } from '#/modules/transactions/routes/entities/settings-changes/set-fallback-handler.entity';
+import { SetGuard } from '#/modules/transactions/routes/entities/settings-changes/set-guard.entity';
+import { SetModuleGuard } from '#/modules/transactions/routes/entities/settings-changes/set-module-guard.entity';
+import { SwapOwner } from '#/modules/transactions/routes/entities/settings-changes/swap-owner.entity';
+import { DataDecodedParamHelper } from '#/modules/transactions/routes/mappers/common/data-decoded-param.helper';
+import { SettingsChangeMapper } from '#/modules/transactions/routes/mappers/common/settings-change.mapper';
+import type { AddressInfoHelper } from '#/routes/common/address-info/address-info.helper';
+import { AddressInfo } from '#/routes/common/entities/address-info.entity';
 
 const addressInfoHelper = vi.mocked({
   getOrDefault: vi.fn(),

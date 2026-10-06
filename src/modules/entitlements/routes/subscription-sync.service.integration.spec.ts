@@ -8,38 +8,38 @@ import type postgres from 'postgres';
 import request from 'supertest';
 import { In } from 'typeorm';
 import type { MockedObject } from 'vitest';
-import { TestDbFactory } from '@/__tests__/db.factory';
+import { TestDbFactory } from '#/__tests__/db.factory';
 import {
   initTestApplication,
   TestAppProvider,
-} from '@/__tests__/test-app.provider';
-import { createTestModule } from '@/__tests__/testing-module';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import configuration from '@/config/entities/__tests__/configuration';
-import { subscriptionPlanBuilder } from '@/datasources/billing-api/entities/__tests__/plan.builder';
-import { subscriptionBuilder } from '@/datasources/billing-api/entities/__tests__/subscription.builder';
-import type { Subscription } from '@/datasources/billing-api/entities/subscription.entity';
-import { stripDashes } from '@/datasources/billing-api/upstream-customer-id.util';
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
+} from '#/__tests__/test-app.provider';
+import { createTestModule } from '#/__tests__/testing-module';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import configuration from '#/config/entities/__tests__/configuration';
+import { subscriptionPlanBuilder } from '#/datasources/billing-api/entities/__tests__/plan.builder';
+import { subscriptionBuilder } from '#/datasources/billing-api/entities/__tests__/subscription.builder';
+import type { Subscription } from '#/datasources/billing-api/entities/subscription.entity';
+import { stripDashes } from '#/datasources/billing-api/upstream-customer-id.util';
+import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
 import {
   type INetworkService,
   NetworkService,
-} from '@/datasources/network/network.service.interface';
-import { nameBuilder } from '@/domain/common/entities/name.builder';
+} from '#/datasources/network/network.service.interface';
+import { nameBuilder } from '#/domain/common/entities/name.builder';
 import {
   webhookEventBuilder,
   webhookEventCustomerBuilder,
-} from '@/modules/billing/domain/entities/__tests__/webhook-event.builder';
-import type { WebhookEvent } from '@/modules/billing/domain/entities/webhook-event.entity';
-import { BillingWebhookAuthGuard } from '@/modules/billing/routes/guards/billing-webhook-auth.guard';
-import { Feature } from '@/modules/entitlements/datasources/entities/feature.entity.db';
-import { SpaceSubscription } from '@/modules/entitlements/datasources/entities/space-subscription.entity.db';
-import { featureBuilder } from '@/modules/entitlements/domain/entities/__tests__/feature.builder';
-import { FeatureType } from '@/modules/entitlements/domain/entities/feature.entity';
-import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
-import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
-import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
-import { rawify } from '@/validation/entities/raw.entity';
+} from '#/modules/billing/domain/entities/__tests__/webhook-event.builder';
+import type { WebhookEvent } from '#/modules/billing/domain/entities/webhook-event.entity';
+import { BillingWebhookAuthGuard } from '#/modules/billing/routes/guards/billing-webhook-auth.guard';
+import { Feature } from '#/modules/entitlements/datasources/entities/feature.entity.db';
+import { SpaceSubscription } from '#/modules/entitlements/datasources/entities/space-subscription.entity.db';
+import { featureBuilder } from '#/modules/entitlements/domain/entities/__tests__/feature.builder';
+import { FeatureType } from '#/modules/entitlements/domain/entities/feature.entity';
+import { NotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/notifications.repository.module';
+import { TestNotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/test.notification.repository.module';
+import { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
+import { rawify } from '#/validation/entities/raw.entity';
 
 const WEBHOOK_PATH = '/v1/billing/webhooks';
 // Epoch seconds, as the billing service sends them; asserted below, so they

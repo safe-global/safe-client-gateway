@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { PaymentLink } from '@/datasources/billing-api/entities/payment-link.entity';
-import { GRACE_PERIOD_METADATA_KEY } from '@/modules/entitlements/domain/entitlements.constants';
+import type { PaymentLink } from '#/datasources/billing-api/entities/payment-link.entity';
+import { GRACE_PERIOD_METADATA_KEY } from '#/modules/entitlements/domain/entitlements.constants';
 
 /** What the offer filter needs to know about the workspace. */
 export type SpaceOfferEligibility = {

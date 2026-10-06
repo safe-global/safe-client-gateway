@@ -27,15 +27,15 @@ import {
   recoverMessageAddress,
   toBytes,
 } from 'viem';
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { DeviceType } from '@/modules/notifications/domain/v1/entities/device.entity';
-import { NotificationType } from '@/modules/notifications/domain/v2/entities/notification.entity';
-import { RegisterDeviceDto } from '@/modules/notifications/routes/v1/entities/register-device.dto.entity';
-import type { UpsertSubscriptionsSafesDto } from '@/modules/notifications/routes/v2/entities/upsert-subscriptions.dto.entity';
-import { NotificationsServiceV2 } from '@/modules/notifications/routes/v2/notifications.service';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { UuidSchema } from '@/validation/entities/schemas/uuid.schema';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+import { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import { DeviceType } from '#/modules/notifications/domain/v1/entities/device.entity';
+import { NotificationType } from '#/modules/notifications/domain/v2/entities/notification.entity';
+import { RegisterDeviceDto } from '#/modules/notifications/routes/v1/entities/register-device.dto.entity';
+import type { UpsertSubscriptionsSafesDto } from '#/modules/notifications/routes/v2/entities/upsert-subscriptions.dto.entity';
+import { NotificationsServiceV2 } from '#/modules/notifications/routes/v2/notifications.service';
+import { AddressSchema } from '#/validation/entities/schemas/address.schema';
+import { UuidSchema } from '#/validation/entities/schemas/uuid.schema';
+import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
 @ApiTags('notifications')
 @Controller({ path: '', version: '1' })

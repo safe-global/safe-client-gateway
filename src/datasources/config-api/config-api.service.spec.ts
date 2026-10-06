@@ -2,18 +2,18 @@
 
 import { faker } from '@faker-js/faker';
 import type { MockedObject } from 'vitest';
-import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
-import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
-import type { ICacheService } from '@/datasources/cache/cache.service.interface';
-import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
-import { ConfigApi } from '@/datasources/config-api/config-api.service';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import { DataSourceError } from '@/domain/errors/data-source.error';
-import type { ILoggingService } from '@/logging/logging.interface';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { gasTokenBuilder } from '@/modules/fees/domain/entities/__tests__/gas-token.builder';
-import { safeAppBuilder } from '@/modules/safe-apps/domain/entities/__tests__/safe-app.builder';
-import { rawify } from '@/validation/entities/raw.entity';
+import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
+import type { CacheFirstDataSource } from '#/datasources/cache/cache.first.data.source';
+import type { ICacheService } from '#/datasources/cache/cache.service.interface';
+import { CacheDir } from '#/datasources/cache/entities/cache-dir.entity';
+import { ConfigApi } from '#/datasources/config-api/config-api.service';
+import { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
+import { DataSourceError } from '#/domain/errors/data-source.error';
+import type { ILoggingService } from '#/logging/logging.interface';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
+import { gasTokenBuilder } from '#/modules/fees/domain/entities/__tests__/gas-token.builder';
+import { safeAppBuilder } from '#/modules/safe-apps/domain/entities/__tests__/safe-app.builder';
+import { rawify } from '#/validation/entities/raw.entity';
 
 const dataSource = {
   get: vi.fn(),

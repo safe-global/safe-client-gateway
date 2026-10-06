@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import swc from 'unplugin-swc';
+import { defaultServerConditions } from 'vite';
 import { configDefaults, defineConfig } from 'vitest/config';
 
 // Fresh plugin instances per project. NestJS relies on `emitDecoratorMetadata`
@@ -27,13 +28,23 @@ const plugins = (): Array<ReturnType<typeof swc.vite>> => [
   }),
 ];
 
+// `#/*` imports resolve through package.json `imports`; the `source` condition
+// maps them to the TypeScript sources instead of the compiled `dist` output.
+// The rest mirrors Vitest's own defaults, which drop Vite's `module` condition.
+const conditions = [
+  'source',
+  ...defaultServerConditions.filter((condition) => condition !== 'module'),
+];
+const resolve = { conditions };
+const ssr = { resolve: { conditions } };
+
 const sharedExclude = [...configDefaults.exclude];
 
 export default defineConfig({
   plugins: plugins(),
   oxc: false,
-  // Resolves the `@/*` and `@/abis/*` path aliases straight from tsconfig.json.
-  resolve: { tsconfigPaths: true },
+  resolve,
+  ssr,
   test: {
     // Coverage is configured once at the root and aggregates across all projects.
     coverage: {
@@ -53,7 +64,8 @@ export default defineConfig({
       {
         plugins: plugins(),
         oxc: false,
-        resolve: { tsconfigPaths: true },
+        resolve,
+        ssr,
         test: {
           name: 'unit',
           globals: true,
@@ -78,7 +90,8 @@ export default defineConfig({
       {
         plugins: plugins(),
         oxc: false,
-        resolve: { tsconfigPaths: true },
+        resolve,
+        ssr,
         test: {
           name: 'integration',
           globals: true,
@@ -94,7 +107,8 @@ export default defineConfig({
       {
         plugins: plugins(),
         oxc: false,
-        resolve: { tsconfigPaths: true },
+        resolve,
+        ssr,
         test: {
           name: 'e2e',
           globals: true,

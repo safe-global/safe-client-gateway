@@ -3,27 +3,27 @@
 import { faker } from '@faker-js/faker';
 import { getAddress, type Hex } from 'viem';
 import type { MockedObject } from 'vitest';
-import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
-import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import { FeeServiceApi } from '@/datasources/fee-service-api/fee-service-api.service';
-import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import { DataSourceError } from '@/domain/errors/data-source.error';
-import { gtfFeesRequestBuilder } from '@/modules/fees/domain/entities/__tests__/gtf-fees-request.builder';
+import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
+import type { CacheFirstDataSource } from '#/datasources/cache/cache.first.data.source';
+import { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
+import { FeeServiceApi } from '#/datasources/fee-service-api/fee-service-api.service';
+import { NetworkResponseError } from '#/datasources/network/entities/network.error.entity';
+import type { INetworkService } from '#/datasources/network/network.service.interface';
+import { DataSourceError } from '#/domain/errors/data-source.error';
+import { gtfFeesRequestBuilder } from '#/modules/fees/domain/entities/__tests__/gtf-fees-request.builder';
 import {
   gtfFeesResponseBuilder,
   gtfPricingContextSnapshotBuilder,
   gtfTxDataBuilder,
-} from '@/modules/fees/domain/entities/__tests__/gtf-fees-response.builder';
+} from '#/modules/fees/domain/entities/__tests__/gtf-fees-response.builder';
 import {
   txDataResponseBuilder,
   txFeesResponseBuilder,
-} from '@/modules/fees/domain/entities/__tests__/tx-fees-response.builder';
-import { Origin } from '@/modules/fees/domain/entities/origin.entity';
-import { PriceSource } from '@/modules/fees/domain/entities/price-source.entity';
-import { feePreviewTransactionDtoBuilder } from '@/modules/fees/routes/entities/__tests__/fee-preview-transaction.dto.builder';
-import { rawify } from '@/validation/entities/raw.entity';
+} from '#/modules/fees/domain/entities/__tests__/tx-fees-response.builder';
+import { Origin } from '#/modules/fees/domain/entities/origin.entity';
+import { PriceSource } from '#/modules/fees/domain/entities/price-source.entity';
+import { feePreviewTransactionDtoBuilder } from '#/modules/fees/routes/entities/__tests__/fee-preview-transaction.dto.builder';
+import { rawify } from '#/validation/entities/raw.entity';
 
 const mockNetworkService = vi.mocked({
   get: vi.fn(),

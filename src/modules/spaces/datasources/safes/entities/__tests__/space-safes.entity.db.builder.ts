@@ -2,11 +2,11 @@
 
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import type { IBuilder } from '@/__tests__/builder';
-import { Builder } from '@/__tests__/builder';
-import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
-import type { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
-import { spaceBuilder } from '@/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
+import type { IBuilder } from '#/__tests__/builder';
+import { Builder } from '#/__tests__/builder';
+import { DB_MAX_SAFE_INTEGER } from '#/domain/common/constants';
+import type { SpaceSafe } from '#/modules/spaces/datasources/safes/entities/space-safes.entity.db';
+import { spaceBuilder } from '#/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
 
 export function spaceSafeBuilder(): IBuilder<SpaceSafe> {
   return new Builder<SpaceSafe>()

@@ -8,52 +8,52 @@ import {
   parseEther,
   parseUnits,
 } from 'viem';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { LogType } from '@/domain/common/entities/log-type.entity';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { LogType } from '#/domain/common/entities/log-type.entity';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import { IDataDecoderRepository } from '@/modules/data-decoder/domain/v2/data-decoder.repository.interface';
-import type { MultisigTransaction as DomainMultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
-import type { SafeRepository } from '@/modules/safe/domain/safe.repository';
-import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
-import { ITokenRepository } from '@/modules/tokens/domain/token.repository.interface';
-import type { AddConfirmationDto } from '@/modules/transactions/domain/entities/add-confirmation.dto.entity';
-import type { ProposeTransactionDto } from '@/modules/transactions/domain/entities/propose-transaction.dto.entity';
+} from '#/logging/logging.interface';
+import { IDataDecoderRepository } from '#/modules/data-decoder/domain/v2/data-decoder.repository.interface';
+import type { MultisigTransaction as DomainMultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
+import type { SafeRepository } from '#/modules/safe/domain/safe.repository';
+import { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
+import { ITokenRepository } from '#/modules/tokens/domain/token.repository.interface';
+import type { AddConfirmationDto } from '#/modules/transactions/domain/entities/add-confirmation.dto.entity';
+import type { ProposeTransactionDto } from '#/modules/transactions/domain/entities/propose-transaction.dto.entity';
 import {
   MODULE_TRANSACTION_PREFIX,
   MULTISIG_TRANSACTION_PREFIX,
   TRANSACTION_ID_SEPARATOR,
   TRANSFER_PREFIX,
-} from '@/modules/transactions/routes/constants';
-import { ConflictType } from '@/modules/transactions/routes/entities/conflict-type.entity';
-import type { CreationTransaction } from '@/modules/transactions/routes/entities/creation-transaction.entity';
-import { IncomingTransfer } from '@/modules/transactions/routes/entities/incoming-transfer.entity';
-import { ModuleTransaction } from '@/modules/transactions/routes/entities/module-transaction.entity';
-import { MultisigTransaction } from '@/modules/transactions/routes/entities/multisig-transaction.entity';
-import type { PreviewTransactionDto } from '@/modules/transactions/routes/entities/preview-transaction.dto.entity';
-import type { QueuedItem } from '@/modules/transactions/routes/entities/queued-item.entity';
-import type { TransactionDetails } from '@/modules/transactions/routes/entities/transaction-details/transaction-details.entity';
-import type { TransactionItemPage } from '@/modules/transactions/routes/entities/transaction-item-page.entity';
-import type { TransactionPreview } from '@/modules/transactions/routes/entities/transaction-preview.entity';
-import { ModuleTransactionMapper } from '@/modules/transactions/routes/mappers/module-transactions/module-transaction.mapper';
-import { ModuleTransactionDetailsMapper } from '@/modules/transactions/routes/mappers/module-transactions/module-transaction-details.mapper';
-import { MultisigTransactionMapper } from '@/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction.mapper';
-import { MultisigTransactionDetailsMapper } from '@/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction-details.mapper';
-import { MultisigTransactionNoteMapper } from '@/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction-note.mapper';
-import { QueuedItemsMapper } from '@/modules/transactions/routes/mappers/queued-items/queued-items.mapper';
-import { TransactionPreviewMapper } from '@/modules/transactions/routes/mappers/transaction-preview.mapper';
-import { TransactionsHistoryMapper } from '@/modules/transactions/routes/mappers/transactions-history.mapper';
-import { TransferMapper } from '@/modules/transactions/routes/mappers/transfers/transfer.mapper';
-import { TransferDetailsMapper } from '@/modules/transactions/routes/mappers/transfers/transfer-details.mapper';
-import type { Page } from '@/routes/common/entities/page.entity';
+} from '#/modules/transactions/routes/constants';
+import { ConflictType } from '#/modules/transactions/routes/entities/conflict-type.entity';
+import type { CreationTransaction } from '#/modules/transactions/routes/entities/creation-transaction.entity';
+import { IncomingTransfer } from '#/modules/transactions/routes/entities/incoming-transfer.entity';
+import { ModuleTransaction } from '#/modules/transactions/routes/entities/module-transaction.entity';
+import { MultisigTransaction } from '#/modules/transactions/routes/entities/multisig-transaction.entity';
+import type { PreviewTransactionDto } from '#/modules/transactions/routes/entities/preview-transaction.dto.entity';
+import type { QueuedItem } from '#/modules/transactions/routes/entities/queued-item.entity';
+import type { TransactionDetails } from '#/modules/transactions/routes/entities/transaction-details/transaction-details.entity';
+import type { TransactionItemPage } from '#/modules/transactions/routes/entities/transaction-item-page.entity';
+import type { TransactionPreview } from '#/modules/transactions/routes/entities/transaction-preview.entity';
+import { ModuleTransactionMapper } from '#/modules/transactions/routes/mappers/module-transactions/module-transaction.mapper';
+import { ModuleTransactionDetailsMapper } from '#/modules/transactions/routes/mappers/module-transactions/module-transaction-details.mapper';
+import { MultisigTransactionMapper } from '#/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction.mapper';
+import { MultisigTransactionDetailsMapper } from '#/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction-details.mapper';
+import { MultisigTransactionNoteMapper } from '#/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction-note.mapper';
+import { QueuedItemsMapper } from '#/modules/transactions/routes/mappers/queued-items/queued-items.mapper';
+import { TransactionPreviewMapper } from '#/modules/transactions/routes/mappers/transaction-preview.mapper';
+import { TransactionsHistoryMapper } from '#/modules/transactions/routes/mappers/transactions-history.mapper';
+import { TransferMapper } from '#/modules/transactions/routes/mappers/transfers/transfer.mapper';
+import { TransferDetailsMapper } from '#/modules/transactions/routes/mappers/transfers/transfer-details.mapper';
+import type { Page } from '#/routes/common/entities/page.entity';
 import {
   buildNextPageURL,
   buildPreviousPageURL,
   cursorUrlFromLimitAndOffset,
   PaginationData,
-} from '@/routes/common/pagination/pagination.data';
+} from '#/routes/common/pagination/pagination.data';
 
 @Injectable()
 export class TransactionsService {

@@ -2,8 +2,8 @@
 
 import type { EntityManager } from 'typeorm';
 import type { MockedObject } from 'vitest';
-import { mockPostgresDataSource } from '@/datasources/db/v2/__tests__/postgresql-datasource.mock';
-import { mockQueryBuilder } from '@/datasources/db/v2/__tests__/querybuilder.mock';
+import { mockPostgresDataSource } from '#/datasources/db/v2/__tests__/postgresql-datasource.mock';
+import { mockQueryBuilder } from '#/datasources/db/v2/__tests__/querybuilder.mock';
 
 export const mockEntityManager = {
   find: vi.fn(),

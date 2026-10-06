@@ -12,27 +12,27 @@ import type { MockedObject } from 'vitest';
 import {
   initTestApplication,
   TestAppProvider,
-} from '@/__tests__/test-app.provider';
-import { createTestModule } from '@/__tests__/testing-module';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import configuration from '@/config/entities/__tests__/configuration';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import { NetworkService } from '@/datasources/network/network.service.interface';
-import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
+} from '#/__tests__/test-app.provider';
+import { createTestModule } from '#/__tests__/testing-module';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import configuration from '#/config/entities/__tests__/configuration';
+import type { INetworkService } from '#/datasources/network/network.service.interface';
+import { NetworkService } from '#/datasources/network/network.service.interface';
+import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
+import type { Chain } from '#/modules/chains/domain/entities/chain.entity';
 import {
   toJson as multisigToJson,
   multisigTransactionBuilder,
-} from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
-import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
-import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
-import { Operation } from '@/modules/safe/domain/entities/operation.entity';
-import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
-import { safeQueueMultisigTransactionBuilder } from '@/modules/safe-queue/entities/__tests__/queue-multisig-transaction.builder';
-import type { SafeQueueMultisigTransactionEntity } from '@/modules/safe-queue/entities/multisig-transaction.entity';
-import { GlobalErrorFilter } from '@/routes/common/filters/global-error.filter';
-import { rawify } from '@/validation/entities/raw.entity';
+} from '#/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
+import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
+import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
+import { Operation } from '#/modules/safe/domain/entities/operation.entity';
+import type { Safe } from '#/modules/safe/domain/entities/safe.entity';
+import { safeQueueMultisigTransactionBuilder } from '#/modules/safe-queue/entities/__tests__/queue-multisig-transaction.builder';
+import type { SafeQueueMultisigTransactionEntity } from '#/modules/safe-queue/entities/multisig-transaction.entity';
+import { GlobalErrorFilter } from '#/routes/common/filters/global-error.filter';
+import { rawify } from '#/validation/entities/raw.entity';
 
 function toQueueTransaction(
   transaction: MultisigTransaction,

@@ -3,7 +3,7 @@ import { z } from 'zod';
 import {
   type PolicyIndexerRows,
   PolicyIndexerRowsSchema,
-} from '@/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
+} from '#/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 
 /**
  * A GraphQL response envelope. Transport-level, so it is parsed in the

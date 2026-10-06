@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Module } from '@nestjs/common';
-import { AuthModule } from '@/modules/auth/auth.module';
-import { EntitlementsModule } from '@/modules/entitlements/entitlements.module';
-import { SpaceSafeShieldController } from '@/modules/safe-shield/routes/space-safe-shield.controller';
-import { SpaceSafeShieldService } from '@/modules/safe-shield/routes/space-safe-shield.service';
-import { SafeShieldModule } from '@/modules/safe-shield/safe-shield.module';
-import { SpacesModule } from '@/modules/spaces/spaces.module';
-import { UsersModule } from '@/modules/users/users.module';
+import { AuthModule } from '#/modules/auth/auth.module';
+import { EntitlementsModule } from '#/modules/entitlements/entitlements.module';
+import { SpaceSafeShieldController } from '#/modules/safe-shield/routes/space-safe-shield.controller';
+import { SpaceSafeShieldService } from '#/modules/safe-shield/routes/space-safe-shield.service';
+import { SafeShieldModule } from '#/modules/safe-shield/safe-shield.module';
+import { SpacesModule } from '#/modules/spaces/spaces.module';
+import { UsersModule } from '#/modules/users/users.module';
 
 /**
  * Space-scoped Safe Shield recipient/counterparty analysis, kept apart from

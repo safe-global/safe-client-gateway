@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { ForbiddenException } from '@nestjs/common';
-import type { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
-import type { Member } from '@/modules/users/domain/entities/member.entity';
-import type { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
+import type { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
+import type { Member } from '#/modules/users/domain/entities/member.entity';
+import type { IMembersRepository } from '#/modules/users/domain/members/members.repository.interface';
 
 /**
  * Asserts the caller is an ACTIVE ADMIN of the space. Non-members, pending

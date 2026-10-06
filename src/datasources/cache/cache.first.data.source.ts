@@ -1,32 +1,32 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
-import { IConfigurationService } from '@/config/configuration.service.interface';
+import { IConfigurationService } from '#/config/configuration.service.interface';
 import {
   CacheService,
   type ICacheService,
-} from '@/datasources/cache/cache.service.interface';
-import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
-import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
-import type { NetworkRequest } from '@/datasources/network/entities/network.request.entity';
+} from '#/datasources/cache/cache.service.interface';
+import { CacheDir } from '#/datasources/cache/entities/cache-dir.entity';
+import { NetworkResponseError } from '#/datasources/network/entities/network.error.entity';
+import type { NetworkRequest } from '#/datasources/network/entities/network.request.entity';
 import {
   type INetworkService,
   NetworkService,
-} from '@/datasources/network/network.service.interface';
-import { LogType } from '@/domain/common/entities/log-type.entity';
-import type { Page } from '@/domain/entities/page.entity';
+} from '#/datasources/network/network.service.interface';
+import { LogType } from '#/domain/common/entities/log-type.entity';
+import type { Page } from '#/domain/entities/page.entity';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
+} from '#/logging/logging.interface';
+import type { Safe } from '#/modules/safe/domain/entities/safe.entity';
 import {
   isCreationTransaction,
   isEthereumTransaction,
   isModuleTransaction,
   isMultisigTransaction,
   type Transaction,
-} from '@/modules/safe/domain/entities/transaction.entity';
-import type { Raw } from '@/validation/entities/raw.entity';
+} from '#/modules/safe/domain/entities/transaction.entity';
+import type { Raw } from '#/validation/entities/raw.entity';
 
 /**
  * A data source which tries to retrieve values from cache using

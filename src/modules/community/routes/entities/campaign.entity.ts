@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import type { Campaign as DomainCampaign } from '@/modules/community/domain/entities/campaign.entity';
-import { ActivityMetadata } from '@/modules/community/routes/entities/activity-metadata.entity';
+import type { Campaign as DomainCampaign } from '#/modules/community/domain/entities/campaign.entity';
+import { ActivityMetadata } from '#/modules/community/routes/entities/activity-metadata.entity';
 
 export class Campaign implements DomainCampaign {
   @ApiProperty()

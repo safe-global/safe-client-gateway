@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import type { Address } from 'viem';
-import { IConfigurationService } from '@/config/configuration.service.interface';
+import { IConfigurationService } from '#/config/configuration.service.interface';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import type { SafeList } from '@/modules/owners/routes/entities/safe-list.entity';
-import { findSimilarAddressPairs } from '@/modules/owners/routes/utils/address-poisoning';
-import { unionStrip } from '@/modules/owners/routes/utils/malicious-safe-strip';
-import type { SafesByChainId } from '@/modules/safe/domain/entities/safes-by-chain-id.entity';
-import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
-import { MaliciousAddressScanner } from '@/modules/safe-shield/malicious-address-scan/malicious-address-scanner.service';
+} from '#/logging/logging.interface';
+import type { SafeList } from '#/modules/owners/routes/entities/safe-list.entity';
+import { findSimilarAddressPairs } from '#/modules/owners/routes/utils/address-poisoning';
+import { unionStrip } from '#/modules/owners/routes/utils/malicious-safe-strip';
+import type { SafesByChainId } from '#/modules/safe/domain/entities/safes-by-chain-id.entity';
+import { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
+import { MaliciousAddressScanner } from '#/modules/safe-shield/malicious-address-scan/malicious-address-scanner.service';
 
 @Injectable()
 export class OwnersService {

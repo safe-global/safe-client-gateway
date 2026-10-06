@@ -4,41 +4,41 @@ import type { Address } from 'viem';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import type { TypedData } from '@/modules/messages/domain/entities/typed-data.entity';
-import type { ThreatAnalysisRequest } from '@/modules/safe-shield/entities/analysis-requests.entity';
-import type { ThreatAnalysisResponse } from '@/modules/safe-shield/entities/analysis-responses.entity';
+} from '#/logging/logging.interface';
+import type { TypedData } from '#/modules/messages/domain/entities/typed-data.entity';
+import type { ThreatAnalysisRequest } from '#/modules/safe-shield/entities/analysis-requests.entity';
+import type { ThreatAnalysisResponse } from '#/modules/safe-shield/entities/analysis-responses.entity';
 import {
   CommonStatus,
   type ThreatAnalysisResult,
   type ThreatIssue,
   type ThreatIssues,
-} from '@/modules/safe-shield/entities/analysis-result.entity';
-import type { ReportEvent } from '@/modules/safe-shield/entities/dtos/report-false-result.dto';
+} from '#/modules/safe-shield/entities/analysis-result.entity';
+import type { ReportEvent } from '#/modules/safe-shield/entities/dtos/report-false-result.dto';
 import {
   compareSeverityString,
   type Severity,
-} from '@/modules/safe-shield/entities/severity.entity';
-import { ThreatStatusGroup } from '@/modules/safe-shield/entities/status-group.entity';
-import type { BalanceChange } from '@/modules/safe-shield/entities/threat-analysis.types';
-import { ThreatStatus } from '@/modules/safe-shield/entities/threat-status.entity';
+} from '#/modules/safe-shield/entities/severity.entity';
+import { ThreatStatusGroup } from '#/modules/safe-shield/entities/status-group.entity';
+import type { BalanceChange } from '#/modules/safe-shield/entities/threat-analysis.types';
+import { ThreatStatus } from '#/modules/safe-shield/entities/threat-status.entity';
 import {
   BLOCKAID_SEVERITY_MAP,
   prepareDescription,
   prepareErrorMessage,
-} from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.constants';
-import { IBlockaidApi } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.interface';
+} from '#/modules/safe-shield/threat-analysis/blockaid/blockaid-api.constants';
+import { IBlockaidApi } from '#/modules/safe-shield/threat-analysis/blockaid/blockaid-api.interface';
 import type {
   ProxyUpgradeManagement,
   TransactionSimulation,
   TransactionValidation,
-} from '@/modules/safe-shield/threat-analysis/blockaid/schemas/blockaid-scan-response.schema';
+} from '#/modules/safe-shield/threat-analysis/blockaid/schemas/blockaid-scan-response.schema';
 import {
   DESCRIPTION_MAPPING,
   SEVERITY_MAPPING,
   TITLE_MAPPING,
-} from '@/modules/safe-shield/threat-analysis/threat-analysis.constants';
-import { NULL_ADDRESS } from '@/routes/common/constants';
+} from '#/modules/safe-shield/threat-analysis/threat-analysis.constants';
+import { NULL_ADDRESS } from '#/routes/common/constants';
 
 /**
  * Service responsible for analyzing transactions for security threats and malicious patterns.

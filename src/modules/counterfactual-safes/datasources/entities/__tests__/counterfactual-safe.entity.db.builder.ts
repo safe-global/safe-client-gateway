@@ -3,10 +3,10 @@
 import { faker } from '@faker-js/faker';
 import type { Hex } from 'viem';
 import { getAddress } from 'viem';
-import type { IBuilder } from '@/__tests__/builder';
-import { Builder } from '@/__tests__/builder';
-import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
-import type { CounterfactualSafe } from '@/modules/counterfactual-safes/datasources/entities/counterfactual-safe.entity.db';
+import type { IBuilder } from '#/__tests__/builder';
+import { Builder } from '#/__tests__/builder';
+import { DB_MAX_SAFE_INTEGER } from '#/domain/common/constants';
+import type { CounterfactualSafe } from '#/modules/counterfactual-safes/datasources/entities/counterfactual-safe.entity.db';
 
 export function counterfactualSafeBuilder(): IBuilder<CounterfactualSafe> {
   return new Builder<CounterfactualSafe>()

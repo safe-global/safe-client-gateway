@@ -20,20 +20,20 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import type { Address } from 'viem';
-import { CreateDelegateDto } from '@/modules/delegate/routes/entities/create-delegate.dto.entity';
-import type { Delegate } from '@/modules/delegate/routes/entities/delegate.entity';
-import { DelegatePage } from '@/modules/delegate/routes/entities/delegate.page.entity';
-import type { GetDelegateDto } from '@/modules/delegate/routes/entities/get-delegate.dto.entity';
-import { CreateDelegateDtoSchema } from '@/modules/delegate/routes/entities/schemas/create-delegate.dto.schema';
-import { GetDelegateDtoSchema } from '@/modules/delegate/routes/entities/schemas/get-delegate.dto.schema';
-import { DelegatesV2Service } from '@/modules/delegate/routes/v2/delegates.v2.service';
-import { DeleteDelegateV2Dto } from '@/modules/delegate/routes/v2/entities/delete-delegate.v2.dto.entity';
-import { DeleteDelegateV2DtoSchema } from '@/modules/delegate/routes/v2/entities/schemas/delete-delegate.v2.dto.schema';
-import { PaginationDataDecorator } from '@/routes/common/decorators/pagination.data.decorator';
-import { RouteUrlDecorator } from '@/routes/common/decorators/route.url.decorator';
-import type { Page } from '@/routes/common/entities/page.entity';
-import type { PaginationData } from '@/routes/common/pagination/pagination.data';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+import { CreateDelegateDto } from '#/modules/delegate/routes/entities/create-delegate.dto.entity';
+import type { Delegate } from '#/modules/delegate/routes/entities/delegate.entity';
+import { DelegatePage } from '#/modules/delegate/routes/entities/delegate.page.entity';
+import type { GetDelegateDto } from '#/modules/delegate/routes/entities/get-delegate.dto.entity';
+import { CreateDelegateDtoSchema } from '#/modules/delegate/routes/entities/schemas/create-delegate.dto.schema';
+import { GetDelegateDtoSchema } from '#/modules/delegate/routes/entities/schemas/get-delegate.dto.schema';
+import { DelegatesV2Service } from '#/modules/delegate/routes/v2/delegates.v2.service';
+import { DeleteDelegateV2Dto } from '#/modules/delegate/routes/v2/entities/delete-delegate.v2.dto.entity';
+import { DeleteDelegateV2DtoSchema } from '#/modules/delegate/routes/v2/entities/schemas/delete-delegate.v2.dto.schema';
+import { PaginationDataDecorator } from '#/routes/common/decorators/pagination.data.decorator';
+import { RouteUrlDecorator } from '#/routes/common/decorators/route.url.decorator';
+import type { Page } from '#/routes/common/entities/page.entity';
+import type { PaginationData } from '#/routes/common/pagination/pagination.data';
+import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
 @ApiTags('delegates')
 @Controller({ version: '2' })

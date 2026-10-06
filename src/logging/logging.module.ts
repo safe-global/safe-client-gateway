@@ -2,9 +2,9 @@
 import { Global, Module } from '@nestjs/common';
 import winston from 'winston';
 import type Transport from 'winston-transport';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { LoggingService } from '@/logging/logging.interface';
-import { RequestScopedLoggingService } from '@/logging/logging.service';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { LoggingService } from '#/logging/logging.interface';
+import { RequestScopedLoggingService } from '#/logging/logging.service';
 
 /**
  * Provides a new instance of a Winston logger using the provided {@link transports}
