@@ -45,6 +45,7 @@ import { CounterfactualSafesModule } from '#/modules/counterfactual-safes/counte
 import { CsvExportModule } from '#/modules/csv-export/csv-export.module';
 import { DataDecoderModule } from '#/modules/data-decoder/data-decoder.module';
 import { DelegateModule } from '#/modules/delegate/delegate.module';
+import { SesEmailModule } from '#/modules/email/ses/ses-email.module';
 import { EntitlementsRoutesModule } from '#/modules/entitlements/routes/entitlements-routes.module';
 import { EstimationsModule } from '#/modules/estimations/estimations.module';
 import { FeesModule } from '#/modules/fees/fees.module';
@@ -87,6 +88,7 @@ export class AppModule implements NestModule {
       email: isEmailFeatureEnabled,
       zerionPositions: isZerionPositionsFeatureEnabled,
       billingService: isBillingServiceFeatureEnabled,
+      sesEmail: isSesEmailFeatureEnabled,
     } = configFactory().features;
 
     return {
@@ -121,6 +123,7 @@ export class AppModule implements NestModule {
           ? [
               UsersModule,
               SpacesModule,
+              ...(isSesEmailFeatureEnabled ? [SesEmailModule] : []),
               CounterfactualSafesModule,
               SpaceSafeShieldModule,
               PoliciesModule,
