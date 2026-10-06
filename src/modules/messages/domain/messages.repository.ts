@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
+import maxBy from 'lodash/maxBy';
 import type { Address, Hash, Hex } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
+import { SAFE_QUEUE_SERVICE_MAX_LIMIT } from '@/domain/common/constants';
 import { HttpExceptionNoLog } from '@/domain/common/errors/http-exception-no-log.error';
 import { Page } from '@/domain/entities/page.entity';
 import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
@@ -109,6 +111,33 @@ export class MessagesRepository implements IMessagesRepository {
     const count =
       parsed.count === null ? null : Math.max(0, parsed.count - filteredOut);
     return { ...parsed, count, results };
+  }
+
+  /**
+   * The queue service cannot order messages by modification date, so its
+   * first page (`SAFE_QUEUE_SERVICE_MAX_LIMIT` messages) is searched for the
+   * latest `modified` instead of trusting whatever order it is served in.
+   */
+  async getLastModifiedMessage(args: {
+    chainId: string;
+    safeAddress: Address;
+  }): Promise<Message | null> {
+    if (!this.safeQueueEnabled) {
+      const transactionService = await this.transactionApiManager.getApi(
+        args.chainId,
+      );
+      const page = await transactionService.getMessagesBySafe({
+        safeAddress: args.safeAddress,
+        ordering: '-modified',
+        limit: 1,
+      });
+      return MessagePageSchema.parse(page).results[0] ?? null;
+    }
+    const page = await this.getMessagesBySafe({
+      ...args,
+      limit: SAFE_QUEUE_SERVICE_MAX_LIMIT,
+    });
+    return maxBy(page.results, (message) => message.modified.getTime()) ?? null;
   }
 
   async createMessage(args: {

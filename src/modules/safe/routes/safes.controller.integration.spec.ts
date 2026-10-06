@@ -1812,17 +1812,7 @@ describe('Safes Controller', () => {
       .with('results', [
         messageToJson(
           messageBuilder()
-            .with('modified', new Date('2023-03-12T12:29:06Z'))
-            .build(),
-        ),
-        messageToJson(
-          messageBuilder()
             .with('modified', new Date('2023-07-12T12:29:06Z'))
-            .build(),
-        ),
-        messageToJson(
-          messageBuilder()
-            .with('modified', new Date('2023-02-12T12:29:06Z'))
             .build(),
         ),
       ])
@@ -1874,6 +1864,13 @@ describe('Safes Controller', () => {
           messagesTag: '1689164946',
         }),
       );
+
+    expect(networkService.get).toHaveBeenCalledWith({
+      url: `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`,
+      networkRequest: expect.objectContaining({
+        params: { ordering: '-modified', limit: 1, offset: undefined },
+      }),
+    });
   });
 
   it('messagesTag is null if there are no messages', async () => {

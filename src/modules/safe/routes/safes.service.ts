@@ -331,20 +331,12 @@ export class SafesService {
     chainId: string,
     safeAddress: Address,
   ): Promise<Date | null> {
-    const messages = await this.messagesRepository.getMessagesBySafe({
+    const message = await this.messagesRepository.getLastModifiedMessage({
       chainId,
       safeAddress,
     });
 
-    if (messages.results.length === 0) {
-      return null;
-    }
-
-    const sortedMessages = messages.results.sort((m1, m2) => {
-      return m2.modified.getTime() - m1.modified.getTime();
-    });
-
-    return sortedMessages[0].modified;
+    return message?.modified ?? null;
   }
 
   private computeVersionState(

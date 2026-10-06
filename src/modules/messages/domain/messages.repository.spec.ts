@@ -3,6 +3,7 @@ import { faker } from '@faker-js/faker';
 import { type Address, getAddress, type Hash, type Hex } from 'viem';
 import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '@/config/configuration.service.interface';
+import { SAFE_QUEUE_SERVICE_MAX_LIMIT } from '@/domain/common/constants';
 import { HttpExceptionNoLog } from '@/domain/common/errors/http-exception-no-log.error';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import type { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
@@ -29,6 +30,7 @@ const mockTransactionApiManager = {
 
 const mockTransactionApi = {
   getMessageByHash: vi.fn(),
+  getMessagesBySafe: vi.fn(),
   postMessage: vi.fn(),
   postMessageSignature: vi.fn(),
   clearMessagesBySafe: vi.fn(),
@@ -174,6 +176,117 @@ describe('MessagesRepository (queue service enabled)', () => {
       expect(result.results).toHaveLength(matching.length);
       expect(result.count).toBe(matching.length);
       expect(mockLoggingService.warn).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('getLastModifiedMessage', () => {
+    it('returns the latest modified message of the queue service page', async () => {
+      const chainId = faker.number.int({ min: 1, max: 1000 });
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const modified = faker.date.recent();
+      const older = faker.helpers.multiple(
+        () =>
+          buildSafeQueueMessage()
+            .with('chainId', chainId)
+            .with('modified', faker.date.past({ refDate: modified }))
+            .build(),
+        { count: { min: 1, max: 4 } },
+      );
+      const latest = buildSafeQueueMessage()
+        .with('chainId', chainId)
+        .with('modified', modified)
+        .build();
+      const page = pageBuilder()
+        .with('count', older.length + 1)
+        .with('results', [...older, latest])
+        .build();
+      safeQueueService.getMessagesBySafe.mockResolvedValue(rawify(page));
+
+      const result = await target.getLastModifiedMessage({
+        chainId: String(chainId),
+        safeAddress,
+      });
+
+      expect(result?.messageHash).toBe(latest.messageHash);
+      expect(safeQueueService.getMessagesBySafe).toHaveBeenCalledWith({
+        chainId: String(chainId),
+        safeAddress,
+        limit: SAFE_QUEUE_SERVICE_MAX_LIMIT,
+      });
+    });
+
+    it('ignores a later modified message from another chain', async () => {
+      const chainId = faker.number.int({ min: 1, max: 1000 });
+      const modified = faker.date.recent();
+      const matching = buildSafeQueueMessage()
+        .with('chainId', chainId)
+        .with('modified', faker.date.past({ refDate: modified }))
+        .build();
+      const wrongChain = buildSafeQueueMessage()
+        .with('chainId', chainId + 1)
+        .with('modified', modified)
+        .build();
+      const page = pageBuilder()
+        .with('count', 2)
+        .with('results', [matching, wrongChain])
+        .build();
+      safeQueueService.getMessagesBySafe.mockResolvedValue(rawify(page));
+
+      const result = await target.getLastModifiedMessage({
+        chainId: String(chainId),
+        safeAddress: getAddress(faker.finance.ethereumAddress()),
+      });
+
+      expect(result?.messageHash).toBe(matching.messageHash);
+    });
+
+    it('returns null when the Safe has no messages on the queue service', async () => {
+      const page = pageBuilder().with('count', 0).with('results', []).build();
+      safeQueueService.getMessagesBySafe.mockResolvedValue(rawify(page));
+
+      const result = await target.getLastModifiedMessage({
+        chainId: faker.string.numeric(),
+        safeAddress: getAddress(faker.finance.ethereumAddress()),
+      });
+
+      expect(result).toBeNull();
+    });
+
+    it('requests the latest modified message from the transaction service when disabled', async () => {
+      const disabledTarget = buildTargetWithQueueDisabled();
+      const chainId = faker.string.numeric();
+      const message = messageBuilder().build();
+      mockTransactionApi.getMessagesBySafe.mockResolvedValue(
+        rawify(pageBuilder().with('results', [message]).build()),
+      );
+
+      const result = await disabledTarget.getLastModifiedMessage({
+        chainId,
+        safeAddress: message.safe,
+      });
+
+      expect(mockTransactionApiManager.getApi).toHaveBeenCalledWith(chainId);
+      expect(mockTransactionApi.getMessagesBySafe).toHaveBeenCalledWith({
+        safeAddress: message.safe,
+        ordering: '-modified',
+        limit: 1,
+      });
+      expect(safeQueueService.getMessagesBySafe).not.toHaveBeenCalled();
+      expect(result?.messageHash).toBe(message.messageHash);
+    });
+
+    it('returns null when the Safe has no messages on the transaction service', async () => {
+      const disabledTarget = buildTargetWithQueueDisabled();
+      mockTransactionApi.getMessagesBySafe.mockResolvedValue(
+        rawify(pageBuilder().with('count', 0).with('results', []).build()),
+      );
+
+      const result = await disabledTarget.getLastModifiedMessage({
+        chainId: faker.string.numeric(),
+        safeAddress: getAddress(faker.finance.ethereumAddress()),
+      });
+
+      expect(result).toBeNull();
     });
   });
 

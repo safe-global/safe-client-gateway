@@ -2619,18 +2619,25 @@ describe('TransactionApi', () => {
   describe('getMessagesBySafe', () => {
     it('should return the message hash received', async () => {
       const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const ordering = faker.helpers.arrayElement([
+        'created',
+        '-created',
+        'modified',
+        '-modified',
+      ]);
       const limit = faker.number.int();
       const offset = faker.number.int();
       const getMessageBySafeUrl = `${baseUrl}/api/v1/safes/${safeAddress}/messages/`;
       const message = messageBuilder().build();
       const cacheDir = new CacheDir(
         `${chainId}_messages_${safeAddress}`,
-        `${limit}_${offset}`,
+        `${ordering}_${limit}_${offset}`,
       );
       mockDataSource.get.mockResolvedValueOnce(rawify(message));
 
       const actual = await service.getMessagesBySafe({
         safeAddress,
+        ordering,
         limit,
         offset,
       });
@@ -2647,6 +2654,7 @@ describe('TransactionApi', () => {
             key: CircuitBreakerKeys.getTransactionServiceKey(chainId),
           },
           params: {
+            ordering,
             limit,
             offset,
           },
@@ -2660,6 +2668,12 @@ describe('TransactionApi', () => {
       ['standard', new Error(errorMessage)],
     ])(`should forward a %s error`, async (_, error) => {
       const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const ordering = faker.helpers.arrayElement([
+        'created',
+        '-created',
+        'modified',
+        '-modified',
+      ]);
       const limit = faker.number.int();
       const offset = faker.number.int();
       const getMessageBySafeUrl = `${baseUrl}/api/v1/safes/${safeAddress}/messages/`;
@@ -2669,7 +2683,7 @@ describe('TransactionApi', () => {
       const expected = new DataSourceError(errorMessage, statusCode);
       const cacheDir = new CacheDir(
         `${chainId}_messages_${safeAddress}`,
-        `${limit}_${offset}`,
+        `${ordering}_${limit}_${offset}`,
       );
       mockDataSource.get.mockRejectedValueOnce(
         new NetworkResponseError(
@@ -2684,6 +2698,7 @@ describe('TransactionApi', () => {
       await expect(
         service.getMessagesBySafe({
           safeAddress,
+          ordering,
           limit,
           offset,
         }),
@@ -2700,6 +2715,7 @@ describe('TransactionApi', () => {
             key: CircuitBreakerKeys.getTransactionServiceKey(chainId),
           },
           params: {
+            ordering,
             limit,
             offset,
           },

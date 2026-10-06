@@ -1099,6 +1099,7 @@ export class TransactionApi implements ITransactionApi {
 
   async getMessagesBySafe(args: {
     safeAddress: Address;
+    ordering?: string;
     limit?: number | undefined;
     offset?: number | undefined;
   }): Promise<Raw<Page<Message>>> {
@@ -1114,6 +1115,7 @@ export class TransactionApi implements ITransactionApi {
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
         networkRequest: {
           params: {
+            ordering: args.ordering,
             limit: args.limit,
             offset: args.offset,
           },
