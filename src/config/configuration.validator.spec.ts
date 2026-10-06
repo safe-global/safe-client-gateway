@@ -324,6 +324,52 @@ describe('Configuration validator', () => {
     });
   });
 
+  describe('FF_MCP', () => {
+    beforeEach(() => {
+      process.env.NODE_ENV = 'production';
+    });
+
+    it('should accept the MCP endpoint with OIDC and a resource URL', () => {
+      const config = {
+        ...validConfiguration,
+        FF_MCP: 'true',
+        FF_OIDC_AUTH: 'true',
+        MCP_RESOURCE_URL: faker.internet.url(),
+      };
+
+      expect(configurationValidator(config, RootConfigurationSchema)).toBe(
+        config,
+      );
+    });
+
+    it('should require MCP_RESOURCE_URL', () => {
+      const config = {
+        ...omit(validConfiguration, 'MCP_RESOURCE_URL'),
+        FF_MCP: 'true',
+        FF_OIDC_AUTH: 'true',
+      };
+
+      expect(() =>
+        configurationValidator(config, RootConfigurationSchema),
+      ).toThrow(
+        'MCP_RESOURCE_URL is required when the MCP endpoint is enabled',
+      );
+    });
+
+    it('should require FF_OIDC_AUTH', () => {
+      const config = {
+        ...validConfiguration,
+        FF_MCP: 'true',
+        FF_OIDC_AUTH: 'false',
+        MCP_RESOURCE_URL: faker.internet.url(),
+      };
+
+      expect(() =>
+        configurationValidator(config, RootConfigurationSchema),
+      ).toThrow('FF_OIDC_AUTH must be true when the MCP endpoint is enabled');
+    });
+  });
+
   describe('ENCRYPTION validation', () => {
     beforeEach(() => {
       process.env.NODE_ENV = 'production';

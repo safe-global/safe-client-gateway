@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { AuthorizationUrlOptions } from '@/modules/auth/oidc/auth0/datasources/auth0-api.interface';
 import type { Auth0AuthenticationMethod } from '@/modules/auth/oidc/auth0/datasources/entities/auth0-authentication-method.entity';
+import type { Auth0AccessToken } from '@/modules/auth/oidc/auth0/domain/entities/auth0-access-token.entity';
 import type { Auth0Token } from '@/modules/auth/oidc/auth0/domain/entities/auth0-token.entity';
 
 export const IAuth0Repository = Symbol('IAuth0Repository');
@@ -22,6 +23,18 @@ export interface IAuth0Repository {
    * @returns The decoded Auth0 token with claims.
    */
   authenticateWithAuthorizationCode(code: string): Promise<Auth0Token>;
+
+  /**
+   * Verifies an Auth0 access token issued for the given API audience.
+   *
+   * @param accessToken - Bearer token presented by the client.
+   * @param audience - Identifier of the Auth0 API the token must be issued for.
+   * @returns The verified access token claims.
+   */
+  verifyAccessToken(
+    accessToken: string,
+    audience: string,
+  ): Promise<Auth0AccessToken>;
 
   /**
    * Lists the MFA authentication methods (e.g. `totp`, `recovery-code`) of

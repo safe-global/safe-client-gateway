@@ -15,9 +15,12 @@ import {
   AuthMethod,
   AuthPayload,
 } from '@/modules/auth/domain/entities/auth-payload.entity';
+import type { IMcpElevationRepository } from '@/modules/auth/mcp/domain/mcp-elevation.repository.interface';
 import type { IAuth0Repository } from '@/modules/auth/oidc/auth0/domain/auth0.repository.interface';
 import { auth0TokenBuilder } from '@/modules/auth/oidc/auth0/domain/entities/__tests__/auth0-token.entity.builder';
 import { OidcAuthService } from '@/modules/auth/oidc/routes/oidc-auth.service';
+import { userBuilder } from '@/modules/users/datasources/entities/__tests__/users.entity.db.builder';
+import type { User as DbUser } from '@/modules/users/datasources/entities/users.entity.db';
 import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import { fakeEmailAddress } from '@/validation/entities/schemas/__tests__/email-address.builder';
 
@@ -31,7 +34,15 @@ const usersRepositoryMock = {
   findOrCreateByExtUserIdAndEmail: vi.fn(),
   findOneOrFail: vi.fn(),
   findEmailById: vi.fn(),
+  find: vi.fn(),
 } as MockedObject<IUsersRepository>;
+
+const mcpElevationRepositoryMock = {
+  createRequest: vi.fn(),
+  consumeRequest: vi.fn(),
+  setElevated: vi.fn(),
+  getElevatedAt: vi.fn(),
+} as MockedObject<IMcpElevationRepository>;
 
 const loggingServiceMock: MockedObject<ILoggingService> = {
   info: vi.fn(),
@@ -78,6 +89,7 @@ describe('OidcAuthService', () => {
       fakeConfigurationService,
       usersRepositoryMock,
       auth0RepositoryMock,
+      mcpElevationRepositoryMock,
       loggingServiceMock,
     );
   });
@@ -783,6 +795,7 @@ describe('OidcAuthService', () => {
           fakeConfigurationService,
           usersRepositoryMock,
           auth0RepositoryMock,
+          mcpElevationRepositoryMock,
           loggingServiceMock,
         );
       });
@@ -904,6 +917,7 @@ describe('OidcAuthService', () => {
           fakeConfigurationService,
           usersRepositoryMock,
           auth0RepositoryMock,
+          mcpElevationRepositoryMock,
           loggingServiceMock,
         );
 
@@ -1076,6 +1090,110 @@ describe('OidcAuthService', () => {
           auth0RepositoryMock.deleteUserAuthenticationMethod,
         ).not.toHaveBeenCalled();
       });
+    });
+  });
+
+  describe('MCP step-up', () => {
+    const requestId = faker.string.hexadecimal({
+      length: 64,
+      casing: 'lower',
+      prefix: '',
+    });
+    let request: { userId: number; clientId: string };
+    let code: string;
+
+    beforeEach(() => {
+      request = {
+        userId: faker.number.int({ min: 1 }),
+        clientId: faker.string.alphanumeric(24),
+      };
+      code = faker.string.alphanumeric(32);
+    });
+
+    it('should carry the request id in the state and force a step-up', () => {
+      const { state } = target.createOidcAuthorizationRequest(undefined, {
+        mcpElevationId: requestId,
+      });
+
+      expect(target.getMcpElevationId(state)).toBe(requestId);
+      expect(target.isElevationState(state)).toBe(true);
+      expect(auth0RepositoryMock.getAuthorizationUrl).toHaveBeenCalledWith(
+        state,
+        expect.objectContaining({ elevate: true }),
+      );
+    });
+
+    it('should elevate the connection the request belongs to', async () => {
+      auth0RepositoryMock.authenticateWithAuthorizationCode.mockResolvedValue(
+        auth0TokenBuilder().with('amr', ['mfa']).build(),
+      );
+      mcpElevationRepositoryMock.consumeRequest.mockResolvedValue(request);
+      usersRepositoryMock.find.mockResolvedValue([
+        userBuilder().with('id', request.userId).build() as DbUser,
+      ]);
+
+      await target.completeMcpElevation(code, requestId);
+
+      expect(mcpElevationRepositoryMock.consumeRequest).toHaveBeenCalledWith(
+        requestId,
+      );
+      expect(mcpElevationRepositoryMock.setElevated).toHaveBeenCalledWith({
+        ...request,
+        verifiedAt: Math.floor(Date.now() / 1_000),
+      });
+      expect(authRepositoryMock.signToken).not.toHaveBeenCalled();
+    });
+
+    it('should refuse when no second factor was presented', async () => {
+      auth0RepositoryMock.authenticateWithAuthorizationCode.mockResolvedValue(
+        auth0TokenBuilder().with('amr', undefined).build(),
+      );
+
+      await expect(
+        target.completeMcpElevation(code, requestId),
+      ).rejects.toThrow('Multi-factor authentication was not performed');
+      expect(mcpElevationRepositoryMock.setElevated).not.toHaveBeenCalled();
+    });
+
+    it('should refuse an expired or already used request', async () => {
+      auth0RepositoryMock.authenticateWithAuthorizationCode.mockResolvedValue(
+        auth0TokenBuilder().with('amr', ['mfa']).build(),
+      );
+      mcpElevationRepositoryMock.consumeRequest.mockResolvedValue(null);
+
+      await expect(
+        target.completeMcpElevation(code, requestId),
+      ).rejects.toThrow('The step-up has expired');
+      expect(mcpElevationRepositoryMock.setElevated).not.toHaveBeenCalled();
+    });
+
+    it('should refuse a step-up completed by another account', async () => {
+      auth0RepositoryMock.authenticateWithAuthorizationCode.mockResolvedValue(
+        auth0TokenBuilder().with('amr', ['mfa']).build(),
+      );
+      mcpElevationRepositoryMock.consumeRequest.mockResolvedValue(request);
+      usersRepositoryMock.find.mockResolvedValue([
+        userBuilder()
+          .with('id', request.userId + 1)
+          .build() as DbUser,
+      ]);
+
+      await expect(
+        target.completeMcpElevation(code, requestId),
+      ).rejects.toThrow('The step-up was completed by another account');
+      expect(mcpElevationRepositoryMock.setElevated).not.toHaveBeenCalled();
+    });
+
+    it('should refuse a step-up by an account the gateway does not know', async () => {
+      auth0RepositoryMock.authenticateWithAuthorizationCode.mockResolvedValue(
+        auth0TokenBuilder().with('amr', ['mfa']).build(),
+      );
+      mcpElevationRepositoryMock.consumeRequest.mockResolvedValue(request);
+      usersRepositoryMock.find.mockResolvedValue([]);
+
+      await expect(
+        target.completeMcpElevation(code, requestId),
+      ).rejects.toThrow('The step-up was completed by another account');
     });
   });
 });

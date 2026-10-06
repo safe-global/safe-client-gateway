@@ -16,6 +16,8 @@ export class CacheRouter {
   private static readonly AUTH_NONCE_KEY = 'auth_nonce';
   private static readonly AUTH0_MANAGEMENT_API_TOKEN_KEY =
     'auth0_management_api_token';
+  private static readonly MCP_ELEVATION_REQUEST_KEY = 'mcp_elevation_request';
+  private static readonly MCP_ELEVATION_KEY = 'mcp_elevation';
   private static readonly BACKBONE_KEY = 'backbone';
   private static readonly BRIDGE_CHAINS_KEY = 'bridge_chains';
   private static readonly CHAIN_KEY = 'chain';
@@ -119,6 +121,23 @@ export class CacheRouter {
 
   static getAuth0ManagementApiTokenCacheDir(): CacheDir {
     return new CacheDir(CacheRouter.AUTH0_MANAGEMENT_API_TOKEN_KEY, '');
+  }
+
+  static getMcpElevationRequestCacheDir(requestId: string): CacheDir {
+    return new CacheDir(
+      `${CacheRouter.MCP_ELEVATION_REQUEST_KEY}_${requestId}`,
+      '',
+    );
+  }
+
+  static getMcpElevationCacheDir(args: {
+    userId: number;
+    clientId: string;
+  }): CacheDir {
+    return new CacheDir(
+      `${CacheRouter.MCP_ELEVATION_KEY}_${args.userId}_${args.clientId}`,
+      '',
+    );
   }
 
   static getBridgeChainsCacheDir(): CacheDir {
