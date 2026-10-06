@@ -487,6 +487,9 @@ export default () => ({
       process.env.FF_SAFE_SHIELD_CORE_DISABLED?.toLowerCase() === 'true',
     safeQueueService:
       process.env.FF_SAFE_QUEUE_SERVICE?.toLowerCase() === 'true',
+    // Owner: Workspaces (MCP connector prototype). Gates `/v1/mcp` for Claude
+    // custom connectors. Remove once the connector is enabled in production.
+    mcp: process.env.FF_MCP?.toLowerCase() === 'true',
   },
   httpClient: {
     // Timeout in milliseconds to be used for the HTTP client.
@@ -568,6 +571,10 @@ export default () => ({
   jwt: {
     issuer: process.env.JWT_ISSUER,
     secret: process.env.JWT_SECRET,
+  },
+  mcp: {
+    // Public URL of `/v1/mcp`; also the audience of the Auth0 access tokens it accepts.
+    resourceUrl: process.env.MCP_RESOURCE_URL,
   },
   entitlements: {
     // When enforcement goes live; workspaces created before it predate it.

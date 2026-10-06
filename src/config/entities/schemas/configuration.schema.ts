@@ -139,6 +139,9 @@ export const RootConfigurationSchema = z
     FF_SES_EMAIL: z.string().optional(),
     FF_BILLING_SERVICE: z.string().optional(),
     FF_MFA_STEP_UP: z.string().optional(),
+    FF_MCP: z.string().optional(),
+    FF_OIDC_AUTH: z.string().optional(),
+    MCP_RESOURCE_URL: z.url().optional(),
     FF_SAFE_SHIELD_CORE_DISABLED: z.string().optional(),
     BLOCKLIST_ENCRYPTED_DATA: z.string(),
     BLOCKLIST_SECRET_KEY: z.string(),
@@ -297,6 +300,25 @@ export const RootConfigurationSchema = z
         message: 'is required in the production environment',
         path: ['AUTH_ALLOWED_SIWE_DOMAINS'],
       });
+    }
+
+    if (config.FF_MCP?.toLowerCase() === 'true') {
+      if (!config.MCP_RESOURCE_URL) {
+        ctx.addIssue({
+          code: 'custom',
+          message: 'is required when the MCP endpoint is enabled',
+          path: ['MCP_RESOURCE_URL'],
+        });
+      }
+      // The endpoint accepts Auth0 access tokens and completes step-ups in the
+      // OIDC callback, so it cannot run without the OIDC module.
+      if (config.FF_OIDC_AUTH?.toLowerCase() !== 'true') {
+        ctx.addIssue({
+          code: 'custom',
+          message: 'must be true when the MCP endpoint is enabled',
+          path: ['FF_OIDC_AUTH'],
+        });
+      }
     }
 
     // Field encryption validation runs regardless of environment: enabling it

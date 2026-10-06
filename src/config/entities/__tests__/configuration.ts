@@ -253,6 +253,7 @@ export default (): ReturnType<typeof configuration> => ({
     mfaStepUp: true,
     safeShieldCoreDisabled: false,
     safeQueueService: false,
+    mcp: false,
   },
   httpClient: {
     requestTimeout: faker.number.int(),
@@ -285,6 +286,9 @@ export default (): ReturnType<typeof configuration> => ({
   jwt: {
     issuer: process.env.JWT_TEST_ISSUER || 'dummy-issuer',
     secret: process.env.JWT_TEST_SECRET || 'dummy-secret',
+  },
+  mcp: {
+    resourceUrl: faker.internet.url({ appendSlash: false }),
   },
   billing: {
     baseUri: faker.internet.url({ appendSlash: false }),

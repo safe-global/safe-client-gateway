@@ -14,6 +14,7 @@ import {
   signAuth0Jwt,
 } from '@/modules/auth/oidc/auth0/__tests__/auth0-jwks.helper';
 import { Auth0TokenVerifier } from '@/modules/auth/oidc/auth0/domain/auth0-token.verifier';
+import { AUTH0_MFA_VERIFIED_AT_CLAIM } from '@/modules/auth/oidc/auth0/domain/entities/auth0-access-token.entity';
 import { Auth0TokenSchema } from '@/modules/auth/oidc/auth0/domain/entities/auth0-token.entity';
 
 const loggingServiceMock = {
@@ -347,6 +348,79 @@ describe('Auth0TokenVerifier', () => {
       );
       expect(loggingServiceMock.debug).toHaveBeenCalledWith(
         expect.stringContaining('Auth0: ID token verification failed:'),
+      );
+    });
+  });
+
+  describe('verifyAccessToken', () => {
+    it('should decode an access token issued for the given audience', async () => {
+      const audience = faker.internet.url({ appendSlash: false });
+      const sub = `auth0|${faker.string.uuid()}`;
+      const mfaVerifiedAt = toSecondsTimestamp(faker.date.recent());
+      const expiresAt = toSecondsTimestamp(faker.date.future());
+      const { privateKey, publicJwk, kid } = getAuth0JwksFixture();
+      const token = signAuth0Jwt({
+        issuer,
+        audience,
+        kid,
+        privateKey,
+        payload: {
+          sub,
+          exp: expiresAt,
+          [AUTH0_MFA_VERIFIED_AT_CLAIM]: mfaVerifiedAt,
+        },
+      });
+      fetchMock.mockResolvedValueOnce(createAuth0JwksResponse(publicJwk, kid));
+
+      const result = await target.verifyAccessToken(token, audience);
+
+      expect(result).toEqual(
+        expect.objectContaining({
+          sub,
+          aud: audience,
+          iss: issuer,
+          exp: new Date(expiresAt * 1_000),
+          [AUTH0_MFA_VERIFIED_AT_CLAIM]: mfaVerifiedAt,
+        }),
+      );
+    });
+
+    it('should throw when the access token was issued for another audience', async () => {
+      const { privateKey, publicJwk, kid } = getAuth0JwksFixture();
+      const token = signAuth0Jwt({
+        issuer,
+        audience: clientId,
+        kid,
+        privateKey,
+        payload: { sub: faker.string.uuid() },
+      });
+      fetchMock.mockResolvedValueOnce(createAuth0JwksResponse(publicJwk, kid));
+
+      await expect(
+        target.verifyAccessToken(token, faker.internet.url()),
+      ).rejects.toThrow(new UnauthorizedException('Invalid access token'));
+      expect(loggingServiceMock.debug).toHaveBeenCalledWith(
+        expect.stringContaining('Auth0: access token verification failed:'),
+      );
+    });
+
+    it('should throw when the MFA claim is not a timestamp', async () => {
+      const audience = faker.internet.url({ appendSlash: false });
+      const { privateKey, publicJwk, kid } = getAuth0JwksFixture();
+      const token = signAuth0Jwt({
+        issuer,
+        audience,
+        kid,
+        privateKey,
+        payload: {
+          sub: faker.string.uuid(),
+          [AUTH0_MFA_VERIFIED_AT_CLAIM]: faker.word.noun(),
+        },
+      });
+      fetchMock.mockResolvedValueOnce(createAuth0JwksResponse(publicJwk, kid));
+
+      await expect(target.verifyAccessToken(token, audience)).rejects.toThrow(
+        new UnauthorizedException('Invalid access token'),
       );
     });
   });

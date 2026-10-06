@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
+import { McpElevationRequestIdSchema } from '@/modules/auth/mcp/domain/entities/mcp-elevation-request.entity';
 
 export const OidcStateSchema = z.object({
   csrf: z.hex().length(64),
@@ -11,6 +12,9 @@ export const OidcStateSchema = z.object({
   // Marks a step-up round-trip: the callback must verify that the returned
   // token proves a fresh multi-factor challenge before elevating the session.
   elevate: z.boolean().optional(),
+  // Marks a step-up opened by an MCP connection: the callback elevates that
+  // connection instead of the browser session.
+  mcpElevationId: McpElevationRequestIdSchema.optional(),
 });
 
 export type OidcState = z.infer<typeof OidcStateSchema>;

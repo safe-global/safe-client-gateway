@@ -13,6 +13,7 @@ import {
   AuthMethod,
   type AuthPayload,
 } from '@/modules/auth/domain/entities/auth-payload.entity';
+import { IMcpElevationRepository } from '@/modules/auth/mcp/domain/mcp-elevation.repository.interface';
 import { TOTP_AUTHENTICATION_METHOD_TYPE } from '@/modules/auth/oidc/auth0/datasources/entities/auth0-authentication-method.entity';
 import { IAuth0Repository } from '@/modules/auth/oidc/auth0/domain/auth0.repository.interface';
 import type { Authenticator } from '@/modules/auth/oidc/routes/entities/authenticator.entity';
@@ -55,6 +56,8 @@ export class OidcAuthService {
     private readonly usersRepository: IUsersRepository,
     @Inject(IAuth0Repository)
     private readonly auth0Repository: IAuth0Repository,
+    @Inject(IMcpElevationRepository)
+    private readonly mcpElevationRepository: IMcpElevationRepository,
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
   ) {
@@ -82,6 +85,52 @@ export class OidcAuthService {
    */
   public isElevationState(state: string): boolean {
     return this.decodeState(state).elevate === true;
+  }
+
+  /**
+   * The MCP step-up this round-trip completes, if any. Same trust caveat as
+   * {@link isElevationState}: only for a state matched against the cookie.
+   */
+  public getMcpElevationId(state: string): string | undefined {
+    return this.decodeState(state).mcpElevationId;
+  }
+
+  /**
+   * Completes a step-up opened by an MCP connection: elevates that connection,
+   * and leaves the browser session as it is.
+   *
+   * @throws {UnauthorizedException} If no second factor was presented, the
+   *   step-up expired or was used, or a different account completed it — which
+   *   stops a link from elevating anyone but the user it was issued to.
+   */
+  public async completeMcpElevation(
+    code: string,
+    requestId: string,
+  ): Promise<void> {
+    const { sub, amr } =
+      await this.auth0Repository.authenticateWithAuthorizationCode(code);
+    if (amr?.includes(OidcAuthService.MFA_AMR_VALUE) !== true) {
+      throw new UnauthorizedException(
+        'Multi-factor authentication was not performed',
+      );
+    }
+
+    const request = await this.mcpElevationRepository.consumeRequest(requestId);
+    if (!request) {
+      throw new UnauthorizedException('The step-up has expired');
+    }
+
+    const [user] = await this.usersRepository.find({ extUserId: sub });
+    if (user?.id !== request.userId) {
+      throw new UnauthorizedException(
+        'The step-up was completed by another account',
+      );
+    }
+
+    await this.mcpElevationRepository.setElevated({
+      ...request,
+      verifiedAt: Math.floor(Date.now() / 1_000),
+    });
   }
 
   /**
@@ -353,10 +402,12 @@ export class OidcAuthService {
       connection,
       enroll,
       elevate,
+      mcpElevationId,
     }: {
       connection?: OidcConnection;
       enroll?: boolean;
       elevate?: boolean;
+      mcpElevationId?: string;
     } = {},
   ): {
     authorizationUrl: string;
@@ -367,11 +418,14 @@ export class OidcAuthService {
       ? resolveAndValidateRedirectUrl(this.redirectConfig, redirectUrl)
       : undefined;
 
+    // An MCP step-up always challenges a second factor.
+    const isElevation = mcpElevationId !== undefined || elevate;
     const statePayload = {
       csrf: randomBytes(32).toString('hex'),
       redirectUrl: resolvedRedirectUrl,
       enroll: enroll || undefined,
-      elevate: elevate || undefined,
+      elevate: isElevation || undefined,
+      mcpElevationId,
     };
 
     const state = Buffer.from(JSON.stringify(statePayload)).toString(
@@ -382,7 +436,7 @@ export class OidcAuthService {
       authorizationUrl: this.auth0Repository.getAuthorizationUrl(state, {
         connection,
         enroll,
-        elevate,
+        elevate: isElevation,
       }),
       state,
       stateMaxAge: this.stateTtlMs,

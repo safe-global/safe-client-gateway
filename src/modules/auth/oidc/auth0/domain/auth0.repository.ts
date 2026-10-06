@@ -9,6 +9,7 @@ import type { Auth0AuthenticationMethod } from '@/modules/auth/oidc/auth0/dataso
 import { Auth0TokenResponseSchema } from '@/modules/auth/oidc/auth0/datasources/entities/auth0-token-response.entity';
 import type { IAuth0Repository } from '@/modules/auth/oidc/auth0/domain/auth0.repository.interface';
 import { Auth0TokenVerifier } from '@/modules/auth/oidc/auth0/domain/auth0-token.verifier';
+import type { Auth0AccessToken } from '@/modules/auth/oidc/auth0/domain/entities/auth0-access-token.entity';
 import type { Auth0Token } from '@/modules/auth/oidc/auth0/domain/entities/auth0-token.entity';
 
 @Injectable()
@@ -32,6 +33,16 @@ export class Auth0Repository implements IAuth0Repository {
     const response = await this.auth0Api.exchangeAuthorizationCode(code);
     const { id_token } = Auth0TokenResponseSchema.parse(response);
     return this.auth0TokenVerifier.verifyAndDecode(id_token);
+  }
+
+  public async verifyAccessToken(
+    accessToken: string,
+    audience: string,
+  ): Promise<Auth0AccessToken> {
+    return await this.auth0TokenVerifier.verifyAccessToken(
+      accessToken,
+      audience,
+    );
   }
 
   public async listUserAuthenticationMethods(

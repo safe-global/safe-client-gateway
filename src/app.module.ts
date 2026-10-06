@@ -33,6 +33,7 @@ import { NotFoundLoggerMiddleware } from '@/middleware/not-found-logger.middlewa
 import { AboutModule } from '@/modules/about/about.module';
 import { AlertsModule } from '@/modules/alerts/alerts.module';
 import { AuthModule } from '@/modules/auth/auth.module';
+import { McpModule } from '@/modules/auth/mcp/mcp.module';
 import { OidcAuthModule } from '@/modules/auth/oidc/oidc-auth.module';
 import { BalancesModule } from '@/modules/balances/balances.module';
 import { BillingModule } from '@/modules/billing/billing.module';
@@ -87,6 +88,7 @@ export class AppModule implements NestModule {
       email: isEmailFeatureEnabled,
       zerionPositions: isZerionPositionsFeatureEnabled,
       billingService: isBillingServiceFeatureEnabled,
+      mcp: isMcpFeatureEnabled,
     } = configFactory().features;
 
     return {
@@ -97,6 +99,7 @@ export class AppModule implements NestModule {
         AboutModule,
         ...(isAuthFeatureEnabled ? [AuthModule] : []),
         ...(isOidcAuthFeatureEnabled ? [OidcAuthModule] : []),
+        ...(isMcpFeatureEnabled ? [McpModule] : []),
         BalancesModule,
         ...(isBillingServiceFeatureEnabled ? [BillingModule] : []),
         ...(isZerionPositionsFeatureEnabled ? [PositionsModule] : []),

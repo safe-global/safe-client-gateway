@@ -157,6 +157,43 @@ If omitted, Auth0 shows its default login page.
 
 ---
 
+## MCP endpoint
+
+`POST /v1/mcp` lets an MCP client, such as a Claude custom connector, call the gateway as an Auth0-authenticated user. Gated by `FF_MCP`, which requires `FF_OIDC_AUTH`.
+
+| Env var            | Description                                                                 |
+| ------------------ | --------------------------------------------------------------------------- |
+| `FF_MCP`           | Enables `/v1/mcp` and its protected resource metadata                        |
+| `MCP_RESOURCE_URL` | Public URL of `/v1/mcp`; the audience of the access tokens it accepts         |
+
+```
+MCP client                       Gateway                          Auth0
+  │                                │                                │
+  ├─ POST /v1/mcp ────────────────►│ 401 + WWW-Authenticate         │
+  ├─ GET /.well-known/oauth-protected-resource/v1/mcp ─►│ names Auth0 as authorization server
+  ├─ OAuth (authorization code + PKCE, resource=MCP_RESOURCE_URL) ─►│
+  │◄──────────────────────────────── access token (aud = MCP URL) ─┤
+  ├─ POST /v1/mcp (Bearer) ───────►│ McpAuthGuard: verify via JWKS, │
+  │                                │ map `sub` to the internal user │
+```
+
+- **Tools** come from the gateway's own OpenAPI document (`/api-json`): `search_endpoints`, `describe_endpoint`, `read_endpoint` (GET) and `write_endpoint` (POST/PUT/PATCH/DELETE). Only documented paths can be called; the MCP controllers are excluded from the document.
+- **Each call** is replayed in-process (`fastify.inject`) with a 60-second internal JWT as the `access_token` cookie, so it passes the same guards, pipes, rate limits and `ElevationGuard` as a web request.
+- **Users** must have signed in to the web app once; the access token carries no email, so no account is created here.
+
+### Step-up from an MCP client
+
+The second factor comes from the access token's `https://safe.global/mfa_verified_at` claim, set by a post-login Action. When a call is refused with `elevation_required`, the tool result carries a link instead of an error alone:
+
+1. The gateway stores a step-up request (`userId`, the token's `azp`) under a random id, for `AUTH_STATE_TTL_MILLISECONDS`.
+2. The link is `/v1/auth/oidc/authorize?mcp_elevation=<id>`, on the host of `AUTH0_REDIRECT_URI` so the state cookie returns with the callback. It implies `elevate`.
+3. The callback consumes the request once, requires `amr` to contain `mfa`, and requires the ID token's user to be the one the request was opened for. It records the step-up for that user and client for `AUTH_ELEVATION_WINDOW_SECONDS`, sets no session cookie, and answers with a plain-text page.
+4. On the retried call, the internal JWT's `mfa_verified_at` is the later of the token claim and the recorded step-up.
+
+A token without `azp` cannot be tied to one connection; its user is told to reconnect instead.
+
+---
+
 ## Cookies
 
 | Cookie         | Content                       | Flags                                       |

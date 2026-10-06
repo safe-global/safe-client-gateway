@@ -3,6 +3,7 @@
 import {
   Controller,
   Get,
+  HttpStatus,
   Inject,
   Query,
   Req,
@@ -23,6 +24,7 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import { asError } from '@/logging/utils';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
+import { McpElevationRequestIdSchema } from '@/modules/auth/mcp/domain/entities/mcp-elevation-request.entity';
 import { Authenticator } from '@/modules/auth/oidc/routes/entities/authenticator.entity';
 import {
   type OidcConnection,
@@ -108,6 +110,13 @@ export class OidcAuthController {
     description:
       'When true, requests step-up authentication: the provider re-challenges a second factor and the resulting session is elevated for sensitive actions.',
   })
+  @ApiQuery({
+    name: 'mcp_elevation',
+    required: false,
+    type: String,
+    description:
+      'Step-up request id handed out by the MCP endpoint. Implies elevate; the callback elevates that MCP connection instead of the browser session.',
+  })
   @ApiFoundResponse({
     description: 'Redirect to OIDC authorize endpoint',
   })
@@ -123,12 +132,18 @@ export class OidcAuthController {
     enroll?: 'true',
     @Query('elevate', new ValidationPipe(z.literal('true').optional()))
     elevate?: 'true',
+    @Query(
+      'mcp_elevation',
+      new ValidationPipe(McpElevationRequestIdSchema.optional()),
+    )
+    mcpElevationId?: string,
   ): void {
     const { authorizationUrl, state, stateMaxAge } =
       this.oidcAuthService.createOidcAuthorizationRequest(redirectUrl, {
         connection,
         enroll: enroll === 'true',
         elevate: elevate === 'true',
+        mcpElevationId,
       });
 
     res.setCookie(
@@ -228,6 +243,12 @@ export class OidcAuthController {
       return;
     }
 
+    const mcpElevationId = this.oidcAuthService.getMcpElevationId(state);
+    if (mcpElevationId) {
+      await this.completeMcpElevation(res, code, mcpElevationId);
+      return;
+    }
+
     try {
       // Safe to read flags off `state`: it was just compared against the
       // one-time state cookie above, so it is our own value, not the caller's.
@@ -284,6 +305,33 @@ export class OidcAuthController {
     @Auth() authPayload: AuthPayload,
   ): Promise<Array<Authenticator>> {
     return await this.oidcAuthService.listAuthenticators(authPayload);
+  }
+
+  // Plain text: the page is read by the user, who then returns to the MCP client.
+  private async completeMcpElevation(
+    res: FastifyReply,
+    code: string,
+    mcpElevationId: string,
+  ): Promise<void> {
+    try {
+      await this.oidcAuthService.completeMcpElevation(code, mcpElevationId);
+      await res
+        .status(HttpStatus.OK)
+        .type('text/plain; charset=utf-8')
+        .send(
+          'Second factor confirmed. Go back to Claude and tell it to continue.',
+        );
+    } catch (err) {
+      this.loggingService.warn(
+        `Auth callback: MCP step-up failed: ${asError(err).message}`,
+      );
+      await res
+        .status(HttpStatus.UNAUTHORIZED)
+        .type('text/plain; charset=utf-8')
+        .send(
+          'The step-up could not be completed. Ask Claude for a new link and try again.',
+        );
+    }
   }
 
   /**
