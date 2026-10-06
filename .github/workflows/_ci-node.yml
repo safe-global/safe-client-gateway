@@ -171,9 +171,15 @@ jobs:
           parallel: true
 
   integration-tests:
+    name: integration-tests (${{ matrix.shard }}/3)
     runs-on: ubuntu-latest
-    # ~5 min in practice; capped for the same reason as unit-tests above.
+    # Each shard runs a third of the suite; capped for the same reason as
+    # unit-tests above.
     timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
     env:
       POSTGRES_TEST_DB: test-db
       POSTGRES_TEST_USER: postgres
@@ -227,7 +233,7 @@ jobs:
       # leaves `dist/migrations` empty, so no migrations run and the schema is
       # never created.
       - run: yarn run build
-      - run: yarn run test:integration:cov
+      - run: yarn run test:integration:cov --shard=${{ matrix.shard }}/3
         env:
           REDIS_HOST: localhost
           REDIS_PORT: 6379
@@ -238,7 +244,7 @@ jobs:
         uses: coverallsapp/github-action@8d6379e14d29928660c4ba802d8e85393440b329 # v2.3.8
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          flag-name: run-integration-tests
+          flag-name: run-integration-tests-${{ matrix.shard }}
           parallel: true
 
   tests:

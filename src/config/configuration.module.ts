@@ -21,6 +21,7 @@ export class ConfigurationModule {
       module: ConfigurationModule,
       imports: [
         ConfigModule.forRoot({
+          ignoreEnvFile: true,
           validate: (config: Record<string, unknown>) => {
             return configurationValidator(config, RootConfigurationSchema);
           },
