@@ -1316,7 +1316,7 @@ describe('SafeRepository', () => {
   describe('getMultisigTransactionsByNonce', () => {
     const chainId = faker.string.numeric();
 
-    it('should read a pending nonce from the queue service, matching nonce, to and value', async () => {
+    it('should read from the queue service, matching nonce, to and value', async () => {
       const safe = safeBuilder().build();
       const nonce = safe.nonce + faker.number.int({ min: 0, max: 5 });
       const value = '0';
@@ -1372,24 +1372,11 @@ describe('SafeRepository', () => {
       expect(mockTransactionApi.getMultisigTransactions).not.toHaveBeenCalled();
     });
 
-    it('should read a consumed nonce from the transaction service', async () => {
+    it('should return no transactions for a consumed nonce without any upstream call', async () => {
       const safe = safeBuilder()
         .with('nonce', faker.number.int({ min: 1, max: 100 }))
         .build();
       const nonce = faker.number.int({ min: 0, max: safe.nonce - 1 });
-      const executed = multisigTransactionBuilder()
-        .with('safe', safe.address)
-        .with('nonce', nonce)
-        .build();
-      const page = pageBuilder<unknown>()
-        .with('results', [multisigTransactionToJson(executed)])
-        .with('count', 1)
-        .with('next', null)
-        .with('previous', null)
-        .build();
-      mockTransactionApi.getMultisigTransactions.mockResolvedValue(
-        rawify(page),
-      );
 
       const result = await repository.getMultisigTransactionsByNonce({
         chainId,
@@ -1399,15 +1386,8 @@ describe('SafeRepository', () => {
         value: '0',
       });
 
-      expect(result).toStrictEqual([executed]);
-      expect(mockTransactionApi.getMultisigTransactions).toHaveBeenCalledWith({
-        safeAddress: safe.address,
-        to: safe.address,
-        value: '0',
-        nonce: nonce.toString(),
-        ordering: '-nonce',
-        trusted: true,
-      });
+      expect(result).toStrictEqual([]);
+      expect(mockTransactionApi.getMultisigTransactions).not.toHaveBeenCalled();
       expect(mockSafeQueueService.getTransactionQueue).not.toHaveBeenCalled();
     });
 
