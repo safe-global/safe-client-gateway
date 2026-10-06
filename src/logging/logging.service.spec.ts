@@ -30,6 +30,10 @@ describe('RequestScopedLoggingService', () => {
     vi.setSystemTime(systemTime);
   });
 
+  afterAll(() => {
+    vi.useRealTimers();
+  });
+
   beforeEach(() => {
     vi.resetAllMocks();
     mockConfigurationService.get.mockImplementation((key) => {

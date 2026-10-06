@@ -63,7 +63,7 @@ const unitTest = {
   pool: 'threads' as const,
   env: { TZ: 'UTC' },
   clearMocks: true,
-  setupFiles: ['./test/faker-setup.ts'],
+  setupFiles: ['./test/faker-setup.ts', './test/shared-module-cache-setup.ts'],
 };
 
 export default defineConfig({
