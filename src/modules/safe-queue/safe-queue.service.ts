@@ -37,8 +37,8 @@ import { rawify } from '@/validation/entities/raw.entity';
 
 @Injectable()
 export class SafeQueueService implements ISafeQueueService {
-  // Chunk size for multisig batch fetches. Each `safe_tx_hash=0x<64 hex>&`
-  // pair is ~81 bytes; nginx's default `large_client_header_buffers 4 8k`
+  // Chunk size for multisig batch fetches. Each `safeTxHash=0x<64 hex>&`
+  // pair is ~79 bytes; nginx's default `large_client_header_buffers 4 8k`
   // and many WAFs reject request lines beyond 8KB, so we cap each call at
   // 50 hashes (~4KB URL) to stay safely under that limit.
   private static readonly MAX_BATCH_HASHES_PER_CALL = 50;
@@ -186,7 +186,7 @@ export class SafeQueueService implements ISafeQueueService {
         chunks.map((chunk) => {
           const query = new URLSearchParams();
           for (const hash of chunk) {
-            query.append('safe_tx_hash', hash);
+            query.append('safeTxHash', hash);
           }
           const url = `${this.baseUri}/api/v1/multisig-transactions/batch?${query.toString()}`;
           const cacheDir =
@@ -265,7 +265,7 @@ export class SafeQueueService implements ISafeQueueService {
         networkRequest: {
           params: {
             safes: `${args.safeAddress}:${args.chainId}`,
-            nonce_order: nonceOrder,
+            nonceOrder,
             limit: args.limit,
             offset: args.offset,
           },

@@ -280,7 +280,7 @@ describe('SafeQueueService', () => {
   });
 
   describe('getMultisigTransactionsBatch chunking', () => {
-    // Each `safe_tx_hash=0x<64 hex>&` query pair is ~81 bytes. nginx's default
+    // Each `safeTxHash=0x<64 hex>&` query pair is ~79 bytes. nginx's default
     // `large_client_header_buffers 4 8k` rejects request lines over ~8KB, AWS
     // ALB caps at 16KB, and many WAFs cap at 8KB. With 200 hashes the URL grows
     // past 16KB. Chunking at 50 keeps each request under ~4KB.
@@ -310,6 +310,27 @@ describe('SafeQueueService', () => {
       });
 
       expect(mockDataSource.get).toHaveBeenCalledTimes(1);
+    });
+
+    it('sends one repeated safeTxHash query param per hash', async () => {
+      const hashes = Array.from(
+        { length: faker.number.int({ min: 2, max: 50 }) },
+        () => faker.string.hexadecimal({ length: 64 }),
+      );
+      mockDataSource.get.mockResolvedValueOnce(rawify([]));
+
+      await service.getMultisigTransactionsBatch({
+        chainId,
+        safeTxHashes: hashes,
+      });
+
+      expect(mockDataSource.get).toHaveBeenCalledWith(
+        expect.objectContaining({
+          url: `${baseUri}/api/v1/multisig-transactions/batch?${hashes
+            .map((hash) => `safeTxHash=${hash}`)
+            .join('&')}`,
+        }),
+      );
     });
 
     it('returns empty without hitting the network when input is empty', async () => {
