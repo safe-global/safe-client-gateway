@@ -1259,20 +1259,30 @@ describe('SafeRepository', () => {
       });
     });
 
-    it('should return an empty page for pending transactions without calling the transaction service', async () => {
-      const result = await repository.getMultisigTransactions({
+    it('should request executed transactions even when pending ones are asked for', async () => {
+      const page = pageBuilder<unknown>()
+        .with('results', [])
+        .with('count', 0)
+        .with('next', null)
+        .with('previous', null)
+        .build();
+      mockTransactionApi.getMultisigTransactions.mockResolvedValue(
+        rawify(page),
+      );
+
+      await repository.getMultisigTransactions({
         chainId,
         safeAddress,
         executed: false,
       });
 
-      expect(result).toStrictEqual({
-        count: 0,
-        next: null,
-        previous: null,
-        results: [],
+      expect(mockTransactionApi.getMultisigTransactions).toHaveBeenCalledWith({
+        chainId,
+        safeAddress,
+        executed: true,
+        ordering: '-nonce',
+        trusted: true,
       });
-      expect(mockTransactionApi.getMultisigTransactions).not.toHaveBeenCalled();
     });
 
     it('should forward the pending filter to the transaction service when FF_SAFE_QUEUE_SERVICE is off', async () => {
@@ -1362,7 +1372,7 @@ describe('SafeRepository', () => {
       expect(mockTransactionApi.getMultisigTransactions).not.toHaveBeenCalled();
     });
 
-    it('should read a consumed nonce from the transaction service, executed only', async () => {
+    it('should read a consumed nonce from the transaction service', async () => {
       const safe = safeBuilder()
         .with('nonce', faker.number.int({ min: 1, max: 100 }))
         .build();
@@ -1380,7 +1390,6 @@ describe('SafeRepository', () => {
       mockTransactionApi.getMultisigTransactions.mockResolvedValue(
         rawify(page),
       );
-      mockSafeQueueService.getMultisigTransactionsBatch.mockResolvedValue([]);
 
       const result = await repository.getMultisigTransactionsByNonce({
         chainId,
@@ -1392,12 +1401,10 @@ describe('SafeRepository', () => {
 
       expect(result).toStrictEqual([executed]);
       expect(mockTransactionApi.getMultisigTransactions).toHaveBeenCalledWith({
-        chainId,
         safeAddress: safe.address,
         to: safe.address,
         value: '0',
         nonce: nonce.toString(),
-        executed: true,
         ordering: '-nonce',
         trusted: true,
       });
@@ -1432,7 +1439,6 @@ describe('SafeRepository', () => {
 
       expect(result).toStrictEqual([pending]);
       expect(mockTransactionApi.getMultisigTransactions).toHaveBeenCalledWith({
-        chainId,
         safeAddress: safe.address,
         to: safe.address,
         value: '0',

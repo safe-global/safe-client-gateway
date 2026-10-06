@@ -32,10 +32,7 @@ import {
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
-import {
-  toJson as queueTransactionToJson,
-  safeQueueMultisigTransactionBuilder,
-} from '@/modules/safe-queue/entities/__tests__/queue-multisig-transaction.builder';
+import { safeQueueMultisigTransactionBuilder } from '@/modules/safe-queue/entities/__tests__/queue-multisig-transaction.builder';
 import type { SafeQueueMultisigTransactionEntity } from '@/modules/safe-queue/entities/multisig-transaction.entity';
 import { tokenBuilder } from '@/modules/tokens/domain/__tests__/token.builder';
 import { addConfirmationDtoBuilder } from '@/modules/transactions/routes/__tests__/entities/add-confirmation.dto.builder';
@@ -193,10 +190,7 @@ describe('Transactions Controller - Safe Queue Service', () => {
         .with('count', 2)
         .with('next', null)
         .with('previous', null)
-        .with('results', [
-          queueTransactionToJson(next),
-          queueTransactionToJson(queued),
-        ])
+        .with('results', [next, queued])
         .build();
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
       const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
@@ -336,9 +330,7 @@ describe('Transactions Controller - Safe Queue Service', () => {
       const getGasTokenUrl = `${chain.transactionService}/api/v1/tokens/${transaction.gasToken}`;
       const getQueueUrl = `${queueBaseUri}/api/v1/multisig-transactions/queue`;
       const proposeUrl = `${queueBaseUri}/api/v1/multisig-transactions`;
-      const queuePage = pageBuilder()
-        .with('results', [queueTransactionToJson(transaction)])
-        .build();
+      const queuePage = pageBuilder().with('results', [transaction]).build();
       let isProposed = false;
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
@@ -349,7 +341,7 @@ describe('Transactions Controller - Safe Queue Service', () => {
           case getQueueTransactionUrl:
             return isProposed
               ? Promise.resolve({
-                  data: rawify(queueTransactionToJson(transaction)),
+                  data: rawify(transaction),
                   status: 200,
                 })
               : Promise.reject(notFoundError(url));
@@ -365,7 +357,7 @@ describe('Transactions Controller - Safe Queue Service', () => {
         if (url === proposeUrl) {
           isProposed = true;
           return Promise.resolve({
-            data: rawify(queueTransactionToJson(transaction)),
+            data: rawify(transaction),
             status: 201,
           });
         }
@@ -439,9 +431,7 @@ describe('Transactions Controller - Safe Queue Service', () => {
       const getGasTokenUrl = `${chain.transactionService}/api/v1/tokens/${transaction.gasToken}`;
       const getQueueUrl = `${queueBaseUri}/api/v1/multisig-transactions/queue`;
       const proposeUrl = `${queueBaseUri}/api/v1/multisig-transactions`;
-      const queuePage = pageBuilder()
-        .with('results', [queueTransactionToJson(transaction)])
-        .build();
+      const queuePage = pageBuilder().with('results', [transaction]).build();
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case getChainUrl:
@@ -450,7 +440,7 @@ describe('Transactions Controller - Safe Queue Service', () => {
             return Promise.resolve({ data: rawify(safe), status: 200 });
           case getQueueTransactionUrl:
             return Promise.resolve({
-              data: rawify(queueTransactionToJson(transaction)),
+              data: rawify(transaction),
               status: 200,
             });
           case getGasTokenUrl:
@@ -464,7 +454,7 @@ describe('Transactions Controller - Safe Queue Service', () => {
       networkService.post.mockImplementation(({ url }) => {
         if (url === proposeUrl) {
           return Promise.resolve({
-            data: rawify(queueTransactionToJson(transaction)),
+            data: rawify(transaction),
             status: 201,
           });
         }
@@ -535,9 +525,7 @@ describe('Transactions Controller - Safe Queue Service', () => {
       const getGasTokenUrl = `${chain.transactionService}/api/v1/tokens/${transaction.gasToken}`;
       const getQueueUrl = `${queueBaseUri}/api/v1/multisig-transactions/queue`;
       const postConfirmationUrl = `${queueBaseUri}/api/v1/multisig-transactions/${transaction.safeTxHash}/signatures`;
-      const queuePage = pageBuilder()
-        .with('results', [queueTransactionToJson(transaction)])
-        .build();
+      const queuePage = pageBuilder().with('results', [transaction]).build();
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case getChainUrl:
@@ -546,7 +534,7 @@ describe('Transactions Controller - Safe Queue Service', () => {
             return Promise.resolve({ data: rawify(safe), status: 200 });
           case getQueueTransactionUrl:
             return Promise.resolve({
-              data: rawify(queueTransactionToJson(transaction)),
+              data: rawify(transaction),
               status: 200,
             });
           case getGasTokenUrl:
@@ -616,7 +604,7 @@ describe('Transactions Controller - Safe Queue Service', () => {
             return Promise.resolve({ data: rawify(safe), status: 200 });
           case getQueueTransactionUrl:
             return Promise.resolve({
-              data: rawify(queueTransactionToJson(transaction)),
+              data: rawify(transaction),
               status: 200,
             });
           default:
@@ -675,9 +663,7 @@ describe('Transactions Controller - Safe Queue Service', () => {
       const gasToken = tokenBuilder().build();
       const getGasTokenUrl = `${chain.transactionService}/api/v1/tokens/${transaction.gasToken}`;
       const getQueueUrl = `${queueBaseUri}/api/v1/multisig-transactions/queue`;
-      const queuePage = pageBuilder()
-        .with('results', [queueTransactionToJson(transaction)])
-        .build();
+      const queuePage = pageBuilder().with('results', [transaction]).build();
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
           case getChainUrl:
@@ -686,7 +672,7 @@ describe('Transactions Controller - Safe Queue Service', () => {
             return Promise.resolve({ data: rawify(safe), status: 200 });
           case getQueueTransactionUrl:
             return Promise.resolve({
-              data: rawify(queueTransactionToJson(transaction)),
+              data: rawify(transaction),
               status: 200,
             });
           case getGasTokenUrl:
@@ -788,7 +774,7 @@ describe('Transactions Controller - Safe Queue Service', () => {
             return Promise.resolve({ data: rawify(safe), status: 200 });
           case getQueueTransactionUrl:
             return Promise.resolve({
-              data: rawify(queueTransactionToJson(queueTransaction)),
+              data: rawify(queueTransaction),
               status: 200,
             });
           case getTxServiceTransactionUrl:

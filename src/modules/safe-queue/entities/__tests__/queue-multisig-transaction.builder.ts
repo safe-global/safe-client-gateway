@@ -35,18 +35,3 @@ export function safeQueueMultisigTransactionBuilder(): IBuilder<SafeQueueMultisi
     .with('modified', faker.date.recent())
     .with('confirmations', []);
 }
-
-export function toJson(
-  transaction: SafeQueueMultisigTransactionEntity,
-): unknown {
-  return {
-    ...transaction,
-    created: transaction.created.toISOString(),
-    modified: transaction.modified.toISOString(),
-    confirmations: transaction.confirmations.map((confirmation) => ({
-      ...confirmation,
-      created: confirmation.created.toISOString(),
-      modified: confirmation.modified.toISOString(),
-    })),
-  };
-}

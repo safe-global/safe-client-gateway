@@ -27,15 +27,9 @@ import {
 } from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
 import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
 import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
-import {
-  toJson as queueTransactionToJson,
-  safeQueueMultisigTransactionBuilder,
-} from '@/modules/safe-queue/entities/__tests__/queue-multisig-transaction.builder';
+import { safeQueueMultisigTransactionBuilder } from '@/modules/safe-queue/entities/__tests__/queue-multisig-transaction.builder';
 import { safeQueueConfirmationBuilder } from '@/modules/safe-queue/entities/__tests__/safe-queue-confirmation.builder';
-import {
-  safeQueueMessageBuilder,
-  toJson as safeQueueMessageToJson,
-} from '@/modules/safe-queue/entities/__tests__/safe-queue-message.builder';
+import { safeQueueMessageBuilder } from '@/modules/safe-queue/entities/__tests__/safe-queue-message.builder';
 import type { SafeQueueConfirmation } from '@/modules/safe-queue/entities/multisig-transaction.entity';
 import { rawify } from '@/validation/entities/raw.entity';
 
@@ -138,7 +132,7 @@ describe('Safes Controller (Safe Queue Service enabled)', () => {
         chain,
         safe,
         trustedTransactions: [multisigTransactionToJson(trustedTransaction)],
-        queuedTransactions: [queueTransactionToJson(queuedTransaction)],
+        queuedTransactions: [queuedTransaction],
       });
 
       await request(app.getHttpServer())
@@ -207,7 +201,7 @@ describe('Safes Controller (Safe Queue Service enabled)', () => {
         chain,
         safe,
         trustedTransactions: [multisigTransactionToJson(trustedTransaction)],
-        queuedTransactions: [queueTransactionToJson(queuedTransaction)],
+        queuedTransactions: [queuedTransaction],
       });
 
       await request(app.getHttpServer())
@@ -311,15 +305,13 @@ describe('Safes Controller (Safe Queue Service enabled)', () => {
         faker.date.past({ refDate: latestModified }),
       ];
       const queuedTransactions = modifiedDates.map((modified, index) =>
-        queueTransactionToJson(
-          safeQueueMultisigTransactionBuilder()
-            .with('chainId', chain.chainId)
-            .with('safe', safe.address)
-            .with('nonce', safe.nonce + index)
-            .with('txHash', null)
-            .with('modified', modified)
-            .build(),
-        ),
+        safeQueueMultisigTransactionBuilder()
+          .with('chainId', chain.chainId)
+          .with('safe', safe.address)
+          .with('nonce', safe.nonce + index)
+          .with('txHash', null)
+          .with('modified', modified)
+          .build(),
       );
       mockSafeInfoUpstreams({
         chain,
@@ -393,9 +385,7 @@ describe('Safes Controller (Safe Queue Service enabled)', () => {
         chain,
         safe,
         queuedTransactions: [],
-        queuedMessages: [...sameChainMessages, otherChainMessage].map(
-          safeQueueMessageToJson,
-        ),
+        queuedMessages: [...sameChainMessages, otherChainMessage],
       });
 
       await request(app.getHttpServer())
@@ -449,15 +439,13 @@ describe('Safes Controller (Safe Queue Service enabled)', () => {
       const expectedAwaitingConfirmation = 2;
       const queuedTransactions = confirmationsPerTransaction.map(
         (confirmations, index) =>
-          queueTransactionToJson(
-            safeQueueMultisigTransactionBuilder()
-              .with('chainId', chain.chainId)
-              .with('safe', safe.address)
-              .with('nonce', safe.nonce + index)
-              .with('txHash', null)
-              .with('confirmations', confirmations)
-              .build(),
-          ),
+          safeQueueMultisigTransactionBuilder()
+            .with('chainId', chain.chainId)
+            .with('safe', safe.address)
+            .with('nonce', safe.nonce + index)
+            .with('txHash', null)
+            .with('confirmations', confirmations)
+            .build(),
       );
       const currency = faker.finance.currencyCode();
 

@@ -35,16 +35,3 @@ export function safeQueueMessageBuilder(): IBuilder<SafeQueueMessage> {
       }),
     );
 }
-
-export function toJson(message: SafeQueueMessage): unknown {
-  return {
-    ...message,
-    created: message.created.toISOString(),
-    modified: message.modified.toISOString(),
-    confirmations: message.confirmations.map((confirmation) => ({
-      ...confirmation,
-      created: confirmation.created.toISOString(),
-      modified: confirmation.modified.toISOString(),
-    })),
-  };
-}

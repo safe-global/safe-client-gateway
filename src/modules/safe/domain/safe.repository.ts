@@ -731,9 +731,6 @@ export class SafeRepository implements ISafeRepository {
     limit?: number;
     offset?: number;
   }): Promise<Page<MultisigTransaction>> {
-    if (this.safeQueueEnabled && args.executed === false) {
-      return { count: 0, next: null, previous: null, results: [] };
-    }
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
     );
@@ -756,14 +753,18 @@ export class SafeRepository implements ISafeRepository {
     value: string;
   }): Promise<Array<MultisigTransaction>> {
     if (!this.safeQueueEnabled || args.nonce < args.safe.nonce) {
-      const page = await this.getMultisigTransactions({
-        chainId: args.chainId,
+      const transactionService = await this.transactionApiManager.getApi(
+        args.chainId,
+      );
+      const page = await transactionService.getMultisigTransactions({
         safeAddress: args.safe.address,
         to: args.to,
         value: args.value,
         nonce: args.nonce.toString(),
+        ordering: '-nonce',
+        trusted: true,
       });
-      return page.results;
+      return MultisigTransactionPageSchema.parse(page).results;
     }
     const page = await this.safeQueueService.getTransactionQueue({
       chainId: args.chainId,

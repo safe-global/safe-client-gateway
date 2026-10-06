@@ -17,15 +17,13 @@ import type { INetworkService } from '@/datasources/network/network.service.inte
 import { NetworkService } from '@/datasources/network/network.service.interface';
 import { SAFE_QUEUE_SERVICE_MAX_LIMIT } from '@/domain/common/constants';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
+import type { Page } from '@/domain/entities/page.entity';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
 import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
 import { createDelegateDtoBuilder } from '@/modules/delegate/routes/entities/__tests__/create-delegate.dto.builder';
 import { deleteDelegateV3DtoBuilder } from '@/modules/delegate/routes/v3/entities/__tests__/delete-delegate.v3.dto.builder';
 import { updateDelegateV3DtoBuilder } from '@/modules/delegate/routes/v3/entities/__tests__/update-delegate.v3.dto.builder';
-import {
-  safeQueueDelegateBuilder,
-  toJson as safeQueueDelegateToJson,
-} from '@/modules/safe-queue/entities/__tests__/safe-queue-delegate.builder';
+import { safeQueueDelegateBuilder } from '@/modules/safe-queue/entities/__tests__/safe-queue-delegate.builder';
 import type { SafeQueueDelegate } from '@/modules/safe-queue/entities/delegate.entity';
 import { PaginationData } from '@/routes/common/pagination/pagination.data';
 import { rawify } from '@/validation/entities/raw.entity';
@@ -38,19 +36,18 @@ describe('Delegates controller (v3) with the Safe Queue Service', () => {
 
   function queueDelegatesPage(
     delegates: Array<SafeQueueDelegate>,
-  ): Record<string, unknown> {
-    const page = pageBuilder<SafeQueueDelegate>()
+  ): Page<SafeQueueDelegate> {
+    return pageBuilder<SafeQueueDelegate>()
       .with('count', delegates.length)
       .with('next', null)
       .with('previous', null)
       .with('results', delegates)
       .build();
-    return { ...page, results: delegates.map(safeQueueDelegateToJson) };
   }
 
   function mockGet(
     chain: Chain,
-    delegatesPage: Record<string, unknown> | null = null,
+    delegatesPage: Page<SafeQueueDelegate> | null = null,
   ): void {
     networkService.get.mockImplementation(({ url }) => {
       switch (url) {

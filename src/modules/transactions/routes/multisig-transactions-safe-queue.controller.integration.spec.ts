@@ -30,10 +30,7 @@ import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.build
 import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
 import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
-import {
-  toJson as queueToJson,
-  safeQueueMultisigTransactionBuilder,
-} from '@/modules/safe-queue/entities/__tests__/queue-multisig-transaction.builder';
+import { safeQueueMultisigTransactionBuilder } from '@/modules/safe-queue/entities/__tests__/queue-multisig-transaction.builder';
 import type { SafeQueueMultisigTransactionEntity } from '@/modules/safe-queue/entities/multisig-transaction.entity';
 import { GlobalErrorFilter } from '@/routes/common/filters/global-error.filter';
 import { rawify } from '@/validation/entities/raw.entity';
@@ -164,9 +161,7 @@ describe('Multisig transactions - Safe queue service', () => {
           return Promise.resolve({
             data: rawify(
               args.transactions.map((transaction) =>
-                queueToJson(
-                  toQueueTransaction(transaction, args.chain.chainId),
-                ),
+                toQueueTransaction(transaction, args.chain.chainId),
               ),
             ),
             status: 200,
@@ -291,10 +286,15 @@ describe('Multisig transactions - Safe queue service', () => {
       );
     });
 
-    it('returns an empty page without calling the TX service when executed=false', async () => {
+    it('requests only executed transactions from the TX service when executed=false', async () => {
       const chain = chainBuilder().build();
-      const { safe } = buildSafeWithSigners();
-      mockUpstreams({ chain, safe, transactions: [] });
+      const { safe, signers } = buildSafeWithSigners();
+      const transactions = await buildExecutedTransactions({
+        chain,
+        safe,
+        signers,
+      });
+      mockUpstreams({ chain, safe, transactions });
 
       await request(app.getHttpServer())
         .get(
@@ -303,21 +303,28 @@ describe('Multisig transactions - Safe queue service', () => {
         .query({ executed: false })
         .expect(200)
         .expect(({ body }) => {
-          expect(body).toEqual({
-            next: null,
-            previous: null,
-            results: [],
+          expect(body).toMatchObject({
+            results: transactions.map((transaction) =>
+              expect.objectContaining({
+                type: 'TRANSACTION',
+                transaction: expect.objectContaining({
+                  id: `multisig_${safe.address}_${transaction.safeTxHash}`,
+                  txStatus: 'SUCCESS',
+                }),
+              }),
+            ),
           });
         });
 
-      expect(networkService.get).not.toHaveBeenCalledWith(
+      expect(networkService.get).toHaveBeenCalledWith(
         expect.objectContaining({
           url: getMultisigTransactionsUrl(chain, safe),
-        }),
-      );
-      expect(networkService.get).not.toHaveBeenCalledWith(
-        expect.objectContaining({
-          url: expect.stringContaining(getQueueBatchUrlPrefix()),
+          networkRequest: expect.objectContaining({
+            params: expect.objectContaining({
+              safe: safe.address,
+              executed: true,
+            }),
+          }),
         }),
       );
     });
@@ -431,9 +438,7 @@ describe('Multisig transactions - Safe queue service', () => {
         pendingTransaction,
         rejectionTransaction,
         otherNonceTransaction,
-      ].map((transaction) =>
-        queueToJson(toQueueTransaction(transaction, chain.chainId)),
-      );
+      ].map((transaction) => toQueueTransaction(transaction, chain.chainId));
       const queuePage = pageBuilder()
         .with('count', queueTransactions.length)
         .with('next', null)
@@ -451,9 +456,7 @@ describe('Multisig transactions - Safe queue service', () => {
           case `${queueBaseUri}/api/v1/multisig-transactions/${pendingTransaction.safeTxHash}`:
             return Promise.resolve({
               data: rawify(
-                queueToJson(
-                  toQueueTransaction(pendingTransaction, chain.chainId),
-                ),
+                toQueueTransaction(pendingTransaction, chain.chainId),
               ),
               status: 200,
             });
@@ -503,7 +506,7 @@ describe('Multisig transactions - Safe queue service', () => {
       );
     });
 
-    it('reads the rejection of an executed transaction from the TX service', async () => {
+    it('reads the rejection of a consumed nonce from the TX service', async () => {
       const chain = chainBuilder().build();
       const signers = faker.helpers.multiple(
         () => privateKeyToAccount(generatePrivateKey()),
@@ -565,9 +568,7 @@ describe('Multisig transactions - Safe queue service', () => {
           case `${queueBaseUri}/api/v1/multisig-transactions/${executedTransaction.safeTxHash}`:
             return Promise.resolve({
               data: rawify(
-                queueToJson(
-                  toQueueTransaction(executedTransaction, chain.chainId),
-                ),
+                toQueueTransaction(executedTransaction, chain.chainId),
               ),
               status: 200,
             });
@@ -612,7 +613,7 @@ describe('Multisig transactions - Safe queue service', () => {
           networkRequest: expect.objectContaining({
             params: expect.objectContaining({
               safe: safe.address,
-              executed: true,
+              executed: undefined,
               nonce: nonce.toString(),
               to: safe.address,
               value: '0',

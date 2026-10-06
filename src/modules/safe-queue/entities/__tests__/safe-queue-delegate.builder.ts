@@ -15,11 +15,3 @@ export function safeQueueDelegateBuilder(): IBuilder<SafeQueueDelegate> {
     .with('created', faker.date.past())
     .with('modified', faker.date.recent());
 }
-
-export function toJson(delegate: SafeQueueDelegate): unknown {
-  return {
-    ...delegate,
-    created: delegate.created.toISOString(),
-    modified: delegate.modified.toISOString(),
-  };
-}

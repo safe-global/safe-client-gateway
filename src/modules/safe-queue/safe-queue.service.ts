@@ -272,11 +272,9 @@ export class SafeQueueService implements ISafeQueueService {
       // Normalize before building the cache key, so an omitted nonceOrder
       // and an explicit 'asc' (the same effective request) share one entry.
       const nonceOrder = args.nonceOrder ?? 'asc';
-      const limit = this.capLimit(args.limit);
       const cacheDir = CacheRouter.getSafeQueuedTransactionsCacheDir({
         ...args,
         nonceOrder,
-        limit,
       });
       const url = `${this.baseUri}/api/v1/multisig-transactions/queue`;
       return await this.dataSource.get<
@@ -290,7 +288,7 @@ export class SafeQueueService implements ISafeQueueService {
           params: {
             safes: `${args.safeAddress}:${args.chainId}`,
             nonceOrder,
-            limit,
+            limit: this.capLimit(args.limit),
             offset: args.offset,
           },
           circuitBreaker: {
@@ -355,11 +353,7 @@ export class SafeQueueService implements ISafeQueueService {
     offset?: number;
   }): Promise<Raw<Page<Delegate>>> {
     try {
-      const limit = this.capLimit(args.limit);
-      const cacheDir = CacheRouter.getSafeQueueDelegatesCacheDir({
-        ...args,
-        limit,
-      });
+      const cacheDir = CacheRouter.getSafeQueueDelegatesCacheDir(args);
       const url = `${this.baseUri}/api/v1/delegates`;
       const data = await this.dataSource.get({
         cacheDir,
@@ -373,7 +367,7 @@ export class SafeQueueService implements ISafeQueueService {
             delegate: args.delegate,
             delegator: args.delegator,
             label: args.label,
-            limit,
+            limit: this.capLimit(args.limit),
             offset: args.offset,
           },
           circuitBreaker: {
@@ -512,11 +506,10 @@ export class SafeQueueService implements ISafeQueueService {
     offset?: number;
   }): Promise<Raw<Page<SafeQueueMessage>>> {
     try {
-      const limit = this.capLimit(args.limit);
       const cacheDir = CacheRouter.getSafeQueueMessagesBySafeCacheDir({
         chainId: args.chainId,
         safeAddress: args.safeAddress,
-        limit,
+        limit: args.limit,
         offset: args.offset,
       });
       const url = `${this.baseUri}/api/v1/safes/${encodeURIComponent(args.safeAddress)}/messages`;
@@ -528,7 +521,7 @@ export class SafeQueueService implements ISafeQueueService {
         networkRequest: {
           params: {
             chainId: Number(args.chainId),
-            limit,
+            limit: this.capLimit(args.limit),
             offset: args.offset,
           },
           circuitBreaker: {
@@ -653,9 +646,7 @@ export class SafeQueueService implements ISafeQueueService {
     await this.cacheService.deleteByKey(key);
   }
 
-  private capLimit(limit: number | undefined): number | undefined {
-    return limit === undefined
-      ? undefined
-      : Math.min(limit, SAFE_QUEUE_SERVICE_MAX_LIMIT);
+  private capLimit(limit?: number): number | undefined {
+    return limit && Math.min(limit, SAFE_QUEUE_SERVICE_MAX_LIMIT);
   }
 }
