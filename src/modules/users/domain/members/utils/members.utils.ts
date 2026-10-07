@@ -6,18 +6,7 @@ import { Space as DbSpace } from '#/modules/spaces/datasources/spaces/entities/s
 import type { Member } from '#/modules/users/datasources/entities/member.entity.db';
 import { User as DbUser } from '#/modules/users/datasources/entities/users.entity.db';
 
-/**
- * Locks needed by the paths that can drop an admin membership, so two of them
- * cannot check the same pre-change admin list and both conclude they are safe.
- *
- * **Ordering, for any new path:** user rows first, then space rows, spaces in
- * ascending id order. Nothing may hold a space row and then wait on a user row
- * - that is the only shape that could deadlock these two against each other.
- *
- * Both must run inside a transaction, and load no relations: Postgres refuses
- * `FOR UPDATE` on the nullable side of an outer join. A missing row is not an
- * error here; the caller's own read reports it.
- */
+// Lock order to avoid deadlocks: user rows, then space rows by ascending id.
 export async function lockUserForAdminChange(
   entityManager: EntityManager,
   userId: DbUser['id'],
@@ -28,7 +17,6 @@ export async function lockUserForAdminChange(
     lock: { mode: 'pessimistic_write' },
   });
 }
-/** See {@link lockUserForAdminChange} for the ordering rule both share. */
 export async function lockSpaceForAdminChange(
   entityManager: EntityManager,
   spaceId: DbSpace['id'],
@@ -40,29 +28,17 @@ export async function lockSpaceForAdminChange(
   });
 }
 
-/**
- * The subset of a member row the active-admin rules read. Kept structural so
- * both a fully loaded row and a relation-limited projection satisfy it.
- */
 type ActiveAdminCandidate = Pick<Member, 'role' | 'status'> & {
   user: Pick<DbUser, 'id'>;
 };
 
-/** An `INVITED` or `DECLINED` admin administers nothing, so status counts too. */
 export function isActiveAdmin(
   member: Pick<Member, 'role' | 'status'>,
 ): boolean {
   return member.role === 'ADMIN' && member.status === 'ACTIVE';
 }
 
-/**
- * True when removing `userId`'s membership would leave the space with no admin.
- *
- * `members` must come from a **single** space: the rule counts active admins,
- * so rows spanning two spaces yield two and this returns `false` - wrongly
- * reporting the removal as safe. Callers holding more than one space partition
- * first (see `UsersRepository.assertIsNotLastAdminOfAnySpace`).
- */
+// `members` must all belong to one space.
 export function isLastActiveAdminOfSpace(args: {
   members: Array<ActiveAdminCandidate>;
   userId: DbUser['id'];

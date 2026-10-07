@@ -199,17 +199,6 @@ export class UsersRepository implements IUsersRepository {
     );
   }
 
-  /**
-   * Deleting the user cascade-deletes their `members` rows, so a space they
-   * solely administer would be left un-administrable - and its members unable
-   * to leave. Reject instead, as every member-removal flow already does: the
-   * user can promote another admin or delete the space, then retry.
-   *
-   * Locks each space before reading its admins, or READ COMMITTED would let two
-   * co-admins acting at once each still see the other. Ascending id order, so
-   * two deletions over the same spaces cannot deadlock. The caller locks this
-   * user's row first, which is what makes the space set complete.
-   */
   private async assertIsNotLastAdminOfAnySpace(args: {
     entityManager: EntityManager;
     userId: User['id'];
@@ -237,8 +226,6 @@ export class UsersRepository implements IUsersRepository {
       relations: { space: true, user: true },
     });
 
-    // Grouped in one pass: promotion into other people's spaces is not capped,
-    // so the administered set has no bound to scan per space.
     const adminsBySpace = new Map<DbMember['space']['id'], Array<DbMember>>();
     for (const activeAdmin of activeAdmins) {
       const group = adminsBySpace.get(activeAdmin.space.id);
@@ -262,10 +249,7 @@ export class UsersRepository implements IUsersRepository {
     const userId = getAuthenticatedUserIdOrFail(authPayload);
 
     await this.postgresDatabaseService.transaction(async (entityManager) => {
-      // A `members` insert for this user takes FOR KEY SHARE on their row,
-      // which this conflicts with: a space created concurrently either waits
-      // and then fails its foreign key, or commits in time to be read below.
-      // A promotion changes no FK column, so `updateRole` takes this same lock.
+      // Blocks concurrent space creation and promotion for this user.
       await lockUserForAdminChange(entityManager, userId);
 
       const memberships = await entityManager.find(DbMember, {

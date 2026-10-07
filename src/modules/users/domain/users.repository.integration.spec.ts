@@ -751,8 +751,6 @@ describe('UsersRepository', () => {
 
       await expect(dbUserRepository.find()).resolves.toHaveLength(1);
       await expect(dbMemberRepository.find()).resolves.toHaveLength(1);
-      // The guard has to run ahead of the MEMBER_LEFT writes, not just roll
-      // them back - the audit table rejects DELETE.
       expect(spaceAuditRepository.record).not.toHaveBeenCalled();
     });
 

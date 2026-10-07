@@ -547,12 +547,7 @@ export class MembersRepository implements IMembersRepository {
     return memberWithAddress;
   }
 
-  /**
-   * Active admins of one space, read through the caller's transaction so the
-   * space lock covers them. Skips `findOrFail`'s email decryption: the admin
-   * rules read only role, status and user id, and a KMS call would sit inside
-   * the lock.
-   */
+  // Skips `findOrFail`'s email decryption to keep KMS calls out of the lock.
   private async findActiveAdminsForUpdateOrFail(
     entityManager: EntityManager,
     spaceId: Space['id'],
@@ -576,10 +571,7 @@ export class MembersRepository implements IMembersRepository {
     role: Member['role'];
   }): Promise<void> {
     await this.postgresDatabaseService.transaction(async (entityManager) => {
-      // A role change touches no FK column, so on its own it takes no lock on
-      // the target's account row - while their in-flight account deletion picks
-      // which spaces to lock from the memberships it can see. Lock that row so
-      // the two serialize; user rows before space rows, per the helper's doc.
+      // Serializes with an in-flight deletion of the target's account.
       await lockUserForAdminChange(entityManager, args.userId);
       await lockSpaceForAdminChange(entityManager, args.spaceId);
 
@@ -738,16 +730,7 @@ export class MembersRepository implements IMembersRepository {
     });
   }
 
-  /**
-   * A space must keep at least one active admin, whoever is acting. The route
-   * service's `assertAdmin` ran before the space lock, so it cannot vouch that
-   * the actor is still an admin by now - a concurrent deletion or demotion may
-   * have removed them. Re-reading the admins under the lock is what keeps two
-   * such changes from each leaving the other as the space's only admin.
-   *
-   * Must run after `lockSpaceForAdminChange` on `spaceId`. `member` is the
-   * target's row in that space, loaded without relations.
-   */
+  // Checked under the space lock: `assertAdmin` ran before it was taken.
   private async assertTargetIsNotLastAdmin(
     entityManager: EntityManager,
     args: {

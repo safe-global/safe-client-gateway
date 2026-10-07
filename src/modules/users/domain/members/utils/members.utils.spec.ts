@@ -139,9 +139,6 @@ describe('isLastActiveAdminOfSpace', () => {
     ).toBe(false);
   });
 
-  // The rule counts active admins, not members: an admin who has not accepted
-  // their invite cannot administer the space, so it does not keep the space
-  // administrable once this user leaves.
   it('ignores non-active admins and active non-admins when counting', () => {
     const [userId, invitedAdminId, activeMemberId] = faker.helpers.uniqueArray(
       () => faker.number.int(),

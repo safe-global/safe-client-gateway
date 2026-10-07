@@ -35,11 +35,7 @@ const mockLoggingService = {
   warn: vi.fn(),
 } as MockedObject<ILoggingService>;
 
-/**
- * Separate file because proving the lock needs two connections held at once,
- * and a spec file's TypeORM pool is shared: forcing it open changes the
- * interleaving of sibling cases that await two repository calls concurrently.
- */
+// Own file: holding two connections at once disturbs sibling specs' pool.
 describe('UsersRepository concurrency', () => {
   let postgresDatabaseService: PostgresDatabaseService;
   let usersRepository: UsersRepository;
@@ -181,9 +177,6 @@ describe('UsersRepository concurrency', () => {
     return result.identifiers[0].id as Member['id'];
   };
 
-  // The co-admin is mid-departure: holding the space lock, membership deleted
-  // but uncommitted. A deletion reading now would still see two admins and
-  // wrongly allow itself, leaving the space with none.
   it('waits for an in-flight admin change before deciding', async () => {
     const userId = await insertUser();
     const coAdminUserId = await insertUser();
@@ -226,7 +219,6 @@ describe('UsersRepository concurrency', () => {
 
       await queryRunner.commitTransaction();
     } finally {
-      // A failed assertion must not leave the row locked - it blocks cleanup.
       if (queryRunner.isTransactionActive) {
         await queryRunner.rollbackTransaction();
       }
@@ -238,14 +230,11 @@ describe('UsersRepository concurrency', () => {
         'Cannot delete account while last admin of a workspace.',
       ),
     );
-    // The co-admin lost their membership, not their account, so both remain.
     await expect(
       dataSource.getRepository(User).findOneBy({ id: userId }),
     ).resolves.not.toBeNull();
   });
 
-  // A space can start being administered after the deletion read its
-  // memberships, so the user-row lock - not the space locks - is what covers it.
   it('rejects a deletion that would orphan a concurrently created space', async () => {
     const userId = await insertUser();
 
@@ -254,7 +243,6 @@ describe('UsersRepository concurrency', () => {
     try {
       await queryRunner.connect();
       await queryRunner.startTransaction();
-      // Mimics SpacesRepository.create: space plus its creator as active admin.
       const inserted = await queryRunner.manager
         .getRepository(Space)
         .insert({ name: faker.word.noun(), status: 'ACTIVE' });
@@ -267,7 +255,6 @@ describe('UsersRepository concurrency', () => {
         invitedBy: null,
       });
 
-      // Reads no memberships - the creation is still uncommitted.
       deletion = usersRepository.delete(
         new AuthPayload(
           siweAuthPayloadDtoBuilder().with('sub', userId.toString()).build(),
@@ -302,9 +289,6 @@ describe('UsersRepository concurrency', () => {
     );
   });
 
-  // Promoting a member does not touch `members.user_id`, so it takes no lock on
-  // the promoted user's row on its own - an account deletion in flight would
-  // not see the new admin membership it is about to cascade away.
   it('makes a promotion wait for an in-flight account deletion', async () => {
     const userId = await insertUser();
     const adminUserId = await insertUser();
@@ -324,7 +308,6 @@ describe('UsersRepository concurrency', () => {
     try {
       await queryRunner.connect();
       await queryRunner.startTransaction();
-      // Stands in for the deletion holding its own account row.
       await queryRunner.manager.findOne(User, {
         where: { id: userId },
         select: { id: true },
@@ -362,10 +345,6 @@ describe('UsersRepository concurrency', () => {
     await promotion;
   });
 
-  // The actor's admin check ran in the route service, before the space lock -
-  // by the time the change runs, the actor may be gone. Here their account
-  // deletion is mid-commit: holding the space lock, their membership deleted
-  // but uncommitted. Acting on the only remaining admin must then be refused.
   it.each([
     {
       name: 'demotion',
