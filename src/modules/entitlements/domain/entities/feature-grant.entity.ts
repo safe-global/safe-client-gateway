@@ -10,9 +10,7 @@ const FeatureGrantSchema = z.object({
   resetsAt: z.coerce.date().nullable(),
   /**
    * Which counter the quota is measured against. NULL for a stock-metered
-   * feature, whose usage is a live count in another module's table. Cached
-   * like `resetsAt`, so a Free window rolling over on its own anchor can lag
-   * by the TTL.
+   * feature, whose usage is a live count in another module's table.
    */
   counter: z
     .object({

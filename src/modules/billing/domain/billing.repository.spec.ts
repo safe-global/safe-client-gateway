@@ -58,6 +58,19 @@ describe('BillingRepository', () => {
   });
 
   describe('schema behaviour', () => {
+    it('should drop the upstream payment link url', async () => {
+      const paymentLink = paymentLinkBuilder().build();
+      billingApiMock.listPaymentLinks.mockResolvedValue(
+        rawify({
+          paymentLinks: [{ ...paymentLink, url: faker.internet.url() }],
+        }),
+      );
+
+      const [actual] = await target.listPaymentLinks();
+
+      expect(actual).not.toHaveProperty('url');
+    });
+
     it('should restore dashes in a hex-only upstreamCustomerId on a subscription', async () => {
       const subscription = subscriptionBuilder().build();
       billingApiMock.getSubscriptionsByCustomerId.mockResolvedValue(

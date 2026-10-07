@@ -170,6 +170,92 @@ describe('Safe address encryption', () => {
     expect(response.body).toStrictEqual({ safes: { 1: [safe.address] } });
   });
 
+  it('returns the decrypted Safes of only the spaces the caller is an active member of, admin or not', async () => {
+    const signUp = async (): Promise<{
+      accessToken: string;
+      address: `0x${string}`;
+    }> => {
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
+      const walletResponse = await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${jwtService.sign(authPayloadDto)}`])
+        .expect(201);
+      return {
+        accessToken: jwtService.sign({
+          ...authPayloadDto,
+          sub: String(walletResponse.body.id),
+        }),
+        address: authPayloadDto.signer_address,
+      };
+    };
+    const createSpace = async (accessToken: string): Promise<string> => {
+      const response = await request(app.getHttpServer())
+        .post('/v1/spaces')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: nameBuilder() })
+        .expect(201);
+      return response.body.uuid;
+    };
+    const buildSafe = (): { chainId: string; address: `0x${string}` } => ({
+      chainId: faker.string.numeric({ length: { min: 1, max: 4 } }),
+      address: getAddress(faker.finance.ethereumAddress()),
+    });
+    const caller = await signUp();
+    const otherAdmin = await signUp();
+    const inviteCaller = async (spaceUuid: string): Promise<void> => {
+      await request(app.getHttpServer())
+        .post(`/v1/spaces/${spaceUuid}/members/invite`)
+        .set('Cookie', [`access_token=${otherAdmin.accessToken}`])
+        .send({
+          users: [
+            { address: caller.address, name: nameBuilder(), role: 'MEMBER' },
+          ],
+        })
+        .expect(201);
+    };
+    const spaceUuid = await createSpace(caller.accessToken);
+    const emptySpaceUuid = await createSpace(caller.accessToken);
+    const memberSpaceUuid = await createSpace(otherAdmin.accessToken);
+    const invitedSpaceUuid = await createSpace(otherAdmin.accessToken);
+    const safe = buildSafe();
+    const memberSpaceSafe = buildSafe();
+    await addSafe(spaceUuid, caller.accessToken, safe).then((response) =>
+      expect(response.status).toBe(201),
+    );
+    await addSafe(
+      memberSpaceUuid,
+      otherAdmin.accessToken,
+      memberSpaceSafe,
+    ).then((response) => expect(response.status).toBe(201));
+    await addSafe(invitedSpaceUuid, otherAdmin.accessToken, buildSafe()).then(
+      (response) => expect(response.status).toBe(201),
+    );
+    await inviteCaller(memberSpaceUuid);
+    await request(app.getHttpServer())
+      .post(`/v1/spaces/${memberSpaceUuid}/members/accept`)
+      .set('Cookie', [`access_token=${caller.accessToken}`])
+      .send({ name: nameBuilder() })
+      .expect(201);
+    await inviteCaller(invitedSpaceUuid);
+
+    const response = await request(app.getHttpServer())
+      .get('/v1/spaces/safes')
+      .set('Cookie', [`access_token=${caller.accessToken}`])
+      .expect(200);
+
+    expect(response.body).toHaveLength(3);
+    expect(response.body).toEqual(
+      expect.arrayContaining([
+        { spaceUuid, safes: { [safe.chainId]: [safe.address] } },
+        { spaceUuid: emptySpaceUuid, safes: {} },
+        {
+          spaceUuid: memberSpaceUuid,
+          safes: { [memberSpaceSafe.chainId]: [memberSpaceSafe.address] },
+        },
+      ]),
+    );
+  });
+
   it('rejects the same Safe twice, matching on the blind index', async () => {
     const { accessToken, spaceUuid } = await createSpaceForSigner();
     const safe = {

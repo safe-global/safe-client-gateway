@@ -29,9 +29,13 @@ import {
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
 import { QuotaExceededExceptionFilter } from '@/modules/entitlements/domain/exception-filters/quota-exceeded.exception-filter';
-import { CreateSpaceSafesDto } from '@/modules/spaces/routes/safes/entities/create-space-safe.dto.entity';
+import {
+  CreateSpaceSafesDto,
+  CreateSpaceSafesSchema,
+} from '@/modules/spaces/routes/safes/entities/create-space-safe.dto.entity';
 import { DeleteSpaceSafesDto } from '@/modules/spaces/routes/safes/entities/delete-space-safe.dto.entity';
 import { GetSpaceSafeResponse } from '@/modules/spaces/routes/safes/entities/get-space-safe.dto.entity';
+import { GetSpacesSafesResponse } from '@/modules/spaces/routes/safes/entities/get-spaces-safes.dto.entity';
 import { SpaceSafesSchema } from '@/modules/spaces/routes/safes/entities/space-safe.dto.entity';
 import { SpaceSafesService } from '@/modules/spaces/routes/safes/space-safes.service';
 import { Auth } from '@/routes/common/auth/auth.decorator';
@@ -41,7 +45,7 @@ import { ValidationPipe } from '@/validation/pipes/validation.pipe';
 
 @ApiTags('spaces')
 @Controller({
-  path: 'spaces/:spaceId/safes',
+  path: 'spaces',
   version: '1',
 })
 @UseGuards(AuthGuard)
@@ -89,11 +93,11 @@ export class SpaceSafesController {
     description:
       'The space is at its plan\'s Safe seat limit. The body carries `{ code: "QUOTA_EXCEEDED", feature, quota, used, resetsAt }`',
   })
-  @Post()
+  @Post(':spaceId/safes')
   @UseGuards(ElevationGuard)
   @UseFilters(QuotaExceededExceptionFilter)
   public async create(
-    @Body(new ValidationPipe(SpaceSafesSchema))
+    @Body(new ValidationPipe(CreateSpaceSafesSchema))
     body: CreateSpaceSafesDto,
     @Param('spaceId', SpaceIdPipe) spaceId: number,
     @Auth() authPayload: AuthPayload,
@@ -102,7 +106,31 @@ export class SpaceSafesController {
       spaceId,
       authPayload,
       payload: body.safes,
+      addressBookItems: body.addressBookItems,
     });
+  }
+
+  @ApiOperation({
+    summary: 'Get Safes of all spaces',
+    description:
+      'Retrieves the Safes of every space the user is an active member of, one entry per space with its Safes grouped by chain like the per-space endpoint. A space without Safes has an empty `safes` object.',
+  })
+  @ApiOkResponse({
+    description: 'Safes of all spaces retrieved successfully',
+    type: GetSpacesSafesResponse,
+    isArray: true,
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Authentication required',
+  })
+  @ApiForbiddenResponse({
+    description: 'Access forbidden - missing or invalid authentication',
+  })
+  @Get('safes')
+  public async getAll(
+    @Auth() authPayload: AuthPayload,
+  ): Promise<Array<GetSpacesSafesResponse>> {
+    return await this.spaceSafesService.getAll(authPayload);
   }
 
   @ApiOperation({
@@ -133,7 +161,7 @@ export class SpaceSafesController {
   @ApiForbiddenResponse({
     description: 'Access forbidden - user is not a member of this space',
   })
-  @Get()
+  @Get(':spaceId/safes')
   public async get(
     @Param('spaceId', SpaceIdPipe) spaceId: number,
     @Auth() authPayload: AuthPayload,
@@ -175,7 +203,7 @@ export class SpaceSafesController {
     description:
       'Access forbidden - user lacks permission to remove Safes from this space',
   })
-  @Delete()
+  @Delete(':spaceId/safes')
   @UseGuards(ElevationGuard)
   @HttpCode(204)
   public async delete(

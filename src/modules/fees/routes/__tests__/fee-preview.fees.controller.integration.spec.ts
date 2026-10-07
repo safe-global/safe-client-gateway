@@ -20,6 +20,7 @@ import { relayerBuilder } from '@/modules/chains/domain/entities/__tests__/relay
 import { gtfFeesResponseBuilder } from '@/modules/fees/domain/entities/__tests__/gtf-fees-response.builder';
 import { txFeesResponseBuilder } from '@/modules/fees/domain/entities/__tests__/tx-fees-response.builder';
 import { feePreviewTransactionDtoBuilder } from '@/modules/fees/routes/entities/__tests__/fee-preview-transaction.dto.builder';
+import { GasPaymentOption } from '@/modules/relay/domain/entities/gas-payment-option.entity';
 import { RelayerType } from '@/modules/relay/domain/entities/relayer-type.entity';
 import { rawify } from '@/validation/entities/raw.entity';
 
@@ -65,7 +66,13 @@ describe('Fees Controller', () => {
 
   it('should return 400 if relay-fee is not available for the chain', async () => {
     const chain = chainBuilder()
-      .with('relayer', relayerBuilder().with('type', null).build())
+      .with(
+        'relayer',
+        relayerBuilder()
+          .with('type', null)
+          .with('gasPaymentOptions', [])
+          .build(),
+      )
       .build();
     const safeAddress = getAddress(faker.finance.ethereumAddress());
 
@@ -91,7 +98,10 @@ describe('Fees Controller', () => {
     const chain = chainBuilder()
       .with(
         'relayer',
-        relayerBuilder().with('type', RelayerType.RELAY_FEE).build(),
+        relayerBuilder()
+          .with('type', RelayerType.RELAY_FEE)
+          .with('gasPaymentOptions', [GasPaymentOption.PAY_FROM_SAFE])
+          .build(),
       )
       .build();
     const safeAddress = getAddress(faker.finance.ethereumAddress());
@@ -123,7 +133,10 @@ describe('Fees Controller', () => {
     const chain = chainBuilder()
       .with(
         'relayer',
-        relayerBuilder().with('type', RelayerType.RELAY_FEE).build(),
+        relayerBuilder()
+          .with('type', RelayerType.RELAY_FEE)
+          .with('gasPaymentOptions', [GasPaymentOption.PAY_FROM_SAFE])
+          .build(),
       )
       .build();
     const safeAddress = getAddress(faker.finance.ethereumAddress());
@@ -167,7 +180,16 @@ describe('Fees Controller', () => {
 
   it('should return fee preview with feeBreakdown when chain resolves to the GTF relayer', async () => {
     const chain = chainBuilder()
-      .with('relayer', relayerBuilder().with('type', RelayerType.GTF).build())
+      .with(
+        'relayer',
+        relayerBuilder()
+          .with('type', RelayerType.GTF)
+          .with(
+            'gasPaymentOptions',
+            faker.helpers.arrayElements(Object.values(GasPaymentOption)),
+          )
+          .build(),
+      )
       .build();
     const safeAddress = getAddress(faker.finance.ethereumAddress());
     const feePreviewDto = feePreviewTransactionDtoBuilder().build();
@@ -225,11 +247,45 @@ describe('Fees Controller', () => {
       });
   });
 
+  it('should return 400 for a chain that does not list PAY_FROM_SAFE', async () => {
+    const chain = chainBuilder()
+      .with(
+        'relayer',
+        relayerBuilder()
+          .with('type', RelayerType.RELAY_FEE)
+          .with('gasPaymentOptions', [GasPaymentOption.FREE_DAILY_LIMIT])
+          .build(),
+      )
+      .build();
+    const safeAddress = getAddress(faker.finance.ethereumAddress());
+
+    networkService.get.mockImplementation(({ url }) => {
+      if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+        return Promise.resolve({ data: rawify(chain), status: 200 });
+      }
+      return Promise.reject(new Error(`Could not match ${url}`));
+    });
+
+    await request(app.getHttpServer())
+      .post(`/v1/chains/${chain.chainId}/fees/${safeAddress}/preview`)
+      .send(feePreviewTransactionDtoBuilder().build())
+      .expect(400)
+      .expect(({ body }) => {
+        expect(body.message).toBe(
+          'Fee preview is not available for this chain',
+        );
+      });
+    expect(networkService.post).not.toHaveBeenCalled();
+  });
+
   it('should throw a validation error for invalid numberSignatures', async () => {
     const chain = chainBuilder()
       .with(
         'relayer',
-        relayerBuilder().with('type', RelayerType.RELAY_FEE).build(),
+        relayerBuilder()
+          .with('type', RelayerType.RELAY_FEE)
+          .with('gasPaymentOptions', [GasPaymentOption.PAY_FROM_SAFE])
+          .build(),
       )
       .build();
     const safeAddress = getAddress(faker.finance.ethereumAddress());

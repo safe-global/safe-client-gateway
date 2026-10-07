@@ -26,13 +26,10 @@ export class RelayRepository {
     acceptUnverifiedSimulation?: boolean;
   }): Promise<Relay> {
     const { relayer } = await this.chainsRepository.getChain(args.chainId);
-    return this.relayManager
-      .getRelayer(relayer?.type ?? null, args.data)
-      .relay({
-        ...args,
-        simulationEnabled:
-          relayer?.enableTenderlySimulationBeforeRelay ?? false,
-      });
+    return this.relayManager.getRelayer({ relayer, data: args.data }).relay({
+      ...args,
+      simulationEnabled: relayer?.enableTenderlySimulationBeforeRelay ?? false,
+    });
   }
 
   getTaskStatus(args: {
@@ -48,8 +45,6 @@ export class RelayRepository {
     safeTxHash?: Hex;
   }): Promise<{ remaining: number; limit: number }> {
     const { relayer } = await this.chainsRepository.getChain(args.chainId);
-    return this.relayManager
-      .getRelayer(relayer?.type ?? null)
-      .getRelaysRemaining(args);
+    return this.relayManager.getFreeRelayer(relayer).getRelaysRemaining(args);
   }
 }

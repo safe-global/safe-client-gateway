@@ -373,6 +373,23 @@ describe('BillingController', () => {
       });
   });
 
+  it('GET /v1/billing/spaces/:spaceId/payment-links does not return the payment link url', async () => {
+    const { accessToken, spaceId } = await registerAndCreateSpace();
+    const spaceLink = paymentLinkBuilder().build();
+    const upstreamLink = { ...spaceLink, url: faker.internet.url() };
+
+    mockPaymentLinkCatalog({ spaceSpecific: [upstreamLink] });
+
+    await request(app.getHttpServer())
+      .get(`/v1/billing/spaces/${spaceId}/payment-links`)
+      .set('Cookie', [`access_token=${accessToken}`])
+      .expect(200)
+      .expect(({ body }) => {
+        expect(body).toEqual([expect.objectContaining({ id: spaceLink.id })]);
+        expect(body[0]).not.toHaveProperty('url');
+      });
+  });
+
   it('GET /v1/billing/spaces/:spaceId/payment-links always offers a space-specific link', async () => {
     const { accessToken, spaceId } = await registerAndCreateSpace();
     // Negotiated for this customer, untagged: the general-catalog enforcement

@@ -896,10 +896,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@fingerprintjs/fingerprintjs-pro-server-api@npm:6.12.0":
-  version: 6.12.0
-  resolution: "@fingerprintjs/fingerprintjs-pro-server-api@npm:6.12.0"
-  checksum: 10/92db660534ec714b9fddc298fd6e4de709e728fe9b0b6d521fa0b7989e48d4e539be9ac9492dc3f19aef0b9ec436590241733ac8ac3dfce2e1a3f9def0830e68
+"@fingerprintjs/fingerprintjs-pro-server-api@npm:6.13.1":
+  version: 6.13.1
+  resolution: "@fingerprintjs/fingerprintjs-pro-server-api@npm:6.13.1"
+  checksum: 10/05046bf6bce8557922dcbf835d6a0c9c0a2e9689cdd9e61388ebf650819e2edf6d6e7cf660fdacaced55eb48ae4cde72d87adf7a5fb8010ee5097b8eb4cd2d12
   languageName: node
   linkType: hard
 
@@ -2617,12 +2617,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/node@npm:26.6.1":
-  version: 26.6.1
-  resolution: "@types/node@npm:26.6.1"
+"@types/node@npm:26.6.2":
+  version: 26.6.2
+  resolution: "@types/node@npm:26.6.2"
   dependencies:
     undici-types: "npm:~8.9.0"
-  checksum: 10/86e4bbb49b696e1183d42e1e8653b13b969146969e6e30635aa5de7d4340f06fcdd748284bcc68ea6a3f8300d9dc54569ec377f312cdeb1c1ae0a5996ec075d7
+  checksum: 10/757d598381b690e4429b9fab3adcf48f88ac7ed17488b47724cf3df9d6d38bcac17ab61c10cabecc5dbda5717f3f819208549ba3cef4cd941300440282a2a1a8
   languageName: node
   linkType: hard
 
@@ -3105,9 +3105,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"bullmq@npm:^6.3.6":
-  version: 6.3.6
-  resolution: "bullmq@npm:6.3.6"
+"bullmq@npm:^6.3.8":
+  version: 6.3.8
+  resolution: "bullmq@npm:6.3.8"
   dependencies:
     cron-parser: "npm:5.10.1"
     msgpackr: "npm:2.1.0"
@@ -3128,7 +3128,7 @@ __metadata:
       optional: true
     redis:
       optional: true
-  checksum: 10/2a21015f0be01af0da296021b1e2f662d622c22b024c0cc9956f429c5eea9dbc24197fb2a7a09137f175b9dd9d2ad8efb963bb1f7ec7b1f044d0a95580676191
+  checksum: 10/90aba5998f6cea623cba50380f88d9425364110235b4e0291c4c772cf7be6130fdf78a4876323a66052927f64c51470f0096bb63ef67fefa2f7165096c7da3c6
   languageName: node
   linkType: hard
 
@@ -5831,7 +5831,7 @@ __metadata:
     "@faker-js/faker": "npm:10.6.0"
     "@fastify/cookie": "npm:^11.1.2"
     "@fastify/static": "npm:^10.1.3"
-    "@fingerprintjs/fingerprintjs-pro-server-api": "npm:6.12.0"
+    "@fingerprintjs/fingerprintjs-pro-server-api": "npm:6.13.1"
     "@nestjs/bullmq": "npm:^12.0.0"
     "@nestjs/cache-manager": "npm:12.0.0"
     "@nestjs/cli": "npm:12.0.3"
@@ -5852,7 +5852,7 @@ __metadata:
     "@types/amqplib": "npm:0"
     "@types/jsonwebtoken": "npm:9"
     "@types/lodash": "npm:4.17.25"
-    "@types/node": "npm:26.6.1"
+    "@types/node": "npm:26.6.2"
     "@types/sanitize-html": "npm:2"
     "@types/semver": "npm:7.8.0"
     "@types/supertest": "npm:7.2.1"
@@ -5860,7 +5860,7 @@ __metadata:
     amqp-connection-manager: "npm:5.0.0"
     amqplib: "npm:2.0.1"
     aws-sdk-client-mock: "npm:4.1.0"
-    bullmq: "npm:^6.3.6"
+    bullmq: "npm:^6.3.8"
     cache-manager: "npm:7.2.9"
     csv-stringify: "npm:^6.8.3"
     dd-trace: "npm:5.127.0"

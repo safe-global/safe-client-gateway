@@ -2,7 +2,11 @@
 
 import { randomUUID } from 'node:crypto';
 import { faker } from '@faker-js/faker';
-import { HttpStatus, NotFoundException } from '@nestjs/common';
+import {
+  HttpStatus,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
 import { DataSource, type ObjectLiteral } from 'typeorm';
 import { getAddress } from 'viem';
@@ -32,6 +36,7 @@ import {
 import {
   FEATURE_KEYS,
   FeatureType,
+  isFeatureKey,
 } from '@/modules/entitlements/domain/entities/feature.entity';
 import type { MaterializedSubscription } from '@/modules/entitlements/domain/entities/materialized-subscription.entity';
 import type { ConsumedQuota } from '@/modules/entitlements/domain/entitlement-enforcement.interface';
@@ -191,6 +196,8 @@ describe('EntitlementsService', () => {
   const membersRepositoryStub = {
     findOne: async (where: Parameters<IMembersRepository['findOne']>[0]) =>
       await dataSource.getRepository(Member).findOne({ where }),
+    find: async (args: Parameters<IMembersRepository['find']>[0]) =>
+      await dataSource.getRepository(Member).find(args),
   } as unknown as IMembersRepository;
 
   beforeAll(async () => {
@@ -374,6 +381,28 @@ describe('EntitlementsService', () => {
       inviteExpiresAt: null,
     });
     return userId;
+  }
+
+  async function joinSpace(args: {
+    userId: number;
+    spaceId: number;
+    status: Member['status'];
+  }): Promise<void> {
+    await dataSource.getRepository(Member).insert({
+      user: { id: args.userId },
+      space: { id: args.spaceId },
+      name: faker.person.firstName(),
+      role: 'MEMBER',
+      status: args.status,
+      inviteExpiresAt: null,
+    });
+  }
+
+  async function spaceUuidOf(spaceId: number): Promise<Space['uuid']> {
+    const space = await dataSource
+      .getRepository(Space)
+      .findOneByOrFail({ id: spaceId });
+    return space.uuid;
   }
 
   function authPayloadFor(userId: number): AuthPayload {
@@ -578,6 +607,7 @@ describe('EntitlementsService', () => {
         id: 'business',
         name: 'Business',
         cycleEndsAt: new Date('2026-08-01T00:00:00Z'),
+        status: 'active',
       });
       const byFeature = new Map(
         result.entitlements.map((entitlement) => [
@@ -597,6 +627,29 @@ describe('EntitlementsService', () => {
       });
       // Not purchased → Free defaults.
       expect(byFeature.get('pay_from_safe')).toMatchObject({ enabled: false });
+    });
+
+    it('reports a trialing subscription as the plan with its status', async () => {
+      const spaceId = await createSpace();
+      const subscription = materializedSubscriptionBuilder()
+        .with('status', 'trialing')
+        .with('entitlements', [
+          parsedEntitlementBuilder().with('featureKey', 'safe_seats').build(),
+        ])
+        .build();
+      await materializeAuthoritative({
+        spaceId,
+        subscriptions: [subscription],
+      });
+
+      const result = await service.resolveEntitlements(spaceId);
+
+      expect(result.plan).toStrictEqual({
+        id: subscription.planId,
+        name: subscription.planName,
+        cycleEndsAt: subscription.currentPeriodEnd,
+        status: 'trialing',
+      });
     });
 
     it('reports usage over the Free quota without inflating it', async () => {
@@ -1520,11 +1573,15 @@ describe('EntitlementsService', () => {
       quota: number | null;
       periodStart: Date;
     }): Promise<void> {
+      // A monthly plan: a longer cycle would split into monthly windows.
+      const currentPeriodEnd = new Date(args.periodStart);
+      currentPeriodEnd.setUTCMonth(currentPeriodEnd.getUTCMonth() + 1);
       await materializeFromEvent({
         spaceId: args.spaceId,
         subscription: materializedSubscriptionBuilder()
           .with('status', 'active')
           .with('currentPeriodStart', args.periodStart)
+          .with('currentPeriodEnd', currentPeriodEnd)
           .with('entitlements', [
             {
               featureKey: 'sponsored_transactions',
@@ -1766,6 +1823,223 @@ describe('EntitlementsService', () => {
           authPayload: authPayloadFor(outsiderUserId),
         }),
       ).rejects.toThrow('User is not a member of this workspace');
+    });
+  });
+
+  describe('monthly quota on a yearly plan', () => {
+    const currentPeriodStart = new Date('2026-01-15T10:30:00Z');
+    const currentPeriodEnd = new Date('2027-01-15T10:30:00Z');
+    const februaryWindow = new Date('2026-02-15T10:30:00Z');
+    const marchWindow = new Date('2026-03-15T10:30:00Z');
+
+    beforeEach(() => {
+      // Only `Date`: the Postgres driver relies on real timers.
+      vi.useFakeTimers({ toFake: ['Date'] });
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    async function annualPlan(spaceId: number, quota: number): Promise<void> {
+      await materializeFromEvent({
+        spaceId,
+        subscription: materializedSubscriptionBuilder()
+          .with('status', 'active')
+          .with('currentPeriodStart', currentPeriodStart)
+          .with('currentPeriodEnd', currentPeriodEnd)
+          .with('entitlements', [
+            {
+              featureKey: 'sponsored_transactions',
+              enabled: true,
+              quota,
+              value: null,
+            },
+          ])
+          .build(),
+      });
+    }
+
+    it("shows only this month's usage and when the quota resets", async () => {
+      const spaceId = await createSpace();
+      const quota = faker.number.int({ min: 2, max: 10 });
+      await annualPlan(spaceId, quota);
+      await recordUsage({
+        spaceId,
+        featureKey: 'sponsored_transactions',
+        used: quota,
+        periodStart: februaryWindow,
+      });
+      vi.setSystemTime(marchWindow);
+
+      const result = await service.resolveEntitlements(spaceId);
+
+      expect(
+        result.entitlements.find(
+          (entitlement) => entitlement.feature === 'sponsored_transactions',
+        ),
+      ).toMatchObject({
+        used: 0,
+        quota,
+        resetsAt: new Date('2026-04-15T10:30:00Z'),
+      });
+      expect(result.plan?.cycleEndsAt).toStrictEqual(currentPeriodEnd);
+    });
+
+    it('allows usage again when a new quota month starts, even with cached limits', async () => {
+      const spaceId = await createSpace();
+      const quota = faker.number.int({ min: 1, max: 10 });
+      await annualPlan(spaceId, quota);
+      vi.setSystemTime(new Date('2026-03-15T10:29:59.999Z'));
+      await recordUsage({
+        spaceId,
+        featureKey: 'sponsored_transactions',
+        used: quota,
+        periodStart: februaryWindow,
+      });
+      await expect(
+        enforcingService.assertWithinQuota({
+          spaceId,
+          featureKey: 'sponsored_transactions',
+          delta: 1,
+        }),
+      ).rejects.toMatchObject({ response: { quota, used: quota } });
+
+      vi.setSystemTime(marchWindow);
+
+      await expect(
+        enforcingService.consumeQuota({
+          spaceId,
+          featureKey: 'sponsored_transactions',
+          delta: 1,
+        }),
+      ).resolves.toMatchObject({
+        period: { periodStart: marchWindow },
+        delta: 1,
+      });
+      const usage = await dataSource.getRepository(SpaceFeatureUsage).find({
+        where: { space: { id: spaceId } },
+        order: { periodStart: 'ASC' },
+      });
+      expect(
+        usage.map(({ periodStart, used }) => ({ periodStart, used })),
+      ).toStrictEqual([
+        { periodStart: februaryWindow, used: quota },
+        { periodStart: marchWindow, used: 1 },
+      ]);
+    });
+  });
+
+  describe('getAllEntitlements', () => {
+    it("keys each active workspace's entitlements by UUID, as getEntitlements returns them", async () => {
+      const [subscribedSpaceId, freeSpaceId] = await Promise.all([
+        createSpace(),
+        createSpace(),
+      ]);
+      const userId = await addActiveMember(subscribedSpaceId);
+      await joinSpace({ userId, spaceId: freeSpaceId, status: 'ACTIVE' });
+      const purchasedSeats = parsedEntitlementBuilder()
+        .with('featureKey', 'safe_seats')
+        .build();
+      await materializeFromEvent({
+        spaceId: subscribedSpaceId,
+        subscription: materializedSubscriptionBuilder()
+          .with('status', 'active')
+          .with('entitlements', [purchasedSeats])
+          .build(),
+      });
+      const safeCount = faker.number.int({ min: 1, max: 3 });
+      await addSafes(freeSpaceId, safeCount);
+      await recordUsage({
+        spaceId: freeSpaceId,
+        featureKey: 'sponsored_transactions',
+        used: faker.number.int({ min: 1, max: 10 }),
+      });
+      const authPayload = authPayloadFor(userId);
+      const [subscribedSpaceUuid, freeSpaceUuid] = await Promise.all([
+        spaceUuidOf(subscribedSpaceId),
+        spaceUuidOf(freeSpaceId),
+      ]);
+
+      const result = await service.getAllEntitlements(authPayload);
+
+      expect(result).toStrictEqual({
+        [subscribedSpaceUuid]: await service.getEntitlements({
+          spaceId: subscribedSpaceId,
+          authPayload,
+        }),
+        [freeSpaceUuid]: await service.getEntitlements({
+          spaceId: freeSpaceId,
+          authPayload,
+        }),
+      });
+      expect(seatsOf(result[subscribedSpaceUuid])).toMatchObject({
+        quota: purchasedSeats.quota,
+        used: 0,
+      });
+      expect(result[freeSpaceUuid].plan).toBeNull();
+      expect(seatsOf(result[freeSpaceUuid])).toMatchObject({
+        quota: FREE_SAFE_SEATS,
+        used: safeCount,
+      });
+    });
+
+    it('leaves out workspaces the caller is only invited to or not in', async () => {
+      const [memberSpaceId, invitedSpaceId, otherSpaceId] = await Promise.all([
+        createSpace(),
+        createSpace(),
+        createSpace(),
+      ]);
+      const userId = await addActiveMember(memberSpaceId);
+      await joinSpace({ userId, spaceId: invitedSpaceId, status: 'INVITED' });
+      await addActiveMember(otherSpaceId);
+
+      const result = await service.getAllEntitlements(authPayloadFor(userId));
+
+      expect(Object.keys(result)).toStrictEqual([
+        await spaceUuidOf(memberSpaceId),
+      ]);
+    });
+
+    it('returns an empty object for a caller with no active workspace', async () => {
+      const userId = await dataSource
+        .getRepository(User)
+        .insert({ status: 'ACTIVE' })
+        .then((inserted) => inserted.generatedMaps[0].id as number);
+      await joinSpace({
+        userId,
+        spaceId: await createSpace(),
+        status: 'INVITED',
+      });
+
+      await expect(
+        service.getAllEntitlements(authPayloadFor(userId)),
+      ).resolves.toStrictEqual({});
+    });
+
+    it('warns about unpublished features once for the whole request', async () => {
+      const [spaceId, otherSpaceId] = await Promise.all([
+        createSpace(),
+        createSpace(),
+      ]);
+      const userId = await addActiveMember(spaceId);
+      await joinSpace({ userId, spaceId: otherSpaceId, status: 'ACTIVE' });
+
+      await service.getAllEntitlements(authPayloadFor(userId));
+
+      expect(mockLoggingService.warn).toHaveBeenCalledExactlyOnceWith(
+        `Features seeded but not published, omitted from the response: ${FEATURE_FIXTURES.map(
+          ({ key }) => key,
+        )
+          .filter((key) => !isFeatureKey(key))
+          .join(', ')}`,
+      );
+    });
+
+    it('rejects an unauthenticated caller', async () => {
+      await expect(
+        service.getAllEntitlements(new AuthPayload()),
+      ).rejects.toThrow(new UnauthorizedException('Not authenticated'));
     });
   });
 });

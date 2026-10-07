@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
+import { Equal } from 'typeorm';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import {
@@ -30,6 +31,10 @@ import type {
   MaterializedSubscription,
   ParsedEntitlement,
 } from '@/modules/entitlements/domain/entities/materialized-subscription.entity';
+import type {
+  PlanContext,
+  SpacePlanContext,
+} from '@/modules/entitlements/domain/entities/plan-context.entity';
 import type {
   ResolvedEntitlement,
   ResolvedEntitlements,
@@ -66,6 +71,7 @@ import { ISubscriptionsRepository } from '@/modules/entitlements/domain/subscrip
 import type {
   EntitlementItem,
   EntitlementsResponse,
+  SpacesEntitlementsResponse,
 } from '@/modules/entitlements/routes/entities/entitlements-response.entity';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 import { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
@@ -141,38 +147,56 @@ export class EntitlementsService implements IEntitlementEnforcement {
   public async resolveEntitlements(
     spaceId: Space['id'],
   ): Promise<ResolvedEntitlements> {
-    const { now, spaceCreatedAt, features, activeSubscription, purchased } =
-      await this.loadPlanContext(spaceId);
+    const [resolved] = (
+      await this.resolvePlanContext(await this.loadPlanContext(spaceId))
+    ).values();
+    return resolved;
+  }
 
-    const usedByFeatureId = await this.getUsageByFeatureId({
-      spaceId,
-      spaceCreatedAt,
-      features,
-      activeSubscription,
-      now,
-    });
+  /**
+   * {@link resolveEntitlements} for several workspaces, reading each table
+   * once for all of them, keyed by workspace id.
+   */
+  private async resolvePlanContext(
+    args: PlanContext,
+  ): Promise<Map<Space['id'], ResolvedEntitlements>> {
+    const { now, features } = args;
+    const usageBySpaceId = await this.getUsageBySpaceId(args);
 
-    const entitlements = features.map((feature) =>
-      this.resolveFeature({
-        feature,
-        spaceCreatedAt,
-        activeSubscription,
-        purchased: purchased.get(feature.id),
-        used: usedByFeatureId.get(feature.id) ?? 0,
-        now,
-      }),
+    return new Map(
+      args.spaces.map(
+        ({ spaceId, spaceCreatedAt, activeSubscription, purchased }) => {
+          const usedByFeatureId = usageBySpaceId.get(spaceId);
+          const entitlements = features.map((feature) =>
+            this.resolveFeature({
+              feature,
+              spaceCreatedAt,
+              activeSubscription,
+              purchased: purchased.get(feature.id),
+              used: usedByFeatureId?.get(feature.id) ?? 0,
+              now,
+            }),
+          );
+
+          return [
+            spaceId,
+            {
+              plan:
+                activeSubscription &&
+                isActiveSubscriptionStatus(activeSubscription.status)
+                  ? {
+                      id: activeSubscription.planId,
+                      name: activeSubscription.planName,
+                      cycleEndsAt: activeSubscription.currentPeriodEnd,
+                      status: activeSubscription.status,
+                    }
+                  : null,
+              entitlements,
+            },
+          ] as const;
+        },
+      ),
     );
-
-    return {
-      plan: activeSubscription
-        ? {
-            id: activeSubscription.planId,
-            name: activeSubscription.planName,
-            cycleEndsAt: activeSubscription.currentPeriodEnd,
-          }
-        : null,
-      entitlements,
-    };
   }
 
   public async assertWithinQuota(args: {
@@ -362,9 +386,15 @@ export class EntitlementsService implements IEntitlementEnforcement {
     featureKey: FeatureKey;
     grant: FeatureGrant;
   }): Promise<number> {
-    return isStockMeteredFeatureKey(args.featureKey)
-      ? await this.stockCounters[args.featureKey](args.spaceId)
-      : await this.countEventUsage(args.spaceId, args.featureKey, args.grant);
+    if (isStockMeteredFeatureKey(args.featureKey)) {
+      const usage = await this.stockCounters[args.featureKey]([args.spaceId]);
+      return usage.get(args.spaceId) ?? 0;
+    }
+    return await this.countEventUsage(
+      args.spaceId,
+      args.featureKey,
+      args.grant,
+    );
   }
 
   /** One counter, for the period its grant names. */
@@ -434,13 +464,7 @@ export class EntitlementsService implements IEntitlementEnforcement {
   }
 
   /** Read once for both consumers: the API response and the cached grants. */
-  private async loadPlanContext(spaceId: Space['id']): Promise<{
-    now: Date;
-    spaceCreatedAt: Date;
-    features: Array<Feature>;
-    activeSubscription: SpaceSubscription | null;
-    purchased: Map<number, SubscriptionEntitlement>;
-  }> {
+  private async loadPlanContext(spaceId: Space['id']): Promise<PlanContext> {
     const [spaceCreatedAt, features, activeSubscription] = await Promise.all([
       this.spacesRepository.findCreatedAtById(spaceId),
       this.featuresRepository.getFeatures(),
@@ -448,11 +472,47 @@ export class EntitlementsService implements IEntitlementEnforcement {
     ]);
     return {
       now: new Date(),
-      spaceCreatedAt,
       features,
-      activeSubscription,
+      spaces: [
+        this.toSpacePlanContext({
+          spaceId,
+          spaceCreatedAt,
+          activeSubscription,
+        }),
+      ],
+    };
+  }
+
+  /** {@link loadPlanContext} for several workspaces, with one read per table. */
+  private async loadPlanContextOfSpaces(
+    spaces: Array<Pick<Space, 'id' | 'createdAt'>>,
+  ): Promise<PlanContext> {
+    const [features, activeSubscriptions] = await Promise.all([
+      this.featuresRepository.getFeatures(),
+      this.subscriptionsRepository.getActiveSubscriptionsBySpaceIds(
+        spaces.map(({ id }) => id),
+      ),
+    ]);
+    return {
+      now: new Date(),
+      features,
+      spaces: spaces.map((space) =>
+        this.toSpacePlanContext({
+          spaceId: space.id,
+          spaceCreatedAt: space.createdAt,
+          activeSubscription: activeSubscriptions.get(space.id) ?? null,
+        }),
+      ),
+    };
+  }
+
+  private toSpacePlanContext(
+    args: Omit<SpacePlanContext, 'purchased'>,
+  ): SpacePlanContext {
+    return {
+      ...args,
       purchased: new Map(
-        (activeSubscription?.entitlements ?? []).map((entitlement) => [
+        (args.activeSubscription?.entitlements ?? []).map((entitlement) => [
           entitlement.feature.id,
           entitlement,
         ]),
@@ -474,8 +534,11 @@ export class EntitlementsService implements IEntitlementEnforcement {
   private async computeGrants(
     spaceId: Space['id'],
   ): Promise<Record<string, FeatureGrant>> {
-    const { now, spaceCreatedAt, features, activeSubscription, purchased } =
-      await this.loadPlanContext(spaceId);
+    const {
+      now,
+      features,
+      spaces: [{ spaceCreatedAt, activeSubscription, purchased }],
+    } = await this.loadPlanContext(spaceId);
 
     return Object.fromEntries(
       features.map((feature) => {
@@ -489,8 +552,7 @@ export class EntitlementsService implements IEntitlementEnforcement {
             enabled: effective.enabled,
             // A feature the plan does not grant has no allowance at all.
             quota: effective.enabled ? effective.quota : 0,
-            // Cached: only a webhook moves it, and that invalidates this.
-            // A Free `freePeriod` rolling over on its own can lag by a TTL.
+            // Cached; `hasClosedWindow` recomputes once it passes.
             resetsAt: resetsAt({
               feature,
               spaceCreatedAt,
@@ -523,10 +585,43 @@ export class EntitlementsService implements IEntitlementEnforcement {
     const userId = getAuthenticatedUserIdOrFail(args.authPayload);
     await assertMember(this.membersRepository, args.spaceId, userId);
 
-    return this.toEntitlementsResponse(
-      await this.resolveEntitlements(args.spaceId),
+    const resolved = await this.resolveEntitlements(args.spaceId);
+    this.warnUnpublished([resolved]);
+    return this.toEntitlementsResponse(resolved);
+  }
+
+  /**
+   * `GET /v1/spaces/entitlements`: those of every workspace the caller is an
+   * active member of, keyed by workspace UUID.
+   */
+  public async getAllEntitlements(
+    authPayload: AuthPayload,
+  ): Promise<SpacesEntitlementsResponse> {
+    const userId = getAuthenticatedUserIdOrFail(authPayload);
+
+    const members = await this.membersRepository.find({
+      select: { id: true, space: { id: true, uuid: true, createdAt: true } },
+      where: { user: Equal(userId), status: 'ACTIVE' },
+      relations: { space: true },
+    });
+    if (members.length === 0) {
+      return {};
+    }
+    const resolved = await this.resolvePlanContext(
+      await this.loadPlanContextOfSpaces(members.map(({ space }) => space)),
+    );
+    this.warnUnpublished(resolved.values());
+
+    return Object.fromEntries(
+      members.flatMap(({ space }) => {
+        const entitlements = resolved.get(space.id);
+        return entitlements
+          ? [[space.uuid, this.toEntitlementsResponse(entitlements)] as const]
+          : [];
+      }),
     );
   }
+
   /**
    * Materializes the state an event carries in its own payload, and stamps the
    * space with that event's `created`. Applied only while it orders strictly
@@ -819,59 +914,71 @@ export class EntitlementsService implements IEntitlementEnforcement {
     }
   }
 
-  /** Usage of every metered feature in the catalog, keyed by feature id. */
-  private async getUsageByFeatureId(args: {
-    spaceId: Space['id'];
-    spaceCreatedAt: Date;
-    features: Array<Feature>;
-    activeSubscription: SpaceSubscription | null;
-    now: Date;
-  }): Promise<Map<number, number>> {
+  /**
+   * Usage of every metered feature in the catalog, keyed by workspace id, then
+   * by feature id.
+   */
+  private async getUsageBySpaceId(
+    args: PlanContext,
+  ): Promise<Map<Space['id'], Map<number, number>>> {
     const metered = args.features.filter(
       (feature) => feature.type === FeatureType.Metered,
     );
+    const spaceIds = args.spaces.map(({ spaceId }) => spaceId);
 
     const [eventUsage, stockUsage] = await Promise.all([
       this.getEventUsage({ ...args, features: metered }),
-      this.getStockUsage(args.spaceId, metered.filter(isStockMeteredFeature)),
+      this.getStockUsage(spaceIds, metered.filter(isStockMeteredFeature)),
     ]);
 
-    return new Map([...eventUsage, ...stockUsage]);
+    return new Map(
+      spaceIds.map((spaceId) => [
+        spaceId,
+        new Map([
+          ...(eventUsage.get(spaceId) ?? []),
+          ...stockUsage.map(
+            ([featureId, usage]) =>
+              [featureId, usage.get(spaceId) ?? 0] as const,
+          ),
+        ]),
+      ]),
+    );
   }
 
   /** One query covering every event-metered feature's current period. */
-  private async getEventUsage(args: {
-    spaceId: Space['id'];
-    spaceCreatedAt: Date;
-    features: Array<Feature>;
-    activeSubscription: SpaceSubscription | null;
-    now: Date;
-  }): Promise<Map<number, number>> {
+  private async getEventUsage(
+    args: PlanContext,
+  ): Promise<Map<Space['id'], Map<number, number>>> {
     const eventMetered = args.features.filter(isEventMeteredFeature);
 
-    return await this.spaceFeatureUsageRepository.getUsageByFeatureId({
-      spaceId: args.spaceId,
-      periods: eventMetered.map((feature) => ({
-        featureId: feature.id,
-        periodStart: eventPeriodStart({
-          feature,
-          spaceCreatedAt: args.spaceCreatedAt,
-          cycle: args.activeSubscription,
-          now: args.now,
-        }),
+    return await this.spaceFeatureUsageRepository.getUsageBySpaceIds(
+      args.spaces.map(({ spaceId, spaceCreatedAt, activeSubscription }) => ({
+        spaceId,
+        periods: eventMetered.map((feature) => ({
+          featureId: feature.id,
+          periodStart: eventPeriodStart({
+            feature,
+            spaceCreatedAt,
+            cycle: activeSubscription,
+            now: args.now,
+          }),
+        })),
       })),
-    });
+    );
   }
 
   /** One live count per stock-metered feature, run concurrently. */
   private async getStockUsage(
-    spaceId: Space['id'],
+    spaceIds: Array<Space['id']>,
     features: Array<Feature & { key: StockMeteredFeature }>,
-  ): Promise<Array<readonly [number, number]>> {
+  ): Promise<Array<readonly [number, Map<Space['id'], number>]>> {
     return await Promise.all(
       features.map(
         async (feature) =>
-          [feature.id, await this.stockCounters[feature.key](spaceId)] as const,
+          [
+            feature.id,
+            await this.stockCounters[feature.key](spaceIds),
+          ] as const,
       ),
     );
   }
@@ -884,10 +991,10 @@ export class EntitlementsService implements IEntitlementEnforcement {
    */
   private readonly stockCounters: Record<
     StockMeteredFeature,
-    (spaceId: Space['id']) => Promise<number>
+    (spaceIds: Array<Space['id']>) => Promise<Map<Space['id'], number>>
   > = {
-    safe_seats: (spaceId) =>
-      this.spaceSafesRepository.countSeatsBySpaceId(spaceId),
+    safe_seats: (spaceIds) =>
+      this.spaceSafesRepository.countSeatsBySpaceIds(spaceIds),
   };
 
   /**
@@ -899,22 +1006,14 @@ export class EntitlementsService implements IEntitlementEnforcement {
   private toEntitlementsResponse(
     resolved: ResolvedEntitlements,
   ): EntitlementsResponse {
-    const unpublished: Array<string> = [];
     const entitlements = resolved.entitlements.flatMap<EntitlementItem>(
       (entitlement) => {
         if (!isFeatureKey(entitlement.feature)) {
-          unpublished.push(entitlement.feature);
           return [];
         }
         return [{ ...entitlement, feature: entitlement.feature }];
       },
     );
-
-    if (unpublished.length > 0) {
-      this.loggingService.warn(
-        `Features seeded but not published, omitted from the response: ${unpublished.join(', ')}`,
-      );
-    }
 
     return {
       plan: resolved.plan
@@ -922,9 +1021,31 @@ export class EntitlementsService implements IEntitlementEnforcement {
             id: resolved.plan.id,
             name: resolved.plan.name,
             cycleEndsAt: resolved.plan.cycleEndsAt,
+            status: resolved.plan.status,
           }
         : null,
       entitlements,
     };
+  }
+
+  /**
+   * Logs the keys {@link toEntitlementsResponse} leaves out, once for however
+   * many workspaces were resolved: they all read the same catalog.
+   */
+  private warnUnpublished(resolved: Iterable<ResolvedEntitlements>): void {
+    const unpublished = new Set<string>();
+    for (const { entitlements } of resolved) {
+      for (const { feature } of entitlements) {
+        if (!isFeatureKey(feature)) {
+          unpublished.add(feature);
+        }
+      }
+    }
+
+    if (unpublished.size > 0) {
+      this.loggingService.warn(
+        `Features seeded but not published, omitted from the response: ${[...unpublished].join(', ')}`,
+      );
+    }
   }
 }

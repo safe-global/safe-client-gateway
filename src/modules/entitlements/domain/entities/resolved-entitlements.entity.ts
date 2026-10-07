@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import type { FeatureType } from '@/modules/entitlements/domain/entities/feature.entity';
+import type { ActiveSubscriptionStatus } from '@/modules/entitlements/domain/entitlements.constants';
 
 /**
  * The computed entitlement state of a workspace, produced by
@@ -11,6 +13,7 @@ export type ResolvedPlan = {
   id: string;
   name: string | null;
   cycleEndsAt: Date | null;
+  status: ActiveSubscriptionStatus;
 };
 
 type ResolvedEntitlementBase = {

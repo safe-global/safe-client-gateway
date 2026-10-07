@@ -150,6 +150,54 @@ describe('CacheFirstDataSource', () => {
       await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeNull(); // item is not cached
     });
 
+    it.each([
+      ['zero', 0],
+      ['undefined', undefined],
+    ])(
+      'should return the network data without checking the invalidation time nor caching it if expireTimeSeconds is %s',
+      async (_, expireTimeSeconds) => {
+        const mockCache = vi.mocked({
+          hGet: vi.fn(),
+          hSet: vi.fn(),
+        } as MockedObject<ICacheService>);
+        cacheFirstDataSource = new CacheFirstDataSource(
+          mockCache,
+          mockNetworkService,
+          mockLoggingService,
+          fakeConfigurationService,
+        );
+        const targetUrl = faker.internet.url({ appendSlash: false });
+        const cacheDir = new CacheDir(faker.word.sample(), faker.word.sample());
+        const notFoundExpireTimeSeconds = faker.number.int();
+        const data = JSON.parse(fakeJson());
+        mockCache.hGet.mockResolvedValue(null);
+        mockNetworkService.get.mockImplementation(({ url }) => {
+          switch (url) {
+            case targetUrl:
+              return Promise.resolve({ data, status: 200 });
+            default:
+              return Promise.reject(`No matching rule for url: ${url}`);
+          }
+        });
+
+        const actual = await cacheFirstDataSource.get({
+          cacheDir,
+          url: targetUrl,
+          notFoundExpireTimeSeconds,
+          expireTimeSeconds,
+        });
+
+        expect(actual).toEqual(data);
+        expect(mockNetworkService.get).toHaveBeenCalledTimes(1);
+        expect(mockCache.hGet).toHaveBeenCalledTimes(1);
+        expect(mockCache.hGet).toHaveBeenCalledWith(cacheDir);
+        expect(mockCache.hGet).not.toHaveBeenCalledWith(
+          new CacheDir(`invalidationTimeMs:${cacheDir.key}`, ''),
+        );
+        expect(mockCache.hSet).not.toHaveBeenCalled();
+      },
+    );
+
     it('should return the cached data without calling the underlying network interface', async () => {
       const cacheDir = new CacheDir(faker.word.sample(), faker.word.sample());
       const notFoundExpireTimeSeconds = faker.number.int();
@@ -433,6 +481,56 @@ describe('CacheFirstDataSource', () => {
       expect(fakeCacheService.keyCount()).toBe(1); // only invalidation timestamp is cached
       await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeNull(); // item is not cached
     });
+
+    it.each([
+      ['zero', 0],
+      ['undefined', undefined],
+    ])(
+      'should return the network data without checking the invalidation time nor caching it if expireTimeSeconds is %s',
+      async (_, expireTimeSeconds) => {
+        const mockCache = vi.mocked({
+          hGet: vi.fn(),
+          hSet: vi.fn(),
+        } as MockedObject<ICacheService>);
+        cacheFirstDataSource = new CacheFirstDataSource(
+          mockCache,
+          mockNetworkService,
+          mockLoggingService,
+          fakeConfigurationService,
+        );
+        const targetUrl = faker.internet.url({ appendSlash: false });
+        const cacheDir = new CacheDir(faker.word.sample(), faker.word.sample());
+        const notFoundExpireTimeSeconds = faker.number.int();
+        const res = JSON.parse(fakeJson());
+        const data = JSON.parse(fakeJson());
+        mockCache.hGet.mockResolvedValue(null);
+        mockNetworkService.post.mockImplementation(({ url }) => {
+          switch (url) {
+            case targetUrl:
+              return Promise.resolve({ data: res, status: 200 });
+            default:
+              return Promise.reject(`No matching rule for url: ${url}`);
+          }
+        });
+
+        const actual = await cacheFirstDataSource.post({
+          cacheDir,
+          url: targetUrl,
+          notFoundExpireTimeSeconds,
+          expireTimeSeconds,
+          data,
+        });
+
+        expect(actual).toEqual(res);
+        expect(mockNetworkService.post).toHaveBeenCalledTimes(1);
+        expect(mockCache.hGet).toHaveBeenCalledTimes(1);
+        expect(mockCache.hGet).toHaveBeenCalledWith(cacheDir);
+        expect(mockCache.hGet).not.toHaveBeenCalledWith(
+          new CacheDir(`invalidationTimeMs:${cacheDir.key}`, ''),
+        );
+        expect(mockCache.hSet).not.toHaveBeenCalled();
+      },
+    );
 
     it('should return the cached data without calling the underlying network interface', async () => {
       const cacheDir = new CacheDir(faker.word.sample(), faker.word.sample());
