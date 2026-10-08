@@ -10,10 +10,14 @@ import {
 } from '@/modules/policies/domain/entities/pending-policy.entity';
 import type { ModuleEnforcement } from '@/modules/policies/domain/entities/policy-enforcement.entity';
 import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
+import type { Token } from '@/modules/policies/domain/entities/token.entity';
 import {
+  Erc20TokenMetadataDto,
   ModuleEnforcementDto,
+  NativeTokenMetadataDto,
   SafeRefDto,
   SafeRefResponse,
+  SpendingLimitTokenMetadataSchema,
 } from '@/modules/policies/routes/entities/policy.dto.entity';
 
 export class EnableModuleChangeDto {
@@ -25,6 +29,7 @@ export class AddDelegateChangeDto {
   @ApiProperty({ enum: [PendingSpendingLimitChangeKind.AddDelegate] })
   public readonly kind!: typeof PendingSpendingLimitChangeKind.AddDelegate;
   @ApiProperty({
+    type: String,
     description:
       'The address being added as a delegate in AllowanceModule contract',
   })
@@ -34,7 +39,10 @@ export class AddDelegateChangeDto {
 export class RemoveDelegateChangeDto {
   @ApiProperty({ enum: [PendingSpendingLimitChangeKind.RemoveDelegate] })
   public readonly kind!: typeof PendingSpendingLimitChangeKind.RemoveDelegate;
-  @ApiProperty({ description: 'The delegate being removed' })
+  @ApiProperty({
+    type: String,
+    description: 'The delegate being removed',
+  })
   public readonly delegate!: Address;
   @ApiProperty({
     description: "Whether the delegate's allowances are deleted along with it",
@@ -42,37 +50,59 @@ export class RemoveDelegateChangeDto {
   public readonly removeAllowances!: boolean;
 }
 
+@ApiExtraModels(NativeTokenMetadataDto, Erc20TokenMetadataDto)
 export class SetAllowanceChangeDto {
   @ApiProperty({ enum: [PendingSpendingLimitChangeKind.SetAllowance] })
   public readonly kind!: typeof PendingSpendingLimitChangeKind.SetAllowance;
-  @ApiProperty()
+  @ApiProperty({ type: String })
   public readonly delegate!: Address;
   @ApiProperty({
+    type: String,
     description: 'The token the limit applies to; zero address for native',
   })
   public readonly token!: Address;
+  @ApiProperty({
+    ...SpendingLimitTokenMetadataSchema,
+    nullable: true,
+    description: 'Metadata of `token`; null when it could not be resolved',
+  })
+  public readonly tokenMetadata!: Token | null;
   @ApiProperty({ description: 'Per-window ceiling, in base units' })
   public readonly amount!: string;
   @ApiProperty({ description: 'Window length in minutes; 0 never resets' })
   public readonly resetPeriodMinutes!: number;
 }
 
+@ApiExtraModels(NativeTokenMetadataDto, Erc20TokenMetadataDto)
 export class ResetAllowanceChangeDto {
   @ApiProperty({ enum: [PendingSpendingLimitChangeKind.ResetAllowance] })
   public readonly kind!: typeof PendingSpendingLimitChangeKind.ResetAllowance;
-  @ApiProperty()
+  @ApiProperty({ type: String })
   public readonly delegate!: Address;
-  @ApiProperty()
+  @ApiProperty({ type: String })
   public readonly token!: Address;
+  @ApiProperty({
+    ...SpendingLimitTokenMetadataSchema,
+    nullable: true,
+    description: 'Metadata of `token`; null when it could not be resolved',
+  })
+  public readonly tokenMetadata!: Token | null;
 }
 
+@ApiExtraModels(NativeTokenMetadataDto, Erc20TokenMetadataDto)
 export class DeleteAllowanceChangeDto {
   @ApiProperty({ enum: [PendingSpendingLimitChangeKind.DeleteAllowance] })
   public readonly kind!: typeof PendingSpendingLimitChangeKind.DeleteAllowance;
-  @ApiProperty()
+  @ApiProperty({ type: String })
   public readonly delegate!: Address;
-  @ApiProperty()
+  @ApiProperty({ type: String })
   public readonly token!: Address;
+  @ApiProperty({
+    ...SpendingLimitTokenMetadataSchema,
+    nullable: true,
+    description: 'Metadata of `token`; null when it could not be resolved',
+  })
+  public readonly tokenMetadata!: Token | null;
 }
 
 const PendingSpendingLimitChangeSchema = {
@@ -118,6 +148,7 @@ const PendingSpendingLimitChangeSchema = {
 )
 export class PendingSpendingLimitDataDto implements PendingSpendingLimitData {
   @ApiProperty({
+    type: String,
     description: 'The AllowanceModule deployment holding this state',
   })
   public readonly module!: Address;

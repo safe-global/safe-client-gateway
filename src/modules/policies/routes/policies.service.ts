@@ -4,7 +4,7 @@ import {
   Injectable,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import { type Address, isAddressEqual } from 'viem';
+import { type Address, isAddressEqual, zeroAddress } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import { batched } from '@/domain/common/utils/batch';
 import {
@@ -14,6 +14,7 @@ import {
 import { asError } from '@/logging/utils';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
+import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
 import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
 import { IDelegatesV3Repository } from '@/modules/delegate/domain/v3/delegates.v3.repository.interface';
 import type { ActivePolicy } from '@/modules/policies/domain/entities/active-policy.entity';
@@ -21,7 +22,15 @@ import type { PolicyIndexerSafeAllowance } from '@/modules/policies/domain/entit
 import type { PendingPolicy } from '@/modules/policies/domain/entities/pending-policy.entity';
 import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
 import type { SafeRef } from '@/modules/policies/domain/entities/safe-ref.entity';
+import type {
+  Token,
+  TokenReference,
+} from '@/modules/policies/domain/entities/token.entity';
 import { IPolicyIndexerRepository } from '@/modules/policies/domain/policy-indexer.repository.interface';
+import {
+  type TokenMetadataKey,
+  tokenMetadataKey,
+} from '@/modules/policies/domain/utils/token-metadata-key.utils';
 import { PendingSpendingLimitMapper } from '@/modules/policies/routes/mappers/pending-spending-limit.mapper';
 import { ProposerMapper } from '@/modules/policies/routes/mappers/proposer.mapper';
 import { SpendingLimitMapper } from '@/modules/policies/routes/mappers/spending-limit.mapper';
@@ -31,6 +40,8 @@ import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 import { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
 import { assertMember } from '@/modules/spaces/domain/space-assert.utils';
+import type { NativeToken } from '@/modules/tokens/domain/entities/token.entity';
+import { ITokenRepository } from '@/modules/tokens/domain/token.repository.interface';
 import { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
 import type { Caip10Address } from '@/validation/entities/schemas/caip-10-addresses.schema';
 
@@ -65,6 +76,10 @@ export class PoliciesService {
     private readonly membersRepository: IMembersRepository,
     @Inject(IDelegatesV3Repository)
     private readonly delegatesV3Repository: IDelegatesV3Repository,
+    @Inject(ITokenRepository)
+    private readonly tokenRepository: ITokenRepository,
+    @Inject(IChainsRepository)
+    private readonly chainsRepository: IChainsRepository,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
     @Inject(LoggingService)
@@ -181,6 +196,9 @@ export class PoliciesService {
     const enabledModulesPerSafe = spendingLimitsRequested
       ? await this.enabledModulesPerSafe(safes)
       : null;
+    const tokenMetadata = state
+      ? await this.getTokenMetadata(state.allowances)
+      : new Map<TokenMetadataKey, Token>();
     const delegatesPerSafe = proposersRequested
       ? await this.delegatesPerSafe(safes)
       : null;
@@ -198,6 +216,7 @@ export class PoliciesService {
               safe,
               allowances: this.getAllowancesBySafe(state.allowances, safe),
               enabledModules,
+              tokenMetadata,
             }),
           );
         }
@@ -214,6 +233,127 @@ export class PoliciesService {
     }
 
     return policies;
+  }
+
+  private async getTokenMetadata(
+    references: ReadonlyArray<TokenReference>,
+  ): Promise<Map<TokenMetadataKey, Token>> {
+    const nativeTokens = await this.fetchNativeTokens(
+      this.nativeCurrencyChainIds(references),
+    );
+    const erc20Tokens = await this.fetchErc20Tokens(
+      this.erc20TokensToFetch(references),
+    );
+
+    return new Map([...nativeTokens, ...erc20Tokens]);
+  }
+
+  private isNativeCurrency(reference: TokenReference): boolean {
+    return isAddressEqual(reference.token, zeroAddress);
+  }
+
+  /** The distinct chains a native-currency reference in {@link references} is on. */
+  private nativeCurrencyChainIds(
+    references: ReadonlyArray<TokenReference>,
+  ): Array<string> {
+    return [
+      ...new Set(
+        references
+          .filter((reference) => this.isNativeCurrency(reference))
+          .map((reference) => reference.chainId),
+      ),
+    ];
+  }
+
+  /**
+   * The distinct `(chainId, address)` pairs an ERC20 reference in
+   * {@link references} names.
+   */
+  private erc20TokensToFetch(
+    references: ReadonlyArray<TokenReference>,
+  ): Array<{ chainId: string; address: Address }> {
+    // Keyed by the same `chainId:address` the fetched token is later stored
+    // under, so a reference repeating a token - another spender, another
+    // Safe, same chain - collapses to the one pair fetched here.
+    const byKey = new Map<
+      TokenMetadataKey,
+      { chainId: string; address: Address }
+    >();
+    for (const reference of references) {
+      if (this.isNativeCurrency(reference)) {
+        continue;
+      }
+      const pair = { chainId: reference.chainId, address: reference.token };
+      byKey.set(tokenMetadataKey(pair), pair);
+    }
+    return [...byKey.values()];
+  }
+
+  private async fetchNativeTokens(
+    chainIds: ReadonlyArray<string>,
+  ): Promise<Map<TokenMetadataKey, Token>> {
+    const tokens = new Map<TokenMetadataKey, Token>();
+
+    const results = await batched(chainIds, this.batchSize, (chainId) =>
+      this.chainsRepository.getChain(chainId),
+    );
+    results.forEach((result, index) => {
+      const chainId = chainIds[index];
+      if (result.status !== 'fulfilled') {
+        this.loggingService.debug({
+          message: "Could not read a chain's native currency",
+          chainId,
+          error: asError(result.reason).message,
+        });
+        return;
+      }
+      const nativeToken: NativeToken = {
+        type: 'NATIVE_TOKEN',
+        address: zeroAddress,
+        ...result.value.nativeCurrency,
+        trusted: true,
+      };
+      tokens.set(
+        tokenMetadataKey({ chainId, address: zeroAddress }),
+        nativeToken,
+      );
+    });
+
+    return tokens;
+  }
+
+  private async fetchErc20Tokens(
+    pairs: ReadonlyArray<{ chainId: string; address: Address }>,
+  ): Promise<Map<TokenMetadataKey, Token>> {
+    const tokens = new Map<TokenMetadataKey, Token>();
+
+    const results = await batched(pairs, this.batchSize, (pair) =>
+      this.tokenRepository.getToken(pair),
+    );
+    results.forEach((result, index) => {
+      const pair = pairs[index];
+      if (result.status !== 'fulfilled') {
+        this.loggingService.debug({
+          message: 'Could not read a token',
+          chainId: pair.chainId,
+          address: pair.address,
+          error: asError(result.reason).message,
+        });
+        return;
+      }
+      if (result.value.type === 'ERC721') {
+        this.loggingService.debug({
+          message:
+            "An allowance's token resolved to an ERC721, not a fungible token",
+          chainId: pair.chainId,
+          address: pair.address,
+        });
+        return;
+      }
+      tokens.set(tokenMetadataKey(pair), result.value);
+    });
+
+    return tokens;
   }
 
   /**
@@ -255,7 +395,13 @@ export class PoliciesService {
       });
     }
 
-    return policies;
+    const tokenMetadata = await this.getTokenMetadata(
+      this.pendingSpendingLimitMapper.getTokenReferences(policies),
+    );
+    return this.pendingSpendingLimitMapper.attachTokenMetadata(
+      policies,
+      tokenMetadata,
+    );
   }
 
   /**
