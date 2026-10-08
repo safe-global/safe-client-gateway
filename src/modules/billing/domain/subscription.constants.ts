@@ -8,3 +8,7 @@ import type { SubscriptionStatus } from '@/datasources/billing-api/entities/subs
  */
 export const UPDATABLE_SUBSCRIPTION_STATUSES: ReadonlyArray<SubscriptionStatus> =
   ['active', 'trialing'];
+
+/** A plan change that failed after the Safes it needed gone were removed. */
+export const SAFES_REMOVED_PLAN_UNCHANGED_MESSAGE =
+  'Your Safes were removed, but the plan change failed. Please try again.';

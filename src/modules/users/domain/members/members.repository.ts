@@ -15,10 +15,11 @@ import type {
   FindOptionsWhere,
 } from 'typeorm';
 import { In, IsNull } from 'typeorm';
-import type { Address } from 'viem';
+import { type Address, getAddress } from 'viem';
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { isUniqueConstraintError } from '@/datasources/errors/helpers/is-unique-constraint-error.helper';
 import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-error';
+import { ILoggingService, LoggingService } from '@/logging/logging.interface';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
 import { Space as DbSpace } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
@@ -41,6 +42,7 @@ import { UserEncryptionService } from '@/modules/users/domain/user-encryption.se
 import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
 import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
 import { WalletEncryptionService } from '@/modules/wallets/domain/wallet-encryption.service';
+import { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
 
 @Injectable()
 export class MembersRepository implements IMembersRepository {
@@ -52,9 +54,13 @@ export class MembersRepository implements IMembersRepository {
     private readonly spacesRepository: ISpacesRepository,
     @Inject(ISpaceAuditRepository)
     private readonly spaceAuditRepository: ISpaceAuditRepository,
+    @Inject(IWalletsRepository)
+    private readonly walletsRepository: IWalletsRepository,
     private readonly userEncryptionService: UserEncryptionService,
     private readonly walletEncryptionService: WalletEncryptionService,
     private readonly memberEncryptionService: MemberEncryptionService,
+    @Inject(LoggingService)
+    private readonly loggingService: ILoggingService,
   ) {}
 
   /**
@@ -74,6 +80,66 @@ export class MembersRepository implements IMembersRepository {
         ? { ...member, user: usersById.get(member.user.id) ?? member.user }
         : member,
     );
+  }
+
+  /**
+   * Attaches to each member's user the decrypted address of their lowest-`id`
+   * wallet, or `null` without one — fetched via the wallets repository, as
+   * the members query does not hydrate `User.wallets`.
+   *
+   * A failed decryption only nulls that member's address (logged as a
+   * warning) — one corrupt wallet row must not fail the whole roster.
+   */
+  private async attachMemberUserAddresses(
+    members: Array<Member>,
+  ): Promise<Array<Member>> {
+    const userIds = [...new Set(members.map((member) => member.user.id))];
+    if (userIds.length === 0) {
+      return members;
+    }
+    const wallets = await this.walletsRepository.find({
+      where: { user: { id: In(userIds) } },
+      relations: { user: true },
+    });
+    // Lowest wallet id per user so the address is stable across requests.
+    const walletByUserId = new Map<User['id'], Wallet>();
+    for (const wallet of [...wallets].sort((a, b) => a.id - b.id)) {
+      if (!walletByUserId.has(wallet.user.id)) {
+        walletByUserId.set(wallet.user.id, wallet);
+      }
+    }
+    const addressEntries = await Promise.all(
+      [...walletByUserId.entries()].map(
+        async ([userId, wallet]): Promise<[User['id'], Address] | null> => {
+          try {
+            return [
+              userId,
+              getAddress(
+                await this.walletEncryptionService.decryptAddress(
+                  userId,
+                  wallet.address,
+                ),
+              ),
+            ];
+          } catch (error) {
+            this.loggingService.warn(
+              `Failed to decrypt member wallet address; omitting it. userId=${userId}, walletId=${wallet.id}, error=${error}`,
+            );
+            return null;
+          }
+        },
+      ),
+    );
+    const addressByUserId = new Map(
+      addressEntries.filter((entry) => entry !== null),
+    );
+    return members.map((member) => ({
+      ...member,
+      user: {
+        ...member.user,
+        address: addressByUserId.get(member.user.id) ?? null,
+      },
+    }));
   }
 
   private async findSpaceForAuditOrFail(
@@ -448,7 +514,7 @@ export class MembersRepository implements IMembersRepository {
       user: true,
     });
     if (own.status !== 'ACTIVE') {
-      return [own];
+      return await this.attachMemberUserAddresses([own]);
     }
 
     const space = await this.spacesRepository.findOneOrFail({
@@ -457,19 +523,22 @@ export class MembersRepository implements IMembersRepository {
     });
 
     const emailDecrypted = await this.decryptMemberUserEmails(space.members);
-    return await this.memberEncryptionService.decryptMembers(
+    const decrypted = await this.memberEncryptionService.decryptMembers(
       args.spaceId,
       emailDecrypted,
     );
+    return await this.attachMemberUserAddresses(decrypted);
   }
 
   public async findSelfMembershipOrFail(args: {
     authPayload: AuthPayload;
     spaceId: Space['id'];
   }): Promise<Member> {
-    return await this.findActiveOrInvitedMemberOrFail(args, {
+    const member = await this.findActiveOrInvitedMemberOrFail(args, {
       user: true,
     });
+    const [memberWithAddress] = await this.attachMemberUserAddresses([member]);
+    return memberWithAddress;
   }
 
   private findActiveAdminsOrFail(spaceId: Space['id']): Promise<Array<Member>> {

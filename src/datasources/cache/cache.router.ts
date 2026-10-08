@@ -658,12 +658,13 @@ export class CacheRouter {
   static getMessagesBySafeCacheDir(args: {
     chainId: string;
     safeAddress: Address;
+    ordering?: string;
     limit?: number;
     offset?: number;
   }): CacheDir {
     return new CacheDir(
       CacheRouter.getMessagesBySafeCacheKey(args),
-      `${args.limit}_${args.offset}`,
+      `${args.ordering}_${args.limit}_${args.offset}`,
     );
   }
 

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { ConflictException, Inject } from '@nestjs/common';
+import type { Address } from 'viem';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
@@ -173,17 +174,19 @@ export class MembersService {
         member.status === 'ACTIVE',
     );
     return {
-      members: members.map((member) => ({
-        ...member,
-        user: this.toMemberUser(
-          member.user,
-          // Until the member accepted the invite, only expose their email
-          // to active admins.
-          member.status === 'ACTIVE' || isActiveAdmin
-            ? member.user.email
-            : null,
-        ),
-      })),
+      members: members.map((member) => {
+        // Until the member accepts the invite, their identifiers (email,
+        // wallet address) are only exposed to active admins.
+        const isVisible = member.status === 'ACTIVE' || isActiveAdmin;
+        return {
+          ...member,
+          user: this.toMemberUser(
+            member.user,
+            isVisible ? member.user.email : null,
+            isVisible ? (member.user.address ?? null) : null,
+          ),
+        };
+      }),
     };
   }
 
@@ -197,7 +200,12 @@ export class MembersService {
     });
     return {
       ...member,
-      user: this.toMemberUser(member.user, member.user.email),
+      user: this.toMemberUser(
+        member.user,
+        // The caller reads their own row, so identifiers are not gated.
+        member.user.email,
+        member.user.address ?? null,
+      ),
     };
   }
 
@@ -205,11 +213,16 @@ export class MembersService {
    * Maps a domain user to the public shape exposed in member responses,
    * explicitly omitting sensitive fields such as `extUserId`.
    */
-  private toMemberUser(user: User, email: User['email']): MemberDto['user'] {
+  private toMemberUser(
+    user: User,
+    email: User['email'],
+    address: Address | null,
+  ): MemberDto['user'] {
     return {
       id: user.id,
       status: user.status,
       email,
+      address,
     };
   }
 

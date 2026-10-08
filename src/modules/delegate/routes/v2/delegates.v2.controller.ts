@@ -41,9 +41,10 @@ export class DelegatesV2Controller {
   constructor(private readonly service: DelegatesV2Service) {}
 
   @ApiOperation({
-    summary: 'Get delegates',
+    deprecated: true,
+    summary: 'Get delegates (deprecated)',
     description:
-      'Retrieves a paginated list of delegates for a specific chain with optional filtering by Safe, delegate, delegator, or label.',
+      'Retrieves a paginated list of delegates for a specific chain with optional filtering by Safe, delegate, delegator, or label. This endpoint is deprecated, please use the v3 version instead.',
   })
   @ApiParam({
     name: 'chainId',
@@ -102,9 +103,10 @@ export class DelegatesV2Controller {
   }
 
   @ApiOperation({
-    summary: 'Create delegate',
+    deprecated: true,
+    summary: 'Create delegate (deprecated)',
     description:
-      'Creates a new delegate relationship between a Safe and a delegate address. Requires proper authorization signature.',
+      'Creates a new delegate relationship between a Safe and a delegate address. Requires proper authorization signature. This endpoint is deprecated, please use the v3 version instead.',
   })
   @ApiParam({
     name: 'chainId',
@@ -135,9 +137,10 @@ export class DelegatesV2Controller {
   }
 
   @ApiOperation({
-    summary: 'Delete delegate',
+    deprecated: true,
+    summary: 'Delete delegate (deprecated)',
     description:
-      'Removes a delegate relationship for a specific delegate address. Requires proper authorization signature.',
+      'Removes a delegate relationship for a specific delegate address. Requires proper authorization signature. This endpoint is deprecated, please use the v3 version instead.',
   })
   @ApiParam({
     name: 'chainId',

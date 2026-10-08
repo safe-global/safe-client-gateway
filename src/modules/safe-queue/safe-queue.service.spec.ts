@@ -9,6 +9,7 @@ import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
 import { CircuitBreakerKeys } from '@/datasources/circuit-breaker/circuit-breaker.keys';
 import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
+import { SAFE_QUEUE_SERVICE_MAX_LIMIT } from '@/domain/common/constants';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { delegateBuilder } from '@/modules/delegate/domain/entities/__tests__/delegate.builder';
 import { messageBuilder } from '@/modules/messages/domain/entities/__tests__/message.builder';
@@ -184,6 +185,119 @@ describe('SafeQueueService', () => {
       );
       expect(cacheDir.key).not.toBe(`${chainId}_delegates_${safeAddress}`);
     });
+
+    it('Should forward the label filter to the queue service', async () => {
+      const delegator = getAddress(faker.finance.ethereumAddress());
+      const label = faker.word.words();
+      mockDataSource.get.mockResolvedValueOnce(rawify({ results: [] }));
+
+      await service.getDelegates({ chainId, delegator, label });
+
+      expect(mockDataSource.get).toHaveBeenCalledWith(
+        expect.objectContaining({
+          url: `${baseUri}/api/v1/delegates`,
+          networkRequest: expect.objectContaining({
+            params: expect.objectContaining({
+              chainId: Number(chainId),
+              delegator,
+              label,
+            }),
+          }),
+        }),
+      );
+    });
+  });
+
+  describe('getMultisigTransactionWithNoCache', () => {
+    it('Should fetch the transaction from the network without the cache', async () => {
+      const tx = safeQueueMultisigTransactionBuilder()
+        .with('safeTxHash', safeTxHash as Hex)
+        .build();
+      networkService.get.mockResolvedValueOnce({
+        status: 200,
+        data: rawify(tx),
+      });
+
+      const actual = await service.getMultisigTransactionWithNoCache({
+        safeTxHash,
+      });
+
+      expect(actual).toBe(tx);
+      expect(networkService.get).toHaveBeenCalledWith({
+        url: `${baseUri}/api/v1/multisig-transactions/${safeTxHash}`,
+        networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getSafeQueueServiceKey(),
+          },
+        },
+      });
+      expect(mockDataSource.get).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('limit capping', () => {
+    const listCalls = [
+      [
+        'getTransactionQueue',
+        (limit: number): Promise<unknown> =>
+          service.getTransactionQueue({ chainId, safeAddress, limit }),
+      ],
+      [
+        'getDelegates',
+        (limit: number): Promise<unknown> =>
+          service.getDelegates({ chainId, safeAddress, limit }),
+      ],
+      [
+        'getMessagesBySafe',
+        (limit: number): Promise<unknown> =>
+          service.getMessagesBySafe({ chainId, safeAddress, limit }),
+      ],
+    ] as const;
+
+    it.each(listCalls)(
+      '%s caps the limit at the queue service maximum',
+      async (_name, call) => {
+        mockDataSource.get.mockResolvedValueOnce(rawify({ results: [] }));
+
+        await call(
+          faker.number.int({
+            min: SAFE_QUEUE_SERVICE_MAX_LIMIT + 1,
+            max: SAFE_QUEUE_SERVICE_MAX_LIMIT * 3,
+          }),
+        );
+
+        expect(mockDataSource.get).toHaveBeenCalledWith(
+          expect.objectContaining({
+            networkRequest: expect.objectContaining({
+              params: expect.objectContaining({
+                limit: SAFE_QUEUE_SERVICE_MAX_LIMIT,
+              }),
+            }),
+          }),
+        );
+      },
+    );
+
+    it.each(listCalls)(
+      '%s forwards a limit within the queue service maximum',
+      async (_name, call) => {
+        const limit = faker.number.int({
+          min: 1,
+          max: SAFE_QUEUE_SERVICE_MAX_LIMIT,
+        });
+        mockDataSource.get.mockResolvedValueOnce(rawify({ results: [] }));
+
+        await call(limit);
+
+        expect(mockDataSource.get).toHaveBeenCalledWith(
+          expect.objectContaining({
+            networkRequest: expect.objectContaining({
+              params: expect.objectContaining({ limit }),
+            }),
+          }),
+        );
+      },
+    );
   });
 
   describe('postConfirmation', () => {
@@ -280,7 +394,7 @@ describe('SafeQueueService', () => {
   });
 
   describe('getMultisigTransactionsBatch chunking', () => {
-    // Each `safe_tx_hash=0x<64 hex>&` query pair is ~81 bytes. nginx's default
+    // Each `safeTxHash=0x<64 hex>&` query pair is ~79 bytes. nginx's default
     // `large_client_header_buffers 4 8k` rejects request lines over ~8KB, AWS
     // ALB caps at 16KB, and many WAFs cap at 8KB. With 200 hashes the URL grows
     // past 16KB. Chunking at 50 keeps each request under ~4KB.
@@ -310,6 +424,27 @@ describe('SafeQueueService', () => {
       });
 
       expect(mockDataSource.get).toHaveBeenCalledTimes(1);
+    });
+
+    it('sends one repeated safeTxHash query param per hash', async () => {
+      const hashes = Array.from(
+        { length: faker.number.int({ min: 2, max: 50 }) },
+        () => faker.string.hexadecimal({ length: 64 }),
+      );
+      mockDataSource.get.mockResolvedValueOnce(rawify([]));
+
+      await service.getMultisigTransactionsBatch({
+        chainId,
+        safeTxHashes: hashes,
+      });
+
+      expect(mockDataSource.get).toHaveBeenCalledWith(
+        expect.objectContaining({
+          url: `${baseUri}/api/v1/multisig-transactions/batch?${hashes
+            .map((hash) => `safeTxHash=${hash}`)
+            .join('&')}`,
+        }),
+      );
     });
 
     it('returns empty without hitting the network when input is empty', async () => {

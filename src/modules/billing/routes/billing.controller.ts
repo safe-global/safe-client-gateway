@@ -254,7 +254,11 @@ export class BillingController {
     });
   }
 
-  @ApiOperation({ summary: 'Move a subscription onto another plan' })
+  @ApiOperation({
+    summary: 'Move a subscription onto another plan',
+    description:
+      'Safes in `removedSafes` are removed from the workspace first, then the plan changes. If the plan change fails after that, the answer is 502 and sending the same request again finishes it.',
+  })
   @ApiParam({
     name: 'spaceId',
     type: 'string',
@@ -284,7 +288,8 @@ export class BillingController {
     description: 'The named payment link does not offer this plan',
   })
   @ApiBadGatewayResponse({
-    description: 'The billing service reported the plan change as unsuccessful',
+    description:
+      'The billing service reported the plan change as unsuccessful, or failed after `removedSafes` were removed',
   })
   @UseGuards(AuthGuard, ElevationGuard)
   @Patch('/spaces/:spaceId/subscriptions/:subscriptionId')
@@ -302,6 +307,7 @@ export class BillingController {
       subscriptionId,
       planId: body.planId,
       paymentLinkId: body.paymentLinkId,
+      removedSafes: body.removedSafes,
       authPayload,
     });
   }

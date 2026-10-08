@@ -128,6 +128,121 @@ describe('entitlements rules', () => {
       ).toStrictEqual(currentPeriodStart);
     });
 
+    it('starts the quota period with a monthly plan, even one from Feb 28 to Mar 31', () => {
+      const currentPeriodStart = new Date('2026-02-28T00:00:00Z');
+
+      expect(
+        eventPeriodStart({
+          feature: feature({ freePeriod: 30 }),
+          spaceCreatedAt,
+          cycle: {
+            currentPeriodStart,
+            currentPeriodEnd: new Date('2026-03-31T00:00:00Z'),
+          },
+          now: new Date('2026-03-30T00:00:00Z'),
+        }),
+      ).toStrictEqual(currentPeriodStart);
+    });
+
+    it.each([
+      ['the first month', '2026-01-20T00:00:00Z', '2026-01-15T10:30:00Z'],
+      ['a later month', '2026-03-20T00:00:00Z', '2026-03-15T10:30:00Z'],
+      [
+        'exactly when a new month starts',
+        '2026-02-15T10:30:00Z',
+        '2026-02-15T10:30:00Z',
+      ],
+      [
+        'one millisecond before a new month starts',
+        '2026-02-15T10:29:59.999Z',
+        '2026-01-15T10:30:00Z',
+      ],
+      ['the last month', '2026-12-20T00:00:00Z', '2026-12-15T10:30:00Z'],
+      [
+        'after the plan ended, before the renewal arrives',
+        '2027-02-20T00:00:00Z',
+        '2026-12-15T10:30:00Z',
+      ],
+    ])(
+      'starts a new quota period every month on a yearly plan: %s',
+      (_label, now, expected) => {
+        expect(
+          eventPeriodStart({
+            feature: feature({ freePeriod: 30 }),
+            spaceCreatedAt,
+            cycle: {
+              currentPeriodStart: new Date('2026-01-15T10:30:00Z'),
+              currentPeriodEnd: new Date('2027-01-15T10:30:00Z'),
+            },
+            now: new Date(now),
+          }),
+        ).toStrictEqual(new Date(expected));
+      },
+    );
+
+    it.each([
+      [
+        'still in January',
+        '2027-01-31T00:00:00Z',
+        '2027-02-15T00:00:00Z',
+        '2027-01-31T00:00:00Z',
+      ],
+      [
+        'in February',
+        '2027-01-31T00:00:00Z',
+        '2027-03-01T00:00:00Z',
+        '2027-02-28T00:00:00Z',
+      ],
+      [
+        'in February of a leap year',
+        '2028-01-31T00:00:00Z',
+        '2028-03-01T00:00:00Z',
+        '2028-02-29T00:00:00Z',
+      ],
+      [
+        'in March',
+        '2027-01-31T00:00:00Z',
+        '2027-04-01T00:00:00Z',
+        '2027-03-31T00:00:00Z',
+      ],
+    ])(
+      'starts the quota period on the last day of a shorter month when the plan starts on the 31st: %s',
+      (_label, start, now, expected) => {
+        const currentPeriodStart = new Date(start);
+        const currentPeriodEnd = new Date(currentPeriodStart);
+        currentPeriodEnd.setUTCFullYear(currentPeriodEnd.getUTCFullYear() + 1);
+
+        expect(
+          eventPeriodStart({
+            feature: feature({ freePeriod: 30 }),
+            spaceCreatedAt,
+            cycle: { currentPeriodStart, currentPeriodEnd },
+            now: new Date(now),
+          }),
+        ).toStrictEqual(new Date(expected));
+      },
+    );
+
+    it.each([
+      ['the first month', '2026-10-15T00:00:00Z', '2026-10-01T09:00:00Z'],
+      ['the second month', '2026-11-15T00:00:00Z', '2026-11-01T09:00:00Z'],
+    ])(
+      'starts a new quota period every month on a 60-day trial: %s',
+      (_label, now, expected) => {
+        expect(
+          eventPeriodStart({
+            feature: feature({ freePeriod: 30 }),
+            spaceCreatedAt,
+            cycle: {
+              currentPeriodStart: new Date('2026-10-01T09:00:00Z'),
+              currentPeriodEnd: new Date('2026-11-30T09:00:00Z'),
+            },
+            now: new Date(now),
+          }),
+        ).toStrictEqual(new Date(expected));
+      },
+    );
+
     it('buckets Free usage in whole windows anchored at the creation date', () => {
       // 70 days in with a 30-day window → third bucket, starting on day 60.
       expect(
@@ -180,6 +295,100 @@ describe('entitlements rules', () => {
           now: new Date('2026-07-15T00:00:00Z'),
         }),
       ).toStrictEqual(currentPeriodEnd);
+    });
+
+    it('resets the quota when a monthly plan ends, even one from Feb 28 to Mar 31', () => {
+      const currentPeriodEnd = new Date('2026-03-31T00:00:00Z');
+
+      expect(
+        resetsAt({
+          feature: feature({ freePeriod: 30 }),
+          spaceCreatedAt,
+          cycle: {
+            currentPeriodStart: new Date('2026-02-28T00:00:00Z'),
+            currentPeriodEnd,
+          },
+          now: new Date('2026-03-30T00:00:00Z'),
+        }),
+      ).toStrictEqual(currentPeriodEnd);
+    });
+
+    it.each([
+      ['the first month', '2026-01-20T00:00:00Z', '2026-02-15T10:30:00Z'],
+      [
+        'exactly when a new month starts',
+        '2026-02-15T10:30:00Z',
+        '2026-03-15T10:30:00Z',
+      ],
+      ['the last month', '2026-12-20T00:00:00Z', '2027-01-15T10:30:00Z'],
+      [
+        'after the plan ended, before the renewal arrives',
+        '2027-02-20T00:00:00Z',
+        '2027-01-15T10:30:00Z',
+      ],
+    ])(
+      'resets the quota every month on a yearly plan: %s',
+      (_label, now, expected) => {
+        expect(
+          resetsAt({
+            feature: feature({ freePeriod: 30 }),
+            spaceCreatedAt,
+            cycle: {
+              currentPeriodStart: new Date('2026-01-15T10:30:00Z'),
+              currentPeriodEnd: new Date('2027-01-15T10:30:00Z'),
+            },
+            now: new Date(now),
+          }),
+        ).toStrictEqual(new Date(expected));
+      },
+    );
+
+    it.each([
+      ['the first month', '2026-10-15T00:00:00Z', '2026-11-01T09:00:00Z'],
+      ['the second month', '2026-11-15T00:00:00Z', '2026-11-30T09:00:00Z'],
+    ])(
+      'resets the quota every month on a 60-day trial: %s',
+      (_label, now, expected) => {
+        expect(
+          resetsAt({
+            feature: feature({ freePeriod: 30 }),
+            spaceCreatedAt,
+            cycle: {
+              currentPeriodStart: new Date('2026-10-01T09:00:00Z'),
+              currentPeriodEnd: new Date('2026-11-30T09:00:00Z'),
+            },
+            now: new Date(now),
+          }),
+        ).toStrictEqual(new Date(expected));
+      },
+    );
+
+    it('resets the quota on the last day of February when the plan starts on the 31st', () => {
+      expect(
+        resetsAt({
+          feature: feature({ freePeriod: 30 }),
+          spaceCreatedAt,
+          cycle: {
+            currentPeriodStart: new Date('2027-01-31T00:00:00Z'),
+            currentPeriodEnd: new Date('2028-01-31T00:00:00Z'),
+          },
+          now: new Date('2027-02-15T00:00:00Z'),
+        }),
+      ).toStrictEqual(new Date('2027-02-28T00:00:00Z'));
+    });
+
+    it('never resets the quota when the plan has no end date', () => {
+      expect(
+        resetsAt({
+          feature: feature({ freePeriod: 30 }),
+          spaceCreatedAt,
+          cycle: {
+            currentPeriodStart: new Date('2026-07-01T00:00:00Z'),
+            currentPeriodEnd: null,
+          },
+          now: new Date('2026-07-15T00:00:00Z'),
+        }),
+      ).toBeNull();
     });
 
     it('is one window past the current Free bucket', () => {

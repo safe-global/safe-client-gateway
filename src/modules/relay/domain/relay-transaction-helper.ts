@@ -429,6 +429,22 @@ export class RelayTransactionHelper {
     return [{ to: args.address, data: args.data }];
   }
 
+  /** Whether an execTransaction has the Safe repay gas to the relayer (`gasPrice > 0`). */
+  private isRefundingExecTransaction(data: Hex): boolean {
+    const decoded = this.decodeExecTransaction(data);
+    return decoded !== null && decoded.gasPrice > BigInt(0);
+  }
+
+  /** Whether the calldata, or any transaction inside its MultiSend, is a refunding execTransaction. */
+  hasRefundingTransaction(data: Hex): boolean {
+    if (!this.isMultiSend(data)) {
+      return this.isRefundingExecTransaction(data);
+    }
+    return this.multiSendDecoder
+      .mapMultiSendTransactions(data)
+      .some((transaction) => this.isRefundingExecTransaction(transaction.data));
+  }
+
   /**
    * Checks if the data of a transaction is an owner management transaction
    * @param {string} data - Data of the transaction

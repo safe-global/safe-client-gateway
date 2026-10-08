@@ -373,6 +373,23 @@ describe('BillingController', () => {
       });
   });
 
+  it('GET /v1/billing/spaces/:spaceId/payment-links does not return the payment link url', async () => {
+    const { accessToken, spaceId } = await registerAndCreateSpace();
+    const spaceLink = paymentLinkBuilder().build();
+    const upstreamLink = { ...spaceLink, url: faker.internet.url() };
+
+    mockPaymentLinkCatalog({ spaceSpecific: [upstreamLink] });
+
+    await request(app.getHttpServer())
+      .get(`/v1/billing/spaces/${spaceId}/payment-links`)
+      .set('Cookie', [`access_token=${accessToken}`])
+      .expect(200)
+      .expect(({ body }) => {
+        expect(body).toEqual([expect.objectContaining({ id: spaceLink.id })]);
+        expect(body[0]).not.toHaveProperty('url');
+      });
+  });
+
   it('GET /v1/billing/spaces/:spaceId/payment-links always offers a space-specific link', async () => {
     const { accessToken, spaceId } = await registerAndCreateSpace();
     // Negotiated for this customer, untagged: the general-catalog enforcement
@@ -727,6 +744,24 @@ describe('BillingController', () => {
         .send({ planId })
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(409);
+
+      expect(networkService.patch).not.toHaveBeenCalled();
+    });
+
+    it('PATCH .../subscriptions/:subscriptionId returns 422 for a malformed removedSafes entry', async () => {
+      const { accessToken, spaceId } = await registerAndCreateSpace();
+      await request(app.getHttpServer())
+        .patch(
+          `/v1/billing/spaces/${spaceId}/subscriptions/${faker.string.alphanumeric(20)}`,
+        )
+        .send({
+          planId: faker.string.alphanumeric(20),
+          removedSafes: [
+            { chainId: faker.string.numeric(), address: faker.word.noun() },
+          ],
+        })
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(422);
 
       expect(networkService.patch).not.toHaveBeenCalled();
     });

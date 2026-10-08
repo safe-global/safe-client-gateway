@@ -7,22 +7,13 @@ import type {
 } from 'typeorm';
 import type { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
 import type { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
+import type {
+  PreparedSpaceSafe,
+  SpaceSafesBySpaceId,
+} from '@/modules/spaces/domain/safes/entities/space-safe.entity';
 import type { SpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository';
 
 export const ISpaceSafesRepository = Symbol('ISpaceSafesRepository');
-
-/**
- * A Safe ready to insert: encrypted address, its blind index, and the
- * plaintext the audit event needs. Produced by `encryptRows` and consumed by
- * `insertRows`; nothing else reads its fields.
- */
-export type PreparedSpaceSafe = {
-  space: { id: Space['id'] };
-  chainId: SpaceSafe['chainId'];
-  address: SpaceSafe['address'];
-  addressIndex: string | null;
-  plaintextAddress: SpaceSafe['address'];
-};
 
 export interface ISpaceSafesRepository {
   /**
@@ -62,6 +53,12 @@ export interface ISpaceSafesRepository {
   findBySpaceId(
     spaceId: Space['id'],
   ): Promise<Array<Pick<SpaceSafe, 'chainId' | 'address'>>>;
+
+  /**
+   * {@link findBySpaceId} for several spaces, in one query. Every requested
+   * space is keyed, one holding no Safes with an empty array.
+   */
+  findBySpaceIds(spaceIds: Array<Space['id']>): Promise<SpaceSafesBySpaceId>;
 
   findOrFail(
     args: Parameters<SpaceSafesRepository['find']>[0],

@@ -6,6 +6,7 @@ import type { ISafeQueueService } from '@/modules/safe-queue/safe-queue.interfac
 export function createMockSafeQueueService(): MockedObject<ISafeQueueService> {
   return {
     getMultisigTransaction: vi.fn(),
+    getMultisigTransactionWithNoCache: vi.fn(),
     getMultisigTransactionsBatch: vi.fn(),
     getTransactionQueue: vi.fn(),
     proposeTransaction: vi.fn(),

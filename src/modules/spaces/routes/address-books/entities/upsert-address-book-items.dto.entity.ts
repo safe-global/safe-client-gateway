@@ -12,7 +12,7 @@ const AddressBookItemSchema = z.object({
   chainIds: z.array(ChainIdSchema),
 });
 
-class AddressBookItem implements z.infer<typeof AddressBookItemSchema> {
+export class AddressBookItem implements z.infer<typeof AddressBookItemSchema> {
   @ApiProperty({ type: String })
   readonly name!: string;
 

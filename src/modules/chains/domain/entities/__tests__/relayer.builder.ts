@@ -2,10 +2,9 @@
 import { faker } from '@faker-js/faker';
 import type { IBuilder } from '@/__tests__/builder';
 import { Builder } from '@/__tests__/builder';
-import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
+import type { Relayer } from '@/modules/chains/domain/entities/relayer.entity';
+import { GasPaymentOption } from '@/modules/relay/domain/entities/gas-payment-option.entity';
 import { RelayerType } from '@/modules/relay/domain/entities/relayer-type.entity';
-
-type Relayer = NonNullable<Chain['relayer']>;
 
 // Defaults to a routable, non-GTF relayer type so that chains built via
 // chainBuilder() route to a real relayer by default. Tests exercising the
@@ -19,6 +18,10 @@ const ROUTABLE_RELAYER_TYPES: Array<Relayer['type']> = [
 export function relayerBuilder(): IBuilder<Relayer> {
   return new Builder<Relayer>()
     .with('type', faker.helpers.arrayElement(ROUTABLE_RELAYER_TYPES))
+    .with(
+      'gasPaymentOptions',
+      faker.helpers.arrayElements(Object.values(GasPaymentOption)),
+    )
     .with('safeCreationSponsored', faker.datatype.boolean())
     .with('safeTransactionSponsored', faker.datatype.boolean())
     .with('enableTenderlySimulationBeforeRelay', faker.datatype.boolean());

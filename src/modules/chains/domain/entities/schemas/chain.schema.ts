@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { TokenDetailsSchema } from '@/domain/common/schemas/token-metadata.schema';
 import { buildLenientPageSchema } from '@/domain/entities/schemas/page.schema.factory';
 import { RpcUriAuthentication } from '@/modules/chains/domain/entities/rpc-uri-authentication.entity';
+import { GasPaymentOption } from '@/modules/relay/domain/entities/gas-payment-option.entity';
 import { RelayerType } from '@/modules/relay/domain/entities/relayer-type.entity';
 import {
   NullableAddressSchema,
@@ -71,11 +72,25 @@ export const BalancesProviderSchema = z.object({
   enabled: z.boolean(),
 });
 
+const GasPaymentOptionSchema = z.enum(GasPaymentOption);
+
+/** Keeps the known options and drops the rest, so a new one can't hide the others. */
+const GasPaymentOptionsSchema = z
+  .array(z.unknown())
+  .transform((options) =>
+    options.flatMap((option) => {
+      const result = GasPaymentOptionSchema.safeParse(option);
+      return result.success ? [result.data] : [];
+    }),
+  )
+  .catch([]);
+
 export const RelayerSchema = z.object({
   type: z.enum(RelayerType).nullable().catch(null),
   safeCreationSponsored: z.boolean().catch(false),
   safeTransactionSponsored: z.boolean().catch(false),
   enableTenderlySimulationBeforeRelay: z.boolean().catch(false),
+  gasPaymentOptions: GasPaymentOptionsSchema,
 });
 
 function removeTrailingSlash(url: string): string {

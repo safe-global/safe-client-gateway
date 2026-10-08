@@ -15,6 +15,7 @@ import {
   INetworkService,
   NetworkService,
 } from '@/datasources/network/network.service.interface';
+import { SAFE_QUEUE_SERVICE_MAX_LIMIT } from '@/domain/common/constants';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 import type { Page } from '@/domain/entities/page.entity';
 import {
@@ -37,8 +38,8 @@ import { rawify } from '@/validation/entities/raw.entity';
 
 @Injectable()
 export class SafeQueueService implements ISafeQueueService {
-  // Chunk size for multisig batch fetches. Each `safe_tx_hash=0x<64 hex>&`
-  // pair is ~81 bytes; nginx's default `large_client_header_buffers 4 8k`
+  // Chunk size for multisig batch fetches. Each `safeTxHash=0x<64 hex>&`
+  // pair is ~79 bytes; nginx's default `large_client_header_buffers 4 8k`
   // and many WAFs reject request lines beyond 8KB, so we cap each call at
   // 50 hashes (~4KB URL) to stay safely under that limit.
   private static readonly MAX_BATCH_HASHES_PER_CALL = 50;
@@ -161,6 +162,27 @@ export class SafeQueueService implements ISafeQueueService {
     }
   }
 
+  async getMultisigTransactionWithNoCache(args: {
+    safeTxHash: string;
+  }): Promise<Raw<SafeQueueMultisigTransactionEntity>> {
+    try {
+      const url = `${this.baseUri}/api/v1/multisig-transactions/${encodeURIComponent(args.safeTxHash)}`;
+      const { data } = await this.networkService.get<
+        Raw<SafeQueueMultisigTransactionEntity>
+      >({
+        url,
+        networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getSafeQueueServiceKey(),
+          },
+        },
+      });
+      return data;
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
   // Note: unlike its siblings, this returns an already-validated array (each
   // chunk is safeParse'd below), not a Raw<T> — re-parsing an already-parsed
   // chunk at the call site would be a pointless double validation, and would
@@ -186,7 +208,7 @@ export class SafeQueueService implements ISafeQueueService {
         chunks.map((chunk) => {
           const query = new URLSearchParams();
           for (const hash of chunk) {
-            query.append('safe_tx_hash', hash);
+            query.append('safeTxHash', hash);
           }
           const url = `${this.baseUri}/api/v1/multisig-transactions/batch?${query.toString()}`;
           const cacheDir =
@@ -265,8 +287,8 @@ export class SafeQueueService implements ISafeQueueService {
         networkRequest: {
           params: {
             safes: `${args.safeAddress}:${args.chainId}`,
-            nonce_order: nonceOrder,
-            limit: args.limit,
+            nonceOrder,
+            limit: this.capLimit(args.limit),
             offset: args.offset,
           },
           circuitBreaker: {
@@ -344,7 +366,8 @@ export class SafeQueueService implements ISafeQueueService {
             safe: args.safeAddress,
             delegate: args.delegate,
             delegator: args.delegator,
-            limit: args.limit,
+            label: args.label,
+            limit: this.capLimit(args.limit),
             offset: args.offset,
           },
           circuitBreaker: {
@@ -498,7 +521,7 @@ export class SafeQueueService implements ISafeQueueService {
         networkRequest: {
           params: {
             chainId: Number(args.chainId),
-            limit: args.limit,
+            limit: this.capLimit(args.limit),
             offset: args.offset,
           },
           circuitBreaker: {
@@ -621,5 +644,9 @@ export class SafeQueueService implements ISafeQueueService {
       safeAddress: args.safeAddress,
     });
     await this.cacheService.deleteByKey(key);
+  }
+
+  private capLimit(limit?: number): number | undefined {
+    return limit && Math.min(limit, SAFE_QUEUE_SERVICE_MAX_LIMIT);
   }
 }

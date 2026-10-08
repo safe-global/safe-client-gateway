@@ -14,13 +14,12 @@ import {
   type ConsumedQuota,
   IEntitlementEnforcement,
 } from '@/modules/entitlements/domain/entitlement-enforcement.interface';
+import { GasPaymentOption } from '@/modules/relay/domain/entities/gas-payment-option.entity';
 import type { Relay } from '@/modules/relay/domain/entities/relay.entity';
-import { RelayerType } from '@/modules/relay/domain/entities/relayer-type.entity';
-import { NoRelayerDefinedError } from '@/modules/relay/domain/errors/no-relayer-defined.error';
-import { RelayDeniedError } from '@/modules/relay/domain/errors/relay-denied.error';
-import { RelayerTypeNotImplementedError } from '@/modules/relay/domain/errors/relayer-type-not-implemented.error';
+import { GasPaymentOptionUnavailableError } from '@/modules/relay/domain/errors/gas-payment-option-unavailable.error';
 import { LimitAddressesMapper } from '@/modules/relay/domain/limit-addresses.mapper';
 import { RelaySimulationService } from '@/modules/relay/domain/relay-simulation.service';
+import { RelayTransactionHelper } from '@/modules/relay/domain/relay-transaction-helper';
 import type { Space } from '@/modules/spaces/domain/entities/space.entity';
 import { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
 
@@ -49,6 +48,7 @@ export class WorkspaceRelayer {
     @Inject(IChainsRepository)
     private readonly chainsRepository: IChainsRepository,
     private readonly relaySimulationService: RelaySimulationService,
+    private readonly relayTransactionHelper: RelayTransactionHelper,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
   ) {}
 
@@ -75,17 +75,37 @@ export class WorkspaceRelayer {
       this.chainsRepository.getChain(args.chainId),
     ]);
 
-    // A chain we do not relay on at all. The type selects a policy this route
-    // does not apply; only its presence is read here.
-    if (!relayer?.type) {
-      throw new NoRelayerDefinedError();
+    if (!relayer) {
+      throw new GasPaymentOptionUnavailableError({
+        requested: GasPaymentOption.SUBSCRIPTION,
+        reason: 'NO_RELAYER',
+        available: [],
+      });
     }
-    if (relayer.type === RelayerType.GTF) {
-      throw new RelayerTypeNotImplementedError(relayer.type);
+    const available = relayer.gasPaymentOptions;
+    if (!available.includes(GasPaymentOption.SUBSCRIPTION)) {
+      throw new GasPaymentOptionUnavailableError({
+        requested: GasPaymentOption.SUBSCRIPTION,
+        reason: 'NOT_LISTED',
+        available,
+      });
     }
 
-    if (safe !== null) {
-      await this.assertHoldsSafe({ ...args, safe });
+    // The Safe would repay gas to the relayer on top of the credit spent.
+    if (this.relayTransactionHelper.hasRefundingTransaction(args.data)) {
+      throw new GasPaymentOptionUnavailableError({
+        requested: GasPaymentOption.SUBSCRIPTION,
+        reason: 'REFUNDING_TRANSACTION',
+        available,
+      });
+    }
+
+    if (safe !== null && !(await this.holdsSafe({ ...args, safe }))) {
+      throw new GasPaymentOptionUnavailableError({
+        requested: GasPaymentOption.SUBSCRIPTION,
+        reason: 'NOT_A_WORKSPACE_SAFE',
+        available,
+      });
     }
 
     // Refused early; `consumeQuota` below is what decides.
@@ -102,7 +122,7 @@ export class WorkspaceRelayer {
       await this.assertSimulates({
         ...args,
         safe,
-        enabled: relayer.enableTenderlySimulationBeforeRelay ?? false,
+        enabled: relayer.enableTenderlySimulationBeforeRelay,
       });
     }
 
@@ -175,18 +195,15 @@ export class WorkspaceRelayer {
    * a Safe creation, a passkey signer deployment — are admitted as they are on
    * the public route: there is nothing to hold yet.
    */
-  private async assertHoldsSafe(args: {
+  private async holdsSafe(args: {
     spaceId: Space['id'];
     chainId: string;
     safe: Address;
-  }): Promise<void> {
-    const holdsSafe = await this.spaceSafesRepository.existsInSpace({
+  }): Promise<boolean> {
+    return await this.spaceSafesRepository.existsInSpace({
       spaceId: args.spaceId,
       chainId: args.chainId,
       address: args.safe,
     });
-    if (!holdsSafe) {
-      throw new RelayDeniedError(args.safe, 'not a Safe of this workspace');
-    }
   }
 }
