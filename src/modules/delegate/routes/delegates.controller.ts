@@ -49,7 +49,7 @@ export class DelegatesController {
     deprecated: true,
     summary: 'Get delegates (deprecated)',
     description:
-      'Retrieves a paginated list of delegates for a specific chain. This endpoint is deprecated, please use the v2 version instead.',
+      'Retrieves a paginated list of delegates for a specific chain. This endpoint is deprecated, please use the v3 version instead.',
   })
   @ApiParam({
     name: 'chainId',
@@ -111,7 +111,7 @@ export class DelegatesController {
     deprecated: true,
     summary: 'Create delegate (deprecated)',
     description:
-      'Creates a new delegate for a specific chain. This endpoint is deprecated, please use the v2 version instead.',
+      'Creates a new delegate for a specific chain. This endpoint is deprecated, please use the v3 version instead.',
   })
   @ApiParam({
     name: 'chainId',
@@ -144,7 +144,7 @@ export class DelegatesController {
     deprecated: true,
     summary: 'Delete delegate (deprecated)',
     description:
-      'Deletes a delegate for a specific chain and address. This endpoint is deprecated, please use the v2 version instead.',
+      'Deletes a delegate for a specific chain and address. This endpoint is deprecated, please use the v3 version instead.',
   })
   @ApiParam({
     name: 'chainId',
@@ -186,7 +186,7 @@ export class DelegatesController {
     deprecated: true,
     summary: 'Delete Safe delegate (deprecated)',
     description:
-      'Removes a delegate from a specific Safe. This endpoint is deprecated, please use the v2 version instead.',
+      'Removes a delegate from a specific Safe. This endpoint is deprecated, please use the v3 version instead.',
   })
   @ApiParam({
     name: 'chainId',

@@ -12,7 +12,7 @@ import {
   type ILoggingService,
   LoggingService,
 } from '@/logging/logging.interface';
-import { DelegatesV2RepositoryModule } from '@/modules/delegate/domain/v2/delegates.v2.repository.interface';
+import { DelegatesV3RepositoryModule } from '@/modules/delegate/domain/v3/delegates.v3.repository.interface';
 import { MessagesModule } from '@/modules/messages/messages.module';
 import { PushNotificationConsumer } from '@/modules/notifications/domain/push/consumers/push-notification.consumer';
 import { PushNotificationService } from '@/modules/notifications/domain/push/push-notification.service';
@@ -40,7 +40,7 @@ import { SafeRepositoryModule } from '@/modules/safe/domain/safe.repository.inte
       }),
       inject: [IConfigurationService],
     }),
-    DelegatesV2RepositoryModule,
+    DelegatesV3RepositoryModule,
     MessagesModule,
     SafeRepositoryModule,
     NotificationsRepositoryV2Module,

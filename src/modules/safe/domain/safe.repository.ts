@@ -758,6 +758,7 @@ export class SafeRepository implements ISafeRepository {
     );
     const page = await transactionService.getMultisigTransactions({
       ...args,
+      ...(this.safeQueueEnabled && { executed: true }),
       ordering: '-nonce',
       trusted: true,
     });
@@ -960,24 +961,33 @@ export class SafeRepository implements ISafeRepository {
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
     );
-    const [safe, transaction] = await Promise.all([
+    const safeTxHash = args.proposeTransactionDto.safeTxHash;
+    const [safe, txServiceProposal, queueProposal] = await Promise.all([
       this.getSafe({
         chainId: args.chainId,
         address: args.safeAddress,
       }),
-      transactionService
-        .getMultisigTransactionWithNoCache(
-          args.proposeTransactionDto.safeTxHash,
-        )
-        .then(MultisigTransactionSchema.parse)
-        .catch(() => null),
+      this.safeQueueEnabled
+        ? null
+        : transactionService
+            .getMultisigTransactionWithNoCache(safeTxHash)
+            .then(MultisigTransactionSchema.parse)
+            .catch(() => null),
+      this.safeQueueEnabled
+        ? this.safeQueueService
+            .getMultisigTransactionWithNoCache({ safeTxHash })
+            .then(SafeQueueMultisigTransactionSchema.parse)
+            .catch(() => null)
+        : null,
     ]);
 
     await this.transactionVerifier.verifyProposal({
       chainId: args.chainId,
       safe,
       proposal: args.proposeTransactionDto,
-      transaction,
+      transaction: queueProposal
+        ? mapSafeQueueToMultisigTransaction(queueProposal, safe)
+        : txServiceProposal,
     });
 
     if (this.safeQueueEnabled) {

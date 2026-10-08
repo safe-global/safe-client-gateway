@@ -37,6 +37,7 @@ import {
 } from '@/modules/safe-queue/entities/__tests__/queue-multisig-transaction.builder';
 import type { SafeQueueMultisigTransactionEntity } from '@/modules/safe-queue/entities/multisig-transaction.entity';
 import { buildOrigin } from '@/modules/safe-queue/helpers/origin.helper';
+import { mapSafeQueueToMultisigTransaction } from '@/modules/safe-queue/mappers/transaction.mapper';
 import {
   nestedTransactionDtoBuilder,
   proposeTransactionDtoBuilder,
@@ -1238,6 +1239,81 @@ describe('SafeRepository', () => {
         mockSafeQueueService.getMultisigTransactionsBatch,
       ).not.toHaveBeenCalled();
     });
+
+    it('should only request executed transactions from the transaction service', async () => {
+      const page = pageBuilder<unknown>()
+        .with('results', [])
+        .with('count', 0)
+        .with('next', null)
+        .with('previous', null)
+        .build();
+      mockTransactionApi.getMultisigTransactions.mockResolvedValue(
+        rawify(page),
+      );
+
+      await repository.getMultisigTransactions({ chainId, safeAddress });
+
+      expect(mockTransactionApi.getMultisigTransactions).toHaveBeenCalledWith({
+        chainId,
+        safeAddress,
+        executed: true,
+        ordering: '-nonce',
+        trusted: true,
+      });
+    });
+
+    it('should request executed transactions even when pending ones are asked for', async () => {
+      const page = pageBuilder<unknown>()
+        .with('results', [])
+        .with('count', 0)
+        .with('next', null)
+        .with('previous', null)
+        .build();
+      mockTransactionApi.getMultisigTransactions.mockResolvedValue(
+        rawify(page),
+      );
+
+      await repository.getMultisigTransactions({
+        chainId,
+        safeAddress,
+        executed: false,
+      });
+
+      expect(mockTransactionApi.getMultisigTransactions).toHaveBeenCalledWith({
+        chainId,
+        safeAddress,
+        executed: true,
+        ordering: '-nonce',
+        trusted: true,
+      });
+    });
+
+    it('should forward the pending filter to the transaction service when FF_SAFE_QUEUE_SERVICE is off', async () => {
+      const repo = createRepository({ safeQueueEnabled: false });
+      const page = pageBuilder<unknown>()
+        .with('results', [])
+        .with('count', 0)
+        .with('next', null)
+        .with('previous', null)
+        .build();
+      mockTransactionApi.getMultisigTransactions.mockResolvedValue(
+        rawify(page),
+      );
+
+      await repo.getMultisigTransactions({
+        chainId,
+        safeAddress,
+        executed: false,
+      });
+
+      expect(mockTransactionApi.getMultisigTransactions).toHaveBeenCalledWith({
+        chainId,
+        safeAddress,
+        executed: false,
+        ordering: '-nonce',
+        trusted: true,
+      });
+    });
   });
 
   describe('getTransactionQueueMaxPageSize', () => {
@@ -1396,7 +1472,7 @@ describe('SafeRepository', () => {
       const safe = safeBuilder().with('address', safeAddress).build();
       const proposeTransactionDto = proposeTransactionDtoBuilder().build();
       mockTransactionApi.getSafe.mockResolvedValue(rawify(safe));
-      mockTransactionApi.getMultisigTransactionWithNoCache.mockRejectedValue(
+      mockSafeQueueService.getMultisigTransactionWithNoCache.mockRejectedValue(
         new Error('not found'),
       );
       mockSafeQueueService.proposeTransaction.mockResolvedValue(rawify({}));
@@ -1447,7 +1523,7 @@ describe('SafeRepository', () => {
         .with('nestedTransaction', nestedTransactionDtoBuilder().build())
         .build();
       mockTransactionApi.getSafe.mockResolvedValue(rawify(safe));
-      mockTransactionApi.getMultisigTransactionWithNoCache.mockRejectedValue(
+      mockSafeQueueService.getMultisigTransactionWithNoCache.mockRejectedValue(
         new Error('not found'),
       );
       mockSafeQueueService.proposeTransaction.mockResolvedValue(rawify({}));
@@ -1486,6 +1562,93 @@ describe('SafeRepository', () => {
 
       expect(mockTransactionApi.postMultisigTransaction).not.toHaveBeenCalled();
       expect(mockSafeQueueService.proposeTransaction).not.toHaveBeenCalled();
+    });
+
+    it('should verify against the existing proposal from the queue service', async () => {
+      const safe = safeBuilder().with('address', safeAddress).build();
+      const proposeTransactionDto = proposeTransactionDtoBuilder().build();
+      const existing = safeQueueMultisigTransactionBuilder()
+        .with('chainId', chainId)
+        .with('safe', safeAddress)
+        .with('safeTxHash', proposeTransactionDto.safeTxHash)
+        .build();
+      mockTransactionApi.getSafe.mockResolvedValue(rawify(safe));
+      mockSafeQueueService.getMultisigTransactionWithNoCache.mockResolvedValue(
+        rawify(existing),
+      );
+      mockSafeQueueService.proposeTransaction.mockResolvedValue(rawify({}));
+
+      await repository.proposeTransaction({
+        chainId,
+        safeAddress,
+        proposeTransactionDto,
+      });
+
+      expect(
+        mockSafeQueueService.getMultisigTransactionWithNoCache,
+      ).toHaveBeenCalledWith({ safeTxHash: proposeTransactionDto.safeTxHash });
+      expect(
+        mockTransactionApi.getMultisigTransactionWithNoCache,
+      ).not.toHaveBeenCalled();
+      expect(mockTransactionVerifier.verifyProposal).toHaveBeenCalledWith({
+        chainId,
+        safe,
+        proposal: proposeTransactionDto,
+        transaction: mapSafeQueueToMultisigTransaction(existing, safe),
+      });
+    });
+
+    it('should verify with no existing proposal when the queue service has none', async () => {
+      const safe = safeBuilder().with('address', safeAddress).build();
+      const proposeTransactionDto = proposeTransactionDtoBuilder().build();
+      mockTransactionApi.getSafe.mockResolvedValue(rawify(safe));
+      mockSafeQueueService.getMultisigTransactionWithNoCache.mockRejectedValue(
+        new Error('not found'),
+      );
+      mockSafeQueueService.proposeTransaction.mockResolvedValue(rawify({}));
+
+      await repository.proposeTransaction({
+        chainId,
+        safeAddress,
+        proposeTransactionDto,
+      });
+
+      expect(mockTransactionVerifier.verifyProposal).toHaveBeenCalledWith({
+        chainId,
+        safe,
+        proposal: proposeTransactionDto,
+        transaction: null,
+      });
+    });
+
+    it('should verify against the existing proposal from the transaction service when FF_SAFE_QUEUE_SERVICE is off', async () => {
+      const repo = createRepository({ safeQueueEnabled: false });
+      const safe = safeBuilder().with('address', safeAddress).build();
+      const proposeTransactionDto = proposeTransactionDtoBuilder().build();
+      const existing = multisigTransactionBuilder()
+        .with('safe', safeAddress)
+        .with('safeTxHash', proposeTransactionDto.safeTxHash)
+        .build();
+      mockTransactionApi.getSafe.mockResolvedValue(rawify(safe));
+      mockTransactionApi.getMultisigTransactionWithNoCache.mockResolvedValue(
+        rawify(multisigTransactionToJson(existing)),
+      );
+
+      await repo.proposeTransaction({
+        chainId,
+        safeAddress,
+        proposeTransactionDto,
+      });
+
+      expect(
+        mockSafeQueueService.getMultisigTransactionWithNoCache,
+      ).not.toHaveBeenCalled();
+      expect(mockTransactionVerifier.verifyProposal).toHaveBeenCalledWith({
+        chainId,
+        safe,
+        proposal: proposeTransactionDto,
+        transaction: existing,
+      });
     });
   });
 

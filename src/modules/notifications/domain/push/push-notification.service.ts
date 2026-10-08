@@ -11,7 +11,7 @@ import {
 } from '@/logging/logging.interface';
 import { asError } from '@/logging/utils';
 import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
-import { IDelegatesV2Repository } from '@/modules/delegate/domain/v2/delegates.v2.repository.interface';
+import { IDelegatesV3Repository } from '@/modules/delegate/domain/v3/delegates.v3.repository.interface';
 import type { Event } from '@/modules/hooks/routes/entities/event.entity';
 import { TransactionEventType } from '@/modules/hooks/routes/entities/event-type.entity';
 import type { IncomingEtherEvent } from '@/modules/hooks/routes/entities/schemas/incoming-ether.schema';
@@ -52,8 +52,8 @@ export class PushNotificationService implements IPushNotificationService {
     private readonly loggingService: ILoggingService,
     @Inject(ISafeRepository)
     private readonly safeRepository: ISafeRepository,
-    @Inject(IDelegatesV2Repository)
-    private readonly delegatesRepository: IDelegatesV2Repository,
+    @Inject(IDelegatesV3Repository)
+    private readonly delegatesRepository: IDelegatesV3Repository,
     @Inject(IMessagesRepository)
     private readonly messagesRepository: IMessagesRepository,
     @Inject(INotificationsRepositoryV2)

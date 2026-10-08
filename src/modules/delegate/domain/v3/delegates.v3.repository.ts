@@ -68,12 +68,13 @@ export class DelegatesV3Repository implements IDelegatesV3Repository {
     chainId: string;
     safeAddress?: Address;
   }): Promise<void> {
-    const transactionService = await this.transactionApiManager.getApi(
-      args.chainId,
-    );
     await clearBothCacheLayers(
       this.loggingService,
-      transactionService.clearDelegates(args.safeAddress),
+      this.transactionApiManager
+        .getApi(args.chainId)
+        .then((transactionService) => {
+          return transactionService.clearDelegates(args.safeAddress);
+        }),
       this.safeQueueService.clearDelegates(args),
       `delegates cache. chainId=${args.chainId}, safeAddress=${args.safeAddress}`,
     );
@@ -89,7 +90,7 @@ export class DelegatesV3Repository implements IDelegatesV3Repository {
   }): Promise<void> {
     if (this.safeQueueEnabled) {
       await this.safeQueueService.postDelegate(args);
-      this.clearDelegates({
+      await this.clearDelegates({
         chainId: args.chainId,
         safeAddress: args.safeAddress ?? undefined,
       });
@@ -99,7 +100,7 @@ export class DelegatesV3Repository implements IDelegatesV3Repository {
       args.chainId,
     );
     await transactionService.postDelegateV2(args);
-    this.clearDelegates({
+    await this.clearDelegates({
       chainId: args.chainId,
       safeAddress: args.safeAddress ?? undefined,
     });
@@ -115,7 +116,7 @@ export class DelegatesV3Repository implements IDelegatesV3Repository {
   }): Promise<void> {
     if (this.safeQueueEnabled) {
       await this.safeQueueService.updateDelegate(args);
-      this.clearDelegates({
+      await this.clearDelegates({
         chainId: args.chainId,
         safeAddress: args.safeAddress ?? undefined,
       });
@@ -125,7 +126,7 @@ export class DelegatesV3Repository implements IDelegatesV3Repository {
       args.chainId,
     );
     await transactionService.updateDelegateV2(args);
-    this.clearDelegates({
+    await this.clearDelegates({
       chainId: args.chainId,
       safeAddress: args.safeAddress ?? undefined,
     });
@@ -140,7 +141,7 @@ export class DelegatesV3Repository implements IDelegatesV3Repository {
   }): Promise<void> {
     if (this.safeQueueEnabled) {
       await this.safeQueueService.deleteDelegate(args);
-      this.clearDelegates({
+      await this.clearDelegates({
         chainId: args.chainId,
         safeAddress: args.safeAddress ?? undefined,
       });
@@ -150,7 +151,7 @@ export class DelegatesV3Repository implements IDelegatesV3Repository {
       args.chainId,
     );
     await transactionService.deleteDelegateV2(args);
-    this.clearDelegates({
+    await this.clearDelegates({
       chainId: args.chainId,
       safeAddress: args.safeAddress ?? undefined,
     });

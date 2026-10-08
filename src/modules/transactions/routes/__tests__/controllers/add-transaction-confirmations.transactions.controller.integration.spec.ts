@@ -166,11 +166,9 @@ describe('Add transaction confirmations - Transactions Controller', () => {
         .build();
       const gasToken = tokenBuilder().build();
       const token = tokenBuilder().build();
-      const rejectionTxsPage = pageBuilder().with('results', []).build();
       networkService.get.mockImplementation(({ url }) => {
         const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
         const getMultisigTransactionUrl = `${chain.transactionService}/api/v2/multisig-transactions/${transaction.safeTxHash}/`;
-        const getMultisigTransactionsUrl = `${chain.transactionService}/api/v2/safes/${safe.address}/multisig-transactions/`;
         const getSafeUrl = `${chain.transactionService}/api/v1/safes/${transaction.safe}`;
         const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
         const getGasTokenContractUrl = `${chain.transactionService}/api/v1/tokens/${transaction.gasToken}`;
@@ -181,11 +179,6 @@ describe('Add transaction confirmations - Transactions Controller', () => {
             return Promise.resolve({ data: rawify(chain), status: 200 });
           case getMultisigTransactionUrl:
             return Promise.resolve({ data: rawify(transaction), status: 200 });
-          case getMultisigTransactionsUrl:
-            return Promise.resolve({
-              data: rawify(rejectionTxsPage),
-              status: 200,
-            });
           case getSafeUrl:
             return Promise.resolve({ data: rawify(safe), status: 200 });
           case getSafeAppsUrl:
