@@ -18,7 +18,7 @@ RUN apt-get update \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Activate Corepack so Yarn 4.14.1 (pinned in .yarnrc.yml) resolves the
+# Activate Corepack so Yarn (pinned in .yarnrc.yml) resolves the
 # project-managed release on first install.
 RUN corepack enable
 

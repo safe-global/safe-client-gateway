@@ -228,6 +228,10 @@ jobs:
       # leaves `dist/migrations` empty, so no migrations run and the schema is
       # never created.
       - run: yarn run build
+      # tsc does not rewrite `@/` path aliases; tsc-alias does. Nothing else in
+      # CI loads the emitted `dist/src`, so assert none were left behind.
+      - name: Check dist has no unresolved path aliases
+        run: "! grep -rlE \"require\\(['\\\"]@/\" dist --include='*.js'"
       - run: yarn run test:integration:cov
         env:
           REDIS_HOST: localhost
