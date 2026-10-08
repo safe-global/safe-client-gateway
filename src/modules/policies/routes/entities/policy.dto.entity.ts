@@ -19,6 +19,11 @@ import {
   PolicyEnforcementKind,
   PolicyType,
 } from '@/modules/policies/domain/entities/policy-type.entity';
+import type { Token } from '@/modules/policies/domain/entities/token.entity';
+import type {
+  Erc20Token,
+  NativeToken,
+} from '@/modules/tokens/domain/entities/token.entity';
 
 /**
  * Which Safe an item belongs to.
@@ -96,12 +101,75 @@ const EnforcementSchema = {
   },
 };
 
+/**
+ * Mirrors the token module's own `BaseTokenMetadata`/`*TokenMetadata` DTOs
+ * (`src/modules/tokens/routes/entities/token.dto.entity.ts`) - not imported
+ * from there directly, since a module reaches another only through its
+ * `domain/` (see `docs/agents/module-structure.md`).
+ */
+class BaseTokenMetadataDto {
+  @ApiProperty({ type: String })
+  public readonly address!: Address;
+  @ApiProperty()
+  public readonly decimals!: number;
+  @ApiProperty()
+  public readonly logoUri!: string;
+  @ApiProperty()
+  public readonly name!: string;
+  @ApiProperty()
+  public readonly symbol!: string;
+  @ApiProperty({
+    description:
+      'Whether the Transaction Service lists the token in one of its imported token lists',
+  })
+  public readonly trusted!: boolean;
+}
+
+export class NativeTokenMetadataDto
+  extends BaseTokenMetadataDto
+  implements NativeToken
+{
+  @ApiProperty({ enum: ['NATIVE_TOKEN'] })
+  public readonly type!: 'NATIVE_TOKEN';
+}
+
+export class Erc20TokenMetadataDto
+  extends BaseTokenMetadataDto
+  implements Erc20Token
+{
+  @ApiProperty({ enum: ['ERC20'] })
+  public readonly type!: 'ERC20';
+}
+
+/** ERC721 never applies: a spending limit is always a fungible amount. */
+export const SpendingLimitTokenMetadataSchema = {
+  oneOf: [
+    { $ref: getSchemaPath(NativeTokenMetadataDto) },
+    { $ref: getSchemaPath(Erc20TokenMetadataDto) },
+  ],
+  discriminator: {
+    propertyName: 'type',
+    mapping: {
+      NATIVE_TOKEN: getSchemaPath(NativeTokenMetadataDto),
+      ERC20: getSchemaPath(Erc20TokenMetadataDto),
+    },
+  },
+};
+
+@ApiExtraModels(NativeTokenMetadataDto, Erc20TokenMetadataDto)
 export class SpendingLimitAllowanceDto implements SpendingLimitAllowance {
   @ApiProperty({
     type: String,
     description: 'The token the limit applies to; zero address for native',
   })
   public readonly tokenAddress!: Address;
+  @ApiProperty({
+    ...SpendingLimitTokenMetadataSchema,
+    nullable: true,
+    description:
+      'Metadata of `tokenAddress`; null when it could not be resolved',
+  })
+  public readonly tokenMetadata!: Token | null;
   @ApiProperty({ description: 'Per-window ceiling, in base units' })
   public readonly amount!: string;
   @ApiProperty({ description: 'Spent in the current window, in base units' })

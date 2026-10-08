@@ -3,6 +3,7 @@ import type { Address } from 'viem';
 import type { PolicyEnforcement } from '@/modules/policies/domain/entities/policy-enforcement.entity';
 import type { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
 import type { SafeRef } from '@/modules/policies/domain/entities/safe-ref.entity';
+import type { Token } from '@/modules/policies/domain/entities/token.entity';
 
 /**
  * `spending-limit`: what each spender may still withdraw, and on what schedule.
@@ -27,6 +28,8 @@ export type SpendingLimitPolicyData = {
 export type SpendingLimitAllowance = {
   /** The zero address is the native currency. */
   tokenAddress: Address;
+  /** Metadata of {@link tokenAddress}; `null` when it could not be resolved. */
+  tokenMetadata: Token | null;
   /** Per-window ceiling, in base units. */
   amount: string;
   /** Spent in the window that began at the last reset, in base units. */
