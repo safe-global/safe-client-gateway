@@ -44,6 +44,7 @@ import {
   TransferPageSchema,
   TransferSchema,
 } from '@/modules/safe/domain/entities/transfer.entity';
+import { getLastModified } from '@/modules/safe/domain/helpers/last-modified.helper';
 import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
 import {
   type SafeQueueMultisigTransactionEntity,
@@ -279,16 +280,24 @@ export class SafeRepository implements ISafeRepository {
     });
   }
 
+  /**
+   * The queue ordered by last modification, newest first. Used to derive
+   * `txQueuedTag`; the queue itself is served nonce-ordered by
+   * {@link getTransactionQueue}.
+   */
   getTransactionQueueByModified(args: {
     chainId: string;
     safe: Safe;
     limit?: number;
     offset?: number;
   }): Promise<Page<MultisigTransaction>> {
-    return this._getTransactionQueue({
-      ...args,
-      ordering: '-modified',
-    });
+    if (!this.safeQueueEnabled) {
+      return this._getTransactionQueue({
+        ...args,
+        ordering: '-modified',
+      });
+    }
+    return this.getSafeQueueSortedByLastModified(args);
   }
 
   getTransactionQueueMaxPageSize(): number {
@@ -316,37 +325,6 @@ export class SafeRepository implements ISafeRepository {
       });
       return MultisigTransactionPageSchema.parse(page);
     }
-    // The queue service can only order by nonce, not by modification date.
-    // For '-modified' ordering, fetch the whole queue and sort by `modified`
-    // locally rather than degrading to nonce order, which would return the
-    // wrong transaction whenever a lower-nonce entry is the most recently
-    // touched one (e.g. a new confirmation on it).
-    if (args.ordering === '-modified') {
-      const page = await this.safeQueueService.getTransactionQueue({
-        chainId: args.chainId,
-        safeAddress: args.safe.address,
-        nonceOrder: 'asc',
-        limit: SAFE_TRANSACTION_SERVICE_MAX_LIMIT,
-      });
-      const parsed = SafeQueueMultisigTransactionPageSchema.parse(page);
-      const sortedByModified = [...parsed.results].sort(
-        (a, b) => b.modified.getTime() - a.modified.getTime(),
-      );
-      const offset = args.offset ?? 0;
-      const sliced = sortedByModified.slice(
-        offset,
-        args.limit ? offset + args.limit : undefined,
-      );
-      return {
-        count: parsed.count,
-        next: null,
-        previous: null,
-        results: sliced.map((tx) =>
-          mapSafeQueueToMultisigTransaction(tx, args.safe),
-        ),
-      };
-    }
-
     const nonceOrder = args.ordering.startsWith('-') ? 'desc' : 'asc';
     const page = await this.safeQueueService.getTransactionQueue({
       chainId: args.chainId,
@@ -362,6 +340,50 @@ export class SafeRepository implements ISafeRepository {
       previous: parsed.previous,
       results: parsed.results.map((tx) =>
         mapSafeQueueToMultisigTransaction(tx, args.safe),
+      ),
+    };
+  }
+
+  /**
+   * Queue-service counterpart of the tx-service's `ordering=-modified`.
+   *
+   * The queue service can only order by nonce, so the first page of the queue
+   * (`SAFE_QUEUE_SERVICE_MAX_LIMIT` transactions, enough for any realistic
+   * queue) is fetched and sorted locally rather than degrading to nonce
+   * order, which would return the wrong transaction whenever a lower-nonce
+   * entry is the most recently touched one.
+   * The sort key is the last modification including confirmations, so a new
+   * signature moves a transaction to the front even if the queue service
+   * leaves its `modified` date untouched.
+   */
+  private async getSafeQueueSortedByLastModified(args: {
+    chainId: string;
+    safe: Safe;
+    limit?: number;
+    offset?: number;
+  }): Promise<Page<MultisigTransaction>> {
+    const page = await this.safeQueueService.getTransactionQueue({
+      chainId: args.chainId,
+      safeAddress: args.safe.address,
+      nonceOrder: 'asc',
+      limit: SAFE_QUEUE_SERVICE_MAX_LIMIT,
+    });
+    const parsed = SafeQueueMultisigTransactionPageSchema.parse(page);
+    const sortedByLastModified = parsed.results
+      .map((tx) => mapSafeQueueToMultisigTransaction(tx, args.safe))
+      .sort(
+        (a, b) =>
+          (getLastModified(b)?.getTime() ?? 0) -
+          (getLastModified(a)?.getTime() ?? 0),
+      );
+    const offset = args.offset ?? 0;
+    return {
+      count: parsed.count,
+      next: null,
+      previous: null,
+      results: sortedByLastModified.slice(
+        offset,
+        args.limit ? offset + args.limit : undefined,
       ),
     };
   }

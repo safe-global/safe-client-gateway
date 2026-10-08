@@ -679,16 +679,19 @@ describe('Safes Controller', () => {
                   multisigTransactionToJson(
                     multisigTransactionBuilder()
                       .with('modified', new Date('2020-09-18T03:52:02Z'))
+                      .with('confirmations', [])
                       .build(),
                   ),
                   multisigTransactionToJson(
                     multisigTransactionBuilder()
                       .with('modified', new Date('2020-09-16T03:52:02Z'))
+                      .with('confirmations', [])
                       .build(),
                   ),
                   multisigTransactionToJson(
                     multisigTransactionBuilder()
                       .with('modified', new Date('2020-09-14T03:52:02Z'))
+                      .with('confirmations', [])
                       .build(),
                   ),
                 ])
