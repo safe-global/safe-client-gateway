@@ -19,6 +19,11 @@ export interface IMessagesRepository {
     offset?: number;
   }): Promise<Page<Message>>;
 
+  getLastModifiedMessage(args: {
+    chainId: string;
+    safeAddress: Address;
+  }): Promise<Message | null>;
+
   createMessage(args: {
     chainId: string;
     safeAddress: Address;
