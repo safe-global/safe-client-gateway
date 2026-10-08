@@ -24,6 +24,10 @@ import { policyIndexerSafeAllowanceBuilder } from '@/modules/policies/domain/ent
 import type { PolicyIndexerSafeAllowance } from '@/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
 import type { IPolicyIndexerRepository } from '@/modules/policies/domain/policy-indexer.repository.interface';
+import {
+  GuardPolicyMapper,
+  guardPolicyKindsOf,
+} from '@/modules/policies/routes/mappers/guard-policy.mapper';
 import { PendingSpendingLimitMapper } from '@/modules/policies/routes/mappers/pending-spending-limit.mapper';
 import { ProposerMapper } from '@/modules/policies/routes/mappers/proposer.mapper';
 import { SpendingLimitMapper } from '@/modules/policies/routes/mappers/spending-limit.mapper';
@@ -87,6 +91,8 @@ describe('PoliciesService', () => {
   const authPayload = new AuthPayload(
     siweAuthPayloadDtoBuilder().with('sub', userId.toString()).build(),
   );
+  /** The guard kinds behind the types {@link policyRequest} asks for. */
+  const everyGuardKind = guardPolicyKindsOf(Object.values(PolicyType));
   const policyRequest = {
     spaceId,
     authPayload,
@@ -138,6 +144,7 @@ describe('PoliciesService', () => {
       new SpendingLimitMapper(),
       new ProposerMapper(),
       pendingSpendingLimitMapper(),
+      new GuardPolicyMapper(mockLoggingService),
     );
   }
 
@@ -210,6 +217,7 @@ describe('PoliciesService', () => {
       await target.getSpaceActivePolicies(policyRequest);
 
       expect(mockPolicyIndexerRepository.getState).toHaveBeenCalledWith({
+        policyKinds: everyGuardKind,
         safes: [{ chainId: SEPOLIA, address: safeAddress }],
       });
     });
@@ -303,6 +311,7 @@ describe('PoliciesService', () => {
 
       expect(mockPolicyIndexerRepository.getState).toHaveBeenCalledTimes(1);
       expect(mockPolicyIndexerRepository.getState).toHaveBeenCalledWith({
+        policyKinds: everyGuardKind,
         safes: [
           { chainId: SEPOLIA, address: safeAddress },
           { chainId: '137', address: otherSafe },
@@ -335,6 +344,7 @@ describe('PoliciesService', () => {
       });
 
       expect(mockPolicyIndexerRepository.getState).toHaveBeenCalledWith({
+        policyKinds: everyGuardKind,
         safes: [{ chainId: SEPOLIA, address: safeAddress }],
       });
     });
@@ -359,6 +369,7 @@ describe('PoliciesService', () => {
 
       expect(policies).toHaveLength(1);
       expect(mockPolicyIndexerRepository.getState).toHaveBeenCalledWith({
+        policyKinds: everyGuardKind,
         safes: [{ chainId: SEPOLIA, address: safeAddress }],
       });
       expect(mockSafeRepository.getSafe).toHaveBeenCalledTimes(1);

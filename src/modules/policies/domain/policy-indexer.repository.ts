@@ -9,12 +9,14 @@ import {
 import { PolicyIndexerApi } from '@/modules/policies/datasources/policy-indexer-api.service';
 import {
   PolicyIndexerMetaSchema,
+  type PolicyIndexerPolicyKind,
   PolicyIndexerRowsSchema,
   type PolicyIndexerSafeAllowance,
   type PolicyIndexerSafeAllowanceRow,
   PolicyIndexerSafeAllowanceSchema,
   type PolicyIndexerSafeDelegate,
   PolicyIndexerSafeDelegateSchema,
+  PolicyIndexerSafePolicySchema,
   type PolicyIndexerState,
 } from '@/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 import type { SafeRef } from '@/modules/policies/domain/entities/safe-ref.entity';
@@ -30,14 +32,18 @@ export class PolicyIndexerRepository implements IPolicyIndexerRepository {
 
   public async getState(args: {
     safes: ReadonlyArray<SafeRef>;
+    policyKinds: ReadonlyArray<PolicyIndexerPolicyKind>;
   }): Promise<PolicyIndexerState> {
     const safes = this.checksum(args.safes);
 
     if (safes.length === 0) {
-      return { meta: [], allowances: [], delegates: [] };
+      return { meta: [], allowances: [], delegates: [], policies: [] };
     }
 
-    const raw = await this.policyIndexerApi.getState({ safes });
+    const raw = await this.policyIndexerApi.getState({
+      safes,
+      policyKinds: args.policyKinds,
+    });
     const response = PolicyIndexerRowsSchema.parse(raw);
 
     const delegates = this.parseRows(
@@ -56,6 +62,11 @@ export class PolicyIndexerRepository implements IPolicyIndexerRepository {
         this.withAllowanceDelegateStatus(allowance, delegates),
       ),
       delegates,
+      policies: this.parseRows(
+        PolicyIndexerSafePolicySchema,
+        response.SafePolicy,
+        'SafePolicy',
+      ),
     };
   }
 

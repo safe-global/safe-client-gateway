@@ -6,6 +6,7 @@ import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send
 import { SafeDecoder } from '@/modules/contracts/domain/decoders/safe-decoder.helper';
 import { DelegatesV3RepositoryModule } from '@/modules/delegate/domain/v3/delegates.v3.repository.interface';
 import { PolicyIndexerRepositoryModule } from '@/modules/policies/domain/policy-indexer-repository.module';
+import { GuardPolicyMapper } from '@/modules/policies/routes/mappers/guard-policy.mapper';
 import { PendingSpendingLimitMapper } from '@/modules/policies/routes/mappers/pending-spending-limit.mapper';
 import { ProposerMapper } from '@/modules/policies/routes/mappers/proposer.mapper';
 import { SpendingLimitMapper } from '@/modules/policies/routes/mappers/spending-limit.mapper';
@@ -35,6 +36,7 @@ import { UsersModule } from '@/modules/users/users.module';
     SpendingLimitMapper,
     ProposerMapper,
     PendingSpendingLimitMapper,
+    GuardPolicyMapper,
     AllowanceModuleDecoder,
     SafeDecoder,
     MultiSendDecoder,

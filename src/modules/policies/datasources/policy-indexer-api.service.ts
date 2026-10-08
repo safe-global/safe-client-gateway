@@ -26,6 +26,7 @@ import {
   ROW_FIELDS,
   RowLocationSchema,
 } from '@/modules/policies/datasources/policy-indexer-response.schema';
+import type { PolicyIndexerPolicyKind } from '@/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 import {
   type PolicyIndexerRows,
   PolicyIndexerRowsSchema,
@@ -75,9 +76,10 @@ export class PolicyIndexerApi {
    */
   public async getState(args: {
     safes: ReadonlyArray<SafeRef>;
+    policyKinds: ReadonlyArray<PolicyIndexerPolicyKind>;
   }): Promise<Raw<unknown>> {
     const cacheHits = await Promise.all(
-      args.safes.map((safe) => this.cachedSlice(safe)),
+      args.safes.map((safe) => this.cachedSlice(safe, args.policyKinds)),
     );
     const misses = args.safes.filter((_, index) => cacheHits[index] === null);
 
@@ -90,7 +92,7 @@ export class PolicyIndexerApi {
     }
 
     const fetchStartTimeMs = Date.now();
-    const fetched = await this.fetch(misses);
+    const fetched = await this.fetch(misses, args.policyKinds);
     const policiesStates = await Promise.all(
       args.safes.map(async (safe, index) => {
         const hit = cacheHits[index];
@@ -99,7 +101,12 @@ export class PolicyIndexerApi {
         }
 
         const policiesState = this.filterPolicyIndexerRowsBySafe(fetched, safe);
-        await this.cache(safe, policiesState, fetchStartTimeMs);
+        await this.cache(
+          safe,
+          args.policyKinds,
+          policiesState,
+          fetchStartTimeMs,
+        );
         return policiesState;
       }),
     );
@@ -128,13 +135,14 @@ export class PolicyIndexerApi {
    */
   private async fetch(
     safes: ReadonlyArray<SafeRef>,
+    policyKinds: ReadonlyArray<PolicyIndexerPolicyKind>,
   ): Promise<PolicyIndexerRows> {
     try {
       const { data } = await this.networkService.post<unknown>({
         url: `${this.baseUri}/v1/graphql`,
         data: {
           query: POLICY_INDEXER_STATE_QUERY,
-          variables: toPolicyIndexerVariables(safes),
+          variables: toPolicyIndexerVariables(safes, policyKinds),
         },
         networkRequest: {
           circuitBreaker: { key: CircuitBreakerKeys.getPolicyIndexerKey() },
@@ -175,8 +183,13 @@ export class PolicyIndexerApi {
     return response.data;
   }
 
-  private async cachedSlice(safe: SafeRef): Promise<PolicyIndexerRows | null> {
-    const cached = await this.cacheService.hGet(this.cacheDir(safe));
+  private async cachedSlice(
+    safe: SafeRef,
+    policyKinds: ReadonlyArray<PolicyIndexerPolicyKind>,
+  ): Promise<PolicyIndexerRows | null> {
+    const cached = await this.cacheService.hGet(
+      this.cacheDir(safe, policyKinds),
+    );
 
     if (!cached) {
       return null;
@@ -209,6 +222,7 @@ export class PolicyIndexerApi {
    */
   private async cache(
     safe: SafeRef,
+    policyKinds: ReadonlyArray<PolicyIndexerPolicyKind>,
     slice: PolicyIndexerRows,
     fetchStartTimeMs: number,
   ): Promise<void> {
@@ -226,7 +240,7 @@ export class PolicyIndexerApi {
     }
 
     await this.cacheService.hSet(
-      this.cacheDir(safe),
+      this.cacheDir(safe, policyKinds),
       JSON.stringify(slice),
       this.expirationTimeSeconds,
     );
@@ -234,10 +248,12 @@ export class PolicyIndexerApi {
 
   private cacheDir(
     safe: SafeRef,
+    policyKinds: ReadonlyArray<PolicyIndexerPolicyKind>,
   ): ReturnType<typeof CacheRouter.getPolicyIndexerStateCacheDir> {
     return CacheRouter.getPolicyIndexerStateCacheDir({
       chainId: safe.chainId,
       safeAddress: safe.address,
+      policyKinds,
     });
   }
 
@@ -268,6 +284,7 @@ export class PolicyIndexerApi {
       _meta: [],
       SafeAllowance: [],
       SafeDelegate: [],
+      SafePolicy: [],
     };
     const chains = new Set<number>();
 
@@ -311,6 +328,7 @@ export class PolicyIndexerApi {
       _meta: response._meta.filter(belongsToChain),
       SafeAllowance: [],
       SafeDelegate: [],
+      SafePolicy: [],
     };
 
     for (const field of ROW_FIELDS) {
