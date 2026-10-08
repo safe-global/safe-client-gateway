@@ -14,6 +14,7 @@ import { DataSourceError } from '@/domain/errors/data-source.error';
 import type { ILoggingService } from '@/logging/logging.interface';
 import { ZerionPortfolioApi } from '@/modules/portfolio/datasources/zerion-portfolio-api.service';
 import type { ZerionChainMappingService } from '@/modules/zerion/datasources/zerion-chain-mapping.service';
+import { rawify } from '@/validation/entities/raw.entity';
 
 describe('ZerionPortfolioApi', () => {
   let service: ZerionPortfolioApi;
@@ -95,6 +96,32 @@ describe('ZerionPortfolioApi', () => {
         positionBalances: [],
       });
       expect(mockNetworkService.get).not.toHaveBeenCalled();
+    });
+
+    it('fetches testnet chains from Zerion when testnets are enabled', async () => {
+      fakeConfigurationService.set('features.zerionTestnets', true);
+      service = new ZerionPortfolioApi(
+        mockNetworkService,
+        fakeConfigurationService as IConfigurationService,
+        mockHttpErrorFactory,
+        mockLoggingService,
+        mockCacheService,
+        mockChainMappingService,
+      );
+      const address = getAddress(faker.finance.ethereumAddress());
+      mockNetworkService.get.mockResolvedValue({
+        data: rawify({ data: [] }),
+        status: 200,
+      });
+
+      await service.getPortfolio({ address, fiatCode: 'USD', isTestnet: true });
+
+      expect(mockNetworkService.get).toHaveBeenCalledWith({
+        url: `${zerionBaseUri}/v1/wallets/${address}/positions`,
+        networkRequest: expect.objectContaining({
+          headers: expect.objectContaining({ 'X-Env': 'testnet' }),
+        }),
+      });
     });
 
     it.each([true, false])(

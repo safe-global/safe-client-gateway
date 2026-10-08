@@ -429,8 +429,9 @@ export default () => ({
     email: process.env.FF_EMAIL?.toLowerCase() === 'true',
     sesEmail: process.env.FF_SES_EMAIL?.toLowerCase() === 'true',
     zerion: process.env.FF_ZERION_ENABLED?.toLowerCase() === 'true',
-    // Zerion has no fiat prices for testnet assets, so testnets are served by
-    // the balances provider unless this is explicitly turned on.
+    // Zerion reports the real fiat price of testnet assets, which is zero. We
+    // keep this off to serve testnets from the transaction service with
+    // simulated prices (CoinGecko mainnet prices).
     zerionTestnets:
       process.env.FF_ZERION_TESTNETS_ENABLED?.toLowerCase() === 'true',
     zerionPositions:

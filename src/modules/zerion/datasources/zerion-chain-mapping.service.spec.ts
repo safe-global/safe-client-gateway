@@ -343,6 +343,44 @@ describe('ZerionChainMappingService', () => {
       );
     });
 
+    it('should skip chains Zerion lists but does not index', async () => {
+      mockCacheService.hGet.mockResolvedValue(null);
+      mockNetworkService.get.mockResolvedValue({
+        data: rawify({
+          data: [
+            {
+              type: 'chain',
+              id: 'ethereum',
+              attributes: {
+                external_id: numberToHex(1),
+                name: 'Ethereum',
+                icon: null,
+                flags: { supports_positions: true },
+              },
+            },
+            {
+              type: 'chain',
+              id: 'opbnb',
+              attributes: {
+                external_id: numberToHex(204),
+                name: 'opBNB',
+                icon: null,
+                flags: { supports_positions: false },
+              },
+            },
+          ],
+        }),
+        status: 200,
+      });
+
+      await expect(
+        service.getNetworkFromChainId('204', false),
+      ).resolves.toBeUndefined();
+      await expect(service.getNetworkFromChainId('1', false)).resolves.toBe(
+        'ethereum',
+      );
+    });
+
     it('should convert network names to lowercase in mapping', async () => {
       mockCacheService.hGet.mockResolvedValue(null);
       const mockResponse = {
@@ -519,7 +557,7 @@ describe('ZerionChainMappingService', () => {
       expect(mockCacheService.hGet).toHaveBeenCalledWith(
         expect.objectContaining({
           field: 'mapping',
-          key: 'zerion_chains',
+          key: 'zerion_indexed_chains',
         }),
       );
     });
@@ -533,7 +571,7 @@ describe('ZerionChainMappingService', () => {
       expect(mockCacheService.hGet).toHaveBeenCalledWith(
         expect.objectContaining({
           field: 'mapping_testnet',
-          key: 'zerion_chains',
+          key: 'zerion_indexed_chains',
         }),
       );
     });
@@ -549,7 +587,7 @@ describe('ZerionChainMappingService', () => {
       expect(mockCacheService.hGet).toHaveBeenCalledWith(
         expect.objectContaining({
           field: 'mapping_reverse',
-          key: 'zerion_chains',
+          key: 'zerion_indexed_chains',
         }),
       );
     });
@@ -565,7 +603,7 @@ describe('ZerionChainMappingService', () => {
       expect(mockCacheService.hGet).toHaveBeenCalledWith(
         expect.objectContaining({
           field: 'mapping_reverse_testnet',
-          key: 'zerion_chains',
+          key: 'zerion_indexed_chains',
         }),
       );
     });
@@ -597,7 +635,7 @@ describe('ZerionChainMappingService', () => {
       expect(mockCacheService.hSet).toHaveBeenCalledWith(
         expect.objectContaining({
           field: 'mapping',
-          key: 'zerion_chains',
+          key: 'zerion_indexed_chains',
         }),
         expect.any(String),
         expect.any(Number),
@@ -641,7 +679,7 @@ describe('ZerionChainMappingService', () => {
       expect(mockCacheService.hSet).toHaveBeenCalledWith(
         expect.objectContaining({
           field: 'mapping',
-          key: 'zerion_chains',
+          key: 'zerion_indexed_chains',
         }),
         expect.any(String),
         expect.any(Number),
@@ -650,7 +688,7 @@ describe('ZerionChainMappingService', () => {
       expect(mockCacheService.hSet).toHaveBeenCalledWith(
         expect.objectContaining({
           field: 'mapping_reverse',
-          key: 'zerion_chains',
+          key: 'zerion_indexed_chains',
         }),
         expect.stringMatching(
           /"1":"ethereum".*"137":"polygon"|"137":"polygon".*"1":"ethereum"/,

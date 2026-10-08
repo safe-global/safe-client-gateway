@@ -170,6 +170,12 @@ export class ZerionChainMappingService {
 
     const mapping: Record<string, string> = {};
     for (const chain of response.data) {
+      // Zerion lists chains it does not index positions for and would return
+      // empty balances for them. We omit these chains so callers fall back to
+      // tx service and prices from Coingecko.
+      if (chain.attributes.flags?.supports_positions === false) {
+        continue;
+      }
       const networkName = chain.id;
       const externalId = chain.attributes.external_id;
 
