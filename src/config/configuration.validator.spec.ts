@@ -331,6 +331,7 @@ describe('Configuration validator', () => {
       SAFENET_CONSENSUS_ADDRESS: faker.finance.ethereumAddress(),
       SAFENET_ORACLE_ADDRESS: faker.finance.ethereumAddress(),
       SAFENET_PAYER_SAFE_ADDRESS: faker.finance.ethereumAddress(),
+      SAFENET_PAYER_KMS_KEY_ID: faker.string.uuid(),
     };
 
     it('accepts a complete configuration', () => {
@@ -343,6 +344,7 @@ describe('Configuration validator', () => {
       'SAFENET_CONSENSUS_ADDRESS',
       'SAFENET_ORACLE_ADDRESS',
       'SAFENET_PAYER_SAFE_ADDRESS',
+      'SAFENET_PAYER_KMS_KEY_ID',
     ])('requires %s when FF_SAFENET is true', (field) => {
       const result = RootConfigurationSchema.safeParse(
         omit(safenetConfiguration, field),
@@ -365,8 +367,26 @@ describe('Configuration validator', () => {
           'SAFENET_CONSENSUS_ADDRESS',
           'SAFENET_ORACLE_ADDRESS',
           'SAFENET_PAYER_SAFE_ADDRESS',
+          'SAFENET_PAYER_KMS_KEY_ID',
         ]),
       );
+    });
+
+    it('rejects an empty SAFENET_PAYER_KMS_KEY_ID when FF_SAFENET is true', () => {
+      const result = RootConfigurationSchema.safeParse({
+        ...safenetConfiguration,
+        SAFENET_PAYER_KMS_KEY_ID: '',
+      });
+
+      expect(result.error?.issues).toContainEqual(
+        expect.objectContaining({ path: ['SAFENET_PAYER_KMS_KEY_ID'] }),
+      );
+    });
+
+    it('needs no Safenet variable in production while FF_SAFENET is off', () => {
+      const config = { ...validConfiguration, CGW_ENV: 'production' };
+
+      expect(RootConfigurationSchema.safeParse(config).success).toBe(true);
     });
   });
 

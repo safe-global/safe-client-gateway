@@ -123,4 +123,13 @@ describe('configuration - safenet', () => {
     vi.stubEnv('SAFENET_PAYER_SAFE_ADDRESS', safeAddress);
     expect(configuration().safenet.payer.safeAddress).toBe(safeAddress);
   });
+
+  it('reads the payer KMS key ID and web identity token file from the environment', () => {
+    const keyId = faker.string.uuid();
+    const file = faker.system.filePath();
+    vi.stubEnv('SAFENET_PAYER_KMS_KEY_ID', keyId);
+    vi.stubEnv('AWS_WEB_IDENTITY_TOKEN_FILE', file);
+    const { kms } = configuration().safenet.payer;
+    expect([kms.keyId, kms.webIdentityTokenFile]).toEqual([keyId, file]);
+  });
 });

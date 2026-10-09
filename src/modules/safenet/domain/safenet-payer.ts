@@ -66,7 +66,7 @@ export class SafenetPayer implements ISafenetPayer {
   private readonly pollIntervalMs: number;
   private readonly pollTimeoutMs: number;
   private readonly nonceTtlSeconds: number;
-  private versionVerified = false;
+  private payerSafeVerified = false;
   private busy = false;
 
   constructor(
@@ -108,7 +108,7 @@ export class SafenetPayer implements ISafenetPayer {
 
   private async proposeSerialized(transaction: Tx.SafenetSafeTransaction) {
     const client = await this.blockchain.getApi(SAFENET_CHAIN_ID);
-    await this.assertSupportedVersion(client);
+    await this.assertPayerSafe(client);
     const key = CacheRouter.getSafenetPayerNonceCacheKey({
       chainId: SAFENET_CHAIN_ID,
       safeAddress: this.payerSafeAddress,
@@ -151,16 +151,25 @@ export class SafenetPayer implements ISafenetPayer {
     return { userSafeTxHash, requestId, transactionHash, payerNonce };
   }
 
-  private async assertSupportedVersion(client: PublicClient): Promise<void> {
-    if (this.versionVerified) return;
-    const version = await client.readContract({
-      address: this.payerSafeAddress,
-      abi: safeAbi,
-      functionName: 'VERSION',
-    });
+  /** One signature from the signer must satisfy the payer Safe, or `execTransaction` reverts. */
+  private async assertPayerSafe(client: PublicClient): Promise<void> {
+    if (this.payerSafeVerified) return;
+    const safe = { address: this.payerSafeAddress, abi: safeAbi } as const;
+    const signer = await this.signer.getAddress();
+    const [version, threshold, isOwner] = await Promise.all([
+      client.readContract({ ...safe, functionName: 'VERSION' }),
+      client.readContract({ ...safe, functionName: 'getThreshold' }),
+      client.readContract({ ...safe, functionName: 'isOwner', args: [signer] }),
+    ]);
     if (version !== SUPPORTED_SAFE_VERSION)
       throw new SafenetPayerError(`Unsupported payer Safe version ${version}`);
-    this.versionVerified = true;
+    if (threshold !== 1n)
+      throw new SafenetPayerError(
+        `Unsupported payer Safe threshold ${threshold}`,
+      );
+    if (!isOwner)
+      throw new SafenetPayerError(`Signer ${signer} is not a payer Safe owner`);
+    this.payerSafeVerified = true;
   }
 
   private async nextNonce(client: PublicClient, key: string): Promise<bigint> {
@@ -184,7 +193,7 @@ export class SafenetPayer implements ISafenetPayer {
         version: SUPPORTED_SAFE_VERSION,
         nonce: Number(payerNonce),
         threshold: 1,
-        owners: [this.signer.address],
+        owners: [await this.signer.getAddress()],
         masterCopy: zeroAddress,
         fallbackHandler: zeroAddress,
         guard: zeroAddress,
