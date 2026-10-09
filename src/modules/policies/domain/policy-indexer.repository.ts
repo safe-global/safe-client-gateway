@@ -8,6 +8,7 @@ import {
 } from '@/logging/logging.interface';
 import { PolicyIndexerApi } from '@/modules/policies/datasources/policy-indexer-api.service';
 import {
+  PolicyIndexerConfigurationRootSchema,
   PolicyIndexerMetaSchema,
   type PolicyIndexerPolicyKind,
   PolicyIndexerRowsSchema,
@@ -73,8 +74,11 @@ export class PolicyIndexerRepository implements IPolicyIndexerRepository {
         response.SafePolicy,
         'SafePolicy',
       ),
-      // Placeholder: replaced in step 7. Configuration roots are not read yet.
-      roots: [],
+      roots: this.parseRows(
+        PolicyIndexerConfigurationRootSchema,
+        response.ConfigurationRoot,
+        'ConfigurationRoot',
+      ),
     };
   }
 

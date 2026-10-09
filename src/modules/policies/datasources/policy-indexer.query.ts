@@ -16,16 +16,22 @@ export type PolicyIndexerVariables = {
   policies: Array<PolicyIndexerPairFilter>;
   /** The guard-policy kinds the caller reports, as `SafePolicy.kind` holds them. */
   policyKinds: Array<PolicyIndexerPolicyKind>;
+  roots: Array<PolicyIndexerPairFilter>;
 };
 
 /**
- * Current allowance-module state for a set of Safes.
+ * Current policy state for a set of Safes.
+ *
+ * `ConfigurationRoot` is not filtered by status: an applied or invalidated root
+ * is not pending, but knowing it was requested at all is what tells it apart
+ * from configurations stored in CGW that nobody requested yet - a draft.
  */
 export const POLICY_INDEXER_STATE_QUERY = `query PolicyIndexerState(
   $allowances: [SafeAllowance_bool_exp!]!
   $delegates: [SafeDelegate_bool_exp!]!
   $policies: [SafePolicy_bool_exp!]!
   $policyKinds: [String!]!
+  $roots: [ConfigurationRoot_bool_exp!]!
 ) {
   _meta { chainId progressBlock sourceBlock isReady }
   SafeAllowance(
@@ -46,6 +52,12 @@ export const POLICY_INDEXER_STATE_QUERY = `query PolicyIndexerState(
     order_by: [{ chainId: asc }, { safe: asc }, { target: asc }, { selector: asc }]
   ) {
     chainId safe guard target selector operation kind policy active isFallback state
+  }
+  ConfigurationRoot(
+    where: { _or: $roots }
+    order_by: [{ chainId: asc }, { safe: asc }, { readyAt: asc }]
+  ) {
+    chainId safe guard root readyAt status
   }
 }`;
 
@@ -79,5 +91,6 @@ export function toPolicyIndexerVariables(
     delegates: groups,
     policies: groups,
     policyKinds: [...policyKinds],
+    roots: groups,
   };
 }

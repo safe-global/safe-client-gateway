@@ -73,6 +73,7 @@ function requestWith(groups: Array<ReturnType<typeof pairGroup>>): object {
         delegates: groups,
         policies: groups,
         policyKinds: [...policyKinds],
+        roots: groups,
       },
     }),
   });

@@ -29,6 +29,7 @@ export function rawPolicyIndexerResponse(
     SafeAllowance: Array<unknown>;
     SafeDelegate: Array<unknown>;
     SafePolicy: Array<unknown>;
+    ConfigurationRoot: Array<unknown>;
   }> = {},
 ): Record<string, Array<unknown>> {
   return {
@@ -36,6 +37,7 @@ export function rawPolicyIndexerResponse(
     SafeAllowance: [],
     SafeDelegate: [],
     SafePolicy: [],
+    ConfigurationRoot: [],
     ...overrides,
   };
 }

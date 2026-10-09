@@ -281,6 +281,7 @@ export const PolicyIndexerRowsSchema = z.object({
   SafeAllowance: z.array(z.unknown()),
   SafeDelegate: z.array(z.unknown()),
   SafePolicy: z.array(z.unknown()),
+  ConfigurationRoot: z.array(z.unknown()),
 });
 
 export type PolicyIndexerRows = z.infer<typeof PolicyIndexerRowsSchema>;

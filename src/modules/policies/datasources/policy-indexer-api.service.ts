@@ -285,6 +285,7 @@ export class PolicyIndexerApi {
       SafeAllowance: [],
       SafeDelegate: [],
       SafePolicy: [],
+      ConfigurationRoot: [],
     };
     const chains = new Set<number>();
 
@@ -329,6 +330,7 @@ export class PolicyIndexerApi {
       SafeAllowance: [],
       SafeDelegate: [],
       SafePolicy: [],
+      ConfigurationRoot: [],
     };
 
     for (const field of ROW_FIELDS) {

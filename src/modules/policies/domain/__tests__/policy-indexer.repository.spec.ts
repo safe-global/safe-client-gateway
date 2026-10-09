@@ -5,6 +5,7 @@ import type { MockedObject } from 'vitest';
 import { ZodError } from 'zod';
 import type { ILoggingService } from '@/logging/logging.interface';
 import type { PolicyIndexerApi } from '@/modules/policies/datasources/policy-indexer-api.service';
+import { rawIndexerConfigurationRootBuilder } from '@/modules/policies/domain/entities/indexer/__tests__/configuration-root.builder';
 import {
   rawIndexerMetaBuilder,
   rawPolicyIndexerResponse,
@@ -127,6 +128,52 @@ describe('PolicyIndexerRepository', () => {
         chainId: SEPOLIA,
         safeAddress: safe,
       });
+    });
+  });
+
+  describe('configuration roots', () => {
+    it('should parse the configuration roots', async () => {
+      const root = rawIndexerConfigurationRootBuilder()
+        .with('safe', safe)
+        .with('readyAt', '1787585100')
+        .with('status', 'APPLIED')
+        .build();
+      mockPolicyIndexerApi.getState.mockResolvedValue(
+        rawify(rawPolicyIndexerResponse({ ConfigurationRoot: [root] })),
+      );
+
+      const result = await target.getState({
+        safes: [{ chainId: SEPOLIA, address: safe }],
+        policyKinds,
+      });
+
+      expect(result.roots).toStrictEqual([
+        {
+          chainId: SEPOLIA,
+          safe,
+          guard: getAddress(root.guard),
+          root: root.root,
+          readyAt: 1787585100,
+          status: 'APPLIED',
+        },
+      ]);
+    });
+
+    it('should drop a root with an unknown status', async () => {
+      const root = rawIndexerConfigurationRootBuilder()
+        .with('safe', safe)
+        .with('status', faker.string.alpha({ length: 8, casing: 'upper' }))
+        .build();
+      mockPolicyIndexerApi.getState.mockResolvedValue(
+        rawify(rawPolicyIndexerResponse({ ConfigurationRoot: [root] })),
+      );
+
+      const result = await target.getState({
+        safes: [{ chainId: SEPOLIA, address: safe }],
+        policyKinds,
+      });
+
+      expect(result.roots).toStrictEqual([]);
     });
   });
 
