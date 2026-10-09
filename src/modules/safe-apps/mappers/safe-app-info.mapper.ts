@@ -35,7 +35,7 @@ export class SafeAppInfoMapper {
       url: originUrl,
     });
     if (!safeApp) {
-      this.loggingService.info(
+      this.loggingService.debug(
         `No Safe Apps matching the origin url ${originUrl} (safeTxHash: ${safeTxHash})`,
       );
       return null;

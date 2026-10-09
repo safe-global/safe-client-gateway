@@ -76,7 +76,7 @@ describe('SafeAppInfo mapper (Unit)', () => {
       onlyListed: false,
       url: originPayload.url,
     });
-    expect(mockLoggingService.info).toHaveBeenCalledWith(
+    expect(mockLoggingService.debug).toHaveBeenCalledWith(
       `No Safe Apps matching the origin url ${originPayload.url} (safeTxHash: ${safeTxHash})`,
     );
   });
