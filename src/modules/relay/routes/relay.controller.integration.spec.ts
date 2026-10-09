@@ -17,6 +17,8 @@ import {
 import { createTestModule } from '#/__tests__/testing-module';
 import { IConfigurationService } from '#/config/configuration.service.interface';
 import configuration from '#/config/entities/__tests__/configuration';
+import type { FakeCacheService } from '#/datasources/cache/__tests__/fake.cache.service';
+import { CacheService } from '#/datasources/cache/cache.service.interface';
 import type { INetworkService } from '#/datasources/network/network.service.interface';
 import { NetworkService } from '#/datasources/network/network.service.interface';
 import {
@@ -27,6 +29,7 @@ import {
   getSafeSingletonDeployments,
   getSignerFactoryDeployments,
 } from '#/domain/common/utils/deployments';
+import { ITransactionApiManager } from '#/domain/interfaces/transaction-api.manager.interface';
 import {
   execTransactionFromModuleEncoder,
   executeNextTxEncoder,
@@ -146,13 +149,14 @@ describe('Relay controller', () => {
   let configurationService: MockedObject<IConfigurationService>;
   let networkService: MockedObject<INetworkService>;
   let balancesService: MockedObject<BalancesService>;
+  let getTokenBalance: MockedObject<BalancesService>['getTokenBalance'];
+  let cacheService: FakeCacheService;
+  let transactionApiManager: ITransactionApiManager;
   let safeConfigUrl: string;
   let relayUrl: string;
   let relayLimit: number;
 
-  beforeEach(async () => {
-    vi.resetAllMocks();
-
+  beforeAll(async () => {
     const defaultConfiguration = configuration();
     const testConfiguration = (): typeof defaultConfiguration => ({
       ...defaultConfiguration,
@@ -172,12 +176,29 @@ describe('Relay controller', () => {
     relayLimit = configurationService.getOrThrow('relay.limit');
     networkService = moduleFixture.get(NetworkService);
     balancesService = moduleFixture.get(BalancesService);
+    getTokenBalance = balancesService.getTokenBalance;
+    cacheService = moduleFixture.get(CacheService);
+    transactionApiManager = moduleFixture.get(ITransactionApiManager);
 
     app = await new TestAppProvider().provide(moduleFixture);
     await initTestApplication(app);
   });
 
-  afterEach(async () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    networkService.get.mockReset();
+    networkService.post.mockReset();
+    networkService.patch.mockReset();
+    networkService.postForm.mockReset();
+    networkService.delete.mockReset();
+    balancesService.getTokenBalance = getTokenBalance;
+    cacheService.clear();
+    for (const chainId of allSupportedChainIds) {
+      transactionApiManager.destroyApi(chainId);
+    }
+  });
+
+  afterAll(async () => {
     await app?.close();
   });
 
