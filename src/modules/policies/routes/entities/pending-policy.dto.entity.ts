@@ -322,8 +322,13 @@ export class PendingGuardConfigurationDto implements PendingGuardConfiguration {
     description: 'The queued request or apply transaction, if any',
   })
   public readonly transaction!: PendingTransactionDto | null;
-  @ApiProperty({ description: 'Unix seconds the change was first seen' })
-  public readonly createdAt!: number;
+  @ApiProperty({
+    type: Number,
+    nullable: true,
+    description:
+      'Unix seconds the change was first seen: when CGW stored its configurations, else when its queued transaction was proposed. Null for a root requested outside the wallet.',
+  })
+  public readonly createdAt!: number | null;
 }
 
 /**

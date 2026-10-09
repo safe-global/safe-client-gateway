@@ -117,8 +117,12 @@ export type PendingGuardConfiguration = {
   expiresAt: number | null;
   /** The queued request or apply transaction, if one is queued. */
   transaction: PendingTransaction | null;
-  /** Unix seconds the change was first seen. */
-  createdAt: number;
+  /**
+   * Unix seconds the change was first seen: when CGW stored its
+   * configurations, else when its queued transaction was proposed. `null` for a
+   * root requested outside the wallet, which CGW has no record of.
+   */
+  createdAt: number | null;
 };
 
 /**
