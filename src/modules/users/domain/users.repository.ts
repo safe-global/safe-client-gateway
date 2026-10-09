@@ -218,6 +218,13 @@ export class UsersRepository implements IUsersRepository {
     }
 
     const activeAdmins = await args.entityManager.find(DbMember, {
+      select: {
+        id: true,
+        role: true,
+        status: true,
+        space: { id: true },
+        user: { id: true },
+      },
       where: {
         space: { id: In(administeredSpaceIds) },
         role: 'ADMIN',
