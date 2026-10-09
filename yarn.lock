@@ -2548,10 +2548,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"amqplib@npm:2.0.1":
-  version: 2.0.1
-  resolution: "amqplib@npm:2.0.1"
-  checksum: 10/731c9e8847c620d67e1546a4a98f9364e47c7b413c17d3eb35b38e4709da002e0da4d3f2186df3feb6123113e0a96aa684c2cce762bfbd415eab446ff385df52
+"amqplib@npm:2.2.0":
+  version: 2.2.0
+  resolution: "amqplib@npm:2.2.0"
+  checksum: 10/22f8adfbaedc535682c442eaff3fdadcad321ad5847744597f456118339e765ca862d2241ce1b8384d04faf3563c1c022f4ccaef09dadad9d5f7a6401a5af1a1
   languageName: node
   linkType: hard
 
@@ -5092,7 +5092,7 @@ __metadata:
     "@types/supertest": "npm:7.2.1"
     "@vitest/coverage-v8": "npm:4.1.11"
     amqp-connection-manager: "npm:5.0.0"
-    amqplib: "npm:2.0.1"
+    amqplib: "npm:2.2.0"
     aws-sdk-client-mock: "npm:4.1.0"
     bullmq: "npm:^6.3.11"
     cache-manager: "npm:7.2.9"
