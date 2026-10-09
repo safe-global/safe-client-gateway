@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import type { MockedObject } from 'vitest';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
 import { SAFE_TRANSACTION_SERVICE_MAX_LIMIT as LIMIT } from '#/domain/common/constants';
 import {
@@ -17,14 +18,14 @@ import { contractBuilder } from '#/modules/data-decoder/domain/v2/entities/__tes
 import { rawify } from '#/validation/entities/raw.entity';
 
 const mockLoggingService = {
-  error: vi.fn(),
+  error: jest.fn(),
 } as MockedObject<ILoggingService>;
 const mockDataDecoderApi = {
-  getContracts: vi.fn(),
-  getTrustedForDelegateCallContracts: vi.fn(),
+  getContracts: jest.fn(),
+  getTrustedForDelegateCallContracts: jest.fn(),
 } as MockedObject<IDataDecoderApi>;
-const mockConfigurationService = vi.mocked({
-  getOrThrow: vi.fn(),
+const mockConfigurationService = mocked({
+  getOrThrow: jest.fn(),
 } as MockedObject<IConfigurationService>);
 
 describe('ContractsRepository', () => {
@@ -47,7 +48,7 @@ describe('ContractsRepository', () => {
   }
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
     initTarget({ trustedList: false });
   });
 

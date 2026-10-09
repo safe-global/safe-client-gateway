@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import type { Job } from 'bullmq';
 import { UnrecoverableError } from 'bullmq';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import type { ILoggingService } from '#/logging/logging.interface';
 import { EmailConsumer } from '#/modules/email/ses/consumers/email.consumer';
 import { sendEmailJobDataBuilder } from '#/modules/email/ses/domain/entities/__tests__/send-email-job-data.builder';
@@ -15,21 +16,21 @@ import {
 import type { IEmailService } from '#/modules/email/ses/domain/interfaces/email-service.interface';
 
 const mockEmailService = {
-  send: vi.fn(),
+  send: jest.fn(),
 } as MockedObject<IEmailService>;
 
 const mockLoggingService = {
-  info: vi.fn(),
-  error: vi.fn(),
-  warn: vi.fn(),
-  debug: vi.fn(),
+  info: jest.fn(),
+  error: jest.fn(),
+  warn: jest.fn(),
+  debug: jest.fn(),
 } as MockedObject<ILoggingService>;
 
 describe('EmailConsumer', () => {
   let consumer: EmailConsumer;
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
     consumer = new EmailConsumer(mockLoggingService, mockEmailService);
   });
 

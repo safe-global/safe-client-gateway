@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { NotFoundException } from '@nestjs/common';
-import type { Mock, MockedObject } from 'vitest';
+import { type Mock, type MockedObject } from '#/__tests__/mocks';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
 import type { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
 import { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
@@ -41,11 +42,11 @@ describe('SpacesRepository', () => {
   let target: SpacesRepository;
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
 
     configurationService = {
-      getOrThrow: vi.fn(),
-      get: vi.fn(),
+      getOrThrow: jest.fn(),
+      get: jest.fn(),
     } as MockedObject<IConfigurationService>;
     configurationService.getOrThrow.mockImplementation((key: string) => {
       if (key === 'spaces.maxSpaceCreationsPerUser')
@@ -58,28 +59,28 @@ describe('SpacesRepository', () => {
     spaceEncryptionService = createMockSpaceEncryptionService();
     memberEncryptionService = createMockMemberEncryptionService();
 
-    queryBuilderSet = vi.fn().mockReturnThis();
+    queryBuilderSet = jest.fn().mockReturnThis();
     const queryBuilder = {
-      update: vi.fn().mockReturnThis(),
+      update: jest.fn().mockReturnThis(),
       set: queryBuilderSet,
-      where: vi.fn().mockReturnThis(),
-      execute: vi.fn().mockResolvedValue({ affected: 1 }),
+      where: jest.fn().mockReturnThis(),
+      execute: jest.fn().mockResolvedValue({ affected: 1 }),
     };
 
     entityManager = {
-      save: vi.fn(),
-      update: vi.fn(),
-      findOne: vi.fn(),
-      delete: vi.fn(),
-      createQueryBuilder: vi.fn().mockReturnValue(queryBuilder),
+      save: jest.fn(),
+      update: jest.fn(),
+      findOne: jest.fn(),
+      delete: jest.fn(),
+      createQueryBuilder: jest.fn().mockReturnValue(queryBuilder),
     };
 
     // isLimited() reads the caller's uninvited memberships.
-    memberRepository = { find: vi.fn().mockResolvedValue([]) };
+    memberRepository = { find: jest.fn().mockResolvedValue([]) };
 
     postgresDatabaseService = {
-      getRepository: vi.fn().mockResolvedValue(memberRepository),
-      transaction: vi.fn((fn: (em: unknown) => Promise<unknown>) =>
+      getRepository: jest.fn().mockResolvedValue(memberRepository),
+      transaction: jest.fn((fn: (em: unknown) => Promise<unknown>) =>
         fn(entityManager),
       ),
     } as MockedObject<PostgresDatabaseService>;
@@ -123,12 +124,16 @@ describe('SpacesRepository', () => {
 
       // The caller gets the plaintext back, not the ciphertext.
       expect(result).toStrictEqual({ uuid: spaceUuid, name });
-      expect(
-        spaceEncryptionService.encryptSpaceName,
-      ).toHaveBeenCalledExactlyOnceWith(spaceId, name);
-      expect(
-        memberEncryptionService.encryptName,
-      ).toHaveBeenCalledExactlyOnceWith(spaceId, `${name} creator`);
+      expect(spaceEncryptionService.encryptSpaceName).toHaveBeenCalledTimes(1);
+      expect(spaceEncryptionService.encryptSpaceName).toHaveBeenCalledWith(
+        spaceId,
+        name,
+      );
+      expect(memberEncryptionService.encryptName).toHaveBeenCalledTimes(1);
+      expect(memberEncryptionService.encryptName).toHaveBeenCalledWith(
+        spaceId,
+        `${name} creator`,
+      );
       expect(entityManager.update).toHaveBeenCalledWith(Space, spaceId, {
         name: encryptedSpaceName,
       });
@@ -137,7 +142,8 @@ describe('SpacesRepository', () => {
       });
       // The audit payload carries the plaintext name (encrypted as a whole
       // blob by the audit repository).
-      expect(spaceAuditRepository.record).toHaveBeenCalledExactlyOnceWith(
+      expect(spaceAuditRepository.record).toHaveBeenCalledTimes(1);
+      expect(spaceAuditRepository.record).toHaveBeenCalledWith(
         entityManager,
         expect.objectContaining({
           eventType: 'SPACE_CREATED',
@@ -153,7 +159,8 @@ describe('SpacesRepository', () => {
 
       expect(result).toStrictEqual({ uuid: spaceUuid, name });
       expect(entityManager.update).not.toHaveBeenCalled();
-      expect(spaceAuditRepository.record).toHaveBeenCalledExactlyOnceWith(
+      expect(spaceAuditRepository.record).toHaveBeenCalledTimes(1);
+      expect(spaceAuditRepository.record).toHaveBeenCalledWith(
         entityManager,
         expect.objectContaining({ payload: { name } }),
       );
@@ -181,16 +188,22 @@ describe('SpacesRepository', () => {
         actorUserId: userId,
       });
 
-      expect(
-        spaceEncryptionService.decryptSpaceName,
-      ).toHaveBeenCalledExactlyOnceWith(spaceId, storedCiphertext);
-      expect(
-        spaceEncryptionService.encryptSpaceName,
-      ).toHaveBeenCalledExactlyOnceWith(spaceId, newName);
-      expect(queryBuilderSet).toHaveBeenCalledExactlyOnceWith({
+      expect(spaceEncryptionService.decryptSpaceName).toHaveBeenCalledTimes(1);
+      expect(spaceEncryptionService.decryptSpaceName).toHaveBeenCalledWith(
+        spaceId,
+        storedCiphertext,
+      );
+      expect(spaceEncryptionService.encryptSpaceName).toHaveBeenCalledTimes(1);
+      expect(spaceEncryptionService.encryptSpaceName).toHaveBeenCalledWith(
+        spaceId,
+        newName,
+      );
+      expect(queryBuilderSet).toHaveBeenCalledTimes(1);
+      expect(queryBuilderSet).toHaveBeenCalledWith({
         name: newCiphertext,
       });
-      expect(spaceAuditRepository.record).toHaveBeenCalledExactlyOnceWith(
+      expect(spaceAuditRepository.record).toHaveBeenCalledTimes(1);
+      expect(spaceAuditRepository.record).toHaveBeenCalledWith(
         entityManager,
         expect.objectContaining({
           eventType: 'SPACE_UPDATED',
@@ -223,7 +236,8 @@ describe('SpacesRepository', () => {
       });
 
       // Never write the incoming plaintext over an encrypted row.
-      expect(queryBuilderSet).toHaveBeenCalledExactlyOnceWith({
+      expect(queryBuilderSet).toHaveBeenCalledTimes(1);
+      expect(queryBuilderSet).toHaveBeenCalledWith({
         name: reEncrypted,
       });
       expect(spaceAuditRepository.record).not.toHaveBeenCalled();
@@ -245,7 +259,8 @@ describe('SpacesRepository', () => {
 
       expect(spaceEncryptionService.decryptSpaceName).not.toHaveBeenCalled();
       expect(spaceEncryptionService.encryptSpaceName).not.toHaveBeenCalled();
-      expect(queryBuilderSet).toHaveBeenCalledExactlyOnceWith({
+      expect(queryBuilderSet).toHaveBeenCalledTimes(1);
+      expect(queryBuilderSet).toHaveBeenCalledWith({
         status: 'ACTIVE',
       });
       expect(spaceAuditRepository.record).not.toHaveBeenCalled();
@@ -277,10 +292,13 @@ describe('SpacesRepository', () => {
 
       await target.delete({ id: spaceId, actorUserId: userId });
 
-      expect(
-        spaceEncryptionService.decryptSpaceName,
-      ).toHaveBeenCalledExactlyOnceWith(spaceId, storedCiphertext);
-      expect(spaceAuditRepository.record).toHaveBeenCalledExactlyOnceWith(
+      expect(spaceEncryptionService.decryptSpaceName).toHaveBeenCalledTimes(1);
+      expect(spaceEncryptionService.decryptSpaceName).toHaveBeenCalledWith(
+        spaceId,
+        storedCiphertext,
+      );
+      expect(spaceAuditRepository.record).toHaveBeenCalledTimes(1);
+      expect(spaceAuditRepository.record).toHaveBeenCalledWith(
         entityManager,
         expect.objectContaining({
           eventType: 'SPACE_DELETED',

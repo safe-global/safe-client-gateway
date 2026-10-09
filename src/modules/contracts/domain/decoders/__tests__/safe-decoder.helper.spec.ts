@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import {
   addOwnerWithThresholdEncoder,
   changeThresholdEncoder,
@@ -13,7 +14,7 @@ describe('SafeDecoder', () => {
   let target: SafeDecoder;
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
     target = new SafeDecoder();
   });
 

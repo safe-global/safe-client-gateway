@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import type { MockedObject } from 'vitest';
 import { ZodError } from 'zod';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
 import { CacheRouter } from '#/datasources/cache/cache.router';
 import type { ICacheService } from '#/datasources/cache/cache.service.interface';
@@ -15,28 +16,28 @@ import { ZerionWalletPortfolioApi } from '#/modules/balances/datasources/zerion-
 import type { ZerionRateLimiter } from '#/modules/zerion/datasources/zerion-rate-limiter.service';
 import { rawify } from '#/validation/entities/raw.entity';
 
-const mockNetworkService = vi.mocked({
-  get: vi.fn(),
+const mockNetworkService = mocked({
+  get: jest.fn(),
 } as MockedObject<INetworkService>);
 
-const mockCacheService = vi.mocked({
-  hGet: vi.fn(),
-  hSet: vi.fn(),
+const mockCacheService = mocked({
+  hGet: jest.fn(),
+  hSet: jest.fn(),
 } as MockedObject<ICacheService>);
 
 const mockLoggingService = {
-  debug: vi.fn(),
-  warn: vi.fn(),
-  error: vi.fn(),
-  info: vi.fn(),
+  debug: jest.fn(),
+  warn: jest.fn(),
+  error: jest.fn(),
+  info: jest.fn(),
 } as MockedObject<ILoggingService>;
 
-const mockHttpErrorFactory = vi.mocked({
-  from: vi.fn(),
+const mockHttpErrorFactory = mocked({
+  from: jest.fn(),
 } as MockedObject<HttpErrorFactory>);
 
-const mockZerionRateLimiter = vi.mocked({
-  assertWithinBudget: vi.fn(),
+const mockZerionRateLimiter = mocked({
+  assertWithinBudget: jest.fn(),
 } as unknown as MockedObject<ZerionRateLimiter>);
 
 const buildPortfolioResponse = (
@@ -60,7 +61,7 @@ describe('ZerionWalletPortfolioApi', () => {
   const address = getAddress(faker.finance.ethereumAddress());
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
     fakeConfigurationService = new FakeConfigurationService();
     fakeConfigurationService.set(
       'balances.providers.zerion.apiKey',

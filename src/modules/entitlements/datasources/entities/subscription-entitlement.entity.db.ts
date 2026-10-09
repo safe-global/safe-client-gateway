@@ -6,6 +6,7 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
+  type Relation,
   Unique,
 } from 'typeorm';
 import { Feature } from '#/modules/entitlements/datasources/entities/feature.entity.db';
@@ -57,7 +58,7 @@ export class SubscriptionEntitlement implements DomainSubscriptionEntitlement {
     name: 'subscription_id',
     foreignKeyConstraintName: 'FK_SE_subscription_id',
   })
-  public readonly subscription?: SpaceSubscription;
+  public readonly subscription?: Relation<SpaceSubscription>;
 
   // Not `eager`: callers that need it ask for it explicitly via `relations`
   // (see the integration spec), so unrelated queries don't pay for the join.
@@ -70,5 +71,5 @@ export class SubscriptionEntitlement implements DomainSubscriptionEntitlement {
     name: 'feature_id',
     foreignKeyConstraintName: 'FK_SE_feature_id',
   })
-  public readonly feature!: Feature;
+  public readonly feature!: Relation<Feature>;
 }

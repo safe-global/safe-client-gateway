@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { MockedObject } from 'vitest';
+import { jest } from 'bun:test';
+import type { MockedObject } from '#/__tests__/mocks';
 import type { WalletEncryptionService } from '#/modules/wallets/domain/wallet-encryption.service';
 
 /**
@@ -11,16 +12,16 @@ import type { WalletEncryptionService } from '#/modules/wallets/domain/wallet-en
  */
 export function createMockWalletEncryptionService(): MockedObject<WalletEncryptionService> {
   return {
-    isEncrypted: vi.fn((value: string) => value.startsWith('kms:')),
-    encryptAddress: vi.fn((_userId: number, address: string) =>
+    isEncrypted: jest.fn((value: string) => value.startsWith('kms:')),
+    encryptAddress: jest.fn((_userId: number, address: string) =>
       Promise.resolve(address),
     ),
-    addressIndex: vi.fn((_address: string) => null),
-    decryptAddress: vi.fn((_userId: number, value: string) =>
+    addressIndex: jest.fn((_address: string) => null),
+    decryptAddress: jest.fn((_userId: number, value: string) =>
       Promise.resolve(value),
     ),
     // Disabled-mode rows are plaintext, so batch decryption passes through.
-    decryptWallets: vi.fn(
+    decryptWallets: jest.fn(
       (_userId: number, wallets: Array<{ address: string }>) =>
         Promise.resolve(wallets),
     ),

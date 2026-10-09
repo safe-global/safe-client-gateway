@@ -1,10 +1,19 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  describe,
+  expect,
+  it,
+  jest,
+} from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { ConflictException } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
 import { DataSource } from 'typeorm';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
 import configuration from '#/config/entities/__tests__/configuration';
 import { postgresConfig } from '#/config/entities/postgres.config';
@@ -32,10 +41,10 @@ const LOCK_WAIT_TIMEOUT_MS = 2_000;
 const LOCK_POLL_INTERVAL_MS = 10;
 
 const mockLoggingService = {
-  debug: vi.fn(),
-  error: vi.fn(),
-  info: vi.fn(),
-  warn: vi.fn(),
+  debug: jest.fn(),
+  error: jest.fn(),
+  info: jest.fn(),
+  warn: jest.fn(),
 } as MockedObject<ILoggingService>;
 
 // Own file: holding two connections at once disturbs sibling specs' pool.
@@ -82,7 +91,7 @@ describe('UsersRepository concurrency', () => {
     await postgresDatabaseService.initializeDatabaseConnection();
 
     const mockConfigService = {
-      getOrThrow: vi.fn().mockImplementation((key: string) => {
+      getOrThrow: jest.fn().mockImplementation((key: string) => {
         if (key === 'db.migrator.numberOfRetries') {
           return testConfiguration.db.migrator.numberOfRetries;
         }

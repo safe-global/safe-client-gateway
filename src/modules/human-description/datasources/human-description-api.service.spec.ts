@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { describe, expect, it } from 'bun:test';
 import { HumanDescriptionApi } from '#/modules/human-description/datasources/human-description-api.service';
 
 describe('HumanDescriptionAPI', () => {

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { expect } from 'vitest';
+import { expect } from 'bun:test';
 
 const anyStringOrNull = (
   actual: unknown,
@@ -15,12 +15,12 @@ expect.extend({
   anyStringOrNull,
 });
 
-declare module 'vitest' {
-  interface Assertion<T = any> {
+declare module 'bun:test' {
+  interface Matchers<T> {
     anyStringOrNull(): void;
   }
 
-  interface AsymmetricMatchersContaining {
+  interface AsymmetricMatchers {
     anyStringOrNull(): void;
   }
 }

@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import type { MockedObject } from 'vitest';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
 import type { CacheFirstDataSource } from '#/datasources/cache/cache.first.data.source';
 import type { ICacheService } from '#/datasources/cache/cache.service.interface';
@@ -15,43 +16,43 @@ import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.b
 import { rawify } from '#/validation/entities/raw.entity';
 
 const configurationService = {
-  getOrThrow: vi.fn(),
+  getOrThrow: jest.fn(),
 } as MockedObject<IConfigurationService>;
 
-const configurationServiceMock = vi.mocked(configurationService);
+const configurationServiceMock = mocked(configurationService);
 
 const configApi = {
-  getChain: vi.fn(),
+  getChain: jest.fn(),
 } as MockedObject<IConfigApi>;
 
-const configApiMock = vi.mocked(configApi);
+const configApiMock = mocked(configApi);
 
 const dataSource = {
-  get: vi.fn(),
+  get: jest.fn(),
 } as MockedObject<CacheFirstDataSource>;
 
-const dataSourceMock = vi.mocked(dataSource);
+const dataSourceMock = mocked(dataSource);
 
 const cacheService = {} as MockedObject<ICacheService>;
 
 const httpErrorFactory = {
-  from: vi.fn(),
+  from: jest.fn(),
 } as MockedObject<HttpErrorFactory>;
 
 const coingeckoApi = {
-  getNativeCoinPrice: vi.fn(),
-  getTokenPrices: vi.fn(),
-  getFiatCodes: vi.fn(),
+  getNativeCoinPrice: jest.fn(),
+  getTokenPrices: jest.fn(),
+  getFiatCodes: jest.fn(),
 } as IPricesApi;
 
-const coingeckoApiMock = vi.mocked(coingeckoApi);
+const coingeckoApiMock = mocked(coingeckoApi);
 
 const networkService = {
-  get: vi.fn(),
-  post: vi.fn(),
+  get: jest.fn(),
+  post: jest.fn(),
 } as MockedObject<INetworkService>;
 
-const networkServiceMock = vi.mocked(networkService);
+const networkServiceMock = mocked(networkService);
 
 const fiatCodes = Array.from(
   { length: faker.number.int({ min: 2, max: 5 }) },
@@ -59,7 +60,7 @@ const fiatCodes = Array.from(
 );
 
 beforeEach(() => {
-  vi.resetAllMocks();
+  jest.resetAllMocks();
   configurationServiceMock.getOrThrow.mockImplementation((key) => {
     if (key === 'safeTransaction.useVpcUrl') return false;
     if (key === 'balances.providers.zerion.currencies') return fiatCodes;

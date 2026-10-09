@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
 import { FakeCacheService } from '#/datasources/cache/__tests__/fake.cache.service';
@@ -12,7 +13,7 @@ describe('SiweApiService', () => {
   const nonceTtlInSeconds = faker.number.int();
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
     fakeConfigurationService = new FakeConfigurationService();
     fakeCacheService = new FakeCacheService();
     fakeConfigurationService.set('auth.nonceTtlSeconds', nonceTtlInSeconds);

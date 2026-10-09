@@ -1,18 +1,19 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { MockedObject } from 'vitest';
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
 import { fullAppDataBuilder } from '#/modules/swaps/domain/entities/__tests__/full-app-data.builder';
 import { SwapAppsHelper } from '#/modules/transactions/routes/helpers/swap-apps.helper';
 
 const configurationService = {
-  getOrThrow: vi.fn(),
+  getOrThrow: jest.fn(),
 } as MockedObject<IConfigurationService>;
 
-const configurationServiceMock = vi.mocked(configurationService);
+const configurationServiceMock = mocked(configurationService);
 
 describe('SwapAppsHelper', () => {
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
   });
 
   describe('Restricting disabled', () => {

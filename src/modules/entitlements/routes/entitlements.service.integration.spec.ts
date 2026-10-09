@@ -1,5 +1,16 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  jest,
+  setSystemTime,
+} from 'bun:test';
 import { randomUUID } from 'node:crypto';
 import { faker } from '@faker-js/faker';
 import {
@@ -10,7 +21,7 @@ import {
 import type { ConfigService } from '@nestjs/config';
 import { DataSource, type ObjectLiteral } from 'typeorm';
 import { getAddress } from 'viem';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
 import configuration from '#/config/entities/__tests__/configuration';
 import { postgresConfig } from '#/config/entities/postgres.config';
@@ -60,10 +71,10 @@ import type { IMembersRepository } from '#/modules/users/domain/members/members.
 import { Wallet } from '#/modules/wallets/datasources/entities/wallets.entity.db';
 
 const mockLoggingService = {
-  debug: vi.fn(),
-  error: vi.fn(),
-  info: vi.fn(),
-  warn: vi.fn(),
+  debug: jest.fn(),
+  error: jest.fn(),
+  info: jest.fn(),
+  warn: jest.fn(),
 } as MockedObject<ILoggingService>;
 
 // The suite owns its catalog: only `safe_seats` and `copilot_scans` are
@@ -225,7 +236,7 @@ describe('EntitlementsService', () => {
     await postgresDatabaseService.initializeDatabaseConnection();
 
     const mockConfigService = {
-      getOrThrow: vi.fn().mockImplementation((key: string) => {
+      getOrThrow: jest.fn().mockImplementation((key: string) => {
         if (key === 'db.migrator.numberOfRetries') {
           return testConfiguration.db.migrator.numberOfRetries;
         }
@@ -1832,13 +1843,10 @@ describe('EntitlementsService', () => {
     const februaryWindow = new Date('2026-02-15T10:30:00Z');
     const marchWindow = new Date('2026-03-15T10:30:00Z');
 
-    beforeEach(() => {
-      // Only `Date`: the Postgres driver relies on real timers.
-      vi.useFakeTimers({ toFake: ['Date'] });
-    });
-
+    // `setSystemTime` fakes only `Date`: the Postgres driver relies on real
+    // timers, which `jest.useFakeTimers()` would fake too.
     afterEach(() => {
-      vi.useRealTimers();
+      setSystemTime();
     });
 
     async function annualPlan(spaceId: number, quota: number): Promise<void> {
@@ -1870,7 +1878,7 @@ describe('EntitlementsService', () => {
         used: quota,
         periodStart: februaryWindow,
       });
-      vi.setSystemTime(marchWindow);
+      setSystemTime(marchWindow);
 
       const result = await service.resolveEntitlements(spaceId);
 
@@ -1890,7 +1898,7 @@ describe('EntitlementsService', () => {
       const spaceId = await createSpace();
       const quota = faker.number.int({ min: 1, max: 10 });
       await annualPlan(spaceId, quota);
-      vi.setSystemTime(new Date('2026-03-15T10:29:59.999Z'));
+      setSystemTime(new Date('2026-03-15T10:29:59.999Z'));
       await recordUsage({
         spaceId,
         featureKey: 'sponsored_transactions',
@@ -1905,7 +1913,7 @@ describe('EntitlementsService', () => {
         }),
       ).rejects.toMatchObject({ response: { quota, used: quota } });
 
-      vi.setSystemTime(marchWindow);
+      setSystemTime(marchWindow);
 
       await expect(
         enforcingService.consumeQuota({
@@ -2027,7 +2035,8 @@ describe('EntitlementsService', () => {
 
       await service.getAllEntitlements(authPayloadFor(userId));
 
-      expect(mockLoggingService.warn).toHaveBeenCalledExactlyOnceWith(
+      expect(mockLoggingService.warn).toHaveBeenCalledTimes(1);
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
         `Features seeded but not published, omitted from the response: ${FEATURE_FIXTURES.map(
           ({ key }) => key,
         )

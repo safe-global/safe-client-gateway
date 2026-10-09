@@ -3,7 +3,7 @@
   "dockerComposeFile": ["../docker-compose.yml", "docker-compose.yml"],
   "service": "devcontainer",
   "workspaceFolder": "/workspaces/safe-client-gateway",
-  "remoteUser": "node",
+  "remoteUser": "vscode",
   "forwardPorts": [3030],
   "postCreateCommand": ".devcontainer/post-create.sh",
   "postAttachCommand": ".devcontainer/post-attach.sh",
@@ -11,6 +11,7 @@
     "vscode": {
       "extensions": [
         "biomejs.biome",
+        "oven.bun-vscode",
         "Anthropic.claude-code",
         "openai.chatgpt"
       ],

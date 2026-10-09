@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { afterEach, beforeEach, describe, expect, it, jest } from 'bun:test';
 import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import type { TestingModule } from '@nestjs/testing';
 import { sign } from 'jsonwebtoken';
 import request from 'supertest';
-import type { MockedObject, MockInstance } from 'vitest';
+import type { MockedObject, MockInstance } from '#/__tests__/mocks';
 import {
   initTestApplication,
   TestAppProvider,
@@ -54,7 +55,7 @@ describe('OidcAuthController', () => {
   let postLoginRedirectUri: string;
 
   beforeEach(() => {
-    fetchMock = vi.spyOn(global, 'fetch');
+    fetchMock = jest.spyOn(global, 'fetch');
   });
 
   afterEach(() => {
@@ -137,8 +138,8 @@ describe('OidcAuthController', () => {
 
   describe('default configuration', () => {
     beforeEach(async () => {
-      vi.useFakeTimers();
-      vi.resetAllMocks();
+      jest.useFakeTimers();
+      jest.resetAllMocks();
 
       const defaultConfiguration = configuration();
       const testConfiguration = (): typeof defaultConfiguration => ({
@@ -157,13 +158,13 @@ describe('OidcAuthController', () => {
     });
 
     afterEach(async () => {
-      vi.useRealTimers();
+      jest.useRealTimers();
       await app?.close();
     });
 
     describe('GET /v1/auth/oidc/authorize', () => {
       it('should redirect to Auth0 authorization endpoint and set the state cookie', async () => {
-        vi.setSystemTime(0);
+        jest.setSystemTime(0);
 
         const response = await request(app.getHttpServer())
           .get('/v1/auth/oidc/authorize')
@@ -199,7 +200,7 @@ describe('OidcAuthController', () => {
       });
 
       it('should set SameSite=None on the state cookie if application.env is not production', async () => {
-        vi.setSystemTime(0);
+        jest.setSystemTime(0);
 
         const defaultConfiguration = configuration();
         const testConfiguration = (): typeof defaultConfiguration => ({
@@ -349,7 +350,7 @@ describe('OidcAuthController', () => {
       }
 
       it('should exchange the authorization code, check the state, set the access token cookie and redirect', async () => {
-        vi.setSystemTime(0);
+        jest.setSystemTime(0);
 
         const expirationTime = faker.date.between({
           from: new Date(),
@@ -543,7 +544,7 @@ describe('OidcAuthController', () => {
       });
 
       it('should redirect with authentication_failed when Auth0 token exp exceeds max validity', async () => {
-        vi.setSystemTime(0);
+        jest.setSystemTime(0);
 
         const farFutureExp =
           Math.floor(Date.now() / 1_000) + maxValidityPeriodInMs / 1_000 + 3600;
@@ -587,7 +588,7 @@ describe('OidcAuthController', () => {
       });
 
       it('should redirect to the custom redirect_url after login', async () => {
-        vi.setSystemTime(0);
+        jest.setSystemTime(0);
 
         const customRedirectUrl = new URL(
           `/${faker.word.noun()}`,
@@ -700,7 +701,7 @@ describe('OidcAuthController', () => {
         /** When set, the callback arrives with a live session cookie expiring then. */
         priorSessionExp?: Date;
       }): Promise<Record<string, unknown> | undefined> {
-        vi.setSystemTime(NOW_MS);
+        jest.setSystemTime(NOW_MS);
 
         const auth0Token = signAuth0Token({
           sub: faker.string.uuid(),
@@ -847,7 +848,7 @@ describe('OidcAuthController', () => {
 
   describe('rate limiting', () => {
     beforeEach(async () => {
-      vi.resetAllMocks();
+      jest.resetAllMocks();
 
       const defaultConfiguration = configuration();
       const testConfiguration = (): typeof defaultConfiguration => ({
@@ -926,7 +927,7 @@ describe('OidcAuthController', () => {
       });
 
       afterEach(async () => {
-        vi.useRealTimers();
+        jest.useRealTimers();
         await app?.close();
       });
 
@@ -952,7 +953,7 @@ describe('OidcAuthController', () => {
 
     describe('production environment', () => {
       afterEach(async () => {
-        vi.useRealTimers();
+        jest.useRealTimers();
         await app?.close();
       });
 

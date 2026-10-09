@@ -1,24 +1,25 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import type { KmsEncryptionService } from '#/datasources/kms/kms-encryption.service';
 import { MemberEncryptionService } from '#/modules/users/domain/members/member-encryption.service';
 
-// Plain vi.fn() mock: the wrapper is policy only — these tests assert the
+// Plain jest.fn() mock: the wrapper is policy only — these tests assert the
 // exact (value, context) wiring into KmsEncryptionService and nothing else.
 const fieldCryptoService = {
-  isEncrypted: vi.fn(),
-  encrypt: vi.fn(),
-  decrypt: vi.fn(),
-  blindIndex: vi.fn(),
+  isEncrypted: jest.fn(),
+  encrypt: jest.fn(),
+  decrypt: jest.fn(),
+  blindIndex: jest.fn(),
 } as MockedObject<KmsEncryptionService>;
 
 describe('MemberEncryptionService', () => {
   let target: MemberEncryptionService;
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
     target = new MemberEncryptionService(fieldCryptoService);
   });
 
@@ -31,7 +32,8 @@ describe('MemberEncryptionService', () => {
       await expect(target.encryptName(spaceId, name)).resolves.toBe(
         'kms:v1:name',
       );
-      expect(fieldCryptoService.encrypt).toHaveBeenCalledExactlyOnceWith(name, {
+      expect(fieldCryptoService.encrypt).toHaveBeenCalledTimes(1);
+      expect(fieldCryptoService.encrypt).toHaveBeenCalledWith(name, {
         spaceId: String(spaceId),
       });
     });
@@ -46,12 +48,10 @@ describe('MemberEncryptionService', () => {
       await expect(target.encryptAlias(spaceId, alias)).resolves.toBe(
         'kms:v1:alias',
       );
-      expect(fieldCryptoService.encrypt).toHaveBeenCalledExactlyOnceWith(
-        alias,
-        {
-          spaceId: String(spaceId),
-        },
-      );
+      expect(fieldCryptoService.encrypt).toHaveBeenCalledTimes(1);
+      expect(fieldCryptoService.encrypt).toHaveBeenCalledWith(alias, {
+        spaceId: String(spaceId),
+      });
     });
   });
 
@@ -64,10 +64,10 @@ describe('MemberEncryptionService', () => {
       await expect(target.decryptName(spaceId, 'kms:v1:name')).resolves.toBe(
         name,
       );
-      expect(fieldCryptoService.decrypt).toHaveBeenCalledExactlyOnceWith(
-        'kms:v1:name',
-        { spaceId: String(spaceId) },
-      );
+      expect(fieldCryptoService.decrypt).toHaveBeenCalledTimes(1);
+      expect(fieldCryptoService.decrypt).toHaveBeenCalledWith('kms:v1:name', {
+        spaceId: String(spaceId),
+      });
     });
   });
 

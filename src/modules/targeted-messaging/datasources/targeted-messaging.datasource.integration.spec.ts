@@ -1,11 +1,20 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  jest,
+} from 'bun:test';
 import { faker } from '@faker-js/faker';
 import type postgres from 'postgres';
 import type { Address } from 'viem';
 import { getAddress } from 'viem';
-import type { MockedObject } from 'vitest';
 import { TestDbFactory } from '#/__tests__/db.factory';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
 import { FakeCacheService } from '#/datasources/cache/__tests__/fake.cache.service';
 import { CacheDir } from '#/datasources/cache/entities/cache-dir.entity';
@@ -22,14 +31,14 @@ import { SubmissionNotFoundError } from '#/modules/targeted-messaging/domain/err
 import { TargetedSafeNotFoundError } from '#/modules/targeted-messaging/domain/errors/targeted-safe-not-found.error';
 
 const mockLoggingService = {
-  debug: vi.fn(),
-  error: vi.fn(),
-  info: vi.fn(),
-  warn: vi.fn(),
+  debug: jest.fn(),
+  error: jest.fn(),
+  info: jest.fn(),
+  warn: jest.fn(),
 } as MockedObject<ILoggingService>;
 
-const mockConfigurationService = vi.mocked({
-  getOrThrow: vi.fn(),
+const mockConfigurationService = mocked({
+  getOrThrow: jest.fn(),
 } as MockedObject<IConfigurationService>);
 
 const buildDistinctChainIds = (): [string, string] => {
@@ -71,7 +80,7 @@ describe('TargetedMessagingDataSource tests', () => {
     await sql`TRUNCATE TABLE submissions RESTART IDENTITY CASCADE`;
     await sql`TRUNCATE TABLE targeted_safes RESTART IDENTITY CASCADE`;
     await sql`TRUNCATE TABLE outreaches RESTART IDENTITY CASCADE`;
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   afterAll(async () => {

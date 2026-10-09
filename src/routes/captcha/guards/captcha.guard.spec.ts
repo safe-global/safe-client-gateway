@@ -1,15 +1,16 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import type { ExecutionContext } from '@nestjs/common';
 import { UnauthorizedException } from '@nestjs/common';
-import type { MockedObject } from 'vitest';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
 import type { CaptchaService } from '#/routes/captcha/captcha.service';
 import { CaptchaGuard } from '#/routes/captcha/guards/captcha.guard';
 
-const mockCaptchaService = vi.mocked({
-  verifyToken: vi.fn(),
+const mockCaptchaService = mocked({
+  verifyToken: jest.fn(),
 } as MockedObject<CaptchaService>);
 
 function buildExecutionContext(
@@ -29,8 +30,8 @@ function buildExecutionContext(
   }
 
   return {
-    switchToHttp: vi.fn().mockReturnValue({
-      getRequest: vi.fn().mockReturnValue({
+    switchToHttp: jest.fn().mockReturnValue({
+      getRequest: jest.fn().mockReturnValue({
         headers,
         ip: overrides.ip ?? faker.internet.ipv4(),
         socket: { remoteAddress: overrides.socketAddress },
@@ -44,7 +45,7 @@ describe('CaptchaGuard', () => {
   let fakeConfigurationService: FakeConfigurationService;
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
   });
 
   describe('when CAPTCHA is disabled', () => {

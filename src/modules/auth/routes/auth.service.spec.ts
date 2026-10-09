@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { afterEach, beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import type { Hex } from 'viem';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
 import type { JwtPayloadWithClaims } from '#/datasources/jwt/jwt-claims.entity';
 import type { ILoggingService } from '#/logging/logging.interface';
@@ -24,24 +25,24 @@ import type { IUsersRepository } from '#/modules/users/domain/users.repository.i
 import { fakeEmailAddress } from '#/validation/entities/schemas/__tests__/email-address.builder';
 
 const siweRepositoryMock = {
-  generateNonce: vi.fn(),
-  getValidatedSiweMessage: vi.fn(),
+  generateNonce: jest.fn(),
+  getValidatedSiweMessage: jest.fn(),
 } as MockedObject<ISiweRepository>;
 
 const authRepositoryMock = {
-  signToken: vi.fn(),
-  verifyToken: vi.fn(),
-  decodeToken: vi.fn(),
-  decodeTokenWithoutVerification: vi.fn(),
+  signToken: jest.fn(),
+  verifyToken: jest.fn(),
+  decodeToken: jest.fn(),
+  decodeTokenWithoutVerification: jest.fn(),
 } as MockedObject<IAuthRepository>;
 
 const usersRepositoryMock = {
-  findOrCreateByWalletAddress: vi.fn(),
-  findEmailById: vi.fn(),
+  findOrCreateByWalletAddress: jest.fn(),
+  findEmailById: jest.fn(),
 } as MockedObject<IUsersRepository>;
 
 const loggingServiceMock = {
-  debug: vi.fn(),
+  debug: jest.fn(),
 } as MockedObject<ILoggingService>;
 
 describe('AuthService', () => {
@@ -87,8 +88,8 @@ describe('AuthService', () => {
   }
 
   beforeEach(() => {
-    vi.resetAllMocks();
-    vi.useFakeTimers();
+    jest.resetAllMocks();
+    jest.useFakeTimers();
 
     maxValidityPeriodInSeconds = faker.number.int({ min: 3600, max: 86400 });
     postLoginRedirectUri = faker.internet.url({ appendSlash: false });
@@ -102,7 +103,7 @@ describe('AuthService', () => {
   });
 
   afterEach(() => {
-    vi.useRealTimers();
+    jest.useRealTimers();
   });
 
   describe('getNonce', () => {
@@ -127,7 +128,7 @@ describe('AuthService', () => {
 
     beforeEach(() => {
       now = new Date();
-      vi.setSystemTime(now);
+      jest.setSystemTime(now);
 
       siweArgs = {
         message: faker.lorem.sentence(),

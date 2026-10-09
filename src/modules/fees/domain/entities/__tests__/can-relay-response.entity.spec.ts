@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { describe, expect, it } from 'bun:test';
 import { CanRelayResponseSchema } from '#/modules/fees/domain/entities/can-relay-response.entity';
 
 describe('CanRelayResponseSchema', () => {

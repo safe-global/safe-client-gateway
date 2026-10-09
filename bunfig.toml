@@ -1,0 +1,38 @@
+# SPDX-License-Identifier: FSL-1.1-MIT
+
+# Run every package.json script and package binary with Bun, never Node.js:
+# binaries whose shebang says `node` (tsc, biome's launcher) are executed by Bun.
+[run]
+bun = true
+
+[install]
+# Same layout the former Yarn `nodeLinker: node-modules` produced.
+linker = "hoisted"
+# `bun add` pins exact versions, matching the exact pins in package.json.
+exact = true
+# Supply-chain cool-down: never resolve a version published less than 7 days
+# ago (formerly Yarn's `npmMinimalAgeGate: 10080`). Freshly hijacked releases
+# are usually detected and unpublished within that window.
+minimumReleaseAge = 604800 # seconds (7 days)
+
+[install.lockfile]
+save = true
+
+[test]
+# Seeds faker and resets mock call history before each test (Vitest's
+# `clearMocks`). Integration/e2e scripts add ./test/e2e-setup.ts on top.
+preload = ["./test/setup.ts"]
+coverageReporter = ["text", "lcov"]
+coverageDir = "coverage"
+coverageSkipTestFiles = true
+coveragePathIgnorePatterns = [
+  "**/index.ts",
+  "**/__tests__/**",
+  "**/*.e2e.spec.ts",
+  "**/*.integration.spec.ts",
+  "node_modules/**",
+  "test/**",
+  "abis/**",
+  "migrations/**",
+  "scripts/**",
+]

@@ -15,7 +15,7 @@
   - [ ] Read the guides the routing table in AGENTS.md maps this diff to
   - [ ] One concern per PR; nothing unrelated refactored or reformatted
   - [ ] Env var? Declared in configuration.ts AND RootConfigurationSchema, added to
-        .env.sample.json, mirrored in __tests__/configuration.ts, `yarn env:validate` clean
+        .env.sample.json, mirrored in __tests__/configuration.ts, `bun run env:validate` clean
   - [ ] Migration? Every FK and WHERE-target column indexed in the same migration; `down` reverts
   - [ ] New/changed endpoint? Every input through `new ValidationPipe(Schema)`; DTO implements
         z.infer; guard on state-changing or caller-scoped routes

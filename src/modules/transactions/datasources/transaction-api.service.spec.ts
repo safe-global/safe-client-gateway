@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
-import type { MockedObject } from 'vitest';
 import { errorStatusCodeExcluding, fakeJson } from '#/__tests__/faker';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
 import type { CacheFirstDataSource } from '#/datasources/cache/cache.first.data.source';
 import type { ICacheService } from '#/datasources/cache/cache.service.interface';
@@ -36,31 +37,31 @@ import { proposeTransactionDtoBuilder } from '#/modules/transactions/routes/enti
 import { rawify } from '#/validation/entities/raw.entity';
 
 const dataSource = {
-  get: vi.fn(),
+  get: jest.fn(),
 } as MockedObject<CacheFirstDataSource>;
-const mockDataSource = vi.mocked(dataSource);
+const mockDataSource = mocked(dataSource);
 
 const cacheService = {
-  deleteByKey: vi.fn(),
-  hSet: vi.fn(),
-  hGet: vi.fn(),
+  deleteByKey: jest.fn(),
+  hSet: jest.fn(),
+  hGet: jest.fn(),
 } as MockedObject<ICacheService>;
-const mockCacheService = vi.mocked(cacheService);
+const mockCacheService = mocked(cacheService);
 
 const configurationService = {
-  getOrThrow: vi.fn(),
+  getOrThrow: jest.fn(),
 } as MockedObject<IConfigurationService>;
-const mockConfigurationService = vi.mocked(configurationService);
+const mockConfigurationService = mocked(configurationService);
 
-const networkService = vi.mocked({
-  get: vi.fn(),
-  post: vi.fn(),
-  delete: vi.fn(),
+const networkService = mocked({
+  get: jest.fn(),
+  post: jest.fn(),
+  delete: jest.fn(),
 } as MockedObject<INetworkService>);
-const mockNetworkService = vi.mocked(networkService);
+const mockNetworkService = mocked(networkService);
 
 const mockLoggingService = {
-  debug: vi.fn(),
+  debug: jest.fn(),
 } as MockedObject<ILoggingService>;
 
 describe('TransactionApi', () => {
@@ -75,7 +76,7 @@ describe('TransactionApi', () => {
   let ownersTimeout: number;
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
 
     httpErrorFactory = new HttpErrorFactory();
     defaultExpirationTimeInSeconds = faker.number.int();

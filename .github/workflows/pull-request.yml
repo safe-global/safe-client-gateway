@@ -3,7 +3,7 @@
 # CALLER: Pull request gate
 # =============================================================================
 # The review this enables is the only human gate before anything reaches main.
-# The quality jobs themselves live in _ci-node.yml so this gate and the trunk
+# The quality jobs themselves live in _ci.yml so this gate and the trunk
 # pipeline share one definition.
 #
 # architecture-check.yml, claude-code-review.yml and linear-release.yml are
@@ -26,5 +26,5 @@ concurrency:
 
 jobs:
   ci:
-    uses: ./.github/workflows/_ci-node.yml
+    uses: ./.github/workflows/_ci.yml
     secrets: inherit

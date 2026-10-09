@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import type { EntityManager } from 'typeorm';
 import { IsNull } from 'typeorm';
 import { getAddress } from 'viem';
-import type { Mock, MockedObject } from 'vitest';
+import { type Mock, type MockedObject } from '#/__tests__/mocks';
 import type { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
 import { spaceSafeBuilder } from '#/modules/spaces/datasources/safes/entities/__tests__/space-safes.entity.db.builder';
 import { SpaceSafe } from '#/modules/spaces/datasources/safes/entities/space-safes.entity.db';
@@ -41,28 +42,28 @@ describe('SpaceSafesRepository', () => {
   let target: SpaceSafesRepository;
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
 
     // Recreated after the reset so the passthrough implementations survive.
     spaceAuditRepository = createMockSpaceAuditRepository();
     spaceEncryptionService = createMockSpaceEncryptionService();
 
     spaceSafeRepository = {
-      find: vi.fn().mockResolvedValue([]),
-      count: vi.fn().mockResolvedValue(0),
+      find: jest.fn().mockResolvedValue([]),
+      count: jest.fn().mockResolvedValue(0),
     };
     entityManager = {
-      query: vi.fn(),
-      getRepository: vi.fn().mockReturnValue(spaceSafeRepository),
-      insert: vi.fn(),
-      find: vi.fn(),
-      remove: vi.fn(),
+      query: jest.fn(),
+      getRepository: jest.fn().mockReturnValue(spaceSafeRepository),
+      insert: jest.fn(),
+      find: jest.fn(),
+      remove: jest.fn(),
       // findSpaceForAuditOrFail
-      findOne: vi.fn().mockResolvedValue({ id: spaceId, uuid: spaceUuid }),
+      findOne: jest.fn().mockResolvedValue({ id: spaceId, uuid: spaceUuid }),
     };
     postgresDatabaseService = {
-      getRepository: vi.fn().mockResolvedValue(spaceSafeRepository),
-      transaction: vi.fn((fn: (em: unknown) => Promise<unknown>) =>
+      getRepository: jest.fn().mockResolvedValue(spaceSafeRepository),
+      transaction: jest.fn((fn: (em: unknown) => Promise<unknown>) =>
         fn(entityManager),
       ),
     } as MockedObject<PostgresDatabaseService>;
@@ -87,9 +88,13 @@ describe('SpaceSafesRepository', () => {
 
       const rows = await target.encryptRows(spaceId, [{ chainId, address }]);
 
-      expect(
-        spaceEncryptionService.encryptSafeAddress,
-      ).toHaveBeenCalledExactlyOnceWith(spaceId, address);
+      expect(spaceEncryptionService.encryptSafeAddress).toHaveBeenCalledTimes(
+        1,
+      );
+      expect(spaceEncryptionService.encryptSafeAddress).toHaveBeenCalledWith(
+        spaceId,
+        address,
+      );
       expect(rows).toStrictEqual([
         {
           space: { id: spaceId },
@@ -142,7 +147,8 @@ describe('SpaceSafesRepository', () => {
       });
 
       // The plaintext travels with the row but is never inserted.
-      expect(entityManager.insert).toHaveBeenCalledExactlyOnceWith(SpaceSafe, [
+      expect(entityManager.insert).toHaveBeenCalledTimes(1);
+      expect(entityManager.insert).toHaveBeenCalledWith(SpaceSafe, [
         {
           space: { id: spaceId },
           chainId,
@@ -150,7 +156,8 @@ describe('SpaceSafesRepository', () => {
           addressIndex,
         },
       ]);
-      expect(spaceAuditRepository.record).toHaveBeenCalledExactlyOnceWith(
+      expect(spaceAuditRepository.record).toHaveBeenCalledTimes(1);
+      expect(spaceAuditRepository.record).toHaveBeenCalledWith(
         entityManager,
         expect.objectContaining({
           eventType: 'SAFE_ADDED',
@@ -172,9 +179,11 @@ describe('SpaceSafesRepository', () => {
       await expect(target.findBySpaceId(spaceId)).resolves.toStrictEqual(
         decrypted,
       );
-      expect(
-        spaceEncryptionService.decryptSpaceSafes,
-      ).toHaveBeenCalledExactlyOnceWith(spaceId, [toSafe(row)]);
+      expect(spaceEncryptionService.decryptSpaceSafes).toHaveBeenCalledTimes(1);
+      expect(spaceEncryptionService.decryptSpaceSafes).toHaveBeenCalledWith(
+        spaceId,
+        [toSafe(row)],
+      );
     });
   });
 
@@ -209,7 +218,7 @@ describe('SpaceSafesRepository', () => {
         emptySpace.id,
       ]);
 
-      expect(spaceSafeRepository.find).toHaveBeenCalledOnce();
+      expect(spaceSafeRepository.find).toHaveBeenCalledTimes(1);
       expect(result).toStrictEqual(
         new Map([
           [space.id, decrypted],
@@ -259,9 +268,11 @@ describe('SpaceSafesRepository', () => {
       const result = await target.find({ where: { space: { id: spaceId } } });
 
       expect(result[0].address).toBe(plaintextAddress);
-      expect(
-        spaceEncryptionService.decryptSpaceSafes,
-      ).toHaveBeenCalledExactlyOnceWith(spaceId, [row]);
+      expect(spaceEncryptionService.decryptSpaceSafes).toHaveBeenCalledTimes(1);
+      expect(spaceEncryptionService.decryptSpaceSafes).toHaveBeenCalledWith(
+        spaceId,
+        [row],
+      );
     });
 
     it('returns plaintext rows untouched without needing the space relation', async () => {
@@ -318,14 +329,19 @@ describe('SpaceSafesRepository', () => {
         payload: [{ chainId, address }],
       });
 
-      expect(entityManager.find).toHaveBeenCalledExactlyOnceWith(SpaceSafe, {
+      expect(entityManager.find).toHaveBeenCalledTimes(1);
+      expect(entityManager.find).toHaveBeenCalledWith(SpaceSafe, {
         where: [{ space: { id: spaceId }, chainId, addressIndex }],
       });
-      expect(entityManager.remove).toHaveBeenCalledExactlyOnceWith([row]);
-      expect(
-        spaceEncryptionService.decryptSpaceSafes,
-      ).toHaveBeenCalledExactlyOnceWith(spaceId, [row]);
-      expect(spaceAuditRepository.record).toHaveBeenCalledExactlyOnceWith(
+      expect(entityManager.remove).toHaveBeenCalledTimes(1);
+      expect(entityManager.remove).toHaveBeenCalledWith([row]);
+      expect(spaceEncryptionService.decryptSpaceSafes).toHaveBeenCalledTimes(1);
+      expect(spaceEncryptionService.decryptSpaceSafes).toHaveBeenCalledWith(
+        spaceId,
+        [row],
+      );
+      expect(spaceAuditRepository.record).toHaveBeenCalledTimes(1);
+      expect(spaceAuditRepository.record).toHaveBeenCalledWith(
         entityManager,
         expect.objectContaining({
           eventType: 'SAFE_REMOVED',
@@ -350,7 +366,8 @@ describe('SpaceSafesRepository', () => {
         payload: [{ chainId, address }],
       });
 
-      expect(entityManager.find).toHaveBeenCalledExactlyOnceWith(SpaceSafe, {
+      expect(entityManager.find).toHaveBeenCalledTimes(1);
+      expect(entityManager.find).toHaveBeenCalledWith(SpaceSafe, {
         where: [
           {
             space: { id: spaceId },

@@ -51,7 +51,7 @@ concurrency:
 
 jobs:
   ci:
-    uses: ./.github/workflows/_ci-node.yml
+    uses: ./.github/workflows/_ci.yml
     secrets: inherit
 
   prepare:

@@ -7,19 +7,6 @@
     "defaultBranch": "main"
   },
   "javascript": {
-    "globals": [
-      "vi",
-      "vitest",
-      "describe",
-      "it",
-      "test",
-      "expect",
-      "suite",
-      "beforeAll",
-      "afterAll",
-      "beforeEach",
-      "afterEach"
-    ],
     "parser": {
       "unsafeParameterDecoratorsEnabled": true
     },
@@ -160,7 +147,7 @@
       "includes": [
         "**/*.spec.ts",
         "**/*.integration.spec.ts",
-        "**/*.e2e-spec.ts",
+        "**/*.e2e.spec.ts",
         "**/__tests__/**"
       ],
       "linter": {

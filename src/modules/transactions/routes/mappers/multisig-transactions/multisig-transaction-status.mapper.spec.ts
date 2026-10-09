@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { afterEach, beforeEach, describe, expect, it, jest } from 'bun:test';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
 import { multisigTransactionBuilder } from '#/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
 import { confirmationBuilder } from '#/modules/safe/domain/entities/__tests__/multisig-transaction-confirmation.builder';
@@ -11,10 +12,10 @@ describe('Multisig Transaction status mapper (Unit)', () => {
   let mapper: MultisigTransactionStatusMapper;
 
   beforeEach(() => {
-    vi.useFakeTimers();
+    jest.useFakeTimers();
     const configurationService = {
-      get: vi.fn(),
-      getOrThrow: vi.fn(<T>(key: string): T => {
+      get: jest.fn(),
+      getOrThrow: jest.fn(<T>(key: string): T => {
         if (key === 'transactions.statusIndexingGracePeriodMs') {
           return INDEXING_GRACE_PERIOD_MS as T;
         }
@@ -25,7 +26,7 @@ describe('Multisig Transaction status mapper (Unit)', () => {
   });
 
   afterEach(() => {
-    vi.useRealTimers();
+    jest.useRealTimers();
   });
 
   it('should return a SUCCESS status', () => {
@@ -65,7 +66,7 @@ describe('Multisig Transaction status mapper (Unit)', () => {
   });
 
   it('should return CANCELLED when nonce passed and not enough confirmations even if recently modified', () => {
-    vi.setSystemTime(new Date('2026-02-19T14:22:00.000Z'));
+    jest.setSystemTime(new Date('2026-02-19T14:22:00.000Z'));
     const transaction = multisigTransactionBuilder()
       .with('isExecuted', false)
       .with('nonce', 2)
@@ -81,7 +82,7 @@ describe('Multisig Transaction status mapper (Unit)', () => {
   });
 
   it('should return CANCELLED when nonce passed and enough confirmations but modified long ago', () => {
-    vi.setSystemTime(new Date('2026-02-19T14:22:00.000Z'));
+    jest.setSystemTime(new Date('2026-02-19T14:22:00.000Z'));
     const transaction = multisigTransactionBuilder()
       .with('isExecuted', false)
       .with('nonce', 2)
@@ -97,7 +98,7 @@ describe('Multisig Transaction status mapper (Unit)', () => {
   });
 
   it('should return AWAITING_EXECUTION instead of CANCELLED during indexing grace period', () => {
-    vi.setSystemTime(new Date('2026-02-19T14:22:10.000Z'));
+    jest.setSystemTime(new Date('2026-02-19T14:22:10.000Z'));
     const transaction = multisigTransactionBuilder()
       .with('isExecuted', false)
       .with('nonce', 46)

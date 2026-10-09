@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { NotFoundException } from '@nestjs/common';
 import { getAddress } from 'viem';
-import type { Mock, MockedObject } from 'vitest';
+import { type Mock, type MockedObject } from '#/__tests__/mocks';
 import type { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
 import { AddressBookRequest as DbAddressBookRequest } from '#/modules/spaces/datasources/address-books/entities/address-book-request.entity.db';
 import { createMockSpaceEncryptionService } from '#/modules/spaces/domain/__tests__/space-encryption.service.mock';
@@ -36,27 +37,27 @@ describe('AddressBookRequestsRepository', () => {
   let target: AddressBookRequestsRepository;
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
 
     spaceEncryptionService = createMockSpaceEncryptionService();
     spaceAuditRepository = createMockSpaceAuditRepository();
 
     requestRepository = {
-      find: vi.fn().mockResolvedValue([]),
-      findOne: vi.fn(),
-      count: vi.fn(),
-      update: vi.fn(),
+      find: jest.fn().mockResolvedValue([]),
+      findOne: jest.fn(),
+      count: jest.fn(),
+      update: jest.fn(),
     };
     entityManager = {
-      getRepository: vi.fn().mockReturnValue(requestRepository),
-      findBy: vi.fn().mockResolvedValue([]),
-      findOne: vi.fn(),
-      insert: vi.fn(),
-      delete: vi.fn(),
+      getRepository: jest.fn().mockReturnValue(requestRepository),
+      findBy: jest.fn().mockResolvedValue([]),
+      findOne: jest.fn(),
+      insert: jest.fn(),
+      delete: jest.fn(),
     };
     db = {
-      getRepository: vi.fn().mockResolvedValue(requestRepository),
-      transaction: vi.fn((fn: (em: unknown) => Promise<unknown>) =>
+      getRepository: jest.fn().mockResolvedValue(requestRepository),
+      transaction: jest.fn((fn: (em: unknown) => Promise<unknown>) =>
         fn(entityManager),
       ),
     } as MockedObject<PostgresDatabaseService>;
@@ -99,8 +100,12 @@ describe('AddressBookRequestsRepository', () => {
 
       expect(
         spaceEncryptionService.encryptAddressBookRequest,
-      ).toHaveBeenCalledExactlyOnceWith(spaceId, { address, name });
-      expect(entityManager.insert).toHaveBeenCalledExactlyOnceWith(
+      ).toHaveBeenCalledTimes(1);
+      expect(
+        spaceEncryptionService.encryptAddressBookRequest,
+      ).toHaveBeenCalledWith(spaceId, { address, name });
+      expect(entityManager.insert).toHaveBeenCalledTimes(1);
+      expect(entityManager.insert).toHaveBeenCalledWith(
         DbAddressBookRequest,
         expect.objectContaining({
           space: { id: spaceId },
@@ -111,16 +116,14 @@ describe('AddressBookRequestsRepository', () => {
           status: 'PENDING',
         }),
       );
-      expect(spaceAuditRepository.record).toHaveBeenCalledExactlyOnceWith(
-        entityManager,
-        {
-          spaceId,
-          spaceUuid,
-          eventType: SpaceAuditEventType.ADDRESS_BOOK_REQUEST_CREATED,
-          actorUserId: requestedById,
-          payload: { address, name },
-        },
-      );
+      expect(spaceAuditRepository.record).toHaveBeenCalledTimes(1);
+      expect(spaceAuditRepository.record).toHaveBeenCalledWith(entityManager, {
+        spaceId,
+        spaceUuid,
+        eventType: SpaceAuditEventType.ADDRESS_BOOK_REQUEST_CREATED,
+        actorUserId: requestedById,
+        payload: { address, name },
+      });
       expect(result.address).toBe(address);
     });
 
@@ -161,24 +164,24 @@ describe('AddressBookRequestsRepository', () => {
         target.reject({ id: requestId, spaceId, reviewedBy }),
       ).resolves.toBe(true);
 
-      expect(requestRepository.findOne).toHaveBeenCalledExactlyOnceWith({
+      expect(requestRepository.findOne).toHaveBeenCalledTimes(1);
+      expect(requestRepository.findOne).toHaveBeenCalledWith({
         where: { id: requestId, space: { id: spaceId } },
         relations: { requestedBy: true },
       });
-      expect(requestRepository.update).toHaveBeenCalledExactlyOnceWith(
+      expect(requestRepository.update).toHaveBeenCalledTimes(1);
+      expect(requestRepository.update).toHaveBeenCalledWith(
         { id: requestId, space: { id: spaceId }, status: 'PENDING' },
         { status: 'REJECTED', reviewedBy },
       );
-      expect(spaceAuditRepository.record).toHaveBeenCalledExactlyOnceWith(
-        entityManager,
-        {
-          spaceId,
-          spaceUuid,
-          eventType: SpaceAuditEventType.ADDRESS_BOOK_REQUEST_REJECTED,
-          actorUserId: reviewedBy,
-          payload: { address, name },
-        },
-      );
+      expect(spaceAuditRepository.record).toHaveBeenCalledTimes(1);
+      expect(spaceAuditRepository.record).toHaveBeenCalledWith(entityManager, {
+        spaceId,
+        spaceUuid,
+        eventType: SpaceAuditEventType.ADDRESS_BOOK_REQUEST_REJECTED,
+        actorUserId: reviewedBy,
+        payload: { address, name },
+      });
     });
 
     it('returns false and records nothing when the request is no longer pending', async () => {
@@ -245,7 +248,10 @@ describe('AddressBookRequestsRepository', () => {
       );
       expect(
         spaceEncryptionService.decryptAddressBookRequests,
-      ).toHaveBeenCalledExactlyOnceWith(spaceId, rows);
+      ).toHaveBeenCalledTimes(1);
+      expect(
+        spaceEncryptionService.decryptAddressBookRequests,
+      ).toHaveBeenCalledWith(spaceId, rows);
     });
   });
 });

@@ -2,19 +2,19 @@
 
 import { Module } from '@nestjs/common';
 import type { Address } from 'viem';
-import { Page } from '#/domain/entities/page.entity';
+import { type Page } from '#/domain/entities/page.entity';
 import { TransactionApiManagerModule } from '#/domain/interfaces/transaction-api.manager.interface';
 import { ChainsModule } from '#/modules/chains/chains.module';
 import { ContractsModule } from '#/modules/contracts/contracts.module';
 import { DelegatesV3RepositoryModule } from '#/modules/delegate/domain/v3/delegates.v3.repository.interface';
-import { CreationTransaction } from '#/modules/safe/domain/entities/creation-transaction.entity';
-import { ModuleTransaction } from '#/modules/safe/domain/entities/module-transaction.entity';
-import { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
-import { Safe } from '#/modules/safe/domain/entities/safe.entity';
-import { SafeList } from '#/modules/safe/domain/entities/safe-list.entity';
-import { SafesByChainId } from '#/modules/safe/domain/entities/safes-by-chain-id.entity';
-import { Transaction } from '#/modules/safe/domain/entities/transaction.entity';
-import { Transfer } from '#/modules/safe/domain/entities/transfer.entity';
+import { type CreationTransaction } from '#/modules/safe/domain/entities/creation-transaction.entity';
+import { type ModuleTransaction } from '#/modules/safe/domain/entities/module-transaction.entity';
+import { type MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
+import { type Safe } from '#/modules/safe/domain/entities/safe.entity';
+import { type SafeList } from '#/modules/safe/domain/entities/safe-list.entity';
+import { type SafesByChainId } from '#/modules/safe/domain/entities/safes-by-chain-id.entity';
+import { type Transaction } from '#/modules/safe/domain/entities/transaction.entity';
+import { type Transfer } from '#/modules/safe/domain/entities/transfer.entity';
 import { SafeRepository } from '#/modules/safe/domain/safe.repository';
 import { SafeQueueModule } from '#/modules/safe-queue/safe-queue.module';
 import { AddConfirmationDto } from '#/modules/transactions/domain/entities/add-confirmation.dto.entity';

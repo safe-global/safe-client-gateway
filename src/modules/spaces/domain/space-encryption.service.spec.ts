@@ -1,16 +1,17 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import type { KmsEncryptionService } from '#/datasources/kms/kms-encryption.service';
 import { SpaceEncryptionService } from '#/modules/spaces/domain/space-encryption.service';
 
 const fieldCryptoService = {
-  isEncrypted: vi.fn(),
-  encrypt: vi.fn(),
-  decrypt: vi.fn(),
-  blindIndex: vi.fn(),
+  isEncrypted: jest.fn(),
+  encrypt: jest.fn(),
+  decrypt: jest.fn(),
+  blindIndex: jest.fn(),
 } as MockedObject<KmsEncryptionService>;
 
 /** A ciphertext-shaped value, as produced by {@link KmsEncryptionService}. */
@@ -21,7 +22,7 @@ describe('SpaceEncryptionService', () => {
   const spaceId = faker.number.int({ min: 1, max: 100_000 });
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
     // Tagging fakes make the (value, context) wiring visible in outputs.
     fieldCryptoService.encrypt.mockImplementation((value, _ctx) =>
       Promise.resolve(`enc:${value}`),
@@ -51,7 +52,8 @@ describe('SpaceEncryptionService', () => {
       await expect(target.encryptSpaceName(spaceId, name)).resolves.toBe(
         `enc:${name}`,
       );
-      expect(fieldCryptoService.encrypt).toHaveBeenCalledExactlyOnceWith(name, {
+      expect(fieldCryptoService.encrypt).toHaveBeenCalledTimes(1);
+      expect(fieldCryptoService.encrypt).toHaveBeenCalledWith(name, {
         spaceId: String(spaceId),
       });
     });
@@ -62,12 +64,10 @@ describe('SpaceEncryptionService', () => {
       await expect(target.decryptSpaceName(spaceId, value)).resolves.toBe(
         `dec:${value}`,
       );
-      expect(fieldCryptoService.decrypt).toHaveBeenCalledExactlyOnceWith(
-        value,
-        {
-          spaceId: String(spaceId),
-        },
-      );
+      expect(fieldCryptoService.decrypt).toHaveBeenCalledTimes(1);
+      expect(fieldCryptoService.decrypt).toHaveBeenCalledWith(value, {
+        spaceId: String(spaceId),
+      });
     });
 
     it('decryptSpaces decrypts each space under its own id and leaves the input untouched', async () => {
@@ -104,19 +104,18 @@ describe('SpaceEncryptionService', () => {
       await expect(target.encryptSafeAddress(spaceId, address)).resolves.toBe(
         `enc:${address}`,
       );
-      expect(fieldCryptoService.encrypt).toHaveBeenCalledExactlyOnceWith(
-        address,
-        { spaceId: String(spaceId) },
-      );
+      expect(fieldCryptoService.encrypt).toHaveBeenCalledTimes(1);
+      expect(fieldCryptoService.encrypt).toHaveBeenCalledWith(address, {
+        spaceId: String(spaceId),
+      });
     });
 
     it('safeAddressIndex computes the blind index over just the value', () => {
       const address = getAddress(faker.finance.ethereumAddress());
 
       expect(target.safeAddressIndex(address)).toBe('index-token');
-      expect(fieldCryptoService.blindIndex).toHaveBeenCalledExactlyOnceWith(
-        address,
-      );
+      expect(fieldCryptoService.blindIndex).toHaveBeenCalledTimes(1);
+      expect(fieldCryptoService.blindIndex).toHaveBeenCalledWith(address);
     });
 
     it('safeAddressIndex returns null when no index key is configured', () => {
@@ -173,18 +172,16 @@ describe('SpaceEncryptionService', () => {
       expect(fieldCryptoService.encrypt).toHaveBeenCalledWith(name, {
         spaceId: String(spaceId),
       });
-      expect(fieldCryptoService.blindIndex).toHaveBeenCalledExactlyOnceWith(
-        address,
-      );
+      expect(fieldCryptoService.blindIndex).toHaveBeenCalledTimes(1);
+      expect(fieldCryptoService.blindIndex).toHaveBeenCalledWith(address);
     });
 
     it('itemAddressIndex computes the blind index over just the value', () => {
       const address = getAddress(faker.finance.ethereumAddress());
 
       expect(target.itemAddressIndex(address)).toBe('index-token');
-      expect(fieldCryptoService.blindIndex).toHaveBeenCalledExactlyOnceWith(
-        address,
-      );
+      expect(fieldCryptoService.blindIndex).toHaveBeenCalledTimes(1);
+      expect(fieldCryptoService.blindIndex).toHaveBeenCalledWith(address);
     });
 
     it('decryptAddressBookItems decrypts address and name per item', async () => {
@@ -238,18 +235,16 @@ describe('SpaceEncryptionService', () => {
       expect(fieldCryptoService.encrypt).toHaveBeenCalledWith(name, {
         spaceId: String(spaceId),
       });
-      expect(fieldCryptoService.blindIndex).toHaveBeenCalledExactlyOnceWith(
-        address,
-      );
+      expect(fieldCryptoService.blindIndex).toHaveBeenCalledTimes(1);
+      expect(fieldCryptoService.blindIndex).toHaveBeenCalledWith(address);
     });
 
     it('requestAddressIndex computes the blind index over just the value', () => {
       const address = getAddress(faker.finance.ethereumAddress());
 
       expect(target.requestAddressIndex(address)).toBe('index-token');
-      expect(fieldCryptoService.blindIndex).toHaveBeenCalledExactlyOnceWith(
-        address,
-      );
+      expect(fieldCryptoService.blindIndex).toHaveBeenCalledTimes(1);
+      expect(fieldCryptoService.blindIndex).toHaveBeenCalledWith(address);
     });
 
     it('decryptAddressBookRequests decrypts address and name per request', async () => {
@@ -297,7 +292,8 @@ describe('SpaceEncryptionService', () => {
       await expect(target.encryptAuditPayload(spaceId, payload)).resolves.toBe(
         `enc:${JSON.stringify(payload)}`,
       );
-      expect(fieldCryptoService.encrypt).toHaveBeenCalledExactlyOnceWith(
+      expect(fieldCryptoService.encrypt).toHaveBeenCalledTimes(1);
+      expect(fieldCryptoService.encrypt).toHaveBeenCalledWith(
         JSON.stringify(payload),
         { spaceId: String(spaceId) },
       );
@@ -314,12 +310,10 @@ describe('SpaceEncryptionService', () => {
       await expect(
         target.decryptAuditPayload(spaceId, value),
       ).resolves.toStrictEqual(payload);
-      expect(fieldCryptoService.decrypt).toHaveBeenCalledExactlyOnceWith(
-        value,
-        {
-          spaceId: String(spaceId),
-        },
-      );
+      expect(fieldCryptoService.decrypt).toHaveBeenCalledTimes(1);
+      expect(fieldCryptoService.decrypt).toHaveBeenCalledWith(value, {
+        spaceId: String(spaceId),
+      });
     });
 
     it('round-trips a payload through encrypt then decrypt', async () => {

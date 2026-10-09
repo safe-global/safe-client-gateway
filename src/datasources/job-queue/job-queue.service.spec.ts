@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import type { Queue } from 'bullmq';
-import type { Mocked } from 'vitest';
+import type { Mocked } from '#/__tests__/mocks';
 import type { TestJobData } from '#/datasources/job-queue/__tests__/test.job.data';
 import { JobQueueService } from '#/datasources/job-queue/job-queue.service';
 import { JobType } from '#/datasources/job-queue/types/job-types';
@@ -12,11 +13,11 @@ describe('JobQueueService', () => {
   let mockQueue: Mocked<Queue>;
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
 
     mockQueue = {
-      add: vi.fn(),
-      getJob: vi.fn(),
+      add: jest.fn(),
+      getJob: jest.fn(),
     } as unknown as Mocked<Queue>;
 
     service = new JobQueueService(mockQueue);

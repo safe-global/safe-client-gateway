@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { describe, expect, it } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
 import { balancesProviderBuilder } from '#/modules/chains/domain/entities/__tests__/balances-provider.builder';

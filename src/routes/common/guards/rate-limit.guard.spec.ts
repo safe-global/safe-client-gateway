@@ -1,19 +1,20 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import type { ExecutionContext } from '@nestjs/common';
 import { BadRequestException, HttpException, HttpStatus } from '@nestjs/common';
-import type { MockedObject } from 'vitest';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import type { ICacheService } from '#/datasources/cache/cache.service.interface';
 import type { ILoggingService } from '#/logging/logging.interface';
 import { RateLimitGuard } from './rate-limit.guard';
 
-const mockCacheService = vi.mocked({
-  increment: vi.fn(),
+const mockCacheService = mocked({
+  increment: jest.fn(),
 } as MockedObject<ICacheService>);
 
 const mockLoggingService = {
-  warn: vi.fn(),
+  warn: jest.fn(),
 } as MockedObject<ILoggingService>;
 
 describe('RateLimitGuard', () => {
@@ -22,8 +23,8 @@ describe('RateLimitGuard', () => {
     const path = new URL(faker.internet.url()).pathname;
     const windowSeconds = faker.number.int({ min: 10, max: 20 });
     const mockExecutionContext = {
-      switchToHttp: vi.fn().mockReturnValue({
-        getRequest: vi.fn().mockReturnValue({
+      switchToHttp: jest.fn().mockReturnValue({
+        getRequest: jest.fn().mockReturnValue({
           ip,
           route: { path },
           method: 'POST',
@@ -51,8 +52,8 @@ describe('RateLimitGuard', () => {
     const windowSeconds = faker.number.int({ min: 10, max: 20 });
     const maxRequests = faker.number.int({ min: 2, max: 10 });
     const mockExecutionContext = {
-      switchToHttp: vi.fn().mockReturnValue({
-        getRequest: vi.fn().mockReturnValue({
+      switchToHttp: jest.fn().mockReturnValue({
+        getRequest: jest.fn().mockReturnValue({
           ip,
           route: { path },
           method: 'PATCH',
@@ -93,8 +94,8 @@ describe('RateLimitGuard', () => {
     const invalidIp = 'invalid-ip-address';
     const path = new URL(faker.internet.url()).pathname;
     const mockExecutionContext = {
-      switchToHttp: vi.fn().mockReturnValue({
-        getRequest: vi.fn().mockReturnValue({
+      switchToHttp: jest.fn().mockReturnValue({
+        getRequest: jest.fn().mockReturnValue({
           ip: invalidIp,
           route: { path },
           method: 'PATCH',

@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import type { Mock, MockedObject } from 'vitest';
+import { type Mock, type MockedObject } from '#/__tests__/mocks';
 import type { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
 import { Wallet } from '#/modules/wallets/datasources/entities/wallets.entity.db';
 import { createMockWalletEncryptionService } from '#/modules/wallets/domain/__tests__/wallet-encryption.service.mock';
@@ -20,15 +21,15 @@ describe('WalletsRepository', () => {
   let target: WalletsRepository;
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
 
     walletRepository = {
-      find: vi.fn(),
-      findOne: vi.fn(),
-      delete: vi.fn(),
+      find: jest.fn(),
+      findOne: jest.fn(),
+      delete: jest.fn(),
     };
     postgresDatabaseService = {
-      getRepository: vi.fn().mockResolvedValue(walletRepository),
+      getRepository: jest.fn().mockResolvedValue(walletRepository),
     } as MockedObject<PostgresDatabaseService>;
     // Created after resetAllMocks so the passthrough implementations survive.
     walletEncryptionService = createMockWalletEncryptionService();
@@ -44,7 +45,7 @@ describe('WalletsRepository', () => {
       const userId = faker.number.int({ min: 1 });
       const walletAddress = getAddress(faker.finance.ethereumAddress());
       const entityManager = {
-        insert: vi
+        insert: jest
           .fn()
           .mockResolvedValue({ identifiers: [{ id: faker.number.int() }] }),
       };
@@ -63,7 +64,7 @@ describe('WalletsRepository', () => {
       const addressIndex = faker.string.alphanumeric(24);
       const ciphertext = `kms:v1:${faker.string.alphanumeric(24)}`;
       const entityManager = {
-        insert: vi
+        insert: jest
           .fn()
           .mockResolvedValue({ identifiers: [{ id: faker.number.int() }] }),
       };

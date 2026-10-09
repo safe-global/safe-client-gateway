@@ -6,6 +6,7 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
+  type Relation,
 } from 'typeorm';
 import type { z } from 'zod';
 import { databaseAddressTransformer } from '#/domain/common/transformers/database-address.transformer';
@@ -39,7 +40,7 @@ export class Wallet implements z.infer<typeof WalletSchema> {
     name: 'user_id',
     foreignKeyConstraintName: 'FK_wallets_user_id',
   })
-  user!: User;
+  user!: Relation<User>;
 
   // Encrypted directly by KMS bound to the owning user (`kms:v1:...`) when
   // field encryption is enabled; EIP-55 plaintext when disabled. Lookups and

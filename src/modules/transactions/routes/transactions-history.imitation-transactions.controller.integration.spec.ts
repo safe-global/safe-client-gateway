@@ -1,12 +1,21 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import {
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  jest,
+} from 'bun:test';
 import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { type Address, getAddress, parseUnits, zeroAddress } from 'viem';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import {
   initTestApplication,
   TestAppProvider,
@@ -64,7 +73,7 @@ describe('Transactions History Controller - Imitation Transactions', () => {
   const safe = safeBuilder().with('owners', [signer.address]).build();
 
   beforeEach(async () => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
 
     const testConfiguration: typeof configuration = () => ({
       ...configuration(),

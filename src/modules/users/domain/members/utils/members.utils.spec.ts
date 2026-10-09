@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { describe, expect, it } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { In, MoreThan } from 'typeorm';
 import { memberBuilder } from '#/modules/users/datasources/entities/__tests__/member.entity.db.builder';

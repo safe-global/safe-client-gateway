@@ -1,5 +1,15 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  jest,
+} from 'bun:test';
 import { randomUUID } from 'node:crypto';
 import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
@@ -62,7 +72,7 @@ describe('EntitlementsController', () => {
   let testDatabase: postgres.Sql;
 
   beforeAll(async () => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
 
     testDatabase = await testDbFactory.createTestDatabase(testDatabaseName);
 

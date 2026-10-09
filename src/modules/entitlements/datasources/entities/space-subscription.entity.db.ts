@@ -8,6 +8,7 @@ import {
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
+  type Relation,
   Unique,
 } from 'typeorm';
 import type { SubscriptionStatus } from '#/datasources/billing-api/entities/subscription.entity';
@@ -112,7 +113,7 @@ export class SpaceSubscription implements DomainSpaceSubscription {
     name: 'space_id',
     foreignKeyConstraintName: 'FK_subscriptions_space_id',
   })
-  public readonly space?: Space;
+  public readonly space?: Relation<Space>;
 
   @OneToMany(
     () => SubscriptionEntitlement,
@@ -121,5 +122,5 @@ export class SpaceSubscription implements DomainSpaceSubscription {
       cascade: ['insert'],
     },
   )
-  public readonly entitlements?: Array<SubscriptionEntitlement>;
+  public readonly entitlements?: Relation<Array<SubscriptionEntitlement>>;
 }

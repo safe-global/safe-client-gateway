@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { describe, expect, it } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { chainUpdateEventBuilder } from '#/modules/hooks/routes/entities/__tests__/chain-update.builder';
 import type { ConfigEventType } from '#/modules/hooks/routes/entities/event-type.entity';

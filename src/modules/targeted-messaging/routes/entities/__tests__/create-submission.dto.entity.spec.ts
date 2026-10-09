@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { describe, expect, it } from 'bun:test';
 import { createSubmissionDtoBuilder } from '#/modules/targeted-messaging/routes/entities/__tests__/create-submission.dto.builder';
 import { CreateSubmissionDtoSchema } from '#/modules/targeted-messaging/routes/entities/create-submission.dto.entity';
 

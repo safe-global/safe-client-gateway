@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { afterEach, beforeEach, describe, expect, it, jest } from 'bun:test';
 import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import {
@@ -41,7 +42,7 @@ describe('AuthGuard', () => {
   let jwtService: IJwtService;
 
   beforeEach(async () => {
-    vi.useFakeTimers();
+    jest.useFakeTimers();
 
     const baseConfiguration = configuration();
     const testConfiguration = (): typeof baseConfiguration => ({
@@ -73,7 +74,7 @@ describe('AuthGuard', () => {
   });
 
   afterEach(async () => {
-    vi.useRealTimers();
+    jest.useRealTimers();
     await app?.close();
   });
 
@@ -127,7 +128,7 @@ describe('AuthGuard', () => {
       ...authPayloadDto,
       exp: new Date(), // Now
     });
-    vi.advanceTimersByTime(1_000);
+    jest.advanceTimersByTime(1_000);
 
     expect(() => jwtService.verify(accessToken)).toThrow('jwt expired');
 

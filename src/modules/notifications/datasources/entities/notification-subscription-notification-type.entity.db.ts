@@ -4,6 +4,7 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
+  type Relation,
   Unique,
 } from 'typeorm';
 import { z } from 'zod';
@@ -30,7 +31,7 @@ export class NotificationSubscriptionNotificationType
   @JoinColumn({
     name: 'notification_subscription_id',
   })
-  notification_subscription!: NotificationSubscription;
+  notification_subscription!: Relation<NotificationSubscription>;
 
   @ManyToOne(
     () => NotificationType,
@@ -41,5 +42,5 @@ export class NotificationSubscriptionNotificationType
     },
   )
   @JoinColumn({ name: 'notification_type_id' })
-  notification_type!: NotificationType;
+  notification_type!: Relation<NotificationType>;
 }

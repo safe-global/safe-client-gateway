@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { get } from 'lodash';
 import { type Address, concat, getAddress, type Hex } from 'viem';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
-import type { MockedObject } from 'vitest';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
 import configuration from '#/config/entities/__tests__/configuration';
 import { SignatureType } from '#/domain/common/entities/signature-type.entity';
@@ -24,20 +25,20 @@ import { Operation } from '#/modules/safe/domain/entities/operation.entity';
 import { proposeTransactionDtoBuilder } from '#/modules/transactions/routes/entities/__tests__/propose-transaction.dto.builder';
 import { TransactionVerifierHelper } from '#/modules/transactions/routes/helpers/transaction-verifier.helper';
 
-const mockConfigurationService = vi.mocked({
-  getOrThrow: vi.fn(),
+const mockConfigurationService = mocked({
+  getOrThrow: jest.fn(),
 } as MockedObject<IConfigurationService>);
 
-const mockDelegatesRepository = vi.mocked({
-  getDelegates: vi.fn(),
+const mockDelegatesRepository = mocked({
+  getDelegates: jest.fn(),
 } as MockedObject<DelegatesV3Repository>);
 
-const mockLoggingRepository = vi.mocked({
-  error: vi.fn(),
+const mockLoggingRepository = mocked({
+  error: jest.fn(),
 } as MockedObject<ILoggingService>);
 
-const mockContractsRepository = vi.mocked({
-  isTrustedForDelegateCall: vi.fn(),
+const mockContractsRepository = mocked({
+  isTrustedForDelegateCall: jest.fn(),
 } as MockedObject<IContractsRepository>);
 
 describe('TransactionVerifierHelper', () => {
@@ -57,7 +58,7 @@ describe('TransactionVerifierHelper', () => {
   }
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
 
     initTarget(configuration);
   });
@@ -609,7 +610,7 @@ describe('TransactionVerifierHelper', () => {
 
         await expect(
           target.verifyProposal({ chainId, safe, proposal, transaction }),
-        ).resolves.not.toThrow();
+        ).resolves.toBeUndefined();
 
         expect(mockLoggingRepository.error).not.toHaveBeenCalled();
       },
@@ -667,7 +668,7 @@ describe('TransactionVerifierHelper', () => {
 
       await expect(
         target.verifyProposal({ chainId, safe, proposal, transaction }),
-      ).resolves.not.toThrow();
+      ).resolves.toBeUndefined();
 
       expect(mockLoggingRepository.error).not.toHaveBeenCalled();
     });
@@ -729,7 +730,7 @@ describe('TransactionVerifierHelper', () => {
 
       await expect(
         target.verifyProposal({ chainId, safe, proposal, transaction }),
-      ).resolves.not.toThrow();
+      ).resolves.toBeUndefined();
     });
 
     it('should throw if the nonce is below that of the Safe', async () => {
@@ -839,7 +840,7 @@ describe('TransactionVerifierHelper', () => {
 
       await expect(
         target.verifyProposal({ chainId, safe, proposal, transaction }),
-      ).resolves.not.toThrow();
+      ).resolves.toBeUndefined();
 
       expect(mockLoggingRepository.error).not.toHaveBeenCalled();
     });
@@ -1504,7 +1505,7 @@ describe('TransactionVerifierHelper', () => {
 
       await expect(
         target.verifyProposal({ chainId, safe, proposal, transaction }),
-      ).resolves.not.toThrow();
+      ).resolves.toBeUndefined();
 
       expect(mockLoggingRepository.error).not.toHaveBeenCalled();
     });

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { MockedObject } from 'vitest';
+import { jest } from 'bun:test';
+import type { MockedObject } from '#/__tests__/mocks';
 import type { SpaceEncryptionService } from '#/modules/spaces/domain/space-encryption.service';
 
 /**
@@ -11,46 +12,46 @@ import type { SpaceEncryptionService } from '#/modules/spaces/domain/space-encry
  */
 export function createMockSpaceEncryptionService(): MockedObject<SpaceEncryptionService> {
   return {
-    isEncrypted: vi.fn((value: string) => value.startsWith('kms:')),
-    encryptSpaceName: vi.fn((_spaceId: number, name: string) =>
+    isEncrypted: jest.fn((value: string) => value.startsWith('kms:')),
+    encryptSpaceName: jest.fn((_spaceId: number, name: string) =>
       Promise.resolve(name),
     ),
-    decryptSpaceName: vi.fn((_spaceId: number, value: string) =>
+    decryptSpaceName: jest.fn((_spaceId: number, value: string) =>
       Promise.resolve(value),
     ),
-    decryptSpaces: vi.fn((spaces: Array<{ id: number; name: string }>) =>
+    decryptSpaces: jest.fn((spaces: Array<{ id: number; name: string }>) =>
       Promise.resolve(spaces),
     ),
-    encryptSafeAddress: vi.fn((_spaceId: number, address: string) =>
+    encryptSafeAddress: jest.fn((_spaceId: number, address: string) =>
       Promise.resolve(address),
     ),
-    safeAddressIndex: vi.fn((_address: string) => null),
-    decryptSpaceSafes: vi.fn(
+    safeAddressIndex: jest.fn((_address: string) => null),
+    decryptSpaceSafes: jest.fn(
       (_spaceId: number, safes: Array<{ address: string }>) =>
         Promise.resolve(safes),
     ),
-    encryptAddressBookItem: vi.fn(
+    encryptAddressBookItem: jest.fn(
       (_spaceId: number, entry: { address: string; name: string }) =>
         Promise.resolve({ ...entry, addressIndex: null }),
     ),
-    itemAddressIndex: vi.fn((_address: string) => null),
-    decryptAddressBookItems: vi.fn(
+    itemAddressIndex: jest.fn((_address: string) => null),
+    decryptAddressBookItems: jest.fn(
       (_spaceId: number, items: Array<{ address: string; name: string }>) =>
         Promise.resolve(items),
     ),
-    encryptAddressBookRequest: vi.fn(
+    encryptAddressBookRequest: jest.fn(
       (_spaceId: number, entry: { address: string; name: string }) =>
         Promise.resolve({ ...entry, addressIndex: null }),
     ),
-    requestAddressIndex: vi.fn((_address: string) => null),
-    decryptAddressBookRequests: vi.fn(
+    requestAddressIndex: jest.fn((_address: string) => null),
+    decryptAddressBookRequests: jest.fn(
       (_spaceId: number, requests: Array<{ address: string; name: string }>) =>
         Promise.resolve(requests),
     ),
-    encryptAuditPayload: vi.fn((_spaceId: number, payload: unknown) =>
+    encryptAuditPayload: jest.fn((_spaceId: number, payload: unknown) =>
       Promise.resolve(JSON.stringify(payload)),
     ),
-    decryptAuditPayload: vi.fn((_spaceId: number, payload: string) =>
+    decryptAuditPayload: jest.fn((_spaceId: number, payload: string) =>
       Promise.resolve(JSON.parse(payload)),
     ),
   } as MockedObject<SpaceEncryptionService>;

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { MockedObject } from 'vitest';
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
 import { FakeCacheService } from '#/datasources/cache/__tests__/fake.cache.service';
 import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
@@ -29,89 +30,89 @@ import type { StakingRepository } from '#/modules/staking/domain/staking.reposit
 import type { TransactionsRepository } from '#/modules/transactions/domain/transactions.repository';
 import type { ZerionCacheService } from '#/modules/zerion/datasources/zerion-cache.service';
 
-const mockBalancesRepository = vi.mocked({
-  clearApi: vi.fn(),
-  clearBalances: vi.fn(),
+const mockBalancesRepository = mocked({
+  clearApi: jest.fn(),
+  clearBalances: jest.fn(),
 } as MockedObject<BalancesRepository>);
 
-const mockBlockchainRepository = vi.mocked({
-  clearApi: vi.fn(),
+const mockBlockchainRepository = mocked({
+  clearApi: jest.fn(),
 } as MockedObject<BlockchainRepository>);
 
-const mockChainsRepository = vi.mocked({
-  getChain: vi.fn(),
-  getChains: vi.fn(),
-  clearChain: vi.fn(),
-  clearChainV2: vi.fn(),
-  isSupportedChain: vi.fn(),
+const mockChainsRepository = mocked({
+  getChain: jest.fn(),
+  getChains: jest.fn(),
+  clearChain: jest.fn(),
+  clearChainV2: jest.fn(),
+  isSupportedChain: jest.fn(),
 } as MockedObject<ChainsRepository>);
 
-const mockCollectiblesRepository = vi.mocked({
-  clearCollectibles: vi.fn(),
+const mockCollectiblesRepository = mocked({
+  clearCollectibles: jest.fn(),
 } as MockedObject<CollectiblesRepository>);
 
-const mockDelegatesRepository = vi.mocked({
-  clearDelegates: vi.fn(),
+const mockDelegatesRepository = mocked({
+  clearDelegates: jest.fn(),
 } as MockedObject<DelegatesV3Repository>);
 
-const mockMessagesRepository = vi.mocked({
-  clearMessages: vi.fn(),
+const mockMessagesRepository = mocked({
+  clearMessages: jest.fn(),
 } as unknown as MockedObject<MessagesRepository>);
 
-const mockSafeAppsRepository = vi.mocked({
-  clearSafeApps: vi.fn(),
+const mockSafeAppsRepository = mocked({
+  clearSafeApps: jest.fn(),
 } as MockedObject<SafeAppsRepository>);
 
-const mockZerionCache = vi.mocked({
-  invalidate: vi.fn(),
+const mockZerionCache = mocked({
+  invalidate: jest.fn(),
 } as MockedObject<ZerionCacheService>);
 
-const mockSafeRepository = vi.mocked({
-  clearTransfers: vi.fn(),
-  clearMultisigTransaction: vi.fn(),
-  clearAllExecutedTransactions: vi.fn(),
-  clearMultisigTransactions: vi.fn(),
-  clearModuleTransactions: vi.fn(),
-  clearIncomingTransfers: vi.fn(),
-  clearSafe: vi.fn(),
+const mockSafeRepository = mocked({
+  clearTransfers: jest.fn(),
+  clearMultisigTransaction: jest.fn(),
+  clearAllExecutedTransactions: jest.fn(),
+  clearMultisigTransactions: jest.fn(),
+  clearModuleTransactions: jest.fn(),
+  clearIncomingTransfers: jest.fn(),
+  clearSafe: jest.fn(),
 } as MockedObject<SafeRepository>);
 
-const mockStakingRepository = vi.mocked({
-  clearApi: vi.fn(),
-  clearStakes: vi.fn(),
+const mockStakingRepository = mocked({
+  clearApi: jest.fn(),
+  clearStakes: jest.fn(),
 } as MockedObject<StakingRepository>);
 
-const mockEarnRepository = vi.mocked({
-  clearApi: vi.fn(),
-  clearStakes: vi.fn(),
+const mockEarnRepository = mocked({
+  clearApi: jest.fn(),
+  clearStakes: jest.fn(),
 } as MockedObject<EarnRepository>);
 
-const mockTransactionsRepository = vi.mocked({
-  clearApi: vi.fn(),
+const mockTransactionsRepository = mocked({
+  clearApi: jest.fn(),
 } as MockedObject<TransactionsRepository>);
 
-const mockLoggingService = vi.mocked({
-  debug: vi.fn(),
-  error: vi.fn(),
-  info: vi.fn(),
-  warn: vi.fn(),
+const mockLoggingService = mocked({
+  debug: jest.fn(),
+  error: jest.fn(),
+  info: jest.fn(),
+  warn: jest.fn(),
 } as MockedObject<ILoggingService>);
 
-const mockPolicyIndexerRepository = vi.mocked({
-  getState: vi.fn(),
-  clearState: vi.fn(),
+const mockPolicyIndexerRepository = mocked({
+  getState: jest.fn(),
+  clearState: jest.fn(),
 } as MockedObject<IPolicyIndexerRepository>);
 
-const mockQueuesRepository = vi.mocked({
-  subscribe: vi.fn(),
+const mockQueuesRepository = mocked({
+  subscribe: jest.fn(),
 } as MockedObject<QueuesRepository>);
 
-const mockConfigurationService = vi.mocked({
-  getOrThrow: vi.fn(),
+const mockConfigurationService = mocked({
+  getOrThrow: jest.fn(),
 } as MockedObject<IConfigurationService>);
 
-const mockPushNotificationService = vi.mocked({
-  enqueueEvent: vi.fn(),
+const mockPushNotificationService = mocked({
+  enqueueEvent: jest.fn(),
 } as MockedObject<IPushNotificationService>);
 
 describe('HooksRepository (Unit)', () => {
@@ -120,7 +121,7 @@ describe('HooksRepository (Unit)', () => {
   let eventCacheHelper: EventCacheHelper;
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
 
     fakeCacheService = new FakeCacheService();
     eventCacheHelper = new EventCacheHelper(
@@ -419,7 +420,7 @@ describe('HooksRepository (Unit)', () => {
       new Error('Queue unavailable'),
     );
 
-    await expect(hooksRepository.onEvent(event)).resolves.not.toThrow();
+    await expect(hooksRepository.onEvent(event)).resolves.toBeDefined();
 
     expect(mockPushNotificationService.enqueueEvent).toHaveBeenCalledTimes(1);
   });

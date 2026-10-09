@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { afterAll, beforeAll, describe, expect, it } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import type postgres from 'postgres';
 import type { Sql } from 'postgres';
@@ -79,7 +80,7 @@ describe('Migration 00007_targeted_messaging_update', () => {
             ${outreach.source_id},
             ${faker.string.alphanumeric({ length: 10 })},
             ${faker.string.alphanumeric({ length: 10 })})
-            `,
+            `.execute(),
           ).rejects.toThrow('duplicate key value violates unique constraint');
         },
       });

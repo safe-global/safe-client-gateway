@@ -2,9 +2,9 @@
 
 import { BadRequestException, Inject, NotFoundException } from '@nestjs/common';
 import {
-  FindOptionsRelations,
-  FindOptionsSelect,
-  FindOptionsWhere,
+  type FindOptionsRelations,
+  type FindOptionsSelect,
+  type FindOptionsWhere,
 } from 'typeorm';
 import { type Address, getAddress } from 'viem';
 import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';

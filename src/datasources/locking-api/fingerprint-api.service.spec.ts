@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest, mock } from 'bun:test';
 import { faker } from '@faker-js/faker';
+import * as fingerprintServerApi from '@fingerprintjs/fingerprintjs-pro-server-api';
 import { unsealEventsResponse } from '@fingerprintjs/fingerprintjs-pro-server-api';
-import type { Mock } from 'vitest';
+import { automock, type Mock } from '#/__tests__/mocks';
 import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
 import {
   fingerprintIpDataBuilder,
@@ -15,7 +17,10 @@ import { FingerprintApiService } from '#/datasources/locking-api/fingerprint-api
 import { eligibilityRequestBuilder } from '#/modules/community/domain/entities/__tests__/eligibility-request.builder';
 
 // TODO: convert to spy to avoid casting
-vi.mock('@fingerprintjs/fingerprintjs-pro-server-api');
+const actualFingerprintServerApi = { ...fingerprintServerApi };
+mock.module('@fingerprintjs/fingerprintjs-pro-server-api', () =>
+  automock(actualFingerprintServerApi),
+);
 
 describe('FingerprintApiService', () => {
   let service: FingerprintApiService;
@@ -23,7 +28,7 @@ describe('FingerprintApiService', () => {
   const eligibilityEncryptionKey = faker.string.uuid();
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
 
     fakeConfigurationService = new FakeConfigurationService();
     fakeConfigurationService.set(

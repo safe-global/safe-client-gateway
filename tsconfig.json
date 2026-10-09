@@ -1,8 +1,7 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
+    "module": "Preserve",
     "moduleResolution": "bundler",
-    "customConditions": ["source"],
     "esModuleInterop": true,
     "removeComments": true,
     "emitDecoratorMetadata": true,
@@ -16,7 +15,13 @@
     "forceConsistentCasingInFileNames": false,
     "noFallthroughCasesInSwitch": false,
     "resolveJsonModule": true,
-    "types": ["node", "vitest/globals"],
-    "strict": true
+    "types": ["bun"],
+    "paths": {
+      "#/abis/*": ["./abis/*"],
+      "#/*": ["./src/*"]
+    },
+    "strict": true,
+    "verbatimModuleSyntax": true,
+    "noEmit": true
   }
 }

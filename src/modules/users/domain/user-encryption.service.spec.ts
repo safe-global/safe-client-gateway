@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { beforeEach, describe, expect, it } from 'bun:test';
 import { faker } from '@faker-js/faker';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import { createMockKmsEncryptionService } from '#/datasources/kms/__tests__/kms-encryption.service.mock';
 import type { KmsEncryptionService } from '#/datasources/kms/kms-encryption.service';
 import { UserEncryptionService } from '#/modules/users/domain/user-encryption.service';
@@ -29,7 +30,8 @@ describe('UserEncryptionService', () => {
     fieldCrypto.blindIndex.mockReturnValue(token);
 
     expect(target.blindIndex(value)).toBe(token);
-    expect(fieldCrypto.blindIndex).toHaveBeenCalledExactlyOnceWith(value);
+    expect(fieldCrypto.blindIndex).toHaveBeenCalledTimes(1);
+    expect(fieldCrypto.blindIndex).toHaveBeenCalledWith(value);
   });
 
   it('encrypt binds the owning userId', async () => {
@@ -39,7 +41,8 @@ describe('UserEncryptionService', () => {
     fieldCrypto.encrypt.mockResolvedValue(ciphertext);
 
     await expect(target.encrypt(userId, email)).resolves.toBe(ciphertext);
-    expect(fieldCrypto.encrypt).toHaveBeenCalledExactlyOnceWith(email, {
+    expect(fieldCrypto.encrypt).toHaveBeenCalledTimes(1);
+    expect(fieldCrypto.encrypt).toHaveBeenCalledWith(email, {
       userId: String(userId),
     });
   });
@@ -51,7 +54,8 @@ describe('UserEncryptionService', () => {
     fieldCrypto.decrypt.mockResolvedValue(email);
 
     await expect(target.decrypt(userId, ciphertext)).resolves.toBe(email);
-    expect(fieldCrypto.decrypt).toHaveBeenCalledExactlyOnceWith(ciphertext, {
+    expect(fieldCrypto.decrypt).toHaveBeenCalledTimes(1);
+    expect(fieldCrypto.decrypt).toHaveBeenCalledWith(ciphertext, {
       userId: String(userId),
     });
   });
@@ -80,10 +84,10 @@ describe('UserEncryptionService', () => {
         nullEmailUser,
       ]);
       expect(users[0].email).toBe(encryptedEmail);
-      expect(fieldCrypto.decrypt).toHaveBeenCalledExactlyOnceWith(
-        encryptedEmail,
-        { userId: String(encryptedUserId) },
-      );
+      expect(fieldCrypto.decrypt).toHaveBeenCalledTimes(1);
+      expect(fieldCrypto.decrypt).toHaveBeenCalledWith(encryptedEmail, {
+        userId: String(encryptedUserId),
+      });
     });
   });
 });

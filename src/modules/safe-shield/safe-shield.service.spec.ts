@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { getAddress, type Hex } from 'viem';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import type { IConfigApi } from '#/domain/interfaces/config-api.interface';
 import type { ILoggingService } from '#/logging/logging.interface';
 import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
@@ -137,33 +138,33 @@ const createCustomTransactionInfo = (
 
 describe('SafeShieldService', () => {
   const mockRecipientAnalysisService = {
-    analyze: vi.fn(),
-    analyzeRecipient: vi.fn(),
+    analyze: jest.fn(),
+    analyzeRecipient: jest.fn(),
   } as MockedObject<RecipientAnalysisService>;
   const mockContractAnalysisService = {
-    analyze: vi.fn(),
+    analyze: jest.fn(),
   } as MockedObject<ContractAnalysisService>;
   const mockDeadlockAnalysisService = {
-    analyze: vi.fn(),
+    analyze: jest.fn(),
   } as MockedObject<DeadlockAnalysisService>;
   const mockThreatAnalysisService = {
-    analyze: vi.fn(),
-    failedAnalysisResponse: vi.fn(),
-    reportTransaction: vi.fn(),
+    analyze: jest.fn(),
+    failedAnalysisResponse: jest.fn(),
+    reportTransaction: jest.fn(),
   } as MockedObject<ThreatAnalysisService>;
   const mockTransactionsService = {
-    previewTransaction: vi.fn(),
+    previewTransaction: jest.fn(),
   } as MockedObject<TransactionsService>;
 
   const mockLoggingService = {
-    debug: vi.fn(),
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
+    debug: jest.fn(),
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
   } as MockedObject<ILoggingService>;
 
   const mockConfigApi = {
-    getChain: vi.fn(),
+    getChain: jest.fn(),
   } as MockedObject<IConfigApi>;
 
   const service = new SafeShieldService(
@@ -183,7 +184,7 @@ describe('SafeShieldService', () => {
   const mockData = faker.string.hexadecimal({ length: 128 }) as Hex;
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
     mockDeadlockAnalysisService.analyze.mockResolvedValue({});
   });
 

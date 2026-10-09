@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { ForbiddenException } from '@nestjs/common';
 import { getAddress } from 'viem';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import type { ILoggingService } from '#/logging/logging.interface';
 import { siweAuthPayloadDtoBuilder } from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
@@ -23,19 +24,19 @@ import { PaginationData } from '#/routes/common/pagination/pagination.data';
 const spaceAuditRepository = createMockSpaceAuditRepository();
 
 const membersRepository = {
-  findOne: vi.fn(),
-  find: vi.fn(),
+  findOne: jest.fn(),
+  find: jest.fn(),
 } as MockedObject<IMembersRepository>;
 
 const identityResolver = {
-  resolveMany: vi.fn(),
+  resolveMany: jest.fn(),
 } as MockedObject<UserIdentityResolverService>;
 
 const loggingService: MockedObject<ILoggingService> = {
-  info: vi.fn(),
-  debug: vi.fn(),
-  error: vi.fn(),
-  warn: vi.fn(),
+  info: jest.fn(),
+  debug: jest.fn(),
+  error: jest.fn(),
+  warn: jest.fn(),
 };
 
 describe('SpaceAuditService', () => {
@@ -73,7 +74,7 @@ describe('SpaceAuditService', () => {
   }
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
     spaceEncryptionService = createMockSpaceEncryptionService();
     service = new SpaceAuditService(
       spaceAuditRepository,
@@ -137,9 +138,13 @@ describe('SpaceAuditService', () => {
         filters: {},
       });
 
-      expect(
-        spaceEncryptionService.decryptAuditPayload,
-      ).toHaveBeenCalledExactlyOnceWith(spaceId, encryptedPayload);
+      expect(spaceEncryptionService.decryptAuditPayload).toHaveBeenCalledTimes(
+        1,
+      );
+      expect(spaceEncryptionService.decryptAuditPayload).toHaveBeenCalledWith(
+        spaceId,
+        encryptedPayload,
+      );
       expect(result.results[0].payload).toStrictEqual({
         address: decryptedAddress,
         name: decryptedName,

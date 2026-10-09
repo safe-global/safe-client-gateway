@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest, mock } from 'bun:test';
 import {
   GetPublicKeyCommand,
   KMSClient,
@@ -12,15 +13,15 @@ import { AwsKmsSignerService } from '#/datasources/kms/aws-kms-signer.service';
 
 const kmsMock = mockClient(KMSClient);
 
-vi.mock('@aws-sdk/credential-provider-web-identity', () => ({
-  fromTokenFile: vi.fn(),
+mock.module('@aws-sdk/credential-provider-web-identity', () => ({
+  fromTokenFile: jest.fn(),
 }));
 
 describe('AwsKmsSignerService', () => {
   const keyId = faker.string.uuid();
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
     kmsMock.reset();
   });
 

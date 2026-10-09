@@ -1,25 +1,34 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  describe,
+  expect,
+  it,
+  jest,
+} from 'bun:test';
 import { faker } from '@faker-js/faker';
 import type postgres from 'postgres';
-import type { MockedObject } from 'vitest';
 import { TestDbFactory } from '#/__tests__/db.factory';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
 import { PostgresDatabaseMigrationHook } from '#/datasources/db/v1/postgres-database.migration.hook';
 import type { PostgresDatabaseMigrator } from '#/datasources/db/v1/postgres-database.migrator';
 import type { ILoggingService } from '#/logging/logging.interface';
 
-const migrator = vi.mocked({
-  migrate: vi.fn(),
+const migrator = mocked({
+  migrate: jest.fn(),
 } as MockedObject<PostgresDatabaseMigrator>);
 
-const loggingService = vi.mocked({
-  error: vi.fn(),
-  info: vi.fn(),
+const loggingService = mocked({
+  error: jest.fn(),
+  info: jest.fn(),
 } as MockedObject<ILoggingService>);
 
-const configurationService = vi.mocked({
-  getOrThrow: vi.fn(),
+const configurationService = mocked({
+  getOrThrow: jest.fn(),
 } as MockedObject<IConfigurationService>);
 
 describe('PostgresDatabaseMigrationHook tests', () => {
@@ -36,7 +45,7 @@ describe('PostgresDatabaseMigrationHook tests', () => {
   });
 
   afterEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   it('should not run migrations', async () => {

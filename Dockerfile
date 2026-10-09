@@ -1,31 +1,31 @@
 # SPDX-License-Identifier: FSL-1.1-MIT
 #
-# BUILD CONTAINER
+# INSTALL CONTAINER
 #
-FROM node:24.21.0-alpine3.24 AS base
+FROM oven/bun:1.4.2-alpine AS base
 ENV NODE_ENV=production
 WORKDIR /app
-COPY --chown=node:node .yarn/releases ./.yarn/releases
-COPY --chown=node:node package.json yarn.lock .yarnrc.yml tsconfig*.json ./
-COPY --chown=node:node scripts/generate-abis.js ./scripts/generate-abis.js
-# Compiled by `yarn build` into dist/scripts/ so the image can mint billing
-# webhook tokens as a one-off workload (see src/modules/billing/README.md).
-COPY --chown=node:node scripts/generate-token.ts ./scripts/generate-token.ts
-COPY --chown=node:node scripts/generate-field-encryption-index-key.ts ./scripts/generate-field-encryption-index-key.ts
-COPY --chown=node:node scripts/backfill-field-encryption.ts ./scripts/backfill-field-encryption.ts
-COPY --chown=node:node assets ./assets
-COPY --chown=node:node migrations ./migrations
-COPY --chown=node:node src ./src
-RUN yarn install --immutable \
-     && yarn run build \
-     && rm -rf ./node_modules \
-     && yarn workspaces focus --production
+COPY --chown=bun:bun package.json bun.lock bunfig.toml tsconfig.json ./
+# Run by the postinstall script to generate the ABIs under ./abis.
+COPY --chown=bun:bun scripts/generate-abis.ts ./scripts/generate-abis.ts
+# `--frozen-lockfile` fails on any drift from bun.lock and every tarball is
+# checked against its recorded integrity hash; dependency lifecycle scripts
+# never run (`trustedDependencies: []`). Only production dependencies.
+RUN bun install --frozen-lockfile --production
+COPY --chown=bun:bun src ./src
+COPY --chown=bun:bun migrations ./migrations
+# One-off workloads run from this image, e.g. minting billing webhook tokens
+# (see src/modules/billing/README.md): `bun scripts/generate-token.ts`.
+COPY --chown=bun:bun scripts/generate-token.ts scripts/generate-field-encryption-index-key.ts scripts/backfill-field-encryption.ts ./scripts/
+# Specs and their helpers are not shipped: nothing outside them imports them.
+RUN find src migrations -type d -name __tests__ -prune -exec rm -rf {} + \
+     && find src -type f -name '*.spec.ts' -delete
 
 #
 # PRODUCTION CONTAINER
 #
-FROM node:24.21.0-alpine3.24 AS production
-USER node
+FROM oven/bun:1.4.2-alpine AS production
+USER bun
 WORKDIR /app
 
 ARG VERSION
@@ -35,13 +35,16 @@ ENV APPLICATION_VERSION=${VERSION} \
     APPLICATION_BUILD_NUMBER=${BUILD_NUMBER} \
     NODE_ENV=production
 
-COPY --chown=node:node --from=base /app/package.json ./package.json
-COPY --chown=node:node --from=base /app/abis ./abis
-COPY --chown=node:node --from=base /app/node_modules ./node_modules
-COPY --chown=node:node --from=base /app/dist ./dist
-COPY --chown=node:node --from=base /app/assets ./assets
-COPY --chown=node:node --from=base /app/migrations ./migrations
-# `--import` loads the Datadog tracer before the app and hooks both `require`
-# and ESM `import`. Keep it: without it, ESM-only dependencies (e.g. Nest 12's
-# Fastify adapter) load untraced and their spans silently disappear.
-CMD [ "node", "--import", "dd-trace/initialize.mjs", "dist/src/main.js" ]
+# Bun runs the TypeScript sources directly; tsconfig.json supplies the `#/`
+# path aliases at runtime.
+COPY --chown=bun:bun --from=base /app/package.json /app/bunfig.toml /app/tsconfig.json ./
+COPY --chown=bun:bun --from=base /app/node_modules ./node_modules
+COPY --chown=bun:bun --from=base /app/abis ./abis
+COPY --chown=bun:bun --from=base /app/src ./src
+COPY --chown=bun:bun --from=base /app/migrations ./migrations
+COPY --chown=bun:bun --from=base /app/scripts ./scripts
+COPY --chown=bun:bun assets ./assets
+# `--preload` starts OpenTelemetry before the app is imported, so the
+# instrumented libraries (http, pg, redis, ioredis, amqplib) are patched when
+# the app loads them. Traces go to the Datadog Agent's OTLP receiver.
+CMD [ "bun", "--preload", "./src/tracing/tracing.ts", "src/main.ts" ]

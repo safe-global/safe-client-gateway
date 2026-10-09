@@ -6,6 +6,7 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
+  type Relation,
   Unique,
 } from 'typeorm';
 import { NAME_MAX_LENGTH } from '#/domain/common/schemas/name.schema';
@@ -41,7 +42,7 @@ export class Member implements DomainMember {
     name: 'user_id',
     foreignKeyConstraintName: 'FK_members_user_id',
   })
-  user!: User;
+  user!: Relation<User>;
 
   @ManyToOne(
     () => Space,
@@ -55,7 +56,7 @@ export class Member implements DomainMember {
     name: 'space_id',
     foreignKeyConstraintName: 'FK_members_space_id',
   })
-  space!: Space;
+  space!: Relation<Space>;
 
   @Column({ type: 'varchar', length: MEMBER_NAME_MAX_LENGTH })
   name!: string;

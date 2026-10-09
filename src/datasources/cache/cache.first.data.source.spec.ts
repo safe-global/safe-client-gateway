@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { afterEach, beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
-import type { MockedObject } from 'vitest';
 import { fakeJson } from '#/__tests__/faker';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
 import { FakeCacheService } from '#/datasources/cache/__tests__/fake.cache.service';
 import { CacheFirstDataSource } from '#/datasources/cache/cache.first.data.source';
@@ -13,18 +14,18 @@ import type { INetworkService } from '#/datasources/network/network.service.inte
 import type { ILoggingService } from '#/logging/logging.interface';
 
 const mockLoggingService: MockedObject<ILoggingService> = {
-  info: vi.fn(),
-  debug: vi.fn(),
-  error: vi.fn(),
-  warn: vi.fn(),
+  info: jest.fn(),
+  debug: jest.fn(),
+  error: jest.fn(),
+  warn: jest.fn(),
 };
 
 const networkService = {
-  get: vi.fn(),
-  post: vi.fn(),
+  get: jest.fn(),
+  post: jest.fn(),
 } as MockedObject<INetworkService>;
 
-const mockNetworkService = vi.mocked(networkService);
+const mockNetworkService = mocked(networkService);
 
 describe('CacheFirstDataSource', () => {
   let cacheFirstDataSource: CacheFirstDataSource;
@@ -32,8 +33,8 @@ describe('CacheFirstDataSource', () => {
   let fakeConfigurationService: FakeConfigurationService;
 
   beforeEach(() => {
-    vi.resetAllMocks();
-    vi.useFakeTimers();
+    jest.resetAllMocks();
+    jest.useFakeTimers();
     fakeCacheService = new FakeCacheService();
     fakeConfigurationService = new FakeConfigurationService();
     fakeConfigurationService.set('features.debugLogs', true);
@@ -47,7 +48,7 @@ describe('CacheFirstDataSource', () => {
   });
 
   afterEach(() => {
-    vi.useRealTimers();
+    jest.useRealTimers();
   });
 
   describe('get', () => {
@@ -100,7 +101,7 @@ describe('CacheFirstDataSource', () => {
         }
       });
 
-      vi.advanceTimersByTime(1); // the request is sent 1 ms after invalidation happened
+      jest.advanceTimersByTime(1); // the request is sent 1 ms after invalidation happened
       const actual = await cacheFirstDataSource.get({
         cacheDir,
         url: targetUrl,
@@ -156,9 +157,9 @@ describe('CacheFirstDataSource', () => {
     ])(
       'should return the network data without checking the invalidation time nor caching it if expireTimeSeconds is %s',
       async (_, expireTimeSeconds) => {
-        const mockCache = vi.mocked({
-          hGet: vi.fn(),
-          hSet: vi.fn(),
+        const mockCache = mocked({
+          hGet: jest.fn(),
+          hSet: jest.fn(),
         } as MockedObject<ICacheService>);
         cacheFirstDataSource = new CacheFirstDataSource(
           mockCache,
@@ -287,9 +288,9 @@ describe('CacheFirstDataSource', () => {
     });
 
     it('should cache not found errors with the default TTL', async () => {
-      const mockCache = vi.mocked({
-        hGet: vi.fn(),
-        hSet: vi.fn(),
+      const mockCache = mocked({
+        hGet: jest.fn(),
+        hSet: jest.fn(),
       } as MockedObject<ICacheService>);
 
       cacheFirstDataSource = new CacheFirstDataSource(
@@ -331,9 +332,9 @@ describe('CacheFirstDataSource', () => {
     });
 
     it('should cache not found errors with a specific TTL', async () => {
-      const mockCache = vi.mocked({
-        hGet: vi.fn(),
-        hSet: vi.fn(),
+      const mockCache = mocked({
+        hGet: jest.fn(),
+        hSet: jest.fn(),
       } as MockedObject<ICacheService>);
 
       cacheFirstDataSource = new CacheFirstDataSource(
@@ -429,7 +430,7 @@ describe('CacheFirstDataSource', () => {
         }
       });
 
-      vi.advanceTimersByTime(1); // the request is sent 1 ms after invalidation happened
+      jest.advanceTimersByTime(1); // the request is sent 1 ms after invalidation happened
       const actual = await cacheFirstDataSource.post({
         cacheDir,
         url: targetUrl,
@@ -488,9 +489,9 @@ describe('CacheFirstDataSource', () => {
     ])(
       'should return the network data without checking the invalidation time nor caching it if expireTimeSeconds is %s',
       async (_, expireTimeSeconds) => {
-        const mockCache = vi.mocked({
-          hGet: vi.fn(),
-          hSet: vi.fn(),
+        const mockCache = mocked({
+          hGet: jest.fn(),
+          hSet: jest.fn(),
         } as MockedObject<ICacheService>);
         cacheFirstDataSource = new CacheFirstDataSource(
           mockCache,
@@ -628,9 +629,9 @@ describe('CacheFirstDataSource', () => {
     });
 
     it('should cache not found errors with the default TTL', async () => {
-      const mockCache = vi.mocked({
-        hGet: vi.fn(),
-        hSet: vi.fn(),
+      const mockCache = mocked({
+        hGet: jest.fn(),
+        hSet: jest.fn(),
       } as MockedObject<ICacheService>);
 
       cacheFirstDataSource = new CacheFirstDataSource(
@@ -674,9 +675,9 @@ describe('CacheFirstDataSource', () => {
     });
 
     it('should cache not found errors with a specific TTL', async () => {
-      const mockCache = vi.mocked({
-        hGet: vi.fn(),
-        hSet: vi.fn(),
+      const mockCache = mocked({
+        hGet: jest.fn(),
+        hSet: jest.fn(),
       } as MockedObject<ICacheService>);
 
       cacheFirstDataSource = new CacheFirstDataSource(

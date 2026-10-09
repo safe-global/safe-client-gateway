@@ -5,6 +5,7 @@ import {
   Entity,
   OneToMany,
   PrimaryGeneratedColumn,
+  type Relation,
   Unique,
 } from 'typeorm';
 import { z } from 'zod';
@@ -59,5 +60,5 @@ export class NotificationDevice
       onDelete: 'CASCADE',
     },
   )
-  notification_subscriptions!: Array<NotificationSubscription>;
+  notification_subscriptions!: Relation<Array<NotificationSubscription>>;
 }

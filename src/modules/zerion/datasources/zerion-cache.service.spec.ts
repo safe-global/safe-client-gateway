@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import type { MockedObject } from 'vitest';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import { CacheRouter } from '#/datasources/cache/cache.router';
 import type { ICacheService } from '#/datasources/cache/cache.service.interface';
 import { LogType } from '#/domain/common/entities/log-type.entity';
@@ -10,15 +11,15 @@ import type { ILoggingService } from '#/logging/logging.interface';
 import { TransactionEventType } from '#/modules/hooks/routes/entities/event-type.entity';
 import { ZerionCacheService } from '#/modules/zerion/datasources/zerion-cache.service';
 
-const mockCacheService = vi.mocked({
-  deleteByKey: vi.fn(),
+const mockCacheService = mocked({
+  deleteByKey: jest.fn(),
 } as MockedObject<ICacheService>);
 
 const mockLoggingService = {
-  debug: vi.fn(),
-  info: vi.fn(),
-  warn: vi.fn(),
-  error: vi.fn(),
+  debug: jest.fn(),
+  info: jest.fn(),
+  warn: jest.fn(),
+  error: jest.fn(),
 } as MockedObject<ILoggingService>;
 
 describe('ZerionCacheService', () => {
@@ -26,7 +27,7 @@ describe('ZerionCacheService', () => {
   const address = getAddress(faker.finance.ethereumAddress());
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
     service = new ZerionCacheService(mockCacheService, mockLoggingService);
   });
 

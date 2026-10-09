@@ -1,10 +1,19 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  describe,
+  expect,
+  it,
+  jest,
+} from 'bun:test';
 import { faker } from '@faker-js/faker';
 import type { ConfigService } from '@nestjs/config';
 import { DataSource } from 'typeorm';
 import { type Address, getAddress } from 'viem';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import configuration from '#/config/entities/__tests__/configuration';
 import { postgresConfig } from '#/config/entities/postgres.config';
 import { DatabaseMigrator } from '#/datasources/db/v2/database-migrator.service';
@@ -21,10 +30,10 @@ import { createMockWalletEncryptionService } from '#/modules/wallets/domain/__te
 import { WalletsRepository } from '#/modules/wallets/domain/wallets.repository';
 
 const mockLoggingService = {
-  debug: vi.fn(),
-  error: vi.fn(),
-  info: vi.fn(),
-  warn: vi.fn(),
+  debug: jest.fn(),
+  error: jest.fn(),
+  info: jest.fn(),
+  warn: jest.fn(),
 } as MockedObject<ILoggingService>;
 
 const UserStatusKeys = getStringEnumKeys(UserStatus);
@@ -77,7 +86,7 @@ describe('WalletsRepository', () => {
 
     // Migrate database
     const mockConfigService = {
-      getOrThrow: vi.fn().mockImplementation((key: string) => {
+      getOrThrow: jest.fn().mockImplementation((key: string) => {
         if (key === 'db.migrator.numberOfRetries') {
           return testConfiguration.db.migrator.numberOfRetries;
         }
@@ -100,7 +109,7 @@ describe('WalletsRepository', () => {
   });
 
   afterEach(async () => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
 
     const dbWalletRepository = dataSource.getRepository(Wallet);
     const dbUserRepository = dataSource.getRepository(User);

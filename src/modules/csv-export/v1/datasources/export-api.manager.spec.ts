@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import type { MockedObject } from 'vitest';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
 import type { CacheFirstDataSource } from '#/datasources/cache/cache.first.data.source';
 import { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
@@ -11,23 +12,23 @@ import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.b
 import { rawify } from '#/validation/entities/raw.entity';
 import { ExportApiManager } from './export-api.manager';
 
-const mockConfigurationService = vi.mocked({
-  getOrThrow: vi.fn(),
+const mockConfigurationService = mocked({
+  getOrThrow: jest.fn(),
 } as MockedObject<IConfigurationService>);
 
-const mockConfigApi = vi.mocked({
-  getChain: vi.fn(),
+const mockConfigApi = mocked({
+  getChain: jest.fn(),
 } as MockedObject<IConfigApi>);
 
-const mockDataSource = vi.mocked({
-  get: vi.fn(),
+const mockDataSource = mocked({
+  get: jest.fn(),
 } as MockedObject<CacheFirstDataSource>);
 
 const mockHttpErrorFactory = {} as MockedObject<HttpErrorFactory>;
 
 describe('ExportApiManager', () => {
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
   });
   const txServiceUrl = faker.internet.url({ appendSlash: false });
   const vpcTxServiceUrl = faker.internet.url({ appendSlash: false });

@@ -1,12 +1,20 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  jest,
+} from 'bun:test';
 import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
 import { ClsModule } from 'nestjs-cls';
-import { getGlobalDispatcher } from 'undici';
 import { fakeJson } from '#/__tests__/faker';
 import {
   createTestApplication,
@@ -19,15 +27,14 @@ import { CircuitBreakerModule } from '#/datasources/circuit-breaker/circuit-brea
 import { CircuitBreakerService } from '#/datasources/circuit-breaker/circuit-breaker.service';
 import { CircuitBreakerException } from '#/datasources/circuit-breaker/exceptions/circuit-breaker.exception';
 import {
+  type FetchClient,
+  FetchClientToken,
+} from '#/datasources/network/entities/fetch-client.entity';
+import {
   NetworkRequestError,
   NetworkResponseError,
 } from '#/datasources/network/entities/network.error.entity';
-import type { FetchClient } from '#/datasources/network/network.module';
-import {
-  FetchClientToken,
-  NetworkModule,
-} from '#/datasources/network/network.module';
-import { UndiciShutdownHook } from '#/datasources/network/undici.shutdown.hook';
+import { NetworkModule } from '#/datasources/network/network.module';
 import { hashSha1 } from '#/domain/common/utils/utils';
 import {
   type ILoggingService,
@@ -42,8 +49,10 @@ describe('NetworkModule', () => {
   let loggingService: ILoggingService;
   let circuitBreakerService: CircuitBreakerService;
   // fetch response is not mocked but we are only concerned with RequestInit options
-  const fetchMock = vi.fn();
-  vi.spyOn(global, 'fetch').mockImplementation(fetchMock);
+  const fetchMock = jest.fn();
+  jest
+    .spyOn(global, 'fetch')
+    .mockImplementation(fetchMock as unknown as typeof fetch);
 
   async function initApp(cacheInFlightRequests: boolean): Promise<void> {
     const baseConfiguration = configuration();
@@ -55,7 +64,7 @@ describe('NetworkModule', () => {
       },
       circuitBreaker: {
         ...baseConfiguration.circuitBreaker,
-        // Vitest loads .env files (unlike Jest), which set
+        // The test scripts load .env.test, which may set
         // CIRCUIT_BREAKER_ENABLED=false. Force it on so the circuit breaker
         // tests below exercise the intended behaviour regardless of env.
         enabled: true,
@@ -82,7 +91,7 @@ describe('NetworkModule', () => {
       'circuitBreaker.threshold',
     );
     loggingService = moduleFixture.get<ILoggingService>(LoggingService);
-    vi.spyOn(loggingService, 'debug');
+    jest.spyOn(loggingService, 'debug');
     circuitBreakerService = moduleFixture.get<CircuitBreakerService>(
       CircuitBreakerService,
     );
@@ -92,7 +101,7 @@ describe('NetworkModule', () => {
   }
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   describe('without caching', () => {
@@ -634,49 +643,6 @@ describe('NetworkModule', () => {
       ).rejects.toThrow(CircuitBreakerException);
 
       expect(fetchMock).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('Undici global dispatcher setup', () => {
-    beforeAll(async () => {
-      await initApp(false);
-    });
-
-    it('sets up Undici Agent as global dispatcher', () => {
-      const globalDispatcher = getGlobalDispatcher();
-
-      // Verify the global dispatcher is our configured Undici Agent
-      expect(globalDispatcher).toBeDefined();
-      expect(globalDispatcher.constructor.name).toBe('Agent');
-
-      // Note: Node.js's global fetch uses the global dispatcher set by setGlobalDispatcher()
-      // This is a documented behavior of Node.js v18+ fetch implementation
-    });
-
-    it('provides shutdown hook for graceful connection cleanup', async () => {
-      const moduleFixture: TestingModule = await Test.createTestingModule({
-        imports: [
-          NetworkModule,
-          ClsModule.forRoot({ global: true }),
-          RequestScopedLoggingModule,
-          ConfigurationModule.register(configuration),
-          CircuitBreakerModule,
-        ],
-      }).compile();
-
-      const shutdownHook =
-        moduleFixture.get<UndiciShutdownHook>(UndiciShutdownHook);
-      expect(shutdownHook).toBeDefined();
-
-      // Spy on the agent's close method
-      const agent = getGlobalDispatcher();
-      const closeSpy = vi.spyOn(agent, 'close');
-
-      // Trigger module destruction
-      await moduleFixture.close();
-
-      expect(closeSpy).toHaveBeenCalled();
-      closeSpy.mockRestore();
     });
   });
 });

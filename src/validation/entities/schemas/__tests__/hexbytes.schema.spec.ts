@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { describe, expect, it } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { HexBytesSchema } from '#/validation/entities/schemas/hexbytes.schema';
 

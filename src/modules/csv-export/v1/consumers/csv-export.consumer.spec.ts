@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import type { Job } from 'bullmq';
-import type { MockedObject } from 'vitest';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import { LogType } from '#/domain/common/entities/log-type.entity';
 import { CSV_EXPORT_WORKER_CONCURRENCY } from '#/domain/common/jobs.constants';
 import type { ILoggingService } from '#/logging/logging.interface';
@@ -18,23 +19,23 @@ import type {
 } from '#/modules/csv-export/v1/entities/csv-export-job-data.entity';
 
 const csvExportService = {
-  export: vi.fn(),
+  export: jest.fn(),
 } as MockedObject<CsvExportService>;
-const mockCsvExportService = vi.mocked(csvExportService);
+const mockCsvExportService = mocked(csvExportService);
 
 const loggingService = {
-  debug: vi.fn(),
-  info: vi.fn(),
-  warn: vi.fn(),
-  error: vi.fn(),
+  debug: jest.fn(),
+  info: jest.fn(),
+  warn: jest.fn(),
+  error: jest.fn(),
 } as MockedObject<ILoggingService>;
-const mockLoggingService = vi.mocked(loggingService);
+const mockLoggingService = mocked(loggingService);
 
 describe('CsvExportConsumer', () => {
   let consumer: CsvExportConsumer;
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
     consumer = new CsvExportConsumer(mockLoggingService, mockCsvExportService);
   });
 
@@ -47,7 +48,7 @@ describe('CsvExportConsumer', () => {
         timestamp: faker.date.recent().getTime(),
         data: jobData,
         attemptsMade: 1,
-        updateProgress: vi.fn().mockResolvedValue(undefined),
+        updateProgress: jest.fn().mockResolvedValue(undefined),
       } as unknown as Job<CsvExportJobData, CsvExportJobResponse>;
 
       mockCsvExportService.export.mockResolvedValue(

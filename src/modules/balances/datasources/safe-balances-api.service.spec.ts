@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import type { MockedObject } from 'vitest';
 import { errorStatusCodeExcluding } from '#/__tests__/faker';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
 import type { CacheFirstDataSource } from '#/datasources/cache/cache.first.data.source';
 import type { ICacheService } from '#/datasources/cache/cache.service.interface';
@@ -19,21 +20,21 @@ import type { IPricesApi } from '#/modules/balances/datasources/prices-api.inter
 import { SafeBalancesApi } from '#/modules/balances/datasources/safe-balances-api.service';
 import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
 
-const mockDataSource = vi.mocked({
-  get: vi.fn(),
+const mockDataSource = mocked({
+  get: jest.fn(),
 } as MockedObject<CacheFirstDataSource>);
 
-const mockCacheService = vi.mocked({
-  deleteByKey: vi.fn(),
+const mockCacheService = mocked({
+  deleteByKey: jest.fn(),
 } as unknown as MockedObject<ICacheService>);
 
-const mockCoingeckoApi = vi.mocked({
-  getNativeCoinPrice: vi.fn(),
-  getTokenPrices: vi.fn(),
+const mockCoingeckoApi = mocked({
+  getNativeCoinPrice: jest.fn(),
+  getTokenPrices: jest.fn(),
 } as unknown as MockedObject<IPricesApi>);
 
-const mockNetworkService = vi.mocked({
-  get: vi.fn(),
+const mockNetworkService = mocked({
+  get: jest.fn(),
 } as MockedObject<INetworkService>);
 
 describe('SafeBalancesApi banned-Safe error funnel', () => {
@@ -42,7 +43,7 @@ describe('SafeBalancesApi banned-Safe error funnel', () => {
   const baseUrl = faker.internet.url({ appendSlash: false });
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
 
     const fakeConfigurationService = new FakeConfigurationService();
     fakeConfigurationService.set('application.isProduction', true);

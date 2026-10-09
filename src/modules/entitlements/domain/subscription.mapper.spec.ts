@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { subscriptionPlanBuilder } from '#/datasources/billing-api/entities/__tests__/plan.builder';
 import { subscriptionBuilder } from '#/datasources/billing-api/entities/__tests__/subscription.builder';
 import { webhookEventBuilder } from '#/modules/billing/domain/entities/__tests__/webhook-event.builder';
@@ -23,8 +24,8 @@ describe('subscription.mapper', () => {
   let onError: (message: string) => void;
 
   beforeEach(() => {
-    onWarning = vi.fn<(message: string) => void>();
-    onError = vi.fn<(message: string) => void>();
+    onWarning = jest.fn<(message: string) => void>();
+    onError = jest.fn<(message: string) => void>();
   });
 
   describe('mapEventToSubscription', () => {
@@ -87,7 +88,8 @@ describe('subscription.mapper', () => {
       expect(
         mapEventToSubscription({ event, featureTypeByKey, onWarning, onError }),
       ).toMatchObject({ planCode: null });
-      expect(onError).toHaveBeenCalledExactlyOnceWith(
+      expect(onError).toHaveBeenCalledTimes(1);
+      expect(onError).toHaveBeenCalledWith(
         `Subscription ${event.data?.subscriptionId} carries no planCode in its metadata`,
       );
     });
@@ -244,7 +246,8 @@ describe('subscription.mapper', () => {
           onError,
         })[0],
       ).toMatchObject({ planCode: null });
-      expect(onError).toHaveBeenCalledExactlyOnceWith(
+      expect(onError).toHaveBeenCalledTimes(1);
+      expect(onError).toHaveBeenCalledWith(
         `Subscription ${subscription.id} carries no planCode in its metadata`,
       );
     });

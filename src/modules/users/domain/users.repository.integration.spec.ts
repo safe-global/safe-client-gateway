@@ -1,6 +1,16 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  jest,
+} from 'bun:test';
+import {
   DecryptCommand,
   GenerateDataKeyCommand,
   KMSClient,
@@ -15,7 +25,7 @@ import type { ConfigService } from '@nestjs/config';
 import { mockClient } from 'aws-sdk-client-mock';
 import { DataSource } from 'typeorm';
 import { type Address, getAddress } from 'viem';
-import type { MockedObject } from 'vitest';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
 import configuration from '#/config/entities/__tests__/configuration';
 import { postgresConfig } from '#/config/entities/postgres.config';
@@ -50,10 +60,10 @@ import { fakeEmailAddress } from '#/validation/entities/schemas/__tests__/email-
 import type { EmailAddress } from '#/validation/entities/schemas/email-address.schema';
 
 const mockLoggingService = {
-  debug: vi.fn(),
-  error: vi.fn(),
-  info: vi.fn(),
-  warn: vi.fn(),
+  debug: jest.fn(),
+  error: jest.fn(),
+  info: jest.fn(),
+  warn: jest.fn(),
 } as MockedObject<ILoggingService>;
 
 const UserStatusKeys = getStringEnumKeys(UserStatus);
@@ -107,7 +117,7 @@ describe('UsersRepository', () => {
 
     // Migrate database
     const mockConfigService = {
-      getOrThrow: vi.fn().mockImplementation((key: string) => {
+      getOrThrow: jest.fn().mockImplementation((key: string) => {
         if (key === 'db.migrator.numberOfRetries') {
           return testConfiguration.db.migrator.numberOfRetries;
         }
@@ -137,7 +147,7 @@ describe('UsersRepository', () => {
   });
 
   afterEach(async () => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
 
     const dbWalletRepository = dataSource.getRepository(Wallet);
     const dbUserRepository = dataSource.getRepository(User);
@@ -1491,9 +1501,9 @@ describe('UsersRepository', () => {
       const accessKeyId = faker.string.alphanumeric(20);
       const secretAccessKey = faker.string.alphanumeric(40);
 
-      const configurationService = vi.mocked({
-        get: vi.fn(),
-        getOrThrow: vi.fn(),
+      const configurationService = mocked({
+        get: jest.fn(),
+        getOrThrow: jest.fn(),
       } as MockedObject<IConfigurationService>);
       configurationService.get.mockImplementation((key: string) => {
         if (key === 'encryption.indexKey') {

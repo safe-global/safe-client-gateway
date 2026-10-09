@@ -1,21 +1,22 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
-import type { MockedObject } from 'vitest';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
 import type { INetworkService } from '#/datasources/network/network.service.interface';
 import type { ILoggingService } from '#/logging/logging.interface';
 import { CaptchaService } from '#/routes/captcha/captcha.service';
 import { rawify } from '#/validation/entities/raw.entity';
 
-const mockNetworkService = vi.mocked({
-  post: vi.fn(),
+const mockNetworkService = mocked({
+  post: jest.fn(),
 } as MockedObject<INetworkService>);
 
-const mockLoggingService = vi.mocked({
-  warn: vi.fn(),
-  debug: vi.fn(),
-  error: vi.fn(),
+const mockLoggingService = mocked({
+  warn: jest.fn(),
+  debug: jest.fn(),
+  error: jest.fn(),
 } as MockedObject<ILoggingService>);
 
 describe('CaptchaService', () => {
@@ -23,7 +24,7 @@ describe('CaptchaService', () => {
   let fakeConfigurationService: FakeConfigurationService;
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
   });
 
   describe('when CAPTCHA is disabled', () => {

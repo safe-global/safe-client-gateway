@@ -2,16 +2,14 @@
 
 # Dev container image for safe-client-gateway.
 # Production image is unchanged and lives at the repo-root Dockerfile.
-# Microsoft only publishes major-version tags for this image, so we pin by
-# digest to keep dev environments reproducible. Production currently uses
-# Node 24.21.0 and this digest ships 24.15.0 (`#/` imports need >= 24.14);
-# refresh the digest periodically (or via Renovate/Dependabot) to pick up the
-# latest 24.x patch.
-FROM mcr.microsoft.com/devcontainers/typescript-node:24-bookworm@sha256:14484cf5f183867fbdddd69db1991ee9a82fc50ff378f40344dcc31824eb834e
+# Microsoft only publishes moving tags for this image, so we pin by digest to
+# keep dev environments reproducible; refresh it periodically.
+FROM mcr.microsoft.com/devcontainers/base:bookworm@sha256:3aacff4130e6cf04709f9cab1d7a6d3e1cc4bff6202bc61611831a18d3755673
 
-# Microsoft's image runs as the `node` user by default; switch to root
-# for system installs and to enable Corepack.
-USER root
+# Same Bun release as production (Dockerfile, package.json `packageManager`),
+# taken from the official image rather than a piped install script.
+COPY --from=oven/bun:1.4.2-debian@sha256:4f6e31d1a54d6a3dd312daef655fc998101b5043d52e12592ac293ef04b9bc73 /usr/local/bin/bun /usr/local/bin/bun
+RUN ln -s /usr/local/bin/bun /usr/local/bin/bunx
 
 # Install postgres-client for inspecting db / db-test from inside the container.
 RUN apt-get update \
@@ -19,8 +17,4 @@ RUN apt-get update \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Activate Corepack so Yarn 4.14.1 (pinned in .yarnrc.yml) resolves the
-# project-managed release on first install.
-RUN corepack enable
-
-USER node
+USER vscode

@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { afterAll, beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
 import type { Address } from 'viem';
 import { getAddress } from 'viem';
-import type { Mocked } from 'vitest';
+import type { Mocked } from '#/__tests__/mocks';
 import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
 import { IConfigurationService } from '#/config/configuration.service.interface';
 import { SafeShieldCoreDisabledExceptionFilter } from '#/modules/safe-shield/domain/exception-filters/safe-shield-core-disabled.exception-filter';
@@ -61,7 +62,7 @@ describe('SafeShieldController (Unit)', () => {
   const mockRecipientAddress = getAddress(faker.finance.ethereumAddress());
 
   beforeEach(async () => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
 
     const fakeConfigurationService = new FakeConfigurationService();
     fakeConfigurationService.set('features.safeShieldCoreDisabled', false);
@@ -72,9 +73,9 @@ describe('SafeShieldController (Unit)', () => {
         {
           provide: SafeShieldService,
           useValue: {
-            analyzeRecipient: vi.fn(),
-            analyzeCounterparty: vi.fn(),
-            analyzeThreats: vi.fn(),
+            analyzeRecipient: jest.fn(),
+            analyzeCounterparty: jest.fn(),
+            analyzeThreats: jest.fn(),
           },
         },
         {

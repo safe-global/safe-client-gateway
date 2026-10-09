@@ -2,14 +2,14 @@
 version: 2
 
 updates:
-  - package-ecosystem: 'npm'
+  - package-ecosystem: 'bun'
     directory: '/'
     schedule:
       interval: 'weekly'
       day: 'monday'
     open-pull-requests-limit: 10
     cooldown:
-      default-days: 7 # Aligns with minimumReleaseAge / npmMinimalAgeGate
+      default-days: 7 # Aligns with bunfig.toml's minimumReleaseAge
     groups:
       nest-js:
         patterns:
@@ -21,6 +21,9 @@ updates:
       aws-sdk:
         patterns:
           - '@aws-sdk/*'
+      opentelemetry:
+        patterns:
+          - '@opentelemetry/*'
 
   - package-ecosystem: 'docker'
     directory: '/'
@@ -29,7 +32,7 @@ updates:
       day: 'monday'
     open-pull-requests-limit: 10
     cooldown:
-      default-days: 7 # Aligns with minimumReleaseAge / npmMinimalAgeGate
+      default-days: 7 # Aligns with bunfig.toml's minimumReleaseAge
 
   - package-ecosystem: 'github-actions'
     directory: '/'

@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import type { Address, Hex } from 'viem';
 import { getAddress } from 'viem';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
 import {
   SAFE_QUEUE_SERVICE_MAX_LIMIT,
@@ -46,41 +47,41 @@ import type { TransactionVerifierHelper } from '#/modules/transactions/routes/he
 import { rawify } from '#/validation/entities/raw.entity';
 
 const mockTransactionApiManager = {
-  getApi: vi.fn(),
+  getApi: jest.fn(),
 } as MockedObject<ITransactionApiManager>;
 
 const mockTransactionApi = {
-  getSafesByOwnerV2: vi.fn(),
-  getAllTransactions: vi.fn(),
-  getSafe: vi.fn(),
-  getMultisigTransaction: vi.fn(),
-  getMultisigTransactionWithNoCache: vi.fn(),
-  getMultisigTransactions: vi.fn(),
-  deleteTransaction: vi.fn(),
-  postMultisigTransaction: vi.fn(),
-  clearMultisigTransaction: vi.fn(),
-  clearMultisigTransactions: vi.fn(),
+  getSafesByOwnerV2: jest.fn(),
+  getAllTransactions: jest.fn(),
+  getSafe: jest.fn(),
+  getMultisigTransaction: jest.fn(),
+  getMultisigTransactionWithNoCache: jest.fn(),
+  getMultisigTransactions: jest.fn(),
+  deleteTransaction: jest.fn(),
+  postMultisigTransaction: jest.fn(),
+  clearMultisigTransaction: jest.fn(),
+  clearMultisigTransactions: jest.fn(),
 } as MockedObject<ITransactionApi>;
 
 const mockLoggingService = {
-  error: vi.fn(),
-  warn: vi.fn(),
-  info: vi.fn(),
-  debug: vi.fn(),
+  error: jest.fn(),
+  warn: jest.fn(),
+  info: jest.fn(),
+  debug: jest.fn(),
 } as MockedObject<ILoggingService>;
 
 const mockChainsRepository = {
-  getAllChains: vi.fn(),
+  getAllChains: jest.fn(),
 } as MockedObject<IChainsRepository>;
 
 const mockTransactionVerifier = {
-  verifyApiTransaction: vi.fn(),
-  verifyConfirmation: vi.fn(),
-  verifyProposal: vi.fn(),
+  verifyApiTransaction: jest.fn(),
+  verifyConfirmation: jest.fn(),
+  verifyProposal: jest.fn(),
 } as MockedObject<TransactionVerifierHelper>;
 
 const mockConfigurationService = {
-  getOrThrow: vi.fn(),
+  getOrThrow: jest.fn(),
 } as MockedObject<IConfigurationService>;
 
 const mockSafeQueueService = createMockSafeQueueService();
@@ -112,7 +113,7 @@ describe('SafeRepository', () => {
   }
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
     mockTransactionApiManager.getApi.mockResolvedValue(mockTransactionApi);
     repository = createRepository({ safeQueueEnabled: true });
   });

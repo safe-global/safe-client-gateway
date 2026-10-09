@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import {
   getRouteUrl,
@@ -8,7 +9,7 @@ import {
 
 describe('http-request.utils tests', () => {
   describe('getRouteUrl tests', () => {
-    const get = vi.fn<(name: string) => string | undefined>();
+    const get = jest.fn<(name: string) => string | undefined>();
     const request = {
       get,
       originalUrl: faker.system.filePath(),

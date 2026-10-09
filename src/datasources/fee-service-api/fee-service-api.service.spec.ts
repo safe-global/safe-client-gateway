@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { getAddress, type Hex } from 'viem';
-import type { MockedObject } from 'vitest';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
 import type { CacheFirstDataSource } from '#/datasources/cache/cache.first.data.source';
 import { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
@@ -25,14 +26,14 @@ import { PriceSource } from '#/modules/fees/domain/entities/price-source.entity'
 import { feePreviewTransactionDtoBuilder } from '#/modules/fees/routes/entities/__tests__/fee-preview-transaction.dto.builder';
 import { rawify } from '#/validation/entities/raw.entity';
 
-const mockNetworkService = vi.mocked({
-  get: vi.fn(),
-  post: vi.fn(),
+const mockNetworkService = mocked({
+  get: jest.fn(),
+  post: jest.fn(),
 } as MockedObject<INetworkService>);
 
-const mockDataSource = vi.mocked({
-  get: vi.fn(),
-  post: vi.fn(),
+const mockDataSource = mocked({
+  get: jest.fn(),
+  post: jest.fn(),
 } as MockedObject<CacheFirstDataSource>);
 
 describe('FeeServiceApi', () => {
@@ -42,7 +43,7 @@ describe('FeeServiceApi', () => {
   let baseUri: string;
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
 
     httpErrorFactory = new HttpErrorFactory();
     fakeConfigurationService = new FakeConfigurationService();

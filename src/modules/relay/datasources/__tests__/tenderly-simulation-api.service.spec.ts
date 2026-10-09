@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress, type Hex, toEventSelector } from 'viem';
-import type { Mock, MockedObject } from 'vitest';
+import { type Mock, type MockedObject, mocked } from '#/__tests__/mocks';
 import {
   NetworkRequestError,
   NetworkResponseError,
@@ -17,23 +18,23 @@ const SAFE_EXECUTION_FAILURE_TOPIC = toEventSelector(
 
 const SIMULATION_URL = 'https://simulation.safe.global/';
 
-const mockNetworkService = vi.mocked({
-  post: vi.fn(),
+const mockNetworkService = mocked({
+  post: jest.fn(),
 } as unknown as MockedObject<INetworkService>);
 
 const mockPublicClient = {
-  getBlock: vi.fn(),
+  getBlock: jest.fn(),
 };
 
-const mockBlockchainApiManager = vi.mocked({
-  getApi: vi.fn(),
+const mockBlockchainApiManager = mocked({
+  getApi: jest.fn(),
 } as unknown as MockedObject<IBlockchainApiManager>);
 
-const mockLoggingService = vi.mocked({
-  info: vi.fn(),
-  warn: vi.fn(),
-  error: vi.fn(),
-  debug: vi.fn(),
+const mockLoggingService = mocked({
+  info: jest.fn(),
+  warn: jest.fn(),
+  error: jest.fn(),
+  debug: jest.fn(),
 } as MockedObject<ILoggingService>);
 
 function fakeAddress(): Address {
@@ -83,7 +84,7 @@ describe('TenderlySimulationApi', () => {
   let blockGasLimit: bigint;
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
 
     blockGasLimit = BigInt(
       faker.number.int({ min: 30_000_000, max: 50_000_000 }),
@@ -315,7 +316,7 @@ describe('TenderlySimulationApi', () => {
     });
 
     it('refetches the block gas limit when the cache entry has expired', async () => {
-      vi.useFakeTimers();
+      jest.useFakeTimers();
       try {
         const args = fakeArgs();
         mockNetworkService.post.mockResolvedValue({
@@ -324,12 +325,12 @@ describe('TenderlySimulationApi', () => {
         } as never);
 
         await target.simulate(args);
-        vi.advanceTimersByTime(31_000);
+        jest.advanceTimersByTime(31_000);
         await target.simulate(args);
 
         expect(mockPublicClient.getBlock as Mock).toHaveBeenCalledTimes(2);
       } finally {
-        vi.useRealTimers();
+        jest.useRealTimers();
       }
     });
 

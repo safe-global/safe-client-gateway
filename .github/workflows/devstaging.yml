@@ -33,7 +33,7 @@ concurrency:
 jobs:
   # Same reusable the PR gate calls. Reported as `ci / <job>`.
   ci:
-    uses: ./.github/workflows/_ci-node.yml
+    uses: ./.github/workflows/_ci.yml
     secrets: inherit
 
   prepare:

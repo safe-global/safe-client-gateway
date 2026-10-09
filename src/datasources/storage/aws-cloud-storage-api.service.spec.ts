@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest, mock } from 'bun:test';
 import { Readable } from 'node:stream';
 import { GetObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';
@@ -7,22 +8,27 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { faker } from '@faker-js/faker';
 import { sdkStreamMixin } from '@smithy/util-stream';
 import { mockClient } from 'aws-sdk-client-mock';
-import type { MockedClass, MockedFunction, MockedObject } from 'vitest';
+import {
+  type MockedClass,
+  type MockedFunction,
+  type MockedObject,
+  mocked,
+} from '#/__tests__/mocks';
 import { AwsCloudStorageApiService } from '#/datasources/storage/aws-cloud-storage-api.service';
 import type { ILoggingService } from '#/logging/logging.interface';
 
-vi.mock('@aws-sdk/s3-request-presigner', () => ({
-  getSignedUrl: vi.fn(),
+mock.module('@aws-sdk/s3-request-presigner', () => ({
+  getSignedUrl: jest.fn(),
 }));
 
-vi.mock('@aws-sdk/lib-storage', () => ({
-  Upload: vi.fn(),
+mock.module('@aws-sdk/lib-storage', () => ({
+  Upload: jest.fn(),
 }));
 
 const loggingService = {
-  debug: vi.fn(),
+  debug: jest.fn(),
 } as MockedObject<ILoggingService>;
-const mockLoggingService = vi.mocked(loggingService);
+const mockLoggingService = mocked(loggingService);
 
 describe('AwsCloudStorageApiService', () => {
   let target: AwsCloudStorageApiService;
@@ -34,7 +40,7 @@ describe('AwsCloudStorageApiService', () => {
   const basePath = 'base/path';
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
 
     target = new AwsCloudStorageApiService(
       accessKeyId,
@@ -117,13 +123,13 @@ describe('AwsCloudStorageApiService', () => {
     });
 
     it('should create upload stream and return upload promise', async () => {
-      const mockDone = vi.fn().mockResolvedValue({ ETag });
+      const mockDone = jest.fn().mockResolvedValue({ ETag });
 
       mockUpload.mockImplementation(function () {
         return {
           done: mockDone,
-          on: vi.fn(),
-          off: vi.fn(),
+          on: jest.fn(),
+          off: jest.fn(),
         } as unknown as Upload;
       });
 
@@ -151,9 +157,9 @@ describe('AwsCloudStorageApiService', () => {
 
       mockUpload.mockImplementation(function () {
         return {
-          done: vi.fn().mockRejectedValue(uploadError),
-          on: vi.fn(),
-          off: vi.fn(),
+          done: jest.fn().mockRejectedValue(uploadError),
+          on: jest.fn(),
+          off: jest.fn(),
         } as unknown as Upload;
       });
 
@@ -182,9 +188,9 @@ describe('AwsCloudStorageApiService', () => {
 
       mockUpload.mockImplementation(function () {
         return {
-          done: vi.fn().mockResolvedValue({}),
-          on: vi.fn(),
-          off: vi.fn(),
+          done: jest.fn().mockResolvedValue({}),
+          on: jest.fn(),
+          off: jest.fn(),
         } as unknown as Upload;
       });
 
@@ -201,12 +207,12 @@ describe('AwsCloudStorageApiService', () => {
     });
 
     it('should track httpUploadProgress event on upload', async () => {
-      const mockOn = vi.fn();
-      const mockOff = vi.fn();
+      const mockOn = jest.fn();
+      const mockOff = jest.fn();
 
       mockUpload.mockImplementation(function () {
         return {
-          done: vi.fn().mockResolvedValue({ ETag }),
+          done: jest.fn().mockResolvedValue({ ETag }),
           on: mockOn,
           off: mockOff,
         } as unknown as Upload;

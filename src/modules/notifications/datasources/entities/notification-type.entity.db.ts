@@ -4,6 +4,7 @@ import {
   Entity,
   OneToMany,
   PrimaryGeneratedColumn,
+  type Relation,
   Unique,
 } from 'typeorm';
 import { z } from 'zod';
@@ -17,7 +18,8 @@ export const NotificationTypeSchema = z.object({
   id: z.number(),
   name: z.enum(NotificationTypeEnum),
   notification_subscription_notification_type: z.array(
-    NotificationSubscriptionNotificationTypeSchema,
+    // Lazy: the two entity modules import each other.
+    z.lazy(() => NotificationSubscriptionNotificationTypeSchema),
   ),
 });
 
@@ -41,5 +43,7 @@ export class NotificationType
       notificationSubscriptionType.notification_type,
     { onDelete: 'CASCADE' },
   )
-  notification_subscription_notification_type!: Array<NotificationSubscriptionNotificationType>;
+  notification_subscription_notification_type!: Relation<
+    Array<NotificationSubscriptionNotificationType>
+  >;
 }

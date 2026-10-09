@@ -2,6 +2,7 @@
   "recommendations": [
     "biomejs.biome",
     "TypeScriptTeam.native-preview",
+    "oven.bun-vscode",
     "Anthropic.claude-code",
     "openai.chatgpt"
   ]

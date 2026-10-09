@@ -23,10 +23,10 @@
  * Usage:
  *   # local key
  *   BILLING_WEBHOOK_JWT_PRIVATE_KEY="$(cat ec-priv.pem)" \
- *     yarn generate-token --sub billing-service --expires-in 1825
+ *     bun run generate-token --sub billing-service --expires-in 1825
  *   # KMS
  *   AWS_REGION=<region> BILLING_WEBHOOK_JWT_KMS_KEY_ID=<arn> \
- *     yarn generate-token --sub billing-service
+ *     bun run generate-token --sub billing-service
  *
  * See src/modules/billing/README.md for the full usage and provisioning guide.
  */

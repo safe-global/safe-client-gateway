@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { ContractMapper } from '#/modules/contracts/routes/mappers/contract.mapper';
 import {
   abiBuilder,
@@ -9,7 +10,7 @@ describe('Contract Mapper', () => {
   let mapper: ContractMapper;
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
 
     mapper = new ContractMapper();
   });

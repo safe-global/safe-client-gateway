@@ -4,7 +4,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import type { Algorithm, JwtPayload } from 'jsonwebtoken';
 import { IConfigurationService } from '#/config/configuration.service.interface';
 import { JWT_HS_ALGORITHM } from '#/datasources/jwt/jwt.constants';
-import { JwtClient } from '#/datasources/jwt/jwt.module';
+import { type JwtClient } from '#/datasources/jwt/jwt.module';
 import { IJwtService } from '#/datasources/jwt/jwt.service.interface';
 
 @Injectable()

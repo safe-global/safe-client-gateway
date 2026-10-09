@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
-import type { MockedObject } from 'vitest';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
 import { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
 import { NetworkResponseError } from '#/datasources/network/entities/network.error.entity';
@@ -11,10 +12,10 @@ import { PushwooshApi } from '#/modules/email/pushwoosh/datasources/pushwoosh-ap
 import type { CreateEmailMessageDto } from '#/modules/email/pushwoosh/domain/entities/create-email-message.dto.entity';
 
 const networkService = {
-  post: vi.fn(),
-  delete: vi.fn(),
+  post: jest.fn(),
+  delete: jest.fn(),
 } as MockedObject<INetworkService>;
-const mockNetworkService = vi.mocked(networkService);
+const mockNetworkService = mocked(networkService);
 
 describe('PushwooshApi', () => {
   let service: PushwooshApi;
@@ -29,7 +30,7 @@ describe('PushwooshApi', () => {
   const configKey = 'email.pushwoosh';
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
 
     pushwooshApplicationCode = faker.string.alphanumeric();
     pushwooshApiKey = faker.string.hexadecimal({ length: 32 });

@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import type { Address, Hex } from 'viem';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import type { ILoggingService } from '#/logging/logging.interface';
 import {
   batchWithdrawCLFeeEncoder,
@@ -14,10 +15,10 @@ import {
 import { KilnDecoder } from '#/modules/staking/domain/contracts/decoders/kiln-decoder.helper';
 
 const mockLoggingService = {
-  debug: vi.fn(),
-  error: vi.fn(),
-  info: vi.fn(),
-  warn: vi.fn(),
+  debug: jest.fn(),
+  error: jest.fn(),
+  info: jest.fn(),
+  warn: jest.fn(),
 } as MockedObject<ILoggingService>;
 
 describe('KilnDecoder', () => {

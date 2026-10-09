@@ -82,7 +82,7 @@ The same config-driven `attempts`/`backoff`/retention shape is expected of every
 
 **Why:** an accumulated buffer holds the entire output in process memory at once, so memory use scales with the size of the export rather than with a fixed buffer independent of it.
 
-**Canonical example:** `src/modules/csv-export/v1/csv-export.service.ts`'s `export` pipes an async-generator-backed `Readable` (`transactionPagesGenerator`) through `CsvService.toCsv` into the upload stream using Node's `stream/promises` `pipeline`; no page of transactions, and no complete export, is ever held as a single in-memory string or array.
+**Canonical example:** `src/modules/csv-export/v1/csv-export.service.ts`'s `export` pipes an async-generator-backed `Readable` (`transactionPagesGenerator`) through `CsvService.toCsv` into the upload stream using `pipeline` from `node:stream/promises` (Node's stream API, which Bun implements); no page of transactions, and no complete export, is ever held as a single in-memory string or array.
 
 The same discipline covers the stream's own error handling: `export` destroys the upload stream on a pipeline failure (`uploadStream.destroy(error)`) specifically so the other side of the pipe unwinds instead of hanging open.
 

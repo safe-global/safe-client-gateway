@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { afterEach, beforeEach, describe, expect, it, jest } from 'bun:test';
 import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import {
@@ -13,8 +14,8 @@ import {
 import { Test, type TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import type { Address } from 'viem';
-import type { MockedObject } from 'vitest';
 import { ZodError } from 'zod';
+import type { MockedObject } from '#/__tests__/mocks';
 import {
   createTestApplication,
   initTestApplication,
@@ -33,10 +34,10 @@ import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 const expectedDatasourceErrorCode = 500;
 
 const mockLoggingService: MockedObject<ILoggingService> = {
-  info: vi.fn(),
-  debug: vi.fn(),
-  error: vi.fn(),
-  warn: vi.fn(),
+  info: jest.fn(),
+  debug: jest.fn(),
+  error: jest.fn(),
+  warn: jest.fn(),
 };
 
 class ErrorWithCode extends Error {
@@ -108,7 +109,7 @@ describe('RouteLoggerInterceptor tests', () => {
   let app: INestApplication<Server>;
 
   beforeEach(async () => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       controllers: [TestController],
@@ -220,17 +221,8 @@ describe('RouteLoggerInterceptor tests', () => {
     expect(mockLoggingService.info).toHaveBeenCalledWith({
       chain_id: null,
       client_ip: null,
-      detail: expect.stringMatching(
-        JSON.stringify([
-          {
-            code: expect.any(String),
-            expected: expect.any(String),
-            received: expect.any(String),
-            path: expect.any(Array),
-            message: expect.any(String),
-          },
-        ]),
-      ),
+      // The serialised Zod issues of the rejected input.
+      detail: expect.stringContaining('"code": "invalid_type"'),
       method: 'GET',
       path: '/test/validation-error',
       response_time_ms: expect.any(Number),

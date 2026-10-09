@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { jest } from 'bun:test';
 import { Module } from '@nestjs/common';
-import type { MockedObject } from 'vitest';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import { IIdentityApi } from '#/domain/interfaces/identity-api.interface';
 
 @Module({
@@ -9,8 +10,8 @@ import { IIdentityApi } from '#/domain/interfaces/identity-api.interface';
     {
       provide: IIdentityApi,
       useFactory: (): MockedObject<IIdentityApi> =>
-        vi.mocked({
-          checkEligibility: vi.fn(),
+        mocked({
+          checkEligibility: jest.fn(),
         }),
     },
   ],

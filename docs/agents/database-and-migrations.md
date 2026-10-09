@@ -42,6 +42,8 @@ The migrator that runs these files on startup — its retry behaviour, and the `
 
 **Canonical example:** `src/modules/users/datasources/entities/users.entity.db.ts`'s `class User implements DomainUser` pairs with `UserSchema = RowSchema.extend({ ... })` in `src/modules/users/domain/entities/user.entity.ts`, so the `id`/`createdAt`/`updatedAt` triple is defined once, in `RowSchema`, and inherited rather than repeated per entity. See `docs/agents/module-structure.md`'s File naming rule for the `.entity.db.ts` suffix convention itself.
 
+A relation property (`@ManyToOne`, `@OneToMany`, `@OneToOne`, `@ManyToMany`) is typed `Relation<T>` (imported as `type Relation` from `typeorm`), e.g. `wallets!: Relation<Array<Wallet>>` in the same file. Bun loads entities as ES modules, where two entity files that reference each other form an import cycle; `Relation<T>` keeps the related class out of the property's emitted decorator metadata, so the cycle doesn't fail at load with a temporal-dead-zone error. When the two entities' Zod schemas also reference each other, wrap the cross-module reference in `z.lazy(() => OtherSchema)` (e.g. `src/modules/notifications/datasources/entities/notification-type.entity.db.ts`).
+
 An `@Index()` decorator on an entity column, such as the same file's `idx_user_status`, is metadata only: with `synchronize` always `false` (see Raw SQL migrations only, above), decorating a column does not create the index, so the migration that adds the column still needs its own `CREATE INDEX` to match (see Index in the same migration, above).
 
 ### No `SELECT *`
@@ -81,7 +83,7 @@ The `CachedQueryResolver` variant: `src/modules/targeted-messaging/datasources/t
 
 **Rule:** The standing sweep for a change to a repository's constructor parameters is `grep -rnF "new <RepoClass>(" src --include='*.integration.spec.ts'` (`-F` keeps the class name literal, so a name containing a regex metacharacter cannot skew the sweep); every call site the grep returns gets updated to match before the change is complete.
 
-**Why:** `*.integration.spec.ts` files hand-construct the repositories they exercise with `new`, rather than resolving them through Nest's DI container, and Vitest strips types without checking them, so a green test run confirms nothing about whether these call sites still compile. `yarn typecheck` (`tsc -p tsconfig.json`, specs included, run in CI) is what catches an un-swept constructor change; `yarn build` does not, because `tsconfig.build.json` excludes every spec file (`**/*spec.ts`, `**/__tests__/*`).
+**Why:** `*.integration.spec.ts` files hand-construct the repositories they exercise with `new`, rather than resolving them through Nest's DI container, and Bun strips types without checking them when it runs the specs, so a green test run confirms nothing about whether these call sites still compile. `bun run typecheck` (`tsc --noEmit -p tsconfig.json`, specs included, run in CI) is what catches an un-swept constructor change.
 
 **Canonical example:** `grep -rn "new WalletsRepository(" src --include='*.integration.spec.ts'` returns several call sites across multiple files — its own `wallets` spec, plus `users`, `users/members`, and `spaces/audit` — which is why the sweep greps all of `src` rather than only the changed repository's own module.
 

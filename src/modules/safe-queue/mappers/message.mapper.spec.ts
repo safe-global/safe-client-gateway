@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { describe, expect, it } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import { safeQueueMessageBuilder } from '#/modules/safe-queue/entities/__tests__/safe-queue-message.builder';

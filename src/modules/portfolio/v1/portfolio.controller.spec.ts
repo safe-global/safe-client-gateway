@@ -1,23 +1,24 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import type { GetPortfolioDto } from '#/modules/portfolio/v1/entities/get-portfolio.dto.entity';
 import type { Portfolio } from '#/modules/portfolio/v1/entities/portfolio.entity';
 import { PortfolioController } from '#/modules/portfolio/v1/portfolio.controller';
 import type { PortfolioApiService } from '#/modules/portfolio/v1/portfolio.service';
 
 const service = {
-  getPortfolio: vi.fn(),
-  clearZerionCaches: vi.fn(),
+  getPortfolio: jest.fn(),
+  clearZerionCaches: jest.fn(),
 } as MockedObject<PortfolioApiService>;
 
 describe('PortfolioController', () => {
   let controller: PortfolioController;
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
     controller = new PortfolioController(service);
   });
 

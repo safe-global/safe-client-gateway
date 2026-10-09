@@ -16,7 +16,7 @@ import {
   ModuleEnforcementDto,
   NativeTokenMetadataDto,
   SafeRefDto,
-  SafeRefResponse,
+  type SafeRefResponse,
   SpendingLimitTokenMetadataSchema,
 } from '#/modules/policies/routes/entities/policy.dto.entity';
 

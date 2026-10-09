@@ -1,22 +1,23 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
 import type { ICacheService } from '#/datasources/cache/cache.service.interface';
 import type { ILoggingService } from '#/logging/logging.interface';
 import { MaliciousAddressScanner } from '#/modules/safe-shield/malicious-address-scan/malicious-address-scanner.service';
 import type { IBlockaidApi } from '#/modules/safe-shield/threat-analysis/blockaid/blockaid-api.interface';
 
-const scanAddressBulk = vi.fn();
+const scanAddressBulk = jest.fn();
 const mockBlockaidApi = { scanAddressBulk } as MockedObject<IBlockaidApi>;
 
-const hGet = vi.fn();
-const hSet = vi.fn();
+const hGet = jest.fn();
+const hSet = jest.fn();
 const mockCacheService = { hGet, hSet } as MockedObject<ICacheService>;
 
 const mockLoggingService = {
-  warn: vi.fn(),
+  warn: jest.fn(),
 } as MockedObject<ILoggingService>;
 
 const fakeConfigurationService = new FakeConfigurationService();
@@ -36,7 +37,7 @@ describe('MaliciousAddressScanner', () => {
   let scanner: MaliciousAddressScanner;
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
     hGet.mockResolvedValue(null);
     hSet.mockResolvedValue(undefined);
     scanner = new MaliciousAddressScanner(
@@ -91,7 +92,7 @@ describe('MaliciousAddressScanner', () => {
     const result = await scanner.getMaliciousAddresses('1', [lowerAddress()]);
 
     expect(result.size).toBe(0);
-    expect(mockLoggingService.warn).toHaveBeenCalledOnce();
+    expect(mockLoggingService.warn).toHaveBeenCalledTimes(1);
   });
 
   it('skips unsupported chains without calling Blockaid', async () => {
@@ -117,7 +118,7 @@ describe('MaliciousAddressScanner', () => {
 
     await scanner.getMaliciousAddresses('1', [address, address.toUpperCase()]);
 
-    expect(scanAddressBulk).toHaveBeenCalledOnce();
+    expect(scanAddressBulk).toHaveBeenCalledTimes(1);
     expect(scanAddressBulk).toHaveBeenCalledWith('ethereum', [address]);
   });
 
@@ -182,7 +183,7 @@ describe('MaliciousAddressScanner', () => {
 
     const result = await scanner.getMaliciousAddresses('1', [malicious]);
 
-    expect(scanAddressBulk).toHaveBeenCalledOnce();
+    expect(scanAddressBulk).toHaveBeenCalledTimes(1);
     expect(result).toEqual(new Set([malicious]));
   });
 });

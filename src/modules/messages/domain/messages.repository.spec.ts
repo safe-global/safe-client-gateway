@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress, type Hash, type Hex } from 'viem';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
 import { SAFE_QUEUE_SERVICE_MAX_LIMIT } from '#/domain/common/constants';
 import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
@@ -25,36 +26,36 @@ function safeQueueMessageBuilder(chainId: number): SafeQueueMessage {
 }
 
 const mockTransactionApiManager = {
-  getApi: vi.fn(),
+  getApi: jest.fn(),
 } as MockedObject<ITransactionApiManager>;
 
 const mockTransactionApi = {
-  getMessageByHash: vi.fn(),
-  getMessagesBySafe: vi.fn(),
-  postMessage: vi.fn(),
-  postMessageSignature: vi.fn(),
-  clearMessagesBySafe: vi.fn(),
-  clearMessagesByHash: vi.fn(),
+  getMessageByHash: jest.fn(),
+  getMessagesBySafe: jest.fn(),
+  postMessage: jest.fn(),
+  postMessageSignature: jest.fn(),
+  clearMessagesBySafe: jest.fn(),
+  clearMessagesByHash: jest.fn(),
 } as MockedObject<ITransactionApi>;
 
 const mockSafeRepository = {
-  getSafe: vi.fn(),
+  getSafe: jest.fn(),
 } as MockedObject<ISafeRepository>;
 
 const mockConfigurationService = {
-  getOrThrow: vi.fn(),
+  getOrThrow: jest.fn(),
 } as MockedObject<IConfigurationService>;
 
 const mockLoggingService = {
-  info: vi.fn(),
-  warn: vi.fn(),
-  error: vi.fn(),
-  debug: vi.fn(),
+  info: jest.fn(),
+  warn: jest.fn(),
+  error: jest.fn(),
+  debug: jest.fn(),
 } as MockedObject<ILoggingService>;
 
 const mockMessageVerifier = {
-  verifyCreation: vi.fn(),
-  verifyUpdate: vi.fn(),
+  verifyCreation: jest.fn(),
+  verifyUpdate: jest.fn(),
 } as MockedObject<MessageVerifierHelper>;
 
 describe('MessagesRepository (queue service enabled)', () => {
@@ -62,7 +63,7 @@ describe('MessagesRepository (queue service enabled)', () => {
   let target: MessagesRepository;
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
     mockConfigurationService.getOrThrow.mockImplementation((key) => {
       if (key === 'features.safeQueueService') return true;
       throw new Error(`Unexpected key: ${key}`);

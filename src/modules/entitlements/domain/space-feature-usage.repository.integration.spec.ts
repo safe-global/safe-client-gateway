@@ -1,10 +1,19 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  describe,
+  expect,
+  it,
+  jest,
+} from 'bun:test';
 import { randomUUID } from 'node:crypto';
 import { faker } from '@faker-js/faker';
 import type { ConfigService } from '@nestjs/config';
 import { DataSource, type ObjectLiteral } from 'typeorm';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import configuration from '#/config/entities/__tests__/configuration';
 import { postgresConfig } from '#/config/entities/postgres.config';
 import { DatabaseMigrator } from '#/datasources/db/v2/database-migrator.service';
@@ -26,10 +35,10 @@ import { User } from '#/modules/users/datasources/entities/users.entity.db';
 import { Wallet } from '#/modules/wallets/datasources/entities/wallets.entity.db';
 
 const mockLoggingService = {
-  debug: vi.fn(),
-  error: vi.fn(),
-  info: vi.fn(),
-  warn: vi.fn(),
+  debug: jest.fn(),
+  error: jest.fn(),
+  info: jest.fn(),
+  warn: jest.fn(),
 } as MockedObject<ILoggingService>;
 
 describe('SpaceFeatureUsageRepository', () => {
@@ -85,7 +94,7 @@ describe('SpaceFeatureUsageRepository', () => {
     await postgresDatabaseService.initializeDatabaseConnection();
 
     const mockConfigService = {
-      getOrThrow: vi.fn().mockImplementation((key: string) => {
+      getOrThrow: jest.fn().mockImplementation((key: string) => {
         if (key === 'db.migrator.numberOfRetries') {
           return testConfiguration.db.migrator.numberOfRetries;
         }
@@ -107,7 +116,7 @@ describe('SpaceFeatureUsageRepository', () => {
   });
 
   afterEach(async () => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
 
     // Dependency order: a usage row references both, and the feature's FK
     // is ON DELETE RESTRICT.

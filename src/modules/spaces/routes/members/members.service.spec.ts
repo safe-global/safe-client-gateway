@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import {
   ConflictException,
@@ -7,7 +8,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { type Address, getAddress } from 'viem';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
 import {
   oidcAuthPayloadDtoBuilder,
@@ -35,14 +36,14 @@ const MAX_INVITES = 10;
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 const membersRepositoryMock = {
-  findOne: vi.fn(),
-  findAuthorizedMembersOrFail: vi.fn(),
-  findSelfMembershipOrFail: vi.fn(),
-  findOneOrFail: vi.fn(),
-  inviteUsers: vi.fn(),
-  renewInvite: vi.fn(),
-  updateRole: vi.fn(),
-  removeUser: vi.fn(),
+  findOne: jest.fn(),
+  findAuthorizedMembersOrFail: jest.fn(),
+  findSelfMembershipOrFail: jest.fn(),
+  findOneOrFail: jest.fn(),
+  inviteUsers: jest.fn(),
+  renewInvite: jest.fn(),
+  updateRole: jest.fn(),
+  removeUser: jest.fn(),
 } as MockedObject<IMembersRepository>;
 
 /** The builders cannot carry the derived `address` — no DB column backs it. */
@@ -54,12 +55,12 @@ function memberWithAddress(
 }
 
 const configurationServiceMock = {
-  getOrThrow: vi.fn(),
+  getOrThrow: jest.fn(),
 } as MockedObject<IConfigurationService>;
 
 const spaceInviteEmailServiceMock = {
-  enqueueInviteEmails: vi.fn(),
-  enqueueRenewalEmail: vi.fn(),
+  enqueueInviteEmails: jest.fn(),
+  enqueueRenewalEmail: jest.fn(),
 } as MockedObject<SpaceInviteEmailService>;
 
 describe('MembersService', () => {
@@ -67,7 +68,7 @@ describe('MembersService', () => {
   let memberEncryptionServiceMock: MockedObject<MemberEncryptionService>;
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
     memberEncryptionServiceMock = createMockMemberEncryptionService();
     configurationServiceMock.getOrThrow.mockImplementation((key: string) => {
       switch (key) {
@@ -433,7 +434,8 @@ describe('MembersService', () => {
           .with('status', 'ACTIVE')
           .build();
         const now = new Date('2026-01-15T00:00:00Z');
-        vi.useFakeTimers().setSystemTime(now);
+        jest.useFakeTimers();
+        jest.setSystemTime(now);
 
         membersRepositoryMock.findOne.mockResolvedValue(adminMember);
         membersRepositoryMock.inviteUsers.mockResolvedValue([]);
@@ -453,7 +455,7 @@ describe('MembersService', () => {
             spaceInviteEmailServiceMock.enqueueInviteEmails,
           ).toHaveBeenCalledWith({ users: [], spaceId });
         } finally {
-          vi.useRealTimers();
+          jest.useRealTimers();
         }
       },
     );
@@ -602,7 +604,8 @@ describe('MembersService', () => {
         .with('status', 'ACTIVE')
         .build();
       const now = new Date('2026-01-15T00:00:00Z');
-      vi.useFakeTimers().setSystemTime(now);
+      jest.useFakeTimers();
+      jest.setSystemTime(now);
 
       membersRepositoryMock.findOne.mockResolvedValue(adminMember);
       membersRepositoryMock.findOneOrFail.mockResolvedValue(targetMember);
@@ -627,7 +630,7 @@ describe('MembersService', () => {
           actorUserId: Number(authPayload.sub),
         });
       } finally {
-        vi.useRealTimers();
+        jest.useRealTimers();
       }
     });
 

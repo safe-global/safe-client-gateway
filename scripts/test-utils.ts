@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { jest } from 'bun:test';
 import type * as fs from 'node:fs';
-import type { MockedFunction, MockInstance } from 'vitest';
+import type { MockedFunction, MockInstance } from '#/__tests__/mocks';
 
 /**
  * Shared test utilities for env scripts.
@@ -18,13 +19,13 @@ import type { MockedFunction, MockInstance } from 'vitest';
 export function createMockStats(isSymLink: boolean): fs.Stats {
   const date = new Date(0);
   return {
-    isFile: vi.fn().mockReturnValue(false),
-    isDirectory: vi.fn().mockReturnValue(false),
-    isBlockDevice: vi.fn().mockReturnValue(false),
-    isCharacterDevice: vi.fn().mockReturnValue(false),
-    isSymbolicLink: vi.fn().mockReturnValue(isSymLink),
-    isFIFO: vi.fn().mockReturnValue(false),
-    isSocket: vi.fn().mockReturnValue(false),
+    isFile: jest.fn().mockReturnValue(false),
+    isDirectory: jest.fn().mockReturnValue(false),
+    isBlockDevice: jest.fn().mockReturnValue(false),
+    isCharacterDevice: jest.fn().mockReturnValue(false),
+    isSymbolicLink: jest.fn().mockReturnValue(isSymLink),
+    isFIFO: jest.fn().mockReturnValue(false),
+    isSocket: jest.fn().mockReturnValue(false),
     dev: 0,
     ino: 0,
     mode: 0,
@@ -60,7 +61,7 @@ export function createMockStats(isSymLink: boolean): fs.Stats {
  * This allows testing code paths that call process.exit() without terminating the test runner.
  * The thrown error message includes the exit code for assertions.
  *
- * @returns The Vitest MockInstance for restoration in afterEach/cleanup
+ * @returns The MockInstance for restoration in afterEach/cleanup
  *
  * @example
  * const exitSpy = mockProcessExit();
@@ -68,7 +69,7 @@ export function createMockStats(isSymLink: boolean): fs.Stats {
  * exitSpy.mockRestore();
  */
 export function mockProcessExit(): MockInstance {
-  return vi
+  return jest
     .spyOn(process, 'exit')
     .mockImplementation((code?: string | number | null) => {
       throw new Error(`process.exit: ${code}`);
@@ -79,7 +80,7 @@ export function mockProcessExit(): MockInstance {
  * Set up a content capture on a mocked fs.writeFileSync.
  * Returns an object whose `content` property updates when the mock is invoked with string data.
  *
- * @param mockFn - The mocked writeFileSync function (from vi.mocked(fs).writeFileSync)
+ * @param mockFn - The mocked writeFileSync function (from mocked(fs).writeFileSync)
  * @returns Object with a `content` property that holds the last written string
  *
  * @example
@@ -105,7 +106,7 @@ export function captureWriteContent(
  * Set up a content capture on a mocked fs.appendFileSync.
  * Returns an object whose `content` property updates when the mock is invoked with string data.
  *
- * @param mockFn - The mocked appendFileSync function (from vi.mocked(fs).appendFileSync)
+ * @param mockFn - The mocked appendFileSync function (from mocked(fs).appendFileSync)
  * @returns Object with a `content` property that holds the last appended string
  *
  * @example

@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { describe, expect, it } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import type { Hex } from 'viem';
 import { encodeFunctionData, parseAbi } from 'viem';

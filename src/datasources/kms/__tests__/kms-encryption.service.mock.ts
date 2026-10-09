@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { MockedObject } from 'vitest';
+import { jest } from 'bun:test';
+import type { MockedObject } from '#/__tests__/mocks';
 import type { KmsEncryptionService } from '#/datasources/kms/kms-encryption.service';
 
 /**
@@ -10,14 +11,14 @@ import type { KmsEncryptionService } from '#/datasources/kms/kms-encryption.serv
  */
 export function createMockKmsEncryptionService(): MockedObject<KmsEncryptionService> {
   return {
-    isEncrypted: vi.fn((value: string) => value.startsWith('kms:')),
-    encrypt: vi.fn((value: string, _ctx: Record<string, string>) =>
+    isEncrypted: jest.fn((value: string) => value.startsWith('kms:')),
+    encrypt: jest.fn((value: string, _ctx: Record<string, string>) =>
       Promise.resolve(value),
     ),
-    decrypt: vi.fn((value: string, _ctx: Record<string, string>) =>
+    decrypt: jest.fn((value: string, _ctx: Record<string, string>) =>
       Promise.resolve(value),
     ),
-    blindIndex: vi.fn((_value: string) => null),
-    onModuleInit: vi.fn(() => Promise.resolve()),
+    blindIndex: jest.fn((_value: string) => null),
+    onModuleInit: jest.fn(() => Promise.resolve()),
   } as MockedObject<KmsEncryptionService>;
 }

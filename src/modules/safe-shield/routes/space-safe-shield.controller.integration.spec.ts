@@ -1,5 +1,14 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  jest,
+} from 'bun:test';
 import { randomUUID } from 'node:crypto';
 import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
@@ -8,8 +17,8 @@ import { HttpStatus } from '@nestjs/common';
 import type postgres from 'postgres';
 import request from 'supertest';
 import { getAddress } from 'viem';
-import type { MockedObject } from 'vitest';
 import { TestDbFactory } from '#/__tests__/db.factory';
+import type { MockedObject } from '#/__tests__/mocks';
 import {
   initTestApplication,
   TestAppProvider,
@@ -105,7 +114,7 @@ describe('SpaceSafeShieldController', () => {
   });
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
     // Recipient/counterparty analysis degrades to a graceful-but-200 result
     // when upstream is unreachable — see safe-shield.controller.integration.spec.ts.
     // This suite is about the gating chain, not the analysis itself.

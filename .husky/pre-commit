@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-yarn run env:validate:silent
-yarn run lint
-yarn run format
+bun run env:validate:silent
+bun run lint
+bun run format

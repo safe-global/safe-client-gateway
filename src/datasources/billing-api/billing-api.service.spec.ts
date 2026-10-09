@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
-import type { MockedObject } from 'vitest';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
 import { BillingApi } from '#/datasources/billing-api/billing-api.service';
 import {
@@ -28,23 +29,23 @@ import { DataSourceError } from '#/domain/errors/data-source.error';
 import type { ILoggingService } from '#/logging/logging.interface';
 import { rawify } from '#/validation/entities/raw.entity';
 
-const mockNetworkService = vi.mocked({
-  get: vi.fn(),
-  post: vi.fn(),
-  patch: vi.fn(),
+const mockNetworkService = mocked({
+  get: jest.fn(),
+  post: jest.fn(),
+  patch: jest.fn(),
 } as MockedObject<INetworkService>);
 
-const mockDataSource = vi.mocked({
-  get: vi.fn(),
-  post: vi.fn(),
+const mockDataSource = mocked({
+  get: jest.fn(),
+  post: jest.fn(),
 } as MockedObject<CacheFirstDataSource>);
 
-const mockCacheService = vi.mocked({
-  deleteByKey: vi.fn(),
+const mockCacheService = mocked({
+  deleteByKey: jest.fn(),
 } as MockedObject<ICacheService>);
 
-const mockLoggingService = vi.mocked({
-  warn: vi.fn(),
+const mockLoggingService = mocked({
+  warn: jest.fn(),
 } as MockedObject<ILoggingService>);
 
 describe('BillingApi', () => {
@@ -59,7 +60,7 @@ describe('BillingApi', () => {
   let notFoundExpireTimeSeconds: number;
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
 
     httpErrorFactory = new HttpErrorFactory();
     fakeConfigurationService = new FakeConfigurationService();
@@ -646,7 +647,8 @@ describe('BillingApi', () => {
 
       await target.clearSubscriptions({ upstreamCustomerId });
 
-      expect(mockCacheService.deleteByKey).toHaveBeenCalledExactlyOnceWith(
+      expect(mockCacheService.deleteByKey).toHaveBeenCalledTimes(1);
+      expect(mockCacheService.deleteByKey).toHaveBeenCalledWith(
         CacheRouter.getBillingSubscriptionsCacheKey(upstreamCustomerId),
       );
     });

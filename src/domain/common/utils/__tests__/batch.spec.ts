@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { batched } from '#/domain/common/utils/batch';
 
@@ -36,7 +37,7 @@ describe('batched', () => {
   });
 
   it('should return an empty array for no items', async () => {
-    const fn = vi.fn();
+    const fn = jest.fn();
 
     const results = await batched([], 5, fn);
 

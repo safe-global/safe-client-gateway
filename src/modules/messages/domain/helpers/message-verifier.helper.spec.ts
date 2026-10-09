@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { get } from 'lodash';
 import { type Address, getAddress } from 'viem';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
-import type { MockedObject } from 'vitest';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
 import configuration from '#/config/entities/__tests__/configuration';
 import { SignatureType } from '#/domain/common/entities/signature-type.entity';
@@ -14,12 +15,12 @@ import { messageBuilder } from '#/modules/messages/domain/entities/__tests__/mes
 import { MessageVerifierHelper } from '#/modules/messages/domain/helpers/message-verifier.helper';
 import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
 
-const mockConfigurationService = vi.mocked({
-  getOrThrow: vi.fn(),
+const mockConfigurationService = mocked({
+  getOrThrow: jest.fn(),
 } as MockedObject<IConfigurationService>);
 
-const mockLoggingRepository = vi.mocked({
-  error: vi.fn(),
+const mockLoggingRepository = mocked({
+  error: jest.fn(),
 } as MockedObject<ILoggingService>);
 
 describe('MessageVerifierHelper', () => {
@@ -37,7 +38,7 @@ describe('MessageVerifierHelper', () => {
   }
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
 
     initTarget(configuration);
   });

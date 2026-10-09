@@ -6,6 +6,7 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
+  type Relation,
   Unique,
 } from 'typeorm';
 import { Feature } from '#/modules/entitlements/datasources/entities/feature.entity.db';
@@ -58,7 +59,7 @@ export class SpaceFeatureUsage implements DomainSpaceFeatureUsage {
     name: 'space_id',
     foreignKeyConstraintName: 'FK_SFU_space_id',
   })
-  public readonly space?: Space;
+  public readonly space?: Relation<Space>;
 
   @Index('IDX_SFU_feature_id')
   @ManyToOne(() => Feature, {
@@ -69,5 +70,5 @@ export class SpaceFeatureUsage implements DomainSpaceFeatureUsage {
     name: 'feature_id',
     foreignKeyConstraintName: 'FK_SFU_feature_id',
   })
-  public readonly feature?: Feature;
+  public readonly feature?: Relation<Feature>;
 }

@@ -41,9 +41,9 @@ A remark earns an entry once it has been raised on **two different PRs by any re
 
 ```ts
 // Don't
-const loggingService = { debug: vi.fn() } as unknown as MockedObject<ILoggingService>;
+const loggingService = { debug: jest.fn() } as unknown as MockedObject<ILoggingService>;
 // Do
-const loggingService = { debug: vi.fn() } as MockedObject<ILoggingService>;
+const loggingService = { debug: jest.fn() } as MockedObject<ILoggingService>;
 ```
 
 **Spotted in:** #3247 ("nit: please ask your Claude to memo that there is no need to cast to unknown"), #3241, #3196 (three separate comments), #3214.
@@ -51,7 +51,7 @@ const loggingService = { debug: vi.fn() } as MockedObject<ILoggingService>;
 
 ### R-002: `as never` to satisfy a mock signature
 
-**Pattern:** `vi.mocked(x).mockResolvedValue(y as never)`, or any `as never` in a spec.
+**Pattern:** `mocked(x).mockResolvedValue(y as never)`, or any `as never` in a spec.
 
 **Why it's bad:** `never` silences the type error without describing anything — the mock now type-checks against a type no value can inhabit, so the spec stops verifying that the double matches the interface it stands in for. Typing the double as `MockedObject<T>` gets the same result while keeping the check.
 
@@ -61,7 +61,7 @@ const loggingService = { debug: vi.fn() } as MockedObject<ILoggingService>;
 // Don't
 mockRepository.getSpace.mockResolvedValue(space as never);
 // Do
-const mockRepository = { getSpace: vi.fn() } as MockedObject<ISpacesRepository>;
+const mockRepository = { getSpace: jest.fn() } as MockedObject<ISpacesRepository>;
 mockRepository.getSpace.mockResolvedValue(space);
 ```
 
@@ -70,7 +70,7 @@ mockRepository.getSpace.mockResolvedValue(space);
 
 ### R-003: Mocking the configuration service instead of using the fake
 
-**Pattern:** a hand-rolled `{ getOrThrow: vi.fn() }` double for `IConfigurationService` in a spec.
+**Pattern:** a hand-rolled `{ getOrThrow: jest.fn() }` double for `IConfigurationService` in a spec.
 
 **Why it's bad:** `FakeConfigurationService` already exists and behaves like the real thing — including throwing on a missing key — so a hand-rolled double both duplicates it and loses that behavior, letting a spec pass with configuration the application would reject at boot. Having both idioms in the tree also leaves the next author guessing which one is current.
 
@@ -78,7 +78,7 @@ mockRepository.getSpace.mockResolvedValue(space);
 
 ```ts
 // Don't
-const configurationService = { getOrThrow: vi.fn() } as MockedObject<IConfigurationService>;
+const configurationService = { getOrThrow: jest.fn() } as MockedObject<IConfigurationService>;
 // Do
 const fakeConfigurationService = new FakeConfigurationService();
 fakeConfigurationService.set('spaces.maxSpaceCreationsPerUser', faker.number.int());
@@ -392,7 +392,7 @@ await Promise.allSettled([
 
 **Why it's bad:** the variable then fails at the first request that needs it rather than at boot, and a secret with a fallback default silently runs the service in an insecure mode instead of refusing to start.
 
-**Corrected form:** declare it in `configuration.ts` *and* `RootConfigurationSchema`, add it to `.env.sample.json`, mirror it in `__tests__/configuration.ts`, and run `yarn env:validate`.
+**Corrected form:** declare it in `configuration.ts` *and* `RootConfigurationSchema`, add it to `.env.sample.json`, mirror it in `__tests__/configuration.ts`, and run `bun run env:validate`.
 
 **Spotted in:** #3228 ("oh could you please also add a check for `BILLING_WEBHOOK_JWT_PUBLIC_KEY`, I forgot about it"), #3217 ("Nit: We can handle it in our validator. We should validate this env variable and transform it if it's valid.").
 **Status:** active — non-negotiable #7; `configuration-and-flags.md` owns it.

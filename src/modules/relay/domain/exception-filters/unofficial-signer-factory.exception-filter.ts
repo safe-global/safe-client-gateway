@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import {
-  ArgumentsHost,
+  type ArgumentsHost,
   Catch,
-  ExceptionFilter,
+  type ExceptionFilter,
   HttpStatus,
 } from '@nestjs/common';
 import type { FastifyReply } from 'fastify';

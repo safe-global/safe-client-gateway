@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
-import type { MockedObject } from 'vitest';
 import { ZodError } from 'zod';
+import type { MockedObject } from '#/__tests__/mocks';
 import { checkoutSessionResultBuilder } from '#/datasources/billing-api/entities/__tests__/checkout-session.builder';
 import { paymentLinkBuilder } from '#/datasources/billing-api/entities/__tests__/payment-link.builder';
 import { subscriptionBuilder } from '#/datasources/billing-api/entities/__tests__/subscription.builder';
@@ -12,24 +13,24 @@ import { BillingRepository } from '#/modules/billing/domain/billing.repository';
 import { rawify } from '#/validation/entities/raw.entity';
 
 const billingApiMock = {
-  listPlans: vi.fn(),
-  getPlan: vi.fn(),
-  getCustomer: vi.fn(),
-  getCustomerSessionUrl: vi.fn(),
-  getSubscriptionsByCustomerId: vi.fn(),
-  listPaymentLinks: vi.fn(),
-  createCheckoutSession: vi.fn(),
-  getCheckoutSession: vi.fn(),
-  previewSubscriptionUpdate: vi.fn(),
-  updateSubscription: vi.fn(),
-  clearSubscriptions: vi.fn(),
+  listPlans: jest.fn(),
+  getPlan: jest.fn(),
+  getCustomer: jest.fn(),
+  getCustomerSessionUrl: jest.fn(),
+  getSubscriptionsByCustomerId: jest.fn(),
+  listPaymentLinks: jest.fn(),
+  createCheckoutSession: jest.fn(),
+  getCheckoutSession: jest.fn(),
+  previewSubscriptionUpdate: jest.fn(),
+  updateSubscription: jest.fn(),
+  clearSubscriptions: jest.fn(),
 } as MockedObject<IBillingApi>;
 
 describe('BillingRepository', () => {
   let target: BillingRepository;
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
     target = new BillingRepository(billingApiMock);
   });
 

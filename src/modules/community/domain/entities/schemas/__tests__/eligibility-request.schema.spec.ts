@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { describe, expect, it } from 'bun:test';
 import { eligibilityRequestBuilder } from '#/modules/community/domain/entities/__tests__/eligibility-request.builder';
 import { EligibilityRequestSchema } from '#/modules/community/domain/entities/eligibility-request.entity';
 

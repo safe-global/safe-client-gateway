@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { afterEach, beforeEach, describe, expect, it, jest } from 'bun:test';
 import { NotFoundException } from '@nestjs/common';
 import { getAddress } from 'viem';
-import type { MockedObject } from 'vitest';
 import { fakeJson } from '#/__tests__/faker';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
 import type { ILoggingService } from '#/logging/logging.interface';
@@ -24,26 +25,26 @@ import { TwapOrderHelper } from '#/modules/transactions/routes/helpers/twap-orde
 import { TwapOrderMapper } from '#/modules/transactions/routes/mappers/common/twap-order.mapper';
 
 const loggingService = {
-  debug: vi.fn(),
-  warn: vi.fn(),
+  debug: jest.fn(),
+  warn: jest.fn(),
 } as MockedObject<ILoggingService>;
-const mockLoggingService = vi.mocked(loggingService);
+const mockLoggingService = mocked(loggingService);
 
 const mockTokenRepository = {
-  getToken: vi.fn(),
+  getToken: jest.fn(),
 } as MockedObject<ITokenRepository>;
 
 const mockSwapsRepository = {
-  getOrder: vi.fn(),
-  getFullAppData: vi.fn(),
+  getOrder: jest.fn(),
+  getFullAppData: jest.fn(),
 } as MockedObject<ISwapsRepository>;
 
 const mockConfigurationService = {
-  getOrThrow: vi.fn(),
+  getOrThrow: jest.fn(),
 } as MockedObject<IConfigurationService>;
 
 const mockChainsRepository = {
-  getChain: vi.fn(),
+  getChain: jest.fn(),
 } as MockedObject<IChainsRepository>;
 
 describe('TwapOrderMapper', () => {
@@ -69,17 +70,17 @@ describe('TwapOrderMapper', () => {
   );
 
   beforeEach(() => {
-    vi.clearAllMocks();
-    vi.useFakeTimers();
+    jest.clearAllMocks();
+    jest.useFakeTimers();
   });
 
   afterEach(() => {
-    vi.useRealTimers();
+    jest.useRealTimers();
   });
 
   it('should map a queued TWAP order', async () => {
     const now = new Date();
-    vi.setSystemTime(now);
+    jest.setSystemTime(now);
 
     configurationService.set('swaps.maxNumberOfParts', 2);
 
@@ -528,7 +529,7 @@ describe('TwapOrderMapper', () => {
 
   it('should throw an error if source apps are restricted and no fullAppData is available', async () => {
     const now = new Date();
-    vi.setSystemTime(now);
+    jest.setSystemTime(now);
 
     configurationService.set('swaps.maxNumberOfParts', 2);
     configurationService.set('swaps.restrictApps', true);
@@ -571,7 +572,7 @@ describe('TwapOrderMapper', () => {
 
   it('should throw an error if source apps are restricted and fullAppData does not match any allowed app', async () => {
     const now = new Date();
-    vi.setSystemTime(now);
+    jest.setSystemTime(now);
 
     configurationService.set('swaps.maxNumberOfParts', 2);
     configurationService.set('swaps.restrictApps', true);
@@ -820,7 +821,7 @@ describe('TwapOrderMapper', () => {
 
   it('should map a queued TWAP order if source apps are restricted and fullAppData matches any allowed app', async () => {
     const now = new Date();
-    vi.setSystemTime(now);
+    jest.setSystemTime(now);
 
     configurationService.set('swaps.maxNumberOfParts', 2);
     configurationService.set('swaps.restrictApps', true);
@@ -990,7 +991,7 @@ describe('TwapOrderMapper', () => {
       ] as unknown as Array<Order>;
 
       // Order #1 is still active for 1 second
-      vi.setSystemTime(new Date((orders[0].validTo - 1) * 1_000));
+      jest.setSystemTime(new Date((orders[0].validTo - 1) * 1_000));
 
       configurationService.set('swaps.maxNumberOfParts', orders.length);
       // We instantiate in tests to be able to set maxNumberOfParts
@@ -1108,7 +1109,7 @@ describe('TwapOrderMapper', () => {
       ] as unknown as Array<Order>;
 
       // Order #2 has been active for 1 second
-      vi.setSystemTime(new Date((orders[0].validTo + 1) * 1_000));
+      jest.setSystemTime(new Date((orders[0].validTo + 1) * 1_000));
 
       configurationService.set('swaps.maxNumberOfParts', orders.length);
       // We instantiate in tests to be able to set maxNumberOfParts
@@ -1268,7 +1269,7 @@ describe('TwapOrderMapper', () => {
       ] as unknown as Array<Order>;
 
       // Order #3 has been active for 1 second
-      vi.setSystemTime(new Date((orders[1].validTo + 1) * 1_000));
+      jest.setSystemTime(new Date((orders[1].validTo + 1) * 1_000));
 
       configurationService.set('swaps.maxNumberOfParts', orders.length);
       // We instantiate in tests to be able to set maxNumberOfParts
@@ -1465,7 +1466,7 @@ describe('TwapOrderMapper', () => {
       ] as unknown as Array<Order>;
 
       // Order #3 has been active for 1 second
-      vi.setSystemTime(new Date((orders[1].validTo + 1) * 1_000));
+      jest.setSystemTime(new Date((orders[1].validTo + 1) * 1_000));
 
       configurationService.set('swaps.maxNumberOfParts', orders.length);
       // We instantiate in tests to be able to set maxNumberOfParts
@@ -1661,7 +1662,7 @@ describe('TwapOrderMapper', () => {
       ] as unknown as Array<Order>;
 
       // Order #3 exired 1 second ago
-      vi.setSystemTime(new Date((orders[2].validTo + 1) * 1_000));
+      jest.setSystemTime(new Date((orders[2].validTo + 1) * 1_000));
 
       configurationService.set('swaps.maxNumberOfParts', orders.length);
       // We instantiate in tests to be able to set maxNumberOfParts

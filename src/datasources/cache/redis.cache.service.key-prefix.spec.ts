@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
-import type { MockedObject } from 'vitest';
 import { fakeJson } from '#/__tests__/faker';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
 import type { RedisClientType } from '#/datasources/cache/cache.module';
 import { CacheDir } from '#/datasources/cache/entities/cache-dir.entity';
@@ -11,26 +12,26 @@ import type { ILoggingService } from '#/logging/logging.interface';
 
 const redisClientTypeMock = {
   isReady: true,
-  hGet: vi.fn(),
-  hSet: vi.fn(),
-  hDel: vi.fn(),
-  expire: vi.fn(),
-  unlink: vi.fn(),
-  quit: vi.fn(),
-  scanIterator: vi.fn(),
+  hGet: jest.fn(),
+  hSet: jest.fn(),
+  hDel: jest.fn(),
+  expire: jest.fn(),
+  unlink: jest.fn(),
+  quit: jest.fn(),
+  scanIterator: jest.fn(),
 } as unknown as MockedObject<RedisClientType>;
 
 const mockLoggingService: MockedObject<ILoggingService> = {
-  info: vi.fn(),
-  debug: vi.fn(),
-  error: vi.fn(),
-  warn: vi.fn(),
+  info: jest.fn(),
+  debug: jest.fn(),
+  error: jest.fn(),
+  warn: jest.fn(),
 };
 
 const configurationService = {
-  getOrThrow: vi.fn(),
+  getOrThrow: jest.fn(),
 } as MockedObject<IConfigurationService>;
-const mockConfigurationService = vi.mocked(configurationService);
+const mockConfigurationService = mocked(configurationService);
 
 describe('RedisCacheService with a Key Prefix', () => {
   let redisCacheService: RedisCacheService;
@@ -39,7 +40,7 @@ describe('RedisCacheService with a Key Prefix', () => {
   const keyPrefix = faker.string.uuid();
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
     defaultExpirationTimeInSeconds = faker.number.int({ min: 1, max: 3600 });
     defaultExpirationDeviatePercent = faker.number.int({ min: 1, max: 3600 });
     mockConfigurationService.getOrThrow.mockImplementation((key) => {
@@ -96,7 +97,7 @@ describe('RedisCacheService with a Key Prefix', () => {
   });
 
   it('deleting a key should unlink with prefix', async () => {
-    vi.useFakeTimers();
+    jest.useFakeTimers();
     const now = Date.now();
     const key = faker.string.alphanumeric();
 
@@ -112,6 +113,6 @@ describe('RedisCacheService with a Key Prefix', () => {
       defaultExpirationTimeInSeconds,
       'NX',
     );
-    vi.useRealTimers();
+    jest.useRealTimers();
   });
 });

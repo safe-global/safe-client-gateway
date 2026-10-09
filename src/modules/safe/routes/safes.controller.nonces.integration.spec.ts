@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { afterEach, beforeEach, describe, it, jest } from 'bun:test';
 import type { Server } from 'node:net';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import {
   initTestApplication,
   TestAppProvider,
@@ -28,7 +29,7 @@ describe('Safes Controller Nonces', () => {
   let configurationService: MockedObject<IConfigurationService>;
 
   beforeEach(async () => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
 
     const moduleFixture = await createTestModule();
 

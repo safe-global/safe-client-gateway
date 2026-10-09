@@ -6,6 +6,7 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
+  type Relation,
   Unique,
 } from 'typeorm';
 import { CounterfactualSafe } from '#/modules/counterfactual-safes/datasources/entities/counterfactual-safe.entity.db';
@@ -28,7 +29,7 @@ export class CounterfactualSafeUser {
     name: 'counterfactual_safe_id',
     foreignKeyConstraintName: 'FK_CFSU_cf_safe_id',
   })
-  public readonly counterfactualSafe!: CounterfactualSafe;
+  public readonly counterfactualSafe!: Relation<CounterfactualSafe>;
 
   @ManyToOne(
     () => User,
@@ -42,7 +43,7 @@ export class CounterfactualSafeUser {
     name: 'user_id',
     foreignKeyConstraintName: 'FK_CFSU_user_id',
   })
-  public readonly user!: User;
+  public readonly user!: Relation<User>;
 
   @Column({
     name: 'created_at',

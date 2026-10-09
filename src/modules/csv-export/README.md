@@ -1,3 +1,7 @@
+<!--
+  SPDX-License-Identifier: FSL-1.1-MIT
+ -->
+
 # CSV Export Module
 
 This module generates a downloadable CSV file of Safe transactions.
@@ -61,7 +65,7 @@ This module generates a downloadable CSV file of Safe transactions.
 
 ## Node.js Streams
 
-The CSV export pipeline relies on Node.js streams to process large datasets efficiently:
+The CSV export pipeline relies on Node.js streams (the `node:stream` API, which Bun implements) to process large datasets efficiently:
 
 - `Readable.from` wraps the async generator `transactionPagesGenerator`, producing a stream of `TransactionExport` objects​:codex-file-citation[codex-file-citation]{line_range_start=118 line_range_end=128 path=src/modules/csv-export/v1/csv-export.service.ts git_url="https://github.com/safe-global/safe-client-gateway/blob/COR-7/retrieve-paginated-transaction-data-and-decode-if-needed/src/modules/csv-export/v1/csv-export.service.ts#L118-L128"}​
 - `CsvService.toCsv` uses `stream.pipeline` to pipe the readable stream through `csv-stringify` and into the destination writable stream​:codex-file-citation[codex-file-citation]{line_range_start=1 line_range_end=31 path=src/modules/csv-export/csv-utils/csv.service.ts git_url="https://github.com/safe-global/safe-client-gateway/blob/COR-7/retrieve-paginated-transaction-data-and-decode-if-needed/src/modules/csv-export/csv-utils/csv.service.ts#L1-L31"}​

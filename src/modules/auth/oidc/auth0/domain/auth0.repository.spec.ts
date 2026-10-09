@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import type { IAuth0Api } from '#/modules/auth/oidc/auth0/datasources/auth0-api.interface';
 import { Auth0Repository } from '#/modules/auth/oidc/auth0/domain/auth0.repository';
 import type { Auth0TokenVerifier } from '#/modules/auth/oidc/auth0/domain/auth0-token.verifier';
@@ -9,19 +10,19 @@ import { rawify } from '#/validation/entities/raw.entity';
 import { fakeEmailAddress } from '#/validation/entities/schemas/__tests__/email-address.builder';
 
 const auth0ApiMock = {
-  getAuthorizationUrl: vi.fn(),
-  exchangeAuthorizationCode: vi.fn(),
+  getAuthorizationUrl: jest.fn(),
+  exchangeAuthorizationCode: jest.fn(),
 } as MockedObject<IAuth0Api>;
 
 const auth0TokenVerifierMock = {
-  verifyAndDecode: vi.fn(),
+  verifyAndDecode: jest.fn(),
 } as MockedObject<Auth0TokenVerifier>;
 
 describe('Auth0Repository', () => {
   let target: Auth0Repository;
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
 
     target = new Auth0Repository(auth0ApiMock, auth0TokenVerifierMock);
   });

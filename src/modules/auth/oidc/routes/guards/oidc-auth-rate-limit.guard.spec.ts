@@ -1,19 +1,20 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
-import type { MockedObject } from 'vitest';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
 import type { ICacheService } from '#/datasources/cache/cache.service.interface';
 import type { ILoggingService } from '#/logging/logging.interface';
 import { RateLimitGuard } from '#/routes/common/guards/rate-limit.guard';
 import { OidcAuthRateLimitGuard } from './oidc-auth-rate-limit.guard';
 
-const mockCacheService = vi.mocked({
-  increment: vi.fn(),
+const mockCacheService = mocked({
+  increment: jest.fn(),
 } as MockedObject<ICacheService>);
 
 const mockLoggingService = {
-  warn: vi.fn(),
+  warn: jest.fn(),
 } as MockedObject<ILoggingService>;
 
 describe('OidcAuthRateLimitGuard', () => {
@@ -22,8 +23,8 @@ describe('OidcAuthRateLimitGuard', () => {
     const windowSeconds = faker.number.int({ min: 10, max: 120 });
 
     const mockConfigurationService = {
-      get: vi.fn(),
-      getOrThrow: vi.fn((key: string) => {
+      get: jest.fn(),
+      getOrThrow: jest.fn((key: string) => {
         switch (key) {
           case 'auth.rateLimit.max':
             return max;

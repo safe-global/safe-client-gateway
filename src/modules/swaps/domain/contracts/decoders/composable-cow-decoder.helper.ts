@@ -9,7 +9,7 @@ import { AbiDecoder } from '#/modules/contracts/domain/decoders/abi-decoder.help
  *
  * @see https://github.com/cowprotocol/cow-sdk/blob/5aa61a03d2ed9921c5f95522866b2af0ceb1c24d/abi/ComposableCoW.json
  *
- * TODO: We should locate this in #/abis/... but we will need to refactor the /scripts/generate-abis.js
+ * TODO: We should locate this in #/abis/... but we will need to refactor the /scripts/generate-abis.ts
  * to handle ABIs that are present (or alternatively install the @cowprotocol/contracts package and generate
  * the ABIs from there)
  */

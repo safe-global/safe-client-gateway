@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { afterEach, beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
-import type { Mocked, MockedObject } from 'vitest';
+import type { Mocked, MockedObject } from '#/__tests__/mocks';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
 import { CircuitBreakerService } from '#/datasources/circuit-breaker/circuit-breaker.service';
 import { CircuitState } from '#/datasources/circuit-breaker/enums/circuit-state.enum';
@@ -15,17 +16,17 @@ describe('CircuitBreakerService', () => {
   const circuitName = faker.string.alphanumeric();
 
   beforeEach(() => {
-    vi.useFakeTimers();
+    jest.useFakeTimers();
     mockLoggingService = {
-      info: vi.fn(),
-      debug: vi.fn(),
-      error: vi.fn(),
-      warn: vi.fn(),
+      info: jest.fn(),
+      debug: jest.fn(),
+      error: jest.fn(),
+      warn: jest.fn(),
     } as MockedObject<ILoggingService>;
   });
 
   afterEach(() => {
-    vi.useRealTimers();
+    jest.useRealTimers();
   });
 
   function createService(overrides?: {
@@ -49,7 +50,7 @@ describe('CircuitBreakerService', () => {
         faker.number.int({ min: 10, max: 100 }),
     };
     const mockConfigService = {
-      getOrThrow: vi.fn((key: string) => config[key]),
+      getOrThrow: jest.fn((key: string) => config[key]),
     } as unknown as Mocked<IConfigurationService>;
 
     return new CircuitBreakerService(mockConfigService, mockLoggingService);
@@ -165,7 +166,7 @@ describe('CircuitBreakerService', () => {
       const circuit = getRegisteredCircuit(service, circuitName);
       expect(circuit.metrics.state).toBe(CircuitState.OPEN);
 
-      vi.advanceTimersByTime(1100);
+      jest.advanceTimersByTime(1100);
       expect(service.canProceed(circuitName)).toBe(true);
       const updatedCircuit = service.get(circuitName);
       expect(updatedCircuit?.metrics.state).toBe(CircuitState.HALF_OPEN);
@@ -178,7 +179,7 @@ describe('CircuitBreakerService', () => {
 
       expect(service.canProceed(circuitName)).toBe(false);
 
-      vi.advanceTimersByTime(500);
+      jest.advanceTimersByTime(500);
       expect(service.canProceed(circuitName)).toBe(false);
       const c = service.get(circuitName);
       expect(c?.metrics.state).toBe(CircuitState.OPEN);
@@ -206,7 +207,7 @@ describe('CircuitBreakerService', () => {
 
     it('should admit the transitioning request as the first probe', () => {
       const service = createHalfOpenService();
-      vi.advanceTimersByTime(150);
+      jest.advanceTimersByTime(150);
       expect(service.canProceed(circuitName)).toBe(true);
       const circuit = getRegisteredCircuit(service, circuitName);
       expect(circuit.metrics.state).toBe(CircuitState.HALF_OPEN);
@@ -217,7 +218,7 @@ describe('CircuitBreakerService', () => {
       // With threshold 5, a rate of maxInFlight * 20 % yields exactly maxInFlight
       const maxInFlight = faker.number.int({ min: 1, max: 5 });
       const service = createHalfOpenService(maxInFlight * 20);
-      vi.advanceTimersByTime(150);
+      jest.advanceTimersByTime(150);
       for (let i = 0; i < maxInFlight; i++) {
         expect(service.canProceed(circuitName)).toBe(true);
       }
@@ -244,7 +245,7 @@ describe('CircuitBreakerService', () => {
     it('should free a probe slot when the probe succeeds', () => {
       // Rate 20 % of threshold 5 → a single probe slot
       const service = createHalfOpenService(20);
-      vi.advanceTimersByTime(150);
+      jest.advanceTimersByTime(150);
       expect(service.canProceed(circuitName)).toBe(true);
       expect(service.canProceed(circuitName)).toBe(false);
 
@@ -258,7 +259,7 @@ describe('CircuitBreakerService', () => {
       // Two slots and two failures to reopen, so one failure frees a slot
       // while the circuit stays HALF_OPEN
       const service = createHalfOpenService();
-      vi.advanceTimersByTime(150);
+      jest.advanceTimersByTime(150);
       expect(service.canProceed(circuitName)).toBe(true);
       expect(service.canProceed(circuitName)).toBe(true);
       expect(service.canProceed(circuitName)).toBe(false);
@@ -272,7 +273,7 @@ describe('CircuitBreakerService', () => {
 
     it('should reset in-flight probes when reopening', () => {
       const service = createHalfOpenService();
-      vi.advanceTimersByTime(150);
+      jest.advanceTimersByTime(150);
       expect(service.canProceed(circuitName)).toBe(true);
       expect(service.canProceed(circuitName)).toBe(true);
 
@@ -285,7 +286,7 @@ describe('CircuitBreakerService', () => {
 
     it('should transition to CLOSED after consecutive successes', () => {
       const service = createHalfOpenService();
-      vi.advanceTimersByTime(150);
+      jest.advanceTimersByTime(150);
       service.canProceed(circuitName); // Transition to HALF_OPEN
       const circuit = getRegisteredCircuit(service, circuitName);
 
@@ -301,7 +302,7 @@ describe('CircuitBreakerService', () => {
 
     it('should transition back to OPEN when half-open failure threshold is reached', () => {
       const service = createHalfOpenService();
-      vi.advanceTimersByTime(150);
+      jest.advanceTimersByTime(150);
       service.canProceed(circuitName); // Transition to HALF_OPEN
       const circuit = getRegisteredCircuit(service, circuitName);
 
@@ -333,7 +334,7 @@ describe('CircuitBreakerService', () => {
     }
 
     function reopenFromHalfOpen(service: CircuitBreakerService): void {
-      vi.advanceTimersByTime(timeout);
+      jest.advanceTimersByTime(timeout);
       service.canProceed(circuitName);
       service.recordFailure(circuitName);
       service.recordFailure(circuitName);
@@ -396,7 +397,7 @@ describe('CircuitBreakerService', () => {
     it('should log the OPEN to HALF_OPEN transition at debug', () => {
       const service = createOpenService();
 
-      vi.advanceTimersByTime(timeout);
+      jest.advanceTimersByTime(timeout);
       service.canProceed(circuitName);
 
       expect(mockLoggingService.debug).toHaveBeenCalledWith(
@@ -498,7 +499,7 @@ describe('CircuitBreakerService', () => {
       }
       reopenFromHalfOpen(service);
 
-      vi.advanceTimersByTime(timeout);
+      jest.advanceTimersByTime(timeout);
       service.canProceed(circuitName);
       for (let i = 0; i < threshold; i++) {
         service.recordSuccess(circuitName);
@@ -571,7 +572,7 @@ describe('CircuitBreakerService', () => {
       }
       const circuit = getRegisteredCircuit(service, circuitName);
 
-      vi.advanceTimersByTime(150);
+      jest.advanceTimersByTime(150);
       service.canProceed(circuitName);
       expect(circuit.metrics.state).toBe(CircuitState.HALF_OPEN);
 
@@ -598,7 +599,7 @@ describe('CircuitBreakerService', () => {
       expect(circuit.metrics.failureCount).toBe(2);
 
       // Advance time past rolling window
-      vi.advanceTimersByTime(rollingWindow + 1);
+      jest.advanceTimersByTime(rollingWindow + 1);
 
       service.recordFailure(circuitName);
       // Old failures discarded, only the new one counts
@@ -648,7 +649,7 @@ describe('CircuitBreakerService', () => {
 
       // Advance time past the stale window (rollingWindow * 10)
       const pastStaleWindow = faker.number.int({ min: 11, max: 100 });
-      vi.advanceTimersByTime(rollingWindow * pastStaleWindow);
+      jest.advanceTimersByTime(rollingWindow * pastStaleWindow);
 
       service.cleanupStaleCircuits();
       expect(service.get(circuitName)).toBeUndefined();
@@ -668,7 +669,7 @@ describe('CircuitBreakerService', () => {
       expect(circuit.metrics.state).toBe(CircuitState.OPEN);
 
       // Advance time past rolling window but within timeout buffer
-      vi.advanceTimersByTime(500);
+      jest.advanceTimersByTime(500);
 
       service.cleanupStaleCircuits();
       expect(service.get(circuitName)).toBeDefined();

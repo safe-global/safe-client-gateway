@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
 import { CacheRouter } from '#/datasources/cache/cache.router';
 import type { ICacheService } from '#/datasources/cache/cache.service.interface';
@@ -28,21 +29,21 @@ describe('PortfolioRepository', () => {
   const defaultDustThreshold = 0.001;
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
 
     mockPortfolioApi = {
-      getPortfolio: vi.fn(),
+      getPortfolio: jest.fn(),
     } as MockedObject<IPortfolioApi>;
 
     mockCacheService = {
-      hGet: vi.fn(),
-      hSet: vi.fn(),
-      deleteByKey: vi.fn(),
+      hGet: jest.fn(),
+      hSet: jest.fn(),
+      deleteByKey: jest.fn(),
     } as MockedObject<ICacheService>;
 
     mockConfigService = {
-      get: vi.fn(),
-      getOrThrow: vi.fn().mockImplementation((key: string) => {
+      get: jest.fn(),
+      getOrThrow: jest.fn().mockImplementation((key: string) => {
         if (key === 'portfolio.cache.ttlSeconds') return defaultCacheTtl;
         if (key === 'portfolio.filters.dustThresholdUsd')
           return defaultDustThreshold;
@@ -51,7 +52,7 @@ describe('PortfolioRepository', () => {
     } as unknown as MockedObject<IConfigurationService>;
 
     mockZerionCache = {
-      invalidate: vi.fn(),
+      invalidate: jest.fn(),
     } as MockedObject<ZerionCacheService>;
 
     repository = new PortfolioRepository(

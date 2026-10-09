@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { describe, expect, it } from 'bun:test';
 import { activityMetadataBuilder } from '#/modules/community/domain/entities/__tests__/activity-metadata.builder';
 import { ActivityMetadataSchema } from '#/modules/community/domain/entities/activity-metadata.entity';
 

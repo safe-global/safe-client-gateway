@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress, zeroAddress } from 'viem';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
 import {
   SAFE_QUEUE_SERVICE_MAX_LIMIT,
@@ -54,42 +55,42 @@ import { memberBuilder } from '#/modules/users/datasources/entities/__tests__/me
 import type { IMembersRepository } from '#/modules/users/domain/members/members.repository.interface';
 
 const mockPolicyIndexerRepository = {
-  getState: vi.fn(),
-  clearState: vi.fn(),
+  getState: jest.fn(),
+  clearState: jest.fn(),
 } as MockedObject<IPolicyIndexerRepository>;
 
 const mockSafeRepository = {
-  getSafe: vi.fn(),
-  getTransactionQueue: vi.fn(),
-  getTransactionQueueMaxPageSize: vi.fn(),
+  getSafe: jest.fn(),
+  getTransactionQueue: jest.fn(),
+  getTransactionQueueMaxPageSize: jest.fn(),
 } as unknown as MockedObject<ISafeRepository>;
 
 const mockSpaceSafesRepository = {
-  findBySpaceId: vi.fn(),
+  findBySpaceId: jest.fn(),
 } as unknown as MockedObject<ISpaceSafesRepository>;
 
 const mockMembersRepository = {
-  findOne: vi.fn(),
+  findOne: jest.fn(),
 } as unknown as MockedObject<IMembersRepository>;
 
 const mockDelegatesV3Repository = {
-  getDelegates: vi.fn(),
+  getDelegates: jest.fn(),
 } as MockedObject<IDelegatesV3Repository>;
 
 const mockTokenRepository = {
-  getToken: vi.fn(),
-  getTokens: vi.fn(),
+  getToken: jest.fn(),
+  getTokens: jest.fn(),
 } as MockedObject<ITokenRepository>;
 
 const mockChainsRepository = {
-  getChain: vi.fn(),
+  getChain: jest.fn(),
 } as unknown as MockedObject<IChainsRepository>;
 
 const mockLoggingService = {
-  info: vi.fn(),
-  error: vi.fn(),
-  warn: vi.fn(),
-  debug: vi.fn(),
+  info: jest.fn(),
+  error: jest.fn(),
+  warn: jest.fn(),
+  debug: jest.fn(),
 } as MockedObject<ILoggingService>;
 
 function pendingSpendingLimitMapper(): PendingSpendingLimitMapper {

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: FSL-1.1-MIT
 
 # Update agent context files with information from plan.md
 #
@@ -254,7 +255,7 @@ get_commands_for_language() {
             echo "cargo test && cargo clippy"
             ;;
         *"JavaScript"*|*"TypeScript"*)
-            echo "npm test \\&\\& npm run lint"
+            echo "bun run test \\&\\& bun run lint"
             ;;
         *)
             echo "# Add commands for $lang"

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { MockedObject } from 'vitest';
+import { jest } from 'bun:test';
+import type { MockedObject } from '#/__tests__/mocks';
 import type { UserEncryptionService } from '#/modules/users/domain/user-encryption.service';
 
 /**
@@ -13,12 +14,16 @@ import type { UserEncryptionService } from '#/modules/users/domain/user-encrypti
  */
 export function createMockUserEncryptionService(): MockedObject<UserEncryptionService> {
   return {
-    encrypt: vi.fn((_userId: number, email: string) => Promise.resolve(email)),
-    decrypt: vi.fn((_userId: number, value: string) => Promise.resolve(value)),
-    isEncrypted: vi.fn((value: string) => value.startsWith('kms:')),
-    blindIndex: vi.fn((_value: string) => null),
+    encrypt: jest.fn((_userId: number, email: string) =>
+      Promise.resolve(email),
+    ),
+    decrypt: jest.fn((_userId: number, value: string) =>
+      Promise.resolve(value),
+    ),
+    isEncrypted: jest.fn((value: string) => value.startsWith('kms:')),
+    blindIndex: jest.fn((_value: string) => null),
     // Disabled-mode rows are plaintext, so batch decryption passes through.
-    decryptUserEmails: vi.fn(
+    decryptUserEmails: jest.fn(
       (users: Array<{ id: number; email: string | null }>) =>
         Promise.resolve(users),
     ),
@@ -53,15 +58,15 @@ export function createEncryptingMockUserEncryptionService(): MockedObject<UserEn
   };
 
   return {
-    encrypt: vi.fn((userId: number, email: string) =>
+    encrypt: jest.fn((userId: number, email: string) =>
       Promise.resolve(
         `kms:v1:${Buffer.from(`${userId}:${email}`, 'utf8').toString('base64url')}`,
       ),
     ),
-    decrypt: vi.fn(decrypt),
-    isEncrypted: vi.fn((value: string) => value.startsWith('kms:')),
-    blindIndex: vi.fn((value: string) => `idx:${value.trim().toLowerCase()}`),
-    decryptUserEmails: vi.fn(
+    decrypt: jest.fn(decrypt),
+    isEncrypted: jest.fn((value: string) => value.startsWith('kms:')),
+    blindIndex: jest.fn((value: string) => `idx:${value.trim().toLowerCase()}`),
+    decryptUserEmails: jest.fn(
       async (users: Array<{ id: number; email: string | null }>) =>
         Promise.all(
           users.map(async (user) =>

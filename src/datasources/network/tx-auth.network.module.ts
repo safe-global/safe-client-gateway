@@ -5,9 +5,9 @@ import { CacheFirstDataSource } from '#/datasources/cache/cache.first.data.sourc
 import { CacheFirstDataSourceModule } from '#/datasources/cache/cache.first.data.source.module';
 import { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
 import { getTxAuthHeaders } from '#/datasources/network/auth/tx-auth-headers.helper';
+import type { FetchClient } from '#/datasources/network/entities/fetch-client.entity';
+import { FetchClientToken } from '#/datasources/network/entities/fetch-client.entity';
 import { FetchNetworkService } from '#/datasources/network/fetch.network.service';
-import type { FetchClient } from '#/datasources/network/network.module';
-import { FetchClientToken } from '#/datasources/network/network.module';
 import { NetworkService } from '#/datasources/network/network.service.interface';
 import {
   type ILoggingService,

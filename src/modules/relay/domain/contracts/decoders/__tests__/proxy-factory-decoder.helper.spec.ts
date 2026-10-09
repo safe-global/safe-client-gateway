@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import type { Hex } from 'viem';
 import { createProxyWithNonceEncoder } from '#/modules/relay/domain/contracts/__tests__/encoders/proxy-factory-encoder.builder';
@@ -8,7 +9,7 @@ describe('ProxyFactoryDecoder', () => {
   let target: ProxyFactoryDecoder;
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
     target = new ProxyFactoryDecoder();
   });
 

@@ -6,6 +6,7 @@ import {
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
+  type Relation,
   Unique,
 } from 'typeorm';
 import { type Address, getAddress } from 'viem';
@@ -24,7 +25,8 @@ export const NotificationSubscriptionSchema = RowSchema.extend({
   safe_address: AddressSchema,
   signer_address: AddressSchema.nullable(),
   notification_subscription_notification_type: z.array(
-    NotificationSubscriptionNotificationTypeSchema,
+    // Lazy: the two entity modules import each other.
+    z.lazy(() => NotificationSubscriptionNotificationTypeSchema),
   ),
 });
 
@@ -49,7 +51,7 @@ export class NotificationSubscription
     },
   )
   @JoinColumn({ name: 'push_notification_device_id' })
-  push_notification_device!: NotificationDevice;
+  push_notification_device!: Relation<NotificationDevice>;
 
   @Column({
     type: 'varchar',
@@ -104,5 +106,7 @@ export class NotificationSubscription
     (notificationSubscriptionNotificationType) =>
       notificationSubscriptionNotificationType.id,
   )
-  notification_subscription_notification_type!: Array<NotificationSubscriptionNotificationType>;
+  notification_subscription_notification_type!: Relation<
+    Array<NotificationSubscriptionNotificationType>
+  >;
 }

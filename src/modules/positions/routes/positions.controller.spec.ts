@@ -1,21 +1,22 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import type { Protocol } from '#/modules/positions/routes/entities/protocol.entity';
 import { PositionsController } from '#/modules/positions/routes/positions.controller';
 import type { PositionsService } from '#/modules/positions/routes/positions.service';
 
 const service = {
-  getPositions: vi.fn(),
+  getPositions: jest.fn(),
 } as MockedObject<PositionsService>;
 
 describe('PositionsController', () => {
   let controller: PositionsController;
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
 
     controller = new PositionsController(service);
   });

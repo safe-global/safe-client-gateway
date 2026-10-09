@@ -38,11 +38,11 @@ This mirror is distinct from the narrower `FakeConfigurationService` (`src/confi
 
 ### Env docs loop
 
-**Rule:** A new variable is added to `.env.sample.json` (`name`, `description`, `defaultValue`, `required`) in the same change that introduces it, and `yarn env:validate` passes.
+**Rule:** A new variable is added to `.env.sample.json` (`name`, `description`, `defaultValue`, `required`) in the same change that introduces it, and `bun run env:validate` passes.
 
-**Why:** `scripts/validate-env-json.ts` — the script behind `env:validate` — greps every non-spec file under `src/` for `process.env.<NAME>` and fails when a name it finds has no matching entry in `.env.sample.json`, so an undocumented var is a build-time failure, not a gap someone notices later.
+**Why:** `scripts/validate-env-json.ts` — the script behind `env:validate` — greps every non-spec file under `src/` for `process.env.<NAME>` and fails when a name it finds has no matching entry in `.env.sample.json`, so an undocumented var is a check failure, not a gap someone notices later.
 
-**Canonical example:** `.husky/pre-commit` runs `yarn run env:validate:silent` before `lint`/`format`, and `.github/workflows/_ci-node.yml` runs the same `env:validate:silent` step, so an undocumented var fails at commit time and again in CI if the hook was ever bypassed.
+**Canonical example:** `.husky/pre-commit` runs `bun run env:validate:silent` before `lint`/`format`, and `.github/workflows/_ci.yml`'s `env-validation` job runs the same `env:validate:silent` step, so an undocumented var fails at commit time and again in CI if the hook was ever bypassed.
 
 An entry that lingers in `.env.sample.json` after its variable leaves the code only warns (`extraInJson`) and exits zero; deleting the stale entry is good hygiene, not something either check enforces.
 

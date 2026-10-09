@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import {
   type Address,
@@ -9,7 +10,7 @@ import {
   type Hex,
   parseAbi,
 } from 'viem';
-import type { MockedObject } from 'vitest';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import { truncateAddress } from '#/domain/common/utils/utils';
 import type { ILoggingService } from '#/logging/logging.interface';
 
@@ -26,19 +27,19 @@ import { SafeAppInfo } from '#/modules/transactions/routes/entities/safe-app-inf
 import { HumanDescriptionMapper } from '#/modules/transactions/routes/mappers/common/human-description.mapper';
 import { AddressInfo } from '#/routes/common/entities/address-info.entity';
 
-const tokenRepository = vi.mocked({
-  getToken: vi.fn(),
+const tokenRepository = mocked({
+  getToken: jest.fn(),
 } as MockedObject<TokenRepository>);
 
 const mockLoggingService: MockedObject<ILoggingService> = {
-  info: vi.fn(),
-  debug: vi.fn(),
-  error: vi.fn(),
-  warn: vi.fn(),
+  info: jest.fn(),
+  debug: jest.fn(),
+  error: jest.fn(),
+  warn: jest.fn(),
 };
 
-const safeAppInfoMapper = vi.mocked({
-  mapSafeAppInfo: vi.fn(),
+const safeAppInfoMapper = mocked({
+  mapSafeAppInfo: jest.fn(),
 } as MockedObject<SafeAppInfoMapper>);
 
 const humanDescriptionAPI = new HumanDescriptionApi();
@@ -58,7 +59,7 @@ describe('Human descriptions mapper (Unit)', () => {
   let transaction: MultisigTransaction;
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
 
     toAddress = new AddressInfo(faker.finance.ethereumAddress());
     chainId = faker.string.numeric();

@@ -1,8 +1,13 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { hexToNumber, toHex } from 'viem';
-import type { MockedObject } from 'vitest';
+import {
+  type MockedObject,
+  type MockInstance,
+  mocked,
+} from '#/__tests__/mocks';
 import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
 import { FakeCacheService } from '#/datasources/cache/__tests__/fake.cache.service';
 import { CacheDir } from '#/datasources/cache/entities/cache-dir.entity';
@@ -13,8 +18,8 @@ import { rpcUriBuilder } from '#/modules/chains/domain/entities/__tests__/rpc-ur
 import { RpcUriAuthentication } from '#/modules/chains/domain/entities/rpc-uri-authentication.entity';
 import { rawify } from '#/validation/entities/raw.entity';
 
-const configApiMock = vi.mocked({
-  getChain: vi.fn(),
+const configApiMock = mocked({
+  getChain: jest.fn(),
 } as MockedObject<IConfigApi>);
 
 describe('BlockchainApiManager', () => {
@@ -24,7 +29,7 @@ describe('BlockchainApiManager', () => {
   const expirationTimeInSeconds = faker.number.int();
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
 
     fakeCacheService = new FakeCacheService();
     const fakeConfigurationService = new FakeConfigurationService();
@@ -108,7 +113,7 @@ describe('BlockchainApiManager', () => {
     it('caches string response RPC requests', async () => {
       const chain = chainBuilder().build();
       const client = target._createCachedRpcClient(chain);
-      const fetchSpy = vi.spyOn(global, 'fetch');
+      const fetchSpy: MockInstance<typeof fetch> = jest.spyOn(global, 'fetch');
       const chainId = toHex(chain.chainId);
       const rpcUrl = new URL(chain.rpcUri.value).toString();
 
@@ -157,7 +162,7 @@ describe('BlockchainApiManager', () => {
     it('caches non-string response RPC requests', async () => {
       const chain = chainBuilder().build();
       const client = target._createCachedRpcClient(chain);
-      const fetchSpy = vi.spyOn(global, 'fetch');
+      const fetchSpy: MockInstance<typeof fetch> = jest.spyOn(global, 'fetch');
       const blockByNumber = {
         baseFeePerGas: null,
         hash: null,

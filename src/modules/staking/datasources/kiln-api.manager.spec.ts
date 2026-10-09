@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { Test } from '@nestjs/testing';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import { IConfigurationService } from '#/config/configuration.service.interface';
 import { CacheFirstDataSource } from '#/datasources/cache/cache.first.data.source';
 import {
@@ -17,15 +18,15 @@ import { StakingApiManager } from '#/modules/staking/datasources/staking-api.man
 import { rawify } from '#/validation/entities/raw.entity';
 
 const configurationService = {
-  getOrThrow: vi.fn(),
+  getOrThrow: jest.fn(),
 } as MockedObject<IConfigurationService>;
 
 const configApi = {
-  getChain: vi.fn(),
+  getChain: jest.fn(),
 } as MockedObject<IConfigApi>;
 
 const dataSource = {
-  get: vi.fn(),
+  get: jest.fn(),
 } as MockedObject<CacheFirstDataSource>;
 
 const cacheService = {} as MockedObject<ICacheService>;
@@ -56,7 +57,7 @@ describe('KilnApiManager', () => {
   }
 
   beforeEach(async () => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
 
     // Instantiate through Nest to cover the constructor being inherited
     // from the abstract KilnApiManager, as the modules provide these

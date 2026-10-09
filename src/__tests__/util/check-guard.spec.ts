@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { describe, expect, it } from 'bun:test';
 import 'reflect-metadata';
 import { Controller, Get, UseGuards } from '@nestjs/common';
 import { checkGuardIsApplied } from './check-guard';

@@ -1,6 +1,17 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  jest,
+  mock,
+} from 'bun:test';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import { automock, mocked } from '#/__tests__/mocks';
+import * as envJsonHelpers from './env-json-helpers';
 import {
   type DirectoryEntry,
   type EnvVariable,
@@ -13,14 +24,17 @@ import {
   findTsFiles,
 } from './validate-env-json';
 
-vi.mock('node:fs');
-vi.mock('./env-json-helpers', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('./env-json-helpers')>()),
-  readDirectory: vi.fn(),
+// Snapshot before `mock.module` rewrites the namespace's bindings in place.
+const actualFs = { ...fs };
+mock.module('node:fs', () => automock(actualFs));
+const actualEnvJsonHelpers = { ...envJsonHelpers };
+mock.module('./env-json-helpers', () => ({
+  ...actualEnvJsonHelpers,
+  readDirectory: jest.fn(),
 }));
 
-const mockFs = vi.mocked(fs);
-const mockReadDirectory = vi.mocked(readDirectory);
+const mockFs = mocked(fs);
+const mockReadDirectory = mocked(readDirectory);
 
 /**
  * Helper to create a DirectoryEntry representing a file
@@ -40,13 +54,13 @@ describe('validate-env-json', () => {
   const SRC_PATH = path.join(PROJECT_ROOT, 'src');
 
   beforeEach(() => {
-    vi.clearAllMocks();
-    vi.spyOn(console, 'log').mockReturnValue(undefined);
-    vi.spyOn(console, 'error').mockReturnValue(undefined);
+    jest.clearAllMocks();
+    jest.spyOn(console, 'log').mockReturnValue(undefined);
+    jest.spyOn(console, 'error').mockReturnValue(undefined);
   });
 
   afterEach(() => {
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   describe('findTsFiles', () => {
@@ -199,7 +213,7 @@ describe('validate-env-json', () => {
         },
       ];
 
-      const mockConsoleError = vi
+      const mockConsoleError = jest
         .spyOn(console, 'error')
         .mockReturnValue(undefined);
 
@@ -298,7 +312,7 @@ describe('validate-env-json', () => {
         },
       ];
 
-      const mockConsoleError = vi
+      const mockConsoleError = jest
         .spyOn(console, 'error')
         .mockReturnValue(undefined);
 

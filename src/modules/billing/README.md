@@ -20,7 +20,7 @@ openssl ecparam -genkey -name prime256v1 -noout -out ec-priv.pem
 openssl ec -in ec-priv.pem -pubout -out ec-pub.pem
 
 # Mint (defaults: --sub billing-service, --expires-in 1825)
-BILLING_WEBHOOK_JWT_PRIVATE_KEY="$(cat ec-priv.pem)" yarn generate-token
+BILLING_WEBHOOK_JWT_PRIVATE_KEY="$(cat ec-priv.pem)" bun run generate-token
 ```
 
 Run the CGW with `FF_BILLING_SERVICE=true` and `BILLING_WEBHOOK_JWT_PUBLIC_KEY="$(cat ec-pub.pem)"`, then hand the minted token to the billing service. The app only ever needs the **public** key — keep the private key out of it.
@@ -29,7 +29,7 @@ Run the CGW with `FF_BILLING_SERVICE=true` and `BILLING_WEBHOOK_JWT_PUBLIC_KEY="
 
 Signing happens inside AWS KMS, so the private key never exists on disk. **Mint before deploying the receiver:** the mint output is the only place the public key appears, since there is no keypair to read it from.
 
-> **Never run the mint in a CGW app pod.** The image ships the compiled script, so `kubectl exec` + `node dist/scripts/generate-token.js` looks like the obvious move — but the pod's `AWS_WEB_IDENTITY_TOKEN_FILE`/`AWS_ROLE_ARN` make the SDK sign as the CGW's **runtime** IRSA role, which has no `kms:Sign` and must not be given it. Run a separate Job under its own service account.
+> **Never run the mint in a CGW app pod.** The image ships the script, so `kubectl exec` + `bun scripts/generate-token.ts` looks like the obvious move — but the pod's `AWS_WEB_IDENTITY_TOKEN_FILE`/`AWS_ROLE_ARN` make the SDK sign as the CGW's **runtime** IRSA role, which has no `kms:Sign` and must not be given it. Run a separate Job under its own service account.
 
 ### 1. Collect the values you need
 
@@ -133,7 +133,7 @@ spec:
       containers:
         - name: mint
           image: <cgw-image>:<tag>
-          command: ["node", "dist/scripts/generate-token.js", "--sub", "billing-service"]
+          command: ["bun", "scripts/generate-token.ts", "--sub", "billing-service"]
           env:
             - { name: BILLING_WEBHOOK_JWT_KMS_KEY_ID, value: "<key-arn>" }
             - { name: AWS_REGION, value: "<region>" }
@@ -159,7 +159,7 @@ Copy **both** the token and the public key PEM, then:
 
 ### Off-cluster alternative
 
-From a bastion, run the same image under an assumed mint role: `aws sts assume-role`, export the three `AWS_*` credentials, then `docker run … node dist/scripts/generate-token.js`. **`unset AWS_WEB_IDENTITY_TOKEN_FILE` first** — when it is set the SDK assumes `AWS_ROLE_ARN` and ignores static keys.
+From a bastion, run the same image under an assumed mint role: `aws sts assume-role`, export the three `AWS_*` credentials, then `docker run … bun scripts/generate-token.ts`. **`unset AWS_WEB_IDENTITY_TOKEN_FILE` first** — when it is set the SDK assumes `AWS_ROLE_ARN` and ignores static keys.
 
 ## Configuration
 

@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { afterEach, beforeEach, describe, expect, it, jest } from 'bun:test';
 import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { getAddress } from 'viem';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import {
   initTestApplication,
   TestAppProvider,
@@ -37,7 +38,7 @@ describe('Owners Controller V3 (Unit)', () => {
   let loggingService: MockedObject<ILoggingService>;
 
   beforeEach(async () => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
 
     const moduleFixture = await createTestModule();
     const configurationService = moduleFixture.get<IConfigurationService>(
@@ -376,7 +377,7 @@ describe('Owners Controller V3 (Unit)', () => {
     });
 
     it('should gracefully handle chain-specific Transaction Service error', async () => {
-      vi.spyOn(loggingService, 'warn');
+      jest.spyOn(loggingService, 'warn');
       const ownerAddress = faker.finance.ethereumAddress();
       const chainId1 = faker.string.numeric();
       const chainId2 = faker.string.numeric({ exclude: [chainId1] });
@@ -1090,7 +1091,7 @@ describe('Owners Controller V3 (Unit)', () => {
     const captchaSecretKey = faker.string.alphanumeric(32);
 
     beforeEach(async () => {
-      vi.resetAllMocks();
+      jest.resetAllMocks();
 
       const customConfig = (): ReturnType<typeof configuration> => ({
         ...configuration(),

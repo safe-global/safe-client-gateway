@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { describe, expect, it } from 'bun:test';
 import { NonNegativeNumericStringSchema } from '#/validation/entities/schemas/non-negative-numeric-string.schema';
 
 describe('NonNegativeNumericStringSchema', () => {

@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { NotFoundException, UnauthorizedException } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
 import { IsNull } from 'typeorm';
 import { type Address, getAddress } from 'viem';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import { mockEntityManager } from '#/datasources/db/v2/__tests__/entity-manager.mock';
 import { mockPostgresDatabaseService } from '#/datasources/db/v2/__tests__/postgresql-database.service.mock';
 import { mockRepository } from '#/datasources/db/v2/__tests__/repository.mock';
@@ -31,20 +32,20 @@ describe('NotificationsRepositoryV2', () => {
   const notificationSubscriptionRepository = { ...mockRepository };
   const notificationSubscriptionsRepository = { ...mockRepository };
   const mockLoggingService = {
-    debug: vi.fn(),
-    error: vi.fn(),
-    info: vi.fn(),
-    warn: vi.fn(),
+    debug: jest.fn(),
+    error: jest.fn(),
+    info: jest.fn(),
+    warn: jest.fn(),
   } as MockedObject<ILoggingService>;
   const mockPushNotificationsApi: IPushNotificationsApi = {
-    enqueueNotification: vi.fn(),
+    enqueueNotification: jest.fn(),
   };
   const mockConfigService = {
-    getOrThrow: vi.fn(),
+    getOrThrow: jest.fn(),
   } as MockedObject<ConfigService>;
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
     notificationsRepository = new NotificationsRepositoryV2(
       mockPushNotificationsApi,
       mockLoggingService,
@@ -67,7 +68,7 @@ describe('NotificationsRepositoryV2', () => {
             id: deviceId,
           },
         ],
-        raw: vi.fn(),
+        raw: jest.fn(),
       });
       mockEntityManager.findOneOrFail.mockResolvedValue({
         id: deviceId,

@@ -6,6 +6,7 @@ import {
   Index,
   OneToMany,
   PrimaryGeneratedColumn,
+  type Relation,
 } from 'typeorm';
 import { databaseEnumTransformer } from '#/domain/common/utils/enum';
 import { SpaceSafe } from '#/modules/spaces/datasources/safes/entities/space-safes.entity.db';
@@ -66,7 +67,7 @@ export class Space implements DomainSpace {
       cascade: ['update', 'insert'],
     },
   )
-  members!: Array<Member>;
+  members!: Relation<Array<Member>>;
 
   @OneToMany(
     () => SpaceSafe,
@@ -75,5 +76,5 @@ export class Space implements DomainSpace {
       cascade: ['update', 'insert'],
     },
   )
-  safes?: Array<SpaceSafe>;
+  safes?: Relation<Array<SpaceSafe>>;
 }

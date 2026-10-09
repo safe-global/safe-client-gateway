@@ -1,25 +1,26 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import type { KmsEncryptionService } from '#/datasources/kms/kms-encryption.service';
 import { WalletEncryptionService } from '#/modules/wallets/domain/wallet-encryption.service';
 
-// Plain vi.fn() mock: the wrapper is policy only — these tests assert the
+// Plain jest.fn() mock: the wrapper is policy only — these tests assert the
 // exact (value, context) wiring into KmsEncryptionService and nothing else.
 const fieldCryptoService = {
-  isEncrypted: vi.fn(),
-  encrypt: vi.fn(),
-  decrypt: vi.fn(),
-  blindIndex: vi.fn(),
+  isEncrypted: jest.fn(),
+  encrypt: jest.fn(),
+  decrypt: jest.fn(),
+  blindIndex: jest.fn(),
 } as MockedObject<KmsEncryptionService>;
 
 describe('WalletEncryptionService', () => {
   let target: WalletEncryptionService;
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
     target = new WalletEncryptionService(fieldCryptoService);
   });
 
@@ -29,9 +30,8 @@ describe('WalletEncryptionService', () => {
       fieldCryptoService.isEncrypted.mockReturnValue(true);
 
       expect(target.isEncrypted(value)).toBe(true);
-      expect(fieldCryptoService.isEncrypted).toHaveBeenCalledExactlyOnceWith(
-        value,
-      );
+      expect(fieldCryptoService.isEncrypted).toHaveBeenCalledTimes(1);
+      expect(fieldCryptoService.isEncrypted).toHaveBeenCalledWith(value);
     });
   });
 
@@ -45,10 +45,10 @@ describe('WalletEncryptionService', () => {
       await expect(target.encryptAddress(userId, address)).resolves.toBe(
         ciphertext,
       );
-      expect(fieldCryptoService.encrypt).toHaveBeenCalledExactlyOnceWith(
-        address,
-        { userId: String(userId) },
-      );
+      expect(fieldCryptoService.encrypt).toHaveBeenCalledTimes(1);
+      expect(fieldCryptoService.encrypt).toHaveBeenCalledWith(address, {
+        userId: String(userId),
+      });
     });
   });
 
@@ -59,9 +59,8 @@ describe('WalletEncryptionService', () => {
       fieldCryptoService.blindIndex.mockReturnValue(token);
 
       expect(target.addressIndex(address)).toBe(token);
-      expect(fieldCryptoService.blindIndex).toHaveBeenCalledExactlyOnceWith(
-        address,
-      );
+      expect(fieldCryptoService.blindIndex).toHaveBeenCalledTimes(1);
+      expect(fieldCryptoService.blindIndex).toHaveBeenCalledWith(address);
     });
 
     it('returns null when no index key is configured', () => {
@@ -83,10 +82,10 @@ describe('WalletEncryptionService', () => {
       await expect(target.decryptAddress(userId, ciphertext)).resolves.toBe(
         address,
       );
-      expect(fieldCryptoService.decrypt).toHaveBeenCalledExactlyOnceWith(
-        ciphertext,
-        { userId: String(userId) },
-      );
+      expect(fieldCryptoService.decrypt).toHaveBeenCalledTimes(1);
+      expect(fieldCryptoService.decrypt).toHaveBeenCalledWith(ciphertext, {
+        userId: String(userId),
+      });
     });
   });
 

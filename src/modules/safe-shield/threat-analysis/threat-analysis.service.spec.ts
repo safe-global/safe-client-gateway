@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { afterEach, beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import type { ILoggingService } from '#/logging/logging.interface';
 import { threatAnalysisRequestBuilder } from '#/modules/safe-shield/entities/__tests__/builders/analysis-requests.builder';
 import type { IBlockaidApi } from '#/modules/safe-shield/threat-analysis/blockaid/blockaid-api.interface';
@@ -15,12 +16,12 @@ import {
 import { ThreatAnalysisService } from '#/modules/safe-shield/threat-analysis/threat-analysis.service';
 
 const mockBlockaidApi = {
-  scanTransaction: vi.fn(),
+  scanTransaction: jest.fn(),
 } as MockedObject<IBlockaidApi>;
 
 const mockLoggingService = {
-  debug: vi.fn(),
-  warn: vi.fn(),
+  debug: jest.fn(),
+  warn: jest.fn(),
 } as MockedObject<ILoggingService>;
 
 describe('ThreatAnalysisService', () => {
@@ -31,8 +32,8 @@ describe('ThreatAnalysisService', () => {
   });
 
   afterEach(() => {
-    vi.clearAllMocks();
-    vi.resetAllMocks();
+    jest.clearAllMocks();
+    jest.resetAllMocks();
   });
 
   describe('analyze', () => {

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import type { Job } from 'bullmq';
 import { TestJobConsumer } from '#/datasources/job-queue/__tests__/test.job.consumer';
@@ -16,7 +17,7 @@ describe('TestJobConsumer', () => {
     const job = {
       name: 'test-job',
       data: { message: faker.lorem.word(), timestamp: 0 },
-      updateProgress: vi.fn(),
+      updateProgress: jest.fn(),
     } as unknown as Job<TestJobData>;
 
     await expect(consumer.process(job)).resolves.toEqual(
@@ -29,12 +30,12 @@ describe('TestJobConsumer', () => {
     const job1 = {
       name: 'test-job',
       data: { message: faker.lorem.word(), timestamp: 0 },
-      updateProgress: vi.fn(),
+      updateProgress: jest.fn(),
     } as unknown as Job<TestJobData>;
     const job2 = {
       name: 'test-job',
       data: { message: faker.lorem.word(), timestamp: 0 },
-      updateProgress: vi.fn(),
+      updateProgress: jest.fn(),
     } as unknown as Job<TestJobData>;
 
     await consumer.process(job1);

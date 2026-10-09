@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { HttpStatus } from '@nestjs/common';
 import { getAddress } from 'viem';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import { DataSourceError } from '#/domain/errors/data-source.error';
 import {
   erc20TokenBuilder,
@@ -12,8 +13,8 @@ import type { ITokenRepository } from '#/modules/tokens/domain/token.repository.
 import { TokensService } from '#/modules/tokens/routes/tokens.service';
 
 const tokenRepository = {
-  getToken: vi.fn(),
-  getTokens: vi.fn(),
+  getToken: jest.fn(),
+  getTokens: jest.fn(),
 } as MockedObject<ITokenRepository>;
 
 describe('TokensService', () => {

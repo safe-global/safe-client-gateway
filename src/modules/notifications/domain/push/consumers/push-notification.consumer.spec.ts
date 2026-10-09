@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import type { Job } from 'bullmq';
-import type { MockedObject } from 'vitest';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import { JobType } from '#/datasources/job-queue/types/job-types';
 import { LogType } from '#/domain/common/entities/log-type.entity';
 import type { ILoggingService } from '#/logging/logging.interface';
@@ -11,19 +12,19 @@ import { pushNotificationDeliveryJobDataBuilder } from '#/modules/notifications/
 import { pushNotificationEventJobDataBuilder } from '#/modules/notifications/domain/push/entities/__tests__/push-notification-event-job-data.builder';
 import type { PushNotificationService } from '#/modules/notifications/domain/push/push-notification.service';
 
-const mockLoggingService = vi.mocked({
-  info: vi.fn(),
-  debug: vi.fn(),
-  error: vi.fn(),
-  warn: vi.fn(),
+const mockLoggingService = mocked({
+  info: jest.fn(),
+  debug: jest.fn(),
+  error: jest.fn(),
+  warn: jest.fn(),
 } as MockedObject<ILoggingService>);
 
 const pushNotificationService = {
-  enqueueEvent: vi.fn(),
-  processEvent: vi.fn(),
-  processDelivery: vi.fn(),
+  enqueueEvent: jest.fn(),
+  processEvent: jest.fn(),
+  processDelivery: jest.fn(),
 } as MockedObject<PushNotificationService>;
-const mockPushNotificationService = vi.mocked(pushNotificationService);
+const mockPushNotificationService = mocked(pushNotificationService);
 
 function createMockJob<T>(
   name: string,
@@ -45,7 +46,7 @@ describe('PushNotificationConsumer', () => {
   let consumer: PushNotificationConsumer;
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
 
     consumer = new PushNotificationConsumer(
       mockLoggingService,

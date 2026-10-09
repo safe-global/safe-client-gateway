@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
-import type { MockedObject } from 'vitest';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
 import type { ILoggingService } from '#/logging/logging.interface';
 import type { IContractsRepository } from '#/modules/contracts/domain/contracts.repository.interface';
@@ -25,50 +26,50 @@ import type { MultisigTransactionStatusMapper } from '#/modules/transactions/rou
 import { addressInfoBuilder } from '#/routes/common/__tests__/entities/address-info.builder';
 import type { AddressInfoHelper } from '#/routes/common/address-info/address-info.helper';
 
-const addressInfoHelper = vi.mocked({
-  getOrDefault: vi.fn(),
+const addressInfoHelper = mocked({
+  getOrDefault: jest.fn(),
 } as MockedObject<AddressInfoHelper>);
 
-const statusMapper = vi.mocked({
-  mapTransactionStatus: vi.fn(),
+const statusMapper = mocked({
+  mapTransactionStatus: jest.fn(),
 } as MockedObject<MultisigTransactionStatusMapper>);
 
-const transactionInfoMapper = vi.mocked({
-  mapTransactionInfo: vi.fn(),
+const transactionInfoMapper = mocked({
+  mapTransactionInfo: jest.fn(),
 } as MockedObject<MultisigTransactionInfoMapper>);
 
-const transactionDataMapper = vi.mocked({
-  isTrustedDelegateCall: vi.fn(),
-  buildAddressInfoIndex: vi.fn(),
-  buildTokenInfoIndex: vi.fn(),
+const transactionDataMapper = mocked({
+  isTrustedDelegateCall: jest.fn(),
+  buildAddressInfoIndex: jest.fn(),
+  buildTokenInfoIndex: jest.fn(),
 } as MockedObject<TransactionDataMapper>);
 
-const safeAppInfoMapper = vi.mocked({
-  mapSafeAppInfo: vi.fn(),
+const safeAppInfoMapper = mocked({
+  mapSafeAppInfo: jest.fn(),
 } as MockedObject<SafeAppInfoMapper>);
 
-const multisigExecutionDetailsMapper = vi.mocked({
-  mapMultisigExecutionDetails: vi.fn(),
+const multisigExecutionDetailsMapper = mocked({
+  mapMultisigExecutionDetails: jest.fn(),
 } as MockedObject<MultisigTransactionExecutionDetailsMapper>);
 
-const multisigTransactionNoteMapper = vi.mocked({
-  mapTxNote: vi.fn(),
+const multisigTransactionNoteMapper = mocked({
+  mapTxNote: jest.fn(),
 });
 
-const mockConfigurationService = vi.mocked({
-  getOrThrow: vi.fn(),
+const mockConfigurationService = mocked({
+  getOrThrow: jest.fn(),
 } as MockedObject<IConfigurationService>);
 
-const mockDelegatesRepository = vi.mocked({
-  getDelegates: vi.fn(),
+const mockDelegatesRepository = mocked({
+  getDelegates: jest.fn(),
 } as MockedObject<DelegatesV3Repository>);
 
 const mockLoggingService = {
-  error: vi.fn(),
+  error: jest.fn(),
 } as MockedObject<ILoggingService>;
 
-const mockContractsRepository = vi.mocked({
-  isTrustedForDelegateCall: vi.fn(),
+const mockContractsRepository = mocked({
+  isTrustedForDelegateCall: jest.fn(),
 } as MockedObject<IContractsRepository>);
 
 describe('MultisigTransactionDetails mapper (Unit)', () => {
@@ -102,7 +103,7 @@ describe('MultisigTransactionDetails mapper (Unit)', () => {
   }
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
 
     initTarget({ ethSign: true });
   });

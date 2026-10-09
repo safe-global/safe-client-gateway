@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import {
   DecryptCommand,
   EncryptCommand,
@@ -34,7 +35,7 @@ describe('AwsKmsService', () => {
   const kmsMock = mockClient(KMSClient);
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
     kmsMock.reset();
   });
 

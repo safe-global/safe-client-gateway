@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeAll, beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import {
   encodeAbiParameters,
@@ -7,11 +8,11 @@ import {
   keccak256,
   parseAbiParameters,
 } from 'viem';
-import type { MockedObject } from 'vitest';
 import {
   getDeploymentVersionsByChainIds,
   RELAY_SUPPORTED_CHAIN_IDS,
 } from '#/__tests__/deployments.helper';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import {
   getMultiSendCallOnlyDeployments,
   getMultiSendDeployments,
@@ -83,19 +84,19 @@ const PROXY_FACTORY_VERSIONS = getDeploymentVersionsByChainIds(
 );
 
 const mockLoggingService = {
-  warn: vi.fn(),
+  warn: jest.fn(),
 } as MockedObject<ILoggingService>;
 
-const mockSafeRepository = vi.mocked({
-  getSafe: vi.fn(),
-  getSafesByModule: vi.fn(),
+const mockSafeRepository = mocked({
+  getSafe: jest.fn(),
+  getSafesByModule: jest.fn(),
 } as MockedObject<ISafeRepository>);
 
 describe('LimitAddressesMapper', () => {
   let target: LimitAddressesMapper;
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
 
     const relayTransactionHelper = new RelayTransactionHelper(
       mockSafeRepository,
@@ -1461,7 +1462,7 @@ describe('LimitAddressesMapper', () => {
         ).slice(-40)}`,
       );
 
-    describe.each(chainsWithFactory)('Chain %s', (chainId) => {
+    describe.each([...chainsWithFactory])('Chain %s', (chainId) => {
       let factoryAddresses: ReadonlyArray<string>;
 
       beforeAll(() => {

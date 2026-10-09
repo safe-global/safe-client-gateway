@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { FakeCacheService } from '#/datasources/cache/__tests__/fake.cache.service';
 import { CacheDir } from '#/datasources/cache/entities/cache-dir.entity';
@@ -24,7 +25,7 @@ describe('FakeCacheService', () => {
   });
 
   it('deletes key and sets invalidationTimeMs', async () => {
-    vi.useFakeTimers();
+    jest.useFakeTimers();
     const now = Date.now();
     const key = faker.string.alphanumeric();
     const field = faker.string.alphanumeric();
@@ -39,7 +40,7 @@ describe('FakeCacheService', () => {
       target.hGet(new CacheDir(`invalidationTimeMs:${cacheDir.key}`, '')),
     ).resolves.toBe(now.toString());
     expect(target.keyCount()).toBe(1);
-    vi.useRealTimers();
+    jest.useRealTimers();
   });
 
   it('clears keys', async () => {

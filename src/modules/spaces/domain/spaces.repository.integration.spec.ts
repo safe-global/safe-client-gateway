@@ -1,9 +1,18 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  describe,
+  expect,
+  it,
+  jest,
+} from 'bun:test';
 import { faker } from '@faker-js/faker';
 import type { ConfigService } from '@nestjs/config';
 import { DataSource, EntityNotFoundError, In } from 'typeorm';
-import type { MockedObject } from 'vitest';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
 import configuration from '#/config/entities/__tests__/configuration';
 import { postgresConfig } from '#/config/entities/postgres.config';
@@ -27,13 +36,13 @@ import { Wallet } from '#/modules/wallets/datasources/entities/wallets.entity.db
 import { fakeUuid } from '#/validation/entities/schemas/__tests__/uuid.builder';
 
 const mockLoggingService = {
-  debug: vi.fn(),
-  error: vi.fn(),
-  info: vi.fn(),
-  warn: vi.fn(),
+  debug: jest.fn(),
+  error: jest.fn(),
+  info: jest.fn(),
+  warn: jest.fn(),
 } as MockedObject<ILoggingService>;
-const mockConfigurationService = vi.mocked({
-  getOrThrow: vi.fn(),
+const mockConfigurationService = mocked({
+  getOrThrow: jest.fn(),
 } as MockedObject<IConfigurationService>);
 
 const UserStatusKeys = getStringEnumKeys(UserStatus);
@@ -91,7 +100,7 @@ describe('SpacesRepository', () => {
 
     // Migrate database
     const mockConfigService = {
-      getOrThrow: vi.fn().mockImplementation((key: string) => {
+      getOrThrow: jest.fn().mockImplementation((key: string) => {
         if (key === 'db.migrator.numberOfRetries') {
           return testConfiguration.db.migrator.numberOfRetries;
         }
@@ -121,7 +130,7 @@ describe('SpacesRepository', () => {
   });
 
   afterEach(async () => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
 
     // Delete in dependency order to avoid deadlocks.
     await dataSource
@@ -264,8 +273,8 @@ describe('SpacesRepository', () => {
     });
 
     it('should fail if the MAX_SPACE_CREATIONS_PER_USER limit is reached', async () => {
-      const config = vi.mocked({
-        getOrThrow: vi.fn(),
+      const config = mocked({
+        getOrThrow: jest.fn(),
       } as MockedObject<IConfigurationService>);
       config.getOrThrow.mockImplementation((key) => {
         if (key === 'spaces.maxSpaceCreationsPerUser') return 1;
@@ -307,8 +316,8 @@ describe('SpacesRepository', () => {
     });
 
     it('should not count OIDC-invited memberships toward the space creation limit', async () => {
-      const config = vi.mocked({
-        getOrThrow: vi.fn(),
+      const config = mocked({
+        getOrThrow: jest.fn(),
       } as MockedObject<IConfigurationService>);
       config.getOrThrow.mockImplementation((key) => {
         if (key === 'spaces.maxSpaceCreationsPerUser') return 1;

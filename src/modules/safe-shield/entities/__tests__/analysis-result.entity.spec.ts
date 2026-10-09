@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { describe, expect, it } from 'bun:test';
 import { omit } from 'lodash';
 import {
   AnalysisResultBaseSchema,

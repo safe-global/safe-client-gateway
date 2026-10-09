@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { beforeEach, describe, expect, it } from 'bun:test';
 import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
 
 describe('FakeConfigurationService', () => {

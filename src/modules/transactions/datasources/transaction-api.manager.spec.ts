@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
-import type { MockedObject } from 'vitest';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
 import type { CacheFirstDataSource } from '#/datasources/cache/cache.first.data.source';
 import type { ICacheService } from '#/datasources/cache/cache.service.interface';
@@ -14,22 +15,22 @@ import { TransactionApiManager } from '#/modules/transactions/datasources/transa
 import { rawify } from '#/validation/entities/raw.entity';
 
 const configurationService = {
-  getOrThrow: vi.fn(),
+  getOrThrow: jest.fn(),
 } as MockedObject<IConfigurationService>;
 
-const configurationServiceMock = vi.mocked(configurationService);
+const configurationServiceMock = mocked(configurationService);
 
 const configApi = {
-  getChain: vi.fn(),
+  getChain: jest.fn(),
 } as MockedObject<IConfigApi>;
 
-const configApiMock = vi.mocked(configApi);
+const configApiMock = mocked(configApi);
 
 const dataSource = {
-  get: vi.fn(),
+  get: jest.fn(),
 } as MockedObject<CacheFirstDataSource>;
 
-const dataSourceMock = vi.mocked(dataSource);
+const dataSourceMock = mocked(dataSource);
 
 const cacheService = {} as MockedObject<ICacheService>;
 
@@ -38,12 +39,12 @@ const httpErrorFactory = {} as MockedObject<HttpErrorFactory>;
 const networkService = {} as MockedObject<INetworkService>;
 
 const mockLoggingService = {
-  debug: vi.fn(),
+  debug: jest.fn(),
 } as MockedObject<ILoggingService>;
 
 describe('Transaction API Manager Tests', () => {
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
   });
 
   const txServiceUrl = faker.internet.url({ appendSlash: false });

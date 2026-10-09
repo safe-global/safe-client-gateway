@@ -1,12 +1,22 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  jest,
+} from 'bun:test';
 import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import { getQueueToken } from '@nestjs/bullmq';
 import type { INestApplication } from '@nestjs/common';
 import type { Queue } from 'bullmq';
 import type { Address, Hash } from 'viem';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import {
   createTestApplication,
   initTestApplication,
@@ -152,7 +162,7 @@ describe('Push notification queue integration', () => {
   beforeEach(async () => {
     // Queue is paused (or not yet started for the first test) — safe to drain.
     await queue.drain(true);
-    vi.clearAllMocks();
+    jest.clearAllMocks();
     cacheService.clear();
     // Resume worker, then queue (worker must be ready before jobs arrive).
     consumer.worker.resume();

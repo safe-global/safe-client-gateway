@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { Mocked, MockedObject } from 'vitest';
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
+import { type Mocked, type MockedObject, mocked } from '#/__tests__/mocks';
 import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
 import { contractBuilder } from '#/modules/contracts/domain/entities/__tests__/contract.builder';
 import type { IDataDecoderRepository } from '#/modules/data-decoder/domain/v2/data-decoder.repository.interface';
@@ -25,38 +26,38 @@ import type { MultisigTransactionStatusMapper } from '#/modules/transactions/rou
 import type { AddressInfoHelper } from '#/routes/common/address-info/address-info.helper';
 
 const mockDataDecodedRepository = {
-  getTransactionDataDecoded: vi.fn(),
+  getTransactionDataDecoded: jest.fn(),
 } as MockedObject<IDataDecoderRepository>;
 
 describe('MultisigTransactionMapper', () => {
   let mapper: MultisigTransactionMapper;
 
-  const addressInfoHelper = vi.mocked({
-    getCollection: vi.fn(),
+  const addressInfoHelper = mocked({
+    getCollection: jest.fn(),
   } as MockedObject<AddressInfoHelper>);
   const statusMapper = {
-    mapTransactionStatus: vi.fn(),
+    mapTransactionStatus: jest.fn(),
   } as unknown as Mocked<MultisigTransactionStatusMapper>;
   const transactionInfoMapper = {
-    mapTransactionInfo: vi.fn(),
+    mapTransactionInfo: jest.fn(),
   } as unknown as Mocked<MultisigTransactionInfoMapper>;
   const executionInfoMapper = {
-    mapExecutionInfo: vi.fn(),
+    mapExecutionInfo: jest.fn(),
   } as unknown as Mocked<MultisigTransactionExecutionInfoMapper>;
   const safeAppInfoMapper = {
-    mapSafeAppInfo: vi.fn(),
+    mapSafeAppInfo: jest.fn(),
   } as unknown as Mocked<SafeAppInfoMapper>;
   const noteMapper = {
-    mapTxNote: vi.fn(),
+    mapTxNote: jest.fn(),
   } as Mocked<MultisigTransactionNoteMapper>;
   const transactionVerifier = {
-    verifyApiTransaction: vi.fn(),
-    verifyProposal: vi.fn(),
-    verifyConfirmation: vi.fn(),
+    verifyApiTransaction: jest.fn(),
+    verifyProposal: jest.fn(),
+    verifyConfirmation: jest.fn(),
   } as unknown as Mocked<TransactionVerifierHelper>;
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
 
     mapper = new MultisigTransactionMapper(
       mockDataDecodedRepository,
