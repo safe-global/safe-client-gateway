@@ -758,7 +758,7 @@ describe('PoliciesService', () => {
       ).resolves.toStrictEqual([]);
     });
 
-    it('should read nothing when spending-limit is not requested', async () => {
+    it('should read nothing when only proposer is requested', async () => {
       const policies = await target.getSpacePendingPolicies({
         ...policyRequest,
         types: [PolicyType.Proposer],
@@ -766,6 +766,15 @@ describe('PoliciesService', () => {
 
       expect(policies).toStrictEqual([]);
       expect(mockSafeRepository.getTransactionQueue).not.toHaveBeenCalled();
+    });
+
+    it('should accept a guard policy type', async () => {
+      const policies = await target.getSpacePendingPolicies({
+        ...policyRequest,
+        types: [PolicyType.Cosigner],
+      });
+
+      expect(policies).toStrictEqual([]);
     });
 
     it('should narrow the read to the requested subset', async () => {

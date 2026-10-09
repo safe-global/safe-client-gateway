@@ -180,8 +180,8 @@ export class PoliciesService {
   }
 
   /**
-   * The spending-limit changes in the transaction queue of every Safe of the
-   * Space, or the requested subset of them.
+   * The pending policy changes of every Safe of the Space, or the requested
+   * subset of them.
    */
   public async getSpacePendingPolicies(
     request: SpacePolicyRequest,
@@ -328,10 +328,10 @@ export class PoliciesService {
   }
 
   /**
-   * The pending spending-limit changes of every Safe of {@link safes}.
+   * The pending policy changes of every Safe of {@link safes}.
    *
-   * `spending-limit` is the only pending type supported currently - a proposer is
-   * off-chain and requires no Safe transaction, so it never has a queued state.
+   * A proposer is off-chain and needs no Safe transaction, so it never has a
+   * pending state.
    *
    * Concurrency is capped at `policies.batchSize`. A Safe
    * whose queue could not be read is skipped rather than failing the whole
@@ -341,7 +341,20 @@ export class PoliciesService {
     safes: ReadonlyArray<SafeRef>,
     types: ReadonlyArray<PolicyType>,
   ): Promise<Array<PendingPolicy>> {
-    if (safes.length === 0 || !types.includes(PolicyType.SpendingLimit)) {
+    const spendingLimitsRequested = types.includes(PolicyType.SpendingLimit);
+    const guardPoliciesRequested = GUARD_POLICY_TYPES.some((type) =>
+      types.includes(type),
+    );
+
+    if (
+      safes.length === 0 ||
+      !(spendingLimitsRequested || guardPoliciesRequested)
+    ) {
+      return [];
+    }
+
+    // Placeholder: replaced in step 2. Guard items are not built yet.
+    if (!spendingLimitsRequested) {
       return [];
     }
 
