@@ -26,6 +26,7 @@ RUN yarn install --immutable \
 #
 FROM node:24.21.0-alpine3.24 AS production
 USER node
+WORKDIR /app
 
 ARG VERSION
 ARG BUILD_NUMBER
