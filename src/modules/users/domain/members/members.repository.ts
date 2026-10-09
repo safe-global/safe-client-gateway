@@ -577,6 +577,7 @@ export class MembersRepository implements IMembersRepository {
       await lockSpaceForAdminChange(entityManager, args.spaceId);
 
       const member = await entityManager.findOne(DbMember, {
+        select: { id: true, role: true, status: true },
         where: { user: { id: args.userId }, space: { id: args.spaceId } },
       });
       if (!member) {
@@ -665,6 +666,7 @@ export class MembersRepository implements IMembersRepository {
       await lockSpaceForAdminChange(entityManager, args.spaceId);
 
       const member = await entityManager.findOne(DbMember, {
+        select: { id: true, role: true, status: true },
         where: { user: { id: args.userId }, space: { id: args.spaceId } },
       });
       if (!member) {
