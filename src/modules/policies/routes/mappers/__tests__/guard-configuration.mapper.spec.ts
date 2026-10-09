@@ -35,6 +35,7 @@ import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 
 const mockLoggingService = {
   warn: vi.fn(),
+  debug: vi.fn(),
 } as MockedObject<ILoggingService>;
 
 const SEPOLIA_CHAIN_ID = '11155111';
@@ -60,6 +61,7 @@ describe('GuardConfigurationMapper', () => {
     target = new GuardConfigurationMapper(
       new MultiSendDecoder(mockLoggingService),
       new SafePolicyGuardDecoder(),
+      mockLoggingService,
     );
   });
 

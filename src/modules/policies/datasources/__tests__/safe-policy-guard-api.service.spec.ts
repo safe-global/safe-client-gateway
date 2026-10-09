@@ -4,6 +4,7 @@ import { getAddress, type PublicClient } from 'viem';
 import type { MockedObject } from 'vitest';
 import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
 import { CacheRouter } from '@/datasources/cache/cache.router';
+import { DataSourceError } from '@/domain/errors/data-source.error';
 import type { IBlockchainApiManager } from '@/domain/interfaces/blockchain-api.manager.interface';
 import { SafePolicyGuardApi } from '@/modules/policies/datasources/safe-policy-guard-api.service';
 import { SafePolicyGuardAbi } from '@/modules/policies/domain/contracts/decoders/safe-policy-guard-decoder.helper';
@@ -70,7 +71,10 @@ describe('SafePolicyGuardApi', () => {
     );
 
     await expect(target.getExpiry({ chainId, guard })).rejects.toThrow(
-      'RPC unavailable',
+      new DataSourceError(
+        'Could not read the EXPIRY of a SafePolicyGuard: RPC unavailable',
+        503,
+      ),
     );
     expect(cacheService.keyCount()).toBe(0);
   });

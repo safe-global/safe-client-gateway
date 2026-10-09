@@ -12,8 +12,6 @@ export const SafePolicyGuardAbi = parseAbi([
   'function configureImmediately(Configuration[] configurations)',
   'function requestConfiguration(bytes32 configureRoot)',
   'function applyConfiguration(Configuration[] configurations)',
-  'function invalidateRoot(bytes32 configureRoot)',
-  'function DELAY() view returns (uint256)',
   'function EXPIRY() view returns (uint256)',
 ]);
 

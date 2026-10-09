@@ -2,6 +2,7 @@
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
+import { ZodError } from 'zod';
 import type { SafePolicyGuardApi } from '@/modules/policies/datasources/safe-policy-guard-api.service';
 import { SafePolicyGuardRepository } from '@/modules/policies/domain/safe-policy-guard.repository';
 import { rawify } from '@/validation/entities/raw.entity';
@@ -35,6 +36,6 @@ describe('SafePolicyGuardRepository', () => {
       rawify((2n ** 64n).toString()),
     );
 
-    await expect(target.getExpiry(args)).rejects.toThrow();
+    await expect(target.getExpiry(args)).rejects.toThrow(ZodError);
   });
 });

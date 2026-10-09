@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Inject, Injectable } from '@nestjs/common';
+import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import type { Address } from 'viem';
 import { CacheRouter } from '@/datasources/cache/cache.router';
 import {
@@ -7,7 +7,9 @@ import {
   type ICacheService,
 } from '@/datasources/cache/cache.service.interface';
 import { MAX_TTL } from '@/datasources/cache/constants';
+import { DataSourceError } from '@/domain/errors/data-source.error';
 import { IBlockchainApiManager } from '@/domain/interfaces/blockchain-api.manager.interface';
+import { asError } from '@/logging/utils';
 import { SafePolicyGuardAbi } from '@/modules/policies/domain/contracts/decoders/safe-policy-guard-decoder.helper';
 import { type Raw, rawify } from '@/validation/entities/raw.entity';
 
@@ -40,13 +42,21 @@ export class SafePolicyGuardApi {
       return rawify(cached);
     }
 
-    const client = await this.blockchainApiManager.getApi(args.chainId);
-    const expiry = await client.readContract({
-      address: args.guard,
-      abi: SafePolicyGuardAbi,
-      functionName: 'EXPIRY',
-    });
-    const value = expiry.toString();
+    let value: string;
+    try {
+      const client = await this.blockchainApiManager.getApi(args.chainId);
+      const expiry = await client.readContract({
+        address: args.guard,
+        abi: SafePolicyGuardAbi,
+        functionName: 'EXPIRY',
+      });
+      value = expiry.toString();
+    } catch (error) {
+      throw new DataSourceError(
+        `Could not read the EXPIRY of a SafePolicyGuard: ${asError(error).message}`,
+        HttpStatus.SERVICE_UNAVAILABLE,
+      );
+    }
 
     await this.cacheService.hSet(cacheDir, value, MAX_TTL);
 

@@ -1,7 +1,12 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { type Address, type Hex, isAddressEqual, zeroAddress } from 'viem';
 import { z } from 'zod';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
+import { asError } from '@/logging/utils';
 import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
 import { SafeGuardManagerDecoder } from '@/modules/policies/domain/contracts/decoders/safe-guard-manager-decoder.helper';
 import { SafePolicyGuardDecoder } from '@/modules/policies/domain/contracts/decoders/safe-policy-guard-decoder.helper';
@@ -42,6 +47,8 @@ export class GuardSetupMapper {
     private readonly multiSendDecoder: MultiSendDecoder,
     private readonly safePolicyGuardDecoder: SafePolicyGuardDecoder,
     private readonly safeGuardManagerDecoder: SafeGuardManagerDecoder,
+    @Inject(LoggingService)
+    private readonly loggingService: ILoggingService,
   ) {}
 
   /**
@@ -148,7 +155,8 @@ export class GuardSetupMapper {
         data: args.data,
       });
       [newValue] = decoded.args;
-    } catch {
+    } catch (error) {
+      this.logUndecodable(error);
       return null;
     }
 
@@ -228,7 +236,8 @@ export class GuardSetupMapper {
         .safeParse(configurations);
 
       return parsed.success ? parsed.data : null;
-    } catch {
+    } catch (error) {
+      this.logUndecodable(error);
       return null;
     }
   }
@@ -247,5 +256,17 @@ export class GuardSetupMapper {
 
   private isSameAddress(a: Address | null, b: Address): boolean {
     return a !== null && isAddressEqual(a, b);
+  }
+
+  /**
+   * A call whose selector matched but whose arguments do not decode cannot be
+   * reported, so it is skipped - and logged, since it means a malformed queued
+   * transaction.
+   */
+  private logUndecodable(error: unknown): void {
+    this.loggingService.debug({
+      message: 'Could not decode a queued SafePolicyGuard setup call',
+      error: asError(error).message,
+    });
   }
 }

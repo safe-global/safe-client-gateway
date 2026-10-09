@@ -1,7 +1,12 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { type Address, type Hex, isAddressEqual, zeroAddress } from 'viem';
 import { z } from 'zod';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '@/logging/logging.interface';
+import { asError } from '@/logging/utils';
 import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
 import { SafePolicyGuardDecoder } from '@/modules/policies/domain/contracts/decoders/safe-policy-guard-decoder.helper';
 import type {
@@ -31,6 +36,7 @@ import {
   queuedCalls,
 } from '@/modules/policies/routes/mappers/queued-calls.utils';
 import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
+import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 
 /** A `requestConfiguration` call in the queue. */
 type QueuedRequest = { guard: Address; transaction: PendingTransaction };
@@ -76,6 +82,8 @@ export class GuardConfigurationMapper {
   constructor(
     private readonly multiSendDecoder: MultiSendDecoder,
     private readonly safePolicyGuardDecoder: SafePolicyGuardDecoder,
+    @Inject(LoggingService)
+    private readonly loggingService: ILoggingService,
   ) {}
 
   /**
@@ -329,7 +337,8 @@ export class GuardConfigurationMapper {
       return getPolicyTypeOfContract(args.safe.chainId, configuration.policy);
     }
 
-    const operation = configuration.operation === 0 ? 'CALL' : 'DELEGATECALL';
+    const operation =
+      configuration.operation === Operation.CALL ? 'CALL' : 'DELEGATECALL';
     const binding = args.bindings.find(
       (binding) =>
         isAddressEqual(binding.target, configuration.target) &&
@@ -352,7 +361,8 @@ export class GuardConfigurationMapper {
       return decoded.functionName === 'requestConfiguration'
         ? decoded.args[0]
         : null;
-    } catch {
+    } catch (error) {
+      this.logUndecodable(error);
       return null;
     }
   }
@@ -374,12 +384,25 @@ export class GuardConfigurationMapper {
         .nonempty()
         .safeParse(decoded.args[0]);
       return parsed.success ? parsed.data : null;
-    } catch {
+    } catch (error) {
+      this.logUndecodable(error);
       return null;
     }
   }
 
   private unixSeconds(date: Date | undefined): number | null {
     return date ? Math.floor(date.getTime() / 1000) : null;
+  }
+
+  /**
+   * A call whose selector matched but whose arguments do not decode cannot be
+   * reported, so it is skipped - and logged, since it means a malformed queued
+   * transaction.
+   */
+  private logUndecodable(error: unknown): void {
+    this.loggingService.debug({
+      message: 'Could not decode a queued SafePolicyGuard configuration call',
+      error: asError(error).message,
+    });
   }
 }
