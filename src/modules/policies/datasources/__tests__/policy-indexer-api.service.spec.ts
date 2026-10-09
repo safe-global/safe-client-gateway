@@ -2,25 +2,25 @@
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
-import type { ICacheService } from '@/datasources/cache/cache.service.interface';
-import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import type { ILoggingService } from '@/logging/logging.interface';
-import { PolicyIndexerApi } from '@/modules/policies/datasources/policy-indexer-api.service';
-import type { RawIndexerMeta } from '@/modules/policies/domain/entities/indexer/__tests__/policy-indexer-state.builder';
+import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
+import type { ICacheService } from '#/datasources/cache/cache.service.interface';
+import { CacheDir } from '#/datasources/cache/entities/cache-dir.entity';
+import { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
+import type { INetworkService } from '#/datasources/network/network.service.interface';
+import type { ILoggingService } from '#/logging/logging.interface';
+import { PolicyIndexerApi } from '#/modules/policies/datasources/policy-indexer-api.service';
+import type { RawIndexerMeta } from '#/modules/policies/domain/entities/indexer/__tests__/policy-indexer-state.builder';
 import {
   rawIndexerMetaBuilder,
   rawPolicyIndexerResponse,
-} from '@/modules/policies/domain/entities/indexer/__tests__/policy-indexer-state.builder';
+} from '#/modules/policies/domain/entities/indexer/__tests__/policy-indexer-state.builder';
 import {
   rawIndexerSafeAllowanceBuilder,
   rawIndexerSafeDelegateBuilder,
-} from '@/modules/policies/domain/entities/indexer/__tests__/safe-allowance.builder';
-import type { SafeRef } from '@/modules/policies/domain/entities/safe-ref.entity';
-import type { Raw } from '@/validation/entities/raw.entity';
-import { rawify } from '@/validation/entities/raw.entity';
+} from '#/modules/policies/domain/entities/indexer/__tests__/safe-allowance.builder';
+import type { SafeRef } from '#/modules/policies/domain/entities/safe-ref.entity';
+import type { Raw } from '#/validation/entities/raw.entity';
+import { rawify } from '#/validation/entities/raw.entity';
 
 const mockNetworkService = {
   post: vi.fn(),

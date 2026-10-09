@@ -13,29 +13,29 @@ import type { MockedObject } from 'vitest';
 import {
   initTestApplication,
   TestAppProvider,
-} from '@/__tests__/test-app.provider';
-import { createTestModule } from '@/__tests__/testing-module';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import configuration from '@/config/entities/__tests__/configuration';
-import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import { NetworkService } from '@/datasources/network/network.service.interface';
-import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
-import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import type { Chain } from '@/modules/chains/routes/entities/chain.entity';
-import { delegateBuilder } from '@/modules/delegate/domain/entities/__tests__/delegate.builder';
-import { NotificationType } from '@/modules/notifications/datasources/entities/notification-type.entity.db';
-import { deleteAllSubscriptionsDtoBuilder } from '@/modules/notifications/domain/v2/entities/__tests__/delete-all-subscriptions.dto.builder';
-import type { DeleteAllSubscriptionsDto } from '@/modules/notifications/domain/v2/entities/delete-all-subscriptions.dto.entity';
-import { INotificationsRepositoryV2 } from '@/modules/notifications/domain/v2/notifications.repository.interface';
-import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
-import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
-import { upsertSubscriptionsDtoBuilder } from '@/modules/notifications/routes/v2/entities/__tests__/upsert-subscriptions.dto.builder';
-import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
-import { TestUsersModule } from '@/modules/users/__tests__/test.users.module';
-import { UsersModule } from '@/modules/users/users.module';
-import { rawify } from '@/validation/entities/raw.entity';
+} from '#/__tests__/test-app.provider';
+import { createTestModule } from '#/__tests__/testing-module';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import configuration from '#/config/entities/__tests__/configuration';
+import { IJwtService } from '#/datasources/jwt/jwt.service.interface';
+import type { INetworkService } from '#/datasources/network/network.service.interface';
+import { NetworkService } from '#/datasources/network/network.service.interface';
+import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
+import { siweAuthPayloadDtoBuilder } from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
+import type { Chain } from '#/modules/chains/routes/entities/chain.entity';
+import { delegateBuilder } from '#/modules/delegate/domain/entities/__tests__/delegate.builder';
+import { NotificationType } from '#/modules/notifications/datasources/entities/notification-type.entity.db';
+import { deleteAllSubscriptionsDtoBuilder } from '#/modules/notifications/domain/v2/entities/__tests__/delete-all-subscriptions.dto.builder';
+import type { DeleteAllSubscriptionsDto } from '#/modules/notifications/domain/v2/entities/delete-all-subscriptions.dto.entity';
+import { INotificationsRepositoryV2 } from '#/modules/notifications/domain/v2/notifications.repository.interface';
+import { NotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/notifications.repository.module';
+import { TestNotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/test.notification.repository.module';
+import { upsertSubscriptionsDtoBuilder } from '#/modules/notifications/routes/v2/entities/__tests__/upsert-subscriptions.dto.builder';
+import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
+import { TestUsersModule } from '#/modules/users/__tests__/test.users.module';
+import { UsersModule } from '#/modules/users/users.module';
+import { rawify } from '#/validation/entities/raw.entity';
 
 describe('Notifications Controller V2', () => {
   let app: INestApplication<Server>;

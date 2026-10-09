@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { getAddress, zeroAddress } from 'viem';
-import { safeQueueMultisigTransactionBuilder } from '@/modules/safe-queue/entities/__tests__/queue-multisig-transaction.builder';
-import { SafeQueueMultisigTransactionSchema } from '@/modules/safe-queue/entities/multisig-transaction.entity';
+import { safeQueueMultisigTransactionBuilder } from '#/modules/safe-queue/entities/__tests__/queue-multisig-transaction.builder';
+import { SafeQueueMultisigTransactionSchema } from '#/modules/safe-queue/entities/multisig-transaction.entity';
 
 describe('SafeQueueMultisigTransactionSchema', () => {
   describe('to', () => {

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { Hex } from 'viem';
-import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
-import type { IRelayer } from '@/modules/relay/domain/interfaces/relayer.interface';
+import type { Chain } from '#/modules/chains/domain/entities/chain.entity';
+import type { IRelayer } from '#/modules/relay/domain/interfaces/relayer.interface';
 
 export const IRelayManager = Symbol('IRelayManager');
 

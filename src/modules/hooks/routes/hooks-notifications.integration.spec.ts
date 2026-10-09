@@ -6,41 +6,41 @@ import type { MockedObject } from 'vitest';
 import {
   createTestApplication,
   initTestApplication,
-} from '@/__tests__/test-app.provider';
-import { createTestModule } from '@/__tests__/testing-module';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import configuration from '@/config/entities/__tests__/configuration';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import { NetworkService } from '@/datasources/network/network.service.interface';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
+} from '#/__tests__/test-app.provider';
+import { createTestModule } from '#/__tests__/testing-module';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import configuration from '#/config/entities/__tests__/configuration';
+import type { INetworkService } from '#/datasources/network/network.service.interface';
+import { NetworkService } from '#/datasources/network/network.service.interface';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
 import {
   IHooksRepository,
   type IHooksRepository as IHooksRepositoryType,
-} from '@/modules/hooks/domain/hooks.repository.interface';
-import { chainUpdateEventBuilder } from '@/modules/hooks/routes/entities/__tests__/chain-update.builder';
+} from '#/modules/hooks/domain/hooks.repository.interface';
+import { chainUpdateEventBuilder } from '#/modules/hooks/routes/entities/__tests__/chain-update.builder';
 import {
   deletedDelegateEventBuilder,
   newDelegateEventBuilder,
   updatedDelegateEventBuilder,
-} from '@/modules/hooks/routes/entities/__tests__/delegate-events.builder';
-import { deletedMultisigTransactionEventBuilder } from '@/modules/hooks/routes/entities/__tests__/deleted-multisig-transaction.builder';
-import { executedTransactionEventBuilder } from '@/modules/hooks/routes/entities/__tests__/executed-transaction.builder';
-import { incomingEtherEventBuilder } from '@/modules/hooks/routes/entities/__tests__/incoming-ether.builder';
-import { incomingTokenEventBuilder } from '@/modules/hooks/routes/entities/__tests__/incoming-token.builder';
-import { messageCreatedEventBuilder } from '@/modules/hooks/routes/entities/__tests__/message-created.builder';
-import { moduleTransactionEventBuilder } from '@/modules/hooks/routes/entities/__tests__/module-transaction.builder';
-import { newConfirmationEventBuilder } from '@/modules/hooks/routes/entities/__tests__/new-confirmation.builder';
-import { newMessageConfirmationEventBuilder } from '@/modules/hooks/routes/entities/__tests__/new-message-confirmation.builder';
-import { outgoingEtherEventBuilder } from '@/modules/hooks/routes/entities/__tests__/outgoing-ether.builder';
-import { outgoingTokenEventBuilder } from '@/modules/hooks/routes/entities/__tests__/outgoing-token.builder';
-import { pendingTransactionEventBuilder } from '@/modules/hooks/routes/entities/__tests__/pending-transaction.builder';
-import { reorgDetectedEventBuilder } from '@/modules/hooks/routes/entities/__tests__/reorg-detected.builder';
-import { safeAppsEventBuilder } from '@/modules/hooks/routes/entities/__tests__/safe-apps-update.builder';
-import { safeCreatedEventBuilder } from '@/modules/hooks/routes/entities/__tests__/safe-created.build';
-import { IPushNotificationService } from '@/modules/notifications/domain/push/push-notification.service.interface';
-import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
-import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
-import { rawify } from '@/validation/entities/raw.entity';
+} from '#/modules/hooks/routes/entities/__tests__/delegate-events.builder';
+import { deletedMultisigTransactionEventBuilder } from '#/modules/hooks/routes/entities/__tests__/deleted-multisig-transaction.builder';
+import { executedTransactionEventBuilder } from '#/modules/hooks/routes/entities/__tests__/executed-transaction.builder';
+import { incomingEtherEventBuilder } from '#/modules/hooks/routes/entities/__tests__/incoming-ether.builder';
+import { incomingTokenEventBuilder } from '#/modules/hooks/routes/entities/__tests__/incoming-token.builder';
+import { messageCreatedEventBuilder } from '#/modules/hooks/routes/entities/__tests__/message-created.builder';
+import { moduleTransactionEventBuilder } from '#/modules/hooks/routes/entities/__tests__/module-transaction.builder';
+import { newConfirmationEventBuilder } from '#/modules/hooks/routes/entities/__tests__/new-confirmation.builder';
+import { newMessageConfirmationEventBuilder } from '#/modules/hooks/routes/entities/__tests__/new-message-confirmation.builder';
+import { outgoingEtherEventBuilder } from '#/modules/hooks/routes/entities/__tests__/outgoing-ether.builder';
+import { outgoingTokenEventBuilder } from '#/modules/hooks/routes/entities/__tests__/outgoing-token.builder';
+import { pendingTransactionEventBuilder } from '#/modules/hooks/routes/entities/__tests__/pending-transaction.builder';
+import { reorgDetectedEventBuilder } from '#/modules/hooks/routes/entities/__tests__/reorg-detected.builder';
+import { safeAppsEventBuilder } from '#/modules/hooks/routes/entities/__tests__/safe-apps-update.builder';
+import { safeCreatedEventBuilder } from '#/modules/hooks/routes/entities/__tests__/safe-created.build';
+import { IPushNotificationService } from '#/modules/notifications/domain/push/push-notification.service.interface';
+import { NotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/notifications.repository.module';
+import { TestNotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/test.notification.repository.module';
+import { rawify } from '#/validation/entities/raw.entity';
 
 describe('Hook Events for Notifications', () => {
   let app: INestApplication<Server>;

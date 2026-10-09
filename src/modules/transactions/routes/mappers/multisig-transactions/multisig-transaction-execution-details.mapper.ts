@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
-import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
-import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
-import type { TokenRepository } from '@/modules/tokens/domain/token.repository';
-import { ITokenRepository } from '@/modules/tokens/domain/token.repository.interface';
+import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
+import type { Safe } from '#/modules/safe/domain/entities/safe.entity';
+import type { TokenRepository } from '#/modules/tokens/domain/token.repository';
+import { ITokenRepository } from '#/modules/tokens/domain/token.repository.interface';
 import {
   MultisigConfirmationDetails,
   MultisigExecutionDetails,
-} from '@/modules/transactions/routes/entities/transaction-details/multisig-execution-details.entity';
-import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
-import { NULL_ADDRESS } from '@/routes/common/constants';
-import { AddressInfo } from '@/routes/common/entities/address-info.entity';
+} from '#/modules/transactions/routes/entities/transaction-details/multisig-execution-details.entity';
+import { AddressInfoHelper } from '#/routes/common/address-info/address-info.helper';
+import { NULL_ADDRESS } from '#/routes/common/constants';
+import { AddressInfo } from '#/routes/common/entities/address-info.entity';
 
 @Injectable()
 export class MultisigTransactionExecutionDetailsMapper {

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import { ZerionWalletPortfolioSchema } from '@/modules/balances/datasources/entities/zerion-wallet-portfolio.entity';
+import { ZerionWalletPortfolioSchema } from '#/modules/balances/datasources/entities/zerion-wallet-portfolio.entity';
 
 describe('ZerionWalletPortfolioSchema', () => {
   it('lower-cases the per-chain distribution keys', () => {

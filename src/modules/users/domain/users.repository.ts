@@ -9,23 +9,23 @@ import {
 import type { FindOptionsRelations, FindOptionsWhere } from 'typeorm';
 import { EntityManager, In, IsNull } from 'typeorm';
 import type { Address } from 'viem';
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { isUniqueConstraintError } from '@/datasources/errors/helpers/is-unique-constraint-error.helper';
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
-import { SpaceAuditEventType } from '@/modules/spaces/domain/audit/entities/space-audit-event.entity';
-import { ISpaceAuditRepository } from '@/modules/spaces/domain/audit/space-audit.repository.interface';
-import { Member as DbMember } from '@/modules/users/datasources/entities/member.entity.db';
-import { User as DbUser } from '@/modules/users/datasources/entities/users.entity.db';
-import type { User } from '@/modules/users/domain/entities/user.entity';
-import { UserStatus } from '@/modules/users/domain/entities/user.entity';
-import { UserEmailAlreadyInUseError } from '@/modules/users/domain/errors/user-email-already-in-use.error';
-import { UserEncryptionService } from '@/modules/users/domain/user-encryption.service';
-import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
-import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
-import { WalletEncryptionService } from '@/modules/wallets/domain/wallet-encryption.service';
-import { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
-import type { EmailAddress } from '@/validation/entities/schemas/email-address.schema';
+import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
+import { isUniqueConstraintError } from '#/datasources/errors/helpers/is-unique-constraint-error.helper';
+import { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import { getAuthenticatedUserIdOrFail } from '#/modules/auth/utils/assert-authenticated.utils';
+import { SpaceAuditEventType } from '#/modules/spaces/domain/audit/entities/space-audit-event.entity';
+import { ISpaceAuditRepository } from '#/modules/spaces/domain/audit/space-audit.repository.interface';
+import { Member as DbMember } from '#/modules/users/datasources/entities/member.entity.db';
+import { User as DbUser } from '#/modules/users/datasources/entities/users.entity.db';
+import type { User } from '#/modules/users/domain/entities/user.entity';
+import { UserStatus } from '#/modules/users/domain/entities/user.entity';
+import { UserEmailAlreadyInUseError } from '#/modules/users/domain/errors/user-email-already-in-use.error';
+import { UserEncryptionService } from '#/modules/users/domain/user-encryption.service';
+import type { IUsersRepository } from '#/modules/users/domain/users.repository.interface';
+import { Wallet } from '#/modules/wallets/datasources/entities/wallets.entity.db';
+import { WalletEncryptionService } from '#/modules/wallets/domain/wallet-encryption.service';
+import { IWalletsRepository } from '#/modules/wallets/domain/wallets.repository.interface';
+import type { EmailAddress } from '#/validation/entities/schemas/email-address.schema';
 
 @Injectable()
 export class UsersRepository implements IUsersRepository {

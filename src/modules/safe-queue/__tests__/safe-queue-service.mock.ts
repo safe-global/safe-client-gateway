@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import type { MockedObject } from 'vitest';
-import type { ISafeQueueService } from '@/modules/safe-queue/safe-queue.interface';
+import type { ISafeQueueService } from '#/modules/safe-queue/safe-queue.interface';
 
 export function createMockSafeQueueService(): MockedObject<ISafeQueueService> {
   return {

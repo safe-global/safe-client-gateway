@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
-import { StripeMetadataSchema } from '@/datasources/billing-api/entities/metadata.entity';
-import { SubscriptionPlanSchema } from '@/datasources/billing-api/entities/plan.entity';
-import { withDashes } from '@/datasources/billing-api/upstream-customer-id.util';
+import { StripeMetadataSchema } from '#/datasources/billing-api/entities/metadata.entity';
+import { SubscriptionPlanSchema } from '#/datasources/billing-api/entities/plan.entity';
+import { withDashes } from '#/datasources/billing-api/upstream-customer-id.util';
 
 export type Subscription = z.infer<typeof SubscriptionSchema>;
 

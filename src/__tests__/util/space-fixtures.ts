@@ -3,14 +3,14 @@ import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { getAddress } from 'viem';
-import type { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import type { IJwtService } from '@/datasources/jwt/jwt.service.interface';
-import { nameBuilder } from '@/domain/common/entities/name.builder';
-import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import { materializedSubscriptionBuilder } from '@/modules/entitlements/domain/entities/__tests__/materialized-subscription.builder';
-import type { FeatureKey } from '@/modules/entitlements/domain/entities/feature.entity';
-import type { EntitlementsService } from '@/modules/entitlements/routes/entitlements.service';
-import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
+import type { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
+import type { IJwtService } from '#/datasources/jwt/jwt.service.interface';
+import { nameBuilder } from '#/domain/common/entities/name.builder';
+import { siweAuthPayloadDtoBuilder } from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { materializedSubscriptionBuilder } from '#/modules/entitlements/domain/entities/__tests__/materialized-subscription.builder';
+import type { FeatureKey } from '#/modules/entitlements/domain/entities/feature.entity';
+import type { EntitlementsService } from '#/modules/entitlements/routes/entitlements.service';
+import { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
 
 /** Registers a user and the space they administer, as a client would. */
 export async function createSpaceForSigner(args: {

@@ -6,9 +6,9 @@ import type { MockedObject } from 'vitest';
 import {
   assertAdmin,
   assertMember,
-} from '@/modules/spaces/domain/space-assert.utils';
-import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
-import type { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
+} from '#/modules/spaces/domain/space-assert.utils';
+import { memberBuilder } from '#/modules/users/datasources/entities/__tests__/member.entity.db.builder';
+import type { IMembersRepository } from '#/modules/users/domain/members/members.repository.interface';
 
 const membersRepositoryMock = {
   findOne: vi.fn(),

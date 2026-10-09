@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import { Builder, type IBuilder } from '@/__tests__/builder';
-import type { PolicyIndexerState } from '@/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
+import { Builder, type IBuilder } from '#/__tests__/builder';
+import type { PolicyIndexerState } from '#/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 
 export type RawIndexerMeta = {
   chainId: number;

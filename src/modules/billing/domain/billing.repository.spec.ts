@@ -3,13 +3,13 @@
 import { faker } from '@faker-js/faker';
 import type { MockedObject } from 'vitest';
 import { ZodError } from 'zod';
-import { checkoutSessionResultBuilder } from '@/datasources/billing-api/entities/__tests__/checkout-session.builder';
-import { paymentLinkBuilder } from '@/datasources/billing-api/entities/__tests__/payment-link.builder';
-import { subscriptionBuilder } from '@/datasources/billing-api/entities/__tests__/subscription.builder';
-import { stripDashes } from '@/datasources/billing-api/upstream-customer-id.util';
-import type { IBillingApi } from '@/domain/interfaces/billing-api.interface';
-import { BillingRepository } from '@/modules/billing/domain/billing.repository';
-import { rawify } from '@/validation/entities/raw.entity';
+import { checkoutSessionResultBuilder } from '#/datasources/billing-api/entities/__tests__/checkout-session.builder';
+import { paymentLinkBuilder } from '#/datasources/billing-api/entities/__tests__/payment-link.builder';
+import { subscriptionBuilder } from '#/datasources/billing-api/entities/__tests__/subscription.builder';
+import { stripDashes } from '#/datasources/billing-api/upstream-customer-id.util';
+import type { IBillingApi } from '#/domain/interfaces/billing-api.interface';
+import { BillingRepository } from '#/modules/billing/domain/billing.repository';
+import { rawify } from '#/validation/entities/raw.entity';
 
 const billingApiMock = {
   listPlans: vi.fn(),

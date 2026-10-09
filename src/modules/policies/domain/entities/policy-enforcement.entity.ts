@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { Address } from 'viem';
-import { PolicyEnforcementKind } from '@/modules/policies/domain/entities/policy-type.entity';
+import { PolicyEnforcementKind } from '#/modules/policies/domain/entities/policy-type.entity';
 
 /**
  * The contract pair backing one guard-enforced policy: the `SafePolicyGuard`

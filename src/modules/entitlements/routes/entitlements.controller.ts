@@ -12,15 +12,15 @@ import {
   ApiUnauthorizedResponse,
   getSchemaPath,
 } from '@nestjs/swagger';
-import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
+import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import { AuthGuard } from '#/modules/auth/routes/guards/auth.guard';
 import {
   EntitlementsResponse,
   type SpacesEntitlementsResponse,
-} from '@/modules/entitlements/routes/entities/entitlements-response.entity';
-import { EntitlementsService } from '@/modules/entitlements/routes/entitlements.service';
-import { Auth } from '@/routes/common/auth/auth.decorator';
-import { SpaceIdPipe } from '@/routes/common/pipes/space-id.pipe';
+} from '#/modules/entitlements/routes/entities/entitlements-response.entity';
+import { EntitlementsService } from '#/modules/entitlements/routes/entitlements.service';
+import { Auth } from '#/routes/common/auth/auth.decorator';
+import { SpaceIdPipe } from '#/routes/common/pipes/space-id.pipe';
 
 @ApiTags('entitlements')
 @Controller({

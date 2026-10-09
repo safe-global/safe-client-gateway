@@ -1,27 +1,27 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import type { Address, Hex } from 'viem';
-import { LogType } from '@/domain/common/entities/log-type.entity';
-import { DataSourceError } from '@/domain/errors/data-source.error';
-import { IRelayApi } from '@/domain/interfaces/relay-api.interface';
+import { LogType } from '#/domain/common/entities/log-type.entity';
+import { DataSourceError } from '#/domain/errors/data-source.error';
+import { IRelayApi } from '#/domain/interfaces/relay-api.interface';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import { asError } from '@/logging/utils';
-import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
+} from '#/logging/logging.interface';
+import { asError } from '#/logging/utils';
+import { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
 import {
   type ConsumedQuota,
   IEntitlementEnforcement,
-} from '@/modules/entitlements/domain/entitlement-enforcement.interface';
-import { GasPaymentOption } from '@/modules/relay/domain/entities/gas-payment-option.entity';
-import type { Relay } from '@/modules/relay/domain/entities/relay.entity';
-import { GasPaymentOptionUnavailableError } from '@/modules/relay/domain/errors/gas-payment-option-unavailable.error';
-import { LimitAddressesMapper } from '@/modules/relay/domain/limit-addresses.mapper';
-import { RelaySimulationService } from '@/modules/relay/domain/relay-simulation.service';
-import { RelayTransactionHelper } from '@/modules/relay/domain/relay-transaction-helper';
-import type { Space } from '@/modules/spaces/domain/entities/space.entity';
-import { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
+} from '#/modules/entitlements/domain/entitlement-enforcement.interface';
+import { GasPaymentOption } from '#/modules/relay/domain/entities/gas-payment-option.entity';
+import type { Relay } from '#/modules/relay/domain/entities/relay.entity';
+import { GasPaymentOptionUnavailableError } from '#/modules/relay/domain/errors/gas-payment-option-unavailable.error';
+import { LimitAddressesMapper } from '#/modules/relay/domain/limit-addresses.mapper';
+import { RelaySimulationService } from '#/modules/relay/domain/relay-simulation.service';
+import { RelayTransactionHelper } from '#/modules/relay/domain/relay-transaction-helper';
+import type { Space } from '#/modules/spaces/domain/entities/space.entity';
+import { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository.interface';
 
 /** One relay spends one unit, a batch included: we pay for the submission. */
 const RELAYS_PER_CALL = 1;

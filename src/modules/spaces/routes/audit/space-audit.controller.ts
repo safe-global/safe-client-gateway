@@ -10,9 +10,9 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
-import type { SpaceAuditEventType } from '@/modules/spaces/domain/audit/entities/space-audit-event.entity';
+import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import { AuthGuard } from '#/modules/auth/routes/guards/auth.guard';
+import type { SpaceAuditEventType } from '#/modules/spaces/domain/audit/entities/space-audit-event.entity';
 import {
   SpaceAuditActorUserIdQuerySchema,
   SpaceAuditDateQuerySchema,
@@ -20,15 +20,15 @@ import {
   SpaceAuditLogActorDto,
   SpaceAuditLogPage,
   SpaceAuditSortDirectionQuerySchema,
-} from '@/modules/spaces/routes/audit/entities/space-audit-log.dto.entity';
-import { SpaceAuditRouteGuard } from '@/modules/spaces/routes/audit/guards/space-audit-route.guard';
-import { SpaceAuditService } from '@/modules/spaces/routes/audit/space-audit.service';
-import { Auth } from '@/routes/common/auth/auth.decorator';
-import { PaginationDataDecorator } from '@/routes/common/decorators/pagination.data.decorator';
-import { RouteUrlDecorator } from '@/routes/common/decorators/route.url.decorator';
-import type { PaginationData } from '@/routes/common/pagination/pagination.data';
-import { SpaceIdPipe } from '@/routes/common/pipes/space-id.pipe';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+} from '#/modules/spaces/routes/audit/entities/space-audit-log.dto.entity';
+import { SpaceAuditRouteGuard } from '#/modules/spaces/routes/audit/guards/space-audit-route.guard';
+import { SpaceAuditService } from '#/modules/spaces/routes/audit/space-audit.service';
+import { Auth } from '#/routes/common/auth/auth.decorator';
+import { PaginationDataDecorator } from '#/routes/common/decorators/pagination.data.decorator';
+import { RouteUrlDecorator } from '#/routes/common/decorators/route.url.decorator';
+import type { PaginationData } from '#/routes/common/pagination/pagination.data';
+import { SpaceIdPipe } from '#/routes/common/pipes/space-id.pipe';
+import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
 @ApiTags('spaces')
 @UseGuards(AuthGuard, SpaceAuditRouteGuard)

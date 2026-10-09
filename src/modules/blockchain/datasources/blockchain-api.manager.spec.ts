@@ -3,15 +3,15 @@
 import { faker } from '@faker-js/faker';
 import { hexToNumber, toHex } from 'viem';
 import type { MockedObject } from 'vitest';
-import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
-import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
-import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
-import type { IConfigApi } from '@/domain/interfaces/config-api.interface';
-import { BlockchainApiManager } from '@/modules/blockchain/datasources/blockchain-api.manager';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { rpcUriBuilder } from '@/modules/chains/domain/entities/__tests__/rpc-uri.builder';
-import { RpcUriAuthentication } from '@/modules/chains/domain/entities/rpc-uri-authentication.entity';
-import { rawify } from '@/validation/entities/raw.entity';
+import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
+import { FakeCacheService } from '#/datasources/cache/__tests__/fake.cache.service';
+import { CacheDir } from '#/datasources/cache/entities/cache-dir.entity';
+import type { IConfigApi } from '#/domain/interfaces/config-api.interface';
+import { BlockchainApiManager } from '#/modules/blockchain/datasources/blockchain-api.manager';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
+import { rpcUriBuilder } from '#/modules/chains/domain/entities/__tests__/rpc-uri.builder';
+import { RpcUriAuthentication } from '#/modules/chains/domain/entities/rpc-uri-authentication.entity';
+import { rawify } from '#/validation/entities/raw.entity';
 
 const configApiMock = vi.mocked({
   getChain: vi.fn(),

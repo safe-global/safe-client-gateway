@@ -14,8 +14,8 @@ import request from 'supertest';
 import {
   createTestApplication,
   initTestApplication,
-} from '@/__tests__/test-app.provider';
-import { CacheControlInterceptor } from '@/routes/common/interceptors/cache-control.interceptor';
+} from '#/__tests__/test-app.provider';
+import { CacheControlInterceptor } from '#/routes/common/interceptors/cache-control.interceptor';
 
 @Controller()
 @UseInterceptors(CacheControlInterceptor)

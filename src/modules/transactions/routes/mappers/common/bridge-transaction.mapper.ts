@@ -1,20 +1,20 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import type { Address } from 'viem';
-import { IBridgeRepository } from '@/modules/bridge/domain/bridge.repository.interface';
-import { LiFiDecoder } from '@/modules/bridge/domain/contracts/decoders/lifi-decoder.helper';
-import type { BridgeStatus } from '@/modules/bridge/domain/entities/bridge-status.entity';
-import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
-import type { Token } from '@/modules/tokens/domain/entities/token.entity';
-import { ITokenRepository } from '@/modules/tokens/domain/token.repository.interface';
+import { IBridgeRepository } from '#/modules/bridge/domain/bridge.repository.interface';
+import { LiFiDecoder } from '#/modules/bridge/domain/contracts/decoders/lifi-decoder.helper';
+import type { BridgeStatus } from '#/modules/bridge/domain/entities/bridge-status.entity';
+import { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
+import type { Token } from '#/modules/tokens/domain/entities/token.entity';
+import { ITokenRepository } from '#/modules/tokens/domain/token.repository.interface';
 import {
   BridgeAndSwapTransactionInfo,
   SwapTransactionInfo,
-} from '@/modules/transactions/routes/entities/bridge/bridge-info.entity';
-import { BridgeFee } from '@/modules/transactions/routes/entities/bridge/fees.entity';
-import { TokenInfo } from '@/modules/transactions/routes/entities/swaps/token-info.entity';
-import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
-import { NULL_ADDRESS } from '@/routes/common/constants';
+} from '#/modules/transactions/routes/entities/bridge/bridge-info.entity';
+import { BridgeFee } from '#/modules/transactions/routes/entities/bridge/fees.entity';
+import { TokenInfo } from '#/modules/transactions/routes/entities/swaps/token-info.entity';
+import { AddressInfoHelper } from '#/routes/common/address-info/address-info.helper';
+import { NULL_ADDRESS } from '#/routes/common/constants';
 
 @Injectable()
 export class BridgeTransactionMapper {

@@ -3,18 +3,18 @@ import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
 import { ZodError } from 'zod';
-import type { ILoggingService } from '@/logging/logging.interface';
-import type { PolicyIndexerApi } from '@/modules/policies/datasources/policy-indexer-api.service';
+import type { ILoggingService } from '#/logging/logging.interface';
+import type { PolicyIndexerApi } from '#/modules/policies/datasources/policy-indexer-api.service';
 import {
   rawIndexerMetaBuilder,
   rawPolicyIndexerResponse,
-} from '@/modules/policies/domain/entities/indexer/__tests__/policy-indexer-state.builder';
+} from '#/modules/policies/domain/entities/indexer/__tests__/policy-indexer-state.builder';
 import {
   rawIndexerSafeAllowanceBuilder,
   rawIndexerSafeDelegateBuilder,
-} from '@/modules/policies/domain/entities/indexer/__tests__/safe-allowance.builder';
-import { PolicyIndexerRepository } from '@/modules/policies/domain/policy-indexer.repository';
-import { rawify } from '@/validation/entities/raw.entity';
+} from '#/modules/policies/domain/entities/indexer/__tests__/safe-allowance.builder';
+import { PolicyIndexerRepository } from '#/modules/policies/domain/policy-indexer.repository';
+import { rawify } from '#/validation/entities/raw.entity';
 
 const mockPolicyIndexerApi = {
   getState: vi.fn(),

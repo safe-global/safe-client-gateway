@@ -9,26 +9,26 @@ import type { MockedObject } from 'vitest';
 import {
   initTestApplication,
   TestAppProvider,
-} from '@/__tests__/test-app.provider';
-import { createTestModule } from '@/__tests__/testing-module';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import configuration from '@/config/entities/__tests__/configuration';
-import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
-import type { NetworkRequest } from '@/datasources/network/entities/network.request.entity';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import { NetworkService } from '@/datasources/network/network.service.interface';
-import { SAFE_TRANSACTION_SERVICE_MAX_LIMIT } from '@/domain/common/constants';
+} from '#/__tests__/test-app.provider';
+import { createTestModule } from '#/__tests__/testing-module';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import configuration from '#/config/entities/__tests__/configuration';
+import { NetworkResponseError } from '#/datasources/network/entities/network.error.entity';
+import type { NetworkRequest } from '#/datasources/network/entities/network.request.entity';
+import type { INetworkService } from '#/datasources/network/network.service.interface';
+import { NetworkService } from '#/datasources/network/network.service.interface';
+import { SAFE_TRANSACTION_SERVICE_MAX_LIMIT } from '#/domain/common/constants';
 import {
   limitAndOffsetUrlFactory,
   pageBuilder,
-} from '@/domain/entities/__tests__/page.builder';
+} from '#/domain/entities/__tests__/page.builder';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import { ChainsRepository } from '@/modules/chains/domain/chains.repository';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { rawify } from '@/validation/entities/raw.entity';
+} from '#/logging/logging.interface';
+import { ChainsRepository } from '#/modules/chains/domain/chains.repository';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
+import { rawify } from '#/validation/entities/raw.entity';
 
 describe('Owners Controller V3 (Unit)', () => {
   let app: INestApplication<Server>;

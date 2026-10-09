@@ -7,14 +7,14 @@ import {
   ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
-import { Chain } from '@/modules/chains/routes/entities/chain.entity';
-import { ChainPage } from '@/modules/chains/routes/entities/chain-page.entity';
-import { ServiceKeyQuerySchema } from '@/modules/chains/routes/v2/entities/schemas/service-key.schema';
-import { PaginationDataDecorator } from '@/routes/common/decorators/pagination.data.decorator';
-import { RouteUrlDecorator } from '@/routes/common/decorators/route.url.decorator';
-import type { Page } from '@/routes/common/entities/page.entity';
-import type { PaginationData } from '@/routes/common/pagination/pagination.data';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+import { Chain } from '#/modules/chains/routes/entities/chain.entity';
+import { ChainPage } from '#/modules/chains/routes/entities/chain-page.entity';
+import { ServiceKeyQuerySchema } from '#/modules/chains/routes/v2/entities/schemas/service-key.schema';
+import { PaginationDataDecorator } from '#/routes/common/decorators/pagination.data.decorator';
+import { RouteUrlDecorator } from '#/routes/common/decorators/route.url.decorator';
+import type { Page } from '#/routes/common/entities/page.entity';
+import type { PaginationData } from '#/routes/common/pagination/pagination.data';
+import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 import { ChainsV2Service } from './chains.v2.service';
 
 @ApiTags('chains')

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { HttpException, HttpStatus } from '@nestjs/common';
-import type { FeatureKey } from '@/modules/entitlements/domain/entities/feature.entity';
+import type { FeatureKey } from '#/modules/entitlements/domain/entities/feature.entity';
 
 export const FEATURE_NOT_GRANTED_ERROR_CODE = 'FEATURE_NOT_GRANTED';
 

@@ -9,30 +9,30 @@ import type { MockedObject } from 'vitest';
 import {
   initTestApplication,
   TestAppProvider,
-} from '@/__tests__/test-app.provider';
-import { createTestModule } from '@/__tests__/testing-module';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import configuration from '@/config/entities/__tests__/configuration';
+} from '#/__tests__/test-app.provider';
+import { createTestModule } from '#/__tests__/testing-module';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import configuration from '#/config/entities/__tests__/configuration';
 import {
   UNAVAILABLE_FOR_LEGAL_REASONS_MESSAGE,
   UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
-} from '@/datasources/errors/constants';
+} from '#/datasources/errors/constants';
 import {
   NetworkRequestError,
   NetworkResponseError,
-} from '@/datasources/network/entities/network.error.entity';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import { NetworkService } from '@/datasources/network/network.service.interface';
+} from '#/datasources/network/entities/network.error.entity';
+import type { INetworkService } from '#/datasources/network/network.service.interface';
+import { NetworkService } from '#/datasources/network/network.service.interface';
 import {
   limitAndOffsetUrlFactory,
   pageBuilder,
-} from '@/domain/entities/__tests__/page.builder';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { collectibleBuilder } from '@/modules/collectibles/domain/entities/__tests__/collectible.builder';
-import type { Collectible } from '@/modules/collectibles/domain/entities/collectible.entity';
-import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
-import { PaginationData } from '@/routes/common/pagination/pagination.data';
-import { rawify } from '@/validation/entities/raw.entity';
+} from '#/domain/entities/__tests__/page.builder';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
+import { collectibleBuilder } from '#/modules/collectibles/domain/entities/__tests__/collectible.builder';
+import type { Collectible } from '#/modules/collectibles/domain/entities/collectible.entity';
+import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
+import { PaginationData } from '#/routes/common/pagination/pagination.data';
+import { rawify } from '#/validation/entities/raw.entity';
 
 describe('Collectibles Controller', () => {
   let app: INestApplication<Server>;

@@ -2,7 +2,7 @@
 
 import { Module } from '@nestjs/common';
 import type { MockedObject } from 'vitest';
-import { IIdentityApi } from '@/domain/interfaces/identity-api.interface';
+import { IIdentityApi } from '#/domain/interfaces/identity-api.interface';
 
 @Module({
   providers: [

@@ -16,9 +16,9 @@ import { ZodError } from 'zod';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import { formatRouteLogMessage } from '@/logging/utils';
-import type { HttpRequest } from '@/routes/common/http/http-request.utils';
+} from '#/logging/logging.interface';
+import { formatRouteLogMessage } from '#/logging/utils';
+import type { HttpRequest } from '#/routes/common/http/http-request.utils';
 
 /**
  * The {@link RouteLoggerInterceptor} is an interceptor that logs the requests

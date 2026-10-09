@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import type { CheckoutSession as DomainCheckoutSession } from '@/datasources/billing-api/entities/checkout-session.entity';
+import type { CheckoutSession as DomainCheckoutSession } from '#/datasources/billing-api/entities/checkout-session.entity';
 
 // camelCase; the domain entity mirrors the upstream (snake_case) format verbatim.
 export class CheckoutSession {

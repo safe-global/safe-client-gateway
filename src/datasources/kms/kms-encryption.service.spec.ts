@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import type { MockedObject } from 'vitest';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
-import type { IKmsService } from '@/datasources/kms/kms.service.interface';
-import { KmsEncryptionService } from '@/datasources/kms/kms-encryption.service';
+import type { IConfigurationService } from '#/config/configuration.service.interface';
+import type { IKmsService } from '#/datasources/kms/kms.service.interface';
+import { KmsEncryptionService } from '#/datasources/kms/kms-encryption.service';
 
 const configurationService = {
   getOrThrow: vi.fn(),

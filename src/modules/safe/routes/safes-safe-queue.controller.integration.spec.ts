@@ -9,29 +9,29 @@ import type { MockedObject } from 'vitest';
 import {
   initTestApplication,
   TestAppProvider,
-} from '@/__tests__/test-app.provider';
-import { createTestModule } from '@/__tests__/testing-module';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import configuration from '@/config/entities/__tests__/configuration';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import { NetworkService } from '@/datasources/network/network.service.interface';
-import { SAFE_QUEUE_SERVICE_MAX_LIMIT } from '@/domain/common/constants';
-import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { singletonBuilder } from '@/modules/chains/domain/entities/__tests__/singleton.builder';
-import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
-import { contractBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/contract.builder';
+} from '#/__tests__/test-app.provider';
+import { createTestModule } from '#/__tests__/testing-module';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import configuration from '#/config/entities/__tests__/configuration';
+import type { INetworkService } from '#/datasources/network/network.service.interface';
+import { NetworkService } from '#/datasources/network/network.service.interface';
+import { SAFE_QUEUE_SERVICE_MAX_LIMIT } from '#/domain/common/constants';
+import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
+import { singletonBuilder } from '#/modules/chains/domain/entities/__tests__/singleton.builder';
+import type { Chain } from '#/modules/chains/domain/entities/chain.entity';
+import { contractBuilder } from '#/modules/data-decoder/domain/v2/entities/__tests__/contract.builder';
 import {
   multisigTransactionBuilder,
   toJson as multisigTransactionToJson,
-} from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
-import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
-import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
-import { safeQueueMultisigTransactionBuilder } from '@/modules/safe-queue/entities/__tests__/queue-multisig-transaction.builder';
-import { safeQueueConfirmationBuilder } from '@/modules/safe-queue/entities/__tests__/safe-queue-confirmation.builder';
-import { safeQueueMessageBuilder } from '@/modules/safe-queue/entities/__tests__/safe-queue-message.builder';
-import type { SafeQueueConfirmation } from '@/modules/safe-queue/entities/multisig-transaction.entity';
-import { rawify } from '@/validation/entities/raw.entity';
+} from '#/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
+import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
+import type { Safe } from '#/modules/safe/domain/entities/safe.entity';
+import { safeQueueMultisigTransactionBuilder } from '#/modules/safe-queue/entities/__tests__/queue-multisig-transaction.builder';
+import { safeQueueConfirmationBuilder } from '#/modules/safe-queue/entities/__tests__/safe-queue-confirmation.builder';
+import { safeQueueMessageBuilder } from '#/modules/safe-queue/entities/__tests__/safe-queue-message.builder';
+import type { SafeQueueConfirmation } from '#/modules/safe-queue/entities/multisig-transaction.entity';
+import { rawify } from '#/validation/entities/raw.entity';
 
 function toUnixSeconds(date: Date): string {
   return Math.floor(date.getTime() / 1000).toString();

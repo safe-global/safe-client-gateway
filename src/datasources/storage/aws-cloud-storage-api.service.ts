@@ -10,19 +10,19 @@ import {
 import { Upload } from '@aws-sdk/lib-storage';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Inject, Injectable } from '@nestjs/common';
-import type { ICloudStorageApiService } from '@/datasources/storage/cloud-storage-api.service';
+import type { ICloudStorageApiService } from '#/datasources/storage/cloud-storage-api.service';
 import {
   AWS_ACCESS_KEY_ID,
   AWS_BASE_PATH,
   AWS_BUCKET_NAME,
   AWS_SECRET_ACCESS_KEY,
-} from '@/datasources/storage/constants';
-import { LogType } from '@/domain/common/entities/log-type.entity';
+} from '#/datasources/storage/constants';
+import { LogType } from '#/domain/common/entities/log-type.entity';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import { asError } from '@/logging/utils';
+} from '#/logging/logging.interface';
+import { asError } from '#/logging/utils';
 
 @Injectable()
 export class AwsCloudStorageApiService implements ICloudStorageApiService {

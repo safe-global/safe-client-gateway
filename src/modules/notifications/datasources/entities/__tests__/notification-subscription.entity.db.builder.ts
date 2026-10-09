@@ -2,10 +2,10 @@
 
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import type { IBuilder } from '@/__tests__/builder';
-import { Builder } from '@/__tests__/builder';
-import { notificationDeviceBuilder } from '@/modules/notifications/datasources/entities/__tests__/notification-devices.entity.db.builder';
-import type { NotificationSubscription } from '@/modules/notifications/datasources/entities/notification-subscription.entity.db';
+import type { IBuilder } from '#/__tests__/builder';
+import { Builder } from '#/__tests__/builder';
+import { notificationDeviceBuilder } from '#/modules/notifications/datasources/entities/__tests__/notification-devices.entity.db.builder';
+import type { NotificationSubscription } from '#/modules/notifications/datasources/entities/notification-subscription.entity.db';
 
 export function notificationSubscriptionBuilder(): IBuilder<NotificationSubscription> {
   return new Builder<NotificationSubscription>()

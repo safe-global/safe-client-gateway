@@ -3,60 +3,60 @@ import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import isEmpty from 'lodash/isEmpty';
 import type { Address } from 'viem';
 import { z } from 'zod';
-import { IConfigurationService } from '@/config/configuration.service.interface';
+import { IConfigurationService } from '#/config/configuration.service.interface';
 import {
   SAFE_QUEUE_SERVICE_MAX_LIMIT,
   SAFE_TRANSACTION_SERVICE_MAX_LIMIT,
-} from '@/domain/common/constants';
-import { HttpExceptionNoLog } from '@/domain/common/errors/http-exception-no-log.error';
-import { Page } from '@/domain/entities/page.entity';
-import { DataSourceError } from '@/domain/errors/data-source.error';
-import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
-import { CreationTransaction } from '@/modules/safe/domain/entities/creation-transaction.entity';
+} from '#/domain/common/constants';
+import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
+import { Page } from '#/domain/entities/page.entity';
+import { DataSourceError } from '#/domain/errors/data-source.error';
+import { ITransactionApiManager } from '#/domain/interfaces/transaction-api.manager.interface';
+import { ILoggingService, LoggingService } from '#/logging/logging.interface';
+import { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
+import { CreationTransaction } from '#/modules/safe/domain/entities/creation-transaction.entity';
 import {
   ModuleTransaction,
   ModuleTransactionPageSchema,
   ModuleTransactionSchema,
-} from '@/modules/safe/domain/entities/module-transaction.entity';
+} from '#/modules/safe/domain/entities/module-transaction.entity';
 import {
   MultisigTransaction,
   MultisigTransactionPageSchema,
   MultisigTransactionSchema,
-} from '@/modules/safe/domain/entities/multisig-transaction.entity';
-import { Safe } from '@/modules/safe/domain/entities/safe.entity';
-import { SafeList } from '@/modules/safe/domain/entities/safe-list.entity';
-import { SafesByChainId } from '@/modules/safe/domain/entities/safes-by-chain-id.entity';
-import { CreationTransactionSchema } from '@/modules/safe/domain/entities/schemas/creation-transaction.schema';
+} from '#/modules/safe/domain/entities/multisig-transaction.entity';
+import { Safe } from '#/modules/safe/domain/entities/safe.entity';
+import { SafeList } from '#/modules/safe/domain/entities/safe-list.entity';
+import { SafesByChainId } from '#/modules/safe/domain/entities/safes-by-chain-id.entity';
+import { CreationTransactionSchema } from '#/modules/safe/domain/entities/schemas/creation-transaction.schema';
 import {
   SafePageV2Schema,
   SafeSchema,
-} from '@/modules/safe/domain/entities/schemas/safe.schema';
-import { SafeListSchema } from '@/modules/safe/domain/entities/schemas/safe-list.schema';
-import { TransactionTypePageSchema } from '@/modules/safe/domain/entities/schemas/transaction-type.schema';
+} from '#/modules/safe/domain/entities/schemas/safe.schema';
+import { SafeListSchema } from '#/modules/safe/domain/entities/schemas/safe-list.schema';
+import { TransactionTypePageSchema } from '#/modules/safe/domain/entities/schemas/transaction-type.schema';
 import {
   isMultisigTransaction,
   Transaction,
-} from '@/modules/safe/domain/entities/transaction.entity';
+} from '#/modules/safe/domain/entities/transaction.entity';
 import {
   Transfer,
   TransferPageSchema,
   TransferSchema,
-} from '@/modules/safe/domain/entities/transfer.entity';
-import { getLastModified } from '@/modules/safe/domain/helpers/last-modified.helper';
-import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
+} from '#/modules/safe/domain/entities/transfer.entity';
+import { getLastModified } from '#/modules/safe/domain/helpers/last-modified.helper';
+import { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
 import {
   type SafeQueueMultisigTransactionEntity,
   SafeQueueMultisigTransactionPageSchema,
   SafeQueueMultisigTransactionSchema,
-} from '@/modules/safe-queue/entities/multisig-transaction.entity';
-import { buildOrigin } from '@/modules/safe-queue/helpers/origin.helper';
-import { mapSafeQueueToMultisigTransaction } from '@/modules/safe-queue/mappers/transaction.mapper';
-import { ISafeQueueService } from '@/modules/safe-queue/safe-queue.interface';
-import { ProposeTransactionDto } from '@/modules/transactions/domain/entities/propose-transaction.dto.entity';
-import { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers/transaction-verifier.helper';
-import { PaginationData } from '@/routes/common/pagination/pagination.data';
+} from '#/modules/safe-queue/entities/multisig-transaction.entity';
+import { buildOrigin } from '#/modules/safe-queue/helpers/origin.helper';
+import { mapSafeQueueToMultisigTransaction } from '#/modules/safe-queue/mappers/transaction.mapper';
+import { ISafeQueueService } from '#/modules/safe-queue/safe-queue.interface';
+import { ProposeTransactionDto } from '#/modules/transactions/domain/entities/propose-transaction.dto.entity';
+import { TransactionVerifierHelper } from '#/modules/transactions/routes/helpers/transaction-verifier.helper';
+import { PaginationData } from '#/routes/common/pagination/pagination.data';
 
 @Injectable()
 export class SafeRepository implements ISafeRepository {

@@ -12,8 +12,8 @@ import {
   createFastifyAdapter,
   DEFAULT_CONFIGURATION,
   FASTIFY_ROUTER_OPTIONS,
-} from '@/app.provider';
-import { IConfigurationService } from '@/config/configuration.service.interface';
+} from '#/app.provider';
+import { IConfigurationService } from '#/config/configuration.service.interface';
 
 export type TestApplication = NestFastifyApplication;
 

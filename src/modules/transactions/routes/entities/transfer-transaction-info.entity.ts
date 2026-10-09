@@ -3,12 +3,12 @@ import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 import {
   TransactionInfo,
   TransactionInfoType,
-} from '@/modules/transactions/routes/entities/transaction-info.entity';
-import { Erc20Transfer } from '@/modules/transactions/routes/entities/transfers/erc20-transfer.entity';
-import { Erc721Transfer } from '@/modules/transactions/routes/entities/transfers/erc721-transfer.entity';
-import { NativeCoinTransfer } from '@/modules/transactions/routes/entities/transfers/native-coin-transfer.entity';
-import { Transfer } from '@/modules/transactions/routes/entities/transfers/transfer.entity';
-import { AddressInfo } from '@/routes/common/entities/address-info.entity';
+} from '#/modules/transactions/routes/entities/transaction-info.entity';
+import { Erc20Transfer } from '#/modules/transactions/routes/entities/transfers/erc20-transfer.entity';
+import { Erc721Transfer } from '#/modules/transactions/routes/entities/transfers/erc721-transfer.entity';
+import { NativeCoinTransfer } from '#/modules/transactions/routes/entities/transfers/native-coin-transfer.entity';
+import { Transfer } from '#/modules/transactions/routes/entities/transfers/transfer.entity';
+import { AddressInfo } from '#/routes/common/entities/address-info.entity';
 
 export enum TransferDirection {
   Incoming = 'INCOMING',

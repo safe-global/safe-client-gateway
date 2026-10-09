@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { getAddress, type Hex } from 'viem';
-import type { IBuilder } from '@/__tests__/builder';
-import { Builder } from '@/__tests__/builder';
-import type { TypedData } from '@/modules/messages/domain/entities/typed-data.entity';
+import type { IBuilder } from '#/__tests__/builder';
+import { Builder } from '#/__tests__/builder';
+import type { TypedData } from '#/modules/messages/domain/entities/typed-data.entity';
 
 // Note: the following is not strictly typed
 export function typedDataBuilder(): IBuilder<TypedData> {

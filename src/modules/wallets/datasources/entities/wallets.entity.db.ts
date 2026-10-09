@@ -8,9 +8,9 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import type { z } from 'zod';
-import { databaseAddressTransformer } from '@/domain/common/transformers/database-address.transformer';
-import { User } from '@/modules/users/datasources/entities/users.entity.db';
-import type { WalletSchema } from '@/modules/wallets/domain/entities/wallet.entity';
+import { databaseAddressTransformer } from '#/domain/common/transformers/database-address.transformer';
+import { User } from '#/modules/users/datasources/entities/users.entity.db';
+import type { WalletSchema } from '#/modules/wallets/domain/entities/wallet.entity';
 
 @Entity('wallets')
 // Plaintext uniqueness for plaintext rows (encryption disabled); blind-index

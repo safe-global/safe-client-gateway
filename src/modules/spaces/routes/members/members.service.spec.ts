@@ -8,28 +8,28 @@ import {
 } from '@nestjs/common';
 import { type Address, getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
+import type { IConfigurationService } from '#/config/configuration.service.interface';
 import {
   oidcAuthPayloadDtoBuilder,
   siweAuthPayloadDtoBuilder,
-} from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import type { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
+} from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import type { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
 import {
   emailInviteUserDtoBuilder,
   walletInviteUserDtoBuilder,
-} from '@/modules/spaces/routes/members/entities/__tests__/invite-user.dto.builder';
-import type { InviteUsersDto } from '@/modules/spaces/routes/members/entities/invite-users.dto.entity';
-import { MembersService } from '@/modules/spaces/routes/members/members.service';
-import type { SpaceInviteEmailService } from '@/modules/spaces/routes/members/space-invite-email.service';
-import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
-import { userBuilder } from '@/modules/users/datasources/entities/__tests__/users.entity.db.builder';
-import type { Member } from '@/modules/users/domain/entities/member.entity';
-import { createMockMemberEncryptionService } from '@/modules/users/domain/members/__tests__/member-encryption.service.mock';
-import type { MemberEncryptionService } from '@/modules/users/domain/members/member-encryption.service';
-import type { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
-import { fakeEmailAddress } from '@/validation/entities/schemas/__tests__/email-address.builder';
-import { fakeUuid } from '@/validation/entities/schemas/__tests__/uuid.builder';
+} from '#/modules/spaces/routes/members/entities/__tests__/invite-user.dto.builder';
+import type { InviteUsersDto } from '#/modules/spaces/routes/members/entities/invite-users.dto.entity';
+import { MembersService } from '#/modules/spaces/routes/members/members.service';
+import type { SpaceInviteEmailService } from '#/modules/spaces/routes/members/space-invite-email.service';
+import { memberBuilder } from '#/modules/users/datasources/entities/__tests__/member.entity.db.builder';
+import { userBuilder } from '#/modules/users/datasources/entities/__tests__/users.entity.db.builder';
+import type { Member } from '#/modules/users/domain/entities/member.entity';
+import { createMockMemberEncryptionService } from '#/modules/users/domain/members/__tests__/member-encryption.service.mock';
+import type { MemberEncryptionService } from '#/modules/users/domain/members/member-encryption.service';
+import type { IMembersRepository } from '#/modules/users/domain/members/members.repository.interface';
+import { fakeEmailAddress } from '#/validation/entities/schemas/__tests__/email-address.builder';
+import { fakeUuid } from '#/validation/entities/schemas/__tests__/uuid.builder';
 
 const MAX_INVITES = 10;
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;

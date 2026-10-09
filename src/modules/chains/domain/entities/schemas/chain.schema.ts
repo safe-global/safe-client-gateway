@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
-import { TokenDetailsSchema } from '@/domain/common/schemas/token-metadata.schema';
-import { buildLenientPageSchema } from '@/domain/entities/schemas/page.schema.factory';
-import { RpcUriAuthentication } from '@/modules/chains/domain/entities/rpc-uri-authentication.entity';
-import { GasPaymentOption } from '@/modules/relay/domain/entities/gas-payment-option.entity';
-import { RelayerType } from '@/modules/relay/domain/entities/relayer-type.entity';
+import { TokenDetailsSchema } from '#/domain/common/schemas/token-metadata.schema';
+import { buildLenientPageSchema } from '#/domain/entities/schemas/page.schema.factory';
+import { RpcUriAuthentication } from '#/modules/chains/domain/entities/rpc-uri-authentication.entity';
+import { GasPaymentOption } from '#/modules/relay/domain/entities/gas-payment-option.entity';
+import { RelayerType } from '#/modules/relay/domain/entities/relayer-type.entity';
 import {
   NullableAddressSchema,
   NullableStringSchema,
-} from '@/validation/entities/schemas/nullable.schema';
+} from '#/validation/entities/schemas/nullable.schema';
 
 export const NativeCurrencySchema = TokenDetailsSchema.extend({
   logoUri: z.url(),

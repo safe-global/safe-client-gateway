@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { Mocked } from 'vitest';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
-import { getTxAuthHeaders } from '@/datasources/network/auth/tx-auth-headers.helper';
+import type { IConfigurationService } from '#/config/configuration.service.interface';
+import { getTxAuthHeaders } from '#/datasources/network/auth/tx-auth-headers.helper';
 
 describe('getTxAuthHeaders', () => {
   let mockConfigService: Mocked<IConfigurationService>;

@@ -3,26 +3,26 @@
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress, type Hash } from 'viem';
 import type { MockedObject } from 'vitest';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
-import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
-import { CacheRouter } from '@/datasources/cache/cache.router';
-import type { ICacheService } from '@/datasources/cache/cache.service.interface';
-import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
-import { DataSourceError } from '@/domain/errors/data-source.error';
-import { dedicatedStakingStatsBuilder } from '@/modules/staking/datasources/entities/__tests__/dedicated-staking-stats.entity.builder';
-import { defiMorphoExtraRewardBuilder } from '@/modules/staking/datasources/entities/__tests__/defi-morpho-extra-reward.entity.builder';
-import { defiVaultStatsBuilder } from '@/modules/staking/datasources/entities/__tests__/defi-vault-stats.entity.builder';
-import { deploymentBuilder } from '@/modules/staking/datasources/entities/__tests__/deployment.entity.builder';
-import { networkStatsBuilder } from '@/modules/staking/datasources/entities/__tests__/network-stats.entity.builder';
-import { pooledStakingStatsBuilder } from '@/modules/staking/datasources/entities/__tests__/pooled-staking-stats.entity.builder';
-import { rewardsFeeBuilder } from '@/modules/staking/datasources/entities/__tests__/rewards-fee.entity.builder';
-import { stakeBuilder } from '@/modules/staking/datasources/entities/__tests__/stake.entity.builder';
-import { transactionStatusBuilder } from '@/modules/staking/datasources/entities/__tests__/transaction-status.entity.builder';
-import { KilnApi } from '@/modules/staking/datasources/kiln-api.service';
-import { KilnDecoder } from '@/modules/staking/domain/contracts/decoders/kiln-decoder.helper';
-import { rawify } from '@/validation/entities/raw.entity';
+import type { IConfigurationService } from '#/config/configuration.service.interface';
+import type { CacheFirstDataSource } from '#/datasources/cache/cache.first.data.source';
+import { CacheRouter } from '#/datasources/cache/cache.router';
+import type { ICacheService } from '#/datasources/cache/cache.service.interface';
+import { CacheDir } from '#/datasources/cache/entities/cache-dir.entity';
+import { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
+import { NetworkResponseError } from '#/datasources/network/entities/network.error.entity';
+import { DataSourceError } from '#/domain/errors/data-source.error';
+import { dedicatedStakingStatsBuilder } from '#/modules/staking/datasources/entities/__tests__/dedicated-staking-stats.entity.builder';
+import { defiMorphoExtraRewardBuilder } from '#/modules/staking/datasources/entities/__tests__/defi-morpho-extra-reward.entity.builder';
+import { defiVaultStatsBuilder } from '#/modules/staking/datasources/entities/__tests__/defi-vault-stats.entity.builder';
+import { deploymentBuilder } from '#/modules/staking/datasources/entities/__tests__/deployment.entity.builder';
+import { networkStatsBuilder } from '#/modules/staking/datasources/entities/__tests__/network-stats.entity.builder';
+import { pooledStakingStatsBuilder } from '#/modules/staking/datasources/entities/__tests__/pooled-staking-stats.entity.builder';
+import { rewardsFeeBuilder } from '#/modules/staking/datasources/entities/__tests__/rewards-fee.entity.builder';
+import { stakeBuilder } from '#/modules/staking/datasources/entities/__tests__/stake.entity.builder';
+import { transactionStatusBuilder } from '#/modules/staking/datasources/entities/__tests__/transaction-status.entity.builder';
+import { KilnApi } from '#/modules/staking/datasources/kiln-api.service';
+import { KilnDecoder } from '#/modules/staking/domain/contracts/decoders/kiln-decoder.helper';
+import { rawify } from '#/validation/entities/raw.entity';
 
 const dataSource = {
   get: vi.fn(),

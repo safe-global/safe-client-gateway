@@ -1,59 +1,59 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import { Equal } from 'typeorm';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { CacheRouter } from '@/datasources/cache/cache.router';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { CacheRouter } from '#/datasources/cache/cache.router';
 import {
   CacheService,
   type ICacheService,
-} from '@/datasources/cache/cache.service.interface';
-import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { LogType } from '@/domain/common/entities/log-type.entity';
+} from '#/datasources/cache/cache.service.interface';
+import { CacheDir } from '#/datasources/cache/entities/cache-dir.entity';
+import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
+import { LogType } from '#/domain/common/entities/log-type.entity';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import { asError } from '@/logging/utils';
-import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
-import type { Feature } from '@/modules/entitlements/datasources/entities/feature.entity.db';
-import type { SpaceSubscription } from '@/modules/entitlements/datasources/entities/space-subscription.entity.db';
-import type { SubscriptionEntitlement } from '@/modules/entitlements/datasources/entities/subscription-entitlement.entity.db';
-import type { FeatureKey } from '@/modules/entitlements/domain/entities/feature.entity';
+} from '#/logging/logging.interface';
+import { asError } from '#/logging/utils';
+import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import { getAuthenticatedUserIdOrFail } from '#/modules/auth/utils/assert-authenticated.utils';
+import type { Feature } from '#/modules/entitlements/datasources/entities/feature.entity.db';
+import type { SpaceSubscription } from '#/modules/entitlements/datasources/entities/space-subscription.entity.db';
+import type { SubscriptionEntitlement } from '#/modules/entitlements/datasources/entities/subscription-entitlement.entity.db';
+import type { FeatureKey } from '#/modules/entitlements/domain/entities/feature.entity';
 import {
   FeatureType,
   isFeatureKey,
-} from '@/modules/entitlements/domain/entities/feature.entity';
-import type { FeatureGrant } from '@/modules/entitlements/domain/entities/feature-grant.entity';
-import { CachedGrantsSchema } from '@/modules/entitlements/domain/entities/feature-grant.entity';
+} from '#/modules/entitlements/domain/entities/feature.entity';
+import type { FeatureGrant } from '#/modules/entitlements/domain/entities/feature-grant.entity';
+import { CachedGrantsSchema } from '#/modules/entitlements/domain/entities/feature-grant.entity';
 import type {
   MaterializedSubscription,
   ParsedEntitlement,
-} from '@/modules/entitlements/domain/entities/materialized-subscription.entity';
+} from '#/modules/entitlements/domain/entities/materialized-subscription.entity';
 import type {
   PlanContext,
   SpacePlanContext,
-} from '@/modules/entitlements/domain/entities/plan-context.entity';
+} from '#/modules/entitlements/domain/entities/plan-context.entity';
 import type {
   ResolvedEntitlement,
   ResolvedEntitlements,
-} from '@/modules/entitlements/domain/entities/resolved-entitlements.entity';
+} from '#/modules/entitlements/domain/entities/resolved-entitlements.entity';
 import type {
   ConsumedQuota,
   IEntitlementEnforcement,
-} from '@/modules/entitlements/domain/entitlement-enforcement.interface';
+} from '#/modules/entitlements/domain/entitlement-enforcement.interface';
 import type {
   BinaryFeature,
   StockMeteredFeature,
-} from '@/modules/entitlements/domain/entitlements.constants';
+} from '#/modules/entitlements/domain/entitlements.constants';
 import {
   isActiveSubscriptionStatus,
   isEventMeteredFeature,
   isStockMeteredFeature,
   isStockMeteredFeatureKey,
   ordersAfter,
-} from '@/modules/entitlements/domain/entitlements.constants';
+} from '#/modules/entitlements/domain/entitlements.constants';
 import {
   effectiveEntitlement,
   eventPeriodStart,
@@ -61,23 +61,23 @@ import {
   hasClosedWindow,
   isEnforcementActive,
   resetsAt,
-} from '@/modules/entitlements/domain/entitlements.rules';
-import { FeatureNotGrantedError } from '@/modules/entitlements/domain/errors/feature-not-granted.error';
-import { QuotaExceededError } from '@/modules/entitlements/domain/errors/quota-exceeded.error';
-import { IFeaturesRepository } from '@/modules/entitlements/domain/features.repository.interface';
-import { ISpaceFeatureUsageRepository } from '@/modules/entitlements/domain/space-feature-usage.repository.interface';
-import { ISubscriptionEntitlementsRepository } from '@/modules/entitlements/domain/subscription-entitlements.repository.interface';
-import { ISubscriptionsRepository } from '@/modules/entitlements/domain/subscriptions.repository.interface';
+} from '#/modules/entitlements/domain/entitlements.rules';
+import { FeatureNotGrantedError } from '#/modules/entitlements/domain/errors/feature-not-granted.error';
+import { QuotaExceededError } from '#/modules/entitlements/domain/errors/quota-exceeded.error';
+import { IFeaturesRepository } from '#/modules/entitlements/domain/features.repository.interface';
+import { ISpaceFeatureUsageRepository } from '#/modules/entitlements/domain/space-feature-usage.repository.interface';
+import { ISubscriptionEntitlementsRepository } from '#/modules/entitlements/domain/subscription-entitlements.repository.interface';
+import { ISubscriptionsRepository } from '#/modules/entitlements/domain/subscriptions.repository.interface';
 import type {
   EntitlementItem,
   EntitlementsResponse,
   SpacesEntitlementsResponse,
-} from '@/modules/entitlements/routes/entities/entitlements-response.entity';
-import type { Space } from '@/modules/spaces/domain/entities/space.entity';
-import { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
-import { assertMember } from '@/modules/spaces/domain/space-assert.utils';
-import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
-import { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
+} from '#/modules/entitlements/routes/entities/entitlements-response.entity';
+import type { Space } from '#/modules/spaces/domain/entities/space.entity';
+import { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository.interface';
+import { assertMember } from '#/modules/spaces/domain/space-assert.utils';
+import { ISpacesRepository } from '#/modules/spaces/domain/spaces.repository.interface';
+import { IMembersRepository } from '#/modules/users/domain/members/members.repository.interface';
 
 /**
  * Orchestrates the entitlements feature: reads and writes rows through the

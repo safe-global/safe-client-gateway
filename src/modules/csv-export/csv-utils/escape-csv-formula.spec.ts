@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { escapeCsvFormula } from '@/modules/csv-export/csv-utils/escape-csv-formula';
+import { escapeCsvFormula } from '#/modules/csv-export/csv-utils/escape-csv-formula';
 
 describe('escapeCsvFormula', () => {
   it.each(['=HYPERLINK("http://x")', '+1+1', '-1', '@SUM(A1)'])(

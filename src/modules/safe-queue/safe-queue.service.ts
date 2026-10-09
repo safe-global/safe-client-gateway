@@ -2,39 +2,39 @@
 
 import { Inject, Injectable } from '@nestjs/common';
 import type { Address, Hex } from 'viem';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
-import { CacheRouter } from '@/datasources/cache/cache.router';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { CacheFirstDataSource } from '#/datasources/cache/cache.first.data.source';
+import { CacheRouter } from '#/datasources/cache/cache.router';
 import {
   CacheService,
   ICacheService,
-} from '@/datasources/cache/cache.service.interface';
-import { CircuitBreakerKeys } from '@/datasources/circuit-breaker/circuit-breaker.keys';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
+} from '#/datasources/cache/cache.service.interface';
+import { CircuitBreakerKeys } from '#/datasources/circuit-breaker/circuit-breaker.keys';
+import { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
 import {
   INetworkService,
   NetworkService,
-} from '@/datasources/network/network.service.interface';
-import { SAFE_QUEUE_SERVICE_MAX_LIMIT } from '@/domain/common/constants';
-import { LogType } from '@/domain/common/entities/log-type.entity';
-import type { Page } from '@/domain/entities/page.entity';
+} from '#/datasources/network/network.service.interface';
+import { SAFE_QUEUE_SERVICE_MAX_LIMIT } from '#/domain/common/constants';
+import { LogType } from '#/domain/common/entities/log-type.entity';
+import type { Page } from '#/domain/entities/page.entity';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import { asError } from '@/logging/utils';
-import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
-import { SafeQueueMessage } from '@/modules/safe-queue/entities/message.entity';
-import type { SafeQueueMultisigTransactionEntity } from '@/modules/safe-queue/entities/multisig-transaction.entity';
+} from '#/logging/logging.interface';
+import { asError } from '#/logging/utils';
+import type { Delegate } from '#/modules/delegate/domain/entities/delegate.entity';
+import { SafeQueueMessage } from '#/modules/safe-queue/entities/message.entity';
+import type { SafeQueueMultisigTransactionEntity } from '#/modules/safe-queue/entities/multisig-transaction.entity';
 import {
   SafeQueueMultisigTransactionListSchema,
   SafeQueueMultisigTransactionSchema,
-} from '@/modules/safe-queue/entities/multisig-transaction.entity';
-import { parseOrigin } from '@/modules/safe-queue/helpers/origin.helper';
-import type { ISafeQueueService } from '@/modules/safe-queue/safe-queue.interface';
-import type { ProposeTransactionDto } from '@/modules/transactions/domain/entities/propose-transaction.dto.entity';
-import type { Raw } from '@/validation/entities/raw.entity';
-import { rawify } from '@/validation/entities/raw.entity';
+} from '#/modules/safe-queue/entities/multisig-transaction.entity';
+import { parseOrigin } from '#/modules/safe-queue/helpers/origin.helper';
+import type { ISafeQueueService } from '#/modules/safe-queue/safe-queue.interface';
+import type { ProposeTransactionDto } from '#/modules/transactions/domain/entities/propose-transaction.dto.entity';
+import type { Raw } from '#/validation/entities/raw.entity';
+import { rawify } from '#/validation/entities/raw.entity';
 
 @Injectable()
 export class SafeQueueService implements ISafeQueueService {

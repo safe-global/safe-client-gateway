@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import type { IBuilder } from '@/__tests__/builder';
-import { Builder } from '@/__tests__/builder';
-import type { Deployment } from '@/modules/staking/datasources/entities/deployment.entity';
+import type { IBuilder } from '#/__tests__/builder';
+import { Builder } from '#/__tests__/builder';
+import type { Deployment } from '#/modules/staking/datasources/entities/deployment.entity';
 import {
   DeploymentChains,
   DeploymentProductTypes,
   DeploymentStatuses,
-} from '@/modules/staking/datasources/entities/deployment.entity';
+} from '#/modules/staking/datasources/entities/deployment.entity';
 
 export function deploymentBuilder(): IBuilder<Deployment> {
   return new Builder<Deployment>()

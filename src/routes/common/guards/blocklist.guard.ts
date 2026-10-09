@@ -8,18 +8,18 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { getAddress, isAddress } from 'viem';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { IBlocklistService } from '@/config/entities/blocklist.interface';
-import { LogType } from '@/domain/common/entities/log-type.entity';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { IBlocklistService } from '#/config/entities/blocklist.interface';
+import { LogType } from '#/domain/common/entities/log-type.entity';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
+} from '#/logging/logging.interface';
 import {
   getRouteParam,
   getRoutePath,
   type HttpRequest,
-} from '@/routes/common/http/http-request.utils';
+} from '#/routes/common/http/http-request.utils';
 
 @Injectable()
 export class BlocklistGuard implements CanActivate {

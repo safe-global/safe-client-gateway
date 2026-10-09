@@ -1,29 +1,29 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { CacheRouter } from '@/datasources/cache/cache.router';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { CacheRouter } from '#/datasources/cache/cache.router';
 import {
   CacheService,
   type ICacheService,
-} from '@/datasources/cache/cache.service.interface';
-import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
-import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
+} from '#/datasources/cache/cache.service.interface';
+import { IJwtService } from '#/datasources/jwt/jwt.service.interface';
+import { NetworkResponseError } from '#/datasources/network/entities/network.error.entity';
 import {
   type INetworkService,
   NetworkService,
-} from '@/datasources/network/network.service.interface';
+} from '#/datasources/network/network.service.interface';
 import type {
   FireabaseNotificationApn,
   FirebaseAndroidMessageConfig,
   FirebaseNotification,
   NotificationContent,
-} from '@/datasources/push-notifications-api/entities/firebase-notification.entity';
+} from '#/datasources/push-notifications-api/entities/firebase-notification.entity';
 import {
   type FirebaseOauth2Token,
   FirebaseOauth2TokenSchema,
-} from '@/datasources/push-notifications-api/entities/firebase-oauth2-token.entity';
-import { getFirstAvailable } from '@/domain/common/utils/array';
-import type { IPushNotificationsApi } from '@/domain/interfaces/push-notifications-api.interface';
+} from '#/datasources/push-notifications-api/entities/firebase-oauth2-token.entity';
+import { getFirstAvailable } from '#/domain/common/utils/array';
+import type { IPushNotificationsApi } from '#/domain/interfaces/push-notifications-api.interface';
 
 @Injectable()
 export class FirebaseCloudMessagingApiService implements IPushNotificationsApi {

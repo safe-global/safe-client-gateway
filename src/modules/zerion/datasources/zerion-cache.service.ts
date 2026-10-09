@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import type { Address } from 'viem';
-import { CacheRouter } from '@/datasources/cache/cache.router';
+import { CacheRouter } from '#/datasources/cache/cache.router';
 import {
   CacheService,
   type ICacheService,
-} from '@/datasources/cache/cache.service.interface';
-import { LogType } from '@/domain/common/entities/log-type.entity';
+} from '#/datasources/cache/cache.service.interface';
+import { LogType } from '#/domain/common/entities/log-type.entity';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import { asError } from '@/logging/utils';
-import type { TransactionEventType } from '@/modules/hooks/routes/entities/event-type.entity';
+} from '#/logging/logging.interface';
+import { asError } from '#/logging/utils';
+import type { TransactionEventType } from '#/modules/hooks/routes/entities/event-type.entity';
 
 /** What triggered an invalidation: an on-chain event, or a manual refresh. */
 export type ZerionCacheInvalidationSource = TransactionEventType | 'refresh';

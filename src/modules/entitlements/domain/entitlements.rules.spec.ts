@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
-import { featureBuilder } from '@/modules/entitlements/domain/entities/__tests__/feature.builder';
-import { DAY_IN_MS } from '@/modules/entitlements/domain/entitlements.constants';
-import type { FeatureDefaults } from '@/modules/entitlements/domain/entitlements.rules';
+import { featureBuilder } from '#/modules/entitlements/domain/entities/__tests__/feature.builder';
+import { DAY_IN_MS } from '#/modules/entitlements/domain/entitlements.constants';
+import type { FeatureDefaults } from '#/modules/entitlements/domain/entitlements.rules';
 import {
   effectiveEntitlement,
   eventPeriodStart,
@@ -11,7 +11,7 @@ import {
   isEnforcementActive,
   predatesEnforcement,
   resetsAt,
-} from '@/modules/entitlements/domain/entitlements.rules';
+} from '#/modules/entitlements/domain/entitlements.rules';
 
 function feature(overrides?: Partial<FeatureDefaults>): FeatureDefaults {
   return { ...featureBuilder().build(), ...overrides };

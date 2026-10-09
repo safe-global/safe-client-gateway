@@ -9,15 +9,15 @@ import {
 } from '@nestjs/common';
 import { ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
 import type { Address } from 'viem';
-import { CollectiblesService } from '@/modules/collectibles/routes/collectibles.service';
-import type { Collectible } from '@/modules/collectibles/routes/entities/collectible.entity';
-import { CollectiblePage } from '@/modules/collectibles/routes/entities/collectible.page.entity';
-import { PaginationDataDecorator } from '@/routes/common/decorators/pagination.data.decorator';
-import { RouteUrlDecorator } from '@/routes/common/decorators/route.url.decorator';
-import type { Page } from '@/routes/common/entities/page.entity';
-import type { PaginationData } from '@/routes/common/pagination/pagination.data';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+import { CollectiblesService } from '#/modules/collectibles/routes/collectibles.service';
+import type { Collectible } from '#/modules/collectibles/routes/entities/collectible.entity';
+import { CollectiblePage } from '#/modules/collectibles/routes/entities/collectible.page.entity';
+import { PaginationDataDecorator } from '#/routes/common/decorators/pagination.data.decorator';
+import { RouteUrlDecorator } from '#/routes/common/decorators/route.url.decorator';
+import type { Page } from '#/routes/common/entities/page.entity';
+import type { PaginationData } from '#/routes/common/pagination/pagination.data';
+import { AddressSchema } from '#/validation/entities/schemas/address.schema';
+import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
 @ApiTags('collectibles')
 @Controller({

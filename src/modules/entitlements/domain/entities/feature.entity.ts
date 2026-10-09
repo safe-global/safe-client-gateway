@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
-import { RowSchema } from '@/datasources/db/v2/entities/row.entity';
+import { RowSchema } from '#/datasources/db/v2/entities/row.entity';
 
 /** The stock Safe-seats feature's key, shared by every constant derived from it. */
 export const SAFE_SEATS_FEATURE_KEY = 'safe_seats';

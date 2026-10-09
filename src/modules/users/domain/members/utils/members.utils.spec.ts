@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { In, MoreThan } from 'typeorm';
-import type { Member } from '@/modules/users/domain/entities/member.entity';
-import { activeOrPendingMemberWhere } from '@/modules/users/domain/members/utils/members.utils';
+import type { Member } from '#/modules/users/domain/entities/member.entity';
+import { activeOrPendingMemberWhere } from '#/modules/users/domain/members/utils/members.utils';
 
 describe('activeOrPendingMemberWhere', () => {
   it('returns an ACTIVE clause and an unexpired-INVITED clause AND-ed onto the base', () => {

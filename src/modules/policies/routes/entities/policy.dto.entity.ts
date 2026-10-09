@@ -7,23 +7,23 @@ import type {
   ProposerPolicyData,
   SpendingLimitAllowance,
   SpendingLimitPolicyData,
-} from '@/modules/policies/domain/entities/active-policy.entity';
+} from '#/modules/policies/domain/entities/active-policy.entity';
 import type {
   GuardSlots,
   ModuleEnforcement,
   OffChainEnforcement,
   PolicyContracts,
   PolicyEnforcement,
-} from '@/modules/policies/domain/entities/policy-enforcement.entity';
+} from '#/modules/policies/domain/entities/policy-enforcement.entity';
 import {
   PolicyEnforcementKind,
   PolicyType,
-} from '@/modules/policies/domain/entities/policy-type.entity';
-import type { Token } from '@/modules/policies/domain/entities/token.entity';
+} from '#/modules/policies/domain/entities/policy-type.entity';
+import type { Token } from '#/modules/policies/domain/entities/token.entity';
 import type {
   Erc20Token,
   NativeToken,
-} from '@/modules/tokens/domain/entities/token.entity';
+} from '#/modules/tokens/domain/entities/token.entity';
 
 /**
  * Which Safe an item belongs to.

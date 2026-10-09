@@ -5,14 +5,14 @@ import type { EntityManager } from 'typeorm';
 import { IsNull } from 'typeorm';
 import { getAddress } from 'viem';
 import type { Mock, MockedObject } from 'vitest';
-import type { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { spaceSafeBuilder } from '@/modules/spaces/datasources/safes/entities/__tests__/space-safes.entity.db.builder';
-import { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
-import { createMockSpaceEncryptionService } from '@/modules/spaces/domain/__tests__/space-encryption.service.mock';
-import { createMockSpaceAuditRepository } from '@/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
-import { spaceBuilder } from '@/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
-import { SpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository';
-import { fakeUuid } from '@/validation/entities/schemas/__tests__/uuid.builder';
+import type { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
+import { spaceSafeBuilder } from '#/modules/spaces/datasources/safes/entities/__tests__/space-safes.entity.db.builder';
+import { SpaceSafe } from '#/modules/spaces/datasources/safes/entities/space-safes.entity.db';
+import { createMockSpaceEncryptionService } from '#/modules/spaces/domain/__tests__/space-encryption.service.mock';
+import { createMockSpaceAuditRepository } from '#/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
+import { spaceBuilder } from '#/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
+import { SpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository';
+import { fakeUuid } from '#/validation/entities/schemas/__tests__/uuid.builder';
 
 const toSafe = ({
   chainId,
@@ -307,9 +307,10 @@ describe('SpaceSafesRepository', () => {
         address: `kms:v1:${faker.string.alphanumeric(16)}`,
       };
       entityManager.find.mockResolvedValue([row]);
-      spaceEncryptionService.decryptSpaceSafes.mockResolvedValue([
-        { chainId, address },
-      ]);
+      const decryptedSafes = [{ chainId, address }];
+      spaceEncryptionService.decryptSpaceSafes.mockResolvedValue(
+        decryptedSafes,
+      );
 
       await target.delete({
         spaceId,
@@ -328,7 +329,7 @@ describe('SpaceSafesRepository', () => {
         entityManager,
         expect.objectContaining({
           eventType: 'SAFE_REMOVED',
-          payload: { safes: [{ chainId, address }] },
+          payload: { safes: decryptedSafes },
         }),
       );
     });

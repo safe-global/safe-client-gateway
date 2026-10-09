@@ -2,18 +2,18 @@
 import { Inject, Injectable } from '@nestjs/common';
 import orderBy from 'lodash/orderBy';
 import type { Address } from 'viem';
-import { getNumberString } from '@/domain/common/utils/utils';
-import { IBalancesRepository } from '@/modules/balances/domain/balances.repository.interface';
-import type { Balance as DomainBalance } from '@/modules/balances/domain/entities/balance.entity';
-import type { Balance } from '@/modules/balances/routes/entities/balance.entity';
-import type { Balances } from '@/modules/balances/routes/entities/balances.entity';
+import { getNumberString } from '#/domain/common/utils/utils';
+import { IBalancesRepository } from '#/modules/balances/domain/balances.repository.interface';
+import type { Balance as DomainBalance } from '#/modules/balances/domain/entities/balance.entity';
+import type { Balance } from '#/modules/balances/routes/entities/balance.entity';
+import type { Balances } from '#/modules/balances/routes/entities/balances.entity';
 import type {
   Erc20Token,
   NativeToken,
-} from '@/modules/balances/routes/entities/token.entity';
-import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
-import type { NativeCurrency } from '@/modules/chains/domain/entities/native.currency.entity';
-import { NULL_ADDRESS } from '@/routes/common/constants';
+} from '#/modules/balances/routes/entities/token.entity';
+import { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
+import type { NativeCurrency } from '#/modules/chains/domain/entities/native.currency.entity';
+import { NULL_ADDRESS } from '#/routes/common/constants';
 
 @Injectable()
 export class BalancesService {

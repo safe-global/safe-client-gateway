@@ -3,11 +3,11 @@ import { Inject, Injectable } from '@nestjs/common';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import type { SafeAppsRepository } from '@/modules/safe-apps/domain/safe-apps.repository';
-import { ISafeAppsRepository } from '@/modules/safe-apps/domain/safe-apps.repository.interface';
-import { parseOrigin } from '@/modules/safe-queue/helpers/origin.helper';
-import { SafeAppInfo } from '@/modules/transactions/routes/entities/safe-app-info.entity';
+} from '#/logging/logging.interface';
+import type { SafeAppsRepository } from '#/modules/safe-apps/domain/safe-apps.repository';
+import { ISafeAppsRepository } from '#/modules/safe-apps/domain/safe-apps.repository.interface';
+import { parseOrigin } from '#/modules/safe-queue/helpers/origin.helper';
+import { SafeAppInfo } from '#/modules/transactions/routes/entities/safe-app-info.entity';
 
 @Injectable()
 export class SafeAppInfoMapper {

@@ -7,22 +7,22 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import type { MockedObject } from 'vitest';
-import { oidcAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
-import { surveyBuilder } from '@/modules/surveys/datasources/entities/__tests__/survey.entity.db.builder';
+import { oidcAuthPayloadDtoBuilder } from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import type { ISpacesRepository } from '#/modules/spaces/domain/spaces.repository.interface';
+import { surveyBuilder } from '#/modules/surveys/datasources/entities/__tests__/survey.entity.db.builder';
 import type {
   Survey,
   SurveyPage,
-} from '@/modules/surveys/domain/entities/survey.entity';
+} from '#/modules/surveys/domain/entities/survey.entity';
 import type {
   ISurveysRepository,
   UpsertedSurveyResponse,
-} from '@/modules/surveys/domain/surveys.repository.interface';
-import { SurveysService } from '@/modules/surveys/routes/surveys.service';
-import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
-import type { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
-import { fakeUuid } from '@/validation/entities/schemas/__tests__/uuid.builder';
+} from '#/modules/surveys/domain/surveys.repository.interface';
+import { SurveysService } from '#/modules/surveys/routes/surveys.service';
+import { memberBuilder } from '#/modules/users/datasources/entities/__tests__/member.entity.db.builder';
+import type { IMembersRepository } from '#/modules/users/domain/members/members.repository.interface';
+import { fakeUuid } from '#/validation/entities/schemas/__tests__/uuid.builder';
 
 const surveysRepositoryMock = {
   findActiveBySlug: vi.fn(),

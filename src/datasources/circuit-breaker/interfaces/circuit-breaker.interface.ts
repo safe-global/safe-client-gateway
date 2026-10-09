@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { CircuitState } from '@/datasources/circuit-breaker/enums/circuit-state.enum';
+import type { CircuitState } from '#/datasources/circuit-breaker/enums/circuit-state.enum';
 
 /**
  * Configuration options for a circuit breaker

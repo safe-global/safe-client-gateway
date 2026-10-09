@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { BadRequestException } from '@nestjs/common';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
+import type { IConfigurationService } from '#/config/configuration.service.interface';
 
 const AUTH0_LOGOUT_PATH = '/v2/logout';
 const LOOPBACK_HOSTNAMES = new Set(['localhost', '127.0.0.1', '[::1]']);

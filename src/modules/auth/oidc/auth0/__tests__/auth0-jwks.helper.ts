@@ -4,7 +4,7 @@ import { generateKeyPairSync } from 'node:crypto';
 import { faker } from '@faker-js/faker';
 import jwt from 'jsonwebtoken';
 import type { MockInstance } from 'vitest';
-import { JWT_RS_ALGORITHM } from '@/datasources/jwt/jwt.constants';
+import { JWT_RS_ALGORITHM } from '#/datasources/jwt/jwt.constants';
 
 export type Auth0JwksFixture = {
   privateKey: string;

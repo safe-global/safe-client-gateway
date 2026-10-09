@@ -1,24 +1,24 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable, Module } from '@nestjs/common';
 import type { Address, Hex } from 'viem';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { ChainsModule } from '@/modules/chains/chains.module';
-import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
-import { GPv2Decoder } from '@/modules/swaps/domain/contracts/decoders/gp-v2-decoder.helper';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { ChainsModule } from '#/modules/chains/chains.module';
+import { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
+import { GPv2Decoder } from '#/modules/swaps/domain/contracts/decoders/gp-v2-decoder.helper';
 import {
   type KnownOrder,
   type Order,
   OrderKind,
-} from '@/modules/swaps/domain/entities/order.entity';
-import { ISwapsRepository } from '@/modules/swaps/domain/swaps.repository';
-import { SwapsModule } from '@/modules/swaps/swaps.module';
-import type { Token } from '@/modules/tokens/domain/entities/token.entity';
-import { ITokenRepository } from '@/modules/tokens/domain/token.repository.interface';
-import { TokensModule } from '@/modules/tokens/tokens.module';
+} from '#/modules/swaps/domain/entities/order.entity';
+import { ISwapsRepository } from '#/modules/swaps/domain/swaps.repository';
+import { SwapsModule } from '#/modules/swaps/swaps.module';
+import type { Token } from '#/modules/tokens/domain/entities/token.entity';
+import { ITokenRepository } from '#/modules/tokens/domain/token.repository.interface';
+import { TokensModule } from '#/modules/tokens/tokens.module';
 import {
   TransactionFinder,
   TransactionFinderModule,
-} from '@/modules/transactions/routes/helpers/transaction-finder.helper';
+} from '#/modules/transactions/routes/helpers/transaction-finder.helper';
 
 @Injectable()
 export class SwapOrderHelper {

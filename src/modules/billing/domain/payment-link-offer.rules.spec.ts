@@ -4,13 +4,13 @@ import {
   paymentLinkBuilder,
   paymentLinkPricedAt,
   trialPaymentLinkBuilder,
-} from '@/datasources/billing-api/entities/__tests__/payment-link.builder';
-import type { PaymentLink } from '@/datasources/billing-api/entities/payment-link.entity';
+} from '#/datasources/billing-api/entities/__tests__/payment-link.builder';
+import type { PaymentLink } from '#/datasources/billing-api/entities/payment-link.entity';
 import {
   gracePeriodOf,
   isOfferedToSpace,
   offersPlan,
-} from '@/modules/billing/domain/payment-link-offer.rules';
+} from '#/modules/billing/domain/payment-link-offer.rules';
 
 /** A trial link carrying `metadata` instead of a recognized `gracePeriod` tag. */
 function trialLinkWithMetadata(metadata: Record<string, string>): PaymentLink {

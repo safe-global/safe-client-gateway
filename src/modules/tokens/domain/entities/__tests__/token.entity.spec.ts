@@ -6,9 +6,9 @@ import {
   erc721TokenBuilder,
   nativeTokenBuilder,
   tokenBuilder,
-} from '@/modules/tokens/domain/__tests__/token.builder';
-import type { Token } from '@/modules/tokens/domain/entities/token.entity';
-import { TokenSchema } from '@/modules/tokens/domain/entities/token.entity';
+} from '#/modules/tokens/domain/__tests__/token.builder';
+import type { Token } from '#/modules/tokens/domain/entities/token.entity';
+import { TokenSchema } from '#/modules/tokens/domain/entities/token.entity';
 
 describe('Token', () => {
   it('should validate a token', () => {

@@ -12,7 +12,7 @@ import {
   getSafeToL2SetupVersions,
   isExtensibleFallbackHandlerDeployed,
   isFallbackHandlerDeployed,
-} from '@/domain/common/utils/deployments';
+} from '#/domain/common/utils/deployments';
 
 // Canonical 1.5.0 deployment addresses (identical across all chains)
 const EXTENSIBLE_FALLBACK_HANDLER_150 = getAddress(

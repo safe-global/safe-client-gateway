@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { Feature } from '@/modules/entitlements/datasources/entities/feature.entity.db';
-import type { IFeaturesRepository } from '@/modules/entitlements/domain/features.repository.interface';
+import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
+import { Feature } from '#/modules/entitlements/datasources/entities/feature.entity.db';
+import type { IFeaturesRepository } from '#/modules/entitlements/domain/features.repository.interface';
 
 @Injectable()
 export class FeaturesRepository implements IFeaturesRepository {

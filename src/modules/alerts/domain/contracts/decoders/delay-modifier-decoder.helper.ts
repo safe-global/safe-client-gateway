@@ -1,6 +1,7 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Injectable } from '@nestjs/common';
 import { parseAbi } from 'viem';
-import { AbiDecoder } from '@/modules/contracts/domain/decoders/abi-decoder.helper';
+import { AbiDecoder } from '#/modules/contracts/domain/decoders/abi-decoder.helper';
 
 export const DelayModifierAbi = parseAbi([
   'event TransactionAdded(uint256 indexed queueNonce, bytes32 indexed txHash, address to, uint256 value, bytes data, uint8 operation)',

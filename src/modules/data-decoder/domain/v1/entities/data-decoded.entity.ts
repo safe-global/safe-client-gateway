@@ -3,7 +3,7 @@ import type { z } from 'zod';
 import type {
   DataDecodedParameterSchema,
   DataDecodedSchema,
-} from '@/modules/data-decoder/domain/v1/entities/schemas/data-decoded.schema';
+} from '#/modules/data-decoder/domain/v1/entities/schemas/data-decoded.schema';
 
 export type DataDecodedParameter = z.infer<typeof DataDecodedParameterSchema>;
 

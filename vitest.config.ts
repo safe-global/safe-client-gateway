@@ -27,13 +27,20 @@ const plugins = (): Array<ReturnType<typeof swc.vite>> => [
   }),
 ];
 
+// `#/*` imports resolve through package.json `imports`; the `source` condition
+// maps them to the TypeScript sources instead of the compiled `dist` output.
+// Vitest merges its own default server conditions into these.
+const conditions = ['source'];
+const resolve = { conditions };
+const ssr = { resolve: { conditions } };
+
 const sharedExclude = [...configDefaults.exclude];
 
 export default defineConfig({
   plugins: plugins(),
   oxc: false,
-  // Resolves the `@/*` and `@/abis/*` path aliases straight from tsconfig.json.
-  resolve: { tsconfigPaths: true },
+  resolve,
+  ssr,
   test: {
     // Coverage is configured once at the root and aggregates across all projects.
     coverage: {
@@ -53,7 +60,8 @@ export default defineConfig({
       {
         plugins: plugins(),
         oxc: false,
-        resolve: { tsconfigPaths: true },
+        resolve,
+        ssr,
         test: {
           name: 'unit',
           globals: true,
@@ -78,7 +86,8 @@ export default defineConfig({
       {
         plugins: plugins(),
         oxc: false,
-        resolve: { tsconfigPaths: true },
+        resolve,
+        ssr,
         test: {
           name: 'integration',
           globals: true,
@@ -94,7 +103,8 @@ export default defineConfig({
       {
         plugins: plugins(),
         oxc: false,
-        resolve: { tsconfigPaths: true },
+        resolve,
+        ssr,
         test: {
           name: 'e2e',
           globals: true,

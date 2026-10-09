@@ -3,16 +3,16 @@
 import { faker } from '@faker-js/faker';
 import { unsealEventsResponse } from '@fingerprintjs/fingerprintjs-pro-server-api';
 import type { Mock } from 'vitest';
-import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
+import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
 import {
   fingerprintIpDataBuilder,
   fingerprintIpInfoBuilder,
   fingerprintLocationSpoofingBuilder,
   fingerprintUnsealedDataBuilder,
   fingerprintVpnBuilder,
-} from '@/datasources/locking-api/entities/__tests__/fingerprint-unsealed-data.entity.builder';
-import { FingerprintApiService } from '@/datasources/locking-api/fingerprint-api.service';
-import { eligibilityRequestBuilder } from '@/modules/community/domain/entities/__tests__/eligibility-request.builder';
+} from '#/datasources/locking-api/entities/__tests__/fingerprint-unsealed-data.entity.builder';
+import { FingerprintApiService } from '#/datasources/locking-api/fingerprint-api.service';
+import { eligibilityRequestBuilder } from '#/modules/community/domain/entities/__tests__/eligibility-request.builder';
 
 // TODO: convert to spy to avoid casting
 vi.mock('@fingerprintjs/fingerprintjs-pro-server-api');

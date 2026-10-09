@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { SubscriptionStatus } from '@/datasources/billing-api/entities/subscription.entity';
+import type { SubscriptionStatus } from '#/datasources/billing-api/entities/subscription.entity';
 import {
   FEATURE_KEYS,
   FeatureType,
   SAFE_SEATS_FEATURE_KEY,
-} from '@/modules/entitlements/domain/entities/feature.entity';
+} from '#/modules/entitlements/domain/entities/feature.entity';
 
 export const DAY_IN_MS = 24 * 60 * 60 * 1_000;
 

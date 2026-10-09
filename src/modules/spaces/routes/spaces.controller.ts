@@ -24,27 +24,27 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { getEnumKey } from '@/domain/common/utils/enum';
-import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
-import { SpaceStatus } from '@/modules/spaces/domain/entities/space.entity';
+import { getEnumKey } from '#/domain/common/utils/enum';
+import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import { AuthGuard } from '#/modules/auth/routes/guards/auth.guard';
+import { SpaceStatus } from '#/modules/spaces/domain/entities/space.entity';
 import {
   CreateSpaceDto,
   CreateSpaceResponse,
   CreateSpaceSchema,
-} from '@/modules/spaces/routes/entities/create-space.dto.entity';
-import { GetSpaceResponse } from '@/modules/spaces/routes/entities/get-space.dto.entity';
+} from '#/modules/spaces/routes/entities/create-space.dto.entity';
+import { GetSpaceResponse } from '#/modules/spaces/routes/entities/get-space.dto.entity';
 import {
   UpdateSpaceDto,
   UpdateSpaceResponse,
   UpdateSpaceSchema,
-} from '@/modules/spaces/routes/entities/update-space.dto.entity';
-import { SpacesCreationRateLimitGuard } from '@/modules/spaces/routes/guards/spaces-creation-rate-limit.guard';
-import { SpacesService } from '@/modules/spaces/routes/spaces.service';
-import { Auth } from '@/routes/common/auth/auth.decorator';
-import { ElevationGuard } from '@/routes/common/auth/elevation.guard';
-import { SpaceIdPipe } from '@/routes/common/pipes/space-id.pipe';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+} from '#/modules/spaces/routes/entities/update-space.dto.entity';
+import { SpacesCreationRateLimitGuard } from '#/modules/spaces/routes/guards/spaces-creation-rate-limit.guard';
+import { SpacesService } from '#/modules/spaces/routes/spaces.service';
+import { Auth } from '#/routes/common/auth/auth.decorator';
+import { ElevationGuard } from '#/routes/common/auth/elevation.guard';
+import { SpaceIdPipe } from '#/routes/common/pipes/space-id.pipe';
+import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
 @ApiTags('spaces')
 @UseGuards(AuthGuard)

@@ -5,9 +5,9 @@ import type {
   FindOptionsSelect,
   FindOptionsWhere,
 } from 'typeorm';
-import type { CounterfactualSafe } from '@/modules/counterfactual-safes/datasources/entities/counterfactual-safe.entity.db';
-import type { CounterfactualSafesRepository } from '@/modules/counterfactual-safes/domain/counterfactual-safes.repository';
-import type { User } from '@/modules/users/datasources/entities/users.entity.db';
+import type { CounterfactualSafe } from '#/modules/counterfactual-safes/datasources/entities/counterfactual-safe.entity.db';
+import type { CounterfactualSafesRepository } from '#/modules/counterfactual-safes/domain/counterfactual-safes.repository';
+import type { User } from '#/modules/users/datasources/entities/users.entity.db';
 
 export const ICounterfactualSafesRepository = Symbol(
   'ICounterfactualSafesRepository',

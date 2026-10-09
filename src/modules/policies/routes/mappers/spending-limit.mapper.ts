@@ -5,16 +5,16 @@ import type {
   ActivePolicy,
   SpendingLimitAllowance,
   SpendingLimitPolicyData,
-} from '@/modules/policies/domain/entities/active-policy.entity';
-import type { PolicyIndexerSafeAllowance } from '@/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
-import { moduleEnforcement } from '@/modules/policies/domain/entities/policy-enforcement.entity';
-import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
-import type { SafeRef } from '@/modules/policies/domain/entities/safe-ref.entity';
-import type { Token } from '@/modules/policies/domain/entities/token.entity';
+} from '#/modules/policies/domain/entities/active-policy.entity';
+import type { PolicyIndexerSafeAllowance } from '#/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
+import { moduleEnforcement } from '#/modules/policies/domain/entities/policy-enforcement.entity';
+import { PolicyType } from '#/modules/policies/domain/entities/policy-type.entity';
+import type { SafeRef } from '#/modules/policies/domain/entities/safe-ref.entity';
+import type { Token } from '#/modules/policies/domain/entities/token.entity';
 import {
   type TokenMetadataKey,
   tokenMetadataKey,
-} from '@/modules/policies/domain/utils/token-metadata-key.utils';
+} from '#/modules/policies/domain/utils/token-metadata-key.utils';
 
 const MILLISECONDS_IN_MINUTE = 60_000;
 

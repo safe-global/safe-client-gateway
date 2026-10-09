@@ -9,34 +9,34 @@ import type { MockedObject } from 'vitest';
 import {
   createTestApplication,
   initTestApplication,
-} from '@/__tests__/test-app.provider';
-import { createTestModule } from '@/__tests__/testing-module';
-import Safe130 from '@/abis/safe/v1.3.0/GnosisSafe.abi';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import configuration from '@/config/entities/__tests__/configuration';
-import type { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
-import { CacheRouter } from '@/datasources/cache/cache.router';
-import { CacheService } from '@/datasources/cache/cache.service.interface';
-import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import { NetworkService } from '@/datasources/network/network.service.interface';
-import { IBalancesApiManager } from '@/domain/interfaces/balances-api.manager.interface';
-import { IBlockchainApiManager } from '@/domain/interfaces/blockchain-api.manager.interface';
-import { IStakingApiManager } from '@/domain/interfaces/staking-api.manager.interface';
-import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { multiSendTransactionsEncoder } from '@/modules/contracts/domain/__tests__/encoders/multi-send-encoder.builder';
+} from '#/__tests__/test-app.provider';
+import { createTestModule } from '#/__tests__/testing-module';
+import Safe130 from '#/abis/safe/v1.3.0/GnosisSafe.abi';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import configuration from '#/config/entities/__tests__/configuration';
+import type { FakeCacheService } from '#/datasources/cache/__tests__/fake.cache.service';
+import { CacheRouter } from '#/datasources/cache/cache.router';
+import { CacheService } from '#/datasources/cache/cache.service.interface';
+import { CacheDir } from '#/datasources/cache/entities/cache-dir.entity';
+import type { INetworkService } from '#/datasources/network/network.service.interface';
+import { NetworkService } from '#/datasources/network/network.service.interface';
+import { IBalancesApiManager } from '#/domain/interfaces/balances-api.manager.interface';
+import { IBlockchainApiManager } from '#/domain/interfaces/blockchain-api.manager.interface';
+import { IStakingApiManager } from '#/domain/interfaces/staking-api.manager.interface';
+import { ITransactionApiManager } from '#/domain/interfaces/transaction-api.manager.interface';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
+import { multiSendTransactionsEncoder } from '#/modules/contracts/domain/__tests__/encoders/multi-send-encoder.builder';
 import {
   deletedDelegateEventBuilder,
   newDelegateEventBuilder,
   updatedDelegateEventBuilder,
-} from '@/modules/hooks/routes/entities/__tests__/delegate-events.builder';
-import { safeCreatedEventBuilder } from '@/modules/hooks/routes/entities/__tests__/safe-created.build';
-import { IQueuesApiService } from '@/modules/queues/datasources/queues-api.service.interface';
-import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
-import { stakeBuilder } from '@/modules/staking/datasources/entities/__tests__/stake.entity.builder';
-import { KilnDecoder } from '@/modules/staking/domain/contracts/decoders/kiln-decoder.helper';
-import { rawify } from '@/validation/entities/raw.entity';
+} from '#/modules/hooks/routes/entities/__tests__/delegate-events.builder';
+import { safeCreatedEventBuilder } from '#/modules/hooks/routes/entities/__tests__/safe-created.build';
+import { IQueuesApiService } from '#/modules/queues/datasources/queues-api.service.interface';
+import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
+import { stakeBuilder } from '#/modules/staking/datasources/entities/__tests__/stake.entity.builder';
+import { KilnDecoder } from '#/modules/staking/domain/contracts/decoders/kiln-decoder.helper';
+import { rawify } from '#/validation/entities/raw.entity';
 
 function getSubscriptionCallback(
   queuesApiService: MockedObject<IQueuesApiService>,

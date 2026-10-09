@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
-import type { Feature } from '@/modules/entitlements/domain/entities/feature.entity';
-import type { FeatureGrant } from '@/modules/entitlements/domain/entities/feature-grant.entity';
-import type { SpaceSubscription } from '@/modules/entitlements/domain/entities/space-subscription.entity';
-import type { SubscriptionEntitlement } from '@/modules/entitlements/domain/entities/subscription-entitlement.entity';
+import type { Feature } from '#/modules/entitlements/domain/entities/feature.entity';
+import type { FeatureGrant } from '#/modules/entitlements/domain/entities/feature-grant.entity';
+import type { SpaceSubscription } from '#/modules/entitlements/domain/entities/space-subscription.entity';
+import type { SubscriptionEntitlement } from '#/modules/entitlements/domain/entities/subscription-entitlement.entity';
 import {
   DAY_IN_MS,
   isStockMeteredFeature,
-} from '@/modules/entitlements/domain/entitlements.constants';
+} from '#/modules/entitlements/domain/entitlements.constants';
 
 /**
  * The Free-tier fallback and the usage window, derived here so the repository

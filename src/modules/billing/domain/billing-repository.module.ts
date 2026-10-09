@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Module } from '@nestjs/common';
-import { BillingApiModule } from '@/datasources/billing-api/billing-api.module';
-import { BillingRepository } from '@/modules/billing/domain/billing.repository';
-import { IBillingRepository } from '@/modules/billing/domain/billing.repository.interface';
+import { BillingApiModule } from '#/datasources/billing-api/billing-api.module';
+import { BillingRepository } from '#/modules/billing/domain/billing.repository';
+import { IBillingRepository } from '#/modules/billing/domain/billing.repository.interface';
 
 /**
  * The seam every consumer of the billing service goes through, so `IBillingApi`

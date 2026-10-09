@@ -12,37 +12,37 @@ import { mockClient } from 'aws-sdk-client-mock';
 import { DataSource } from 'typeorm';
 import { type Address, getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
-import configuration from '@/config/entities/__tests__/configuration';
-import { postgresConfig } from '@/config/entities/postgres.config';
-import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { AwsKmsService } from '@/datasources/kms/aws-kms.service';
-import { INDEX_KEY_LENGTH } from '@/datasources/kms/encryption.constants';
-import { KmsEncryptionService } from '@/datasources/kms/kms-encryption.service';
-import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
-import { getStringEnumKeys } from '@/domain/common/utils/enum';
-import type { ILoggingService } from '@/logging/logging.interface';
+import type { IConfigurationService } from '#/config/configuration.service.interface';
+import configuration from '#/config/entities/__tests__/configuration';
+import { postgresConfig } from '#/config/entities/postgres.config';
+import { DatabaseMigrator } from '#/datasources/db/v2/database-migrator.service';
+import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
+import { AwsKmsService } from '#/datasources/kms/aws-kms.service';
+import { INDEX_KEY_LENGTH } from '#/datasources/kms/encryption.constants';
+import { KmsEncryptionService } from '#/datasources/kms/kms-encryption.service';
+import { DB_MAX_SAFE_INTEGER } from '#/domain/common/constants';
+import { getStringEnumKeys } from '#/domain/common/utils/enum';
+import type { ILoggingService } from '#/logging/logging.interface';
 import {
   oidcAuthPayloadDtoBuilder,
   siweAuthPayloadDtoBuilder,
-} from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
-import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
-import { createMockSpaceAuditRepository } from '@/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
-import { Member } from '@/modules/users/datasources/entities/member.entity.db';
-import { User } from '@/modules/users/datasources/entities/users.entity.db';
-import { createMockUserEncryptionService } from '@/modules/users/domain/__tests__/user-encryption.service.mock';
-import { UserStatus } from '@/modules/users/domain/entities/user.entity';
-import { UserEmailAlreadyInUseError } from '@/modules/users/domain/errors/user-email-already-in-use.error';
-import { UserEncryptionService } from '@/modules/users/domain/user-encryption.service';
-import { UsersRepository } from '@/modules/users/domain/users.repository';
-import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
-import { createMockWalletEncryptionService } from '@/modules/wallets/domain/__tests__/wallet-encryption.service.mock';
-import { WalletsRepository } from '@/modules/wallets/domain/wallets.repository';
-import { fakeEmailAddress } from '@/validation/entities/schemas/__tests__/email-address.builder';
-import type { EmailAddress } from '@/validation/entities/schemas/email-address.schema';
+} from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import { SpaceSafe } from '#/modules/spaces/datasources/safes/entities/space-safes.entity.db';
+import { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
+import { createMockSpaceAuditRepository } from '#/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
+import { Member } from '#/modules/users/datasources/entities/member.entity.db';
+import { User } from '#/modules/users/datasources/entities/users.entity.db';
+import { createMockUserEncryptionService } from '#/modules/users/domain/__tests__/user-encryption.service.mock';
+import { UserStatus } from '#/modules/users/domain/entities/user.entity';
+import { UserEmailAlreadyInUseError } from '#/modules/users/domain/errors/user-email-already-in-use.error';
+import { UserEncryptionService } from '#/modules/users/domain/user-encryption.service';
+import { UsersRepository } from '#/modules/users/domain/users.repository';
+import { Wallet } from '#/modules/wallets/datasources/entities/wallets.entity.db';
+import { createMockWalletEncryptionService } from '#/modules/wallets/domain/__tests__/wallet-encryption.service.mock';
+import { WalletsRepository } from '#/modules/wallets/domain/wallets.repository';
+import { fakeEmailAddress } from '#/validation/entities/schemas/__tests__/email-address.builder';
+import type { EmailAddress } from '#/validation/entities/schemas/email-address.schema';
 
 const mockLoggingService = {
   debug: vi.fn(),

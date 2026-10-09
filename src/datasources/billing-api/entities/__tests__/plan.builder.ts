@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import type { IBuilder } from '@/__tests__/builder';
-import { Builder } from '@/__tests__/builder';
+import type { IBuilder } from '#/__tests__/builder';
+import { Builder } from '#/__tests__/builder';
 import type {
   Plan,
   Product,
   SubscriptionPlan,
-} from '@/datasources/billing-api/entities/plan.entity';
+} from '#/datasources/billing-api/entities/plan.entity';
 import {
   PlanBillingCycles,
   PlanCurrencies,
   PlanTypes,
-} from '@/datasources/billing-api/entities/plan.entity';
+} from '#/datasources/billing-api/entities/plan.entity';
 
 export function productBuilder(): IBuilder<Product> {
   return new Builder<Product>()

@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import type { FastifyReply } from 'fastify';
 import { ZodError, type z } from 'zod';
-import { ZodErrorWithCode } from '@/validation/pipes/validation.pipe';
+import { ZodErrorWithCode } from '#/validation/pipes/validation.pipe';
 
 /**
  * Exception filter that handles Zod validation errors throughout the application.

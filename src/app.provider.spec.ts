@@ -12,9 +12,9 @@ import {
 import { Test } from '@nestjs/testing';
 import type { FastifyRequest } from 'fastify';
 import request from 'supertest';
-import { createFastifyAdapter, parseBodyLimit } from '@/app.provider';
-import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
-import { IConfigurationService } from '@/config/configuration.service.interface';
+import { createFastifyAdapter, parseBodyLimit } from '#/app.provider';
+import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
+import { IConfigurationService } from '#/config/configuration.service.interface';
 
 @Controller()
 class ProbeController {

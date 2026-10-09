@@ -9,20 +9,20 @@ import type { MockedObject } from 'vitest';
 import {
   initTestApplication,
   TestAppProvider,
-} from '@/__tests__/test-app.provider';
-import { createTestModule } from '@/__tests__/testing-module';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import configuration from '@/config/entities/__tests__/configuration';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import { NetworkService } from '@/datasources/network/network.service.interface';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { relayerBuilder } from '@/modules/chains/domain/entities/__tests__/relayer.builder';
-import { gtfFeesResponseBuilder } from '@/modules/fees/domain/entities/__tests__/gtf-fees-response.builder';
-import { txFeesResponseBuilder } from '@/modules/fees/domain/entities/__tests__/tx-fees-response.builder';
-import { feePreviewTransactionDtoBuilder } from '@/modules/fees/routes/entities/__tests__/fee-preview-transaction.dto.builder';
-import { GasPaymentOption } from '@/modules/relay/domain/entities/gas-payment-option.entity';
-import { RelayerType } from '@/modules/relay/domain/entities/relayer-type.entity';
-import { rawify } from '@/validation/entities/raw.entity';
+} from '#/__tests__/test-app.provider';
+import { createTestModule } from '#/__tests__/testing-module';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import configuration from '#/config/entities/__tests__/configuration';
+import type { INetworkService } from '#/datasources/network/network.service.interface';
+import { NetworkService } from '#/datasources/network/network.service.interface';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
+import { relayerBuilder } from '#/modules/chains/domain/entities/__tests__/relayer.builder';
+import { gtfFeesResponseBuilder } from '#/modules/fees/domain/entities/__tests__/gtf-fees-response.builder';
+import { txFeesResponseBuilder } from '#/modules/fees/domain/entities/__tests__/tx-fees-response.builder';
+import { feePreviewTransactionDtoBuilder } from '#/modules/fees/routes/entities/__tests__/fee-preview-transaction.dto.builder';
+import { GasPaymentOption } from '#/modules/relay/domain/entities/gas-payment-option.entity';
+import { RelayerType } from '#/modules/relay/domain/entities/relayer-type.entity';
+import { rawify } from '#/validation/entities/raw.entity';
 
 describe('Fees Controller', () => {
   let app: INestApplication<Server>;

@@ -63,7 +63,7 @@ Coverage is configured once, at the root, and aggregates across all three projec
 
 `faker-setup.ts` seeds `@faker-js/faker` once per test file — from `FAKER_SEED` if set, otherwise a random seed it logs as `[faker] seed=<n>` — so a failing run's data is reproducible by re-running with `FAKER_SEED=<n>`.
 
-Globals (`describe`/`it`/`expect`/`vi`) are enabled for every project, so they need no import; the Vitest type helpers (`MockedObject`, `MockInstance`) still do, imported from `'vitest'` directly. Every project also resolves `{ tsconfigPaths: true }`, so a spec's `@/*`/`@/abis/*` imports follow the same aliases `tsconfig.json` defines for production code — the `@/` import rule in `docs/agents/module-structure.md` applies unchanged inside a spec.
+Globals (`describe`/`it`/`expect`/`vi`) are enabled for every project, so they need no import; the Vitest type helpers (`MockedObject`, `MockInstance`) still do, imported from `'vitest'` directly. Every project also resolves with the `source` condition, so a spec's `#/*`/`#/abis/*` imports follow the same `package.json` `imports` entries as production code, mapped to the TypeScript sources — the `#/` import rule in `docs/agents/module-structure.md` applies unchanged inside a spec. Vitest never type-checks a spec; `yarn typecheck` does, in CI, over `tsconfig.json` (specs included).
 
 ### Builders and faker only
 
@@ -101,7 +101,7 @@ A `*.factory.ts` file is not this pattern and is not a template to copy for a ne
 
 **Canonical example:** `src/modules/chains/`'s `domain/chains.repository.spec.ts` (unit, every dependency mocked) sits next to `routes/chains.controller.integration.spec.ts` (integration, boots a real Nest module through `TestAppProvider`/`initTestApplication` and drives it with `supertest`) and the module's own builders under `domain/entities/__tests__/*.builder.ts` — all three co-located with the code they cover.
 
-`docs/agents/module-structure.md`'s Imports rule records the one known deviation from this placement — a builder importing its entity via a relative path instead of `@/` — which is not precedent to extend either.
+`docs/agents/module-structure.md`'s Imports rule records the one known deviation from this placement — a builder importing its entity via a relative path instead of `#/` — which is not precedent to extend either.
 
 ### Determinism
 
@@ -117,6 +117,6 @@ A `*.factory.ts` file is not this pattern and is not a template to copy for a ne
 
 **Rule:** After changing a repository's constructor parameters, run the standing sweep — `grep -rnF "new <RepoClass>(" src --include='*.integration.spec.ts'` (`-F` so the class name is matched literally, not as a regex) — and update every call site it returns before the change is done.
 
-**Why:** the full rationale — `*.integration.spec.ts` hand-constructs repositories with `new` rather than through Nest DI, and `tsconfig.build.json` excludes spec files from the typecheck that would otherwise catch this — belongs to `docs/agents/database-and-migrations.md`'s "The integration-spec constructor sweep" rule; this entry only cross-references it so a testing-focused pass over this guide doesn't miss the sweep.
+**Why:** the full rationale — `*.integration.spec.ts` hand-constructs repositories with `new` rather than through Nest DI, and only `yarn typecheck` (not `yarn build`, whose `tsconfig.build.json` excludes spec files) type-checks them — belongs to `docs/agents/database-and-migrations.md`'s "The integration-spec constructor sweep" rule; this entry only cross-references it so a testing-focused pass over this guide doesn't miss the sweep.
 
 **Canonical example:** see the `WalletsRepository` sweep worked through in `docs/agents/database-and-migrations.md`'s "The integration-spec constructor sweep" rule.

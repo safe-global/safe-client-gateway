@@ -7,10 +7,10 @@ import {
   type PendingSpendingLimitChange,
   PendingSpendingLimitChangeKind,
   type PendingSpendingLimitData,
-} from '@/modules/policies/domain/entities/pending-policy.entity';
-import type { ModuleEnforcement } from '@/modules/policies/domain/entities/policy-enforcement.entity';
-import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
-import type { Token } from '@/modules/policies/domain/entities/token.entity';
+} from '#/modules/policies/domain/entities/pending-policy.entity';
+import type { ModuleEnforcement } from '#/modules/policies/domain/entities/policy-enforcement.entity';
+import { PolicyType } from '#/modules/policies/domain/entities/policy-type.entity';
+import type { Token } from '#/modules/policies/domain/entities/token.entity';
 import {
   Erc20TokenMetadataDto,
   ModuleEnforcementDto,
@@ -18,7 +18,7 @@ import {
   SafeRefDto,
   SafeRefResponse,
   SpendingLimitTokenMetadataSchema,
-} from '@/modules/policies/routes/entities/policy.dto.entity';
+} from '#/modules/policies/routes/entities/policy.dto.entity';
 
 export class EnableModuleChangeDto {
   @ApiProperty({ enum: [PendingSpendingLimitChangeKind.EnableModule] })

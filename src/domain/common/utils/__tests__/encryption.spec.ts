@@ -9,7 +9,7 @@ import {
   canonicalContext,
   decryptData,
   encryptData,
-} from '@/domain/common/utils/encryption';
+} from '#/domain/common/utils/encryption';
 
 describe('Encryption Utils', () => {
   const testKey = faker.string.alphanumeric();

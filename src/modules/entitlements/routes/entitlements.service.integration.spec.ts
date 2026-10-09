@@ -11,53 +11,53 @@ import type { ConfigService } from '@nestjs/config';
 import { DataSource, type ObjectLiteral } from 'typeorm';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
-import configuration from '@/config/entities/__tests__/configuration';
-import { postgresConfig } from '@/config/entities/postgres.config';
-import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
-import { CacheRouter } from '@/datasources/cache/cache.router';
-import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
-import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { LogType } from '@/domain/common/entities/log-type.entity';
-import { nameBuilder } from '@/domain/common/entities/name.builder';
-import type { ILoggingService } from '@/logging/logging.interface';
-import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { Feature } from '@/modules/entitlements/datasources/entities/feature.entity.db';
-import { SpaceFeatureUsage } from '@/modules/entitlements/datasources/entities/space-feature-usage.entity.db';
-import { SpaceSubscription } from '@/modules/entitlements/datasources/entities/space-subscription.entity.db';
-import { SubscriptionEntitlement } from '@/modules/entitlements/datasources/entities/subscription-entitlement.entity.db';
-import { featureBuilder } from '@/modules/entitlements/domain/entities/__tests__/feature.builder';
+import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
+import configuration from '#/config/entities/__tests__/configuration';
+import { postgresConfig } from '#/config/entities/postgres.config';
+import { FakeCacheService } from '#/datasources/cache/__tests__/fake.cache.service';
+import { CacheRouter } from '#/datasources/cache/cache.router';
+import { CacheDir } from '#/datasources/cache/entities/cache-dir.entity';
+import { DatabaseMigrator } from '#/datasources/db/v2/database-migrator.service';
+import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
+import { LogType } from '#/domain/common/entities/log-type.entity';
+import { nameBuilder } from '#/domain/common/entities/name.builder';
+import type { ILoggingService } from '#/logging/logging.interface';
+import { siweAuthPayloadDtoBuilder } from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import { Feature } from '#/modules/entitlements/datasources/entities/feature.entity.db';
+import { SpaceFeatureUsage } from '#/modules/entitlements/datasources/entities/space-feature-usage.entity.db';
+import { SpaceSubscription } from '#/modules/entitlements/datasources/entities/space-subscription.entity.db';
+import { SubscriptionEntitlement } from '#/modules/entitlements/datasources/entities/subscription-entitlement.entity.db';
+import { featureBuilder } from '#/modules/entitlements/domain/entities/__tests__/feature.builder';
 import {
   materializedSubscriptionBuilder,
   parsedEntitlementBuilder,
-} from '@/modules/entitlements/domain/entities/__tests__/materialized-subscription.builder';
+} from '#/modules/entitlements/domain/entities/__tests__/materialized-subscription.builder';
 import {
   FEATURE_KEYS,
   FeatureType,
   isFeatureKey,
-} from '@/modules/entitlements/domain/entities/feature.entity';
-import type { MaterializedSubscription } from '@/modules/entitlements/domain/entities/materialized-subscription.entity';
-import type { ConsumedQuota } from '@/modules/entitlements/domain/entitlement-enforcement.interface';
-import { isStockMeteredFeature } from '@/modules/entitlements/domain/entitlements.constants';
-import { FEATURE_NOT_GRANTED_ERROR_CODE } from '@/modules/entitlements/domain/errors/feature-not-granted.error';
-import { QUOTA_EXCEEDED_ERROR_CODE } from '@/modules/entitlements/domain/errors/quota-exceeded.error';
-import { FeaturesRepository } from '@/modules/entitlements/domain/features.repository';
-import { SpaceFeatureUsageRepository } from '@/modules/entitlements/domain/space-feature-usage.repository';
-import { SubscriptionEntitlementsRepository } from '@/modules/entitlements/domain/subscription-entitlements.repository';
-import { SubscriptionsRepository } from '@/modules/entitlements/domain/subscriptions.repository';
-import { EntitlementsService } from '@/modules/entitlements/routes/entitlements.service';
-import { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
-import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
-import { createMockSpaceEncryptionService } from '@/modules/spaces/domain/__tests__/space-encryption.service.mock';
-import { createMockSpaceAuditRepository } from '@/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
-import { SpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository';
-import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
-import { Member } from '@/modules/users/datasources/entities/member.entity.db';
-import { User } from '@/modules/users/datasources/entities/users.entity.db';
-import type { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
-import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
+} from '#/modules/entitlements/domain/entities/feature.entity';
+import type { MaterializedSubscription } from '#/modules/entitlements/domain/entities/materialized-subscription.entity';
+import type { ConsumedQuota } from '#/modules/entitlements/domain/entitlement-enforcement.interface';
+import { isStockMeteredFeature } from '#/modules/entitlements/domain/entitlements.constants';
+import { FEATURE_NOT_GRANTED_ERROR_CODE } from '#/modules/entitlements/domain/errors/feature-not-granted.error';
+import { QUOTA_EXCEEDED_ERROR_CODE } from '#/modules/entitlements/domain/errors/quota-exceeded.error';
+import { FeaturesRepository } from '#/modules/entitlements/domain/features.repository';
+import { SpaceFeatureUsageRepository } from '#/modules/entitlements/domain/space-feature-usage.repository';
+import { SubscriptionEntitlementsRepository } from '#/modules/entitlements/domain/subscription-entitlements.repository';
+import { SubscriptionsRepository } from '#/modules/entitlements/domain/subscriptions.repository';
+import { EntitlementsService } from '#/modules/entitlements/routes/entitlements.service';
+import { SpaceSafe } from '#/modules/spaces/datasources/safes/entities/space-safes.entity.db';
+import { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
+import { createMockSpaceEncryptionService } from '#/modules/spaces/domain/__tests__/space-encryption.service.mock';
+import { createMockSpaceAuditRepository } from '#/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
+import { SpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository';
+import type { ISpacesRepository } from '#/modules/spaces/domain/spaces.repository.interface';
+import { Member } from '#/modules/users/datasources/entities/member.entity.db';
+import { User } from '#/modules/users/datasources/entities/users.entity.db';
+import type { IMembersRepository } from '#/modules/users/domain/members/members.repository.interface';
+import { Wallet } from '#/modules/wallets/datasources/entities/wallets.entity.db';
 
 const mockLoggingService = {
   debug: vi.fn(),

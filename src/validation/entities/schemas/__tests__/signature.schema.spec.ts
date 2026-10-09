@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import type { Hex } from 'viem';
-import { SignatureSchema } from '@/validation/entities/schemas/signature.schema';
+import { SignatureSchema } from '#/validation/entities/schemas/signature.schema';
 
 describe('SignatureSchema', () => {
   it('should validate a signature', () => {

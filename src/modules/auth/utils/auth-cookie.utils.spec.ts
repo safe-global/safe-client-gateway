@@ -5,7 +5,7 @@ import {
   getClearCookieOptions,
   getCookieOptions,
   getSetCookieOptions,
-} from '@/modules/auth/utils/auth-cookie.utils';
+} from '#/modules/auth/utils/auth-cookie.utils';
 
 describe('auth-cookie.utils', () => {
   describe('getCookieOptions', () => {

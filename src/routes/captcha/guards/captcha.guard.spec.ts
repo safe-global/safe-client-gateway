@@ -4,9 +4,9 @@ import { faker } from '@faker-js/faker';
 import type { ExecutionContext } from '@nestjs/common';
 import { UnauthorizedException } from '@nestjs/common';
 import type { MockedObject } from 'vitest';
-import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
-import type { CaptchaService } from '@/routes/captcha/captcha.service';
-import { CaptchaGuard } from '@/routes/captcha/guards/captcha.guard';
+import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
+import type { CaptchaService } from '#/routes/captcha/captcha.service';
+import { CaptchaGuard } from '#/routes/captcha/guards/captcha.guard';
 
 const mockCaptchaService = vi.mocked({
   verifyToken: vi.fn(),

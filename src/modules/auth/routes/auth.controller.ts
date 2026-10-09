@@ -23,29 +23,29 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import type { FastifyReply } from 'fastify';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { getSecondsUntil } from '@/domain/common/utils/time';
-import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { AuthService } from '@/modules/auth/routes/auth.service';
-import { AuthNonce } from '@/modules/auth/routes/entities/auth-nonce.entity';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { getSecondsUntil } from '#/domain/common/utils/time';
+import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import { AuthService } from '#/modules/auth/routes/auth.service';
+import { AuthNonce } from '#/modules/auth/routes/entities/auth-nonce.entity';
 import {
   LogoutDto,
   LogoutDtoSchema,
-} from '@/modules/auth/routes/entities/logout.dto.entity';
+} from '#/modules/auth/routes/entities/logout.dto.entity';
 import {
   SiweDto,
   SiweDtoSchema,
-} from '@/modules/auth/routes/entities/siwe.dto.entity';
-import { UserSession } from '@/modules/auth/routes/entities/user-session.entity';
-import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
+} from '#/modules/auth/routes/entities/siwe.dto.entity';
+import { UserSession } from '#/modules/auth/routes/entities/user-session.entity';
+import { AuthGuard } from '#/modules/auth/routes/guards/auth.guard';
 import {
   ACCESS_TOKEN_COOKIE_NAME,
   getClearCookieOptions,
   getSetCookieOptions,
-} from '@/modules/auth/utils/auth-cookie.utils';
-import { Auth } from '@/routes/common/auth/auth.decorator';
-import type { HttpRequest } from '@/routes/common/http/http-request.utils';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+} from '#/modules/auth/utils/auth-cookie.utils';
+import { Auth } from '#/routes/common/auth/auth.decorator';
+import type { HttpRequest } from '#/routes/common/http/http-request.utils';
+import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
 /**
  * The AuthController is responsible for handling SiWe authentication:

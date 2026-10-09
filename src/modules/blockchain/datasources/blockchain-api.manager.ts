@@ -8,18 +8,18 @@ import {
   RpcRequestError,
 } from 'viem';
 import { getHttpRpcClient } from 'viem/utils';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { CacheRouter } from '@/datasources/cache/cache.router';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { CacheRouter } from '#/datasources/cache/cache.router';
 import {
   CacheService,
   type ICacheService,
-} from '@/datasources/cache/cache.service.interface';
-import { ChainApiManager } from '@/datasources/common/chain-api.manager';
-import type { IBlockchainApiManager } from '@/domain/interfaces/blockchain-api.manager.interface';
-import { IConfigApi } from '@/domain/interfaces/config-api.interface';
-import type { Chain as DomainChain } from '@/modules/chains/domain/entities/chain.entity';
-import { RpcUriAuthentication } from '@/modules/chains/domain/entities/rpc-uri-authentication.entity';
-import { ChainSchema } from '@/modules/chains/domain/entities/schemas/chain.schema';
+} from '#/datasources/cache/cache.service.interface';
+import { ChainApiManager } from '#/datasources/common/chain-api.manager';
+import type { IBlockchainApiManager } from '#/domain/interfaces/blockchain-api.manager.interface';
+import { IConfigApi } from '#/domain/interfaces/config-api.interface';
+import type { Chain as DomainChain } from '#/modules/chains/domain/entities/chain.entity';
+import { RpcUriAuthentication } from '#/modules/chains/domain/entities/rpc-uri-authentication.entity';
+import { ChainSchema } from '#/modules/chains/domain/entities/schemas/chain.schema';
 
 @Injectable()
 export class BlockchainApiManager

@@ -22,20 +22,20 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import type { Address } from 'viem';
-import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
-import { AddressBooksService } from '@/modules/spaces/routes/address-books/address-books.service';
-import { SpaceAddressBookDto } from '@/modules/spaces/routes/address-books/entities/space-address-book.dto.entity';
+import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import { AuthGuard } from '#/modules/auth/routes/guards/auth.guard';
+import { AddressBooksService } from '#/modules/spaces/routes/address-books/address-books.service';
+import { SpaceAddressBookDto } from '#/modules/spaces/routes/address-books/entities/space-address-book.dto.entity';
 import {
   UpsertAddressBookItemsDto,
   UpsertAddressBookItemsSchema,
-} from '@/modules/spaces/routes/address-books/entities/upsert-address-book-items.dto.entity';
-import { SpacesAddressBookRateLimitGuard } from '@/modules/spaces/routes/address-books/guards/spaces-address-book-rate-limit.guard';
-import { Auth } from '@/routes/common/auth/auth.decorator';
-import { ElevationGuard } from '@/routes/common/auth/elevation.guard';
-import { SpaceIdPipe } from '@/routes/common/pipes/space-id.pipe';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+} from '#/modules/spaces/routes/address-books/entities/upsert-address-book-items.dto.entity';
+import { SpacesAddressBookRateLimitGuard } from '#/modules/spaces/routes/address-books/guards/spaces-address-book-rate-limit.guard';
+import { Auth } from '#/routes/common/auth/auth.decorator';
+import { ElevationGuard } from '#/routes/common/auth/elevation.guard';
+import { SpaceIdPipe } from '#/routes/common/pipes/space-id.pipe';
+import { AddressSchema } from '#/validation/entities/schemas/address.schema';
+import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
 @ApiTags('spaces')
 @Controller({ path: 'spaces', version: '1' })

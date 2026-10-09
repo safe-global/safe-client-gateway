@@ -5,9 +5,9 @@ import type { ExecutionContext } from '@nestjs/common';
 import { ForbiddenException } from '@nestjs/common';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
-import type { IBlocklistService } from '@/config/entities/blocklist.interface';
-import type { ILoggingService } from '@/logging/logging.interface';
+import type { IConfigurationService } from '#/config/configuration.service.interface';
+import type { IBlocklistService } from '#/config/entities/blocklist.interface';
+import type { ILoggingService } from '#/logging/logging.interface';
 import { BlocklistGuard } from './blocklist.guard';
 
 const mockLoggingService = {

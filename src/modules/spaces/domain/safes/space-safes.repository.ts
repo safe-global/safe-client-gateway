@@ -10,20 +10,20 @@ import {
   IsNull,
 } from 'typeorm';
 import { z } from 'zod';
-import { getScopedRepository } from '@/datasources/db/v2/get-scoped-repository.util';
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { isUniqueConstraintError } from '@/datasources/errors/helpers/is-unique-constraint-error.helper';
-import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-error';
-import { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
-import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
-import { SpaceAuditEventType } from '@/modules/spaces/domain/audit/entities/space-audit-event.entity';
-import { ISpaceAuditRepository } from '@/modules/spaces/domain/audit/space-audit.repository.interface';
+import { getScopedRepository } from '#/datasources/db/v2/get-scoped-repository.util';
+import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
+import { isUniqueConstraintError } from '#/datasources/errors/helpers/is-unique-constraint-error.helper';
+import { UniqueConstraintError } from '#/datasources/errors/unique-constraint-error';
+import { SpaceSafe } from '#/modules/spaces/datasources/safes/entities/space-safes.entity.db';
+import { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
+import { SpaceAuditEventType } from '#/modules/spaces/domain/audit/entities/space-audit-event.entity';
+import { ISpaceAuditRepository } from '#/modules/spaces/domain/audit/space-audit.repository.interface';
 import type {
   PreparedSpaceSafe,
   SpaceSafesBySpaceId,
-} from '@/modules/spaces/domain/safes/entities/space-safe.entity';
-import type { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
-import { SpaceEncryptionService } from '@/modules/spaces/domain/space-encryption.service';
+} from '#/modules/spaces/domain/safes/entities/space-safe.entity';
+import type { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository.interface';
+import { SpaceEncryptionService } from '#/modules/spaces/domain/space-encryption.service';
 
 /** Own namespace: the single-int lock key space is shared process-wide. */
 const SEAT_LOCK_NAMESPACE = 1827;

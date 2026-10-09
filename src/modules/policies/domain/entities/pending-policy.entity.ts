@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { Address, Hex } from 'viem';
-import type { ModuleEnforcement } from '@/modules/policies/domain/entities/policy-enforcement.entity';
-import type { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
-import type { SafeRef } from '@/modules/policies/domain/entities/safe-ref.entity';
-import type { Token } from '@/modules/policies/domain/entities/token.entity';
+import type { ModuleEnforcement } from '#/modules/policies/domain/entities/policy-enforcement.entity';
+import type { PolicyType } from '#/modules/policies/domain/entities/policy-type.entity';
+import type { SafeRef } from '#/modules/policies/domain/entities/safe-ref.entity';
+import type { Token } from '#/modules/policies/domain/entities/token.entity';
 
 export type PendingPolicy = PendingQueuedPolicy;
 

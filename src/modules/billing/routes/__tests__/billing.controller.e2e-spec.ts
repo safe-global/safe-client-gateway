@@ -8,45 +8,45 @@ import type { MockedObject } from 'vitest';
 import {
   initTestApplication,
   TestAppProvider,
-} from '@/__tests__/test-app.provider';
-import { createTestModule } from '@/__tests__/testing-module';
-import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import configuration from '@/config/entities/__tests__/configuration';
+} from '#/__tests__/test-app.provider';
+import { createTestModule } from '#/__tests__/testing-module';
+import { checkGuardIsApplied } from '#/__tests__/util/check-guard';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import configuration from '#/config/entities/__tests__/configuration';
 import {
   checkoutSessionBuilder,
   checkoutSessionResultBuilder,
-} from '@/datasources/billing-api/entities/__tests__/checkout-session.builder';
+} from '#/datasources/billing-api/entities/__tests__/checkout-session.builder';
 import {
   paymentLinkBuilder,
   paymentLinkPricedAt,
   trialPaymentLinkBuilder,
-} from '@/datasources/billing-api/entities/__tests__/payment-link.builder';
-import { planBuilder } from '@/datasources/billing-api/entities/__tests__/plan.builder';
-import { subscriptionBuilder } from '@/datasources/billing-api/entities/__tests__/subscription.builder';
+} from '#/datasources/billing-api/entities/__tests__/payment-link.builder';
+import { planBuilder } from '#/datasources/billing-api/entities/__tests__/plan.builder';
+import { subscriptionBuilder } from '#/datasources/billing-api/entities/__tests__/subscription.builder';
 import {
   subscriptionUpdatePreviewBuilder,
   updateSubscriptionResultBuilder,
-} from '@/datasources/billing-api/entities/__tests__/subscription-update.builder';
-import type { PaymentLink } from '@/datasources/billing-api/entities/payment-link.entity';
-import type { Subscription } from '@/datasources/billing-api/entities/subscription.entity';
-import type { SubscriptionUpdatePreview } from '@/datasources/billing-api/entities/subscription-update.entity';
-import type { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
-import { CacheService } from '@/datasources/cache/cache.service.interface';
-import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
+} from '#/datasources/billing-api/entities/__tests__/subscription-update.builder';
+import type { PaymentLink } from '#/datasources/billing-api/entities/payment-link.entity';
+import type { Subscription } from '#/datasources/billing-api/entities/subscription.entity';
+import type { SubscriptionUpdatePreview } from '#/datasources/billing-api/entities/subscription-update.entity';
+import type { FakeCacheService } from '#/datasources/cache/__tests__/fake.cache.service';
+import { CacheService } from '#/datasources/cache/cache.service.interface';
+import { IJwtService } from '#/datasources/jwt/jwt.service.interface';
 import {
   type INetworkService,
   NetworkService,
-} from '@/datasources/network/network.service.interface';
-import { nameBuilder } from '@/domain/common/entities/name.builder';
-import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
-import { BillingController } from '@/modules/billing/routes/billing.controller';
-import { BillingWebhookAuthGuard } from '@/modules/billing/routes/guards/billing-webhook-auth.guard';
-import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
-import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
-import { SpacesCreationRateLimitGuard } from '@/modules/spaces/routes/guards/spaces-creation-rate-limit.guard';
-import { rawify } from '@/validation/entities/raw.entity';
+} from '#/datasources/network/network.service.interface';
+import { nameBuilder } from '#/domain/common/entities/name.builder';
+import { siweAuthPayloadDtoBuilder } from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { AuthGuard } from '#/modules/auth/routes/guards/auth.guard';
+import { BillingController } from '#/modules/billing/routes/billing.controller';
+import { BillingWebhookAuthGuard } from '#/modules/billing/routes/guards/billing-webhook-auth.guard';
+import { NotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/notifications.repository.module';
+import { TestNotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/test.notification.repository.module';
+import { SpacesCreationRateLimitGuard } from '#/modules/spaces/routes/guards/spaces-creation-rate-limit.guard';
+import { rawify } from '#/validation/entities/raw.entity';
 
 describe('BillingController', () => {
   let app: INestApplication<Server>;

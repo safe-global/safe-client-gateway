@@ -1,5 +1,6 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
-import { TargetedSafeEntrySchema } from '@/modules/targeted-messaging/domain/entities/targeted-safe-entry.entity';
+import { TargetedSafeEntrySchema } from '#/modules/targeted-messaging/domain/entities/targeted-safe-entry.entity';
 
 export type OutreachFile = z.infer<typeof OutreachFileSchema>;
 

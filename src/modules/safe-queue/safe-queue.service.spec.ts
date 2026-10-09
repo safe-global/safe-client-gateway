@@ -2,24 +2,24 @@
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress, type Hex } from 'viem';
 import type { MockedObject } from 'vitest';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
-import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
-import type { ICacheService } from '@/datasources/cache/cache.service.interface';
-import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
-import { CircuitBreakerKeys } from '@/datasources/circuit-breaker/circuit-breaker.keys';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import { SAFE_QUEUE_SERVICE_MAX_LIMIT } from '@/domain/common/constants';
-import type { ILoggingService } from '@/logging/logging.interface';
-import { delegateBuilder } from '@/modules/delegate/domain/entities/__tests__/delegate.builder';
-import { messageBuilder } from '@/modules/messages/domain/entities/__tests__/message.builder';
-import { safeQueueMultisigTransactionBuilder } from '@/modules/safe-queue/entities/__tests__/queue-multisig-transaction.builder';
-import { SafeQueueService } from '@/modules/safe-queue/safe-queue.service';
+import type { IConfigurationService } from '#/config/configuration.service.interface';
+import type { CacheFirstDataSource } from '#/datasources/cache/cache.first.data.source';
+import type { ICacheService } from '#/datasources/cache/cache.service.interface';
+import { CacheDir } from '#/datasources/cache/entities/cache-dir.entity';
+import { CircuitBreakerKeys } from '#/datasources/circuit-breaker/circuit-breaker.keys';
+import { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
+import type { INetworkService } from '#/datasources/network/network.service.interface';
+import { SAFE_QUEUE_SERVICE_MAX_LIMIT } from '#/domain/common/constants';
+import type { ILoggingService } from '#/logging/logging.interface';
+import { delegateBuilder } from '#/modules/delegate/domain/entities/__tests__/delegate.builder';
+import { messageBuilder } from '#/modules/messages/domain/entities/__tests__/message.builder';
+import { safeQueueMultisigTransactionBuilder } from '#/modules/safe-queue/entities/__tests__/queue-multisig-transaction.builder';
+import { SafeQueueService } from '#/modules/safe-queue/safe-queue.service';
 import {
   nestedTransactionDtoBuilder,
   proposeTransactionDtoBuilder,
-} from '@/modules/transactions/routes/entities/__tests__/propose-transaction.dto.builder';
-import { rawify } from '@/validation/entities/raw.entity';
+} from '#/modules/transactions/routes/entities/__tests__/propose-transaction.dto.builder';
+import { rawify } from '#/validation/entities/raw.entity';
 
 const dataSource = {
   get: vi.fn(),

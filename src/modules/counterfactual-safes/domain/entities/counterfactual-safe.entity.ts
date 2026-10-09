@@ -2,12 +2,12 @@
 
 import type { Address } from 'viem';
 import { z } from 'zod';
-import { RowSchema } from '@/datasources/db/v2/entities/row.entity';
-import type { CounterfactualSafe as DbCounterfactualSafe } from '@/modules/counterfactual-safes/datasources/entities/counterfactual-safe.entity.db';
-import { UserSchema } from '@/modules/users/domain/entities/user.entity';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { HexSchema } from '@/validation/entities/schemas/hex.schema';
-import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
+import { RowSchema } from '#/datasources/db/v2/entities/row.entity';
+import type { CounterfactualSafe as DbCounterfactualSafe } from '#/modules/counterfactual-safes/datasources/entities/counterfactual-safe.entity.db';
+import { UserSchema } from '#/modules/users/domain/entities/user.entity';
+import { AddressSchema } from '#/validation/entities/schemas/address.schema';
+import { HexSchema } from '#/validation/entities/schemas/hex.schema';
+import { NumericStringSchema } from '#/validation/entities/schemas/numeric-string.schema';
 
 export type CounterfactualSafe = z.infer<typeof CounterfactualSafeSchema>;
 

@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { get } from 'lodash';
 import type { MockedObject } from 'vitest';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
-import configuration from '@/config/entities/__tests__/configuration';
-import { getSafeQueueAuthHeaders } from '@/datasources/network/auth/queue-auth-headers.helper';
+import type { IConfigurationService } from '#/config/configuration.service.interface';
+import configuration from '#/config/entities/__tests__/configuration';
+import { getSafeQueueAuthHeaders } from '#/datasources/network/auth/queue-auth-headers.helper';
 
 const mockConfigurationService = vi.mocked({
   getOrThrow: vi.fn(),

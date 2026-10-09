@@ -2,9 +2,9 @@
 
 import { faker } from '@faker-js/faker';
 import { getAddress, zeroAddress } from 'viem';
-import { CacheRouter } from '@/datasources/cache/cache.router';
-import type { BaseDataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
-import { Origin } from '@/modules/fees/domain/entities/origin.entity';
+import { CacheRouter } from '#/datasources/cache/cache.router';
+import type { BaseDataDecoded } from '#/modules/data-decoder/domain/v2/entities/data-decoded.entity';
+import { Origin } from '#/modules/fees/domain/entities/origin.entity';
 
 const address = getAddress(faker.finance.ethereumAddress());
 

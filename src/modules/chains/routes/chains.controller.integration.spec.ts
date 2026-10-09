@@ -9,28 +9,28 @@ import type { MockedObject } from 'vitest';
 import {
   initTestApplication,
   TestAppProvider,
-} from '@/__tests__/test-app.provider';
-import { createTestModule } from '@/__tests__/testing-module';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import { NetworkService } from '@/datasources/network/network.service.interface';
-import type { Page } from '@/domain/entities/page.entity';
-import { backboneBuilder } from '@/modules/backbone/domain/entities/__tests__/backbone.builder';
-import type { Backbone } from '@/modules/backbone/domain/entities/backbone.entity';
-import { BlockchainModule } from '@/modules/blockchain/blockchain.module';
-import { TestBlockchainApiManagerModule } from '@/modules/blockchain/datasources/__tests__/test.blockchain-api.manager';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { gasPriceResponseBuilder } from '@/modules/chains/domain/entities/__tests__/gas-price-response.builder';
-import { indexingStatusBuilder } from '@/modules/chains/domain/entities/__tests__/indexing-status.builder';
-import { relayerBuilder } from '@/modules/chains/domain/entities/__tests__/relayer.builder';
-import { singletonBuilder } from '@/modules/chains/domain/entities/__tests__/singleton.builder';
-import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
-import type { Singleton } from '@/modules/chains/domain/entities/singleton.entity';
-import type { MasterCopy } from '@/modules/chains/routes/entities/master-copy.entity';
-import { GasPaymentOption } from '@/modules/relay/domain/entities/gas-payment-option.entity';
-import { PaginationData } from '@/routes/common/pagination/pagination.data';
-import { rawify } from '@/validation/entities/raw.entity';
+} from '#/__tests__/test-app.provider';
+import { createTestModule } from '#/__tests__/testing-module';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { NetworkResponseError } from '#/datasources/network/entities/network.error.entity';
+import type { INetworkService } from '#/datasources/network/network.service.interface';
+import { NetworkService } from '#/datasources/network/network.service.interface';
+import type { Page } from '#/domain/entities/page.entity';
+import { backboneBuilder } from '#/modules/backbone/domain/entities/__tests__/backbone.builder';
+import type { Backbone } from '#/modules/backbone/domain/entities/backbone.entity';
+import { BlockchainModule } from '#/modules/blockchain/blockchain.module';
+import { TestBlockchainApiManagerModule } from '#/modules/blockchain/datasources/__tests__/test.blockchain-api.manager';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
+import { gasPriceResponseBuilder } from '#/modules/chains/domain/entities/__tests__/gas-price-response.builder';
+import { indexingStatusBuilder } from '#/modules/chains/domain/entities/__tests__/indexing-status.builder';
+import { relayerBuilder } from '#/modules/chains/domain/entities/__tests__/relayer.builder';
+import { singletonBuilder } from '#/modules/chains/domain/entities/__tests__/singleton.builder';
+import type { Chain } from '#/modules/chains/domain/entities/chain.entity';
+import type { Singleton } from '#/modules/chains/domain/entities/singleton.entity';
+import type { MasterCopy } from '#/modules/chains/routes/entities/master-copy.entity';
+import { GasPaymentOption } from '#/modules/relay/domain/entities/gas-payment-option.entity';
+import { PaginationData } from '#/routes/common/pagination/pagination.data';
+import { rawify } from '#/validation/entities/raw.entity';
 
 describe('Chains Controller', () => {
   let app: INestApplication<Server>;

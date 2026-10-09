@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { SafeRef } from '@/modules/policies/domain/entities/safe-ref.entity';
+import type { SafeRef } from '#/modules/policies/domain/entities/safe-ref.entity';
 
 /**
  * One filter group per chain, as the indexer's generated `*_bool_exp` types.

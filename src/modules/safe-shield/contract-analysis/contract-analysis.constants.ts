@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { Address } from 'viem';
-import { CommonStatus } from '@/modules/safe-shield/entities/analysis-result.entity';
+import { CommonStatus } from '#/modules/safe-shield/entities/analysis-result.entity';
 import {
   COMMON_DESCRIPTION_MAPPING,
   COMMON_SEVERITY_MAPPING,
-} from '@/modules/safe-shield/entities/common-status.constants';
-import { ContractStatus } from '@/modules/safe-shield/entities/contract-status.entity';
-import type { Severity } from '@/modules/safe-shield/entities/severity.entity';
+} from '#/modules/safe-shield/entities/common-status.constants';
+import { ContractStatus } from '#/modules/safe-shield/entities/contract-status.entity';
+import type { Severity } from '#/modules/safe-shield/entities/severity.entity';
 
 /** Address of the official fallback handler used by CowSwap TWAP contracts */
 export const TWAP_FALLBACK_HANDLER: Address =

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { Address, Hex } from 'viem';
-import type { Relay } from '@/modules/relay/domain/entities/relay.entity';
-import type { RelayEligibility } from '@/modules/relay/domain/entities/relay-eligibility.entity';
+import type { Relay } from '#/modules/relay/domain/entities/relay.entity';
+import type { RelayEligibility } from '#/modules/relay/domain/entities/relay-eligibility.entity';
 
 export const IRelayer = Symbol('IRelayer');
 

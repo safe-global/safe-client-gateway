@@ -13,43 +13,43 @@ import type { MockedObject } from 'vitest';
 import {
   initTestApplication,
   TestAppProvider,
-} from '@/__tests__/test-app.provider';
-import { ConfigurationModule } from '@/config/configuration.module';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import configuration from '@/config/entities/__tests__/configuration';
-import { TestBlocklistModule } from '@/config/entities/__tests__/test.blocklist.module';
-import { IBlocklistService } from '@/config/entities/blocklist.interface';
-import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
-import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
-import { TestTxAuthNetworkModule } from '@/datasources/network/__tests__/test.tx-auth.network.module';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import { NetworkService } from '@/datasources/network/network.service.interface';
-import { TxAuthNetworkModule } from '@/datasources/network/tx-auth.network.module';
-import { SignatureType } from '@/domain/common/entities/signature-type.entity';
-import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
-import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
+} from '#/__tests__/test-app.provider';
+import { ConfigurationModule } from '#/config/configuration.module';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import configuration from '#/config/entities/__tests__/configuration';
+import { TestBlocklistModule } from '#/config/entities/__tests__/test.blocklist.module';
+import { IBlocklistService } from '#/config/entities/blocklist.interface';
+import { TestCacheModule } from '#/datasources/cache/__tests__/test.cache.module';
+import { TestNetworkModule } from '#/datasources/network/__tests__/test.network.module';
+import { TestTxAuthNetworkModule } from '#/datasources/network/__tests__/test.tx-auth.network.module';
+import type { INetworkService } from '#/datasources/network/network.service.interface';
+import { NetworkService } from '#/datasources/network/network.service.interface';
+import { TxAuthNetworkModule } from '#/datasources/network/tx-auth.network.module';
+import { SignatureType } from '#/domain/common/entities/signature-type.entity';
+import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
+import { TestLoggingModule } from '#/logging/__tests__/test.logging.module';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { contractBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/contract.builder';
-import { dataDecodedBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
+} from '#/logging/logging.interface';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
+import { contractBuilder } from '#/modules/data-decoder/domain/v2/entities/__tests__/contract.builder';
+import { dataDecodedBuilder } from '#/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
 import {
   toJson as multisigToJson,
   multisigTransactionBuilder,
-} from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
-import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
-import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
-import { safeAppBuilder } from '@/modules/safe-apps/domain/entities/__tests__/safe-app.builder';
-import { TestSafeQueueModule } from '@/modules/safe-queue/__tests__/test.safe-queue.module';
-import { SafeQueueModule } from '@/modules/safe-queue/safe-queue.module';
-import { tokenBuilder } from '@/modules/tokens/domain/__tests__/token.builder';
-import { addConfirmationDtoBuilder } from '@/modules/transactions/routes/__tests__/entities/add-confirmation.dto.builder';
-import { TransactionsModule } from '@/modules/transactions/transactions.module';
-import { GlobalErrorFilter } from '@/routes/common/filters/global-error.filter';
-import { ZodErrorFilter } from '@/routes/common/filters/zod-error.filter';
-import { rawify } from '@/validation/entities/raw.entity';
+} from '#/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
+import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
+import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
+import { safeAppBuilder } from '#/modules/safe-apps/domain/entities/__tests__/safe-app.builder';
+import { TestSafeQueueModule } from '#/modules/safe-queue/__tests__/test.safe-queue.module';
+import { SafeQueueModule } from '#/modules/safe-queue/safe-queue.module';
+import { tokenBuilder } from '#/modules/tokens/domain/__tests__/token.builder';
+import { addConfirmationDtoBuilder } from '#/modules/transactions/routes/__tests__/entities/add-confirmation.dto.builder';
+import { TransactionsModule } from '#/modules/transactions/transactions.module';
+import { GlobalErrorFilter } from '#/routes/common/filters/global-error.filter';
+import { ZodErrorFilter } from '#/routes/common/filters/zod-error.filter';
+import { rawify } from '#/validation/entities/raw.entity';
 
 describe('Add transaction confirmations - Transactions Controller', () => {
   let app: INestApplication<Server>;

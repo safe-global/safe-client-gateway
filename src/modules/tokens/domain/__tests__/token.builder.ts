@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import type { IBuilder } from '@/__tests__/builder';
-import { Builder } from '@/__tests__/builder';
+import type { IBuilder } from '#/__tests__/builder';
+import { Builder } from '#/__tests__/builder';
 import type {
   Erc20Token,
   Erc721Token,
   NativeToken,
   Token,
-} from '@/modules/tokens/domain/entities/token.entity';
+} from '#/modules/tokens/domain/entities/token.entity';
 
 export function nativeTokenBuilder(): IBuilder<NativeToken> {
   return new Builder<NativeToken>()

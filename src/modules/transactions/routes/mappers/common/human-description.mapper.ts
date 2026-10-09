@@ -2,26 +2,26 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { Hex } from 'viem';
 import { formatUnits, isAddress, isHex } from 'viem';
-import { truncateAddress } from '@/domain/common/utils/utils';
+import { truncateAddress } from '#/domain/common/utils/utils';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import { asError } from '@/logging/utils';
+} from '#/logging/logging.interface';
+import { asError } from '#/logging/utils';
 import {
   type HumanDescriptionFragment,
   type TokenValueFragment,
   ValueType,
-} from '@/modules/human-description/domain/entities/human-description.entity';
-import type { HumanDescriptionRepository } from '@/modules/human-description/domain/human-description.repository';
-import { IHumanDescriptionRepository } from '@/modules/human-description/domain/human-description.repository.interface';
-import type { ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
-import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
-import { isMultisigTransaction } from '@/modules/safe/domain/entities/transaction.entity';
-import { SafeAppInfoMapper } from '@/modules/safe-apps/mappers/safe-app-info.mapper';
-import type { TokenRepository } from '@/modules/tokens/domain/token.repository';
-import { ITokenRepository } from '@/modules/tokens/domain/token.repository.interface';
-import { MAX_UINT256 } from '@/modules/transactions/routes/constants';
+} from '#/modules/human-description/domain/entities/human-description.entity';
+import type { HumanDescriptionRepository } from '#/modules/human-description/domain/human-description.repository';
+import { IHumanDescriptionRepository } from '#/modules/human-description/domain/human-description.repository.interface';
+import type { ModuleTransaction } from '#/modules/safe/domain/entities/module-transaction.entity';
+import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
+import { isMultisigTransaction } from '#/modules/safe/domain/entities/transaction.entity';
+import { SafeAppInfoMapper } from '#/modules/safe-apps/mappers/safe-app-info.mapper';
+import type { TokenRepository } from '#/modules/tokens/domain/token.repository';
+import { ITokenRepository } from '#/modules/tokens/domain/token.repository.interface';
+import { MAX_UINT256 } from '#/modules/transactions/routes/constants';
 import {
   RichAddressFragment,
   RichDecodedInfo,
@@ -29,7 +29,7 @@ import {
   RichFragmentType,
   RichTextFragment,
   RichTokenValueFragment,
-} from '@/modules/transactions/routes/entities/human-description.entity';
+} from '#/modules/transactions/routes/entities/human-description.entity';
 
 @Injectable()
 export class HumanDescriptionMapper {

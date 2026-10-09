@@ -7,8 +7,8 @@ import {
   ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
-import { SafeApp } from '@/modules/safe-apps/routes/entities/safe-app.entity';
-import { SafeAppsService } from '@/modules/safe-apps/routes/safe-apps.service';
+import { SafeApp } from '#/modules/safe-apps/routes/entities/safe-app.entity';
+import { SafeAppsService } from '#/modules/safe-apps/routes/safe-apps.service';
 
 @ApiTags('safe-apps')
 @Controller({

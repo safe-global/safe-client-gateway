@@ -2,20 +2,20 @@
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import type { Address, Hash, Hex } from 'viem';
 import { isAddressEqual } from 'viem';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { IBlocklistService } from '@/config/entities/blocklist.interface';
-import { LogSource } from '@/domain/common/entities/log-source.entity';
-import { LogType } from '@/domain/common/entities/log-type.entity';
-import { SafeSignature } from '@/domain/common/entities/safe-signature';
-import { SignatureType } from '@/domain/common/entities/signature-type.entity';
-import { HttpExceptionNoLog } from '@/domain/common/errors/http-exception-no-log.error';
-import { getSafeMessageMessageHash } from '@/domain/common/utils/safe';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { IBlocklistService } from '#/config/entities/blocklist.interface';
+import { LogSource } from '#/domain/common/entities/log-source.entity';
+import { LogType } from '#/domain/common/entities/log-type.entity';
+import { SafeSignature } from '#/domain/common/entities/safe-signature';
+import { SignatureType } from '#/domain/common/entities/signature-type.entity';
+import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
+import { getSafeMessageMessageHash } from '#/domain/common/utils/safe';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import type { Message } from '@/modules/messages/domain/entities/message.entity';
-import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
+} from '#/logging/logging.interface';
+import type { Message } from '#/modules/messages/domain/entities/message.entity';
+import type { Safe } from '#/modules/safe/domain/entities/safe.entity';
 
 enum ErrorMessage {
   MalformedHash = 'Could not calculate messageHash',

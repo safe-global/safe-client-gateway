@@ -7,19 +7,19 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import type { MockedObject } from 'vitest';
-import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
-import type { ILoggingService } from '@/logging/logging.interface';
-import type { IAuthRepository } from '@/modules/auth/domain/auth.repository.interface';
-import { oidcAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
+import type { ILoggingService } from '#/logging/logging.interface';
+import type { IAuthRepository } from '#/modules/auth/domain/auth.repository.interface';
+import { oidcAuthPayloadDtoBuilder } from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import {
   AuthMethod,
   AuthPayload,
-} from '@/modules/auth/domain/entities/auth-payload.entity';
-import type { IAuth0Repository } from '@/modules/auth/oidc/auth0/domain/auth0.repository.interface';
-import { auth0TokenBuilder } from '@/modules/auth/oidc/auth0/domain/entities/__tests__/auth0-token.entity.builder';
-import { OidcAuthService } from '@/modules/auth/oidc/routes/oidc-auth.service';
-import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
-import { fakeEmailAddress } from '@/validation/entities/schemas/__tests__/email-address.builder';
+} from '#/modules/auth/domain/entities/auth-payload.entity';
+import type { IAuth0Repository } from '#/modules/auth/oidc/auth0/domain/auth0.repository.interface';
+import { auth0TokenBuilder } from '#/modules/auth/oidc/auth0/domain/entities/__tests__/auth0-token.entity.builder';
+import { OidcAuthService } from '#/modules/auth/oidc/routes/oidc-auth.service';
+import type { IUsersRepository } from '#/modules/users/domain/users.repository.interface';
+import { fakeEmailAddress } from '#/validation/entities/schemas/__tests__/email-address.builder';
 
 const authRepositoryMock = {
   signToken: vi.fn(),

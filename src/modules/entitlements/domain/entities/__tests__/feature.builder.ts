@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import type { IBuilder } from '@/__tests__/builder';
-import { Builder } from '@/__tests__/builder';
-import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
-import type { Feature } from '@/modules/entitlements/domain/entities/feature.entity';
-import { FeatureType } from '@/modules/entitlements/domain/entities/feature.entity';
+import type { IBuilder } from '#/__tests__/builder';
+import { Builder } from '#/__tests__/builder';
+import { DB_MAX_SAFE_INTEGER } from '#/domain/common/constants';
+import type { Feature } from '#/modules/entitlements/domain/entities/feature.entity';
+import { FeatureType } from '#/modules/entitlements/domain/entities/feature.entity';
 
 export function featureBuilder(): IBuilder<Feature> {
   return new Builder<Feature>()

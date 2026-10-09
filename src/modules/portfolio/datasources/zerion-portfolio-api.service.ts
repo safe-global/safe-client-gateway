@@ -4,38 +4,38 @@ import { get, groupBy } from 'lodash';
 import type { Address } from 'viem';
 import { getAddress, isAddress } from 'viem';
 import { ZodError } from 'zod';
-import { IConfigurationService } from '@/config/configuration.service.interface';
+import { IConfigurationService } from '#/config/configuration.service.interface';
 import {
   CacheService,
   ICacheService,
-} from '@/datasources/cache/cache.service.interface';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
+} from '#/datasources/cache/cache.service.interface';
+import { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
+import { NetworkResponseError } from '#/datasources/network/entities/network.error.entity';
 import {
   INetworkService,
   NetworkService,
-} from '@/datasources/network/network.service.interface';
-import { LogType } from '@/domain/common/entities/log-type.entity';
-import { getNumberString } from '@/domain/common/utils/utils';
-import { DataSourceError } from '@/domain/errors/data-source.error';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import { asError } from '@/logging/utils';
-import type { ZerionBalance } from '@/modules/balances/datasources/entities/zerion-balance.entity';
-import { ZerionBalancesSchema } from '@/modules/balances/datasources/entities/zerion-balance.entity';
+} from '#/datasources/network/network.service.interface';
+import { LogType } from '#/domain/common/entities/log-type.entity';
+import { getNumberString } from '#/domain/common/utils/utils';
+import { DataSourceError } from '#/domain/errors/data-source.error';
+import { ILoggingService, LoggingService } from '#/logging/logging.interface';
+import { asError } from '#/logging/utils';
+import type { ZerionBalance } from '#/modules/balances/datasources/entities/zerion-balance.entity';
+import { ZerionBalancesSchema } from '#/modules/balances/datasources/entities/zerion-balance.entity';
 import {
   getZerionHeaders,
   normalizeZerionBalances,
-} from '@/modules/balances/datasources/zerion-api.helpers';
-import type { AppBalance } from '@/modules/portfolio/domain/entities/app-balance.entity';
+} from '#/modules/balances/datasources/zerion-api.helpers';
+import type { AppBalance } from '#/modules/portfolio/domain/entities/app-balance.entity';
 import type {
   AppPosition,
   AppPositionGroup,
-} from '@/modules/portfolio/domain/entities/app-position.entity';
-import type { Portfolio } from '@/modules/portfolio/domain/entities/portfolio.entity';
-import type { TokenBalance } from '@/modules/portfolio/domain/entities/token-balance.entity';
-import { IPortfolioApi } from '@/modules/portfolio/interfaces/portfolio-api.interface';
-import { ZerionChainMappingService } from '@/modules/zerion/datasources/zerion-chain-mapping.service';
-import { type Raw, rawify } from '@/validation/entities/raw.entity';
+} from '#/modules/portfolio/domain/entities/app-position.entity';
+import type { Portfolio } from '#/modules/portfolio/domain/entities/portfolio.entity';
+import type { TokenBalance } from '#/modules/portfolio/domain/entities/token-balance.entity';
+import { IPortfolioApi } from '#/modules/portfolio/interfaces/portfolio-api.interface';
+import { ZerionChainMappingService } from '#/modules/zerion/datasources/zerion-chain-mapping.service';
+import { type Raw, rawify } from '#/validation/entities/raw.entity';
 
 /**
  * Zerion portfolio API integration.

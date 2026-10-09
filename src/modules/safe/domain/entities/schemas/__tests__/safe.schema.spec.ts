@@ -4,11 +4,11 @@ import { type Address, getAddress } from 'viem';
 import {
   safeBuilder,
   safeV2Builder,
-} from '@/modules/safe/domain/entities/__tests__/safe.builder';
+} from '#/modules/safe/domain/entities/__tests__/safe.builder';
 import {
   SafeSchema,
   SafeSchemaV2,
-} from '@/modules/safe/domain/entities/schemas/safe.schema';
+} from '#/modules/safe/domain/entities/schemas/safe.schema';
 
 describe('Safe Schemas', () => {
   describe('SafeSchema', () => {

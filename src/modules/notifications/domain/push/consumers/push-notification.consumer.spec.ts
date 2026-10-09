@@ -3,13 +3,13 @@
 import { faker } from '@faker-js/faker';
 import type { Job } from 'bullmq';
 import type { MockedObject } from 'vitest';
-import { JobType } from '@/datasources/job-queue/types/job-types';
-import { LogType } from '@/domain/common/entities/log-type.entity';
-import type { ILoggingService } from '@/logging/logging.interface';
-import { PushNotificationConsumer } from '@/modules/notifications/domain/push/consumers/push-notification.consumer';
-import { pushNotificationDeliveryJobDataBuilder } from '@/modules/notifications/domain/push/entities/__tests__/push-notification-delivery-job-data.builder';
-import { pushNotificationEventJobDataBuilder } from '@/modules/notifications/domain/push/entities/__tests__/push-notification-event-job-data.builder';
-import type { PushNotificationService } from '@/modules/notifications/domain/push/push-notification.service';
+import { JobType } from '#/datasources/job-queue/types/job-types';
+import { LogType } from '#/domain/common/entities/log-type.entity';
+import type { ILoggingService } from '#/logging/logging.interface';
+import { PushNotificationConsumer } from '#/modules/notifications/domain/push/consumers/push-notification.consumer';
+import { pushNotificationDeliveryJobDataBuilder } from '#/modules/notifications/domain/push/entities/__tests__/push-notification-delivery-job-data.builder';
+import { pushNotificationEventJobDataBuilder } from '#/modules/notifications/domain/push/entities/__tests__/push-notification-event-job-data.builder';
+import type { PushNotificationService } from '#/modules/notifications/domain/push/push-notification.service';
 
 const mockLoggingService = vi.mocked({
   info: vi.fn(),

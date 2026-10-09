@@ -6,9 +6,9 @@ import {
   KMSClient,
 } from '@aws-sdk/client-kms';
 import { Inject, Injectable } from '@nestjs/common';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { resolveAwsCredentials } from '@/datasources/common/utils/aws-credentials.utils';
-import type { IKmsService } from '@/datasources/kms/kms.service.interface';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { resolveAwsCredentials } from '#/datasources/common/utils/aws-credentials.utils';
+import type { IKmsService } from '#/datasources/kms/kms.service.interface';
 
 @Injectable()
 export class AwsKmsService implements IKmsService {

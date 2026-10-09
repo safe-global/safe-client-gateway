@@ -8,7 +8,7 @@ import {
 import { fromTokenFile } from '@aws-sdk/credential-provider-web-identity';
 import { faker } from '@faker-js/faker';
 import { mockClient } from 'aws-sdk-client-mock';
-import { AwsKmsSignerService } from '@/datasources/kms/aws-kms-signer.service';
+import { AwsKmsSignerService } from '#/datasources/kms/aws-kms-signer.service';
 
 const kmsMock = mockClient(KMSClient);
 

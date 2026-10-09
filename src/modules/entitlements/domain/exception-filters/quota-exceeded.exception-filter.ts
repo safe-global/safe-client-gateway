@@ -6,7 +6,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import type { FastifyReply } from 'fastify';
-import { QuotaExceededError } from '@/modules/entitlements/domain/errors/quota-exceeded.error';
+import { QuotaExceededError } from '#/modules/entitlements/domain/errors/quota-exceeded.error';
 
 /**
  * Registered on gated routes so the rejection never reaches

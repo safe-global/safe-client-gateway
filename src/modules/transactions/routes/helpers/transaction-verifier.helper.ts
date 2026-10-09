@@ -1,29 +1,29 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { type Address, type Hash, type Hex, isAddressEqual } from 'viem';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { IBlocklistService } from '@/config/entities/blocklist.interface';
-import { LogSource } from '@/domain/common/entities/log-source.entity';
-import { LogType } from '@/domain/common/entities/log-type.entity';
-import { SafeSignature } from '@/domain/common/entities/safe-signature';
-import { SignatureType } from '@/domain/common/entities/signature-type.entity';
-import { HttpExceptionNoLog } from '@/domain/common/errors/http-exception-no-log.error';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { IBlocklistService } from '#/config/entities/blocklist.interface';
+import { LogSource } from '#/domain/common/entities/log-source.entity';
+import { LogType } from '#/domain/common/entities/log-type.entity';
+import { SafeSignature } from '#/domain/common/entities/safe-signature';
+import { SignatureType } from '#/domain/common/entities/signature-type.entity';
+import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
 import {
   type BaseMultisigTransaction,
   getBaseMultisigTransaction,
   getSafeTxHash,
-} from '@/domain/common/utils/safe';
-import { parseSignaturesByType } from '@/domain/common/utils/signatures';
+} from '#/domain/common/utils/safe';
+import { parseSignaturesByType } from '#/domain/common/utils/signatures';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import { IContractsRepository } from '@/modules/contracts/domain/contracts.repository.interface';
-import { IDelegatesV3Repository } from '@/modules/delegate/domain/v3/delegates.v3.repository.interface';
-import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
-import { Operation } from '@/modules/safe/domain/entities/operation.entity';
-import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
-import type { ProposeTransactionDto } from '@/modules/transactions/domain/entities/propose-transaction.dto.entity';
+} from '#/logging/logging.interface';
+import { IContractsRepository } from '#/modules/contracts/domain/contracts.repository.interface';
+import { IDelegatesV3Repository } from '#/modules/delegate/domain/v3/delegates.v3.repository.interface';
+import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
+import { Operation } from '#/modules/safe/domain/entities/operation.entity';
+import type { Safe } from '#/modules/safe/domain/entities/safe.entity';
+import type { ProposeTransactionDto } from '#/modules/transactions/domain/entities/propose-transaction.dto.entity';
 
 enum ErrorMessage {
   MalformedHash = 'Could not calculate safeTxHash',

@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import crypto from 'node:crypto';
 import type { Address, Hash } from 'viem';
-import type { SubscriptionStatusFilter } from '@/datasources/billing-api/entities/subscription.entity';
-import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
-import type { BaseDataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
-import { Origin } from '@/modules/fees/domain/entities/origin.entity';
-import type { ExtractedContract } from '@/modules/safe-shield/entities/extracted-contract.entity';
-import type { TransactionInfo } from '@/modules/transactions/routes/entities/transaction-info.entity';
+import type { SubscriptionStatusFilter } from '#/datasources/billing-api/entities/subscription.entity';
+import { CacheDir } from '#/datasources/cache/entities/cache-dir.entity';
+import type { BaseDataDecoded } from '#/modules/data-decoder/domain/v2/entities/data-decoded.entity';
+import { Origin } from '#/modules/fees/domain/entities/origin.entity';
+import type { ExtractedContract } from '#/modules/safe-shield/entities/extracted-contract.entity';
+import type { TransactionInfo } from '#/modules/transactions/routes/entities/transaction-info.entity';
 
 export class CacheRouter {
   private static readonly ACCOUNT_DATA_SETTINGS_KEY = 'account_data_settings';

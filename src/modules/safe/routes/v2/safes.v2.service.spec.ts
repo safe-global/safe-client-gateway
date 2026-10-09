@@ -3,19 +3,19 @@
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
-import type { ILoggingService } from '@/logging/logging.interface';
-import type { ZerionWalletPortfolio } from '@/modules/balances/datasources/entities/zerion-wallet-portfolio.entity';
-import type { IZerionWalletPortfolioApi } from '@/modules/balances/datasources/zerion-wallet-portfolio-api.service';
-import type { IBalancesRepository } from '@/modules/balances/domain/balances.repository.interface';
-import { balanceBuilder } from '@/modules/balances/domain/entities/__tests__/balance.builder';
-import type { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
-import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
-import type { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
-import { SafesV2Service } from '@/modules/safe/routes/v2/safes.v2.service';
-import type { IZerionRepository } from '@/modules/zerion/domain/zerion.repository.interface';
+import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
+import type { ILoggingService } from '#/logging/logging.interface';
+import type { ZerionWalletPortfolio } from '#/modules/balances/datasources/entities/zerion-wallet-portfolio.entity';
+import type { IZerionWalletPortfolioApi } from '#/modules/balances/datasources/zerion-wallet-portfolio-api.service';
+import type { IBalancesRepository } from '#/modules/balances/domain/balances.repository.interface';
+import { balanceBuilder } from '#/modules/balances/domain/entities/__tests__/balance.builder';
+import type { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
+import type { Chain } from '#/modules/chains/domain/entities/chain.entity';
+import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
+import type { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
+import { SafesV2Service } from '#/modules/safe/routes/v2/safes.v2.service';
+import type { IZerionRepository } from '#/modules/zerion/domain/zerion.repository.interface';
 
 const mockSafeRepository = vi.mocked({
   getSafe: vi.fn(),

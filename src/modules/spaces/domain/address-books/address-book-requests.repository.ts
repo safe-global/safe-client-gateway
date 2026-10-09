@@ -2,22 +2,22 @@
 
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type { EntityManager, FindOptionsWhere, InsertResult } from 'typeorm';
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { isUniqueConstraintError } from '@/datasources/errors/helpers/is-unique-constraint-error.helper';
-import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-error';
-import { AddressBookRequest as DbAddressBookRequest } from '@/modules/spaces/datasources/address-books/entities/address-book-request.entity.db';
-import { Space as DbSpace } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
-import { IAddressBookRequestsRepository } from '@/modules/spaces/domain/address-books/address-book-requests.repository.interface';
-import type { AddressBookItem } from '@/modules/spaces/domain/address-books/entities/address-book-item.entity';
+import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
+import { isUniqueConstraintError } from '#/datasources/errors/helpers/is-unique-constraint-error.helper';
+import { UniqueConstraintError } from '#/datasources/errors/unique-constraint-error';
+import { AddressBookRequest as DbAddressBookRequest } from '#/modules/spaces/datasources/address-books/entities/address-book-request.entity.db';
+import { Space as DbSpace } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
+import { IAddressBookRequestsRepository } from '#/modules/spaces/domain/address-books/address-book-requests.repository.interface';
+import type { AddressBookItem } from '#/modules/spaces/domain/address-books/entities/address-book-item.entity';
 import type {
   AddressBookRequest,
   AddressBookRequestStatus,
-} from '@/modules/spaces/domain/address-books/entities/address-book-request.entity';
-import { SpaceAuditEventType } from '@/modules/spaces/domain/audit/entities/space-audit-event.entity';
-import { ISpaceAuditRepository } from '@/modules/spaces/domain/audit/space-audit.repository.interface';
-import type { Space } from '@/modules/spaces/domain/entities/space.entity';
-import { SpaceEncryptionService } from '@/modules/spaces/domain/space-encryption.service';
-import type { User } from '@/modules/users/domain/entities/user.entity';
+} from '#/modules/spaces/domain/address-books/entities/address-book-request.entity';
+import { SpaceAuditEventType } from '#/modules/spaces/domain/audit/entities/space-audit-event.entity';
+import { ISpaceAuditRepository } from '#/modules/spaces/domain/audit/space-audit.repository.interface';
+import type { Space } from '#/modules/spaces/domain/entities/space.entity';
+import { SpaceEncryptionService } from '#/modules/spaces/domain/space-encryption.service';
+import type { User } from '#/modules/users/domain/entities/user.entity';
 
 @Injectable()
 export class AddressBookRequestsRepository

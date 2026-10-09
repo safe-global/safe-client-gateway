@@ -6,39 +6,39 @@ import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import type postgres from 'postgres';
 import request from 'supertest';
-import { TestDbFactory } from '@/__tests__/db.factory';
+import { TestDbFactory } from '#/__tests__/db.factory';
 import {
   initTestApplication,
   TestAppProvider,
-} from '@/__tests__/test-app.provider';
-import { createTestModule } from '@/__tests__/testing-module';
-import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
+} from '#/__tests__/test-app.provider';
+import { createTestModule } from '#/__tests__/testing-module';
+import { checkGuardIsApplied } from '#/__tests__/util/check-guard';
 import {
   addSafes as addSafesFixture,
   createSpaceForSigner as createSpaceForSignerFixture,
   grantEntitlements,
   safePayload,
-} from '@/__tests__/util/space-fixtures';
-import configuration from '@/config/entities/__tests__/configuration';
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
-import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
-import { nameBuilder } from '@/domain/common/entities/name.builder';
-import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
-import { Feature } from '@/modules/entitlements/datasources/entities/feature.entity.db';
-import { SpaceFeatureUsage } from '@/modules/entitlements/datasources/entities/space-feature-usage.entity.db';
-import { SpaceSubscription } from '@/modules/entitlements/datasources/entities/space-subscription.entity.db';
-import { SubscriptionEntitlement } from '@/modules/entitlements/datasources/entities/subscription-entitlement.entity.db';
-import { featureBuilder } from '@/modules/entitlements/domain/entities/__tests__/feature.builder';
-import { FeatureType } from '@/modules/entitlements/domain/entities/feature.entity';
-import { EntitlementsController } from '@/modules/entitlements/routes/entitlements.controller';
-import { EntitlementsService } from '@/modules/entitlements/routes/entitlements.service';
-import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
-import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
-import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
-import { SpacesCreationRateLimitGuard } from '@/modules/spaces/routes/guards/spaces-creation-rate-limit.guard';
-import { Member } from '@/modules/users/datasources/entities/member.entity.db';
+} from '#/__tests__/util/space-fixtures';
+import configuration from '#/config/entities/__tests__/configuration';
+import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
+import { IJwtService } from '#/datasources/jwt/jwt.service.interface';
+import { DB_MAX_SAFE_INTEGER } from '#/domain/common/constants';
+import { nameBuilder } from '#/domain/common/entities/name.builder';
+import { siweAuthPayloadDtoBuilder } from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { AuthGuard } from '#/modules/auth/routes/guards/auth.guard';
+import { Feature } from '#/modules/entitlements/datasources/entities/feature.entity.db';
+import { SpaceFeatureUsage } from '#/modules/entitlements/datasources/entities/space-feature-usage.entity.db';
+import { SpaceSubscription } from '#/modules/entitlements/datasources/entities/space-subscription.entity.db';
+import { SubscriptionEntitlement } from '#/modules/entitlements/datasources/entities/subscription-entitlement.entity.db';
+import { featureBuilder } from '#/modules/entitlements/domain/entities/__tests__/feature.builder';
+import { FeatureType } from '#/modules/entitlements/domain/entities/feature.entity';
+import { EntitlementsController } from '#/modules/entitlements/routes/entitlements.controller';
+import { EntitlementsService } from '#/modules/entitlements/routes/entitlements.service';
+import { NotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/notifications.repository.module';
+import { TestNotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/test.notification.repository.module';
+import { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
+import { SpacesCreationRateLimitGuard } from '#/modules/spaces/routes/guards/spaces-creation-rate-limit.guard';
+import { Member } from '#/modules/users/datasources/entities/member.entity.db';
 
 // The suite owns its own tiny catalog: only `safe_seats` is signed off and
 // seeded by a migration, so the feature types below come from fixtures (same

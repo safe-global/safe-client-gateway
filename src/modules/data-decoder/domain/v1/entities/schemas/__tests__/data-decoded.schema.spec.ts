@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import { fakeJson } from '@/__tests__/faker';
+import { fakeJson } from '#/__tests__/faker';
 import {
   dataDecodedBuilder,
   dataDecodedParameterBuilder,
-} from '@/modules/data-decoder/domain/v1/entities/__tests__/data-decoded.builder';
+} from '#/modules/data-decoder/domain/v1/entities/__tests__/data-decoded.builder';
 import {
   DataDecodedParameterSchema,
   DataDecodedSchema,
-} from '@/modules/data-decoder/domain/v1/entities/schemas/data-decoded.schema';
+} from '#/modules/data-decoder/domain/v1/entities/schemas/data-decoded.schema';
 
 describe('Data decoded schema', () => {
   describe('DataDecodedParameterSchema', () => {

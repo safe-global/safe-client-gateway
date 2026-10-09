@@ -2,7 +2,7 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import type { Address } from 'viem';
 import type { z } from 'zod';
-import type { GetDelegateDtoSchema } from '@/modules/delegate/routes/entities/schemas/get-delegate.dto.schema';
+import type { GetDelegateDtoSchema } from '#/modules/delegate/routes/entities/schemas/get-delegate.dto.schema';
 
 export class GetDelegateDto implements z.infer<typeof GetDelegateDtoSchema> {
   @ApiPropertyOptional()

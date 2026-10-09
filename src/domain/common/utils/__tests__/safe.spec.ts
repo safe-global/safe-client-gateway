@@ -2,33 +2,33 @@
 import { faker } from '@faker-js/faker';
 import semverSatisfies from 'semver/functions/satisfies';
 import { getAddress, type Hex } from 'viem';
-import type { IBuilder } from '@/__tests__/builder';
-import { Builder } from '@/__tests__/builder';
+import type { IBuilder } from '#/__tests__/builder';
+import { Builder } from '#/__tests__/builder';
 import {
   getSafeL2SingletonDeployments,
   getSafeL2SingletonVersions,
   getSafeMigrationDeployments,
   getSafeSingletonDeployments,
   getSafeSingletonVersions,
-} from '@/domain/common/utils/deployments';
-import type { BaseMultisigTransaction } from '@/domain/common/utils/safe';
+} from '#/domain/common/utils/deployments';
+import type { BaseMultisigTransaction } from '#/domain/common/utils/safe';
 import {
   _getSafeDomain,
   _getSafeTxTypesAndMessage,
   getBaseMultisigTransaction,
   getSafeMessageMessageHash,
   getSafeTxHash,
-} from '@/domain/common/utils/safe';
+} from '#/domain/common/utils/safe';
 import {
   migrateL2SingletonEncoder,
   migrateL2WithFallbackHandlerEncoder,
   migrateSingletonEncoder,
   migrateWithFallbackHandlerEncoder,
-} from '@/modules/contracts/domain/__tests__/encoders/safe-migration-encoder.builder';
-import { typedDataBuilder } from '@/modules/messages/routes/entities/__tests__/typed-data.builder';
-import { multisigTransactionBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
-import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
-import { Operation } from '@/modules/safe/domain/entities/operation.entity';
+} from '#/modules/contracts/domain/__tests__/encoders/safe-migration-encoder.builder';
+import { typedDataBuilder } from '#/modules/messages/routes/entities/__tests__/typed-data.builder';
+import { multisigTransactionBuilder } from '#/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
+import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
+import { Operation } from '#/modules/safe/domain/entities/operation.entity';
 
 // Audited versions only
 const DOMAIN_WITHOUT_CHAIN_ID_VERSIONS = [

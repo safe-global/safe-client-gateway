@@ -6,17 +6,17 @@ import {
   type Hash,
   type PrivateKeyAccount,
 } from 'viem';
-import { Builder } from '@/__tests__/builder';
-import { SignatureType } from '@/domain/common/entities/signature-type.entity';
-import { getSignature } from '@/domain/common/utils/__tests__/signatures.builder';
-import { getSafeMessageMessageHash } from '@/domain/common/utils/safe';
+import { Builder } from '#/__tests__/builder';
+import { SignatureType } from '#/domain/common/entities/signature-type.entity';
+import { getSignature } from '#/domain/common/utils/__tests__/signatures.builder';
+import { getSafeMessageMessageHash } from '#/domain/common/utils/safe';
 import {
   messageConfirmationBuilder,
   toJson as messageConfirmationToJson,
-} from '@/modules/messages/domain/entities/__tests__/message-confirmation.builder';
-import type { Message } from '@/modules/messages/domain/entities/message.entity';
-import type { MessageConfirmation } from '@/modules/messages/domain/entities/message-confirmation.entity';
-import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
+} from '#/modules/messages/domain/entities/__tests__/message-confirmation.builder';
+import type { Message } from '#/modules/messages/domain/entities/message.entity';
+import type { MessageConfirmation } from '#/modules/messages/domain/entities/message-confirmation.entity';
+import type { Safe } from '#/modules/safe/domain/entities/safe.entity';
 
 // TODO: Refactor with multisig BuilderWithConfirmations
 class BuilderWithConfirmations<T extends Message> extends Builder<T> {

@@ -1,12 +1,12 @@
 {
   "compilerOptions": {
     "module": "commonjs",
+    "moduleResolution": "bundler",
+    "customConditions": ["source"],
     "esModuleInterop": true,
-    "declaration": true,
     "removeComments": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-    "allowSyntheticDefaultImports": true,
     "target": "es2024",
     "sourceMap": true,
     "outDir": "./dist",
@@ -17,11 +17,6 @@
     "noFallthroughCasesInSwitch": false,
     "resolveJsonModule": true,
     "types": ["node", "vitest/globals"],
-    "paths": {
-      "@/abis/*": ["./abis/*"],
-      "@/*": ["./src/*"]
-    },
-    "strict": true,
-    "strictNullChecks": true
+    "strict": true
   }
 }

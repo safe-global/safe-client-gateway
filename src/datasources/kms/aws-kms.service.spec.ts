@@ -8,8 +8,8 @@ import {
 } from '@aws-sdk/client-kms';
 import { faker } from '@faker-js/faker';
 import { mockClient } from 'aws-sdk-client-mock';
-import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
-import { AwsKmsService } from '@/datasources/kms/aws-kms.service';
+import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
+import { AwsKmsService } from '#/datasources/kms/aws-kms.service';
 
 const keyId = faker.string.uuid();
 const accessKeyId = faker.string.alphanumeric(20);

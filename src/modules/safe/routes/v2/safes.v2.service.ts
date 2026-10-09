@@ -2,27 +2,27 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { Address } from 'viem';
 import { ZodError } from 'zod';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { LimitReachedError } from '@/datasources/network/entities/errors/limit-reached.error';
-import { LogType } from '@/domain/common/entities/log-type.entity';
-import { getNumberString } from '@/domain/common/utils/utils';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { LimitReachedError } from '#/datasources/network/entities/errors/limit-reached.error';
+import { LogType } from '#/domain/common/entities/log-type.entity';
+import { getNumberString } from '#/domain/common/utils/utils';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import { asError } from '@/logging/utils';
-import type { ZerionWalletPortfolio } from '@/modules/balances/datasources/entities/zerion-wallet-portfolio.entity';
-import { IZerionWalletPortfolioApi } from '@/modules/balances/datasources/zerion-wallet-portfolio-api.service';
-import { IBalancesRepository } from '@/modules/balances/domain/balances.repository.interface';
-import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
-import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
-import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
-import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
-import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
-import { SafeOverview } from '@/modules/safe/routes/entities/safe-overview.entity';
-import { IZerionRepository } from '@/modules/zerion/domain/zerion.repository.interface';
-import { AddressInfo } from '@/routes/common/entities/address-info.entity';
-import type { Caip10Address } from '@/validation/entities/schemas/caip-10-addresses.schema';
+} from '#/logging/logging.interface';
+import { asError } from '#/logging/utils';
+import type { ZerionWalletPortfolio } from '#/modules/balances/datasources/entities/zerion-wallet-portfolio.entity';
+import { IZerionWalletPortfolioApi } from '#/modules/balances/datasources/zerion-wallet-portfolio-api.service';
+import { IBalancesRepository } from '#/modules/balances/domain/balances.repository.interface';
+import { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
+import type { Chain } from '#/modules/chains/domain/entities/chain.entity';
+import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
+import type { Safe } from '#/modules/safe/domain/entities/safe.entity';
+import { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
+import { SafeOverview } from '#/modules/safe/routes/entities/safe-overview.entity';
+import { IZerionRepository } from '#/modules/zerion/domain/zerion.repository.interface';
+import { AddressInfo } from '#/routes/common/entities/address-info.entity';
+import type { Caip10Address } from '#/validation/entities/schemas/caip-10-addresses.schema';
 
 /**
  * A (chainId, address) entry whose chain and Safe have been resolved up front,

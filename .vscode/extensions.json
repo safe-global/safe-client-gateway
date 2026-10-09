@@ -1,6 +1,7 @@
 {
   "recommendations": [
     "biomejs.biome",
+    "TypeScriptTeam.native-preview",
     "Anthropic.claude-code",
     "openai.chatgpt"
   ]

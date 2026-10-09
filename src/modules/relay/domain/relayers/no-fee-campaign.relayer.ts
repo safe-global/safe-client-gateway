@@ -1,23 +1,23 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import type { Address, Hex } from 'viem';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { IRelayApi } from '@/domain/interfaces/relay-api.interface';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { IRelayApi } from '#/domain/interfaces/relay-api.interface';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import { BalancesService } from '@/modules/balances/routes/balances.service';
+} from '#/logging/logging.interface';
+import { BalancesService } from '#/modules/balances/routes/balances.service';
 import type {
   NoFeeCampaignConfiguration,
   RelayRules,
-} from '@/modules/relay/domain/entities/relay.configuration';
-import type { Relay } from '@/modules/relay/domain/entities/relay.entity';
-import type { RelayEligibility } from '@/modules/relay/domain/entities/relay-eligibility.entity';
-import { ExceedsMaxGasLimitError } from '@/modules/relay/domain/errors/exceeds-max-gas-limit';
-import { RelayLimitReachedError } from '@/modules/relay/domain/errors/relay-limit-reached.error';
-import type { IRelayer } from '@/modules/relay/domain/interfaces/relayer.interface';
-import { LimitAddressesMapper } from '@/modules/relay/domain/limit-addresses.mapper';
+} from '#/modules/relay/domain/entities/relay.configuration';
+import type { Relay } from '#/modules/relay/domain/entities/relay.entity';
+import type { RelayEligibility } from '#/modules/relay/domain/entities/relay-eligibility.entity';
+import { ExceedsMaxGasLimitError } from '#/modules/relay/domain/errors/exceeds-max-gas-limit';
+import { RelayLimitReachedError } from '#/modules/relay/domain/errors/relay-limit-reached.error';
+import type { IRelayer } from '#/modules/relay/domain/interfaces/relayer.interface';
+import { LimitAddressesMapper } from '#/modules/relay/domain/limit-addresses.mapper';
 
 @Injectable()
 export class NoFeeCampaignRelayer implements IRelayer {

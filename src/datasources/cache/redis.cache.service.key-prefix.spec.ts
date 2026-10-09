@@ -2,14 +2,12 @@
 
 import { faker } from '@faker-js/faker';
 import type { MockedObject } from 'vitest';
-import { fakeJson } from '@/__tests__/faker';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
-import type { RedisClientType } from '@/datasources/cache/cache.module';
-import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
-import { RedisCacheService } from '@/datasources/cache/redis.cache.service';
-import type { ILoggingService } from '@/logging/logging.interface';
-
-import clearAllMocks = vi.clearAllMocks;
+import { fakeJson } from '#/__tests__/faker';
+import type { IConfigurationService } from '#/config/configuration.service.interface';
+import type { RedisClientType } from '#/datasources/cache/cache.module';
+import { CacheDir } from '#/datasources/cache/entities/cache-dir.entity';
+import { RedisCacheService } from '#/datasources/cache/redis.cache.service';
+import type { ILoggingService } from '#/logging/logging.interface';
 
 const redisClientTypeMock = {
   isReady: true,
@@ -41,7 +39,7 @@ describe('RedisCacheService with a Key Prefix', () => {
   const keyPrefix = faker.string.uuid();
 
   beforeEach(() => {
-    clearAllMocks();
+    vi.clearAllMocks();
     defaultExpirationTimeInSeconds = faker.number.int({ min: 1, max: 3600 });
     defaultExpirationDeviatePercent = faker.number.int({ min: 1, max: 3600 });
     mockConfigurationService.getOrThrow.mockImplementation((key) => {

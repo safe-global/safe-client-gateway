@@ -4,14 +4,14 @@ import { faker } from '@faker-js/faker';
 import { In, IsNull } from 'typeorm';
 import { getAddress } from 'viem';
 import type { Mock, MockedObject } from 'vitest';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
-import type { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { AddressBookItem as DbAddressBookItem } from '@/modules/spaces/datasources/address-books/entities/address-book-item.entity.db';
-import { createMockSpaceEncryptionService } from '@/modules/spaces/domain/__tests__/space-encryption.service.mock';
-import { AddressBookItemsRepository } from '@/modules/spaces/domain/address-books/address-book-items.repository';
-import { createMockSpaceAuditRepository } from '@/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
-import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
-import { fakeUuid } from '@/validation/entities/schemas/__tests__/uuid.builder';
+import type { IConfigurationService } from '#/config/configuration.service.interface';
+import type { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
+import { AddressBookItem as DbAddressBookItem } from '#/modules/spaces/datasources/address-books/entities/address-book-item.entity.db';
+import { createMockSpaceEncryptionService } from '#/modules/spaces/domain/__tests__/space-encryption.service.mock';
+import { AddressBookItemsRepository } from '#/modules/spaces/domain/address-books/address-book-items.repository';
+import { createMockSpaceAuditRepository } from '#/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
+import type { ISpacesRepository } from '#/modules/spaces/domain/spaces.repository.interface';
+import { fakeUuid } from '#/validation/entities/schemas/__tests__/uuid.builder';
 
 describe('AddressBookItemsRepository', () => {
   const spaceId = faker.number.int({ min: 1, max: 100_000 });

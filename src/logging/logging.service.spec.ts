@@ -3,8 +3,8 @@ import { faker } from '@faker-js/faker';
 import type { ClsService } from 'nestjs-cls';
 import type { MockedObject } from 'vitest';
 import type winston from 'winston';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
-import { RequestScopedLoggingService } from '@/logging/logging.service';
+import type { IConfigurationService } from '#/config/configuration.service.interface';
+import { RequestScopedLoggingService } from '#/logging/logging.service';
 
 const mockClsService = vi.mocked({
   getId: vi.fn(),

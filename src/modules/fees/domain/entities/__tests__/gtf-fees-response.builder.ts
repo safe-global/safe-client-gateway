@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { getAddress, zeroAddress } from 'viem';
-import type { IBuilder } from '@/__tests__/builder';
-import { Builder } from '@/__tests__/builder';
+import type { IBuilder } from '#/__tests__/builder';
+import { Builder } from '#/__tests__/builder';
 import type {
   GtfFeeBreakdown,
   GtfFeesResponse,
   GtfPricingContextSnapshot,
   GtfTxData,
   GtfValuationDetail,
-} from '@/modules/fees/domain/entities/gtf-fees-response.entity';
-import { Origin } from '@/modules/fees/domain/entities/origin.entity';
-import { PriceSource } from '@/modules/fees/domain/entities/price-source.entity';
-import { Operation } from '@/modules/safe/domain/entities/operation.entity';
+} from '#/modules/fees/domain/entities/gtf-fees-response.entity';
+import { Origin } from '#/modules/fees/domain/entities/origin.entity';
+import { PriceSource } from '#/modules/fees/domain/entities/price-source.entity';
+import { Operation } from '#/modules/safe/domain/entities/operation.entity';
 
 export function gtfTxDataBuilder(): IBuilder<GtfTxData> {
   return new Builder<GtfTxData>()

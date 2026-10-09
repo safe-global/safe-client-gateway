@@ -3,15 +3,15 @@
 import { faker } from '@faker-js/faker';
 import { NotFoundException } from '@nestjs/common';
 import type { Mock, MockedObject } from 'vitest';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
-import type { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
-import { createMockSpaceEncryptionService } from '@/modules/spaces/domain/__tests__/space-encryption.service.mock';
-import { createMockSpaceAuditRepository } from '@/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
-import { SpacesRepository } from '@/modules/spaces/domain/spaces.repository';
-import { Member } from '@/modules/users/datasources/entities/member.entity.db';
-import { createMockMemberEncryptionService } from '@/modules/users/domain/members/__tests__/member-encryption.service.mock';
-import { fakeUuid } from '@/validation/entities/schemas/__tests__/uuid.builder';
+import type { IConfigurationService } from '#/config/configuration.service.interface';
+import type { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
+import { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
+import { createMockSpaceEncryptionService } from '#/modules/spaces/domain/__tests__/space-encryption.service.mock';
+import { createMockSpaceAuditRepository } from '#/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
+import { SpacesRepository } from '#/modules/spaces/domain/spaces.repository';
+import { Member } from '#/modules/users/datasources/entities/member.entity.db';
+import { createMockMemberEncryptionService } from '#/modules/users/domain/members/__tests__/member-encryption.service.mock';
+import { fakeUuid } from '#/validation/entities/schemas/__tests__/uuid.builder';
 
 describe('SpacesRepository', () => {
   const spaceId = faker.number.int({ min: 1, max: 100_000 });

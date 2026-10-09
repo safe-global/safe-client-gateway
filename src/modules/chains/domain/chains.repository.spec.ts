@@ -4,20 +4,20 @@ import { faker } from '@faker-js/faker';
 import chunk from 'lodash/chunk';
 import { type Address, getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
+import type { IConfigurationService } from '#/config/configuration.service.interface';
 import {
   limitAndOffsetUrlFactory,
   pageBuilder,
-} from '@/domain/entities/__tests__/page.builder';
-import type { Page } from '@/domain/entities/page.entity';
-import type { IConfigApi } from '@/domain/interfaces/config-api.interface';
-import type { IEtherscanApi } from '@/domain/interfaces/etherscan-api.interface';
-import type { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
-import type { ILoggingService } from '@/logging/logging.interface';
-import { ChainsRepository } from '@/modules/chains/domain/chains.repository';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
-import { type Raw, rawify } from '@/validation/entities/raw.entity';
+} from '#/domain/entities/__tests__/page.builder';
+import type { Page } from '#/domain/entities/page.entity';
+import type { IConfigApi } from '#/domain/interfaces/config-api.interface';
+import type { IEtherscanApi } from '#/domain/interfaces/etherscan-api.interface';
+import type { ITransactionApiManager } from '#/domain/interfaces/transaction-api.manager.interface';
+import type { ILoggingService } from '#/logging/logging.interface';
+import { ChainsRepository } from '#/modules/chains/domain/chains.repository';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
+import type { Chain } from '#/modules/chains/domain/entities/chain.entity';
+import { type Raw, rawify } from '#/validation/entities/raw.entity';
 
 const mockLoggingService = {
   error: vi.fn(),

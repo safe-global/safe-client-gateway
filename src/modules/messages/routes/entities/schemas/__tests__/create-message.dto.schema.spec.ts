@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import type { Address } from 'viem';
-import { createMessageDtoBuilder } from '@/modules/messages/routes/entities/__tests__/create-message.dto.builder';
-import { typedDataBuilder } from '@/modules/messages/routes/entities/__tests__/typed-data.builder';
-import { CreateMessageDtoSchema } from '@/modules/messages/routes/entities/schemas/create-message.dto.schema';
+import { createMessageDtoBuilder } from '#/modules/messages/routes/entities/__tests__/create-message.dto.builder';
+import { typedDataBuilder } from '#/modules/messages/routes/entities/__tests__/typed-data.builder';
+import { CreateMessageDtoSchema } from '#/modules/messages/routes/entities/schemas/create-message.dto.schema';
 
 describe('CreateMessageDtoSchema', () => {
   describe('message', () => {

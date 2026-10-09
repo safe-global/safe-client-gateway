@@ -9,8 +9,8 @@ import type {
   Repository,
 } from 'typeorm';
 import type { Address } from 'viem';
-import type { User } from '@/modules/users/domain/entities/user.entity';
-import type { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
+import type { User } from '#/modules/users/domain/entities/user.entity';
+import type { Wallet } from '#/modules/wallets/datasources/entities/wallets.entity.db';
 
 export const IWalletsRepository = Symbol('IWalletsRepository');
 

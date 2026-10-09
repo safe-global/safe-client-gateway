@@ -1,5 +1,6 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
-import { NullableAddressSchema } from '@/validation/entities/schemas/nullable.schema';
+import { NullableAddressSchema } from '#/validation/entities/schemas/nullable.schema';
 
 export const DeleteDelegateV2DtoSchema = z
   .object({

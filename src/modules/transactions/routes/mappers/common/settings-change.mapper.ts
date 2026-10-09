@@ -1,24 +1,24 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Injectable } from '@nestjs/common';
 import { getAddress } from 'viem';
-import type { DataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
-import { AddOwner } from '@/modules/transactions/routes/entities/settings-changes/add-owner.entity';
-import { ChangeMasterCopy } from '@/modules/transactions/routes/entities/settings-changes/change-master-copy.entity';
-import { ChangeThreshold } from '@/modules/transactions/routes/entities/settings-changes/change-threshold.entity';
-import { DeleteGuard } from '@/modules/transactions/routes/entities/settings-changes/delete-guard';
-import { DeleteModuleGuard } from '@/modules/transactions/routes/entities/settings-changes/delete-module-guard.entity';
-import { DisableModule } from '@/modules/transactions/routes/entities/settings-changes/disable-module.entity';
-import { EnableModule } from '@/modules/transactions/routes/entities/settings-changes/enable-module.entity';
-import { RemoveOwner } from '@/modules/transactions/routes/entities/settings-changes/remove-owner.entity';
-import { SetFallbackHandler } from '@/modules/transactions/routes/entities/settings-changes/set-fallback-handler.entity';
-import { SetGuard } from '@/modules/transactions/routes/entities/settings-changes/set-guard.entity';
-import { SetModuleGuard } from '@/modules/transactions/routes/entities/settings-changes/set-module-guard.entity';
-import type { SettingsChange } from '@/modules/transactions/routes/entities/settings-changes/settings-change.entity';
-import { SwapOwner } from '@/modules/transactions/routes/entities/settings-changes/swap-owner.entity';
-import { DataDecodedParamHelper } from '@/modules/transactions/routes/mappers/common/data-decoded-param.helper';
-import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
-import { NULL_ADDRESS } from '@/routes/common/constants';
-import { AddressInfo } from '@/routes/common/entities/address-info.entity';
+import type { DataDecoded } from '#/modules/data-decoder/domain/v2/entities/data-decoded.entity';
+import { AddOwner } from '#/modules/transactions/routes/entities/settings-changes/add-owner.entity';
+import { ChangeMasterCopy } from '#/modules/transactions/routes/entities/settings-changes/change-master-copy.entity';
+import { ChangeThreshold } from '#/modules/transactions/routes/entities/settings-changes/change-threshold.entity';
+import { DeleteGuard } from '#/modules/transactions/routes/entities/settings-changes/delete-guard';
+import { DeleteModuleGuard } from '#/modules/transactions/routes/entities/settings-changes/delete-module-guard.entity';
+import { DisableModule } from '#/modules/transactions/routes/entities/settings-changes/disable-module.entity';
+import { EnableModule } from '#/modules/transactions/routes/entities/settings-changes/enable-module.entity';
+import { RemoveOwner } from '#/modules/transactions/routes/entities/settings-changes/remove-owner.entity';
+import { SetFallbackHandler } from '#/modules/transactions/routes/entities/settings-changes/set-fallback-handler.entity';
+import { SetGuard } from '#/modules/transactions/routes/entities/settings-changes/set-guard.entity';
+import { SetModuleGuard } from '#/modules/transactions/routes/entities/settings-changes/set-module-guard.entity';
+import type { SettingsChange } from '#/modules/transactions/routes/entities/settings-changes/settings-change.entity';
+import { SwapOwner } from '#/modules/transactions/routes/entities/settings-changes/swap-owner.entity';
+import { DataDecodedParamHelper } from '#/modules/transactions/routes/mappers/common/data-decoded-param.helper';
+import { AddressInfoHelper } from '#/routes/common/address-info/address-info.helper';
+import { NULL_ADDRESS } from '#/routes/common/constants';
+import { AddressInfo } from '#/routes/common/entities/address-info.entity';
 
 @Injectable()
 export class SettingsChangeMapper {

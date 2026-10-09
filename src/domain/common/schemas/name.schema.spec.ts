@@ -7,7 +7,7 @@ import {
   makeNameSchema,
   NameSchema,
   sanitizeName,
-} from '@/domain/common/schemas/name.schema';
+} from '#/domain/common/schemas/name.schema';
 
 // Invisible characters referenced by tests (defined by code point to avoid
 // editor/encoding ambiguity).

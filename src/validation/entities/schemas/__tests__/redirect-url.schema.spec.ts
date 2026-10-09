@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import { RedirectUrlSchema } from '@/validation/entities/schemas/redirect-url.schema';
+import { RedirectUrlSchema } from '#/validation/entities/schemas/redirect-url.schema';
 
 describe('RedirectUrlSchema', () => {
   it('should validate a relative path', () => {

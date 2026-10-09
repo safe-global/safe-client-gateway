@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { Address, Hex } from 'viem';
-import type { CanRelayResponse } from '@/modules/fees/domain/entities/can-relay-response.entity';
-import type { GtfFeesRequest } from '@/modules/fees/domain/entities/gtf-fees-request.entity';
-import type { GtfFeesResponse } from '@/modules/fees/domain/entities/gtf-fees-response.entity';
-import type { TxFeesRequest } from '@/modules/fees/domain/entities/tx-fees-request.entity';
-import type { TxFeesResponse } from '@/modules/fees/domain/entities/tx-fees-response.entity';
+import type { CanRelayResponse } from '#/modules/fees/domain/entities/can-relay-response.entity';
+import type { GtfFeesRequest } from '#/modules/fees/domain/entities/gtf-fees-request.entity';
+import type { GtfFeesResponse } from '#/modules/fees/domain/entities/gtf-fees-response.entity';
+import type { TxFeesRequest } from '#/modules/fees/domain/entities/tx-fees-request.entity';
+import type { TxFeesResponse } from '#/modules/fees/domain/entities/tx-fees-response.entity';
 
 export const IFeeServiceApi = Symbol('IFeeServiceApi');
 

@@ -4,7 +4,7 @@ import {
   NAME_MAX_LENGTH,
   NAME_MIN_LENGTH,
   sanitizeName,
-} from '@/domain/common/schemas/name.schema';
+} from '#/domain/common/schemas/name.schema';
 
 // UTF-8 sample names: Latin, accented, and Cyrillic — all NFC-normalised,
 // no control/format chars, no leading/trailing whitespace.

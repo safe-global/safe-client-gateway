@@ -3,26 +3,26 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { groupBy, mapValues } from 'lodash';
 import { Equal } from 'typeorm';
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
-import { IEntitlementEnforcement } from '@/modules/entitlements/domain/entitlement-enforcement.interface';
-import type { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
-import type { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
-import { IAddressBookItemsRepository } from '@/modules/spaces/domain/address-books/address-book-items.repository.interface';
-import { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
+import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
+import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import { getAuthenticatedUserIdOrFail } from '#/modules/auth/utils/assert-authenticated.utils';
+import { IEntitlementEnforcement } from '#/modules/entitlements/domain/entitlement-enforcement.interface';
+import type { SpaceSafe } from '#/modules/spaces/datasources/safes/entities/space-safes.entity.db';
+import type { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
+import { IAddressBookItemsRepository } from '#/modules/spaces/domain/address-books/address-book-items.repository.interface';
+import { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository.interface';
 import {
   assertAdmin,
   assertMember,
-} from '@/modules/spaces/domain/space-assert.utils';
+} from '#/modules/spaces/domain/space-assert.utils';
 import type {
   CreateSpaceSafeDto,
   CreateSpaceSafesDto,
-} from '@/modules/spaces/routes/safes/entities/create-space-safe.dto.entity';
-import type { DeleteSpaceSafeDto } from '@/modules/spaces/routes/safes/entities/delete-space-safe.dto.entity';
-import type { GetSpaceSafeResponse } from '@/modules/spaces/routes/safes/entities/get-space-safe.dto.entity';
-import type { GetSpacesSafesResponse } from '@/modules/spaces/routes/safes/entities/get-spaces-safes.dto.entity';
-import { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
+} from '#/modules/spaces/routes/safes/entities/create-space-safe.dto.entity';
+import type { DeleteSpaceSafeDto } from '#/modules/spaces/routes/safes/entities/delete-space-safe.dto.entity';
+import type { GetSpaceSafeResponse } from '#/modules/spaces/routes/safes/entities/get-space-safe.dto.entity';
+import type { GetSpacesSafesResponse } from '#/modules/spaces/routes/safes/entities/get-spaces-safes.dto.entity';
+import { IMembersRepository } from '#/modules/users/domain/members/members.repository.interface';
 
 @Injectable()
 export class SpaceSafesService {

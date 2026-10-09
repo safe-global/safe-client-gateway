@@ -5,18 +5,18 @@ import { Test } from '@nestjs/testing';
 import {
   createTestApplication,
   initTestApplication,
-} from '@/__tests__/test-app.provider';
-import '@/__tests__/matchers/to-be-string-or-null';
+} from '#/__tests__/test-app.provider';
+import '#/__tests__/matchers/to-be-string-or-null';
 import type { Server } from 'node:net';
 import type { Address } from 'viem';
-import { ConfigurationModule } from '@/config/configuration.module';
-import configuration from '@/config/entities/configuration';
-import { CacheKeyPrefix } from '@/datasources/cache/constants';
-import { NetworkModule } from '@/datasources/network/network.module';
-import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
-import type { Order } from '@/modules/swaps/domain/entities/order.entity';
-import { ISwapsRepository } from '@/modules/swaps/domain/swaps.repository';
-import { SwapsModule } from '@/modules/swaps/swaps.module';
+import { ConfigurationModule } from '#/config/configuration.module';
+import configuration from '#/config/entities/configuration';
+import { CacheKeyPrefix } from '#/datasources/cache/constants';
+import { NetworkModule } from '#/datasources/network/network.module';
+import { TestLoggingModule } from '#/logging/__tests__/test.logging.module';
+import type { Order } from '#/modules/swaps/domain/entities/order.entity';
+import { ISwapsRepository } from '#/modules/swaps/domain/swaps.repository';
+import { SwapsModule } from '#/modules/swaps/swaps.module';
 
 const orderIds = {
   '1': {

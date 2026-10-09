@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
-import { StripeMetadataSchema } from '@/datasources/billing-api/entities/metadata.entity';
+import { StripeMetadataSchema } from '#/datasources/billing-api/entities/metadata.entity';
 
 export type PaymentLinkPriceRecurring = z.infer<
   typeof PaymentLinkPriceRecurringSchema

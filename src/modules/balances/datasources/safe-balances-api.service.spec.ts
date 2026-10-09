@@ -3,21 +3,21 @@
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import { errorStatusCodeExcluding } from '@/__tests__/faker';
-import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
-import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
-import type { ICacheService } from '@/datasources/cache/cache.service.interface';
+import { errorStatusCodeExcluding } from '#/__tests__/faker';
+import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
+import type { CacheFirstDataSource } from '#/datasources/cache/cache.first.data.source';
+import type { ICacheService } from '#/datasources/cache/cache.service.interface';
 import {
   UNAVAILABLE_FOR_LEGAL_REASONS_MESSAGE,
   UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
-} from '@/datasources/errors/constants';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import { DataSourceError } from '@/domain/errors/data-source.error';
-import type { IPricesApi } from '@/modules/balances/datasources/prices-api.interface';
-import { SafeBalancesApi } from '@/modules/balances/datasources/safe-balances-api.service';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
+} from '#/datasources/errors/constants';
+import { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
+import { NetworkResponseError } from '#/datasources/network/entities/network.error.entity';
+import type { INetworkService } from '#/datasources/network/network.service.interface';
+import { DataSourceError } from '#/domain/errors/data-source.error';
+import type { IPricesApi } from '#/modules/balances/datasources/prices-api.interface';
+import { SafeBalancesApi } from '#/modules/balances/datasources/safe-balances-api.service';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
 
 const mockDataSource = vi.mocked({
   get: vi.fn(),

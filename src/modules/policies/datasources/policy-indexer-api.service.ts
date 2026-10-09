@@ -1,37 +1,37 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import type { Address } from 'viem';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { CacheRouter } from '@/datasources/cache/cache.router';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { CacheRouter } from '#/datasources/cache/cache.router';
 import {
   CacheService,
   type ICacheService,
-} from '@/datasources/cache/cache.service.interface';
-import { CircuitBreakerKeys } from '@/datasources/circuit-breaker/circuit-breaker.keys';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
+} from '#/datasources/cache/cache.service.interface';
+import { CircuitBreakerKeys } from '#/datasources/circuit-breaker/circuit-breaker.keys';
+import { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
 import {
   type INetworkService,
   NetworkService,
-} from '@/datasources/network/network.service.interface';
+} from '#/datasources/network/network.service.interface';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
+} from '#/logging/logging.interface';
 import {
   POLICY_INDEXER_STATE_QUERY,
   toPolicyIndexerVariables,
-} from '@/modules/policies/datasources/policy-indexer.query';
+} from '#/modules/policies/datasources/policy-indexer.query';
 import {
   PolicyIndexerResponseSchema,
   ROW_FIELDS,
   RowLocationSchema,
-} from '@/modules/policies/datasources/policy-indexer-response.schema';
+} from '#/modules/policies/datasources/policy-indexer-response.schema';
 import {
   type PolicyIndexerRows,
   PolicyIndexerRowsSchema,
-} from '@/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
-import type { SafeRef } from '@/modules/policies/domain/entities/safe-ref.entity';
-import { type Raw, rawify } from '@/validation/entities/raw.entity';
+} from '#/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
+import type { SafeRef } from '#/modules/policies/domain/entities/safe-ref.entity';
+import { type Raw, rawify } from '#/validation/entities/raw.entity';
 
 /**
  * Reads current policy state from the Policy Indexer.

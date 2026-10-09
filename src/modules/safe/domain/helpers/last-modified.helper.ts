@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import max from 'lodash/max';
-import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
+import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
 
 /**
  * The most recent point in time a queued multisig transaction changed: the

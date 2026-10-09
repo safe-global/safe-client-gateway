@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import { siweMessageBuilder } from '@/modules/siwe/domain/entities/__tests__/siwe-message.builder';
-import { buildSiweMessageSchema } from '@/modules/siwe/domain/entities/siwe-message.entity';
+import { siweMessageBuilder } from '#/modules/siwe/domain/entities/__tests__/siwe-message.builder';
+import { buildSiweMessageSchema } from '#/modules/siwe/domain/entities/siwe-message.entity';
 
 describe('buildSiweMessageSchema', () => {
   const SKEW_SECONDS = 30;

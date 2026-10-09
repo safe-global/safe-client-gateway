@@ -3,19 +3,19 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { EntityManager, type FindOptionsWhere, In, IsNull } from 'typeorm';
 import { isAddressEqual } from 'viem';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { AddressBookItem as DbAddressBookItem } from '@/modules/spaces/datasources/address-books/entities/address-book-item.entity.db';
-import { IAddressBookItemsRepository } from '@/modules/spaces/domain/address-books/address-book-items.repository.interface';
-import type { AddressBookDbItem } from '@/modules/spaces/domain/address-books/entities/address-book-item.db.entity';
-import { AddressBookItem } from '@/modules/spaces/domain/address-books/entities/address-book-item.entity';
-import { SpaceAuditEventType } from '@/modules/spaces/domain/audit/entities/space-audit-event.entity';
-import { ISpaceAuditRepository } from '@/modules/spaces/domain/audit/space-audit.repository.interface';
-import { Space } from '@/modules/spaces/domain/entities/space.entity';
-import { SpaceEncryptionService } from '@/modules/spaces/domain/space-encryption.service';
-import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
-import { UpsertAddressBookItemsDto } from '@/modules/spaces/routes/address-books/entities/upsert-address-book-items.dto.entity';
-import type { User } from '@/modules/users/domain/entities/user.entity';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
+import { AddressBookItem as DbAddressBookItem } from '#/modules/spaces/datasources/address-books/entities/address-book-item.entity.db';
+import { IAddressBookItemsRepository } from '#/modules/spaces/domain/address-books/address-book-items.repository.interface';
+import type { AddressBookDbItem } from '#/modules/spaces/domain/address-books/entities/address-book-item.db.entity';
+import { AddressBookItem } from '#/modules/spaces/domain/address-books/entities/address-book-item.entity';
+import { SpaceAuditEventType } from '#/modules/spaces/domain/audit/entities/space-audit-event.entity';
+import { ISpaceAuditRepository } from '#/modules/spaces/domain/audit/space-audit.repository.interface';
+import { Space } from '#/modules/spaces/domain/entities/space.entity';
+import { SpaceEncryptionService } from '#/modules/spaces/domain/space-encryption.service';
+import { ISpacesRepository } from '#/modules/spaces/domain/spaces.repository.interface';
+import { UpsertAddressBookItemsDto } from '#/modules/spaces/routes/address-books/entities/upsert-address-book-items.dto.entity';
+import type { User } from '#/modules/users/domain/entities/user.entity';
 
 @Injectable()
 export class AddressBookItemsRepository implements IAddressBookItemsRepository {

@@ -2,16 +2,16 @@
 
 import { faker } from '@faker-js/faker';
 import type { MockedObject } from 'vitest';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
-import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
-import type { ICacheService } from '@/datasources/cache/cache.service.interface';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import type { IConfigApi } from '@/domain/interfaces/config-api.interface';
-import type { ILoggingService } from '@/logging/logging.interface';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { TransactionApiManager } from '@/modules/transactions/datasources/transaction-api.manager';
-import { rawify } from '@/validation/entities/raw.entity';
+import type { IConfigurationService } from '#/config/configuration.service.interface';
+import type { CacheFirstDataSource } from '#/datasources/cache/cache.first.data.source';
+import type { ICacheService } from '#/datasources/cache/cache.service.interface';
+import { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
+import type { INetworkService } from '#/datasources/network/network.service.interface';
+import type { IConfigApi } from '#/domain/interfaces/config-api.interface';
+import type { ILoggingService } from '#/logging/logging.interface';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
+import { TransactionApiManager } from '#/modules/transactions/datasources/transaction-api.manager';
+import { rawify } from '#/validation/entities/raw.entity';
 
 const configurationService = {
   getOrThrow: vi.fn(),

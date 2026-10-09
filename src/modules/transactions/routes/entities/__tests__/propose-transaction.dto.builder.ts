@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { getAddress, type Hash, type Hex } from 'viem';
-import type { IBuilder } from '@/__tests__/builder';
-import { Builder } from '@/__tests__/builder';
-import type { Operation } from '@/modules/safe/domain/entities/operation.entity';
+import type { IBuilder } from '#/__tests__/builder';
+import { Builder } from '#/__tests__/builder';
+import type { Operation } from '#/modules/safe/domain/entities/operation.entity';
 import type {
   NestedTransactionDto,
   ProposeTransactionDto,
-} from '@/modules/transactions/routes/entities/propose-transaction.dto.entity';
+} from '#/modules/transactions/routes/entities/propose-transaction.dto.entity';
 
 export function nestedTransactionDtoBuilder(): IBuilder<NestedTransactionDto> {
   return new Builder<NestedTransactionDto>()

@@ -74,15 +74,15 @@
  *   audit reader (decryptAuditPayload) uses to decrypt and re-parse it.
  */
 import { DataSource } from 'typeorm';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
-import configuration from '@/config/entities/configuration';
-import { postgresConfig } from '@/config/entities/postgres.config';
-import { AwsKmsService } from '@/datasources/kms/aws-kms.service';
+import type { IConfigurationService } from '#/config/configuration.service.interface';
+import configuration from '#/config/entities/configuration';
+import { postgresConfig } from '#/config/entities/postgres.config';
+import { AwsKmsService } from '#/datasources/kms/aws-kms.service';
 import {
   ENCRYPTION_PREFIX,
   ENCRYPTION_VERSION,
-} from '@/datasources/kms/encryption.constants';
-import { KmsEncryptionService } from '@/datasources/kms/kms-encryption.service';
+} from '#/datasources/kms/encryption.constants';
+import { KmsEncryptionService } from '#/datasources/kms/kms-encryption.service';
 
 const BATCH_SIZE = 500;
 // Bounds concurrent KMS Encrypt calls per batch; KMS comfortably handles this,

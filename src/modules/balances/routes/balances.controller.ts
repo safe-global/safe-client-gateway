@@ -15,10 +15,10 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import type { Address } from 'viem';
-import { BalancesService } from '@/modules/balances/routes/balances.service';
-import { Balances } from '@/modules/balances/routes/entities/balances.entity';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+import { BalancesService } from '#/modules/balances/routes/balances.service';
+import { Balances } from '#/modules/balances/routes/entities/balances.entity';
+import { AddressSchema } from '#/validation/entities/schemas/address.schema';
+import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
 @ApiTags('balances')
 @Controller({

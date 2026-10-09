@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import { batched } from '@/domain/common/utils/batch';
+import { batched } from '#/domain/common/utils/batch';
 
 describe('batched', () => {
   it('should return the settled result of fn for every item, in order', async () => {

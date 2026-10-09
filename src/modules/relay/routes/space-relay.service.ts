@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
-import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
-import { WorkspaceRelayer } from '@/modules/relay/domain/relayers/workspace.relayer';
-import { Relay } from '@/modules/relay/routes/entities/relay.entity';
-import type { SpaceRelayDto } from '@/modules/relay/routes/entities/space-relay.dto.entity';
-import type { Space } from '@/modules/spaces/domain/entities/space.entity';
-import { assertMember } from '@/modules/spaces/domain/space-assert.utils';
-import { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
+import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import { getAuthenticatedUserIdOrFail } from '#/modules/auth/utils/assert-authenticated.utils';
+import { WorkspaceRelayer } from '#/modules/relay/domain/relayers/workspace.relayer';
+import { Relay } from '#/modules/relay/routes/entities/relay.entity';
+import type { SpaceRelayDto } from '#/modules/relay/routes/entities/space-relay.dto.entity';
+import type { Space } from '#/modules/spaces/domain/entities/space.entity';
+import { assertMember } from '#/modules/spaces/domain/space-assert.utils';
+import { IMembersRepository } from '#/modules/users/domain/members/members.repository.interface';
 
 @Injectable()
 export class SpaceRelayService {

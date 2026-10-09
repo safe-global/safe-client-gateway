@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import { SignatureType } from '@/domain/common/entities/signature-type.entity';
-import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
-import { safeQueueMultisigTransactionBuilder } from '@/modules/safe-queue/entities/__tests__/queue-multisig-transaction.builder';
-import { ProposalRoute } from '@/modules/safe-queue/entities/proposal-route.entity';
-import { mapSafeQueueToMultisigTransaction } from '@/modules/safe-queue/mappers/transaction.mapper';
+import { SignatureType } from '#/domain/common/entities/signature-type.entity';
+import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
+import { safeQueueMultisigTransactionBuilder } from '#/modules/safe-queue/entities/__tests__/queue-multisig-transaction.builder';
+import { ProposalRoute } from '#/modules/safe-queue/entities/proposal-route.entity';
+import { mapSafeQueueToMultisigTransaction } from '#/modules/safe-queue/mappers/transaction.mapper';
 
 describe('mapSafeQueueToMultisigTransaction', () => {
   it('embeds the note into the origin JSON so it can be extracted downstream', () => {

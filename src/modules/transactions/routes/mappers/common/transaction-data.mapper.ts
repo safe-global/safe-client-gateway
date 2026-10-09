@@ -3,34 +3,34 @@ import { Inject, Injectable } from '@nestjs/common';
 import isEmpty from 'lodash/isEmpty';
 import type { Address } from 'viem';
 import { getAddress, isAddress } from 'viem';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
-import type { ContractsRepository } from '@/modules/contracts/domain/contracts.repository';
-import { IContractsRepository } from '@/modules/contracts/domain/contracts.repository.interface';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
+import type { ContractsRepository } from '#/modules/contracts/domain/contracts.repository';
+import { IContractsRepository } from '#/modules/contracts/domain/contracts.repository.interface';
 import type {
   BaseDataDecoded,
   DataDecoded,
   DataDecodedParameter,
-} from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
-import { Operation } from '@/modules/safe/domain/entities/operation.entity';
+} from '#/modules/data-decoder/domain/v2/entities/data-decoded.entity';
+import { Operation } from '#/modules/safe/domain/entities/operation.entity';
 import type {
   Erc20Token,
   Erc721Token,
   NativeToken,
-} from '@/modules/tokens/domain/entities/token.entity';
-import { ITokenRepository } from '@/modules/tokens/domain/token.repository.interface';
+} from '#/modules/tokens/domain/entities/token.entity';
+import { ITokenRepository } from '#/modules/tokens/domain/token.repository.interface';
 import {
   ADDRESS_PARAMETER_TYPE,
   MULTI_SEND_METHOD_NAME,
   TRANSACTIONS_PARAMETER_NAME,
-} from '@/modules/transactions/routes/constants';
-import type { PreviewTransactionDto } from '@/modules/transactions/routes/entities/preview-transaction.dto.entity';
-import { TransactionData } from '@/modules/transactions/routes/entities/transaction-data.entity';
-import { DataDecodedParamHelper } from '@/modules/transactions/routes/mappers/common/data-decoded-param.helper';
-import { MultisigTransactionInfoMapper } from '@/modules/transactions/routes/mappers/common/transaction-info.mapper';
-import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
-import { NULL_ADDRESS } from '@/routes/common/constants';
-import type { AddressInfo } from '@/routes/common/entities/address-info.entity';
+} from '#/modules/transactions/routes/constants';
+import type { PreviewTransactionDto } from '#/modules/transactions/routes/entities/preview-transaction.dto.entity';
+import { TransactionData } from '#/modules/transactions/routes/entities/transaction-data.entity';
+import { DataDecodedParamHelper } from '#/modules/transactions/routes/mappers/common/data-decoded-param.helper';
+import { MultisigTransactionInfoMapper } from '#/modules/transactions/routes/mappers/common/transaction-info.mapper';
+import { AddressInfoHelper } from '#/routes/common/address-info/address-info.helper';
+import { NULL_ADDRESS } from '#/routes/common/constants';
+import type { AddressInfo } from '#/routes/common/entities/address-info.entity';
 
 @Injectable()
 export class TransactionDataMapper {

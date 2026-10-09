@@ -25,35 +25,35 @@ import {
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
 import { z } from 'zod';
-import type { SubscriptionStatusFilter } from '@/datasources/billing-api/entities/subscription.entity';
-import { SubscriptionStatusFilterSchema } from '@/datasources/billing-api/entities/subscription.entity';
-import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
-import type { WebhookEvent } from '@/modules/billing/domain/entities/webhook-event.entity';
-import { WebhookEventSchema } from '@/modules/billing/domain/entities/webhook-event.entity';
-import { BillingService } from '@/modules/billing/routes/billing.service';
-import { CheckoutSession } from '@/modules/billing/routes/entities/checkout-session.entity';
-import { CheckoutSessionResult } from '@/modules/billing/routes/entities/checkout-session-result.entity';
-import { PaymentLink } from '@/modules/billing/routes/entities/payment-link.entity';
-import { Plan } from '@/modules/billing/routes/entities/plan.entity';
-import { Subscription } from '@/modules/billing/routes/entities/subscription.entity';
+import type { SubscriptionStatusFilter } from '#/datasources/billing-api/entities/subscription.entity';
+import { SubscriptionStatusFilterSchema } from '#/datasources/billing-api/entities/subscription.entity';
+import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import { AuthGuard } from '#/modules/auth/routes/guards/auth.guard';
+import type { WebhookEvent } from '#/modules/billing/domain/entities/webhook-event.entity';
+import { WebhookEventSchema } from '#/modules/billing/domain/entities/webhook-event.entity';
+import { BillingService } from '#/modules/billing/routes/billing.service';
+import { CheckoutSession } from '#/modules/billing/routes/entities/checkout-session.entity';
+import { CheckoutSessionResult } from '#/modules/billing/routes/entities/checkout-session-result.entity';
+import { PaymentLink } from '#/modules/billing/routes/entities/payment-link.entity';
+import { Plan } from '#/modules/billing/routes/entities/plan.entity';
+import { Subscription } from '#/modules/billing/routes/entities/subscription.entity';
 import {
   SubscriptionUpdatePreview,
   UpdateSubscriptionResult,
-} from '@/modules/billing/routes/entities/subscription-update.entity';
+} from '#/modules/billing/routes/entities/subscription-update.entity';
 import {
   UpdateSubscriptionDto,
   UpdateSubscriptionSchema,
-} from '@/modules/billing/routes/entities/update-subscription.dto.entity';
-import { UrlResponse } from '@/modules/billing/routes/entities/url.entity';
-import { BillingWebhookAuthGuard } from '@/modules/billing/routes/guards/billing-webhook-auth.guard';
-import type { Space } from '@/modules/spaces/domain/entities/space.entity';
-import { Auth } from '@/routes/common/auth/auth.decorator';
-import { ElevationGuard } from '@/routes/common/auth/elevation.guard';
-import { SpaceIdPipe } from '@/routes/common/pipes/space-id.pipe';
-import { OpaqueIdSchema } from '@/validation/entities/schemas/opaque-id.schema';
-import { UuidSchema } from '@/validation/entities/schemas/uuid.schema';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+} from '#/modules/billing/routes/entities/update-subscription.dto.entity';
+import { UrlResponse } from '#/modules/billing/routes/entities/url.entity';
+import { BillingWebhookAuthGuard } from '#/modules/billing/routes/guards/billing-webhook-auth.guard';
+import type { Space } from '#/modules/spaces/domain/entities/space.entity';
+import { Auth } from '#/routes/common/auth/auth.decorator';
+import { ElevationGuard } from '#/routes/common/auth/elevation.guard';
+import { SpaceIdPipe } from '#/routes/common/pipes/space-id.pipe';
+import { OpaqueIdSchema } from '#/validation/entities/schemas/opaque-id.schema';
+import { UuidSchema } from '#/validation/entities/schemas/uuid.schema';
+import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
 const ReturnUrlSchema = z.url();
 const opaqueIdPipe = new ValidationPipe(OpaqueIdSchema);

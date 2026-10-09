@@ -2,7 +2,7 @@
 
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
-import type { BaseDataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
+import type { BaseDataDecoded } from '#/modules/data-decoder/domain/v2/entities/data-decoded.entity';
 
 export function addr(): Address {
   return getAddress(faker.finance.ethereumAddress());

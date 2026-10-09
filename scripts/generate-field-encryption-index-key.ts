@@ -25,9 +25,9 @@
  * whose value is already encrypted.
  */
 import { randomBytes } from 'node:crypto';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
-import configuration from '@/config/entities/configuration';
-import { AwsKmsService } from '@/datasources/kms/aws-kms.service';
+import type { IConfigurationService } from '#/config/configuration.service.interface';
+import configuration from '#/config/entities/configuration';
+import { AwsKmsService } from '#/datasources/kms/aws-kms.service';
 
 function getByPath(obj: unknown, path: string): unknown {
   return path

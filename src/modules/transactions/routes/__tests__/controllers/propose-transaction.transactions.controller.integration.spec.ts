@@ -11,38 +11,38 @@ import type { MockedObject } from 'vitest';
 import {
   initTestApplication,
   TestAppProvider,
-} from '@/__tests__/test-app.provider';
-import { createTestModule } from '@/__tests__/testing-module';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import configuration from '@/config/entities/__tests__/configuration';
-import { IBlocklistService } from '@/config/entities/blocklist.interface';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import { NetworkService } from '@/datasources/network/network.service.interface';
-import { SignatureType } from '@/domain/common/entities/signature-type.entity';
-import { getSignature } from '@/domain/common/utils/__tests__/signatures.builder';
-import { getSafeTxHash } from '@/domain/common/utils/safe';
-import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
+} from '#/__tests__/test-app.provider';
+import { createTestModule } from '#/__tests__/testing-module';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import configuration from '#/config/entities/__tests__/configuration';
+import { IBlocklistService } from '#/config/entities/blocklist.interface';
+import type { INetworkService } from '#/datasources/network/network.service.interface';
+import { NetworkService } from '#/datasources/network/network.service.interface';
+import { SignatureType } from '#/domain/common/entities/signature-type.entity';
+import { getSignature } from '#/domain/common/utils/__tests__/signatures.builder';
+import { getSafeTxHash } from '#/domain/common/utils/safe';
+import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { contractBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/contract.builder';
-import { dataDecodedBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
-import { delegateBuilder } from '@/modules/delegate/domain/entities/__tests__/delegate.builder';
-import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
+} from '#/logging/logging.interface';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
+import { contractBuilder } from '#/modules/data-decoder/domain/v2/entities/__tests__/contract.builder';
+import { dataDecodedBuilder } from '#/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
+import { delegateBuilder } from '#/modules/delegate/domain/entities/__tests__/delegate.builder';
+import type { Delegate } from '#/modules/delegate/domain/entities/delegate.entity';
 import {
   toJson as multisigToJson,
   multisigTransactionBuilder,
-} from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
-import { confirmationBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction-confirmation.builder';
-import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
-import { Operation } from '@/modules/safe/domain/entities/operation.entity';
-import { safeAppBuilder } from '@/modules/safe-apps/domain/entities/__tests__/safe-app.builder';
-import { tokenBuilder } from '@/modules/tokens/domain/__tests__/token.builder';
-import { proposeTransactionDtoBuilder } from '@/modules/transactions/routes/entities/__tests__/propose-transaction.dto.builder';
-import { GlobalErrorFilter } from '@/routes/common/filters/global-error.filter';
-import { rawify } from '@/validation/entities/raw.entity';
+} from '#/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
+import { confirmationBuilder } from '#/modules/safe/domain/entities/__tests__/multisig-transaction-confirmation.builder';
+import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
+import { Operation } from '#/modules/safe/domain/entities/operation.entity';
+import { safeAppBuilder } from '#/modules/safe-apps/domain/entities/__tests__/safe-app.builder';
+import { tokenBuilder } from '#/modules/tokens/domain/__tests__/token.builder';
+import { proposeTransactionDtoBuilder } from '#/modules/transactions/routes/entities/__tests__/propose-transaction.dto.builder';
+import { GlobalErrorFilter } from '#/routes/common/filters/global-error.filter';
+import { rawify } from '#/validation/entities/raw.entity';
 
 describe('Propose transaction - Transactions Controller', () => {
   let app: INestApplication<Server>;

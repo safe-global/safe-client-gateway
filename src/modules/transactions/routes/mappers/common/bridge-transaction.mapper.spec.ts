@@ -3,14 +3,14 @@
 import { faker } from '@faker-js/faker';
 import type { Address, Hash, Hex } from 'viem';
 import type { Mocked } from 'vitest';
-import type { IBridgeRepository } from '@/modules/bridge/domain/bridge.repository.interface';
-import type { LiFiDecoder } from '@/modules/bridge/domain/contracts/decoders/lifi-decoder.helper';
-import type { BridgeStatus } from '@/modules/bridge/domain/entities/bridge-status.entity';
-import type { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
-import type { ITokenRepository } from '@/modules/tokens/domain/token.repository.interface';
-import { SwapTransactionInfo } from '@/modules/transactions/routes/entities/bridge/bridge-info.entity';
-import { TokenInfo } from '@/modules/transactions/routes/entities/swaps/token-info.entity';
-import type { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
+import type { IBridgeRepository } from '#/modules/bridge/domain/bridge.repository.interface';
+import type { LiFiDecoder } from '#/modules/bridge/domain/contracts/decoders/lifi-decoder.helper';
+import type { BridgeStatus } from '#/modules/bridge/domain/entities/bridge-status.entity';
+import type { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
+import type { ITokenRepository } from '#/modules/tokens/domain/token.repository.interface';
+import { SwapTransactionInfo } from '#/modules/transactions/routes/entities/bridge/bridge-info.entity';
+import { TokenInfo } from '#/modules/transactions/routes/entities/swaps/token-info.entity';
+import type { AddressInfoHelper } from '#/routes/common/address-info/address-info.helper';
 import { BridgeTransactionMapper } from './bridge-transaction.mapper';
 
 describe('BridgeTransactionMapper (Unit)', () => {

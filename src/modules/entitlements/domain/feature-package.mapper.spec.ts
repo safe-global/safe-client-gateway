@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
-import { FeatureType } from '@/modules/entitlements/domain/entities/feature.entity';
-import { MAX_ENTITLEMENT_VALUE_LENGTH } from '@/modules/entitlements/domain/entitlements.constants';
+import { DB_MAX_SAFE_INTEGER } from '#/domain/common/constants';
+import { FeatureType } from '#/modules/entitlements/domain/entities/feature.entity';
+import { MAX_ENTITLEMENT_VALUE_LENGTH } from '#/modules/entitlements/domain/entitlements.constants';
 import {
   mapFeaturePackage,
   parseSafeSeatQuota,
-} from '@/modules/entitlements/domain/feature-package.mapper';
+} from '#/modules/entitlements/domain/feature-package.mapper';
 
 const featureTypeByKey: Map<string, FeatureType> = new Map([
   ['security_hub', FeatureType.Binary],

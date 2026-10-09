@@ -5,8 +5,8 @@ import type { z } from 'zod';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import { PolicyIndexerApi } from '@/modules/policies/datasources/policy-indexer-api.service';
+} from '#/logging/logging.interface';
+import { PolicyIndexerApi } from '#/modules/policies/datasources/policy-indexer-api.service';
 import {
   PolicyIndexerMetaSchema,
   PolicyIndexerRowsSchema,
@@ -16,9 +16,9 @@ import {
   type PolicyIndexerSafeDelegate,
   PolicyIndexerSafeDelegateSchema,
   type PolicyIndexerState,
-} from '@/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
-import type { SafeRef } from '@/modules/policies/domain/entities/safe-ref.entity';
-import type { IPolicyIndexerRepository } from '@/modules/policies/domain/policy-indexer.repository.interface';
+} from '#/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
+import type { SafeRef } from '#/modules/policies/domain/entities/safe-ref.entity';
+import type { IPolicyIndexerRepository } from '#/modules/policies/domain/policy-indexer.repository.interface';
 
 @Injectable()
 export class PolicyIndexerRepository implements IPolicyIndexerRepository {

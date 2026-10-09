@@ -7,7 +7,7 @@ import {
 } from '@nestjs/swagger';
 import type { Address } from 'viem';
 import type { z } from 'zod';
-import type { ThreatAnalysisResponse } from '@/modules/safe-shield/entities/analysis-responses.entity';
+import type { ThreatAnalysisResponse } from '#/modules/safe-shield/entities/analysis-responses.entity';
 import {
   CommonStatus,
   type FailedThreatAnalysisResult,
@@ -16,15 +16,15 @@ import {
   type ThreatAnalysisResult,
   type ThreatIssue,
   type ThreatIssues,
-} from '@/modules/safe-shield/entities/analysis-result.entity';
-import { ThreatStatusGroup } from '@/modules/safe-shield/entities/status-group.entity';
+} from '#/modules/safe-shield/entities/analysis-result.entity';
+import { ThreatStatusGroup } from '#/modules/safe-shield/entities/status-group.entity';
 import type {
   AssetType,
   BalanceChange,
   FungibleDiffSchema,
   NFTDiffSchema,
-} from '@/modules/safe-shield/entities/threat-analysis.types';
-import { ThreatStatus } from '@/modules/safe-shield/entities/threat-status.entity';
+} from '#/modules/safe-shield/entities/threat-analysis.types';
+import { ThreatStatus } from '#/modules/safe-shield/entities/threat-status.entity';
 import { AnalysisResultDto } from './analysis-result.dto';
 
 /**

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { Address } from 'viem';
-import type { PolicyIndexerState } from '@/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
-import type { SafeRef } from '@/modules/policies/domain/entities/safe-ref.entity';
+import type { PolicyIndexerState } from '#/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
+import type { SafeRef } from '#/modules/policies/domain/entities/safe-ref.entity';
 
 export const IPolicyIndexerRepository = Symbol('IPolicyIndexerRepository');
 

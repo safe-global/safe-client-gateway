@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
-import { TokenSchema } from '@/modules/bridge/domain/entities/token.entity';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { TokenSchema } from '#/modules/bridge/domain/entities/token.entity';
+import { AddressSchema } from '#/validation/entities/schemas/address.schema';
 import {
   NullableNumberSchema,
   NullableStringSchema,
-} from '@/validation/entities/schemas/nullable.schema';
+} from '#/validation/entities/schemas/nullable.schema';
 
 // Adapted from StatusResponse of @lifi/types
 // @see https://github.com/lifinance/types/blob/f87f67730de3aa22e63fe2b4337115d2998c76ea/src/api.ts#L535

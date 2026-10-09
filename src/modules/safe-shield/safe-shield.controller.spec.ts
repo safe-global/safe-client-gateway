@@ -6,23 +6,23 @@ import { Test } from '@nestjs/testing';
 import type { Address } from 'viem';
 import { getAddress } from 'viem';
 import type { Mocked } from 'vitest';
-import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { SafeShieldCoreDisabledExceptionFilter } from '@/modules/safe-shield/domain/exception-filters/safe-shield-core-disabled.exception-filter';
+import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { SafeShieldCoreDisabledExceptionFilter } from '#/modules/safe-shield/domain/exception-filters/safe-shield-core-disabled.exception-filter';
 import {
   CounterpartyAnalysisRequestSchema,
   ThreatAnalysisRequestSchema,
-} from '@/modules/safe-shield/entities/analysis-requests.entity';
-import type { SingleRecipientAnalysisResponse } from '@/modules/safe-shield/entities/analysis-responses.entity';
-import { CommonStatus } from '@/modules/safe-shield/entities/analysis-result.entity';
-import { ContractStatus } from '@/modules/safe-shield/entities/contract-status.entity';
-import { RecipientStatus } from '@/modules/safe-shield/entities/recipient-status.entity';
+} from '#/modules/safe-shield/entities/analysis-requests.entity';
+import type { SingleRecipientAnalysisResponse } from '#/modules/safe-shield/entities/analysis-responses.entity';
+import { CommonStatus } from '#/modules/safe-shield/entities/analysis-result.entity';
+import { ContractStatus } from '#/modules/safe-shield/entities/contract-status.entity';
+import { RecipientStatus } from '#/modules/safe-shield/entities/recipient-status.entity';
 import {
   ContractStatusGroup,
   RecipientStatusGroup,
-} from '@/modules/safe-shield/entities/status-group.entity';
-import { SafeShieldCoreGatingGuard } from '@/modules/safe-shield/routes/guards/safe-shield-core-gating.guard';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+} from '#/modules/safe-shield/entities/status-group.entity';
+import { SafeShieldCoreGatingGuard } from '#/modules/safe-shield/routes/guards/safe-shield-core-gating.guard';
+import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 import {
   counterpartyAnalysisRequestDtoBuilder,
   threatAnalysisRequestBuilder,
