@@ -20,19 +20,25 @@ import { delegateBuilder } from '@/modules/delegate/domain/entities/__tests__/de
 import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
 import type { IDelegatesV3Repository } from '@/modules/delegate/domain/v3/delegates.v3.repository.interface';
 import { policyConfigurationBuilder } from '@/modules/policies/domain/entities/__tests__/policy-configuration.builder';
+import { storedPolicyConfigurationBuilder } from '@/modules/policies/domain/entities/__tests__/stored-policy-configuration.builder';
 import type { ActivePolicy } from '@/modules/policies/domain/entities/active-policy.entity';
+import { policyIndexerConfigurationRootBuilder } from '@/modules/policies/domain/entities/indexer/__tests__/configuration-root.builder';
 import { policyIndexerResponseBuilder } from '@/modules/policies/domain/entities/indexer/__tests__/policy-indexer-state.builder';
 import { policyIndexerSafeAllowanceBuilder } from '@/modules/policies/domain/entities/indexer/__tests__/safe-allowance.builder';
+import { policyIndexerSafePolicyBuilder } from '@/modules/policies/domain/entities/indexer/__tests__/safe-policy.builder';
 import type { PolicyIndexerSafeAllowance } from '@/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 import type { PolicyConfiguration } from '@/modules/policies/domain/entities/policy-configuration.entity';
 import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
 import type { IPolicyConfigurationRequestsRepository } from '@/modules/policies/domain/policy-configuration-requests.repository.interface';
 import type { IPolicyIndexerRepository } from '@/modules/policies/domain/policy-indexer.repository.interface';
+import type { ISafePolicyGuardRepository } from '@/modules/policies/domain/safe-policy-guard.repository.interface';
 import { configurationRoot } from '@/modules/policies/domain/utils/policy-configuration-root.utils';
+import type { GuardConfigurationMapper } from '@/modules/policies/routes/mappers/guard-configuration.mapper';
 import {
   GuardPolicyMapper,
   guardPolicyKindsOf,
 } from '@/modules/policies/routes/mappers/guard-policy.mapper';
+import type { GuardSetupMapper } from '@/modules/policies/routes/mappers/guard-setup.mapper';
 import { PendingSpendingLimitMapper } from '@/modules/policies/routes/mappers/pending-spending-limit.mapper';
 import { ProposerMapper } from '@/modules/policies/routes/mappers/proposer.mapper';
 import { SpendingLimitMapper } from '@/modules/policies/routes/mappers/spending-limit.mapper';
@@ -53,7 +59,20 @@ const mockPolicyIndexerRepository = {
 
 const mockConfigurationRequestsRepository = {
   create: vi.fn(),
-} as unknown as MockedObject<IPolicyConfigurationRequestsRepository>;
+  findBySafes: vi.fn(),
+} as MockedObject<IPolicyConfigurationRequestsRepository>;
+
+const mockSafePolicyGuardRepository = {
+  getExpiry: vi.fn(),
+} as MockedObject<ISafePolicyGuardRepository>;
+
+const mockGuardSetupMapper = {
+  map: vi.fn(),
+} as MockedObject<GuardSetupMapper>;
+
+const mockGuardConfigurationMapper = {
+  map: vi.fn(),
+} as MockedObject<GuardConfigurationMapper>;
 
 const mockSafeRepository = {
   getSafe: vi.fn(),
@@ -125,6 +144,9 @@ describe('PoliciesService', () => {
     // No proposers unless a case registers some.
     withDelegates([]);
     mockConfigurationRequestsRepository.create.mockResolvedValue();
+    mockConfigurationRequestsRepository.findBySafes.mockResolvedValue([]);
+    mockGuardSetupMapper.map.mockReturnValue([]);
+    mockGuardConfigurationMapper.map.mockReturnValue([]);
   });
 
   /**
@@ -146,6 +168,7 @@ describe('PoliciesService', () => {
     return new PoliciesService(
       mockPolicyIndexerRepository,
       mockConfigurationRequestsRepository,
+      mockSafePolicyGuardRepository,
       mockSafeRepository,
       mockSpaceSafesRepository,
       mockMembersRepository,
@@ -156,6 +179,8 @@ describe('PoliciesService', () => {
       new ProposerMapper(),
       pendingSpendingLimitMapper(),
       new GuardPolicyMapper(mockLoggingService),
+      mockGuardSetupMapper,
+      mockGuardConfigurationMapper,
     );
   }
 
@@ -768,15 +793,6 @@ describe('PoliciesService', () => {
       expect(mockSafeRepository.getTransactionQueue).not.toHaveBeenCalled();
     });
 
-    it('should accept a guard policy type', async () => {
-      const policies = await target.getSpacePendingPolicies({
-        ...policyRequest,
-        types: [PolicyType.Cosigner],
-      });
-
-      expect(policies).toStrictEqual([]);
-    });
-
     it('should narrow the read to the requested subset', async () => {
       const otherSafe = getAddress(faker.finance.ethereumAddress());
       mockSpaceSafesRepository.findBySpaceId.mockResolvedValue([
@@ -976,6 +992,210 @@ describe('PoliciesService', () => {
       expect(mostInFlight).toBe(3);
       expect(mockSafeRepository.getTransactionQueue).toHaveBeenCalledTimes(
         safes.length,
+      );
+    });
+  });
+
+  describe('pending guard policies', () => {
+    const guardRequest = { ...policyRequest, types: [PolicyType.Cosigner] };
+    const safe = { chainId: SEPOLIA, address: safeAddress };
+    const otherSafe = {
+      chainId: SEPOLIA,
+      address: getAddress(faker.finance.ethereumAddress()),
+    };
+
+    beforeEach(() => {
+      mockSafeRepository.getTransactionQueue.mockResolvedValue(
+        pageBuilder<MultisigTransaction>()
+          .with('results', [])
+          .with('next', null)
+          .build(),
+      );
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('should read nothing for guard items when no guard type is requested', async () => {
+      await target.getSpacePendingPolicies({
+        ...policyRequest,
+        types: [PolicyType.SpendingLimit],
+      });
+
+      expect(mockGuardSetupMapper.map).not.toHaveBeenCalled();
+      expect(mockGuardConfigurationMapper.map).not.toHaveBeenCalled();
+      expect(mockPolicyIndexerRepository.getState).not.toHaveBeenCalled();
+      expect(
+        mockConfigurationRequestsRepository.findBySafes,
+      ).not.toHaveBeenCalled();
+    });
+
+    it('should give the setup mapper the queue and the current guard', async () => {
+      const safeInfo = safeBuilder().build();
+      const transaction = multisigTransactionBuilder().build();
+      mockSafeRepository.getSafe.mockResolvedValue(safeInfo);
+      mockSafeRepository.getTransactionQueue.mockResolvedValue(
+        pageBuilder<MultisigTransaction>()
+          .with('results', [transaction])
+          .with('next', null)
+          .build(),
+      );
+
+      await target.getSpacePendingPolicies(guardRequest);
+
+      expect(mockGuardSetupMapper.map).toHaveBeenCalledWith({
+        safe,
+        guard: safeInfo.guard,
+        moduleGuard: null,
+        transactions: [transaction],
+      });
+    });
+
+    it('should read every guard kind and the stored configurations once for all safes', async () => {
+      mockSpaceSafesRepository.findBySpaceId.mockResolvedValue([
+        safe,
+        otherSafe,
+      ]);
+
+      await target.getSpacePendingPolicies(guardRequest);
+
+      expect(mockPolicyIndexerRepository.getState).toHaveBeenCalledTimes(1);
+      expect(mockPolicyIndexerRepository.getState).toHaveBeenCalledWith({
+        safes: [safe, otherSafe],
+        policyKinds: everyGuardKind,
+      });
+      expect(
+        mockConfigurationRequestsRepository.findBySafes,
+      ).toHaveBeenCalledTimes(1);
+      expect(
+        mockConfigurationRequestsRepository.findBySafes,
+      ).toHaveBeenCalledWith([safe, otherSafe]);
+    });
+
+    it("should give the configuration mapper only the safe's own data", async () => {
+      const now = faker.date.recent();
+      vi.useFakeTimers({ now });
+      const expiry = faker.number.int({ min: 60, max: 86_400 });
+      const root = policyIndexerConfigurationRootBuilder()
+        .with('chainId', SEPOLIA)
+        .with('safe', safeAddress)
+        .build();
+      const otherRoot = policyIndexerConfigurationRootBuilder()
+        .with('chainId', SEPOLIA)
+        .with('safe', otherSafe.address)
+        .build();
+      const binding = policyIndexerSafePolicyBuilder()
+        .with('chainId', SEPOLIA)
+        .with('safe', safeAddress)
+        .build();
+      const otherBinding = policyIndexerSafePolicyBuilder()
+        .with('chainId', SEPOLIA)
+        .with('safe', otherSafe.address)
+        .build();
+      const stored = storedPolicyConfigurationBuilder()
+        .with('chainId', SEPOLIA)
+        .with('safeAddress', safeAddress)
+        .build();
+      const otherStored = storedPolicyConfigurationBuilder()
+        .with('chainId', SEPOLIA)
+        .with('safeAddress', otherSafe.address)
+        .build();
+      mockPolicyIndexerRepository.getState.mockResolvedValue(
+        policyIndexerResponseBuilder()
+          .with('roots', [root, otherRoot])
+          .with('policies', [binding, otherBinding])
+          .build(),
+      );
+      mockConfigurationRequestsRepository.findBySafes.mockResolvedValue([
+        stored,
+        otherStored,
+      ]);
+      mockSafePolicyGuardRepository.getExpiry.mockResolvedValue(expiry);
+
+      await target.getSpacePendingPolicies(guardRequest);
+
+      expect(mockGuardConfigurationMapper.map).toHaveBeenCalledWith({
+        safe,
+        transactions: [],
+        roots: [root],
+        stored: [stored],
+        bindings: [binding],
+        expiries: new Map([[root.guard, expiry]]),
+        types: guardRequest.types,
+        now: Math.floor(now.getTime() / 1_000),
+      });
+    });
+
+    it('should read the expiry only of guards that hold a pending root', async () => {
+      const pending = policyIndexerConfigurationRootBuilder()
+        .with('chainId', SEPOLIA)
+        .with('safe', safeAddress)
+        .build();
+      const applied = policyIndexerConfigurationRootBuilder()
+        .with('chainId', SEPOLIA)
+        .with('safe', safeAddress)
+        .with('status', 'APPLIED')
+        .build();
+      mockPolicyIndexerRepository.getState.mockResolvedValue(
+        policyIndexerResponseBuilder()
+          .with('roots', [pending, applied])
+          .build(),
+      );
+      mockSafePolicyGuardRepository.getExpiry.mockResolvedValue(
+        faker.number.int({ min: 60, max: 86_400 }),
+      );
+
+      await target.getSpacePendingPolicies(guardRequest);
+
+      expect(mockSafePolicyGuardRepository.getExpiry).toHaveBeenCalledTimes(1);
+      expect(mockSafePolicyGuardRepository.getExpiry).toHaveBeenCalledWith({
+        chainId: SEPOLIA,
+        guard: pending.guard,
+      });
+    });
+
+    it('should keep the setup items but leave out configuration items when the guard state cannot be read', async () => {
+      mockPolicyIndexerRepository.getState.mockRejectedValue(
+        new Error('Service unavailable'),
+      );
+
+      await target.getSpacePendingPolicies(guardRequest);
+
+      expect(mockGuardSetupMapper.map).toHaveBeenCalled();
+      expect(mockGuardConfigurationMapper.map).not.toHaveBeenCalled();
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: 'Could not read the guard configurations of the Safes',
+        }),
+      );
+    });
+
+    it("should leave out a safe's configuration items when an expiry cannot be read", async () => {
+      mockPolicyIndexerRepository.getState.mockResolvedValue(
+        policyIndexerResponseBuilder()
+          .with('roots', [
+            policyIndexerConfigurationRootBuilder()
+              .with('chainId', SEPOLIA)
+              .with('safe', safeAddress)
+              .build(),
+          ])
+          .build(),
+      );
+      mockSafePolicyGuardRepository.getExpiry.mockRejectedValue(
+        new Error('RPC unavailable'),
+      );
+
+      await target.getSpacePendingPolicies(guardRequest);
+
+      expect(mockGuardSetupMapper.map).toHaveBeenCalled();
+      expect(mockGuardConfigurationMapper.map).not.toHaveBeenCalled();
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: 'Could not read the expiry of a SafePolicyGuard',
+          chainId: SEPOLIA,
+          safeAddress,
+        }),
       );
     });
   });

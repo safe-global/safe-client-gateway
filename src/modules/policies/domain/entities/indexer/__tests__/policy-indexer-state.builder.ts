@@ -51,5 +51,6 @@ export function policyIndexerResponseBuilder(): IBuilder<PolicyIndexerState> {
     .with('meta', [])
     .with('allowances', [])
     .with('delegates', [])
-    .with('policies', []);
+    .with('policies', [])
+    .with('roots', []);
 }

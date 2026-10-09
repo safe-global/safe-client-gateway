@@ -11,7 +11,11 @@ import { PolicyConfigurationRequest } from '@/modules/policies/datasources/entit
 import { PolicyConfigurationRequestsRepository } from '@/modules/policies/domain/policy-configuration-requests.repository';
 import { IPolicyConfigurationRequestsRepository } from '@/modules/policies/domain/policy-configuration-requests.repository.interface';
 import { PolicyIndexerRepositoryModule } from '@/modules/policies/domain/policy-indexer-repository.module';
+import { SafePolicyGuardRepository } from '@/modules/policies/domain/safe-policy-guard.repository';
+import { ISafePolicyGuardRepository } from '@/modules/policies/domain/safe-policy-guard.repository.interface';
+import { GuardConfigurationMapper } from '@/modules/policies/routes/mappers/guard-configuration.mapper';
 import { GuardPolicyMapper } from '@/modules/policies/routes/mappers/guard-policy.mapper';
+import { GuardSetupMapper } from '@/modules/policies/routes/mappers/guard-setup.mapper';
 import { PendingSpendingLimitMapper } from '@/modules/policies/routes/mappers/pending-spending-limit.mapper';
 import { ProposerMapper } from '@/modules/policies/routes/mappers/proposer.mapper';
 import { SpendingLimitMapper } from '@/modules/policies/routes/mappers/spending-limit.mapper';
@@ -45,12 +49,18 @@ import { UsersModule } from '@/modules/users/users.module';
     ProposerMapper,
     PendingSpendingLimitMapper,
     GuardPolicyMapper,
+    GuardSetupMapper,
+    GuardConfigurationMapper,
     AllowanceModuleDecoder,
     SafeDecoder,
     MultiSendDecoder,
     {
       provide: IPolicyConfigurationRequestsRepository,
       useClass: PolicyConfigurationRequestsRepository,
+    },
+    {
+      provide: ISafePolicyGuardRepository,
+      useClass: SafePolicyGuardRepository,
     },
   ],
 })

@@ -214,6 +214,44 @@ export type PolicyIndexerSafePolicy = z.infer<
 >;
 
 /**
+ * Where a delayed configuration root stands on-chain.
+ *
+ * This is the current state, not a final one: applying or invalidating a root
+ * clears the guard's storage, so the same root can be requested again and go
+ * back to `PENDING`.
+ */
+export const PolicyIndexerRootStatusSchema = z.enum([
+  'PENDING',
+  'APPLIED',
+  'INVALIDATED',
+]);
+
+export type PolicyIndexerRootStatus = z.infer<
+  typeof PolicyIndexerRootStatusSchema
+>;
+
+/**
+ * A delayed configuration root of a `SafePolicyGuard`, one per
+ * `(guard, safe, root)`.
+ */
+export const PolicyIndexerConfigurationRootSchema = z.object({
+  chainId: PolicyIndexerChainIdSchema,
+  safe: AddressSchema,
+  guard: AddressSchema,
+  root: HexSchema,
+  /**
+   * Unix seconds `applyConfiguration` is valid from. It is the `timestamp` of
+   * `RootConfigured`, which is already `block.timestamp + DELAY`.
+   */
+  readyAt: PolicyIndexerIntegerSchema,
+  status: PolicyIndexerRootStatusSchema,
+});
+
+export type PolicyIndexerConfigurationRoot = z.infer<
+  typeof PolicyIndexerConfigurationRootSchema
+>;
+
+/**
  * Indexing progress, one entry per chain - `_meta` is a list, not an object.
  *
  * `isReady` only records that a chain caught up *once*, so it stays `true` while
@@ -255,4 +293,5 @@ export type PolicyIndexerState = {
   allowances: Array<PolicyIndexerSafeAllowance>;
   delegates: Array<PolicyIndexerSafeDelegate>;
   policies: Array<PolicyIndexerSafePolicy>;
+  roots: Array<PolicyIndexerConfigurationRoot>;
 };

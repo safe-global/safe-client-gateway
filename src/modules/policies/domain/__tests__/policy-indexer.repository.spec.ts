@@ -100,6 +100,7 @@ describe('PolicyIndexerRepository', () => {
         allowances: [],
         delegates: [],
         policies: [],
+        roots: [],
       });
       expect(mockPolicyIndexerApi.getState).not.toHaveBeenCalled();
     });

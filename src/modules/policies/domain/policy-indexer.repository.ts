@@ -37,7 +37,13 @@ export class PolicyIndexerRepository implements IPolicyIndexerRepository {
     const safes = this.checksum(args.safes);
 
     if (safes.length === 0) {
-      return { meta: [], allowances: [], delegates: [], policies: [] };
+      return {
+        meta: [],
+        allowances: [],
+        delegates: [],
+        policies: [],
+        roots: [],
+      };
     }
 
     const raw = await this.policyIndexerApi.getState({
@@ -67,6 +73,8 @@ export class PolicyIndexerRepository implements IPolicyIndexerRepository {
         response.SafePolicy,
         'SafePolicy',
       ),
+      // Placeholder: replaced in step 7. Configuration roots are not read yet.
+      roots: [],
     };
   }
 
