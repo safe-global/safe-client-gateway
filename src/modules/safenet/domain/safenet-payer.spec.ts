@@ -78,19 +78,37 @@ class Harness {
     status: 'success',
     logs: this.logs,
   } as unknown as TransactionReceipt;
+  readonly signerAddress = randomAddress();
   readonly signer = {
-    address: randomAddress(),
+    getAddress: vi.fn().mockResolvedValue(this.signerAddress),
     signHash: vi.fn((hash: Hex) => {
       const { topics } = this.executedLog;
       if (topics.length < 2) topics.splice(1, 0, hash);
       return Promise.resolve(toHex(1n, { size: 65 }));
     }),
   };
+  readonly safe: Record<string, unknown> = {
+    VERSION: '1.4.1',
+    getThreshold: 1n,
+    owner: this.signerAddress,
+    nonce: 2n,
+  };
   readonly client = {
     readContract: vi
       .fn()
-      .mockImplementation(({ functionName }) =>
-        Promise.resolve(functionName === 'VERSION' ? '1.4.1' : 2n),
+      .mockImplementation(
+        ({
+          functionName,
+          args,
+        }: {
+          functionName: string;
+          args?: Array<unknown>;
+        }) =>
+          Promise.resolve(
+            functionName === 'isOwner'
+              ? args?.[0] === this.safe.owner
+              : this.safe[functionName],
+          ),
       ),
     call: vi.fn().mockResolvedValue({ data: this.userSafeTxHash }),
     getTransactionReceipt: vi.fn().mockResolvedValue(this.receipt),
@@ -147,6 +165,12 @@ class Harness {
     const target = this[`${log}Log`];
     if (field === 'emitter') target.address = randomAddress();
     else target.topics.splice(field, 1, randomHash());
+  }
+
+  safeReads(): number {
+    return this.client.readContract.mock.calls.filter(
+      ([{ functionName }]) => functionName !== 'nonce',
+    ).length;
   }
 
   propose() {
@@ -284,27 +308,39 @@ describe('SafenetPayer', () => {
     expect(h.client.getTransactionReceipt).toHaveBeenCalledTimes(3);
   });
 
-  it('rejects a payer Safe that is not 1.4.1 before simulating', async () => {
+  it.each([
+    ['VERSION', '1.3.0', 'Unsupported payer Safe version 1.3.0'],
+    ['getThreshold', 2n, 'Unsupported payer Safe threshold 2'],
+  ])('rejects a payer Safe with %s %s', async (read, value, message) => {
     const h = new Harness();
-    h.client.readContract.mockResolvedValueOnce('1.3.0');
+    h.safe[read] = value;
 
-    await expectPayerError(h.propose(), 'Unsupported payer Safe version 1.3.0');
+    await expectPayerError(h.propose(), message);
     expect(h.client.call).not.toHaveBeenCalled();
     expect(h.relay.relay).not.toHaveBeenCalled();
   });
 
-  it('keeps verifying the payer Safe version until a read succeeds', async () => {
+  it('rejects a signer that does not own the payer Safe', async () => {
     const h = new Harness();
-    h.client.readContract.mockResolvedValueOnce('1.3.0');
-    await h.propose().catch(() => undefined);
+    h.safe.owner = randomAddress();
 
-    await h.propose();
-    await h.propose();
-
-    const reads = h.client.readContract.mock.calls.filter(
-      ([call]) => call.functionName === 'VERSION',
+    await expectPayerError(
+      h.propose(),
+      `Signer ${h.signerAddress} is not a payer Safe owner`,
     );
-    expect(reads).toHaveLength(2);
+    expect(h.relay.relay).not.toHaveBeenCalled();
+  });
+
+  it('verifies the payer Safe until a check passes, then not again', async () => {
+    const h = new Harness();
+    h.safe.getThreshold = 2n;
+    await h.propose().catch(() => undefined);
+    h.safe.getThreshold = 1n;
+
+    await h.propose();
+    await h.propose();
+
+    expect(h.safeReads()).toBe(6);
   });
 
   it('rejects a simulation revert without the raw error or relay', async () => {

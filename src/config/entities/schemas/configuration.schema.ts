@@ -87,6 +87,7 @@ function validateSafenetConfig(
     SAFENET_CONSENSUS_ADDRESS?: string;
     SAFENET_ORACLE_ADDRESS?: string;
     SAFENET_PAYER_SAFE_ADDRESS?: string;
+    SAFENET_PAYER_KMS_KEY_ID?: string;
   },
   ctx: z.RefinementCtx,
 ): void {
@@ -97,6 +98,7 @@ function validateSafenetConfig(
     'SAFENET_CONSENSUS_ADDRESS',
     'SAFENET_ORACLE_ADDRESS',
     'SAFENET_PAYER_SAFE_ADDRESS',
+    'SAFENET_PAYER_KMS_KEY_ID',
   ] as const) {
     if (!config[field]) {
       ctx.addIssue({
@@ -172,6 +174,7 @@ export const RootConfigurationSchema = z
     SAFENET_CONSENSUS_ADDRESS: AddressSchema.optional(),
     SAFENET_ORACLE_ADDRESS: AddressSchema.optional(),
     SAFENET_PAYER_SAFE_ADDRESS: AddressSchema.optional(),
+    SAFENET_PAYER_KMS_KEY_ID: z.string().optional(),
     BLOCKLIST_ENCRYPTED_DATA: z.string(),
     BLOCKLIST_SECRET_KEY: z.string(),
     BLOCKLIST_SECRET_SALT: z.string(),

@@ -44,6 +44,8 @@ import { SafeRepositoryModule } from '@/modules/safe/domain/safe.repository.inte
   // outside this module — `WorkspaceRelayer`, wired under its own feature
   // flags — reuses instead of restating.
   exports: [
+    // Lets a caller submit its own transactions, without the relayers' limits.
+    RelayApiModule,
     RelayRepository,
     LimitAddressesMapper,
     RelaySimulationService,

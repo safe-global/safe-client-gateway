@@ -849,6 +849,10 @@ export default () => ({
     oracleAddress: process.env.SAFENET_ORACLE_ADDRESS,
     payer: {
       safeAddress: process.env.SAFENET_PAYER_SAFE_ADDRESS,
+      kms: {
+        keyId: process.env.SAFENET_PAYER_KMS_KEY_ID,
+        webIdentityTokenFile: process.env.AWS_WEB_IDENTITY_TOKEN_FILE,
+      },
     },
     pollIntervalMs: 1000,
     pollTimeoutMs: 120000,

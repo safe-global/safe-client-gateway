@@ -468,7 +468,10 @@ export default (): ReturnType<typeof configuration> => ({
   safenet: {
     consensusAddress: faker.finance.ethereumAddress(),
     oracleAddress: faker.finance.ethereumAddress(),
-    payer: { safeAddress: undefined },
+    payer: {
+      safeAddress: undefined,
+      kms: { keyId: undefined, webIdentityTokenFile: undefined },
+    },
     pollIntervalMs: 1000,
     pollTimeoutMs: 120000,
   },

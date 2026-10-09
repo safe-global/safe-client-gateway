@@ -175,11 +175,15 @@ yarn run start:prod
 
 ## Safenet payer
 
-`FF_SAFENET` enables the Safenet payer and defaults to false.
-Set the Consensus, Oracle, and payer Safe variables listed in `.env.sample.json`.
+`FF_SAFENET` enables the Safenet module and defaults to false.
+Set the Consensus, Oracle, and payer Safe variables listed in `.env.sample.json`, and `SAFENET_PAYER_KMS_KEY_ID`, the AWS KMS key that signs for the payer Safe.
+The KMS key must have key spec `ECC_SECG_P256K1` and key usage `SIGN_VERIFY`. The AWS SDK environment sets its region and credentials; `AWS_WEB_IDENTITY_TOKEN_FILE` selects IRSA credentials.
+The signer loads its public key on first use. CGW starts when KMS is down, and the first proposal fails.
+For local development, set `AWS_ENDPOINT_URL_KMS` to point the SDK at a KMS emulator. It also sends CGW's field-encryption KMS client to the emulator.
 This module exposes no HTTP route or queue.
 
-The payer runs on Gnosis Chain (chain ID `100`) and needs a Safe `1.4.1` payer Safe.
+The payer runs on Gnosis Chain (chain ID `100`) and needs a Safe `1.4.1` payer Safe with threshold 1 and the signer as an owner.
+Before the first proposal, the payer reads `VERSION()`, `getThreshold()`, and `isOwner(signer)`. A wrong value throws `SafenetPayerError`, and nothing is relayed. The payer repeats the check until it passes once, then does not repeat it in this instance.
 One proposal runs at a time per instance. The nonce counter (Redis key `safenet_payer_nonce_100_<lowercase payer address>`, 60 seconds) is not a distributed lock. Run one instance per payer Safe.
 The relay status and the receipt are each polled every second for up to 120 seconds.
 
