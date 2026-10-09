@@ -125,7 +125,7 @@ jobs:
         ports:
           - 6379:6379
       postgres:
-        image: postgres:14.8
+        image: postgres:16.13-alpine3.23
         env:
           POSTGRES_DB: test-db
           POSTGRES_USER: postgres
@@ -191,7 +191,7 @@ jobs:
         ports:
           - 6379:6379
       postgres:
-        image: postgres:14.8
+        image: postgres:16.13-alpine3.23
         env:
           # Should match the env above. "Variables in the env map cannot be defined in terms of other variables in the map."
           # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#env
