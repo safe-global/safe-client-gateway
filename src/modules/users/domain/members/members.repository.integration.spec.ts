@@ -2932,7 +2932,7 @@ describe('MembersRepository', () => {
           spaceId,
           userId,
         }),
-      ).rejects.toThrow('No members found.');
+      ).rejects.toThrow('Member not found.');
     });
 
     it('should throw an error if the user is not a member of the space', async () => {

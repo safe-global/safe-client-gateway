@@ -6,6 +6,7 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { groupBy } from 'lodash';
 import type { FindOptionsRelations, FindOptionsWhere } from 'typeorm';
 import { EntityManager, In, IsNull } from 'typeorm';
 import type { Address } from 'viem';
@@ -20,6 +21,12 @@ import { User as DbUser } from '#/modules/users/datasources/entities/users.entit
 import type { User } from '#/modules/users/domain/entities/user.entity';
 import { UserStatus } from '#/modules/users/domain/entities/user.entity';
 import { UserEmailAlreadyInUseError } from '#/modules/users/domain/errors/user-email-already-in-use.error';
+import {
+  isActiveAdmin,
+  isLastActiveAdminOfSpace,
+  lockSpaceForAdminChange,
+  lockUserForAdminChange,
+} from '#/modules/users/domain/members/utils/members.utils';
 import { UserEncryptionService } from '#/modules/users/domain/user-encryption.service';
 import type { IUsersRepository } from '#/modules/users/domain/users.repository.interface';
 import { Wallet } from '#/modules/wallets/datasources/entities/wallets.entity.db';
@@ -193,13 +200,67 @@ export class UsersRepository implements IUsersRepository {
     );
   }
 
+  private async assertIsNotLastAdminOfAnySpace(args: {
+    entityManager: EntityManager;
+    userId: User['id'];
+    memberships: Array<DbMember>;
+  }): Promise<void> {
+    const administeredSpaceIds = args.memberships
+      .filter(isActiveAdmin)
+      .map((membership) => membership.space.id)
+      .sort((a, b) => a - b);
+
+    if (administeredSpaceIds.length === 0) {
+      return;
+    }
+
+    for (const spaceId of administeredSpaceIds) {
+      await lockSpaceForAdminChange(args.entityManager, spaceId);
+    }
+
+    const activeAdmins = await args.entityManager.find(DbMember, {
+      select: {
+        id: true,
+        role: true,
+        status: true,
+        space: { id: true },
+        user: { id: true },
+      },
+      where: {
+        space: { id: In(administeredSpaceIds) },
+        role: 'ADMIN',
+        status: 'ACTIVE',
+      },
+      relations: { space: true, user: true },
+    });
+
+    const adminsBySpace = groupBy(activeAdmins, (admin) => admin.space.id);
+
+    for (const members of Object.values(adminsBySpace)) {
+      if (isLastActiveAdminOfSpace({ members, userId: args.userId })) {
+        throw new ConflictException(
+          'Cannot delete account while last admin of a workspace.',
+        );
+      }
+    }
+  }
+
   public async delete(authPayload: AuthPayload): Promise<void> {
     const userId = getAuthenticatedUserIdOrFail(authPayload);
 
     await this.postgresDatabaseService.transaction(async (entityManager) => {
+      // Blocks concurrent space creation and promotion for this user.
+      await lockUserForAdminChange(entityManager, userId);
+
       const memberships = await entityManager.find(DbMember, {
         where: { user: { id: userId } },
         relations: { space: true },
+      });
+
+      await this.assertIsNotLastAdminOfAnySpace({
+        entityManager,
+        userId,
+        memberships,
       });
 
       for (const membership of memberships) {

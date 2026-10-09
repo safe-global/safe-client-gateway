@@ -37,7 +37,13 @@ import type { Member } from '#/modules/users/domain/entities/member.entity';
 import type { User } from '#/modules/users/domain/entities/user.entity';
 import { MemberEncryptionService } from '#/modules/users/domain/members/member-encryption.service';
 import type { IMembersRepository } from '#/modules/users/domain/members/members.repository.interface';
-import { activeOrPendingMemberWhere } from '#/modules/users/domain/members/utils/members.utils';
+import {
+  activeOrPendingMemberWhere,
+  isActiveAdmin,
+  isLastActiveAdminOfSpace,
+  lockSpaceForAdminChange,
+  lockUserForAdminChange,
+} from '#/modules/users/domain/members/utils/members.utils';
 import { UserEncryptionService } from '#/modules/users/domain/user-encryption.service';
 import { IUsersRepository } from '#/modules/users/domain/users.repository.interface';
 import { Wallet } from '#/modules/wallets/datasources/entities/wallets.entity.db';
@@ -541,11 +547,22 @@ export class MembersRepository implements IMembersRepository {
     return memberWithAddress;
   }
 
-  private findActiveAdminsOrFail(spaceId: Space['id']): Promise<Array<Member>> {
-    return this.findOrFail({
+  // Skips `findOrFail`'s email decryption to keep KMS calls out of the lock.
+  private async findActiveAdminsForUpdateOrFail(
+    entityManager: EntityManager,
+    spaceId: Space['id'],
+  ): Promise<Array<DbMember>> {
+    const members = await entityManager.find(DbMember, {
+      select: { id: true, role: true, status: true, user: { id: true } },
       where: { space: { id: spaceId }, role: 'ADMIN', status: 'ACTIVE' },
       relations: { user: true },
     });
+
+    if (members.length === 0) {
+      throw new NotFoundException('No members found.');
+    }
+
+    return members;
   }
 
   public async updateRole(args: {
@@ -554,21 +571,25 @@ export class MembersRepository implements IMembersRepository {
     userId: User['id'];
     role: Member['role'];
   }): Promise<void> {
-    // A space must keep at least one active admin. The caller verified the
-    // actor is one, so demoting someone else can never remove the last admin;
-    // the admin list is only loaded for a self-demotion.
-    const isSelf = args.actorUserId === args.userId;
-    if (isSelf && args.role !== 'ADMIN') {
-      const activeAdmins = await this.findActiveAdminsOrFail(args.spaceId);
-      this.assertIsNotLastAdmin({ members: activeAdmins, userId: args.userId });
-    }
-
     await this.postgresDatabaseService.transaction(async (entityManager) => {
+      // Serializes with an in-flight deletion of the target's account.
+      await lockUserForAdminChange(entityManager, args.userId);
+      await lockSpaceForAdminChange(entityManager, args.spaceId);
+
       const member = await entityManager.findOne(DbMember, {
+        select: { id: true, role: true, status: true },
         where: { user: { id: args.userId }, space: { id: args.spaceId } },
       });
       if (!member) {
         throw new NotFoundException('Member not found.');
+      }
+
+      if (args.role !== 'ADMIN') {
+        await this.assertTargetIsNotLastAdmin(entityManager, {
+          member,
+          spaceId: args.spaceId,
+          userId: args.userId,
+        });
       }
 
       await entityManager.update(DbMember, member.id, { role: args.role });
@@ -641,19 +662,22 @@ export class MembersRepository implements IMembersRepository {
     userId: User['id'];
     spaceId: Space['id'];
   }): Promise<void> {
-    // Same as `updateRole`: only a self-removal can hit the last admin.
-    if (args.actorUserId === args.userId) {
-      const activeAdmins = await this.findActiveAdminsOrFail(args.spaceId);
-      this.assertIsNotLastAdmin({ members: activeAdmins, userId: args.userId });
-    }
-
     await this.postgresDatabaseService.transaction(async (entityManager) => {
+      await lockSpaceForAdminChange(entityManager, args.spaceId);
+
       const member = await entityManager.findOne(DbMember, {
+        select: { id: true, role: true, status: true },
         where: { user: { id: args.userId }, space: { id: args.spaceId } },
       });
       if (!member) {
         throw new NotFoundException('Member not found.');
       }
+
+      await this.assertTargetIsNotLastAdmin(entityManager, {
+        member,
+        spaceId: args.spaceId,
+        userId: args.userId,
+      });
 
       await entityManager.delete(DbMember, member.id);
 
@@ -677,17 +701,21 @@ export class MembersRepository implements IMembersRepository {
   }): Promise<void> {
     const userId = getAuthenticatedUserIdOrFail(args.authPayload);
 
-    const activeAdmins = await this.findActiveAdminsOrFail(args.spaceId);
-
-    this.assertIsNotLastAdmin({ members: activeAdmins, userId });
-
     await this.postgresDatabaseService.transaction(async (entityManager) => {
+      await lockSpaceForAdminChange(entityManager, args.spaceId);
+
       const member = await entityManager.findOne(DbMember, {
         where: { user: { id: userId }, space: { id: args.spaceId } },
       });
       if (!member) {
         throw new NotFoundException('Member not found.');
       }
+
+      await this.assertTargetIsNotLastAdmin(entityManager, {
+        member,
+        spaceId: args.spaceId,
+        userId,
+      });
 
       await entityManager.delete(DbMember, member.id);
 
@@ -705,21 +733,28 @@ export class MembersRepository implements IMembersRepository {
     });
   }
 
-  private assertIsNotLastAdmin(args: {
-    members: Array<DbMember>;
-    userId: User['id'];
-  }): void {
+  // Runs under the space lock, so two concurrent changes cannot both pass.
+  private async assertTargetIsNotLastAdmin(
+    entityManager: EntityManager,
+    args: {
+      member: DbMember;
+      spaceId: Space['id'];
+      userId: User['id'];
+    },
+  ): Promise<void> {
+    if (!isActiveAdmin(args.member)) {
+      return;
+    }
+
+    const activeAdmins = await this.findActiveAdminsForUpdateOrFail(
+      entityManager,
+      args.spaceId,
+    );
     if (
-      args.members.length === 1 &&
-      args.members[0].user.id === args.userId &&
-      this.isActiveAdmin(args.members[0])
+      isLastActiveAdminOfSpace({ members: activeAdmins, userId: args.userId })
     ) {
       throw new ConflictException('Cannot remove last admin.');
     }
-  }
-
-  private isActiveAdmin(member: DbMember): boolean {
-    return member.role === 'ADMIN' && member.status === 'ACTIVE';
   }
 
   /**
