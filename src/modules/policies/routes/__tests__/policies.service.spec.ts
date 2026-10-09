@@ -1031,8 +1031,10 @@ describe('PoliciesService', () => {
       ).not.toHaveBeenCalled();
     });
 
-    it('should give the setup mapper the queue and the current guard', async () => {
-      const safeInfo = safeBuilder().build();
+    it('should give the setup mapper the queue and the current guards', async () => {
+      const safeInfo = safeBuilder()
+        .with('moduleGuard', getAddress(faker.finance.ethereumAddress()))
+        .build();
       const transaction = multisigTransactionBuilder().build();
       mockSafeRepository.getSafe.mockResolvedValue(safeInfo);
       mockSafeRepository.getTransactionQueue.mockResolvedValue(
@@ -1047,7 +1049,7 @@ describe('PoliciesService', () => {
       expect(mockGuardSetupMapper.map).toHaveBeenCalledWith({
         safe,
         guard: safeInfo.guard,
-        moduleGuard: null,
+        moduleGuard: safeInfo.moduleGuard,
         transactions: [transaction],
       });
     });

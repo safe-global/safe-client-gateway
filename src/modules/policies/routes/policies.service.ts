@@ -515,8 +515,7 @@ export class PoliciesService {
         ...this.guardSetupMapper.map({
           safe,
           guard: safeInfo.guard,
-          // Placeholder: replaced in step 4. The module guard is not read yet.
-          moduleGuard: null,
+          moduleGuard: safeInfo.moduleGuard,
           transactions,
         }),
       );

@@ -15,6 +15,7 @@ export function safeBuilder(): IBuilder<Safe> {
     .with('modules', null)
     .with('fallbackHandler', getAddress(faker.finance.ethereumAddress()))
     .with('guard', getAddress(faker.finance.ethereumAddress()))
+    .with('moduleGuard', null)
     .with(
       'version',
       faker.helpers.arrayElement([
