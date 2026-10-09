@@ -16,7 +16,6 @@ import {
 import { createTestModule } from '#/__tests__/testing-module';
 import { IConfigurationService } from '#/config/configuration.service.interface';
 import configuration from '#/config/entities/__tests__/configuration';
-import { IBlocklistService } from '#/config/entities/blocklist.interface';
 import { NetworkResponseError } from '#/datasources/network/entities/network.error.entity';
 import type { INetworkService } from '#/datasources/network/network.service.interface';
 import { NetworkService } from '#/datasources/network/network.service.interface';
@@ -54,7 +53,6 @@ describe('Get by id - Transactions Controller', () => {
   let safeDecoderUrl: string;
   let networkService: MockedObject<INetworkService>;
   let loggingService: MockedObject<ILoggingService>;
-  let blocklistService: MockedObject<IBlocklistService>;
 
   async function initApp(config: typeof configuration): Promise<void> {
     const moduleFixture = await createTestModule({
@@ -75,7 +73,6 @@ describe('Get by id - Transactions Controller', () => {
     safeDecoderUrl = configurationService.getOrThrow('safeDataDecoder.baseUri');
     networkService = moduleFixture.get(NetworkService);
     loggingService = moduleFixture.get(LoggingService);
-    blocklistService = moduleFixture.get(IBlocklistService);
 
     // TODO: Override module to avoid spying
     vi.spyOn(loggingService, 'error');
@@ -1338,77 +1335,6 @@ describe('Get by id - Transactions Controller', () => {
         );
       },
     );
-
-    it('should throw and log if a signer is blocked', async () => {
-      const chain = chainBuilder().build();
-      const privateKey = generatePrivateKey();
-      const signer = privateKeyToAccount(privateKey);
-
-      const defaultConfiguration = configuration();
-      const testConfiguration = (): ReturnType<typeof configuration> => {
-        return {
-          ...defaultConfiguration,
-          features: {
-            ...defaultConfiguration.features,
-          },
-        };
-      };
-      await initApp(testConfiguration);
-
-      vi.spyOn(blocklistService, 'getBlocklist').mockReturnValue([
-        signer.address,
-      ]);
-
-      const safe = safeBuilder().with('owners', [signer.address]).build();
-      const multisigTransaction = await multisigTransactionBuilder()
-        .with('safe', safe.address)
-        .with('isExecuted', false)
-        .with('nonce', safe.nonce)
-        .buildWithConfirmations({
-          chainId: chain.chainId,
-          signers: [signer],
-          safe,
-        });
-      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
-      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
-      const getMultisigTransactionUrl = `${chain.transactionService}/api/v2/multisig-transactions/${multisigTransaction.safeTxHash}/`;
-      networkService.get.mockImplementation(({ url }) => {
-        switch (url) {
-          case getChainUrl:
-            return Promise.resolve({ data: rawify(chain), status: 200 });
-          case getMultisigTransactionUrl:
-            return Promise.resolve({
-              data: rawify(multisigToJson(multisigTransaction)),
-              status: 200,
-            });
-          case getSafeUrl:
-            return Promise.resolve({ data: rawify(safe), status: 200 });
-          default:
-            return Promise.reject(new Error(`Could not match ${url}`));
-        }
-      });
-
-      await request(app.getHttpServer())
-        .get(
-          `/v1/chains/${chain.chainId}/transactions/multisig_${safe.address}_${multisigTransaction.safeTxHash}`,
-        )
-        .expect(502)
-        .expect({
-          message: 'Unauthorized address',
-          statusCode: 502,
-        });
-
-      expect(loggingService.error).toHaveBeenCalledWith({
-        event: 'Unauthorized address',
-        chainId: chain.chainId,
-        safeAddress: safe.address,
-        safeVersion: safe.version,
-        safeTxHash: multisigTransaction.safeTxHash,
-        blockedAddress: signer.address,
-        type: 'TRANSACTION_VALIDITY',
-        source: 'API',
-      });
-    });
 
     it('should throw and log if a signer does not match the confirmation owner', async () => {
       const chain = chainBuilder().build();

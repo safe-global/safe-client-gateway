@@ -1,11 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
-import type { Address } from 'viem';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
-import type { IBlocklistService } from '#/config/entities/blocklist.interface';
 import type { ILoggingService } from '#/logging/logging.interface';
 import type { IContractsRepository } from '#/modules/contracts/domain/contracts.repository.interface';
 import { dataDecodedBuilder } from '#/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
@@ -73,20 +71,10 @@ const mockContractsRepository = vi.mocked({
   isTrustedForDelegateCall: vi.fn(),
 } as MockedObject<IContractsRepository>);
 
-const mockBlocklistService = vi.mocked({
-  getBlocklist: vi.fn(),
-  clearCache: vi.fn(),
-} as MockedObject<IBlocklistService>);
-
 describe('MultisigTransactionDetails mapper (Unit)', () => {
   let mapper: MultisigTransactionDetailsMapper;
 
-  function initTarget(args: {
-    ethSign: boolean;
-    blocklist: Array<Address>;
-  }): void {
-    mockBlocklistService.getBlocklist.mockReturnValue(args.blocklist);
-
+  function initTarget(args: { ethSign: boolean }): void {
     mockConfigurationService.getOrThrow.mockImplementation((key): boolean => {
       return [
         'features.hashVerification.api',
@@ -109,7 +97,6 @@ describe('MultisigTransactionDetails mapper (Unit)', () => {
         mockDelegatesRepository,
         mockLoggingService,
         mockContractsRepository,
-        mockBlocklistService,
       ),
     );
   }
@@ -117,7 +104,7 @@ describe('MultisigTransactionDetails mapper (Unit)', () => {
   beforeEach(() => {
     vi.resetAllMocks();
 
-    initTarget({ ethSign: true, blocklist: [] });
+    initTarget({ ethSign: true });
   });
 
   it('should return a TransactionDetails object with null addressInfoIndex', async () => {

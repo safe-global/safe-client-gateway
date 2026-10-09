@@ -5,8 +5,6 @@ import type { ModuleDefinition } from '@nestjs/core/interfaces/module-definition
 import { Test, type TestingModule } from '@nestjs/testing';
 import { AppModule } from '#/app.module';
 import configuration from '#/config/entities/__tests__/configuration';
-import { TestBlocklistModule } from '#/config/entities/__tests__/test.blocklist.module';
-import { BlocklistModule } from '#/config/entities/blocklist.module';
 import { TestCacheModule } from '#/datasources/cache/__tests__/test.cache.module';
 import { CacheModule } from '#/datasources/cache/cache.module';
 import { CacheKeyPrefix } from '#/datasources/cache/constants';
@@ -69,10 +67,6 @@ export function createTestModule(
     guards,
     providers,
     modules: [
-      {
-        originalModule: BlocklistModule,
-        testModule: TestBlocklistModule,
-      },
       {
         originalModule: CacheModule,
         testModule: TestCacheModule,

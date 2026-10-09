@@ -183,9 +183,9 @@ Outside production, the same allowlist also accepts `localhost`/`127.0.0.1`/`[::
 
 ### Domain freshness in verifiers
 
-**Rule:** Proposal and confirmation verification rejects a nonce below the Safe's current on-chain nonce, an already-executed transaction, and a blocklisted signer, each via `HttpExceptionNoLog` rather than a silently-swallowed rejection or a generic 500.
+**Rule:** Proposal and confirmation verification rejects a nonce below the Safe's current on-chain nonce, and an already-executed transaction, each via `HttpExceptionNoLog` rather than a silently-swallowed rejection or a generic 500.
 
-**Why:** PR #2408 — a stale-nonce/already-executed transaction could be replayed through verification; PRs #2399/#2405 — a blocklisted signer's confirmation was accepted.
+**Why:** PR #2408 — a stale-nonce/already-executed transaction could be replayed through verification.
 
 **Canonical example:** `src/modules/transactions/routes/helpers/transaction-verifier.helper.ts` — `verifyConfirmation` throws `HttpExceptionNoLog(ErrorMessage.InvalidNonce, ...)` when `transaction.isExecuted || transaction.nonce < safe.nonce`:
 
@@ -194,8 +194,6 @@ if (args.transaction.isExecuted || args.transaction.nonce < args.safe.nonce) {
   throw new HttpExceptionNoLog(ErrorMessage.InvalidNonce, code);
 }
 ```
-
-`verifyApiSignatures`, `verifyProposalSignature`, and `verifyConfirmationSignature` each separately throw `HttpExceptionNoLog(ErrorMessage.BlockedAddress, ...)` when a recovered signer address is found in `this.blocklist` (backed by `IBlocklistService`), before the signature is even checked against the Safe's owners.
 
 ### Structured logging only
 
