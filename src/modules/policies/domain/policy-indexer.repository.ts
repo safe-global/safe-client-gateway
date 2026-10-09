@@ -8,6 +8,7 @@ import {
 } from '@/logging/logging.interface';
 import { PolicyIndexerApi } from '@/modules/policies/datasources/policy-indexer-api.service';
 import {
+  PolicyIndexerConfigurationRootSchema,
   PolicyIndexerMetaSchema,
   type PolicyIndexerPolicyKind,
   PolicyIndexerRowsSchema,
@@ -37,7 +38,13 @@ export class PolicyIndexerRepository implements IPolicyIndexerRepository {
     const safes = this.checksum(args.safes);
 
     if (safes.length === 0) {
-      return { meta: [], allowances: [], delegates: [], policies: [] };
+      return {
+        meta: [],
+        allowances: [],
+        delegates: [],
+        policies: [],
+        roots: [],
+      };
     }
 
     const raw = await this.policyIndexerApi.getState({
@@ -66,6 +73,11 @@ export class PolicyIndexerRepository implements IPolicyIndexerRepository {
         PolicyIndexerSafePolicySchema,
         response.SafePolicy,
         'SafePolicy',
+      ),
+      roots: this.parseRows(
+        PolicyIndexerConfigurationRootSchema,
+        response.ConfigurationRoot,
+        'ConfigurationRoot',
       ),
     };
   }

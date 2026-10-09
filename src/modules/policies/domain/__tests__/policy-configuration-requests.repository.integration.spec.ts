@@ -230,4 +230,54 @@ describe('PolicyConfigurationRequestsRepository', () => {
       ).resolves.toBeUndefined();
     });
   });
+
+  describe('findBySafes', () => {
+    it('should return the stored configurations of the given Safes only', async () => {
+      const first = storableRequest();
+      const second = storableRequest();
+      const other = storableRequest();
+      await repository.create(first);
+      await repository.create(second);
+      await repository.create(other);
+
+      const stored = await repository.findBySafes([
+        { chainId: first.chainId, address: first.safeAddress },
+        { chainId: second.chainId, address: second.safeAddress },
+      ]);
+
+      expect(stored).toStrictEqual([
+        {
+          chainId: first.chainId,
+          safeAddress: first.safeAddress,
+          root: first.root,
+          configurations: first.configurations,
+          createdAt: expect.any(Date),
+        },
+        {
+          chainId: second.chainId,
+          safeAddress: second.safeAddress,
+          root: second.root,
+          configurations: second.configurations,
+          createdAt: expect.any(Date),
+        },
+      ]);
+    });
+
+    it('should not return a Safe of the same address on another chain', async () => {
+      const request = storableRequest();
+      await repository.create(request);
+
+      await expect(
+        repository.findBySafes([
+          { chainId: '1', address: request.safeAddress },
+        ]),
+      ).resolves.toStrictEqual([]);
+    });
+
+    it('should return nothing for no Safes', async () => {
+      await repository.create(storableRequest());
+
+      await expect(repository.findBySafes([])).resolves.toStrictEqual([]);
+    });
+  });
 });

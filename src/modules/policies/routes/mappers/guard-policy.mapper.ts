@@ -127,6 +127,16 @@ export function guardPolicyKindsOf(
 }
 
 /**
+ * The policy type an indexer kind reports, or `null` for a kind CGW does not
+ * render.
+ */
+export function guardPolicyTypeOfKind(
+  kind: PolicyIndexerPolicyKind,
+): PolicyType | null {
+  return PAYLOADS.find((payload) => payload.kind === kind)?.type ?? null;
+}
+
+/**
  * Builds the guard-enforced policies of one Safe from the `SafePolicyGuard`
  * bindings the indexer serves.
  *

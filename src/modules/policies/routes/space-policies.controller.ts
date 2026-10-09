@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
+  ApiExtraModels,
   ApiForbiddenResponse,
   ApiOkResponse,
   ApiOperation,
@@ -20,8 +21,14 @@ import {
 } from '@nestjs/swagger';
 import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
 import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
+import type { PendingPolicy } from '@/modules/policies/domain/entities/pending-policy.entity';
 import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
-import { PendingPolicyDto } from '@/modules/policies/routes/entities/pending-policy.dto.entity';
+import {
+  PendingGuardConfigurationDto,
+  PendingGuardSetupDto,
+  PendingPolicySchema,
+  PendingQueuedPolicyDto,
+} from '@/modules/policies/routes/entities/pending-policy.dto.entity';
 import { ActivePolicyDto } from '@/modules/policies/routes/entities/policy.dto.entity';
 import {
   type PolicyTypes,
@@ -115,7 +122,7 @@ export class SpacePoliciesController {
   @ApiOperation({
     summary: 'Get the pending policy changes on Safes in a Space',
     description:
-      'Returns the spending-limit changes in the transaction queue of every Safe in the Space. Detects only direct AllowanceModule calls and calls found one level inside a MultiSend batch, and only against known AllowanceModule deployments (@safe-global/safe-modules-deployments) - a change made through a nested MultiSend, a custom batching contract, a Safe module bypassing the owner queue, or an unofficial AllowanceModule fork is not detected.',
+      'Returns the pending policy changes of every Safe in the Space, as three kinds of item. `queued-transaction`: a spending-limit change in the transaction queue. `guard-setup`: a queued transaction that calls configureImmediately on a SafePolicyGuard, or sets or removes the guard with setGuard or setModuleGuard. `guard-configuration`: a delayed SafePolicyGuard configuration, one per root, from draft to expired. Queued calls are detected only when made directly or one level inside a MultiSend batch, and only against known AllowanceModule and SafePolicyGuard deployments - a change made through a nested MultiSend, a custom batching contract, or a Safe module bypassing the owner queue is not detected.',
   })
   @ApiParam({
     name: 'spaceId',
@@ -136,10 +143,15 @@ export class SpacePoliciesController {
     isArray: true,
     enum: Object.values(PolicyType),
     description:
-      'The policy types to report, comma-separated. Only `spending-limit` yields pending items today; other types are accepted and return none.',
+      'The policy types to report, comma-separated. `spending-limit` reports queued spending-limit changes; the guard policy types report guard setup and guard configuration items. `proposer` is accepted and returns none, as a proposer change needs no Safe transaction.',
     example: 'spending-limit',
   })
-  @ApiOkResponse({ type: PendingPolicyDto, isArray: true })
+  @ApiExtraModels(
+    PendingQueuedPolicyDto,
+    PendingGuardSetupDto,
+    PendingGuardConfigurationDto,
+  )
+  @ApiOkResponse({ schema: { type: 'array', items: PendingPolicySchema } })
   @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @ApiUnprocessableEntityResponse({
     description:
@@ -160,7 +172,7 @@ export class SpacePoliciesController {
     types: PolicyTypes,
     @Query('safes', new ValidationPipe(Caip10AddressesSchema.optional()))
     safes?: Caip10Addresses,
-  ): Promise<Array<PendingPolicyDto>> {
+  ): Promise<Array<PendingPolicy>> {
     return await this.policiesService.getSpacePendingPolicies({
       spaceId,
       safes,

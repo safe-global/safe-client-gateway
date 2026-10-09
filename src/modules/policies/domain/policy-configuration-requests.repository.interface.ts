@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { Address, Hex } from 'viem';
 import type { PolicyConfiguration } from '@/modules/policies/domain/entities/policy-configuration.entity';
+import type { SafeRef } from '@/modules/policies/domain/entities/safe-ref.entity';
+import type { StoredPolicyConfiguration } from '@/modules/policies/domain/entities/stored-policy-configuration.entity';
 
 export const IPolicyConfigurationRequestsRepository = Symbol(
   'IPolicyConfigurationRequestsRepository',
@@ -26,4 +28,11 @@ export interface IPolicyConfigurationRequestsRepository {
     spaceId: number;
     createdBy: number;
   }): Promise<void>;
+
+  /**
+   * The configurations stored for every Safe of {@link safes}.
+   */
+  findBySafes(
+    safes: ReadonlyArray<SafeRef>,
+  ): Promise<Array<StoredPolicyConfiguration>>;
 }

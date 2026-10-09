@@ -5,6 +5,11 @@ import { IConfigurationService } from '@/config/configuration.service.interface'
 import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
 import { PolicyConfigurationRequest } from '@/modules/policies/datasources/entities/policy-configuration-request.entity.db';
 import type { PolicyConfiguration } from '@/modules/policies/domain/entities/policy-configuration.entity';
+import type { SafeRef } from '@/modules/policies/domain/entities/safe-ref.entity';
+import {
+  type StoredPolicyConfiguration,
+  StoredPolicyConfigurationSchema,
+} from '@/modules/policies/domain/entities/stored-policy-configuration.entity';
 import type { IPolicyConfigurationRequestsRepository } from '@/modules/policies/domain/policy-configuration-requests.repository.interface';
 
 @Injectable()
@@ -51,6 +56,37 @@ export class PolicyConfigurationRequestsRepository
       })
       .orIgnore()
       .execute();
+  }
+
+  /**
+   * One `(chain_id, safe_address)` group per Safe, so each lookup uses
+   * `IDX_PCR_chain_safe`.
+   */
+  public async findBySafes(
+    safes: ReadonlyArray<SafeRef>,
+  ): Promise<Array<StoredPolicyConfiguration>> {
+    if (safes.length === 0) {
+      return [];
+    }
+
+    const repository = await this.db.getRepository(PolicyConfigurationRequest);
+
+    const rows = await repository.find({
+      select: {
+        chainId: true,
+        safeAddress: true,
+        root: true,
+        configurations: true,
+        createdAt: true,
+      },
+      where: safes.map((safe) => ({
+        chainId: safe.chainId,
+        safeAddress: safe.address,
+      })),
+      order: { id: 'ASC' },
+    });
+
+    return StoredPolicyConfigurationSchema.array().parse(rows);
   }
 
   /**

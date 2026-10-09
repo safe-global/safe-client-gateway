@@ -51,6 +51,8 @@ export class CacheRouter {
   private static readonly BILLING_SUBSCRIPTIONS_KEY = 'billing_subscriptions';
   private static readonly RATE_LIMIT_KEY = 'rate_limit';
   private static readonly POLICY_INDEXER_STATE_KEY = 'policy_indexer_state';
+  private static readonly SAFE_POLICY_GUARD_EXPIRY_KEY =
+    'safe_policy_guard_expiry';
   private static readonly RELAY_KEY = 'relay';
   private static readonly RPC_REQUESTS_KEY = 'rpc_requests';
   private static readonly SAFE_APPS_KEY = 'safe_apps';
@@ -1384,5 +1386,19 @@ export class CacheRouter {
     safeAddress: Address;
   }): string {
     return `${args.chainId}_${CacheRouter.POLICY_INDEXER_STATE_KEY}_${args.safeAddress}`;
+  }
+
+  /**
+   * A `SafePolicyGuard`'s `EXPIRY`, which is fixed at deployment - so the entry
+   * never needs invalidating.
+   */
+  static getSafePolicyGuardExpiryCacheDir(args: {
+    chainId: string;
+    guard: Address;
+  }): CacheDir {
+    return new CacheDir(
+      `${args.chainId}_${CacheRouter.SAFE_POLICY_GUARD_EXPIRY_KEY}_${args.guard}`,
+      '',
+    );
   }
 }

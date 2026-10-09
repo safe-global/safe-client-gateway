@@ -3,15 +3,23 @@ import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.module';
 import { AuthModule } from '@/modules/auth/auth.module';
+import { BlockchainModule } from '@/modules/blockchain/blockchain.module';
 import { AllowanceModuleDecoder } from '@/modules/contracts/domain/decoders/allowance-module-decoder.helper';
 import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
 import { SafeDecoder } from '@/modules/contracts/domain/decoders/safe-decoder.helper';
 import { DelegatesV3RepositoryModule } from '@/modules/delegate/domain/v3/delegates.v3.repository.interface';
 import { PolicyConfigurationRequest } from '@/modules/policies/datasources/entities/policy-configuration-request.entity.db';
+import { SafePolicyGuardApi } from '@/modules/policies/datasources/safe-policy-guard-api.service';
+import { SafeGuardManagerDecoder } from '@/modules/policies/domain/contracts/decoders/safe-guard-manager-decoder.helper';
+import { SafePolicyGuardDecoder } from '@/modules/policies/domain/contracts/decoders/safe-policy-guard-decoder.helper';
 import { PolicyConfigurationRequestsRepository } from '@/modules/policies/domain/policy-configuration-requests.repository';
 import { IPolicyConfigurationRequestsRepository } from '@/modules/policies/domain/policy-configuration-requests.repository.interface';
 import { PolicyIndexerRepositoryModule } from '@/modules/policies/domain/policy-indexer-repository.module';
+import { SafePolicyGuardRepository } from '@/modules/policies/domain/safe-policy-guard.repository';
+import { ISafePolicyGuardRepository } from '@/modules/policies/domain/safe-policy-guard.repository.interface';
+import { GuardConfigurationMapper } from '@/modules/policies/routes/mappers/guard-configuration.mapper';
 import { GuardPolicyMapper } from '@/modules/policies/routes/mappers/guard-policy.mapper';
+import { GuardSetupMapper } from '@/modules/policies/routes/mappers/guard-setup.mapper';
 import { PendingSpendingLimitMapper } from '@/modules/policies/routes/mappers/pending-spending-limit.mapper';
 import { ProposerMapper } from '@/modules/policies/routes/mappers/proposer.mapper';
 import { SpendingLimitMapper } from '@/modules/policies/routes/mappers/spending-limit.mapper';
@@ -29,6 +37,7 @@ import { UsersModule } from '@/modules/users/users.module';
 @Module({
   imports: [
     PolicyIndexerRepositoryModule,
+    BlockchainModule,
     PostgresDatabaseModuleV2,
     TypeOrmModule.forFeature([PolicyConfigurationRequest]),
     SafeRepositoryModule,
@@ -45,12 +54,21 @@ import { UsersModule } from '@/modules/users/users.module';
     ProposerMapper,
     PendingSpendingLimitMapper,
     GuardPolicyMapper,
+    GuardSetupMapper,
+    GuardConfigurationMapper,
     AllowanceModuleDecoder,
     SafeDecoder,
     MultiSendDecoder,
+    SafePolicyGuardDecoder,
+    SafeGuardManagerDecoder,
     {
       provide: IPolicyConfigurationRequestsRepository,
       useClass: PolicyConfigurationRequestsRepository,
+    },
+    SafePolicyGuardApi,
+    {
+      provide: ISafePolicyGuardRepository,
+      useClass: SafePolicyGuardRepository,
     },
   ],
 })

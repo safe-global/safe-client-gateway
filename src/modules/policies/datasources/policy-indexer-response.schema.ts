@@ -36,4 +36,5 @@ export const ROW_FIELDS = [
   'SafeAllowance',
   'SafeDelegate',
   'SafePolicy',
+  'ConfigurationRoot',
 ] as const satisfies ReadonlyArray<keyof PolicyIndexerRows>;

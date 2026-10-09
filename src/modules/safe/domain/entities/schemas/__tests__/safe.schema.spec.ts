@@ -48,6 +48,30 @@ describe('Safe Schemas', () => {
       );
     });
 
+    it('should checksum moduleGuard', () => {
+      const nonChecksummedAddress = faker.finance
+        .ethereumAddress()
+        .toLowerCase() as Address;
+      const safe = safeBuilder()
+        .with('moduleGuard', nonChecksummedAddress)
+        .build();
+
+      const result = SafeSchema.safeParse(safe);
+
+      expect(result.success && result.data.moduleGuard).toBe(
+        getAddress(nonChecksummedAddress),
+      );
+    });
+
+    it('should default a missing moduleGuard to null', () => {
+      // Transaction Service versions before module guard support omit it.
+      const { moduleGuard: _, ...safe } = safeBuilder().build();
+
+      const result = SafeSchema.safeParse(safe);
+
+      expect(result.success && result.data.moduleGuard).toBeNull();
+    });
+
     it('should allow an integer nonce', () => {
       const safe = safeBuilder()
         .with('nonce', faker.number.int({ min: 0 }))
