@@ -65,11 +65,25 @@ describe('ProposerMapper', () => {
       expect(proposerData(policies[0]).proposers).toStrictEqual([
         {
           proposer: first.delegate,
-          delegatedBy: [{ delegator: first.delegator, label: first.label }],
+          delegatedBy: [
+            {
+              delegator: first.delegator,
+              label: first.label,
+              created: first.created,
+              modified: first.modified,
+            },
+          ],
         },
         {
           proposer: second.delegate,
-          delegatedBy: [{ delegator: second.delegator, label: second.label }],
+          delegatedBy: [
+            {
+              delegator: second.delegator,
+              label: second.label,
+              created: second.created,
+              modified: second.modified,
+            },
+          ],
         },
       ]);
     });
@@ -104,14 +118,21 @@ describe('ProposerMapper', () => {
 
   describe('nesting the registrations by proposer', () => {
     it('should collapse one proposer granted by two owners into one entry', () => {
+      // Each owner's grant keeps its own timestamps - a grant must never
+      // report another grant's dates, e.g. by indexing the first grant of
+      // the group instead of the one being mapped.
       const proposer = getAddress(faker.finance.ethereumAddress());
       const byFirst = delegateBuilder()
         .with('safe', safe.address)
         .with('delegate', proposer)
+        .with('created', faker.date.past())
+        .with('modified', faker.date.recent())
         .build();
       const bySecond = delegateBuilder()
         .with('safe', safe.address)
         .with('delegate', proposer)
+        .with('created', faker.date.past())
+        .with('modified', faker.date.recent())
         .build();
 
       const [policy] = map([byFirst, bySecond]);
@@ -120,8 +141,18 @@ describe('ProposerMapper', () => {
         {
           proposer,
           delegatedBy: [
-            { delegator: byFirst.delegator, label: byFirst.label },
-            { delegator: bySecond.delegator, label: bySecond.label },
+            {
+              delegator: byFirst.delegator,
+              label: byFirst.label,
+              created: byFirst.created,
+              modified: byFirst.modified,
+            },
+            {
+              delegator: bySecond.delegator,
+              label: bySecond.label,
+              created: bySecond.created,
+              modified: bySecond.modified,
+            },
           ],
         },
       ]);
@@ -173,8 +204,41 @@ describe('ProposerMapper', () => {
       const [policy] = map([unlabelled]);
 
       expect(proposerData(policy).proposers[0].delegatedBy).toStrictEqual([
-        { delegator: unlabelled.delegator, label: '' },
+        {
+          delegator: unlabelled.delegator,
+          label: '',
+          created: unlabelled.created,
+          modified: unlabelled.modified,
+        },
       ]);
+    });
+  });
+
+  describe('grant timestamps', () => {
+    it('should report null timestamps for a registration held by the Transaction Service', () => {
+      const delegate = delegateBuilder().with('safe', safe.address).build();
+
+      const [policy] = map([delegate]);
+
+      const [grant] = proposerData(policy).proposers[0].delegatedBy;
+      expect(grant.created).toBeNull();
+      expect(grant.modified).toBeNull();
+    });
+
+    it('should carry the Queue Service’s timestamps through for its registrations', () => {
+      const created = faker.date.past();
+      const modified = faker.date.recent();
+      const delegate = delegateBuilder()
+        .with('safe', safe.address)
+        .with('created', created)
+        .with('modified', modified)
+        .build();
+
+      const [policy] = map([delegate]);
+
+      const [grant] = proposerData(policy).proposers[0].delegatedBy;
+      expect(grant.created).toBe(created);
+      expect(grant.modified).toBe(modified);
     });
   });
 });

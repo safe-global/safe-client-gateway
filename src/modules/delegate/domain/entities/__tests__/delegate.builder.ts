@@ -10,5 +10,7 @@ export function delegateBuilder(): IBuilder<Delegate> {
     .with('safe', getAddress(faker.finance.ethereumAddress()))
     .with('delegate', getAddress(faker.finance.ethereumAddress()))
     .with('delegator', getAddress(faker.finance.ethereumAddress()))
-    .with('label', faker.word.sample());
+    .with('label', faker.word.sample())
+    .with('created', null)
+    .with('modified', null);
 }

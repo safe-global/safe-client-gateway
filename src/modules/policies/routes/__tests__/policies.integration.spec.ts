@@ -496,7 +496,12 @@ describe('Space Policies Controller', () => {
               {
                 proposer: proposer.delegate,
                 delegatedBy: [
-                  { delegator: proposer.delegator, label: proposer.label },
+                  {
+                    delegator: proposer.delegator,
+                    label: proposer.label,
+                    created: null,
+                    modified: null,
+                  },
                 ],
               },
             ],
