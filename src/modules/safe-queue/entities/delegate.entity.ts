@@ -14,7 +14,7 @@ export type SafeQueueDelegate = z.infer<typeof QueueServiceDelegateSchema>;
 export const QueueServiceDelegateSchema = z.object({
   delegate: AddressSchema,
   delegator: AddressSchema,
-  chainId: ChainIdSchema,
+  chainId: ChainIdSchema.nullable(),
   safe: NullableAddressSchema,
   label: NullableStringSchema,
   created: z.coerce.date(),

@@ -473,17 +473,6 @@ describe('Get by id - Transactions Controller', () => {
         signers,
       });
     const dataDecoded = dataDecodedBuilder().build();
-    const rejectionTx = await multisigTransactionBuilder()
-      .with('safe', safe.address)
-      .with('nonce', tx.nonce)
-      .buildWithConfirmations({
-        chainId,
-        safe,
-        signers: [signers[0]],
-      });
-    const rejectionTxsPage = pageBuilder()
-      .with('results', [multisigToJson(rejectionTx)])
-      .build();
     const safeAppsResponse = [
       safeAppBuilder()
         .with('url', faker.internet.url({ appendSlash: false }))
@@ -497,7 +486,6 @@ describe('Get by id - Transactions Controller', () => {
     const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
     const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
     const getMultisigTransactionUrl = `${chain.transactionService}/api/v2/multisig-transactions/${tx.safeTxHash}/`;
-    const getMultisigTransactionsUrl = `${chain.transactionService}/api/v2/safes/${safe.address}/multisig-transactions/`;
     const getGasTokenContractUrl = `${chain.transactionService}/api/v1/tokens/${tx.gasToken}`;
     const getToContractUrl = `${safeDecoderUrl}/api/v1/contracts/${tx.to}`;
     const getToTokenUrl = `${chain.transactionService}/api/v1/tokens/${tx.to}`;
@@ -508,11 +496,6 @@ describe('Get by id - Transactions Controller', () => {
         case getMultisigTransactionUrl:
           return Promise.resolve({
             data: rawify(multisigToJson(tx)),
-            status: 200,
-          });
-        case getMultisigTransactionsUrl:
-          return Promise.resolve({
-            data: rawify(rejectionTxsPage),
             status: 200,
           });
         case getSafeUrl:
@@ -612,11 +595,7 @@ describe('Get by id - Transactions Controller', () => {
                 submittedAt: tx.confirmations?.[1].submissionDate.getTime(),
               },
             ],
-            rejectors: expect.arrayContaining([
-              expect.objectContaining({
-                value: rejectionTx.confirmations?.[0].owner,
-              }),
-            ]),
+            rejectors: [],
             gasToken: tx.gasToken,
             gasTokenInfo: gasToken,
             trusted: tx.trusted,
@@ -666,16 +645,6 @@ describe('Get by id - Transactions Controller', () => {
         safe,
       });
     const dataDecoded = dataDecodedBuilder().build();
-    const rejectionTx = await multisigTransactionBuilder()
-      .with('safe', safe.address)
-      .buildWithConfirmations({
-        signers: [signers[0]],
-        chainId: chain.chainId,
-        safe,
-      });
-    const rejectionTxsPage = pageBuilder()
-      .with('results', [multisigToJson(rejectionTx)])
-      .build();
     const safeAppsResponse = [
       safeAppBuilder()
         .with('url', faker.internet.url({ appendSlash: false }))
@@ -691,7 +660,6 @@ describe('Get by id - Transactions Controller', () => {
     const getMultisigTransactionUrl = `${
       chain.transactionService
     }/api/v2/multisig-transactions/${tx.safeTxHash.slice(2)}/`;
-    const getMultisigTransactionsUrl = `${chain.transactionService}/api/v2/safes/${safe.address}/multisig-transactions/`;
     const getGasTokenContractUrl = `${chain.transactionService}/api/v1/tokens/${tx.gasToken}`;
     const getToContractUrl = `${safeDecoderUrl}/api/v1/contracts/${tx.to}`;
     const getToTokenUrl = `${chain.transactionService}/api/v1/tokens/${tx.to}`;
@@ -702,11 +670,6 @@ describe('Get by id - Transactions Controller', () => {
         case getMultisigTransactionUrl:
           return Promise.resolve({
             data: rawify(multisigToJson(tx)),
-            status: 200,
-          });
-        case getMultisigTransactionsUrl:
-          return Promise.resolve({
-            data: rawify(rejectionTxsPage),
             status: 200,
           });
         case getSafeUrl:
@@ -804,11 +767,7 @@ describe('Get by id - Transactions Controller', () => {
                 submittedAt: tx.confirmations?.[1].submissionDate.getTime(),
               },
             ],
-            rejectors: expect.arrayContaining([
-              expect.objectContaining({
-                value: rejectionTx.confirmations?.[0].owner,
-              }),
-            ]),
+            rejectors: [],
             gasToken: tx.gasToken,
             gasTokenInfo: gasToken,
             trusted: tx.trusted,
@@ -860,16 +819,6 @@ describe('Get by id - Transactions Controller', () => {
         safe,
       });
     const dataDecoded = dataDecodedBuilder().build();
-    const rejectionTx = await multisigTransactionBuilder()
-      .with('safe', safe.address)
-      .buildWithConfirmations({
-        chainId: chain.chainId,
-        signers,
-        safe,
-      });
-    const rejectionTxsPage = pageBuilder()
-      .with('results', [multisigToJson(rejectionTx)])
-      .build();
     const safeAppsResponse = [
       safeAppBuilder()
         .with('url', faker.internet.url({ appendSlash: false }))
@@ -882,7 +831,6 @@ describe('Get by id - Transactions Controller', () => {
     const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
     const getSafeAppsUrl = `${safeConfigUrl}/api/v1/safe-apps/`;
     const getMultisigTransactionUrl = `${chain.transactionService}/api/v2/multisig-transactions/${tx.safeTxHash}/`;
-    const getMultisigTransactionsUrl = `${chain.transactionService}/api/v2/safes/${safe.address}/multisig-transactions/`;
     const getGasTokenContractUrl = `${chain.transactionService}/api/v1/tokens/${tx.gasToken}`;
     const getToContractUrl = `${safeDecoderUrl}/api/v1/contracts/${tx.to}`;
     networkService.get.mockImplementation(({ url }) => {
@@ -892,11 +840,6 @@ describe('Get by id - Transactions Controller', () => {
         case getMultisigTransactionUrl:
           return Promise.resolve({
             data: rawify(multisigToJson(tx)),
-            status: 200,
-          });
-        case getMultisigTransactionsUrl:
-          return Promise.resolve({
-            data: rawify(rejectionTxsPage),
             status: 200,
           });
         case getSafeUrl:
@@ -993,14 +936,7 @@ describe('Get by id - Transactions Controller', () => {
                 submittedAt: tx.confirmations?.[1].submissionDate.getTime(),
               }),
             ]),
-            rejectors: expect.arrayContaining([
-              expect.objectContaining({
-                value: rejectionTx.confirmations?.[0].owner,
-              }),
-              expect.objectContaining({
-                value: rejectionTx.confirmations?.[1].owner,
-              }),
-            ]),
+            rejectors: [],
             gasToken: tx.gasToken,
             gasTokenInfo: gasToken,
             trusted: tx.trusted,

@@ -228,6 +228,7 @@ export interface ITransactionApi {
 
   getMessagesBySafe(args: {
     safeAddress: Address;
+    ordering?: string;
     limit?: number;
     offset?: number;
   }): Promise<Raw<Page<Message>>>;

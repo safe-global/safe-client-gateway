@@ -15,6 +15,7 @@ import {
   INetworkService,
   NetworkService,
 } from '@/datasources/network/network.service.interface';
+import { SAFE_QUEUE_SERVICE_MAX_LIMIT } from '@/domain/common/constants';
 import { LogType } from '@/domain/common/entities/log-type.entity';
 import type { Page } from '@/domain/entities/page.entity';
 import {
@@ -161,6 +162,27 @@ export class SafeQueueService implements ISafeQueueService {
     }
   }
 
+  async getMultisigTransactionWithNoCache(args: {
+    safeTxHash: string;
+  }): Promise<Raw<SafeQueueMultisigTransactionEntity>> {
+    try {
+      const url = `${this.baseUri}/api/v1/multisig-transactions/${encodeURIComponent(args.safeTxHash)}`;
+      const { data } = await this.networkService.get<
+        Raw<SafeQueueMultisigTransactionEntity>
+      >({
+        url,
+        networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getSafeQueueServiceKey(),
+          },
+        },
+      });
+      return data;
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
   // Note: unlike its siblings, this returns an already-validated array (each
   // chunk is safeParse'd below), not a Raw<T> — re-parsing an already-parsed
   // chunk at the call site would be a pointless double validation, and would
@@ -266,7 +288,7 @@ export class SafeQueueService implements ISafeQueueService {
           params: {
             safes: `${args.safeAddress}:${args.chainId}`,
             nonceOrder,
-            limit: args.limit,
+            limit: this.capLimit(args.limit),
             offset: args.offset,
           },
           circuitBreaker: {
@@ -344,7 +366,8 @@ export class SafeQueueService implements ISafeQueueService {
             safe: args.safeAddress,
             delegate: args.delegate,
             delegator: args.delegator,
-            limit: args.limit,
+            label: args.label,
+            limit: this.capLimit(args.limit),
             offset: args.offset,
           },
           circuitBreaker: {
@@ -498,7 +521,7 @@ export class SafeQueueService implements ISafeQueueService {
         networkRequest: {
           params: {
             chainId: Number(args.chainId),
-            limit: args.limit,
+            limit: this.capLimit(args.limit),
             offset: args.offset,
           },
           circuitBreaker: {
@@ -621,5 +644,9 @@ export class SafeQueueService implements ISafeQueueService {
       safeAddress: args.safeAddress,
     });
     await this.cacheService.deleteByKey(key);
+  }
+
+  private capLimit(limit?: number): number | undefined {
+    return limit && Math.min(limit, SAFE_QUEUE_SERVICE_MAX_LIMIT);
   }
 }

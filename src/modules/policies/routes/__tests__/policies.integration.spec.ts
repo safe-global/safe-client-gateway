@@ -4,7 +4,7 @@ import type { Server } from 'node:http';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { getAddress } from 'viem';
+import { getAddress, zeroAddress } from 'viem';
 import type { MockedObject } from 'vitest';
 import {
   initTestApplication,
@@ -14,13 +14,17 @@ import { createTestModule } from '@/__tests__/testing-module';
 import { IConfigurationService } from '@/config/configuration.service.interface';
 import configuration from '@/config/entities/__tests__/configuration';
 import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
+import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
 import type { INetworkService } from '@/datasources/network/network.service.interface';
 import { NetworkService } from '@/datasources/network/network.service.interface';
 import { nameBuilder } from '@/domain/common/entities/name.builder';
 import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
 import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { addDelegateEncoder } from '@/modules/contracts/domain/__tests__/encoders/allowance-module-encoder.builder';
+import {
+  addDelegateEncoder,
+  setAllowanceEncoder,
+} from '@/modules/contracts/domain/__tests__/encoders/allowance-module-encoder.builder';
 import { delegateBuilder } from '@/modules/delegate/domain/entities/__tests__/delegate.builder';
 import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
 import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
@@ -43,6 +47,8 @@ import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.build
 import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
 import { Operation } from '@/modules/safe/domain/entities/operation.entity';
 import { SpacesCreationRateLimitGuard } from '@/modules/spaces/routes/guards/spaces-creation-rate-limit.guard';
+import { erc20TokenBuilder } from '@/modules/tokens/domain/__tests__/token.builder';
+import type { Token } from '@/modules/tokens/domain/entities/token.entity';
 import { rawify } from '@/validation/entities/raw.entity';
 
 const SEPOLIA_CHAIN_ID = '11155111';
@@ -120,11 +126,15 @@ describe('Space Policies Controller', () => {
       delegates?: Array<Delegate>;
       delegatesUnavailable?: boolean;
       queuedTransactions?: Array<MultisigTransaction>;
+      tokens?: Array<Token>;
+      tokenNotFoundAddresses?: Array<string>;
     } = {},
   ): void {
     const modules = args.modules ?? [allowanceModule];
     const delegates = args.delegates ?? [];
     const queuedTransactions = args.queuedTransactions ?? [];
+    const tokens = args.tokens ?? [];
+    const tokenNotFoundAddresses = args.tokenNotFoundAddresses ?? [];
     const safe = safeBuilder()
       .with('address', safeAddress)
       .with('modules', modules)
@@ -187,6 +197,21 @@ describe('Space Policies Controller', () => {
           ),
           status: 200,
         });
+      }
+      const token = tokens.find(
+        (item) => url === `${txServiceUrl}/api/v1/tokens/${item.address}`,
+      );
+      if (token) {
+        return Promise.resolve({ data: rawify(token), status: 200 });
+      }
+      if (
+        tokenNotFoundAddresses.some(
+          (address) => url === `${txServiceUrl}/api/v1/tokens/${address}`,
+        )
+      ) {
+        return Promise.reject(
+          new NetworkResponseError(new URL(url), { status: 404 } as Response),
+        );
       }
       return Promise.reject(new Error(`No matching rule for url: ${url}`));
     });
@@ -426,6 +451,9 @@ describe('Space Policies Controller', () => {
                 allowances: [
                   {
                     tokenAddress: getAddress(allowance.token),
+                    // `mockUpstream()` here mocks no token, so the lookup
+                    // fails and this allowance's metadata is null.
+                    tokenMetadata: null,
                     amount: '1000',
                     spent: '250',
                     resetPeriodMinutes: DAY_IN_MINUTES,
@@ -733,6 +761,87 @@ describe('Space Policies Controller', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(422);
     });
+
+    describe('token metadata', () => {
+      it("should attach the token's metadata to an ERC20 spending-limit allowance", async () => {
+        const token = erc20TokenBuilder().build();
+        const allowance = anAllowance().with('token', token.address).build();
+        mockUpstream({ tokens: [token] });
+        mockIndexer(
+          rawPolicyIndexerResponse({
+            SafeAllowance: [allowance],
+            SafeDelegate: registrationsFor([allowance]),
+          }),
+        );
+        const { accessToken, spaceId } = await createSpaceWithSafe({
+          withSafe: true,
+        });
+
+        const { body } = await request(app.getHttpServer())
+          .get(`/v1/spaces/${spaceId}/policies/active`)
+          .query({ types: policyTypes })
+          .set('Cookie', [`access_token=${accessToken}`])
+          .expect(200);
+
+        expect(
+          body[0].data.spenders[0].allowances[0].tokenMetadata,
+        ).toStrictEqual(token);
+      });
+
+      it("should attach the chain's native currency to a native-currency spending-limit allowance", async () => {
+        const allowance = anAllowance().with('token', zeroAddress).build();
+        mockUpstream();
+        mockIndexer(
+          rawPolicyIndexerResponse({
+            SafeAllowance: [allowance],
+            SafeDelegate: registrationsFor([allowance]),
+          }),
+        );
+        const { accessToken, spaceId } = await createSpaceWithSafe({
+          withSafe: true,
+        });
+
+        const { body } = await request(app.getHttpServer())
+          .get(`/v1/spaces/${spaceId}/policies/active`)
+          .query({ types: policyTypes })
+          .set('Cookie', [`access_token=${accessToken}`])
+          .expect(200);
+
+        expect(
+          body[0].data.spenders[0].allowances[0].tokenMetadata,
+        ).toStrictEqual({
+          type: 'NATIVE_TOKEN',
+          address: zeroAddress,
+          name: chain.nativeCurrency.name,
+          symbol: chain.nativeCurrency.symbol,
+          decimals: chain.nativeCurrency.decimals,
+          logoUri: chain.nativeCurrency.logoUri,
+          trusted: true,
+        });
+      });
+
+      it('should return the allowance with a null token when the transaction service does not know it, without failing the request', async () => {
+        const allowance = anAllowance().build();
+        mockUpstream({ tokenNotFoundAddresses: [allowance.token] });
+        mockIndexer(
+          rawPolicyIndexerResponse({
+            SafeAllowance: [allowance],
+            SafeDelegate: registrationsFor([allowance]),
+          }),
+        );
+        const { accessToken, spaceId } = await createSpaceWithSafe({
+          withSafe: true,
+        });
+
+        const { body } = await request(app.getHttpServer())
+          .get(`/v1/spaces/${spaceId}/policies/active`)
+          .query({ types: policyTypes })
+          .set('Cookie', [`access_token=${accessToken}`])
+          .expect(200);
+
+        expect(body[0].data.spenders[0].allowances[0].tokenMetadata).toBeNull();
+      });
+    });
   });
 
   describe('GET /v1/spaces/:spaceId/policies/pending', () => {
@@ -773,6 +882,34 @@ describe('Space Policies Controller', () => {
               },
             ],
           },
+        }),
+      ]);
+    });
+
+    it("should attach the token's metadata to a decoded setAllowance change", async () => {
+      const token = erc20TokenBuilder().build();
+      const setAllowance = setAllowanceEncoder().with('token', token.address);
+      const transaction = multisigTransactionBuilder()
+        .with('to', SEPOLIA_ALLOWANCE_MODULE)
+        .with('operation', Operation.CALL)
+        .with('data', setAllowance.encode())
+        .build();
+      mockUpstream({ queuedTransactions: [transaction], tokens: [token] });
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+
+      const { body } = await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}/policies/pending`)
+        .query({ types: PolicyType.SpendingLimit })
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200);
+
+      expect(body).toEqual([
+        expect.objectContaining({
+          data: expect.objectContaining({
+            changes: [expect.objectContaining({ tokenMetadata: token })],
+          }),
         }),
       ]);
     });
