@@ -8,6 +8,8 @@ import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send
 import { SafeDecoder } from '@/modules/contracts/domain/decoders/safe-decoder.helper';
 import { DelegatesV3RepositoryModule } from '@/modules/delegate/domain/v3/delegates.v3.repository.interface';
 import { PolicyConfigurationRequest } from '@/modules/policies/datasources/entities/policy-configuration-request.entity.db';
+import { SafeGuardManagerDecoder } from '@/modules/policies/domain/contracts/decoders/safe-guard-manager-decoder.helper';
+import { SafePolicyGuardDecoder } from '@/modules/policies/domain/contracts/decoders/safe-policy-guard-decoder.helper';
 import { PolicyConfigurationRequestsRepository } from '@/modules/policies/domain/policy-configuration-requests.repository';
 import { IPolicyConfigurationRequestsRepository } from '@/modules/policies/domain/policy-configuration-requests.repository.interface';
 import { PolicyIndexerRepositoryModule } from '@/modules/policies/domain/policy-indexer-repository.module';
@@ -54,6 +56,8 @@ import { UsersModule } from '@/modules/users/users.module';
     AllowanceModuleDecoder,
     SafeDecoder,
     MultiSendDecoder,
+    SafePolicyGuardDecoder,
+    SafeGuardManagerDecoder,
     {
       provide: IPolicyConfigurationRequestsRepository,
       useClass: PolicyConfigurationRequestsRepository,
