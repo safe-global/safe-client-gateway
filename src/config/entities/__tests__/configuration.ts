@@ -223,6 +223,7 @@ export default (): ReturnType<typeof configuration> => ({
     email: false,
     sesEmail: false,
     zerion: false,
+    zerionTestnets: false,
     zerionPositions: false,
     debugLogs: false,
     configHooksDebugLogs: false,

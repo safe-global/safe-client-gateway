@@ -79,7 +79,7 @@ export class ZerionChainMappingService {
     const mapping = await this.getChainIdToNetworkMapping(isTestnet);
     const network = mapping[chainId];
     if (!network) {
-      this.loggingService.warn(
+      this.loggingService.debug(
         `Unknown chain ID for Zerion mapping: "${chainId}" (isTestnet: ${isTestnet})`,
       );
     }
@@ -104,7 +104,7 @@ export class ZerionChainMappingService {
   /**
    * Gets mapping: chain ID -> network name (for positions).
    */
-  private async getChainIdToNetworkMapping(
+  async getChainIdToNetworkMapping(
     isTestnet: boolean,
   ): Promise<Record<string, string>> {
     const cached = await this._getCachedMapping(isTestnet, 'chainIdToNetwork');
@@ -170,6 +170,12 @@ export class ZerionChainMappingService {
 
     const mapping: Record<string, string> = {};
     for (const chain of response.data) {
+      // Zerion lists chains it does not index positions for and would return
+      // empty balances for them. We omit these chains so callers fall back to
+      // tx service and prices from Coingecko.
+      if (chain.attributes.flags?.supports_positions === false) {
+        continue;
+      }
       const networkName = chain.id;
       const externalId = chain.attributes.external_id;
 

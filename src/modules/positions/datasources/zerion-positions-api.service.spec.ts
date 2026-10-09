@@ -105,6 +105,7 @@ describe('ZerionPositionsApi', () => {
       );
       configurationService.set('expirationTimeInSeconds.zerionPositions', 60);
       configurationService.set('balances.providers.zerion.currencies', ['USD']);
+      configurationService.set('features.zerionTestnets', false);
       configurationService.set('balances.providers.zerion.chains', {
         1: { chainName },
       });
@@ -258,6 +259,7 @@ describe('ZerionPositionsApi', () => {
         'balances.providers.zerion.currencies',
         supportedFiatCodes,
       );
+      fakeConfigurationService.set('features.zerionTestnets', false);
 
       service = new ZerionPositionsApi(
         mockCacheService,
@@ -268,6 +270,18 @@ describe('ZerionPositionsApi', () => {
         mockChainMappingService,
       );
     });
+
+    const enableZerionTestnets = (): void => {
+      fakeConfigurationService.set('features.zerionTestnets', true);
+      service = new ZerionPositionsApi(
+        mockCacheService,
+        mockLoggingService,
+        mockNetworkService,
+        fakeConfigurationService,
+        mockHttpErrorFactory,
+        mockChainMappingService,
+      );
+    };
 
     describe('getPositions', () => {
       it('should fail for an invalid fiatCode', async () => {
@@ -318,7 +332,23 @@ describe('ZerionPositionsApi', () => {
         });
       });
 
+      it('returns no positions and calls no upstream for a testnet chain', async () => {
+        const chain = chainBuilder().with('isTestnet', true).build();
+        const safeAddress = getAddress(faker.finance.ethereumAddress());
+        const fiatCode = faker.helpers.arrayElement(supportedFiatCodes);
+
+        const positions = await service.getPositions({
+          chain,
+          safeAddress,
+          fiatCode,
+        });
+
+        expect(positions).toStrictEqual([]);
+        expect(mockNetworkService.get).not.toHaveBeenCalled();
+      });
+
       it('should include X-Env header for testnet chains', async () => {
+        enableZerionTestnets();
         const chain = chainBuilder().with('isTestnet', true).build();
         const safeAddress = getAddress(faker.finance.ethereumAddress());
         const fiatCode = faker.helpers.arrayElement(supportedFiatCodes);
@@ -432,6 +462,7 @@ describe('ZerionPositionsApi', () => {
       });
 
       it('should use chain mapping service with isTestnet flag', async () => {
+        enableZerionTestnets();
         const chainId = '11155111';
         const mappedChainName = 'ethereum';
         const chain = chainBuilder()

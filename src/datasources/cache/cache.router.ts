@@ -96,7 +96,7 @@ export class CacheRouter {
   private static readonly ZERION_BALANCES_KEY = 'zerion_balances';
   private static readonly ZERION_COLLECTIBLES_KEY = 'zerion_collectibles';
   private static readonly ZERION_POSITIONS_KEY = 'zerion_positions';
-  private static readonly ZERION_CHAINS_KEY = 'zerion_chains';
+  private static readonly ZERION_CHAINS_KEY = 'zerion_indexed_chains';
   private static readonly PORTFOLIO_KEY = 'portfolio';
   private static readonly ZERION_WALLET_PORTFOLIO_KEY =
     'zerion_wallet_portfolio';
