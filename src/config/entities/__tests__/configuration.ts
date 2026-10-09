@@ -253,6 +253,7 @@ export default (): ReturnType<typeof configuration> => ({
     mfaStepUp: true,
     safeShieldCoreDisabled: false,
     safeQueueService: false,
+    safenet: false,
   },
   httpClient: {
     requestTimeout: faker.number.int(),
@@ -462,6 +463,11 @@ export default (): ReturnType<typeof configuration> => ({
   safeTransaction: {
     useVpcUrl: false,
     apiKey: faker.string.hexadecimal({ length: 32 }),
+  },
+  safenet: {
+    consensusAddress: faker.finance.ethereumAddress(),
+    oracleAddress: faker.finance.ethereumAddress(),
+    payer: { safeAddress: undefined },
   },
   transactions: {
     statusIndexingGracePeriodMs: faker.number.int({

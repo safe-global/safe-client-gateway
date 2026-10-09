@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
+import { AddressSchema } from '@/validation/entities/schemas/address.schema';
 
 const relayRulesValidator = z
   .string()
@@ -80,6 +81,33 @@ function validateFieldEncryptionConfig(
   }
 }
 
+function validateSafenetConfig(
+  config: {
+    FF_SAFENET?: string;
+    SAFENET_CONSENSUS_ADDRESS?: string;
+    SAFENET_ORACLE_ADDRESS?: string;
+    SAFENET_PAYER_SAFE_ADDRESS?: string;
+  },
+  ctx: z.RefinementCtx,
+): void {
+  if (config.FF_SAFENET?.toLowerCase() !== 'true') {
+    return;
+  }
+  for (const field of [
+    'SAFENET_CONSENSUS_ADDRESS',
+    'SAFENET_ORACLE_ADDRESS',
+    'SAFENET_PAYER_SAFE_ADDRESS',
+  ] as const) {
+    if (!config[field]) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'is required when FF_SAFENET is true',
+        path: [field],
+      });
+    }
+  }
+}
+
 const DomainSchema = z.string().refine(
   (val) => {
     try {
@@ -140,6 +168,10 @@ export const RootConfigurationSchema = z
     FF_BILLING_SERVICE: z.string().optional(),
     FF_MFA_STEP_UP: z.string().optional(),
     FF_SAFE_SHIELD_CORE_DISABLED: z.string().optional(),
+    FF_SAFENET: z.string().optional(),
+    SAFENET_CONSENSUS_ADDRESS: AddressSchema.optional(),
+    SAFENET_ORACLE_ADDRESS: AddressSchema.optional(),
+    SAFENET_PAYER_SAFE_ADDRESS: AddressSchema.optional(),
     BLOCKLIST_ENCRYPTED_DATA: z.string(),
     BLOCKLIST_SECRET_KEY: z.string(),
     BLOCKLIST_SECRET_SALT: z.string(),
@@ -302,6 +334,7 @@ export const RootConfigurationSchema = z
     // Field encryption validation runs regardless of environment: enabling it
     // without its dependencies is always broken, deployed or not.
     validateFieldEncryptionConfig(config, ctx);
+    validateSafenetConfig(config, ctx);
 
     if (!isDeployedEnv) {
       return;

@@ -324,6 +324,52 @@ describe('Configuration validator', () => {
     });
   });
 
+  describe('Safenet payer', () => {
+    const safenetConfiguration = {
+      ...validConfiguration,
+      FF_SAFENET: 'true',
+      SAFENET_CONSENSUS_ADDRESS: faker.finance.ethereumAddress(),
+      SAFENET_ORACLE_ADDRESS: faker.finance.ethereumAddress(),
+      SAFENET_PAYER_SAFE_ADDRESS: faker.finance.ethereumAddress(),
+    };
+
+    it('accepts a complete configuration', () => {
+      expect(
+        RootConfigurationSchema.safeParse(safenetConfiguration).success,
+      ).toBe(true);
+    });
+
+    it.each([
+      'SAFENET_CONSENSUS_ADDRESS',
+      'SAFENET_ORACLE_ADDRESS',
+      'SAFENET_PAYER_SAFE_ADDRESS',
+    ])('requires %s when FF_SAFENET is true', (field) => {
+      const result = RootConfigurationSchema.safeParse(
+        omit(safenetConfiguration, field),
+      );
+
+      expect(result.success).toBe(false);
+      expect(result.error?.issues).toContainEqual(
+        expect.objectContaining({ path: [field] }),
+      );
+    });
+
+    it('requires every Safenet variable when FF_SAFENET is TRUE', () => {
+      const result = RootConfigurationSchema.safeParse({
+        ...validConfiguration,
+        FF_SAFENET: 'TRUE',
+      });
+
+      expect(result.error?.issues.map(({ path }) => path[0])).toEqual(
+        expect.arrayContaining([
+          'SAFENET_CONSENSUS_ADDRESS',
+          'SAFENET_ORACLE_ADDRESS',
+          'SAFENET_PAYER_SAFE_ADDRESS',
+        ]),
+      );
+    });
+  });
+
   describe('ENCRYPTION validation', () => {
     beforeEach(() => {
       process.env.NODE_ENV = 'production';

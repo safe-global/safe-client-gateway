@@ -487,6 +487,8 @@ export default () => ({
       process.env.FF_SAFE_SHIELD_CORE_DISABLED?.toLowerCase() === 'true',
     safeQueueService:
       process.env.FF_SAFE_QUEUE_SERVICE?.toLowerCase() === 'true',
+    // Safe Labs: remove after the KMS-backed payer rollout is complete.
+    safenet: process.env.FF_SAFENET?.toLowerCase() === 'true',
   },
   httpClient: {
     // Timeout in milliseconds to be used for the HTTP client.
@@ -840,6 +842,13 @@ export default () => ({
   safeTransaction: {
     useVpcUrl: process.env.USE_TX_SERVICE_VPC_URL?.toLowerCase() === 'true',
     apiKey: process.env.TX_SERVICE_API_KEY,
+  },
+  safenet: {
+    consensusAddress: process.env.SAFENET_CONSENSUS_ADDRESS,
+    oracleAddress: process.env.SAFENET_ORACLE_ADDRESS,
+    payer: {
+      safeAddress: process.env.SAFENET_PAYER_SAFE_ADDRESS,
+    },
   },
   transactions: {
     statusIndexingGracePeriodMs: Number.parseInt(

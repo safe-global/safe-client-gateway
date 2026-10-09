@@ -108,6 +108,15 @@ export class CacheRouter {
   private static readonly GAS_PRICE_KEY = 'gas_price';
   private static readonly RELAY_FEE_PREVIEW_KEY = 'relay_fee_preview';
   private static readonly GTF_FEE_PREVIEW_KEY = 'gtf_fee_preview';
+  private static readonly SAFENET_PAYER_NONCE_KEY = 'safenet_payer_nonce';
+
+  static getSafenetPayerNonceCacheKey(args: {
+    chainId: string;
+    safeAddress: Address;
+  }): string {
+    const address = args.safeAddress.toLowerCase();
+    return `${CacheRouter.SAFENET_PAYER_NONCE_KEY}_${args.chainId}_${address}`;
+  }
 
   static getAuthNonceCacheKey(nonce: string): string {
     return `${CacheRouter.AUTH_NONCE_KEY}_${nonce}`;
