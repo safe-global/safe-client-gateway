@@ -155,9 +155,8 @@ export class RedisCacheService
       ),
     );
 
-    await this.client.set(key, value, {
+    await this.client.set(this._prefixKey(key), value, {
       EX: expirationTime,
-      NX: true,
     });
   }
 

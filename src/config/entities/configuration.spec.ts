@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { faker } from '@faker-js/faker';
 import configuration from '@/config/entities/configuration';
 
 describe('configuration - httpServer.trustProxy', () => {
@@ -104,4 +105,22 @@ describe('configuration - entitlements.enforcementStartsAt', () => {
       );
     },
   );
+});
+
+describe('configuration - safenet', () => {
+  afterEach(() => vi.unstubAllEnvs());
+
+  it.each([
+    [undefined, false],
+    ['TRUE', true],
+  ])('parses FF_SAFENET=%s as %s', (flag, expected) => {
+    vi.stubEnv('FF_SAFENET', flag);
+    expect(configuration().features.safenet).toBe(expected);
+  });
+
+  it('reads the payer Safe address from the environment', () => {
+    const safeAddress = faker.finance.ethereumAddress();
+    vi.stubEnv('SAFENET_PAYER_SAFE_ADDRESS', safeAddress);
+    expect(configuration().safenet.payer.safeAddress).toBe(safeAddress);
+  });
 });
