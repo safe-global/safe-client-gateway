@@ -177,7 +177,6 @@ jobs:
     # unit-tests above.
     timeout-minutes: 20
     strategy:
-      fail-fast: false
       matrix:
         shard: [1, 2, 3]
     env:
