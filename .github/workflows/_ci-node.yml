@@ -18,7 +18,7 @@ on:
       node_version:
         description: Node version to lint/type-check/test against.
         type: string
-        default: "24.21.0"
+        default: "26.10.0"
       python_version:
         description: Python version used only to run pre-commit for license headers.
         type: string
@@ -72,7 +72,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: ${{ inputs.node_version }} # Krypton
+          node-version: ${{ inputs.node_version }}
           cache: 'yarn'
       # Install unconditionally rather than caching the linked node_modules:
       # `enableHardenedMode` (.yarnrc.yml) verifies the supply chain only during
@@ -88,7 +88,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: ${{ inputs.node_version }} # Krypton
+          node-version: ${{ inputs.node_version }}
           cache: 'yarn'
       - run: yarn install --immutable
       - run: yarn run format-check
@@ -149,7 +149,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: ${{ inputs.node_version }} # Krypton
+          node-version: ${{ inputs.node_version }}
           cache: 'yarn'
       - run: yarn install --immutable
       # Tests are transformed straight from `src` by the test runner, so the
@@ -223,7 +223,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: ${{ inputs.node_version }} # Krypton
+          node-version: ${{ inputs.node_version }}
           cache: 'yarn'
       - run: yarn install --immutable
       # Unlike unit-tests, the integration suite runs DB migrations, and the
