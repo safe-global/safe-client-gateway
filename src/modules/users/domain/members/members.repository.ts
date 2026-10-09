@@ -703,12 +703,6 @@ export class MembersRepository implements IMembersRepository {
 
     await this.postgresDatabaseService.transaction(async (entityManager) => {
       await lockSpaceForAdminChange(entityManager, args.spaceId);
-      const activeAdmins = await this.findActiveAdminsForUpdateOrFail(
-        entityManager,
-        args.spaceId,
-      );
-
-      this.assertIsNotLastAdmin({ members: activeAdmins, userId });
 
       const member = await entityManager.findOne(DbMember, {
         where: { user: { id: userId }, space: { id: args.spaceId } },
@@ -716,6 +710,12 @@ export class MembersRepository implements IMembersRepository {
       if (!member) {
         throw new NotFoundException('Member not found.');
       }
+
+      await this.assertTargetIsNotLastAdmin(entityManager, {
+        member,
+        spaceId: args.spaceId,
+        userId,
+      });
 
       await entityManager.delete(DbMember, member.id);
 
@@ -733,7 +733,7 @@ export class MembersRepository implements IMembersRepository {
     });
   }
 
-  // Checked under the space lock: `assertAdmin` ran before it was taken.
+  // Runs under the space lock, so two concurrent changes cannot both pass.
   private async assertTargetIsNotLastAdmin(
     entityManager: EntityManager,
     args: {
@@ -750,17 +750,9 @@ export class MembersRepository implements IMembersRepository {
       entityManager,
       args.spaceId,
     );
-    this.assertIsNotLastAdmin({
-      members: activeAdmins,
-      userId: args.userId,
-    });
-  }
-
-  private assertIsNotLastAdmin(args: {
-    members: Array<DbMember>;
-    userId: User['id'];
-  }): void {
-    if (isLastActiveAdminOfSpace(args)) {
+    if (
+      isLastActiveAdminOfSpace({ members: activeAdmins, userId: args.userId })
+    ) {
       throw new ConflictException('Cannot remove last admin.');
     }
   }
