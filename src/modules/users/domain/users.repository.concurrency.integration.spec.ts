@@ -28,6 +28,9 @@ import { Wallet } from '#/modules/wallets/datasources/entities/wallets.entity.db
 import { createMockWalletEncryptionService } from '#/modules/wallets/domain/__tests__/wallet-encryption.service.mock';
 import { WalletsRepository } from '#/modules/wallets/domain/wallets.repository';
 
+const LOCK_WAIT_TIMEOUT_MS = 2_000;
+const LOCK_POLL_INTERVAL_MS = 10;
+
 const mockLoggingService = {
   debug: vi.fn(),
   error: vi.fn(),
@@ -177,6 +180,24 @@ describe('UsersRepository concurrency', () => {
     return result.identifiers[0].id as Member['id'];
   };
 
+  // Proves the call under test is blocked, without a fixed sleep.
+  const waitForBlockedQuery = async (): Promise<void> => {
+    const deadline = Date.now() + LOCK_WAIT_TIMEOUT_MS;
+    while (Date.now() < deadline) {
+      const rows: Array<{ count: number }> = await dataSource.query(
+        `SELECT count(*)::int AS count FROM pg_stat_activity
+         WHERE datname = current_database() AND wait_event_type = 'Lock'`,
+      );
+      if (rows[0].count > 0) {
+        return;
+      }
+      await new Promise((resolve) =>
+        setTimeout(resolve, LOCK_POLL_INTERVAL_MS),
+      );
+    }
+    throw new Error('No query blocked on a lock.');
+  };
+
   it('waits for an in-flight admin change before deciding', async () => {
     const userId = await insertUser();
     const coAdminUserId = await insertUser();
@@ -203,19 +224,7 @@ describe('UsersRepository concurrency', () => {
       await queryRunner.manager.delete(Member, coAdminMemberId);
 
       deletion = usersRepository.delete(authPayload);
-      let timer: ReturnType<typeof setTimeout> | undefined;
-      const outcome = await Promise.race([
-        deletion.then(
-          () => 'decided',
-          () => 'decided',
-        ),
-        new Promise((resolve) => {
-          timer = setTimeout(() => resolve('waiting'), 500);
-        }),
-      ]);
-      clearTimeout(timer);
-
-      expect(outcome).toBe('waiting');
+      await waitForBlockedQuery();
 
       await queryRunner.commitTransaction();
     } finally {
@@ -260,17 +269,7 @@ describe('UsersRepository concurrency', () => {
           siweAuthPayloadDtoBuilder().with('sub', userId.toString()).build(),
         ),
       );
-      let timer: ReturnType<typeof setTimeout> | undefined;
-      await Promise.race([
-        deletion.then(
-          () => undefined,
-          () => undefined,
-        ),
-        new Promise((resolve) => {
-          timer = setTimeout(resolve, 250);
-        }),
-      ]);
-      clearTimeout(timer);
+      await waitForBlockedQuery();
 
       await queryRunner.commitTransaction();
     } finally {
@@ -320,19 +319,7 @@ describe('UsersRepository concurrency', () => {
         userId,
         role: 'ADMIN',
       });
-      let timer: ReturnType<typeof setTimeout> | undefined;
-      const outcome = await Promise.race([
-        promotion.then(
-          () => 'decided',
-          () => 'decided',
-        ),
-        new Promise((resolve) => {
-          timer = setTimeout(() => resolve('waiting'), 500);
-        }),
-      ]);
-      clearTimeout(timer);
-
-      expect(outcome).toBe('waiting');
+      await waitForBlockedQuery();
 
       await queryRunner.commitTransaction();
     } finally {
@@ -391,19 +378,7 @@ describe('UsersRepository concurrency', () => {
         await queryRunner.manager.delete(Member, actorMemberId);
 
         change = act({ actorUserId, userId: coAdminUserId, spaceId });
-        let timer: ReturnType<typeof setTimeout> | undefined;
-        const outcome = await Promise.race([
-          change.then(
-            () => 'decided',
-            () => 'decided',
-          ),
-          new Promise((resolve) => {
-            timer = setTimeout(() => resolve('waiting'), 500);
-          }),
-        ]);
-        clearTimeout(timer);
-
-        expect(outcome).toBe('waiting');
+        await waitForBlockedQuery();
 
         await queryRunner.commitTransaction();
       } finally {
