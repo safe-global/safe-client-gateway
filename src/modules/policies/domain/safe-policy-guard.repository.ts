@@ -1,16 +1,35 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import type { Address } from 'viem';
+import { z } from 'zod';
+import { SafePolicyGuardApi } from '@/modules/policies/datasources/safe-policy-guard-api.service';
 import type { ISafePolicyGuardRepository } from '@/modules/policies/domain/safe-policy-guard.repository.interface';
+
+/**
+ * `EXPIRY` in seconds. Rejected rather than rounded if it does not fit in a
+ * safe integer: a rounded expiry would move every root's deadline.
+ */
+const ExpirySecondsSchema = z
+  .string()
+  .regex(/^\d+$/)
+  .transform(Number)
+  .refine(Number.isSafeInteger, {
+    error: 'Expected an expiry within the safe integer range',
+  });
 
 @Injectable()
 export class SafePolicyGuardRepository implements ISafePolicyGuardRepository {
-  public getExpiry(_args: {
+  constructor(
+    @Inject(SafePolicyGuardApi)
+    private readonly safePolicyGuardApi: SafePolicyGuardApi,
+  ) {}
+
+  public async getExpiry(args: {
     chainId: string;
     guard: Address;
   }): Promise<number> {
-    // Placeholder: replaced in step 8. EXPIRY is not read from the chain yet,
-    // so every root is treated as never expiring.
-    return Promise.resolve(Number.MAX_SAFE_INTEGER);
+    const expiry = await this.safePolicyGuardApi.getExpiry(args);
+
+    return ExpirySecondsSchema.parse(expiry);
   }
 }
