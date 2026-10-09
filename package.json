@@ -95,7 +95,7 @@
     "@faker-js/faker": "10.6.0",
     "@nestjs/testing": "12.1.2",
     "@smithy/util-stream": "4.8.2",
-    "@swc/core": "1.16.2",
+    "@swc/core": "1.16.13",
     "@types/amqplib": "0",
     "@types/jsonwebtoken": "9",
     "@types/lodash": "4.17.25",
