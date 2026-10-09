@@ -172,9 +172,11 @@ describe('SafeSignature', () => {
   });
 
   it('should return the v value', () => {
-    const signature = faker.string.hexadecimal({
-      length: 130,
-    }) as Hex;
+    // A v of 0 marks a contract signature, which needs a dynamic part.
+    const v = faker.number.int({ min: 1, max: 255 });
+    const signature = `${faker.string.hexadecimal({
+      length: 128,
+    })}${v.toString(16).padStart(2, '0')}` as Hex;
     const hash = faker.string.hexadecimal({ length: 66 }) as Hash;
 
     const safeSignature = new SafeSignature({
@@ -182,7 +184,7 @@ describe('SafeSignature', () => {
       hash,
     });
 
-    expect(safeSignature.v).toBe(Number.parseInt(signature.slice(-2), 16));
+    expect(safeSignature.v).toBe(v);
   });
 
   describe('signatureType', () => {

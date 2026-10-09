@@ -810,7 +810,7 @@ describe('Notifications Controller V2', () => {
         const chainId = faker.string.numeric();
         const safeAddress = getAddress(faker.finance.ethereumAddress());
         const deviceUuid = faker.string.uuid();
-        const accessToken = faker.string.sample();
+        const accessToken = faker.string.alphanumeric();
 
         expect(() => jwtService.verify(accessToken)).toThrow('jwt malformed');
         await request(app.getHttpServer())
