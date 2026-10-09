@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import type { ILoggingService } from '#/logging/logging.interface';
 import {
   multiSendEncoder,
@@ -18,7 +19,7 @@ import { MultiSendDecoder } from '#/modules/contracts/domain/decoders/multi-send
 import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
 
 const mockLoggingService = {
-  warn: vi.fn(),
+  warn: jest.fn(),
 } as MockedObject<ILoggingService>;
 
 describe('MultiSendDecoder', () => {

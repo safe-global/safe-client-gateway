@@ -6,7 +6,7 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  * (features catalog, subscriptions, subscription_entitlements,
  * space_feature_usage, space_seat_selection).
  *
- * Generated with `yarn migration:generate create-entitlements` from the
+ * Generated with `bun run migration:generate create-entitlements` from the
  * `*.entity.db.ts` entities (README convention), then pruned: the generator
  * also emitted normalization churn for pre-existing tables (constraint/index
  * renames unrelated to this feature), which was dropped.

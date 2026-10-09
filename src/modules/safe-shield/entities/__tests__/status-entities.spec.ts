@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { describe, expect, it } from 'bun:test';
 import { CommonStatus } from '#/modules/safe-shield/entities/analysis-result.entity';
 import { BridgeStatus, BridgeStatusSchema } from '../bridge-status.entity';
 import {

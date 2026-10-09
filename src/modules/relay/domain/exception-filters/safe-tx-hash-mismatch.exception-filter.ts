@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { ArgumentsHost } from '@nestjs/common';
-import { Catch, ExceptionFilter, HttpStatus } from '@nestjs/common';
+import { Catch, type ExceptionFilter, HttpStatus } from '@nestjs/common';
 import type { FastifyReply } from 'fastify';
 import { SafeTxHashMismatchError } from '#/modules/relay/domain/errors/safe-tx-hash-mismatch.error';
 

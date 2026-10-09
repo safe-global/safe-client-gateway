@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
 import { FakeCacheService } from '#/datasources/cache/__tests__/fake.cache.service';
 import { CacheDir } from '#/datasources/cache/entities/cache-dir.entity';
@@ -12,9 +13,9 @@ import { Auth0Api } from '#/modules/auth/oidc/auth0/datasources/auth0-api.servic
 import { rawify } from '#/validation/entities/raw.entity';
 
 const networkService = {
-  delete: vi.fn(),
-  get: vi.fn(),
-  postForm: vi.fn(),
+  delete: jest.fn(),
+  get: jest.fn(),
+  postForm: jest.fn(),
 } as MockedObject<INetworkService>;
 
 describe('Auth0Api', () => {
@@ -28,7 +29,7 @@ describe('Auth0Api', () => {
   let scope: string;
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
 
     const domain = faker.internet.domainName();
     baseUri = `https://${domain}`;
@@ -210,7 +211,7 @@ describe('Auth0Api', () => {
     it('should cache a new token until one minute before expiry', async () => {
       const accessToken = faker.string.alphanumeric();
       const extUserId = faker.string.uuid();
-      const cacheSetSpy = vi.spyOn(fakeCacheService, 'hSet');
+      const cacheSetSpy = jest.spyOn(fakeCacheService, 'hSet');
       networkService.postForm.mockResolvedValueOnce({
         status: 200,
         data: rawify({

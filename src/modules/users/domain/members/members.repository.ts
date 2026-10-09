@@ -19,7 +19,10 @@ import { type Address, getAddress } from 'viem';
 import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
 import { isUniqueConstraintError } from '#/datasources/errors/helpers/is-unique-constraint-error.helper';
 import { UniqueConstraintError } from '#/datasources/errors/unique-constraint-error';
-import { ILoggingService, LoggingService } from '#/logging/logging.interface';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '#/logging/logging.interface';
 import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '#/modules/auth/utils/assert-authenticated.utils';
 import { Space as DbSpace } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';

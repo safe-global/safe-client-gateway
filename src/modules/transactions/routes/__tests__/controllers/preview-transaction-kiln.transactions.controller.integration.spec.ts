@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { afterEach, beforeEach, describe, expect, it, jest } from 'bun:test';
 import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import type { Address } from 'viem';
 import { concat } from 'viem';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import {
   initTestApplication,
   TestAppProvider,
@@ -53,7 +54,7 @@ describe('Preview transaction - Kiln - Transactions Controller', () => {
   let dataDecoderUrl: string;
 
   beforeEach(async () => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
     const moduleFixture = await createTestModule();
 
     const configurationService = moduleFixture.get<IConfigurationService>(
@@ -2452,25 +2453,13 @@ describe('Preview transaction - Kiln - Transactions Controller', () => {
 
   describe('Lending Vaults', () => {
     describe('deposit', () => {
-      it.todo('should preview a transaction');
-      it.todo(
-        'should return a "standard" transaction preview if the deployment is unavailable',
-      );
-      it.todo(
-        'should return a "standard" transaction preview if the deployment product type is not defi',
-      );
-      it.todo(
-        'should return a "standard" transaction preview if the deployment is not active',
-      );
-      it.todo(
-        'should return a "standard" transaction preview if the deployment is on a different chain',
-      );
-      it.todo(
-        'should return a "standard" transaction preview if the vault stats are not available',
-      );
-      it.todo(
-        'should return a "standard" transaction preview if the underlying token is unknown',
-      );
+      it.todo('should preview a transaction', () => {});
+      it.todo('should return a "standard" transaction preview if the deployment is unavailable', () => {});
+      it.todo('should return a "standard" transaction preview if the deployment product type is not defi', () => {});
+      it.todo('should return a "standard" transaction preview if the deployment is not active', () => {});
+      it.todo('should return a "standard" transaction preview if the deployment is on a different chain', () => {});
+      it.todo('should return a "standard" transaction preview if the vault stats are not available', () => {});
+      it.todo('should return a "standard" transaction preview if the underlying token is unknown', () => {});
     });
   });
 });

@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest, mock } from 'bun:test';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import type { MockedObject } from 'vitest';
+import { automock, type Mocked, mocked } from '#/__tests__/mocks';
 import {
   EnvConfigSchema,
   type EnvVariable,
@@ -18,12 +19,14 @@ import {
 import { createMockStats, mockProcessExit } from './test-utils';
 
 // Mock fs module
-vi.mock('node:fs');
-const mockFs: MockedObject<typeof fs> = vi.mocked(fs);
+// Snapshot before `mock.module` rewrites the namespace's bindings in place.
+const actualFs = { ...fs };
+mock.module('node:fs', () => automock(actualFs));
+const mockFs: Mocked<typeof fs> = mocked(fs);
 
 describe('env-json-helpers', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   describe('EnvVariableSchema', () => {
@@ -167,7 +170,7 @@ describe('env-json-helpers', () => {
     it('should exit with error if file does not exist', () => {
       mockFs.existsSync.mockReturnValue(false);
       const exitSpy = mockProcessExit();
-      const errorSpy = vi.spyOn(console, 'error').mockReturnValue(undefined);
+      const errorSpy = jest.spyOn(console, 'error').mockReturnValue(undefined);
 
       expect(() => loadEnvJson()).toThrow('process.exit: 1');
       expect(errorSpy).toHaveBeenCalledWith(
@@ -183,7 +186,7 @@ describe('env-json-helpers', () => {
       mockFs.readFileSync.mockReturnValue('invalid json {');
 
       const exitSpy = mockProcessExit();
-      const errorSpy = vi.spyOn(console, 'error').mockReturnValue(undefined);
+      const errorSpy = jest.spyOn(console, 'error').mockReturnValue(undefined);
 
       expect(() => loadEnvJson()).toThrow('process.exit: 1');
       expect(errorSpy).toHaveBeenCalledWith(
@@ -208,7 +211,7 @@ describe('env-json-helpers', () => {
       mockFs.readFileSync.mockReturnValue(JSON.stringify(invalidData));
 
       const exitSpy = mockProcessExit();
-      const errorSpy = vi.spyOn(console, 'error').mockReturnValue(undefined);
+      const errorSpy = jest.spyOn(console, 'error').mockReturnValue(undefined);
 
       expect(() => loadEnvJson()).toThrow('process.exit: 1');
       expect(errorSpy).toHaveBeenCalledWith(
@@ -278,7 +281,7 @@ describe('env-json-helpers', () => {
       mockFs.readFileSync.mockReturnValue(JSON.stringify(mockData));
 
       const exitSpy = mockProcessExit();
-      const errorSpy = vi.spyOn(console, 'error').mockReturnValue(undefined);
+      const errorSpy = jest.spyOn(console, 'error').mockReturnValue(undefined);
 
       expect(() => loadEnvJson()).toThrow('process.exit: 1');
       expect(errorSpy).toHaveBeenCalledWith(

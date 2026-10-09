@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { getAddress, type Hex } from 'viem';
-import type { MockedObject } from 'vitest';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
 import type { CacheFirstDataSource } from '#/datasources/cache/cache.first.data.source';
 import { CircuitBreakerKeys } from '#/datasources/circuit-breaker/circuit-breaker.keys';
@@ -15,13 +16,13 @@ import { contractBuilder } from '#/modules/data-decoder/domain/v2/entities/__tes
 import { dataDecodedBuilder } from '#/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
 import { rawify } from '#/validation/entities/raw.entity';
 
-const mockConfigurationService = vi.mocked({
-  getOrThrow: vi.fn(),
+const mockConfigurationService = mocked({
+  getOrThrow: jest.fn(),
 } as MockedObject<IConfigurationService>);
 
-const mockCacheFirstDataSource = vi.mocked({
-  get: vi.fn(),
-  post: vi.fn(),
+const mockCacheFirstDataSource = mocked({
+  get: jest.fn(),
+  post: jest.fn(),
 } as MockedObject<CacheFirstDataSource>);
 
 describe('DataDecoderApi', () => {
@@ -31,7 +32,7 @@ describe('DataDecoderApi', () => {
   let target: DataDecoderApi;
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
 
     mockConfigurationService.getOrThrow.mockImplementation((key) => {
       if (key === 'safeDataDecoder.baseUri') {

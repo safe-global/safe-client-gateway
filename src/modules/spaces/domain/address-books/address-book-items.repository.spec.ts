@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { In, IsNull } from 'typeorm';
 import { getAddress } from 'viem';
-import type { Mock, MockedObject } from 'vitest';
+import { type Mock, type MockedObject } from '#/__tests__/mocks';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
 import type { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
 import { AddressBookItem as DbAddressBookItem } from '#/modules/spaces/datasources/address-books/entities/address-book-item.entity.db';
@@ -35,11 +36,11 @@ describe('AddressBookItemsRepository', () => {
   let target: AddressBookItemsRepository;
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
 
     configurationService = {
-      getOrThrow: vi.fn(),
-      get: vi.fn(),
+      getOrThrow: jest.fn(),
+      get: jest.fn(),
     } as MockedObject<IConfigurationService>;
     configurationService.getOrThrow.mockImplementation((key: string) => {
       if (key === 'spaces.addressBooks.maxItems') return 100;
@@ -51,25 +52,25 @@ describe('AddressBookItemsRepository', () => {
     spaceEncryptionService = createMockSpaceEncryptionService();
 
     itemRepository = {
-      findBy: vi.fn().mockResolvedValue([]),
-      count: vi.fn().mockResolvedValue(0),
-      insert: vi.fn().mockResolvedValue({ identifiers: [] }),
-      update: vi.fn(),
+      findBy: jest.fn().mockResolvedValue([]),
+      count: jest.fn().mockResolvedValue(0),
+      insert: jest.fn().mockResolvedValue({ identifiers: [] }),
+      update: jest.fn(),
     };
     entityManager = {
-      getRepository: vi.fn().mockReturnValue(itemRepository),
-      findBy: vi.fn().mockResolvedValue([]),
-      findOne: vi.fn(),
-      delete: vi.fn(),
+      getRepository: jest.fn().mockReturnValue(itemRepository),
+      findBy: jest.fn().mockResolvedValue([]),
+      findOne: jest.fn(),
+      delete: jest.fn(),
     };
     db = {
-      getRepository: vi.fn().mockResolvedValue(itemRepository),
-      transaction: vi.fn((fn: (em: unknown) => Promise<unknown>) =>
+      getRepository: jest.fn().mockResolvedValue(itemRepository),
+      transaction: jest.fn((fn: (em: unknown) => Promise<unknown>) =>
         fn(entityManager),
       ),
     } as MockedObject<PostgresDatabaseService>;
     spacesRepository = {
-      findOneOrFail: vi
+      findOneOrFail: jest
         .fn()
         .mockResolvedValue({ id: spaceId, uuid: spaceUuid }),
     } as MockedObject<ISpacesRepository>;
@@ -99,7 +100,10 @@ describe('AddressBookItemsRepository', () => {
       );
       expect(
         spaceEncryptionService.decryptAddressBookItems,
-      ).toHaveBeenCalledExactlyOnceWith(spaceId, rows);
+      ).toHaveBeenCalledTimes(1);
+      expect(
+        spaceEncryptionService.decryptAddressBookItems,
+      ).toHaveBeenCalledWith(spaceId, rows);
     });
   });
 
@@ -122,8 +126,12 @@ describe('AddressBookItemsRepository', () => {
 
       expect(
         spaceEncryptionService.encryptAddressBookItem,
-      ).toHaveBeenCalledExactlyOnceWith(spaceId, { address, name });
-      expect(itemRepository.insert).toHaveBeenCalledExactlyOnceWith([
+      ).toHaveBeenCalledTimes(1);
+      expect(
+        spaceEncryptionService.encryptAddressBookItem,
+      ).toHaveBeenCalledWith(spaceId, { address, name });
+      expect(itemRepository.insert).toHaveBeenCalledTimes(1);
+      expect(itemRepository.insert).toHaveBeenCalledWith([
         expect.objectContaining({
           address: 'kms:v1:addr',
           addressIndex: 'idx',
@@ -133,7 +141,8 @@ describe('AddressBookItemsRepository', () => {
           lastUpdatedBy: userId,
         }),
       ]);
-      expect(spaceAuditRepository.record).toHaveBeenCalledExactlyOnceWith(
+      expect(spaceAuditRepository.record).toHaveBeenCalledTimes(1);
+      expect(spaceAuditRepository.record).toHaveBeenCalledWith(
         entityManager,
         expect.objectContaining({
           eventType: 'ADDRESS_BOOK_UPSERTED',
@@ -174,7 +183,8 @@ describe('AddressBookItemsRepository', () => {
         space: { id: spaceId },
         addressIndex: In(['idx']),
       });
-      expect(itemRepository.update).toHaveBeenCalledExactlyOnceWith(
+      expect(itemRepository.update).toHaveBeenCalledTimes(1);
+      expect(itemRepository.update).toHaveBeenCalledWith(
         7,
         expect.objectContaining({
           address: 'kms:v1:addr',
@@ -185,7 +195,8 @@ describe('AddressBookItemsRepository', () => {
         }),
       );
       expect(itemRepository.insert).not.toHaveBeenCalled();
-      expect(spaceAuditRepository.record).toHaveBeenCalledExactlyOnceWith(
+      expect(spaceAuditRepository.record).toHaveBeenCalledTimes(1);
+      expect(spaceAuditRepository.record).toHaveBeenCalledWith(
         entityManager,
         expect.objectContaining({
           payload: expect.objectContaining({
@@ -207,7 +218,8 @@ describe('AddressBookItemsRepository', () => {
         addressBookItems: [{ address, name, chainIds }],
       });
 
-      expect(itemRepository.insert).toHaveBeenCalledExactlyOnceWith([
+      expect(itemRepository.insert).toHaveBeenCalledTimes(1);
+      expect(itemRepository.insert).toHaveBeenCalledWith([
         expect.objectContaining({
           address,
           name,
@@ -233,20 +245,20 @@ describe('AddressBookItemsRepository', () => {
 
       await target.deleteByAddress({ userId, spaceId, address });
 
-      expect(entityManager.findOne).toHaveBeenCalledExactlyOnceWith(
-        DbAddressBookItem,
-        {
-          where: { space: { id: spaceId }, addressIndex: 'idx' },
-        },
-      );
-      expect(entityManager.delete).toHaveBeenCalledExactlyOnceWith(
-        DbAddressBookItem,
-        9,
-      );
+      expect(entityManager.findOne).toHaveBeenCalledTimes(1);
+      expect(entityManager.findOne).toHaveBeenCalledWith(DbAddressBookItem, {
+        where: { space: { id: spaceId }, addressIndex: 'idx' },
+      });
+      expect(entityManager.delete).toHaveBeenCalledTimes(1);
+      expect(entityManager.delete).toHaveBeenCalledWith(DbAddressBookItem, 9);
       expect(
         spaceEncryptionService.decryptAddressBookItems,
-      ).toHaveBeenCalledExactlyOnceWith(spaceId, [item]);
-      expect(spaceAuditRepository.record).toHaveBeenCalledExactlyOnceWith(
+      ).toHaveBeenCalledTimes(1);
+      expect(
+        spaceEncryptionService.decryptAddressBookItems,
+      ).toHaveBeenCalledWith(spaceId, [item]);
+      expect(spaceAuditRepository.record).toHaveBeenCalledTimes(1);
+      expect(spaceAuditRepository.record).toHaveBeenCalledWith(
         entityManager,
         expect.objectContaining({
           eventType: 'ADDRESS_BOOK_DELETED',
@@ -265,12 +277,10 @@ describe('AddressBookItemsRepository', () => {
 
       await target.deleteByAddress({ userId, spaceId, address });
 
-      expect(entityManager.findOne).toHaveBeenCalledExactlyOnceWith(
-        DbAddressBookItem,
-        {
-          where: { address, space: { id: spaceId }, addressIndex: IsNull() },
-        },
-      );
+      expect(entityManager.findOne).toHaveBeenCalledTimes(1);
+      expect(entityManager.findOne).toHaveBeenCalledWith(DbAddressBookItem, {
+        where: { address, space: { id: spaceId }, addressIndex: IsNull() },
+      });
     });
   });
 });

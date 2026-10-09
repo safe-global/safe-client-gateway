@@ -9,6 +9,7 @@ It bridges the Safe{Wallet} clients (Android, iOS, Web) to the Safe{Core} servic
 It reshapes their responses into client-oriented payloads, and shields clients from upstream latency and outages through caching.
 CGW is a public repository.
 Code committed from 2026-02-17 onward is licensed FSL-1.1-MIT (see `LICENSE`), while historical code up to 2026-02-16 remains MIT.
+It runs on Bun, straight from the TypeScript sources — there is no build step and no `dist/`; Bun resolves the `#/` imports through `tsconfig.json`'s `paths` at runtime and loads the app as ES modules, so an import cycle that CommonJS used to tolerate fails at load (see best-practices.md's `import type` rule and nestjs-patterns.md's `forwardRef` rule).
 
 The mental model, end to end, is `Controller → Route Service → Repository → Datasource → CacheFirstDataSource → upstream API`.
 Zod validation sits at both ends of that chain: once at the inbound HTTP boundary (per-parameter, via `ValidationPipe`), and once at the outbound boundary where a repository parses whatever a datasource returned before trusting it as a domain entity.
@@ -112,7 +113,7 @@ A domain entity is a Zod schema plus its `z.infer` type, used internally.
 A DTO pairs a Zod schema with a class decorated with `@ApiProperty` so Swagger can document the shape, and it is that class the controller declares as its response `type`.
 `routes/v2/` (or a sibling `v2` module, e.g. `src/modules/chains/routes/v2/`) sits alongside an existing unversioned controller when a breaking response-shape change needs a new API version rather than an in-place change.
 Test builders under `entities/__tests__/` are fluent (`.with(field, value)`, via the shared `Builder`/`IBuilder` in `src/__tests__/builder.ts`) and use `@faker-js/faker` for field values, so specs construct realistic entities instead of hard-coding literals.
-Spec files are also named by the Vitest project they belong to: plain `*.spec.ts` is a unit test, `*.integration.spec.ts` needs real backing services (Postgres, Redis) and is excluded from the unit run, and `*.e2e-spec.ts` exercises the whole app.
+Spec files are also named by the test suite they belong to: plain `*.spec.ts` is a unit test, `*.integration.spec.ts` needs real backing services (Postgres, Redis) and is excluded from the unit run, and `*.e2e.spec.ts` exercises the whole app (see testing.md for how `bun test` routes each suffix).
 
 The Symbol-per-interface convention has one notable exception worth knowing about: the central network module exports its DI token as `export const NetworkService = Symbol('INetworkService')` (`src/datasources/network/network.service.interface.ts`) rather than naming the constant `INetworkService` to match — the symbol's own string label still says `INetworkService`, only the exported binding name differs.
 
@@ -258,6 +259,7 @@ All three filters are registered globally as `APP_FILTER`s in `src/app.module.ts
 
 All outbound HTTP goes through `INetworkService` (`src/datasources/network/network.service.interface.ts`) — there is no direct `fetch`/HTTP client usage inside a datasource.
 Requests default to a 5-second timeout (`httpClient.requestTimeout`) with no automatic retries.
+Underneath, the fetch client (`fetchClientFactory` in `src/datasources/network/network.module.ts`, injected via `FetchClientToken` from `src/datasources/network/entities/fetch-client.entity.ts`) calls Bun's native `fetch`. OpenTelemetry cannot patch that, so each call is wrapped in a client span by `withHttpClientSpan` (`src/tracing/http-client-span.ts`). Tracing itself is bootstrapped by `src/tracing/tracing.ts`, preloaded before the app is imported (the container `CMD` and `start:prod`), and exports spans over OTLP/HTTP to the Datadog Agent; config lives under `tracing` in `src/config/entities/configuration.ts`.
 A circuit breaker (`src/datasources/circuit-breaker/`) is opt-in per request via a `circuitBreaker.key`, and trips after `circuitBreaker.threshold` consecutive failures within `circuitBreaker.rollingWindow`. While HALF_OPEN it admits at most as many concurrent probes as the number of failures that would re-open it (`threshold × halfOpenFailureRateThreshold / 100`) and rejects the rest, so a hanging upstream never receives a burst of probes that each wait out the full request timeout.
 
 Per-chain external APIs share a common shape: `IApiManager<T>` (`src/domain/interfaces/api.manager.interface.ts`) declares `getApi(chainId)`/`destroyApi(chainId)`, and is implemented once per API family — `IBalancesApiManager`, `ITransactionApiManager`, `IStakingApiManager`, `IBlockchainApiManager`, and others.

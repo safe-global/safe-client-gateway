@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { describe, expect, it } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { dedicatedStakingStatsBuilder } from '#/modules/staking/datasources/entities/__tests__/dedicated-staking-stats.entity.builder';
 import { DedicatedStakingStatsSchema } from '#/modules/staking/datasources/entities/dedicated-staking-stats.entity';

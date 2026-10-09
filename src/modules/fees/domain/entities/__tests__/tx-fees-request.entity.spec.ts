@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { describe, expect, it } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { getAddress, zeroAddress } from 'viem';
 import { TxFeesRequestSchema } from '#/modules/fees/domain/entities/tx-fees-request.entity';

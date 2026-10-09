@@ -6,10 +6,7 @@ import {
   getSchemaPath,
 } from '@nestjs/swagger';
 import type { Address } from 'viem';
-import {
-  BeaconChainExplorerUriTemplate as ApiBeaconChainExplorerUriTemplate,
-  type BeaconChainExplorerUriTemplate,
-} from '#/modules/chains/domain/entities/beacon-chain-explorer-uri-template.entity';
+import type { BeaconChainExplorerUriTemplate } from '#/modules/chains/domain/entities/beacon-chain-explorer-uri-template.entity';
 import { BalancesProvider } from '#/modules/chains/routes/entities/balances-provider.entity';
 import {
   BlockExplorerUriTemplate as ApiBlockExplorerUriTemplate,
@@ -64,7 +61,7 @@ export class Chain {
   @ApiProperty()
   blockExplorerUriTemplate: ApiBlockExplorerUriTemplate;
   @ApiProperty()
-  beaconChainExplorerUriTemplate: ApiBeaconChainExplorerUriTemplate;
+  beaconChainExplorerUriTemplate: BeaconChainExplorerUriTemplate;
   @ApiProperty()
   disabledWallets: Array<string>;
   @ApiPropertyOptional({ type: String, nullable: true })

@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import type { Job } from 'bullmq';
 import type { Address, Hash } from 'viem';
-import type { MockedObject } from 'vitest';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import { JobType } from '#/datasources/job-queue/types/job-types';
 import { LogType } from '#/domain/common/entities/log-type.entity';
 import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
@@ -40,35 +41,35 @@ import type { Transfer } from '#/modules/safe/domain/entities/transfer.entity';
 import type { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
 import { fakeUuid } from '#/validation/entities/schemas/__tests__/uuid.builder';
 
-const mockJobQueueService = vi.mocked({
-  addJob: vi.fn(),
-  getJob: vi.fn(),
+const mockJobQueueService = mocked({
+  addJob: jest.fn(),
+  getJob: jest.fn(),
 } as MockedObject<IJobQueueService>);
 
-const mockLoggingService = vi.mocked({
-  info: vi.fn(),
-  debug: vi.fn(),
-  error: vi.fn(),
-  warn: vi.fn(),
+const mockLoggingService = mocked({
+  info: jest.fn(),
+  debug: jest.fn(),
+  error: jest.fn(),
+  warn: jest.fn(),
 } as MockedObject<ILoggingService>);
 
-const mockSafeRepository = vi.mocked({
-  getSafe: vi.fn(),
-  getIncomingTransfers: vi.fn(),
-  getMultiSigTransaction: vi.fn(),
+const mockSafeRepository = mocked({
+  getSafe: jest.fn(),
+  getIncomingTransfers: jest.fn(),
+  getMultiSigTransaction: jest.fn(),
 } as MockedObject<ISafeRepository>);
 
-const mockDelegatesRepository = vi.mocked({
-  getDelegates: vi.fn(),
+const mockDelegatesRepository = mocked({
+  getDelegates: jest.fn(),
 } as MockedObject<IDelegatesV3Repository>);
 
-const mockMessagesRepository = vi.mocked({
-  getMessageByHash: vi.fn(),
+const mockMessagesRepository = mocked({
+  getMessageByHash: jest.fn(),
 } as MockedObject<IMessagesRepository>);
 
-const mockNotificationsRepository = vi.mocked({
-  enqueueNotification: vi.fn(),
-  getSubscribersBySafe: vi.fn(),
+const mockNotificationsRepository = mocked({
+  enqueueNotification: jest.fn(),
+  getSubscribersBySafe: jest.fn(),
 } as MockedObject<INotificationsRepositoryV2>);
 
 function createSafe(
@@ -88,7 +89,7 @@ describe('PushNotificationService (Unit)', () => {
   let service: PushNotificationService;
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
 
     service = new PushNotificationService(
       mockJobQueueService,
@@ -119,7 +120,7 @@ describe('PushNotificationService (Unit)', () => {
         new Error('Redis unavailable'),
       );
 
-      await expect(service.enqueueEvent(event)).resolves.not.toThrow();
+      await expect(service.enqueueEvent(event)).resolves.toBeUndefined();
 
       expect(mockLoggingService.error).toHaveBeenCalledWith(
         expect.stringContaining('Failed to enqueue push notification event'),

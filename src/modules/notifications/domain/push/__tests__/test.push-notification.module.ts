@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { jest } from 'bun:test';
 import { Module } from '@nestjs/common';
 import { IPushNotificationService } from '#/modules/notifications/domain/push/push-notification.service.interface';
 
@@ -7,7 +8,7 @@ import { IPushNotificationService } from '#/modules/notifications/domain/push/pu
     {
       provide: IPushNotificationService,
       useValue: {
-        enqueueEvent: vi.fn(),
+        enqueueEvent: jest.fn(),
       },
     },
   ],

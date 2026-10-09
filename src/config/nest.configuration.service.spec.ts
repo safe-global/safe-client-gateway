@@ -1,21 +1,22 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import type { ConfigService } from '@nestjs/config';
-import type { MockedObject } from 'vitest';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import { NestConfigurationService } from '#/config/nest.configuration.service';
 
 const configService = {
-  get: vi.fn(),
-  getOrThrow: vi.fn(),
+  get: jest.fn(),
+  getOrThrow: jest.fn(),
 } as MockedObject<ConfigService>;
-const configServiceMock = vi.mocked(configService);
+const configServiceMock = mocked(configService);
 
 describe('NestConfigurationService', () => {
   let target: NestConfigurationService;
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
     target = new NestConfigurationService(configServiceMock);
   });
 

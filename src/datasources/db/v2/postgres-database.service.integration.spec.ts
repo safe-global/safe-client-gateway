@@ -1,4 +1,13 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  describe,
+  expect,
+  it,
+  jest,
+} from 'bun:test';
 import { join } from 'node:path';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Test, type TestingModule } from '@nestjs/testing';
@@ -79,7 +88,7 @@ describe('PostgresDatabaseService', () => {
   });
 
   afterEach(() => {
-    vi.restoreAllMocks();
+    jest.restoreAllMocks();
   });
 
   describe('getDataSource()', () => {
@@ -146,7 +155,7 @@ describe('PostgresDatabaseService', () => {
     class MockEntity {}
 
     it('Should fetch the database connection before returning the repository', async () => {
-      const fetchConnectionSpy = vi.spyOn(
+      const fetchConnectionSpy = jest.spyOn(
         postgresqlService,
         'initializeDatabaseConnection',
       );

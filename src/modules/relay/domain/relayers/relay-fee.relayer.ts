@@ -19,7 +19,7 @@ import { UnofficialProxyFactoryError } from '#/modules/relay/domain/errors/unoff
 import type { IRelayer } from '#/modules/relay/domain/interfaces/relayer.interface';
 import { RelaySimulationService } from '#/modules/relay/domain/relay-simulation.service';
 import { RelayTransactionHelper } from '#/modules/relay/domain/relay-transaction-helper';
-import { SafeTransaction } from '#/modules/transactions/domain/entities/safe-transaction.entity';
+import { type SafeTransaction } from '#/modules/transactions/domain/entities/safe-transaction.entity';
 
 @Injectable()
 export class RelayFeeRelayer implements IRelayer {

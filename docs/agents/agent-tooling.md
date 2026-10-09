@@ -43,13 +43,13 @@ One skill per guide, each a loader. Skills exist because a routing table only wo
 
 `.claude/settings.json` carries one `PreToolUse` hook, filtered to `git commit` via `if: "Bash(git commit *)"`. When `src/` has changes — staged or unstaged, so `git commit -a` is covered too — it injects an instruction to read `reviewing.md` and apply both parts of its checklist before the commit is treated as done. The hook deliberately points at the file rather than inlining the checklist items: an inlined copy drifts every time `reviewing.md` is edited (it did — see the stale-guides item that copy was missing). When `src/` is untouched it emits nothing and exits 0, so a docs-only commit is unaffected.
 
-**Why a hook rather than a slash command.** The review is the one part of the pre-PR flow that nothing else triggers: `.husky/pre-commit` already runs `yarn env:validate:silent`, `yarn lint` and `yarn format` on every commit, so the mechanical half is automatic, but the guideline and deviation checks depended on someone remembering to ask for them. A hook removes the remembering. This repo deliberately has **no repo-specific slash commands** for that reason — see the next section.
+**Why a hook rather than a slash command.** The review is the one part of the pre-PR flow that nothing else triggers: `.husky/pre-commit` already runs `bun run env:validate:silent`, `bun run lint` and `bun run format` on every commit, so the mechanical half is automatic, but the guideline and deviation checks depended on someone remembering to ask for them. A hook removes the remembering. This repo deliberately has **no repo-specific slash commands** for that reason — see the next section.
 
 **What it is and is not.** It injects context; it does not gate. The commit still proceeds, so the hook cannot deadlock and cannot produce a false rejection. If you want a hard gate instead, the same hook can exit 2 (or return `decision: "block"`) to bounce the first attempt with the checklist as the reason — but then it needs a way to recognize that the review already happened, or every commit blocks forever.
 
 **Two constraints on the command, learned the hard way:**
 
-- **No `jq`.** It is a reasonable assumption elsewhere and is not installed in every environment used with this repo. The command uses only `git`, `test` and `printf`, and leans on the `if` field for filtering rather than parsing the hook's stdin JSON. Validate hook JSON with `node -e 'JSON.parse(require("fs").readFileSync(0, "utf8"))'` instead — Node is the one runtime this repo already guarantees.
+- **No `jq`.** It is a reasonable assumption elsewhere and is not installed in every environment used with this repo. The command uses only `git`, `test` and `printf`, and leans on the `if` field for filtering rather than parsing the hook's stdin JSON. Validate hook JSON with `bun -e 'JSON.parse(await Bun.stdin.text())'` instead — Bun is the one runtime this repo already guarantees.
 - **Both paths need testing, not just the firing one.** Run the exact command string from `settings.json` twice — once with `src/` clean (expect empty stdout, exit 0) and once with a throwaway change under `src/` (expect valid JSON) — and revert the probe afterwards. A hook whose no-op path exits non-zero is noise on every unrelated commit.
 
 A newly created `.claude/settings.json` may not be picked up until the settings watcher reloads: it only watches directories that already had a settings file when the session started. Opening `/hooks` once, or restarting, loads it.
@@ -79,7 +79,7 @@ Adding one back is a reasonable thing to do — but the bar is that it must do s
 1. **It must act, not inform.** Perform something, or run a sequence nobody would think to ask for. A command that only points at a guide is a guide with extra steps.
 2. **Reference, never restate.** Name the skills and guides to load, then list only the steps specific to that workflow.
 3. **Idempotent.** Inspect current state before writing; re-running it reports what is already correct rather than duplicating it.
-4. **End in verification** — `yarn format`, `yarn lint --fix`, `yarn typecheck`, the relevant tests, with the **real output** reported. [reviewing.md](reviewing.md) treats an unproven "tests pass" as a finding.
+4. **End in verification** — `bun run format`, `bun run lint`, `bun run typecheck`, the relevant tests, with the **real output** reported. [reviewing.md](reviewing.md) treats an unproven "tests pass" as a finding.
 5. **Frontmatter:** a one-line `description` (this is what shows in the command list) plus an `argument-hint` when it takes arguments; `$ARGUMENTS` in the body. No SPDX header, for the same frontmatter reason as skills.
 6. **Name it for the workflow, not the tool** — `/new-env-var`, not `/config-helper`.
 7. **Nothing but command files lives under `.claude/commands/`** — a loose markdown file there becomes a command, exactly as a loose one under `.claude/skills/` becomes a skill.

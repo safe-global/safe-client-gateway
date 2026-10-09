@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress, type Hex } from 'viem';
-import type { Mocked, MockedObject } from 'vitest';
+import { type Mocked, type MockedObject, mocked } from '#/__tests__/mocks';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
 import type { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
 import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
@@ -19,40 +20,40 @@ import { SwapOrderHelper } from '#/modules/transactions/routes/helpers/swap-orde
 import type { TransactionFinder } from '#/modules/transactions/routes/helpers/transaction-finder.helper';
 
 const swapsRepository = {
-  getOrder: vi.fn(),
+  getOrder: jest.fn(),
 } as MockedObject<SwapsRepository>;
-const swapsRepositoryMock = vi.mocked(swapsRepository);
+const swapsRepositoryMock = mocked(swapsRepository);
 
 const gpv2Decoder = {
-  getOrderUidFromSetPreSignature: vi.fn(),
+  getOrderUidFromSetPreSignature: jest.fn(),
 } as MockedObject<GPv2Decoder>;
-const gpv2DecoderMock = vi.mocked(gpv2Decoder);
+const gpv2DecoderMock = mocked(gpv2Decoder);
 
 const tokenRepository = {
-  getToken: vi.fn(),
+  getToken: jest.fn(),
 } as MockedObject<ITokenRepository>;
 
-const tokenRepositoryMock = vi.mocked(tokenRepository);
+const tokenRepositoryMock = mocked(tokenRepository);
 
 const configurationService = {
-  getOrThrow: vi.fn(),
+  getOrThrow: jest.fn(),
 } as MockedObject<IConfigurationService>;
-const configurationServiceMock = vi.mocked(configurationService);
+const configurationServiceMock = mocked(configurationService);
 
 const transactionFinder = {} as Mocked<TransactionFinder>;
-const transactionFinderMock = vi.mocked(transactionFinder);
+const transactionFinderMock = mocked(transactionFinder);
 
 const chainsRepository = {
-  getChain: vi.fn(),
+  getChain: jest.fn(),
 } as MockedObject<IChainsRepository>;
-const chainsRepositoryMock = vi.mocked(chainsRepository);
+const chainsRepositoryMock = mocked(chainsRepository);
 
 describe('Swap Order Helper tests', () => {
   let target: SwapOrderHelper;
   const explorerBaseUrl = faker.internet.url();
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
     configurationServiceMock.getOrThrow.mockImplementation((key) => {
       if (key === 'swaps.explorerBaseUri') return explorerBaseUrl;
       throw new Error(`Key ${key} not found.`);

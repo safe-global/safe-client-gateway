@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import type { MockedObject } from 'vitest';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import { erc20TransferBuilder } from '#/modules/safe/domain/entities/__tests__/erc20-transfer.builder';
 import { orderBuilder } from '#/modules/swaps/domain/entities/__tests__/order.builder';
 import { OrdersSchema } from '#/modules/swaps/domain/entities/order.entity';
@@ -16,17 +17,17 @@ import { getTransferDirection } from '#/modules/transactions/routes/mappers/comm
 import { SwapTransferInfoMapper } from '#/modules/transactions/routes/mappers/transfers/swap-transfer-info.mapper';
 import { addressInfoBuilder } from '#/routes/common/__tests__/entities/address-info.builder';
 
-const mockSwapOrderHelper = vi.mocked({
-  getToken: vi.fn(),
-  getOrderExplorerUrl: vi.fn(),
+const mockSwapOrderHelper = mocked({
+  getToken: jest.fn(),
+  getOrderExplorerUrl: jest.fn(),
 } as MockedObject<SwapOrderHelper>);
 
-const mockSwapsRepository = vi.mocked({
-  getOrders: vi.fn(),
+const mockSwapsRepository = mocked({
+  getOrders: jest.fn(),
 } as MockedObject<ISwapsRepository>);
 
-const mockSwapAppsHelper = vi.mocked({
-  isAppAllowed: vi.fn(),
+const mockSwapAppsHelper = mocked({
+  isAppAllowed: jest.fn(),
 } as MockedObject<SwapAppsHelper>);
 
 describe('SwapTransferInfoMapper', () => {
@@ -35,7 +36,7 @@ describe('SwapTransferInfoMapper', () => {
   const GPv2SettlementAddress = '0x9008D19f58AAbD9eD0D60971565AA8510560ab41';
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
 
     target = new SwapTransferInfoMapper(
       mockSwapOrderHelper,

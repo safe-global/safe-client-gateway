@@ -4,11 +4,14 @@ import { IConfigurationService } from '#/config/configuration.service.interface'
 import { CacheFirstDataSource } from '#/datasources/cache/cache.first.data.source';
 import { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
 import { getSafeQueueAuthHeaders } from '#/datasources/network/auth/queue-auth-headers.helper';
+import type { FetchClient } from '#/datasources/network/entities/fetch-client.entity';
+import { FetchClientToken } from '#/datasources/network/entities/fetch-client.entity';
 import { FetchNetworkService } from '#/datasources/network/fetch.network.service';
-import type { FetchClient } from '#/datasources/network/network.module';
-import { FetchClientToken } from '#/datasources/network/network.module';
 import { NetworkService } from '#/datasources/network/network.service.interface';
-import { ILoggingService, LoggingService } from '#/logging/logging.interface';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '#/logging/logging.interface';
 import { ISafeQueueService } from '#/modules/safe-queue/safe-queue.interface';
 import { SafeQueueService } from '#/modules/safe-queue/safe-queue.service';
 

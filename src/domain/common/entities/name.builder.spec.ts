@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { describe, expect, it } from 'bun:test';
 import { nameBuilder } from '#/domain/common/entities/name.builder';
 import { NameSchema, sanitizeName } from '#/domain/common/schemas/name.schema';
 

@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import type { Hex } from 'viem';
 import { getAddress } from 'viem';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import type { ILoggingService } from '#/logging/logging.interface';
 import {
   addDelegateEncoder,
@@ -31,7 +32,7 @@ const SEPOLIA_ALLOWANCE_MODULE = getAddress(
 const CHAIN_ID_WITHOUT_ALLOWANCE_MODULE = '999999999';
 
 const mockLoggingService = {
-  warn: vi.fn(),
+  warn: jest.fn(),
 } as MockedObject<ILoggingService>;
 
 describe('PendingSpendingLimitMapper', () => {

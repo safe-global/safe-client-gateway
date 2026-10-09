@@ -9,8 +9,7 @@
 
 ## Prerequisites
 
-- Node.js 22.x
-- Yarn 4.x
+- Bun 1.4.2
 - Docker (for Redis)
 - Access to Config Service v2 endpoints
 
@@ -34,13 +33,13 @@ docker-compose up -d redis postgres
 ### 2. Install Dependencies
 
 ```bash
-yarn install
+bun install
 ```
 
 ### 3. Run Development Server
 
 ```bash
-yarn start:dev
+bun run start:dev
 ```
 
 ### 4. Test the New Endpoints
@@ -70,17 +69,17 @@ curl http://localhost:3000/v1/chains/1
 
 ```bash
 # All unit tests
-yarn test
+bun run test
 
 # Specific to chains module
-yarn test --testPathPattern=chains
+bun --no-env-file --env-file=.env.test test --path-ignore-patterns='**/*.integration.spec.ts' --path-ignore-patterns='**/*.e2e.spec.ts' src/modules/chains
 ```
 
 ### Integration Tests
 
 ```bash
 # Requires running Docker dependencies
-yarn test:integration --testPathPattern=chains.v2
+bun --no-env-file --env-file=.env.test test --preload ./test/e2e-setup.ts --timeout=60000 src/modules/chains/routes/v2/chains.v2.controller.integration.spec.ts
 ```
 
 ## File Locations

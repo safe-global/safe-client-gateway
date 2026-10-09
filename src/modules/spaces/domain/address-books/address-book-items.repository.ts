@@ -8,10 +8,10 @@ import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.s
 import { AddressBookItem as DbAddressBookItem } from '#/modules/spaces/datasources/address-books/entities/address-book-item.entity.db';
 import { IAddressBookItemsRepository } from '#/modules/spaces/domain/address-books/address-book-items.repository.interface';
 import type { AddressBookDbItem } from '#/modules/spaces/domain/address-books/entities/address-book-item.db.entity';
-import { AddressBookItem } from '#/modules/spaces/domain/address-books/entities/address-book-item.entity';
+import { type AddressBookItem } from '#/modules/spaces/domain/address-books/entities/address-book-item.entity';
 import { SpaceAuditEventType } from '#/modules/spaces/domain/audit/entities/space-audit-event.entity';
 import { ISpaceAuditRepository } from '#/modules/spaces/domain/audit/space-audit.repository.interface';
-import { Space } from '#/modules/spaces/domain/entities/space.entity';
+import { type Space } from '#/modules/spaces/domain/entities/space.entity';
 import { SpaceEncryptionService } from '#/modules/spaces/domain/space-encryption.service';
 import { ISpacesRepository } from '#/modules/spaces/domain/spaces.repository.interface';
 import { UpsertAddressBookItemsDto } from '#/modules/spaces/routes/address-books/entities/upsert-address-book-items.dto.entity';

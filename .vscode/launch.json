@@ -1,18 +1,15 @@
 {
-  // Use IntelliSense to learn about possible attributes.
-  // Hover to view descriptions of existing attributes.
-  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  // Debug configurations for the Bun VS Code extension (oven.bun-vscode).
+  // For more information, visit: https://bun.com/docs/runtime/debugger
   "version": "0.2.0",
   "configurations": [
     {
-      "type": "node",
+      "type": "bun",
       "request": "launch",
       "name": "Launch Program",
-      "skipFiles": ["<node_internals>/**"],
       "program": "${workspaceFolder}/src/main.ts",
-      "outFiles": ["${workspaceFolder}/dist/**/*.js"],
-      "console": "integratedTerminal",
-      "outputCapture": "std",
+      "cwd": "${workspaceFolder}",
+      "watchMode": false,
       "env": {
         "FF_AUTH": "true",
         "FF_DELEGATES_V2": "true",
@@ -29,55 +26,25 @@
       }
     },
     {
-      "type": "node",
-      "request": "launch",
-      "name": "Debug tests",
-      "skipFiles": ["<node_internals>/**"],
-      "runtimeArgs": [
-        "--inspect-brk",
-        "${workspaceRoot}/node_modules/.bin/vitest",
-        "run",
-        "--project",
-        "unit",
-        "--project",
-        "unit-isolated",
-        "--no-file-parallelism"
-      ],
-      "console": "integratedTerminal"
-    },
-    {
-      "type": "node",
+      "type": "bun",
       "request": "launch",
       "name": "Debug current test file",
-      "skipFiles": ["<node_internals>/**"],
-      "runtimeArgs": [
-        "--inspect-brk",
-        "${workspaceRoot}/node_modules/.bin/vitest",
-        "run",
-        "--project",
-        "unit",
-        "--project",
-        "unit-isolated",
-        "--no-file-parallelism",
-        "${relativeFile}"
-      ],
-      "console": "integratedTerminal"
+      "runtimeArgs": ["test"],
+      "program": "${file}",
+      "cwd": "${workspaceFolder}"
     },
     {
-      "type": "node",
+      "type": "bun",
       "request": "launch",
-      "name": "Debug current E2E test file",
-      "skipFiles": ["<node_internals>/**"],
+      "name": "Debug current integration or E2E test file",
       "runtimeArgs": [
-        "--inspect-brk",
-        "${workspaceRoot}/node_modules/.bin/vitest",
-        "run",
-        "--project",
-        "e2e",
-        "--no-file-parallelism",
-        "${relativeFile}"
+        "test",
+        "--preload",
+        "./test/e2e-setup.ts",
+        "--timeout=60000"
       ],
-      "console": "integratedTerminal"
+      "program": "${file}",
+      "cwd": "${workspaceFolder}"
     }
   ]
 }

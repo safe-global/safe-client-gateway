@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { describe, expect, it } from 'bun:test';
 import { TypedDataSchema } from '#/modules/messages/domain/entities/typed-data.entity';
 
 // TODO: Increase test coverage

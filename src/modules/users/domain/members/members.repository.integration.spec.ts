@@ -1,11 +1,21 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  jest,
+} from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { ForbiddenException, GoneException } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
 import { DataSource, In } from 'typeorm';
 import { getAddress } from 'viem';
-import type { MockedObject } from 'vitest';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
 import configuration from '#/config/entities/__tests__/configuration';
 import { postgresConfig } from '#/config/entities/postgres.config';
@@ -50,13 +60,13 @@ import { WalletsRepository } from '#/modules/wallets/domain/wallets.repository';
 import { EmailAddressSchema } from '#/validation/entities/schemas/email-address.schema';
 
 const mockLoggingService = {
-  debug: vi.fn(),
-  error: vi.fn(),
-  info: vi.fn(),
-  warn: vi.fn(),
+  debug: jest.fn(),
+  error: jest.fn(),
+  info: jest.fn(),
+  warn: jest.fn(),
 } as MockedObject<ILoggingService>;
-const mockConfigurationService = vi.mocked({
-  getOrThrow: vi.fn(),
+const mockConfigurationService = mocked({
+  getOrThrow: jest.fn(),
 } as MockedObject<IConfigurationService>);
 
 const UserStatusKeys = getStringEnumKeys(UserStatus);
@@ -117,7 +127,7 @@ describe('MembersRepository', () => {
 
     // Migrate database
     const mockConfigService = {
-      getOrThrow: vi.fn().mockImplementation((key: string) => {
+      getOrThrow: jest.fn().mockImplementation((key: string) => {
         if (key === 'db.migrator.numberOfRetries') {
           return testConfiguration.db.migrator.numberOfRetries;
         }
@@ -167,7 +177,7 @@ describe('MembersRepository', () => {
   });
 
   afterEach(async () => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
 
     await dataSource
       .getRepository(Member)
@@ -2504,7 +2514,7 @@ describe('MembersRepository', () => {
           role: 'ADMIN',
           userId: memberUserId,
         }),
-      ).resolves.not.toThrow();
+      ).resolves.toBeUndefined();
     });
 
     it('should update the role of a member as OIDC admin', async () => {
@@ -2549,7 +2559,7 @@ describe('MembersRepository', () => {
           role: 'ADMIN',
           userId: memberUserId,
         }),
-      ).resolves.not.toThrow();
+      ).resolves.toBeUndefined();
     });
 
     it.each([
@@ -2613,7 +2623,7 @@ describe('MembersRepository', () => {
             role: 'ADMIN',
             userId: memberUserId,
           }),
-        ).resolves.not.toThrow();
+        ).resolves.toBeUndefined();
         // Member role in space1 is updated
         await expect(
           membersRepository.findOneOrFail(
@@ -2731,7 +2741,7 @@ describe('MembersRepository', () => {
           spaceId,
           userId: memberUserId,
         }),
-      ).resolves.not.toThrow();
+      ).resolves.toBeUndefined();
 
       await expect(
         dbMembersRepository.findOne({ where: { id: memberId } }),
@@ -2780,7 +2790,7 @@ describe('MembersRepository', () => {
           spaceId,
           userId: memberUserId,
         }),
-      ).resolves.not.toThrow();
+      ).resolves.toBeUndefined();
 
       await expect(
         dbMembersRepository.findOne({ where: { id: memberId } }),
@@ -2864,7 +2874,7 @@ describe('MembersRepository', () => {
             spaceId,
             userId: memberUserId,
           }),
-        ).resolves.not.toThrow();
+        ).resolves.toBeUndefined();
         await expect(
           dbMembersRepository.findOne({ where: { id: memberId } }),
         ).resolves.toBeNull();
@@ -3012,7 +3022,7 @@ describe('MembersRepository', () => {
           authPayload,
           spaceId,
         }),
-      ).resolves.not.toThrow();
+      ).resolves.toBeUndefined();
 
       await expect(
         dbMembersRepository.findOne({ where: { id: signerMemberId } }),
@@ -3059,7 +3069,7 @@ describe('MembersRepository', () => {
           authPayload,
           spaceId,
         }),
-      ).resolves.not.toThrow();
+      ).resolves.toBeUndefined();
 
       await expect(
         dbMembersRepository.findOne({ where: { id: signerMemberId } }),
@@ -3111,7 +3121,7 @@ describe('MembersRepository', () => {
             authPayload,
             spaceId,
           }),
-        ).resolves.not.toThrow();
+        ).resolves.toBeUndefined();
 
         await expect(
           dbMembersRepository.findOne({ where: { id: signerMemberId } }),
@@ -3186,7 +3196,7 @@ describe('MembersRepository', () => {
             authPayload,
             spaceId: spaceId1,
           }),
-        ).resolves.not.toThrow();
+        ).resolves.toBeUndefined();
 
         // Should be removed from first space
         await expect(

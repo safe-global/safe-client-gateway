@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import type { MockedObject } from 'vitest';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
 import type { ICacheService } from '#/datasources/cache/cache.service.interface';
@@ -24,37 +25,37 @@ describe('ZerionPortfolioApi', () => {
   const zerionBaseUri = faker.internet.url({ appendSlash: false });
   const supportedFiatCodes = ['USD', 'EUR'];
 
-  const mockNetworkService = vi.mocked({
-    get: vi.fn(),
-    post: vi.fn(),
-    postForm: vi.fn(),
-    delete: vi.fn(),
+  const mockNetworkService = mocked({
+    get: jest.fn(),
+    post: jest.fn(),
+    postForm: jest.fn(),
+    delete: jest.fn(),
   } as MockedObject<INetworkService>);
 
-  const mockHttpErrorFactory = vi.mocked({
-    from: vi.fn(),
+  const mockHttpErrorFactory = mocked({
+    from: jest.fn(),
   } as MockedObject<HttpErrorFactory>);
 
-  const mockLoggingService = vi.mocked({
-    debug: vi.fn(),
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
+  const mockLoggingService = mocked({
+    debug: jest.fn(),
+    info: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
   } as MockedObject<ILoggingService>);
 
-  const mockCacheService = vi.mocked({
-    hGet: vi.fn(),
-    hSet: vi.fn(),
-    deleteByKey: vi.fn(),
+  const mockCacheService = mocked({
+    hGet: jest.fn(),
+    hSet: jest.fn(),
+    deleteByKey: jest.fn(),
   } as MockedObject<ICacheService>);
 
-  const mockChainMappingService = vi.mocked({
-    getNetworkFromChainId: vi.fn(),
-    getChainIdFromNetwork: vi.fn(),
+  const mockChainMappingService = mocked({
+    getNetworkFromChainId: jest.fn(),
+    getChainIdFromNetwork: jest.fn(),
   } as MockedObject<ZerionChainMappingService>);
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
     fakeConfigurationService = new FakeConfigurationService();
     fakeConfigurationService.set(
       'balances.providers.zerion.assetsApiKey',

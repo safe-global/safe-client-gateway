@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { afterEach, beforeEach, describe, expect, it, jest } from 'bun:test';
 import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { getAddress } from 'viem';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import {
   initTestApplication,
   TestAppProvider,
@@ -38,7 +39,7 @@ describe('Owners Controller (Unit)', () => {
   let loggingService: MockedObject<ILoggingService>;
 
   beforeEach(async () => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
 
     const moduleFixture = await createTestModule();
     const configurationService = moduleFixture.get<IConfigurationService>(
@@ -229,7 +230,7 @@ describe('Owners Controller (Unit)', () => {
     });
 
     it('should gracefully handle chain-specific Transaction Service error', async () => {
-      vi.spyOn(loggingService, 'warn');
+      jest.spyOn(loggingService, 'warn');
       const ownerAddress = faker.finance.ethereumAddress();
       const chainId1 = faker.string.numeric();
       const chainId2 = faker.string.numeric({ exclude: [chainId1] });
@@ -462,7 +463,7 @@ describe('Owners Controller (Unit)', () => {
     });
 
     it('should preserve all addresses when creation date fetch fails', async () => {
-      vi.spyOn(loggingService, 'warn');
+      jest.spyOn(loggingService, 'warn');
       const chainId = faker.string.numeric();
       const chain = chainBuilder().with('chainId', chainId).build();
 

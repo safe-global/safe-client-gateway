@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress, type Hex } from 'viem';
-import type { MockedObject } from 'vitest';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
 import type { CacheFirstDataSource } from '#/datasources/cache/cache.first.data.source';
 import type { ICacheService } from '#/datasources/cache/cache.service.interface';
@@ -22,33 +23,33 @@ import {
 import { rawify } from '#/validation/entities/raw.entity';
 
 const dataSource = {
-  get: vi.fn(),
+  get: jest.fn(),
 } as MockedObject<CacheFirstDataSource>;
-const mockDataSource = vi.mocked(dataSource);
+const mockDataSource = mocked(dataSource);
 
 const cacheService = {
-  deleteByKey: vi.fn(),
+  deleteByKey: jest.fn(),
 } as unknown as MockedObject<ICacheService>;
-const mockCacheService = vi.mocked(cacheService);
+const mockCacheService = mocked(cacheService);
 
 const configurationService = {
-  getOrThrow: vi.fn(),
+  getOrThrow: jest.fn(),
 } as MockedObject<IConfigurationService>;
-const mockConfigurationService = vi.mocked(configurationService);
+const mockConfigurationService = mocked(configurationService);
 
-const networkService = vi.mocked({
-  get: vi.fn(),
-  post: vi.fn(),
-  delete: vi.fn(),
+const networkService = mocked({
+  get: jest.fn(),
+  post: jest.fn(),
+  delete: jest.fn(),
 } as MockedObject<INetworkService>);
 
 const loggingService = {
-  debug: vi.fn(),
-  info: vi.fn(),
-  warn: vi.fn(),
-  error: vi.fn(),
+  debug: jest.fn(),
+  info: jest.fn(),
+  warn: jest.fn(),
+  error: jest.fn(),
 } as MockedObject<ILoggingService>;
-const mockLoggingService = vi.mocked(loggingService);
+const mockLoggingService = mocked(loggingService);
 
 describe('SafeQueueService', () => {
   const chainId = faker.string.numeric();
@@ -59,7 +60,7 @@ describe('SafeQueueService', () => {
   let service: SafeQueueService;
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
     mockConfigurationService.getOrThrow.mockImplementation((key) => {
       if (key === 'safeQueueService.baseUri') return baseUri;
       if (key === 'expirationTimeInSeconds.default') return 60;

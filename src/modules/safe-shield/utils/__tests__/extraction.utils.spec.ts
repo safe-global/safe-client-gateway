@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress, type Hex } from 'viem';
+import { mocked } from '#/__tests__/mocks';
 import type {
   DataDecoded,
   DataDecodedParameter,
@@ -14,15 +16,12 @@ import {
   extractRecipients,
 } from '#/modules/safe-shield/utils/extraction.utils';
 
-const mockErc20Decoder = vi.mocked(
-  {
-    helpers: {
-      isTransfer: vi.fn(),
-      isTransferFrom: vi.fn(),
-    },
-  } as unknown as Erc20Decoder,
-  true,
-);
+const mockErc20Decoder = mocked({
+  helpers: {
+    isTransfer: jest.fn(),
+    isTransferFrom: jest.fn(),
+  },
+} as unknown as Erc20Decoder);
 
 const createDataDecoded = (
   overrides: Partial<DataDecoded> = {},
@@ -46,7 +45,7 @@ const createTransaction = (
 
 describe('extraction.utils', () => {
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
   });
 
   describe('extractContracts', () => {

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { afterEach, beforeEach, describe, it } from 'bun:test';
 import { generateKeyPairSync } from 'node:crypto';
 import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';

@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { describe, expect, it } from 'bun:test';
 import { addressBookItemBuilder } from '#/modules/spaces/domain/address-books/entities/__tests__/address-book-item.db.builder';
 import { CreateAddressBookRequestSchema } from '#/modules/spaces/routes/address-books/entities/address-book-request.dto.entity';
 

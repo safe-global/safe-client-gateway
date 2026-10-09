@@ -16,7 +16,7 @@ services:
       # Persist Claude Code auth/config across container rebuilds.
       # If the host directory does not exist Docker creates an empty one.
       # ${HOME:?...} fails fast with a clear error if HOME is unset (e.g. CI).
-      - ${HOME:?HOME must be set to mount the Claude config volume}/.claude-docker:/home/node/.claude
+      - ${HOME:?HOME must be set to mount the Claude config volume}/.claude-docker:/home/vscode/.claude
       # SSH agent forwarding:
       #   - Docker Desktop (macOS/Windows): SSH_AUTH_SOCK is unset on the host,
       #     so the default /run/host-services/ssh-auth.sock magic path is used.

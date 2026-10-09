@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import type { MockedObject } from 'vitest';
 import { ZodError } from 'zod';
+import type { MockedObject } from '#/__tests__/mocks';
 import type { ILoggingService } from '#/logging/logging.interface';
 import type { PolicyIndexerApi } from '#/modules/policies/datasources/policy-indexer-api.service';
 import {
@@ -17,15 +18,15 @@ import { PolicyIndexerRepository } from '#/modules/policies/domain/policy-indexe
 import { rawify } from '#/validation/entities/raw.entity';
 
 const mockPolicyIndexerApi = {
-  getState: vi.fn(),
-  clearState: vi.fn(),
+  getState: jest.fn(),
+  clearState: jest.fn(),
 } as MockedObject<PolicyIndexerApi>;
 
 const mockLoggingService = {
-  info: vi.fn(),
-  error: vi.fn(),
-  warn: vi.fn(),
-  debug: vi.fn(),
+  info: jest.fn(),
+  error: jest.fn(),
+  warn: jest.fn(),
+  debug: jest.fn(),
 } as MockedObject<ILoggingService>;
 
 const SEPOLIA = '11155111';
@@ -35,7 +36,7 @@ describe('PolicyIndexerRepository', () => {
   const safe = getAddress(faker.finance.ethereumAddress());
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
     mockPolicyIndexerApi.getState.mockResolvedValue(
       rawify(rawPolicyIndexerResponse()),
     );

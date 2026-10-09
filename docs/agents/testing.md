@@ -4,13 +4,13 @@
 
 # Testing
 
-This guide states the testing conventions for Safe Client Gateway: which test type to write, how to run each locally and in CI, the Vitest project layout tests run under, and the rules that keep test data and mocking consistent. The shared `Builder`/`IBuilder` helper and the Vitest project split are introduced in `docs/agents/ARCHITECTURE.md`'s Module anatomy section; this guide is their normative, in-depth treatment.
+This guide states the testing conventions for Safe Client Gateway: which test type to write, how to run each locally and in CI, the `bun test` setup tests run under, and the rules that keep test data and mocking consistent. The shared `Builder`/`IBuilder` helper and the unit/integration/e2e split are introduced in `docs/agents/ARCHITECTURE.md`'s Module anatomy section; this guide is their normative, in-depth treatment.
 
 ## Test types
 
 - **Unit (`*.spec.ts`)** — every dependency the file under test touches is mocked: no real database, cache, queue, or upstream HTTP call. Use it for services, controllers, repositories, schemas, and validators — the default choice, and the fastest to run.
 - **Integration (`*.integration.spec.ts`)** — runs against a real Postgres database (via TypeORM) and real Redis/BullMQ, and boots the actual NestJS module graph. Use it for a repository's queries, a migration, a queue consumer, or a controller flow that has to prove out a real module boundary rather than a mocked one.
-- **E2E (`*.e2e-spec.ts`)** — boots the whole application the way production does, for a full request/response cycle across every layer. 18 exist today, one per feature needing a full-app smoke test — e.g. `src/app.module.e2e-spec.ts`, `src/modules/spaces/routes/spaces.controller.e2e-spec.ts`, `src/modules/data-decoder/routes/__tests__/data-decode.e2e-spec.ts`.
+- **E2E (`*.e2e.spec.ts`)** — boots the whole application the way production does, for a full request/response cycle across every layer. 18 exist today, one per feature needing a full-app smoke test — e.g. `src/app.module.e2e.spec.ts`, `src/modules/spaces/routes/spaces.controller.e2e.spec.ts`, `src/modules/data-decoder/routes/__tests__/data-decode.e2e.spec.ts`.
 
 Write the fastest test that still proves the point:
 
@@ -18,22 +18,23 @@ Write the fastest test that still proves the point:
 - Reach for **integration** once mocking a dependency would stop testing the boundary that actually matters — a repository's queries, a migration, a queue consumer, or a request/response cycle spanning multiple modules.
 - Reach for **e2e** only for a workflow critical enough to warrant a full-app smoke test end to end.
 
-Today's split: 336 unit specs, 80 integration specs, 18 e2e specs.
+Today's split: 384 unit specs, 93 integration specs, 18 e2e specs.
 
 ## Running tests locally
 
-Commands, all defined in `package.json` and all resolving `vitest.config.ts`'s named projects:
+Commands, all defined in `package.json`, all running Bun's native test runner (`bun test`):
 
-- `yarn test` / `yarn test:unit` — the `unit` and `unit-isolated` projects; these two are equivalent.
-- `yarn test:integration` — the `integration` project.
-- `yarn test:all` / `yarn test:all:cov` — `vitest run` with no `--project` filter, i.e. every project `vitest.config.ts` defines (unit, integration, and e2e) in one pass.
-- `yarn test:watch` — the `unit` and `unit-isolated` projects, in watch mode.
-- `yarn test:unit:cov` / `yarn test:integration:cov` — the matching projects, instrumented with `@vitest/coverage-v8`, written to `./coverage`.
-- `yarn test:debug [path/to/file.spec.ts]` — the `unit` and `unit-isolated` projects under `--inspect-brk` with `--no-file-parallelism`, for stepping through a single file in a debugger.
-- `yarn test --reporter=verbose` — the unit projects with per-test output instead of the default reporter.
-- `yarn test:e2e` / `yarn test:e2e:cov` — the `e2e` project; exists as a script, but nothing in CI runs it (see below).
+- `bun run test` / `bun run test:unit` — the unit suite; these two are equivalent.
+- `bun run test:integration` — the integration suite.
+- `bun run test:all` — unit, then integration, then e2e, as three sequential runs.
+- `bun run test:watch` — the unit suite, in watch mode.
+- `bun run test:unit:cov` / `bun run test:integration:cov` / `bun run test:e2e:cov` — the matching suite with `--coverage`, written to `./coverage`.
+- `bun run test:debug` — the unit suite under `--inspect-brk`, without `--parallel`, for stepping through in a debugger.
+- `bun run test:e2e` — the e2e suite; exists as a script, but nothing in CI runs it (see below).
 
-In GitHub Actions (`.github/workflows/_ci-node.yml`, called by `pull-request.yml`, `devstaging.yml` and `production.yml`), `unit-tests` and `integration-tests` run as separate parallel jobs, `integration-tests` itself split into three `vitest --shard` jobs, each reporting to Coveralls, with a `tests` job gating branch protection on both. Both jobs provision Postgres, Redis, and RabbitMQ as GitHub Actions `services:` — including `unit-tests`, even though every unit spec mocks its own I/O and never reaches them; `integration-tests` is the job that actually needs the services, running real migrations against the job's Postgres service (database `test-db`) after a full `yarn build` (a plain `generate-abis` is enough for `unit-tests`, since Vitest transforms straight from `src`). Neither job runs the `e2e` project — nothing in `_ci-node.yml` references `*.e2e-spec.ts` today.
+Note `bun run test`, not `bun test`: a bare `bun test` invokes the runner directly and skips the script's flags (the `.env.test` loading, the path filters, `--parallel`, the e2e preload and timeouts). Extra runner flags can be appended to a script, e.g. `bun run test:unit --test-name-pattern=<regex>`; an appended file path does not narrow a script's run, because path filters are OR'd with the script's own `src scripts`. To run one file, call the runner with the same env flags directly: `bun --no-env-file --env-file=.env.test test path/to/file.spec.ts` (add `--preload ./test/e2e-setup.ts --timeout=60000` for an integration spec).
+
+In GitHub Actions (`.github/workflows/_ci.yml`, called by `pull-request.yml`, `devstaging.yml` and `production.yml`), `unit-tests` and `integration-tests` run as separate parallel jobs, `integration-tests` itself split into three `bun test --shard` jobs, each reporting to Coveralls, with a `tests` job gating branch protection on both. Both jobs provision Postgres, Redis, and RabbitMQ as GitHub Actions `services:` — including `unit-tests`, even though every unit spec mocks its own I/O and never reaches them; `integration-tests` is the job that actually needs the services, running real migrations against the job's Postgres service (database `test-db`). Neither job has a build step: after `bun install --frozen-lockfile` (whose `postinstall` generates the ABIs), Bun runs the specs and TypeORM loads `migrations/*.ts` straight from source. Neither job runs the e2e suite — nothing in `_ci.yml` references `*.e2e.spec.ts` today.
 
 Running integration tests locally needs the same backing services running through Docker Compose — the Postgres service they connect to is named `db-test` (matching the `POSTGRES_TEST_*` variables below), not `postgres`:
 
@@ -41,30 +42,45 @@ Running integration tests locally needs the same backing services running throug
 docker compose up -d db-test redis rabbitmq
 ```
 
-No further setup is needed for a default local setup: `src/config/entities/__tests__/configuration.ts` already defaults `POSTGRES_TEST_*`, `REDIS_HOST`/`REDIS_PORT`, and `AMQP_URL` to match the Compose services above. If yours diverges, create a `.env.test` at the repo root overriding the ones that differ — it is `.gitignore`d, so a fresh clone has none, and every `yarn test:*` script loads it only when present (`node --env-file-if-exists=./.env.test`). Then:
+No further setup is needed for a default local setup: `src/config/entities/__tests__/configuration.ts` already defaults `POSTGRES_TEST_*`, `REDIS_HOST`/`REDIS_PORT`, and `AMQP_URL` to match the Compose services above. If yours diverges, create a `.env.test` at the repo root overriding the ones that differ — it is `.gitignore`d, so a fresh clone has none. Every test script runs `bun --no-env-file --env-file=.env.test test …`, so it loads `.env.test` when present and never your development `.env`. Then:
 
 ```bash
-yarn test:integration
+bun run test:integration
 ```
 
-Either coverage command's output already includes a browsable report at `coverage/index.html`, alongside the raw lcov data Coveralls consumes in CI.
+Either coverage command prints a text summary and writes `coverage/lcov.info`, the lcov data Coveralls consumes in CI.
 
-## Vitest project layout
+## `bun test` setup
 
-All test configuration lives in one root `vitest.config.ts`, defining four [projects](https://vitest.dev/guide/projects):
+There is no separate test-runner config file: the shared settings live in `bunfig.toml`'s `[test]` section, and the per-suite differences are flags on the `package.json` scripts.
 
-- **`unit`** (default) — `src/**/*.spec.ts` and `scripts/**/*.spec.ts`, minus the specs `unit-isolated` takes. Runs on the `threads` pool with `isolate: false`: specs in a worker share one module cache, so NestJS, viem and the rest are imported once per worker instead of once per spec file, which is most of what a unit run used to spend its time on.
-- **`unit-isolated`** — the unit specs that call `vi.mock`/`vi.doMock`, detected by `vitest.config.ts` when it loads, so nothing has to be registered by hand. Same settings as `unit`, but each file gets its own module registry: a module mock only applies to a module the file imports fresh, and must not leak into the cache the `unit` specs share.
-- **`integration`** — `src/**/*.integration.spec.ts`. Default `forks` pool (real DB/Redis/AMQP connections need real process isolation), 60s test timeout. Like `unit`, it runs with `isolate: false`, so each worker imports the app's module graph once instead of once per spec file; it loads the same `test/shared-module-cache-setup.ts`.
-- **`e2e`** — `src/**/*.e2e-spec.ts`. Default `forks` pool, 40s test timeout.
+- **unit** — `src` and `scripts`, minus `*.integration.spec.ts` and `*.e2e.spec.ts` (excluded with `--path-ignore-patterns`). Default 5s test timeout.
+- **integration** — `*.integration.spec.ts`. Adds `--preload ./test/e2e-setup.ts` (production-shaped env defaults for a full app boot) and a 60s test timeout.
+- **e2e** — `*.e2e.spec.ts`. Same preload as integration, 40s test timeout.
 
-Every project is transformed through SWC (`unplugin-swc`, `decoratorMetadata: true`), because NestJS dependency injection relies on `emitDecoratorMetadata`, which Vite's default Oxc transform drops. `integration` and `e2e` share `test/e2e-setup.ts` (production-shaped env defaults for a full app boot) plus `test/faker-setup.ts`; `unit` and `unit-isolated` load the latter plus `test/shared-module-cache-setup.ts`, which restores real timers, spies, stubbed env vars and stubbed globals after each spec file so nothing carries over to the next file in a worker. All four projects pin `env: { TZ: 'UTC' }` and set `clearMocks: true`.
+Bun only discovers files named `*.spec.*` / `*.test.*`, which is why the e2e suffix is `.e2e.spec.ts`. Every suite runs with `--parallel`, which gives each test file its own fresh globals and module registry — required so one file's `mock.module` never leaks into another.
 
-Coverage is configured once, at the root, and aggregates across all four projects: `@vitest/coverage-v8` writes lcov/html/text to `./coverage`, over `src/**/*.{ts,js}` minus `index.ts` barrel files, `.builder.ts`/`.factory.ts` test helpers, and `.integration.spec.ts`/`.e2e-spec.ts` files themselves — test infrastructure and slower suites aren't what the coverage number is meant to measure.
+`bunfig.toml` preloads `test/setup.ts` for every run. It:
 
-`faker-setup.ts` seeds `@faker-js/faker` once per test file — from `FAKER_SEED` if set, otherwise a random seed it logs as `[faker] seed=<n>` — so a failing run's data is reproducible by re-running with `FAKER_SEED=<n>`.
+- seeds `@faker-js/faker` once per test file — from `FAKER_SEED` if set, otherwise a random seed it logs as `[faker] seed=<n>` — so a failing run's data is reproducible by re-running with `FAKER_SEED=<n>`;
+- clears every mock's call history before each test (`jest.clearAllMocks()` in a global `beforeEach`, the equivalent of the old Vitest `clearMocks: true`);
+- keeps Vitest 4's reset semantics: `jest.resetAllMocks()` restores the implementation a `jest.fn(impl)` was created with instead of leaving a bare mock returning `undefined`;
+- imports `nestjs-cls` once with `AsyncLocalStorage#enterWith` stubbed, working around a Bun 1.4.2 bug where an `enterWith()` made while a test file is being evaluated leaves that file's tests hanging until they time out.
 
-Globals (`describe`/`it`/`expect`/`vi`) are enabled for every project, so they need no import; the Vitest type helpers (`MockedObject`, `MockInstance`) still do, imported from `'vitest'` directly. Every project also resolves with the `source` condition, so a spec's `#/*`/`#/abis/*` imports follow the same `package.json` `imports` entries as production code, mapped to the TypeScript sources — the `#/` import rule in `docs/agents/module-structure.md` applies unchanged inside a spec. Vitest never type-checks a spec; `yarn typecheck` does, in CI, over `tsconfig.json` (specs included).
+Coverage (`--coverage`) is configured in `bunfig.toml` too: text and lcov reporters into `./coverage`, skipping test files themselves plus `index.ts` barrel files, `__tests__/` helpers, `.integration.spec.ts`/`.e2e.spec.ts` files, `test/`, `abis/`, `migrations/` and `scripts/` — test infrastructure and slower suites aren't what the coverage number is meant to measure.
+
+Nothing is a global: every spec imports what it uses from `'bun:test'` explicitly — `describe`, `it`, `expect`, `beforeEach`/`afterEach`/`beforeAll`/`afterAll`, `jest` and `mock`. `bun:test` ships `Mock<T>` but not Jest's `Mocked*` helpers, so the mock types — `MockedObject<T>`, `Mocked<T>`, `MockedFunction<T>`, `MockedClass<T>`, `MockInstance`, `Mock` — and the `mocked()` helper (the former `vi.mocked`) come from `'#/__tests__/mocks'`. Bun resolves the `#/*`/`#/abis/*` imports through `tsconfig.json`'s `paths` natively, so a spec's imports follow the same mapping as production code — the `#/` import rule in `docs/agents/module-structure.md` applies unchanged inside a spec. `bun test` runs in UTC by default. Bun never type-checks a spec; `bun run typecheck` does, in CI, over `tsconfig.json` (specs included).
+
+### Module mocks
+
+`mock.module(id, factory)` replaces a module for the rest of the file (the former `vi.mock`). Unlike `vi.mock` it is not hoisted: it runs where it is written and patches the bindings of modules that have already imported `id`. When the factory spreads the real module, snapshot a namespace import first, because `mock.module` rewrites that namespace's bindings in place — see `src/domain/common/entities/safe-signature.spec.ts` (`viem`) and `src/modules/email/ses/datasources/aws-ses-email.service.spec.ts` (`@aws-sdk/client-sesv2`). A factory-less automock has no `bun:test` equivalent; use `mock.module(id, () => automock(actual))` with `automock()` from `'#/__tests__/mocks'`, which replaces every function export of the snapshot with a bare `jest.fn()`.
+
+### `bun:test` gotchas
+
+- `expect(promise).resolves.not.toThrow()` does not work — assert the resolved value instead (`.resolves.toBeUndefined()`, `.resolves.toEqual(...)`).
+- postgres.js queries are lazy thenables: write ``expect(sql`...`.execute()).rejects...``, not ``expect(sql`...`).rejects...`` — see `src/datasources/db/v1/postgres-database.migrator.integration.spec.ts`.
+- `it.each` spreads an array row into the test's arguments, so when a row value is itself an array, use one-element tuple rows (`[[a, b]]`).
+- `toHaveBeenCalledExactlyOnceWith` is not available — use `toHaveBeenCalledTimes(1)` plus `toHaveBeenCalledWith(...)`. Assert call order across mocks with `mock.invocationCallOrder` (e.g. `src/modules/billing/routes/billing.service.spec.ts`).
 
 ### Builders and faker only
 
@@ -78,11 +94,11 @@ A `*.factory.ts` file is not this pattern and is not a template to copy for a ne
 
 ### Mocking idiom
 
-**Rule:** A mock is a plain object literal of `vi.fn()`s cast `as MockedObject<T>`; when the literal only covers part of the interface, double-cast through `as unknown as MockedObject<T>` instead of widening the literal itself. A manual `vi.clearAllMocks()` in `beforeEach` is never added — `clearMocks` is already set globally in `vitest.config.ts`.
+**Rule:** A mock is a plain object literal of `jest.fn()`s (imported from `'bun:test'`) cast `as MockedObject<T>` (imported from `'#/__tests__/mocks'`); when the literal only covers part of the interface, double-cast through `as unknown as MockedObject<T>` instead of widening the literal itself. A manual `jest.clearAllMocks()` in `beforeEach` is never added — `test/setup.ts` already does it globally.
 
-**Why:** `clearMocks: true` already resets every `vi.fn()`'s call history between tests for the whole run; a spec-level reset on top of it is redundant at best, and since one spec file can't opt the rest of the suite out of the global setting, it never actually fills a gap the config leaves open.
+**Why:** the preloaded `test/setup.ts` already clears every mock's call history before each test for the whole run; a spec-level reset on top of it is redundant at best, and since one spec file can't opt the rest of the suite out of the global setup, it never actually fills a gap the setup leaves open.
 
-**Canonical example:** `vitest.config.ts` sets `clearMocks: true` in each of its four project configs. `src/modules/portfolio/v1/portfolio.controller.spec.ts` casts `{ getPortfolio: vi.fn(), clearZerionCaches: vi.fn() }` directly `as MockedObject<PortfolioApiService>`; `src/modules/hooks/domain/hooks.repository.spec.ts`'s `mockMessagesRepository` double-casts `{ clearMessages: vi.fn() } as unknown as MockedObject<MessagesRepository>`, since that literal covers only one method of the interface.
+**Canonical example:** `test/setup.ts` registers the global `beforeEach(() => { jest.clearAllMocks(); })`, and `bunfig.toml`'s `[test] preload` loads it for every run. `src/modules/portfolio/v1/portfolio.controller.spec.ts` casts `{ getPortfolio: jest.fn(), clearZerionCaches: jest.fn() }` directly `as MockedObject<PortfolioApiService>`; `src/modules/hooks/domain/hooks.repository.spec.ts`'s `mockMessagesRepository` double-casts `{ clearMessages: jest.fn() } as unknown as MockedObject<MessagesRepository>`, since that literal covers only one method of the interface.
 
 ### App bootstrapping in tests
 
@@ -96,9 +112,9 @@ A `*.factory.ts` file is not this pattern and is not a template to copy for a ne
 
 ### Test taxonomy
 
-**Rule:** `*.spec.ts` mocks all I/O; `*.integration.spec.ts` runs against real Postgres, Redis, and RabbitMQ; `*.e2e-spec.ts` boots the whole app, and is not run in CI today (see Running tests locally above — nothing in `_ci-node.yml` references it). A spec is co-located with the code it exercises, never gathered into a parallel test tree; its builders live under a `__tests__/` directory next to the entity they build.
+**Rule:** `*.spec.ts` mocks all I/O; `*.integration.spec.ts` runs against real Postgres, Redis, and RabbitMQ; `*.e2e.spec.ts` boots the whole app, and is not run in CI today (see Running tests locally above — nothing in `_ci.yml` references it). A spec is co-located with the code it exercises, never gathered into a parallel test tree; its builders live under a `__tests__/` directory next to the entity they build.
 
-**Why:** the three suffixes are how `vitest.config.ts` routes a file to the right project at all — the `unit` project's `include`/`exclude` globs are exactly what makes it safe to run without Docker. Misnaming a file's suffix silently moves it into the wrong project, or out of every project's `include` glob entirely.
+**Why:** the three suffixes are how the `test:*` scripts route a file to the right suite at all — the unit script's `--path-ignore-patterns` exclusions are exactly what makes it safe to run without Docker. Misnaming a file's suffix silently moves it into the wrong suite, or out of every suite entirely (Bun only discovers `*.spec.*`/`*.test.*` files, so the old `*.e2e-spec.ts` suffix would never run).
 
 **Canonical example:** `src/modules/chains/`'s `domain/chains.repository.spec.ts` (unit, every dependency mocked) sits next to `routes/chains.controller.integration.spec.ts` (integration, boots a real Nest module through `TestAppProvider`/`initTestApplication` and drives it with `supertest`) and the module's own builders under `domain/entities/__tests__/*.builder.ts` — all three co-located with the code they cover.
 
@@ -106,18 +122,18 @@ A `*.factory.ts` file is not this pattern and is not a template to copy for a ne
 
 ### Determinism
 
-**Rule:** Faker is seeded per test file, so a failing run is reproducible by re-running with `FAKER_SEED=<n>` (the seed a run used is always logged). Time is pinned to `TZ=UTC` for every project. A test never depends on another test's side effects or on run order — each one is independent and idempotent on repeat. A spec also leaves no global state behind (a spy on a global such as `console`, a `process.env` change, fake timers): `unit` specs share a module cache within a worker, so whatever one file leaves behind, the next file in that worker inherits.
+**Rule:** Faker is seeded per test file, so a failing run is reproducible by re-running with `FAKER_SEED=<n>` (the seed a run used is always logged). Time runs in UTC for every suite. A test never depends on another test's side effects or on run order — each one is independent and idempotent on repeat.
 
 **Why:** an unseeded faker value or a local timezone makes a failure irreproducible outside the exact process that hit it; a test that silently depends on another test having already run is the other common source of a suite that passes in isolation and fails in CI, or the reverse.
 
-**Canonical example:** `test/faker-setup.ts` seeds `@faker-js/faker` from `FAKER_SEED` (or a fresh random seed it logs as `[faker] seed=<n>`) before any test in the file runs; `vitest.config.ts` sets `env: { TZ: 'UTC' }` in all four of its projects, and every `yarn test:*` script additionally prefixes the same `TZ=UTC`.
+**Canonical example:** `test/setup.ts` seeds `@faker-js/faker` from `FAKER_SEED` (or a fresh random seed it logs as `[faker] seed=<n>`) before any test in the file runs; `bun test` runs in UTC by default, so no script needs a `TZ` prefix.
 
-`faker-setup.ts` is a `setupFiles` entry shared by all four projects, so this isn't a unit-only concern: an integration or e2e spec seeding its fixtures through the same builders gets the exact same reproducibility.
+`test/setup.ts` is the `bunfig.toml` `[test] preload` shared by every suite, so this isn't a unit-only concern: an integration or e2e spec seeding its fixtures through the same builders gets the exact same reproducibility.
 
 ### Constructor-change sweep
 
 **Rule:** After changing a repository's constructor parameters, run the standing sweep — `grep -rnF "new <RepoClass>(" src --include='*.integration.spec.ts'` (`-F` so the class name is matched literally, not as a regex) — and update every call site it returns before the change is done.
 
-**Why:** the full rationale — `*.integration.spec.ts` hand-constructs repositories with `new` rather than through Nest DI, and only `yarn typecheck` (not `yarn build`, whose `tsconfig.build.json` excludes spec files) type-checks them — belongs to `docs/agents/database-and-migrations.md`'s "The integration-spec constructor sweep" rule; this entry only cross-references it so a testing-focused pass over this guide doesn't miss the sweep.
+**Why:** the full rationale — `*.integration.spec.ts` hand-constructs repositories with `new` rather than through Nest DI, and only `bun run typecheck` (`tsc -p tsconfig.json`, specs included) type-checks them, since `bun test` strips types without checking — belongs to `docs/agents/database-and-migrations.md`'s "The integration-spec constructor sweep" rule; this entry only cross-references it so a testing-focused pass over this guide doesn't miss the sweep.
 
 **Canonical example:** see the `WalletsRepository` sweep worked through in `docs/agents/database-and-migrations.md`'s "The integration-spec constructor sweep" rule.

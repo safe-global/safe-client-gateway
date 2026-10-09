@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { ForbiddenException } from '@nestjs/common';
 import { getAddress } from 'viem';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import { siweAuthPayloadDtoBuilder } from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
 import type { IEntitlementEnforcement } from '#/modules/entitlements/domain/entitlement-enforcement.interface';
@@ -35,14 +36,14 @@ describe('SpaceSafeShieldService', () => {
   let target: SpaceSafeShieldService;
 
   beforeEach(() => {
-    spaceSafesRepository = { existsInSpace: vi.fn().mockResolvedValue(true) };
+    spaceSafesRepository = { existsInSpace: jest.fn().mockResolvedValue(true) };
     membersRepository = {
-      findOne: vi.fn().mockResolvedValue({ id: userId } as Member),
+      findOne: jest.fn().mockResolvedValue({ id: userId } as Member),
     };
-    entitlementEnforcement = { assertFeatureGranted: vi.fn() };
+    entitlementEnforcement = { assertFeatureGranted: jest.fn() };
     safeShieldAnalysis = {
-      analyzeRecipient: vi.fn(),
-      analyzeCounterparty: vi.fn(),
+      analyzeRecipient: jest.fn(),
+      analyzeCounterparty: jest.fn(),
     };
     target = new SpaceSafeShieldService(
       spaceSafesRepository as MockedObject<ISpaceSafesRepository>,
@@ -86,9 +87,10 @@ describe('SpaceSafeShieldService', () => {
         }),
       ).rejects.toThrow(notGranted);
 
-      expect(
-        entitlementEnforcement.assertFeatureGranted,
-      ).toHaveBeenCalledExactlyOnceWith({
+      expect(entitlementEnforcement.assertFeatureGranted).toHaveBeenCalledTimes(
+        1,
+      );
+      expect(entitlementEnforcement.assertFeatureGranted).toHaveBeenCalledWith({
         spaceId,
         featureKey: 'copilot_scans',
       });
@@ -128,14 +130,14 @@ describe('SpaceSafeShieldService', () => {
         }),
       ).resolves.toBe(response);
 
-      expect(membersRepository.findOne).toHaveBeenCalledExactlyOnceWith({
+      expect(membersRepository.findOne).toHaveBeenCalledTimes(1);
+      expect(membersRepository.findOne).toHaveBeenCalledWith({
         user: { id: userId },
         space: { id: spaceId },
         status: 'ACTIVE',
       });
-      expect(
-        safeShieldAnalysis.analyzeRecipient,
-      ).toHaveBeenCalledExactlyOnceWith(
+      expect(safeShieldAnalysis.analyzeRecipient).toHaveBeenCalledTimes(1);
+      expect(safeShieldAnalysis.analyzeRecipient).toHaveBeenCalledWith(
         safe.chainId,
         safe.safeAddress,
         recipientAddress,
@@ -186,9 +188,8 @@ describe('SpaceSafeShieldService', () => {
         }),
       ).resolves.toBe(response);
 
-      expect(
-        safeShieldAnalysis.analyzeCounterparty,
-      ).toHaveBeenCalledExactlyOnceWith({
+      expect(safeShieldAnalysis.analyzeCounterparty).toHaveBeenCalledTimes(1);
+      expect(safeShieldAnalysis.analyzeCounterparty).toHaveBeenCalledWith({
         chainId: safe.chainId,
         safeAddress: safe.safeAddress,
         tx,

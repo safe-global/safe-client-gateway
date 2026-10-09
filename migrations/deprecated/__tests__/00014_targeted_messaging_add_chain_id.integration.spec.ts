@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { afterAll, beforeAll, describe, expect, it } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import type postgres from 'postgres';
 import type { Sql } from 'postgres';
@@ -138,7 +139,7 @@ describe('Migration 00014_targeted_messaging_add_chain_id', () => {
           await expect(
             sql`
               INSERT INTO targeted_safes (address, outreach_id, chain_id)
-              VALUES (${address}, ${outreach.id}, '1')`,
+              VALUES (${address}, ${outreach.id}, '1')`.execute(),
           ).rejects.toThrow('duplicate key value');
         },
       });
@@ -193,7 +194,7 @@ describe('Migration 00014_targeted_messaging_add_chain_id', () => {
           await expect(
             sql`
               INSERT INTO targeted_safes (address, outreach_id, chain_id)
-              VALUES (${address}, ${outreach.id}, NULL)`,
+              VALUES (${address}, ${outreach.id}, NULL)`.execute(),
           ).rejects.toThrow('duplicate key value');
         },
       });
@@ -219,7 +220,7 @@ describe('Migration 00014_targeted_messaging_add_chain_id', () => {
           await expect(
             sql`
               INSERT INTO targeted_safes (address, outreach_id, chain_id)
-              VALUES (${address}, ${outreach.id}, '1')`,
+              VALUES (${address}, ${outreach.id}, '1')`.execute(),
           ).rejects.toThrow(/exclusion constraint/);
         },
       });
@@ -245,7 +246,7 @@ describe('Migration 00014_targeted_messaging_add_chain_id', () => {
           await expect(
             sql`
               INSERT INTO targeted_safes (address, outreach_id, chain_id)
-              VALUES (${address}, ${outreach.id}, NULL)`,
+              VALUES (${address}, ${outreach.id}, NULL)`.execute(),
           ).rejects.toThrow(/exclusion constraint/);
         },
       });

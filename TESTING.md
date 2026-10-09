@@ -8,27 +8,37 @@ The testing guide moved to [docs/agents/testing.md](docs/agents/testing.md) — 
 
 ## Quick reference
 
+Tests run on Bun's built-in test runner (`bun:test`).
+
 ```bash
 # Run all unit tests (default config from package.json)
-yarn test
+bun run test
 
-# Run unit tests explicitly (the `unit` project in vitest.config.ts)
-yarn test:unit
+# Run unit tests explicitly (src/ and scripts/ minus *.integration.spec.ts and *.e2e.spec.ts)
+bun run test:unit
 
 # Run unit tests with coverage
-yarn test:unit:cov
+bun run test:unit:cov
 
-# Run integration tests (the `integration` project in vitest.config.ts)
-yarn test:integration
+# Run integration tests (*.integration.spec.ts; needs Postgres, Redis and RabbitMQ)
+bun run test:integration
 
 # Run integration tests with coverage
-yarn test:integration:cov
+bun run test:integration:cov
 
-# Run all tests (unit + integration)
-yarn test:all
+# Run all tests (unit, then integration, then e2e)
+bun run test:all
 
 # Run in watch mode
-yarn test:watch
+bun run test:watch
 ```
 
-**Note**: `yarn test` and `yarn test:unit` are equivalent — both run the `unit` project defined in `vitest.config.ts`.
+**Note**: `bun run test` and `bun run test:unit` are equivalent. A path appended to these scripts adds to their own `src scripts` filters rather than narrowing them, so run a single file directly:
+
+```bash
+# unit spec
+bun --no-env-file --env-file=.env.test test ./path/to/file.spec.ts
+
+# integration or e2e spec
+bun --no-env-file --env-file=.env.test test --preload ./test/e2e-setup.ts --timeout=60000 ./path/to/file.integration.spec.ts
+```

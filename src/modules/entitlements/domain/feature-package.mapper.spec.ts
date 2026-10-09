@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { DB_MAX_SAFE_INTEGER } from '#/domain/common/constants';
 import { FeatureType } from '#/modules/entitlements/domain/entities/feature.entity';
@@ -21,7 +22,7 @@ describe('mapFeaturePackage', () => {
   let onWarning: (message: string) => void;
 
   beforeEach(() => {
-    onWarning = vi.fn<(message: string) => void>();
+    onWarning = jest.fn<(message: string) => void>();
   });
 
   it('parses binary, metered, unlimited and value metadata entries', () => {
@@ -212,7 +213,7 @@ describe('parseSafeSeatQuota', () => {
   it.each(['ten', '-1', '1.5', `${DB_MAX_SAFE_INTEGER + 1}`])(
     'returns null and warns for the unparseable quota %s',
     (quota) => {
-      const onWarning = vi.fn<(message: string) => void>();
+      const onWarning = jest.fn<(message: string) => void>();
 
       expect(
         parseSafeSeatQuota({ FEATURE_SAFE_SEATS: quota }, onWarning),
@@ -223,7 +224,7 @@ describe('parseSafeSeatQuota', () => {
   );
 
   it('does not warn for an unlimited quota', () => {
-    const onWarning = vi.fn<(message: string) => void>();
+    const onWarning = jest.fn<(message: string) => void>();
 
     parseSafeSeatQuota({ FEATURE_SAFE_SEATS: 'unlimited' }, onWarning);
 
@@ -231,7 +232,7 @@ describe('parseSafeSeatQuota', () => {
   });
 
   it('does not warn when the key is absent', () => {
-    const onWarning = vi.fn<(message: string) => void>();
+    const onWarning = jest.fn<(message: string) => void>();
 
     parseSafeSeatQuota({}, onWarning);
 

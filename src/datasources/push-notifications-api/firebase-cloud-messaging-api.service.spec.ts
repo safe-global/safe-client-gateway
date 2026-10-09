@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
-import type { MockedObject } from 'vitest';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
 import { FakeCacheService } from '#/datasources/cache/__tests__/fake.cache.service';
 import { CacheDir } from '#/datasources/cache/entities/cache-dir.entity';
@@ -12,13 +13,13 @@ import { firebaseNotificationBuilder } from '#/datasources/push-notifications-ap
 import { FirebaseCloudMessagingApiService } from '#/datasources/push-notifications-api/firebase-cloud-messaging-api.service';
 import { rawify } from '#/validation/entities/raw.entity';
 
-const mockNetworkService = vi.mocked({
-  get: vi.fn(),
-  post: vi.fn(),
+const mockNetworkService = mocked({
+  get: jest.fn(),
+  post: jest.fn(),
 } as MockedObject<INetworkService>);
 
-const mockJwtService = vi.mocked({
-  sign: vi.fn(),
+const mockJwtService = mocked({
+  sign: jest.fn(),
 } as MockedObject<IJwtService>);
 
 describe('FirebaseCloudMessagingApiService', () => {
@@ -32,7 +33,7 @@ describe('FirebaseCloudMessagingApiService', () => {
   let oauth2TokenTtlBufferInSeconds: number;
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
 
     pushNotificationsBaseUri = faker.internet.url({ appendSlash: false });
     pushNotificationsProject = faker.word.noun();

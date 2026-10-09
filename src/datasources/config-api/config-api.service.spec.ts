@@ -1,7 +1,16 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  jest,
+} from 'bun:test';
 import { faker } from '@faker-js/faker';
-import type { MockedObject } from 'vitest';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
 import type { CacheFirstDataSource } from '#/datasources/cache/cache.first.data.source';
 import type { ICacheService } from '#/datasources/cache/cache.service.interface';
@@ -16,23 +25,23 @@ import { safeAppBuilder } from '#/modules/safe-apps/domain/entities/__tests__/sa
 import { rawify } from '#/validation/entities/raw.entity';
 
 const dataSource = {
-  get: vi.fn(),
+  get: jest.fn(),
 } as MockedObject<CacheFirstDataSource>;
-const mockDataSource = vi.mocked(dataSource);
+const mockDataSource = mocked(dataSource);
 
 const cacheService = {
-  deleteByKey: vi.fn(),
-  hSet: vi.fn(),
+  deleteByKey: jest.fn(),
+  hSet: jest.fn(),
 } as MockedObject<ICacheService>;
-const mockCacheService = vi.mocked(cacheService);
+const mockCacheService = mocked(cacheService);
 
 const httpErrorFactory = {
-  from: vi.fn(),
+  from: jest.fn(),
 } as MockedObject<HttpErrorFactory>;
-const mockHttpErrorFactory = vi.mocked(httpErrorFactory);
+const mockHttpErrorFactory = mocked(httpErrorFactory);
 
 const mockLoggingService = {
-  info: vi.fn(),
+  info: jest.fn(),
 } as MockedObject<ILoggingService>;
 
 describe('ConfigApi', () => {
@@ -57,7 +66,7 @@ describe('ConfigApi', () => {
   });
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
     service = new ConfigApi(
       dataSource,
       mockCacheService,
@@ -368,11 +377,11 @@ describe('ConfigApi', () => {
 
   describe('Cache-clearing tests', () => {
     beforeEach(() => {
-      vi.useFakeTimers();
+      jest.useFakeTimers();
     });
 
     afterAll(() => {
-      vi.useRealTimers();
+      jest.useRealTimers();
     });
 
     it('clear safe apps for a given chain should trigger delete on cache service', async () => {

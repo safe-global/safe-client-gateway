@@ -46,7 +46,7 @@ These checks are independent of Part 1 and of each other: passing one never excu
   - An interface with a single implementation that isn't a standard Symbol-DI seam (this repo's one-interface/one-implementation-per-datasource pattern), an export nothing imports, and a config flag with no reader are each their own finding.
   - A helper generalized (parameterized, exported, or made reusable) beyond what its one call site actually needs, or an abstraction built for an anticipated future need, is a finding on the same basis as literal dead code.
   - An artifact whose reader or writer lands in a later PR of a declared series is staged delivery, not speculation — but only when the PR description itself declares the series and states which follow-up consumes it (e.g. a data-model PR shipping its whole schema in one migration so follow-ups never alter the tables). An undeclared "we'll use it later" is still a finding.
-- [ ] Pre-commit checklist commands (`yarn format`, `yarn lint --fix`, `yarn typecheck`, `yarn test`) ran clean — evidence, not assertion.
+- [ ] Pre-commit checklist commands (`bun run format`, `bun run lint`, `bun run typecheck`, `bun run test`) ran clean — evidence, not assertion.
   - A stated "tests pass" without pasted command output or a CI run link does not satisfy this item.
   - Running only some of the four commands, or running them against an earlier version of the diff, does not satisfy this item either.
 - [ ] New/changed files carry the correct SPDX license header.

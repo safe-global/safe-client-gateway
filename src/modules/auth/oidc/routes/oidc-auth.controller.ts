@@ -20,7 +20,10 @@ import {
 import type { FastifyReply } from 'fastify';
 import { z } from 'zod';
 import { IConfigurationService } from '#/config/configuration.service.interface';
-import { ILoggingService, LoggingService } from '#/logging/logging.interface';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '#/logging/logging.interface';
 import { asError } from '#/logging/utils';
 import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
 import { Authenticator } from '#/modules/auth/oidc/routes/entities/authenticator.entity';

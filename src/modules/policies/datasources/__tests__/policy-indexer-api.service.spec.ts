@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
 import type { ICacheService } from '#/datasources/cache/cache.service.interface';
 import { CacheDir } from '#/datasources/cache/entities/cache-dir.entity';
@@ -23,21 +24,21 @@ import type { Raw } from '#/validation/entities/raw.entity';
 import { rawify } from '#/validation/entities/raw.entity';
 
 const mockNetworkService = {
-  post: vi.fn(),
+  post: jest.fn(),
 } as MockedObject<INetworkService>;
 
 const mockCacheService = {
-  hGet: vi.fn(),
-  hSet: vi.fn(),
-  deleteByKey: vi.fn(),
-  getInvalidationTimeMs: vi.fn(),
+  hGet: jest.fn(),
+  hSet: jest.fn(),
+  deleteByKey: jest.fn(),
+  getInvalidationTimeMs: jest.fn(),
 } as unknown as MockedObject<ICacheService>;
 
 const mockLoggingService = {
-  info: vi.fn(),
-  error: vi.fn(),
-  warn: vi.fn(),
-  debug: vi.fn(),
+  info: jest.fn(),
+  error: jest.fn(),
+  warn: jest.fn(),
+  debug: jest.fn(),
 } as MockedObject<ILoggingService>;
 
 const SEPOLIA = '11155111';

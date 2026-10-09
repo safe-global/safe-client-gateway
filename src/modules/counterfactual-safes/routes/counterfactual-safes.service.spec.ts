@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { ConflictException } from '@nestjs/common';
 import { getAddress } from 'viem';
-import type { MockedObject } from 'vitest';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import type { ILoggingService } from '#/logging/logging.interface';
 import { siweAuthPayloadDtoBuilder } from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
@@ -13,19 +14,19 @@ import { CounterfactualSafesService } from '#/modules/counterfactual-safes/route
 import type { CreateCounterfactualSafeDto } from '#/modules/counterfactual-safes/routes/entities/create-counterfactual-safe.dto.entity';
 import type { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
 
-const mockCounterfactualSafesRepository = vi.mocked({
-  create: vi.fn(),
+const mockCounterfactualSafesRepository = mocked({
+  create: jest.fn(),
 } as MockedObject<ICounterfactualSafesRepository>);
 
-const mockSafeRepository = vi.mocked({
-  isSafe: vi.fn(),
+const mockSafeRepository = mocked({
+  isSafe: jest.fn(),
 } as MockedObject<ISafeRepository>);
 
 const mockLoggingService = {
-  info: vi.fn(),
-  debug: vi.fn(),
-  error: vi.fn(),
-  warn: vi.fn(),
+  info: jest.fn(),
+  debug: jest.fn(),
+  error: jest.fn(),
+  warn: jest.fn(),
 } as MockedObject<ILoggingService>;
 
 function createDto(
@@ -55,7 +56,7 @@ describe('CounterfactualSafesService', () => {
   let target: CounterfactualSafesService;
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
     target = new CounterfactualSafesService(
       mockCounterfactualSafesRepository,
       mockSafeRepository,

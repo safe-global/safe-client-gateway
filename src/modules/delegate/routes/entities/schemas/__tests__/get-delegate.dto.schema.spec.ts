@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { describe, expect, it } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
 import { GetDelegateDtoSchema } from '#/modules/delegate/routes/entities/schemas/get-delegate.dto.schema';

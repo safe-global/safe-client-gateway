@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import {
   ForbiddenException,
@@ -8,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { MoreThan } from 'typeorm';
 import { getAddress } from 'viem';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import {
   oidcAuthPayloadDtoBuilder,
   siweAuthPayloadDtoBuilder,
@@ -31,30 +32,30 @@ import type { IWalletsRepository } from '#/modules/wallets/domain/wallets.reposi
 import { fakeUuid } from '#/validation/entities/schemas/__tests__/uuid.builder';
 
 const spacesRepositoryMock = {
-  create: vi.fn(),
-  find: vi.fn(),
-  findOneOrFail: vi.fn(),
-  update: vi.fn(),
-  delete: vi.fn(),
+  create: jest.fn(),
+  find: jest.fn(),
+  findOneOrFail: jest.fn(),
+  update: jest.fn(),
+  delete: jest.fn(),
 } as MockedObject<ISpacesRepository>;
 
 const membersRepositoryMock = {
-  find: vi.fn(),
-  findOne: vi.fn(),
+  find: jest.fn(),
+  findOne: jest.fn(),
 } as MockedObject<IMembersRepository>;
 
 const spaceSafesRepositoryMock = {
-  countSeatsBySpaceIds: vi.fn(),
+  countSeatsBySpaceIds: jest.fn(),
 } as MockedObject<ISpaceSafesRepository>;
 
 const usersRepositoryMock = {
-  findOneOrFail: vi.fn(),
-  activateIfPending: vi.fn(),
-  findEmailsByIds: vi.fn(),
+  findOneOrFail: jest.fn(),
+  activateIfPending: jest.fn(),
+  findEmailsByIds: jest.fn(),
 } as MockedObject<IUsersRepository>;
 
 const walletsRepositoryMock = {
-  find: vi.fn(),
+  find: jest.fn(),
 } as MockedObject<IWalletsRepository>;
 
 describe('SpacesService', () => {
@@ -68,7 +69,7 @@ describe('SpacesService', () => {
   >;
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
     // Created after resetAllMocks so the passthrough implementations survive.
     walletEncryptionServiceMock = createMockWalletEncryptionService();
     spaceEncryptionServiceMock = createMockSpaceEncryptionService();
@@ -259,7 +260,10 @@ describe('SpacesService', () => {
       expect(result[0].safeCount).toBe(seats);
       expect(
         spaceSafesRepositoryMock.countSeatsBySpaceIds,
-      ).toHaveBeenCalledExactlyOnceWith([space.id]);
+      ).toHaveBeenCalledTimes(1);
+      expect(
+        spaceSafesRepositoryMock.countSeatsBySpaceIds,
+      ).toHaveBeenCalledWith([space.id]);
     });
 
     it.each([

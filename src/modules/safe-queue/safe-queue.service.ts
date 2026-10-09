@@ -7,12 +7,12 @@ import { CacheFirstDataSource } from '#/datasources/cache/cache.first.data.sourc
 import { CacheRouter } from '#/datasources/cache/cache.router';
 import {
   CacheService,
-  ICacheService,
+  type ICacheService,
 } from '#/datasources/cache/cache.service.interface';
 import { CircuitBreakerKeys } from '#/datasources/circuit-breaker/circuit-breaker.keys';
 import { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
 import {
-  INetworkService,
+  type INetworkService,
   NetworkService,
 } from '#/datasources/network/network.service.interface';
 import { SAFE_QUEUE_SERVICE_MAX_LIMIT } from '#/domain/common/constants';
@@ -24,7 +24,7 @@ import {
 } from '#/logging/logging.interface';
 import { asError } from '#/logging/utils';
 import type { Delegate } from '#/modules/delegate/domain/entities/delegate.entity';
-import { SafeQueueMessage } from '#/modules/safe-queue/entities/message.entity';
+import { type SafeQueueMessage } from '#/modules/safe-queue/entities/message.entity';
 import type { SafeQueueMultisigTransactionEntity } from '#/modules/safe-queue/entities/multisig-transaction.entity';
 import {
   SafeQueueMultisigTransactionListSchema,

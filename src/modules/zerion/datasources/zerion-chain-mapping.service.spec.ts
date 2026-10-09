@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { numberToHex } from 'viem';
-import type { MockedObject } from 'vitest';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
 import { CacheRouter } from '#/datasources/cache/cache.router';
 import type { ICacheService } from '#/datasources/cache/cache.service.interface';
@@ -11,20 +12,20 @@ import type { ILoggingService } from '#/logging/logging.interface';
 import { ZerionChainMappingService } from '#/modules/zerion/datasources/zerion-chain-mapping.service';
 import { rawify } from '#/validation/entities/raw.entity';
 
-const mockCacheService = vi.mocked({
-  hGet: vi.fn(),
-  hSet: vi.fn(),
+const mockCacheService = mocked({
+  hGet: jest.fn(),
+  hSet: jest.fn(),
 } as MockedObject<ICacheService>);
 
 const mockLoggingService = {
-  debug: vi.fn(),
-  warn: vi.fn(),
-  error: vi.fn(),
-  info: vi.fn(),
+  debug: jest.fn(),
+  warn: jest.fn(),
+  error: jest.fn(),
+  info: jest.fn(),
 } as MockedObject<ILoggingService>;
 
-const mockNetworkService = vi.mocked({
-  get: vi.fn(),
+const mockNetworkService = mocked({
+  get: jest.fn(),
 } as MockedObject<INetworkService>);
 
 describe('ZerionChainMappingService', () => {
@@ -34,7 +35,7 @@ describe('ZerionChainMappingService', () => {
   const zerionBaseUri = faker.internet.url({ appendSlash: false });
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
     fakeConfigurationService = new FakeConfigurationService();
     fakeConfigurationService.set(
       'balances.providers.zerion.apiKey',
@@ -740,7 +741,7 @@ describe('ZerionChainMappingService', () => {
     });
 
     it('should not override cache field - field should come from CacheRouter', async () => {
-      const getZerionChainsCacheDirSpy = vi.spyOn(
+      const getZerionChainsCacheDirSpy = jest.spyOn(
         CacheRouter,
         'getZerionChainsCacheDir',
       );
@@ -791,7 +792,7 @@ describe('ZerionChainMappingService', () => {
     });
 
     it('should use CacheRouter field for chainIdToNetwork direction without overriding', async () => {
-      const getZerionChainsCacheDirSpy = vi.spyOn(
+      const getZerionChainsCacheDirSpy = jest.spyOn(
         CacheRouter,
         'getZerionChainsCacheDir',
       );

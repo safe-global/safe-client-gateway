@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import type { Hex } from 'viem';
 import { getAddress } from 'viem';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import type { ILoggingService } from '#/logging/logging.interface';
 import { DelayModifierDecoder } from '#/modules/alerts/domain/contracts/decoders/delay-modifier-decoder.helper';
 import { relayerBuilder } from '#/modules/chains/domain/entities/__tests__/relayer.builder';
@@ -32,29 +33,29 @@ import type { RelayFeeRelayer } from '#/modules/relay/domain/relayers/relay-fee.
 import type { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
 
 const mockDailyLimitRelayer = {
-  canRelay: vi.fn(),
-  relay: vi.fn(),
-  getRelaysRemaining: vi.fn(),
+  canRelay: jest.fn(),
+  relay: jest.fn(),
+  getRelaysRemaining: jest.fn(),
 } as unknown as MockedObject<DailyLimitRelayer>;
 
 const mockNoFeeCampaignRelayer = {
-  canRelay: vi.fn(),
-  relay: vi.fn(),
-  getRelaysRemaining: vi.fn(),
+  canRelay: jest.fn(),
+  relay: jest.fn(),
+  getRelaysRemaining: jest.fn(),
 } as unknown as MockedObject<NoFeeCampaignRelayer>;
 
 const mockRelayFeeRelayer = {
-  canRelay: vi.fn(),
-  relay: vi.fn(),
-  getRelaysRemaining: vi.fn(),
+  canRelay: jest.fn(),
+  relay: jest.fn(),
+  getRelaysRemaining: jest.fn(),
 } as unknown as MockedObject<RelayFeeRelayer>;
 
 const mockLoggingService = {
-  warn: vi.fn(),
+  warn: jest.fn(),
 } as MockedObject<ILoggingService>;
 
 const mockSafeRepository = {
-  getSafe: vi.fn(),
+  getSafe: jest.fn(),
 } as unknown as MockedObject<ISafeRepository>;
 
 const NON_GTF_RELAYER_TYPES = [
@@ -96,7 +97,7 @@ describe('RelayManager', () => {
   let manager: RelayManager;
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
     manager = new RelayManager(
       mockDailyLimitRelayer,
       mockNoFeeCampaignRelayer,

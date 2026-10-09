@@ -67,13 +67,13 @@ Before creating **EACH** commit, you MUST run the following commands in sequence
 1. **Format the code:**
 
    ```bash
-   yarn format
+   bun run format
    ```
 
 2. **Run linter and fix issues:**
 
    ```bash
-   yarn lint --fix
+   bun run lint
    ```
 
    If there are any remaining lint errors, fix them manually before proceeding.
@@ -81,13 +81,13 @@ Before creating **EACH** commit, you MUST run the following commands in sequence
 3. **Type-check (specs included):**
 
    ```bash
-   yarn typecheck
+   bun run typecheck
    ```
 
 4. **Run tests:**
 
    ```bash
-   yarn test
+   bun run test
    ```
 
    All tests must pass before committing. If tests fail, fix the issues before proceeding.
@@ -99,10 +99,10 @@ The correct workflow for making commits is:
 ```bash
 # 1. Make your code changes
 # 2. Run quality checks
-yarn format
-yarn lint --fix
-yarn typecheck
-yarn test
+bun run format
+bun run lint
+bun run typecheck
+bun run test
 
 # 3. Only after all checks pass, commit
 git add <files>

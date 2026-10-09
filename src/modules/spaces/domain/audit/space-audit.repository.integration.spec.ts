@@ -1,10 +1,19 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  describe,
+  expect,
+  it,
+  jest,
+} from 'bun:test';
 import { faker } from '@faker-js/faker';
 import type { ConfigService } from '@nestjs/config';
 import { DataSource } from 'typeorm';
 import { getAddress } from 'viem';
-import type { MockedObject } from 'vitest';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
 import configuration from '#/config/entities/__tests__/configuration';
 import { postgresConfig } from '#/config/entities/postgres.config';
@@ -37,14 +46,14 @@ import { WalletsRepository } from '#/modules/wallets/domain/wallets.repository';
 import { fakeEmailAddress } from '#/validation/entities/schemas/__tests__/email-address.builder';
 
 const mockLoggingService = {
-  debug: vi.fn(),
-  error: vi.fn(),
-  info: vi.fn(),
-  warn: vi.fn(),
+  debug: jest.fn(),
+  error: jest.fn(),
+  info: jest.fn(),
+  warn: jest.fn(),
 } as MockedObject<ILoggingService>;
 
-const mockConfigurationService = vi.mocked({
-  getOrThrow: vi.fn(),
+const mockConfigurationService = mocked({
+  getOrThrow: jest.fn(),
 } as MockedObject<IConfigurationService>);
 
 describe('SpaceAuditRepository', () => {
@@ -100,7 +109,7 @@ describe('SpaceAuditRepository', () => {
 
     // Migrate database
     const mockConfigService = {
-      getOrThrow: vi.fn().mockImplementation((key: string) => {
+      getOrThrow: jest.fn().mockImplementation((key: string) => {
         if (key === 'db.migrator.numberOfRetries') {
           return testConfiguration.db.migrator.numberOfRetries;
         }
@@ -639,8 +648,8 @@ describe('SpaceAuditRepository', () => {
   describe('record (flag off)', () => {
     it('should be a no-op when the feature flag is disabled', async () => {
       const { spaceId, spaceUuid, adminUserId } = await createSpaceWithAdmin();
-      const disabledConfigurationService = vi.mocked({
-        getOrThrow: vi.fn().mockImplementation((key: string) => {
+      const disabledConfigurationService = mocked({
+        getOrThrow: jest.fn().mockImplementation((key: string) => {
           if (key === 'features.spaceAuditLog') {
             return false;
           }

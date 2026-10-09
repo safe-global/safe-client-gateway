@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { afterEach, beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress, zeroAddress } from 'viem';
 import type { IBuilder } from '#/__tests__/builder';
@@ -164,7 +165,8 @@ describe('SpendingLimitMapper', () => {
   describe('computing when an allowance next resets', () => {
     /** Pins now to `minutes` since the epoch, so a boundary can be placed. */
     function nowAtMinute(minutes: number): void {
-      vi.useFakeTimers().setSystemTime(minutes * 60 * 1000);
+      jest.useFakeTimers();
+      jest.setSystemTime(minutes * 60 * 1000);
     }
 
     /** A daily allowance whose current window began at `windowStart`. */
@@ -183,7 +185,7 @@ describe('SpendingLimitMapper', () => {
     }
 
     afterEach(() => {
-      vi.useRealTimers();
+      jest.useRealTimers();
     });
 
     it('should report the boundary one period after the window start', () => {

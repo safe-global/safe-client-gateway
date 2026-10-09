@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { ForbiddenException } from '@nestjs/common';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import {
   assertAdmin,
   assertMember,
@@ -11,12 +12,12 @@ import { memberBuilder } from '#/modules/users/datasources/entities/__tests__/me
 import type { IMembersRepository } from '#/modules/users/domain/members/members.repository.interface';
 
 const membersRepositoryMock = {
-  findOne: vi.fn(),
+  findOne: jest.fn(),
 } as MockedObject<IMembersRepository>;
 
 describe('space-assert.utils', () => {
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
   });
 
   describe('assertAdmin', () => {

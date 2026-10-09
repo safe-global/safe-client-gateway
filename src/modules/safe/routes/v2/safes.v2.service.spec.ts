@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import type { MockedObject } from 'vitest';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
 import type { ILoggingService } from '#/logging/logging.interface';
 import type { ZerionWalletPortfolio } from '#/modules/balances/datasources/entities/zerion-wallet-portfolio.entity';
@@ -17,32 +18,32 @@ import type { ISafeRepository } from '#/modules/safe/domain/safe.repository.inte
 import { SafesV2Service } from '#/modules/safe/routes/v2/safes.v2.service';
 import type { IZerionRepository } from '#/modules/zerion/domain/zerion.repository.interface';
 
-const mockSafeRepository = vi.mocked({
-  getSafe: vi.fn(),
-  getTransactionQueue: vi.fn(),
+const mockSafeRepository = mocked({
+  getSafe: jest.fn(),
+  getTransactionQueue: jest.fn(),
 } as MockedObject<ISafeRepository>);
 
-const mockChainsRepository = vi.mocked({
-  getChain: vi.fn(),
+const mockChainsRepository = mocked({
+  getChain: jest.fn(),
 } as MockedObject<IChainsRepository>);
 
-const mockBalancesRepository = vi.mocked({
-  getBalances: vi.fn(),
+const mockBalancesRepository = mocked({
+  getBalances: jest.fn(),
 } as MockedObject<IBalancesRepository>);
 
-const mockZerionWalletPortfolioApi = vi.mocked({
-  getPortfolio: vi.fn(),
+const mockZerionWalletPortfolioApi = mocked({
+  getPortfolio: jest.fn(),
 } as MockedObject<IZerionWalletPortfolioApi>);
 
 const mockLoggingService = {
-  debug: vi.fn(),
-  warn: vi.fn(),
-  error: vi.fn(),
-  info: vi.fn(),
+  debug: jest.fn(),
+  warn: jest.fn(),
+  error: jest.fn(),
+  info: jest.fn(),
 } as MockedObject<ILoggingService>;
 
-const mockZerionRepository = vi.mocked({
-  getChainIdToNetworkMapping: vi.fn(),
+const mockZerionRepository = mocked({
+  getChainIdToNetworkMapping: jest.fn(),
 } as MockedObject<IZerionRepository>);
 
 // Chains Zerion lists per environment, keyed by chainId; anything else is unsupported.
@@ -90,7 +91,7 @@ describe('SafesV2Service', () => {
   };
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
     fakeConfigurationService = new FakeConfigurationService();
     fakeConfigurationService.set('mappings.safe.maxOverviews', 10);
     fakeConfigurationService.set('features.zerion', true);
@@ -183,7 +184,10 @@ describe('SafesV2Service', () => {
     expect(result[0].fiatTotal).toBe('5');
     expect(
       mockZerionRepository.getChainIdToNetworkMapping,
-    ).toHaveBeenCalledExactlyOnceWith(true);
+    ).toHaveBeenCalledTimes(1);
+    expect(
+      mockZerionRepository.getChainIdToNetworkMapping,
+    ).toHaveBeenCalledWith(true);
     expect(mockBalancesRepository.getBalances).not.toHaveBeenCalled();
   });
 

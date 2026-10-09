@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import type { MockedObject } from 'vitest';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import type { ILoggingService } from '#/logging/logging.interface';
 import { siweAuthPayloadDtoBuilder } from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
@@ -14,34 +15,34 @@ import type { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-
 import { memberBuilder } from '#/modules/users/datasources/entities/__tests__/member.entity.db.builder';
 import type { IMembersRepository } from '#/modules/users/domain/members/members.repository.interface';
 
-const mockMembersRepository = vi.mocked({
-  findOne: vi.fn(),
+const mockMembersRepository = mocked({
+  findOne: jest.fn(),
 } as MockedObject<IMembersRepository>);
 
-const mockSpaceSafesRepository = vi.mocked({
-  findBySpaceId: vi.fn(),
+const mockSpaceSafesRepository = mocked({
+  findBySpaceId: jest.fn(),
 } as MockedObject<ISpaceSafesRepository>);
 
-const mockCounterfactualSafesRepository = vi.mocked({
-  find: vi.fn(),
+const mockCounterfactualSafesRepository = mocked({
+  find: jest.fn(),
 } as MockedObject<ICounterfactualSafesRepository>);
 
-const mockSafeRepository = vi.mocked({
-  isSafe: vi.fn(),
+const mockSafeRepository = mocked({
+  isSafe: jest.fn(),
 } as MockedObject<ISafeRepository>);
 
 const mockLoggingService = {
-  info: vi.fn(),
-  debug: vi.fn(),
-  error: vi.fn(),
-  warn: vi.fn(),
+  info: jest.fn(),
+  debug: jest.fn(),
+  error: jest.fn(),
+  warn: jest.fn(),
 } as MockedObject<ILoggingService>;
 
 describe('SpaceCounterfactualSafesService', () => {
   let target: SpaceCounterfactualSafesService;
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
     target = new SpaceCounterfactualSafesService(
       mockMembersRepository,
       mockSpaceSafesRepository,

@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import type { Address } from 'viem';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
 import type { ILoggingService } from '#/logging/logging.interface';
 import { OwnersService } from '#/modules/owners/routes/owners.service';
@@ -10,28 +11,28 @@ import type { SafeRepository } from '#/modules/safe/domain/safe.repository';
 import type { MaliciousAddressScanner } from '#/modules/safe-shield/malicious-address-scan/malicious-address-scanner.service';
 
 const safeRepositoryMock: MockedObject<SafeRepository> = {
-  getSafesByOwner: vi.fn(),
-  getSafesByOwnerV2: vi.fn(),
-  getAllSafesByOwner: vi.fn(),
-  getAllSafesByOwnerV2: vi.fn(),
-  getCreationTransaction: vi.fn(),
+  getSafesByOwner: jest.fn(),
+  getSafesByOwnerV2: jest.fn(),
+  getAllSafesByOwner: jest.fn(),
+  getAllSafesByOwnerV2: jest.fn(),
+  getCreationTransaction: jest.fn(),
 } as MockedObject<SafeRepository>;
 
 const loggingServiceMock: MockedObject<ILoggingService> = {
-  info: vi.fn(),
-  debug: vi.fn(),
-  error: vi.fn(),
-  warn: vi.fn(),
+  info: jest.fn(),
+  debug: jest.fn(),
+  error: jest.fn(),
+  warn: jest.fn(),
 };
 
-const getMaliciousAddresses = vi.fn();
+const getMaliciousAddresses = jest.fn();
 const scannerMock = {
   getMaliciousAddresses,
 } as unknown as MaliciousAddressScanner;
 
 function buildService(maliciousFilterEnabled: boolean): OwnersService {
   const configurationServiceMock = {
-    getOrThrow: vi.fn((key: string) => {
+    getOrThrow: jest.fn((key: string) => {
       if (key === 'features.ownersMaliciousFilter')
         return maliciousFilterEnabled;
       throw new Error(`Unexpected configuration key: ${key}`);
@@ -49,7 +50,7 @@ describe('OwnersService', () => {
   let service: OwnersService;
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
     getMaliciousAddresses.mockResolvedValue(new Set<string>());
     service = buildService(false);
   });

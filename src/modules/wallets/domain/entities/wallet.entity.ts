@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { z } from 'zod';
+import { z } from 'zod';
 import { RowSchema } from '#/datasources/db/v2/entities/row.entity';
 import { UserSchema } from '#/modules/users/domain/entities/user.entity';
 import { AddressSchema } from '#/validation/entities/schemas/address.schema';
@@ -12,5 +12,6 @@ export const WalletSchema = RowSchema.extend({
   // to a checksummed address at the repository boundary, so the inferred type
   // is a plain string; the AddressSchema runtime validation is retained.
   address: AddressSchema as z.ZodType<string>,
-  user: UserSchema,
+  // Lazy: UserSchema and WalletSchema reference each other.
+  user: z.lazy(() => UserSchema),
 });

@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import chunk from 'lodash/chunk';
 import { type Address, getAddress } from 'viem';
-import type { MockedObject } from 'vitest';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
 import {
   limitAndOffsetUrlFactory,
@@ -20,20 +21,20 @@ import type { Chain } from '#/modules/chains/domain/entities/chain.entity';
 import { type Raw, rawify } from '#/validation/entities/raw.entity';
 
 const mockLoggingService = {
-  error: vi.fn(),
+  error: jest.fn(),
 } as MockedObject<ILoggingService>;
 const mockConfigApi = {
-  getChains: vi.fn(),
-  getChainsV2: vi.fn(),
-  getChainV2: vi.fn(),
-  clearChainV2: vi.fn(),
+  getChains: jest.fn(),
+  getChainsV2: jest.fn(),
+  getChainV2: jest.fn(),
+  clearChainV2: jest.fn(),
 } as MockedObject<IConfigApi>;
 const mockEtherscanApi = {
-  getGasPrice: vi.fn(),
+  getGasPrice: jest.fn(),
 } as MockedObject<IEtherscanApi>;
 const mockTransactionApiManager = {} as MockedObject<ITransactionApiManager>;
-const mockConfigurationService = vi.mocked({
-  getOrThrow: vi.fn(),
+const mockConfigurationService = mocked({
+  getOrThrow: jest.fn(),
 } as MockedObject<IConfigurationService>);
 
 /**
@@ -51,7 +52,7 @@ describe('ChainsRepository', () => {
   const maxSequentialPages = 3;
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
 
     mockConfigurationService.getOrThrow.mockImplementation((key) => {
       if (key === 'safeConfig.chains.maxSequentialPages')

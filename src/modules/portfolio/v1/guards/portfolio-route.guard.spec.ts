@@ -1,17 +1,18 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { MockedObject } from 'vitest';
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
+import type { MockedObject } from '#/__tests__/mocks';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
 import { PortfolioRouteGuard } from '#/modules/portfolio/v1/guards/portfolio-route.guard';
 
 const mockConfigurationService = {
-  getOrThrow: vi.fn(),
+  getOrThrow: jest.fn(),
 } as MockedObject<IConfigurationService>;
 
 describe('PortfolioRouteGuard', () => {
   let target: PortfolioRouteGuard;
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
     target = new PortfolioRouteGuard(mockConfigurationService);
   });
 

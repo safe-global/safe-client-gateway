@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Inject } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '#/config/configuration.service.interface';
 import { CacheFirstDataSource } from '#/datasources/cache/cache.first.data.source';
 import {
@@ -19,7 +19,12 @@ import { KilnApi } from '#/modules/staking/datasources/kiln-api.service';
  *
  * Each widget deployment (`staking`, `earn`) is its own Kiln "organization",
  * so each has its own base URLs and API keys in configuration.
+ *
+ * `@Injectable()` keeps `dataSource` in the emitted constructor metadata: Bun's
+ * transpiler records undecorated parameters ahead of the first `@Inject` as
+ * `Object` on a class that has parameter decorators but no class decorator.
  */
+@Injectable()
 export abstract class KilnApiManager
   extends ChainApiManager<IStakingApi>
   implements IStakingApiManager

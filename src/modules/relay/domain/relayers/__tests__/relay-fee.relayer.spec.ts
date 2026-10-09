@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import type { Address, Hex } from 'viem';
 import { getAddress } from 'viem';
-import type { MockedObject } from 'vitest';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import type { IFeeServiceApi } from '#/domain/interfaces/fee-service-api.interface';
 import type { IRelayApi } from '#/domain/interfaces/relay-api.interface';
 import type { ITenderlySimulationApi } from '#/domain/interfaces/tenderly-simulation-api.interface';
@@ -17,34 +18,34 @@ import { RelaySimulationService } from '#/modules/relay/domain/relay-simulation.
 import type { RelayTransactionHelper } from '#/modules/relay/domain/relay-transaction-helper';
 import { RelayFeeRelayer } from '../relay-fee.relayer';
 
-const mockLoggingService = vi.mocked({
-  info: vi.fn(),
-  warn: vi.fn(),
-  error: vi.fn(),
-  debug: vi.fn(),
+const mockLoggingService = mocked({
+  info: jest.fn(),
+  warn: jest.fn(),
+  error: jest.fn(),
+  debug: jest.fn(),
 } as MockedObject<ILoggingService>);
 
-const mockRelayApi = vi.mocked({
-  relay: vi.fn(),
-  getRelayCount: vi.fn(),
-  setRelayCount: vi.fn(),
+const mockRelayApi = mocked({
+  relay: jest.fn(),
+  getRelayCount: jest.fn(),
+  setRelayCount: jest.fn(),
 } as MockedObject<IRelayApi>);
 
-const mockFeeServiceApi = vi.mocked({
-  canRelay: vi.fn(),
+const mockFeeServiceApi = mocked({
+  canRelay: jest.fn(),
 } as MockedObject<IFeeServiceApi>);
 
-const mockTenderlySimulationApi = vi.mocked({
-  simulate: vi.fn(),
+const mockTenderlySimulationApi = mocked({
+  simulate: jest.fn(),
 } as MockedObject<ITenderlySimulationApi>);
 
-const mockRelayTransactionHelper = vi.mocked({
-  decodeExecTransaction: vi.fn(),
-  isValidDecodedExecTransaction: vi.fn(),
-  isValidExecTransactionCall: vi.fn(),
-  isSafeTxHashValid: vi.fn(),
-  isValidCreateProxyWithNonceCall: vi.fn(),
-  isOfficialProxyFactoryDeployment: vi.fn(),
+const mockRelayTransactionHelper = mocked({
+  decodeExecTransaction: jest.fn(),
+  isValidDecodedExecTransaction: jest.fn(),
+  isValidExecTransactionCall: jest.fn(),
+  isSafeTxHashValid: jest.fn(),
+  isValidCreateProxyWithNonceCall: jest.fn(),
+  isOfficialProxyFactoryDeployment: jest.fn(),
 } as MockedObject<RelayTransactionHelper>);
 
 function fakeSafeTxHash(): Hex {
@@ -60,7 +61,7 @@ describe('RelayFeeRelayer', () => {
   let chainId: string;
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
 
     chainId = faker.string.numeric();
 

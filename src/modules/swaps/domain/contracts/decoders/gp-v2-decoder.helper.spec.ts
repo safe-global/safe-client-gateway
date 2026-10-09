@@ -1,22 +1,23 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import type { Hex } from 'viem';
-import type { MockedObject } from 'vitest';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import type { ILoggingService } from '#/logging/logging.interface';
 import { setPreSignatureEncoder } from '#/modules/swaps/domain/contracts/__tests__/encoders/gp-v2-encoder.builder';
 import { GPv2Decoder } from '#/modules/swaps/domain/contracts/decoders/gp-v2-decoder.helper';
 
 const loggingService = {
-  debug: vi.fn(),
+  debug: jest.fn(),
 } as MockedObject<ILoggingService>;
-const loggingServiceMock = vi.mocked(loggingService);
+const loggingServiceMock = mocked(loggingService);
 
 describe('GPv2Decoder', () => {
   let target: GPv2Decoder;
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
     target = new GPv2Decoder(loggingServiceMock);
   });
 

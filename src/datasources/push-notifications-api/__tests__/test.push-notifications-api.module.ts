@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { jest } from 'bun:test';
 import { Global, Module } from '@nestjs/common';
-import type { MockedObject } from 'vitest';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import { IPushNotificationsApi } from '#/domain/interfaces/push-notifications-api.interface';
 
 const mockPushNotificationsApi: IPushNotificationsApi = {
-  enqueueNotification: vi.fn(),
+  enqueueNotification: jest.fn(),
 };
 
 @Global()
@@ -13,7 +14,7 @@ const mockPushNotificationsApi: IPushNotificationsApi = {
     {
       provide: IPushNotificationsApi,
       useFactory: (): MockedObject<IPushNotificationsApi> => {
-        return vi.mocked(mockPushNotificationsApi);
+        return mocked(mockPushNotificationsApi);
       },
     },
   ],

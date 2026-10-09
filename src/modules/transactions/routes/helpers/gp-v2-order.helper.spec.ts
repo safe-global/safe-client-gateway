@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { describe, expect, it, jest } from 'bun:test';
 import { zeroAddress } from 'viem';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import type { ILoggingService } from '#/logging/logging.interface';
 import { MultiSendDecoder } from '#/modules/contracts/domain/decoders/multi-send-decoder.helper';
 import { ComposableCowDecoder } from '#/modules/swaps/domain/contracts/decoders/composable-cow-decoder.helper';
@@ -10,7 +11,7 @@ import { TransactionFinder } from '#/modules/transactions/routes/helpers/transac
 import { TwapOrderHelper } from '#/modules/transactions/routes/helpers/twap-order.helper';
 
 const mockLoggingService = {
-  warn: vi.fn(),
+  warn: jest.fn(),
 } as MockedObject<ILoggingService>;
 
 describe('GPv2OrderHelper', () => {

@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { afterAll, beforeAll, describe, expect, it } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import type postgres from 'postgres';
 import type { Sql } from 'postgres';
@@ -128,7 +129,7 @@ describe('Migration 00006_targeted_messaging', () => {
             sql<[Outreach]>`
             INSERT INTO outreaches (name, start_date, end_date)
             VALUES (${outreach.name}, ${faker.date.recent()}, ${faker.date.future()})
-            RETURNING *`,
+            RETURNING *`.execute(),
           ).rejects.toThrow('duplicate key value violates unique constraint');
         },
       });
@@ -196,7 +197,7 @@ describe('Migration 00006_targeted_messaging', () => {
             sql<[TargetedSafe]>`
             INSERT INTO targeted_safes (address, outreach_id)
             VALUES (${targetedSafe.address}, ${outreach.id})
-            RETURNING *`,
+            RETURNING *`.execute(),
           ).rejects.toThrow('duplicate key value violates unique constraint');
         },
       });
@@ -302,7 +303,7 @@ describe('Migration 00006_targeted_messaging', () => {
             sql<[Submission]>`
             INSERT INTO submissions (targeted_safe_id, signer_address, completion_date)
             VALUES (${targetedSafe.id}, ${signerAddress}, ${faker.date.recent()})
-            RETURNING *`,
+            RETURNING *`.execute(),
           ).rejects.toThrow('duplicate key value violates unique constraint');
         },
       });

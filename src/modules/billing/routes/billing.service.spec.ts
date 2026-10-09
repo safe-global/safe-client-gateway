@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import {
   BadGatewayException,
@@ -11,7 +12,7 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { getAddress } from 'viem';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
 import {
   checkoutSessionBuilder,
@@ -52,43 +53,43 @@ import type { IMembersRepository } from '#/modules/users/domain/members/members.
 import { fakeUuid } from '#/validation/entities/schemas/__tests__/uuid.builder';
 
 const billingRepositoryMock = {
-  getPlan: vi.fn(),
-  getCustomerSessionUrl: vi.fn(),
-  getSubscriptionsByCustomerId: vi.fn(),
-  listPaymentLinks: vi.fn(),
-  createCheckoutSession: vi.fn(),
-  getCheckoutSession: vi.fn(),
-  previewSubscriptionUpdate: vi.fn(),
-  updateSubscription: vi.fn(),
-  clearSubscriptions: vi.fn(),
+  getPlan: jest.fn(),
+  getCustomerSessionUrl: jest.fn(),
+  getSubscriptionsByCustomerId: jest.fn(),
+  listPaymentLinks: jest.fn(),
+  createCheckoutSession: jest.fn(),
+  getCheckoutSession: jest.fn(),
+  previewSubscriptionUpdate: jest.fn(),
+  updateSubscription: jest.fn(),
+  clearSubscriptions: jest.fn(),
 } as MockedObject<IBillingRepository>;
 
 const membersRepositoryMock = {
-  findOne: vi.fn(),
+  findOne: jest.fn(),
 } as MockedObject<IMembersRepository>;
 
 const subscriptionSyncServiceMock = {
-  handleWebhook: vi.fn(),
+  handleWebhook: jest.fn(),
 } as MockedObject<ISubscriptionSyncService>;
 
 const subscriptionsRepositoryMock = {
-  getSubscriptionSummary: vi.fn(),
+  getSubscriptionSummary: jest.fn(),
 } as MockedObject<ISubscriptionsRepository>;
 
 const spacesRepositoryMock = {
-  findCreatedAtById: vi.fn(),
+  findCreatedAtById: jest.fn(),
 } as MockedObject<ISpacesRepository>;
 
 const spaceSafesRepositoryMock = {
-  countSeatsBySpaceId: vi.fn(),
-  delete: vi.fn(),
+  countSeatsBySpaceId: jest.fn(),
+  delete: jest.fn(),
 } as MockedObject<ISpaceSafesRepository>;
 
 const loggingServiceMock = {
-  warn: vi.fn(),
-  info: vi.fn(),
-  debug: vi.fn(),
-  error: vi.fn(),
+  warn: jest.fn(),
+  info: jest.fn(),
+  debug: jest.fn(),
+  error: jest.fn(),
 } as MockedObject<ILoggingService>;
 
 // The enforcement date the offer rule splits workspaces on, and one stamp on
@@ -122,7 +123,7 @@ describe('BillingService', () => {
   }
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
     postLoginRedirectUri = faker.internet.url();
     const fakeConfigurationService = new FakeConfigurationService();
     fakeConfigurationService.set(
@@ -1360,12 +1361,19 @@ describe('BillingService', () => {
           actorUserId: Number(authPayload.sub),
           payload: safes,
         });
-        expect(spaceSafesRepositoryMock.delete).toHaveBeenCalledBefore(
-          spaceSafesRepositoryMock.countSeatsBySpaceId,
+        // Seats are recounted after the delete and before the plan update.
+        expect(
+          spaceSafesRepositoryMock.delete.mock.invocationCallOrder[0],
+        ).toBeLessThan(
+          spaceSafesRepositoryMock.countSeatsBySpaceId.mock
+            .invocationCallOrder[0],
         );
         expect(
-          spaceSafesRepositoryMock.countSeatsBySpaceId,
-        ).toHaveBeenCalledBefore(billingRepositoryMock.updateSubscription);
+          spaceSafesRepositoryMock.countSeatsBySpaceId.mock
+            .invocationCallOrder[0],
+        ).toBeLessThan(
+          billingRepositoryMock.updateSubscription.mock.invocationCallOrder[0],
+        );
         expect(billingRepositoryMock.updateSubscription).toHaveBeenCalledWith(
           expect.objectContaining({ paymentLinkId: paymentLink.id }),
         );

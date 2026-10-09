@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { In, QueryFailedError } from 'typeorm';
 import { getAddress } from 'viem';
-import type { Mock, MockedObject } from 'vitest';
+import { type Mock, type MockedObject } from '#/__tests__/mocks';
 import type { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
 import { UniqueConstraintError } from '#/datasources/errors/unique-constraint-error';
 import { nameBuilder } from '#/domain/common/entities/name.builder';
@@ -29,21 +30,21 @@ import type { IWalletsRepository } from '#/modules/wallets/domain/wallets.reposi
 
 describe('MembersRepository', () => {
   const usersRepository = {
-    create: vi.fn(),
-    findOrCreateByWalletAddress: vi.fn(),
-    updateStatus: vi.fn(),
+    create: jest.fn(),
+    findOrCreateByWalletAddress: jest.fn(),
+    updateStatus: jest.fn(),
   } as MockedObject<IUsersRepository>;
   const spacesRepository = {
-    findOneOrFail: vi.fn(),
+    findOneOrFail: jest.fn(),
   } as MockedObject<ISpacesRepository>;
   const walletsRepository = {
-    find: vi.fn(),
+    find: jest.fn(),
   } as MockedObject<IWalletsRepository>;
   const loggingService = {
-    debug: vi.fn(),
-    error: vi.fn(),
-    info: vi.fn(),
-    warn: vi.fn(),
+    debug: jest.fn(),
+    error: jest.fn(),
+    info: jest.fn(),
+    warn: jest.fn(),
   } as MockedObject<ILoggingService>;
 
   let entityManager: {
@@ -53,8 +54,8 @@ describe('MembersRepository', () => {
     update: Mock;
   };
   let dbMembersRepository: {
-    find: ReturnType<typeof vi.fn>;
-    findOne: ReturnType<typeof vi.fn>;
+    find: ReturnType<typeof jest.fn>;
+    findOne: ReturnType<typeof jest.fn>;
   };
   let postgresDatabaseService: MockedObject<PostgresDatabaseService>;
   let walletEncryptionService: MockedObject<WalletEncryptionService>;
@@ -67,21 +68,21 @@ describe('MembersRepository', () => {
   let inviteExpiresAt: Date;
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
 
     inviteExpiresAt = faker.date.future();
     entityManager = {
-      find: vi.fn(),
-      findOne: vi.fn(),
-      insert: vi.fn(),
-      update: vi.fn(),
+      find: jest.fn(),
+      findOne: jest.fn(),
+      insert: jest.fn(),
+      update: jest.fn(),
     };
-    dbMembersRepository = { find: vi.fn(), findOne: vi.fn() };
+    dbMembersRepository = { find: jest.fn(), findOne: jest.fn() };
     postgresDatabaseService = {
-      transaction: vi
+      transaction: jest
         .fn()
         .mockImplementation((callback) => callback(entityManager)),
-      getRepository: vi.fn().mockResolvedValue(dbMembersRepository),
+      getRepository: jest.fn().mockResolvedValue(dbMembersRepository),
     } as MockedObject<PostgresDatabaseService>;
     spacesRepository.findOneOrFail.mockResolvedValue(space);
     // No wallets by default: read paths attach `address: null`.

@@ -36,7 +36,7 @@ feat(users): return the user session from the me endpoint
 | `perf` | A change whose *purpose* is a measured latency, throughput, or call-count improvement. | A cache added as part of a new feature (that is `feat`). |
 | `test` | Adding or changing `*.spec.ts` / `*.integration.spec.ts` / e2e files only. | A production-code fix that happens to also add a regression test — that is `fix`. |
 | `docs` | Markdown, `docs/agents/`, README, code comments only. | A change touching `src/`. |
-| `build` | Dependency bumps and build tooling (`package.json`, `yarn.lock`, `Dockerfile`, `tsconfig`). Dependabot uses `build(deps)` / `build(deps-dev)`. | CI workflow files (`ci`). |
+| `build` | Dependency bumps and build tooling (`package.json`, `bun.lock`, `bunfig.toml`, `Dockerfile`, `tsconfig`). Dependabot uses `build(deps)` / `build(deps-dev)`. | CI workflow files (`ci`). |
 | `ci` | `.github/workflows/`, `.husky/`, `.pre-commit-config.yaml`. | Build configuration (`build`). |
 | `chore` | Housekeeping that fits nothing above — deleting dead code, config key renames, repo maintenance. | Anything that fits a more specific type. `chore` is the last resort, not the default. |
 
@@ -136,11 +136,11 @@ uses and how.
 ```
 # Don't — one PR
 feat(queue): add the tx-queue-service client, rename QueueService → TxQueueService,
-             bump undici, and switch messages to the new cache keys
+             bump bullmq, and switch messages to the new cache keys
 
 # Do — four PRs, in this order
 refactor(queue): rename QueueService to TxQueueService
-build(deps): bump undici from 8.5.0 to 8.7.0
+build(deps): bump bullmq from 6.3.6 to 6.3.8
 feat(queue): add the tx-queue-service client
 feat(messages): read messages through the tx-queue-service client
 ```
@@ -161,8 +161,8 @@ feat(messages): read messages through the tx-queue-service client
 
 Nothing in this guide is machine-checked today. Specifically:
 
-- `.husky/pre-commit` runs `yarn env:validate:silent`, `yarn lint`, and `yarn format` — it does not look at commit messages.
+- `.husky/pre-commit` runs `bun run env:validate:silent`, `bun run lint`, and `bun run format` — it does not look at commit messages.
 - There is no `.husky/commit-msg` hook and no `commitlint` dependency.
-- No workflow has a PR-title job. `pull-request.yml` calls `_ci-node.yml`, whose jobs are `license-headers`, `env-validation`, `biome`, `unit-tests`, `integration-tests`, `tests` and `tests-finish`; the build and deploy jobs live in `devstaging.yml` and `production.yml`.
+- No workflow has a PR-title job. `pull-request.yml` calls `_ci.yml`, whose jobs are `license-headers`, `env-validation`, `audit`, `biome`, `unit-tests`, `integration-tests`, `tests` and `tests-finish`; the build and deploy jobs live in `devstaging.yml` and `production.yml`.
 
 The gap is on the PR title, since that is what reaches `main`. Adding a `commitlint`-style PR-title check is the enforcement this guide is missing; until it exists, the check happens in review — `reviewing.md` Part 1 routes any PR-shaping change to this guide.

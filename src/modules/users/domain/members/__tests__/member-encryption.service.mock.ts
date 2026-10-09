@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { MockedObject } from 'vitest';
+import { jest } from 'bun:test';
+import type { MockedObject } from '#/__tests__/mocks';
 import type { MemberEncryptionService } from '#/modules/users/domain/members/member-encryption.service';
 
 /**
@@ -10,17 +11,17 @@ import type { MemberEncryptionService } from '#/modules/users/domain/members/mem
  */
 export function createMockMemberEncryptionService(): MockedObject<MemberEncryptionService> {
   return {
-    encryptName: vi.fn((_spaceId: number, name: string) =>
+    encryptName: jest.fn((_spaceId: number, name: string) =>
       Promise.resolve(name),
     ),
-    encryptAlias: vi.fn((_spaceId: number, alias: string) =>
+    encryptAlias: jest.fn((_spaceId: number, alias: string) =>
       Promise.resolve(alias),
     ),
-    decryptName: vi.fn((_spaceId: number, value: string) =>
+    decryptName: jest.fn((_spaceId: number, value: string) =>
       Promise.resolve(value),
     ),
     // Disabled-mode rows are plaintext, so batch decryption passes through.
-    decryptMembers: vi.fn(
+    decryptMembers: jest.fn(
       (
         _spaceId: number,
         members: Array<{ name: string; alias: string | null }>,

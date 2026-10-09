@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { describe, expect, it, jest, mock } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { shuffle } from 'lodash';
 import type { Hash, Hex } from 'viem';
 import * as viem from 'viem';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
+import { mocked } from '#/__tests__/mocks';
 import { SafeSignature } from '#/domain/common/entities/safe-signature';
 import { SignatureType } from '#/domain/common/entities/signature-type.entity';
 import { getSignature } from '#/domain/common/utils/__tests__/signatures.builder';
@@ -12,12 +14,14 @@ import {
   SIGNATURE_HEX_LENGTH,
 } from '#/domain/common/utils/signatures';
 
-// `vi.spyOn` cannot redefine read-only ESM named exports, so partially mock
-// viem with a spy that wraps the real `getAddress` implementation.
-vi.mock('viem', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('viem')>();
-  return { ...actual, getAddress: vi.fn(actual.getAddress) };
-});
+// `spyOn` cannot redefine read-only ESM named exports, so partially mock viem
+// with a spy that wraps the real `getAddress` implementation. Snapshot first:
+// `mock.module` rewrites the namespace's bindings in place.
+const actualViem = { ...viem };
+mock.module('viem', () => ({
+  ...actualViem,
+  getAddress: jest.fn(actualViem.getAddress),
+}));
 
 describe('SafeSignature', () => {
   it('should create an instance', () => {
@@ -168,9 +172,11 @@ describe('SafeSignature', () => {
   });
 
   it('should return the v value', () => {
-    const signature = faker.string.hexadecimal({
-      length: 130,
-    }) as Hex;
+    // A v of 0 marks a contract signature, which needs a dynamic part.
+    const v = faker.number.int({ min: 1, max: 255 });
+    const signature = `${faker.string.hexadecimal({
+      length: 128,
+    })}${v.toString(16).padStart(2, '0')}` as Hex;
     const hash = faker.string.hexadecimal({ length: 66 }) as Hash;
 
     const safeSignature = new SafeSignature({
@@ -178,7 +184,7 @@ describe('SafeSignature', () => {
       hash,
     });
 
-    expect(safeSignature.v).toBe(Number.parseInt(signature.slice(-2), 16));
+    expect(safeSignature.v).toBe(v);
   });
 
   describe('signatureType', () => {
@@ -255,7 +261,7 @@ describe('SafeSignature', () => {
     );
 
     it('should memoize the owner', async () => {
-      const getAddressSpy = vi.mocked(viem.getAddress);
+      const getAddressSpy = mocked(viem.getAddress);
       getAddressSpy.mockClear();
 
       const privateKey = generatePrivateKey();

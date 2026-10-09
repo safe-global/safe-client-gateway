@@ -1,19 +1,20 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { afterEach, beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
 import type { IKmsService } from '#/datasources/kms/kms.service.interface';
 import { KmsEncryptionService } from '#/datasources/kms/kms-encryption.service';
 
 const configurationService = {
-  getOrThrow: vi.fn(),
-  get: vi.fn(),
+  getOrThrow: jest.fn(),
+  get: jest.fn(),
 } as MockedObject<IConfigurationService>;
 
 const kmsService = {
-  encrypt: vi.fn(),
-  decrypt: vi.fn(),
-  generateDataKey: vi.fn(),
+  encrypt: jest.fn(),
+  decrypt: jest.fn(),
+  generateDataKey: jest.fn(),
 } as MockedObject<IKmsService>;
 
 /** Random `length`-byte buffer — KMS blobs and index keys are opaque here. */
@@ -68,12 +69,12 @@ function stubGetOrThrow(enabled: boolean): void {
 
 describe('KmsEncryptionService', () => {
   beforeEach(() => {
-    vi.resetAllMocks();
-    vi.useFakeTimers();
+    jest.resetAllMocks();
+    jest.useFakeTimers();
   });
 
   afterEach(() => {
-    vi.useRealTimers();
+    jest.useRealTimers();
   });
 
   async function buildTarget(args?: {
@@ -113,7 +114,8 @@ describe('KmsEncryptionService', () => {
       const target = new KmsEncryptionService(configurationService, kmsService);
       await target.onModuleInit();
 
-      expect(kmsService.decrypt).toHaveBeenCalledExactlyOnceWith({
+      expect(kmsService.decrypt).toHaveBeenCalledTimes(1);
+      expect(kmsService.decrypt).toHaveBeenCalledWith({
         ciphertext: WRAPPED_INDEX_KEY,
       });
     });
@@ -128,7 +130,7 @@ describe('KmsEncryptionService', () => {
       const target = new KmsEncryptionService(configurationService, kmsService);
       await target.onModuleInit();
 
-      expect(kmsService.decrypt).toHaveBeenCalledOnce();
+      expect(kmsService.decrypt).toHaveBeenCalledTimes(1);
     });
 
     it('throws when the unwrapped index key is not 32 bytes', async () => {
@@ -155,7 +157,8 @@ describe('KmsEncryptionService', () => {
       const stored = await target.encrypt(value, CONTEXT);
 
       expect(stored.startsWith('kms:v1:')).toBe(true);
-      expect(kmsService.generateDataKey).toHaveBeenCalledExactlyOnceWith({
+      expect(kmsService.generateDataKey).toHaveBeenCalledTimes(1);
+      expect(kmsService.generateDataKey).toHaveBeenCalledWith({
         encryptionContext: CONTEXT,
       });
       // The blob leads with the length-prefixed wrapped key; the value only
@@ -186,7 +189,8 @@ describe('KmsEncryptionService', () => {
       const plaintext = await target.decrypt(stored, CONTEXT);
 
       expect(plaintext).toBe(value);
-      expect(kmsService.decrypt).toHaveBeenCalledExactlyOnceWith({
+      expect(kmsService.decrypt).toHaveBeenCalledTimes(1);
+      expect(kmsService.decrypt).toHaveBeenCalledWith({
         ciphertext: wrappedKey,
         encryptionContext: CONTEXT,
       });

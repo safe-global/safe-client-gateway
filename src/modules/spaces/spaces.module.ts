@@ -57,7 +57,8 @@ import { SpaceIdPipe } from '#/routes/common/pipes/space-id.pipe';
     SpaceAuditModule,
     KmsEncryptionModule,
     MemberEncryptionModule,
-    UserIdentityResolverModule,
+    // Cyclic: UserIdentityResolverModule -> UsersModule -> SpacesModule.
+    forwardRef(() => UserIdentityResolverModule),
     WalletsModule,
   ],
   controllers: [

@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import type { Address } from 'viem';
-import type { MockedObject } from 'vitest';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import type { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
 import type { Chain } from '#/modules/chains/domain/entities/chain.entity';
 import { positionBuilder } from '#/modules/positions/domain/entities/__tests__/position.builder';
@@ -14,19 +15,19 @@ import type { Protocol } from '#/modules/positions/routes/entities/protocol.enti
 import { PositionsService } from '#/modules/positions/routes/positions.service';
 import { NULL_ADDRESS } from '#/routes/common/constants';
 
-const positionsRepoMock = vi.mocked({
-  getPositions: vi.fn(),
+const positionsRepoMock = mocked({
+  getPositions: jest.fn(),
 } as MockedObject<IPositionsRepository>);
 
-const chainsRepoMock = vi.mocked({
-  getChain: vi.fn(),
+const chainsRepoMock = mocked({
+  getChain: jest.fn(),
 } as MockedObject<IChainsRepository>);
 
 describe('PositionsService', () => {
   let service: PositionsService;
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
 
     service = new PositionsService(positionsRepoMock, chainsRepoMock);
 

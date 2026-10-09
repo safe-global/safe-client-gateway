@@ -1,21 +1,22 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
-import type { MockedObject } from 'vitest';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import { erc20TransferBuilder } from '#/modules/safe/domain/entities/__tests__/erc20-transfer.builder';
 import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
 import { transferTransactionInfoBuilder } from '#/modules/transactions/routes/entities/__tests__/transfer-transaction-info.builder';
 import { TransferDetailsMapper } from '#/modules/transactions/routes/mappers/transfers/transfer-details.mapper';
 import type { TransferInfoMapper } from '#/modules/transactions/routes/mappers/transfers/transfer-info.mapper';
 
-const transferInfoMapper = vi.mocked({
-  mapTransferInfo: vi.fn(),
+const transferInfoMapper = mocked({
+  mapTransferInfo: jest.fn(),
 } as MockedObject<TransferInfoMapper>);
 
 describe('TransferDetails mapper (Unit)', () => {
   let mapper: TransferDetailsMapper;
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
     mapper = new TransferDetailsMapper(transferInfoMapper);
   });
 

@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { describe, expect, it } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
 import type { SignatureType } from '#/domain/common/entities/signature-type.entity';

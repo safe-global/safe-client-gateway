@@ -5,6 +5,7 @@ import {
   Index,
   OneToMany,
   PrimaryGeneratedColumn,
+  type Relation,
 } from 'typeorm';
 import { databaseEnumTransformer } from '#/domain/common/utils/enum';
 import { Member } from '#/modules/users/datasources/entities/member.entity.db';
@@ -69,7 +70,7 @@ export class User implements DomainUser {
       onDelete: 'CASCADE',
     },
   )
-  wallets!: Array<Wallet>;
+  wallets!: Relation<Array<Wallet>>;
 
   @Column({
     name: 'created_at',
@@ -91,5 +92,5 @@ export class User implements DomainUser {
     () => Member,
     (member: Member) => member.user,
   )
-  members!: Array<Member>;
+  members!: Relation<Array<Member>>;
 }

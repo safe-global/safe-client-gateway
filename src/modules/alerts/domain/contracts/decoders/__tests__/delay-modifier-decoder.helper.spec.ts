@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { toHex } from 'viem';
 import { transactionAddedEventBuilder } from '#/modules/alerts/domain/contracts/__tests__/encoders/delay-modifier-encoder.builder';
@@ -8,7 +9,7 @@ describe('DelayModifierDecoder', () => {
   let target: DelayModifierDecoder;
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
     target = new DelayModifierDecoder();
   });
 

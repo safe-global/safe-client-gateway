@@ -7,6 +7,7 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
+  type Relation,
 } from 'typeorm';
 import type { Address } from 'viem';
 import { databaseAddressTransformer } from '#/domain/common/transformers/database-address.transformer';
@@ -14,7 +15,7 @@ import { databaseEnumTransformer } from '#/domain/common/utils/enum';
 import { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
 import {
   AddressBookRequestStatus,
-  AddressBookRequest as DomainAddressBookRequest,
+  type AddressBookRequest as DomainAddressBookRequest,
 } from '#/modules/spaces/domain/address-books/entities/address-book-request.entity';
 import { User } from '#/modules/users/datasources/entities/users.entity.db';
 
@@ -52,7 +53,7 @@ export class AddressBookRequest implements DomainAddressBookRequest {
     name: 'space_id',
     foreignKeyConstraintName: 'FK_ABR_space_id',
   })
-  public readonly space!: Space;
+  public readonly space!: Relation<Space>;
 
   @ManyToOne(
     () => User,
@@ -66,7 +67,7 @@ export class AddressBookRequest implements DomainAddressBookRequest {
     name: 'requested_by',
     foreignKeyConstraintName: 'FK_ABR_requested_by',
   })
-  public readonly requestedBy!: User;
+  public readonly requestedBy!: Relation<User>;
 
   @Column({
     name: 'chain_ids',

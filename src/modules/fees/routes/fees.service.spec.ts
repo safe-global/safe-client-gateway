@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { BadRequestException } from '@nestjs/common';
 import { getAddress } from 'viem';
-import type { MockedObject } from 'vitest';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import type { IFeeServiceApi } from '#/domain/interfaces/fee-service-api.interface';
 import type { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
 import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
@@ -15,25 +16,25 @@ import { FeesService } from '#/modules/fees/routes/fees.service';
 import { GasPaymentOption } from '#/modules/relay/domain/entities/gas-payment-option.entity';
 import { RelayerType } from '#/modules/relay/domain/entities/relayer-type.entity';
 
-const mockFeeServiceApi = vi.mocked({
-  canRelay: vi.fn(),
-  getRelayFees: vi.fn(),
-  getGtfFees: vi.fn(),
+const mockFeeServiceApi = mocked({
+  canRelay: jest.fn(),
+  getRelayFees: jest.fn(),
+  getGtfFees: jest.fn(),
 } as unknown as MockedObject<IFeeServiceApi>);
 
-const mockGasTokensRepository = vi.mocked({
-  getGasTokens: vi.fn(),
+const mockGasTokensRepository = mocked({
+  getGasTokens: jest.fn(),
 } as unknown as MockedObject<IGasTokensRepository>);
 
-const mockChainsRepository = vi.mocked({
-  getChain: vi.fn(),
+const mockChainsRepository = mocked({
+  getChain: jest.fn(),
 } as unknown as MockedObject<IChainsRepository>);
 
 describe('FeesService', () => {
   let target: FeesService;
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
     target = new FeesService(
       mockFeeServiceApi,
       mockGasTokensRepository,

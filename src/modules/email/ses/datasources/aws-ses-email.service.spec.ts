@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest, mock } from 'bun:test';
+import * as sesv2 from '@aws-sdk/client-sesv2';
 import { MessageRejected, SESv2Client } from '@aws-sdk/client-sesv2';
 import { fromTokenFile } from '@aws-sdk/credential-provider-web-identity';
 import { faker } from '@faker-js/faker';
@@ -10,20 +12,23 @@ import {
   TransientEmailError,
 } from '#/modules/email/ses/domain/errors/email.errors';
 
-const { mockSend } = vi.hoisted(() => ({ mockSend: vi.fn() }));
+const mockSend = jest.fn();
 
-vi.mock('@aws-sdk/client-sesv2', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@aws-sdk/client-sesv2')>()),
-  SESv2Client: vi.fn().mockImplementation(function () {
+// Snapshot before `mock.module` rewrites the namespace's bindings in place.
+const actualSesv2 = { ...sesv2 };
+
+mock.module('@aws-sdk/client-sesv2', () => ({
+  ...actualSesv2,
+  SESv2Client: jest.fn().mockImplementation(function () {
     return { send: mockSend };
   }),
-  SendEmailCommand: vi.fn().mockImplementation(function (input) {
+  SendEmailCommand: jest.fn().mockImplementation(function (input) {
     return input;
   }),
 }));
 
-vi.mock('@aws-sdk/credential-provider-web-identity', () => ({
-  fromTokenFile: vi.fn().mockReturnValue('mockCredentials'),
+mock.module('@aws-sdk/credential-provider-web-identity', () => ({
+  fromTokenFile: jest.fn().mockReturnValue('mockCredentials'),
 }));
 
 describe('SesEmailService', () => {
@@ -43,7 +48,7 @@ describe('SesEmailService', () => {
   });
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
 
     fakeConfigurationService = new FakeConfigurationService();
     fakeConfigurationService.set('email.ses.fromEmail', sesFromEmail);
@@ -74,7 +79,7 @@ describe('SesEmailService', () => {
     });
 
     it('should use web identity credentials when web identity token file is set', () => {
-      vi.clearAllMocks();
+      jest.clearAllMocks();
       fakeConfigurationService.set(
         'email.ses.aws.webIdentityTokenFile',
         '/var/run/secrets/eks.amazonaws.com/serviceaccount/token',

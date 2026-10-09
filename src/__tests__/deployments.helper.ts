@@ -88,7 +88,8 @@ export function getVersionsByChainIdByDeploymentMap(): VersionsByChainIdByDeploy
   }
 
   // For each version...
-  for (const version of fs.readdirSync(assetsDir)) {
+  // Sorted: directory listing order is filesystem-dependent.
+  for (const version of fs.readdirSync(assetsDir).sort()) {
     const versionDir = path.join(assetsDir, version);
 
     // ...parse each asset

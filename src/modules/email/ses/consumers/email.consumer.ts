@@ -8,7 +8,10 @@ import {
   SES_EMAIL_QUEUE,
   SES_EMAIL_WORKER_CONCURRENCY,
 } from '#/domain/common/jobs.constants';
-import { ILoggingService, LoggingService } from '#/logging/logging.interface';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '#/logging/logging.interface';
 import { asError } from '#/logging/utils';
 import type { SendEmailJobData } from '#/modules/email/ses/domain/entities/email-job-data.entity';
 import { PermanentEmailError } from '#/modules/email/ses/domain/errors/email.errors';

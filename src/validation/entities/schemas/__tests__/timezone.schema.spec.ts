@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { describe, expect, it } from 'bun:test';
 import { TimezoneSchema } from '#/validation/entities/schemas/timezone.schema';
 
 describe('TimezoneSchema()', () => {

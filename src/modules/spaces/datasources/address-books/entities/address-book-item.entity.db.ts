@@ -6,6 +6,7 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
+  type Relation,
 } from 'typeorm';
 import type { Address } from 'viem';
 import { databaseAddressTransformer } from '#/domain/common/transformers/database-address.transformer';
@@ -44,7 +45,7 @@ export class AddressBookItem implements DomainAddressBookItem {
     name: 'space_id',
     foreignKeyConstraintName: 'FK_SABI_space_id',
   })
-  public readonly space!: Space;
+  public readonly space!: Relation<Space>;
 
   @Column({
     name: 'chain_ids',

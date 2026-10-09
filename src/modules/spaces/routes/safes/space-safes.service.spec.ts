@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import type { EntityManager } from 'typeorm';
 import { Equal } from 'typeorm';
 import type { Address } from 'viem';
 import { getAddress } from 'viem';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import type { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
 import {
   oidcAuthPayloadDtoBuilder,
@@ -36,46 +37,46 @@ const preparedRow = (spaceId: number, address: Address): PreparedSpaceSafe => ({
 });
 
 const spaceSafesRepositoryMock = {
-  encryptRows: vi.fn(),
-  lockSeats: vi.fn(),
-  countSeatsBySpaceId: vi.fn(),
-  countNewSeats: vi.fn(),
-  insertRows: vi.fn(),
-  findBySpaceId: vi.fn(),
-  findBySpaceIds: vi.fn(),
-  delete: vi.fn(),
+  encryptRows: jest.fn(),
+  lockSeats: jest.fn(),
+  countSeatsBySpaceId: jest.fn(),
+  countNewSeats: jest.fn(),
+  insertRows: jest.fn(),
+  findBySpaceId: jest.fn(),
+  findBySpaceIds: jest.fn(),
+  delete: jest.fn(),
 } as MockedObject<ISpaceSafesRepository>;
 
 const entityManager = {} as EntityManager;
 
 const postgresDatabaseServiceMock = {
-  transaction: vi.fn((fn: (em: EntityManager) => Promise<unknown>) =>
+  transaction: jest.fn((fn: (em: EntityManager) => Promise<unknown>) =>
     fn(entityManager),
   ),
 } as MockedObject<PostgresDatabaseService>;
 
 const membersRepositoryMock = {
-  findOne: vi.fn(),
-  find: vi.fn(),
+  findOne: jest.fn(),
+  find: jest.fn(),
 } as MockedObject<IMembersRepository>;
 
 const adminMember = (): Member =>
   memberBuilder().with('role', 'ADMIN').with('status', 'ACTIVE').build();
 
 const addressBookItemsRepositoryMock = {
-  upsertMany: vi.fn(),
+  upsertMany: jest.fn(),
 } as MockedObject<IAddressBookItemsRepository>;
 
 const entitlementEnforcementMock = {
-  assertWithinQuota: vi.fn(),
-  prepareQuotaCheck: vi.fn(),
+  assertWithinQuota: jest.fn(),
+  prepareQuotaCheck: jest.fn(),
 } as MockedObject<IEntitlementEnforcement>;
 
 describe('SpaceSafesService', () => {
   let service: SpaceSafesService;
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
     service = new SpaceSafesService(
       spaceSafesRepositoryMock,
       membersRepositoryMock,
@@ -107,7 +108,7 @@ describe('SpaceSafesService', () => {
       ];
 
       membersRepositoryMock.findOne.mockResolvedValue(adminMember());
-      entitlementEnforcementMock.prepareQuotaCheck.mockResolvedValue(vi.fn());
+      entitlementEnforcementMock.prepareQuotaCheck.mockResolvedValue(jest.fn());
       spaceSafesRepositoryMock.encryptRows.mockResolvedValue(rows);
       spaceSafesRepositoryMock.countSeatsBySpaceId.mockResolvedValue(0);
       spaceSafesRepositoryMock.countNewSeats.mockResolvedValue(1);
@@ -115,12 +116,13 @@ describe('SpaceSafesService', () => {
       await service.create({ spaceId, authPayload, payload });
 
       expect(membersRepositoryMock.findOne).toHaveBeenCalled();
-      expect(
-        spaceSafesRepositoryMock.lockSeats,
-      ).toHaveBeenCalledExactlyOnceWith(spaceId, entityManager);
-      expect(
-        spaceSafesRepositoryMock.insertRows,
-      ).toHaveBeenCalledExactlyOnceWith({
+      expect(spaceSafesRepositoryMock.lockSeats).toHaveBeenCalledTimes(1);
+      expect(spaceSafesRepositoryMock.lockSeats).toHaveBeenCalledWith(
+        spaceId,
+        entityManager,
+      );
+      expect(spaceSafesRepositoryMock.insertRows).toHaveBeenCalledTimes(1);
+      expect(spaceSafesRepositoryMock.insertRows).toHaveBeenCalledWith({
         spaceId,
         actorUserId: Number(authPayload.sub),
         rows,
@@ -171,7 +173,7 @@ describe('SpaceSafesService', () => {
         delta: 1,
       };
 
-      const check = vi.fn();
+      const check = jest.fn();
       const rows = payload.map(({ address }) => preparedRow(spaceId, address));
       membersRepositoryMock.findOne.mockResolvedValue(adminMember());
       entitlementEnforcementMock.prepareQuotaCheck.mockResolvedValue(check);
@@ -185,23 +187,30 @@ describe('SpaceSafesService', () => {
 
       expect(
         entitlementEnforcementMock.prepareQuotaCheck,
-      ).toHaveBeenCalledExactlyOnceWith({
-        spaceId,
-        featureKey: 'safe_seats',
-      });
+      ).toHaveBeenCalledTimes(1);
+      expect(entitlementEnforcementMock.prepareQuotaCheck).toHaveBeenCalledWith(
+        {
+          spaceId,
+          featureKey: 'safe_seats',
+        },
+      );
       // Measured in the caller's transaction, so the count the check admits is
       // the state the insert lands on.
       expect(
         spaceSafesRepositoryMock.countSeatsBySpaceId,
-      ).toHaveBeenCalledExactlyOnceWith(spaceId, entityManager);
-      expect(
-        spaceSafesRepositoryMock.countNewSeats,
-      ).toHaveBeenCalledExactlyOnceWith(
+      ).toHaveBeenCalledTimes(1);
+      expect(spaceSafesRepositoryMock.countSeatsBySpaceId).toHaveBeenCalledWith(
+        spaceId,
+        entityManager,
+      );
+      expect(spaceSafesRepositoryMock.countNewSeats).toHaveBeenCalledTimes(1);
+      expect(spaceSafesRepositoryMock.countNewSeats).toHaveBeenCalledWith(
         { spaceId, addresses: payload.map(({ address }) => address) },
         entityManager,
       );
-      expect(check).toHaveBeenCalledExactlyOnceWith(seats);
-      expect(spaceSafesRepositoryMock.insertRows).toHaveBeenCalledOnce();
+      expect(check).toHaveBeenCalledTimes(1);
+      expect(check).toHaveBeenCalledWith(seats);
+      expect(spaceSafesRepositoryMock.insertRows).toHaveBeenCalledTimes(1);
     });
 
     it('takes no seat for another chain of a Safe the Workspace holds', async () => {
@@ -211,7 +220,7 @@ describe('SpaceSafesService', () => {
         { address: addr(), chainId: faker.number.int().toString() },
       ];
       const quota = faker.number.int({ min: 1, max: 5 });
-      const check = vi.fn();
+      const check = jest.fn();
       membersRepositoryMock.findOne.mockResolvedValue(adminMember());
       entitlementEnforcementMock.prepareQuotaCheck.mockResolvedValue(check);
       spaceSafesRepositoryMock.encryptRows.mockResolvedValue(
@@ -223,11 +232,12 @@ describe('SpaceSafesService', () => {
 
       await service.create({ spaceId, authPayload, payload });
 
-      expect(check).toHaveBeenCalledExactlyOnceWith({
+      expect(check).toHaveBeenCalledTimes(1);
+      expect(check).toHaveBeenCalledWith({
         used: quota,
         delta: 0,
       });
-      expect(spaceSafesRepositoryMock.insertRows).toHaveBeenCalledOnce();
+      expect(spaceSafesRepositoryMock.insertRows).toHaveBeenCalledTimes(1);
     });
 
     it('propagates a seat rejection raised inside the write', async () => {
@@ -276,7 +286,7 @@ describe('SpaceSafesService', () => {
       const address = addr();
       const chainId = faker.number.int().toString();
       membersRepositoryMock.findOne.mockResolvedValue(adminMember());
-      entitlementEnforcementMock.prepareQuotaCheck.mockResolvedValue(vi.fn());
+      entitlementEnforcementMock.prepareQuotaCheck.mockResolvedValue(jest.fn());
       spaceSafesRepositoryMock.encryptRows.mockResolvedValue([
         preparedRow(spaceId, address),
       ]);
@@ -297,9 +307,10 @@ describe('SpaceSafesService', () => {
 
       await service.create({ spaceId, authPayload, payload, addressBookItems });
 
-      expect(
-        addressBookItemsRepositoryMock.upsertMany,
-      ).toHaveBeenCalledExactlyOnceWith({
+      expect(addressBookItemsRepositoryMock.upsertMany).toHaveBeenCalledTimes(
+        1,
+      );
+      expect(addressBookItemsRepositoryMock.upsertMany).toHaveBeenCalledWith({
         userId: Number(authPayload.sub),
         spaceId,
         addressBookItems,
@@ -352,7 +363,7 @@ describe('SpaceSafesService', () => {
       expect(spaceSafesRepositoryMock.insertRows).toHaveBeenCalledWith(
         expect.objectContaining({ entityManager }),
       );
-      expect(postgresDatabaseServiceMock.transaction).toHaveBeenCalledOnce();
+      expect(postgresDatabaseServiceMock.transaction).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -454,14 +465,19 @@ describe('SpaceSafesService', () => {
 
         const result = await service.getAll(authPayload);
 
-        expect(membersRepositoryMock.find).toHaveBeenCalledExactlyOnceWith({
+        expect(membersRepositoryMock.find).toHaveBeenCalledTimes(1);
+        expect(membersRepositoryMock.find).toHaveBeenCalledWith({
           select: { id: true, space: { id: true, uuid: true } },
           where: { user: Equal(Number(authPayload.sub)), status: 'ACTIVE' },
           relations: { space: true },
         });
-        expect(
-          spaceSafesRepositoryMock.findBySpaceIds,
-        ).toHaveBeenCalledExactlyOnceWith([space1.id, space2.id]);
+        expect(spaceSafesRepositoryMock.findBySpaceIds).toHaveBeenCalledTimes(
+          1,
+        );
+        expect(spaceSafesRepositoryMock.findBySpaceIds).toHaveBeenCalledWith([
+          space1.id,
+          space2.id,
+        ]);
         expect(result).toStrictEqual([
           {
             spaceUuid: space1.uuid,
@@ -495,9 +511,8 @@ describe('SpaceSafesService', () => {
       spaceSafesRepositoryMock.findBySpaceIds.mockResolvedValue(new Map());
 
       await expect(service.getAll(authPayload)).resolves.toStrictEqual([]);
-      expect(
-        spaceSafesRepositoryMock.findBySpaceIds,
-      ).toHaveBeenCalledExactlyOnceWith([]);
+      expect(spaceSafesRepositoryMock.findBySpaceIds).toHaveBeenCalledTimes(1);
+      expect(spaceSafesRepositoryMock.findBySpaceIds).toHaveBeenCalledWith([]);
     });
 
     it('should throw when not authenticated', async () => {

@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { HttpStatus } from '@nestjs/common';
 import type { Address, Hex } from 'viem';
 import { getAddress } from 'viem';
-import type { MockedObject } from 'vitest';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import { LogType } from '#/domain/common/entities/log-type.entity';
 import { DataSourceError } from '#/domain/errors/data-source.error';
 import type { IRelayApi } from '#/domain/interfaces/relay-api.interface';
@@ -31,46 +32,46 @@ import { WorkspaceRelayer } from '#/modules/relay/domain/relayers/workspace.rela
 import type { Space } from '#/modules/spaces/domain/entities/space.entity';
 import type { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository.interface';
 
-const mockLimitAddressesMapper = vi.mocked({
-  resolveTarget: vi.fn(),
-  getLimitAddresses: vi.fn(),
+const mockLimitAddressesMapper = mocked({
+  resolveTarget: jest.fn(),
+  getLimitAddresses: jest.fn(),
 } as MockedObject<LimitAddressesMapper>);
 
-const mockRelayApi = vi.mocked({
-  relay: vi.fn(),
-  getTaskStatus: vi.fn(),
-  getRelayCount: vi.fn(),
-  setRelayCount: vi.fn(),
+const mockRelayApi = mocked({
+  relay: jest.fn(),
+  getTaskStatus: jest.fn(),
+  getRelayCount: jest.fn(),
+  setRelayCount: jest.fn(),
 } as MockedObject<IRelayApi>);
 
-const mockEntitlementEnforcement = vi.mocked({
-  assertWithinQuota: vi.fn(),
-  prepareQuotaCheck: vi.fn(),
-  consumeQuota: vi.fn(),
-  refundQuota: vi.fn(),
+const mockEntitlementEnforcement = mocked({
+  assertWithinQuota: jest.fn(),
+  prepareQuotaCheck: jest.fn(),
+  consumeQuota: jest.fn(),
+  refundQuota: jest.fn(),
 } as MockedObject<IEntitlementEnforcement>);
 
-const mockLoggingService = vi.mocked({
-  info: vi.fn(),
-  warn: vi.fn(),
-  error: vi.fn(),
-  debug: vi.fn(),
+const mockLoggingService = mocked({
+  info: jest.fn(),
+  warn: jest.fn(),
+  error: jest.fn(),
+  debug: jest.fn(),
 } as MockedObject<ILoggingService>);
 
-const mockSpaceSafesRepository = vi.mocked({
-  existsInSpace: vi.fn(),
+const mockSpaceSafesRepository = mocked({
+  existsInSpace: jest.fn(),
 } as MockedObject<ISpaceSafesRepository>);
 
-const mockChainsRepository = vi.mocked({
-  getChain: vi.fn(),
+const mockChainsRepository = mocked({
+  getChain: jest.fn(),
 } as MockedObject<IChainsRepository>);
 
-const mockTenderlySimulationApi = vi.mocked({
-  simulate: vi.fn(),
+const mockTenderlySimulationApi = mocked({
+  simulate: jest.fn(),
 } as MockedObject<ITenderlySimulationApi>);
 
 const mockRelayTransactionHelper = {
-  hasRefundingTransaction: vi.fn(),
+  hasRefundingTransaction: jest.fn(),
 } as MockedObject<RelayTransactionHelper>;
 
 describe('WorkspaceRelayer', () => {
@@ -132,7 +133,7 @@ describe('WorkspaceRelayer', () => {
   }
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
     simulationEnabled(false);
     mockEntitlementEnforcement.consumeQuota.mockResolvedValue(spend());
     mockEntitlementEnforcement.refundQuota.mockResolvedValue(undefined);
@@ -514,9 +515,10 @@ describe('WorkspaceRelayer', () => {
 
     await expect(target.relay(args)).rejects.toThrow(failed);
 
-    expect(
-      mockEntitlementEnforcement.refundQuota,
-    ).toHaveBeenCalledExactlyOnceWith(spentQuota);
+    expect(mockEntitlementEnforcement.refundQuota).toHaveBeenCalledTimes(1);
+    expect(mockEntitlementEnforcement.refundQuota).toHaveBeenCalledWith(
+      spentQuota,
+    );
   });
 
   it('should keep a relay whose refund could not be written', async () => {

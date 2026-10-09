@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import type { Cache } from 'cache-manager';
 import sortBy from 'lodash/sortBy';
-import type { MockedObject } from 'vitest';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
 import type { CacheFirstDataSource } from '#/datasources/cache/cache.first.data.source';
 import type { ICacheService } from '#/datasources/cache/cache.service.interface';
@@ -22,28 +23,28 @@ import { rawify } from '#/validation/entities/raw.entity';
 
 const MAX_BATCH_SIZE = 100;
 
-const mockCacheFirstDataSource = vi.mocked({
-  get: vi.fn(),
+const mockCacheFirstDataSource = mocked({
+  get: jest.fn(),
 } as MockedObject<CacheFirstDataSource>);
 
-const mockCacheService = vi.mocked({
-  deleteByKey: vi.fn(),
-  hGet: vi.fn(),
-  hSet: vi.fn(),
+const mockCacheService = mocked({
+  deleteByKey: jest.fn(),
+  hGet: jest.fn(),
+  hSet: jest.fn(),
 } as MockedObject<ICacheService>);
 
-const mockNetworkService = vi.mocked({
-  get: vi.fn(),
+const mockNetworkService = mocked({
+  get: jest.fn(),
 } as MockedObject<INetworkService>);
 
 const mockLoggingService = {
-  debug: vi.fn(),
-  error: vi.fn(),
+  debug: jest.fn(),
+  error: jest.fn(),
 } as MockedObject<ILoggingService>;
 
 const mockInMemoryCache = {
-  get: vi.fn(),
-  set: vi.fn(),
+  get: jest.fn(),
+  set: jest.fn(),
 } as MockedObject<Cache>;
 
 function buildCoinGeckoResponse(
@@ -76,7 +77,7 @@ describe('CoingeckoAPI', () => {
   const notFoundExpirationTimeInSeconds = faker.number.int();
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
     fakeConfigurationService = new FakeConfigurationService();
     fakeConfigurationService.set(
       'balances.providers.safe.prices.baseUri',

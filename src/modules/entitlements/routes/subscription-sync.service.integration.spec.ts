@@ -1,5 +1,14 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  describe,
+  expect,
+  it,
+  jest,
+} from 'bun:test';
 import { randomUUID } from 'node:crypto';
 import type { Server } from 'node:http';
 import { faker } from '@faker-js/faker';
@@ -7,8 +16,8 @@ import type { INestApplication } from '@nestjs/common';
 import type postgres from 'postgres';
 import request from 'supertest';
 import { In } from 'typeorm';
-import type { MockedObject } from 'vitest';
 import { TestDbFactory } from '#/__tests__/db.factory';
+import type { MockedObject } from '#/__tests__/mocks';
 import {
   initTestApplication,
   TestAppProvider,
@@ -68,7 +77,7 @@ describe('Billing webhook → entitlements materialization', () => {
   let testDatabase: postgres.Sql;
 
   beforeAll(async () => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
 
     testDatabase = await testDbFactory.createTestDatabase(testDatabaseName);
 

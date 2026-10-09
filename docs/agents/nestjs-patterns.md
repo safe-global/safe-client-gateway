@@ -124,7 +124,7 @@ async getSafe(
 
 **Rule:** Three specific traps, each with an established answer:
 
-- **Circular module imports** are resolved with `forwardRef(() => OtherModule)` on *both* sides of the cycle, never by duplicating a provider to break it.
+- **Circular module imports** are resolved with `forwardRef(() => OtherModule)` on *both* sides of the cycle, never by duplicating a provider to break it. Bun loads the app as ES modules, so an unwrapped cycle fails at load with a temporal-dead-zone error (`Cannot access 'X' before initialization`) rather than quietly resolving.
 - **Everything is a singleton.** No `Scope.REQUEST` or `Scope.TRANSIENT` provider exists in this repo. Per-request state lives in CLS (`ClsMiddleware`), not in a request-scoped provider.
 - **An injected dependency is typed as its interface, not its implementing class** — `@Inject(IFoo) private readonly foo: IFoo`, never `: FooService`.
 

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { afterEach, beforeEach, describe, expect, it, jest } from 'bun:test';
 import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
@@ -8,7 +9,7 @@ import request from 'supertest';
 import type { Address } from 'viem';
 import { getAddress } from 'viem';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import {
   initTestApplication,
   TestAppProvider,
@@ -75,14 +76,14 @@ describe('Get by id - Transactions Controller', () => {
     loggingService = moduleFixture.get(LoggingService);
 
     // TODO: Override module to avoid spying
-    vi.spyOn(loggingService, 'error');
+    jest.spyOn(loggingService, 'error');
 
     app = await new TestAppProvider().provide(moduleFixture);
     await initTestApplication(app);
   }
 
   beforeEach(async () => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
 
     const baseConfiguration = configuration();
     const testConfiguration = (): typeof baseConfiguration => ({

@@ -4,9 +4,11 @@ import { ClsService } from 'nestjs-cls';
 import type winston from 'winston';
 import { IConfigurationService } from '#/config/configuration.service.interface';
 import type { ILoggingService } from '#/logging/logging.interface';
+import { getDatadogTraceAttributes } from '#/tracing/trace-context';
 
 /**
- * Implementation of ILoggingService which prepends the current time and a unique request ID to every logged message.
+ * Implementation of ILoggingService which prepends the current time and a unique request ID to every logged message,
+ * plus the active trace's Datadog correlation IDs when tracing is enabled.
  *
  * The requestID is generated and provided using the `nestjs-cls` `ClsService` which uses the async local storage to store a uuid for each processed request through a middleware.
  */
@@ -47,6 +49,7 @@ export class RequestScopedLoggingService implements ILoggingService {
     request_id: string;
     timestamp: string;
     version: string | undefined;
+    dd?: { trace_id: string; span_id: string };
   } {
     const requestId = this.cls.getId();
     const timestamp = Date.now();
@@ -58,6 +61,8 @@ export class RequestScopedLoggingService implements ILoggingService {
       request_id: requestId,
       timestamp: dateAsString,
       version: this.version,
+      // Joins the line to its trace in Datadog; absent outside a trace.
+      ...getDatadogTraceAttributes(),
     };
   }
 }

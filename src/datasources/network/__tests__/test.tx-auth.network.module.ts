@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { Module } from '@nestjs/common';
-import type { MockedObject } from 'vitest';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import { CacheFirstDataSource } from '#/datasources/cache/cache.first.data.source';
 import { CacheFirstDataSourceModule } from '#/datasources/cache/cache.first.data.source.module';
 import { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
@@ -25,7 +25,7 @@ import {
     {
       provide: NetworkService,
       useFactory: (): MockedObject<INetworkService> => {
-        return vi.mocked(networkService);
+        return mocked(networkService);
       },
     },
     CacheFirstDataSource,

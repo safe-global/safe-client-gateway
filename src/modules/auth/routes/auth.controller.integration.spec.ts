@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { afterEach, beforeEach, describe, expect, it, jest } from 'bun:test';
 import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
@@ -7,7 +8,7 @@ import type { TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import { createSiweMessage } from 'viem/siwe';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import {
   initTestApplication,
   TestAppProvider,
@@ -72,8 +73,8 @@ describe('AuthController', () => {
   }
 
   beforeEach(async () => {
-    vi.useFakeTimers();
-    vi.resetAllMocks();
+    jest.useFakeTimers();
+    jest.resetAllMocks();
 
     const defaultConfiguration = configuration();
     const testConfiguration = (): typeof defaultConfiguration => ({
@@ -92,7 +93,7 @@ describe('AuthController', () => {
   });
 
   afterEach(async () => {
-    vi.useRealTimers();
+    jest.useRealTimers();
     await app?.close();
   });
 
@@ -115,7 +116,7 @@ describe('AuthController', () => {
   describe('POST /v1/auth/verify', () => {
     it('should verify a signer', async () => {
       // Fix "now" as it is otherwise to precisely expect expiration/maxAge
-      vi.setSystemTime(0);
+      jest.setSystemTime(0);
 
       const privateKey = generatePrivateKey();
       const signer = privateKeyToAccount(privateKey);
@@ -165,7 +166,7 @@ describe('AuthController', () => {
 
     it('should set SameSite=none if application.env is not production', async () => {
       // Fix "now" as it is otherwise to precisely expect expiration/maxAge
-      vi.setSystemTime(0);
+      jest.setSystemTime(0);
 
       const defaultConfiguration = configuration();
       const testConfiguration = (): typeof defaultConfiguration => ({
@@ -444,7 +445,7 @@ describe('AuthController', () => {
 
     it('should get the max expirationTime if not specified on the SiWE message', async () => {
       // Fix "now" as it is otherwise to precisely expect expiration/maxAge
-      vi.setSystemTime(0);
+      jest.setSystemTime(0);
 
       const privateKey = generatePrivateKey();
       const signer = privateKeyToAccount(privateKey);

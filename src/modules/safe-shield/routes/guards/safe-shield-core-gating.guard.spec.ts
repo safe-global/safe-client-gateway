@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { describe, expect, it } from 'bun:test';
 import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
 import { SafeShieldCoreDisabledError } from '#/modules/safe-shield/domain/errors/safe-shield-core-disabled.error';
 import { SafeShieldCoreGatingGuard } from '#/modules/safe-shield/routes/guards/safe-shield-core-gating.guard';

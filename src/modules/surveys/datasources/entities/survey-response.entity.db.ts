@@ -5,6 +5,7 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
+  type Relation,
   Unique,
 } from 'typeorm';
 import { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
@@ -29,7 +30,7 @@ export class SurveyResponse implements DomainSurveyResponse {
     name: 'space_id',
     foreignKeyConstraintName: 'FK_survey_responses_space_id',
   })
-  space!: Space;
+  space!: Relation<Space>;
 
   @ManyToOne(
     () => Survey,
@@ -40,7 +41,7 @@ export class SurveyResponse implements DomainSurveyResponse {
     name: 'survey_id',
     foreignKeyConstraintName: 'FK_survey_responses_survey_id',
   })
-  survey!: Survey;
+  survey!: Relation<Survey>;
 
   @ManyToOne(
     () => User,
@@ -51,7 +52,7 @@ export class SurveyResponse implements DomainSurveyResponse {
     name: 'answered_by_user_id',
     foreignKeyConstraintName: 'FK_survey_responses_answered_by_user_id',
   })
-  answeredBy!: User | null;
+  answeredBy!: Relation<User | null>;
 
   @Column({ type: 'jsonb' })
   selections!: Record<string, Array<string>>;

@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { UnauthorizedException } from '@nestjs/common';
 import { QueryFailedError } from 'typeorm';
 import { getAddress } from 'viem';
-import type { Mock, MockedObject } from 'vitest';
+import { type Mock, type MockedObject } from '#/__tests__/mocks';
 import type { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
 import { siweAuthPayloadDtoBuilder } from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
@@ -29,19 +30,19 @@ function uniqueConstraintError(constraint: string): QueryFailedError {
 
 describe('UsersRepository', () => {
   const walletsRepository = {
-    findOneByAddress: vi.fn(),
-    findOneOrFail: vi.fn(),
-    deleteByAddress: vi.fn(),
+    findOneByAddress: jest.fn(),
+    findOneOrFail: jest.fn(),
+    deleteByAddress: jest.fn(),
   } as MockedObject<IWalletsRepository>;
   // Passthrough crypto (disabled-like): blind index null, values unchanged, so
   // existing plaintext assertions hold. Encryption + blind-index lookups are
   // covered by integration tests.
   const userEncryptionService = {
-    encrypt: vi.fn(),
-    decrypt: vi.fn(),
-    isEncrypted: vi.fn(),
-    blindIndex: vi.fn(),
-    decryptUserEmails: vi.fn(),
+    encrypt: jest.fn(),
+    decrypt: jest.fn(),
+    isEncrypted: jest.fn(),
+    blindIndex: jest.fn(),
+    decryptUserEmails: jest.fn(),
   } as MockedObject<UserEncryptionService>;
 
   let postgresDatabaseService: MockedObject<PostgresDatabaseService>;
@@ -57,29 +58,29 @@ describe('UsersRepository', () => {
   let target: UsersRepository;
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
 
     // Chainable stub for persistEmail's UPDATE ... WHERE email IS NULL query.
-    emailUpdateExecute = vi.fn().mockResolvedValue({ affected: 1 });
+    emailUpdateExecute = jest.fn().mockResolvedValue({ affected: 1 });
     const queryBuilder = {
-      update: vi.fn().mockReturnThis(),
-      set: vi.fn().mockReturnThis(),
-      where: vi.fn().mockReturnThis(),
-      andWhere: vi.fn().mockReturnThis(),
+      update: jest.fn().mockReturnThis(),
+      set: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      andWhere: jest.fn().mockReturnThis(),
       execute: emailUpdateExecute,
     };
 
     userRepository = {
-      find: vi.fn(),
-      findOne: vi.fn(),
-      findOneOrFail: vi.fn(),
-      update: vi.fn(),
-      createQueryBuilder: vi.fn().mockReturnValue(queryBuilder),
+      find: jest.fn(),
+      findOne: jest.fn(),
+      findOneOrFail: jest.fn(),
+      update: jest.fn(),
+      createQueryBuilder: jest.fn().mockReturnValue(queryBuilder),
     };
 
     postgresDatabaseService = {
-      getRepository: vi.fn().mockResolvedValue(userRepository),
-      transaction: vi.fn(),
+      getRepository: jest.fn().mockResolvedValue(userRepository),
+      transaction: jest.fn(),
     } as MockedObject<PostgresDatabaseService>;
 
     userEncryptionService.encrypt.mockImplementation((_userId, email) =>
@@ -123,11 +124,11 @@ describe('UsersRepository', () => {
       racedUserId?: number;
     }) => {
       const queryBuilder = {
-        insert: vi.fn().mockReturnThis(),
-        into: vi.fn().mockReturnThis(),
-        values: vi.fn().mockReturnThis(),
-        orIgnore: vi.fn().mockReturnThis(),
-        execute: vi.fn().mockResolvedValue({
+        insert: jest.fn().mockReturnThis(),
+        into: jest.fn().mockReturnThis(),
+        values: jest.fn().mockReturnThis(),
+        orIgnore: jest.fn().mockReturnThis(),
+        execute: jest.fn().mockResolvedValue({
           identifiers: args?.walletInsertIdentifiers ?? [
             { id: faker.number.int() },
           ],
@@ -135,7 +136,7 @@ describe('UsersRepository', () => {
       };
 
       return {
-        findOne: vi
+        findOne: jest
           .fn()
           .mockResolvedValueOnce(null)
           .mockResolvedValueOnce(
@@ -147,13 +148,13 @@ describe('UsersRepository', () => {
                 }
               : null,
           ),
-        insert: vi.fn().mockResolvedValue({
+        insert: jest.fn().mockResolvedValue({
           identifiers: [
             { id: args?.createdUserId ?? faker.number.int({ min: 1 }) },
           ],
         }),
-        createQueryBuilder: vi.fn().mockReturnValue(queryBuilder),
-        delete: vi.fn(),
+        createQueryBuilder: jest.fn().mockReturnValue(queryBuilder),
+        delete: jest.fn(),
       };
     };
 

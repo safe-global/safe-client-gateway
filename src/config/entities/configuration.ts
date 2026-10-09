@@ -516,30 +516,6 @@ export default () => ({
     // https://fastify.dev/docs/latest/Reference/Server/#trustproxy
     trustProxy: process.env.HTTP_SERVER_TRUST_PROXY || 'loopback, uniquelocal',
   },
-  undici: {
-    // Maximum number of connections per origin. Defaults to 100.
-    connections: Number.parseInt(
-      process.env.UNDICI_CONNECTIONS ?? `${100}`,
-      10,
-    ),
-    // Number of requests to pipeline. Defaults to 1 (no pipelining).
-    pipelining: Number.parseInt(process.env.UNDICI_PIPELINING ?? `${1}`, 10),
-    // Timeout for socket connection in milliseconds. Defaults to 10000 (10 seconds).
-    connectTimeout: Number.parseInt(
-      process.env.UNDICI_CONNECT_TIMEOUT_MILLISECONDS ?? `${10_000}`,
-      10,
-    ),
-    // Time of inactivity on socket in milliseconds before closing. Defaults to 30000 (30 seconds).
-    keepAliveTimeout: Number.parseInt(
-      process.env.UNDICI_KEEP_ALIVE_TIMEOUT_MILLISECONDS ?? `${30_000}`,
-      10,
-    ),
-    // Maximum time to keep a connection alive in milliseconds. Defaults to 600000 (600 seconds / 10 minutes).
-    keepAliveMaxTimeout: Number.parseInt(
-      process.env.UNDICI_KEEP_ALIVE_MAX_TIMEOUT_MILLISECONDS ?? `${600_000}`,
-      10,
-    ),
-  },
   circuitBreaker: {
     // Whether the circuit breaker is enabled
     enabled: process.env.CIRCUIT_BREAKER_ENABLED?.toLowerCase() !== 'false',
@@ -624,6 +600,26 @@ export default () => ({
     level: process.env.LOG_LEVEL || 'debug',
     silent: process.env.LOG_SILENT?.toLowerCase() === 'true',
     prettyColorize: process.env.LOG_PRETTY_COLORIZE?.toLowerCase() === 'true',
+  },
+  // OpenTelemetry tracing, exported over OTLP/HTTP to the Datadog Agent's OTLP
+  // receiver (or any OTLP collector). It only runs in a process started with
+  // `--preload ./src/tracing/tracing.ts`, as the container image is. Standard
+  // OTEL_* variables the SDK reads itself (OTEL_SERVICE_NAME,
+  // OTEL_RESOURCE_ATTRIBUTES, OTEL_TRACES_SAMPLER, OTEL_BSP_*) also apply.
+  tracing: {
+    enabled: process.env.OTEL_SDK_DISABLED?.toLowerCase() !== 'true',
+    // OTLP/HTTP traces endpoint. Defaults to the node-local Datadog Agent
+    // (DD_AGENT_HOST), whose OTLP/HTTP receiver listens on port 4318.
+    exporterUrl:
+      process.env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT ||
+      (process.env.OTEL_EXPORTER_OTLP_ENDPOINT
+        ? `${process.env.OTEL_EXPORTER_OTLP_ENDPOINT.replace(/\/$/, '')}/v1/traces`
+        : `http://${process.env.DD_AGENT_HOST || 'localhost'}:4318/v1/traces`),
+    // Datadog unified service tagging, mapped onto OpenTelemetry resource
+    // attributes. OTEL_SERVICE_NAME/OTEL_RESOURCE_ATTRIBUTES take precedence.
+    service: process.env.DD_SERVICE || 'safe-client-gateway',
+    env: process.env.DD_ENV,
+    version: process.env.DD_VERSION || process.env.APPLICATION_VERSION,
   },
   owners: {
     // There is no hook to invalidate the owners, so defaulting 0 disables the cache

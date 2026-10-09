@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { afterEach, beforeEach, describe, expect, it, jest } from 'bun:test';
 import type { Server } from 'node:net';
 import {
   Controller,
@@ -52,7 +53,7 @@ describe('Auth decorator', () => {
   }
 
   beforeEach(async () => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
 
     const baseConfiguration = configuration();
     const testConfiguration = (): typeof baseConfiguration => ({

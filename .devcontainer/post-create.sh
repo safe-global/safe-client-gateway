@@ -7,10 +7,7 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-echo "[devcontainer] Activating Corepack..."
-corepack enable
-
 echo "[devcontainer] Installing dependencies..."
-yarn install --immutable
+bun install --frozen-lockfile
 
 echo "[devcontainer] Setup complete."

@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { ChainApiManager } from '#/datasources/common/chain-api.manager';
 
 class TestApiManager extends ChainApiManager<{ chainId: string }> {
-  createApi = vi.fn((chainId: string) => Promise.resolve({ chainId }));
+  createApi = jest.fn((chainId: string) => Promise.resolve({ chainId }));
 
   getApi(chainId: string): Promise<{ chainId: string }> {
     return this.getOrCreateApi(chainId);

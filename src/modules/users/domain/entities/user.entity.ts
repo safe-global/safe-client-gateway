@@ -37,6 +37,7 @@ export const UserSchema: z.ZodType<
   extUserId: z.string().min(1).max(255).nullable(),
   email: EmailAddressSchema.nullable(),
   address: AddressSchema.nullable().optional(),
-  wallets: z.array(WalletSchema),
+  // Lazy: UserSchema and WalletSchema reference each other.
+  wallets: z.array(z.lazy(() => WalletSchema)),
   members: z.array(z.lazy(() => MemberSchema)),
 });

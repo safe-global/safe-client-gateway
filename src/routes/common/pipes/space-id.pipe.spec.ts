@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import type { ISpacesRepository } from '#/modules/spaces/domain/spaces.repository.interface';
 import {
   INVALID_SPACE_IDENTIFIER_MESSAGE,
@@ -10,14 +11,14 @@ import {
 } from '#/routes/common/pipes/space-id.pipe';
 
 const spacesRepositoryMock = {
-  findIdByUuid: vi.fn(),
+  findIdByUuid: jest.fn(),
 } as MockedObject<ISpacesRepository>;
 
 describe('SpaceIdPipe', () => {
   let pipe: SpaceIdPipe;
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
     pipe = new SpaceIdPipe(spacesRepositoryMock);
   });
 

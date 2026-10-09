@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { getAddress } from 'viem';
-import type { MockedObject } from 'vitest';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
 import { CacheRouter } from '#/datasources/cache/cache.router';
 import type { ICacheService } from '#/datasources/cache/cache.service.interface';
@@ -10,15 +11,15 @@ import { LogType } from '#/domain/common/entities/log-type.entity';
 import type { ILoggingService } from '#/logging/logging.interface';
 import { ZerionRateLimiter } from '#/modules/zerion/datasources/zerion-rate-limiter.service';
 
-const mockCacheService = vi.mocked({
-  increment: vi.fn(),
+const mockCacheService = mocked({
+  increment: jest.fn(),
 } as MockedObject<ICacheService>);
 
 const mockLoggingService = {
-  debug: vi.fn(),
-  warn: vi.fn(),
-  error: vi.fn(),
-  info: vi.fn(),
+  debug: jest.fn(),
+  warn: jest.fn(),
+  error: jest.fn(),
+  info: jest.fn(),
 } as MockedObject<ILoggingService>;
 
 const GLOBAL_KEY = CacheRouter.getRateLimitCacheKey('zerion');
@@ -61,7 +62,7 @@ describe('ZerionRateLimiter', () => {
   };
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
     limiter = buildLimiter();
   });
 

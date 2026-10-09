@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { describe, expect, it } from 'bun:test';
 import type { UUID } from 'node:crypto';
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';

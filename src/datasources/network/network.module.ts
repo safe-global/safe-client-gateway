@@ -1,8 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Global, Module } from '@nestjs/common';
-import { Agent, setGlobalDispatcher } from 'undici';
 import { IConfigurationService } from '#/config/configuration.service.interface';
 import { CircuitBreakerService } from '#/datasources/circuit-breaker/circuit-breaker.service';
+import {
+  type FetchClient,
+  FetchClientToken,
+} from '#/datasources/network/entities/fetch-client.entity';
 import {
   NetworkRequestError,
   NetworkResponseError,
@@ -11,28 +14,14 @@ import type { NetworkRequest } from '#/datasources/network/entities/network.requ
 import type { NetworkResponse } from '#/datasources/network/entities/network.response.entity';
 import { FetchNetworkService } from '#/datasources/network/fetch.network.service';
 import { NetworkService } from '#/datasources/network/network.service.interface';
-import {
-  UndiciAgent,
-  UndiciShutdownHook,
-} from '#/datasources/network/undici.shutdown.hook';
 import { LogType } from '#/domain/common/entities/log-type.entity';
 import { hashSha1 } from '#/domain/common/utils/utils';
 import {
   type ILoggingService,
   LoggingService,
 } from '#/logging/logging.interface';
-import { asError } from '#/logging/utils';
+import { withHttpClientSpan } from '#/tracing/http-client-span';
 import type { Raw } from '#/validation/entities/raw.entity';
-
-export const FetchClientToken = Symbol('FetchClient');
-
-export type FetchClient = <T>(
-  url: string,
-  options: RequestInit,
-  timeout?: number,
-  circuitBreaker?: NetworkRequest['circuitBreaker'],
-  responseType?: NetworkRequest['responseType'],
-) => Promise<NetworkResponse<T>>;
 
 const cache: Record<string, Promise<NetworkResponse<unknown>>> = {};
 
@@ -76,14 +65,21 @@ function createRequestFunction(defaultTimeout: number) {
     let response: Response | null = null;
 
     try {
-      urlObject = new URL(url);
+      const requestUrl = new URL(url);
+      urlObject = requestUrl;
       const timeout = customTimeout ?? defaultTimeout;
 
-      response = await fetch(url, {
-        ...options,
-        signal: AbortSignal.timeout(timeout),
-        keepalive: true,
-      });
+      response = await withHttpClientSpan(
+        {
+          url: requestUrl,
+          init: {
+            ...options,
+            signal: AbortSignal.timeout(timeout),
+            keepalive: true,
+          },
+        },
+        (init) => fetch(url, init),
+      );
     } catch (error) {
       throw new NetworkRequestError(urlObject, error);
     }
@@ -246,50 +242,6 @@ function getCacheKey(
 }
 
 /**
- * Sets up the global Undici dispatcher with configured connection pooling
- * Returns the Agent instance for graceful shutdown
- */
-function setupUndiciDispatcher(
-  configurationService: IConfigurationService,
-  loggingService: ILoggingService,
-): Agent {
-  const connections =
-    configurationService.getOrThrow<number>('undici.connections');
-  const pipelining =
-    configurationService.getOrThrow<number>('undici.pipelining');
-  const connectTimeout = configurationService.getOrThrow<number>(
-    'undici.connectTimeout',
-  );
-  const keepAliveTimeout = configurationService.getOrThrow<number>(
-    'undici.keepAliveTimeout',
-  );
-  const keepAliveMaxTimeout = configurationService.getOrThrow<number>(
-    'undici.keepAliveMaxTimeout',
-  );
-
-  try {
-    const agent = new Agent({
-      connections,
-      pipelining,
-      connect: {
-        timeout: connectTimeout,
-        keepAlive: true,
-      },
-      keepAliveTimeout,
-      keepAliveMaxTimeout,
-    });
-
-    setGlobalDispatcher(agent);
-    return agent;
-  } catch (error) {
-    loggingService.error(
-      `Failed to setup Undici global dispatcher: ${asError(error).message}`,
-    );
-    throw error;
-  }
-}
-
-/**
  * A {@link Global} Module which provides HTTP support via {@link NetworkService}
  * Feature Modules don't need to import this module directly in order to inject
  * the {@link NetworkService}.
@@ -299,12 +251,6 @@ function setupUndiciDispatcher(
 @Global()
 @Module({
   providers: [
-    {
-      provide: UndiciAgent,
-      useFactory: setupUndiciDispatcher,
-      inject: [IConfigurationService, LoggingService],
-    },
-    UndiciShutdownHook,
     {
       provide: FetchClientToken,
       useFactory: fetchClientFactory,

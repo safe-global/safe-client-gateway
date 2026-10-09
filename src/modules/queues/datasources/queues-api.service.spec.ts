@@ -1,22 +1,23 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import type {
   AmqpConnectionManager,
   ChannelWrapper,
 } from 'amqp-connection-manager';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import type { ILoggingService } from '#/logging/logging.interface';
 import type { QueueConsumer } from '#/modules/queues/datasources/queues-api.module';
 import { QueueApiService } from '#/modules/queues/datasources/queues-api.service';
 
 const mockConnection = {
-  isConnected: vi.fn(),
+  isConnected: jest.fn(),
 } as MockedObject<AmqpConnectionManager>;
 
 const mockChannel = {
-  consume: vi.fn(),
-  ack: vi.fn(),
+  consume: jest.fn(),
+  ack: jest.fn(),
 } as MockedObject<ChannelWrapper>;
 
 const mockQueueConsumer: QueueConsumer = {
@@ -25,15 +26,15 @@ const mockQueueConsumer: QueueConsumer = {
 };
 
 const mockLoggingService = {
-  info: vi.fn(),
-  warn: vi.fn(),
+  info: jest.fn(),
+  warn: jest.fn(),
 } as MockedObject<ILoggingService>;
 
 describe('QueuesApi', () => {
   let service: QueueApiService;
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
   });
 
   describe('isReady', () => {
@@ -55,7 +56,7 @@ describe('QueuesApi', () => {
   describe('subscribe', () => {
     it('should subscribe to the queue', async () => {
       service = new QueueApiService(mockQueueConsumer, mockLoggingService);
-      const fn = vi.fn();
+      const fn = jest.fn();
 
       await service.subscribe(faker.string.sample(), fn);
 

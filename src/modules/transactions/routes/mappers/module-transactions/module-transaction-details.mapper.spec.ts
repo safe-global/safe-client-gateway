@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import type { MockedObject } from 'vitest';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import { dataDecodedBuilder } from '#/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
 import { moduleTransactionBuilder } from '#/modules/safe/domain/entities/__tests__/module-transaction.builder';
 import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
@@ -19,26 +20,26 @@ import type { AddressInfoHelper } from '#/routes/common/address-info/address-inf
 describe('ModuleTransactionDetails mapper (Unit)', () => {
   let mapper: ModuleTransactionDetailsMapper;
 
-  const addressInfoHelper = vi.mocked({
-    getOrDefault: vi.fn(),
+  const addressInfoHelper = mocked({
+    getOrDefault: jest.fn(),
   } as MockedObject<AddressInfoHelper>);
 
-  const statusMapper = vi.mocked({
-    mapTransactionStatus: vi.fn(),
+  const statusMapper = mocked({
+    mapTransactionStatus: jest.fn(),
   } as MockedObject<ModuleTransactionStatusMapper>);
 
-  const transactionInfoMapper = vi.mocked({
-    mapTransactionInfo: vi.fn(),
+  const transactionInfoMapper = mocked({
+    mapTransactionInfo: jest.fn(),
   } as MockedObject<MultisigTransactionInfoMapper>);
 
-  const transactionDataMapper = vi.mocked({
-    isTrustedDelegateCall: vi.fn(),
-    buildAddressInfoIndex: vi.fn(),
-    buildTokenInfoIndex: vi.fn(),
+  const transactionDataMapper = mocked({
+    isTrustedDelegateCall: jest.fn(),
+    buildAddressInfoIndex: jest.fn(),
+    buildTokenInfoIndex: jest.fn(),
   } as MockedObject<TransactionDataMapper>);
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
     mapper = new ModuleTransactionDetailsMapper(
       addressInfoHelper,
       statusMapper,

@@ -1,10 +1,20 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  jest,
+} from 'bun:test';
 import { join } from 'node:path';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Test, type TestingModule } from '@nestjs/testing';
 import type { DataSource } from 'typeorm';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import { ConfigurationModule } from '#/config/configuration.module';
 import configuration from '#/config/entities/__tests__/configuration';
 import { mockPostgresDataSource } from '#/datasources/db/v2/__tests__/postgresql-datasource.mock';
@@ -15,10 +25,10 @@ import { TestLoggingModule } from '#/logging/__tests__/test.logging.module';
 import type { ILoggingService } from '#/logging/logging.interface';
 
 const mockLoggingService = {
-  debug: vi.fn(),
-  error: vi.fn(),
-  info: vi.fn(),
-  warn: vi.fn(),
+  debug: jest.fn(),
+  error: jest.fn(),
+  info: jest.fn(),
+  warn: jest.fn(),
 } as MockedObject<ILoggingService>;
 
 describe('PostgresDatabaseService', () => {
@@ -88,7 +98,7 @@ describe('PostgresDatabaseService', () => {
   beforeEach(() => {});
 
   afterEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
   });
 
   describe('migrate()', () => {
@@ -133,7 +143,7 @@ describe('PostgresDatabaseService', () => {
     });
 
     it('Should truncate locks if a migration error occurs', async () => {
-      connection.query.mockResolvedValue(vi.fn());
+      connection.query.mockResolvedValue(jest.fn());
       connection.runMigrations.mockRejectedValue(new Error('Migration Error'));
 
       await expect(databaseMigratorService.migrate()).rejects.toThrow(
@@ -154,7 +164,7 @@ describe('PostgresDatabaseService', () => {
     });
 
     it('Should truncate locks after migrations are successful', async () => {
-      connection.query.mockResolvedValue(vi.fn());
+      connection.query.mockResolvedValue(jest.fn());
 
       await databaseMigratorService.migrate();
 

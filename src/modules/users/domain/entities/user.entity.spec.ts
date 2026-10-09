@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { describe, expect, it } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import omit from 'lodash/omit';
 import { userBuilder } from '#/modules/users/datasources/entities/__tests__/users.entity.db.builder';

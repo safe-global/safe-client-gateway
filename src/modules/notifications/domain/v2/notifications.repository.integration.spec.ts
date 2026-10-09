@@ -1,12 +1,21 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  jest,
+} from 'bun:test';
 import type { UUID } from 'node:crypto';
 import { faker } from '@faker-js/faker';
 import { NotFoundException } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
 import { DataSource, type EntityManager, In } from 'typeorm';
 import { getAddress } from 'viem';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import configuration from '#/config/entities/__tests__/configuration';
 import { postgresConfig } from '#/config/entities/postgres.config';
 import { CacheRouter } from '#/datasources/cache/cache.router';
@@ -30,16 +39,16 @@ import { fakeUuid } from '#/validation/entities/schemas/__tests__/uuid.builder';
 
 describe('NotificationsRepositoryV2', () => {
   const mockLoggingService = {
-    debug: vi.fn(),
-    error: vi.fn(),
-    info: vi.fn(),
-    warn: vi.fn(),
+    debug: jest.fn(),
+    error: jest.fn(),
+    info: jest.fn(),
+    warn: jest.fn(),
   } as MockedObject<ILoggingService>;
   const mockPushNotificationsApi: IPushNotificationsApi = {
-    enqueueNotification: vi.fn(),
+    enqueueNotification: jest.fn(),
   };
   const mockConfigService = {
-    getOrThrow: vi.fn().mockImplementation((key: string) => {
+    getOrThrow: jest.fn().mockImplementation((key: string) => {
       if (key === 'db.migrator.numberOfRetries') {
         return config.db.migrator.numberOfRetries;
       }
@@ -226,15 +235,15 @@ describe('NotificationsRepositoryV2', () => {
   });
 
   beforeEach(async () => {
-    vi.clearAllMocks();
-    vi.restoreAllMocks();
+    jest.clearAllMocks();
+    jest.restoreAllMocks();
 
     await truncateTables();
   });
 
   describe('upsertSubscription()', () => {
     it('Should insert a new device when upserting a subscription', async () => {
-      vi.spyOn(dataSource, 'transaction');
+      jest.spyOn(dataSource, 'transaction');
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
@@ -255,7 +264,7 @@ describe('NotificationsRepositoryV2', () => {
     });
 
     it('Should remove subscriptions cache when upserting a subscription', async () => {
-      vi.spyOn(dataSource, 'transaction');
+      jest.spyOn(dataSource, 'transaction');
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
@@ -308,7 +317,7 @@ describe('NotificationsRepositoryV2', () => {
     });
 
     it('Should not remove other devices subscriptions cache when upserting a new subscription', async () => {
-      vi.spyOn(dataSource, 'transaction');
+      jest.spyOn(dataSource, 'transaction');
       const authPayloadDto_1 = siweAuthPayloadDtoBuilder().build();
       const authPayloadDto_2 = siweAuthPayloadDtoBuilder().build();
       const authPayload_1 = new AuthPayload(authPayloadDto_1);
@@ -439,7 +448,7 @@ describe('NotificationsRepositoryV2', () => {
     });
 
     it('Should upsert a new subscription object when upserting subscriptions', async () => {
-      vi.spyOn(dataSource, 'transaction');
+      jest.spyOn(dataSource, 'transaction');
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
@@ -467,7 +476,7 @@ describe('NotificationsRepositoryV2', () => {
     });
 
     it('Should upsert subscription notification types object when upserting subscriptions', async () => {
-      vi.spyOn(dataSource, 'transaction');
+      jest.spyOn(dataSource, 'transaction');
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const authPayload = new AuthPayload(authPayloadDto);
       const upsertSubscriptionsDto = upsertSubscriptionsDtoBuilder().build();
@@ -534,17 +543,21 @@ describe('NotificationsRepositoryV2', () => {
         async (entityManager: EntityManager): Promise<unknown> => {
           const databaseTransaction = entityManager;
 
-          vi.spyOn(postgresDatabaseService, 'transaction').mockImplementation(
-            <T>(
-              runInTransaction: (entityManager: EntityManager) => Promise<T>,
-            ): Promise<T> => {
-              return runInTransaction(databaseTransaction);
-            },
-          );
+          jest
+            .spyOn(postgresDatabaseService, 'transaction')
+            .mockImplementation(
+              <T>(
+                runInTransaction: (entityManager: EntityManager) => Promise<T>,
+              ): Promise<T> => {
+                return runInTransaction(databaseTransaction);
+              },
+            );
 
-          vi.spyOn(databaseTransaction, 'upsert').mockImplementationOnce(() => {
-            throw new Error('Error');
-          });
+          jest
+            .spyOn(databaseTransaction, 'upsert')
+            .mockImplementationOnce(() => {
+              throw new Error('Error');
+            });
 
           const authPayloadDto = siweAuthPayloadDtoBuilder().build();
           const authPayload = new AuthPayload(authPayloadDto);
@@ -814,7 +827,7 @@ describe('NotificationsRepositoryV2', () => {
       const notificationSubscriptionRepository = dataSource.getRepository(
         NotificationSubscription,
       );
-      vi.spyOn(notificationSubscriptionRepository, 'remove');
+      jest.spyOn(notificationSubscriptionRepository, 'remove');
 
       const subscription = await notificationSubscriptionRepository.findBy({
         safe_address: upsertSubscriptionsDto.safes[0].address,
@@ -842,7 +855,7 @@ describe('NotificationsRepositoryV2', () => {
       const notificationSubscriptionRepository = dataSource.getRepository(
         NotificationSubscription,
       );
-      vi.spyOn(notificationSubscriptionRepository, 'remove');
+      jest.spyOn(notificationSubscriptionRepository, 'remove');
 
       const subscription = await notificationSubscriptionRepository.findBy({
         safe_address: upsertSubscriptionsDto.safes[0].address,

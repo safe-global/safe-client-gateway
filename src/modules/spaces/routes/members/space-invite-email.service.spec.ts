@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
 import { nameBuilder } from '#/domain/common/entities/name.builder';
 import type { ILoggingService } from '#/logging/logging.interface';
@@ -20,19 +21,19 @@ const BASE_URI = 'https://app.safe.global';
 const INVITE_URL = 'https://app.safe.global/welcome/spaces';
 
 const configurationServiceMock = {
-  getOrThrow: vi.fn(),
+  getOrThrow: jest.fn(),
 } as MockedObject<IConfigurationService>;
 
 const loggingServiceMock = {
-  warn: vi.fn(),
+  warn: jest.fn(),
 } as MockedObject<ILoggingService>;
 
 const spacesRepositoryMock = {
-  findOneOrFail: vi.fn(),
+  findOneOrFail: jest.fn(),
 } as MockedObject<ISpacesRepository>;
 
 const sesEmailQueueServiceMock = {
-  enqueue: vi.fn(),
+  enqueue: jest.fn(),
 } as MockedObject<SesEmailQueueService>;
 
 describe('SpaceInviteEmailService', () => {
@@ -54,7 +55,7 @@ describe('SpaceInviteEmailService', () => {
     );
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
     // Recreated after the reset so the passthrough implementation survives.
     spaceEncryptionServiceMock = createMockSpaceEncryptionService();
     configurationServiceMock.getOrThrow.mockImplementation((key: string) => {
@@ -107,9 +108,13 @@ describe('SpaceInviteEmailService', () => {
 
     await service.enqueueInviteEmails({ users: [invite], spaceId });
 
-    expect(
-      spaceEncryptionServiceMock.decryptSpaceName,
-    ).toHaveBeenCalledExactlyOnceWith(spaceId, 'kms:v1:workspace-name');
+    expect(spaceEncryptionServiceMock.decryptSpaceName).toHaveBeenCalledTimes(
+      1,
+    );
+    expect(spaceEncryptionServiceMock.decryptSpaceName).toHaveBeenCalledWith(
+      spaceId,
+      'kms:v1:workspace-name',
+    );
     expect(sesEmailQueueServiceMock.enqueue).toHaveBeenCalledWith(
       expect.objectContaining({
         htmlBody: expect.stringContaining('Decrypted workspace'),

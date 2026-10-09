@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { get } from 'lodash';
-import type { MockedObject } from 'vitest';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
 import configuration from '#/config/entities/__tests__/configuration';
 import { getSafeQueueAuthHeaders } from '#/datasources/network/auth/queue-auth-headers.helper';
 
-const mockConfigurationService = vi.mocked({
-  getOrThrow: vi.fn(),
-  get: vi.fn(),
+const mockConfigurationService = mocked({
+  getOrThrow: jest.fn(),
+  get: jest.fn(),
 } as MockedObject<IConfigurationService>);
 
 function initTarget(config: typeof configuration): void {
@@ -21,7 +22,7 @@ function initTarget(config: typeof configuration): void {
 
 describe('getSafeQueueAuthHeaders', () => {
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
     initTarget(configuration);
   });
 

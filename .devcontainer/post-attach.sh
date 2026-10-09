@@ -12,7 +12,7 @@ if ! command -v claude >/dev/null 2>&1; then
   # The Anthropic.claude-code VS Code extension ships a bundled `claude`
   # binary but does not add it to PATH. Resolve the newest installed
   # version (path includes version + arch, so glob-and-sort).
-  CLAUDE_BIN=$(ls -1d /home/node/.vscode-server/extensions/anthropic.claude-code-*/resources/native-binary/claude 2>/dev/null | sort -V | tail -1)
+  CLAUDE_BIN=$(ls -1d /home/vscode/.vscode-server/extensions/anthropic.claude-code-*/resources/native-binary/claude 2>/dev/null | sort -V | tail -1)
   if [ -n "$CLAUDE_BIN" ] && [ -x "$CLAUDE_BIN" ]; then
     export PATH="$(dirname "$CLAUDE_BIN"):$PATH"
   fi

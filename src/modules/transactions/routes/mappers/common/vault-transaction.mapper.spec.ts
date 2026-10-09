@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { NotFoundException } from '@nestjs/common';
 import { type Address, getAddress } from 'viem';
-import type { MockedObject } from 'vitest';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
 import type { EarnRepository } from '#/modules/earn/domain/earn.repository';
 import { defiMorphoExtraRewardBuilder } from '#/modules/staking/datasources/entities/__tests__/defi-morpho-extra-reward.entity.builder';
@@ -20,22 +21,22 @@ import { TransactionInfoType } from '#/modules/transactions/routes/entities/tran
 import { VaultInfo } from '#/modules/transactions/routes/entities/vaults/vault-info.entity';
 import { VaultTransactionMapper } from '#/modules/transactions/routes/mappers/common/vault-transaction.mapper';
 
-const mockEarnRepository = vi.mocked({
-  getDeployment: vi.fn(),
-  getDefiVaultStats: vi.fn(),
-  getDefiVaultStake: vi.fn(),
-  getDefiMorphoExtraRewards: vi.fn(),
+const mockEarnRepository = mocked({
+  getDeployment: jest.fn(),
+  getDefiVaultStats: jest.fn(),
+  getDefiVaultStake: jest.fn(),
+  getDefiMorphoExtraRewards: jest.fn(),
 } as MockedObject<EarnRepository>);
 
 const mockTokenRepository = {
-  getToken: vi.fn(),
+  getToken: jest.fn(),
 } as MockedObject<ITokenRepository>;
 
 describe('VaultTransactionMapper', () => {
   let target: VaultTransactionMapper;
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
 
     target = new VaultTransactionMapper(
       mockEarnRepository,

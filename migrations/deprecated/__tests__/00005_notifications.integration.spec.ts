@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { afterAll, beforeAll, describe, expect, it } from 'bun:test';
 import type { UUID } from 'node:crypto';
 import { faker } from '@faker-js/faker';
 import type postgres from 'postgres';
@@ -226,7 +227,7 @@ describe('Migration 00005_notifications', () => {
 
     // Create device with invalid device_type
     await expect(
-      sql`INSERT INTO push_notification_devices (device_type, device_uuid, cloud_messaging_token) VALUES (${deviceType}, ${deviceUuid}, ${cloudMessagingToken})`,
+      sql`INSERT INTO push_notification_devices (device_type, device_uuid, cloud_messaging_token) VALUES (${deviceType}, ${deviceUuid}, ${cloudMessagingToken})`.execute(),
     ).rejects.toThrow(
       'new row for relation "push_notification_devices" violates check constraint "push_notification_devices_device_type_check"',
     );
@@ -248,7 +249,7 @@ describe('Migration 00005_notifications', () => {
 
     // Create device with duplicate device_uuid
     await expect(
-      sql`INSERT INTO push_notification_devices (device_type, device_uuid, cloud_messaging_token) VALUES (${deviceType}, ${deviceUuid}, ${cloudMessagingToken})`,
+      sql`INSERT INTO push_notification_devices (device_type, device_uuid, cloud_messaging_token) VALUES (${deviceType}, ${deviceUuid}, ${cloudMessagingToken})`.execute(),
     ).rejects.toThrow(
       'duplicate key value violates unique constraint "push_notification_devices_device_uuid_key"',
     );
@@ -267,7 +268,7 @@ describe('Migration 00005_notifications', () => {
 
     // Create type with duplicate name
     await expect(
-      sql`INSERT INTO notification_types (name) VALUES (${afterMigration.after[0].name})`,
+      sql`INSERT INTO notification_types (name) VALUES (${afterMigration.after[0].name})`.execute(),
     ).rejects.toThrow(
       'duplicate key value violates unique constraint "notification_types_name_key"',
     );
@@ -300,7 +301,7 @@ describe('Migration 00005_notifications', () => {
 
     // Assert that subscription was deleted
     await expect(
-      sql`SELECT * FROM notification_subscriptions WHERE id = ${afterMigration.after.subscription.id}`,
+      sql`SELECT * FROM notification_subscriptions WHERE id = ${afterMigration.after.subscription.id}`.execute(),
     ).resolves.toStrictEqual([]);
   });
 
@@ -324,7 +325,7 @@ describe('Migration 00005_notifications', () => {
     await expect(
       sql<
         [NotificationSubscriptionsRow]
-      >`INSERT INTO notification_subscriptions (push_notification_device_id, chain_id, safe_address) VALUES (${afterMigration.after[0].id}, ${chainId}, ${safeAddress}) RETURNING *`,
+      >`INSERT INTO notification_subscriptions (push_notification_device_id, chain_id, safe_address) VALUES (${afterMigration.after[0].id}, ${chainId}, ${safeAddress}) RETURNING *`.execute(),
     ).resolves.toStrictEqual([
       {
         id: 1,
@@ -361,7 +362,7 @@ describe('Migration 00005_notifications', () => {
 
     // Create duplicate subscription
     await expect(
-      sql`INSERT INTO notification_subscriptions (signer_address, push_notification_device_id, chain_id, safe_address) VALUES (${signerAddress}, ${afterMigration.after[0].push_notification_device_id}, ${chainId}, ${safeAddress})`,
+      sql`INSERT INTO notification_subscriptions (signer_address, push_notification_device_id, chain_id, safe_address) VALUES (${signerAddress}, ${afterMigration.after[0].push_notification_device_id}, ${chainId}, ${safeAddress})`.execute(),
     ).rejects.toThrow(
       'duplicate key value violates unique constraint "notification_subscriptions_chain_id_safe_address_push_notif_key"',
     );
@@ -459,7 +460,7 @@ describe('Migration 00005_notifications', () => {
 
     // Assert that the subscribed notification type was deleted
     await expect(
-      sql`SELECT * FROM notification_subscription_notification_types WHERE id = ${afterMigration.after.subscribedNotificationType.id}`,
+      sql`SELECT * FROM notification_subscription_notification_types WHERE id = ${afterMigration.after.subscribedNotificationType.id}`.execute(),
     ).resolves.toStrictEqual([]);
   });
 
@@ -497,7 +498,7 @@ describe('Migration 00005_notifications', () => {
 
     // Assert that the subscribed notification type was deleted
     await expect(
-      sql`SELECT * FROM notification_subscription_notification_types WHERE id = ${afterMigration.after.subscribedNotificationType.id}`,
+      sql`SELECT * FROM notification_subscription_notification_types WHERE id = ${afterMigration.after.subscribedNotificationType.id}`.execute(),
     ).resolves.toStrictEqual([]);
   });
 
@@ -532,7 +533,7 @@ describe('Migration 00005_notifications', () => {
 
     // Create duplicate subscription
     await expect(
-      sql`INSERT INTO notification_subscription_notification_types (notification_subscription_id, notification_type_id) VALUES (${afterMigration.after[0].notification_subscription_id}, ${afterMigration.after[0].notification_type_id})`,
+      sql`INSERT INTO notification_subscription_notification_types (notification_subscription_id, notification_type_id) VALUES (${afterMigration.after[0].notification_subscription_id}, ${afterMigration.after[0].notification_type_id})`.execute(),
     ).rejects.toThrow(
       'duplicate key value violates unique constraint "notification_subscription_not_notification_subscription_id__key"',
     );

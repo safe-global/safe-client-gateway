@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { afterEach, beforeEach, describe, expect, it, jest } from 'bun:test';
 import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
@@ -8,7 +9,7 @@ import type { TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import { type Address, getAddress } from 'viem';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import {
   initTestApplication,
   TestAppProvider,
@@ -98,15 +99,15 @@ describe('Messages controller', () => {
     loggingService = moduleFixture.get(LoggingService);
 
     // TODO: Override module to avoid spying
-    vi.spyOn(loggingService, 'error');
-    vi.spyOn(loggingService, 'info');
+    jest.spyOn(loggingService, 'error');
+    jest.spyOn(loggingService, 'info');
 
     app = await new TestAppProvider().provide(moduleFixture);
     await initTestApplication(app);
   }
 
   beforeEach(async () => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
 
     // This spec exercises the queue-service read path; the rest of the
     // integration suite still defaults to features.safeQueueService=false until

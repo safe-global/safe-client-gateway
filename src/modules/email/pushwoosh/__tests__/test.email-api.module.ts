@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { jest } from 'bun:test';
 import { Module } from '@nestjs/common';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
 import { IEmailApi } from '#/domain/interfaces/email-api.interface';
 
 const emailApi = {
-  createMessage: vi.fn(),
-  deleteEmailAddress: vi.fn(),
+  createMessage: jest.fn(),
+  deleteEmailAddress: jest.fn(),
 };
 
 @Module({
@@ -16,7 +17,7 @@ const emailApi = {
     {
       provide: IEmailApi,
       useFactory: (): MockedObject<IEmailApi> => {
-        return vi.mocked(emailApi);
+        return emailApi as MockedObject<IEmailApi>;
       },
     },
   ],

@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { NotFoundException } from '@nestjs/common';
 import { QueryFailedError } from 'typeorm';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import { subscriptionBuilder } from '#/datasources/billing-api/entities/__tests__/subscription.builder';
 import { CacheRouter } from '#/datasources/cache/cache.router';
 import type { ICacheService } from '#/datasources/cache/cache.service.interface';
@@ -108,33 +109,33 @@ describe('SubscriptionSyncService', () => {
   }
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
 
     billingRepository = {
-      getSubscriptionsByCustomerId: vi.fn(),
-      clearSubscriptions: vi.fn(),
+      getSubscriptionsByCustomerId: jest.fn(),
+      clearSubscriptions: jest.fn(),
     } as MockedObject<IBillingRepository>;
     entitlementsService = {
-      materializeFromEvent: vi.fn().mockResolvedValue(true),
-      materializeAuthoritative: vi.fn().mockResolvedValue(true),
+      materializeFromEvent: jest.fn().mockResolvedValue(true),
+      materializeAuthoritative: jest.fn().mockResolvedValue(true),
     };
     spacesRepository = {
-      findIdByUuid: vi.fn().mockResolvedValue(spaceId),
+      findIdByUuid: jest.fn().mockResolvedValue(spaceId),
     };
     featuresRepository = {
-      getFeatures: vi.fn().mockResolvedValue(FEATURES),
+      getFeatures: jest.fn().mockResolvedValue(FEATURES),
     };
     subscriptionsRepository = {
-      getLastEventAt: vi.fn().mockResolvedValue(null),
+      getLastEventAt: jest.fn().mockResolvedValue(null),
     };
     cacheService = {
-      deleteByKey: vi.fn(),
+      deleteByKey: jest.fn(),
     } as unknown as MockedObject<ICacheService>;
     loggingService = {
-      debug: vi.fn(),
-      error: vi.fn(),
-      info: vi.fn(),
-      warn: vi.fn(),
+      debug: jest.fn(),
+      error: jest.fn(),
+      info: jest.fn(),
+      warn: jest.fn(),
     } as MockedObject<ILoggingService>;
 
     target = new SubscriptionSyncService(
@@ -178,9 +179,10 @@ describe('SubscriptionSyncService', () => {
         status: 'all',
       },
     );
-    expect(
-      entitlementsService.materializeAuthoritative,
-    ).toHaveBeenCalledExactlyOnceWith({
+    expect(entitlementsService.materializeAuthoritative).toHaveBeenCalledTimes(
+      1,
+    );
+    expect(entitlementsService.materializeAuthoritative).toHaveBeenCalledWith({
       spaceId,
       triggerEventAt: expect.any(Date),
       // The mark as it stood before the fetch went out: the write is abandoned
@@ -301,7 +303,8 @@ describe('SubscriptionSyncService', () => {
   it('invalidates the payment links cache and skips materialization for payment_link events', async () => {
     await target.handleWebhook(webhookEvent({ type: 'payment_link.created' }));
 
-    expect(cacheService.deleteByKey).toHaveBeenCalledExactlyOnceWith(
+    expect(cacheService.deleteByKey).toHaveBeenCalledTimes(1);
+    expect(cacheService.deleteByKey).toHaveBeenCalledWith(
       CacheRouter.getBillingPaymentLinksCacheDir().key,
     );
     expect(
@@ -456,9 +459,8 @@ describe('SubscriptionSyncService', () => {
     expect(
       billingRepository.getSubscriptionsByCustomerId,
     ).not.toHaveBeenCalled();
-    expect(
-      entitlementsService.materializeFromEvent,
-    ).toHaveBeenCalledExactlyOnceWith({
+    expect(entitlementsService.materializeFromEvent).toHaveBeenCalledTimes(1);
+    expect(entitlementsService.materializeFromEvent).toHaveBeenCalledWith({
       spaceId,
       // The payload's own state, stamped with the event that carried it.
       eventAt: new Date(created * 1_000),
@@ -493,7 +495,8 @@ describe('SubscriptionSyncService', () => {
 
     await target.handleWebhook(event);
 
-    expect(loggingService.error).toHaveBeenCalledExactlyOnceWith(
+    expect(loggingService.error).toHaveBeenCalledTimes(1);
+    expect(loggingService.error).toHaveBeenCalledWith(
       `Subscription ${event.data?.subscriptionId} carries no planCode in its metadata`,
     );
     expect(entitlementsService.materializeFromEvent).toHaveBeenCalledWith(
@@ -572,7 +575,8 @@ describe('SubscriptionSyncService', () => {
       ).toHaveBeenCalledTimes(1);
       expect(
         entitlementsService.materializeAuthoritative,
-      ).toHaveBeenCalledExactlyOnceWith(
+      ).toHaveBeenCalledTimes(1);
+      expect(entitlementsService.materializeAuthoritative).toHaveBeenCalledWith(
         expect.objectContaining({
           // Read before the fetch went out, so a write landing meanwhile is
           // caught under the lock.
@@ -593,7 +597,8 @@ describe('SubscriptionSyncService', () => {
       expect(entitlementsService.materializeFromEvent).not.toHaveBeenCalled();
       expect(
         entitlementsService.materializeAuthoritative,
-      ).toHaveBeenCalledExactlyOnceWith(
+      ).toHaveBeenCalledTimes(1);
+      expect(entitlementsService.materializeAuthoritative).toHaveBeenCalledWith(
         expect.objectContaining({ triggerEventAt: null }),
       );
     });

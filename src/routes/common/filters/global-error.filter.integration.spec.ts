@@ -1,4 +1,13 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  jest,
+} from 'bun:test';
 import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import {
@@ -63,8 +72,8 @@ describe('GlobalErrorFilter tests', () => {
     loggingService = moduleFixture.get<ILoggingService>(LoggingService);
 
     // TODO: Override service so as to not spy
-    vi.spyOn(loggingService, 'error');
-    vi.spyOn(loggingService, 'info');
+    jest.spyOn(loggingService, 'error');
+    jest.spyOn(loggingService, 'info');
 
     app = await new TestAppProvider().provide(moduleFixture);
     await initTestApplication(app);
@@ -75,7 +84,7 @@ describe('GlobalErrorFilter tests', () => {
   });
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
   });
 
   describe('responses', () => {

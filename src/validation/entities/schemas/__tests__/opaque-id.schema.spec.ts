@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { describe, expect, it } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { OPAQUE_ID_MAXLENGTH } from '#/routes/common/constants';
 import { OpaqueIdSchema } from '#/validation/entities/schemas/opaque-id.schema';

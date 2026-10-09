@@ -6,6 +6,7 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
+  type Relation,
   Unique,
 } from 'typeorm';
 import type { Address, Hex } from 'viem';
@@ -155,5 +156,5 @@ export class CounterfactualSafe implements DomainCounterfactualSafe {
     name: 'creator_id',
     foreignKeyConstraintName: 'FK_CFS_creator_id',
   })
-  public readonly creator?: User | null;
+  public readonly creator?: Relation<User | null>;
 }

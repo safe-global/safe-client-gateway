@@ -9,25 +9,28 @@ import {
   SAFE_TRANSACTION_SERVICE_MAX_LIMIT,
 } from '#/domain/common/constants';
 import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
-import { Page } from '#/domain/entities/page.entity';
+import { type Page } from '#/domain/entities/page.entity';
 import { DataSourceError } from '#/domain/errors/data-source.error';
 import { ITransactionApiManager } from '#/domain/interfaces/transaction-api.manager.interface';
-import { ILoggingService, LoggingService } from '#/logging/logging.interface';
-import { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
-import { CreationTransaction } from '#/modules/safe/domain/entities/creation-transaction.entity';
 import {
-  ModuleTransaction,
+  type ILoggingService,
+  LoggingService,
+} from '#/logging/logging.interface';
+import { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
+import { type CreationTransaction } from '#/modules/safe/domain/entities/creation-transaction.entity';
+import {
+  type ModuleTransaction,
   ModuleTransactionPageSchema,
   ModuleTransactionSchema,
 } from '#/modules/safe/domain/entities/module-transaction.entity';
 import {
-  MultisigTransaction,
+  type MultisigTransaction,
   MultisigTransactionPageSchema,
   MultisigTransactionSchema,
 } from '#/modules/safe/domain/entities/multisig-transaction.entity';
-import { Safe } from '#/modules/safe/domain/entities/safe.entity';
-import { SafeList } from '#/modules/safe/domain/entities/safe-list.entity';
-import { SafesByChainId } from '#/modules/safe/domain/entities/safes-by-chain-id.entity';
+import { type Safe } from '#/modules/safe/domain/entities/safe.entity';
+import { type SafeList } from '#/modules/safe/domain/entities/safe-list.entity';
+import { type SafesByChainId } from '#/modules/safe/domain/entities/safes-by-chain-id.entity';
 import { CreationTransactionSchema } from '#/modules/safe/domain/entities/schemas/creation-transaction.schema';
 import {
   SafePageV2Schema,
@@ -37,10 +40,10 @@ import { SafeListSchema } from '#/modules/safe/domain/entities/schemas/safe-list
 import { TransactionTypePageSchema } from '#/modules/safe/domain/entities/schemas/transaction-type.schema';
 import {
   isMultisigTransaction,
-  Transaction,
+  type Transaction,
 } from '#/modules/safe/domain/entities/transaction.entity';
 import {
-  Transfer,
+  type Transfer,
   TransferPageSchema,
   TransferSchema,
 } from '#/modules/safe/domain/entities/transfer.entity';

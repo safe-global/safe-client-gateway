@@ -4,10 +4,10 @@ import { join } from 'node:path';
 import { BullModule } from '@nestjs/bullmq';
 import { CacheModule as InMemoryCacheModule } from '@nestjs/cache-manager';
 import {
-  DynamicModule,
-  MiddlewareConsumer,
+  type DynamicModule,
+  type MiddlewareConsumer,
   Module,
-  NestModule,
+  type NestModule,
   RequestMethod,
 } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -75,6 +75,7 @@ import { ZodErrorFilter } from '#/routes/common/filters/zod-error.filter';
 import { CacheControlInterceptor } from '#/routes/common/interceptors/cache-control.interceptor';
 import { NullResponseInterceptor } from '#/routes/common/interceptors/null-response.interceptor';
 import { RouteLoggerInterceptor } from '#/routes/common/interceptors/route-logger.interceptor';
+import { TracingModule } from '#/tracing/tracing.module';
 
 @Module({})
 export class AppModule implements NestModule {
@@ -154,6 +155,7 @@ export class AppModule implements NestModule {
         InMemoryCacheModule.register({ isGlobal: true }),
         NetworkModule,
         RequestScopedLoggingModule,
+        TracingModule,
         ScheduleModule.forRoot(),
         ServeStaticModule.forRoot({
           rootPath: join(__dirname, '..', 'assets'),

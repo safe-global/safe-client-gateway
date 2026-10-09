@@ -11,6 +11,7 @@ import {
 import type { SwaggerDocumentOptions } from '@nestjs/swagger';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { IConfigurationService } from '#/config/configuration.service.interface';
+import { setHttpServerRoute } from '#/tracing/trace-context';
 
 export function configureVersioning(app: INestApplication): void {
   app.enableVersioning({
@@ -205,6 +206,22 @@ async function configureCookies(app: INestApplication): Promise<void> {
   await (app as NestFastifyApplication).register(fastifyCookie);
 }
 
+/**
+ * Names each traced request after its route template rather than its method
+ * alone. Inert when tracing is not enabled (no active HTTP server span).
+ */
+function configureTracing(app: INestApplication): void {
+  (app as NestFastifyApplication)
+    .getHttpAdapter()
+    .getInstance()
+    .addHook('onRequest', (request, _reply, done) => {
+      if (request.routeOptions.url) {
+        setHttpServerRoute(request.routeOptions.url);
+      }
+      done();
+    });
+}
+
 export const DEFAULT_CONFIGURATION: Array<
   (app: INestApplication) => void | Promise<void>
 > = [
@@ -212,4 +229,5 @@ export const DEFAULT_CONFIGURATION: Array<
   configureShutdownHooks,
   configureSwagger,
   configureCookies,
+  configureTracing,
 ];

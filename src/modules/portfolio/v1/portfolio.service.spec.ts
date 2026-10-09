@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import type { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
 import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
 import { appBalanceBuilder } from '#/modules/portfolio/domain/entities/__tests__/app-balance.builder';
@@ -19,21 +20,21 @@ describe('PortfolioApiService', () => {
   let portfolioRouteMapper: PortfolioRouteMapper;
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
 
     mockDomainService = {
-      getPortfolio: vi.fn(),
-      clearZerionCaches: vi.fn(),
+      getPortfolio: jest.fn(),
+      clearZerionCaches: jest.fn(),
     } as MockedObject<IDomainPortfolioService>;
 
     mockChainsRepository = {
-      getChain: vi.fn(),
-      getChains: vi.fn(),
-      getAllChains: vi.fn(),
-      clearChain: vi.fn(),
-      getSingletons: vi.fn(),
-      getIndexingStatus: vi.fn(),
-      isSupportedChain: vi.fn(),
+      getChain: jest.fn(),
+      getChains: jest.fn(),
+      getAllChains: jest.fn(),
+      clearChain: jest.fn(),
+      getSingletons: jest.fn(),
+      getIndexingStatus: jest.fn(),
+      isSupportedChain: jest.fn(),
     } as MockedObject<IChainsRepository>;
 
     portfolioRouteMapper = new PortfolioRouteMapper();

@@ -10,7 +10,7 @@
  * Usage (credentials via AWS_WEB_IDENTITY_TOKEN_FILE, or KMS_AWS_ACCESS_KEY_ID
  * and KMS_AWS_SECRET_ACCESS_KEY):
  *   AWS_KMS_ENCRYPTION_KEY_ID=<arn-or-id> AWS_REGION=<region> \
- *     yarn generate:field-encryption-key
+ *     bun run generate:field-encryption-key
  *
  * Outputs the value to set (initial setup):
  *   ENCRYPTION_INDEX_KEY

@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { afterAll, beforeAll, describe, expect, it, jest } from 'bun:test';
 import crypto from 'node:crypto';
 import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { getAddress } from 'viem';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import {
   createTestApplication,
   initTestApplication,
@@ -78,7 +79,7 @@ describe('Alerts Controller', () => {
     let signingKey: string;
 
     beforeAll(async () => {
-      vi.resetAllMocks();
+      jest.resetAllMocks();
 
       const defaultConfiguration = configuration();
       const testConfiguration = (): typeof defaultConfiguration => ({
@@ -853,7 +854,7 @@ describe('Alerts Controller', () => {
     let app: INestApplication<Server>;
 
     beforeAll(async () => {
-      vi.resetAllMocks();
+      jest.resetAllMocks();
 
       const defaultConfiguration = configuration();
       const testConfiguration = (): typeof defaultConfiguration => ({

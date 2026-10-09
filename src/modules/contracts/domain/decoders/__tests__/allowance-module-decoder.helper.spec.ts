@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import {
   addDelegateEncoder,
   deleteAllowanceEncoder,
@@ -12,7 +13,7 @@ describe('AllowanceModuleDecoder', () => {
   let target: AllowanceModuleDecoder;
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
     target = new AllowanceModuleDecoder();
   });
 

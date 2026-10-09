@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'bun:test';
 import fs from 'node:fs';
 import path from 'node:path';
 import { faker } from '@faker-js/faker';
@@ -50,9 +51,8 @@ const migrations: Array<{
 type TestRow = { a: string; b: number };
 type ExtendedTestRow = { a: string; b: number; c: Date };
 
-// postgres returns rows in a `Result` (an `Array` subclass). Vitest's
-// `toStrictEqual` checks constructors, so a `Result` is not strictly equal to a
-// plain array (unlike Jest). Convert to a plain array before asserting.
+// postgres returns rows in a `Result` (an `Array` subclass). `toStrictEqual`
+// checks constructors, so a `Result` is not strictly equal to a plain array. Convert to a plain array before asserting.
 const toRows = <T>(rows: ReadonlyArray<T> | undefined): Array<T> | undefined =>
   rows === undefined ? undefined : [...rows];
 
@@ -302,7 +302,7 @@ describe('PostgresDatabaseMigrator tests', () => {
       });
 
       // Should not track migrations when testing
-      await expect(sql`SELECT * FROM migrations`).rejects.toThrow(
+      await expect(sql`SELECT * FROM migrations`.execute()).rejects.toThrow(
         'does not exist',
       );
 

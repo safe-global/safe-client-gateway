@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import type { ArgumentsHost } from '@nestjs/common';
 import { HttpStatus } from '@nestjs/common';
-import type { Mock } from 'vitest';
+import type { Mock } from '#/__tests__/mocks';
 import {
   QUOTA_EXCEEDED_ERROR_CODE,
   QuotaExceededError,
@@ -14,10 +15,10 @@ function buildMockHost(): {
   mockStatus: Mock;
   mockSend: Mock;
 } {
-  const mockSend = vi.fn();
-  const mockStatus = vi.fn().mockReturnValue({ send: mockSend });
-  const mockGetResponse = vi.fn().mockReturnValue({ status: mockStatus });
-  const mockSwitchToHttp = vi
+  const mockSend = jest.fn();
+  const mockStatus = jest.fn().mockReturnValue({ send: mockSend });
+  const mockGetResponse = jest.fn().mockReturnValue({ status: mockStatus });
+  const mockSwitchToHttp = jest
     .fn()
     .mockReturnValue({ getResponse: mockGetResponse });
   const host = {

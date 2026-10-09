@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { afterEach, beforeEach, describe, expect, it, jest } from 'bun:test';
 import type { Server } from 'node:net';
 import { Controller, Get, type INestApplication, Module } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
@@ -28,7 +29,7 @@ describe('PaginationDataDecorator', () => {
   class TestModule {}
 
   beforeEach(async () => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [TestModule],

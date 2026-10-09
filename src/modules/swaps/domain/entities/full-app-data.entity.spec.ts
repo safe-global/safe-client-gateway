@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { describe, expect, it } from 'bun:test';
 import { FullAppDataSchema } from '#/modules/swaps/domain/entities/full-app-data.entity';
 
 describe('FullAppDataSchema', () => {

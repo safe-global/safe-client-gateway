@@ -17,7 +17,10 @@ import {
   getSafeSingletonDeployments,
   getSignerFactoryDeployments,
 } from '#/domain/common/utils/deployments';
-import { ILoggingService, LoggingService } from '#/logging/logging.interface';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '#/logging/logging.interface';
 import { DelayModifierDecoder } from '#/modules/alerts/domain/contracts/decoders/delay-modifier-decoder.helper';
 import { MultiSendDecoder } from '#/modules/contracts/domain/decoders/multi-send-decoder.helper';
 import { SafeDecoder } from '#/modules/contracts/domain/decoders/safe-decoder.helper';

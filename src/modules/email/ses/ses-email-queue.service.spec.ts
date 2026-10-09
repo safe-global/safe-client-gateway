@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-
-import type { MockedObject } from 'vitest';
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
+import type { MockedObject } from '#/__tests__/mocks';
 import { JobType } from '#/datasources/job-queue/types/job-types';
 import type { IJobQueueService } from '#/domain/interfaces/job-queue.interface';
 import { sendEmailJobDataBuilder } from '#/modules/email/ses/domain/entities/__tests__/send-email-job-data.builder';
@@ -9,12 +9,12 @@ import { SesEmailQueueService } from '#/modules/email/ses/ses-email-queue.servic
 describe('SesEmailQueueService', () => {
   let service: SesEmailQueueService;
   const mockJobQueueService = {
-    addJob: vi.fn(),
-    getJob: vi.fn(),
+    addJob: jest.fn(),
+    getJob: jest.fn(),
   } as MockedObject<IJobQueueService>;
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
     service = new SesEmailQueueService(mockJobQueueService);
   });
 

@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { afterEach, beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
 import { FakeCacheService } from '#/datasources/cache/__tests__/fake.cache.service';
 import { CacheRouter } from '#/datasources/cache/cache.router';
@@ -35,21 +36,21 @@ import {
 } from './utils/__tests__/helpers/base-data-decoded.helpers';
 
 const mockTransactionApi = {
-  getSafe: vi.fn(),
-  isSafe: vi.fn(),
+  getSafe: jest.fn(),
+  isSafe: jest.fn(),
 } as MockedObject<ITransactionApi>;
 
 const mockTransactionApiManager = {
-  getApi: vi.fn().mockResolvedValue(mockTransactionApi),
+  getApi: jest.fn().mockResolvedValue(mockTransactionApi),
 } as MockedObject<ITransactionApiManager>;
 
 const mockConfigurationService = {
-  getOrThrow: vi.fn().mockReturnValue(600),
+  getOrThrow: jest.fn().mockReturnValue(600),
 } as MockedObject<IConfigurationService>;
 
 const mockLoggingService = {
-  debug: vi.fn(),
-  warn: vi.fn(),
+  debug: jest.fn(),
+  warn: jest.fn(),
 } as MockedObject<ILoggingService>;
 
 function mockSafe(args: {
@@ -105,7 +106,7 @@ describe('DeadlockAnalysisService', () => {
   const safeAddress = getAddress(faker.finance.ethereumAddress());
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
     mockTransactionApiManager.getApi.mockResolvedValue(mockTransactionApi);
     fakeCacheService = new FakeCacheService();
     service = new DeadlockAnalysisService(

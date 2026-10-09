@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import type { Address } from 'viem';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
 import type { Page } from '#/domain/entities/page.entity';
 import type { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
@@ -15,11 +16,11 @@ describe('ChainsV2Service', () => {
   let mockChainsRepository: MockedObject<IChainsRepository>;
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
 
     mockChainsRepository = {
-      getChainsV2: vi.fn(),
-      getChainV2: vi.fn(),
+      getChainsV2: jest.fn(),
+      getChainV2: jest.fn(),
     } as MockedObject<IChainsRepository>;
 
     service = new ChainsV2Service(mockChainsRepository);

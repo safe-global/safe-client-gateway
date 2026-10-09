@@ -1,20 +1,21 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { jest } from 'bun:test';
 import type { EntityManager } from 'typeorm';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import { mockEntityManager } from '#/datasources/db/v2/__tests__/entity-manager.mock';
 import { mockPostgresDataSource } from '#/datasources/db/v2/__tests__/postgresql-datasource.mock';
 import type { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
 
 export const mockPostgresDatabaseService = {
-  getDataSource: vi.fn().mockImplementation(() => mockPostgresDataSource),
-  isInitialized: vi.fn(),
-  initializeDatabaseConnection: vi
+  getDataSource: jest.fn().mockImplementation(() => mockPostgresDataSource),
+  isInitialized: jest.fn(),
+  initializeDatabaseConnection: jest
     .fn()
     .mockImplementation(() => mockPostgresDataSource),
-  destroyDatabaseConnection: vi.fn(),
-  getRepository: vi.fn(),
-  transaction: vi
+  destroyDatabaseConnection: jest.fn(),
+  getRepository: jest.fn(),
+  transaction: jest
     .fn()
     .mockImplementation(
       (callback: (mockEntityManager: EntityManager) => EntityManager) => {

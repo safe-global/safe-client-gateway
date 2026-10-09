@@ -27,7 +27,7 @@ const balances = BalancesSchema.parse(raw);
 
 **Why:** `any` and a suppression comment both switch the compiler off for exactly the line that might be wrong, which undoes what the parse-don't-assert rule above is trying to guarantee all the way to the boundary.
 
-**Canonical example:** biome errors on this today: `noExplicitAny` catches explicit `any` in production code (the test override turns it off for `*.spec.ts`/`*.integration.spec.ts`/`*.e2e-spec.ts`/`__tests__/`). `@ts-ignore`/`@ts-expect-error` carry no biome rule at all — freeze the count instead: zero exist in `src/` production code today, and none get added.
+**Canonical example:** biome errors on this today: `noExplicitAny` catches explicit `any` in production code (the test override turns it off for `*.spec.ts`/`*.integration.spec.ts`/`*.e2e.spec.ts`/`__tests__/`). `@ts-ignore`/`@ts-expect-error` carry no biome rule at all — freeze the count instead: zero exist in `src/` production code today, and none get added.
 
 ```ts
 // Don't — silences the compiler at exactly the line that might be wrong
@@ -64,9 +64,9 @@ function getChainName(chain?: Chain): string {
 
 **Rule:** An import used only as a type is written `import type { X }`, or an inline `type` marker alongside value imports from the same module; a NestJS DI token is the one exception — a Symbol-and-interface pair injected via `@Inject` keeps the Symbol half as a value import, because `@Inject(IFoo)` needs it at runtime even though the property it types is the interface half of the same name.
 
-**Why:** an import that's only ever used as a type but isn't marked as such still looks, to a reader, like it might carry a runtime dependency; marking it `type` keeps a decorator-metadata-heavy codebase honest about which imports the emitted JavaScript actually needs.
+**Why:** an import that's only ever used as a type but isn't marked as such still looks, to a reader, like it might carry a runtime dependency; marking it `type` keeps a decorator-metadata-heavy codebase honest about which imports the runtime actually needs. Under Bun this is also load-bearing: the app runs as ES modules straight from TypeScript, and an unmarked import is kept as a real runtime import, so it can close an import cycle that CommonJS used to tolerate and now fails at load with a temporal-dead-zone (`Cannot access 'X' before initialization`) error. A class type that appears in decorator metadata (a decorated constructor parameter or property) is the sharpest case — imported as a value, it is emitted as a runtime reference; imported with `type`, it is not.
 
-**Canonical example:** 1,112 files use `import type` today, while biome's `useImportType` rule is `"off"` — a real, unenforced convention. `src/datasources/db/v1/cached-query-resolver.ts` mixes both halves in one import statement: `import { type ILoggingService, LoggingService } from '#/logging/logging.interface';` — `ILoggingService` is type-only, `LoggingService` (the DI Symbol) is not. See module-structure.md's "Symbol DI wiring" rule for the token pattern itself.
+**Canonical example:** biome's `useImportType` rule is `"off"`, but `tsconfig.json` sets `verbatimModuleSyntax: true`, so `bun run typecheck` (and CI's `biome` job, which runs it) fails on a type-only import that isn't marked `type`; more than 1,300 files under `src/` use a type-only import today. `src/datasources/db/v1/cached-query-resolver.ts` mixes both halves in one import statement: `import { type ILoggingService, LoggingService } from '#/logging/logging.interface';` — `ILoggingService` is type-only, `LoggingService` (the DI Symbol) is not. See module-structure.md's "Symbol DI wiring" rule for the token pattern itself.
 
 ```ts
 // Don't — the DI token needs to exist at runtime; type-only strips it

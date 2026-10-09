@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { Mocked } from 'vitest';
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
+import type { Mocked } from '#/__tests__/mocks';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
 import { getTxAuthHeaders } from '#/datasources/network/auth/tx-auth-headers.helper';
 
@@ -7,10 +8,10 @@ describe('getTxAuthHeaders', () => {
   let mockConfigService: Mocked<IConfigurationService>;
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
     mockConfigService = {
-      getOrThrow: vi.fn(),
-      get: vi.fn(),
+      getOrThrow: jest.fn(),
+      get: jest.fn(),
     } as Mocked<IConfigurationService>;
   });
 

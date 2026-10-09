@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import { getAddress } from 'viem';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
 import {
   oidcAuthPayloadDtoBuilder,
@@ -26,36 +27,36 @@ import { fakeEmailAddress } from '#/validation/entities/schemas/__tests__/email-
 import { fakeUuid } from '#/validation/entities/schemas/__tests__/uuid.builder';
 
 const repositoryMock = {
-  findAllBySpaceId: vi.fn(),
-  upsertMany: vi.fn(),
-  deleteByAddress: vi.fn(),
+  findAllBySpaceId: jest.fn(),
+  upsertMany: jest.fn(),
+  deleteByAddress: jest.fn(),
 } as MockedObject<IAddressBookItemsRepository>;
 
 const configurationServiceMock = {
-  getOrThrow: vi.fn().mockReturnValue(20),
+  getOrThrow: jest.fn().mockReturnValue(20),
 } as MockedObject<IConfigurationService>;
 
 const usersRepositoryMock = {
-  find: vi.fn(),
+  find: jest.fn(),
 } as MockedObject<IUsersRepository>;
 
 const walletsRepositoryMock = {
-  find: vi.fn(),
+  find: jest.fn(),
 } as MockedObject<IWalletsRepository>;
 
 const spacesRepositoryMock = {
-  findUuidById: vi.fn(),
+  findUuidById: jest.fn(),
 } as MockedObject<ISpacesRepository>;
 
 const membersRepositoryMock = {
-  findOne: vi.fn(),
+  findOne: jest.fn(),
 } as MockedObject<IMembersRepository>;
 
 describe('AddressBooksService', () => {
   let service: AddressBooksService;
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
     configurationServiceMock.getOrThrow.mockReturnValue(20);
     usersRepositoryMock.find.mockResolvedValue([]);
     walletsRepositoryMock.find.mockResolvedValue([]);

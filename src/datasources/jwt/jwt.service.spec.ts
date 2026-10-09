@@ -1,18 +1,19 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { afterEach, beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
-import type { MockedObject } from 'vitest';
 import { fakeJson } from '#/__tests__/faker';
+import type { MockedObject } from '#/__tests__/mocks';
 import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
 import type { JwtClient } from '#/datasources/jwt/jwt.module';
 import { JwtService } from '#/datasources/jwt/jwt.service';
 
-const jwtClientMock: MockedObject<JwtClient> = vi.mocked({
-  sign: vi.fn(),
-  verify: vi.fn(),
-  decode: vi.fn(),
-  decodeWithoutVerification: vi.fn(),
-});
+const jwtClientMock = {
+  sign: jest.fn(),
+  verify: jest.fn(),
+  decode: jest.fn(),
+  decodeWithoutVerification: jest.fn(),
+} as MockedObject<JwtClient>;
 
 describe('JwtService', () => {
   let service: JwtService;
@@ -20,8 +21,8 @@ describe('JwtService', () => {
   let configSecret: string;
 
   beforeEach(() => {
-    vi.useFakeTimers();
-    vi.resetAllMocks();
+    jest.useFakeTimers();
+    jest.resetAllMocks();
 
     configIssuer = faker.word.noun();
     configSecret = faker.string.alphanumeric();
@@ -34,7 +35,7 @@ describe('JwtService', () => {
   });
 
   afterEach(() => {
-    vi.useRealTimers();
+    jest.useRealTimers();
   });
 
   describe('sign', () => {

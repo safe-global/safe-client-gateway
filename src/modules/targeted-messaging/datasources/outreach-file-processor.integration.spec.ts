@@ -1,13 +1,23 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  jest,
+} from 'bun:test';
 import { createHash } from 'node:crypto';
 import { mkdir, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { faker } from '@faker-js/faker';
 import type postgres from 'postgres';
 import { type Address, getAddress } from 'viem';
-import type { MockedObject } from 'vitest';
 import { TestDbFactory } from '#/__tests__/db.factory';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
 import { FakeCacheService } from '#/datasources/cache/__tests__/fake.cache.service';
 import { CacheRouter } from '#/datasources/cache/cache.router';
@@ -25,18 +35,18 @@ import { createOutreachDtoBuilder } from '#/modules/targeted-messaging/domain/en
 import { OutreachFileProcessor } from './outreach-file-processor';
 
 const mockLoggingService = {
-  debug: vi.fn(),
-  error: vi.fn(),
-  info: vi.fn(),
-  warn: vi.fn(),
+  debug: jest.fn(),
+  error: jest.fn(),
+  info: jest.fn(),
+  warn: jest.fn(),
 } as MockedObject<ILoggingService>;
 
-const mockConfigurationService = vi.mocked({
-  getOrThrow: vi.fn(),
+const mockConfigurationService = mocked({
+  getOrThrow: jest.fn(),
 } as MockedObject<IConfigurationService>);
 
-const mockCloudStorageApiService = vi.mocked({
-  getFileContent: vi.fn(),
+const mockCloudStorageApiService = mocked({
+  getFileContent: jest.fn(),
 } as MockedObject<ICloudStorageApiService>);
 
 function getChecksum(content: string): string {
@@ -98,7 +108,7 @@ describe('OutreachFileProcessor', () => {
   afterEach(async () => {
     await sql`TRUNCATE TABLE submissions, targeted_safes, outreaches CASCADE`;
     await rm(path.resolve(baseDir, fileName));
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   afterAll(async () => {
@@ -210,7 +220,8 @@ describe('OutreachFileProcessor', () => {
       ).toHaveLength(1);
       expect(await fakeCacheService.hGet(lockCacheKey)).toBeNull();
       expect(mockLoggingService.error).toHaveBeenCalledWith(
-        expect.stringContaining('is not valid JSON'),
+        // The parser's own wording is engine-specific; both name JSON.
+        expect.stringMatching(/Error parsing data file: .*JSON/),
       );
     } finally {
       await rm(badSourceFile);

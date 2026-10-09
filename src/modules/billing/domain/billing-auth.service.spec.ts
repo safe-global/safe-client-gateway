@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { describe, expect, it, jest } from 'bun:test';
 import { sign as cryptoSign, generateKeyPairSync } from 'node:crypto';
 import { faker } from '@faker-js/faker';
 import { UnauthorizedException } from '@nestjs/common';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
 import { JWT_ES_ALGORITHM } from '#/datasources/jwt/jwt.constants';
 import { jwtClientFactory } from '#/datasources/jwt/jwt.module';
@@ -29,10 +30,10 @@ function generateKeyPair(): { privateKey: string; publicKey: string } {
 
 describe('BillingAuthService', () => {
   const loggingService = {
-    info: vi.fn(),
-    debug: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
+    info: jest.fn(),
+    debug: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
   } as MockedObject<ILoggingService>;
 
   describe('mint (static)', () => {

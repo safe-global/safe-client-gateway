@@ -20,34 +20,37 @@ It provides UI-oriented mappings and data structures for easier integration with
 
 ## Requirements
 
-- Node.js v24.21.0 'Krypton' LTS (>= 24.14 is required for the `#/` imports) ([Node.js Release Schedule](https://nodejs.org/en/about/previous-releases)) – https://nodejs.org/en/
+- Bun v1.4.2 (the version pinned in `package.json`'s `packageManager`) – https://bun.com/
 - Docker Compose – https://docs.docker.com/compose/
 
 ## Installation
 
-**Optional:** If you have NVM installed, you can run `nvm use` in the root folder of the project to use the recommended
-Node version set for this project.
-
-We use Yarn as the package manager for this project. Yarn is bundled with the project so to use it run:
+Bun is the runtime, package manager and test runner for this project. Install it from https://bun.com/docs/installation, then run:
 
 ```bash
-corepack enable && yarn install
+bun install
+```
+
+Installs follow the supply-chain settings in `bunfig.toml` and `package.json`: no version published less than 7 days ago is resolved (`minimumReleaseAge`), dependencies' lifecycle scripts never run (`trustedDependencies: []`), and CI installs with `--frozen-lockfile`. Check the resolved packages against known advisories with:
+
+```bash
+bun audit
 ```
 
 The project requires some ABIs that are generated after install. In order to manually generate them, run:
 
 ```bash
-yarn generate-abis
+bun run generate-abis
 ```
 
 ### Development with Dev Containers
 
-If you have Docker and the [VS Code/Cursor Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) installed, you can develop the project without installing Node, Yarn, or any of the backing services on your host:
+If you have Docker and the [VS Code/Cursor Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) installed, you can develop the project without installing Bun or any of the backing services on your host:
 
 1. Open the repository in VS Code/Cursor.
 2. Run **Dev Containers: Reopen in Container** from the command palette.
 
-On first build the container will install dependencies with `yarn install --immutable` (which also generates the required ABIs via the `postinstall` hook).
+On first build the container will install dependencies with `bun install --frozen-lockfile` (which also generates the required ABIs via the `postinstall` hook).
 
 The following services start automatically alongside the dev container: Postgres (`db`), Postgres test DB (`db-test`), Redis (`redis`), and RabbitMQ (`rabbitmq`). The `web`, `nginx`, and `pgadmin` services from `docker-compose.yml` are NOT auto-started; if you need them, run them from the host with:
 
@@ -57,7 +60,7 @@ docker compose up <service>
 
 Note: both `db` and `db-test` run with SSL enabled, so before you reopen in container — or any time you run `docker compose up db`/`db-test` from the host — make sure the self-signed key has owner-only permissions (see [Running the services](#running-the-services)).
 
-VS Code/Cursor installs the Biome, Claude Code, and ChatGPT extensions automatically inside the container.
+VS Code/Cursor installs the Biome, Bun, Claude Code, and ChatGPT extensions automatically inside the container.
 
 ## Setup your env
 
@@ -115,19 +118,19 @@ Please review the required API keys in the `.env` file and ensure you have creat
 
 ```bash
 # Generate .env file from required variables
-yarn env:generate
+bun run env:generate
 
 # Generate .env file (force overwrite existing)
-yarn env:generate:force
+bun run env:generate:force
 
 # Generate or update .env file (creates if missing, updates if exists)
-yarn env:generate:update
+bun run env:generate:update
 
 # Validate that all env vars are documented (verbose)
-yarn env:validate
+bun run env:validate
 
 # Validate silently (Only exit if there is an error)
-yarn env:validate:silent
+bun run env:validate:silent
 ```
 
 ## Running the services
@@ -164,14 +167,16 @@ To generate a key, go to:
 
 ```bash
 # development
-yarn run start
+bun run start
 
 # watch mode
-yarn run start:dev
+bun run start:dev
 
-# production mode
-yarn run start:prod
+# production mode (with OpenTelemetry tracing, as in the container image)
+bun run start:prod
 ```
+
+Bun runs the TypeScript sources directly: there is no build step. Bun loads `.env` from the project root automatically.
 
 ## Test
 
@@ -185,26 +190,40 @@ Make sure the self-signed certificate key has the right permissions (see [Runnin
 docker compose up -d db-test
 
 # unit tests
-yarn run test
+bun run test
+
+# integration tests
+docker compose up -d redis rabbitmq && bun run test:integration
 
 # e2e tests
-docker-compose up -d redis rabbitmq && yarn run test:e2e
+docker compose up -d redis rabbitmq && bun run test:e2e
 
 # test coverage
-yarn run test:cov
+bun run test:cov
 ```
+
+Tests run on Bun's built-in test runner (`bun:test`); see [docs/agents/testing.md](docs/agents/testing.md).
 
 ## Linter and Style Guide
 
-We use [Biome](https://biomejs.dev/) as a linter and [Prettier](https://prettier.io/) as a code formatter.
-You can run `yarn run lint` to execute Biome and `yarn run format` to execute Prettier.
+We use [Biome](https://biomejs.dev/) as linter and formatter (Bun has no built-in linter or formatter).
+You can run `bun run lint` and `bun run format`, and type-check with `bun run typecheck`.
 
 These checks can be automatically executed using Git hooks. If you wish to install the provided git hooks:
 
 ```shell
-yarn install
-yarn husky install
+bun install
+bunx husky
 ```
+
+## Observability
+
+Traces are produced with [OpenTelemetry](https://opentelemetry.io/) (`src/tracing/`) and exported over OTLP/HTTP. Datadog's `dd-trace` does not support the Bun runtime, so the Datadog Agent ingests them through its OTLP receiver instead.
+
+- The container image starts the app with `bun --preload ./src/tracing/tracing.ts src/main.ts` (also `bun run start:prod`), which patches the HTTP server, PostgreSQL (`pg`), Redis (`redis`, `ioredis`) and RabbitMQ (`amqplib`) clients before the app loads them. Outbound HTTP calls made through the network service get client spans and propagate W3C `traceparent` headers.
+- Spans go to `http://$DD_AGENT_HOST:4318/v1/traces` unless `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` or `OTEL_EXPORTER_OTLP_ENDPOINT` is set. The Agent's OTLP/HTTP receiver must be enabled, e.g. `DD_OTLP_CONFIG_RECEIVER_PROTOCOLS_HTTP_ENDPOINT=0.0.0.0:4318` (see [Datadog's OTLP ingestion docs](https://docs.datadoghq.com/opentelemetry/setup/otlp_ingest_in_the_agent/)).
+- `DD_SERVICE`, `DD_ENV` and `DD_VERSION` become the `service.name`, `deployment.environment.name` and `service.version` resource attributes; the standard `OTEL_SERVICE_NAME`/`OTEL_RESOURCE_ATTRIBUTES` take precedence. Sampling follows `OTEL_TRACES_SAMPLER`/`OTEL_TRACES_SAMPLER_ARG` (default: every trace). Set `OTEL_SDK_DISABLED=true` to turn tracing off.
+- Logs are JSON on stdout, collected by the Agent as before. Each line written inside a trace carries `dd.trace_id` and `dd.span_id`, which Datadog uses to link it to its trace.
 
 ## Database Migrations
 

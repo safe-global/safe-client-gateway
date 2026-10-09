@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { HttpStatus } from '@nestjs/common';
 import { getAddress } from 'viem';
-import type { MockedObject } from 'vitest';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
 import { FakeCacheService } from '#/datasources/cache/__tests__/fake.cache.service';
@@ -22,16 +23,16 @@ import type { ZerionChainMappingService } from '#/modules/zerion/datasources/zer
 import { rawify } from '#/validation/entities/raw.entity';
 
 const loggingService = {
-  debug: vi.fn(),
-  info: vi.fn(),
-  warn: vi.fn(),
-  error: vi.fn(),
+  debug: jest.fn(),
+  info: jest.fn(),
+  warn: jest.fn(),
+  error: jest.fn(),
 } as MockedObject<ILoggingService>;
 
 const networkService = {
-  get: vi.fn(),
-  post: vi.fn(),
-  delete: vi.fn(),
+  get: jest.fn(),
+  post: jest.fn(),
+  delete: jest.fn(),
 } as MockedObject<INetworkService>;
 
 function buildZerionLoanBalance(args: {
@@ -92,7 +93,7 @@ describe('ZerionPositionsApi', () => {
     } as Chain;
 
     beforeEach(() => {
-      vi.resetAllMocks();
+      jest.resetAllMocks();
       cacheService = new FakeCacheService();
       configurationService = new FakeConfigurationService();
       configurationService.set(
@@ -111,8 +112,8 @@ describe('ZerionPositionsApi', () => {
       });
 
       zerionChainMappingService = {
-        getChainIdFromNetwork: vi.fn(),
-        getNetworkFromChainId: vi.fn().mockResolvedValue(chainName),
+        getChainIdFromNetwork: jest.fn(),
+        getNetworkFromChainId: jest.fn().mockResolvedValue(chainName),
       } as unknown as MockedObject<ZerionChainMappingService>;
 
       target = new ZerionPositionsApi(
@@ -216,32 +217,32 @@ describe('ZerionPositionsApi', () => {
       ]),
     );
 
-    const mockCacheService = vi.mocked({
-      hGet: vi.fn(),
-      hSet: vi.fn(),
-      deleteByKey: vi.fn(),
+    const mockCacheService = mocked({
+      hGet: jest.fn(),
+      hSet: jest.fn(),
+      deleteByKey: jest.fn(),
     } as MockedObject<ICacheService>);
 
     const mockLoggingService = {
-      debug: vi.fn(),
-      warn: vi.fn(),
+      debug: jest.fn(),
+      warn: jest.fn(),
     } as MockedObject<ILoggingService>;
 
-    const mockNetworkService = vi.mocked({
-      get: vi.fn(),
+    const mockNetworkService = mocked({
+      get: jest.fn(),
     } as MockedObject<INetworkService>);
 
-    const mockHttpErrorFactory = vi.mocked({
-      from: vi.fn(),
+    const mockHttpErrorFactory = mocked({
+      from: jest.fn(),
     } as MockedObject<HttpErrorFactory>);
 
-    const mockChainMappingService = vi.mocked({
-      getNetworkFromChainId: vi.fn(),
-      getChainIdFromNetwork: vi.fn(),
+    const mockChainMappingService = mocked({
+      getNetworkFromChainId: jest.fn(),
+      getChainIdFromNetwork: jest.fn(),
     } as MockedObject<ZerionChainMappingService>);
 
     beforeEach(() => {
-      vi.resetAllMocks();
+      jest.resetAllMocks();
       fakeConfigurationService = new FakeConfigurationService();
       fakeConfigurationService.set(
         'balances.providers.zerion.assetsApiKey',

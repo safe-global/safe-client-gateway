@@ -6,6 +6,7 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
+  type Relation,
 } from 'typeorm';
 import type { Address } from 'viem';
 import { databaseAddressTransformer } from '#/domain/common/transformers/database-address.transformer';
@@ -89,5 +90,5 @@ export class SpaceSafe implements DomainSpaceSafe {
     name: 'space_id',
     foreignKeyConstraintName: 'FK_SS_space_id',
   })
-  public readonly space?: Space;
+  public readonly space?: Relation<Space>;
 }

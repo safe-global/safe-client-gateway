@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import type { MockedObject } from 'vitest';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import { User as DbUser } from '#/modules/users/datasources/entities/users.entity.db';
 import { UserIdentityResolverService } from '#/modules/users/domain/user-identity-resolver/user-identity-resolver.service';
 import { IUsersRepository } from '#/modules/users/domain/users.repository.interface';
@@ -12,12 +13,12 @@ import type { WalletEncryptionService } from '#/modules/wallets/domain/wallet-en
 import { IWalletsRepository } from '#/modules/wallets/domain/wallets.repository.interface';
 import { fakeEmailAddress } from '#/validation/entities/schemas/__tests__/email-address.builder';
 
-const mockUsersRepository = vi.mocked({
-  find: vi.fn(),
+const mockUsersRepository = mocked({
+  find: jest.fn(),
 } as unknown as IUsersRepository);
 
-const mockWalletsRepository = vi.mocked({
-  find: vi.fn(),
+const mockWalletsRepository = mocked({
+  find: jest.fn(),
 } as unknown as IWalletsRepository);
 
 const buildUser = (overrides: Partial<DbUser>): DbUser =>
@@ -38,7 +39,7 @@ describe('UserIdentityResolverService', () => {
   let walletEncryptionService: MockedObject<WalletEncryptionService>;
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    jest.clearAllMocks();
     walletEncryptionService = createMockWalletEncryptionService();
     service = new UserIdentityResolverService(
       mockUsersRepository,

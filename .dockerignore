@@ -2,3 +2,7 @@ Dockerfile
 .dockerignore
 node_modules
 dist
+coverage
+.env
+.env.test
+.env.dev

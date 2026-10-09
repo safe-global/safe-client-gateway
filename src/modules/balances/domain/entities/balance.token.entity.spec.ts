@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { describe, expect, it } from 'bun:test';
 import { balanceTokenBuilder } from '#/modules/balances/domain/entities/__tests__/balance.token.builder';
 import { BalanceTokenSchema } from '#/modules/balances/domain/entities/balance.token.entity';
 

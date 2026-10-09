@@ -7,18 +7,21 @@ import { ZodError } from 'zod';
 import { IConfigurationService } from '#/config/configuration.service.interface';
 import {
   CacheService,
-  ICacheService,
+  type ICacheService,
 } from '#/datasources/cache/cache.service.interface';
 import { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
 import { NetworkResponseError } from '#/datasources/network/entities/network.error.entity';
 import {
-  INetworkService,
+  type INetworkService,
   NetworkService,
 } from '#/datasources/network/network.service.interface';
 import { LogType } from '#/domain/common/entities/log-type.entity';
 import { getNumberString } from '#/domain/common/utils/utils';
 import { DataSourceError } from '#/domain/errors/data-source.error';
-import { ILoggingService, LoggingService } from '#/logging/logging.interface';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '#/logging/logging.interface';
 import { asError } from '#/logging/utils';
 import type { ZerionBalance } from '#/modules/balances/datasources/entities/zerion-balance.entity';
 import { ZerionBalancesSchema } from '#/modules/balances/datasources/entities/zerion-balance.entity';

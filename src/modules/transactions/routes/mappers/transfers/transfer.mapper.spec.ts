@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import type { MockedObject } from 'vitest';
+import { type MockedObject, mocked } from '#/__tests__/mocks';
 import type { ILoggingService } from '#/logging/logging.interface';
 import { erc20TransferBuilder } from '#/modules/safe/domain/entities/__tests__/erc20-transfer.builder';
 import { erc721TransferBuilder } from '#/modules/safe/domain/entities/__tests__/erc721-transfer.builder';
@@ -33,28 +34,28 @@ import { TransferInfoMapper } from '#/modules/transactions/routes/mappers/transf
 import type { AddressInfoHelper } from '#/routes/common/address-info/address-info.helper';
 import { AddressInfo } from '#/routes/common/entities/address-info.entity';
 
-const addressInfoHelper = vi.mocked({
-  getOrDefault: vi.fn(),
+const addressInfoHelper = mocked({
+  getOrDefault: jest.fn(),
 } as MockedObject<AddressInfoHelper>);
 
-const tokenRepository = vi.mocked({
-  getToken: vi.fn(),
+const tokenRepository = mocked({
+  getToken: jest.fn(),
 } as MockedObject<TokenRepository>);
 
-const swapTransferInfoMapper = vi.mocked({
-  mapSwapTransferInfo: vi.fn(),
+const swapTransferInfoMapper = mocked({
+  mapSwapTransferInfo: jest.fn(),
 } as MockedObject<SwapTransferInfoMapper>);
 
-const mockLoggingService = vi.mocked({
-  warn: vi.fn(),
-  debug: vi.fn(),
+const mockLoggingService = mocked({
+  warn: jest.fn(),
+  debug: jest.fn(),
 } as MockedObject<ILoggingService>);
 
 describe('Transfer mapper (Unit)', () => {
   let mapper: TransferMapper;
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
 
     const transferInfoMapper = new TransferInfoMapper(
       tokenRepository,

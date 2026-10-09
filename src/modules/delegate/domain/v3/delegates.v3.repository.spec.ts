@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import type { Address } from 'viem';
 import { getAddress } from 'viem';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
 import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
 import type { ITransactionApi } from '#/domain/interfaces/transaction-api.interface';
@@ -18,34 +19,34 @@ import type { ISafeQueueService } from '#/modules/safe-queue/safe-queue.interfac
 import { rawify } from '#/validation/entities/raw.entity';
 
 const mockTransactionApiManager = {
-  getApi: vi.fn(),
+  getApi: jest.fn(),
 } as MockedObject<ITransactionApiManager>;
 
 const mockTransactionApi = {
-  getDelegatesV2: vi.fn(),
-  postDelegateV2: vi.fn(),
-  updateDelegateV2: vi.fn(),
-  deleteDelegateV2: vi.fn(),
-  clearDelegates: vi.fn(),
+  getDelegatesV2: jest.fn(),
+  postDelegateV2: jest.fn(),
+  updateDelegateV2: jest.fn(),
+  deleteDelegateV2: jest.fn(),
+  clearDelegates: jest.fn(),
 } as MockedObject<ITransactionApi>;
 
 const mockSafeQueueService = {
-  getDelegates: vi.fn(),
-  postDelegate: vi.fn(),
-  updateDelegate: vi.fn(),
-  deleteDelegate: vi.fn(),
-  clearDelegates: vi.fn(),
+  getDelegates: jest.fn(),
+  postDelegate: jest.fn(),
+  updateDelegate: jest.fn(),
+  deleteDelegate: jest.fn(),
+  clearDelegates: jest.fn(),
 } as MockedObject<ISafeQueueService>;
 
 const mockConfigurationService = {
-  getOrThrow: vi.fn(),
+  getOrThrow: jest.fn(),
 } as MockedObject<IConfigurationService>;
 
 const mockLoggingService = {
-  error: vi.fn(),
-  warn: vi.fn(),
-  info: vi.fn(),
-  debug: vi.fn(),
+  error: jest.fn(),
+  warn: jest.fn(),
+  info: jest.fn(),
+  debug: jest.fn(),
 } as MockedObject<ILoggingService>;
 
 describe('DelegatesV3Repository', () => {
@@ -69,7 +70,7 @@ describe('DelegatesV3Repository', () => {
   }
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
     mockTransactionApiManager.getApi.mockResolvedValue(mockTransactionApi);
     mockTransactionApi.clearDelegates.mockResolvedValue(undefined);
     mockSafeQueueService.clearDelegates.mockResolvedValue(undefined);

@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { afterEach, beforeEach, describe, expect, it, jest } from 'bun:test';
 import type { Server } from 'node:net';
 import type { INestApplication } from '@nestjs/common';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import {
   createTestApplication,
   initTestApplication,
@@ -73,7 +74,7 @@ describe('Hook Events for Notifications', () => {
   }
 
   beforeEach(async () => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
     await initApp();
   });
 

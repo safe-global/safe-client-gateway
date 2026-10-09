@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { beforeEach, describe, expect, it, jest } from 'bun:test';
 import { faker } from '@faker-js/faker';
 import {
   BadRequestException,
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
-import type { MockedObject } from 'vitest';
+import type { MockedObject } from '#/__tests__/mocks';
 import { oidcAuthPayloadDtoBuilder } from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
 import type { ISpacesRepository } from '#/modules/spaces/domain/spaces.repository.interface';
@@ -25,18 +26,18 @@ import type { IMembersRepository } from '#/modules/users/domain/members/members.
 import { fakeUuid } from '#/validation/entities/schemas/__tests__/uuid.builder';
 
 const surveysRepositoryMock = {
-  findActiveBySlug: vi.fn(),
-  findActiveBySlugOrFail: vi.fn(),
-  findResponse: vi.fn(),
-  upsertResponse: vi.fn(),
+  findActiveBySlug: jest.fn(),
+  findActiveBySlugOrFail: jest.fn(),
+  findResponse: jest.fn(),
+  upsertResponse: jest.fn(),
 } as MockedObject<ISurveysRepository>;
 
 const membersRepositoryMock = {
-  findOne: vi.fn(),
+  findOne: jest.fn(),
 } as unknown as MockedObject<IMembersRepository>;
 
 const spacesRepositoryMock = {
-  findUuidById: vi.fn(),
+  findUuidById: jest.fn(),
 } as MockedObject<ISpacesRepository>;
 
 function buildSurvey(pages: Array<SurveyPage>): Survey {
@@ -61,7 +62,7 @@ describe('SurveysService', () => {
   let userId: number;
 
   beforeEach(() => {
-    vi.resetAllMocks();
+    jest.resetAllMocks();
     service = new SurveysService(
       surveysRepositoryMock,
       membersRepositoryMock,
