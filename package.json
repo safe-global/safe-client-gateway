@@ -42,12 +42,12 @@
     "backfill:field-encryption": "yarn build && node --env-file=.env dist/scripts/backfill-field-encryption.js"
   },
   "dependencies": {
-    "@aws-sdk/client-kms": "3.1133.0",
-    "@aws-sdk/client-s3": "3.1133.0",
-    "@aws-sdk/client-sesv2": "3.1133.0",
-    "@aws-sdk/credential-provider-web-identity": "3.972.77",
-    "@aws-sdk/lib-storage": "3.1133.0",
-    "@aws-sdk/s3-request-presigner": "3.1133.0",
+    "@aws-sdk/client-kms": "3.1145.0",
+    "@aws-sdk/client-s3": "3.1145.0",
+    "@aws-sdk/client-sesv2": "3.1145.0",
+    "@aws-sdk/credential-provider-web-identity": "3.972.78",
+    "@aws-sdk/lib-storage": "3.1145.0",
+    "@aws-sdk/s3-request-presigner": "3.1145.0",
     "@blockaid/client": "^1.8.0",
     "@fastify/cookie": "^11.1.2",
     "@fastify/static": "^10.1.5",
