@@ -553,6 +553,7 @@ export class MembersRepository implements IMembersRepository {
     spaceId: Space['id'],
   ): Promise<Array<DbMember>> {
     const members = await entityManager.find(DbMember, {
+      select: { id: true, role: true, status: true, user: { id: true } },
       where: { space: { id: spaceId }, role: 'ADMIN', status: 'ACTIVE' },
       relations: { user: true },
     });
