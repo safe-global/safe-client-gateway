@@ -6,6 +6,7 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { groupBy } from 'lodash';
 import type { FindOptionsRelations, FindOptionsWhere } from 'typeorm';
 import { EntityManager, In, IsNull } from 'typeorm';
 import type { Address } from 'viem';
@@ -233,17 +234,9 @@ export class UsersRepository implements IUsersRepository {
       relations: { space: true, user: true },
     });
 
-    const adminsBySpace = new Map<DbMember['space']['id'], Array<DbMember>>();
-    for (const activeAdmin of activeAdmins) {
-      const group = adminsBySpace.get(activeAdmin.space.id);
-      if (group) {
-        group.push(activeAdmin);
-      } else {
-        adminsBySpace.set(activeAdmin.space.id, [activeAdmin]);
-      }
-    }
+    const adminsBySpace = groupBy(activeAdmins, (admin) => admin.space.id);
 
-    for (const members of adminsBySpace.values()) {
+    for (const members of Object.values(adminsBySpace)) {
       if (isLastActiveAdminOfSpace({ members, userId: args.userId })) {
         throw new ConflictException(
           'Cannot delete account while last admin of a workspace.',
