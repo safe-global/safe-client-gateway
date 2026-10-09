@@ -3,6 +3,7 @@
 import { faker } from '@faker-js/faker';
 import { In, MoreThan } from 'typeorm';
 import { memberBuilder } from '#/modules/users/datasources/entities/__tests__/member.entity.db.builder';
+import { userBuilder } from '#/modules/users/datasources/entities/__tests__/users.entity.db.builder';
 import type { Member as DbMember } from '#/modules/users/datasources/entities/member.entity.db';
 import type { User } from '#/modules/users/datasources/entities/users.entity.db';
 import type { Member } from '#/modules/users/domain/entities/member.entity';
@@ -94,7 +95,7 @@ describe('isLastActiveAdminOfSpace', () => {
     memberBuilder()
       .with('role', 'ADMIN')
       .with('status', 'ACTIVE')
-      .with('user', { id: userId } as User)
+      .with('user', userBuilder().with('id', userId).build())
       .build();
 
   it('is true when the user is the only active admin', () => {
@@ -147,12 +148,12 @@ describe('isLastActiveAdminOfSpace', () => {
     const invitedAdmin = memberBuilder()
       .with('role', 'ADMIN')
       .with('status', 'INVITED')
-      .with('user', { id: invitedAdminId } as User)
+      .with('user', userBuilder().with('id', invitedAdminId).build())
       .build();
     const activeMember = memberBuilder()
       .with('role', 'MEMBER')
       .with('status', 'ACTIVE')
-      .with('user', { id: activeMemberId } as User)
+      .with('user', userBuilder().with('id', activeMemberId).build())
       .build();
 
     expect(
