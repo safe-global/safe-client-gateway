@@ -4,7 +4,7 @@
 
 # Testing
 
-This guide states the testing conventions for Safe Client Gateway: which test type to write, how to run each locally and in CI, the Vitest project layout tests run under, and the rules that keep test data and mocking consistent. The shared `Builder`/`IBuilder` helper and the three-Vitest-project split are introduced in `docs/agents/ARCHITECTURE.md`'s Module anatomy section; this guide is their normative, in-depth treatment.
+This guide states the testing conventions for Safe Client Gateway: which test type to write, how to run each locally and in CI, the Vitest project layout tests run under, and the rules that keep test data and mocking consistent. The shared `Builder`/`IBuilder` helper and the Vitest project split are introduced in `docs/agents/ARCHITECTURE.md`'s Module anatomy section; this guide is their normative, in-depth treatment.
 
 ## Test types
 
@@ -24,13 +24,13 @@ Today's split: 336 unit specs, 80 integration specs, 18 e2e specs.
 
 Commands, all defined in `package.json` and all resolving `vitest.config.ts`'s named projects:
 
-- `yarn test` / `yarn test:unit` — the `unit` project; these two are equivalent.
+- `yarn test` / `yarn test:unit` — the `unit` and `unit-isolated` projects; these two are equivalent.
 - `yarn test:integration` — the `integration` project.
 - `yarn test:all` / `yarn test:all:cov` — `vitest run` with no `--project` filter, i.e. every project `vitest.config.ts` defines (unit, integration, and e2e) in one pass.
-- `yarn test:watch` — the `unit` project, in watch mode.
-- `yarn test:unit:cov` / `yarn test:integration:cov` — the matching project, instrumented with `@vitest/coverage-v8`, written to `./coverage`.
-- `yarn test:debug [path/to/file.spec.ts]` — the `unit` project under `--inspect-brk` with `--no-file-parallelism`, for stepping through a single file in a debugger.
-- `yarn test --reporter=verbose` — the `unit` project with per-test output instead of the default reporter.
+- `yarn test:watch` — the `unit` and `unit-isolated` projects, in watch mode.
+- `yarn test:unit:cov` / `yarn test:integration:cov` — the matching projects, instrumented with `@vitest/coverage-v8`, written to `./coverage`.
+- `yarn test:debug [path/to/file.spec.ts]` — the `unit` and `unit-isolated` projects under `--inspect-brk` with `--no-file-parallelism`, for stepping through a single file in a debugger.
+- `yarn test --reporter=verbose` — the unit projects with per-test output instead of the default reporter.
 - `yarn test:e2e` / `yarn test:e2e:cov` — the `e2e` project; exists as a script, but nothing in CI runs it (see below).
 
 In GitHub Actions (`.github/workflows/_ci-node.yml`, called by `pull-request.yml`, `devstaging.yml` and `production.yml`), `unit-tests` and `integration-tests` run as separate parallel jobs, each reporting to Coveralls, with a `tests` job gating branch protection on both. Both jobs provision Postgres, Redis, and RabbitMQ as GitHub Actions `services:` — including `unit-tests`, even though every unit spec mocks its own I/O and never reaches them; `integration-tests` is the job that actually needs the services, running real migrations against the job's Postgres service (database `test-db`) after a full `yarn build` (a plain `generate-abis` is enough for `unit-tests`, since Vitest transforms straight from `src`). Neither job runs the `e2e` project — nothing in `_ci-node.yml` references `*.e2e-spec.ts` today.
@@ -51,15 +51,16 @@ Either coverage command's output already includes a browsable report at `coverag
 
 ## Vitest project layout
 
-All test configuration lives in one root `vitest.config.ts`, defining three [projects](https://vitest.dev/guide/projects):
+All test configuration lives in one root `vitest.config.ts`, defining four [projects](https://vitest.dev/guide/projects):
 
-- **`unit`** (default) — `src/**/*.spec.ts` and `scripts/**/*.spec.ts`. Runs on the `threads` pool: mocked-I/O specs need no per-file process isolation, and worker threads start far cheaper than the default `forks` pool.
+- **`unit`** (default) — `src/**/*.spec.ts` and `scripts/**/*.spec.ts`, minus the specs `unit-isolated` takes. Runs on the `threads` pool with `isolate: false`: specs in a worker share one module cache, so NestJS, viem and the rest are imported once per worker instead of once per spec file, which is most of what a unit run used to spend its time on.
+- **`unit-isolated`** — the unit specs that call `vi.mock`/`vi.doMock`, detected by `vitest.config.ts` when it loads, so nothing has to be registered by hand. Same settings as `unit`, but each file gets its own module registry: a module mock only applies to a module the file imports fresh, and must not leak into the cache the `unit` specs share.
 - **`integration`** — `src/**/*.integration.spec.ts`. Default `forks` pool (real DB/Redis/AMQP connections need real process isolation), 60s test timeout.
 - **`e2e`** — `src/**/*.e2e-spec.ts`. Default `forks` pool, 40s test timeout.
 
-Every project is transformed through SWC (`unplugin-swc`, `decoratorMetadata: true`), because NestJS dependency injection relies on `emitDecoratorMetadata`, which Vite's default Oxc transform drops. `integration` and `e2e` share `test/e2e-setup.ts` (production-shaped env defaults for a full app boot) plus `test/faker-setup.ts`; `unit` loads only the latter. All three projects pin `env: { TZ: 'UTC' }` and set `clearMocks: true`.
+Every project is transformed through SWC (`unplugin-swc`, `decoratorMetadata: true`), because NestJS dependency injection relies on `emitDecoratorMetadata`, which Vite's default Oxc transform drops. `integration` and `e2e` share `test/e2e-setup.ts` (production-shaped env defaults for a full app boot) plus `test/faker-setup.ts`; `unit` and `unit-isolated` load the latter plus `test/shared-module-cache-setup.ts`, which restores real timers, spies, stubbed env vars and stubbed globals after each spec file so nothing carries over to the next file in a worker. All four projects pin `env: { TZ: 'UTC' }` and set `clearMocks: true`.
 
-Coverage is configured once, at the root, and aggregates across all three projects: `@vitest/coverage-v8` writes lcov/html/text to `./coverage`, over `src/**/*.{ts,js}` minus `index.ts` barrel files, `.builder.ts`/`.factory.ts` test helpers, and `.integration.spec.ts`/`.e2e-spec.ts` files themselves — test infrastructure and slower suites aren't what the coverage number is meant to measure.
+Coverage is configured once, at the root, and aggregates across all four projects: `@vitest/coverage-v8` writes lcov/html/text to `./coverage`, over `src/**/*.{ts,js}` minus `index.ts` barrel files, `.builder.ts`/`.factory.ts` test helpers, and `.integration.spec.ts`/`.e2e-spec.ts` files themselves — test infrastructure and slower suites aren't what the coverage number is meant to measure.
 
 `faker-setup.ts` seeds `@faker-js/faker` once per test file — from `FAKER_SEED` if set, otherwise a random seed it logs as `[faker] seed=<n>` — so a failing run's data is reproducible by re-running with `FAKER_SEED=<n>`.
 
@@ -81,7 +82,7 @@ A `*.factory.ts` file is not this pattern and is not a template to copy for a ne
 
 **Why:** `clearMocks: true` already resets every `vi.fn()`'s call history between tests for the whole run; a spec-level reset on top of it is redundant at best, and since one spec file can't opt the rest of the suite out of the global setting, it never actually fills a gap the config leaves open.
 
-**Canonical example:** `vitest.config.ts` sets `clearMocks: true` in each of its three project configs. `src/modules/portfolio/v1/portfolio.controller.spec.ts` casts `{ getPortfolio: vi.fn(), clearZerionCaches: vi.fn() }` directly `as MockedObject<PortfolioApiService>`; `src/modules/hooks/domain/hooks.repository.spec.ts`'s `mockMessagesRepository` double-casts `{ clearMessages: vi.fn() } as unknown as MockedObject<MessagesRepository>`, since that literal covers only one method of the interface.
+**Canonical example:** `vitest.config.ts` sets `clearMocks: true` in each of its four project configs. `src/modules/portfolio/v1/portfolio.controller.spec.ts` casts `{ getPortfolio: vi.fn(), clearZerionCaches: vi.fn() }` directly `as MockedObject<PortfolioApiService>`; `src/modules/hooks/domain/hooks.repository.spec.ts`'s `mockMessagesRepository` double-casts `{ clearMessages: vi.fn() } as unknown as MockedObject<MessagesRepository>`, since that literal covers only one method of the interface.
 
 ### App bootstrapping in tests
 
@@ -105,13 +106,13 @@ A `*.factory.ts` file is not this pattern and is not a template to copy for a ne
 
 ### Determinism
 
-**Rule:** Faker is seeded per test file, so a failing run is reproducible by re-running with `FAKER_SEED=<n>` (the seed a run used is always logged). Time is pinned to `TZ=UTC` for every project. A test never depends on another test's side effects or on run order — each one is independent and idempotent on repeat.
+**Rule:** Faker is seeded per test file, so a failing run is reproducible by re-running with `FAKER_SEED=<n>` (the seed a run used is always logged). Time is pinned to `TZ=UTC` for every project. A test never depends on another test's side effects or on run order — each one is independent and idempotent on repeat. A spec also leaves no global state behind (a spy on a global such as `console`, a `process.env` change, fake timers): `unit` specs share a module cache within a worker, so whatever one file leaves behind, the next file in that worker inherits.
 
 **Why:** an unseeded faker value or a local timezone makes a failure irreproducible outside the exact process that hit it; a test that silently depends on another test having already run is the other common source of a suite that passes in isolation and fails in CI, or the reverse.
 
-**Canonical example:** `test/faker-setup.ts` seeds `@faker-js/faker` from `FAKER_SEED` (or a fresh random seed it logs as `[faker] seed=<n>`) before any test in the file runs; `vitest.config.ts` sets `env: { TZ: 'UTC' }` in all three of its projects, and every `yarn test:*` script additionally prefixes the same `TZ=UTC`.
+**Canonical example:** `test/faker-setup.ts` seeds `@faker-js/faker` from `FAKER_SEED` (or a fresh random seed it logs as `[faker] seed=<n>`) before any test in the file runs; `vitest.config.ts` sets `env: { TZ: 'UTC' }` in all four of its projects, and every `yarn test:*` script additionally prefixes the same `TZ=UTC`.
 
-`faker-setup.ts` is a `setupFiles` entry shared by all three projects, so this isn't a unit-only concern: an integration or e2e spec seeding its fixtures through the same builders gets the exact same reproducibility.
+`faker-setup.ts` is a `setupFiles` entry shared by all four projects, so this isn't a unit-only concern: an integration or e2e spec seeding its fixtures through the same builders gets the exact same reproducibility.
 
 ### Constructor-change sweep
 
