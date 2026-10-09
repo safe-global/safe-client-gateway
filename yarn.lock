@@ -585,15 +585,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@datadog/pprof@npm:5.18.1":
-  version: 5.18.1
-  resolution: "@datadog/pprof@npm:5.18.1"
+"@datadog/pprof@npm:5.19.0":
+  version: 5.19.0
+  resolution: "@datadog/pprof@npm:5.19.0"
   dependencies:
     node-gyp: "npm:latest"
     node-gyp-build: "npm:^4.8.4"
     pprof-format: "npm:^2.3.1"
     source-map: "npm:^0.8.0"
-  checksum: 10/8b90ade6f2a1343675f2d744e54813bf40fd4388ecaf7f05247d97b1871ec700a678fcc635d9e7dff6c760f49f50e34ee9dc1df2a9fe86b0e89b69507643a8bc
+  checksum: 10/db8ba256b1ae70b865ba5ddbeb08248c3613b8ca9fc77ebb402e5046c2910f7275e771a49bbcc4fd8d2361085a24b5b5e14ee518e0be0e3cc6b886253cca57bf
   languageName: node
   linkType: hard
 
@@ -3085,16 +3085,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"dd-trace@npm:5.127.0":
-  version: 5.127.0
-  resolution: "dd-trace@npm:5.127.0"
+"dd-trace@npm:6.19.0":
+  version: 6.19.0
+  resolution: "dd-trace@npm:6.19.0"
   dependencies:
     "@datadog/libdatadog": "npm:^0.21.0"
     "@datadog/libdatadog-extras": "npm:^0.21.0"
     "@datadog/native-appsec": "npm:11.0.2"
     "@datadog/native-iast-taint-tracking": "npm:4.2.1"
     "@datadog/native-metrics": "npm:4.0.0"
-    "@datadog/pprof": "npm:5.18.1"
+    "@datadog/pprof": "npm:5.19.0"
     "@datadog/wasm-js-rewriter": "npm:5.0.4"
     "@opentelemetry/api": "npm:>=1.0.0 <1.10.0"
     "@opentelemetry/api-logs": "npm:<1.0.0"
@@ -3123,7 +3123,7 @@ __metadata:
       optional: true
     oxc-parser:
       optional: true
-  checksum: 10/5a7068ee11e89595cf5e2bd16f019a592762aa1495bed2fbd709a37c1dbfc2928c3d9ec2b4a6c1c5f1f41db3ec560a0203deb3d7f21bc0c71677a667797ded0d
+  checksum: 10/e2b283392c303c76fd63194c22bde55ed457034e3abfda9545dcb02d6dc594adf33407c49ca19b609c6e9a7957912deca021e5418f52319fc60d8a100ef47999
   languageName: node
   linkType: hard
 
@@ -5486,7 +5486,7 @@ __metadata:
     cache-manager: "npm:7.2.9"
     concurrently: "npm:9.2.4"
     csv-stringify: "npm:^6.9.0"
-    dd-trace: "npm:5.127.0"
+    dd-trace: "npm:6.19.0"
     ecdsa-sig-formatter: "npm:1.0.11"
     husky: "npm:9.1.7"
     ioredis: "npm:6.0.0"
