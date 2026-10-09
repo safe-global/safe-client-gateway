@@ -31,8 +31,7 @@ process.env.REDIS_PORT ||= '6379';
 
 // For E2E tests, connect to the test AMQP server
 process.env.AMQP_URL ||= 'amqp://localhost:5672';
-process.env.AMQP_EXCHANGE_NAME = 'test-exchange';
-process.env.AMQP_EXCHANGE_MODE = 'fanout';
+process.env.AMQP_EXCHANGE_NAME = 'test-exchange-with-topics';
 process.env.AMQP_QUEUE = 'test-queue';
 process.env.AMQP_PREFETCH = '100';
 
