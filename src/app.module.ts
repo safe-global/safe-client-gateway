@@ -11,13 +11,12 @@ import {
   RequestMethod,
 } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ClsMiddleware, ClsModule } from 'nestjs-cls';
 import { ConfigurationModule } from '#/config/configuration.module';
-import { BlocklistModule } from '#/config/entities/blocklist.module';
 import configuration from '#/config/entities/configuration';
 import { postgresConfig } from '#/config/entities/postgres.config';
 import { CacheModule } from '#/datasources/cache/cache.module';
@@ -73,7 +72,6 @@ import { UsersModule } from '#/modules/users/users.module';
 import { DataSourceErrorFilter } from '#/routes/common/filters/data-source-error.filter';
 import { GlobalErrorFilter } from '#/routes/common/filters/global-error.filter';
 import { ZodErrorFilter } from '#/routes/common/filters/zod-error.filter';
-import { BlocklistGuard } from '#/routes/common/guards/blocklist.guard';
 import { CacheControlInterceptor } from '#/routes/common/interceptors/cache-control.interceptor';
 import { NullResponseInterceptor } from '#/routes/common/interceptors/null-response.interceptor';
 import { RouteLoggerInterceptor } from '#/routes/common/interceptors/route-logger.interceptor';
@@ -142,7 +140,6 @@ export class AppModule implements NestModule {
         TargetedMessagingModule,
         TransactionsModule,
         // common
-        BlocklistModule,
         CacheModule,
         CircuitBreakerModule,
         // Module for storing and reading from the async local storage
@@ -213,10 +210,6 @@ export class AppModule implements NestModule {
         {
           provide: APP_INTERCEPTOR,
           useClass: NullResponseInterceptor,
-        },
-        {
-          provide: APP_GUARD,
-          useClass: BlocklistGuard,
         },
         {
           provide: APP_FILTER,

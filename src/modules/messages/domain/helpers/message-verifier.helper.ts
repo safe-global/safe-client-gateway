@@ -3,7 +3,6 @@ import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import type { Address, Hash, Hex } from 'viem';
 import { isAddressEqual } from 'viem';
 import { IConfigurationService } from '#/config/configuration.service.interface';
-import { IBlocklistService } from '#/config/entities/blocklist.interface';
 import { LogSource } from '#/domain/common/entities/log-source.entity';
 import { LogType } from '#/domain/common/entities/log-type.entity';
 import { SafeSignature } from '#/domain/common/entities/safe-signature';
@@ -21,7 +20,6 @@ enum ErrorMessage {
   MalformedHash = 'Could not calculate messageHash',
   HashMismatch = 'Invalid messageHash',
   InvalidSignature = 'Invalid signature',
-  BlockedAddress = 'Unauthorized address',
 }
 @Injectable()
 export class MessageVerifierHelper {
@@ -36,18 +34,12 @@ export class MessageVerifierHelper {
     private readonly configurationService: IConfigurationService,
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
-    @Inject(IBlocklistService)
-    private readonly blocklistService: IBlocklistService,
   ) {
     this.isEthSignEnabled =
       this.configurationService.getOrThrow('features.ethSign');
     this.isMessageVerificationEnabled = this.configurationService.getOrThrow(
       'features.messageVerification',
     );
-  }
-
-  private get blocklist(): Array<Address> {
-    return this.blocklistService.getBlocklist();
   }
 
   public verifyCreation(args: {
@@ -155,20 +147,6 @@ export class MessageVerifierHelper {
       signature: args.signature,
     });
 
-    const isBlocked = this.blocklist.some((blockedAddress) => {
-      return isAddressEqual(signature.owner, blockedAddress);
-    });
-    if (isBlocked) {
-      this.logBlockedAddress({
-        ...args,
-        blockedAddress: signature.owner,
-      });
-      throw new HttpExceptionNoLog(
-        ErrorMessage.BlockedAddress,
-        MessageVerifierHelper.StatusCode,
-      );
-    }
-
     if (
       !this.isEthSignEnabled &&
       signature.signatureType === SignatureType.EthSign
@@ -221,27 +199,6 @@ export class MessageVerifierHelper {
       safeAddress: args.safe.address,
       safeVersion: args.safe.version,
       messageHash: args.messageHash,
-      type: LogType.MessageValidity,
-      source: args.source,
-    });
-  }
-
-  private logBlockedAddress(args: {
-    chainId: string;
-    safe: Safe;
-    messageHash: Hash;
-    signature: Hex;
-    blockedAddress: Address;
-    source: LogSource;
-  }): void {
-    this.loggingService.error({
-      event: 'Unauthorized address',
-      chainId: args.chainId,
-      safeAddress: args.safe.address,
-      safeVersion: args.safe.version,
-      messageHash: args.messageHash,
-      signature: args.signature,
-      blockedAddress: args.blockedAddress,
       type: LogType.MessageValidity,
       source: args.source,
     });

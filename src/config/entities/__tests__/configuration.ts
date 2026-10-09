@@ -105,10 +105,6 @@ export default (): ReturnType<typeof configuration> => ({
     },
   },
   blockchain: {
-    blocklistEnabled: false,
-    blocklistSecretData: faker.string.hexadecimal({ length: 64 }),
-    blocklistSecretKey: faker.string.hexadecimal({ length: 64 }),
-    blocklistSecretSalt: faker.string.hexadecimal({ length: 64 }),
     infura: {
       apiKey: faker.string.hexadecimal({ length: 32 }),
     },

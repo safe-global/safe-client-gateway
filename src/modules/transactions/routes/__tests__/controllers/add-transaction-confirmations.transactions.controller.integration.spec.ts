@@ -17,8 +17,6 @@ import {
 import { ConfigurationModule } from '#/config/configuration.module';
 import { IConfigurationService } from '#/config/configuration.service.interface';
 import configuration from '#/config/entities/__tests__/configuration';
-import { TestBlocklistModule } from '#/config/entities/__tests__/test.blocklist.module';
-import { IBlocklistService } from '#/config/entities/blocklist.interface';
 import { TestCacheModule } from '#/datasources/cache/__tests__/test.cache.module';
 import { TestNetworkModule } from '#/datasources/network/__tests__/test.network.module';
 import { TestTxAuthNetworkModule } from '#/datasources/network/__tests__/test.tx-auth.network.module';
@@ -57,7 +55,6 @@ describe('Add transaction confirmations - Transactions Controller', () => {
   let safeDecoderUrl: string;
   let networkService: MockedObject<INetworkService>;
   let loggingService: MockedObject<ILoggingService>;
-  let blocklistService: MockedObject<IBlocklistService>;
 
   async function initApp(config: typeof configuration): Promise<void> {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -65,7 +62,6 @@ describe('Add transaction confirmations - Transactions Controller', () => {
         // feature
         TransactionsModule,
         // common
-        TestBlocklistModule,
         TestCacheModule,
         ConfigurationModule.register(config),
         TestLoggingModule,
@@ -93,7 +89,6 @@ describe('Add transaction confirmations - Transactions Controller', () => {
     safeDecoderUrl = configurationService.getOrThrow('safeDataDecoder.baseUri');
     networkService = moduleFixture.get(NetworkService);
     loggingService = moduleFixture.get(LoggingService);
-    blocklistService = moduleFixture.get(IBlocklistService);
 
     // TODO: Override module to avoid spying
     vi.spyOn(loggingService, 'error');
@@ -594,78 +589,6 @@ describe('Add transaction confirmations - Transactions Controller', () => {
         expect(loggingService.error).not.toHaveBeenCalled();
       },
     );
-
-    it('should throw and log if a signer is blocked', async () => {
-      const chain = chainBuilder().build();
-      const privateKey = generatePrivateKey();
-      const signer = privateKeyToAccount(privateKey);
-
-      const defaultConfiguration = configuration();
-      const testConfiguration = (): ReturnType<typeof configuration> => ({
-        ...defaultConfiguration,
-        features: {
-          ...defaultConfiguration.features,
-        },
-      });
-      await initApp(testConfiguration);
-
-      vi.spyOn(blocklistService, 'getBlocklist').mockReturnValue([
-        signer.address,
-      ]);
-
-      const safe = safeBuilder().with('owners', [signer.address]).build();
-      const transaction = multisigToJson(
-        await multisigTransactionBuilder()
-          .with('safe', safe.address)
-          .with('nonce', safe.nonce)
-          .with('isExecuted', false)
-          .buildWithConfirmations({
-            signers: [signer],
-            chainId: chain.chainId,
-            safe,
-          }),
-      ) as MultisigTransaction;
-      const addConfirmationDto = addConfirmationDtoBuilder()
-        .with('signature', transaction.confirmations?.[0].signature as Address)
-        .build();
-      networkService.get.mockImplementation(({ url }) => {
-        const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
-        const getMultisigTransactionUrl = `${chain.transactionService}/api/v2/multisig-transactions/${transaction.safeTxHash}/`;
-        const getSafeUrl = `${chain.transactionService}/api/v1/safes/${transaction.safe}`;
-        switch (url) {
-          case getChainUrl:
-            return Promise.resolve({ data: rawify(chain), status: 200 });
-          case getMultisigTransactionUrl:
-            return Promise.resolve({ data: rawify(transaction), status: 200 });
-          case getSafeUrl:
-            return Promise.resolve({ data: rawify(safe), status: 200 });
-          default:
-            return Promise.reject(new Error(`Could not match ${url}`));
-        }
-      });
-
-      await request(app.getHttpServer())
-        .post(
-          `/v1/chains/${chain.chainId}/transactions/${transaction.safeTxHash}/confirmations`,
-        )
-        .send(addConfirmationDto)
-        .expect(502)
-        .expect({
-          message: 'Unauthorized address',
-          statusCode: 502,
-        });
-
-      expect(loggingService.error).toHaveBeenCalledWith({
-        event: 'Unauthorized address',
-        chainId: chain.chainId,
-        safeAddress: safe.address,
-        safeVersion: safe.version,
-        safeTxHash: transaction.safeTxHash,
-        blockedAddress: signer.address,
-        type: 'TRANSACTION_VALIDITY',
-        source: 'API',
-      });
-    });
 
     it('should throw if eth_sign is disabled', async () => {
       const defaultConfiguration = configuration();

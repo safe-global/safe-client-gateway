@@ -7,7 +7,6 @@ import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
 import configuration from '#/config/entities/__tests__/configuration';
-import type { IBlocklistService } from '#/config/entities/blocklist.interface';
 import { SignatureType } from '#/domain/common/entities/signature-type.entity';
 import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
 import { getSignature } from '#/domain/common/utils/__tests__/signatures.builder';
@@ -41,11 +40,6 @@ const mockContractsRepository = vi.mocked({
   isTrustedForDelegateCall: vi.fn(),
 } as MockedObject<IContractsRepository>);
 
-const mockBlocklistService = vi.mocked({
-  getBlocklist: vi.fn(),
-  clearCache: vi.fn(),
-} as MockedObject<IBlocklistService>);
-
 describe('TransactionVerifierHelper', () => {
   let target: TransactionVerifierHelper;
 
@@ -59,14 +53,12 @@ describe('TransactionVerifierHelper', () => {
       mockDelegatesRepository,
       mockLoggingRepository,
       mockContractsRepository,
-      mockBlocklistService,
     );
   }
 
   beforeEach(() => {
     vi.resetAllMocks();
 
-    mockBlocklistService.getBlocklist.mockReturnValue([]);
     initTarget(configuration);
   });
 
@@ -458,48 +450,6 @@ describe('TransactionVerifierHelper', () => {
         expect(mockLoggingRepository.error).not.toHaveBeenCalled();
       },
     );
-
-    it('should throw and log if a signer is blocked', async () => {
-      const privateKey = generatePrivateKey();
-      const signer = privateKeyToAccount(privateKey);
-
-      mockBlocklistService.getBlocklist.mockReturnValue([signer.address]);
-
-      const defaultConfiguration = configuration();
-      const testConfiguration = (): ReturnType<typeof configuration> => {
-        return {
-          ...defaultConfiguration,
-        };
-      };
-      initTarget(testConfiguration);
-      const chainId = faker.string.numeric();
-      const safe = safeBuilder().with('owners', [signer.address]).build();
-      const transaction = await multisigTransactionBuilder()
-        .with('safe', safe.address)
-        .with('isExecuted', false)
-        .with('nonce', safe.nonce)
-        .buildWithConfirmations({
-          chainId,
-          signers: [signer],
-          safe,
-        });
-
-      expect(() => {
-        return target.verifyApiTransaction({ chainId, safe, transaction });
-      }).toThrow(new HttpExceptionNoLog('Unauthorized address', 502));
-
-      expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
-      expect(mockLoggingRepository.error).toHaveBeenNthCalledWith(1, {
-        event: 'Unauthorized address',
-        chainId,
-        safeAddress: safe.address,
-        safeVersion: safe.version,
-        safeTxHash: transaction.safeTxHash,
-        blockedAddress: signer.address,
-        type: 'TRANSACTION_VALIDITY',
-        source: 'API',
-      });
-    });
 
     it('should throw and log if a signer does not match the confirmation owner', async () => {
       const chainId = faker.string.numeric();
@@ -1395,73 +1345,6 @@ describe('TransactionVerifierHelper', () => {
       },
     );
 
-    it('should throw and log if a signer is blocked', async () => {
-      const chainId = faker.string.numeric();
-      const signers = Array.from(
-        { length: faker.number.int({ min: 2, max: 5 }) },
-        () => {
-          const privateKey = generatePrivateKey();
-          return privateKeyToAccount(privateKey);
-        },
-      );
-
-      mockBlocklistService.getBlocklist.mockReturnValue([signers[0].address]);
-
-      const defaultConfiguration = configuration();
-      const testConfiguration = (): ReturnType<typeof configuration> => {
-        return {
-          ...defaultConfiguration,
-        };
-      };
-      initTarget(testConfiguration);
-      const safe = safeBuilder()
-        .with(
-          'owners',
-          signers.map((s) => s.address),
-        )
-        .build();
-      const transaction = await multisigTransactionBuilder()
-        .with('safe', safe.address)
-        .with('nonce', safe.nonce)
-        .with('operation', Operation.CALL)
-        .buildWithConfirmations({
-          chainId,
-          signers,
-          safe,
-        });
-      const proposal = proposeTransactionDtoBuilder()
-        .with('to', transaction.to)
-        .with('value', transaction.value)
-        .with('data', transaction.data)
-        .with('nonce', transaction.nonce.toString())
-        .with('operation', transaction.operation)
-        .with('safeTxGas', transaction.safeTxGas!.toString())
-        .with('baseGas', transaction.baseGas!.toString())
-        .with('gasPrice', transaction.gasPrice as string)
-        .with('gasToken', transaction.gasToken as Address)
-        .with('refundReceiver', transaction.refundReceiver)
-        .with('safeTxHash', transaction.safeTxHash)
-        .with('sender', transaction.confirmations![0].owner)
-        .with('signature', transaction.confirmations![0].signature)
-        .build();
-
-      await expect(
-        target.verifyProposal({ chainId, safe, proposal, transaction }),
-      ).rejects.toThrow(new HttpExceptionNoLog('Unauthorized address', 422));
-
-      expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
-      expect(mockLoggingRepository.error).toHaveBeenNthCalledWith(1, {
-        event: 'Unauthorized address',
-        chainId,
-        safeAddress: safe.address,
-        safeVersion: safe.version,
-        safeTxHash: transaction.safeTxHash,
-        blockedAddress: signers[0].address,
-        type: 'TRANSACTION_VALIDITY',
-        source: 'PROPOSAL',
-      });
-    });
-
     it('should throw if eth_sign is disabled', async () => {
       const defaultConfiguration = configuration();
       const testConfiguration = (): ReturnType<typeof configuration> => {
@@ -2166,72 +2049,6 @@ describe('TransactionVerifierHelper', () => {
         expect(mockLoggingRepository.error).not.toHaveBeenCalled();
       },
     );
-
-    it('should throw and log if a signer is blocked', async () => {
-      const [blockedSigner, ...otherSigners] = Array.from(
-        { length: faker.number.int({ min: 2, max: 5 }) },
-        () => {
-          const privateKey = generatePrivateKey();
-          return privateKeyToAccount(privateKey);
-        },
-      );
-
-      mockBlocklistService.getBlocklist.mockReturnValue([
-        blockedSigner.address,
-      ]);
-
-      const defaultConfiguration = configuration();
-      const testConfiguration = (): ReturnType<typeof configuration> => {
-        return {
-          ...defaultConfiguration,
-        };
-      };
-      initTarget(testConfiguration);
-      const chainId = faker.string.numeric();
-      const safe = safeBuilder()
-        .with('owners', [
-          blockedSigner.address,
-          ...otherSigners.map((signer) => signer.address),
-        ])
-        .build();
-      const transaction = await multisigTransactionBuilder()
-        .with('safe', safe.address)
-        .with('isExecuted', false)
-        .with('nonce', safe.nonce)
-        .buildWithConfirmations({
-          chainId,
-          signers: [blockedSigner, ...otherSigners],
-          safe,
-        });
-      // We need to remove the blocked signer from the signers array
-      // so as to not be verified as an API signature
-      const confirmations = transaction.confirmations as NonNullable<
-        typeof transaction.confirmations
-      >;
-      const blockedConfirmation = confirmations[0];
-      confirmations.shift();
-
-      expect(() => {
-        return target.verifyConfirmation({
-          chainId,
-          safe,
-          transaction,
-          signature: blockedConfirmation.signature as Hex,
-        });
-      }).toThrow(new HttpExceptionNoLog('Unauthorized address', 422));
-
-      expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
-      expect(mockLoggingRepository.error).toHaveBeenNthCalledWith(1, {
-        event: 'Unauthorized address',
-        chainId,
-        safeAddress: safe.address,
-        safeVersion: safe.version,
-        safeTxHash: transaction.safeTxHash,
-        blockedAddress: blockedSigner.address,
-        type: 'TRANSACTION_VALIDITY',
-        source: 'CONFIRMATION',
-      });
-    });
 
     it('should throw if eth_sign is disabled', async () => {
       const defaultConfiguration = configuration();

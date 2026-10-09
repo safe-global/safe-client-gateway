@@ -14,7 +14,6 @@ import {
 import { createTestModule } from '#/__tests__/testing-module';
 import { IConfigurationService } from '#/config/configuration.service.interface';
 import configuration from '#/config/entities/__tests__/configuration';
-import { IBlocklistService } from '#/config/entities/blocklist.interface';
 import { TestIdentityApiModule } from '#/datasources/locking-api/__tests__/test.identity-api.module';
 import { IdentityApiModule } from '#/datasources/locking-api/identity-api.module';
 import type { INetworkService } from '#/datasources/network/network.service.interface';
@@ -43,7 +42,6 @@ describe('List queued transactions by Safe - Transactions Controller', () => {
   let safeDecoderUrl: string;
   let networkService: MockedObject<INetworkService>;
   let loggingService: MockedObject<ILoggingService>;
-  let blocklistService: MockedObject<IBlocklistService>;
 
   async function initApp(config: typeof configuration): Promise<void> {
     const moduleFixture = await createTestModule({
@@ -63,7 +61,6 @@ describe('List queued transactions by Safe - Transactions Controller', () => {
     safeDecoderUrl = configurationService.getOrThrow('safeDataDecoder.baseUri');
     networkService = moduleFixture.get(NetworkService);
     loggingService = moduleFixture.get(LoggingService);
-    blocklistService = moduleFixture.get(IBlocklistService);
 
     // TODO: Override module to avoid spying
     vi.spyOn(loggingService, 'error');
@@ -1043,103 +1040,6 @@ describe('List queued transactions by Safe - Transactions Controller', () => {
         );
       },
     );
-
-    it('should throw and log if a signer is blocked', async () => {
-      const chainResponse = chainBuilder().build();
-      const privateKey = generatePrivateKey();
-      const signer = privateKeyToAccount(privateKey);
-
-      const defaultConfiguration = configuration();
-      const testConfiguration = (): ReturnType<typeof configuration> => {
-        return {
-          ...defaultConfiguration,
-        };
-      };
-      await initApp(testConfiguration);
-
-      vi.spyOn(blocklistService, 'getBlocklist').mockReturnValue([
-        signer.address,
-      ]);
-
-      const safeAddress = getAddress(faker.finance.ethereumAddress());
-      const safeResponse = safeBuilder()
-        .with('address', safeAddress)
-        .with('nonce', 1)
-        .with('owners', [signer.address])
-        .build();
-      const getTransaction = (nonce: number): Promise<MultisigTransaction> => {
-        return multisigTransactionBuilder()
-          .with('safe', safeAddress)
-          .with('isExecuted', false)
-          .with('nonce', nonce)
-          .buildWithConfirmations({
-            safe: safeResponse,
-            chainId: chainResponse.chainId,
-            signers: [signer],
-          });
-      };
-      const nonce1 = await getTransaction(1);
-      const nonce2 = await getTransaction(2);
-      const transactions: Array<MultisigTransaction> = [
-        multisigToJson(nonce1) as MultisigTransaction,
-        multisigToJson(nonce2) as MultisigTransaction,
-      ];
-      const tokenResponse = erc20TokenBuilder().build();
-      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainResponse.chainId}`;
-      const getMultisigTransactionsUrl = `${chainResponse.transactionService}/api/v2/safes/${safeAddress}/multisig-transactions/`;
-      const getSafeUrl = `${chainResponse.transactionService}/api/v1/safes/${safeAddress}`;
-      const getTokenUrlPattern = `${chainResponse.transactionService}/api/v1/tokens/`;
-      networkService.get.mockImplementation(({ url }) => {
-        if (url === getChainUrl) {
-          return Promise.resolve({
-            data: rawify(chainResponse),
-            status: 200,
-          });
-        }
-        if (url === getMultisigTransactionsUrl) {
-          return Promise.resolve({
-            data: rawify({
-              count: 6,
-              next: null,
-              previous: null,
-              results: transactions,
-            }),
-            status: 200,
-          });
-        }
-        if (url === getSafeUrl) {
-          return Promise.resolve({
-            data: rawify(safeResponse),
-            status: 200,
-          });
-        }
-        if (url.startsWith(getTokenUrlPattern)) {
-          return Promise.resolve({ data: rawify(tokenResponse), status: 200 });
-        }
-        return Promise.reject(new Error(`Could not match ${url}`));
-      });
-
-      await request(app.getHttpServer())
-        .get(
-          `/v1/chains/${chainResponse.chainId}/safes/${safeAddress}/transactions/queued`,
-        )
-        .expect(502)
-        .expect({
-          message: 'Unauthorized address',
-          statusCode: 502,
-        });
-
-      expect(loggingService.error).toHaveBeenCalledWith({
-        event: 'Unauthorized address',
-        chainId: chainResponse.chainId,
-        safeAddress: safeResponse.address,
-        safeVersion: safeResponse.version,
-        safeTxHash: nonce1.safeTxHash,
-        blockedAddress: signer.address,
-        type: 'TRANSACTION_VALIDITY',
-        source: 'API',
-      });
-    });
 
     it('should throw and log if a signer does not match the confirmation owner', async () => {
       const chainResponse = chainBuilder().build();
