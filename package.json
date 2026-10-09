@@ -64,7 +64,7 @@
     "@nestjs/swagger": "12.0.2",
     "@nestjs/typeorm": "12.0.2",
     "@safe-global/safe-deployments": "1.37.63",
-    "@safe-global/safe-modules-deployments": "3.0.9",
+    "@safe-global/safe-modules-deployments": "3.0.10",
     "amqp-connection-manager": "5.0.0",
     "amqplib": "2.0.1",
     "bullmq": "^6.3.8",
