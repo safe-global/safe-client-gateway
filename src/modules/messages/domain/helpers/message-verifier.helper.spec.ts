@@ -2,7 +2,7 @@
 
 import { faker } from '@faker-js/faker';
 import { get } from 'lodash';
-import { type Address, getAddress } from 'viem';
+import { type Address, getAddress, type Hex } from 'viem';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
@@ -295,7 +295,10 @@ describe('MessageVerifierHelper', () => {
             safe,
             signatureType,
           });
-        const v = message.confirmations[0].signature?.slice(-2);
+        const signature = message.confirmations[0].signature;
+        // Replace one hex digit in the r component with 'g' (invalid hex char)
+        const invalidSignature =
+          `${signature.slice(0, 65)}g${signature.slice(66)}` as Hex;
 
         expect(() => {
           return target.verifyUpdate({
@@ -303,7 +306,7 @@ describe('MessageVerifierHelper', () => {
             safe,
             message: message.message,
             messageHash: message.messageHash,
-            signature: `0x${'-'.repeat(128)}${v}`,
+            signature: invalidSignature,
           });
         }).toThrow('Could not recover address');
 
@@ -695,7 +698,10 @@ describe('MessageVerifierHelper', () => {
             safe,
             signatureType,
           });
-        const v = message.confirmations[0].signature?.slice(-2);
+        const signature = message.confirmations[0].signature;
+        // Replace one hex digit in the r component with 'g' (invalid hex char)
+        const invalidSignature =
+          `${signature.slice(0, 65)}g${signature.slice(66)}` as Hex;
 
         expect(() => {
           return target.verifyUpdate({
@@ -703,7 +709,7 @@ describe('MessageVerifierHelper', () => {
             safe,
             message: message.message,
             messageHash: message.messageHash,
-            signature: `0x${'-'.repeat(128)}${v}`,
+            signature: invalidSignature,
           });
         }).toThrow('Could not recover address');
 

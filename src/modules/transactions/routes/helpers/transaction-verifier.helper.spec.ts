@@ -448,8 +448,10 @@ describe('TransactionVerifierHelper', () => {
             safe,
             signatureType,
           });
-        const v = transaction.confirmations?.[0].signature?.slice(-2);
-        transaction.confirmations![0].signature = `0x${'-'.repeat(128)}${v}`;
+        const signature = transaction.confirmations?.[0].signature as Hex;
+        // Replace one hex digit in the r component with 'g' (invalid hex char)
+        transaction.confirmations![0].signature =
+          `${signature.slice(0, 65)}g${signature.slice(66)}` as Hex;
 
         expect(() => {
           return target.verifyApiTransaction({ chainId, safe, transaction });
@@ -1370,7 +1372,10 @@ describe('TransactionVerifierHelper', () => {
             safe,
             signatureType,
           });
-        const v = transaction.confirmations?.[0].signature?.slice(-2);
+        const signature = transaction.confirmations?.[0].signature as Hex;
+        // Replace one hex digit in the r component with 'g' (invalid hex char)
+        const invalidSignature =
+          `${signature.slice(0, 65)}g${signature.slice(66)}` as Hex;
         const proposal = proposeTransactionDtoBuilder()
           .with('to', transaction.to)
           .with('value', transaction.value)
@@ -1384,7 +1389,7 @@ describe('TransactionVerifierHelper', () => {
           .with('refundReceiver', transaction.refundReceiver)
           .with('safeTxHash', transaction.safeTxHash)
           .with('sender', transaction.confirmations![0].owner)
-          .with('signature', `0x${'-'.repeat(128)}${v}`)
+          .with('signature', invalidSignature)
           .build();
 
         await expect(
