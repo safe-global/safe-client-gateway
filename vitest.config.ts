@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import swc from 'unplugin-swc';
-import { defaultServerConditions } from 'vite';
 import { configDefaults, defineConfig } from 'vitest/config';
 
 // Fresh plugin instances per project. NestJS relies on `emitDecoratorMetadata`
@@ -30,11 +29,8 @@ const plugins = (): Array<ReturnType<typeof swc.vite>> => [
 
 // `#/*` imports resolve through package.json `imports`; the `source` condition
 // maps them to the TypeScript sources instead of the compiled `dist` output.
-// The rest mirrors Vitest's own defaults, which drop Vite's `module` condition.
-const conditions = [
-  'source',
-  ...defaultServerConditions.filter((condition) => condition !== 'module'),
-];
+// Vitest merges its own default server conditions into these.
+const conditions = ['source'];
 const resolve = { conditions };
 const ssr = { resolve: { conditions } };
 

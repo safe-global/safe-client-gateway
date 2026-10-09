@@ -93,10 +93,11 @@ jobs:
       - run: yarn install --immutable
       - run: yarn run format-check
       - run: yarn run lint-check
-      # Vitest transpiles via SWC, which strips types without checking them,
-      # so this is the only whole-program type-check on PRs. It covers specs
-      # and scripts as well as `src`, unlike the `tsconfig.build.json` build.
-      # Needs the generated ABIs that the `#/abis` import resolves to.
+      # Vitest transpiles via SWC, which strips types without checking them.
+      # Unlike the `tsconfig.build.json` build (already run by `env-validation`
+      # and `integration-tests`), this also covers spec files, `__tests__`
+      # helpers and `test/`. Needs the generated ABIs that the `#/abis` import
+      # resolves to.
       - run: yarn generate-abis
       - run: yarn typecheck
 
