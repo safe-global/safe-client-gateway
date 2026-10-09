@@ -179,6 +179,16 @@ yarn run start:prod
 Set the Consensus, Oracle, and payer Safe variables listed in `.env.sample.json`.
 This module exposes no HTTP route or queue.
 
+The payer runs on Gnosis Chain (chain ID `100`) and needs a Safe `1.4.1` payer Safe.
+One proposal runs at a time per instance. The nonce counter (Redis key `safenet_payer_nonce_100_<lowercase payer address>`, 60 seconds) is not a distributed lock. Run one instance per payer Safe.
+The relay status and the receipt are each polled every second for up to 120 seconds.
+
+`SafenetPayerError` means no payer transaction from this call can have paid the fee. Nothing was relayed, the relay rejected or reverted it, or the observed receipt reverted.
+`SafenetPayerUnresolvedError` means the fee may have been paid. Check the payer Safe nonce and events on chain before any new proposal. Its `details` carry `taskId`, `payerNonce`, and `transactionHash` when known.
+It covers a relay timeout, a missing receipt hash or receipt, and a successful receipt without the payer `ExecutionSuccess`. It also covers a failed counter write and a missing `TransactionProposed` or `NewRequest`.
+The payer does not block later proposals after such an error. A repeated proposal can pay the fee again.
+Other errors, such as a failed relay request, are not classified. The relay can accept a transaction and lose the response, so check the payer Safe nonce on chain before a retry.
+
 ## Test
 
 The unit test suite contains tests that require a database connection.
