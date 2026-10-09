@@ -410,6 +410,10 @@ export default () => ({
       process.env.EXPIRATION_TIME_ENTITLEMENTS_SECONDS ?? `${300}`,
       10,
     ),
+    decodedData: Number.parseInt(
+      process.env.EXPIRATION_TIME_DECODED_DATA_SECONDS ?? `${3600}`,
+      10,
+    ),
     notFound: {
       default: Number.parseInt(
         process.env.DEFAULT_NOT_FOUND_EXPIRE_TIME_SECONDS ?? `${30}`,
@@ -417,6 +421,10 @@ export default () => ({
       ),
       contract: Number.parseInt(
         process.env.CONTRACT_NOT_FOUND_EXPIRE_TIME_SECONDS ?? `${60}`,
+        10,
+      ),
+      decodedData: Number.parseInt(
+        process.env.DECODED_DATA_NOT_FOUND_EXPIRE_TIME_SECONDS ?? `${900}`,
         10,
       ),
       token: Number.parseInt(

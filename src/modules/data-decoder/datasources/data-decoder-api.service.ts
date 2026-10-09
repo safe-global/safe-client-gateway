@@ -21,6 +21,8 @@ export class DataDecoderApi implements IDataDecoderApi {
   private readonly defaultExpirationTimeSeconds: number;
   private readonly contractNotFoundExpirationTimeSeconds: number;
   private readonly hoodiExpirationTimeSeconds: number;
+  private readonly decodedDataExpirationTimeSeconds: number;
+  private readonly decodedDataNotFoundExpirationTimeSeconds: number;
 
   constructor(
     @Inject(IConfigurationService)
@@ -48,6 +50,14 @@ export class DataDecoderApi implements IDataDecoderApi {
       this.configurationService.getOrThrow<number>(
         'expirationTimeInSeconds.notFound.contract',
       );
+    this.decodedDataExpirationTimeSeconds =
+      this.configurationService.getOrThrow<number>(
+        'expirationTimeInSeconds.decodedData',
+      );
+    this.decodedDataNotFoundExpirationTimeSeconds =
+      this.configurationService.getOrThrow<number>(
+        'expirationTimeInSeconds.notFound.decodedData',
+      );
   }
 
   public async getDecodedData(args: {
@@ -59,7 +69,9 @@ export class DataDecoderApi implements IDataDecoderApi {
       const url = `${this.baseUrl}/api/v1/data-decoder`;
       return await this.dataSource.post<DataDecoded>({
         cacheDir: CacheRouter.getDecodedDataCacheDir(args),
-        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        notFoundExpireTimeSeconds:
+          this.decodedDataNotFoundExpirationTimeSeconds,
+        expireTimeSeconds: this.decodedDataExpirationTimeSeconds,
         url,
         data: args,
         networkRequest: {

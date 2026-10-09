@@ -184,7 +184,17 @@ export const RootConfigurationSchema = z
     EMAIL_API_FROM_EMAIL: z.email(),
     EMAIL_API_KEY: z.string(),
     ENTITLEMENTS_ENFORCEMENT_STARTS_AT: z.iso.datetime().optional(),
+    DECODED_DATA_NOT_FOUND_EXPIRE_TIME_SECONDS: z.coerce
+      .number()
+      .int()
+      .min(0)
+      .optional(),
     EXPIRATION_DEVIATE_PERCENT: z.coerce.number().min(0).max(100).optional(),
+    EXPIRATION_TIME_DECODED_DATA_SECONDS: z.coerce
+      .number()
+      .int()
+      .min(0)
+      .optional(),
     EXPIRATION_TIME_ENTITLEMENTS_SECONDS: z.coerce
       .number()
       .int()

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
+import { createHash } from 'node:crypto';
 import { faker } from '@faker-js/faker';
 import { getAddress, type Hex } from 'viem';
 import type { MockedObject } from 'vitest';
@@ -28,6 +29,9 @@ describe('DataDecoderApi', () => {
   const baseUrl = faker.internet.url({ appendSlash: false });
   const notFoundExpireTimeSeconds = faker.number.int();
   const expireTimeSeconds = faker.number.int();
+  const decodedDataExpireTimeSeconds = faker.number.int();
+  const decodedDataNotFoundExpireTimeSeconds = faker.number.int();
+  const hoodiExpireTimeSeconds = faker.number.int();
   let target: DataDecoderApi;
 
   beforeEach(() => {
@@ -47,7 +51,13 @@ describe('DataDecoderApi', () => {
         return expireTimeSeconds;
       }
       if (key === 'expirationTimeInSeconds.hoodi') {
-        return expireTimeSeconds;
+        return hoodiExpireTimeSeconds;
+      }
+      if (key === 'expirationTimeInSeconds.decodedData') {
+        return decodedDataExpireTimeSeconds;
+      }
+      if (key === 'expirationTimeInSeconds.notFound.decodedData') {
+        return decodedDataNotFoundExpireTimeSeconds;
       }
       throw new Error('Unexpected key');
     });
@@ -80,10 +90,11 @@ describe('DataDecoderApi', () => {
       expect(mockCacheFirstDataSource.post).toHaveBeenCalledWith({
         cacheDir: {
           field: '',
-          key: `${chainId}_decoded_data_${data}_${to}`,
+          key: `${chainId}_decoded_data_v2_${createHash('sha256').update(data).digest('hex')}_${to}`,
         },
         url: getDataDecodedUrl,
-        notFoundExpireTimeSeconds,
+        notFoundExpireTimeSeconds: decodedDataNotFoundExpireTimeSeconds,
+        expireTimeSeconds: decodedDataExpireTimeSeconds,
         data: { chainId, to, data },
         networkRequest: {
           circuitBreaker: {
@@ -126,10 +137,11 @@ describe('DataDecoderApi', () => {
       expect(mockCacheFirstDataSource.post).toHaveBeenCalledWith({
         cacheDir: {
           field: '',
-          key: `${chainId}_decoded_data_${data}_${to}`,
+          key: `${chainId}_decoded_data_v2_${createHash('sha256').update(data).digest('hex')}_${to}`,
         },
         url: getDataDecodedUrl,
-        notFoundExpireTimeSeconds,
+        notFoundExpireTimeSeconds: decodedDataNotFoundExpireTimeSeconds,
+        expireTimeSeconds: decodedDataExpireTimeSeconds,
         data: { chainId, to, data },
         networkRequest: {
           circuitBreaker: {
@@ -137,6 +149,56 @@ describe('DataDecoderApi', () => {
           },
         },
       });
+    });
+
+    it('should cache Hoodi decodes with the decoded data TTL', async () => {
+      const to = getAddress(faker.finance.ethereumAddress());
+      const data = faker.string.hexadecimal() as Hex;
+      mockCacheFirstDataSource.post.mockResolvedValue(
+        rawify(dataDecodedBuilder().build()),
+      );
+
+      await target.getDecodedData({ data, to, chainId: '560048' });
+
+      expect(mockCacheFirstDataSource.post).toHaveBeenCalledWith(
+        expect.objectContaining({
+          notFoundExpireTimeSeconds: decodedDataNotFoundExpireTimeSeconds,
+          expireTimeSeconds: decodedDataExpireTimeSeconds,
+        }),
+      );
+    });
+
+    it('should use distinct cache keys for different calldata', async () => {
+      const to = getAddress(faker.finance.ethereumAddress());
+      const chainId = faker.string.numeric();
+      const data = faker.string.hexadecimal({ length: 64 }) as Hex;
+      const otherData = `${data}00` as Hex;
+      mockCacheFirstDataSource.post.mockResolvedValue(
+        rawify(dataDecodedBuilder().build()),
+      );
+
+      await target.getDecodedData({ data, to, chainId });
+      await target.getDecodedData({ data: otherData, to, chainId });
+
+      const [first, second] = mockCacheFirstDataSource.post.mock.calls.map(
+        ([args]) => args.cacheDir.key,
+      );
+      expect(first).not.toBe(second);
+    });
+
+    it('should keep the cache key size constant for large calldata', async () => {
+      const to = getAddress(faker.finance.ethereumAddress());
+      const chainId = faker.string.numeric();
+      const data = faker.string.hexadecimal({ length: 50_000 }) as Hex;
+      mockCacheFirstDataSource.post.mockResolvedValue(
+        rawify(dataDecodedBuilder().build()),
+      );
+
+      await target.getDecodedData({ data, to, chainId });
+
+      expect(mockCacheFirstDataSource.post.mock.calls[0][0].cacheDir.key).toBe(
+        `${chainId}_decoded_data_v2_${createHash('sha256').update(data).digest('hex')}_${to}`,
+      );
     });
   });
 
@@ -178,6 +240,25 @@ describe('DataDecoderApi', () => {
           },
         },
       });
+    });
+
+    it('should use the Hoodi TTL for Hoodi contracts', async () => {
+      const contract = contractBuilder().build();
+      mockCacheFirstDataSource.get.mockResolvedValue(
+        rawify(pageBuilder().with('results', [contract]).build()),
+      );
+
+      await target.getContracts({
+        address: contract.address,
+        chainId: '560048',
+      });
+
+      expect(mockCacheFirstDataSource.get).toHaveBeenCalledWith(
+        expect.objectContaining({
+          notFoundExpireTimeSeconds: hoodiExpireTimeSeconds,
+          expireTimeSeconds: hoodiExpireTimeSeconds,
+        }),
+      );
     });
 
     it('should forward an error', async () => {
