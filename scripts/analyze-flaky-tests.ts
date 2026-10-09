@@ -5,8 +5,15 @@ import * as fs from "fs";
 import * as path from "path";
 
 const REPO = "safe-global/safe-client-gateway";
-const WORKFLOW_NAME = "CI";
-const TEST_JOBS = ["unit-tests", "integration-tests"];
+// Workflows running the test gate: ci.yml until 2026-09-29, then the PR gate
+// plus the trunk pipeline (staging.yml, renamed devstaging.yml on 2026-10-05).
+const CI_WORKFLOWS = new Set(
+	["ci.yml", "pull-request.yml", "staging.yml", "devstaging.yml"].map(
+		(f) => `.github/workflows/${f}`,
+	),
+);
+// Matches "unit-tests" and reusable-workflow names like "ci / integration-tests (1/3)"
+const TEST_JOB = /(^|\/ )(unit|integration)-tests( \(\d+\/\d+\))?$/;
 const PERIOD_DAYS = 60;
 const PER_PAGE = 100;
 const OUTPUT_DIR = path.join(__dirname, "..", "reports", "flaky-tests");
@@ -180,6 +187,7 @@ interface GhWorkflowRun {
 	conclusion: string;
 	created_at: string;
 	name: string;
+	path: string;
 	event: string;
 	run_attempt: number;
 }
@@ -195,11 +203,12 @@ async function fetchAllCiRuns(
 ): Promise<Array<GhWorkflowRun>> {
 	const allRuns: Array<GhWorkflowRun> = [];
 
-	// GitHub caps paginated results at 1000, so chunk by 2-week windows
+	// GitHub caps paginated results at 1000 across all workflows, so chunk by
+	// 2-day windows
 	const chunks: Array<{ from: string; to: string }> = [];
 	const startDate = new Date(`${from}T00:00:00Z`);
 	const endDate = new Date(`${to}T23:59:59Z`);
-	const chunkMs = 14 * 24 * 60 * 60 * 1000; // 14 days
+	const chunkMs = 2 * 24 * 60 * 60 * 1000; // 2 days
 
 	let chunkStart = new Date(startDate);
 	while (chunkStart < endDate) {
@@ -230,7 +239,7 @@ async function fetchAllCiRuns(
 			}) as GhWorkflowRunsResponse;
 
 			const ciRuns = data.workflow_runs.filter(
-				(r) => r.name === WORKFLOW_NAME && r.event !== "release",
+				(r) => CI_WORKFLOWS.has(r.path) && r.event !== "release",
 			);
 
 			// Deduplicate across chunk boundaries
@@ -249,6 +258,8 @@ async function fetchAllCiRuns(
 
 			if (data.workflow_runs.length < PER_PAGE) {
 				hasMore = false;
+			} else if (page * PER_PAGE >= 1000) {
+				throw new Error(`${chunk.from}..${chunk.to} hit the 1000-run cap`);
 			} else {
 				page++;
 				await sleep(DELAY_MS);
@@ -382,7 +393,7 @@ async function fetchFailedTestDetails(
 		...(opts.allAttempts ? { filter: "all" } : {}),
 	}) as GhJobsResponse;
 	const failedJobs = jobsData.jobs
-		.filter((j) => j.conclusion === "failure" && TEST_JOBS.includes(j.name))
+		.filter((j) => j.conclusion === "failure" && TEST_JOB.test(j.name))
 		.map((j) => ({ id: j.id, name: j.name }));
 
 	if (failedJobs.length === 0) {

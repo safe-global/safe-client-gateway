@@ -1,14 +1,14 @@
 # Flaky Test Baseline Report
 
-Generated: 2026-09-28T12:41:17.765Z | Period: 2026-01-16 to 2026-09-28
+Generated: 2026-09-20T23:59:59.000Z | Period: 2026-01-16 to 2026-09-20
 
 ## Summary
 
 | Metric | Value |
 |--------|-------|
-| Total unique commits | 2422 |
-| Flaky commits (pass + fail on same SHA) | 142 |
-| Flakiness rate | 5.9% |
+| Total unique commits | 2441 |
+| Flaky commits (pass + fail on same SHA) | 141 |
+| Flakiness rate | 5.8% |
 | Cascade baseline | 1 failures (7 tests) |
 
 Since 2026-06-04 a commit also counts as flaky when a failed attempt was recovered by re-running the same workflow run (GitHub reports only the final attempt, so this signal needs a per-attempt lookup). Earlier weeks lack that signal and understate flakiness.
@@ -61,8 +61,7 @@ Since 2026-06-04 a commit also counts as flaky when a failed attempt was recover
 | 2026-08-24 | 75 | 0 | 0% |
 | 2026-08-31 | 12 | 0 | 0% |
 | 2026-09-07 | 48 | 3 | 6.3% |
-| 2026-09-14 | 52 | 2 | 3.8% |
-| 2026-09-21 | 72 | 2 | 2.8% |
+| 2026-09-14 | 143 | 3 | 2.1% |
 
 ```text
 Weekly CI flakiness rate %  ·  n = unique commits  ·  weeks with n<10 omitted
@@ -101,8 +100,7 @@ Weekly CI flakiness rate %  ·  n = unique commits  ·  weeks with n<10 omitted
 08-24   0.0%  n=75   ▏
 08-31   0.0%  n=12   ▏
 09-07   6.3%  n=48   █████████████
-09-14   3.8%  n=52   ████████
-09-21   2.8%  n=72   ██████
+09-14   2.1%  n=143  ████
 ```
 
 ## Clean Streak
@@ -134,7 +132,6 @@ Streak broken: the most recent week has a flake. Target <1% at 95% needs a 300-c
 | `src/modules/transactions/routes/__tests__/controllers/get-transaction-by-id.transactions.controller.integration.spec.ts` | 2 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
 | `src/modules/users/domain/__tests__/user-identity-resolver.service.spec.ts` | 2 | Open | - |
 | `src/modules/surveys/routes/surveys.controller.integration.spec.ts` | 2 | Fixed | [#3242](https://github.com/safe-global/safe-client-gateway/pull/3242) |
-| `src/modules/transactions/routes/__tests__/controllers/preview-transaction.transactions.controller.integration.spec.ts` | 2 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
 
 ## Cascade Tests
 
@@ -148,8 +145,8 @@ These 7 tests all failed exactly 1 times, suggesting they fail together as a cas
 - `src/modules/safe-shield/safe-shield.controller.integration.spec.ts`
 - `src/modules/safe-apps/routes/safe-apps.controller.integration.spec.ts`
 - `src/modules/auth/routes/auth.controller.integration.spec.ts`
+- `src/modules/transactions/routes/__tests__/controllers/preview-transaction.transactions.controller.integration.spec.ts`
 - `src/domain/common/entities/name.builder.spec.ts`
-- `src/modules/notifications/routes/v1/notifications.controller.integration.spec.ts`
 
 </details>
 
