@@ -3064,10 +3064,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"csv-stringify@npm:^6.8.3":
-  version: 6.8.3
-  resolution: "csv-stringify@npm:6.8.3"
-  checksum: 10/288465886c5ebca7c87c02cda0df4dfe9ba0bb4df264b64e7962821a890df89efded9dbf5120c9fdd848a76ed781a7a6cfd6332893ed5c60a7a62b368635fc9f
+"csv-stringify@npm:^6.9.0":
+  version: 6.9.0
+  resolution: "csv-stringify@npm:6.9.0"
+  checksum: 10/af8bb8999ee023183fcec2b95693cb7fda90466e1961509936eda55886963e4e01ce9109fce7e22da4c2c42ebdaf8bcddf178974c5508e8e2ea12fe42670e524
   languageName: node
   linkType: hard
 
@@ -5485,7 +5485,7 @@ __metadata:
     bullmq: "npm:^6.3.8"
     cache-manager: "npm:7.2.9"
     concurrently: "npm:9.2.4"
-    csv-stringify: "npm:^6.8.3"
+    csv-stringify: "npm:^6.9.0"
     dd-trace: "npm:5.127.0"
     ecdsa-sig-formatter: "npm:1.0.11"
     husky: "npm:9.1.7"
