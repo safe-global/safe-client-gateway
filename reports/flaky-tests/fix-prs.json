@@ -1,17 +1,124 @@
 {
-  "generated_at": "2026-09-20T23:59:59.000Z",
+  "generated_at": "2026-10-09T15:07:59.711Z",
   "prs": [
+    {
+      "number": 3558,
+      "title": "perf(relay): boot the relay controller spec's app once per file",
+      "url": "https://github.com/safe-global/safe-client-gateway/pull/3558",
+      "merged_at": null,
+      "tests_fixed": [
+        "src/modules/relay/routes/relay.controller.integration.spec.ts"
+      ]
+    },
+    {
+      "number": 3552,
+      "title": "perf: share the unit-test module cache across spec files",
+      "url": "https://github.com/safe-global/safe-client-gateway/pull/3552",
+      "merged_at": "2026-10-09T14:57:38Z",
+      "tests_fixed": [
+        "src/logging/logging.service.spec.ts"
+      ]
+    },
+    {
+      "number": 3551,
+      "title": "build: resolve #/ imports natively and type-check specs on TS 7",
+      "url": "https://github.com/safe-global/safe-client-gateway/pull/3551",
+      "merged_at": "2026-10-09T14:51:16Z",
+      "tests_fixed": [
+        "migrations/deprecated/__tests__/00005_notifications.integration.spec.ts",
+        "migrations/deprecated/__tests__/00006_targeted_messaging.integration.spec.ts",
+        "migrations/deprecated/__tests__/00007_targeted_messaging_update.integration.spec.ts",
+        "migrations/deprecated/__tests__/00008_targeted_messaging_add_outreach_1.integration.spec.ts",
+        "migrations/deprecated/__tests__/00013_targeted_messaging_add_outreach_2.integration.spec.ts",
+        "migrations/deprecated/__tests__/00014_targeted_messaging_add_chain_id.integration.spec.ts",
+        "migrations/deprecated/__tests__/_all.integration.spec.ts",
+        "scripts/env-json-helpers.spec.ts",
+        "scripts/generate-env.spec.ts",
+        "scripts/validate-env-json.spec.ts",
+        "src/__tests__/deployments.helper.spec.ts",
+        "src/__tests__/matchers/to-be-string-or-null.spec.ts",
+        "src/app.provider.spec.ts",
+        "src/config/__tests__/fake.configuration.service.spec.ts",
+        "src/config/configuration.validator.spec.ts",
+        "src/config/entities/configuration.spec.ts",
+        "src/config/nest.configuration.service.spec.ts",
+        "src/datasources/billing-api/billing-api.service.spec.ts",
+        "src/datasources/billing-api/upstream-customer-id.util.spec.ts",
+        "src/datasources/cache/__tests__/fake.cache.service.spec.ts",
+        "src/datasources/cache/cache.first.data.source.spec.ts",
+        "src/datasources/cache/cache.router.spec.ts",
+        "src/datasources/cache/redis.cache.service.integration.spec.ts",
+        "src/datasources/cache/redis.cache.service.key-prefix.spec.ts",
+        "src/datasources/circuit-breaker/circuit-breaker.service.spec.ts",
+        "src/datasources/common/chain-api.manager.spec.ts",
+        "src/datasources/config-api/config-api.service.spec.ts",
+        "src/datasources/db/v1/cached-query-resolver.spec.ts",
+        "src/datasources/db/v1/postgres-database.migration.hook.integration.spec.ts",
+        "src/datasources/db/v1/postgres-database.migrator.integration.spec.ts",
+        "src/datasources/db/v1/postgres-database.module.integration.spec.ts"
+      ]
+    },
     {
       "number": 3447,
       "title": "feat: derive zerion support from its chain list, excluding testnets",
       "url": "https://github.com/safe-global/safe-client-gateway/pull/3447",
-      "merged_at": null,
+      "merged_at": "2026-10-09T14:11:01Z",
       "tests_fixed": [
         "src/modules/balances/datasources/entities/zerion-wallet-portfolio.entity.spec.ts",
         "src/modules/portfolio/datasources/zerion-portfolio-api.service.spec.ts",
         "src/modules/positions/datasources/zerion-positions-api.service.spec.ts",
         "src/modules/safe/routes/v2/__tests__/safes.v2.controller.overview.integration.spec.ts",
-        "src/modules/safe/routes/v2/safes.v2.service.spec.ts"
+        "src/modules/safe/routes/v2/safes.v2.service.spec.ts",
+        "src/modules/zerion/datasources/zerion-chain-mapping.service.spec.ts"
+      ]
+    },
+    {
+      "number": 3560,
+      "title": "build: migrate runtime, tooling and tests from node to bun",
+      "url": "https://github.com/safe-global/safe-client-gateway/pull/3560",
+      "merged_at": null,
+      "tests_fixed": [
+        "migrations/deprecated/__tests__/00005_notifications.integration.spec.ts",
+        "migrations/deprecated/__tests__/00006_targeted_messaging.integration.spec.ts",
+        "migrations/deprecated/__tests__/00007_targeted_messaging_update.integration.spec.ts",
+        "migrations/deprecated/__tests__/00008_targeted_messaging_add_outreach_1.integration.spec.ts",
+        "migrations/deprecated/__tests__/00013_targeted_messaging_add_outreach_2.integration.spec.ts",
+        "migrations/deprecated/__tests__/00014_targeted_messaging_add_chain_id.integration.spec.ts",
+        "migrations/deprecated/__tests__/_all.integration.spec.ts",
+        "scripts/env-json-helpers.spec.ts",
+        "scripts/generate-env.spec.ts",
+        "scripts/validate-env-json.spec.ts",
+        "src/__tests__/deployments.helper.spec.ts",
+        "src/__tests__/matchers/to-be-string-or-null.spec.ts",
+        "src/__tests__/timezone.spec.ts",
+        "src/__tests__/util/check-guard.spec.ts",
+        "src/app.module.e2e.spec.ts",
+        "src/app.provider.spec.ts",
+        "src/config/__tests__/fake.configuration.service.spec.ts",
+        "src/config/configuration.validator.spec.ts",
+        "src/config/entities/configuration.spec.ts",
+        "src/config/nest.configuration.service.spec.ts",
+        "src/datasources/billing-api/billing-api.service.spec.ts",
+        "src/datasources/billing-api/upstream-customer-id.util.spec.ts",
+        "src/datasources/cache/__tests__/fake.cache.service.spec.ts",
+        "src/datasources/cache/cache.first.data.source.spec.ts",
+        "src/datasources/cache/cache.router.spec.ts",
+        "src/datasources/cache/redis.cache.service.integration.spec.ts",
+        "src/datasources/cache/redis.cache.service.key-prefix.spec.ts",
+        "src/datasources/circuit-breaker/circuit-breaker.service.spec.ts",
+        "src/datasources/common/chain-api.manager.spec.ts",
+        "src/datasources/config-api/config-api.service.spec.ts"
+      ]
+    },
+    {
+      "number": 3550,
+      "title": "fix: compute messagesTag from the latest modified message",
+      "url": "https://github.com/safe-global/safe-client-gateway/pull/3550",
+      "merged_at": "2026-10-08T10:34:41Z",
+      "tests_fixed": [
+        "src/modules/messages/domain/messages.repository.spec.ts",
+        "src/modules/safe/routes/safes.controller.integration.spec.ts",
+        "src/modules/transactions/datasources/transaction-api.service.spec.ts"
       ]
     },
     {
@@ -21,6 +128,15 @@
       "merged_at": null,
       "tests_fixed": [
         "src/datasources/circuit-breaker/circuit-breaker.service.spec.ts"
+      ]
+    },
+    {
+      "number": 3506,
+      "title": "fix(users): return the winning user id on a concurrent wallet insert",
+      "url": "https://github.com/safe-global/safe-client-gateway/pull/3506",
+      "merged_at": "2026-09-30T09:12:08Z",
+      "tests_fixed": [
+        "src/modules/users/domain/users.repository.integration.spec.ts"
       ]
     },
     {

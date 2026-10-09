@@ -1,14 +1,14 @@
 # Flaky Test Baseline Report
 
-Generated: 2026-09-20T23:59:59.000Z | Period: 2026-01-16 to 2026-09-20
+Generated: 2026-10-09T15:07:59.718Z | Period: 2026-01-16 to 2026-10-09
 
 ## Summary
 
 | Metric | Value |
 |--------|-------|
-| Total unique commits | 2441 |
-| Flaky commits (pass + fail on same SHA) | 141 |
-| Flakiness rate | 5.8% |
+| Total unique commits | 2837 |
+| Flaky commits (pass + fail on same SHA) | 145 |
+| Flakiness rate | 5.1% |
 | Cascade baseline | 1 failures (7 tests) |
 
 Since 2026-06-04 a commit also counts as flaky when a failed attempt was recovered by re-running the same workflow run (GitHub reports only the final attempt, so this signal needs a per-attempt lookup). Earlier weeks lack that signal and understate flakiness.
@@ -62,6 +62,9 @@ Since 2026-06-04 a commit also counts as flaky when a failed attempt was recover
 | 2026-08-31 | 12 | 0 | 0% |
 | 2026-09-07 | 48 | 3 | 6.3% |
 | 2026-09-14 | 143 | 3 | 2.1% |
+| 2026-09-21 | 182 | 3 | 1.6% |
+| 2026-09-28 | 109 | 0 | 0% |
+| 2026-10-05 | 105 | 1 | 1% |
 
 ```text
 Weekly CI flakiness rate %  ·  n = unique commits  ·  weeks with n<10 omitted
@@ -101,6 +104,9 @@ Weekly CI flakiness rate %  ·  n = unique commits  ·  weeks with n<10 omitted
 08-31   0.0%  n=12   ▏
 09-07   6.3%  n=48   █████████████
 09-14   2.1%  n=143  ████
+09-21   1.6%  n=182  ███
+09-28   0.0%  n=109  ▏
+10-05   1.0%  n=105  ██
 ```
 
 ## Clean Streak
@@ -120,9 +126,9 @@ Streak broken: the most recent week has a flake. Target <1% at 95% needs a 300-c
 | `src/datasources/job-queue/__tests__/job-queue.service.integration.spec.ts` | 10 | Open | [#2781](https://github.com/safe-global/safe-client-gateway/pull/2781) |
 | `src/modules/notifications/routes/v2/notifications.controller.integration.spec.ts` | 10 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
 | `src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts` | 10 | Fixed | [#2977](https://github.com/safe-global/safe-client-gateway/pull/2977) |
+| `src/modules/transactions/routes/helpers/transaction-verifier.helper.spec.ts` | 10 | Fixed | [#2891](https://github.com/safe-global/safe-client-gateway/pull/2891) |
 | `src/modules/transactions/routes/mappers/common/transaction-data.mapper.spec.ts` | 9 | Open | - |
-| `src/modules/transactions/routes/helpers/transaction-verifier.helper.spec.ts` | 9 | Fixed | [#2891](https://github.com/safe-global/safe-client-gateway/pull/2891) |
-| `src/modules/users/domain/users.repository.integration.spec.ts` | 8 | Open | - |
+| `src/modules/users/domain/users.repository.integration.spec.ts` | 9 | Fixed | [#3506](https://github.com/safe-global/safe-client-gateway/pull/3506) |
 | `src/modules/transactions/routes/__tests__/controllers/add-transaction-confirmations.transactions.controller.integration.spec.ts` | 7 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
 | `src/domain/common/entities/safe-signature.spec.ts` | 6 | Fixed | [#3136](https://github.com/safe-global/safe-client-gateway/pull/3136) |
 | `src/modules/users/domain/members.repository.integration.spec.ts` | 5 | Fixed | [#2891](https://github.com/safe-global/safe-client-gateway/pull/2891) |
@@ -132,6 +138,7 @@ Streak broken: the most recent week has a flake. Target <1% at 95% needs a 300-c
 | `src/modules/transactions/routes/__tests__/controllers/get-transaction-by-id.transactions.controller.integration.spec.ts` | 2 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
 | `src/modules/users/domain/__tests__/user-identity-resolver.service.spec.ts` | 2 | Open | - |
 | `src/modules/surveys/routes/surveys.controller.integration.spec.ts` | 2 | Fixed | [#3242](https://github.com/safe-global/safe-client-gateway/pull/3242) |
+| `src/modules/transactions/routes/__tests__/controllers/preview-transaction.transactions.controller.integration.spec.ts` | 2 | Fixed | [#2890](https://github.com/safe-global/safe-client-gateway/pull/2890) |
 
 ## Cascade Tests
 
@@ -145,15 +152,21 @@ These 7 tests all failed exactly 1 times, suggesting they fail together as a cas
 - `src/modules/safe-shield/safe-shield.controller.integration.spec.ts`
 - `src/modules/safe-apps/routes/safe-apps.controller.integration.spec.ts`
 - `src/modules/auth/routes/auth.controller.integration.spec.ts`
-- `src/modules/transactions/routes/__tests__/controllers/preview-transaction.transactions.controller.integration.spec.ts`
 - `src/domain/common/entities/name.builder.spec.ts`
+- `src/modules/notifications/routes/v1/notifications.controller.integration.spec.ts`
 
 </details>
 
 ## Fix PRs
 
-- [#3447](https://github.com/safe-global/safe-client-gateway/pull/3447) - feat: derive zerion support from its chain list, excluding testnets (Open)
+- [#3558](https://github.com/safe-global/safe-client-gateway/pull/3558) - perf(relay): boot the relay controller spec's app once per file (Open)
+- [#3552](https://github.com/safe-global/safe-client-gateway/pull/3552) - perf: share the unit-test module cache across spec files (Merged)
+- [#3551](https://github.com/safe-global/safe-client-gateway/pull/3551) - build: resolve #/ imports natively and type-check specs on TS 7 (Merged)
+- [#3447](https://github.com/safe-global/safe-client-gateway/pull/3447) - feat: derive zerion support from its chain list, excluding testnets (Merged)
+- [#3560](https://github.com/safe-global/safe-client-gateway/pull/3560) - build: migrate runtime, tooling and tests from node to bun (Open)
+- [#3550](https://github.com/safe-global/safe-client-gateway/pull/3550) - fix: compute messagesTag from the latest modified message (Merged)
 - [#3444](https://github.com/safe-global/safe-client-gateway/pull/3444) - fix(circuit-breaker): replace deprecated done() callback with Date.now mocking (Open)
+- [#3506](https://github.com/safe-global/safe-client-gateway/pull/3506) - fix(users): return the winning user id on a concurrent wallet insert (Merged)
 - [#3262](https://github.com/safe-global/safe-client-gateway/pull/3262) - fix: await Fastify ready when initializing test apps (Merged)
 - [#3242](https://github.com/safe-global/safe-client-gateway/pull/3242) - fix(tests): resolve remaining flaky tests after Vitest migration (Merged)
 - [#3139](https://github.com/safe-global/safe-client-gateway/pull/3139) - chore(tests): reduce CI flakiness (clearMocks + seeded faker) (Merged)
@@ -179,7 +192,6 @@ These 7 tests all failed exactly 1 times, suggesting they fail together as a cas
 
 - `src/datasources/job-queue/__tests__/job-queue.service.integration.spec.ts` (10 failures)
 - `src/modules/transactions/routes/mappers/common/transaction-data.mapper.spec.ts` (9 failures)
-- `src/modules/users/domain/users.repository.integration.spec.ts` (8 failures)
 - `src/modules/users/domain/__tests__/user-identity-resolver.service.spec.ts` (2 failures)
 
 ---

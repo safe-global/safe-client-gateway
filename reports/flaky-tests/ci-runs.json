@@ -1,11 +1,26 @@
 {
-  "generated_at": "2026-09-20T23:59:59.000Z",
-  "last_checked_at": "2026-09-20T23:59:59.000Z",
+  "generated_at": "2026-10-09T15:07:59.711Z",
+  "last_checked_at": "2026-10-09T15:07:59.711Z",
   "period": {
     "from": "2026-01-16",
-    "to": "2026-09-20"
+    "to": "2026-10-09"
   },
   "flaky_shas": [
+    "4a0b8c9",
+    "f65de72",
+    "3f674b7",
+    "a23fd1d",
+    "3eee9a0",
+    "21153d5",
+    "4583cb3",
+    "dd402c0",
+    "094a7b7",
+    "d4546a1",
+    "b67f5d7",
+    "5c85b7a",
+    "693e14c",
+    "b648aef",
+    "fce0ef3",
     "9b8f387",
     "9ebe58e",
     "76ce6b8",
@@ -158,23 +173,80 @@
     "47477af",
     "dc3acbd",
     "ab8c16f",
-    "b648aef",
-    "fce0ef3",
-    "693e14c",
-    "4583cb3",
-    "dd402c0",
-    "094a7b7",
-    "d4546a1",
-    "b67f5d7",
-    "5c85b7a",
-    "4a0b8c9",
-    "f65de72",
-    "3f674b7",
-    "a23fd1d",
-    "3eee9a0",
-    "21153d5"
+    "629c23c",
+    "0daa4bf",
+    "f927a3e",
+    "510b1fa"
   ],
   "runs": [
+    {
+      "id": 37923787392,
+      "sha": "510b1fa",
+      "branch": "fix-zombie-safe",
+      "conclusion": "failure",
+      "created_at": "2026-10-09T11:27:00Z",
+      "failed_jobs": [
+        "ci / unit-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/transactions/routes/helpers/transaction-verifier.helper.spec.ts",
+          "name": "TransactionVerifierHelper > verifyProposal > should throw if a CONTRACT_SIGNATURE signature is invalid",
+          "error": "AssertionError: expected a thrown error to be Error: Could not recover address"
+        }
+      ]
+    },
+    {
+      "id": 36033027438,
+      "sha": "f927a3e",
+      "branch": "feat/wa-3556-policies-entitlement",
+      "conclusion": "failure",
+      "created_at": "2026-09-24T17:15:27Z",
+      "failed_jobs": [
+        "ci / integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/users/domain/users.repository.integration.spec.ts",
+          "name": "UsersRepository > findOrCreateByWalletAddress > should return the existing user id on concurrent duplicate insert",
+          "error": "AssertionError: expected 28 to be 29 // Object.is equality"
+        }
+      ]
+    },
+    {
+      "id": 35597969180,
+      "sha": "629c23c",
+      "branch": "fix-merge-conflict",
+      "conclusion": "failure",
+      "created_at": "2026-09-21T12:10:08Z",
+      "failed_jobs": [
+        "integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/notifications/routes/v1/notifications.controller.integration.spec.ts",
+          "name": "Notifications Controller > POST /register/notifications > Should pass if the timestamp in within then last 5 minutes",
+          "error": "AssertionError: expected \"vi.fn()\" to be called at least once"
+        }
+      ]
+    },
+    {
+      "id": 35593253762,
+      "sha": "0daa4bf",
+      "branch": "main",
+      "conclusion": "failure",
+      "created_at": "2026-09-21T11:17:17Z",
+      "failed_jobs": [
+        "integration-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/transactions/routes/__tests__/controllers/preview-transaction.transactions.controller.integration.spec.ts",
+          "name": "Preview transaction - Transactions Controller > should throw a validation error",
+          "error": "QueryFailedError: duplicate key value violates unique constraint \"pg_class_relname_nsp_index\""
+        }
+      ]
+    },
     {
       "id": 35347380038,
       "sha": "4a0b8c9",
