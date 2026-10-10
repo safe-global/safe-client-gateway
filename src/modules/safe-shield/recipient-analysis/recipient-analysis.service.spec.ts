@@ -97,8 +97,10 @@ describe('RecipientAnalysisService', () => {
   const mockSafeAddress = getAddress(faker.finance.ethereumAddress());
   const mockRecipientAddress = getAddress(faker.finance.ethereumAddress());
 
+  // `exclude` only filters characters, so a colliding value is redrawn
   const uniqueTargetChainId = (): string => {
-    return faker.string.numeric({ length: 3, exclude: [mockChainId] });
+    const chainId = faker.string.numeric(3);
+    return chainId === mockChainId ? uniqueTargetChainId() : chainId;
   };
 
   const createMockTxInfo = (
