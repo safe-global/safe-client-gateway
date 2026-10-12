@@ -268,26 +268,27 @@ export class ProposerPolicyDataDto implements ProposerPolicyData {
 }
 
 export class Erc20TransferRecipientDto implements Erc20TransferRecipient {
-  @ApiProperty({ description: 'An address the Safe may send this token to' })
+  @ApiProperty({
+    type: String,
+    description: 'An address the Safe can send this token to',
+  })
   public readonly account!: Address;
   @ApiProperty({
     enum: PolicyPermissionSchema.options,
-    description:
-      'ONCE is spent by the first matching transfer; ALWAYS applies to every one',
   })
   public readonly permission!: PolicyPermission;
 }
 
 export class Erc20TransferAllowlistEntryDto {
   @ApiProperty({
+    type: String,
     description: 'The token the allowlist applies to; zero address for native',
   })
   public readonly token_address!: Address;
   @ApiProperty({
     type: Erc20TransferRecipientDto,
     isArray: true,
-    description:
-      'Who the Safe may send this token to, accumulated across every configure call',
+    description: 'The recipients of the token transfers the policy permits',
   })
   public readonly recipients!: Array<Erc20TransferRecipient>;
 }
@@ -299,19 +300,16 @@ export class Erc20TransferPolicyDataDto implements Erc20TransferPolicyData {
 
 export class CosignerPolicyDataDto implements CosignerPolicyData {
   @ApiProperty({
-    description:
-      'The cosigner the policy requires. The whole payload of the event; the access it covers is the item id.',
+    type: String,
+    description: 'The cosigner the policy enforces.',
   })
   public readonly cosigner_address!: Address;
 }
 
 /**
- * Allow, deny and native transfer carry no configuration: which calls they cover
- * is already in the item's `id` and `enforcement`.
+ * Allow, deny and native transfer carry no configuration.
  */
 export class StatelessPolicyDataDto implements StatelessPolicyData {
-  // Mirrors `StatelessPolicyData`'s `Record<string, never>`: the payload carries
-  // no properties, and adding one here would have to be modelled there first.
   [key: string]: never;
 }
 
