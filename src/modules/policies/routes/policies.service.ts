@@ -20,7 +20,6 @@ import { IDelegatesV3Repository } from '#/modules/delegate/domain/v3/delegates.v
 import type { ActivePolicy } from '#/modules/policies/domain/entities/active-policy.entity';
 import type {
   PolicyIndexerGuardPolicyBinding,
-  PolicyIndexerGuardPolicyKind,
   PolicyIndexerSafeAllowance,
 } from '#/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 import type { PendingPolicy } from '#/modules/policies/domain/entities/pending-policy.entity';
@@ -264,7 +263,6 @@ export class PoliciesService {
             bindings: this.getGuardPolicyBindingsBySafe(
               state.guardPolicyBindings,
               safe,
-              guardPolicyKinds,
             ),
             transactionGuard: enforcers.transactionGuard,
             moduleGuard: enforcers.moduleGuard,
@@ -613,19 +611,16 @@ export class PoliciesService {
   }
 
   /**
-   * The guard bindings belonging to {@link safe} that {@link guardPolicyKinds}
-   * names.
+   * The guard bindings belonging to {@link safe}.
    */
   private getGuardPolicyBindingsBySafe(
     bindings: ReadonlyArray<PolicyIndexerGuardPolicyBinding>,
     safe: SafeRef,
-    guardPolicyKinds: ReadonlyArray<PolicyIndexerGuardPolicyKind>,
   ): Array<PolicyIndexerGuardPolicyBinding> {
     return bindings.filter(
       (binding) =>
         binding.chainId === safe.chainId &&
-        isAddressEqual(binding.safe, safe.address) &&
-        guardPolicyKinds.includes(binding.kind),
+        isAddressEqual(binding.safe, safe.address),
     );
   }
 }

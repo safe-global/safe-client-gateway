@@ -1,24 +1,17 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress, zeroAddress } from 'viem';
-import type { MockedObject } from 'vitest';
-import type { ILoggingService } from '#/logging/logging.interface';
-
 import type {
   CosignerPolicyData,
   Erc20TransferPolicyData,
 } from '#/modules/policies/domain/entities/active-policy.entity';
 import { policyIndexerGuardPolicyBindingBuilder } from '#/modules/policies/domain/entities/indexer/__tests__/guard-policy-binding.builder';
-import type { PolicyIndexerGuardPolicyBinding } from '#/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
+import type {
+  PolicyIndexerGuardPolicyBinding,
+  PolicyIndexerGuardPolicyKind,
+} from '#/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 import { PolicyType } from '#/modules/policies/domain/entities/policy-type.entity';
 import { GuardPolicyMapper } from '#/modules/policies/routes/mappers/guard-policy.mapper';
-
-const mockLoggingService = {
-  info: vi.fn(),
-  error: vi.fn(),
-  warn: vi.fn(),
-  debug: vi.fn(),
-} as MockedObject<ILoggingService>;
 
 const SEPOLIA = '11155111';
 const TRANSFER_SELECTOR = '0xa9059cbb';
@@ -32,7 +25,7 @@ describe('GuardPolicyMapper', () => {
   const guard = getAddress(faker.finance.ethereumAddress());
 
   beforeEach(() => {
-    target = new GuardPolicyMapper(mockLoggingService);
+    target = new GuardPolicyMapper();
   });
 
   function map(
@@ -109,30 +102,6 @@ describe('GuardPolicyMapper', () => {
       },
     );
 
-    it('should skip an allowlist whose permission it does not know', () => {
-      // `permission` is inside the indexer's jsonb, so a new value arrives with
-      // no schema signal. Guessing between a single-use and an open-ended grant
-      // would misreport what the Safe actually permits.
-      const policy = binding()
-        .with('kind', 'ERC20_TRANSFER')
-        .with('state', {
-          recipients: [
-            {
-              account: getAddress(faker.finance.ethereumAddress()),
-              permission: 'TWICE',
-            },
-          ],
-        })
-        .build();
-
-      expect(map([policy])).toStrictEqual([]);
-      expect(mockLoggingService.warn).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: 'Could not read the state of a policy',
-        }),
-      );
-    });
-
     it('should report the accumulated recipient list as the indexer folded it', () => {
       // `configure` is an upsert of deltas, so only the folded sequence is the
       // allowlist - and the indexer has already folded it.
@@ -177,15 +146,13 @@ describe('GuardPolicyMapper', () => {
       });
     });
 
-    it.each([
+    it.each<[PolicyIndexerGuardPolicyKind, PolicyType]>([
       ['ALLOW', PolicyType.Allow],
       ['DENY', PolicyType.Deny],
       ['NATIVE_TRANSFER', PolicyType.NativeTransfer],
+      ['MULTISEND', PolicyType.MultiSend],
     ])('should report %s with an empty payload', (kind, type) => {
-      const policy = binding()
-        .with('kind', kind as PolicyIndexerGuardPolicyBinding['kind'])
-        .with('state', null)
-        .build();
+      const policy = binding().with('kind', kind).with('state', null).build();
 
       const [result] = map([policy]);
 
@@ -193,50 +160,28 @@ describe('GuardPolicyMapper', () => {
       expect(result.data).toStrictEqual({});
     });
 
-    it.each([
+    it.each<PolicyIndexerGuardPolicyKind>([
       'ERC20_APPROVE',
       'ALLOWED_MODULE',
-      'MULTISEND',
-      'NONE',
       'UNKNOWN',
     ])('should skip %s, which CGW does not render', (kind) => {
       // Rendering an unknown restriction is worse than omitting it.
-      const policy = binding()
-        .with('kind', kind as PolicyIndexerGuardPolicyBinding['kind'])
-        .build();
+      const policy = binding().with('kind', kind).with('state', null).build();
 
       expect(map([policy])).toStrictEqual([]);
-      expect(mockLoggingService.warn).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: 'Skipping a policy kind CGW does not render',
-          kind,
-        }),
-      );
     });
 
-    it('should skip a binding whose state is not the shape its kind implies', () => {
-      // The indexer's registry and CGW disagree about the policy address.
-      const policy = binding()
-        .with('kind', 'COSIGNER')
-        .with('state', { recipients: [] })
-        .build();
-
-      expect(map([policy])).toStrictEqual([]);
-      expect(mockLoggingService.warn).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: 'Could not read the state of a policy',
-        }),
-      );
-    });
-
-    it('should keep the readable bindings when one is not', () => {
-      const readable = binding()
+    it('should keep the rendered bindings beside one it does not render', () => {
+      const rendered = binding()
         .with('kind', 'ALLOW')
         .with('state', null)
         .build();
-      const unreadable = binding().with('kind', 'MULTISEND').build();
+      const unrendered = binding()
+        .with('kind', 'ERC20_APPROVE')
+        .with('state', null)
+        .build();
 
-      expect(map([readable, unreadable])).toHaveLength(1);
+      expect(map([rendered, unrendered])).toHaveLength(1);
     });
   });
 

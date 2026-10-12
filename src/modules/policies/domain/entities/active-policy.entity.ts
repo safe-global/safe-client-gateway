@@ -5,6 +5,7 @@ import type { PolicyEnforcement } from '#/modules/policies/domain/entities/polic
 import type { PolicyType } from '#/modules/policies/domain/entities/policy-type.entity';
 import type { SafeRef } from '#/modules/policies/domain/entities/safe-ref.entity';
 import type { Token } from '#/modules/policies/domain/entities/token.entity';
+import { AddressSchema } from '#/validation/entities/schemas/address.schema';
 
 /**
  * `spending-limit`: what each spender may still withdraw, and on what schedule.
@@ -85,10 +86,14 @@ export const PolicyPermissionSchema = z.enum(['ONCE', 'ALWAYS']);
 
 export type PolicyPermission = z.infer<typeof PolicyPermissionSchema>;
 
-export type Erc20TransferRecipient = {
-  account: Address;
-  permission: PolicyPermission;
-};
+export const Erc20TransferRecipientSchema = z.object({
+  account: AddressSchema,
+  permission: PolicyPermissionSchema,
+});
+
+export type Erc20TransferRecipient = z.infer<
+  typeof Erc20TransferRecipientSchema
+>;
 
 /**
  * `ERC20TransferPolicy`: per token, the recipients the Safe can send to.
@@ -108,7 +113,7 @@ export type CosignerPolicyData = {
 };
 
 /**
- * The stateless policies - allow, deny and native transfer.
+ * The stateless policies - allow, deny, native transfer and multisend.
  *
  */
 export type StatelessPolicyData = Record<string, never>;

@@ -174,7 +174,7 @@ describe('PoliciesService', () => {
       new SpendingLimitMapper(),
       new ProposerMapper(),
       pendingSpendingLimitMapper(),
-      new GuardPolicyMapper(mockLoggingService),
+      new GuardPolicyMapper(),
     );
   }
 

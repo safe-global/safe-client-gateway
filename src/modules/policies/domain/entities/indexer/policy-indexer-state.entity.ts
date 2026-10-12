@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
 import { ChainIdSchema } from '#/modules/chains/domain/entities/schemas/chain-id.schema';
+import { Erc20TransferRecipientSchema } from '#/modules/policies/domain/entities/active-policy.entity';
 import { PolicyOperation } from '#/modules/policies/domain/entities/policy-operation.entity';
 import { AddressSchema } from '#/validation/entities/schemas/address.schema';
 import { HexSchema } from '#/validation/entities/schemas/hex.schema';
@@ -142,29 +143,33 @@ export type PolicyIndexerSafeDelegate = z.infer<
   typeof PolicyIndexerSafeDelegateSchema
 >;
 
-export const PolicyIndexerGuardPolicyKindSchema = z
-  .enum([
-    'ERC20_TRANSFER',
-    'ERC20_APPROVE',
-    'ALLOWED_MODULE',
-    'COSIGNER',
-    'ALLOW',
-    'DENY',
-    'MULTISEND',
-    'NATIVE_TRANSFER',
-    'UNKNOWN',
-  ])
-  .catch('UNKNOWN');
+export const PolicyIndexerGuardPolicyKindSchema = z.enum([
+  'ERC20_TRANSFER',
+  'ERC20_APPROVE',
+  'ALLOWED_MODULE',
+  'COSIGNER',
+  'ALLOW',
+  'DENY',
+  'MULTISEND',
+  'NATIVE_TRANSFER',
+  'UNKNOWN',
+]);
 
 export type PolicyIndexerGuardPolicyKind = z.infer<
   typeof PolicyIndexerGuardPolicyKindSchema
 >;
 
-/**
- * One `SafePolicyGuard` binding, aggregated by the indexer per
- * `(guard, safe, target, selector, operation)`.
- */
-export const PolicyIndexerGuardPolicyBindingSchema = z.object({
+/** `ERC20TransferPolicy`'s accumulated recipient list for the bound token. */
+export const PolicyIndexerErc20TransferStateSchema = z.object({
+  recipients: z.array(Erc20TransferRecipientSchema),
+});
+
+/** `CoSignerPolicy`'s configured cosigner. */
+export const PolicyIndexerCosignerStateSchema = z.object({
+  cosigner: AddressSchema,
+});
+
+const PolicyIndexerGuardPolicyBindingBaseSchema = z.object({
   chainId: PolicyIndexerChainIdSchema,
   safe: AddressSchema,
   guard: AddressSchema,
@@ -172,12 +177,31 @@ export const PolicyIndexerGuardPolicyBindingSchema = z.object({
   /** Trimmed to four bytes by the indexer; the event carries 32. */
   selector: HexSchema,
   operation: z.enum(PolicyOperation),
-  kind: PolicyIndexerGuardPolicyKindSchema,
   policy: AddressSchema,
   active: z.boolean(),
   isFallback: z.boolean(),
-  state: z.unknown(),
 });
+
+export const PolicyIndexerGuardPolicyBindingSchema = z.discriminatedUnion(
+  'kind',
+  [
+    PolicyIndexerGuardPolicyBindingBaseSchema.extend({
+      kind: z.literal('ERC20_TRANSFER'),
+      state: PolicyIndexerErc20TransferStateSchema,
+    }),
+    PolicyIndexerGuardPolicyBindingBaseSchema.extend({
+      kind: z.literal('COSIGNER'),
+      state: PolicyIndexerCosignerStateSchema,
+    }),
+    PolicyIndexerGuardPolicyBindingBaseSchema.extend({
+      kind: PolicyIndexerGuardPolicyKindSchema.exclude([
+        'ERC20_TRANSFER',
+        'COSIGNER',
+      ]),
+      state: z.unknown(),
+    }),
+  ],
+);
 
 export type PolicyIndexerGuardPolicyBinding = z.infer<
   typeof PolicyIndexerGuardPolicyBindingSchema

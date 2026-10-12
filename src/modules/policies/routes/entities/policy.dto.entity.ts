@@ -307,7 +307,7 @@ export class CosignerPolicyDataDto implements CosignerPolicyData {
 }
 
 /**
- * Allow, deny and native transfer carry no configuration.
+ * Allow, deny, native transfer and multisend carry no configuration.
  */
 export class StatelessPolicyDataDto implements StatelessPolicyData {
   [key: string]: never;

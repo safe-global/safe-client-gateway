@@ -5,6 +5,7 @@ import type { MockedObject } from 'vitest';
 import { ZodError } from 'zod';
 import type { ILoggingService } from '#/logging/logging.interface';
 import type { PolicyIndexerApi } from '#/modules/policies/datasources/policy-indexer-api.service';
+import { rawIndexerGuardPolicyBindingBuilder } from '#/modules/policies/domain/entities/indexer/__tests__/guard-policy-binding.builder';
 import {
   rawIndexerMetaBuilder,
   rawPolicyIndexerResponse,
@@ -383,6 +384,121 @@ describe('PolicyIndexerRepository', () => {
       });
 
       expect(result.allowances[0].isDelegateActive).toBe(false);
+    });
+  });
+
+  describe('guard policy bindings', () => {
+    /** Reads the bindings of `safe` from a response holding {@link rows}. */
+    function readBindings(
+      rows: Array<unknown>,
+    ): ReturnType<typeof target.getState> {
+      mockPolicyIndexerApi.getState.mockResolvedValue(
+        rawify(rawPolicyIndexerResponse({ GuardPolicyBinding: rows })),
+      );
+      return target.getState({
+        safes: [{ chainId: SEPOLIA, address: safe }],
+        guardPolicyKinds,
+      });
+    }
+
+    it('should parse the recipient list of a token allowlist', async () => {
+      const recipient = getAddress(faker.finance.ethereumAddress());
+      const binding = rawIndexerGuardPolicyBindingBuilder()
+        .with('kind', 'ERC20_TRANSFER')
+        .with('state', {
+          recipients: [{ account: recipient, permission: 'ONCE' }],
+        })
+        .build();
+
+      const result = await readBindings([binding]);
+
+      expect(result.guardPolicyBindings).toHaveLength(1);
+      expect(result.guardPolicyBindings[0]).toMatchObject({
+        kind: 'ERC20_TRANSFER',
+        state: { recipients: [{ account: recipient, permission: 'ONCE' }] },
+      });
+    });
+
+    it('should parse the cosigner of a cosigner policy', async () => {
+      const cosigner = getAddress(faker.finance.ethereumAddress());
+      const binding = rawIndexerGuardPolicyBindingBuilder()
+        .with('kind', 'COSIGNER')
+        .with('state', { cosigner })
+        .build();
+
+      const result = await readBindings([binding]);
+
+      expect(result.guardPolicyBindings[0]).toMatchObject({
+        kind: 'COSIGNER',
+        state: { cosigner },
+      });
+    });
+
+    it('should keep a binding whose kind carries no configuration CGW reads', async () => {
+      const binding = rawIndexerGuardPolicyBindingBuilder()
+        .with('kind', 'ALLOW')
+        .with('state', null)
+        .build();
+
+      const result = await readBindings([binding]);
+
+      expect(result.guardPolicyBindings[0]).toMatchObject({
+        kind: 'ALLOW',
+        state: null,
+      });
+    });
+
+    it('should drop a binding whose state is not the shape its kind implies', async () => {
+      // The indexer's registry and CGW disagree about the policy address.
+      const readable = rawIndexerGuardPolicyBindingBuilder().build();
+      const unreadable = rawIndexerGuardPolicyBindingBuilder()
+        .with('kind', 'COSIGNER')
+        .with('state', { recipients: [] })
+        .build();
+
+      const result = await readBindings([readable, unreadable]);
+
+      expect(result.guardPolicyBindings).toHaveLength(1);
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: 'Dropped unreadable policy indexer rows',
+          field: 'GuardPolicyBinding',
+          dropped: 1,
+          of: 2,
+        }),
+      );
+    });
+
+    it('should drop an allowlist whose permission it does not know', async () => {
+      // `permission` is inside the indexer's jsonb, so a new value arrives with
+      // no schema signal. Guessing between a single-use and an open-ended grant
+      // would misreport what the Safe actually permits.
+      const binding = rawIndexerGuardPolicyBindingBuilder()
+        .with('kind', 'ERC20_TRANSFER')
+        .with('state', {
+          recipients: [
+            {
+              account: getAddress(faker.finance.ethereumAddress()),
+              permission: faker.string.alpha({ length: 8, casing: 'upper' }),
+            },
+          ],
+        })
+        .build();
+
+      const result = await readBindings([binding]);
+
+      expect(result.guardPolicyBindings).toStrictEqual([]);
+    });
+
+    it('should drop a binding of a kind it does not know', async () => {
+      // A kind added by a newer indexer release, which no release of CGW knows.
+      const binding = rawIndexerGuardPolicyBindingBuilder()
+        .with('kind', faker.string.alpha({ length: 12, casing: 'upper' }))
+        .build();
+
+      const result = await readBindings([binding]);
+
+      expect(result.guardPolicyBindings).toStrictEqual([]);
     });
   });
 
