@@ -16,7 +16,7 @@ expect.extend({
 });
 
 declare module 'vitest' {
-  interface Assertion<T = any> {
+  interface Assertion<R extends void | Promise<void> = void, T = unknown> {
     anyStringOrNull(): void;
   }
 
