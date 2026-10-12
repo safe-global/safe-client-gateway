@@ -91,14 +91,11 @@ jobs:
           node-version: ${{ inputs.node_version }} # Krypton
           cache: 'yarn'
       - run: yarn install --immutable
-      - run: yarn run format-check
-      - run: yarn run lint-check
+      - run: yarn biome ci
       # Vitest transpiles via SWC, which strips types without checking them.
       # Unlike the `tsconfig.build.json` build (already run by `env-validation`
       # and `integration-tests`), this also covers spec files, `__tests__`
-      # helpers and `test/`. Needs the generated ABIs that the `#/abis` import
-      # resolves to.
-      - run: yarn generate-abis
+      # helpers and `test/`.
       - run: yarn typecheck
 
   unit-tests:
