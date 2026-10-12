@@ -10,6 +10,7 @@ import type {
   PolicyIndexerGuardPolicyBinding,
   PolicyIndexerGuardPolicyKind,
 } from '#/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
+import type { PolicyAccess } from '#/modules/policies/domain/entities/policy-enforcement.entity';
 import { PolicyType } from '#/modules/policies/domain/entities/policy-type.entity';
 import { GuardPolicyMapper } from '#/modules/policies/routes/mappers/guard-policy.mapper';
 
@@ -55,6 +56,14 @@ describe('GuardPolicyMapper', () => {
       .with('chainId', SEPOLIA)
       .with('safe', safe.address)
       .with('guard', guard);
+  }
+
+  function accessOf(policy: PolicyIndexerGuardPolicyBinding): PolicyAccess {
+    return {
+      target: policy.target,
+      selector: policy.selector,
+      operation: policy.operation,
+    };
   }
 
   describe('kinds', () => {
@@ -199,6 +208,7 @@ describe('GuardPolicyMapper', () => {
             safePolicyGuard: guard,
           },
         },
+        access: accessOf(policy),
       });
     });
 
@@ -210,7 +220,11 @@ describe('GuardPolicyMapper', () => {
       const [result] = map([policy], { transactionGuard: null });
 
       expect(result.enabled).toBe(false);
-      expect(result.enforcement).toStrictEqual({ via: 'guard', guards: {} });
+      expect(result.enforcement).toStrictEqual({
+        via: 'guard',
+        guards: {},
+        access: accessOf(policy),
+      });
     });
 
     it('should report the module guard slot when only the module guard is set', () => {
@@ -230,6 +244,7 @@ describe('GuardPolicyMapper', () => {
             safePolicyGuard: guard,
           },
         },
+        access: accessOf(policy),
       });
     });
 
@@ -249,6 +264,7 @@ describe('GuardPolicyMapper', () => {
       expect(result.enforcement).toStrictEqual({
         via: 'guard',
         guards: { transactionGuard: contracts, moduleGuard: contracts },
+        access: accessOf(policy),
       });
     });
 
@@ -269,6 +285,7 @@ describe('GuardPolicyMapper', () => {
             safePolicyGuard: guard,
           },
         },
+        access: accessOf(policy),
       });
     });
 
@@ -299,7 +316,6 @@ describe('GuardPolicyMapper', () => {
         .with('kind', 'ALLOW')
         .with('target', zeroAddress)
         .with('selector', '0x00000000')
-        .with('isFallback', true)
         .with('state', null)
         .build();
 
@@ -310,6 +326,61 @@ describe('GuardPolicyMapper', () => {
         enabled: true,
         data: {},
       });
+      expect(result.enforcement).toMatchObject({
+        access: {
+          target: zeroAddress,
+          selector: '0x00000000',
+        },
+      });
+    });
+
+    it('should report the calls the binding governs', () => {
+      const policy = binding()
+        .with('kind', 'MULTISEND')
+        .with('target', getAddress(faker.finance.ethereumAddress()))
+        .with(
+          'selector',
+          faker.string.hexadecimal({
+            length: 8,
+            casing: 'lower',
+          }) as `0x${string}`,
+        )
+        .with('operation', 'DELEGATECALL')
+        .with('state', null)
+        .build();
+
+      const [result] = map([policy]);
+
+      expect(result.enforcement).toMatchObject({
+        via: 'guard',
+        access: {
+          target: policy.target,
+          selector: policy.selector,
+          operation: 'DELEGATECALL',
+        },
+      });
+    });
+
+    it('should tell apart bindings of one policy by the calls they govern', () => {
+      // One ALLOW policy bound to three owner-management selectors is three
+      // items that differ only in their access.
+      const selectors = faker.helpers.uniqueArray(
+        () => faker.string.hexadecimal({ length: 8, casing: 'lower' }),
+        3,
+      ) as Array<`0x${string}`>;
+      const bindings = selectors.map((selector) =>
+        binding()
+          .with('kind', 'ALLOW')
+          .with('selector', selector)
+          .with('state', null)
+          .build(),
+      );
+
+      const result = map(bindings);
+
+      expect(result.map((item) => item.enforcement)).toMatchObject(
+        selectors.map((selector) => ({ access: { selector } })),
+      );
     });
 
     it('should report one item per binding, even when they share a list', () => {

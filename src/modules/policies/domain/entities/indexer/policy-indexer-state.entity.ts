@@ -179,7 +179,6 @@ const PolicyIndexerGuardPolicyBindingBaseSchema = z.object({
   operation: z.enum(PolicyOperation),
   policy: AddressSchema,
   active: z.boolean(),
-  isFallback: z.boolean(),
 });
 
 export const PolicyIndexerGuardPolicyBindingSchema = z.discriminatedUnion(

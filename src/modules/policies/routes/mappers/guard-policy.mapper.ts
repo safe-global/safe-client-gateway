@@ -60,7 +60,14 @@ export class GuardPolicyMapper {
 
       guardPolicies.push({
         type,
-        enforcement: guardEnforcement(guards),
+        enforcement: guardEnforcement({
+          guards,
+          access: {
+            target: binding.target,
+            selector: binding.selector,
+            operation: binding.operation,
+          },
+        }),
         // Configured on the guard, but only enforced while the Safe has that
         // guard set - a policy configured before setGuard is reported, with no
         // slot, rather than hidden.

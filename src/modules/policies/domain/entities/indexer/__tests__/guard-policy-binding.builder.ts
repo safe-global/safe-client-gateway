@@ -14,7 +14,6 @@ export type RawIndexerGuardPolicyBinding = {
   kind: string;
   policy: string;
   active: boolean;
-  isFallback: boolean;
   state: unknown;
 };
 
@@ -30,7 +29,6 @@ export function rawIndexerGuardPolicyBindingBuilder(): IBuilder<RawIndexerGuardP
       .with('kind', 'ERC20_TRANSFER')
       .with('policy', getAddress(faker.finance.ethereumAddress()))
       .with('active', true)
-      .with('isFallback', false)
       // An allowlist entry is an address plus how far its grant reaches.
       .with('state', {
         recipients: [
@@ -59,6 +57,5 @@ export function policyIndexerGuardPolicyBindingBuilder(): IBuilder<PolicyIndexer
     .with('kind', 'ERC20_TRANSFER')
     .with('policy', getAddress(raw.policy))
     .with('active', true)
-    .with('isFallback', false)
     .with('state', raw.state);
 }

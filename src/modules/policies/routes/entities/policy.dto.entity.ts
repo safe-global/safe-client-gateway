@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
-import type { Address } from 'viem';
+import type { Address, Hex } from 'viem';
 import {
   type ActivePolicy,
   type ActivePolicyData,
@@ -15,12 +15,15 @@ import {
   type StatelessPolicyData,
 } from '#/modules/policies/domain/entities/active-policy.entity';
 import type {
+  GuardEnforcement,
   GuardSlots,
   ModuleEnforcement,
   OffChainEnforcement,
+  PolicyAccess,
   PolicyContracts,
   PolicyEnforcement,
 } from '#/modules/policies/domain/entities/policy-enforcement.entity';
+import { PolicyOperation } from '#/modules/policies/domain/entities/policy-operation.entity';
 import {
   PolicyEnforcementKind,
   PolicyType,
@@ -73,11 +76,31 @@ export class ModuleEnforcementDto implements ModuleEnforcement {
   public readonly moduleAddress!: Address;
 }
 
-export class GuardEnforcementDto {
+export class PolicyAccessDto implements PolicyAccess {
+  @ApiProperty({
+    type: String,
+    description: 'The contract the governed calls target',
+  })
+  public readonly target!: Address;
+  @ApiProperty({
+    type: String,
+    description: 'The 4-byte function selector of the governed calls',
+  })
+  public readonly selector!: Hex;
+  @ApiProperty({ enum: Object.values(PolicyOperation) })
+  public readonly operation!: PolicyOperation;
+}
+
+export class GuardEnforcementDto implements GuardEnforcement {
   @ApiProperty({ enum: [PolicyEnforcementKind.Guard] })
   public readonly via!: typeof PolicyEnforcementKind.Guard;
   @ApiProperty({ type: GuardSlotsDto })
   public readonly guards!: GuardSlots;
+  @ApiProperty({
+    type: PolicyAccessDto,
+    description: 'The calls the guard applies the policy to',
+  })
+  public readonly access!: PolicyAccess;
 }
 
 export class OffChainEnforcementDto implements OffChainEnforcement {

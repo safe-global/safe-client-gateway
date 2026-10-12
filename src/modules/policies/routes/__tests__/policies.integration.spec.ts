@@ -658,6 +658,11 @@ describe('Space Policies Controller', () => {
                 safePolicyGuard,
               },
             },
+            access: {
+              target: getAddress(binding.target),
+              selector: binding.selector,
+              operation: binding.operation,
+            },
           },
           enabled: true,
         }),
@@ -720,6 +725,45 @@ describe('Space Policies Controller', () => {
         PolicyType.SpendingLimit,
         PolicyType.Allow,
       ]);
+    });
+
+    it('should report the access of a guard policy only', async () => {
+      const binding = rawIndexerGuardPolicyBindingBuilder()
+        .with('chainId', Number(SEPOLIA_CHAIN_ID))
+        .with('safe', safeAddress)
+        .with('guard', safePolicyGuard)
+        .with('kind', 'ALLOW')
+        .with('state', null)
+        .build();
+      mockUpstream();
+      mockIndexer(
+        rawPolicyIndexerResponse({
+          SafeAllowance: [anAllowance().build()],
+          GuardPolicyBinding: [binding],
+        }),
+      );
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+
+      const { body } = await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}/policies/active`)
+        .query({ types: policyTypes })
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200);
+
+      const [spendingLimit, allow] = body as Array<{
+        enforcement: Record<string, unknown>;
+      }>;
+      expect(spendingLimit.enforcement).toStrictEqual({
+        via: 'module',
+        moduleAddress: allowanceModule,
+      });
+      expect(allow.enforcement.access).toStrictEqual({
+        target: getAddress(binding.target),
+        selector: binding.selector,
+        operation: binding.operation,
+      });
     });
 
     it('should report a limit as unenforced when the module is not enabled', async () => {
