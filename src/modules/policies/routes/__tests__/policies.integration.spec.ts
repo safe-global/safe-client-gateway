@@ -131,9 +131,13 @@ describe('Space Policies Controller', () => {
       queuedTransactions?: Array<MultisigTransaction>;
       tokens?: Array<Token>;
       tokenNotFoundAddresses?: Array<string>;
+      guard?: `0x${string}`;
+      moduleGuard?: `0x${string}`;
     } = {},
   ): void {
     const modules = args.modules ?? [allowanceModule];
+    const guard = args.guard ?? safePolicyGuard;
+    const moduleGuard = args.moduleGuard ?? zeroAddress;
     const delegates = args.delegates ?? [];
     const queuedTransactions = args.queuedTransactions ?? [];
     const tokens = args.tokens ?? [];
@@ -141,12 +145,14 @@ describe('Space Policies Controller', () => {
     const safe = safeBuilder()
       .with('address', safeAddress)
       .with('modules', modules)
-      .with('guard', safePolicyGuard)
+      .with('guard', guard)
+      .with('moduleGuard', moduleGuard)
       .build();
     const polygonSafe = safeBuilder()
       .with('address', polygonSafeAddress)
       .with('modules', modules)
-      .with('guard', safePolicyGuard)
+      .with('guard', guard)
+      .with('moduleGuard', moduleGuard)
       .build();
 
     networkService.get.mockImplementation(({ url }) => {
@@ -618,6 +624,43 @@ describe('Space Policies Controller', () => {
             ],
           },
         },
+      ]);
+    });
+
+    it('should report a guard policy enforced by the module guard slot alone', async () => {
+      const binding = rawIndexerGuardPolicyBindingBuilder()
+        .with('chainId', Number(SEPOLIA_CHAIN_ID))
+        .with('safe', safeAddress)
+        .with('guard', safePolicyGuard)
+        .with('kind', 'ALLOW')
+        .with('state', null)
+        .build();
+      mockUpstream({ guard: zeroAddress, moduleGuard: safePolicyGuard });
+      mockIndexer(rawPolicyIndexerResponse({ GuardPolicyBinding: [binding] }));
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+
+      const { body } = await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}/policies/active`)
+        .query({ types: policyTypes })
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200);
+
+      expect(body).toStrictEqual([
+        expect.objectContaining({
+          type: PolicyType.Allow,
+          enforcement: {
+            via: 'guard',
+            guards: {
+              moduleGuard: {
+                policyContract: getAddress(binding.policy),
+                safePolicyGuard,
+              },
+            },
+          },
+          enabled: true,
+        }),
       ]);
     });
 

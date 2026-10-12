@@ -37,7 +37,10 @@ describe('GuardPolicyMapper', () => {
 
   function map(
     bindings: Array<PolicyIndexerGuardPolicyBinding>,
-    overrides?: { transactionGuard?: Address | null },
+    overrides?: {
+      transactionGuard?: Address | null;
+      moduleGuard?: Address | null;
+    },
   ) {
     return target.map({
       safe,
@@ -46,6 +49,8 @@ describe('GuardPolicyMapper', () => {
         overrides?.transactionGuard === undefined
           ? guard
           : overrides.transactionGuard,
+      moduleGuard:
+        overrides?.moduleGuard === undefined ? null : overrides.moduleGuard,
     });
   }
 
@@ -260,6 +265,66 @@ describe('GuardPolicyMapper', () => {
       const [result] = map([policy], { transactionGuard: null });
 
       expect(result.enabled).toBe(false);
+      expect(result.enforcement).toStrictEqual({ via: 'guard', guards: {} });
+    });
+
+    it('should report the module guard slot when only the module guard is set', () => {
+      const policy = binding().with('state', { recipients: [] }).build();
+
+      const [result] = map([policy], {
+        transactionGuard: null,
+        moduleGuard: guard,
+      });
+
+      expect(result.enabled).toBe(true);
+      expect(result.enforcement).toStrictEqual({
+        via: 'guard',
+        guards: {
+          moduleGuard: {
+            policyContract: policy.policy,
+            safePolicyGuard: guard,
+          },
+        },
+      });
+    });
+
+    it('should report both slots when the guard is set in both', () => {
+      const policy = binding().with('state', { recipients: [] }).build();
+      const contracts = {
+        policyContract: policy.policy,
+        safePolicyGuard: guard,
+      };
+
+      const [result] = map([policy], {
+        transactionGuard: guard,
+        moduleGuard: guard,
+      });
+
+      expect(result.enabled).toBe(true);
+      expect(result.enforcement).toStrictEqual({
+        via: 'guard',
+        guards: { transactionGuard: contracts, moduleGuard: contracts },
+      });
+    });
+
+    it('should report only the slot holding the guard when the other holds another', () => {
+      const policy = binding().with('state', { recipients: [] }).build();
+
+      const [result] = map([policy], {
+        transactionGuard: getAddress(faker.finance.ethereumAddress()),
+        moduleGuard: guard,
+      });
+
+      expect(result.enabled).toBe(true);
+      expect(result.enforcement).toStrictEqual({
+        via: 'guard',
+        guards: {
+          moduleGuard: {
+            policyContract: policy.policy,
+            safePolicyGuard: guard,
+          },
+        },
+      });
     });
 
     it('should report a policy as unenforced when another guard is set', () => {

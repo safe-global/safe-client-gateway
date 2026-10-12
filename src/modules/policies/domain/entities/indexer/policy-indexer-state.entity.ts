@@ -163,11 +163,6 @@ export type PolicyIndexerGuardPolicyKind = z.infer<
 /**
  * One `SafePolicyGuard` binding, aggregated by the indexer per
  * `(guard, safe, target, selector, operation)`.
- *
- * `state` is the *accumulated* configuration, already folded from the payload
- * deltas of every `PolicyConfirmed` for the access - which is why CGW no longer
- * replays events. Its shape is decided by `kind`, so it is carried as `unknown`
- * here and parsed by the assembler that owns the kind.
  */
 export const PolicyIndexerGuardPolicyBindingSchema = z.object({
   chainId: PolicyIndexerChainIdSchema,
@@ -179,13 +174,7 @@ export const PolicyIndexerGuardPolicyBindingSchema = z.object({
   operation: z.enum(PolicyOperation),
   kind: PolicyIndexerGuardPolicyKindSchema,
   policy: AddressSchema,
-  /**
-   * `false` once unbound. The binding keeps its `policy`, `kind` and `state`,
-   * because the policy contract's own storage is untouched by an unbind and the
-   * retained configuration returns to effect if the access is rebound.
-   */
   active: z.boolean(),
-  /** `target` and `selector` both zeroed - the catch-all binding. */
   isFallback: z.boolean(),
   state: z.unknown(),
 });

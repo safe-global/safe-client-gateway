@@ -61,7 +61,7 @@ describe('SpendingLimitMapper', () => {
    * `ActivePolicyData` is a union once guard policies join it, and every policy
    * this mapper builds is a spending limit.
    */
-  function dataOf(policy: ActivePolicy): SpendingLimitPolicyData {
+  function getSpendingLimitData(policy: ActivePolicy): SpendingLimitPolicyData {
     return policy.data as SpendingLimitPolicyData;
   }
 
@@ -76,7 +76,9 @@ describe('SpendingLimitMapper', () => {
 
       expect(policies).toHaveLength(1);
       expect(
-        dataOf(policies[0]).spenders.map((entry) => entry.spender),
+        getSpendingLimitData(policies[0]).spenders.map(
+          (entry) => entry.spender,
+        ),
       ).toStrictEqual([first.delegate, second.delegate]);
     });
 
@@ -90,9 +92,9 @@ describe('SpendingLimitMapper', () => {
 
       const [policy] = map([usdc, native]);
 
-      expect(dataOf(policy).spenders).toHaveLength(1);
+      expect(getSpendingLimitData(policy).spenders).toHaveLength(1);
       expect(
-        dataOf(policy).spenders[0].allowances.map(
+        getSpendingLimitData(policy).spenders[0].allowances.map(
           (entry) => entry.tokenAddress,
         ),
       ).toStrictEqual([usdc.token, zeroAddress]);
@@ -134,10 +136,9 @@ describe('SpendingLimitMapper', () => {
 
       const policies = map([onV1, onV2], [allowanceModule, otherModule]);
 
-      expect(policies.map((policy) => dataOf(policy).module)).toStrictEqual([
-        allowanceModule,
-        otherModule,
-      ]);
+      expect(
+        policies.map((policy) => getSpendingLimitData(policy).module),
+      ).toStrictEqual([allowanceModule, otherModule]);
     });
   });
 
@@ -175,7 +176,7 @@ describe('SpendingLimitMapper', () => {
     function onlyAllowance(
       rows: Array<PolicyIndexerSafeAllowance>,
     ): SpendingLimitPolicyData['spenders'][number]['allowances'][number] {
-      return dataOf(map(rows)[0]).spenders[0].allowances[0];
+      return getSpendingLimitData(map(rows)[0]).spenders[0].allowances[0];
     }
 
     afterEach(() => {
@@ -347,7 +348,7 @@ describe('SpendingLimitMapper', () => {
 
       const [policy] = map([revoked]);
 
-      expect(dataOf(policy).spenders[0]).toMatchObject({
+      expect(getSpendingLimitData(policy).spenders[0]).toMatchObject({
         spender: revoked.delegate,
         isActive: false,
       });
@@ -360,9 +361,9 @@ describe('SpendingLimitMapper', () => {
 
       const [policy] = map([revoked]);
 
-      expect(dataOf(policy).spenders[0].allowances[0].isDelegateActive).toBe(
-        false,
-      );
+      expect(
+        getSpendingLimitData(policy).spenders[0].allowances[0].isDelegateActive,
+      ).toBe(false);
     });
   });
 
@@ -373,7 +374,9 @@ describe('SpendingLimitMapper', () => {
 
       const [policy] = map([large]);
 
-      expect(dataOf(policy).spenders[0].allowances[0]).toMatchObject({
+      expect(
+        getSpendingLimitData(policy).spenders[0].allowances[0],
+      ).toMatchObject({
         amount: huge,
         spent: '0',
       });
@@ -384,9 +387,9 @@ describe('SpendingLimitMapper', () => {
 
       const [policy] = map([native]);
 
-      expect(dataOf(policy).spenders[0].allowances[0].tokenAddress).toBe(
-        zeroAddress,
-      );
+      expect(
+        getSpendingLimitData(policy).spenders[0].allowances[0].tokenAddress,
+      ).toBe(zeroAddress);
     });
 
     it('should keep the creation time unchanged', () => {
@@ -395,9 +398,9 @@ describe('SpendingLimitMapper', () => {
 
       const [policy] = map([row]);
 
-      expect(dataOf(policy).spenders[0].allowances[0].createdAt).toBe(
-        createdAt,
-      );
+      expect(
+        getSpendingLimitData(policy).spenders[0].allowances[0].createdAt,
+      ).toBe(createdAt);
     });
 
     it('should keep the last-updated time unchanged', () => {
@@ -406,9 +409,9 @@ describe('SpendingLimitMapper', () => {
 
       const [policy] = map([row]);
 
-      expect(dataOf(policy).spenders[0].allowances[0].updatedAt).toBe(
-        updatedAt,
-      );
+      expect(
+        getSpendingLimitData(policy).spenders[0].allowances[0].updatedAt,
+      ).toBe(updatedAt);
     });
   });
 
@@ -426,7 +429,7 @@ describe('SpendingLimitMapper', () => {
       const [policy] = map([row], [allowanceModule], tokenMetadata);
 
       expect(
-        dataOf(policy).spenders[0].allowances[0].tokenMetadata,
+        getSpendingLimitData(policy).spenders[0].allowances[0].tokenMetadata,
       ).toStrictEqual(metadata);
     });
 
@@ -435,7 +438,9 @@ describe('SpendingLimitMapper', () => {
 
       const [policy] = map([row], [allowanceModule], new Map());
 
-      expect(dataOf(policy).spenders[0].allowances[0].tokenMetadata).toBeNull();
+      expect(
+        getSpendingLimitData(policy).spenders[0].allowances[0].tokenMetadata,
+      ).toBeNull();
     });
 
     it("should not attach another token's metadata to this allowance", () => {
@@ -450,7 +455,9 @@ describe('SpendingLimitMapper', () => {
 
       const [policy] = map([row], [allowanceModule], tokenMetadata);
 
-      expect(dataOf(policy).spenders[0].allowances[0].tokenMetadata).toBeNull();
+      expect(
+        getSpendingLimitData(policy).spenders[0].allowances[0].tokenMetadata,
+      ).toBeNull();
     });
   });
 });

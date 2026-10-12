@@ -15,6 +15,10 @@ import type {
   PolicyIndexerGuardPolicyBinding,
   PolicyIndexerGuardPolicyKind,
 } from '#/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
+import type {
+  GuardSlots,
+  PolicyContracts,
+} from '#/modules/policies/domain/entities/policy-enforcement.entity';
 import {
   PolicyEnforcementKind,
   PolicyType,
@@ -22,20 +26,6 @@ import {
 import type { SafeRef } from '#/modules/policies/domain/entities/safe-ref.entity';
 import { AddressSchema } from '#/validation/entities/schemas/address.schema';
 
-/**
- * The accumulated configuration of the two policies that hold any, as the
- * indexer stores it in `SafePolicy.state`.
- *
- * The policy contracts' `configure` is an upsert of deltas, so only the folded
- * sequence describes the state - which the indexer has already folded. CGW
- * parses the result rather than replaying anything.
- *
- * An allowlist entry is an address plus how far its grant reaches. `permission`
- * lives inside the indexer's `jsonb` rather than in a column, so it carries no
- * schema signal and CGW validates the value set itself - rejecting rather than
- * defaulting, since guessing between a single-use and an open-ended grant is the
- * wrong way to be wrong about a permission.
- */
 const Erc20TransferStateSchema = z.object({
   recipients: z.array(
     z.object({
@@ -49,18 +39,9 @@ const CosignerStateSchema = z.object({
   cosigner: AddressSchema,
 });
 
-/**
- * Turns one `GuardPolicyBinding` row into the payload its kind implies.
- *
- * A kind absent from this map is one CGW does not render - `ERC20_APPROVE`,
- * `ALLOWED_MODULE`, `MULTISEND`, and the `NONE`/`UNKNOWN` the indexer reports
- * for an unbound or unregistered policy. Skipping them is deliberate: rendering
- * an unknown restriction is worse than omitting it.
- */
 const PAYLOADS: ReadonlyArray<{
   kind: PolicyIndexerGuardPolicyKind;
   type: PolicyType;
-  /** `null` when the state is not the shape the kind implies. */
   data: (binding: PolicyIndexerGuardPolicyBinding) => ActivePolicyData | null;
 }> = [
   {
@@ -71,8 +52,8 @@ const PAYLOADS: ReadonlyArray<{
       if (!state.success) {
         return null;
       }
-      // The policy keys its recipients by token, and the access target *is* the
-      // token - so the binding names the token its list applies to.
+      // The policy keys its recipients by token, and the access target is the
+      // token.
       return {
         allowlist: [
           {
@@ -100,24 +81,10 @@ const PAYLOADS: ReadonlyArray<{
   },
 ];
 
-/**
- * The policy types this mapper can report, derived from {@link PAYLOADS} so a
- * kind added there is filterable without a second list to keep in step.
- *
- * A request naming none of these needs neither the guard bindings nor the
- * Safe's guard slot read.
- */
 export const GUARD_POLICY_TYPES: ReadonlyArray<PolicyType> = PAYLOADS.map(
   (payload) => payload.type,
 );
 
-/**
- * The indexer kinds behind {@link types}, which is what narrows the
- * `GuardPolicyBinding` rows the query asks for.
- *
- * Empty when a request names no guard-enforced type - the caller reads no
- * bindings at all rather than asking the indexer for none of them.
- */
 export function guardPolicyKindsOf(
   types: ReadonlyArray<PolicyType>,
 ): Array<PolicyIndexerGuardPolicyKind> {
@@ -126,15 +93,6 @@ export function guardPolicyKindsOf(
   );
 }
 
-/**
- * Builds the guard-enforced policies of one Safe from the `SafePolicyGuard`
- * bindings the indexer serves.
- *
- * One item per binding. Rows that share a storage key already carry the same
- * accumulated `state` - the indexer writes it to all of them - so the "fold
- * `transfer` and `transferFrom` into one entry" step that event aggregation
- * needed does not exist here.
- */
 @Injectable()
 export class GuardPolicyMapper {
   constructor(
@@ -144,15 +102,11 @@ export class GuardPolicyMapper {
 
   public map(args: {
     safe: SafeRef;
-    /** Already scoped to {@link args.safe} by the caller. */
     bindings: ReadonlyArray<PolicyIndexerGuardPolicyBinding>;
-    /**
-     * The guard set on the Safe, which is what makes a guard policy enforced.
-     *
-     * Only the transaction guard slot: the module guard cannot be read from the
-     * Transaction Service's single-Safe endpoint yet (WA-2914).
-     */
+    /** The guard in the Safe's transaction-guard slot. */
     transactionGuard: Address | null;
+    /** The guard in the Safe's module-guard slot. */
+    moduleGuard: Address | null;
   }): Array<ActivePolicy> {
     const guardPolicies: Array<ActivePolicy> = [];
 
@@ -169,7 +123,11 @@ export class GuardPolicyMapper {
 
   private toPolicy(
     binding: PolicyIndexerGuardPolicyBinding,
-    args: { safe: SafeRef; transactionGuard: Address | null },
+    args: {
+      safe: SafeRef;
+      transactionGuard: Address | null;
+      moduleGuard: Address | null;
+    },
   ): ActivePolicy | null {
     const payload = PAYLOADS.find(({ kind }) => kind === binding.kind);
 
@@ -199,25 +157,32 @@ export class GuardPolicyMapper {
       return null;
     }
 
+    const contracts: PolicyContracts = {
+      policyContract: binding.policy,
+      safePolicyGuard: binding.guard,
+    };
+    const guards: GuardSlots = {
+      ...(isGuardSet(args.transactionGuard, binding.guard) && {
+        transactionGuard: contracts,
+      }),
+      ...(isGuardSet(args.moduleGuard, binding.guard) && {
+        moduleGuard: contracts,
+      }),
+    };
+
     return {
       type: payload.type,
-      enforcement: {
-        via: PolicyEnforcementKind.Guard,
-        guards: {
-          transactionGuard: {
-            policyContract: binding.policy,
-            safePolicyGuard: binding.guard,
-          },
-        },
-      },
+      enforcement: { via: PolicyEnforcementKind.Guard, guards },
       // Configured on the guard, but only enforced while the Safe has that
-      // guard set - a policy configured through configureImmediately before
-      // setGuard is reported rather than hidden.
-      enabled:
-        args.transactionGuard !== null &&
-        isAddressEqual(args.transactionGuard, binding.guard),
+      // guard set in a slot - a policy configured through configureImmediately
+      // before setGuard is reported, with no slot, rather than hidden.
+      enabled: Object.keys(guards).length > 0,
       data,
       safe: args.safe,
     };
   }
+}
+
+function isGuardSet(slot: Address | null, guard: Address): boolean {
+  return slot !== null && isAddressEqual(slot, guard);
 }

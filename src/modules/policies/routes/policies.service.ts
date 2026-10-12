@@ -63,12 +63,10 @@ type SpacePolicyRequest = {
   authPayload: AuthPayload;
 };
 
-/**
- * What the Safe itself has switched on - see {@link PoliciesService.enforcers}.
- */
 type Enforcers = {
   enabledModules: ReadonlyArray<Address>;
   transactionGuard: Address | null;
+  moduleGuard: Address | null;
 };
 
 @Injectable()
@@ -269,6 +267,7 @@ export class PoliciesService {
               guardPolicyKinds,
             ),
             transactionGuard: enforcers.transactionGuard,
+            moduleGuard: enforcers.moduleGuard,
           }),
         );
       }
@@ -577,19 +576,23 @@ export class PoliciesService {
 
   /**
    * What the Safe itself has switched on: the modules it has enabled and the
-   * guard it has set. Both are what turn a configured policy into an enforced
-   * one.
+   * guards it has set, in the transaction and the module slot. These are what
+   * turn a configured policy into an enforced one.
    *
    * Read from the Safe rather than the indexer: enablement lives in the Safe's
    * own storage, and CGW already serves it.
    */
   private async enforcers(safe: SafeRef): Promise<Enforcers> {
-    const { modules, guard } = await this.safeRepository.getSafe({
+    const { modules, guard, moduleGuard } = await this.safeRepository.getSafe({
       chainId: safe.chainId,
       address: safe.address,
     });
 
-    return { enabledModules: modules ?? [], transactionGuard: guard };
+    return {
+      enabledModules: modules ?? [],
+      transactionGuard: guard,
+      moduleGuard,
+    };
   }
 
   /**
@@ -612,11 +615,6 @@ export class PoliciesService {
   /**
    * The guard bindings belonging to {@link safe} that {@link guardPolicyKinds}
    * names.
-   *
-   * Scoped by Safe for the same reason as {@link getAllowancesBySafe}: one read
-   * covers every Safe of a request. Scoped by kind because the read is shared
-   * too - a cached slice was fetched for whatever kinds that caller asked for,
-   * so the narrowing the query already did is not something this can assume.
    */
   private getGuardPolicyBindingsBySafe(
     bindings: ReadonlyArray<PolicyIndexerGuardPolicyBinding>,

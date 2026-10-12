@@ -27,7 +27,7 @@ export const POLICY_INDEXER_STATE_QUERY = `query PolicyIndexerState(
   $allowances: [SafeAllowance_bool_exp!]!
   $delegates: [SafeDelegate_bool_exp!]!
   $guardPolicyBindings: [SafePolicy_bool_exp!]!
-  $guardPolicyKinds: [String!]!
+  $guardPolicyKinds: [policykind!]!
 ) {
   _meta { chainId progressBlock sourceBlock isReady }
   SafeAllowance(
