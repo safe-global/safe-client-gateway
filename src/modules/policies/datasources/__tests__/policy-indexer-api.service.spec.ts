@@ -71,7 +71,7 @@ function requestWith(groups: Array<ReturnType<typeof pairGroup>>): object {
       variables: {
         allowances: groups,
         delegates: groups,
-        policies: groups,
+        guardPolicyBindings: groups,
         policyKinds: [...policyKinds],
       },
     }),
@@ -168,7 +168,7 @@ describe('PolicyIndexerApi', () => {
         '_meta',
         'SafeAllowance',
         'SafeDelegate',
-        'SafePolicy',
+        'GuardPolicyBinding',
       ]) {
         expect(mockNetworkService.post).toHaveBeenCalledWith(
           expect.objectContaining({

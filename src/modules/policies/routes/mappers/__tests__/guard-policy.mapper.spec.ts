@@ -8,8 +8,8 @@ import type {
   CosignerPolicyData,
   Erc20TransferPolicyData,
 } from '#/modules/policies/domain/entities/active-policy.entity';
-import { policyIndexerSafePolicyBuilder } from '#/modules/policies/domain/entities/indexer/__tests__/safe-policy.builder';
-import type { PolicyIndexerSafePolicy } from '#/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
+import { policyIndexerGuardPolicyBindingBuilder } from '#/modules/policies/domain/entities/indexer/__tests__/guard-policy-binding.builder';
+import type { PolicyIndexerGuardPolicyBinding } from '#/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 import { PolicyType } from '#/modules/policies/domain/entities/policy-type.entity';
 import { GuardPolicyMapper } from '#/modules/policies/routes/mappers/guard-policy.mapper';
 
@@ -36,12 +36,12 @@ describe('GuardPolicyMapper', () => {
   });
 
   function map(
-    policies: Array<PolicyIndexerSafePolicy>,
+    bindings: Array<PolicyIndexerGuardPolicyBinding>,
     overrides?: { transactionGuard?: Address | null },
   ) {
     return target.map({
       safe,
-      policies,
+      bindings,
       transactionGuard:
         overrides?.transactionGuard === undefined
           ? guard
@@ -50,8 +50,10 @@ describe('GuardPolicyMapper', () => {
   }
 
   /** A binding of `safe` on `guard`. */
-  function binding(): ReturnType<typeof policyIndexerSafePolicyBuilder> {
-    return policyIndexerSafePolicyBuilder()
+  function binding(): ReturnType<
+    typeof policyIndexerGuardPolicyBindingBuilder
+  > {
+    return policyIndexerGuardPolicyBindingBuilder()
       .with('chainId', SEPOLIA)
       .with('safe', safe.address)
       .with('guard', guard);
@@ -176,7 +178,7 @@ describe('GuardPolicyMapper', () => {
       ['NATIVE_TRANSFER', PolicyType.NativeTransfer],
     ])('should report %s with an empty payload', (kind, type) => {
       const policy = binding()
-        .with('kind', kind as PolicyIndexerSafePolicy['kind'])
+        .with('kind', kind as PolicyIndexerGuardPolicyBinding['kind'])
         .with('state', null)
         .build();
 
@@ -195,7 +197,7 @@ describe('GuardPolicyMapper', () => {
     ])('should skip %s, which CGW does not render', (kind) => {
       // Rendering an unknown restriction is worse than omitting it.
       const policy = binding()
-        .with('kind', kind as PolicyIndexerSafePolicy['kind'])
+        .with('kind', kind as PolicyIndexerGuardPolicyBinding['kind'])
         .build();
 
       expect(map([policy])).toStrictEqual([]);

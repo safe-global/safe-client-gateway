@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
 import { ChainIdSchema } from '#/modules/chains/domain/entities/schemas/chain-id.schema';
+import { PolicyOperation } from '#/modules/policies/domain/entities/policy-operation.entity';
 import { AddressSchema } from '#/validation/entities/schemas/address.schema';
 import { HexSchema } from '#/validation/entities/schemas/hex.schema';
 
@@ -141,12 +142,6 @@ export type PolicyIndexerSafeDelegate = z.infer<
   typeof PolicyIndexerSafeDelegateSchema
 >;
 
-/**
- * `policykind` and `policyoperation` are exposed as **custom scalars, not
- * GraphQL enums** - introspection reports `SCALAR` with no `enumValues`, so a
- * new indexer release can add a value with no schema signal. CGW therefore
- * validates the value sets itself.
- */
 export const PolicyIndexerPolicyKindSchema = z
   .enum([
     'ERC20_TRANSFER',
@@ -157,26 +152,12 @@ export const PolicyIndexerPolicyKindSchema = z
     'DENY',
     'MULTISEND',
     'NATIVE_TRANSFER',
-    'NONE',
     'UNKNOWN',
   ])
   .catch('UNKNOWN');
 
 export type PolicyIndexerPolicyKind = z.infer<
   typeof PolicyIndexerPolicyKindSchema
->;
-
-/**
- * No fallback: an operation CGW cannot place is not a policy it can report, so
- * the row is dropped by the caller instead of being mis-attributed to `CALL`.
- */
-export const PolicyIndexerPolicyOperationSchema = z.enum([
-  'CALL',
-  'DELEGATECALL',
-]);
-
-export type PolicyIndexerPolicyOperation = z.infer<
-  typeof PolicyIndexerPolicyOperationSchema
 >;
 
 /**
@@ -188,14 +169,14 @@ export type PolicyIndexerPolicyOperation = z.infer<
  * replays events. Its shape is decided by `kind`, so it is carried as `unknown`
  * here and parsed by the assembler that owns the kind.
  */
-export const PolicyIndexerSafePolicySchema = z.object({
+export const PolicyIndexerGuardPolicyBindingSchema = z.object({
   chainId: PolicyIndexerChainIdSchema,
   safe: AddressSchema,
   guard: AddressSchema,
   target: AddressSchema,
   /** Trimmed to four bytes by the indexer; the event carries 32. */
   selector: HexSchema,
-  operation: PolicyIndexerPolicyOperationSchema,
+  operation: z.enum(PolicyOperation),
   kind: PolicyIndexerPolicyKindSchema,
   policy: AddressSchema,
   /**
@@ -209,8 +190,8 @@ export const PolicyIndexerSafePolicySchema = z.object({
   state: z.unknown(),
 });
 
-export type PolicyIndexerSafePolicy = z.infer<
-  typeof PolicyIndexerSafePolicySchema
+export type PolicyIndexerGuardPolicyBinding = z.infer<
+  typeof PolicyIndexerGuardPolicyBindingSchema
 >;
 
 /**
@@ -242,7 +223,7 @@ export const PolicyIndexerRowsSchema = z.object({
   _meta: z.array(z.unknown()),
   SafeAllowance: z.array(z.unknown()),
   SafeDelegate: z.array(z.unknown()),
-  SafePolicy: z.array(z.unknown()),
+  GuardPolicyBinding: z.array(z.unknown()),
 });
 
 export type PolicyIndexerRows = z.infer<typeof PolicyIndexerRowsSchema>;
@@ -251,8 +232,8 @@ export type PolicyIndexerRows = z.infer<typeof PolicyIndexerRowsSchema>;
  * The validated read: current policy state for the requested Safes.
  */
 export type PolicyIndexerState = {
-  meta: Array<PolicyIndexerMeta>;
-  allowances: Array<PolicyIndexerSafeAllowance>;
-  delegates: Array<PolicyIndexerSafeDelegate>;
-  policies: Array<PolicyIndexerSafePolicy>;
+  meta: ReadonlyArray<PolicyIndexerMeta>;
+  allowances: ReadonlyArray<PolicyIndexerSafeAllowance>;
+  delegates: ReadonlyArray<PolicyIndexerSafeDelegate>;
+  guardPolicyBindings: ReadonlyArray<PolicyIndexerGuardPolicyBinding>;
 };

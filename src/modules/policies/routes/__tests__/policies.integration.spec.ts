@@ -29,6 +29,7 @@ import { delegateBuilder } from '#/modules/delegate/domain/entities/__tests__/de
 import type { Delegate } from '#/modules/delegate/domain/entities/delegate.entity';
 import { NotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/notifications.repository.module';
 import { TestNotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/test.notification.repository.module';
+import { rawIndexerGuardPolicyBindingBuilder } from '#/modules/policies/domain/entities/indexer/__tests__/guard-policy-binding.builder';
 import {
   rawIndexerMetaBuilder,
   rawPolicyIndexerResponse,
@@ -41,7 +42,6 @@ import {
   rawIndexerSafeAllowanceBuilder,
   rawIndexerSafeDelegateBuilder,
 } from '#/modules/policies/domain/entities/indexer/__tests__/safe-allowance.builder';
-import { rawIndexerSafePolicyBuilder } from '#/modules/policies/domain/entities/indexer/__tests__/safe-policy.builder';
 import { PolicyType } from '#/modules/policies/domain/entities/policy-type.entity';
 import { multisigTransactionBuilder } from '#/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
 import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
@@ -572,7 +572,7 @@ describe('Space Policies Controller', () => {
     it('should return a guard-enforced token allowlist', async () => {
       const token = getAddress(faker.finance.ethereumAddress());
       const recipient = getAddress(faker.finance.ethereumAddress());
-      const binding = rawIndexerSafePolicyBuilder()
+      const binding = rawIndexerGuardPolicyBindingBuilder()
         .with('chainId', Number(SEPOLIA_CHAIN_ID))
         .with('safe', safeAddress)
         .with('guard', safePolicyGuard)
@@ -584,7 +584,7 @@ describe('Space Policies Controller', () => {
         })
         .build();
       mockUpstream();
-      mockIndexer(rawPolicyIndexerResponse({ SafePolicy: [binding] }));
+      mockIndexer(rawPolicyIndexerResponse({ GuardPolicyBinding: [binding] }));
       const { accessToken, spaceId } = await createSpaceWithSafe({
         withSafe: true,
       });
@@ -622,7 +622,7 @@ describe('Space Policies Controller', () => {
     });
 
     it('should report a guard policy as unenforced when the guard is not set', async () => {
-      const binding = rawIndexerSafePolicyBuilder()
+      const binding = rawIndexerGuardPolicyBindingBuilder()
         .with('chainId', Number(SEPOLIA_CHAIN_ID))
         .with('safe', safeAddress)
         .with('guard', getAddress(faker.finance.ethereumAddress()))
@@ -630,7 +630,7 @@ describe('Space Policies Controller', () => {
         .with('state', null)
         .build();
       mockUpstream();
-      mockIndexer(rawPolicyIndexerResponse({ SafePolicy: [binding] }));
+      mockIndexer(rawPolicyIndexerResponse({ GuardPolicyBinding: [binding] }));
       const { accessToken, spaceId } = await createSpaceWithSafe({
         withSafe: true,
       });
@@ -651,8 +651,8 @@ describe('Space Policies Controller', () => {
       mockIndexer(
         rawPolicyIndexerResponse({
           SafeAllowance: [anAllowance().build()],
-          SafePolicy: [
-            rawIndexerSafePolicyBuilder()
+          GuardPolicyBinding: [
+            rawIndexerGuardPolicyBindingBuilder()
               .with('chainId', Number(SEPOLIA_CHAIN_ID))
               .with('safe', safeAddress)
               .with('guard', safePolicyGuard)

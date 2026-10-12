@@ -12,8 +12,8 @@ import {
   PolicyPermission,
 } from '#/modules/policies/domain/entities/active-policy.entity';
 import type {
+  PolicyIndexerGuardPolicyBinding,
   PolicyIndexerPolicyKind,
-  PolicyIndexerSafePolicy,
 } from '#/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 import {
   PolicyEnforcementKind,
@@ -50,7 +50,7 @@ const CosignerStateSchema = z.object({
 });
 
 /**
- * Turns one `SafePolicy` row into the payload its kind implies.
+ * Turns one `GuardPolicyBinding` row into the payload its kind implies.
  *
  * A kind absent from this map is one CGW does not render - `ERC20_APPROVE`,
  * `ALLOWED_MODULE`, `MULTISEND`, and the `NONE`/`UNKNOWN` the indexer reports
@@ -61,7 +61,7 @@ const PAYLOADS: ReadonlyArray<{
   kind: PolicyIndexerPolicyKind;
   type: PolicyType;
   /** `null` when the state is not the shape the kind implies. */
-  data: (binding: PolicyIndexerSafePolicy) => ActivePolicyData | null;
+  data: (binding: PolicyIndexerGuardPolicyBinding) => ActivePolicyData | null;
 }> = [
   {
     kind: 'ERC20_TRANSFER',
@@ -113,7 +113,7 @@ export const GUARD_POLICY_TYPES: ReadonlyArray<PolicyType> = PAYLOADS.map(
 
 /**
  * The indexer kinds behind {@link types}, which is what narrows the
- * `SafePolicy` rows the query asks for.
+ * `GuardPolicyBinding` rows the query asks for.
  *
  * Empty when a request names no guard-enforced type - the caller reads no
  * bindings at all rather than asking the indexer for none of them.
@@ -145,7 +145,7 @@ export class GuardPolicyMapper {
   public map(args: {
     safe: SafeRef;
     /** Already scoped to {@link args.safe} by the caller. */
-    policies: ReadonlyArray<PolicyIndexerSafePolicy>;
+    bindings: ReadonlyArray<PolicyIndexerGuardPolicyBinding>;
     /**
      * The guard set on the Safe, which is what makes a guard policy enforced.
      *
@@ -156,7 +156,7 @@ export class GuardPolicyMapper {
   }): Array<ActivePolicy> {
     const guardPolicies: Array<ActivePolicy> = [];
 
-    for (const binding of args.policies) {
+    for (const binding of args.bindings) {
       const policy = this.toPolicy(binding, args);
 
       if (policy) {
@@ -168,7 +168,7 @@ export class GuardPolicyMapper {
   }
 
   private toPolicy(
-    binding: PolicyIndexerSafePolicy,
+    binding: PolicyIndexerGuardPolicyBinding,
     args: { safe: SafeRef; transactionGuard: Address | null },
   ): ActivePolicy | null {
     const payload = PAYLOADS.find(({ kind }) => kind === binding.kind);

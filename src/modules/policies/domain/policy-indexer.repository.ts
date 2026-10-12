@@ -8,6 +8,7 @@ import {
 } from '#/logging/logging.interface';
 import { PolicyIndexerApi } from '#/modules/policies/datasources/policy-indexer-api.service';
 import {
+  PolicyIndexerGuardPolicyBindingSchema,
   PolicyIndexerMetaSchema,
   type PolicyIndexerPolicyKind,
   PolicyIndexerRowsSchema,
@@ -16,7 +17,6 @@ import {
   PolicyIndexerSafeAllowanceSchema,
   type PolicyIndexerSafeDelegate,
   PolicyIndexerSafeDelegateSchema,
-  PolicyIndexerSafePolicySchema,
   type PolicyIndexerState,
 } from '#/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 import type { SafeRef } from '#/modules/policies/domain/entities/safe-ref.entity';
@@ -37,7 +37,12 @@ export class PolicyIndexerRepository implements IPolicyIndexerRepository {
     const safes = this.checksum(args.safes);
 
     if (safes.length === 0) {
-      return { meta: [], allowances: [], delegates: [], policies: [] };
+      return {
+        meta: [],
+        allowances: [],
+        delegates: [],
+        guardPolicyBindings: [],
+      };
     }
 
     const raw = await this.policyIndexerApi.getState({
@@ -62,10 +67,10 @@ export class PolicyIndexerRepository implements IPolicyIndexerRepository {
         this.withAllowanceDelegateStatus(allowance, delegates),
       ),
       delegates,
-      policies: this.parseRows(
-        PolicyIndexerSafePolicySchema,
-        response.SafePolicy,
-        'SafePolicy',
+      guardPolicyBindings: this.parseRows(
+        PolicyIndexerGuardPolicyBindingSchema,
+        response.GuardPolicyBinding,
+        'GuardPolicyBinding',
       ),
     };
   }

@@ -11,20 +11,22 @@ type PolicyIndexerPairFilter = {
 };
 
 export type PolicyIndexerVariables = {
-  allowances: Array<PolicyIndexerPairFilter>;
-  delegates: Array<PolicyIndexerPairFilter>;
-  policies: Array<PolicyIndexerPairFilter>;
-  /** The guard-policy kinds the caller reports, as `SafePolicy.kind` holds them. */
-  policyKinds: Array<PolicyIndexerPolicyKind>;
+  allowances: ReadonlyArray<PolicyIndexerPairFilter>;
+  delegates: ReadonlyArray<PolicyIndexerPairFilter>;
+  guardPolicyBindings: ReadonlyArray<PolicyIndexerPairFilter>;
+  policyKinds: ReadonlyArray<PolicyIndexerPolicyKind>;
 };
 
 /**
  * Current allowance-module state for a set of Safes.
+ *
+ * The indexer calls its `SafePolicyGuard` bindings `SafePolicy`; they are
+ * aliased to `GuardPolicyBinding` so the name says what a row is.
  */
 export const POLICY_INDEXER_STATE_QUERY = `query PolicyIndexerState(
   $allowances: [SafeAllowance_bool_exp!]!
   $delegates: [SafeDelegate_bool_exp!]!
-  $policies: [SafePolicy_bool_exp!]!
+  $guardPolicyBindings: [SafePolicy_bool_exp!]!
   $policyKinds: [String!]!
 ) {
   _meta { chainId progressBlock sourceBlock isReady }
@@ -41,8 +43,8 @@ export const POLICY_INDEXER_STATE_QUERY = `query PolicyIndexerState(
   ) {
     chainId safe module moduleVersion delegate active addedAt updatedAt
   }
-  SafePolicy(
-    where: { _or: $policies, active: { _eq: true }, kind: { _in: $policyKinds } }
+  GuardPolicyBinding: SafePolicy(
+    where: { _or: $guardPolicyBindings, active: { _eq: true }, kind: { _in: $policyKinds } }
     order_by: [{ chainId: asc }, { safe: asc }, { target: asc }, { selector: asc }]
   ) {
     chainId safe guard target selector operation kind policy active isFallback state
@@ -71,13 +73,11 @@ export function toPolicyIndexerVariables(
     safe: { _in: addresses },
   }));
 
-  // The same groups for each, since the pairs are the same set. `policyKinds`
-  // narrows the bindings on top of them: a request reporting no guard policy
-  // reads none, rather than paying for rows nothing renders.
+  // The same groups for each, since the pairs are the same set.
   return {
     allowances: groups,
     delegates: groups,
-    policies: groups,
-    policyKinds: [...policyKinds],
+    guardPolicyBindings: groups,
+    policyKinds: policyKinds,
   };
 }

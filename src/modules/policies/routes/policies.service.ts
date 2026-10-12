@@ -19,9 +19,9 @@ import type { Delegate } from '#/modules/delegate/domain/entities/delegate.entit
 import { IDelegatesV3Repository } from '#/modules/delegate/domain/v3/delegates.v3.repository.interface';
 import type { ActivePolicy } from '#/modules/policies/domain/entities/active-policy.entity';
 import type {
+  PolicyIndexerGuardPolicyBinding,
   PolicyIndexerPolicyKind,
   PolicyIndexerSafeAllowance,
-  PolicyIndexerSafePolicy,
 } from '#/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 import type { PendingPolicy } from '#/modules/policies/domain/entities/pending-policy.entity';
 import { PolicyType } from '#/modules/policies/domain/entities/policy-type.entity';
@@ -263,8 +263,8 @@ export class PoliciesService {
         policies.push(
           ...this.guardPolicyMapper.map({
             safe,
-            policies: this.getPoliciesBySafe(
-              state.policies,
+            bindings: this.getGuardPolicyBindingsBySafe(
+              state.guardPolicyBindings,
               safe,
               guardPolicyKinds,
             ),
@@ -618,16 +618,16 @@ export class PoliciesService {
    * too - a cached slice was fetched for whatever kinds that caller asked for,
    * so the narrowing the query already did is not something this can assume.
    */
-  private getPoliciesBySafe(
-    policies: ReadonlyArray<PolicyIndexerSafePolicy>,
+  private getGuardPolicyBindingsBySafe(
+    bindings: ReadonlyArray<PolicyIndexerGuardPolicyBinding>,
     safe: SafeRef,
     guardPolicyKinds: ReadonlyArray<PolicyIndexerPolicyKind>,
-  ): Array<PolicyIndexerSafePolicy> {
-    return policies.filter(
-      (policy) =>
-        policy.chainId === safe.chainId &&
-        isAddressEqual(policy.safe, safe.address) &&
-        guardPolicyKinds.includes(policy.kind),
+  ): Array<PolicyIndexerGuardPolicyBinding> {
+    return bindings.filter(
+      (binding) =>
+        binding.chainId === safe.chainId &&
+        isAddressEqual(binding.safe, safe.address) &&
+        guardPolicyKinds.includes(binding.kind),
     );
   }
 }
