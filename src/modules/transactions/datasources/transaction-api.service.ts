@@ -540,6 +540,7 @@ export class TransactionApi implements ITransactionApi {
             limit: args.limit,
             offset: args.offset,
             to: args.to,
+            // The Transaction Service names this filter `_from` as `from` is a Python keyword
             _from: args.from,
             token_address: args.tokenAddress,
             execution_date__gte: args.executionDateGte,

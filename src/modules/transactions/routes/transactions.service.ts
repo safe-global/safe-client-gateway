@@ -414,22 +414,23 @@ export class TransactionsService {
     paginationData?: PaginationData;
     onlyTrusted: boolean;
   }): Promise<Partial<Page<TransactionItem>>> {
-    const transfers = await this.safeRepository.getTransfers({
-      chainId: args.chainId,
-      safeAddress: args.safeAddress,
-      executionDateGte: args.executionDateGte,
-      executionDateLte: args.executionDateLte,
-      to: args.to,
-      from: args.from,
-      tokenAddress: args.tokenAddress,
-      limit: args.paginationData?.limit,
-      offset: args.paginationData?.offset,
-    });
-
-    const safeInfo = await this.safeRepository.getSafe({
-      chainId: args.chainId,
-      address: args.safeAddress,
-    });
+    const [transfers, safeInfo] = await Promise.all([
+      this.safeRepository.getTransfers({
+        chainId: args.chainId,
+        safeAddress: args.safeAddress,
+        executionDateGte: args.executionDateGte,
+        executionDateLte: args.executionDateLte,
+        to: args.to,
+        from: args.from,
+        tokenAddress: args.tokenAddress,
+        limit: args.paginationData?.limit,
+        offset: args.paginationData?.offset,
+      }),
+      this.safeRepository.getSafe({
+        chainId: args.chainId,
+        address: args.safeAddress,
+      }),
+    ]);
     const results = (
       await this.transferMapper.mapTransfers({
         chainId: args.chainId,

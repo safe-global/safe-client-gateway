@@ -12,18 +12,29 @@ import {
 } from '#/__tests__/test-app.provider';
 import { createTestModule } from '#/__tests__/testing-module';
 import { IConfigurationService } from '#/config/configuration.service.interface';
+import { NetworkResponseError } from '#/datasources/network/entities/network.error.entity';
 import type { INetworkService } from '#/datasources/network/network.service.interface';
 import { NetworkService } from '#/datasources/network/network.service.interface';
-import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
+import {
+  limitAndOffsetUrlFactory,
+  pageBuilder,
+} from '#/domain/entities/__tests__/page.builder';
 import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
 import type { Chain } from '#/modules/chains/domain/entities/chain.entity';
 import {
   erc20TransferBuilder,
   toJson as erc20TransferToJson,
 } from '#/modules/safe/domain/entities/__tests__/erc20-transfer.builder';
+import {
+  erc721TransferBuilder,
+  toJson as erc721TransferToJson,
+} from '#/modules/safe/domain/entities/__tests__/erc721-transfer.builder';
 import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
 import type { Safe } from '#/modules/safe/domain/entities/safe.entity';
-import { erc20TokenBuilder } from '#/modules/tokens/domain/__tests__/token.builder';
+import {
+  erc20TokenBuilder,
+  erc721TokenBuilder,
+} from '#/modules/tokens/domain/__tests__/token.builder';
 import type { Token } from '#/modules/tokens/domain/entities/token.entity';
 import { rawify } from '#/validation/entities/raw.entity';
 
@@ -57,6 +68,8 @@ describe('List transfers by Safe - Transactions Controller', () => {
     safe: Safe;
     transfers: Array<unknown>;
     token: Token;
+    next?: string | null;
+    previous?: string | null;
   }): void {
     networkService.get.mockImplementation(({ url }) => {
       const getChainUrl = `${safeConfigUrl}/api/v1/chains/${args.chain.chainId}`;
@@ -69,7 +82,13 @@ describe('List transfers by Safe - Transactions Controller', () => {
       }
       if (url === getTransfersUrl) {
         return Promise.resolve({
-          data: rawify(pageBuilder().with('results', args.transfers).build()),
+          data: rawify(
+            pageBuilder()
+              .with('results', args.transfers)
+              .with('next', args.next ?? null)
+              .with('previous', args.previous ?? null)
+              .build(),
+          ),
           status: 200,
         });
       }
@@ -201,27 +220,215 @@ describe('List transfers by Safe - Transactions Controller', () => {
       });
   });
 
-  it('should reject an invalid recipient address', async () => {
+  it('should return transfers of untrusted tokens when trusted is false', async () => {
+    const chain = chainBuilder().build();
+    const safe = safeBuilder().build();
+    const recipient = getAddress(faker.finance.ethereumAddress());
+    const erc20Transfer = erc20TransferBuilder()
+      .with('from', safe.address)
+      .with('to', recipient)
+      .with('value', faker.number.int({ min: 1 }).toString())
+      .build();
+    const token = erc20TokenBuilder()
+      .with('address', getAddress(erc20Transfer.tokenAddress))
+      .with('trusted', false)
+      .build();
+    mockNetwork({
+      chain,
+      safe,
+      transfers: [erc20TransferToJson(erc20Transfer)],
+      token,
+    });
+
+    await request(app.getHttpServer())
+      .get(`/v1/chains/${chain.chainId}/safes/${safe.address}/transfers/`)
+      .query({ to: recipient, trusted: 'false' })
+      .expect(200)
+      .then(({ body }) => {
+        expect(body.results).toHaveLength(1);
+        expect(body.results[0].transaction.txHash).toBe(
+          erc20Transfer.transactionHash,
+        );
+      });
+  });
+
+  it('should return ERC-721 transfers of untrusted tokens, as only ERC-20 transfers are filtered by trust', async () => {
+    const chain = chainBuilder().build();
+    const safe = safeBuilder().build();
+    const recipient = getAddress(faker.finance.ethereumAddress());
+    const erc721Transfer = erc721TransferBuilder()
+      .with('from', safe.address)
+      .with('to', recipient)
+      .build();
+    const token = erc721TokenBuilder()
+      .with('address', getAddress(erc721Transfer.tokenAddress))
+      .with('trusted', false)
+      .build();
+    mockNetwork({
+      chain,
+      safe,
+      transfers: [erc721TransferToJson(erc721Transfer)],
+      token,
+    });
+
+    await request(app.getHttpServer())
+      .get(`/v1/chains/${chain.chainId}/safes/${safe.address}/transfers/`)
+      .query({ to: recipient })
+      .expect(200)
+      .then(({ body }) => {
+        expect(body.results).toHaveLength(1);
+        expect(body.results[0].transaction.txInfo.transferInfo.type).toBe(
+          'ERC721',
+        );
+      });
+  });
+
+  it('should forward the cursor and return next and previous cursors that keep the filters', async () => {
+    const chain = chainBuilder().build();
+    const safe = safeBuilder().build();
+    const recipient = getAddress(faker.finance.ethereumAddress());
+    const token = erc20TokenBuilder().with('trusted', true).build();
+    const limit = faker.number.int({ min: 1, max: 50 });
+    const offset = faker.number.int({ min: 1, max: 50 }) * limit;
+    const transfersUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/transfers/`;
+    mockNetwork({
+      chain,
+      safe,
+      transfers: [],
+      token,
+      next: limitAndOffsetUrlFactory(limit, offset + limit, transfersUrl),
+      previous: limitAndOffsetUrlFactory(limit, offset - limit, transfersUrl),
+    });
+
+    const { body } = await request(app.getHttpServer())
+      .get(`/v1/chains/${chain.chainId}/safes/${safe.address}/transfers/`)
+      .query({
+        cursor: `limit=${limit}&offset=${offset}`,
+        to: recipient,
+        trusted: 'false',
+      })
+      .expect(200);
+
+    expect(networkService.get).toHaveBeenCalledWith({
+      url: transfersUrl,
+      networkRequest: expect.objectContaining({
+        params: expect.objectContaining({ limit, offset }),
+      }),
+    });
+    const next = new URL(body.next);
+    const previous = new URL(body.previous);
+    expect(next.searchParams.get('cursor')).toBe(
+      `limit=${limit}&offset=${offset + limit}`,
+    );
+    expect(previous.searchParams.get('cursor')).toBe(
+      `limit=${limit}&offset=${offset - limit}`,
+    );
+    for (const url of [next, previous]) {
+      expect(url.searchParams.get('to')).toBe(recipient);
+      expect(url.searchParams.get('trusted')).toBe('false');
+    }
+  });
+
+  it.each([
+    ['to', faker.string.alpha(10)],
+    ['from', faker.string.alpha(10)],
+    ['token_address', faker.string.alpha(10)],
+    ['execution_date__gte', faker.string.alpha(10)],
+    ['execution_date__lte', faker.string.alpha(10)],
+    ['trusted', faker.string.alpha(10)],
+  ])('should reject an invalid %s', async (param, value) => {
     const chain = chainBuilder().build();
     const safe = safeBuilder().build();
 
     await request(app.getHttpServer())
       .get(`/v1/chains/${chain.chainId}/safes/${safe.address}/transfers/`)
-      .query({ to: faker.string.alpha(10) })
+      .query({ [param]: value })
       .expect(422);
 
     expect(networkService.get).not.toHaveBeenCalled();
   });
 
-  it('should reject a date that is not ISO 8601', async () => {
-    const chain = chainBuilder().build();
+  it('should reject an invalid chain ID', async () => {
     const safe = safeBuilder().build();
 
     await request(app.getHttpServer())
-      .get(`/v1/chains/${chain.chainId}/safes/${safe.address}/transfers/`)
-      .query({ execution_date__gte: faker.string.alpha(10) })
+      .get(
+        `/v1/chains/${faker.string.alpha(5)}/safes/${safe.address}/transfers/`,
+      )
       .expect(422);
 
     expect(networkService.get).not.toHaveBeenCalled();
+  });
+
+  it('should return the Transaction Service error status when the transfers request fails', async () => {
+    const chain = chainBuilder().build();
+    const safe = safeBuilder().build();
+    const transfersUrl = `${chain.transactionService}/api/v1/safes/${safe.address}/transfers/`;
+    networkService.get.mockImplementation(({ url }) => {
+      if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+        return Promise.resolve({ data: rawify(chain), status: 200 });
+      }
+      if (url === `${chain.transactionService}/api/v1/safes/${safe.address}`) {
+        return Promise.resolve({ data: rawify(safe), status: 200 });
+      }
+      return Promise.reject(
+        new NetworkResponseError(new URL(transfersUrl), {
+          status: 500,
+        } as Response),
+      );
+    });
+
+    await request(app.getHttpServer())
+      .get(`/v1/chains/${chain.chainId}/safes/${safe.address}/transfers/`)
+      .expect(500)
+      .expect({ message: 'An error occurred', code: 500 });
+  });
+
+  it('should return 404 when the Safe is not found', async () => {
+    const chain = chainBuilder().build();
+    const safe = safeBuilder().build();
+    const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+    networkService.get.mockImplementation(({ url }) => {
+      if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+        return Promise.resolve({ data: rawify(chain), status: 200 });
+      }
+      if (url === getSafeUrl) {
+        return Promise.reject(
+          new NetworkResponseError(new URL(getSafeUrl), {
+            status: 404,
+          } as Response),
+        );
+      }
+      return Promise.resolve({
+        data: rawify(pageBuilder().build()),
+        status: 200,
+      });
+    });
+
+    await request(app.getHttpServer())
+      .get(`/v1/chains/${chain.chainId}/safes/${safe.address}/transfers/`)
+      .expect(404);
+  });
+
+  it('should return 502 when the Transaction Service returns a malformed page', async () => {
+    const chain = chainBuilder().build();
+    const safe = safeBuilder().build();
+    networkService.get.mockImplementation(({ url }) => {
+      if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+        return Promise.resolve({ data: rawify(chain), status: 200 });
+      }
+      if (url === `${chain.transactionService}/api/v1/safes/${safe.address}`) {
+        return Promise.resolve({ data: rawify(safe), status: 200 });
+      }
+      return Promise.resolve({
+        data: rawify({ results: [faker.string.alpha()] }),
+        status: 200,
+      });
+    });
+
+    await request(app.getHttpServer())
+      .get(`/v1/chains/${chain.chainId}/safes/${safe.address}/transfers/`)
+      .expect(502)
+      .expect({ statusCode: 502, message: 'Bad gateway' });
   });
 });

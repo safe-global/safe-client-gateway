@@ -22,6 +22,7 @@ import {
   ApiParam,
   ApiQuery,
   ApiTags,
+  ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
 import type { Address } from 'viem';
 import { ChainIdSchema } from '#/modules/chains/domain/entities/schemas/chain-id.schema';
@@ -46,13 +47,14 @@ import { TransactionDetails } from '#/modules/transactions/routes/entities/trans
 import type { TransactionItem } from '#/modules/transactions/routes/entities/transaction-item.entity';
 import { TransactionItemPage } from '#/modules/transactions/routes/entities/transaction-item-page.entity';
 import { TransactionPreview } from '#/modules/transactions/routes/entities/transaction-preview.entity';
-import { TransferItemPage } from '#/modules/transactions/routes/entities/transfer-item-page.entity';
+import { TransferTransactionItemPage } from '#/modules/transactions/routes/entities/transfer-transaction-item-page.entity';
 import { TransactionsService } from '#/modules/transactions/routes/transactions.service';
 import { PaginationDataDecorator } from '#/routes/common/decorators/pagination.data.decorator';
 import { RouteUrlDecorator } from '#/routes/common/decorators/route.url.decorator';
 import type { Page } from '#/routes/common/entities/page.entity';
 import type { PaginationData } from '#/routes/common/pagination/pagination.data';
 import { AddressSchema } from '#/validation/entities/schemas/address.schema';
+import { BooleanStringSchema } from '#/validation/entities/schemas/boolean-string.schema';
 import { DateStringSchema } from '#/validation/entities/schemas/date-string.schema';
 import { TimezoneSchema } from '#/validation/entities/schemas/timezone.schema';
 import { ValidationPipe } from '#/validation/pipes/validation.pipe';
@@ -452,7 +454,7 @@ export class TransactionsController {
   @ApiOperation({
     summary: 'Get transfers',
     description:
-      'Retrieves native, ERC-20 and ERC-721 transfers sent or received by a Safe, including transfers made inside batches. Unlike multisig-transactions, `to` matches the recipient of each transfer rather than the target of the Safe transaction.',
+      'Retrieves native, ERC-20 and ERC-721 transfers sent or received by a Safe. Unlike multisig-transactions, `to` matches the recipient of each transfer rather than the target of the Safe transaction. Token transfers made inside batches are included; native transfers made inside batches are not available on chains indexed from events (most L2s). Only the newest 1000 transfers per direction and transfer type can be reached, so narrow with filters for older history. A page can hold fewer items than requested, or none, once untrusted transfers are dropped: keep following `next` until it is null.',
   })
   @ApiParam({
     name: 'chainId',
@@ -470,14 +472,14 @@ export class TransactionsController {
     required: false,
     type: String,
     description:
-      'Filter by execution date greater than or equal to (ISO 8601 format)',
+      'Filter by execution date greater than or equal to (ISO 8601 UTC, e.g. 2024-01-01T00:00:00Z)',
   })
   @ApiQuery({
     name: 'execution_date__lte',
     required: false,
     type: String,
     description:
-      'Filter by execution date less than or equal to (ISO 8601 format)',
+      'Filter by execution date less than or equal to (ISO 8601 UTC, e.g. 2024-01-01T00:00:00Z)',
   })
   @ApiQuery({
     name: 'to',
@@ -509,14 +511,17 @@ export class TransactionsController {
     required: false,
     type: Boolean,
     description:
-      'Only return transfers of trusted tokens (defaults to true). Untrusted tokens can emit transfers the Safe never made.',
+      'When true (default), ERC-20 transfers of untrusted tokens and ERC-20 transfers without value are omitted, since any token contract can emit a transfer the Safe never made. ERC-721 and native transfers are not filtered.',
   })
   @ApiOkResponse({
-    type: TransferItemPage,
+    type: TransferTransactionItemPage,
     description: 'Paginated list of transfers',
   })
-  @ApiBadRequestResponse({
-    description: 'Invalid query parameters',
+  @ApiUnprocessableEntityResponse({
+    description: 'Invalid chain ID, address, date or trusted flag',
+  })
+  @ApiNotFoundResponse({
+    description: 'Safe or chain not found',
   })
   @Get('chains/:chainId/safes/:safeAddress/transfers')
   getTransfers(
@@ -525,7 +530,7 @@ export class TransactionsController {
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,
     @PaginationDataDecorator() paginationData: PaginationData,
-    @Query('trusted', new DefaultValuePipe(true), ParseBoolPipe)
+    @Query('trusted', new ValidationPipe(BooleanStringSchema.default(true)))
     trusted: boolean,
     @Query(
       'execution_date__gte',
