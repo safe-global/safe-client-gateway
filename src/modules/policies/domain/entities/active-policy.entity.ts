@@ -100,7 +100,7 @@ export type Erc20TransferRecipient = z.infer<
  */
 export type Erc20TransferPolicyData = {
   allowlist: Array<{
-    token_address: Address;
+    tokenAddress: Address;
     recipients: Array<Erc20TransferRecipient>;
   }>;
 };
@@ -109,7 +109,7 @@ export type Erc20TransferPolicyData = {
  * `CoSignerPolicy`: the cosigner the policy enforces.
  */
 export type CosignerPolicyData = {
-  cosigner_address: Address;
+  cosignerAddress: Address;
 };
 
 /**

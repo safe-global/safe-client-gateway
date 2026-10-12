@@ -618,7 +618,7 @@ describe('Space Policies Controller', () => {
           data: {
             allowlist: [
               {
-                token_address: token,
+                tokenAddress: token,
                 recipients: [{ account: recipient, permission: 'ALWAYS' }],
               },
             ],

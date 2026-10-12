@@ -307,7 +307,7 @@ export class Erc20TransferAllowlistEntryDto {
     type: String,
     description: 'The token the allowlist applies to; zero address for native',
   })
-  public readonly token_address!: Address;
+  public readonly tokenAddress!: Address;
   @ApiProperty({
     type: Erc20TransferRecipientDto,
     isArray: true,
@@ -326,7 +326,7 @@ export class CosignerPolicyDataDto implements CosignerPolicyData {
     type: String,
     description: 'The cosigner the policy enforces.',
   })
-  public readonly cosigner_address!: Address;
+  public readonly cosignerAddress!: Address;
 }
 
 /**

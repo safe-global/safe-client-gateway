@@ -87,7 +87,7 @@ describe('GuardPolicyMapper', () => {
       expect(result.data as Erc20TransferPolicyData).toStrictEqual({
         allowlist: [
           {
-            token_address: token,
+            tokenAddress: token,
             recipients: [{ account: recipient, permission: 'ALWAYS' }],
           },
         ],
@@ -151,7 +151,7 @@ describe('GuardPolicyMapper', () => {
 
       expect(result.type).toBe(PolicyType.Cosigner);
       expect(result.data as CosignerPolicyData).toStrictEqual({
-        cosigner_address: cosigner,
+        cosignerAddress: cosigner,
       });
     });
 
@@ -412,8 +412,8 @@ describe('GuardPolicyMapper', () => {
       expect(
         result.map((item) => (item.data as Erc20TransferPolicyData).allowlist),
       ).toStrictEqual([
-        [{ token_address: token, recipients: state.recipients }],
-        [{ token_address: token, recipients: state.recipients }],
+        [{ tokenAddress: token, recipients: state.recipients }],
+        [{ tokenAddress: token, recipients: state.recipients }],
       ]);
     });
 

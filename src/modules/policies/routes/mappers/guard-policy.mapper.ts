@@ -91,13 +91,13 @@ export class GuardPolicyMapper {
         return {
           allowlist: [
             {
-              token_address: binding.target,
+              tokenAddress: binding.target,
               recipients: binding.state.recipients,
             },
           ],
         };
       case 'COSIGNER':
-        return { cosigner_address: binding.state.cosigner };
+        return { cosignerAddress: binding.state.cosigner };
       default:
         // Allow, deny, native transfer and multisend carry no configuration.
         return {};
