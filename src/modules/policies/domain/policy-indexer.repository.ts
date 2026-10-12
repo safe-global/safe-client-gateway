@@ -9,8 +9,8 @@ import {
 import { PolicyIndexerApi } from '#/modules/policies/datasources/policy-indexer-api.service';
 import {
   PolicyIndexerGuardPolicyBindingSchema,
+  type PolicyIndexerGuardPolicyKind,
   PolicyIndexerMetaSchema,
-  type PolicyIndexerPolicyKind,
   PolicyIndexerRowsSchema,
   type PolicyIndexerSafeAllowance,
   type PolicyIndexerSafeAllowanceRow,
@@ -32,7 +32,7 @@ export class PolicyIndexerRepository implements IPolicyIndexerRepository {
 
   public async getState(args: {
     safes: ReadonlyArray<SafeRef>;
-    policyKinds: ReadonlyArray<PolicyIndexerPolicyKind>;
+    guardPolicyKinds: ReadonlyArray<PolicyIndexerGuardPolicyKind>;
   }): Promise<PolicyIndexerState> {
     const safes = this.checksum(args.safes);
 
@@ -47,7 +47,7 @@ export class PolicyIndexerRepository implements IPolicyIndexerRepository {
 
     const raw = await this.policyIndexerApi.getState({
       safes,
-      policyKinds: args.policyKinds,
+      guardPolicyKinds: args.guardPolicyKinds,
     });
     const response = PolicyIndexerRowsSchema.parse(raw);
 

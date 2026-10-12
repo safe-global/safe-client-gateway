@@ -20,7 +20,7 @@ import { IDelegatesV3Repository } from '#/modules/delegate/domain/v3/delegates.v
 import type { ActivePolicy } from '#/modules/policies/domain/entities/active-policy.entity';
 import type {
   PolicyIndexerGuardPolicyBinding,
-  PolicyIndexerPolicyKind,
+  PolicyIndexerGuardPolicyKind,
   PolicyIndexerSafeAllowance,
 } from '#/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 import type { PendingPolicy } from '#/modules/policies/domain/entities/pending-policy.entity';
@@ -219,7 +219,7 @@ export class PoliciesService {
     const state = indexerRequested
       ? await this.policyIndexerRepository.getState({
           safes,
-          policyKinds: guardPolicyKinds,
+          guardPolicyKinds,
         })
       : null;
     const enforcersPerSafe = indexerRequested
@@ -621,7 +621,7 @@ export class PoliciesService {
   private getGuardPolicyBindingsBySafe(
     bindings: ReadonlyArray<PolicyIndexerGuardPolicyBinding>,
     safe: SafeRef,
-    guardPolicyKinds: ReadonlyArray<PolicyIndexerPolicyKind>,
+    guardPolicyKinds: ReadonlyArray<PolicyIndexerGuardPolicyKind>,
   ): Array<PolicyIndexerGuardPolicyBinding> {
     return bindings.filter(
       (binding) =>

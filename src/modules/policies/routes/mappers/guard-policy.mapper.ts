@@ -9,11 +9,11 @@ import {
 import {
   type ActivePolicy,
   type ActivePolicyData,
-  PolicyPermission,
+  PolicyPermissionSchema,
 } from '#/modules/policies/domain/entities/active-policy.entity';
 import type {
   PolicyIndexerGuardPolicyBinding,
-  PolicyIndexerPolicyKind,
+  PolicyIndexerGuardPolicyKind,
 } from '#/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 import {
   PolicyEnforcementKind,
@@ -40,7 +40,7 @@ const Erc20TransferStateSchema = z.object({
   recipients: z.array(
     z.object({
       account: AddressSchema,
-      permission: z.enum(PolicyPermission),
+      permission: PolicyPermissionSchema,
     }),
   ),
 });
@@ -58,7 +58,7 @@ const CosignerStateSchema = z.object({
  * an unknown restriction is worse than omitting it.
  */
 const PAYLOADS: ReadonlyArray<{
-  kind: PolicyIndexerPolicyKind;
+  kind: PolicyIndexerGuardPolicyKind;
   type: PolicyType;
   /** `null` when the state is not the shape the kind implies. */
   data: (binding: PolicyIndexerGuardPolicyBinding) => ActivePolicyData | null;
@@ -120,7 +120,7 @@ export const GUARD_POLICY_TYPES: ReadonlyArray<PolicyType> = PAYLOADS.map(
  */
 export function guardPolicyKindsOf(
   types: ReadonlyArray<PolicyType>,
-): Array<PolicyIndexerPolicyKind> {
+): Array<PolicyIndexerGuardPolicyKind> {
   return PAYLOADS.filter((payload) => types.includes(payload.type)).map(
     (payload) => payload.kind,
   );

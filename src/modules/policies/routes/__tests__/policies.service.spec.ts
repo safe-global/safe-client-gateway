@@ -275,7 +275,7 @@ describe('PoliciesService', () => {
       await target.getSpaceActivePolicies(policyRequest);
 
       expect(mockPolicyIndexerRepository.getState).toHaveBeenCalledWith({
-        policyKinds: everyGuardKind,
+        guardPolicyKinds: everyGuardKind,
         safes: [{ chainId: SEPOLIA, address: safeAddress }],
       });
     });
@@ -471,7 +471,7 @@ describe('PoliciesService', () => {
 
       expect(mockPolicyIndexerRepository.getState).toHaveBeenCalledTimes(1);
       expect(mockPolicyIndexerRepository.getState).toHaveBeenCalledWith({
-        policyKinds: everyGuardKind,
+        guardPolicyKinds: everyGuardKind,
         safes: [
           { chainId: SEPOLIA, address: safeAddress },
           { chainId: '137', address: otherSafe },
@@ -504,7 +504,7 @@ describe('PoliciesService', () => {
       });
 
       expect(mockPolicyIndexerRepository.getState).toHaveBeenCalledWith({
-        policyKinds: everyGuardKind,
+        guardPolicyKinds: everyGuardKind,
         safes: [{ chainId: SEPOLIA, address: safeAddress }],
       });
     });
@@ -529,7 +529,7 @@ describe('PoliciesService', () => {
 
       expect(policies).toHaveLength(1);
       expect(mockPolicyIndexerRepository.getState).toHaveBeenCalledWith({
-        policyKinds: everyGuardKind,
+        guardPolicyKinds: everyGuardKind,
         safes: [{ chainId: SEPOLIA, address: safeAddress }],
       });
       expect(mockSafeRepository.getSafe).toHaveBeenCalledTimes(1);

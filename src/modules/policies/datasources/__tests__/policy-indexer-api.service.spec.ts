@@ -18,6 +18,7 @@ import {
   rawIndexerSafeAllowanceBuilder,
   rawIndexerSafeDelegateBuilder,
 } from '#/modules/policies/domain/entities/indexer/__tests__/safe-allowance.builder';
+import type { PolicyIndexerGuardPolicyKind } from '#/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 import type { SafeRef } from '#/modules/policies/domain/entities/safe-ref.entity';
 import type { Raw } from '#/validation/entities/raw.entity';
 import { rawify } from '#/validation/entities/raw.entity';
@@ -61,8 +62,10 @@ function pairGroup(chainId: string, ...safes: Array<SafeRef>) {
   };
 }
 
-/** The guard-policy kinds the reads below ask for. */
-const policyKinds = ['ERC20_TRANSFER', 'COSIGNER'] as const;
+const guardPolicyKinds: Array<PolicyIndexerGuardPolicyKind> = [
+  'ERC20_TRANSFER',
+  'COSIGNER',
+];
 
 /** A request whose filters are exactly {@link groups}, for every root field. */
 function requestWith(groups: Array<ReturnType<typeof pairGroup>>): object {
@@ -72,7 +75,7 @@ function requestWith(groups: Array<ReturnType<typeof pairGroup>>): object {
         allowances: groups,
         delegates: groups,
         guardPolicyBindings: groups,
-        policyKinds: [...policyKinds],
+        guardPolicyKinds: [...guardPolicyKinds],
       },
     }),
   });
@@ -83,7 +86,7 @@ function cacheKey(safe: SafeRef): string {
 }
 
 /**
- * Where a read for {@link policyKinds} caches its slice: the kinds, sorted, are
+ * Where a read for {@link guardPolicyKinds} caches its slice: the kinds, sorted, are
  * the field, so a narrowed read cannot answer a wider one.
  */
 function cacheDirOf(safe: SafeRef): CacheDir {
@@ -137,7 +140,7 @@ describe('PolicyIndexerApi', () => {
 
   /** A read of one Sepolia Safe, for the cases that do not care which. */
   function readOneSafe(): Promise<Raw<unknown>> {
-    return target.getState({ safes: [safeRef(SEPOLIA)], policyKinds });
+    return target.getState({ safes: [safeRef(SEPOLIA)], guardPolicyKinds });
   }
 
   describe('get policies request', () => {
@@ -184,7 +187,7 @@ describe('PolicyIndexerApi', () => {
       const sepolia = safeRef(SEPOLIA);
       const polygon = safeRef(POLYGON);
 
-      await target.getState({ safes: [sepolia, polygon], policyKinds });
+      await target.getState({ safes: [sepolia, polygon], guardPolicyKinds });
 
       expect(mockNetworkService.post).toHaveBeenCalledTimes(1);
     });
@@ -198,7 +201,7 @@ describe('PolicyIndexerApi', () => {
 
       await target.getState({
         safes: [sepoliaOne, polygon, sepoliaTwo],
-        policyKinds,
+        guardPolicyKinds,
       });
 
       expect(mockNetworkService.post).toHaveBeenCalledWith(
@@ -277,7 +280,7 @@ describe('PolicyIndexerApi', () => {
         ),
       );
 
-      await target.getState({ safes: [cached, missed], policyKinds });
+      await target.getState({ safes: [cached, missed], guardPolicyKinds });
 
       expect(mockNetworkService.post).toHaveBeenCalledTimes(1);
       expect(mockNetworkService.post).toHaveBeenCalledWith(
@@ -289,7 +292,7 @@ describe('PolicyIndexerApi', () => {
       const sepolia = safeRef(SEPOLIA);
       const polygon = safeRef(POLYGON);
 
-      await target.getState({ safes: [sepolia, polygon], policyKinds });
+      await target.getState({ safes: [sepolia, polygon], guardPolicyKinds });
 
       expect(mockCacheService.hSet).toHaveBeenCalledTimes(2);
       for (const safe of [sepolia, polygon]) {
@@ -307,8 +310,8 @@ describe('PolicyIndexerApi', () => {
       // are part of the entry, not just of the query.
       const safe = safeRef(SEPOLIA);
 
-      await target.getState({ safes: [safe], policyKinds: ['COSIGNER'] });
-      await target.getState({ safes: [safe], policyKinds });
+      await target.getState({ safes: [safe], guardPolicyKinds: ['COSIGNER'] });
+      await target.getState({ safes: [safe], guardPolicyKinds });
 
       expect(mockCacheService.hGet).toHaveBeenNthCalledWith(
         1,
@@ -325,11 +328,11 @@ describe('PolicyIndexerApi', () => {
 
       await target.getState({
         safes: [safe],
-        policyKinds: ['COSIGNER', 'ERC20_TRANSFER'],
+        guardPolicyKinds: ['COSIGNER', 'ERC20_TRANSFER'],
       });
       await target.getState({
         safes: [safe],
-        policyKinds: ['ERC20_TRANSFER', 'COSIGNER'],
+        guardPolicyKinds: ['ERC20_TRANSFER', 'COSIGNER'],
       });
 
       expect(mockCacheService.hGet).toHaveBeenNthCalledWith(
@@ -359,7 +362,7 @@ describe('PolicyIndexerApi', () => {
         ],
       });
 
-      await target.getState({ safes: [mine, other], policyKinds });
+      await target.getState({ safes: [mine, other], guardPolicyKinds });
 
       expect(mockCacheService.hSet).toHaveBeenCalledWith(
         cacheDirOf(mine),
@@ -380,7 +383,7 @@ describe('PolicyIndexerApi', () => {
       const sepoliaMeta = meta(SEPOLIA);
       mockIndexerState({ _meta: [sepoliaMeta] });
 
-      await target.getState({ safes: [safe], policyKinds });
+      await target.getState({ safes: [safe], guardPolicyKinds });
 
       expect(mockCacheService.hSet).toHaveBeenCalledWith(
         cacheDirOf(safe),
@@ -406,7 +409,7 @@ describe('PolicyIndexerApi', () => {
       mockIndexerState({ _meta: [sepoliaMeta, polygonMeta] });
 
       const result = await target.getState({
-        policyKinds,
+        guardPolicyKinds,
         safes: [safeRef(SEPOLIA), safeRef(POLYGON)],
       });
 
@@ -438,7 +441,7 @@ describe('PolicyIndexerApi', () => {
         Promise.resolve(key === cacheKey(safe) ? Date.now() : null),
       );
 
-      await target.getState({ safes: [safe], policyKinds });
+      await target.getState({ safes: [safe], guardPolicyKinds });
 
       expect(mockCacheService.hSet).not.toHaveBeenCalled();
     });
@@ -450,7 +453,7 @@ describe('PolicyIndexerApi', () => {
       mockIndexerState({ _meta: [sepoliaMeta] });
       mockCacheService.getInvalidationTimeMs.mockResolvedValue(Date.now());
 
-      const result = await target.getState({ safes: [safe], policyKinds });
+      const result = await target.getState({ safes: [safe], guardPolicyKinds });
 
       expect(result).toStrictEqual(
         rawPolicyIndexerResponse({ _meta: [sepoliaMeta] }),
@@ -463,7 +466,7 @@ describe('PolicyIndexerApi', () => {
         Date.now() - faker.number.int({ min: 1000, max: 10_000 }),
       );
 
-      await target.getState({ safes: [safe], policyKinds });
+      await target.getState({ safes: [safe], guardPolicyKinds });
 
       expect(mockCacheService.hSet).toHaveBeenCalledWith(
         cacheDirOf(safe),
@@ -481,7 +484,7 @@ describe('PolicyIndexerApi', () => {
         Promise.resolve(key === cacheKey(cleared) ? Date.now() : null),
       );
 
-      await target.getState({ safes: [cleared, untouched], policyKinds });
+      await target.getState({ safes: [cleared, untouched], guardPolicyKinds });
 
       expect(mockCacheService.hSet).toHaveBeenCalledTimes(1);
       expect(mockCacheService.hSet).toHaveBeenCalledWith(

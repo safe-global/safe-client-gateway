@@ -7,7 +7,8 @@ import {
   type CosignerPolicyData,
   type Erc20TransferPolicyData,
   type Erc20TransferRecipient,
-  PolicyPermission,
+  type PolicyPermission,
+  PolicyPermissionSchema,
   type ProposerPolicyData,
   type SpendingLimitAllowance,
   type SpendingLimitPolicyData,
@@ -270,7 +271,7 @@ export class Erc20TransferRecipientDto implements Erc20TransferRecipient {
   @ApiProperty({ description: 'An address the Safe may send this token to' })
   public readonly account!: Address;
   @ApiProperty({
-    enum: Object.values(PolicyPermission),
+    enum: PolicyPermissionSchema.options,
     description:
       'ONCE is spent by the first matching transfer; ALWAYS applies to every one',
   })

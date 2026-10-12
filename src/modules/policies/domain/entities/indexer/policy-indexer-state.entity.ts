@@ -142,7 +142,7 @@ export type PolicyIndexerSafeDelegate = z.infer<
   typeof PolicyIndexerSafeDelegateSchema
 >;
 
-export const PolicyIndexerPolicyKindSchema = z
+export const PolicyIndexerGuardPolicyKindSchema = z
   .enum([
     'ERC20_TRANSFER',
     'ERC20_APPROVE',
@@ -156,8 +156,8 @@ export const PolicyIndexerPolicyKindSchema = z
   ])
   .catch('UNKNOWN');
 
-export type PolicyIndexerPolicyKind = z.infer<
-  typeof PolicyIndexerPolicyKindSchema
+export type PolicyIndexerGuardPolicyKind = z.infer<
+  typeof PolicyIndexerGuardPolicyKindSchema
 >;
 
 /**
@@ -177,7 +177,7 @@ export const PolicyIndexerGuardPolicyBindingSchema = z.object({
   /** Trimmed to four bytes by the indexer; the event carries 32. */
   selector: HexSchema,
   operation: z.enum(PolicyOperation),
-  kind: PolicyIndexerPolicyKindSchema,
+  kind: PolicyIndexerGuardPolicyKindSchema,
   policy: AddressSchema,
   /**
    * `false` once unbound. The binding keeps its `policy`, `kind` and `state`,

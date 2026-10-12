@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { Address } from 'viem';
+import { z } from 'zod';
 import type { PolicyEnforcement } from '#/modules/policies/domain/entities/policy-enforcement.entity';
 import type { PolicyType } from '#/modules/policies/domain/entities/policy-type.entity';
 import type { SafeRef } from '#/modules/policies/domain/entities/safe-ref.entity';
@@ -80,36 +81,17 @@ export type ProposerPolicyData = {
   }>;
 };
 
-/**
- * How far a guard-enforced grant reaches.
- *
- * The policy contract carries it per entry rather than per policy, so one
- * allowlist can hold a single-use grant beside an open-ended one. Only `ALWAYS`
- * occurs in the dev indexer's data today.
- */
-export const PolicyPermission = {
-  /** Spent by the first matching call. */
-  Once: 'ONCE',
-  /** Applies to every matching call. */
-  Always: 'ALWAYS',
-} as const;
+export const PolicyPermissionSchema = z.enum(['ONCE', 'ALWAYS']);
 
-export type PolicyPermission =
-  (typeof PolicyPermission)[keyof typeof PolicyPermission];
+export type PolicyPermission = z.infer<typeof PolicyPermissionSchema>;
 
-/** One entry of an ERC-20 allowlist: who, and for how long. */
 export type Erc20TransferRecipient = {
   account: Address;
   permission: PolicyPermission;
 };
 
 /**
- * `ERC20TransferPolicy`: per token, the recipients the Safe may send to.
- *
- * Addresses only, on both sides: the client resolves token metadata and display
- * names itself. The recipient list is the indexer's accumulated one - the policy
- * contract's `configure` is an upsert of deltas, so only the folded sequence
- * describes the allowlist.
+ * `ERC20TransferPolicy`: per token, the recipients the Safe can send to.
  */
 export type Erc20TransferPolicyData = {
   allowlist: Array<{
@@ -119,10 +101,7 @@ export type Erc20TransferPolicyData = {
 };
 
 /**
- * `CoSignerPolicy`: the cosigner the policy requires.
- *
- * The whole payload, since that is all the state encodes - no threshold is
- * derivable from it.
+ * `CoSignerPolicy`: the cosigner the policy enforces.
  */
 export type CosignerPolicyData = {
   cosigner_address: Address;
@@ -131,8 +110,6 @@ export type CosignerPolicyData = {
 /**
  * The stateless policies - allow, deny and native transfer.
  *
- * Which calls they cover is already carried by the item's `enforcement`, and the
- * policy contract holds no configuration, so there is nothing left to report.
  */
 export type StatelessPolicyData = Record<string, never>;
 

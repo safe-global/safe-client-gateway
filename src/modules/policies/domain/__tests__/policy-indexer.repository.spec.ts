@@ -46,7 +46,7 @@ describe('PolicyIndexerRepository', () => {
   });
 
   /** The guard-policy kinds the reads below ask for. */
-  const policyKinds = ['ERC20_TRANSFER', 'COSIGNER'] as const;
+  const guardPolicyKinds = ['ERC20_TRANSFER', 'COSIGNER'] as const;
 
   describe('get policies request', () => {
     it('should read the state of every requested safe in one call', async () => {
@@ -55,7 +55,7 @@ describe('PolicyIndexerRepository', () => {
           { chainId: SEPOLIA, address: safe },
           { chainId: '137', address: safe },
         ],
-        policyKinds,
+        guardPolicyKinds,
       });
 
       expect(mockPolicyIndexerApi.getState).toHaveBeenCalledTimes(1);
@@ -68,11 +68,11 @@ describe('PolicyIndexerRepository', () => {
         safes: [
           { chainId: SEPOLIA, address: safe.toLowerCase() as `0x${string}` },
         ],
-        policyKinds,
+        guardPolicyKinds,
       });
 
       expect(mockPolicyIndexerApi.getState).toHaveBeenCalledWith({
-        policyKinds,
+        guardPolicyKinds,
         safes: [{ chainId: SEPOLIA, address: safe }],
       });
     });
@@ -83,18 +83,18 @@ describe('PolicyIndexerRepository', () => {
           { chainId: SEPOLIA, address: safe },
           { chainId: SEPOLIA, address: safe.toLowerCase() as `0x${string}` },
         ],
-        policyKinds,
+        guardPolicyKinds,
       });
 
       expect(mockPolicyIndexerApi.getState).toHaveBeenCalledWith({
-        policyKinds,
+        guardPolicyKinds,
         safes: [{ chainId: SEPOLIA, address: safe }],
       });
     });
 
     it('should return empty state without a request when no safe is given', async () => {
       await expect(
-        target.getState({ safes: [], policyKinds }),
+        target.getState({ safes: [], guardPolicyKinds }),
       ).resolves.toStrictEqual({
         meta: [],
         allowances: [],
@@ -112,7 +112,7 @@ describe('PolicyIndexerRepository', () => {
       await expect(
         target.getState({
           safes: [{ chainId: SEPOLIA, address: safe }],
-          policyKinds,
+          guardPolicyKinds,
         }),
       ).rejects.toThrow('Service unavailable');
     });
@@ -140,7 +140,7 @@ describe('PolicyIndexerRepository', () => {
 
       const result = await target.getState({
         safes: [{ chainId: '137', address: safe }],
-        policyKinds,
+        guardPolicyKinds,
       });
 
       expect(result.allowances[0].chainId).toBe('137');
@@ -160,7 +160,7 @@ describe('PolicyIndexerRepository', () => {
 
       const result = await target.getState({
         safes: [{ chainId: SEPOLIA, address: safe }],
-        policyKinds,
+        guardPolicyKinds,
       });
 
       expect(result.allowances[0].amount).toBe(amount);
@@ -180,7 +180,7 @@ describe('PolicyIndexerRepository', () => {
 
       const result = await target.getState({
         safes: [{ chainId: SEPOLIA, address: safe }],
-        policyKinds,
+        guardPolicyKinds,
       });
 
       expect(result.allowances[0]).toMatchObject({
@@ -202,7 +202,7 @@ describe('PolicyIndexerRepository', () => {
 
       const result = await target.getState({
         safes: [{ chainId: SEPOLIA, address: safe }],
-        policyKinds,
+        guardPolicyKinds,
       });
 
       expect(result.allowances).toStrictEqual([]);
@@ -222,7 +222,7 @@ describe('PolicyIndexerRepository', () => {
 
       const result = await target.getState({
         safes: [{ chainId: SEPOLIA, address: safe }],
-        policyKinds,
+        guardPolicyKinds,
       });
 
       expect(result.delegates).toHaveLength(1);
@@ -236,7 +236,7 @@ describe('PolicyIndexerRepository', () => {
 
       await target.getState({
         safes: [{ chainId: SEPOLIA, address: safe }],
-        policyKinds,
+        guardPolicyKinds,
       });
 
       expect(mockLoggingService.warn).toHaveBeenCalledWith(
@@ -262,7 +262,7 @@ describe('PolicyIndexerRepository', () => {
 
       const result = await target.getState({
         safes: [{ chainId: SEPOLIA, address: safe }],
-        policyKinds,
+        guardPolicyKinds,
       });
 
       expect(result.allowances[0].resetPhase).toBe('UNKNOWN');
@@ -275,7 +275,7 @@ describe('PolicyIndexerRepository', () => {
       await expect(
         target.getState({
           safes: [{ chainId: SEPOLIA, address: safe }],
-          policyKinds,
+          guardPolicyKinds,
         }),
       ).rejects.toThrow(ZodError);
     });
@@ -317,7 +317,7 @@ describe('PolicyIndexerRepository', () => {
 
       const result = await target.getState({
         safes: [{ chainId: SEPOLIA, address: safe }],
-        policyKinds,
+        guardPolicyKinds,
       });
 
       expect(result.allowances[0].isDelegateActive).toBe(true);
@@ -336,7 +336,7 @@ describe('PolicyIndexerRepository', () => {
 
       const result = await target.getState({
         safes: [{ chainId: SEPOLIA, address: safe }],
-        policyKinds,
+        guardPolicyKinds,
       });
 
       expect(result.allowances[0].isDelegateActive).toBe(false);
@@ -355,7 +355,7 @@ describe('PolicyIndexerRepository', () => {
 
       const result = await target.getState({
         safes: [{ chainId: SEPOLIA, address: safe }],
-        policyKinds,
+        guardPolicyKinds,
       });
 
       expect(result.allowances[0].isDelegateActive).toBe(false);
@@ -379,7 +379,7 @@ describe('PolicyIndexerRepository', () => {
 
       const result = await target.getState({
         safes: [{ chainId: SEPOLIA, address: safe }],
-        policyKinds,
+        guardPolicyKinds,
       });
 
       expect(result.allowances[0].isDelegateActive).toBe(false);
@@ -405,7 +405,7 @@ describe('PolicyIndexerRepository', () => {
 
       const result = await target.getState({
         safes: [{ chainId: SEPOLIA, address: safe }],
-        policyKinds,
+        guardPolicyKinds,
       });
 
       expect(result.meta.map((meta) => meta.chainId)).toStrictEqual([

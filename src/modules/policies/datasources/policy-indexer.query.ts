@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { PolicyIndexerPolicyKind } from '#/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
+import type { PolicyIndexerGuardPolicyKind } from '#/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 import type { SafeRef } from '#/modules/policies/domain/entities/safe-ref.entity';
 
 /**
@@ -14,7 +14,7 @@ export type PolicyIndexerVariables = {
   allowances: ReadonlyArray<PolicyIndexerPairFilter>;
   delegates: ReadonlyArray<PolicyIndexerPairFilter>;
   guardPolicyBindings: ReadonlyArray<PolicyIndexerPairFilter>;
-  policyKinds: ReadonlyArray<PolicyIndexerPolicyKind>;
+  guardPolicyKinds: ReadonlyArray<PolicyIndexerGuardPolicyKind>;
 };
 
 /**
@@ -27,7 +27,7 @@ export const POLICY_INDEXER_STATE_QUERY = `query PolicyIndexerState(
   $allowances: [SafeAllowance_bool_exp!]!
   $delegates: [SafeDelegate_bool_exp!]!
   $guardPolicyBindings: [SafePolicy_bool_exp!]!
-  $policyKinds: [String!]!
+  $guardPolicyKinds: [String!]!
 ) {
   _meta { chainId progressBlock sourceBlock isReady }
   SafeAllowance(
@@ -44,7 +44,7 @@ export const POLICY_INDEXER_STATE_QUERY = `query PolicyIndexerState(
     chainId safe module moduleVersion delegate active addedAt updatedAt
   }
   GuardPolicyBinding: SafePolicy(
-    where: { _or: $guardPolicyBindings, active: { _eq: true }, kind: { _in: $policyKinds } }
+    where: { _or: $guardPolicyBindings, active: { _eq: true }, kind: { _in: $guardPolicyKinds } }
     order_by: [{ chainId: asc }, { safe: asc }, { target: asc }, { selector: asc }]
   ) {
     chainId safe guard target selector operation kind policy active isFallback state
@@ -56,7 +56,7 @@ export const POLICY_INDEXER_STATE_QUERY = `query PolicyIndexerState(
  */
 export function toPolicyIndexerVariables(
   safes: ReadonlyArray<SafeRef>,
-  policyKinds: ReadonlyArray<PolicyIndexerPolicyKind>,
+  guardPolicyKinds: ReadonlyArray<PolicyIndexerGuardPolicyKind>,
 ): PolicyIndexerVariables {
   const safesPerChain = new Map<string, Array<string>>();
 
@@ -78,6 +78,6 @@ export function toPolicyIndexerVariables(
     allowances: groups,
     delegates: groups,
     guardPolicyBindings: groups,
-    policyKinds: policyKinds,
+    guardPolicyKinds,
   };
 }

@@ -26,7 +26,7 @@ import {
   ROW_FIELDS,
   RowLocationSchema,
 } from '#/modules/policies/datasources/policy-indexer-response.schema';
-import type { PolicyIndexerPolicyKind } from '#/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
+import type { PolicyIndexerGuardPolicyKind } from '#/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 import {
   type PolicyIndexerRows,
   PolicyIndexerRowsSchema,
@@ -76,10 +76,10 @@ export class PolicyIndexerApi {
    */
   public async getState(args: {
     safes: ReadonlyArray<SafeRef>;
-    policyKinds: ReadonlyArray<PolicyIndexerPolicyKind>;
+    guardPolicyKinds: ReadonlyArray<PolicyIndexerGuardPolicyKind>;
   }): Promise<Raw<unknown>> {
     const cacheHits = await Promise.all(
-      args.safes.map((safe) => this.cachedSlice(safe, args.policyKinds)),
+      args.safes.map((safe) => this.cachedSlice(safe, args.guardPolicyKinds)),
     );
     const misses = args.safes.filter((_, index) => cacheHits[index] === null);
 
@@ -92,7 +92,7 @@ export class PolicyIndexerApi {
     }
 
     const fetchStartTimeMs = Date.now();
-    const fetched = await this.fetch(misses, args.policyKinds);
+    const fetched = await this.fetch(misses, args.guardPolicyKinds);
     const policiesStates = await Promise.all(
       args.safes.map(async (safe, index) => {
         const hit = cacheHits[index];
@@ -103,7 +103,7 @@ export class PolicyIndexerApi {
         const policiesState = this.filterPolicyIndexerRowsBySafe(fetched, safe);
         await this.cache(
           safe,
-          args.policyKinds,
+          args.guardPolicyKinds,
           policiesState,
           fetchStartTimeMs,
         );
@@ -135,14 +135,14 @@ export class PolicyIndexerApi {
    */
   private async fetch(
     safes: ReadonlyArray<SafeRef>,
-    policyKinds: ReadonlyArray<PolicyIndexerPolicyKind>,
+    guardPolicyKinds: ReadonlyArray<PolicyIndexerGuardPolicyKind>,
   ): Promise<PolicyIndexerRows> {
     try {
       const { data } = await this.networkService.post<unknown>({
         url: `${this.baseUri}/v1/graphql`,
         data: {
           query: POLICY_INDEXER_STATE_QUERY,
-          variables: toPolicyIndexerVariables(safes, policyKinds),
+          variables: toPolicyIndexerVariables(safes, guardPolicyKinds),
         },
         networkRequest: {
           circuitBreaker: { key: CircuitBreakerKeys.getPolicyIndexerKey() },
@@ -185,10 +185,10 @@ export class PolicyIndexerApi {
 
   private async cachedSlice(
     safe: SafeRef,
-    policyKinds: ReadonlyArray<PolicyIndexerPolicyKind>,
+    guardPolicyKinds: ReadonlyArray<PolicyIndexerGuardPolicyKind>,
   ): Promise<PolicyIndexerRows | null> {
     const cached = await this.cacheService.hGet(
-      this.cacheDir(safe, policyKinds),
+      this.cacheDir(safe, guardPolicyKinds),
     );
 
     if (!cached) {
@@ -222,7 +222,7 @@ export class PolicyIndexerApi {
    */
   private async cache(
     safe: SafeRef,
-    policyKinds: ReadonlyArray<PolicyIndexerPolicyKind>,
+    guardPolicyKinds: ReadonlyArray<PolicyIndexerGuardPolicyKind>,
     slice: PolicyIndexerRows,
     fetchStartTimeMs: number,
   ): Promise<void> {
@@ -240,7 +240,7 @@ export class PolicyIndexerApi {
     }
 
     await this.cacheService.hSet(
-      this.cacheDir(safe, policyKinds),
+      this.cacheDir(safe, guardPolicyKinds),
       JSON.stringify(slice),
       this.expirationTimeSeconds,
     );
@@ -248,12 +248,12 @@ export class PolicyIndexerApi {
 
   private cacheDir(
     safe: SafeRef,
-    policyKinds: ReadonlyArray<PolicyIndexerPolicyKind>,
+    guardPolicyKinds: ReadonlyArray<PolicyIndexerGuardPolicyKind>,
   ): ReturnType<typeof CacheRouter.getPolicyIndexerStateCacheDir> {
     return CacheRouter.getPolicyIndexerStateCacheDir({
       chainId: safe.chainId,
       safeAddress: safe.address,
-      policyKinds,
+      guardPolicyKinds,
     });
   }
 
