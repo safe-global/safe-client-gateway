@@ -513,11 +513,15 @@ export class TransactionApi implements ITransactionApi {
 
   async getTransfers(args: {
     safeAddress: Address;
-    onlyErc20: boolean;
-    onlyErc721: boolean;
+    onlyErc20?: boolean;
+    onlyErc721?: boolean;
     limit?: number;
     offset?: number;
     to?: Address;
+    from?: Address;
+    tokenAddress?: Address;
+    executionDateGte?: string;
+    executionDateLte?: string;
   }): Promise<Raw<Page<Transfer>>> {
     try {
       const cacheDir = CacheRouter.getTransfersCacheDir({
@@ -536,6 +540,10 @@ export class TransactionApi implements ITransactionApi {
             limit: args.limit,
             offset: args.offset,
             to: args.to,
+            _from: args.from,
+            token_address: args.tokenAddress,
+            execution_date__gte: args.executionDateGte,
+            execution_date__lte: args.executionDateLte,
           },
           circuitBreaker: {
             key: CircuitBreakerKeys.getTransactionServiceKey(this.chainId),

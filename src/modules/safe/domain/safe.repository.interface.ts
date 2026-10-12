@@ -186,6 +186,12 @@ export interface ISafeRepository {
     chainId: string;
     safeAddress: Address;
     limit?: number;
+    offset?: number;
+    to?: Address;
+    from?: Address;
+    tokenAddress?: Address;
+    executionDateGte?: string;
+    executionDateLte?: string;
   }): Promise<Page<Transfer>>;
 
   getSafesByOwner(args: {
