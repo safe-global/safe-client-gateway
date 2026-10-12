@@ -5,6 +5,7 @@ import {
   FindOptionsRelations,
   FindOptionsSelect,
   FindOptionsWhere,
+  IsNull,
 } from 'typeorm';
 import { type Address, getAddress } from 'viem';
 import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
@@ -156,6 +157,7 @@ export class CounterfactualSafesRepository
         'cfsu.counterfactual_safe_id = cfs.id',
       )
       .where('cfsu.user_id = :userId', { userId: args.userId })
+      .andWhere('cfs.deployed_at IS NULL')
       .getMany();
   }
 
@@ -233,6 +235,21 @@ export class CounterfactualSafesRepository
         .whereInIds(targets.map((t) => t.id))
         .execute();
     });
+  }
+
+  public async markAsDeployed(args: {
+    chainId: CounterfactualSafe['chainId'];
+    address: CounterfactualSafe['address'];
+  }): Promise<boolean> {
+    const repository =
+      await this.postgresDatabaseService.getRepository(CounterfactualSafe);
+
+    const result = await repository.update(
+      { chainId: args.chainId, address: args.address, deployedAt: IsNull() },
+      { deployedAt: new Date() },
+    );
+
+    return !!result.affected;
   }
 }
 
