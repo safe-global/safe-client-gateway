@@ -17,7 +17,11 @@ describe('pinoLoggerFactory', () => {
     configurationService.set('log.prettyColorize', false);
     configurationService.set('log.level', 'debug');
     lines = [];
-    stream = { write: (line: string): void => void lines.push(line) };
+    stream = {
+      write: (line: string): void => {
+        lines.push(line);
+      },
+    };
   });
 
   function parsedLines(): Array<unknown> {

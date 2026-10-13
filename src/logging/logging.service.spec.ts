@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import type { ClsService } from 'nestjs-cls';
-import type { MockedObject } from 'vitest';
 import type { Logger } from 'pino';
+import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
 import { RequestScopedLoggingService } from '#/logging/logging.service';
 
