@@ -105,6 +105,8 @@ export class TransactionsService {
   async getById(args: {
     chainId: string;
     txId: string;
+    spaceUuid?: Space['uuid'];
+    authPayload: AuthPayload;
   }): Promise<TransactionDetails> {
     const [txType, safeAddress, id] = args.txId.split(TRANSACTION_ID_SEPARATOR);
 
@@ -154,10 +156,18 @@ export class TransactionsService {
           throw new BadRequestException('Invalid transaction ID');
         }
 
+        const spaceId = await this.getSpaceIdOfMember({
+          spaceUuid: args.spaceUuid,
+          chainId: args.chainId,
+          safeAddress: getAddress(safeAddress),
+          authPayload: args.authPayload,
+        });
+
         const [tx, safe] = await Promise.all([
           this.safeRepository.getMultiSigTransaction({
             chainId: args.chainId,
             safeTransactionHash: id,
+            spaceId,
           }),
           this.safeRepository.getSafe({
             chainId: args.chainId,

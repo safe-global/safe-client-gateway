@@ -93,14 +93,27 @@ export class TransactionsController {
   @ApiNotFoundResponse({
     description: 'Transaction not found',
   })
+  @ApiQuery({
+    name: 'spaceId',
+    required: false,
+    type: String,
+    description:
+      'Space UUID. Also returns a multisig transaction only the Space can see, for a multisig transaction ID. Requires a session of a Space member, and the Safe registered to the Space',
+  })
+  @UseGuards(OptionalAuthGuard)
   @Get(`chains/:chainId/transactions/:id`)
   getTransactionById(
     @Param('chainId') chainId: string,
     @Param('id') id: string,
+    @Query('spaceId', new ValidationPipe(UuidSchema.optional()))
+    spaceUuid: UUID | undefined,
+    @Auth() authPayload: AuthPayload,
   ): Promise<TransactionDetails> {
     return this.transactionsService.getById({
       chainId,
       txId: id,
+      spaceUuid,
+      authPayload,
     });
   }
 
