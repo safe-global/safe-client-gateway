@@ -31,11 +31,13 @@ import {
   webhookEventCustomerBuilder,
 } from '#/modules/billing/domain/entities/__tests__/webhook-event.builder';
 import type { WebhookEvent } from '#/modules/billing/domain/entities/webhook-event.entity';
+import { WALLET_WEB_CUSTOMER_GROUP } from '#/modules/billing/domain/entities/webhook-event.entity';
 import { BillingWebhookAuthGuard } from '#/modules/billing/routes/guards/billing-webhook-auth.guard';
 import { Feature } from '#/modules/entitlements/datasources/entities/feature.entity.db';
 import { SpaceSubscription } from '#/modules/entitlements/datasources/entities/space-subscription.entity.db';
 import { featureBuilder } from '#/modules/entitlements/domain/entities/__tests__/feature.builder';
 import { FeatureType } from '#/modules/entitlements/domain/entities/feature.entity';
+import { CUSTOMER_GROUP_METADATA_KEY } from '#/modules/entitlements/domain/entitlements.constants';
 import { NotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/notifications.repository.module';
 import { TestNotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/test.notification.repository.module';
 import { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
@@ -229,6 +231,7 @@ describe('Billing webhook → entitlements materialization', () => {
       .with('currentPeriodEnd', PERIOD_END)
       .with('plan', subscriptionPlanBuilder().build())
       .with('metadata', {
+        [CUSTOMER_GROUP_METADATA_KEY]: WALLET_WEB_CUSTOMER_GROUP,
         planCode: 'BUS-10-A',
         FEATURE_SAFE_SEATS: '10',
         FEATURE_SECURITY_HUB: 'true',
@@ -468,7 +471,10 @@ describe('Billing webhook → entitlements materialization', () => {
         .with('plan', subscriptionPlanBuilder().with('id', planId).build())
         .with('currentPeriodStart', PERIOD_START)
         .with('currentPeriodEnd', PERIOD_END)
-        .with('metadata', null)
+        // No feature metadata, only the group that keeps it a Safe{Wallet} subscription
+        .with('metadata', {
+          [CUSTOMER_GROUP_METADATA_KEY]: WALLET_WEB_CUSTOMER_GROUP,
+        })
         .build(),
     ]);
 

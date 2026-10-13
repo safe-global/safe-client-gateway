@@ -28,6 +28,15 @@ import {
 } from '#/datasources/billing-api/entities/subscription-update.entity';
 import { IBillingApi } from '#/domain/interfaces/billing-api.interface';
 import type { IBillingRepository } from '#/modules/billing/domain/billing.repository.interface';
+import { WALLET_WEB_CUSTOMER_GROUP } from '#/modules/billing/domain/entities/webhook-event.entity';
+import { CUSTOMER_GROUP_METADATA_KEY } from '#/modules/entitlements/domain/entitlements.constants';
+
+function isWalletWebSubscription(subscription: Subscription): boolean {
+  return (
+    subscription.metadata?.[CUSTOMER_GROUP_METADATA_KEY] ===
+    WALLET_WEB_CUSTOMER_GROUP
+  );
+}
 
 @Injectable()
 export class BillingRepository implements IBillingRepository {
@@ -57,7 +66,7 @@ export class BillingRepository implements IBillingRepository {
       await this.billingApi.getSubscriptionsByCustomerId(args),
     );
 
-    return subscriptions;
+    return subscriptions.filter(isWalletWebSubscription);
   }
 
   public async listPaymentLinks(

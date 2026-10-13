@@ -116,6 +116,11 @@ export const PLAN_CODE_METADATA_KEY = 'planCode';
 export const GRACE_PERIOD_METADATA_KEY = 'gracePeriod';
 
 /**
+ * Metadata key naming the upstream customer group
+ */
+export const CUSTOMER_GROUP_METADATA_KEY = 'customerGroup';
+
+/**
  * Mirrors the `subscription_entitlements.value` column's `varchar(255)`: a
  * longer value is skipped rather than left to fail the insert.
  */

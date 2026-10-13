@@ -9,6 +9,8 @@ import { subscriptionBuilder } from '#/datasources/billing-api/entities/__tests_
 import { stripDashes } from '#/datasources/billing-api/upstream-customer-id.util';
 import type { IBillingApi } from '#/domain/interfaces/billing-api.interface';
 import { BillingRepository } from '#/modules/billing/domain/billing.repository';
+import { WALLET_WEB_CUSTOMER_GROUP } from '#/modules/billing/domain/entities/webhook-event.entity';
+import { CUSTOMER_GROUP_METADATA_KEY } from '#/modules/entitlements/domain/entitlements.constants';
 import { rawify } from '#/validation/entities/raw.entity';
 
 const billingApiMock = {
@@ -54,6 +56,66 @@ describe('BillingRepository', () => {
       );
 
       await expect(target.listPaymentLinks()).resolves.toEqual(paymentLinks);
+    });
+  });
+
+  describe('customer group', () => {
+    it('should keep the subscriptions of the Safe{Wallet} customer group', async () => {
+      const subscriptions = [
+        subscriptionBuilder().build(),
+        subscriptionBuilder()
+          .with('metadata', {
+            [CUSTOMER_GROUP_METADATA_KEY]: WALLET_WEB_CUSTOMER_GROUP,
+          })
+          .build(),
+      ];
+      billingApiMock.getSubscriptionsByCustomerId.mockResolvedValue(
+        rawify({ subscriptions }),
+      );
+
+      await expect(
+        target.getSubscriptionsByCustomerId({
+          upstreamCustomerId: faker.string.uuid(),
+        }),
+      ).resolves.toEqual(subscriptions);
+    });
+
+    it('should drop the subscriptions of another customer group', async () => {
+      const walletWeb = subscriptionBuilder().build();
+      const otherGroup = subscriptionBuilder()
+        .with('metadata', {
+          [CUSTOMER_GROUP_METADATA_KEY]: faker.word.noun(),
+          FEATURE_SAFE_SEATS: '10',
+        })
+        .build();
+      billingApiMock.getSubscriptionsByCustomerId.mockResolvedValue(
+        rawify({ subscriptions: [otherGroup, walletWeb] }),
+      );
+
+      await expect(
+        target.getSubscriptionsByCustomerId({
+          upstreamCustomerId: faker.string.uuid(),
+        }),
+      ).resolves.toEqual([walletWeb]);
+    });
+
+    it('should drop a subscription that names no customer group', async () => {
+      const subscriptions = [
+        subscriptionBuilder().with('metadata', null).build(),
+        subscriptionBuilder().with('metadata', {}).build(),
+        subscriptionBuilder()
+          .with('metadata', { [CUSTOMER_GROUP_METADATA_KEY]: null })
+          .build(),
+      ];
+      billingApiMock.getSubscriptionsByCustomerId.mockResolvedValue(
+        rawify({ subscriptions }),
+      );
+
+      await expect(
+        target.getSubscriptionsByCustomerId({
+          upstreamCustomerId: faker.string.uuid(),
+        }),
+      ).resolves.toEqual([]);
     });
   });
 
