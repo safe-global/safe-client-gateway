@@ -47,7 +47,7 @@ export const POLICY_INDEXER_STATE_QUERY = `query PolicyIndexerState(
     where: { _or: $guardPolicyBindings, active: { _eq: true }, kind: { _in: $guardPolicyKinds } }
     order_by: [{ chainId: asc }, { safe: asc }, { target: asc }, { selector: asc }]
   ) {
-    chainId safe guard target selector operation kind policy active state
+    chainId safe guard target selector operation kind policy state
   }
 }`;
 

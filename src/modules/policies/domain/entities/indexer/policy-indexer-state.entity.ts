@@ -178,7 +178,6 @@ const PolicyIndexerGuardPolicyBindingBaseSchema = z.object({
   selector: HexSchema,
   operation: z.enum(PolicyOperation),
   policy: AddressSchema,
-  active: z.boolean(),
 });
 
 export const PolicyIndexerGuardPolicyBindingSchema = z.discriminatedUnion(
