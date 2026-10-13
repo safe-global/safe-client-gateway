@@ -78,36 +78,16 @@ describe('pinoLoggerFactory', () => {
     expect(lines).toHaveLength(0);
   });
 
-  it.each([
-    ['info', false],
-    ['http', false],
-    ['verbose', false],
-    ['debug', true],
-    ['silly', true],
-  ])(
-    'filters debug messages for the %s level as before (debug logged: %s)',
-    (level, isDebugLogged) => {
-      configurationService.set('log.level', level);
-      const debugMessage = faker.word.words();
-      const infoMessage = faker.word.words();
-      const logger = pinoLoggerFactory(configurationService, stream);
+  it('filters messages below the configured level', () => {
+    configurationService.set('log.level', 'info');
+    const infoMessage = faker.word.words();
+    const logger = pinoLoggerFactory(configurationService, stream);
 
-      logger.debug({ message: debugMessage });
-      logger.info({ message: infoMessage });
+    logger.debug({ message: faker.word.words() });
+    logger.info({ message: infoMessage });
 
-      expect(parsedLines()).toStrictEqual([
-        ...(isDebugLogged ? [{ level: 'debug', message: debugMessage }] : []),
-        { level: 'info', message: infoMessage },
-      ]);
-    },
-  );
-
-  it('throws for an unsupported level', () => {
-    const level = faker.string.alpha({ length: 12 });
-    configurationService.set('log.level', level);
-
-    expect(() => pinoLoggerFactory(configurationService, stream)).toThrow(
-      `Unsupported log level. level=${level}`,
-    );
+    expect(parsedLines()).toStrictEqual([
+      { level: 'info', message: infoMessage },
+    ]);
   });
 });

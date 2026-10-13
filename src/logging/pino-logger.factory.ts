@@ -1,38 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import {
-  type DestinationStream,
-  destination,
-  type Level,
-  type Logger,
-  pino,
-} from 'pino';
+import { type DestinationStream, destination, type Logger, pino } from 'pino';
 import PinoPretty from 'pino-pretty';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
 
 export const PinoLogger = Symbol('PinoLogger');
 
 const STDOUT_FD = 1;
-
-/**
- * Maps the configured `log.level` (npm level names) to the Pino level
- * that filters the same set of messages.
- */
-function toPinoLevel(level: string): Level {
-  switch (level) {
-    case 'error':
-    case 'warn':
-    case 'info':
-    case 'debug':
-      return level;
-    case 'http':
-    case 'verbose':
-      return 'info';
-    case 'silly':
-      return 'debug';
-    default:
-      throw new Error(`Unsupported log level. level=${level}`);
-  }
-}
 
 /**
  * Provides a Pino logger whose output keeps the structured JSON shape
@@ -50,7 +23,7 @@ export function pinoLoggerFactory(
     configurationService.getOrThrow<boolean>('log.prettyColorize');
   return pino(
     {
-      level: toPinoLevel(configurationService.getOrThrow<string>('log.level')),
+      level: configurationService.getOrThrow<string>('log.level'),
       enabled: !configurationService.getOrThrow<boolean>('log.silent'),
       messageKey: 'message',
       base: null,
