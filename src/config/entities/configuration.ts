@@ -70,6 +70,7 @@ export default () => ({
         .filter((domain) => domain.length > 0) ?? [],
     auth0: {
       domain: process.env.AUTH0_DOMAIN,
+      managementDomain: process.env.AUTH0_MANAGEMENT_DOMAIN,
       clientId: process.env.AUTH0_CLIENT_ID,
       clientSecret: process.env.AUTH0_CLIENT_SECRET,
       redirectUri: process.env.AUTH0_REDIRECT_URI,

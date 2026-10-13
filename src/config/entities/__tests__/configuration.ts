@@ -36,6 +36,7 @@ export default (): ReturnType<typeof configuration> => ({
     allowedSiweDomains: [],
     auth0: {
       domain: faker.internet.domainName(),
+      managementDomain: faker.internet.domainName(),
       clientId: faker.string.uuid(),
       clientSecret: faker.string.uuid(),
       redirectUri: faker.internet.url(),

@@ -21,6 +21,7 @@ describe('Auth0Api', () => {
   let target: Auth0Api;
   let fakeCacheService: FakeCacheService;
   let baseUri: string;
+  let managementBaseUri: string;
   let clientId: string;
   let clientSecret: string;
   let redirectUri: string;
@@ -32,6 +33,8 @@ describe('Auth0Api', () => {
 
     const domain = faker.internet.domainName();
     baseUri = `https://${domain}`;
+    const managementDomain = faker.internet.domainName();
+    managementBaseUri = `https://${managementDomain}`;
     clientId = faker.string.uuid();
     clientSecret = faker.string.uuid();
     redirectUri = faker.internet.url();
@@ -40,6 +43,10 @@ describe('Auth0Api', () => {
 
     const fakeConfigurationService = new FakeConfigurationService();
     fakeConfigurationService.set('auth.auth0.domain', domain);
+    fakeConfigurationService.set(
+      'auth.auth0.managementDomain',
+      managementDomain,
+    );
     fakeConfigurationService.set('auth.auth0.clientId', clientId);
     fakeConfigurationService.set('auth.auth0.clientSecret', clientSecret);
     fakeConfigurationService.set('auth.auth0.redirectUri', redirectUri);
@@ -235,6 +242,44 @@ describe('Auth0Api', () => {
           networkRequest: {
             headers: { Authorization: `Bearer ${accessToken}` },
           },
+        }),
+      );
+    });
+
+    it('should call the Management API on the management domain', async () => {
+      const accessToken = faker.string.alphanumeric();
+      const extUserId = faker.string.uuid();
+      const methodId = faker.string.uuid();
+      networkService.postForm.mockResolvedValueOnce({
+        status: 200,
+        data: rawify({
+          access_token: accessToken,
+          expires_in: 3_600,
+        }),
+      });
+
+      await target.listUserAuthenticationMethods(extUserId);
+      await target.deleteUserAuthenticationMethod(extUserId, methodId);
+
+      const authenticationMethodsUrl = new URL(
+        `/api/v2/users/${encodeURIComponent(extUserId)}/authentication-methods`,
+        managementBaseUri,
+      ).toString();
+      expect(networkService.postForm).toHaveBeenCalledWith({
+        url: new URL('/oauth/token', managementBaseUri).toString(),
+        data: {
+          grant_type: 'client_credentials',
+          client_id: clientId,
+          client_secret: clientSecret,
+          audience: new URL('/api/v2/', managementBaseUri).toString(),
+        },
+      });
+      expect(networkService.get).toHaveBeenCalledWith(
+        expect.objectContaining({ url: authenticationMethodsUrl }),
+      );
+      expect(networkService.delete).toHaveBeenCalledWith(
+        expect.objectContaining({
+          url: `${authenticationMethodsUrl}/${encodeURIComponent(methodId)}`,
         }),
       );
     });

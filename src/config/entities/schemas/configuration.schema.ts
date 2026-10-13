@@ -99,6 +99,7 @@ export const RootConfigurationSchema = z
     AUTH_ALLOWED_SIWE_DOMAINS: z.string().optional(),
     AUTH0_API_AUDIENCE: z.string().optional(),
     AUTH0_DOMAIN: DomainSchema.optional(),
+    AUTH0_MANAGEMENT_DOMAIN: DomainSchema.optional(),
     AUTH0_CLIENT_ID: z.string().optional(),
     BILLING_WEBHOOK_JWT_PUBLIC_KEY: z.string().optional(),
     BILLING_WEBHOOK_JWT_ISSUER: z.string().optional(),

@@ -40,6 +40,7 @@ export class Auth0Api implements IAuth0Api {
   private static readonly MULTI_FACTOR_ACR_VALUE =
     'http://schemas.openid.net/pape/policies/2007/06/multi-factor';
   private readonly baseUri: string;
+  private readonly managementBaseUri: string;
   private readonly clientId: string;
   private readonly clientSecret: string;
   private readonly redirectUri: string;
@@ -62,6 +63,11 @@ export class Auth0Api implements IAuth0Api {
       `${prefix}.domain`,
     );
     this.baseUri = `https://${domain}`;
+    // Auth0 serves the Management API only under the tenant domain, never a custom domain.
+    const managementDomain = this.configurationService.getOrThrow<string>(
+      `${prefix}.managementDomain`,
+    );
+    this.managementBaseUri = `https://${managementDomain}`;
     this.clientId = this.configurationService.getOrThrow<string>(
       `${prefix}.clientId`,
     );
@@ -180,7 +186,7 @@ export class Auth0Api implements IAuth0Api {
   private getAuthenticationMethodsUrl(extUserId: string): string {
     return new URL(
       `/api/v2/users/${encodeURIComponent(extUserId)}/authentication-methods`,
-      this.baseUri,
+      this.managementBaseUri,
     ).toString();
   }
 
@@ -207,17 +213,17 @@ export class Auth0Api implements IAuth0Api {
    * grant.
    *
    * Requires the Auth0 application to be authorized for the Management API
-   * (audience `https://{domain}/api/v2/`) with at least the
+   * (audience `https://{managementDomain}/api/v2/`) with at least the
    * `read:authentication_methods` and `delete:authentication_methods` scopes.
    */
   private async fetchManagementApiToken(): Promise<string> {
     const response = await this.networkService.postForm({
-      url: new URL('/oauth/token', this.baseUri).toString(),
+      url: new URL('/oauth/token', this.managementBaseUri).toString(),
       data: {
         grant_type: Auth0Api.CLIENT_CREDENTIALS_GRANT_TYPE,
         client_id: this.clientId,
         client_secret: this.clientSecret,
-        audience: new URL('/api/v2/', this.baseUri).toString(),
+        audience: new URL('/api/v2/', this.managementBaseUri).toString(),
       },
     });
 
