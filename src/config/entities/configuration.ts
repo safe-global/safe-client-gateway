@@ -379,6 +379,7 @@ export default () => ({
       10,
     ),
     safenetNonce: 60,
+    safenetChecksPerDay: 24 * 60 * 60,
     hoodi: Number.parseInt(
       process.env.HOODI_EXPIRATION_TIME_SECONDS ?? `${60}`,
       10,
@@ -870,6 +871,10 @@ export default () => ({
     ),
     pollTimeoutMs: Number.parseInt(
       process.env.SAFENET_POLL_TIMEOUT_MS ?? `${120_000}`,
+      10,
+    ),
+    checksPerSpacePerDay: Number.parseInt(
+      process.env.SAFENET_CHECKS_PER_SPACE_PER_DAY ?? '100',
       10,
     ),
     // The schema bounds the attempts to 1-3 and the retention ages to 30 days or more.
