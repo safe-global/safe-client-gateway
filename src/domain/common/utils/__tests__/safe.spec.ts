@@ -25,6 +25,7 @@ import {
   migrateSingletonEncoder,
   migrateWithFallbackHandlerEncoder,
 } from '#/modules/contracts/domain/__tests__/encoders/safe-migration-encoder.builder';
+import type { TypedData } from '#/modules/messages/domain/entities/typed-data.entity';
 import { typedDataBuilder } from '#/modules/messages/routes/entities/__tests__/typed-data.builder';
 import { multisigTransactionBuilder } from '#/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
 import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
@@ -122,7 +123,7 @@ describe('Safe', () => {
           DOMAIN_WITH_CHAIN_ID_VERSIONS,
         );
         const safe = safeBuilder().with('version', version).build();
-        const message = {
+        const message: TypedData = {
           domain: {
             name: faker.lorem.word(),
             version: faker.system.semver(),
