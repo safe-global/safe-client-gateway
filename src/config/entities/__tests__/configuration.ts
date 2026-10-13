@@ -465,7 +465,15 @@ export default (): ReturnType<typeof configuration> => ({
   safenet: {
     consensusAddress: faker.finance.ethereumAddress(),
     oracleAddress: faker.finance.ethereumAddress(),
-    payer: { safeAddress: faker.finance.ethereumAddress() },
+    payer: {
+      safeAddress: faker.finance.ethereumAddress(),
+      kms: {
+        keyId: faker.string.uuid(),
+        webIdentityTokenFile: faker.system.filePath(),
+        connectionTimeoutMs: faker.number.int({ min: 1, max: 5_000 }),
+        requestTimeoutMs: faker.number.int({ min: 1, max: 10_000 }),
+      },
+    },
     pollIntervalMs: faker.number.int({ min: 1, max: 1000 }),
     pollTimeoutMs: faker.number.int({ min: 1000, max: 120_000 }),
   },

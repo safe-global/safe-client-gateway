@@ -56,6 +56,7 @@ export class SafenetPayer {
   private readonly pollIntervalMs: number;
   private readonly pollTimeoutMs: number;
   private readonly nonceTtlSeconds: number;
+  private ownerVerified = false;
 
   constructor(
     @Inject(IConfigurationService) configuration: IConfigurationService,
@@ -102,6 +103,7 @@ export class SafenetPayer {
 
   private async prepare(proposal: SafenetProposal) {
     const client = await this.blockchain.getApi(SAFENET_CHAIN_ID);
+    await this.assertSignerIsOwner(client);
     const key = CacheRouter.getSafenetPayerNonceCacheKey({
       chainId: SAFENET_CHAIN_ID,
       safeAddress: this.payerSafeAddress,
@@ -155,6 +157,24 @@ export class SafenetPayer {
       });
   }
 
+  /** The signer must own the payer Safe, or `execTransaction` rejects its signature. */
+  private async assertSignerIsOwner(client: PublicClient): Promise<void> {
+    if (this.ownerVerified) {
+      return;
+    }
+    const signer = await this.signer.getAddress();
+    const isOwner = await client.readContract({
+      address: this.payerSafeAddress,
+      abi: safeAbi,
+      functionName: 'isOwner',
+      args: [signer],
+    });
+    if (!isOwner) {
+      throw new SafenetPayerError(`Signer ${signer} is not a payer Safe owner`);
+    }
+    this.ownerVerified = true;
+  }
+
   private async nextNonce(client: PublicClient, key: string): Promise<bigint> {
     const [onchainNonce, counter] = await Promise.all([
       client.readContract({
@@ -176,7 +196,7 @@ export class SafenetPayer {
         version: SUPPORTED_SAFE_VERSION,
         nonce: Number(payerNonce),
         threshold: 1,
-        owners: [this.signer.address],
+        owners: [await this.signer.getAddress()],
         masterCopy: zeroAddress,
         fallbackHandler: zeroAddress,
         guard: zeroAddress,

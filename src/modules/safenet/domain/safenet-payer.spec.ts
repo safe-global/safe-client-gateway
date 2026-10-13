@@ -77,8 +77,10 @@ class Harness {
     status: 'success',
     logs: this.logs,
   } as TransactionReceipt;
+  readonly signerAddress = randomAddress();
+  owner: Address = this.signerAddress;
   readonly signer = {
-    address: randomAddress(),
+    getAddress: vi.fn().mockResolvedValue(this.signerAddress),
     signHash: vi.fn((hash: Hex) => {
       const { topics } = this.executedLog;
       if (topics.length < 2) {
@@ -88,7 +90,20 @@ class Harness {
     }),
   };
   readonly client = {
-    readContract: vi.fn().mockResolvedValue(2n),
+    readContract: vi
+      .fn()
+      .mockImplementation(
+        ({
+          functionName,
+          args,
+        }: {
+          functionName: string;
+          args?: Array<unknown>;
+        }) =>
+          Promise.resolve(
+            functionName === 'isOwner' ? args?.[0] === this.owner : 2n,
+          ),
+      ),
     call: vi.fn().mockResolvedValue({ data: this.userSafeTxHash }),
     getTransactionReceipt: vi.fn().mockResolvedValue(this.receipt),
   } as MockedObject<PublicClient>;
@@ -303,6 +318,31 @@ describe('SafenetPayer', () => {
       chainId: '100',
       transactionHash: h.transactionHash,
       error: 'Error',
+    });
+  });
+
+  it('rejects a signer that does not own the payer Safe before the relay', async () => {
+    const h = new Harness();
+    h.owner = randomAddress();
+
+    await expectPayerError(
+      h.propose(),
+      `Signer ${h.signerAddress} is not a payer Safe owner`,
+    );
+    expect(h.client.call).not.toHaveBeenCalled();
+    expect(h.relay.relayWithoutLimits).not.toHaveBeenCalled();
+  });
+
+  it('checks ownership until it passes once, then not again', async () => {
+    const h = new Harness();
+    h.owner = randomAddress();
+    await expect(h.propose()).rejects.toBeInstanceOf(SafenetPayerError);
+    h.owner = h.signerAddress;
+    await h.propose();
+    h.owner = randomAddress();
+
+    await expect(h.propose()).resolves.toMatchObject({
+      transactionHash: h.transactionHash,
     });
   });
 
