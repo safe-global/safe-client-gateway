@@ -114,6 +114,21 @@ describe('TypedDataSchema', () => {
       );
     });
 
+    it('should keep and checksum the safe', () => {
+      const nonChecksummedAddress = faker.finance
+        .ethereumAddress()
+        .toLowerCase() as Address;
+      const domain = typedDataDomainBuilder()
+        .with('safe', nonChecksummedAddress)
+        .build();
+
+      const result = _TypedDataDomainSchema.safeParse(domain);
+
+      expect(result.success && result.data.safe).toBe(
+        getAddress(nonChecksummedAddress),
+      );
+    });
+
     it.each(Object.keys(typedDataDomainBuilder().build()))(
       'should allow an optional %s',
       (key) => {

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import semverSatisfies from 'semver/functions/satisfies';
-import { getAddress, type Hex } from 'viem';
+import { getAddress, type Hex, hashTypedData } from 'viem';
 import type { IBuilder } from '#/__tests__/builder';
 import { Builder } from '#/__tests__/builder';
 import {
@@ -114,6 +114,52 @@ describe('Safe', () => {
             safe,
           }),
         ).not.toThrow();
+      });
+
+      it('should handle typedData with a safe in its domain', () => {
+        const chainId = faker.string.numeric();
+        const version = faker.helpers.arrayElement(
+          DOMAIN_WITH_CHAIN_ID_VERSIONS,
+        );
+        const safe = safeBuilder().with('version', version).build();
+        const message = {
+          domain: {
+            name: faker.lorem.word(),
+            version: faker.system.semver(),
+            chainId: faker.number.int(),
+            safe: getAddress(faker.finance.ethereumAddress()),
+          },
+          primaryType: 'Delegate',
+          types: {
+            EIP712Domain: [
+              { name: 'name', type: 'string' },
+              { name: 'version', type: 'string' },
+              { name: 'chainId', type: 'uint256' },
+              { name: 'safe', type: 'address' },
+            ],
+            Delegate: [
+              { name: 'delegateAddress', type: 'address' },
+              { name: 'totp', type: 'uint256' },
+              { name: 'action', type: 'string' },
+            ],
+          },
+          message: {
+            delegateAddress: getAddress(faker.finance.ethereumAddress()),
+            totp: faker.number.int(),
+            action: faker.helpers.arrayElement(['add', 'delete', 'edit']),
+          },
+        };
+
+        const result = getSafeMessageMessageHash({ chainId, message, safe });
+
+        expect(result).toBe(
+          hashTypedData({
+            domain: _getSafeDomain({ chainId, address: safe.address, version }),
+            primaryType: 'SafeMessage',
+            types: { SafeMessage: [{ name: 'message', type: 'bytes' }] },
+            message: { message: hashTypedData(message) },
+          }),
+        );
       });
 
       it.each(DOMAIN_WITHOUT_CHAIN_ID_VERSIONS)(

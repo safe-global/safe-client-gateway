@@ -42,5 +42,6 @@ export function typedDataDomainBuilder(): IBuilder<TypedData['domain']> {
     .with('name', faker.lorem.word())
     .with('salt', faker.string.hexadecimal({ length: 64 }) as Hex)
     .with('verifyingContract', getAddress(faker.finance.ethereumAddress()))
-    .with('version', faker.system.semver());
+    .with('version', faker.system.semver())
+    .with('safe', getAddress(faker.finance.ethereumAddress()));
 }
