@@ -2,7 +2,7 @@
 
 import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
-import type { INestApplication } from '@nestjs/common';
+import { type INestApplication, Module } from '@nestjs/common';
 import { APP_FILTER } from '@nestjs/core';
 import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
@@ -42,12 +42,26 @@ import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisi
 import { safeAppBuilder } from '#/modules/safe-apps/domain/entities/__tests__/safe-app.builder';
 import { TestSafeQueueModule } from '#/modules/safe-queue/__tests__/test.safe-queue.module';
 import { SafeQueueModule } from '#/modules/safe-queue/safe-queue.module';
+import { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository.interface';
+import { ISpacesRepository } from '#/modules/spaces/domain/spaces.repository.interface';
+import { SpacesModule } from '#/modules/spaces/spaces.module';
 import { tokenBuilder } from '#/modules/tokens/domain/__tests__/token.builder';
 import { addConfirmationDtoBuilder } from '#/modules/transactions/routes/__tests__/entities/add-confirmation.dto.builder';
 import { TransactionsModule } from '#/modules/transactions/transactions.module';
+import { TestUsersModule } from '#/modules/users/__tests__/test.users.module';
+import { UsersModule } from '#/modules/users/users.module';
 import { GlobalErrorFilter } from '#/routes/common/filters/global-error.filter';
 import { ZodErrorFilter } from '#/routes/common/filters/zod-error.filter';
 import { rawify } from '#/validation/entities/raw.entity';
+
+@Module({
+  providers: [
+    { provide: ISpacesRepository, useValue: {} },
+    { provide: ISpaceSafesRepository, useValue: {} },
+  ],
+  exports: [ISpacesRepository, ISpaceSafesRepository],
+})
+class TestSpacesModule {}
 
 describe('Add transaction confirmations - Transactions Controller', () => {
   let app: INestApplication<Server>;
@@ -80,6 +94,10 @@ describe('Add transaction confirmations - Transactions Controller', () => {
       .useModule(TestTxAuthNetworkModule)
       .overrideModule(SafeQueueModule)
       .useModule(TestSafeQueueModule)
+      .overrideModule(UsersModule)
+      .useModule(TestUsersModule)
+      .overrideModule(SpacesModule)
+      .useModule(TestSpacesModule)
       .compile();
 
     const configurationService = moduleFixture.get<IConfigurationService>(
