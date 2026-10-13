@@ -2,7 +2,7 @@
 import { faker } from '@faker-js/faker';
 import type { ClsService } from 'nestjs-cls';
 import type { MockedObject } from 'vitest';
-import type winston from 'winston';
+import type { Logger } from 'pino';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
 import { RequestScopedLoggingService } from '#/logging/logging.service';
 
@@ -11,8 +11,11 @@ const mockClsService = vi.mocked({
 } as MockedObject<ClsService>);
 
 const mockLogger = {
-  log: vi.fn(),
-} as MockedObject<winston.Logger>;
+  info: vi.fn(),
+  error: vi.fn(),
+  warn: vi.fn(),
+  debug: vi.fn(),
+} as unknown as MockedObject<Logger>;
 
 const mockConfigurationService = vi.mocked({
   get: vi.fn(),
@@ -60,8 +63,8 @@ describe('RequestScopedLoggingService', () => {
 
     loggingService.info(message);
 
-    expect(mockLogger.log).toHaveBeenCalledTimes(1);
-    expect(mockLogger.log).toHaveBeenCalledWith('info', {
+    expect(mockLogger.info).toHaveBeenCalledTimes(1);
+    expect(mockLogger.info).toHaveBeenCalledWith({
       message,
       build_number: buildNumber,
       request_id: requestId,
@@ -77,8 +80,8 @@ describe('RequestScopedLoggingService', () => {
 
     loggingService.error(message);
 
-    expect(mockLogger.log).toHaveBeenCalledTimes(1);
-    expect(mockLogger.log).toHaveBeenCalledWith('error', {
+    expect(mockLogger.error).toHaveBeenCalledTimes(1);
+    expect(mockLogger.error).toHaveBeenCalledWith({
       message,
       build_number: buildNumber,
       request_id: requestId,
@@ -94,8 +97,8 @@ describe('RequestScopedLoggingService', () => {
 
     loggingService.warn(message);
 
-    expect(mockLogger.log).toHaveBeenCalledTimes(1);
-    expect(mockLogger.log).toHaveBeenCalledWith('warn', {
+    expect(mockLogger.warn).toHaveBeenCalledTimes(1);
+    expect(mockLogger.warn).toHaveBeenCalledWith({
       message,
       build_number: buildNumber,
       request_id: requestId,
@@ -111,9 +114,35 @@ describe('RequestScopedLoggingService', () => {
 
     loggingService.debug(message);
 
-    expect(mockLogger.log).toHaveBeenCalledTimes(1);
-    expect(mockLogger.log).toHaveBeenCalledWith('debug', {
+    expect(mockLogger.debug).toHaveBeenCalledTimes(1);
+    expect(mockLogger.debug).toHaveBeenCalledWith({
       message,
+      build_number: buildNumber,
+      request_id: requestId,
+      timestamp: systemTime.toISOString(),
+      version: version,
+    });
+  });
+
+  it('logs the message and enumerable properties of an Error', () => {
+    const level = faker.helpers.arrayElement([
+      'info',
+      'error',
+      'warn',
+      'debug',
+    ] as const);
+    const errorMessage = faker.word.words();
+    const code = faker.number.int();
+    const error = Object.assign(new Error(errorMessage), { code });
+    const requestId = faker.string.uuid();
+    mockClsService.getId.mockReturnValue(requestId);
+
+    loggingService[level](error);
+
+    expect(mockLogger[level]).toHaveBeenCalledTimes(1);
+    expect(mockLogger[level]).toHaveBeenCalledWith({
+      message: errorMessage,
+      code,
       build_number: buildNumber,
       request_id: requestId,
       timestamp: systemTime.toISOString(),

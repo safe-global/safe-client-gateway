@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import { ClsService } from 'nestjs-cls';
-import type winston from 'winston';
+import type { Logger } from 'pino';
 import { IConfigurationService } from '#/config/configuration.service.interface';
 import type { ILoggingService } from '#/logging/logging.interface';
+import { PinoLogger } from '#/logging/pino-logger.factory';
 
 /**
  * Implementation of ILoggingService which prepends the current time and a unique request ID to every logged message.
@@ -18,7 +19,7 @@ export class RequestScopedLoggingService implements ILoggingService {
   constructor(
     @Inject(IConfigurationService)
     readonly configurationService: IConfigurationService,
-    @Inject('Logger') private readonly logger: winston.Logger,
+    @Inject(PinoLogger) private readonly logger: Logger,
     private readonly cls: ClsService,
   ) {
     this.version = configurationService.get('about.version');
@@ -26,19 +27,19 @@ export class RequestScopedLoggingService implements ILoggingService {
   }
 
   info(message: unknown): void {
-    this.logger.log('info', this.formatMessage(message));
+    this.logger.info(this.formatMessage(message));
   }
 
   error(message: unknown): void {
-    this.logger.log('error', this.formatMessage(message));
+    this.logger.error(this.formatMessage(message));
   }
 
   warn(message: unknown): void {
-    this.logger.log('warn', this.formatMessage(message));
+    this.logger.warn(this.formatMessage(message));
   }
 
   debug(message: unknown): void {
-    this.logger.log('debug', this.formatMessage(message));
+    this.logger.debug(this.formatMessage(message));
   }
 
   private formatMessage(message: unknown): {
@@ -52,12 +53,18 @@ export class RequestScopedLoggingService implements ILoggingService {
     const timestamp = Date.now();
     const dateAsString = new Date(timestamp).toISOString();
 
-    return {
+    const entry = {
       message,
       build_number: this.buildNumber,
       request_id: requestId,
       timestamp: dateAsString,
       version: this.version,
     };
+
+    if (message instanceof Error) {
+      return { ...entry, ...message, message: message.message };
+    }
+
+    return entry;
   }
 }
