@@ -29,6 +29,9 @@ class TypedDataDomain {
     type: String,
   })
   version?: string;
+
+  @ApiPropertyOptional({ type: String })
+  safe?: Address;
 }
 
 class TypedDataParameter {
