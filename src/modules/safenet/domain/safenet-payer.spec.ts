@@ -172,6 +172,10 @@ class Harness {
   }
 }
 
+const upstream = Object.assign(new Error('upstream body'), {
+  name: 'TimeoutError',
+});
+
 type Arrange = (h: Harness) => unknown;
 
 async function expectPayerError(outcome: Promise<unknown>, message: string) {
@@ -360,6 +364,22 @@ describe('SafenetPayer', () => {
     );
 
     expect(error.cause).toBeUndefined();
+    expect(h.relay.relayWithoutLimits).not.toHaveBeenCalled();
+  });
+
+  it.each<[string, Arrange]>([
+    ['an RPC error', (h) => h.client.readContract.mockRejectedValue(upstream)],
+    ['a KMS error', (h) => h.signer.signHash.mockRejectedValue(upstream)],
+  ])('retries %s before the relay', async (_name, arrange) => {
+    const h = new Harness();
+    arrange(h);
+
+    const error = await expectPayerError(
+      h.propose(),
+      'Safenet payer failed before relay: TimeoutError',
+    );
+
+    expect(error.cause).toBe(upstream);
     expect(h.relay.relayWithoutLimits).not.toHaveBeenCalled();
   });
 

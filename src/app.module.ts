@@ -65,6 +65,7 @@ import { SafeAppsModule } from '#/modules/safe-apps/safe-apps.module';
 import { SafeShieldModule } from '#/modules/safe-shield/safe-shield.module';
 import { SpaceSafeShieldModule } from '#/modules/safe-shield/space-safe-shield.module';
 import { SafenetModule } from '#/modules/safenet/safenet.module';
+import { SafenetChecksModule } from '#/modules/safenet/safenet-checks.module';
 import { SpacesModule } from '#/modules/spaces/spaces.module';
 import { SurveysModule } from '#/modules/surveys/surveys.module';
 import { TargetedMessagingModule } from '#/modules/targeted-messaging/targeted-messaging.module';
@@ -139,7 +140,9 @@ export class AppModule implements NestModule {
         SafeAppsModule,
         SafeModule,
         SafeShieldModule,
-        ...(isSafenetFeatureEnabled ? [SafenetModule] : []),
+        ...(isSafenetFeatureEnabled
+          ? [SafenetModule, SafenetChecksModule]
+          : []),
         TargetedMessagingModule,
         TransactionsModule,
         // common
