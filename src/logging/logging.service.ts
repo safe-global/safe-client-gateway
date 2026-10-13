@@ -6,6 +6,14 @@ import { IConfigurationService } from '#/config/configuration.service.interface'
 import type { ILoggingService } from '#/logging/logging.interface';
 import { PinoLogger } from '#/logging/pino-logger.factory';
 
+type LogEntry = {
+  message: unknown;
+  build_number: string | undefined;
+  request_id: string;
+  timestamp: string;
+  version: string | undefined;
+};
+
 /**
  * Implementation of ILoggingService which prepends the current time and a unique request ID to every logged message.
  *
@@ -42,29 +50,29 @@ export class RequestScopedLoggingService implements ILoggingService {
     this.logger.debug(this.formatMessage(message));
   }
 
-  private formatMessage(message: unknown): {
-    message: unknown;
-    build_number: string | undefined;
-    request_id: string;
-    timestamp: string;
-    version: string | undefined;
-  } {
+  private formatMessage(message: unknown): LogEntry {
     const requestId = this.cls.getId();
     const timestamp = Date.now();
     const dateAsString = new Date(timestamp).toISOString();
 
-    const entry = {
+    return flattenError({
       message,
       build_number: this.buildNumber,
       request_id: requestId,
       timestamp: dateAsString,
       version: this.version,
-    };
+    });
+  }
+}
 
-    if (message instanceof Error) {
-      return { ...entry, ...message, message: message.message };
-    }
-
+/**
+ * Replaces an {@link Error} message with its message string and lifts the
+ * error's own enumerable properties onto the entry.
+ */
+function flattenError(entry: LogEntry): LogEntry {
+  const { message } = entry;
+  if (!(message instanceof Error)) {
     return entry;
   }
+  return { ...entry, ...message, message: message.message };
 }

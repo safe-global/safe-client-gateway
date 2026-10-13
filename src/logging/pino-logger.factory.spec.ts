@@ -14,7 +14,6 @@ describe('pinoLoggerFactory', () => {
   beforeEach(() => {
     configurationService = new FakeConfigurationService();
     configurationService.set('log.silent', false);
-    configurationService.set('log.prettyColorize', false);
     configurationService.set('log.level', 'debug');
     lines = [];
     stream = {

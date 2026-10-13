@@ -5,8 +5,6 @@ import type { IConfigurationService } from '#/config/configuration.service.inter
 
 export const PinoLogger = Symbol('PinoLogger');
 
-const STDOUT_FD = 1;
-
 /**
  * Provides a Pino logger whose output keeps the structured JSON shape
  * consumed downstream: string `level`, payload under `message` and no
@@ -19,8 +17,6 @@ export function pinoLoggerFactory(
   configurationService: IConfigurationService,
   stream?: DestinationStream,
 ): Logger {
-  const prettyColorize =
-    configurationService.getOrThrow<boolean>('log.prettyColorize');
   return pino(
     {
       level: configurationService.getOrThrow<string>('log.level'),
@@ -33,8 +29,8 @@ export function pinoLoggerFactory(
       },
     },
     stream ??
-      (prettyColorize
+      (configurationService.getOrThrow<boolean>('log.prettyColorize')
         ? PinoPretty({ colorize: true, sync: true, messageKey: 'message' })
-        : destination({ fd: STDOUT_FD, sync: true })),
+        : destination({ sync: true })),
   );
 }
