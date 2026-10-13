@@ -398,6 +398,7 @@ describe('Transactions Controller - Safe Queue Service', () => {
       expect(networkService.get).toHaveBeenCalledWith({
         url: getQueueTransactionUrl,
         networkRequest: {
+          params: { spaceId: undefined },
           circuitBreaker: expect.anything(),
         },
       });
@@ -478,6 +479,7 @@ describe('Transactions Controller - Safe Queue Service', () => {
       expect(networkService.get).toHaveBeenCalledWith({
         url: getQueueTransactionUrl,
         networkRequest: {
+          params: { spaceId: undefined },
           circuitBreaker: expect.anything(),
         },
       });

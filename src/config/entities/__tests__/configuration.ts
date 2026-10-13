@@ -436,6 +436,7 @@ export default (): ReturnType<typeof configuration> => ({
     baseUri: faker.internet.url({ appendSlash: false }),
     useVpcUrl: false,
     apiKey: faker.string.hexadecimal({ length: 32 }),
+    privateQueueApiKey: faker.string.hexadecimal({ length: 32 }),
   },
   safeConfig: {
     baseUri: faker.internet.url({ appendSlash: false }),

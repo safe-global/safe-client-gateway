@@ -5,6 +5,7 @@ import type { Page } from '#/domain/entities/page.entity';
 import type { Delegate } from '#/modules/delegate/domain/entities/delegate.entity';
 import type { SafeQueueMessage } from '#/modules/safe-queue/entities/message.entity';
 import type { SafeQueueMultisigTransactionEntity } from '#/modules/safe-queue/entities/multisig-transaction.entity';
+import type { Space } from '#/modules/spaces/domain/entities/space.entity';
 import type { ProposeTransactionDto } from '#/modules/transactions/domain/entities/propose-transaction.dto.entity';
 import type { Raw } from '#/validation/entities/raw.entity';
 
@@ -15,15 +16,18 @@ export interface ISafeQueueService {
     chainId: string;
     safeAddress: Address;
     proposeTransactionDto: ProposeTransactionDto;
+    spaceId?: Space['id'];
   }): Promise<Raw<SafeQueueMultisigTransactionEntity>>;
 
   getMultisigTransaction(args: {
     chainId: string;
     safeTxHash: string;
+    spaceId?: Space['id'];
   }): Promise<Raw<SafeQueueMultisigTransactionEntity>>;
 
   getMultisigTransactionWithNoCache(args: {
     safeTxHash: string;
+    spaceId?: Space['id'];
   }): Promise<Raw<SafeQueueMultisigTransactionEntity>>;
 
   // Already validated internally (each chunk is safeParse'd) — not Raw<T>.
@@ -40,6 +44,7 @@ export interface ISafeQueueService {
     nonceOrder?: 'asc' | 'desc';
     limit?: number;
     offset?: number;
+    spaceId?: Space['id'];
   }): Promise<Raw<Page<SafeQueueMultisigTransactionEntity>>>;
 
   postConfirmation(args: {

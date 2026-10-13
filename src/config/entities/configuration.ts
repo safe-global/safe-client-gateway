@@ -809,6 +809,7 @@ export default () => ({
     useVpcUrl:
       process.env.USE_SAFE_QUEUE_SERVICE_VPC_URL?.toLowerCase() === 'true',
     apiKey: process.env.SAFE_QUEUE_SERVICE_API_KEY,
+    privateQueueApiKey: process.env.SAFE_QUEUE_SERVICE_PRIVATE_QUEUE_API_KEY,
   },
   safeConfig: {
     baseUri:

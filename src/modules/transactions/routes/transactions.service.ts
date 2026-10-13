@@ -18,6 +18,7 @@ import { IDataDecoderRepository } from '#/modules/data-decoder/domain/v2/data-de
 import type { MultisigTransaction as DomainMultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
 import type { SafeRepository } from '#/modules/safe/domain/safe.repository';
 import { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
+import type { Space } from '#/modules/spaces/domain/entities/space.entity';
 import { ITokenRepository } from '#/modules/tokens/domain/token.repository.interface';
 import type { AddConfirmationDto } from '#/modules/transactions/domain/entities/add-confirmation.dto.entity';
 import type { ProposeTransactionDto } from '#/modules/transactions/domain/entities/propose-transaction.dto.entity';
@@ -423,6 +424,7 @@ export class TransactionsService {
     safeAddress: Address;
     paginationData: PaginationData;
     trusted?: boolean;
+    spaceId?: Space['id'];
   }): Promise<Page<QueuedItem>> {
     const pagination = this.getAdjustedPaginationForQueue(args.paginationData);
     const safeInfo = await this.safeRepository.getSafe({
@@ -435,6 +437,7 @@ export class TransactionsService {
       limit: pagination.limit,
       offset: pagination.offset,
       trusted: args.trusted,
+      spaceId: args.spaceId,
     });
 
     const nextURL = buildNextPageURL(args.routeUrl, transactions.count);
@@ -528,6 +531,7 @@ export class TransactionsService {
     chainId: string;
     safeAddress: Address;
     proposeTransactionDto: ProposeTransactionDto;
+    spaceId?: Space['id'];
   }): Promise<TransactionDetails> {
     this.logProposeTx(args);
     args.proposeTransactionDto.origin = this.verifyOrigin(
@@ -538,6 +542,7 @@ export class TransactionsService {
     const domainTransaction = await this.safeRepository.getMultiSigTransaction({
       chainId: args.chainId,
       safeTransactionHash: args.proposeTransactionDto.safeTxHash,
+      spaceId: args.spaceId,
     });
     const [safe, dataDecoded] = await Promise.all([
       this.safeRepository.getSafe({

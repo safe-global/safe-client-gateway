@@ -67,6 +67,7 @@ import { SpaceSafeShieldModule } from '#/modules/safe-shield/space-safe-shield.m
 import { SpacesModule } from '#/modules/spaces/spaces.module';
 import { SurveysModule } from '#/modules/surveys/surveys.module';
 import { TargetedMessagingModule } from '#/modules/targeted-messaging/targeted-messaging.module';
+import { SpaceTransactionsModule } from '#/modules/transactions/space-transactions.module';
 import { TransactionsModule } from '#/modules/transactions/transactions.module';
 import { UsersModule } from '#/modules/users/users.module';
 import { DataSourceErrorFilter } from '#/routes/common/filters/data-source-error.filter';
@@ -124,6 +125,7 @@ export class AppModule implements NestModule {
               ...(isSesEmailFeatureEnabled ? [SesEmailModule] : []),
               CounterfactualSafesModule,
               SpaceSafeShieldModule,
+              SpaceTransactionsModule,
               PoliciesModule,
               SurveysModule,
             ]
