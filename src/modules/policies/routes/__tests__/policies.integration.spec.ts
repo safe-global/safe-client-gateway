@@ -665,7 +665,7 @@ describe('Space Policies Controller', () => {
       ]);
     });
 
-    it('should report a guard policy as unenforced when the guard is not set', async () => {
+    it('should report a guard policy as unenforced when another guard is set', async () => {
       const binding = rawIndexerGuardEnforcedPolicyBuilder()
         .with('chainId', Number(SEPOLIA_CHAIN_ID))
         .with('safe', safeAddress)
