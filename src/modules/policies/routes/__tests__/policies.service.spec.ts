@@ -35,10 +35,8 @@ import { policyIndexerSafeAllowanceBuilder } from '#/modules/policies/domain/ent
 import type { PolicyIndexerSafeAllowance } from '#/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 import { PolicyType } from '#/modules/policies/domain/entities/policy-type.entity';
 import type { IPolicyIndexerRepository } from '#/modules/policies/domain/policy-indexer.repository.interface';
-import {
-  GuardPolicyMapper,
-  guardPolicyKindsOf,
-} from '#/modules/policies/routes/mappers/guard-policy.mapper';
+import { guardPolicyKindsOf } from '#/modules/policies/domain/utils/policy.utils';
+import { GuardPolicyMapper } from '#/modules/policies/routes/mappers/guard-policy.mapper';
 import { PendingSpendingLimitMapper } from '#/modules/policies/routes/mappers/pending-spending-limit.mapper';
 import { ProposerMapper } from '#/modules/policies/routes/mappers/proposer.mapper';
 import { SpendingLimitMapper } from '#/modules/policies/routes/mappers/spending-limit.mapper';

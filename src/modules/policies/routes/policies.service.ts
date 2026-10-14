@@ -30,15 +30,12 @@ import type {
   TokenReference,
 } from '#/modules/policies/domain/entities/token.entity';
 import { IPolicyIndexerRepository } from '#/modules/policies/domain/policy-indexer.repository.interface';
+import { guardPolicyKindsOf } from '#/modules/policies/domain/utils/policy.utils';
 import {
   type TokenMetadataKey,
   tokenMetadataKey,
 } from '#/modules/policies/domain/utils/token-metadata-key.utils';
-import {
-  GUARD_POLICY_TYPES,
-  GuardPolicyMapper,
-  guardPolicyKindsOf,
-} from '#/modules/policies/routes/mappers/guard-policy.mapper';
+import { GuardPolicyMapper } from '#/modules/policies/routes/mappers/guard-policy.mapper';
 import { PendingSpendingLimitMapper } from '#/modules/policies/routes/mappers/pending-spending-limit.mapper';
 import { ProposerMapper } from '#/modules/policies/routes/mappers/proposer.mapper';
 import { SpendingLimitMapper } from '#/modules/policies/routes/mappers/spending-limit.mapper';
@@ -197,9 +194,8 @@ export class PoliciesService {
   ): Promise<Array<ActivePolicy>> {
     const spendingLimitsRequested = types.includes(PolicyType.SpendingLimit);
     const proposersRequested = types.includes(PolicyType.Proposer);
-    const guardPoliciesRequested = GUARD_POLICY_TYPES.some((type) =>
-      types.includes(type),
-    );
+    const guardPolicyKinds = guardPolicyKindsOf(types);
+    const guardPoliciesRequested = guardPolicyKinds.length > 0;
 
     if (
       safes.length === 0 ||
@@ -211,7 +207,6 @@ export class PoliciesService {
     // One indexer read serves both halves - it answers with the allowance rows
     // and the guard bindings alike - and so does the Safe read that follows it,
     // for the modules and the guard slot that say which of them are enforced.
-    const guardPolicyKinds = guardPolicyKindsOf(types);
     const indexerRequested = spendingLimitsRequested || guardPoliciesRequested;
     const state = indexerRequested
       ? await this.policyIndexerRepository.getState({
