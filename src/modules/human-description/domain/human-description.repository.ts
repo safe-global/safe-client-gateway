@@ -45,8 +45,9 @@ export class HumanDescriptionRepository implements IHumanDescriptionRepository {
     functionSignature: FunctionSignatureHash,
   ): HumanDescriptionTemplate {
     const template = this.templates[functionSignature];
-    if (!template)
+    if (!template) {
       throw Error(`No template for function signature ${functionSignature}`);
+    }
     return template;
   }
 }

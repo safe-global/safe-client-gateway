@@ -402,9 +402,13 @@ export function getSignerFactoryDeployments(args: {
     network: args.chainId,
     version: SUPPORTED_SIGNER_FACTORY_VERSION,
   });
-  if (!deployment) return [];
+  if (!deployment) {
+    return [];
+  }
   const address = deployment.networkAddresses[args.chainId];
-  if (!address) return [];
+  if (!address) {
+    return [];
+  }
   return [getAddress(address)];
 }
 

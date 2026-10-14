@@ -756,7 +756,9 @@ describe('RelayTransactionHelper', () => {
         'should return true for createProxyWithNonce with official L1 singleton at version %s',
         (version) => {
           const [singleton] = getSafeSingletonDeployments({ version, chainId });
-          if (!singleton) return;
+          if (!singleton) {
+            return;
+          }
           const data = createProxyWithNonceEncoder()
             .with('singleton', singleton)
             .encode();
@@ -778,7 +780,9 @@ describe('RelayTransactionHelper', () => {
             version,
             chainId,
           });
-          if (!singleton) return;
+          if (!singleton) {
+            return;
+          }
           const data = createProxyWithNonceEncoder()
             .with('singleton', singleton)
             .encode();
@@ -919,7 +923,9 @@ describe('RelayTransactionHelper', () => {
         'should return owners from a createProxyWithNonce call with official L1 singleton at version %s',
         (version) => {
           const [singleton] = getSafeSingletonDeployments({ version, chainId });
-          if (!singleton) return;
+          if (!singleton) {
+            return;
+          }
           const owners = [
             getAddress(faker.finance.ethereumAddress()),
             getAddress(faker.finance.ethereumAddress()),
@@ -942,7 +948,9 @@ describe('RelayTransactionHelper', () => {
             version,
             chainId,
           });
-          if (!singleton) return;
+          if (!singleton) {
+            return;
+          }
           const owners = [
             getAddress(faker.finance.ethereumAddress()),
             getAddress(faker.finance.ethereumAddress()),
@@ -967,7 +975,9 @@ describe('RelayTransactionHelper', () => {
       const chainId = faker.helpers.arrayElement(supportedChainIds);
       const version = PROXY_FACTORY_VERSIONS[chainId][0];
       const [singleton] = getSafeSingletonDeployments({ version, chainId });
-      if (!singleton) return;
+      if (!singleton) {
+        return;
+      }
       // execTransaction is a valid Safe ABI function but not 'setup'
       const data = createProxyWithNonceEncoder()
         .with('singleton', singleton)

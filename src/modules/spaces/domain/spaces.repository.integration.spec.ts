@@ -268,7 +268,9 @@ describe('SpacesRepository', () => {
         getOrThrow: vi.fn(),
       } as MockedObject<IConfigurationService>);
       config.getOrThrow.mockImplementation((key) => {
-        if (key === 'spaces.maxSpaceCreationsPerUser') return 1;
+        if (key === 'spaces.maxSpaceCreationsPerUser') {
+          return 1;
+        }
       });
       const target = new SpacesRepository(
         postgresDatabaseService,
@@ -311,7 +313,9 @@ describe('SpacesRepository', () => {
         getOrThrow: vi.fn(),
       } as MockedObject<IConfigurationService>);
       config.getOrThrow.mockImplementation((key) => {
-        if (key === 'spaces.maxSpaceCreationsPerUser') return 1;
+        if (key === 'spaces.maxSpaceCreationsPerUser') {
+          return 1;
+        }
       });
       const target = new SpacesRepository(
         postgresDatabaseService,

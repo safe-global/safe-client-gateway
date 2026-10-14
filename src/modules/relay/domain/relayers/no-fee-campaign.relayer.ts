@@ -194,8 +194,12 @@ export class NoFeeCampaignRelayer implements IRelayer {
   private getLimit(tokenBalance: bigint, relayRules: RelayRules): number {
     // Sort rules by balanceMin ascending to ensure proper range checking
     const sortedRules = relayRules.sort((a, b) => {
-      if (a.balanceMin < b.balanceMin) return -1;
-      if (a.balanceMin > b.balanceMin) return 1;
+      if (a.balanceMin < b.balanceMin) {
+        return -1;
+      }
+      if (a.balanceMin > b.balanceMin) {
+        return 1;
+      }
       return 0;
     });
 
@@ -216,7 +220,9 @@ export class NoFeeCampaignRelayer implements IRelayer {
     const chainConfiguration =
       this.relayConfiguration[Number.parseInt(args.chainId, 10)];
 
-    if (!chainConfiguration) return BigInt(0);
+    if (!chainConfiguration) {
+      return BigInt(0);
+    }
 
     try {
       const balance = await this.balancesService.getTokenBalance({

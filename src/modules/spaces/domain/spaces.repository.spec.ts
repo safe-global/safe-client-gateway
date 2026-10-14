@@ -48,8 +48,9 @@ describe('SpacesRepository', () => {
       get: vi.fn(),
     } as MockedObject<IConfigurationService>;
     configurationService.getOrThrow.mockImplementation((key: string) => {
-      if (key === 'spaces.maxSpaceCreationsPerUser')
+      if (key === 'spaces.maxSpaceCreationsPerUser') {
         return maxSpaceCreationsPerUser;
+      }
       throw new Error(`Unexpected config key: ${key}`);
     });
 

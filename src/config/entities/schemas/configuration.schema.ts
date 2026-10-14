@@ -5,11 +5,15 @@ const relayRulesValidator = z
   .string()
   .refine(
     (value) => {
-      if (value === undefined || value === null || value === '') return false;
+      if (value === undefined || value === null || value === '') {
+        return false;
+      }
       try {
         const parsed = JSON.parse(value);
 
-        if (!Array.isArray(parsed)) return false;
+        if (!Array.isArray(parsed)) {
+          return false;
+        }
         return parsed.every(
           (rule: Record<string, unknown>) =>
             typeof rule === 'object' &&

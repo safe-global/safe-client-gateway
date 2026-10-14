@@ -136,7 +136,9 @@ export class CacheFirstDataSource {
     queryFn: () => Promise<Raw<T>>;
   }): Promise<Raw<T>> {
     const cached = await this.cacheService.hGet(args.cacheDir);
-    if (cached != null) return this._getFromCachedData(args.cacheDir, cached);
+    if (cached != null) {
+      return this._getFromCachedData(args.cacheDir, cached);
+    }
 
     try {
       return await args.queryFn();
@@ -269,7 +271,9 @@ export class CacheFirstDataSource {
       new CacheDir(`invalidationTimeMs:${key}`, ''),
     );
 
-    if (!invalidationTimeMsStr) return true;
+    if (!invalidationTimeMsStr) {
+      return true;
+    }
 
     const invalidationTimeMs = Number(invalidationTimeMsStr);
     return (

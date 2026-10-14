@@ -42,10 +42,15 @@ describe('ExportApiManager', () => {
       .build();
 
     mockConfigurationService.getOrThrow.mockImplementation((key) => {
-      if (key === 'safeTransaction.useVpcUrl') return useVpcUrl;
-      if (key === 'expirationTimeInSeconds.default') return faker.number.int();
-      if (key === 'expirationTimeInSeconds.notFound.default')
+      if (key === 'safeTransaction.useVpcUrl') {
+        return useVpcUrl;
+      }
+      if (key === 'expirationTimeInSeconds.default') {
         return faker.number.int();
+      }
+      if (key === 'expirationTimeInSeconds.notFound.default') {
+        return faker.number.int();
+      }
       throw new Error(`Unexpected key: ${key}`);
     });
 

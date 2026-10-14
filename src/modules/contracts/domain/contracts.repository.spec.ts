@@ -33,10 +33,12 @@ describe('ContractsRepository', () => {
 
   function initTarget(args: { trustedList: boolean }): void {
     mockConfigurationService.getOrThrow.mockImplementation((key) => {
-      if (key === 'contracts.trustedForDelegateCall.maxSequentialPages')
+      if (key === 'contracts.trustedForDelegateCall.maxSequentialPages') {
         return maxSequentialPages;
-      if (key === 'features.trustedForDelegateCallContractsList')
+      }
+      if (key === 'features.trustedForDelegateCallContractsList') {
         return args.trustedList;
+      }
     });
 
     target = new ContractsRepository(
