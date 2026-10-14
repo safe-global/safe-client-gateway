@@ -64,7 +64,9 @@ describe('MessagesRepository (queue service enabled)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockConfigurationService.getOrThrow.mockImplementation((key) => {
-      if (key === 'features.safeQueueService') return true;
+      if (key === 'features.safeQueueService') {
+        return true;
+      }
       throw new Error(`Unexpected key: ${key}`);
     });
     safeQueueService = createMockSafeQueueService();
@@ -323,7 +325,9 @@ describe('MessagesRepository (queue service enabled)', () => {
   // is read once in the constructor, so the fallback branch needs its own target.
   function buildTargetWithQueueDisabled(): MessagesRepository {
     mockConfigurationService.getOrThrow.mockImplementation((key) => {
-      if (key === 'features.safeQueueService') return false;
+      if (key === 'features.safeQueueService') {
+        return false;
+      }
       throw new Error(`Unexpected key: ${key}`);
     });
     mockTransactionApiManager.getApi.mockResolvedValue(mockTransactionApi);

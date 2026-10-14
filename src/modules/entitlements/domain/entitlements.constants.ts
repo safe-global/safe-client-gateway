@@ -86,7 +86,9 @@ export function isActiveSubscriptionStatus(
  * at all.
  */
 export function ordersAfter(stamp: Date | null, mark: Date | null): boolean {
-  if (stamp === null) return false;
+  if (stamp === null) {
+    return false;
+  }
   return mark === null || stamp > mark;
 }
 

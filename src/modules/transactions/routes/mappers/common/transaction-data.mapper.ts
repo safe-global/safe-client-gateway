@@ -111,7 +111,9 @@ export class TransactionDataMapper {
     to: Address,
     dataDecoded: DataDecoded | null,
   ): Promise<boolean | null> {
-    if (operation !== Operation.DELEGATE) return null;
+    if (operation !== Operation.DELEGATE) {
+      return null;
+    }
 
     let isTrustedForDelegateCall: boolean;
     try {
@@ -270,8 +272,9 @@ export class TransactionDataMapper {
     chainId: string,
     dataDecoded: DataDecoded | null,
   ): Promise<Record<string, AddressInfo>> {
-    if (dataDecoded === null || !Array.isArray(dataDecoded.parameters))
+    if (dataDecoded === null || !Array.isArray(dataDecoded.parameters)) {
       return {};
+    }
     const { method, parameters } = dataDecoded;
     const promises: Array<
       Promise<Array<AddressInfo | null> | AddressInfo | null>
@@ -312,7 +315,9 @@ export class TransactionDataMapper {
     chainId: string,
     valueDecoded: unknown,
   ): Promise<Array<AddressInfo | null>> {
-    if (!Array.isArray(valueDecoded)) return [];
+    if (!Array.isArray(valueDecoded)) {
+      return [];
+    }
     const promises: Array<Promise<AddressInfo | null>> = [];
 
     for (const transaction of valueDecoded) {

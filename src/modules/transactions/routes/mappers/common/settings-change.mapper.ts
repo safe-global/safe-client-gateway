@@ -60,7 +60,9 @@ export class SettingsChangeMapper {
       dataDecoded,
       0,
     );
-    if (typeof handler !== 'string') return null;
+    if (typeof handler !== 'string') {
+      return null;
+    }
     const addressInfo = await this.addressInfoHelper.getOrDefault(
       chainId,
       getAddress(handler),
@@ -80,8 +82,12 @@ export class SettingsChangeMapper {
       this.dataDecodedParamHelper.getValueAtPosition(dataDecoded, 1),
     );
 
-    if (typeof owner !== 'string') return null;
-    if (Number.isNaN(threshold)) return null;
+    if (typeof owner !== 'string') {
+      return null;
+    }
+    if (Number.isNaN(threshold)) {
+      return null;
+    }
 
     return new AddOwner(new AddressInfo(owner), threshold);
   }
@@ -95,8 +101,12 @@ export class SettingsChangeMapper {
       this.dataDecodedParamHelper.getValueAtPosition(dataDecoded, 2),
     );
 
-    if (typeof owner !== 'string') return null;
-    if (Number.isNaN(threshold)) return null;
+    if (typeof owner !== 'string') {
+      return null;
+    }
+    if (Number.isNaN(threshold)) {
+      return null;
+    }
 
     return new RemoveOwner(new AddressInfo(owner), threshold);
   }
@@ -111,8 +121,12 @@ export class SettingsChangeMapper {
       2,
     );
 
-    if (typeof oldOwner !== 'string') return null;
-    if (typeof newOwner !== 'string') return null;
+    if (typeof oldOwner !== 'string') {
+      return null;
+    }
+    if (typeof newOwner !== 'string') {
+      return null;
+    }
 
     return new SwapOwner(new AddressInfo(oldOwner), new AddressInfo(newOwner));
   }
@@ -124,7 +138,9 @@ export class SettingsChangeMapper {
     const implementation: unknown =
       this.dataDecodedParamHelper.getValueAtPosition(dataDecoded, 0);
 
-    if (typeof implementation !== 'string') return null;
+    if (typeof implementation !== 'string') {
+      return null;
+    }
 
     const implementationInfo = await this.addressInfoHelper.getOrDefault(
       chainId,
@@ -143,7 +159,9 @@ export class SettingsChangeMapper {
       0,
     );
 
-    if (typeof module !== 'string') return null;
+    if (typeof module !== 'string') {
+      return null;
+    }
 
     const moduleInfo = await this.addressInfoHelper.getOrDefault(
       chainId,
@@ -162,7 +180,9 @@ export class SettingsChangeMapper {
       1,
     );
 
-    if (typeof module !== 'string') return null;
+    if (typeof module !== 'string') {
+      return null;
+    }
 
     const moduleInfo = await this.addressInfoHelper.getOrDefault(
       chainId,
@@ -179,7 +199,9 @@ export class SettingsChangeMapper {
       this.dataDecodedParamHelper.getValueAtPosition(dataDecoded, 0),
     );
 
-    if (Number.isNaN(threshold)) return null;
+    if (Number.isNaN(threshold)) {
+      return null;
+    }
 
     return new ChangeThreshold(threshold);
   }
@@ -199,7 +221,9 @@ export class SettingsChangeMapper {
       0,
     );
 
-    if (typeof guardValue !== 'string') return null;
+    if (typeof guardValue !== 'string') {
+      return null;
+    }
 
     if (guardValue !== NULL_ADDRESS) {
       const guardAddressInfo = await this.addressInfoHelper.getOrDefault(

@@ -356,24 +356,31 @@ export class SafesService {
     supportedSingletons: Array<Singleton>,
   ): MasterCopyVersionState {
     // If the safe version is null we return UNKNOWN
-    if (safe.version === null) return MasterCopyVersionState.UNKNOWN;
-    // If the safe version or the recommended safe version is not valid we return UNKNOWN
-    if (!semver.valid(safe.version)) return MasterCopyVersionState.UNKNOWN;
-    if (!semver.valid(recommendedMasterCopyVersion))
+    if (safe.version === null) {
       return MasterCopyVersionState.UNKNOWN;
+    }
+    // If the safe version or the recommended safe version is not valid we return UNKNOWN
+    if (!semver.valid(safe.version)) {
+      return MasterCopyVersionState.UNKNOWN;
+    }
+    if (!semver.valid(recommendedMasterCopyVersion)) {
+      return MasterCopyVersionState.UNKNOWN;
+    }
     // If the singleton of this safe is not part of the collection
     // of the supported singletons we return UNKNOWN
     if (
       supportedSingletons.every(
         (singleton) => singleton.address !== safe.masterCopy,
       )
-    )
+    ) {
       return MasterCopyVersionState.UNKNOWN;
+    }
 
     // If the safe version is lower than the recommended safe version
     // we return it as outdated
-    if (semver.lt(safe.version, recommendedMasterCopyVersion))
+    if (semver.lt(safe.version, recommendedMasterCopyVersion)) {
       return MasterCopyVersionState.OUTDATED;
+    }
 
     // Else we consider that the safe is up-to-date
     return MasterCopyVersionState.UP_TO_DATE;

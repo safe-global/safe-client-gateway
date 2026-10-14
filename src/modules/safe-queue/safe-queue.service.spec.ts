@@ -61,9 +61,15 @@ describe('SafeQueueService', () => {
   beforeEach(() => {
     vi.resetAllMocks();
     mockConfigurationService.getOrThrow.mockImplementation((key) => {
-      if (key === 'safeQueueService.baseUri') return baseUri;
-      if (key === 'expirationTimeInSeconds.default') return 60;
-      if (key === 'expirationTimeInSeconds.notFound.default') return 30;
+      if (key === 'safeQueueService.baseUri') {
+        return baseUri;
+      }
+      if (key === 'expirationTimeInSeconds.default') {
+        return 60;
+      }
+      if (key === 'expirationTimeInSeconds.notFound.default') {
+        return 30;
+      }
       throw new Error(`Unexpected key: ${key}`);
     });
 

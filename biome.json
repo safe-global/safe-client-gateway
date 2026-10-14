@@ -141,7 +141,8 @@
         "useAsConstAssertion": "error",
         "noUselessElse": "error",
         "noInferrableTypes": "error",
-        "useArrayLiterals": "error"
+        "useArrayLiterals": "error",
+        "useBlockStatements": "error"
       },
       "performance": {
         "noAccumulatingSpread": "warn",

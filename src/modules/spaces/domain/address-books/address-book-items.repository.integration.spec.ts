@@ -502,7 +502,9 @@ describe('AddressBookItemsRepository', () => {
   ): Promise<AuthPayload> => {
     const { user, authPayload } = await createUser();
     const space = await dbSpacesRepository.findOneBy({ id: spaceId });
-    if (!space) throw new NotFoundException('Workspace not found.');
+    if (!space) {
+      throw new NotFoundException('Workspace not found.');
+    }
     await dbMembersRepository.insert({
       user,
       space,

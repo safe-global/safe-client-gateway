@@ -18,7 +18,9 @@ describe('SwapAppsHelper', () => {
   describe('Restricting disabled', () => {
     beforeEach(() => {
       configurationServiceMock.getOrThrow.mockImplementation((key) => {
-        if (key === 'swaps.restrictApps') return false;
+        if (key === 'swaps.restrictApps') {
+          return false;
+        }
         throw new Error(`Key ${key} not found.`);
       });
     });
@@ -41,7 +43,9 @@ describe('SwapAppsHelper', () => {
   describe('Restricting enabled', () => {
     beforeEach(() => {
       configurationServiceMock.getOrThrow.mockImplementation((key) => {
-        if (key === 'swaps.restrictApps') return true;
+        if (key === 'swaps.restrictApps') {
+          return true;
+        }
         throw new Error(`Key ${key} not found.`);
       });
     });

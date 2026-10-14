@@ -857,8 +857,12 @@ export class EntitlementsService implements IEntitlementEnforcement {
     storedEventAt: Date | null,
     triggerEventAt: Date | null,
   ): Date | null {
-    if (storedEventAt === null) return triggerEventAt;
-    if (triggerEventAt === null) return storedEventAt;
+    if (storedEventAt === null) {
+      return triggerEventAt;
+    }
+    if (triggerEventAt === null) {
+      return storedEventAt;
+    }
     return storedEventAt > triggerEventAt ? storedEventAt : triggerEventAt;
   }
 

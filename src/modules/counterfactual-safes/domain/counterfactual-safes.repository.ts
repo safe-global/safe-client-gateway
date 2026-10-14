@@ -29,7 +29,9 @@ export class CounterfactualSafesRepository
   public async create(
     args: Parameters<ICounterfactualSafesRepository['create']>[0],
   ): Promise<void> {
-    if (args.payload.length === 0) return;
+    if (args.payload.length === 0) {
+      return;
+    }
 
     // Checksum every address field before comparing against or inserting into
     // the DB: the canonical row is stored checksummed via the TypeORM
@@ -260,9 +262,13 @@ function isSameAddressList(
   a: ReadonlyArray<Address>,
   b: ReadonlyArray<Address>,
 ): boolean {
-  if (a.length !== b.length) return false;
+  if (a.length !== b.length) {
+    return false;
+  }
   for (let i = 0; i < a.length; i++) {
-    if (a[i] !== b[i]) return false;
+    if (a[i] !== b[i]) {
+      return false;
+    }
   }
   return true;
 }

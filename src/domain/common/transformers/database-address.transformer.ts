@@ -26,11 +26,15 @@ export const databaseAddressTransformer: ValueTransformer = {
 
 export const databaseNullableAddressTransformer: ValueTransformer = {
   to(value: string | null): string | null {
-    if (value === null || value === undefined) return null;
+    if (value === null || value === undefined) {
+      return null;
+    }
     return isCiphertext(value) ? value : getAddress(value);
   },
   from(value: string | null): string | null {
-    if (value === null || value === undefined) return null;
+    if (value === null || value === undefined) {
+      return null;
+    }
     return isCiphertext(value) ? value : getAddress(value);
   },
 };

@@ -172,7 +172,9 @@ export class PortfolioRepository implements IPortfolioRepository {
     const filteredGroups = app.groups
       .map((group) => {
         const filteredItems = group.items.filter(positionFilter);
-        if (filteredItems.length === 0) return null;
+        if (filteredItems.length === 0) {
+          return null;
+        }
         return {
           ...group,
           items: filteredItems,
@@ -180,7 +182,9 @@ export class PortfolioRepository implements IPortfolioRepository {
       })
       .filter((group): group is NonNullable<typeof group> => group !== null);
 
-    if (filteredGroups.length === 0) return null;
+    if (filteredGroups.length === 0) {
+      return null;
+    }
 
     const allFilteredPositions = filteredGroups.flatMap((group) => group.items);
     const sum = this._sumBalances(allFilteredPositions);
@@ -233,7 +237,9 @@ export class PortfolioRepository implements IPortfolioRepository {
    */
   private _filterDustPositions(portfolio: Portfolio): Portfolio {
     const isDustFree = (item: { balanceFiat?: string }): boolean => {
-      if (!item.balanceFiat) return true;
+      if (!item.balanceFiat) {
+        return true;
+      }
       const value = Math.abs(Number(item.balanceFiat));
       return value >= this.dustThresholdUsd;
     };

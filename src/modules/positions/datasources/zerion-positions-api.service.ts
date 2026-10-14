@@ -166,10 +166,11 @@ export class ZerionPositionsApi implements IPositionsApi {
         const implementation = zb.attributes.fungible_info.implementations.find(
           (implementation) => implementation.chain_id === chainName,
         );
-        if (!implementation)
+        if (!implementation) {
           throw Error(
             `Zerion error: ${chainName} implementation not found for balance ${zb.id}`,
           );
+        }
         const { value, price, application_metadata } = zb.attributes;
         const fiatBalance = value !== null ? getNumberString(value) : null;
         const fiatConversion = price !== null ? getNumberString(price) : null;
