@@ -12,6 +12,24 @@ import { HexSchema } from '#/validation/entities/schemas/hex.schema';
 const SELECTOR_SIZE = 4;
 
 /**
+ * Largest `Configuration[]` CGW stores, in bytes of JSON text: 64 KiB. Also the
+ * `CHK_PCR_configurations_size` check constraint of the table, which measures
+ * Postgres's own serialization of the stored `jsonb` value.
+ */
+export const MAX_POLICY_CONFIGURATIONS_BYTES = 65_536;
+
+/**
+ * Bytes of {@link configurations} as Postgres serializes the stored `jsonb`,
+ * which is what the check constraint measures: a space follows every `:` and
+ * `,`. Every value here is a hex string or `0`/`1`, so each `:` and `,` in the
+ * JSON is a separator.
+ */
+function storedJsonBytes(configurations: ReadonlyArray<unknown>): number {
+  const json = JSON.stringify(configurations);
+  return Buffer.byteLength(json) + (json.match(/[:,]/g)?.length ?? 0);
+}
+
+/**
  * One entry of the `Configuration[]` a delayed configuration request hashes.
  *
  * ```solidity
@@ -50,4 +68,9 @@ export type PolicyConfiguration = z.infer<typeof PolicyConfigurationSchema>;
  */
 export const PolicyConfigurationsSchema = z
   .array(PolicyConfigurationSchema)
-  .nonempty();
+  .nonempty()
+  .refine(
+    (configurations) =>
+      storedJsonBytes(configurations) <= MAX_POLICY_CONFIGURATIONS_BYTES,
+    { error: 'Configurations exceed the maximum stored size' },
+  );

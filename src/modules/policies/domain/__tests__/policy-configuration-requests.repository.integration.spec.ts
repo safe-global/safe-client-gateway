@@ -13,7 +13,10 @@ import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.s
 import type { ILoggingService } from '#/logging/logging.interface';
 import { PolicyConfigurationRequest } from '#/modules/policies/datasources/entities/policy-configuration-request.entity.db';
 import { policyConfigurationBuilder } from '#/modules/policies/domain/entities/__tests__/policy-configuration.builder';
-import type { PolicyConfiguration } from '#/modules/policies/domain/entities/policy-configuration.entity';
+import {
+  MAX_POLICY_CONFIGURATIONS_BYTES,
+  type PolicyConfiguration,
+} from '#/modules/policies/domain/entities/policy-configuration.entity';
 import { PolicyConfigurationRequestsRepository } from '#/modules/policies/domain/policy-configuration-requests.repository';
 import { configurationRoot } from '#/modules/policies/domain/utils/policy-configuration-root.utils';
 
@@ -30,6 +33,8 @@ describe('PolicyConfigurationRequestsRepository', () => {
   let dbRepository: Repository<PolicyConfigurationRequest>;
 
   const maxPerSafe = 3;
+  /** A real Space per test: `space_id` is a foreign key to `spaces`. */
+  let spaceId: number;
   const testDatabaseName = faker.string.alpha({ length: 10, casing: 'lower' });
   const testConfiguration = configuration();
 
@@ -60,7 +65,7 @@ describe('PolicyConfigurationRequestsRepository', () => {
         args?.safeAddress ?? getAddress(faker.finance.ethereumAddress()),
       root: configurationRoot(configurations),
       configurations,
-      spaceId: faker.number.int({ min: 1, max: 1000 }),
+      spaceId,
       createdBy: faker.number.int({ min: 1, max: 1000 }),
     };
   }
@@ -116,6 +121,21 @@ describe('PolicyConfigurationRequestsRepository', () => {
     dbRepository = await postgresDatabaseService.getRepository(
       PolicyConfigurationRequest,
     );
+  });
+
+  /** Inserts an active Space and returns its id. */
+  async function insertSpace(): Promise<number> {
+    const [{ id }] = await postgresDatabaseService
+      .getDataSource()
+      .query(
+        `INSERT INTO "spaces" ("name", "status") VALUES ($1, 1) RETURNING "id"`,
+        [faker.word.noun()],
+      );
+    return id;
+  }
+
+  beforeEach(async () => {
+    spaceId = await insertSpace();
   });
 
   afterEach(async () => {
@@ -228,6 +248,67 @@ describe('PolicyConfigurationRequestsRepository', () => {
       await expect(
         repository.create(storableRequest()),
       ).resolves.toBeUndefined();
+    });
+  });
+
+  describe('table constraints', () => {
+    it('should delete the stored configurations of a deleted space', async () => {
+      await repository.create(storableRequest());
+
+      await postgresDatabaseService
+        .getDataSource()
+        .query(`DELETE FROM "spaces" WHERE "id" = $1`, [spaceId]);
+
+      await expect(dbRepository.countBy({ spaceId })).resolves.toBe(0);
+    });
+
+    it('should reject an update of a stored row', async () => {
+      const request = storableRequest();
+      await repository.create(request);
+
+      await expect(
+        postgresDatabaseService
+          .getDataSource()
+          .query(
+            `UPDATE "policy_configuration_requests" SET "configurations" = '[]' WHERE "root" = $1`,
+            [request.root],
+          ),
+      ).rejects.toThrow('policy_configuration_requests rows are immutable');
+    });
+
+    it('should still allow a stored row to be deleted', async () => {
+      const request = storableRequest();
+      await repository.create(request);
+
+      await dbRepository.delete({ root: request.root });
+
+      await expect(dbRepository.countBy({ root: request.root })).resolves.toBe(
+        0,
+      );
+    });
+
+    it('should reject configurations larger than 64 KiB', async () => {
+      // Written past the repository, which validates nothing about size: this
+      // is the check constraint's own guarantee.
+      const oversized = JSON.stringify([
+        { data: `0x${'ab'.repeat(MAX_POLICY_CONFIGURATIONS_BYTES / 2)}` },
+      ]);
+
+      await expect(
+        postgresDatabaseService.getDataSource().query(
+          `INSERT INTO "policy_configuration_requests"
+             ("chain_id", "safe_address", "root", "configurations", "space_id", "created_by")
+           VALUES ($1, $2, $3, $4, $5, $6)`,
+          [
+            faker.string.numeric(5),
+            getAddress(faker.finance.ethereumAddress()),
+            faker.string.hexadecimal({ length: 64, casing: 'lower' }),
+            oversized,
+            spaceId,
+            faker.number.int({ min: 1, max: 1000 }),
+          ],
+        ),
+      ).rejects.toThrow('CHK_PCR_configurations_size');
     });
   });
 });
