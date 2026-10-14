@@ -929,6 +929,57 @@ describe('PoliciesService', () => {
       ]);
     });
 
+    it('should report no spending limits when only a guard-enforced policy type is asked for', async () => {
+      mockPolicyIndexerRepository.getState.mockResolvedValue(
+        policyIndexerResponseBuilder()
+          .with('allowances', [allowanceOf(safeAddress)])
+          .with('guardPolicyBindings', [
+            policyIndexerGuardEnforcedPolicyBuilder()
+              .with('chainId', SEPOLIA)
+              .with('safe', safeAddress)
+              .build(),
+          ])
+          .build(),
+      );
+
+      const policies = await target.getSpaceActivePolicies({
+        ...policyRequest,
+        types: [PolicyType.Erc20Transfer],
+      });
+
+      expect(policies.map((policy) => policy.type)).toStrictEqual([
+        PolicyType.Erc20Transfer,
+      ]);
+      // Token metadata is fetched for spending limits only.
+      expect(mockTokenRepository.getToken).not.toHaveBeenCalled();
+      expect(mockChainsRepository.getChain).not.toHaveBeenCalled();
+    });
+
+    it('should report no guard-enforced policies when only spending limits are requested for', async () => {
+      mockPolicyIndexerRepository.getState.mockResolvedValue(
+        policyIndexerResponseBuilder()
+          .with('allowances', [allowanceOf(safeAddress)])
+          .with('guardPolicyBindings', [
+            policyIndexerGuardEnforcedPolicyBuilder()
+              .with('chainId', SEPOLIA)
+              .with('safe', safeAddress)
+              .with('kind', 'ALLOW')
+              .with('state', null)
+              .build(),
+          ])
+          .build(),
+      );
+
+      const policies = await target.getSpaceActivePolicies({
+        ...policyRequest,
+        types: [PolicyType.SpendingLimit],
+      });
+
+      expect(policies.map((policy) => policy.type)).toStrictEqual([
+        PolicyType.SpendingLimit,
+      ]);
+    });
+
     it('should read nothing for a type it does not report yet', async () => {
       const policies = await target.getSpaceActivePolicies({
         ...policyRequest,
