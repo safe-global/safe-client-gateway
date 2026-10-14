@@ -305,7 +305,7 @@ export class Erc20TransferRecipientDto implements Erc20TransferRecipient {
 export class Erc20TransferPolicyDataDto implements Erc20TransferPolicyData {
   @ApiProperty({
     type: String,
-    description: 'The token the allowlist applies to; zero address for native',
+    description: 'The ERC20 token the allowlist applies to',
   })
   public readonly tokenAddress!: Address;
   @ApiProperty({
