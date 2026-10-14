@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import { databaseEnumTransformer } from '#/domain/common/utils/enum';
 import { SpaceSafe } from '#/modules/spaces/datasources/safes/entities/space-safes.entity.db';
+import type { ExperimentalFeature } from '#/modules/spaces/domain/entities/experimental-feature.entity';
 import {
   type Space as DomainSpace,
   SpaceStatus,
@@ -42,6 +43,13 @@ export class Space implements DomainSpace {
     transformer: databaseEnumTransformer(SpaceStatus),
   })
   status!: keyof typeof SpaceStatus;
+
+  @Column({
+    name: 'experimental_features',
+    type: 'jsonb',
+    default: () => "'[]'",
+  })
+  experimentalFeatures!: Array<ExperimentalFeature>;
 
   @Column({
     name: 'created_at',

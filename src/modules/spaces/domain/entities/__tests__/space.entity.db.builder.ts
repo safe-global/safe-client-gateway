@@ -13,5 +13,6 @@ export function spaceBuilder(): IBuilder<Space> {
     .with('id', faker.number.int({ min: 1, max: DB_MAX_SAFE_INTEGER }))
     .with('uuid', fakeUuid())
     .with('name', nameBuilder())
-    .with('status', 'ACTIVE');
+    .with('status', 'ACTIVE')
+    .with('experimentalFeatures', []);
 }
