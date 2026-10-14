@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
 import { ChainIdSchema } from '#/modules/chains/domain/entities/schemas/chain-id.schema';
+import { Erc20TransferRecipientSchema } from '#/modules/policies/domain/entities/active-policy.entity';
+import { PolicyOperation } from '#/modules/policies/domain/entities/policy-operation.entity';
 import { AddressSchema } from '#/validation/entities/schemas/address.schema';
+import { HexSchema } from '#/validation/entities/schemas/hex.schema';
 
 /**
  * `chainId` is an `Int` in the indexer and a decimal string everywhere in CGW.
@@ -140,6 +143,68 @@ export type PolicyIndexerSafeDelegate = z.infer<
   typeof PolicyIndexerSafeDelegateSchema
 >;
 
+export const PolicyIndexerGuardPolicyKindSchema = z.enum([
+  'ERC20_TRANSFER',
+  'ERC20_APPROVE',
+  'ALLOWED_MODULE',
+  'COSIGNER',
+  'ALLOW',
+  'DENY',
+  'MULTISEND',
+  'NATIVE_TRANSFER',
+  'UNKNOWN',
+]);
+
+export type PolicyIndexerGuardPolicyKind = z.infer<
+  typeof PolicyIndexerGuardPolicyKindSchema
+>;
+
+/** `ERC20TransferPolicy`'s accumulated recipient list for the bound token. */
+export const PolicyIndexerErc20TransferStateSchema = z.object({
+  recipients: z.array(Erc20TransferRecipientSchema),
+});
+
+/** `CoSignerPolicy`'s configured cosigner. */
+export const PolicyIndexerCosignerStateSchema = z.object({
+  cosigner: AddressSchema,
+});
+
+const PolicyIndexerGuardEnforcedPolicyBaseSchema = z.object({
+  chainId: PolicyIndexerChainIdSchema,
+  safe: AddressSchema,
+  guard: AddressSchema,
+  target: AddressSchema,
+  /** Trimmed to four bytes by the indexer; the event carries 32. */
+  selector: HexSchema,
+  operation: z.enum(PolicyOperation),
+  policy: AddressSchema,
+});
+
+export const PolicyIndexerGuardEnforcedPolicySchema = z.discriminatedUnion(
+  'kind',
+  [
+    PolicyIndexerGuardEnforcedPolicyBaseSchema.extend({
+      kind: z.literal('ERC20_TRANSFER'),
+      state: PolicyIndexerErc20TransferStateSchema,
+    }),
+    PolicyIndexerGuardEnforcedPolicyBaseSchema.extend({
+      kind: z.literal('COSIGNER'),
+      state: PolicyIndexerCosignerStateSchema,
+    }),
+    PolicyIndexerGuardEnforcedPolicyBaseSchema.extend({
+      kind: PolicyIndexerGuardPolicyKindSchema.exclude([
+        'ERC20_TRANSFER',
+        'COSIGNER',
+      ]),
+      state: z.unknown(),
+    }),
+  ],
+);
+
+export type PolicyIndexerGuardEnforcedPolicy = z.infer<
+  typeof PolicyIndexerGuardEnforcedPolicySchema
+>;
+
 /**
  * Indexing progress, one entry per chain - `_meta` is a list, not an object.
  *
@@ -169,6 +234,7 @@ export const PolicyIndexerRowsSchema = z.object({
   _meta: z.array(z.unknown()),
   SafeAllowance: z.array(z.unknown()),
   SafeDelegate: z.array(z.unknown()),
+  GuardPolicyBinding: z.array(z.unknown()),
 });
 
 export type PolicyIndexerRows = z.infer<typeof PolicyIndexerRowsSchema>;
@@ -177,7 +243,8 @@ export type PolicyIndexerRows = z.infer<typeof PolicyIndexerRowsSchema>;
  * The validated read: current policy state for the requested Safes.
  */
 export type PolicyIndexerState = {
-  meta: Array<PolicyIndexerMeta>;
-  allowances: Array<PolicyIndexerSafeAllowance>;
-  delegates: Array<PolicyIndexerSafeDelegate>;
+  meta: ReadonlyArray<PolicyIndexerMeta>;
+  allowances: ReadonlyArray<PolicyIndexerSafeAllowance>;
+  delegates: ReadonlyArray<PolicyIndexerSafeDelegate>;
+  guardPolicyBindings: ReadonlyArray<PolicyIndexerGuardEnforcedPolicy>;
 };

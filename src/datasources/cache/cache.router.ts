@@ -1365,8 +1365,12 @@ export class CacheRouter {
   static getPolicyIndexerStateCacheDir(args: {
     chainId: string;
     safeAddress: Address;
+    guardPolicyKinds: ReadonlyArray<string>;
   }): CacheDir {
-    return new CacheDir(CacheRouter.getPolicyIndexerStateCacheKey(args), '');
+    return new CacheDir(
+      CacheRouter.getPolicyIndexerStateCacheKey(args),
+      [...args.guardPolicyKinds].sort().join(','),
+    );
   }
 
   static getPolicyIndexerStateCacheKey(args: {
