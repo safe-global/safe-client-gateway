@@ -555,7 +555,7 @@ export class PoliciesService {
 
       const safe = safes[index];
       this.loggingService.warn({
-        message: 'Could not read enabled modules of a Safe',
+        message: 'Could not read the modules and guards of a Safe',
         chainId: safe.chainId,
         safeAddress: safe.address,
         error: asError(result.reason).message,
