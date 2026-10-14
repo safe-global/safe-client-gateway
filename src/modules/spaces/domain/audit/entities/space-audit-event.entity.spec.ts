@@ -76,3 +76,45 @@ describe('SpaceAuditEventSchema — plaintext addresses', () => {
     expect(result.success).toBe(true);
   });
 });
+
+describe('SpaceAuditEventSchema — SPACE_UPDATED experimentalFeatures', () => {
+  it('does not inject experimentalFeatures into a name-only update', () => {
+    const payload = {
+      old: { name: faker.lorem.words() },
+      new: { name: faker.lorem.words() },
+    };
+
+    const result = SpaceAuditEventSchema.parse({
+      eventType: 'SPACE_UPDATED',
+      payload,
+    });
+
+    expect(result.payload).toStrictEqual(payload);
+  });
+
+  it('round-trips an experimentalFeatures change', () => {
+    const payload = {
+      old: { experimentalFeatures: [] },
+      new: { experimentalFeatures: ['recipientAllowlist'] },
+    };
+
+    const result = SpaceAuditEventSchema.parse({
+      eventType: 'SPACE_UPDATED',
+      payload,
+    });
+
+    expect(result.payload).toStrictEqual(payload);
+  });
+
+  it('accepts a feature key no longer in the enum', () => {
+    const result = SpaceAuditEventSchema.safeParse({
+      eventType: 'SPACE_UPDATED',
+      payload: {
+        old: { experimentalFeatures: [faker.word.noun()] },
+        new: { experimentalFeatures: [] },
+      },
+    });
+
+    expect(result.success).toBe(true);
+  });
+});

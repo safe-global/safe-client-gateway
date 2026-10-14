@@ -8,7 +8,10 @@ import type { PostgresDatabaseService } from '#/datasources/db/v2/postgres-datab
 import { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
 import { createMockSpaceEncryptionService } from '#/modules/spaces/domain/__tests__/space-encryption.service.mock';
 import { createMockSpaceAuditRepository } from '#/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
-import { SpacesRepository } from '#/modules/spaces/domain/spaces.repository';
+import {
+  isSameFeatureSet,
+  SpacesRepository,
+} from '#/modules/spaces/domain/spaces.repository';
 import { Member } from '#/modules/users/datasources/entities/member.entity.db';
 import { createMockMemberEncryptionService } from '#/modules/users/domain/members/__tests__/member-encryption.service.mock';
 import { fakeUuid } from '#/validation/entities/schemas/__tests__/uuid.builder';
@@ -172,6 +175,7 @@ describe('SpacesRepository', () => {
         uuid: spaceUuid,
         name: storedCiphertext,
         status: 'ACTIVE',
+        experimentalFeatures: [],
       });
       spaceEncryptionService.decryptSpaceName.mockResolvedValue(decryptedName);
       spaceEncryptionService.encryptSpaceName.mockResolvedValue(newCiphertext);
@@ -213,6 +217,7 @@ describe('SpacesRepository', () => {
         uuid: spaceUuid,
         name: `kms:v1:${faker.string.alphanumeric(16)}`,
         status: 'ACTIVE',
+        experimentalFeatures: [],
       });
       spaceEncryptionService.decryptSpaceName.mockResolvedValue(sameName);
       spaceEncryptionService.encryptSpaceName.mockResolvedValue(reEncrypted);
@@ -236,6 +241,7 @@ describe('SpacesRepository', () => {
         uuid: spaceUuid,
         name: `kms:v1:${faker.string.alphanumeric(16)}`,
         status: 'ACTIVE',
+        experimentalFeatures: [],
       });
 
       await target.update({
@@ -262,6 +268,103 @@ describe('SpacesRepository', () => {
           actorUserId: userId,
         }),
       ).rejects.toThrow(NotFoundException);
+    });
+
+    it('selects experimentalFeatures for the diff', async () => {
+      entityManager.findOne.mockResolvedValue({
+        id: spaceId,
+        uuid: spaceUuid,
+        name: `kms:v1:${faker.string.alphanumeric(16)}`,
+        status: 'ACTIVE',
+        experimentalFeatures: [],
+      });
+
+      await target.update({
+        id: spaceId,
+        updatePayload: { experimentalFeatures: ['recipientAllowlist'] },
+        actorUserId: userId,
+      });
+
+      expect(entityManager.findOne).toHaveBeenCalledWith(
+        Space,
+        expect.objectContaining({
+          select: expect.objectContaining({ experimentalFeatures: true }),
+        }),
+      );
+    });
+
+    it('writes and audits an experimentalFeatures change', async () => {
+      entityManager.findOne.mockResolvedValue({
+        id: spaceId,
+        uuid: spaceUuid,
+        name: `kms:v1:${faker.string.alphanumeric(16)}`,
+        status: 'ACTIVE',
+        experimentalFeatures: [],
+      });
+
+      await target.update({
+        id: spaceId,
+        updatePayload: { experimentalFeatures: ['recipientAllowlist'] },
+        actorUserId: userId,
+      });
+
+      expect(spaceEncryptionService.encryptSpaceName).not.toHaveBeenCalled();
+      expect(queryBuilderSet).toHaveBeenCalledExactlyOnceWith({
+        experimentalFeatures: ['recipientAllowlist'],
+      });
+      expect(spaceAuditRepository.record).toHaveBeenCalledExactlyOnceWith(
+        entityManager,
+        expect.objectContaining({
+          eventType: 'SPACE_UPDATED',
+          payload: {
+            old: { experimentalFeatures: [] },
+            new: { experimentalFeatures: ['recipientAllowlist'] },
+          },
+        }),
+      );
+    });
+
+    it('records no audit event when the same set is re-sent', async () => {
+      entityManager.findOne.mockResolvedValue({
+        id: spaceId,
+        uuid: spaceUuid,
+        name: `kms:v1:${faker.string.alphanumeric(16)}`,
+        status: 'ACTIVE',
+        experimentalFeatures: ['recipientAllowlist'],
+      });
+
+      await target.update({
+        id: spaceId,
+        updatePayload: { experimentalFeatures: ['recipientAllowlist'] },
+        actorUserId: userId,
+      });
+
+      expect(spaceAuditRepository.record).not.toHaveBeenCalled();
+    });
+
+    it('leaves experimentalFeatures out of the UPDATE on a name-only change', async () => {
+      const newCiphertext = `kms:v1:${faker.string.alphanumeric(16)}`;
+      entityManager.findOne.mockResolvedValue({
+        id: spaceId,
+        uuid: spaceUuid,
+        name: `kms:v1:${faker.string.alphanumeric(16)}`,
+        status: 'ACTIVE',
+        experimentalFeatures: ['recipientAllowlist'],
+      });
+      spaceEncryptionService.decryptSpaceName.mockResolvedValue(
+        faker.lorem.words(),
+      );
+      spaceEncryptionService.encryptSpaceName.mockResolvedValue(newCiphertext);
+
+      await target.update({
+        id: spaceId,
+        updatePayload: { name: faker.lorem.words() },
+        actorUserId: userId,
+      });
+
+      expect(queryBuilderSet).toHaveBeenCalledExactlyOnceWith({
+        name: newCiphertext,
+      });
     });
   });
 
@@ -290,5 +393,23 @@ describe('SpacesRepository', () => {
       );
       expect(entityManager.delete).toHaveBeenCalledWith(Space, spaceId);
     });
+  });
+});
+
+describe('isSameFeatureSet', () => {
+  it('is true for the same members in any order', () => {
+    expect(isSameFeatureSet(['x', 'y'], ['y', 'x'])).toBe(true);
+  });
+
+  it('is false for a subset', () => {
+    expect(isSameFeatureSet(['x'], ['x', 'y'])).toBe(false);
+  });
+
+  it('ignores duplicates on either side', () => {
+    expect(isSameFeatureSet(['x', 'x'], ['x'])).toBe(true);
+  });
+
+  it('is true for two empty sets', () => {
+    expect(isSameFeatureSet([], [])).toBe(true);
   });
 });

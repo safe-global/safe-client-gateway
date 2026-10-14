@@ -33,6 +33,15 @@ import {
 } from '#/modules/users/domain/entities/member.entity';
 import { MemberEncryptionService } from '#/modules/users/domain/members/member-encryption.service';
 
+export function isSameFeatureSet(
+  a: ReadonlyArray<string>,
+  b: ReadonlyArray<string>,
+): boolean {
+  const setA = new Set(a);
+  const setB = new Set(b);
+  return setA.size === setB.size && [...setA].every((f) => setB.has(f));
+}
+
 @Injectable()
 export class SpacesRepository implements ISpacesRepository {
   private readonly maxSpaceCreationsPerUser: number;
@@ -241,7 +250,9 @@ export class SpacesRepository implements ISpacesRepository {
 
   public async update(args: {
     id: Space['id'];
-    updatePayload: Partial<Pick<Space, 'name' | 'status'>>;
+    updatePayload: Partial<
+      Pick<Space, 'name' | 'status' | 'experimentalFeatures'>
+    >;
     actorUserId: number;
   }): Promise<Pick<Space, 'uuid'>> {
     return await this.postgresDatabaseService.transaction(
@@ -249,7 +260,13 @@ export class SpacesRepository implements ISpacesRepository {
         // Old values are read inside the transaction to keep the diff exact.
         const current = await entityManager.findOne(Space, {
           where: { id: args.id },
-          select: { id: true, uuid: true, name: true, status: true },
+          select: {
+            id: true,
+            uuid: true,
+            name: true,
+            status: true,
+            experimentalFeatures: true,
+          },
         });
         if (!current) {
           throw new NotFoundException('Workspace not found.');
@@ -299,15 +316,17 @@ export class SpacesRepository implements ISpacesRepository {
   }
 
   /**
-   * Changed `name`/`status` fields of a space update, or `null` for a no-op.
+   * Changed `name`/`status`/`experimentalFeatures` fields of a space update, or `null` for a no-op.
    * Names are the plaintext values — the audit payload is encrypted as a whole
    * blob by the audit repository.
    */
   private diffSpaceUpdate(args: {
-    current: Pick<Space, 'status'>;
+    current: Pick<Space, 'status' | 'experimentalFeatures'>;
     /** The stored name decrypted, for the plaintext comparison. */
     currentName: string;
-    updatePayload: Partial<Pick<Space, 'name' | 'status'>>;
+    updatePayload: Partial<
+      Pick<Space, 'name' | 'status' | 'experimentalFeatures'>
+    >;
   }): SpaceUpdatedPayload | null {
     const { name, status } = args.updatePayload;
     const oldFields: SpaceUpdatedPayload['old'] = {};
@@ -320,6 +339,14 @@ export class SpacesRepository implements ISpacesRepository {
     if (status !== undefined && status !== args.current.status) {
       oldFields.status = args.current.status;
       newFields.status = status;
+    }
+    const { experimentalFeatures } = args.updatePayload;
+    if (
+      experimentalFeatures !== undefined &&
+      !isSameFeatureSet(experimentalFeatures, args.current.experimentalFeatures)
+    ) {
+      oldFields.experimentalFeatures = args.current.experimentalFeatures;
+      newFields.experimentalFeatures = experimentalFeatures;
     }
 
     return Object.keys(newFields).length > 0

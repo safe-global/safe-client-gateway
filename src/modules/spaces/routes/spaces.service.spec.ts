@@ -119,6 +119,7 @@ describe('SpacesService', () => {
         {
           uuid: mockSpace.uuid,
           name: space.name,
+          experimentalFeatures: [],
           members: [member],
           memberCount: 1,
           safeCount: 3,
@@ -131,6 +132,41 @@ describe('SpacesService', () => {
               inviteExpiresAt: true,
             }),
           }),
+        }),
+      );
+    });
+
+    it('should return the space experimental features', async () => {
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const user = userBuilder().with('id', Number(authPayload.sub)).build();
+      const space = spaceBuilder().build();
+      const member = memberBuilder()
+        .with('user', user)
+        .with('space', space)
+        .build();
+
+      membersRepositoryMock.find.mockResolvedValue([member]);
+
+      const mockSpace = spaceBuilder()
+        .with('id', space.id)
+        .with('name', space.name)
+        .with('members', [member])
+        .with('experimentalFeatures', ['recipientAllowlist'])
+        .build();
+
+      spacesRepositoryMock.find.mockResolvedValue([mockSpace]);
+      spaceSafesRepositoryMock.countSeatsBySpaceIds.mockResolvedValue(
+        new Map([[space.id, 0]]),
+      );
+
+      const result = await service.getActiveOrInvitedSpaces(authPayload);
+
+      expect(result[0].experimentalFeatures).toStrictEqual([
+        'recipientAllowlist',
+      ]);
+      expect(spacesRepositoryMock.find).toHaveBeenCalledWith(
+        expect.objectContaining({
+          select: expect.objectContaining({ experimentalFeatures: true }),
         }),
       );
     });

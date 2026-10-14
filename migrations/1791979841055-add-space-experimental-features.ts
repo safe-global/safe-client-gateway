@@ -1,11 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-/**
- * Adds `spaces.experimental_features`, a Workspace's experimental opt-ins as a
- * jsonb array of feature keys. The `'[]'` default is what makes existing
- * Workspaces read back as opted out. No index, as nothing filters on it.
- */
+// No index: nothing filters on this column.
 export class AddSpaceExperimentalFeatures1791979841055
   implements MigrationInterface
 {
