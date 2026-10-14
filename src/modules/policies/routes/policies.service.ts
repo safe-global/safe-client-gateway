@@ -18,10 +18,6 @@ import { IChainsRepository } from '#/modules/chains/domain/chains.repository.int
 import type { Delegate } from '#/modules/delegate/domain/entities/delegate.entity';
 import { IDelegatesV3Repository } from '#/modules/delegate/domain/v3/delegates.v3.repository.interface';
 import type { ActivePolicy } from '#/modules/policies/domain/entities/active-policy.entity';
-import type {
-  PolicyIndexerGuardPolicyBinding,
-  PolicyIndexerSafeAllowance,
-} from '#/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 import type { PendingPolicy } from '#/modules/policies/domain/entities/pending-policy.entity';
 import { PolicyType } from '#/modules/policies/domain/entities/policy-type.entity';
 import type { SafeRef } from '#/modules/policies/domain/entities/safe-ref.entity';
@@ -235,7 +231,9 @@ export class PoliciesService {
         policies.push(
           ...this.spendingLimitMapper.map({
             safe,
-            allowances: this.getAllowancesBySafe(state.allowances, safe),
+            allowances: state.allowances.filter((allowance) =>
+              this.isScopedToSafe(allowance, safe),
+            ),
             enabledModules: enforcers.enabledModules,
             tokenMetadata,
           }),
@@ -255,9 +253,8 @@ export class PoliciesService {
         policies.push(
           ...this.guardPolicyMapper.map({
             safe,
-            bindings: this.getGuardPolicyBindingsBySafe(
-              state.guardPolicyBindings,
-              safe,
+            bindings: state.guardPolicyBindings.filter((binding) =>
+              this.isScopedToSafe(binding, safe),
             ),
             transactionGuard: enforcers.transactionGuard,
             moduleGuard: enforcers.moduleGuard,
@@ -589,33 +586,18 @@ export class PoliciesService {
   }
 
   /**
-   * The allowance rows belonging to {@link safe}.
+   * Whether an indexer row - an allowance or a guard binding - belongs to
+   * {@link safe}.
    *
    * One indexer read covers every Safe of a request, so an unscoped read would
    * report another Safe's policies on this one.
    */
-  private getAllowancesBySafe(
-    allowances: ReadonlyArray<PolicyIndexerSafeAllowance>,
+  private isScopedToSafe(
+    row: { chainId: string; safe: Address },
     safe: SafeRef,
-  ): Array<PolicyIndexerSafeAllowance> {
-    return allowances.filter(
-      (allowance) =>
-        allowance.chainId === safe.chainId &&
-        isAddressEqual(allowance.safe, safe.address),
-    );
-  }
-
-  /**
-   * The guard bindings belonging to {@link safe}.
-   */
-  private getGuardPolicyBindingsBySafe(
-    bindings: ReadonlyArray<PolicyIndexerGuardPolicyBinding>,
-    safe: SafeRef,
-  ): Array<PolicyIndexerGuardPolicyBinding> {
-    return bindings.filter(
-      (binding) =>
-        binding.chainId === safe.chainId &&
-        isAddressEqual(binding.safe, safe.address),
+  ): boolean {
+    return (
+      row.chainId === safe.chainId && isAddressEqual(row.safe, safe.address)
     );
   }
 }

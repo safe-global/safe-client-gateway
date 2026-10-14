@@ -30,9 +30,13 @@ import type {
   SpendingLimitAllowance,
   SpendingLimitPolicyData,
 } from '#/modules/policies/domain/entities/active-policy.entity';
+import { policyIndexerGuardPolicyBindingBuilder } from '#/modules/policies/domain/entities/indexer/__tests__/guard-policy-binding.builder';
 import { policyIndexerResponseBuilder } from '#/modules/policies/domain/entities/indexer/__tests__/policy-indexer-state.builder';
 import { policyIndexerSafeAllowanceBuilder } from '#/modules/policies/domain/entities/indexer/__tests__/safe-allowance.builder';
-import type { PolicyIndexerSafeAllowance } from '#/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
+import type {
+  PolicyIndexerGuardPolicyBinding,
+  PolicyIndexerSafeAllowance,
+} from '#/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 import { PolicyType } from '#/modules/policies/domain/entities/policy-type.entity';
 import type { IPolicyIndexerRepository } from '#/modules/policies/domain/policy-indexer.repository.interface';
 import { guardPolicyKindsOf } from '#/modules/policies/domain/utils/policy.utils';
@@ -346,6 +350,82 @@ describe('PoliciesService', () => {
           safeAddress,
         }),
       );
+    });
+  });
+
+  describe('guard bindings', () => {
+    /** An ALLOW binding of `safe` on `chainId`. */
+    function bindingOf(
+      safe: Address,
+      chainId = SEPOLIA,
+    ): PolicyIndexerGuardPolicyBinding {
+      return policyIndexerGuardPolicyBindingBuilder()
+        .with('chainId', chainId)
+        .with('safe', safe)
+        .with('kind', 'ALLOW')
+        .with('state', null)
+        .build();
+    }
+
+    /** The guard policies of the Space, over the given binding rows. */
+    async function guardPolicies(
+      bindings: Array<PolicyIndexerGuardPolicyBinding>,
+    ): Promise<Array<ActivePolicy>> {
+      mockPolicyIndexerRepository.getState.mockResolvedValue(
+        policyIndexerResponseBuilder()
+          .with('guardPolicyBindings', bindings)
+          .build(),
+      );
+
+      return await target.getSpaceActivePolicies({
+        ...policyRequest,
+        types: [PolicyType.Allow],
+      });
+    }
+
+    it('should report the bindings of the safe it is building', async () => {
+      const result = await guardPolicies([
+        bindingOf(safeAddress),
+      ]);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].safe).toStrictEqual({
+        chainId: SEPOLIA,
+        address: safeAddress,
+      });
+    });
+
+    it('should use only the bindings of the safe it is building', async () => {
+      // The indexer answers for every Safe of a request, so an unscoped read
+      // would report another Safe's guard policies on this one.
+      const result = await guardPolicies([
+        bindingOf(getAddress(faker.finance.ethereumAddress())),
+      ]);
+
+      expect(result).toStrictEqual([]);
+    });
+
+    it('should not report a binding of the same address on another chain', async () => {
+      // A Safe address can be deployed on several chains, each with its own
+      // guard configuration.
+      const otherChain = faker.string.numeric({
+        length: 3,
+        exclude: [SEPOLIA],
+      });
+
+      const result = await guardPolicies([
+        bindingOf(safeAddress, otherChain),
+      ]);
+
+      expect(result).toStrictEqual([]);
+    });
+
+    it('should match the safe of a binding regardless of casing', async () => {
+      const result = await guardPolicies([
+        bindingOf(safeAddress.toLowerCase() as Address),
+      ]);
+
+      expect(result).toHaveLength(1);
     });
   });
 
