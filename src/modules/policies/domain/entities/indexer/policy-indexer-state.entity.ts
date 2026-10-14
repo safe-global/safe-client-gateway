@@ -169,7 +169,7 @@ export const PolicyIndexerCosignerStateSchema = z.object({
   cosigner: AddressSchema,
 });
 
-const PolicyIndexerGuardPolicyBindingBaseSchema = z.object({
+const PolicyIndexerGuardEnforcedPolicyBaseSchema = z.object({
   chainId: PolicyIndexerChainIdSchema,
   safe: AddressSchema,
   guard: AddressSchema,
@@ -180,18 +180,18 @@ const PolicyIndexerGuardPolicyBindingBaseSchema = z.object({
   policy: AddressSchema,
 });
 
-export const PolicyIndexerGuardPolicyBindingSchema = z.discriminatedUnion(
+export const PolicyIndexerGuardEnforcedPolicySchema = z.discriminatedUnion(
   'kind',
   [
-    PolicyIndexerGuardPolicyBindingBaseSchema.extend({
+    PolicyIndexerGuardEnforcedPolicyBaseSchema.extend({
       kind: z.literal('ERC20_TRANSFER'),
       state: PolicyIndexerErc20TransferStateSchema,
     }),
-    PolicyIndexerGuardPolicyBindingBaseSchema.extend({
+    PolicyIndexerGuardEnforcedPolicyBaseSchema.extend({
       kind: z.literal('COSIGNER'),
       state: PolicyIndexerCosignerStateSchema,
     }),
-    PolicyIndexerGuardPolicyBindingBaseSchema.extend({
+    PolicyIndexerGuardEnforcedPolicyBaseSchema.extend({
       kind: PolicyIndexerGuardPolicyKindSchema.exclude([
         'ERC20_TRANSFER',
         'COSIGNER',
@@ -201,8 +201,8 @@ export const PolicyIndexerGuardPolicyBindingSchema = z.discriminatedUnion(
   ],
 );
 
-export type PolicyIndexerGuardPolicyBinding = z.infer<
-  typeof PolicyIndexerGuardPolicyBindingSchema
+export type PolicyIndexerGuardEnforcedPolicy = z.infer<
+  typeof PolicyIndexerGuardEnforcedPolicySchema
 >;
 
 /**
@@ -246,5 +246,5 @@ export type PolicyIndexerState = {
   meta: ReadonlyArray<PolicyIndexerMeta>;
   allowances: ReadonlyArray<PolicyIndexerSafeAllowance>;
   delegates: ReadonlyArray<PolicyIndexerSafeDelegate>;
-  guardPolicyBindings: ReadonlyArray<PolicyIndexerGuardPolicyBinding>;
+  guardPolicyBindings: ReadonlyArray<PolicyIndexerGuardEnforcedPolicy>;
 };

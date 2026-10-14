@@ -5,7 +5,7 @@ import type {
   ActivePolicy,
   ActivePolicyData,
 } from '#/modules/policies/domain/entities/active-policy.entity';
-import type { PolicyIndexerGuardPolicyBinding } from '#/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
+import type { PolicyIndexerGuardEnforcedPolicy } from '#/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 import {
   type GuardSlots,
   guardEnforcement,
@@ -17,7 +17,7 @@ import { guardPolicyTypeOfKind } from '#/modules/policies/domain/utils/policy.ut
 export class GuardPolicyMapper {
   public map(args: {
     safe: SafeRef;
-    bindings: ReadonlyArray<PolicyIndexerGuardPolicyBinding>;
+    bindings: ReadonlyArray<PolicyIndexerGuardEnforcedPolicy>;
     transactionGuard: Address | null;
     moduleGuard: Address | null;
   }): Array<ActivePolicy> {
@@ -59,7 +59,7 @@ export class GuardPolicyMapper {
   /**
    * The payload of a policy.
    */
-  private toData(binding: PolicyIndexerGuardPolicyBinding): ActivePolicyData {
+  private toData(binding: PolicyIndexerGuardEnforcedPolicy): ActivePolicyData {
     switch (binding.kind) {
       case 'ERC20_TRANSFER':
         // The policy keys its recipients by token, and the access target is
@@ -81,7 +81,7 @@ export class GuardPolicyMapper {
    * guard checks owner transactions, the module guard module transactions.
    */
   private toGuardSlots(
-    binding: PolicyIndexerGuardPolicyBinding,
+    binding: PolicyIndexerGuardEnforcedPolicy,
     slots: { transactionGuard: Address | null; moduleGuard: Address | null },
   ): GuardSlots {
     const contracts = {

@@ -8,7 +8,7 @@ import {
 } from '#/logging/logging.interface';
 import { PolicyIndexerApi } from '#/modules/policies/datasources/policy-indexer-api.service';
 import {
-  PolicyIndexerGuardPolicyBindingSchema,
+  PolicyIndexerGuardEnforcedPolicySchema,
   type PolicyIndexerGuardPolicyKind,
   PolicyIndexerMetaSchema,
   PolicyIndexerRowsSchema,
@@ -68,7 +68,7 @@ export class PolicyIndexerRepository implements IPolicyIndexerRepository {
       ),
       delegates,
       guardPolicyBindings: this.parseRows(
-        PolicyIndexerGuardPolicyBindingSchema,
+        PolicyIndexerGuardEnforcedPolicySchema,
         response.GuardPolicyBinding,
         'GuardPolicyBinding',
       ),

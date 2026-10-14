@@ -5,7 +5,7 @@ import type { MockedObject } from 'vitest';
 import { ZodError } from 'zod';
 import type { ILoggingService } from '#/logging/logging.interface';
 import type { PolicyIndexerApi } from '#/modules/policies/datasources/policy-indexer-api.service';
-import { rawIndexerGuardPolicyBindingBuilder } from '#/modules/policies/domain/entities/indexer/__tests__/guard-policy-binding.builder';
+import { rawIndexerGuardEnforcedPolicyBuilder } from '#/modules/policies/domain/entities/indexer/__tests__/guard-enforced-policy.builder';
 import {
   rawIndexerMetaBuilder,
   rawPolicyIndexerResponse,
@@ -403,7 +403,7 @@ describe('PolicyIndexerRepository', () => {
 
     it('should parse the recipient list of a token allowlist', async () => {
       const recipient = getAddress(faker.finance.ethereumAddress());
-      const binding = rawIndexerGuardPolicyBindingBuilder()
+      const binding = rawIndexerGuardEnforcedPolicyBuilder()
         .with('kind', 'ERC20_TRANSFER')
         .with('state', {
           recipients: [{ account: recipient, permission: 'ONCE' }],
@@ -421,7 +421,7 @@ describe('PolicyIndexerRepository', () => {
 
     it('should parse the cosigner of a cosigner policy', async () => {
       const cosigner = getAddress(faker.finance.ethereumAddress());
-      const binding = rawIndexerGuardPolicyBindingBuilder()
+      const binding = rawIndexerGuardEnforcedPolicyBuilder()
         .with('kind', 'COSIGNER')
         .with('state', { cosigner })
         .build();
@@ -435,7 +435,7 @@ describe('PolicyIndexerRepository', () => {
     });
 
     it('should keep a binding whose kind carries no configuration CGW reads', async () => {
-      const binding = rawIndexerGuardPolicyBindingBuilder()
+      const binding = rawIndexerGuardEnforcedPolicyBuilder()
         .with('kind', 'ALLOW')
         .with('state', null)
         .build();
@@ -450,8 +450,8 @@ describe('PolicyIndexerRepository', () => {
 
     it('should drop a binding whose state is not the shape its kind implies', async () => {
       // The indexer's registry and CGW disagree about the policy address.
-      const readable = rawIndexerGuardPolicyBindingBuilder().build();
-      const unreadable = rawIndexerGuardPolicyBindingBuilder()
+      const readable = rawIndexerGuardEnforcedPolicyBuilder().build();
+      const unreadable = rawIndexerGuardEnforcedPolicyBuilder()
         .with('kind', 'COSIGNER')
         .with('state', { recipients: [] })
         .build();
@@ -473,7 +473,7 @@ describe('PolicyIndexerRepository', () => {
       // `permission` is inside the indexer's jsonb, so a new value arrives with
       // no schema signal. Guessing between a single-use and an open-ended grant
       // would misreport what the Safe actually permits.
-      const binding = rawIndexerGuardPolicyBindingBuilder()
+      const binding = rawIndexerGuardEnforcedPolicyBuilder()
         .with('kind', 'ERC20_TRANSFER')
         .with('state', {
           recipients: [
@@ -492,7 +492,7 @@ describe('PolicyIndexerRepository', () => {
 
     it('should drop a binding of a kind it does not know', async () => {
       // A kind added by a newer indexer release, which no release of CGW knows.
-      const binding = rawIndexerGuardPolicyBindingBuilder()
+      const binding = rawIndexerGuardEnforcedPolicyBuilder()
         .with('kind', faker.string.alpha({ length: 12, casing: 'upper' }))
         .build();
 

@@ -30,11 +30,11 @@ import type {
   SpendingLimitAllowance,
   SpendingLimitPolicyData,
 } from '#/modules/policies/domain/entities/active-policy.entity';
-import { policyIndexerGuardPolicyBindingBuilder } from '#/modules/policies/domain/entities/indexer/__tests__/guard-policy-binding.builder';
+import { policyIndexerGuardEnforcedPolicyBuilder } from '#/modules/policies/domain/entities/indexer/__tests__/guard-enforced-policy.builder';
 import { policyIndexerResponseBuilder } from '#/modules/policies/domain/entities/indexer/__tests__/policy-indexer-state.builder';
 import { policyIndexerSafeAllowanceBuilder } from '#/modules/policies/domain/entities/indexer/__tests__/safe-allowance.builder';
 import type {
-  PolicyIndexerGuardPolicyBinding,
+  PolicyIndexerGuardEnforcedPolicy,
   PolicyIndexerSafeAllowance,
 } from '#/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 import { PolicyType } from '#/modules/policies/domain/entities/policy-type.entity';
@@ -353,13 +353,13 @@ describe('PoliciesService', () => {
     });
   });
 
-  describe('guard bindings', () => {
-    /** An ALLOW binding of `safe` on `chainId`. */
-    function bindingOf(
+  describe('policies enforced by the guard', () => {
+    /** An ALLOW policy enforced by the guard on `safe`, on `chainId`. */
+    function guardEnforcedPolicyOf(
       safe: Address,
       chainId = SEPOLIA,
-    ): PolicyIndexerGuardPolicyBinding {
-      return policyIndexerGuardPolicyBindingBuilder()
+    ): PolicyIndexerGuardEnforcedPolicy {
+      return policyIndexerGuardEnforcedPolicyBuilder()
         .with('chainId', chainId)
         .with('safe', safe)
         .with('kind', 'ALLOW')
@@ -367,13 +367,13 @@ describe('PoliciesService', () => {
         .build();
     }
 
-    /** The guard policies of the Space, over the given binding rows. */
-    async function guardPolicies(
-      bindings: Array<PolicyIndexerGuardPolicyBinding>,
+    /** The guard-enforced policies of the Space, over the given indexer rows. */
+    async function guardEnforcedPolicies(
+      policies: Array<PolicyIndexerGuardEnforcedPolicy>,
     ): Promise<Array<ActivePolicy>> {
       mockPolicyIndexerRepository.getState.mockResolvedValue(
         policyIndexerResponseBuilder()
-          .with('guardPolicyBindings', bindings)
+          .with('guardPolicyBindings', policies)
           .build(),
       );
 
@@ -383,9 +383,9 @@ describe('PoliciesService', () => {
       });
     }
 
-    it('should report the bindings of the safe it is building', async () => {
-      const result = await guardPolicies([
-        bindingOf(safeAddress),
+    it('should report the policies of the safe it is building', async () => {
+      const result = await guardEnforcedPolicies([
+        guardEnforcedPolicyOf(safeAddress),
       ]);
 
       expect(result).toHaveLength(1);
@@ -395,17 +395,17 @@ describe('PoliciesService', () => {
       });
     });
 
-    it('should use only the bindings of the safe it is building', async () => {
+    it('should use only the policies the guard enforces on the safe it is building', async () => {
       // The indexer answers for every Safe of a request, so an unscoped read
-      // would report another Safe's guard policies on this one.
-      const result = await guardPolicies([
-        bindingOf(getAddress(faker.finance.ethereumAddress())),
+      // would report the policies the guard enforces on another Safe on this one.
+      const result = await guardEnforcedPolicies([
+        guardEnforcedPolicyOf(getAddress(faker.finance.ethereumAddress())),
       ]);
 
       expect(result).toStrictEqual([]);
     });
 
-    it('should not report a binding of the same address on another chain', async () => {
+    it('should not report a policy the guard enforces on the same address on another chain', async () => {
       // A Safe address can be deployed on several chains, each with its own
       // guard configuration.
       const otherChain = faker.string.numeric({
@@ -413,16 +413,16 @@ describe('PoliciesService', () => {
         exclude: [SEPOLIA],
       });
 
-      const result = await guardPolicies([
-        bindingOf(safeAddress, otherChain),
+      const result = await guardEnforcedPolicies([
+        guardEnforcedPolicyOf(safeAddress, otherChain),
       ]);
 
       expect(result).toStrictEqual([]);
     });
 
-    it('should match the safe of a binding regardless of casing', async () => {
-      const result = await guardPolicies([
-        bindingOf(safeAddress.toLowerCase() as Address),
+    it('should match the safe of a policy enforced by the guard regardless of casing', async () => {
+      const result = await guardEnforcedPolicies([
+        guardEnforcedPolicyOf(safeAddress.toLowerCase() as Address),
       ]);
 
       expect(result).toHaveLength(1);

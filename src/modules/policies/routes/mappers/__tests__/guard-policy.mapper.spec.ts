@@ -5,9 +5,9 @@ import type {
   CosignerPolicyData,
   Erc20TransferPolicyData,
 } from '#/modules/policies/domain/entities/active-policy.entity';
-import { policyIndexerGuardPolicyBindingBuilder } from '#/modules/policies/domain/entities/indexer/__tests__/guard-policy-binding.builder';
+import { policyIndexerGuardEnforcedPolicyBuilder } from '#/modules/policies/domain/entities/indexer/__tests__/guard-enforced-policy.builder';
 import type {
-  PolicyIndexerGuardPolicyBinding,
+  PolicyIndexerGuardEnforcedPolicy,
   PolicyIndexerGuardPolicyKind,
 } from '#/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 import type { PolicyAccess } from '#/modules/policies/domain/entities/policy-enforcement.entity';
@@ -30,7 +30,7 @@ describe('GuardPolicyMapper', () => {
   });
 
   function map(
-    bindings: Array<PolicyIndexerGuardPolicyBinding>,
+    bindings: Array<PolicyIndexerGuardEnforcedPolicy>,
     overrides?: {
       transactionGuard?: Address | null;
       moduleGuard?: Address | null;
@@ -50,15 +50,15 @@ describe('GuardPolicyMapper', () => {
 
   /** A binding of `safe` on `guard`. */
   function binding(): ReturnType<
-    typeof policyIndexerGuardPolicyBindingBuilder
+    typeof policyIndexerGuardEnforcedPolicyBuilder
   > {
-    return policyIndexerGuardPolicyBindingBuilder()
+    return policyIndexerGuardEnforcedPolicyBuilder()
       .with('chainId', SEPOLIA)
       .with('safe', safe.address)
       .with('guard', guard);
   }
 
-  function accessOf(policy: PolicyIndexerGuardPolicyBinding): PolicyAccess {
+  function accessOf(policy: PolicyIndexerGuardEnforcedPolicy): PolicyAccess {
     return {
       target: policy.target,
       selector: policy.selector,

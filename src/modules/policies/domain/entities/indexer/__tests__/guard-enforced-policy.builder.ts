@@ -2,9 +2,9 @@
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import { Builder, type IBuilder } from '#/__tests__/builder';
-import type { PolicyIndexerGuardPolicyBinding } from '#/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
+import type { PolicyIndexerGuardEnforcedPolicy } from '#/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 
-export type RawIndexerGuardPolicyBinding = {
+export type RawIndexerGuardEnforcedPolicy = {
   chainId: number;
   safe: string;
   guard: string;
@@ -16,9 +16,9 @@ export type RawIndexerGuardPolicyBinding = {
   state: unknown;
 };
 
-export function rawIndexerGuardPolicyBindingBuilder(): IBuilder<RawIndexerGuardPolicyBinding> {
+export function rawIndexerGuardEnforcedPolicyBuilder(): IBuilder<RawIndexerGuardEnforcedPolicy> {
   return (
-    new Builder<RawIndexerGuardPolicyBinding>()
+    new Builder<RawIndexerGuardEnforcedPolicy>()
       .with('chainId', 11155111)
       .with('safe', getAddress(faker.finance.ethereumAddress()))
       .with('guard', getAddress(faker.finance.ethereumAddress()))
@@ -42,10 +42,10 @@ export function rawIndexerGuardPolicyBindingBuilder(): IBuilder<RawIndexerGuardP
 /**
  * A parsed guard binding, as a repository returns it.
  */
-export function policyIndexerGuardPolicyBindingBuilder(): IBuilder<PolicyIndexerGuardPolicyBinding> {
-  const raw = rawIndexerGuardPolicyBindingBuilder().build();
+export function policyIndexerGuardEnforcedPolicyBuilder(): IBuilder<PolicyIndexerGuardEnforcedPolicy> {
+  const raw = rawIndexerGuardEnforcedPolicyBuilder().build();
 
-  return new Builder<PolicyIndexerGuardPolicyBinding>()
+  return new Builder<PolicyIndexerGuardEnforcedPolicy>()
     .with('chainId', String(raw.chainId))
     .with('safe', getAddress(raw.safe))
     .with('guard', getAddress(raw.guard))
