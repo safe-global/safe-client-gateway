@@ -302,7 +302,7 @@ export class Erc20TransferRecipientDto implements Erc20TransferRecipient {
   public readonly permission!: PolicyPermission;
 }
 
-export class Erc20TransferAllowlistEntryDto {
+export class Erc20TransferPolicyDataDto implements Erc20TransferPolicyData {
   @ApiProperty({
     type: String,
     description: 'The token the allowlist applies to; zero address for native',
@@ -314,11 +314,6 @@ export class Erc20TransferAllowlistEntryDto {
     description: 'The recipients of the token transfers the policy permits',
   })
   public readonly recipients!: Array<Erc20TransferRecipient>;
-}
-
-export class Erc20TransferPolicyDataDto implements Erc20TransferPolicyData {
-  @ApiProperty({ type: Erc20TransferAllowlistEntryDto, isArray: true })
-  public readonly allowlist!: Erc20TransferPolicyData['allowlist'];
 }
 
 export class CosignerPolicyDataDto implements CosignerPolicyData {

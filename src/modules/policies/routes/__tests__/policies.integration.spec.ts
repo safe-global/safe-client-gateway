@@ -616,12 +616,8 @@ describe('Space Policies Controller', () => {
           enabled: true,
           safe: { chainId: SEPOLIA_CHAIN_ID, address: safeAddress },
           data: {
-            allowlist: [
-              {
-                tokenAddress: token,
-                recipients: [{ account: recipient, permission: 'ALWAYS' }],
-              },
-            ],
+            tokenAddress: token,
+            recipients: [{ account: recipient, permission: 'ALWAYS' }],
           },
         },
       ]);

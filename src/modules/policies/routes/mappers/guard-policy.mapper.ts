@@ -89,12 +89,8 @@ export class GuardPolicyMapper {
         // The policy keys its recipients by token, and the access target is
         // the token.
         return {
-          allowlist: [
-            {
-              tokenAddress: binding.target,
-              recipients: binding.state.recipients,
-            },
-          ],
+          tokenAddress: binding.target,
+          recipients: binding.state.recipients,
         };
       case 'COSIGNER':
         return { cosignerAddress: binding.state.cosigner };

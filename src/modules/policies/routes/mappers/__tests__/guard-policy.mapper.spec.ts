@@ -85,12 +85,8 @@ describe('GuardPolicyMapper', () => {
 
       expect(result.type).toBe(PolicyType.Erc20Transfer);
       expect(result.data as Erc20TransferPolicyData).toStrictEqual({
-        allowlist: [
-          {
-            tokenAddress: token,
-            recipients: [{ account: recipient, permission: 'ALWAYS' }],
-          },
-        ],
+        tokenAddress: token,
+        recipients: [{ account: recipient, permission: 'ALWAYS' }],
       });
     });
 
@@ -106,7 +102,7 @@ describe('GuardPolicyMapper', () => {
         const [result] = map([policy]);
 
         expect(
-          (result.data as Erc20TransferPolicyData).allowlist[0].recipients,
+          (result.data as Erc20TransferPolicyData).recipients,
         ).toStrictEqual([{ account, permission }]);
       },
     );
@@ -135,9 +131,9 @@ describe('GuardPolicyMapper', () => {
 
       const [result] = map([policy]);
 
-      expect(
-        (result.data as Erc20TransferPolicyData).allowlist[0].recipients,
-      ).toStrictEqual(recipients);
+      expect((result.data as Erc20TransferPolicyData).recipients).toStrictEqual(
+        recipients,
+      );
     });
 
     it('should report a cosigner as the whole payload', () => {
@@ -410,10 +406,10 @@ describe('GuardPolicyMapper', () => {
 
       expect(result).toHaveLength(2);
       expect(
-        result.map((item) => (item.data as Erc20TransferPolicyData).allowlist),
+        result.map((item) => item.data as Erc20TransferPolicyData),
       ).toStrictEqual([
-        [{ tokenAddress: token, recipients: state.recipients }],
-        [{ tokenAddress: token, recipients: state.recipients }],
+        { tokenAddress: token, recipients: state.recipients },
+        { tokenAddress: token, recipients: state.recipients },
       ]);
     });
 

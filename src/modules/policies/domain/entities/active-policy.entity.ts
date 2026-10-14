@@ -99,10 +99,8 @@ export type Erc20TransferRecipient = z.infer<
  * `ERC20TransferPolicy`: per token, the recipients the Safe can send to.
  */
 export type Erc20TransferPolicyData = {
-  allowlist: Array<{
-    tokenAddress: Address;
-    recipients: Array<Erc20TransferRecipient>;
-  }>;
+  tokenAddress: Address;
+  recipients: Array<Erc20TransferRecipient>;
 };
 
 /**
