@@ -23,6 +23,7 @@ import {
 } from '#/modules/spaces/domain/audit/entities/space-audit-event.entity';
 import { ISpaceAuditRepository } from '#/modules/spaces/domain/audit/space-audit.repository.interface';
 import type { SpaceStatus } from '#/modules/spaces/domain/entities/space.entity';
+import { isSameFeatureSet } from '#/modules/spaces/domain/experimental-features.utils';
 import { SpaceEncryptionService } from '#/modules/spaces/domain/space-encryption.service';
 import type { ISpacesRepository } from '#/modules/spaces/domain/spaces.repository.interface';
 import { Member } from '#/modules/users/datasources/entities/member.entity.db';
@@ -32,15 +33,6 @@ import {
   MemberStatus,
 } from '#/modules/users/domain/entities/member.entity';
 import { MemberEncryptionService } from '#/modules/users/domain/members/member-encryption.service';
-
-export function isSameFeatureSet(
-  a: ReadonlyArray<string>,
-  b: ReadonlyArray<string>,
-): boolean {
-  const setA = new Set(a);
-  const setB = new Set(b);
-  return setA.size === setB.size && [...setA].every((f) => setB.has(f));
-}
 
 @Injectable()
 export class SpacesRepository implements ISpacesRepository {

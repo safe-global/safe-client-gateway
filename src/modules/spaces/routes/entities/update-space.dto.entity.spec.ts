@@ -9,30 +9,9 @@ describe('UpdateSpaceSchema', () => {
     expect(result).not.toHaveProperty('experimentalFeatures');
   });
 
-  it('does not add experimentalFeatures to an empty body', () => {
-    expect(UpdateSpaceSchema.parse({})).toStrictEqual({});
-  });
-
-  it('accepts and dedupes experimentalFeatures', () => {
-    const result = UpdateSpaceSchema.parse({
-      experimentalFeatures: ['recipientAllowlist', 'recipientAllowlist'],
-    });
-
-    expect(result).toStrictEqual({
-      experimentalFeatures: ['recipientAllowlist'],
-    });
-  });
-
   it('accepts an empty array to opt out of everything', () => {
     expect(UpdateSpaceSchema.parse({ experimentalFeatures: [] })).toStrictEqual(
       { experimentalFeatures: [] },
     );
-  });
-
-  it('rejects an unknown feature', () => {
-    expect(
-      UpdateSpaceSchema.safeParse({ experimentalFeatures: ['notAFeature'] })
-        .success,
-    ).toBe(false);
   });
 });

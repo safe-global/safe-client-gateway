@@ -119,7 +119,7 @@ describe('SpacesService', () => {
         {
           uuid: mockSpace.uuid,
           name: space.name,
-          experimentalFeatures: [],
+          experimentalFeatures: mockSpace.experimentalFeatures,
           members: [member],
           memberCount: 1,
           safeCount: 3,

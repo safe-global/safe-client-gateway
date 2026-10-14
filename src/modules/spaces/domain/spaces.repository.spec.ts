@@ -8,10 +8,7 @@ import type { PostgresDatabaseService } from '#/datasources/db/v2/postgres-datab
 import { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
 import { createMockSpaceEncryptionService } from '#/modules/spaces/domain/__tests__/space-encryption.service.mock';
 import { createMockSpaceAuditRepository } from '#/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
-import {
-  isSameFeatureSet,
-  SpacesRepository,
-} from '#/modules/spaces/domain/spaces.repository';
+import { SpacesRepository } from '#/modules/spaces/domain/spaces.repository';
 import { Member } from '#/modules/users/datasources/entities/member.entity.db';
 import { createMockMemberEncryptionService } from '#/modules/users/domain/members/__tests__/member-encryption.service.mock';
 import { fakeUuid } from '#/validation/entities/schemas/__tests__/uuid.builder';
@@ -393,23 +390,5 @@ describe('SpacesRepository', () => {
       );
       expect(entityManager.delete).toHaveBeenCalledWith(Space, spaceId);
     });
-  });
-});
-
-describe('isSameFeatureSet', () => {
-  it('is true for the same members in any order', () => {
-    expect(isSameFeatureSet(['x', 'y'], ['y', 'x'])).toBe(true);
-  });
-
-  it('is false for a subset', () => {
-    expect(isSameFeatureSet(['x'], ['x', 'y'])).toBe(false);
-  });
-
-  it('ignores duplicates on either side', () => {
-    expect(isSameFeatureSet(['x', 'x'], ['x'])).toBe(true);
-  });
-
-  it('is true for two empty sets', () => {
-    expect(isSameFeatureSet([], [])).toBe(true);
   });
 });
