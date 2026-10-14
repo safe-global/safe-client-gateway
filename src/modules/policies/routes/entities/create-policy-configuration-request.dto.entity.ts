@@ -38,7 +38,8 @@ export class PolicyConfigurationDto implements PolicyConfiguration {
   })
   public readonly policy!: Address;
   @ApiProperty({
-    description: 'Policy payload, abi-encoded as passed to the guard',
+    description:
+      'Policy payload, abi-encoded as passed to the guard. At most 64 KiB (65,536 bytes).',
   })
   public readonly data!: Hex;
 }

@@ -11,10 +11,11 @@ import { postgresConfig } from '#/config/entities/postgres.config';
 import { DatabaseMigrator } from '#/datasources/db/v2/database-migrator.service';
 import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
 import type { ILoggingService } from '#/logging/logging.interface';
+import { PolicyConfigurationRecord } from '#/modules/policies/datasources/entities/policy-configuration.entity.db';
 import { PolicyConfigurationRequest } from '#/modules/policies/datasources/entities/policy-configuration-request.entity.db';
 import { policyConfigurationBuilder } from '#/modules/policies/domain/entities/__tests__/policy-configuration.builder';
 import {
-  MAX_POLICY_CONFIGURATIONS_BYTES,
+  MAX_POLICY_CONFIGURATION_DATA_BYTES,
   type PolicyConfiguration,
 } from '#/modules/policies/domain/entities/policy-configuration.entity';
 import { PolicyConfigurationRequestsRepository } from '#/modules/policies/domain/policy-configuration-requests.repository';
@@ -31,6 +32,7 @@ describe('PolicyConfigurationRequestsRepository', () => {
   let postgresDatabaseService: PostgresDatabaseService;
   let repository: PolicyConfigurationRequestsRepository;
   let dbRepository: Repository<PolicyConfigurationRequest>;
+  let configurationsRepository: Repository<PolicyConfigurationRecord>;
 
   const maxPerSafe = 3;
   /** A real Space per test: `space_id` is a foreign key to `spaces`. */
@@ -45,7 +47,7 @@ describe('PolicyConfigurationRequestsRepository', () => {
       database: testDatabaseName,
     }),
     migrationsTableName: testConfiguration.db.orm.migrationsTableName,
-    entities: [PolicyConfigurationRequest],
+    entities: [PolicyConfigurationRequest, PolicyConfigurationRecord],
   });
 
   type StorableRequest = Parameters<
@@ -56,8 +58,11 @@ describe('PolicyConfigurationRequestsRepository', () => {
   function storableRequest(args?: {
     chainId?: string;
     safeAddress?: Address;
+    configurations?: Array<PolicyConfiguration>;
   }): StorableRequest {
-    const configurations = [policyConfigurationBuilder().build()];
+    const configurations = args?.configurations ?? [
+      policyConfigurationBuilder().build(),
+    ];
 
     return {
       chainId: args?.chainId ?? '11155111',
@@ -121,6 +126,9 @@ describe('PolicyConfigurationRequestsRepository', () => {
     dbRepository = await postgresDatabaseService.getRepository(
       PolicyConfigurationRequest,
     );
+    configurationsRepository = await postgresDatabaseService.getRepository(
+      PolicyConfigurationRecord,
+    );
   });
 
   /** Inserts an active Space and returns its id. */
@@ -138,8 +146,29 @@ describe('PolicyConfigurationRequestsRepository', () => {
     spaceId = await insertSpace();
   });
 
+  /** The stored configurations of {@link root}, in `position` order. */
+  async function storedConfigurations(
+    root: StorableRequest['root'],
+  ): Promise<Array<PolicyConfiguration>> {
+    const [request] = await dbRepository.findBy({ root });
+    const rows = await configurationsRepository.find({
+      where: { requestId: request.id },
+      order: { position: 'ASC' },
+    });
+    return rows.map(({ target, selector, operation, policy, data }) => ({
+      target,
+      selector,
+      operation,
+      policy,
+      data,
+    }));
+  }
+
   afterEach(async () => {
-    await dbRepository.clear();
+    // CASCADE: policy_configurations references the requests.
+    await postgresDatabaseService
+      .getDataSource()
+      .query(`TRUNCATE "policy_configuration_requests" CASCADE`);
   });
 
   afterAll(async () => {
@@ -174,11 +203,38 @@ describe('PolicyConfigurationRequestsRepository', () => {
         chainId: request.chainId,
         safeAddress: request.safeAddress,
         root: request.root,
-        configurations: request.configurations,
         spaceId: request.spaceId,
         createdBy: request.createdBy,
       });
       expect(stored.createdAt).toBeInstanceOf(Date);
+      await expect(storedConfigurations(request.root)).resolves.toStrictEqual(
+        request.configurations,
+      );
+    });
+
+    it('should store the configurations in the order the root hashes them', async () => {
+      const configurations = Array.from(
+        { length: faker.number.int({ min: 2, max: 5 }) },
+        () => policyConfigurationBuilder().build(),
+      );
+      const request = storableRequest({ configurations });
+
+      await repository.create(request);
+
+      await expect(storedConfigurations(request.root)).resolves.toStrictEqual(
+        configurations,
+      );
+    });
+
+    it('should not store the configurations of a re-submission again', async () => {
+      const request = storableRequest();
+
+      await repository.create(request);
+      await repository.create(request);
+
+      await expect(configurationsRepository.count()).resolves.toBe(
+        request.configurations.length,
+      );
     });
 
     it('should be idempotent per chain, Safe and root', async () => {
@@ -260,9 +316,10 @@ describe('PolicyConfigurationRequestsRepository', () => {
         .query(`DELETE FROM "spaces" WHERE "id" = $1`, [spaceId]);
 
       await expect(dbRepository.countBy({ spaceId })).resolves.toBe(0);
+      await expect(configurationsRepository.count()).resolves.toBe(0);
     });
 
-    it('should reject an update of a stored row', async () => {
+    it('should reject an update of a stored request', async () => {
       const request = storableRequest();
       await repository.create(request);
 
@@ -270,13 +327,23 @@ describe('PolicyConfigurationRequestsRepository', () => {
         postgresDatabaseService
           .getDataSource()
           .query(
-            `UPDATE "policy_configuration_requests" SET "configurations" = '[]' WHERE "root" = $1`,
+            `UPDATE "policy_configuration_requests" SET "created_by" = "created_by" + 1 WHERE "root" = $1`,
             [request.root],
           ),
       ).rejects.toThrow('policy_configuration_requests rows are immutable');
     });
 
-    it('should still allow a stored row to be deleted', async () => {
+    it('should reject an update of a stored configuration', async () => {
+      await repository.create(storableRequest());
+
+      await expect(
+        postgresDatabaseService
+          .getDataSource()
+          .query(`UPDATE "policy_configurations" SET "data" = '0x'`),
+      ).rejects.toThrow('policy_configurations rows are immutable');
+    });
+
+    it('should delete the configurations of a deleted request', async () => {
       const request = storableRequest();
       await repository.create(request);
 
@@ -285,30 +352,33 @@ describe('PolicyConfigurationRequestsRepository', () => {
       await expect(dbRepository.countBy({ root: request.root })).resolves.toBe(
         0,
       );
+      await expect(configurationsRepository.count()).resolves.toBe(0);
     });
 
-    it('should reject configurations larger than 64 KiB', async () => {
-      // Written past the repository, which validates nothing about size: this
-      // is the check constraint's own guarantee.
-      const oversized = JSON.stringify([
-        { data: `0x${'ab'.repeat(MAX_POLICY_CONFIGURATIONS_BYTES / 2)}` },
-      ]);
+    it('should reject configuration data larger than 64 KiB', async () => {
+      // Written past the repository and the schema: this is the check
+      // constraint's own guarantee.
+      const request = storableRequest();
+      await repository.create(request);
+      const [stored] = await dbRepository.findBy({ root: request.root });
+      const configuration = policyConfigurationBuilder().build();
 
       await expect(
         postgresDatabaseService.getDataSource().query(
-          `INSERT INTO "policy_configuration_requests"
-             ("chain_id", "safe_address", "root", "configurations", "space_id", "created_by")
-           VALUES ($1, $2, $3, $4, $5, $6)`,
+          `INSERT INTO "policy_configurations"
+             ("request_id", "position", "target", "selector", "operation", "policy", "data")
+           VALUES ($1, $2, $3, $4, $5, $6, $7)`,
           [
-            faker.string.numeric(5),
-            getAddress(faker.finance.ethereumAddress()),
-            faker.string.hexadecimal({ length: 64, casing: 'lower' }),
-            oversized,
-            spaceId,
-            faker.number.int({ min: 1, max: 1000 }),
+            stored.id,
+            request.configurations.length,
+            configuration.target,
+            configuration.selector,
+            configuration.operation,
+            configuration.policy,
+            `0x${'ab'.repeat(MAX_POLICY_CONFIGURATION_DATA_BYTES + 1)}`,
           ],
         ),
-      ).rejects.toThrow('CHK_PCR_configurations_size');
+      ).rejects.toThrow('CHK_PC_data_size');
     });
   });
 });

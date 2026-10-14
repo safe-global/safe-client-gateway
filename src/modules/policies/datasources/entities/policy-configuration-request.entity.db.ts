@@ -2,12 +2,14 @@
 import { Column, Entity, Index, PrimaryGeneratedColumn, Unique } from 'typeorm';
 import type { Address, Hex } from 'viem';
 import { databaseAddressTransformer } from '#/domain/common/transformers/database-address.transformer';
-import type { PolicyConfiguration } from '#/modules/policies/domain/entities/policy-configuration.entity';
 import { CHAIN_ID_MAXLENGTH } from '#/routes/common/constants';
 
 /**
  * The `Configuration[]` behind a delayed configuration request, kept off-chain
  * because `requestConfiguration(bytes32 root)` publishes only its hash.
+ *
+ * Its `Configuration[]` is stored in `policy_configurations`, one
+ * {@link PolicyConfigurationRecord} per entry.
  *
  * Rows are immutable - a different configuration hashes to a different root, so
  * it is a different row - and a database trigger rejects every `UPDATE`. The table is a decoding aid, never a source of truth -
@@ -48,13 +50,6 @@ export class PolicyConfigurationRequest {
    */
   @Column({ type: 'varchar', length: 66, update: false })
   public readonly root!: Hex;
-
-  /**
-   * The configurations exactly as hashed: `data` raw, not decoded. Capped at
-   * `MAX_POLICY_CONFIGURATIONS_BYTES` by a check constraint.
-   */
-  @Column({ type: 'jsonb', update: false })
-  public readonly configurations!: Array<PolicyConfiguration>;
 
   /**
    * Space the request came through. A foreign key to `spaces` that cascades on

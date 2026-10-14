@@ -8,6 +8,7 @@ import { AllowanceModuleDecoder } from '#/modules/contracts/domain/decoders/allo
 import { MultiSendDecoder } from '#/modules/contracts/domain/decoders/multi-send-decoder.helper';
 import { SafeDecoder } from '#/modules/contracts/domain/decoders/safe-decoder.helper';
 import { DelegatesV3RepositoryModule } from '#/modules/delegate/domain/v3/delegates.v3.repository.interface';
+import { PolicyConfigurationRecord } from '#/modules/policies/datasources/entities/policy-configuration.entity.db';
 import { PolicyConfigurationRequest } from '#/modules/policies/datasources/entities/policy-configuration-request.entity.db';
 import { PolicyConfigurationRequestsRepository } from '#/modules/policies/domain/policy-configuration-requests.repository';
 import { IPolicyConfigurationRequestsRepository } from '#/modules/policies/domain/policy-configuration-requests.repository.interface';
@@ -32,7 +33,10 @@ import { UsersModule } from '#/modules/users/users.module';
   imports: [
     PolicyIndexerRepositoryModule,
     PostgresDatabaseModuleV2,
-    TypeOrmModule.forFeature([PolicyConfigurationRequest]),
+    TypeOrmModule.forFeature([
+      PolicyConfigurationRequest,
+      PolicyConfigurationRecord,
+    ]),
     SafeRepositoryModule,
     DelegatesV3RepositoryModule,
     TokensModule,
