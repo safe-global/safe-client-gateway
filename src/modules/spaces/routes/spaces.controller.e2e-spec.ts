@@ -631,6 +631,216 @@ describe('SpacesController', () => {
         );
     });
 
+    it('Should read back [] for a space that never opted in, then set and return experimental features', async () => {
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const spaceName = nameBuilder();
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`]);
+
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: spaceName });
+      const spaceId = createSpaceResponse.body.uuid;
+
+      await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200)
+        .expect(({ body }) => {
+          expect(body.experimentalFeatures).toStrictEqual([]);
+        });
+
+      await request(app.getHttpServer())
+        .patch(`/v1/spaces/${spaceId}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ experimentalFeatures: ['recipientAllowlist'] })
+        .expect(200);
+
+      await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200)
+        .expect(({ body }) => {
+          expect(body.experimentalFeatures).toStrictEqual([
+            'recipientAllowlist',
+          ]);
+        });
+    });
+
+    it('Should opt out when sent an empty array', async () => {
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const spaceName = nameBuilder();
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`]);
+
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: spaceName });
+      const spaceId = createSpaceResponse.body.uuid;
+
+      await request(app.getHttpServer())
+        .patch(`/v1/spaces/${spaceId}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ experimentalFeatures: ['recipientAllowlist'] })
+        .expect(200);
+
+      await request(app.getHttpServer())
+        .patch(`/v1/spaces/${spaceId}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ experimentalFeatures: [] })
+        .expect(200);
+
+      await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200)
+        .expect(({ body }) => {
+          expect(body.experimentalFeatures).toStrictEqual([]);
+        });
+    });
+
+    it('Should store a repeated value once', async () => {
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const spaceName = nameBuilder();
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`]);
+
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: spaceName });
+      const spaceId = createSpaceResponse.body.uuid;
+
+      await request(app.getHttpServer())
+        .patch(`/v1/spaces/${spaceId}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({
+          experimentalFeatures: ['recipientAllowlist', 'recipientAllowlist'],
+        })
+        .expect(200);
+
+      await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200)
+        .expect(({ body }) => {
+          expect(body.experimentalFeatures).toStrictEqual([
+            'recipientAllowlist',
+          ]);
+        });
+    });
+
+    it('Should leave experimental features untouched when updating only the name', async () => {
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const spaceName = nameBuilder();
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`]);
+
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: spaceName });
+      const spaceId = createSpaceResponse.body.uuid;
+      const newSpaceName = nameBuilder();
+
+      await request(app.getHttpServer())
+        .patch(`/v1/spaces/${spaceId}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ experimentalFeatures: ['recipientAllowlist'] })
+        .expect(200);
+
+      await request(app.getHttpServer())
+        .patch(`/v1/spaces/${spaceId}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: newSpaceName })
+        .expect(200);
+
+      await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200)
+        .expect(({ body }) => {
+          expect(body.name).toBe(newSpaceName);
+          expect(body.experimentalFeatures).toStrictEqual([
+            'recipientAllowlist',
+          ]);
+        });
+    });
+
+    it('Should leave the name untouched when updating only experimental features', async () => {
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const spaceName = nameBuilder();
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`]);
+
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: spaceName });
+      const spaceId = createSpaceResponse.body.uuid;
+
+      await request(app.getHttpServer())
+        .patch(`/v1/spaces/${spaceId}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ experimentalFeatures: ['recipientAllowlist'] })
+        .expect(200);
+
+      await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200)
+        .expect(({ body }) => {
+          expect(body.name).toBe(spaceName);
+          expect(body.experimentalFeatures).toStrictEqual([
+            'recipientAllowlist',
+          ]);
+        });
+    });
+
+    it.each([
+      ['an unknown feature', ['notAFeature']],
+      ['a bare string', 'recipientAllowlist'],
+      ['an object', { recipientAllowlist: true }],
+      ['a number element', [1]],
+    ])('Should return a 422 for %s', async (_label, value) => {
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const spaceName = nameBuilder();
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`]);
+
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: spaceName });
+      const spaceId = createSpaceResponse.body.uuid;
+
+      await request(app.getHttpServer())
+        .patch(`/v1/spaces/${spaceId}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ experimentalFeatures: value })
+        .expect(422);
+    });
+
     it('Should return a 400 if the space id is numeric (UUID required on writes)', async () => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
