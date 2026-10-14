@@ -127,7 +127,8 @@ export class RedisCacheService
     expireTimeSeconds: number | undefined,
     expireDeviatePercent?: number,
   ): Promise<number> {
-    const transaction = this.client.multi().incr(cacheKey);
+    const key = this._prefixKey(cacheKey);
+    const transaction = this.client.multi().incr(key);
     if (expireTimeSeconds !== undefined && expireTimeSeconds > 0) {
       const expirationTime = this.enforceMaxRedisTTL(
         deviateRandomlyByPercentage(
@@ -136,9 +137,9 @@ export class RedisCacheService
         ),
       );
 
-      transaction.expire(cacheKey, expirationTime, 'NX');
+      transaction.expire(key, expirationTime, 'NX');
     }
-    const [incrRes] = await transaction.get(cacheKey).exec();
+    const [incrRes] = await transaction.get(key).exec();
     return Number(incrRes);
   }
 
