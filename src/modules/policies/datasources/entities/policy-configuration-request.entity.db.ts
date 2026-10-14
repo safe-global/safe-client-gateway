@@ -9,8 +9,8 @@ import { CHAIN_ID_MAXLENGTH } from '#/routes/common/constants';
  * The `Configuration[]` behind a delayed configuration request, kept off-chain
  * because `requestConfiguration(bytes32 root)` publishes only its hash.
  *
- * Rows are immutable: a different configuration hashes to a different root, so
- * it is a different row. The table is a decoding aid, never a source of truth -
+ * Rows are immutable - a different configuration hashes to a different root, so
+ * it is a different row - and a database trigger rejects every `UPDATE`. The table is a decoding aid, never a source of truth -
  * the `RootConfigured`/`RootInvalidated` events remain authoritative for whether
  * a request exists, is ready or was cancelled.
  */
@@ -49,11 +49,18 @@ export class PolicyConfigurationRequest {
   @Column({ type: 'varchar', length: 66, update: false })
   public readonly root!: Hex;
 
-  /** The configurations exactly as hashed: `data` raw, not decoded. */
+  /**
+   * The configurations exactly as hashed: `data` raw, not decoded. Capped at
+   * `MAX_POLICY_CONFIGURATIONS_BYTES` by a check constraint.
+   */
   @Column({ type: 'jsonb', update: false })
   public readonly configurations!: Array<PolicyConfiguration>;
 
-  /** Space the request came through. No FK: the row outlives space deletion. */
+  /**
+   * Space the request came through. A foreign key to `spaces` that cascades on
+   * delete, declared in the migration rather than as a relation here, so this
+   * module does not import the spaces module's datasource entity.
+   */
   @Column({ name: 'space_id', type: 'integer', update: false })
   public readonly spaceId!: number;
 
