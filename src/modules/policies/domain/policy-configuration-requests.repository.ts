@@ -1,11 +1,19 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import type { Address, Hex } from 'viem';
+import { z } from 'zod';
 import { IConfigurationService } from '#/config/configuration.service.interface';
 import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
+import { PolicyConfigurationRecord } from '#/modules/policies/datasources/entities/policy-configuration.entity.db';
 import { PolicyConfigurationRequest } from '#/modules/policies/datasources/entities/policy-configuration-request.entity.db';
 import type { PolicyConfiguration } from '#/modules/policies/domain/entities/policy-configuration.entity';
 import type { IPolicyConfigurationRequestsRepository } from '#/modules/policies/domain/policy-configuration-requests.repository.interface';
+
+/**
+ * The `RETURNING "id"` of the request insert: one row when it was inserted, none
+ * when `ON CONFLICT DO NOTHING` skipped it. `bigint` arrives as a string.
+ */
+const InsertedRequestSchema = z.array(z.object({ id: z.string() })).max(1);
 
 @Injectable()
 export class PolicyConfigurationRequestsRepository
@@ -32,25 +40,52 @@ export class PolicyConfigurationRequestsRepository
     spaceId: number;
     createdBy: number;
   }): Promise<void> {
-    const repository = await this.db.getRepository(PolicyConfigurationRequest);
-
     await this.assertBelowMaxPerSafe(args);
 
-    // `ON CONFLICT DO NOTHING` on (chain_id, safe_address, root): re-submitting
-    // a stored root is a no-op rather than an error, so a client retry is safe.
-    await repository
-      .createQueryBuilder()
-      .insert()
-      .values({
-        chainId: args.chainId,
-        safeAddress: args.safeAddress,
-        root: args.root,
-        configurations: [...args.configurations],
-        spaceId: args.spaceId,
-        createdBy: args.createdBy,
-      })
-      .orIgnore()
-      .execute();
+    // The request and its configurations land together or not at all.
+    await this.db.transaction(async (manager) => {
+      // `ON CONFLICT DO NOTHING` on (chain_id, safe_address, root): re-submitting
+      // a stored root is a no-op rather than an error, so a client retry is safe.
+      const { raw } = await manager
+        .createQueryBuilder()
+        .insert()
+        .into(PolicyConfigurationRequest)
+        .values({
+          chainId: args.chainId,
+          safeAddress: args.safeAddress,
+          root: args.root,
+          spaceId: args.spaceId,
+          createdBy: args.createdBy,
+        })
+        .orIgnore()
+        .returning(['id'])
+        .execute();
+
+      const [inserted] = InsertedRequestSchema.parse(raw);
+
+      // A re-submission inserted no request, and its configurations are the
+      // ones already stored: the same root hashes the same configurations.
+      if (!inserted) {
+        return;
+      }
+
+      await manager
+        .createQueryBuilder()
+        .insert()
+        .into(PolicyConfigurationRecord)
+        .values(
+          args.configurations.map((configuration, position) => ({
+            requestId: inserted.id,
+            position,
+            target: configuration.target,
+            selector: configuration.selector,
+            operation: configuration.operation,
+            policy: configuration.policy,
+            data: configuration.data,
+          })),
+        )
+        .execute();
+    });
   }
 
   /**

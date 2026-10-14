@@ -12,22 +12,11 @@ import { HexSchema } from '#/validation/entities/schemas/hex.schema';
 const SELECTOR_SIZE = 4;
 
 /**
- * Largest `Configuration[]` CGW stores, in bytes of JSON text: 64 KiB. Also the
- * `CHK_PCR_configurations_size` check constraint of the table, which measures
- * Postgres's own serialization of the stored `jsonb` value.
+ * Largest `data` of one configuration CGW stores: 64 KiB of bytes. Also the
+ * `CHK_PC_data_size` check constraint of `policy_configurations`, which counts
+ * the same bytes as 0x-prefixed hex.
  */
-export const MAX_POLICY_CONFIGURATIONS_BYTES = 65_536;
-
-/**
- * Bytes of {@link configurations} as Postgres serializes the stored `jsonb`,
- * which is what the check constraint measures: a space follows every `:` and
- * `,`. Every value here is a hex string or `0`/`1`, so each `:` and `,` in the
- * JSON is a separator.
- */
-function storedJsonBytes(configurations: ReadonlyArray<unknown>): number {
-  const json = JSON.stringify(configurations);
-  return Buffer.byteLength(json) + (json.match(/[:,]/g)?.length ?? 0);
-}
+export const MAX_POLICY_CONFIGURATION_DATA_BYTES = 65_536;
 
 /**
  * One entry of the `Configuration[]` a delayed configuration request hashes.
@@ -56,7 +45,11 @@ export const PolicyConfigurationSchema = z.object({
     .describe('0 = CALL, 1 = DELEGATECALL'),
   /** `NULL_ADDRESS` removes the policy of this access. */
   policy: AddressSchema,
-  data: HexSchema,
+  /** The policy payload, abi-encoded as passed to the guard. */
+  data: HexSchema.refine(
+    (value) => size(value) <= MAX_POLICY_CONFIGURATION_DATA_BYTES,
+    { error: 'Invalid data, exceeds the maximum of 64 KiB' },
+  ),
 });
 
 export type PolicyConfiguration = z.infer<typeof PolicyConfigurationSchema>;
@@ -68,9 +61,4 @@ export type PolicyConfiguration = z.infer<typeof PolicyConfigurationSchema>;
  */
 export const PolicyConfigurationsSchema = z
   .array(PolicyConfigurationSchema)
-  .nonempty()
-  .refine(
-    (configurations) =>
-      storedJsonBytes(configurations) <= MAX_POLICY_CONFIGURATIONS_BYTES,
-    { error: 'Configurations exceed the maximum stored size' },
-  );
+  .nonempty();
