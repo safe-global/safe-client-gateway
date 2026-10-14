@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
+import { AddressSchema } from '#/validation/entities/schemas/address.schema';
 
 const relayRulesValidator = z
   .string()
@@ -144,6 +145,10 @@ export const RootConfigurationSchema = z
     FF_BILLING_SERVICE: z.string().optional(),
     FF_MFA_STEP_UP: z.string().optional(),
     FF_SAFE_SHIELD_CORE_DISABLED: z.string().optional(),
+    FF_SAFENET: z.string().optional(),
+    SAFENET_CONSENSUS_ADDRESS: AddressSchema.optional(),
+    SAFENET_ORACLE_ADDRESS: AddressSchema.optional(),
+    SAFENET_PAYER_SAFE_ADDRESS: AddressSchema.optional(),
     FF_ZERION_TESTNETS_ENABLED: z.string().optional(),
     CGW_ENV: z.string().optional(),
     CIRCUIT_BREAKER_THRESHOLD: z.coerce.number().int().min(1).optional(),

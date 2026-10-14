@@ -173,6 +173,11 @@ yarn run start:dev
 yarn run start:prod
 ```
 
+## Safenet payer
+
+`FF_SAFENET` enables the Safenet payer and defaults to false.
+Set the Consensus, Oracle, and payer Safe variables listed in `.env.sample.json`.
+
 ## Test
 
 The unit test suite contains tests that require a database connection.
