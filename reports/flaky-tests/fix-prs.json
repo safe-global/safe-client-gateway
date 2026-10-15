@@ -1,11 +1,12 @@
 {
-  "generated_at": "2026-10-15T08:08:44.881Z",
+  "generated_at": "2026-10-15T16:36:22.638Z",
   "prs": [
     {
       "number": 3572,
       "title": "fix(tests): stop signature, chain ID and JWT test flakes",
       "url": "https://github.com/safe-global/safe-client-gateway/pull/3572",
       "merged_at": "2026-10-12T15:40:16Z",
+      "state": "merged",
       "tests_fixed": [
         "src/domain/common/entities/safe-signature.spec.ts",
         "src/modules/messages/domain/helpers/message-verifier.helper.spec.ts",
@@ -19,6 +20,7 @@
       "title": "fix(db): make the v2 migrator lock acquisition atomic",
       "url": "https://github.com/safe-global/safe-client-gateway/pull/3594",
       "merged_at": null,
+      "state": "open",
       "tests_fixed": [
         "src/datasources/db/v2/database-migrator.service.integration.spec.ts",
         "src/modules/surveys/routes/surveys.controller.integration.spec.ts",
@@ -30,6 +32,7 @@
       "title": "build: migrate runtime, tooling and tests from node to bun",
       "url": "https://github.com/safe-global/safe-client-gateway/pull/3560",
       "merged_at": null,
+      "state": "open",
       "tests_fixed": [
         "migrations/deprecated/__tests__/00005_notifications.integration.spec.ts",
         "migrations/deprecated/__tests__/00006_targeted_messaging.integration.spec.ts",
@@ -69,6 +72,7 @@
       "title": "perf(relay): boot the relay controller spec's app once per file",
       "url": "https://github.com/safe-global/safe-client-gateway/pull/3558",
       "merged_at": "2026-10-09T15:12:22Z",
+      "state": "merged",
       "tests_fixed": [
         "src/modules/relay/routes/relay.controller.integration.spec.ts"
       ]
@@ -78,6 +82,7 @@
       "title": "perf: share the unit-test module cache across spec files",
       "url": "https://github.com/safe-global/safe-client-gateway/pull/3552",
       "merged_at": "2026-10-09T14:57:38Z",
+      "state": "merged",
       "tests_fixed": [
         "src/logging/logging.service.spec.ts"
       ]
@@ -87,6 +92,7 @@
       "title": "build: resolve #/ imports natively and type-check specs on TS 7",
       "url": "https://github.com/safe-global/safe-client-gateway/pull/3551",
       "merged_at": "2026-10-09T14:51:16Z",
+      "state": "merged",
       "tests_fixed": [
         "migrations/deprecated/__tests__/00005_notifications.integration.spec.ts",
         "migrations/deprecated/__tests__/00006_targeted_messaging.integration.spec.ts",
@@ -126,6 +132,7 @@
       "title": "feat: derive zerion support from its chain list, excluding testnets",
       "url": "https://github.com/safe-global/safe-client-gateway/pull/3447",
       "merged_at": "2026-10-09T14:11:01Z",
+      "state": "merged",
       "tests_fixed": [
         "src/modules/balances/datasources/entities/zerion-wallet-portfolio.entity.spec.ts",
         "src/modules/portfolio/datasources/zerion-portfolio-api.service.spec.ts",
@@ -140,6 +147,7 @@
       "title": "fix: compute messagesTag from the latest modified message",
       "url": "https://github.com/safe-global/safe-client-gateway/pull/3550",
       "merged_at": "2026-10-08T10:34:41Z",
+      "state": "merged",
       "tests_fixed": [
         "src/modules/messages/domain/messages.repository.spec.ts",
         "src/modules/safe/routes/safes.controller.integration.spec.ts",
@@ -151,6 +159,7 @@
       "title": "fix(circuit-breaker): replace deprecated done() callback with Date.now mocking",
       "url": "https://github.com/safe-global/safe-client-gateway/pull/3444",
       "merged_at": null,
+      "state": "closed",
       "tests_fixed": [
         "src/datasources/circuit-breaker/circuit-breaker.service.spec.ts"
       ]
@@ -160,6 +169,7 @@
       "title": "fix(users): return the winning user id on a concurrent wallet insert",
       "url": "https://github.com/safe-global/safe-client-gateway/pull/3506",
       "merged_at": "2026-09-30T09:12:08Z",
+      "state": "merged",
       "tests_fixed": [
         "src/modules/users/domain/users.repository.integration.spec.ts"
       ]
@@ -169,6 +179,7 @@
       "title": "fix: await Fastify ready when initializing test apps",
       "url": "https://github.com/safe-global/safe-client-gateway/pull/3262",
       "merged_at": "2026-07-14T10:09:53Z",
+      "state": "merged",
       "tests_fixed": [
         "src/modules/portfolio/v1/portfolio.controller.integration.spec.ts"
       ]
@@ -178,6 +189,7 @@
       "title": "fix(tests): resolve remaining flaky tests after Vitest migration",
       "url": "https://github.com/safe-global/safe-client-gateway/pull/3242",
       "merged_at": "2026-07-10T14:09:16Z",
+      "state": "merged",
       "tests_fixed": [
         "src/datasources/job-queue/__tests__/job-queue.service.integration.spec.ts",
         "src/datasources/network/network.module.integration.spec.ts",
@@ -248,6 +260,7 @@
       "title": "chore(tests): reduce CI flakiness (clearMocks + seeded faker)",
       "url": "https://github.com/safe-global/safe-client-gateway/pull/3139",
       "merged_at": "2026-07-02T08:28:07Z",
+      "state": "merged",
       "tests_fixed": [
         "src/datasources/job-queue/__tests__/job-queue.service.integration.spec.ts",
         "src/routes/common/guards/rate-limit.guard.spec.ts"
@@ -258,6 +271,7 @@
       "title": "feat: replace Jest with Vitest",
       "url": "https://github.com/safe-global/safe-client-gateway/pull/3136",
       "merged_at": "2026-06-23T10:11:05Z",
+      "state": "merged",
       "tests_fixed": [
         "scripts/env-json-helpers.spec.ts",
         "scripts/generate-env.spec.ts",
@@ -339,6 +353,7 @@
       "title": "chore: Fix flaky unit test",
       "url": "https://github.com/safe-global/safe-client-gateway/pull/3162",
       "merged_at": "2026-06-11T13:37:04Z",
+      "state": "merged",
       "tests_fixed": [
         "src/modules/auth/utils/auth-redirect.helper.spec.ts"
       ]
@@ -358,7 +373,8 @@
         "src/modules/safe/routes/safes.controller.nonces.integration.spec.ts",
         "src/routes/common/decorators/pagination.data.decorator.integration.spec.ts",
         "src/routes/common/interceptors/cache-control.interceptor.integration.spec.ts"
-      ]
+      ],
+      "state": "merged"
     },
     {
       "number": 2992,
@@ -368,7 +384,8 @@
       "tests_fixed": [
         "src/modules/auth/oidc/routes/oidc-auth.controller.integration.spec.ts",
         "src/modules/auth/oidc/routes/oidc-auth.service.spec.ts"
-      ]
+      ],
+      "state": "merged"
     },
     {
       "number": 2977,
@@ -378,7 +395,8 @@
       "tests_fixed": [
         "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts",
         "src/modules/transactions/routes/__tests__/controllers/preview-transaction-cow-swap.transactions.controller.integration.spec.ts"
-      ]
+      ],
+      "state": "merged"
     },
     {
       "number": 2944,
@@ -388,7 +406,8 @@
       "tests_fixed": [
         "src/modules/auth/datasources/__tests__/external-auth.mock.datasource.spec.ts",
         "src/modules/auth/routes/__tests__/mock-consent.controller.spec.ts"
-      ]
+      ],
+      "state": "closed"
     },
     {
       "number": 2911,
@@ -432,7 +451,8 @@
         "src/modules/transactions/routes/transactions-history.controller.integration.spec.ts",
         "src/modules/transactions/routes/transactions-history.imitation-transactions.controller.integration.spec.ts",
         "src/routes/common/filters/global-error.filter.integration.spec.ts"
-      ]
+      ],
+      "state": "merged"
     },
     {
       "number": 2913,
@@ -447,7 +467,8 @@
         "src/modules/transactions/routes/__tests__/controllers/list-queued-transactions-by-safe.transactions.controller.integration.spec.ts",
         "src/modules/transactions/routes/__tests__/controllers/propose-transaction.transactions.controller.integration.spec.ts",
         "src/modules/transactions/routes/helpers/transaction-verifier.helper.spec.ts"
-      ]
+      ],
+      "state": "merged"
     },
     {
       "number": 2907,
@@ -456,7 +477,8 @@
       "merged_at": "2026-02-06T09:55:03Z",
       "tests_fixed": [
         "src/modules/transactions/routes/__tests__/controllers/preview-transaction-kiln.transactions.controller.integration.spec.ts"
-      ]
+      ],
+      "state": "merged"
     },
     {
       "number": 2903,
@@ -465,7 +487,8 @@
       "merged_at": "2026-02-05T10:53:23Z",
       "tests_fixed": [
         "src/modules/notifications/routes/v2/notifications.controller.integration.spec.ts"
-      ]
+      ],
+      "state": "merged"
     },
     {
       "number": 2891,
@@ -478,7 +501,8 @@
         "src/modules/targeted-messaging/datasources/targeted-messaging.datasource.integration.spec.ts",
         "src/modules/transactions/routes/helpers/transaction-verifier.helper.spec.ts",
         "src/modules/users/domain/members.repository.integration.spec.ts"
-      ]
+      ],
+      "state": "merged"
     },
     {
       "number": 2890,
@@ -545,7 +569,8 @@
         "src/routes/common/filters/zod-error.filter.integration.spec.ts",
         "src/routes/common/interceptors/cache-control.interceptor.integration.spec.ts",
         "src/routes/common/interceptors/route-logger.interceptor.integration.spec.ts"
-      ]
+      ],
+      "state": "merged"
     },
     {
       "number": 2846,
@@ -554,7 +579,8 @@
       "merged_at": "2025-12-11T14:42:17Z",
       "tests_fixed": [
         "src/modules/transactions/routes/transactions-history.imitation-transactions.controller.spec.ts"
-      ]
+      ],
+      "state": "merged"
     },
     {
       "number": 2842,
@@ -566,7 +592,8 @@
         "src/modules/safe-shield/threat-analysis/blockaid/blockaid-api.service.spec.ts",
         "src/modules/safe-shield/threat-analysis/blockaid/schemas/blockaid-scan-response.schema.spec.ts",
         "src/modules/safe-shield/threat-analysis/threat-analysis.service.spec.ts"
-      ]
+      ],
+      "state": "closed"
     },
     {
       "number": 2737,
@@ -591,7 +618,8 @@
         "src/routes/alerts/alerts.controller.spec.ts",
         "src/routes/auth/auth.controller.spec.ts",
         "src/routes/users/users.controller.spec.ts"
-      ]
+      ],
+      "state": "closed"
     },
     {
       "number": 2806,
@@ -604,7 +632,8 @@
         "src/modules/balances/routes/__tests__/controllers/zerion-balances.controller.spec.ts",
         "src/modules/collectibles/routes/__tests__/controllers/zerion-collectibles.controller.spec.ts",
         "src/modules/portfolio/v1/portfolio.service.spec.ts"
-      ]
+      ],
+      "state": "merged"
     },
     {
       "number": 2781,
@@ -620,7 +649,8 @@
         "src/routes/safes/safes.controller.overview.spec.ts",
         "src/routes/spaces/space-safes.controller.spec.ts",
         "src/routes/transactions/__tests__/controllers/preview-transaction-cow-swap.transactions.controller.spec.ts"
-      ]
+      ],
+      "state": "closed"
     }
   ]
 }
