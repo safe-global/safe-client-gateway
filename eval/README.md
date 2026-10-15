@@ -1,91 +1,126 @@
 # PR reviewer eval: CGW
 
-Which PR reviewer finds the most real problems per unit of cost: one system alone, or a combination?
+How good are AI code reviewers on our own PRs, and against what? This folder holds the full eval for CGW: the PR set, every reviewer run, the judging pipeline, and the final scores. The combined write-up for wallet and CGW is the "What does good mean for an AI reviewer?" report (Claude artifact, shared in the org: https://claude.ai/artifact/UpPisuzY3smjVTSS2fTXq4). The wallet eval lives on the same branch name in safe-wallet-monorepo.
+
+Everything here is reproducible from the files in this folder plus `gh` and the Claude CLI. Every script skips work that already exists, so an interrupted step can simply be run again.
+
+## The problem: there is no ground truth
+
+Nobody has the full list of real problems in a PR. Human reviewers miss things, and AI reviewers raise things a human never would. So the eval uses two imperfect benchmarks and reads them together:
+
+1. **Human reviews (primary).** Of the issues human reviewers raised and authors accepted, how many did each AI reviewer also raise?
+2. **Absolute findings.** How many issues does each reviewer raise, and how many does a blind judge confirm against the code?
+
+There is deliberately no "pooled recall" (the share of all issues any reviewer found): a reviewer that raises more issues grows the pool it is scored against, which makes the metric circular. `judge/metrics.js` is that original scorer, kept only for history.
 
 ## Candidates
 
-| ID | Reviewer | Source |
-|---|---|---|
-| A | `code-conventions` skill, `--review-pr` mode | run locally |
-| B | `safe-engineering-plugin:safe-code-review` | run locally |
-| C | `@claude review` GitHub workflow | existing PR comments, only where it ran |
-| D | `@claude arch-review` GitHub workflow | existing PR comments, only where it ran |
-| E | Human review | existing PR comments |
+| ID | Reviewer | Source | Pin |
+|---|---|---|---|
+| A | `code-conventions` skill, `--review-pr` mode | run locally by `run.sh` | skill and rules at `ebad1342` on `valentin/cgw-code-conventions-docs-only` |
+| B | `safe-engineering-plugin:safe-code-review` | run locally by `run.sh` | plugin version recorded in each run file |
+| C | `@claude review` GitHub workflow | existing PR comments, collected | only on PRs where it ran (`hasC`) |
+| D | `@claude arch-review` GitHub workflow | existing PR comments, collected | only on PRs where it ran (`hasD`) |
+| E | Human reviewers, first review round | existing PR comments, collected | — |
 
+**A is a held-out snapshot.** A learns its rules from closed PRs' review comments. The pinned snapshot covers review history up to 2026-06-02 only, and every eval PR closed after that date, so A was never scored on PRs it learned from. Do not re-run A with a newer snapshot on these PRs: it would be tested on its own training data.
 
-**Pins:**
-- **A** uses the skill and rules from `valentin/cgw-code-conventions-docs-only` at `ebad1342`. That snapshot covers review history up to 2026-06-02, so it has never seen the eval PRs.
-- **B** is recorded by plugin version in each run file.
+**B ran in two modes.** Runs up to batch 5 used the full plugin. From batch 6 on (runs after 2026-09-28), `run.sh` caps it to save usage: `--effort medium` and "use at most 2 subagents in total"; those runs carry `+max2agents+effort-medium` in `version`. Full: 33 runs, 6.1 issues/PR, 73% valid, $5.42/PR. Capped: 27 runs, 5.5 issues/PR, 76% valid, $2.35/PR.
 
-## PR set
+## PR set: `prs.json`
 
-The PR set is 60 CGW PRs merged between 2026-06-02 and 2026-09-22, listed in `prs.json`. D ran on only 25 PRs in that window; all 25 are included, and C and D are compared on those PRs only.
+60 CGW PRs closed between 2026-06-02 and 2026-09-22, sampled in three size bands and including all 25 PRs where @claude arch-review (D) ran. @claude review (C) ran on 40 of them.
 
-Each PR is reviewed at one **review SHA**, and A and B run on exactly that commit:
-1. **Where D ran:** the commit D reviewed. On 10 PRs C reviewed a different commit (`cSameSha: false`).
-2. **Otherwise, where C ran:** the commit C reviewed.
-3. **Otherwise:** the commit the first human review was left on.
-4. **No review at all:** the head at merge. These PRs measure false positives.
+Fields: `pr`, `batch`, `band` (size band S/M/L), `lines`, `reviewSha`, `baseSha`, `reviewShaSource`, `hasC`, `hasD`, `title`.
 
-## Running a PR (devs)
+**Review SHA.** Every reviewer is scored on one commit per PR:
+1. where an AI reviewer already commented (C or D), the commit it saw, so all candidates see the same code;
+2. otherwise the commit the first human review was left on;
+3. with no review at all, the head at merge.
 
-1. **Take only your PRs:** we assign each PR to one dev in the ticket checklist. Run only the PRs assigned to you.
-2. **Run it:** `eval/run.sh <pr>`. The script:
-   - checks out the review SHA in a throwaway worktree;
-   - runs A and B in review-only mode, with no edits and no GitHub comments;
-   - writes `runs/<pr>/A.json` and `runs/<pr>/B.json`.
-3. **Submit:** open a PR into `eval/pr-reviewers` that adds only `runs/<pr>/`, then tick the line in the ticket.
+**Force-push correction.** After a force-push GitHub rewrites commit dates, so the first guess was wrong for 9 PRs. `judge/c-commit.js` rebuilds the head the bot saw from the `HeadRefForcePushedEvent.beforeCommit` history (`git rev-list -1 --before=<comment time> <beforeCommit>`). Those PRs were corrected in `prs.json` and A and B were re-run on them.
 
-A whole batch runs with `eval/run-batch.sh <batch>`. It skips PRs that already have both run files, so an interrupted batch can simply be started again. The ticket's "Instructions for Claude" section turns this into one prompt: "work on batch N of WA-3633".
+## Step 1: run the reviewers
 
-Never change prompts, pins or other PRs' folders. Each PR owns its own folder, so parallel PRs never conflict. This branch starts from `main` and never merges back.
-
-### Run file
-
-```json
-{
-  "pr": 3445,
-  "reviewSha": "…",
-  "baseSha": "…",
-  "system": "A",
-  "version": "ebad1342",
-  "model": "claude-opus-5-5",
-  "runner": "<github handle>",
-  "usage": { "inputTokens": 0, "outputTokens": 0, "cacheReadTokens": 0, "turns": 0, "wallSeconds": 0, "apiEquivalentUsd": 0 },
-  "output": "<the reviewer's raw report>"
-}
+```bash
+export CLAUDE_BIN=$(which claude)                      # or the path to the Claude CLI
+export SAFE_ENG_PLUGIN_DIR=<path to safe-engineering-plugin>
+eval/run.sh <pr> ["A B"]      # one PR
+eval/run-batch.sh <batch>     # all PRs of a batch; skips PRs that already have both run files
 ```
 
-`usage` comes from `claude -p --output-format json`. Runs use a Claude Max subscription, so `apiEquivalentUsd` is the comparable cost figure, not money spent.
+`run.sh` checks the review SHA out in a throwaway worktree, runs A and B headless (`claude -p --output-format json`) in review-only mode (no edits, no GitHub comments), and writes `runs/<pr>/A.json` and `B.json`:
 
-## Judging (central, after all runs)
+```json
+{ "pr": 0, "reviewSha": "…", "baseSha": "…", "system": "A", "version": "…", "model": "…", "runner": "<github handle>",
+  "usage": { "inputTokens": 0, "outputTokens": 0, "cacheReadTokens": 0, "cacheWriteTokens": 0, "turns": 0, "wallSeconds": 0, "apiEquivalentUsd": 0 },
+  "output": "<the reviewer's raw report>" }
+```
 
-1. **Collect:** C, D and E come from GitHub comments at the review SHA. A and B come from the run files.
-2. **Extract findings:** each finding becomes `{ file, line, claim }`, and its source is kept.
-3. **Group:** findings about the same problem become one issue, which lists every candidate that found it.
-4. **Judge blind:** the judge doesn't see the source and labels each issue real (high, medium or low), nit, or wrong. The judge is checked against about 50 issues a human labels independently.
-5. **Escaped defects:** bugs fixed by a later PR in the lines the reviewed PR changed. Did any candidate flag them at review time?
+`apiEquivalentUsd` is the CLI's `total_cost_usd`. The runs used a Claude subscription, so it is an estimate for comparing cost, not money spent.
 
-The answer key is every issue judged real, plus the escaped defects. Nobody's comments count as correct by default, humans included.
+## Step 2: judge (central, after all runs)
 
-## Metrics
+Run from the repo root, in this order. Models are set in each script; `JOBS` sets parallelism. In zsh, pass multi-PR arguments through `bash -c` (zsh does not word-split `$VAR`).
 
-- **Recall:** the share of real issues a candidate found.
-- **Precision:** the share of a candidate's findings that are real.
-- **Noise:** findings per PR, and false positives on PRs with no review.
-- **Unique catches:** real issues only one candidate found.
-- **Overlap and combos:** issues covered and cost for every combination of candidates.
-- **Escaped-defect catch rate.**
-- **Cost:** tokens and API-equivalent USD for A and B, and time to first review for E.
+| # | Script | Model | Reads | Writes | What it does |
+|---|---|---|---|---|---|
+| 1 | `collect.js` | — (`gh`) | GitHub | `runs/<pr>/C.json`, `D.json`, `E.json` | Collects the bot reviews and the first human review round: comments on the first reviewed commit, cut off at the next push. Automated accounts and the PR author are excluded. |
+| 2 | `c-commit.js <owner/repo>` | — (`gh`, `git`) | `prs.json` | stdout | Prints PRs whose review SHA is wrong after a force-push. Fix `prs.json`, delete those PRs' A/B runs and results, and re-run them. |
+| 3 | `extract.js [pr…]` | Sonnet, no tools | run files | `results/<pr>/findings/<sys>.json` | Rewrites every review into `{file, line, claim}` findings in one neutral voice, so the judge cannot recognise a reviewer by style. |
+| 4 | `blind.js` | — | findings | `results/<pr>/blind.json`, `key.json` | Pools all findings of a PR under shuffled ids (seeded by PR number, stable on re-runs) and adds the PR title and description. `key.json` maps id → source and is never shown to the judge. |
+| 5 | `judge.js [pr…]` | Opus, read-only on the review SHA | `blind.json` | `results/<pr>/issues.json` | Groups findings about the same problem into issues and labels each against the code: high, medium, low, nit, wrong or unverifiable, with file:line evidence. |
+| 6 | `classify.js` | Sonnet, no tools | `issues.json` | adds `category` | Tags each issue (correctness, tests, convention, style, design, docs, product, security, performance), still source-blind. |
+| 7 | `humans.js <owner/repo> [pr…]` | Opus, PR conversation + final head | issues, GitHub | `results/<pr>/humans.json` | For every issue raised by E, or raised only by C: did the author accept it (fixed before merge or agreed), reject it, or leave it open; and was it already present at the review SHA? |
+| 8 | `score.js` | — | all of the above | `results/score.json`, stdout | Scores both benchmarks and every combination of reviewers. |
+
+To redo a step for a PR, delete its output file and run the step again.
+
+## Scoring (`score.js`)
+
+**Benchmark 1, human reviews.**
+- *Strict key*: issues raised by E, accepted by the author, and present at the review SHA. Score = share of the key a reviewer also raised.
+- *Broad key*: the same, but also counting issues left open.
+- *C-endorsed* (`withC`): adds issues only C raised that the author accepted. C commented before human reviewers on most PRs, and humans rarely repeat what C already said, so the strict key under-counts C; `withC` includes C's own findings and is its upper bound.
+- *Combinations*: an issue counts if any member raised it. Combinations with C or D use only the PRs where those ran, so their denominator is smaller.
+
+**Benchmark 2, findings.** Per reviewer: findings, distinct issues, issues per PR, and the share labelled valid, nit or wrong. Counted per issue, so splitting one problem into many findings does not pay.
+
+**Valid** means the judge labelled the issue `medium` or `low`. Known quirk: `high` is not counted as valid (1 issue in wallet, 3 in CGW). The effect is small, but if you re-score, consider adding `high`.
+
+**Judge check.** As a sanity check, the judge's labels on human-accepted issues were compared with the human verdict: it called many of them nits, so it is stricter than our reviewers and the valid shares are conservative. Claude judges Claude reviewers here; neutral extraction reduces, but does not remove, style bias.
+
+## Results (CGW, final)
+
+| Reviewer | Human benchmark (strict) | Issues / PR | Valid / PR | Valid share | Nit | Wrong | $ / PR (est.) |
+|---|---|---|---|---|---|---|---|
+| A | 11 / 50 (22%) | 6.1 | 3.3 | 54% | 39% | 5% | 0.99 |
+| B | 4 / 50 (8%) | 5.8 | 4.3 | 74% | 17% | 6% | 4.04 |
+| A + B | 12 / 50 (24%) | 9.5 | 5.8 | 61% | 30% | 6% | 5.03 |
+| C (40 PRs) | 4 / 34 (12%); 67% incl. C-endorsed | 5.5 | 2.1 | 38% | 40% | 21% | – |
+| D (25 PRs) | 0 / 24 (0%) | 2.8 | 1.3 | 46% | 32% | 22% | – |
+| E humans | – | 1.4 | 0.3 | 18% | 46% | 32% | – |
+
+Human benchmark: 31 PRs with human comments gave 84 issues, 57 accepted, 50 of them present at the review SHA. Authors fixed 57 of the 150 issues only C raised (38%) without a human comment.
 
 ## Layout
 
 ```
 eval/
-  README.md    this spec
-  prs.json     PR number, review SHA, base SHA
-  run.sh       runs A and B for one PR
-  runs/<pr>/   A.json, B.json (added by devs)
+  README.md          this file
+  prs.json           PR set and review/base SHAs
+  run.sh             runs A and B for one PR
+  run-batch.sh       runs a batch
+  runs/<pr>/         A.json, B.json (run.sh); C.json, `D.json`, E.json (collect.js)
+  results/<pr>/      findings/<sys>.json, blind.json, key.json, issues.json, humans.json,
+                     conversation.txt (the PR conversation humans.js reads)
+  results/score.json final scores
+  judge/             the pipeline scripts above (metrics.js is the superseded pooled-recall scorer)
 ```
 
-Judging scripts and results are added centrally once the runs are in.
+## Extending the eval
+
+- **Another reviewer:** give it a new letter, write `runs/<pr>/<X>.json` in the run-file format, add the letter to the `systems` list in `blind.js` and to the `bots` list in `score.js`, then delete `blind.json`, `key.json` and `issues.json` for the affected PRs and re-run steps 4–8. Adding a reviewer re-groups the issues, so re-judge all of them, not just the new findings.
+- **More PRs:** append to `prs.json` with a review SHA chosen by the rules above, run step 1, then steps 1–8 of the judging.
+- **Another model for A or B:** change the model in `run.sh`, write the runs under a new letter, and treat them as another reviewer.
+- **Next steps** we proposed: build and score a merged A+B reviewer, compare models, have engineers check a sample of the judge's labels, tune B's subagents, test today's A against the Jun 2 snapshot on PRs closed after Sep 22, shadow-run on live PRs, grow the human benchmark, and measure run-to-run variance.
