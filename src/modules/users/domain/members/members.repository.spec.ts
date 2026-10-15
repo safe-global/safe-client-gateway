@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
-import { In, QueryFailedError } from 'typeorm';
+import { In, IsNull, LessThanOrEqual, Or, QueryFailedError } from 'typeorm';
 import { getAddress } from 'viem';
 import type { Mock, MockedObject } from 'vitest';
 import type { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
@@ -645,19 +645,27 @@ describe('MembersRepository', () => {
     it("should update the member's inviteExpiresAt by id", async () => {
       const memberId = faker.number.int();
       const targetUserId = faker.number.int();
+      const notRenewedSince = faker.date.future();
+      entityManager.update.mockResolvedValue({ affected: 1 });
 
       await target.renewInvite({
         memberId,
         inviteExpiresAt,
+        notRenewedSince,
         spaceId: space.id,
         spaceUuid: space.uuid,
         targetUserId,
         actorUserId: authenticatedUserId,
       });
 
-      expect(entityManager.update).toHaveBeenCalledWith(DbMember, memberId, {
-        inviteExpiresAt,
-      });
+      expect(entityManager.update).toHaveBeenCalledWith(
+        DbMember,
+        {
+          id: memberId,
+          inviteExpiresAt: Or(IsNull(), LessThanOrEqual(notRenewedSince)),
+        },
+        { inviteExpiresAt },
+      );
     });
   });
 });
