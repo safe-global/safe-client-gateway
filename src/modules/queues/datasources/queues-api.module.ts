@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { hostname } from 'node:os';
 import { Module } from '@nestjs/common';
 import amqp, {
   type AmqpConnectionManager,
@@ -19,6 +20,7 @@ export interface QueueConsumer {
 function queueConsumerFactory(
   configurationService: IConfigurationService,
 ): QueueConsumer {
+  const serviceName = configurationService.getOrThrow<string>('about.name');
   const amqpUrl = configurationService.getOrThrow<string>('amqp.url');
   const exchangeName =
     configurationService.getOrThrow<string>('amqp.exchange.name');
@@ -36,6 +38,10 @@ function queueConsumerFactory(
   const connection = amqp.connect(amqpUrl, {
     heartbeatIntervalInSeconds,
     reconnectTimeInSeconds,
+    connectionOptions: {
+      // Shown by RabbitMQ in the management UI and logs to identify this connection
+      clientProperties: { connection_name: `${serviceName}@${hostname()}` },
+    },
   });
   const channel = connection.createChannel({
     json: true,
