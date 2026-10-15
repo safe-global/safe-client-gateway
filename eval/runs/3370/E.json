@@ -1,0 +1,11 @@
+{
+  "pr": 3370,
+  "reviewSha": "b89c2025ef33949a9b4c0a0610d36026b9663b22",
+  "baseSha": "482232a40249c7bee55a23a97031c50c3842ed33",
+  "system": "E",
+  "version": "github",
+  "runner": "collect",
+  "model": "human",
+  "commentSha": "50ae135507d73f5e31cc65b71fc02e680fe5842f",
+  "output": "src/modules/safe/routes/safes.controller.integration.spec.ts:2424\nWhy are we casting? Can we create a Response object?\n\n---\n\nsrc/modules/balances/datasources/safe-balances-api.service.ts:109\nCan we create a proper response mapper so that we can map other response codes as well if we ever decide to do so in the future?"
+}

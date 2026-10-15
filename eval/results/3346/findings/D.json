@@ -1,0 +1,25 @@
+{
+  "usd": 0.0379116,
+  "findings": [
+    {
+      "file": "src/modules/entitlements/routes/entitlements.controller.ts",
+      "line": 18,
+      "claim": "The controller imports space-id.pipe from another module's routes directory (@/modules/spaces/routes/pipes/space-id.pipe) instead of going through that module's domain layer, which is the exact anti-pattern the module structure guide calls out by name as something not to imitate."
+    },
+    {
+      "file": "src/modules/entitlements/routes/entitlements.service.ts",
+      "line": 37,
+      "claim": "The service imports assertMember from another module's routes/utils (@/modules/spaces/routes/utils/space-assert.utils) rather than that module's domain layer, even though the service already injects IMembersRepository and could use that instead."
+    },
+    {
+      "file": "src/modules/entitlements/entitlements-routes.module.ts",
+      "line": 26,
+      "claim": "A second Nest module is defined at the module root instead of under routes/, deviating from the canonical module structure used elsewhere in the repo (e.g. src/modules/delegate/routes/delegates.module.ts) and inconsistent with this module's own domain/entitlements-repository.module.ts placement."
+    },
+    {
+      "file": "src/modules/entitlements/routes/entitlements.service.integration.spec.ts",
+      "line": 292,
+      "claim": "createSpace() replaces the shared nameBuilder() with faker.company.name(), an unexplained drive-by change unrelated to the entitlements work being reviewed."
+    }
+  ]
+}

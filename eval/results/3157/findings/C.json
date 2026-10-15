@@ -1,0 +1,35 @@
+{
+  "usd": 0.0605356,
+  "findings": [
+    {
+      "file": "src/config/entities/configuration.ts",
+      "line": 409,
+      "claim": "The zerionEnabled flag is parsed using `!!process.env.FF_ZERION_ENABLED` while every other feature flag in the same block uses `.toLowerCase() === 'true'`, so any non-empty string including \"false\", \"0\", or \"no\" would enable the flag. The new name FF_ZERION_ENABLED implies boolean semantics, so operators setting it to false would be surprised that it still enables the feature."
+    },
+    {
+      "file": "src/config/entities/configuration.ts",
+      "line": 409,
+      "claim": "Changing the parsing to `.toLowerCase() === 'true'` would change semantics versus main, since an unset variable would now default to false, so the deploy note should be updated to clarify that any environment currently just setting FF_ZERION_ENABLED to any value (carried over from the legacy chain-id list variable) would need to explicitly set it to FF_ZERION_ENABLED=true."
+    },
+    {
+      "file": ".env.sample.json",
+      "line": 753,
+      "claim": "The FF_ZERION_ENABLED entry's description says \"(OPTIONAL)\" but the entry also has required: true, which is contradictory."
+    },
+    {
+      "file": ".env.sample.json",
+      "line": 755,
+      "claim": "The entry sets defaultValue: true, which combined with the `!!` parsing means the flag is effectively always on in dev unless the env var is completely unset, which is misleading."
+    },
+    {
+      "file": ".env.sample.json",
+      "line": 754,
+      "claim": "The description still refers to \"balances provider\" even though, per the PR body, the flag now gates Zerion as a whole rather than just the balances provider, so the description should be updated (e.g., to \"Enable Zerion (OPTIONAL)\")."
+    },
+    {
+      "file": "src/modules/balances/datasources/balances-api.manager.spec.ts",
+      "line": 81,
+      "claim": "The spec still mocks features.zerionEnabled, but balances-api.manager.ts no longer reads that key, making this a dead mock left over from the old flag name that could be removed while the file is being touched."
+    }
+  ]
+}

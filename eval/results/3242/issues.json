@@ -1,0 +1,61 @@
+{
+  "usage": {
+    "usd": 0.2864132,
+    "turns": 4,
+    "wallSeconds": 30
+  },
+  "issues": [
+    {
+      "findings": [
+        "F2",
+        "F3",
+        "F4",
+        "F5",
+        "F7",
+        "F9"
+      ],
+      "summary": "The bulk replace left `if (app) await app?.close()` inside an existing `if (app)` guard, so the optional chaining does nothing.",
+      "label": "nit",
+      "evidence": "feature-flag.service.integration.spec.ts:23 and messages.controller.integration.spec.ts:50 both wrap `app?.close()` in `if (app)`. The `?.` is redundant but harmless, so this only affects style.",
+      "category": "style"
+    },
+    {
+      "findings": [
+        "F11"
+      ],
+      "summary": "`app?.close()` is used on a local `const app` that was just created and initialised, so it can never be undefined there.",
+      "label": "nit",
+      "evidence": "feature-flag.service.integration.spec.ts:86-97: `const app = await new TestAppProvider().provide(...)` followed by `await app.init()`, so the `?.` at line 97 has no effect. This is harmless churn.",
+      "category": "style"
+    },
+    {
+      "findings": [
+        "F6",
+        "F10",
+        "F12"
+      ],
+      "summary": "No deterministic test covers the name.builder truncation fix (or the bridge-name resample), so reverting either would only show up as a rare flake.",
+      "label": "low",
+      "evidence": "name.builder.ts:28 adds a second sanitizeName after the slice, and only the existing randomized idempotence test exercises it. The code under test is a test builder, so a regression would only bring back a CI flake and would not affect production behaviour.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F1"
+      ],
+      "summary": "The bridge-name resample `while` loop has no upper bound.",
+      "label": "nit",
+      "evidence": "bridge-name.entity.spec.ts:21-24 loops while `isBridgeName(name)`. faker's noun list is far larger than the roughly 20 bridge names and the seeded sequence is deterministic, so the loop will not realistically run forever.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F8"
+      ],
+      "summary": "The claim is that re-sanitizing after truncation could drop the name below NAME_MIN_LENGTH.",
+      "label": "nit",
+      "evidence": "name.builder.ts:25-28: truncation only happens to strings longer than NAME_MAX_LENGTH (30), and trimming the trailing whitespace of a 30-code-point slice of an already-sanitized name cannot plausibly bring it under the minimum. The finding itself admits this case is unreachable.",
+      "category": "correctness"
+    }
+  ]
+}

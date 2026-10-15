@@ -1,0 +1,24 @@
+{
+  "usd": 0.3508918,
+  "head": "a8e1ba18f41ba41bbcfa92ddc2d8d6fcbb471d3f",
+  "verdicts": [
+    {
+      "issue": 17,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "The reviewed commit had `Math.max(args.delta, 1)` at entitlements.service.ts:186. The author replied \"Fixed\", and commit ab6d8bdca removed it. The check is now `used < quota && used + delta <= quota` in fitsWithinQuota (entitlements.rules.ts:68)."
+    },
+    {
+      "issue": 18,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "The author replied \"Fixed\" and commit ab6d8bdca added the test. It asserts the guard's schema accepts exactly what UUID_REGEX accepts (entitlement.guard.spec.ts:106)."
+    },
+    {
+      "issue": 19,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "The reviewed commit had `Record<FeatureKey, () => number>` at entitlements.service.ts:240. The author replied \"Fixed\", and commit ab6d8bdca changed it to a plain `Record<FeatureKey, number>` built in the constructor (entitlements.service.ts:79,117)."
+    }
+  ]
+}

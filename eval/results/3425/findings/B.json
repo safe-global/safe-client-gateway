@@ -1,0 +1,50 @@
+{
+  "usd": 0.0715356,
+  "findings": [
+    {
+      "file": "src/modules/spaces/domain/address-books/address-book-requests.repository.ts",
+      "line": 198,
+      "claim": "The reject operation performs a space lookup, a request read, and a KMS decrypt inside the transaction before the conditional UPDATE, even though the audit repository returns early and never uses the decrypted values when the audit-log feature flag is off, and these values are also wasted when the request is no longer pending. This turns what used to be a single UPDATE into a flow where a slow or failing KMS call can make reject fail with a 500 (even with auditing disabled) and holds a pooled DB connection open during the KMS round-trip."
+    },
+    {
+      "file": "src/modules/spaces/domain/address-books/address-book-requests.repository.ts",
+      "line": 139,
+      "claim": "The create operation similarly performs an extra space lookup before its main operation; this one is a cheap query without a KMS call, but it follows the same pattern as the reject issue."
+    },
+    {
+      "file": "address-book-requests.repository.spec.ts",
+      "line": 61,
+      "claim": "No test checks that the audit write is atomic with the request create/reject operation; the transaction mock simply invokes the callback without verifying atomicity, and no e2e test in address-book-requests.controller.e2e-spec.ts asserts that audit rows are written for request create or reject."
+    },
+    {
+      "file": "src/modules/spaces/domain/address-books/address-book-requests.repository.ts",
+      "line": 151,
+      "claim": "The UniqueConstraintError mapping now executes inside the new transaction, and this path is not covered by any test, either before or after the change."
+    },
+    {
+      "file": "src/modules/spaces/domain/address-books/address-book-requests.repository.ts",
+      "line": 202,
+      "claim": "Rejecting a request that does not exist now returns 404 instead of 400; while this matches the Swagger docs and how approve behaves, no e2e test covers this behavior change and the PR description should call it out."
+    },
+    {
+      "file": "address-book-requests.repository.spec.ts",
+      "line": 149,
+      "claim": "The new tests hard-code values such as 'Alice' and 'kms:v1:a' instead of using builders and faker, which violates the project's non-negotiable rule requiring builders and faker; the file already did this before, but the diff adds more instances."
+    },
+    {
+      "file": "src/modules/spaces/domain/address-books/address-book-requests.repository.ts",
+      "line": 193,
+      "claim": "Sibling operations use two different transaction patterns: approve runs its transaction in the service while reject now runs its transaction in the repository, creating an architectural inconsistency."
+    },
+    {
+      "file": "src/modules/spaces/domain/address-books/address-book-requests.repository.ts",
+      "line": 210,
+      "claim": "Within the same reject method, the DB-sourced spaceId is mixed with args.spaceId rather than consistently using one source, which is confusing and inconsistent."
+    },
+    {
+      "file": "src/modules/spaces/domain/address-books/address-book-requests.repository.ts",
+      "line": 210,
+      "claim": "The property assignment 'spaceId: spaceId' can be written using the shorthand 'spaceId', consistent with the rest of the file."
+    }
+  ]
+}

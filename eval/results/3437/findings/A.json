@@ -1,0 +1,45 @@
+{
+  "usd": 0.046532000000000004,
+  "findings": [
+    {
+      "file": "src/modules/entitlements/domain/entities/feature-grant.entity.ts",
+      "line": 15,
+      "claim": "FeatureGrantSchema adds a required counter field but the cache key used by getSpaceEntitlementsCacheDir was not changed to reflect the new shape. Grants cached under the old code lack counter, so CachedGrantsSchema.parse throws a ZodError when reading them, causing assertWithinQuota and resolveEntitlements to fail for every workspace with a warm cache for up to one TTL (default 300s) after deploy, including the Safe-seat check on adding Safes."
+    },
+    {
+      "file": "src/modules/relay/domain/relayers/__tests__/workspace.relayer.spec.ts",
+      "line": 350,
+      "claim": "rejects.toThrow() is called with no argument, so the test passes regardless of which error is thrown instead of asserting the specific rejection the test sets up."
+    },
+    {
+      "file": "src/modules/relay/domain/relayers/__tests__/workspace.relayer.spec.ts",
+      "line": 148,
+      "claim": "The test name describes spending a unit based on how much the transaction carries, but the test uses random calldata from relayArgs() rather than a batch or large transfer, so it duplicates the assertion of the preceding test instead of exercising the described behavior."
+    },
+    {
+      "file": "src/modules/relay/routes/space-relay.controller.integration.spec.ts",
+      "line": 303,
+      "claim": "Test data uses literal hardcoded values such as version: '1.3.0' and gasLimit: '100000' instead of generated values like faker.system.semver() and faker.string.numeric(), reducing test data variability without justification (also at line 394)."
+    },
+    {
+      "file": "src/modules/relay/domain/relayers/workspace.relayer.ts",
+      "line": 121,
+      "claim": "The warning logged when recording usage fails is an unstructured plain string, unlike the structured LogType.TxRelayEligibility logging used elsewhere for this relayer's decisions, making it harder to search for cases where a sponsored transaction went unrecorded and billing was lost."
+    },
+    {
+      "file": "src/modules/relay/routes/space-relay.controller.ts",
+      "line": 76,
+      "claim": "The Swagger documentation for the endpoint does not describe the 501 response that RelayerTypeNotImplementedError produces when a chain's relayer type is GTF, even though this is a deliberate thrown error covered by a unit test."
+    },
+    {
+      "file": "src/modules/relay/routes/space-relay.service.ts",
+      "line": 9,
+      "claim": "assertMember is imported from spaces/routes/utils rather than from spaces/domain, which is the intended module boundary; the same pattern already exists in counterfactual-safes, entitlements, and billing, indicating pre-existing drift that could spread further if not addressed."
+    },
+    {
+      "file": null,
+      "line": null,
+      "claim": "The PR bundles three separable pieces of work together: event-metered usage counting in entitlements, behaviour-preserving refactors (extracting RelaySimulationService and adding resolveTarget to LimitAddressesMapper), and the new endpoint; splitting the refactor and entitlements changes into their own PR ahead of the new endpoint would make review easier."
+    }
+  ]
+}

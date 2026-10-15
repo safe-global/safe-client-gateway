@@ -1,0 +1,25 @@
+{
+  "usd": 0.0472456,
+  "findings": [
+    {
+      "file": "src/modules/spaces/routes/address-book-requests.service.ts",
+      "line": 84,
+      "claim": "countPending() and create() run as two separate queries without a transaction or lock, so concurrent POSTs from the same user for different addresses can each read a count below the pending limit and all insert, letting the pending-request cap be exceeded. The partial unique index only prevents duplicate addresses and does not enforce the count limit."
+    },
+    {
+      "file": "migrations/1781300000000-address-book-requests-pending-unique.ts",
+      "line": 57,
+      "claim": "The down() migration re-adds the full UNIQUE (space_id, requested_by, address) constraint, but a user who had a request rejected and then re-requested the same address (a flow this PR allows) will have two rows for that key, causing ADD CONSTRAINT to fail when rolling back."
+    },
+    {
+      "file": "src/modules/spaces/routes/guards/spaces-address-book-requests-rate-limit.guard.ts",
+      "line": 15,
+      "claim": "The new rate-limit guard has no test coverage: address-book-requests.controller.e2e-spec.ts does not configure a rate-limit override or assert a 429 response, unlike the sibling address-books.controller.e2e-spec.ts which tests this pattern with initApp({ rateLimit: { max: 1, ... } }) and .expect(429)."
+    },
+    {
+      "file": "src/modules/spaces/routes/address-book-requests.service.ts",
+      "line": 75,
+      "claim": "Because the unique index is now partial (status = 0), a request for an address that was already approved no longer blocks a new proposal for that same address, allowing repeat proposals that approve() silently overwrites the existing contact's name and chainIds via upsertMany in address-book-items.repository.ts."
+    }
+  ]
+}

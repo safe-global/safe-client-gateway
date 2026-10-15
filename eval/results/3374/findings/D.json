@@ -1,0 +1,15 @@
+{
+  "usd": 0.055327600000000005,
+  "findings": [
+    {
+      "file": "src/modules/auth/oidc/routes/oidc-auth.controller.integration.spec.ts",
+      "line": 737,
+      "claim": "The prior session cookie is minted from a hand-written literal payload that duplicates what the oidcAuthPayloadDtoBuilder() already produces (same auth_method, same faker.string.numeric({ exclude: ['0'] }) for sub), instead of using the builder; the sibling unit spec in the same PR uses the builder, so tests should use it here too for consistency."
+    },
+    {
+      "file": null,
+      "line": null,
+      "claim": "The PR title 'fix: Session duration step up' is a capitalised, non-imperative noun-phrase description, and since the merge strategy is squash-merge, this title becomes the permanent commit subject on main."
+    }
+  ]
+}

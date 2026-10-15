@@ -1,0 +1,119 @@
+{
+  "usage": {
+    "usd": 0.46662180000000003,
+    "turns": 8,
+    "wallSeconds": 70
+  },
+  "issues": [
+    {
+      "findings": [
+        "F1",
+        "F22",
+        "F16"
+      ],
+      "summary": "The PR swaps manager.delete(Entity, ids) for a query-builder delete in counterfactual-safes, which is inconsistent with the other repositories and justified by a commit message that doesn't hold up",
+      "label": "low",
+      "evidence": "counterfactual-safes.repository.ts:229-234 now uses createQueryBuilder().delete().whereInIds(). Every other production delete still uses the EntityManager shorthand (users.repository.ts:217,294; spaces.repository.ts:317; members.repository.ts:567; address-book-items.repository.ts:137), and the only other query-builder deletes are in test afterEach hooks. A later commit (ca8d58937) admits this rewrite 'did not address this failure', so it is unneeded inconsistency, not a defect.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F4",
+        "F10"
+      ],
+      "summary": "No comment explains why the counterfactual-safes delete uses the query builder rather than the shorthand or `{ id: In(ids) }`",
+      "label": "low",
+      "evidence": "counterfactual-safes.repository.ts:229-234 has no comment. The query-builder form bypasses TypeORM's empty-criteria guard, and that is only safe because of the `targets.length === 0` check at line 219. That is a small maintainability cost. I couldn't confirm the claim that whereInIds is 'legacy', because node_modules is absent.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F13",
+        "F5",
+        "F7",
+        "F9",
+        "F15",
+        "F19"
+      ],
+      "summary": "The enum transformer's `from` can now return null, but every column that uses it is typed non-nullable",
+      "label": "low",
+      "evidence": "enum.ts:36 returns `keyof T | null`, while member.entity.db.ts:71,78, users.entity.db.ts:29, space.entity.db.ts:41 and address-book-request.entity.db.ts:91 are non-nullable NOT NULL integer columns. Those entity files are unchanged, and null should only show up when a relation is absent, so the entity isn't hydrated in that case. The type mismatch is real but has little practical impact.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F18",
+        "F3"
+      ],
+      "summary": "The case where the transformer returns null is recorded only in a commit message, with no code comment and no integration test that reproduces it",
+      "label": "low",
+      "evidence": "enum.ts:37-39 adds the null branch with no comment, and enum.spec.ts:104 only unit-tests from(null). No integration spec covers the joined-column hydration case that commit b512fb586 gives as the reason, so a later cleanup could remove the branch without a test catching it.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F11"
+      ],
+      "summary": "The claim that the `keyof T | null` return type is misleading because invalid non-null values still throw",
+      "label": "nit",
+      "evidence": "enum.ts:12-21,36-42: before the PR, invalid values also threw ('Invalid enum value'). The PR only adds pass-through for null, and the signature correctly describes the non-throwing results. This is a design preference, not a defect.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F2"
+      ],
+      "summary": "TypeORM 1.x now throws on null/undefined values in find `where` clauses, and the PR neither sets invalidWhereValuesBehavior explicitly nor mentions the change",
+      "label": "low",
+      "evidence": "postgres.config.ts:45 doesn't set invalidWhereValuesBehavior, and the PR description doesn't list this among the breaking changes. The finding itself says no current call site triggers it, so it is a latent risk plus a documentation gap. I couldn't confirm the new default locally because node_modules is absent.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F8",
+        "F14"
+      ],
+      "summary": "The comment explaining why `.where('1=1')` was dropped appears in only one of the eight edited integration specs",
+      "label": "nit",
+      "evidence": "counterfactual-safes.repository.integration.spec.ts:160-162 is the only file with the explanation. The other specs just call `.createQueryBuilder().delete().execute()` (e.g. space-safes spec:127-131). This is a consistency preference with little concrete cost.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F21"
+      ],
+      "summary": "Claim that the new comment about `.where('1=1')` in the counterfactual spec is redundant",
+      "label": "wrong",
+      "evidence": "counterfactual-safes.repository.integration.spec.ts:160-162 explains a non-obvious TypeORM 1.1 rule: it rejects a WHERE clause that renders as '1=1'. Without the comment, someone could reintroduce the pattern, so it is useful rather than redundant.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F12",
+        "F20"
+      ],
+      "summary": "Claim that the cleanup comments in the spaces and space-safes specs are redundant",
+      "label": "wrong",
+      "evidence": "spaces.repository.integration.spec.ts:122 and space-safes.repository.integration.spec.ts:124 hold the existing comment 'Delete in dependency order to avoid deadlocks'. The PR didn't change it, and it records real ordering intent.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F17"
+      ],
+      "summary": "Suggestion to put the two-relation object in the notifications spec on a single line",
+      "label": "wrong",
+      "evidence": "notifications.repository.integration.spec.ts:506-509: the old array shorthand is no longer valid in TypeORM 1.x, and the object's multi-line layout comes from the formatter (commit 264455f10 ran biome). There is no style inconsistency to fix.",
+      "category": "style"
+    },
+    {
+      "findings": [
+        "F6"
+      ],
+      "summary": "Integration and e2e tests weren't run locally, so CI should be confirmed green before merge",
+      "label": "unverifiable",
+      "evidence": "The PR description leaves the integration/e2e checkboxes unchecked. Whether they pass against a real Postgres can't be determined from the code in this read-only checkout.",
+      "category": "tests"
+    }
+  ]
+}

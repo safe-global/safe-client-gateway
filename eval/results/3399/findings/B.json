@@ -1,0 +1,55 @@
+{
+  "usd": 0.0559636,
+  "findings": [
+    {
+      "claim": "The new offer filter drops any trial link lacking the newly introduced gracePeriod metadata, and since this metadata is new in the diff, every existing trial link in the catalog is untagged unless retagged out of band, so those offers disappear right after deploy.",
+      "file": "src/modules/billing/routes/billing.service.ts",
+      "line": 153
+    },
+    {
+      "claim": "createCheckoutUrl reuses the same filtered list, so attempting to check out a trial link that lacks the gracePeriod tag now returns a 403 instead of opening a Stripe session.",
+      "file": "src/modules/billing/routes/billing.service.ts",
+      "line": 128
+    },
+    {
+      "claim": "The filter is not gated by any feature flag; it applies as soon as enforcementStartsAt is reached, and FF_BILLING_SERVICE only disables the entire billing module rather than this specific filter, so there is no way to turn off just the new filtering behavior without a redeploy.",
+      "file": "src/modules/billing/domain/payment-link-offer.rules.ts",
+      "line": 41
+    },
+    {
+      "claim": "The PR description/runbook does not state whether the live catalog has been retagged with gracePeriod before deploy, which is needed to avoid the rollout gap described above.",
+      "file": null,
+      "line": null
+    },
+    {
+      "claim": "The two existing tests for shared-id link precedence both use a paid general link for a space that has never subscribed, a case where isOfferedToSpace already excludes the general link before it reaches the id-keyed map, so the tests do not actually exercise or verify that the space-specific link wins when both links are eligible; reversing the spread order or removing the dedupe logic entirely would still pass these tests.",
+      "file": "src/modules/billing/routes/billing.service.ts",
+      "line": 167
+    },
+    {
+      "claim": "Neither billing.service.spec.ts nor billing.controller.e2e-spec.ts includes a case where the general link is actually offered (hasEverSubscribed true with a differing paid plan) to confirm the space-specific link still takes precedence.",
+      "file": "src/modules/billing/routes/billing.service.ts",
+      "line": 167
+    },
+    {
+      "claim": "parseEnforcementStartsAt accepts a date-only string such as '2026-10-01', a value the removed DateStringSchema check used to reject, and no test covers this input; outside NODE_ENV=test this is still caught at boot by the RootConfigurationSchema z.iso.datetime() check, so the gap is only exposed in test mode.",
+      "file": "src/config/entities/configuration.ts",
+      "line": 1070
+    },
+    {
+      "claim": "Either a test case should be added for the date-only enforcementStartsAt input, or the comment claiming the parser 'fails loudly' should be narrowed to reflect that it does not fail in test mode.",
+      "file": "src/config/entities/configuration.ts",
+      "line": 1070
+    },
+    {
+      "claim": "warnedUnclassifiedLinkIds on the singleton service never evicts entries once added, meaning it grows unboundedly over the process lifetime, even though in practice it stays small because it is only fed by the admin-curated general catalog.",
+      "file": "src/modules/billing/routes/billing.service.ts",
+      "line": 43
+    },
+    {
+      "claim": "trialPeriodDays is a new optional field and it is unclear whether billing-api actually sends it yet; if it does not, every trial link would be read as a paid link, causing a space that has never subscribed to see no general links at all, and the unclassified-trial warning would not fire since it only inspects trial links.",
+      "file": "src/datasources/billing-api/entities/payment-link.entity.ts",
+      "line": 42
+    }
+  ]
+}

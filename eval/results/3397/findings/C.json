@@ -1,0 +1,40 @@
+{
+  "usd": 0.06364360000000001,
+  "findings": [
+    {
+      "file": "src/modules/{balances,safe-apps,data-decoder,owners,estimations,safe,chains,recovery,positions,collectibles,delegate,transactions,notifications/v1}/routes/*.controller.ts",
+      "line": null,
+      "claim": "Numerous controllers still accept a bare @Param('chainId') string with no ValidationPipe, so an empty or otherwise invalid chainId can still poison the '_chain' cache and cause a cached error until TTL expiry, just through a different route than the one this PR fixes."
+    },
+    {
+      "file": "src/modules/{balances,safe-apps,data-decoder,owners,estimations,safe,chains,recovery,positions,collectibles,delegate,transactions,notifications/v1}/routes/*.controller.ts",
+      "line": null,
+      "claim": "Because the fix is applied only to this specific route pattern via getChain rather than by validating input at the parameter level, the PR body's claim of covering 41 other sites is true only for this exact bug, not for input-validation gaps in general."
+    },
+    {
+      "file": null,
+      "line": null,
+      "claim": "After this change, the same invalid chainId input produces a 422 response on routes protected by ValidationPipe but a 404 response on other bare-@Param routes protected only by the getChain guard, creating inconsistent status codes for the same client mistake."
+    },
+    {
+      "file": "src/datasources/config-api/config-api.service.ts",
+      "line": 75,
+      "claim": "The three-line comment explaining the rationale for the empty-chainId check is longer than necessary and could be trimmed to a single line stating that an empty chainId would hit the chain collection endpoint and cache-poison '_chain', matching the terser commenting style used elsewhere in the file."
+    },
+    {
+      "file": "config-api.service.spec.ts",
+      "line": 120,
+      "claim": "The unit test uses .rejects.toThrow(new DataSourceError(...)), but since DataSourceError's constructor calls a bare super(), the thrown error's message is empty, so the assertion only passes on equality of two empty message strings rather than verifying the intended code: 404; a matcher like toMatchObject({ message: 'Chain not found', code: 404 }) would actually pin the expected error."
+    },
+    {
+      "file": "messages.controller.integration.spec.ts",
+      "line": 485,
+      "claim": "The controller change affects all four message-related routes, but integration tests only cover GET .../messages/:messageHash; there is no integration test for safes/:safeAddress/messages, POST .../messages, or POST .../messages/:messageHash/signatures, so a future regression on those three routes could go unnoticed."
+    },
+    {
+      "file": "config-api.service.spec.ts",
+      "line": 122,
+      "claim": "The guard implementation uses HttpStatus.NOT_FOUND while the corresponding spec asserts against the numeric literal 404, which is an inconsistency in how the same status code is referenced between implementation and test."
+    }
+  ]
+}

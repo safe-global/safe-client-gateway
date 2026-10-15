@@ -1,0 +1,25 @@
+{
+  "usd": 0.051648,
+  "findings": [
+    {
+      "file": "src/modules/transactions/datasources/transaction-api.service.ts",
+      "line": 1193,
+      "claim": "The mapError method checks for a nonFieldErrors payload before calling mapBannedSafeError, so a response that is both a 451 and contains a nonFieldErrors array would never reach the banned-Safe rewrite; reordering to check the banned-Safe case first would make the logic robust to this upstream payload shape even though it is unlikely under the current contract."
+    },
+    {
+      "file": "src/datasources/errors/helpers/banned-safe.helper.spec.ts",
+      "line": 36,
+      "claim": "The same status-excluding helper loop (looping faker.internet.httpStatusCode until it isn't UNAVAILABLE_FOR_LEGAL_REASONS_STATUS) is duplicated across three spec files instead of being extracted into a shared test utility such as src/__tests__/faker.ts, which would remove duplication and centralize future exclusions."
+    },
+    {
+      "file": "src/modules/balances/routes/balances.controller.integration.spec.ts",
+      "line": 838,
+      "claim": "The new integration test covers the /balances/usd route for the banned-Safe path but does not add a mirrored test for /collectibles, even though both getBalances and getCollectibles now apply mapBannedSafeError in SafeBalancesApi, so route-level wiring for the second catch site is only verified at the datasource level, not the integration level."
+    },
+    {
+      "file": "src/datasources/errors/helpers/banned-safe.helper.ts",
+      "line": null,
+      "claim": "The helper is named mapBannedSafeError after the specific upstream cause (banned Safe) rather than after its actual behavior of rewriting any 451 response payload into a message field that HttpErrorFactory can read, so if another upstream later returns 451 for a different reason, the name would be misleading; a name like map451ResponsePayload would better reflect its function."
+    }
+  ]
+}

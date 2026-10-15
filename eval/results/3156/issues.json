@@ -1,0 +1,107 @@
+{
+  "usage": {
+    "usd": 0.5870824,
+    "turns": 10,
+    "wallSeconds": 85
+  },
+  "issues": [
+    {
+      "findings": [
+        "F1",
+        "F14",
+        "F15"
+      ],
+      "summary": "The unchanged spaces e2e test for an invited member still expects the invitee to see the admin's ACTIVE row. Its token is not tied to the invitee, so it never checks the new trimmed invitee view.",
+      "label": "medium",
+      "evidence": "src/modules/spaces/routes/spaces.controller.e2e-spec.ts:511-576 signs `siweAuthPayloadDtoBuilder().build()`, whose sub is one random digit (auth-payload-dto.entity.builder.ts:16), and still expects the admin's ACTIVE row. With the new filter in spaces.service.ts:109-112, a real invitee only gets their own row, so the test passes only when the sub happens to match the admin, and returns nothing when it matches no one. The only coverage of the changed GET /spaces/:id behaviour is the unit test in spaces.service.spec.ts.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F3",
+        "F7",
+        "F12"
+      ],
+      "summary": "The address-books createPendingMember helper still signs a random-sub token that is not tied to the invited user, unlike the fixed sibling helper in user-address-book, so the declined-membership test depends on chance.",
+      "label": "low",
+      "evidence": "address-books.controller.e2e-spec.ts:799-814 signs `memberAuthPayloadDto` with a random sub, while user-address-book's helper signs `inviteResponse.body[0].userId`. declineInvite (members.repository.ts:298-310) calls findOneOrFail on that userId, so the test at line 183 only succeeds when the sub happens to match the invitee. This predates the PR (the PR only renamed the helper), so it is low.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F4",
+        "F9"
+      ],
+      "summary": "The Swagger description for GET /spaces/:id was not updated to say that pending invitees get a trimmed roster and safeCount 0, while the members endpoint description was.",
+      "label": "low",
+      "evidence": "spaces.controller.ts:144-147 still says only 'The user must be a member of or invited to the space', which stays true but does not mention the new filtering in spaces.service.ts:108-128. members.controller.ts:240-241 did get the equivalent note. This is a documentation mismatch.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F10",
+        "F11"
+      ],
+      "summary": "The Swagger description for GET /spaces still promises the count of Safes in each space, which is inaccurate for pending invitees, who now get safeCount 0.",
+      "label": "low",
+      "evidence": "spaces.controller.ts:120-123 still describes the full Safe count, while spaces.service.ts:128 returns 0 when the caller is not ACTIVE. The docs don't match the behaviour, but nothing breaks functionally.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F5"
+      ],
+      "summary": "Returning safeCount 0 for an invitee looks the same as a space that really has no Safes.",
+      "label": "low",
+      "evidence": "spaces.service.ts:128 hides the count on purpose (see the comment at line 108, 'no safe count'), but choosing 0 instead of null or omitting the field means clients can't tell hidden data from an empty space. The impact is minor UI ambiguity.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F6",
+        "F8"
+      ],
+      "summary": "The new 'pending member' unit test in space-assert has the same setup and assertions as the non-member test, so it adds no pending-specific coverage.",
+      "label": "low",
+      "evidence": "space-assert.utils.spec.ts:83-96 mocks findOne to return null and expects ForbiddenException, exactly like the adjacent non-member test. The ACTIVE-only filter is actually checked by the earlier `toHaveBeenCalledWith({... status: 'ACTIVE'})` assertion, so this test is redundant and its name is misleading.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F2",
+        "F16"
+      ],
+      "summary": "The createActiveMember invite-then-accept helper is copied into three e2e specs, and the copies already build the token in different ways.",
+      "label": "low",
+      "evidence": "The same helper appears in address-book-requests.controller.e2e-spec.ts:522, address-books.controller.e2e-spec.ts:818 and user-address-book.controller.e2e-spec.ts (which uses accessTokenForUserId, the others inline `.with('sub', ...)`). The drift is real, and the unfixed pending helper in address-books shows what it costs, but it is test-only maintenance.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F13"
+      ],
+      "summary": "findActiveOrInvitedMemberOrFail keeps an optional relations parameter even though both call sites now pass { user: true }, and the JSDoc explaining why it varied was deleted.",
+      "label": "nit",
+      "evidence": "members.repository.ts:339 and :358 both pass `{ user: true }`, so the parameter could be hard-coded. Leaving it costs nothing concrete.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F17"
+      ],
+      "summary": "Claim that the helper was renamed needlessly and should have been called createPendingMember.",
+      "label": "wrong",
+      "evidence": "The helper was renamed to createPendingMember (address-books.controller.e2e-spec.ts:799). A separate createActiveMember, which does invite plus accept, was added because the ACTIVE-only rule requires accepted members. The rename matches the new behaviour.",
+      "category": "style"
+    },
+    {
+      "findings": [
+        "F18"
+      ],
+      "summary": "Claim that contacts from a workspace the user is only invited to no longer appear in the recipient dropdown, described as a regression.",
+      "label": "wrong",
+      "evidence": "The PR description says hiding the shared address book from pending invitees before they accept is the main fix (getSpaceAs / AddressBooksController). The described behaviour is exactly what the PR intends.",
+      "category": "correctness"
+    }
+  ]
+}

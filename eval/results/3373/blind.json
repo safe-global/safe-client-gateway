@@ -1,0 +1,115 @@
+{
+  "pr": 3373,
+  "title": "fix(relay): log the provider's rejection reason on relay failures",
+  "description": "## Summary\r\nA relay rejection from Rhinestone reached the logs as nothing but a status code. Rhinestone nests its reason under `errors[].message`, while `HttpErrorFactory` reads only `data.message`, so the reason hit the literal\r\n`'An error occurred'` fallback and was thrown away.\r\n\r\nBecause the body is third-party-controlled text, only two fields are copied out of it: `errors[].message` and `traceId`. The `errors[].context` object is deliberately dropped — it echoes back the chain ID and addresses from the\r\nrequest, which the structured-logging rule in `docs/agents/security.md` keeps out of log storage; the schema simply does not declare it, so Zod strips it.\r\nMessages are whitespace-collapsed (newlines would let an upstream string forge log lines) and capped at 3 entries x 200 chars.\r\n\r\nThe client-facing response is unchanged and deliberately so: the throw still goes through `httpErrorFactory.from()`, so callers keep the generic `{code, message}` payload and the provider's text stays server-side. A test asserts that, so a later change wiring the detail into the throw fails rather than silently leaking it.\r\n\r\n`getTaskStatus` shares `formatError` and gains the same detail.\r\n\r\n## Changes\r\n- `src/modules/relay/datasources/schemas/rhinestone-error.schema.ts` — new; the error envelope, all fields optional so parsing an error path cannot throw and mask the original failure\r\n- `src/modules/relay/datasources/rhinestone-api.service.ts` — `formatError` appends the whitelisted fields; `describeUpstreamError` + `truncateForLog` helpers\r\n- `src/modules/relay/datasources/rhinestone-api.service.spec.ts` — 5 cases: message + traceId, `context` absent, truncation/newline collapsing, the error-count cap, and the response staying generic\r\n",
+  "findings": [
+    {
+      "id": "F1",
+      "file": "src/modules/relay/datasources/rhinestone-api.service.ts",
+      "line": 142,
+      "claim": "Three functions in this service are pure functions with no dependency on instance state, so they should be extracted outside of the service class. Keeping them as methods forces every formatting test case to go through relay() and drag along mockRejectedValue, rejects.toThrow, and a mocked logger, instead of being testable in isolation."
+    },
+    {
+      "id": "F2",
+      "file": "src/modules/relay/datasources/rhinestone-api.service.spec.ts",
+      "line": null,
+      "claim": "There is no test for the malformed-body path where one errors[] entry is invalid, which is the exact failure mode described as dropping the whole diagnostic, and no test for the traceId-only path."
+    },
+    {
+      "id": "F3",
+      "file": "src/modules/relay/datasources/rhinestone-api.service.spec.ts",
+      "line": null,
+      "claim": "Four of the new tests hard-code literal values ({ status: 400, statusText: 'Bad Request' }) instead of using the faker-generated status/statusText pattern used by the first new test and the existing tests, which is inconsistent with the project's testing convention of using literals only at explicit assertion boundaries; three of the four tests do not fit that exception."
+    },
+    {
+      "id": "F4",
+      "file": "src/modules/relay/datasources/rhinestone-api.service.spec.ts",
+      "line": 157,
+      "claim": "The new tests only cover relay(), while getTaskStatus() goes through the same formatError logic and now logs body fragments too, but no test asserts that behavior for getTaskStatus()."
+    },
+    {
+      "id": "F5",
+      "file": "src/modules/relay/datasources/rhinestone-api.service.ts",
+      "line": 116,
+      "claim": "The logging code copies the upstream `errors[].message` free text into the logs, and since that message is controlled by Rhinestone it may repeat request details such as addresses, which is the exact risk the removed doc comment previously warned about; although whitespace collapsing and length caps reduce the risk, it is worth confirming the team accepts upstream-echoed addresses being stored in logs."
+    },
+    {
+      "id": "F6",
+      "file": "src/modules/relay/datasources/schemas/rhinestone-error.schema.ts",
+      "line": 24,
+      "claim": "The exported type RhinestoneErrorResponse has no importers; the only consumer imports RhinestoneErrorResponseSchema alone, so this exported type is dead code that should be removed."
+    },
+    {
+      "id": "F7",
+      "file": "src/modules/relay/datasources/rhinestone-api.service.ts",
+      "line": 132,
+      "claim": "The comment justifying newline-collapsing references avoiding forged log lines, but in production the logger uses winston.format.json() which already escapes newlines, so the stated rationale does not apply and the comment should instead explain the collapsing is for readability."
+    },
+    {
+      "id": "F8",
+      "file": "src/modules/relay/datasources/rhinestone-api.service.spec.ts",
+      "line": 193,
+      "claim": "Four of the five new tests hardcode the HTTP status and status text (e.g. `{ status: 400, statusText: 'Bad Request' }`) and repeat those literals in the expected log strings and in the `DataSourceError` assertion, instead of generating them with faker as the repo convention and the neighboring first new test do. Status and text should be generated with faker in each test and reused in the expected strings to match the established pattern."
+    },
+    {
+      "id": "F9",
+      "file": "src/modules/relay/datasources/rhinestone-api.service.ts",
+      "line": 116,
+      "claim": "The code comment states that context is dropped from logs because it echoes wallet addresses treated as PII, but errors[].message is free text logged verbatim up to 200 characters, so if the upstream message itself contains an address it would still reach the logs, undermining the stated privacy protection."
+    },
+    {
+      "id": "F10",
+      "file": "src/modules/relay/datasources/rhinestone-api.service.ts",
+      "line": 116,
+      "claim": "In describeUpstreamError, messages are sliced to MAX_LOGGED_UPSTREAM_ERRORS before being filtered for non-empty content, so if the first N entries happen to be whitespace-only, all diagnostic content is dropped even though later entries could contain a real error reason; filtering before slicing would preserve the diagnosis."
+    },
+    {
+      "id": "F11",
+      "file": "src/modules/relay/datasources/schemas/rhinestone-error.schema.ts",
+      "line": 24,
+      "claim": "The exported type RhinestoneErrorResponse is not used anywhere in the codebase, unlike its sibling TenderlySimulationResponse which is used elsewhere, so copying that pattern here is not justified."
+    },
+    {
+      "id": "F12",
+      "file": "src/modules/relay/datasources/schemas/rhinestone-error.schema.ts",
+      "line": null,
+      "claim": "The new schema has no dedicated spec file, even though its sibling schema has one (schemas/__tests__/tenderly-simulation.schema.spec.ts)."
+    },
+    {
+      "id": "F13",
+      "file": "src/modules/relay/datasources/rhinestone-api.service.ts",
+      "line": 123,
+      "claim": "Double-quote characters inside a logged message are not escaped, so a message containing something like x\" traceId=... could forge a fake traceId= field inside the upstreamErrors=\"...\" log fragment, misleading anyone grepping or parsing the log line."
+    },
+    {
+      "id": "F14",
+      "file": "src/modules/relay/datasources/schemas/rhinestone-error.schema.ts",
+      "line": 24,
+      "claim": "The exported type `RhinestoneErrorResponse` is not imported or used anywhere in `src/`, since the service only consumes `RhinestoneErrorResponseSchema`; unused exported symbols should not exist, so the type alias should be deleted or its export removed."
+    },
+    {
+      "id": "F15",
+      "file": "src/modules/relay/datasources/schemas/rhinestone-error.schema.ts",
+      "line": 20,
+      "claim": "The schema parse is all-or-nothing: if a single errors[] entry has a non-string or missing message, or errors is null, safeParse fails for the entire body. This causes describeUpstreamError to return an empty string, discarding both the traceId and any valid messages with no indication anything was dropped, which defeats the purpose of the commit."
+    },
+    {
+      "id": "F16",
+      "file": "src/modules/relay/datasources/rhinestone-api.service.spec.ts",
+      "line": 214,
+      "claim": "Three new tests hard-code literal fixture values ({ status: 400, statusText: 'Bad Request' }) instead of generating them with faker.internet.httpStatusCode and faker.lorem.words, inconsistent with the pattern used in the pre-existing sibling test and the first new test case, and inconsistent with the project's testing guideline against literal fixtures."
+    },
+    {
+      "id": "F17",
+      "file": "src/modules/relay/datasources/schemas/rhinestone-error.schema.ts",
+      "line": 24,
+      "claim": "The exported type alias RhinestoneErrorResponse has no importers anywhere in the codebase, since rhinestone-api.service.ts only imports RhinestoneErrorResponseSchema, making it dead code that should be deleted."
+    },
+    {
+      "id": "F18",
+      "file": "src/modules/relay/datasources/rhinestone-api.service.spec.ts",
+      "line": 214,
+      "claim": "Three tests (also at lines 247 and 268) hard-code the response literal { status: 400, statusText: 'Bad Request' } instead of generating these values with faker as done in the sibling test, even though the assertions in these tests are about context omission, truncation, and the error cap rather than the specific status value."
+    }
+  ]
+}

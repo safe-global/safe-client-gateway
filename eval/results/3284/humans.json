@@ -1,0 +1,42 @@
+{
+  "usd": 0.29614700000000005,
+  "head": "254c12b8beaad48d56ab6e6b4deb070aaa863c9d",
+  "verdicts": [
+    {
+      "issue": 17,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "LucieFaire asked to move it to config at auth0-api.service.ts:33. TimDaub replied with commit 5b7bb5187, which removes the static MANAGEMENT_API_TOKEN_TTL_BUFFER_IN_SECONDS = 60 and reads auth.managementApiTokenTtlBufferInSeconds from configuration instead."
+    },
+    {
+      "issue": 20,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "LucieFaire suggested extracting the types from oidc-auth.service.ts:39. TimDaub linked commit ba4e04e12, which moves the Authenticator type into routes/entities/authenticator.entity.ts."
+    },
+    {
+      "issue": 21,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "In the thread at auth0-api.service.ts:203, TimDaub wrote \"We decided against validating the `access_token`\", and the code was not changed for it."
+    },
+    {
+      "issue": 22,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "In the thread at auth0-api.service.ts:208, TimDaub defended the caching: he followed PooyaRaki's advice and copied the Firebase OAuth token pattern. The caching was kept."
+    },
+    {
+      "issue": 23,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "In the thread at oidc-auth.service.ts:197, TimDaub explained that extUserId can be null (for example, a SIWE user). The existing guard in getExtUserId throws UnauthorizedException for that case, so no change was made."
+    },
+    {
+      "issue": 24,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "In the thread at oidc-auth.controller.ts:267, TimDaub explained that having two authenticators for a short time is intended: the new one is added in Auth0 before the old one is deleted on return. The code was not changed."
+    }
+  ]
+}

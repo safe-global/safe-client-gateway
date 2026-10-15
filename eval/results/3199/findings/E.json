@@ -1,0 +1,30 @@
+{
+  "usd": 0.0426616,
+  "findings": [
+    {
+      "file": "src/datasources/cache/__tests__/fake.cache.service.ts",
+      "line": 89,
+      "claim": "The incrWithTtl implementation can be simplified into a shorter form; a version that assigns and returns the incremented value directly is more concise, though a slightly more verbose version with explicit intermediate variables may be preferable for readability."
+    },
+    {
+      "file": "src/datasources/cache/cache.service.interface.ts",
+      "line": 34,
+      "claim": "The method documentation exposes Redis 6/7 version-specific implementation details instead of describing the method's behavior in implementation-agnostic terms."
+    },
+    {
+      "file": "src/modules/safe/routes/v2/safes.v2.service.ts",
+      "line": 202,
+      "claim": "The method builds an intermediate array of entries before constructing the result, when it could construct and return the Map directly, reducing unnecessary intermediate steps."
+    },
+    {
+      "file": "src/modules/safe/routes/v2/safes.v2.service.ts",
+      "line": 229,
+      "claim": "The method does not short-circuit when the Zerion feature flag is disabled, performing unnecessary work instead of returning an empty map immediately in that case."
+    },
+    {
+      "file": "src/modules/safe/routes/v2/safes.v2.service.ts",
+      "line": 277,
+      "claim": "The PortfolioResult union type and its 'degraded' status variant carry no information that changes behavior, since both a degraded result and a missing map key fall through to the same serveDegradedBalance path, making the union removable in favor of a plain Map<string, ZerionWalletPortfolio>; error logging and degraded-serve metrics are already handled independently of this marker at the point of failure and within serveDegradedBalance, respectively, so removing it would not lose that information, though it would collapse the distinction between 'fetch failed' and 'never fetched' into the same undefined value, which is currently not observable but forecloses cheaply distinguishing the two cases from the map later."
+    }
+  ]
+}

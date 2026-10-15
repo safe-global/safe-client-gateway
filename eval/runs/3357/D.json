@@ -1,0 +1,10 @@
+{
+  "pr": 3357,
+  "reviewSha": "5506983c5262d24e78e579af705a88d71f4afc7e",
+  "baseSha": "253dd40e6a99c26bf436226526ff3e071ab73974",
+  "system": "D",
+  "version": "github",
+  "runner": "collect",
+  "model": "claude-code-action",
+  "output": "## Architecture check\n\nApplicable guides: commits-and-prs.md, remarks.md (no src/ change, so best-practices/security/config/testing rules are not applicable; R-030 pinned-action rule is met — both `uses:` are full SHAs with version comments).\n\nPR description — PR body: body carries `## Before this works` and `## Not verified` on top of the template's two sections, which commits-and-prs.md's \"PR body\" rule limits to `## Summary` and `## Changes` (\"nothing more\") — the secret-setup prerequisite and the verification status belong in `## Summary` prose.\n\n**Verdict:** ❌ 1 finding(s)"
+}

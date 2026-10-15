@@ -1,0 +1,20 @@
+{
+  "usd": 0.058609600000000005,
+  "findings": [
+    {
+      "file": ".github/workflows/ci.yml",
+      "line": 302,
+      "claim": "The 'Validate release tag' step checks for a value that cannot be empty in this context, since tag_name is a required field on a published release and the job only runs when action is 'released', so the check is ineffective. It also fails to catch tag values with characters Docker rejects, such as '/', '+' or spaces, which pass validation but later cause build-push-action to fail with an invalid reference format error."
+    },
+    {
+      "file": ".github/workflows/ci.yml",
+      "line": 321,
+      "claim": "Every 'released' event also pushes the ':latest' tag, so publishing a patch release on an older release line (for example 1.9.1 after 2.0.0 has already shipped) would point ':latest' back at the older build."
+    },
+    {
+      "file": ".github/workflows/ci.yml",
+      "line": 21,
+      "claim": "The concurrency group is keyed on github.ref rather than the release payload; if the motivation for this change is that github.ref cannot be trusted on release events, the same concern would apply here, though in practice github.ref is refs/tags/<tag> on these events so it is likely fine."
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "pr": 3332,
+  "reviewSha": "17f4589bedf361e62e56aabff36a4acee17292f7",
+  "baseSha": "d1f57d81b1b6ad20cdeaa182b4d7048397f55d36",
+  "system": "E",
+  "version": "github",
+  "runner": "collect",
+  "model": "human",
+  "commentSha": "17f4589bedf361e62e56aabff36a4acee17292f7",
+  "output": ".yarnrc.yml:18\nWe should not pre approve any package regardless of being internal/external."
+}

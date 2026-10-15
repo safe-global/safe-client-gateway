@@ -1,0 +1,78 @@
+{
+  "usage": {
+    "usd": 0.34660919999999995,
+    "turns": 5,
+    "wallSeconds": 37
+  },
+  "issues": [
+    {
+      "findings": [
+        "F4",
+        "F9"
+      ],
+      "summary": "getOrCreateApi races on concurrent first calls: both see an empty slot, both call createApi, and the last write wins",
+      "label": "low",
+      "evidence": "src/datasources/common/chain-api.manager.ts:17 checks the slot, awaits `createApi`, then assigns without checking again. The old async managers (e.g. the base-version staking-api.manager.ts:30-48) already raced this way. For Bridge/Swaps, whose createApi is synchronous, the `await` adds a new microtask gap. The only effect is an extra, largely stateless client instance, so the impact is minor.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F1",
+        "F6",
+        "F11"
+      ],
+      "summary": "_getSafeBalancesApi is now a one-line pass-through with a single caller and could be inlined",
+      "label": "nit",
+      "evidence": "src/modules/balances/datasources/balances-api.manager.ts:46-56: `getApi` calls `_getSafeBalancesApi`, which only returns `this.getOrCreateApi(chainId)`. The wrapper is redundant but costs nothing concrete.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F2",
+        "F5",
+        "F10"
+      ],
+      "summary": "The `!== undefined` guard before `delete` in the base destroyApi is redundant",
+      "label": "nit",
+      "evidence": "src/datasources/common/chain-api.manager.ts:25-28: deleting a missing key is already a no-op, so the guard changes nothing. This is purely stylistic.",
+      "category": "style"
+    },
+    {
+      "findings": [
+        "F3"
+      ],
+      "summary": "The Kiln spec uses Test.createTestingModule instead of direct construction",
+      "label": "wrong",
+      "evidence": "src/modules/staking/datasources/kiln-api.manager.spec.ts:61-63 has a comment saying it goes through Nest on purpose, to check that the constructor inherited from the abstract KilnApiManager still resolves through DI. That is a deliberate check of the refactor, not an accidental mix of concerns.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F7",
+        "F13"
+      ],
+      "summary": "The testnet, caching and eviction tests only exercise the staking widget, not earn",
+      "label": "low",
+      "evidence": "kiln-api.manager.spec.ts:99-137 runs the testnet, cache and destroy cases only on stakingApiManager. Earn goes through the same `${this.widget}.${env}` template in kiln-api.manager.ts, so the missing earn cases are a small coverage gap with low regression risk.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F8"
+      ],
+      "summary": "The plain-object cache inherits prototype keys (e.g. 'constructor'), so hasApi/getOrCreateApi misbehave for those keys",
+      "label": "low",
+      "evidence": "chain-api.manager.ts:12 uses `Record<string,T> = {}`, so `apis['constructor']` returns Object and `??=` hands it back. This predates the PR, since the old truthiness checks behaved the same way, and a real chainId is never a prototype key name, so the edge case is unlikely.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F12"
+      ],
+      "summary": "The loose comment in earn-api.manager.ts repeats what the KilnApiManager JSDoc already says",
+      "label": "nit",
+      "evidence": "src/modules/earn/datasources/earn-api.manager.ts:5-6 says the same thing as kiln-api.manager.ts:17-21 ('each widget deployment is its own Kiln organization'). It is redundant documentation with no concrete cost.",
+      "category": "docs"
+    }
+  ]
+}

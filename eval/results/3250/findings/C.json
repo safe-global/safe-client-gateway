@@ -1,0 +1,35 @@
+{
+  "usd": 0.0606796,
+  "findings": [
+    {
+      "file": "counterfactual-safes.service.ts",
+      "line": 80,
+      "claim": "assertNoneDeployed and filterUndeployed in space-counterfactual-safes.service.ts implement the same logic of mapping over Safes, calling isSafe in parallel, and failing open on error; this duplication should be extracted into a shared helper so future changes to the fail-open policy or error logging only need to be made in one place."
+    },
+    {
+      "file": "counterfactual-safes.service.ts",
+      "line": 90,
+      "claim": "The catch blocks in assertNoneDeployed and filterUndeployed swallow all errors without any logging, so if the transaction service is down or returns malformed data, the endpoint silently continues and there is no observability into the guard being effectively disabled; a LoggingService should be injected and a warn-level log (chainId, address, error) added."
+    },
+    {
+      "file": "counterfactual-safes.service.ts",
+      "line": 80,
+      "claim": "If a batched POST includes the same (chainId, address) pair twice, isSafe is invoked once per occurrence instead of being deduplicated, causing redundant transaction-service requests; a Map-based dedupe keyed by chainId and address would avoid this in assertNoneDeployed, and the same issue may apply to filterUndeployed if the underlying repository can return duplicates."
+    },
+    {
+      "file": "space-counterfactual-safes.service.ts",
+      "line": null,
+      "claim": "After filtering, a chain whose Safes were all deployed will be missing entirely from the response safes object, but the tests only assert on non-empty chains, so it is unverified whether clients rely on an empty array being present per chain; if they do, transformCounterfactualSafesResponse may need to preserve empty buckets."
+    },
+    {
+      "file": "counterfactual-safes.service.spec.ts",
+      "line": 22,
+      "claim": "The DTO builder in the test re-implements the same field-mapping already performed in CounterfactualSafesService.create (e.g. to becomes setupTo, data becomes setupData), duplicating logic between test and implementation; a shared createCounterfactualSafeDtoBuilder() in the domain builders would keep the DTO shape asserted in one place and prevent tests from drifting when the DTO changes."
+    },
+    {
+      "file": "counterfactual-safes.service.ts",
+      "line": 78,
+      "claim": "The comments explaining the code describe what the code does (reject if any deployed) rather than the non-obvious why (the fail-open reasoning), and should be trimmed to focus on the fail-open rationale; the same applies to the comment in space-counterfactual-safes.service.ts."
+    }
+  ]
+}

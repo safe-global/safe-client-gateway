@@ -1,0 +1,138 @@
+{
+  "usage": {
+    "usd": 0.5474992000000001,
+    "turns": 9,
+    "wallSeconds": 73
+  },
+  "issues": [
+    {
+      "findings": [
+        "F2"
+      ],
+      "summary": "No test covers a chain with only 1.5.0 singletons, so the derived target-version list is untested",
+      "label": "medium",
+      "evidence": "All SafeMigration tests use chainId '1' (safe.spec.ts:688), where 1.3.0 singletons exist, so if the old ['1.3.0','1.4.1'] candidate list at safe.ts:206 were restored the tests would still pass. In safe-deployments 1.37.62, chains 5424, 9302, 38833, 613419 and 843843 have only 1.5.0 singletons and a SafeMigration 1.5.0 deployment. On those chains the new list is what makes inference work, and nothing tests it.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F1",
+        "F6"
+      ],
+      "summary": "opBNB test says no singletons are deployed, but chain 204 has them, so the throw branch is dead",
+      "label": "low",
+      "evidence": "The package data shows chain 204 has 1.3.0, 1.4.1 and 1.5.0 L1/L2 singletons. hasAnySingletons is therefore always true and the toThrow else-branch (safe.spec.ts:~913-940) never runs. The test predates the PR, which only touched the version-list line.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F8",
+        "F10",
+        "F12"
+      ],
+      "summary": "The hasAnySingletons list in the test is hardcoded instead of derived from the package",
+      "label": "nit",
+      "evidence": "safe.spec.ts:913 extends the literal by hand. The list contains '1.3.0', which chain 204 already has, so a future version would not change the result. The lack of any meaningful assertion is covered by F1.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F17"
+      ],
+      "summary": "describe.each pins the SafeMigration versions instead of using getSafeMigrationVersions()",
+      "label": "nit",
+      "evidence": "safe.spec.ts:705-708 pins '1.4.1' and '1.5.0'. Pinned values give explicit regression coverage, and a new version would be handled in production by getSafeMigrationVersions(). This is a style preference with little concrete cost.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F3"
+      ],
+      "summary": "The SafeToL2Migration change in recipient-analysis is outside the stated scope and not mentioned in the PR description",
+      "label": "nit",
+      "evidence": "recipient-analysis.service.ts:707-712 now iterates getSafeToL2MigrationVersions(), which currently only returns ['1.4.1'], so behaviour is unchanged. The PR description's Changes list does not mention this file. It is scope creep with no functional impact.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F5"
+      ],
+      "summary": "The SafeToL2Migration any-version check has no test",
+      "label": "low",
+      "evidence": "The package ships only SafeToL2Migration 1.4.1, so behaviour is currently identical to the old hardcoded check (recipient-analysis.service.ts:707). Only a future package bump would exercise the new path, so the risk is small.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F4"
+      ],
+      "summary": "PR title reportedly typed as chore instead of fix",
+      "label": "wrong",
+      "evidence": "The PR title is 'fix: recognise v1.5.0 migrations for safes with unknown mastercopies', so it is already typed as fix.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F7"
+      ],
+      "summary": "Adding _getSafeMigrationDeployments to the DeploymentGetter union is unnecessary",
+      "label": "nit",
+      "evidence": "The base already called formatDeployments(_getSafeMigrationDeployments, args) (old deployments.ts:165) without it being in the union, because the types are structurally compatible. Adding it now (deployments.ts:41) is consistency cleanup with no cost.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F11"
+      ],
+      "summary": "The PR adds more reliance on internal dist/deployments underscore arrays",
+      "label": "low",
+      "evidence": "deployments.ts:14-22 now imports 7 underscore arrays (3 before). The package's public index exports no underscore symbols, so a restructure of the package's internals could break these imports. The existing getSafeToL2SetupVersions already used this pattern.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F9"
+      ],
+      "summary": "MULTICHAIN_SUPPORTED_VERSIONS in recipient-analysis is still hardcoded",
+      "label": "low",
+      "evidence": "recipient-analysis.service.ts:82-86 is a hardcoded list that the PR does not touch. It is a valid maintainability point but outside the diff, so at most low.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F14"
+      ],
+      "summary": "SAFE_VERSIONS in recipient-analysis is still hardcoded",
+      "label": "low",
+      "evidence": "recipient-analysis.service.ts:65-72 is a hardcoded list that the PR does not touch. A future mastercopy version would need a manual edit, but the code is outside this diff.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F13"
+      ],
+      "summary": "The silent catch in detectSafeMigration makes triage harder",
+      "label": "nit",
+      "evidence": "safe.ts:224-226 `catch { return null; }` predates the PR and is a free function with no logger. The caller then throws 'Safe version is required', so the failure is not fully silent.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F15"
+      ],
+      "summary": "getSafeSingletonVersions returns pre-1.3.0 versions without a warning in its JSDoc",
+      "label": "nit",
+      "evidence": "getSafeSingletonVersions returns ['1.5.0',...,'1.0.0'], but the only hash-related caller filters to >=1.3.0 (safe.ts getSafeMigrationTargetVersions). The concern is about hypothetical future callers.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F16"
+      ],
+      "summary": "JSDoc descending-order claim reportedly unverified",
+      "label": "wrong",
+      "evidence": "Checked against safe-deployments 1.37.62 (the pinned version). _SAFE_DEPLOYMENTS gives ['1.5.0','1.4.1','1.3.0','1.2.0','1.1.1','1.0.0'], and the L2, Migration and ToL2Migration arrays are also descending, so the JSDoc is accurate. The code also sorts ascending explicitly with semverCompare and does not depend on the package's order.",
+      "category": "docs"
+    }
+  ]
+}

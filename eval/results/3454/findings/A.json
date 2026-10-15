@@ -1,0 +1,120 @@
+{
+  "usd": 0.739446,
+  "findings": [
+    {
+      "file": "src/modules/safe-shield/errors/copilot-core-disabled.error.ts",
+      "line": 13,
+      "claim": "The 402 error message sent to clients states that recipient and counterparty analysis both require a paid Space, but only recipient analysis is actually gated on Core; counterparty analysis remains free, which the message misrepresents."
+    },
+    {
+      "file": "src/modules/safe-shield/errors/copilot-core-disabled.error.ts",
+      "line": 6,
+      "claim": "A doc comment repeats the same 'recipient/counterparty' inaccuracy, describing counterparty analysis as gated when it is not."
+    },
+    {
+      "file": "src/modules/safe-shield/guards/copilot-core-gating.guard.ts",
+      "line": 6,
+      "claim": "A doc comment repeats the same 'recipient/counterparty' inaccuracy, describing counterparty analysis as gated when it is not."
+    },
+    {
+      "file": "src/modules/safe-shield/safe-shield.service.ts",
+      "line": 51,
+      "claim": "A comment states that the class lives in a 'routes/' folder, but the file is actually located at the module root, not under routes/."
+    },
+    {
+      "file": "src/modules/safe-shield/domain/safe-shield-analysis.interface.ts",
+      "line": 14,
+      "claim": "A comment repeats the incorrect claim that this is part of safe-shield's 'routes/' layer, which does not match the actual file location."
+    },
+    {
+      "file": "src/modules/safe-shield/safe-shield.module.ts",
+      "line": 33,
+      "claim": "SafeShieldService is still exported from the module even though nothing outside the module uses it anymore, since consumers now go through the ISafeShieldAnalysis token; this contradicts the module's own comment stating the service is never imported directly, and only the token should be exported."
+    },
+    {
+      "file": "src/modules/safe-shield/safe-shield.module.ts",
+      "line": 30,
+      "claim": "CopilotCoreGatingGuard and CopilotCoreDisabledExceptionFilter are registered as module providers, but they don't need to be since @UseGuards and @UseFilters instantiate them directly; this is also inconsistent with QuotaExceededExceptionFilter, which is not registered as a provider."
+    },
+    {
+      "file": "src/modules/spaces/routes/safe-shield/space-safe-shield.service.spec.ts",
+      "line": 40,
+      "claim": "A test casts a plain object with `{ id: userId } as Member` instead of using the existing memberBuilder() helper."
+    },
+    {
+      "file": "src/modules/spaces/routes/safe-shield/space-safe-shield.service.spec.ts",
+      "line": 116,
+      "claim": "A test casts a partial analysis response using `as Awaited<...>` instead of using the recipient/counterparty response builders available in analysis-responses.builder.ts."
+    },
+    {
+      "file": "src/modules/spaces/routes/safe-shield/space-safe-shield.service.spec.ts",
+      "line": 174,
+      "claim": "A test casts a partial analysis response using `as Awaited<...>` instead of using the recipient/counterparty response builders available in analysis-responses.builder.ts."
+    },
+    {
+      "file": "src/modules/spaces/routes/safe-shield/space-safe-shield.service.spec.ts",
+      "line": 48,
+      "claim": "Test mocks typed as `Pick<>` subsets are cast up to the full interfaces rather than being constructed to match the full type directly."
+    },
+    {
+      "file": "src/modules/spaces/routes/safe-shield/space-safe-shield.service.spec.ts",
+      "line": 114,
+      "claim": "The test name references being 'within quota', but the underlying feature (copilot_scans) is a simple on/off flag with no quota concept, so the name misdescribes the behavior being tested."
+    },
+    {
+      "file": "src/modules/spaces/routes/safe-shield/space-safe-shield.service.spec.ts",
+      "line": 173,
+      "claim": "The test name references being 'within quota', but the underlying feature (copilot_scans) is a simple on/off flag with no quota concept, so the name misdescribes the behavior being tested."
+    },
+    {
+      "file": "space-safe-shield.controller.integration.spec.ts",
+      "line": 138,
+      "claim": "The test name references 'plan/quota state', but the underlying feature is a simple on/off flag with no quota concept, so the name misdescribes the behavior being tested."
+    },
+    {
+      "file": "space-safe-shield.controller.integration.spec.ts",
+      "line": 294,
+      "claim": "The test name references 'plan/quota state', but the underlying feature is a simple on/off flag with no quota concept, so the name misdescribes the behavior being tested."
+    },
+    {
+      "file": "entitlements.controller.integration.spec.ts",
+      "line": 17,
+      "claim": "Imports use `as` aliases (e.g. addSafes as addSafesFixture) that were needed to avoid name clashes with local functions that have since been deleted, so the aliases are now unnecessary."
+    },
+    {
+      "file": "space-safe-shield.controller.integration.spec.ts",
+      "line": 19,
+      "claim": "Imports use `as` aliases (e.g. createSpaceForSigner as createSpaceForSignerFixture) that were needed to avoid name clashes with local functions that have since been deleted, so the aliases are now unnecessary."
+    },
+    {
+      "file": "space-safes.enforcement.integration.spec.ts",
+      "line": 17,
+      "claim": "Imports use `as` aliases that were needed to avoid name clashes with local functions that have since been deleted, so the aliases are now unnecessary."
+    },
+    {
+      "file": "entitlements.controller.integration.spec.ts",
+      "line": 196,
+      "claim": "A `spaceUuid: spaceId` rename adds no value and could be simplified."
+    },
+    {
+      "file": "src/__tests__/util/space-fixtures.ts",
+      "line": 54,
+      "claim": "The code uses the raw template literal type `` `0x${string}` `` instead of the `Address` type, even though the file already imports from viem where that type is available."
+    },
+    {
+      "file": "src/__tests__/util/space-fixtures.ts",
+      "line": 69,
+      "claim": "The code uses the raw template literal type `` `0x${string}` `` instead of the `Address` type, even though the file already imports from viem where that type is available."
+    },
+    {
+      "file": "safe-shield.controller.spec.ts",
+      "line": 42,
+      "claim": "A test helper (appliedNames and related metadata-key literals) duplicates an existing helper (filterNames) in space-safes.controller.spec.ts, and since this is now a second copy, it should be moved into a shared test utility location."
+    },
+    {
+      "file": "space-safe-shield.controller.integration.spec.ts",
+      "line": null,
+      "claim": "The same four negative test cases (unauthenticated, non-member, 402, unregistered Safe) are duplicated across both routes at the integration level and again at the unit level, when only one representative negative case per route should be tested in integration with the branch variations covered in unit tests."
+    }
+  ]
+}

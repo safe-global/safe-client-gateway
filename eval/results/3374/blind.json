@@ -1,0 +1,127 @@
+{
+  "pr": 3374,
+  "title": "fix(auth): keep the prior session expiry on step-up",
+  "description": "## Summary\r\n\r\nA step-up round-trip minted a brand-new session, so elevating at hour 20 of a\r\n24h session handed back a fresh lifetime instead of the 4h the user had left.\r\nThe session lifetime is an absolute timeout — its job is to bound how long any\r\none session lives, and a step-up proves only the second factor — so it must\r\nnot reset that clock. The elevated token now carries over the prior cookie's\r\n`exp`, bounded by the max-validity constant.\r\n\r\nWith no live session to elevate — it expired while the user was on the\r\nchallenge page — the step-up now fails (`401`, surfaced to the client as the\r\nusual `authentication_failed` redirect) instead of minting a fresh session:\r\nelevation would otherwise double as a login whose first factor is only Auth0's\r\nlonger-lived SSO session. The user signs in again through the normal flow.\r\nWA-3268.\r\n\r\n## Changes\r\n\r\n- `src/modules/auth/oidc/routes/oidc-auth.service.ts` — on elevation, require a\r\n  valid prior session and carry its verified `exp` into the new token, bounded by\r\n  `maxExpirationTime`; reject with `UnauthorizedException` when there is none\r\n  (decode failures are debug-logged, message only, never the token)\r\n- `src/modules/auth/oidc/routes/oidc-auth.controller.ts` — pass the session cookie\r\n  into authentication on the callback\r\n- `src/modules/auth/oidc/routes/oidc-auth.service.spec.ts` — carry-over, bound,\r\n  rejected-when-undecodable, rejected-when-absent, and plain-login cases\r\n- `src/modules/auth/oidc/routes/oidc-auth.controller.integration.spec.ts` — the\r\n  elevate round-trip carries a live session cookie; asserts the carried-over `exp`\r\n  and the refusal when no session is present\r\n",
+  "findings": [
+    {
+      "id": "F1",
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.spec.ts",
+      "line": 505,
+      "claim": "The existing 'session lifetime on step-up' tests mock decodeToken using oidcAuthPayloadDtoBuilder with a sub value that is never asserted against, so none of them would catch a missing or incorrect check of sub versus userId or auth_method. Tests should be added using a mismatched sub and a SIWE-style payload, both expecting UnauthorizedException and no call to signToken."
+    },
+    {
+      "id": "F2",
+      "file": "src/modules/auth/oidc/routes/oidc-auth.controller.integration.spec.ts",
+      "line": 737,
+      "claim": "The prior session cookie is minted from a hand-written literal payload that duplicates what the oidcAuthPayloadDtoBuilder() already produces (same auth_method, same faker.string.numeric({ exclude: ['0'] }) for sub), instead of using the builder; the sibling unit spec in the same PR uses the builder, so tests should use it here too for consistency."
+    },
+    {
+      "id": "F3",
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.ts",
+      "line": 180,
+      "claim": "The docblock states that a step-up 'elevates the session the user already has' and that rejecting a missing session prevents a step-up from doubling as a login backed only by Auth0's longer-lived SSO session, but the code does not enforce that the elevated session belongs to the same user, so this stated protection can be bypassed."
+    },
+    {
+      "id": "F4",
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.ts",
+      "line": 134,
+      "claim": "The expiration bound check runs before the code decides whether to take the elevate branch, so it can throw a ForbiddenException for an Auth0 exp claim that is discarded and never actually used when priorExpiration is substituted in its place. A tenant's ID token with a long-lived exp would break elevation for reasons unrelated to the elevated session's own lifetime."
+    },
+    {
+      "id": "F5",
+      "file": "test/modules/auth/oidc/routes/oidc-auth.service.spec.ts",
+      "line": null,
+      "claim": "The test suite does not cover the interaction between an over-max Auth0 exp claim and a valid prior session on the elevate path, which is the exact scenario where the premature expiration bound check could incorrectly reject a valid step-up. A dedicated test would pin down the intended behavior for this case."
+    },
+    {
+      "id": "F6",
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.ts",
+      "line": 226,
+      "claim": "The rationale explaining that the timeout is absolute because a step-up proves only the second factor is repeated in multiple places (the authenticateWithOidc @param at lines 91-94, the getSessionExpiration docblock at lines 182-185, the getPriorExpiration docblock at lines 226-229, and again in spec comments), when keeping it in a single docblock would suffice."
+    },
+    {
+      "id": "F7",
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.ts",
+      "line": 157,
+      "claim": "The min-of-two-Dates comparison is implemented with a conditional expression on Date objects rather than Math.min on their millisecond values; the result is correct but the conditional form is less direct for expressing a clamp-to-bound operation."
+    },
+    {
+      "id": "F8",
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.ts",
+      "line": 188,
+      "claim": "The comment describing the rejection logic states that it prevents a step-up from acting as a login based solely on Auth0's SSO session, but the actual check does not enforce that the elevating cookie belongs to the same user or was created via OIDC, so the code does not match the stated intent."
+    },
+    {
+      "id": "F9",
+      "file": null,
+      "line": null,
+      "claim": "The PR title 'fix: Session duration step up' is a capitalised, non-imperative noun-phrase description, and since the merge strategy is squash-merge, this title becomes the permanent commit subject on main."
+    },
+    {
+      "id": "F10",
+      "file": "src/modules/auth/oidc/routes/oidc-auth.controller.integration.spec.ts",
+      "line": 739,
+      "claim": "The integration test uses a prior token whose sub is random and unrelated to the user being signed in, which demonstrates the missing user-binding check rather than guarding against it."
+    },
+    {
+      "id": "F11",
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.ts",
+      "line": 223,
+      "claim": "The rationale that a step-up must not reset the absolute session timeout is repeated in three places: the @param doc comment, getSessionExpiration, and getPriorExpiration. This duplication should be consolidated into a single location, with getPriorExpiration's doc trimmed to describe only what it returns."
+    },
+    {
+      "id": "F12",
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.ts",
+      "line": 211,
+      "claim": "The debug log only prints the raw decode-failure message (e.g. 'jwt expired'), which is safe since it never includes token bytes, but lacks any surrounding context, making it hard to recognize the log line's origin in a shared log stream."
+    },
+    {
+      "id": "F13",
+      "file": "oidc-auth.service.spec.ts",
+      "line": 606,
+      "claim": "The test for the undecodable prior-session case throws a generic Error('jwt expired') rather than the actual TokenExpiredError or JsonWebTokenError types that decodeToken would raise in production, so the test does not exercise the real catch-path logic for those specific error types."
+    },
+    {
+      "id": "F14",
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.ts",
+      "line": 237,
+      "claim": "getPriorExpiration only checks that the session cookie is a validly signed token and reads its exp, without comparing the token's auth_method or sub against the userId that Auth0 just authenticated. This means the elevation-target check is missing at the point where the prior expiration is carried over."
+    },
+    {
+      "id": "F15",
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.ts",
+      "line": 134,
+      "claim": "On the elevate branch, an over-max expirationTime surfaces as a ForbiddenException while a missing prior session surfaces as an UnauthorizedException, even though both represent the same category of step-up failure; using a single exception type for both would be more consistent."
+    },
+    {
+      "id": "F16",
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.ts",
+      "line": 237,
+      "claim": "The fix should require auth_method === AuthMethod.Oidc and sub === userId.toString() before carrying over the expiry, which may require resolving the user first or comparing after findOrCreate…, and otherwise reject; a unit test for a mismatched sub and one for a SIWE prior token should be added."
+    },
+    {
+      "id": "F17",
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.ts",
+      "line": 237,
+      "claim": "The step-up flow's getPriorExpiration only verifies the cookie's signature and reads its exp field, without checking that auth_method equals 'oidc' or that the cookie's sub matches the userId returned by findOrCreateByExtUserIdAndEmail. As a result, a step-up can proceed using a valid session cookie from any user or from a non-OIDC login method (e.g. a wallet/SIWE session), letting someone complete Auth0 and MFA as a different account while the elevated token still inherits the throwaway session's expiry."
+    },
+    {
+      "id": "F18",
+      "file": "src/modules/auth/oidc/routes/oidc-auth.controller.integration.spec.ts",
+      "line": 813,
+      "claim": "The integration test 'should refuse to elevate when there is no session to elevate' duplicates the unit test 'should reject the step-up when there is no prior session' at oidc-auth.service.spec.ts:621, and the route's integration block already has a representative rejection test, so this negative path is tested redundantly at two layers instead of being kept at the lowest layer that can prove it."
+    },
+    {
+      "id": "F19",
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.ts",
+      "line": 193,
+      "claim": "getSessionExpiration throws UnauthorizedException when there is no session but is not named to indicate it throws, whereas the convention is for such helpers to be named assert* or *OrFail, e.g. getSessionExpirationOrFail."
+    },
+    {
+      "id": "F20",
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.ts",
+      "line": null,
+      "claim": "The GET oidc/authorize?elevate=true endpoint is not guarded, meaning the callback is the only place where any check on the prior session occurs, so any live gateway cookie (including a SIWE session or an OIDC session belonging to a different account) passes and the callback signs an elevated token for whichever Auth0 user completed the challenge, using that other session's expiry."
+    }
+  ]
+}

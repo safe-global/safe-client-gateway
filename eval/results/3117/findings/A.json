@@ -1,0 +1,75 @@
+{
+  "usd": 0.084354,
+  "findings": [
+    {
+      "file": "migrations/1779200000000-add-space-uuid.ts",
+      "line": 4,
+      "claim": "The migration reuses a timestamp already used by migrations/1779200000000-add-member-invite-expires-at.ts and is older than the already-merged 1780900000000-member-name-length.ts, so the two same-timestamp migrations run in an undefined order and environments that already applied later migrations may treat this one as out of sequence; the timestamp should be regenerated to be later than 1780900000000."
+    },
+    {
+      "file": "src/modules/spaces/datasources/entities/space.entity.db.ts",
+      "line": 26,
+      "claim": "The entity declares the uuid column with an unnamed unique: true, which makes TypeORM expect an auto-generated UQ_<hash> constraint name, while the migration creates a unique index explicitly named UQ_spaces_uuid, so the schema and entity definitions diverge and migration:generate will report a difference; the column should use a named @Index or @Unique matching UQ_spaces_uuid instead of unique: true."
+    },
+    {
+      "file": "src/modules/spaces/routes/entities/create-space.dto.entity.ts",
+      "line": 20,
+      "claim": "The space id in API responses changes from a number to a UUID string across create, get/list, update, and invitation (spaceId) DTOs, and all write routes (POST/PUT/PATCH/DELETE) now reject numeric IDs with a 400 via SpaceIdPipe while only GET routes keep a numeric fallback, so any released client still sending or reading numeric IDs will break on writes and on the response shape; the change needs versioning or a backward-compatible transition period accepting both ID formats."
+    },
+    {
+      "file": "src/modules/spaces/domain/spaces.repository.ts",
+      "line": 232,
+      "claim": "findIdByIdOrUuid parses the raw route parameter with regexes and throws the HTTP-level BadRequestException from inside the repository, whereas input validation is expected to happen at the controller via Zod/ValidationPipe and repositories should only map persistence failures; the numeric/UUID parsing should move into LegacySpaceIdPipe and the repository should expose plain lookups by UUID or numeric ID."
+    },
+    {
+      "file": "src/modules/spaces/routes/spaces.controller.ts",
+      "line": 170,
+      "claim": "The GET /v1/spaces/:id route declares @Param('id') idOrUuid: string with no validation pipe, and its resolveUuid implementation performs a lookup to get the ID, another lookup to get the UUID, and then a further query by UUID in findSpaces, resulting in two extra database queries per request; it is also the only legacy route skipping LegacySpaceIdPipe, and should use that pipe and resolve to the UUID in a single query."
+    },
+    {
+      "file": "src/modules/spaces/domain/spaces.repository.ts",
+      "line": 215,
+      "claim": "result.raw[0] is cast as Pick<Space, 'id' | 'uuid'> | undefined without validating the actual shape of the raw driver row, contradicting the expectation that repositories validate raw query results; the row should be parsed with a schema or obtained via result.generatedMaps or a narrow select instead of an unchecked cast."
+    },
+    {
+      "file": "src/modules/spaces/domain/spaces.repository.ts",
+      "line": 245,
+      "claim": "A UUID regex is hand-written even though the shared UuidSchema and ParseUUIDPipe already exist in the codebase, duplicating validation logic that could drift from the shared implementation."
+    },
+    {
+      "file": "src/modules/spaces/domain/spaces.repository.ts",
+      "line": 233,
+      "claim": "The numeric-ID bounds check is rebuilt by hand instead of reusing RowSchema.shape.id, which previously provided this validation, duplicating logic and risking inconsistent bounds checking."
+    },
+    {
+      "file": "src/modules/spaces/domain/entities/space.entity.ts",
+      "line": 27,
+      "claim": "The entity uses z.string().uuid() directly instead of the shared UuidSchema (src/validation/entities/schemas/uuid.schema.ts), so the two new pipes end up validating UUIDs in two different ways."
+    },
+    {
+      "file": "src/modules/spaces/routes/pipes/space-id.pipe.ts",
+      "line": null,
+      "claim": "The new pipes and resolver logic (SpaceIdPipe, LegacySpaceIdPipe, findIdByUuid, findIdByIdOrUuid, resolveUuid) have almost no unit or integration test coverage; only one e2e test covers an invalid letters-only ID and one survey integration test covers the legacy numeric path, leaving untested cases such as a numeric ID above DB_MAX_SAFE_INTEGER returning 400, a non-UUID value on a SpaceIdPipe route returning 400, update on a missing row throwing NotFoundException, and the legacy numeric path on the spaces, members and address-book routes."
+    },
+    {
+      "file": ".gitignore",
+      "line": 64,
+      "claim": "The new /docs entry ignores the entire docs/ tree, including docs/engineering convention docs, which is unrelated to the space UUID change and should be in a separate PR or scoped to a narrower local exclude."
+    },
+    {
+      "file": "src/modules/spaces/spaces.module.ts",
+      "line": 94,
+      "claim": "The new pipes are registered and exported as module providers even though Nest can already instantiate class-based pipes passed via @Param(..., Pipe) from the controller module's injector, since they only need ISpacesRepository, which is already exported; this adds unnecessary module surface unless there is a specific reason to expose them as providers."
+    },
+    {
+      "file": "src/modules/spaces/routes/address-books.controller.ts",
+      "line": 77,
+      "claim": "Several methods are changed from return this.service… to async/return await without any need introduced by the UUID change, adding unrelated modifications to the diff."
+    },
+    {
+      "file": "src/modules/spaces/domain/spaces.repository.ts",
+      "line": null,
+      "claim": "The new public methods findIdByUuid, findIdByIdOrUuid and resolveUuid have no documentation beyond their TODOs, leaving their behavior undocumented."
+    }
+  ]
+}

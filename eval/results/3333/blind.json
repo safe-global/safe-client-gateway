@@ -1,0 +1,6 @@
+{
+  "pr": 3333,
+  "title": "chore: drop the npm age-gate exemption now the bump is locked",
+  "description": "## Summary\r\n\r\nRemoves the `npmPreapprovedPackages` exemption added for the\r\nsafe-deployments 1.37.62 bump. The `npmMinimalAgeGate` only applies at\r\nresolution time — installing from the existing lockfile is unaffected, so\r\nCI and local `yarn install --immutable` keep working without it (verified).\r\n\r\nWith the standing exemption gone, any future bump landing inside a\r\npackage's 7-day publication window requires a deliberate, temporary\r\nexemption instead of a permanent bypass — a compromised org publish token\r\nno longer has an instant path into CI.\r\n\r\n## Changes\r\n\r\n- `.yarnrc.yml` — remove the `npmPreapprovedPackages` entry; the age gate\r\n  itself stays as is\r\n",
+  "findings": []
+}

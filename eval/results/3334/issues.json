@@ -1,0 +1,113 @@
+{
+  "usage": {
+    "usd": 0.5001258000000001,
+    "turns": 7,
+    "wallSeconds": 64
+  },
+  "issues": [
+    {
+      "findings": [
+        "F8",
+        "F18"
+      ],
+      "summary": "SafeToL2Setup check now passes if any setup version exists on the target chain, ignoring the Safe's own `to` address and the Safe version being tested",
+      "label": "medium",
+      "evidence": "recipient-analysis.service.ts:693-700 calls `getSafeToL2SetupVersions().some(...)` using only chainId, never `safeAccountConfig.to` or `version`. So a 1.4.1 Safe that used SafeToL2Setup 1.4.1 is marked compatible on a chain that has only the 1.5.0 setup, which the pinned '1.4.1' check used to reject. This is a real loosening of a safety check; I could not confirm which chains are affected because node_modules is absent.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F5",
+        "F15"
+      ],
+      "summary": "No service-level test covers the SafeToL2Setup version change",
+      "label": "medium",
+      "evidence": "Every 1.5.0 bridge test in recipient-analysis.service.spec.ts (e.g. around 1726 and 1783) sets `to` to zeroAddress, so `includesSetupToL2` is false and the branch at recipient-analysis.service.ts:693 never runs. deployments.spec.ts only checks that the version list contains '1.4.1' and '1.5.0', so a regression in this logic would go unnoticed.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F21",
+        "F24"
+      ],
+      "summary": "The \"compat OR extensible\" official-handler check is written out by hand in two services, and the recipient version repeats the same argument object",
+      "label": "low",
+      "evidence": "contract-analysis.service.ts:449-456 and recipient-analysis.service.ts:678-688 each combine the two checks separately, and the recipient version passes an identical {version, chainId, address} object twice. A shared helper would keep a future official handler type from being missed in one place, which is the same kind of omission this PR fixes.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F3",
+        "F4",
+        "F6",
+        "F7",
+        "F11",
+        "F12",
+        "F13",
+        "F16"
+      ],
+      "summary": "Deployment addresses are hardcoded as literals in specs instead of derived from safe-deployments",
+      "label": "nit",
+      "evidence": "The literals (e.g. recipient-analysis.service.spec.ts:1771-1780, contract-analysis.service.spec.ts:1284) follow the existing sibling tests (1715-1724, 1233), and line 1848 predates the PR. The claim that the tests would stay silently stale is wrong: the code checks against the package's real data, so a changed canonical address would make these tests fail loudly. Pinning known canonical addresses is a reasonable way to test this.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F1",
+        "F17"
+      ],
+      "summary": "The new recipient test is titled 'should not return INCOMPATIBLE_SAFE' but asserts MISSING_OWNERSHIP",
+      "label": "nit",
+      "evidence": "recipient-analysis.service.spec.ts:1752/1803-1805: asserting BRIDGE[0] is MISSING_OWNERSHIP does imply it is not INCOMPATIBLE_SAFE, and the title states the regression being guarded. This is wording only; the test itself checks the right thing.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F10",
+        "F22"
+      ],
+      "summary": "The bridge test asserts only BRIDGE[0] positively instead of also asserting INCOMPATIBLE_SAFE is absent from the array",
+      "label": "nit",
+      "evidence": "recipient-analysis.service.spec.ts:1803 (new) and 1747 (the older sibling test) check only index 0. Bridge analysis gives one result per target, so the scenario where both results appear together is speculative. A negative assertion would be slightly stronger but has no concrete cost.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F14"
+      ],
+      "summary": "The new ExtensibleFallbackHandler recipient test duplicates the preceding Compatibility test body",
+      "label": "nit",
+      "evidence": "recipient-analysis.service.spec.ts:1752-1806 differs from 1696-1750 only in the fallbackHandler literal. The rest of this describe block already duplicates setup the same way, so an it.each would be a style preference.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F20",
+        "F23"
+      ],
+      "summary": "The exported getExtensibleFallbackHandlerDeployments has no external importers",
+      "label": "nit",
+      "evidence": "grep shows no imports outside deployments.ts. It mirrors the existing exported getFallbackHandlerDeployments (deployments.ts:~124), which has the same pattern, so it is consistent with the file and costs nothing.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F2"
+      ],
+      "summary": "The JSDoc 'descending order' claim for the new version-list functions is unverified",
+      "label": "nit",
+      "evidence": "deployments.ts:220/231 copy the wording of the existing getFallbackHandlerVersions doc (line 207). Every caller uses `.some(...)`, so order never matters, and the package data cannot be checked here because node_modules is absent.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F9",
+        "F19"
+      ],
+      "summary": "The contract-analysis test title 'should omit FALLBACK_HANDLER' supposedly does not match its assertion",
+      "label": "wrong",
+      "evidence": "contract-analysis.service.spec.ts:1282 asserts with `toEqual` on the exact result object, which has no FALLBACK_HANDLER key, so it does verify the omission. The title also mirrors the existing sibling test at line 1236.",
+      "category": "tests"
+    }
+  ]
+}

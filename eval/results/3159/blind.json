@@ -1,0 +1,85 @@
+{
+  "pr": 3159,
+  "title": "feat: gate portfolio endpoint behind Zerion feature flag",
+  "description": "## Summary\n\n- Adds `PortfolioRouteGuard` (a `CanActivate` guard) gating the `/v1/portfolio` routes on `features.zerionBalancesEnabled`, mirroring the existing `AlertsRouteGuard` pattern.\n- The portfolio endpoint is backed by Zerion, so it shares the same kill-switch. When the flag is off, both `GET` and `DELETE /v1/portfolio/:address` return 403.\n- Applied at the controller level via `@UseGuards`; the guard is instantiated from the global config DI context (no module provider needed, same as `AlertsRouteGuard`).\n\n## Related\n\n- [WA-2751](https://linear.app/safe-global/issue/WA-2751/gate-portfolio-endpoint-behind-zerion-feature-flag) (part of [WA-2749](https://linear.app/safe-global/issue/WA-2749/refactor-balances-and-portfolio-endpoint-at-cgw))\n- Built on `main`, so it reads the current `features.zerionBalancesEnabled`. A separate PR renames that flag to `features.zerionEnabled` (#3157) — whichever merges second should update the flag reference accordingly.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+  "findings": [
+    {
+      "id": "F1",
+      "file": "src/config/entities/configuration.ts",
+      "line": 421,
+      "claim": "The flag check uses !!process.env.FF_ZERION_ENABLED, which treats the string \"false\" as truthy, so setting the environment variable to \"false\" does not disable the feature; operators must unset the variable entirely to use the kill-switch as described in the guard's doc comment."
+    },
+    {
+      "id": "F2",
+      "file": "src/app.module.ts",
+      "line": 108,
+      "claim": "When the feature flag is off, the portfolio routes return 403 \"Forbidden resource\", whereas the alerts module returns 404 when disabled because it isn't registered at all; this inconsistency could lead clients to misinterpret the 403 as an authentication/authorization failure rather than a disabled feature."
+    },
+    {
+      "id": "F3",
+      "file": "src/__tests__/util/check-guard.ts",
+      "line": null,
+      "claim": "The repository already has a checkGuardIsApplied helper (used elsewhere, e.g. surveys.controller.integration.spec.ts:162) that should be used to assert the guard is applied to the class, since the guard metadata lives on the class rather than individual methods. Alternatively, an integration smoke test could confirm a 403 response when the flag is off."
+    },
+    {
+      "id": "F4",
+      "file": "src/modules/portfolio/v1/portfolio.controller.ts",
+      "line": 32,
+      "claim": "No test fails if the @UseGuards(PortfolioRouteGuard) decorator is removed from the controller: the controller spec instantiates the controller directly with 'new', so Nest never runs its guards, the guard's own spec only tests canActivate() in isolation, and there is no integration or e2e spec for portfolio routes. This means the feature-flag kill-switch could be deleted during a refactor while CI stays green, leaving the gated third-party calls active even though operators believe them disabled."
+    },
+    {
+      "id": "F5",
+      "file": "src/modules/portfolio/v1/portfolio.controller.ts",
+      "line": 32,
+      "claim": "No test verifies that the PortfolioRouteGuard is actually attached to the controller via @UseGuards. The guard's own spec only tests canActivate() in isolation, and the controller spec builds the controller directly without guards running, so if the @UseGuards decorator were removed, all tests would still pass while the feature-flag kill-switch silently stopped working."
+    },
+    {
+      "id": "F6",
+      "file": ".env.sample.json",
+      "line": 801,
+      "claim": "The descriptions for FF_ZERION_ENABLED and FF_ZERION_BALANCES_CHAIN_IDS still only mention enabling Zerion balances, but after this change they also control whether the /v1/portfolio routes respond at all, returning 403 when unset. This is a real behavior change for deployments that don't set these variables, and it should be reflected in both the config descriptions and the PR description so operators are not surprised."
+    },
+    {
+      "id": "F7",
+      "file": "src/modules/portfolio/v1/guards/portfolio-route.guard.spec.ts",
+      "line": 8,
+      "claim": "The 'as MockedObject<IConfigurationService>' cast around the object literal is unnecessary because vi.mocked() already returns a MockedObject, which is inconsistent with how other tests in the codebase mock IConfigurationService."
+    },
+    {
+      "id": "F8",
+      "file": "src/modules/portfolio/v1/guards/portfolio-route.guard.ts",
+      "line": 5,
+      "claim": "The class-level JSDoc explaining the flag rationale will become redundant if the flag is renamed to zerionEnabled per #3157, since the name would then map more obviously to 'portfolio'."
+    },
+    {
+      "id": "F9",
+      "file": "src/modules/portfolio/v1/guards/portfolio-route.guard.ts",
+      "line": 18,
+      "claim": "The guard references features.zerionBalancesEnabled, but this flag is already known to be renamed to features.zerionEnabled in a separate PR (#3157), so the reference will become stale once one of the PRs merges."
+    },
+    {
+      "id": "F10",
+      "file": "src/modules/portfolio/v1/guards/portfolio-route.guard.ts",
+      "line": 16,
+      "claim": "The GET and DELETE /v1/portfolio/:address routes, which previously worked without any flag, now return 403 in any environment where neither FF_ZERION_ENABLED nor FF_ZERION_BALANCES_CHAIN_IDS is set, and it is not confirmed what production actually sets for these variables."
+    },
+    {
+      "id": "F11",
+      "file": "src/modules/portfolio/v1/guards/portfolio-route.guard.spec.ts",
+      "line": 1,
+      "claim": "The unit test only verifies the guard's logic in isolation and does not confirm that @UseGuards(PortfolioRouteGuard) is actually applied to the controller, so a future refactor removing the decorator would silently unblock the endpoint."
+    },
+    {
+      "id": "F12",
+      "file": "src/modules/portfolio/v1/guards/portfolio-route.guard.spec.ts",
+      "line": 1,
+      "claim": "There is no integration test confirming that both GET /v1/portfolio/:address and DELETE /v1/portfolio/:address return 403 when the feature flag is off, even though the PR description explicitly claims this behavior."
+    },
+    {
+      "id": "F13",
+      "file": "src/modules/portfolio/v1/guards/portfolio-route.guard.spec.ts",
+      "line": 23,
+      "claim": "The flag name string literal is duplicated in the spec file, so when the flag is renamed the identical string literals here must also be updated to stay in sync with the guard implementation."
+    }
+  ]
+}

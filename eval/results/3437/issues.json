@@ -1,0 +1,246 @@
+{
+  "usage": {
+    "usd": 0.7694681999999999,
+    "turns": 12,
+    "wallSeconds": 100
+  },
+  "issues": [
+    {
+      "findings": [
+        "F15",
+        "F27",
+        "F31",
+        "F32",
+        "F35"
+      ],
+      "summary": "New controller/service import SpaceIdPipe, @Auth() and assertMember from other modules' routes/ trees",
+      "label": "medium",
+      "evidence": "space-relay.controller.ts:25,44 import `@/modules/auth/routes/decorators/auth.decorator` and `@/modules/spaces/routes/pipes/space-id.pipe`, and space-relay.service.ts:9 imports `@/modules/spaces/routes/utils/space-assert.utils`. module-structure.md:79-85 allows only guards as an exception and names exactly these imports as an anti-example. The PR description says the files were moved, but this commit contains no such move.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F2",
+        "F21"
+      ],
+      "summary": "The new required `counter` field breaks parsing of grants already cached under an unchanged cache key",
+      "label": "medium",
+      "evidence": "feature-grant.entity.ts:15 adds `counter` as `.nullable()` but not optional, and the cache key at cache.router.ts:224 is unchanged. Entries written before deploy have no `counter`, so `CachedGrantsSchema.parse` at entitlements.service.ts:335 throws uncaught. Every quota-gated action for a warm-cache space then fails until the TTL expires.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F11",
+        "F19",
+        "F33"
+      ],
+      "summary": "Check-then-relay-then-record lets concurrent relays overshoot the allowance",
+      "label": "medium",
+      "evidence": "workspace.relayer.ts:86-125 calls assertWithinQuota, then relayApi.relay, then recordUsage, with no lock or atomic reservation, and the value `incrementUsage` returns is thrown away. The PR description says an atomic consumeQuota replaced this ordering, but the code at this commit does not have it, so parallel requests can together spend more than the quota at Safe's expense.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F30"
+      ],
+      "summary": "The hasClosedWindow cache-bypass branch has no test",
+      "label": "medium",
+      "evidence": "hasClosedWindow is referenced only in entitlements.rules.ts and entitlements.service.ts:338. No spec imports it, seeds a cache entry with a past resetsAt, or uses fake timers, so removing the branch would not fail any test, even though it decides which period usage is counted against.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F5",
+        "F24",
+        "F29"
+      ],
+      "summary": "Unrecorded-usage failures are logged as plain warn strings, not structured or alertable",
+      "label": "low",
+      "evidence": "workspace.relayer.ts:113-121 and entitlements.service.ts:196 call `loggingService.warn` with an interpolated string. Other quota paths use structured LogType logs, so a persistent DB fault that leaves sponsored relays uncounted would be hard to alert on.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F13"
+      ],
+      "summary": "The quota check and the usage record resolve the grant separately, so a relay spanning a period rollover is checked against one period and recorded into the next",
+      "label": "low",
+      "evidence": "assertWithinQuota and recordUsage (entitlements.service.ts:189) each call resolveGrant, and after a rollover the cache is recomputed (line 338). The discrepancy is at most one unit and only at the boundary.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F34"
+      ],
+      "summary": "Repeated cache misses while a renewal webhook lags past resetsAt",
+      "label": "low",
+      "evidence": "With a stale resetsAt <= now, hasClosedWindow (entitlements.service.ts:338) forces computeGrants on every call, and one stale grant invalidates the whole space's cached grants. This is a performance cost that only lasts while the webhook lags.",
+      "category": "performance"
+    },
+    {
+      "findings": [
+        "F16",
+        "F20"
+      ],
+      "summary": "Swagger does not document the 501 returned for GTF chains",
+      "label": "low",
+      "evidence": "workspace.relayer.ts throws RelayerTypeNotImplementedError for GTF, and relayer-not-available.exception-filter.ts:24 maps it to NOT_IMPLEMENTED. The controller's decorators (space-relay.controller.ts:76-94) list no 501 response.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F25"
+      ],
+      "summary": "The relayer-type check allows unknown types, while RelayManager refuses them",
+      "label": "low",
+      "evidence": "relay.manager.ts:59-60 throws NoRelayerDefinedError by default, but workspace.relayer.ts:75-80 rejects only a missing type and GTF, so any other value passes. This only matters if the enum gains a new member.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F1"
+      ],
+      "summary": "existsInSpace is not tested with encryption enabled",
+      "label": "low",
+      "evidence": "The existsInSpace tests (space-safes.repository.integration.spec.ts:688-762) use the default setup with encryption off, so the blind-index branch of safeMatch (space-safes.repository.ts:177) is never exercised through exists(). A bug there would fail closed, so the risk is low.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F3"
+      ],
+      "summary": "The test named 'however much the transaction carries' does not use a batch or large payload",
+      "label": "low",
+      "evidence": "workspace.relayer.spec.ts:148-157 uses the random relayArgs() and only asserts one recordUsage call. That largely repeats the previous test and does not exercise what its name describes.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F26",
+        "F36"
+      ],
+      "summary": "Bare rejects.toThrow() with no expected error",
+      "label": "low",
+      "evidence": "workspace.relayer.spec.ts:350 uses `rejects.toThrow()` although the test creates a specific Error for the relay mock. Any rejection, including an unrelated TypeError, would pass, unlike the sibling tests, which pass the expected instance.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F12"
+      ],
+      "summary": "A failed usage write is only logged, so that relay goes uncounted",
+      "label": "wrong",
+      "evidence": "This is intended: workspace.relayer.ts:108-110 says 'A relay already made cannot fail because the counter did', it matches DailyLimitRelayer, and a test covers it (the finding itself says so).",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F17"
+      ],
+      "summary": "recordUsage should throw rather than warn when counter is null",
+      "label": "nit",
+      "evidence": "The only caller (workspace.relayer.ts:113) catches and warns on any error, so throwing would produce the same result as the current warn at entitlements.service.ts:194-200. assertWithinQuota already refuses a null counter up front (countEventUsage).",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F22"
+      ],
+      "summary": "The ownership and quota checks could run in parallel",
+      "label": "wrong",
+      "evidence": "Running them in sequence is deliberate: a Safe the workspace does not hold is refused without a quota check, and a test asserts this (workspace.relayer.spec.ts:159-176). The finding itself concedes that parallelising would break that.",
+      "category": "performance"
+    },
+    {
+      "findings": [
+        "F37"
+      ],
+      "summary": "The last three awaited calls could run concurrently",
+      "label": "wrong",
+      "evidence": "workspace.relayer.ts:86-125 relies on this order: the quota is checked before the expensive simulation, the relay must not run if the simulation fails, and usage is recorded only after a successful relay.",
+      "category": "performance"
+    },
+    {
+      "findings": [
+        "F28"
+      ],
+      "summary": "The hardcoded 'workspace' relayer literal lets a typo compile",
+      "label": "wrong",
+      "evidence": "`relayer` is typed `SimulatedRelayer` = 'relay-fee' | 'workspace' (relay-simulation.service.ts:15-17), so a misspelling such as 'workspce' fails to compile.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F6"
+      ],
+      "summary": "The forwardRef imports in SpaceRelayModule look unnecessary",
+      "label": "nit",
+      "evidence": "Auth, Spaces and Users modules import each other circularly (auth.module.ts:10, spaces.module.ts:57-58), and sibling modules such as counterfactual-safes.module.ts:23-25 wrap them the same way, so this follows repo practice and guards against file-level cycles.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F8"
+      ],
+      "summary": "isEventMeteredFeature returns boolean rather than a type predicate",
+      "label": "nit",
+      "evidence": "entitlements.constants.ts:36-42. Nothing needs the narrowing, since `.filter(isEventMeteredFeature)` and eventPeriodStart take a plain Feature, so this is only about consistency.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F14"
+      ],
+      "summary": "countFeatureUsage builds a synthetic object to satisfy a type guard",
+      "label": "nit",
+      "evidence": "entitlements.service.ts:291 binds `{ key }` so the guard narrows it, and a comment explains why. This is a style preference with no cost.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F23"
+      ],
+      "summary": "The integration test uses literal version and gasLimit values",
+      "label": "nit",
+      "evidence": "space-relay.controller.integration.spec.ts:303,394. '1.3.0' has to be a supported Safe version, and the gasLimit only needs to be present because the test checks it is ignored, so the literals carry no real cost.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F7",
+        "F18"
+      ],
+      "summary": "Behaviour-preserving refactors are bundled with the feature",
+      "label": "nit",
+      "evidence": "The RelaySimulationService, resolveTarget and safeMatch extractions are all in the single commit 2bdf6ac8d. Splitting them out is a reviewability preference, not a defect.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F4"
+      ],
+      "summary": "The sponsoredSubscription and sponsoredPlan test helpers are near-duplicates",
+      "label": "nit",
+      "evidence": "entitlements.service.integration.spec.ts:1183. This is test-helper duplication with no behavioural impact.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F9"
+      ],
+      "summary": "The doc-comment format differs from the rest of the file",
+      "label": "nit",
+      "evidence": "space-safes.repository.interface.ts:70. No rule or tool enforces a format, so this is purely stylistic.",
+      "category": "style"
+    },
+    {
+      "findings": [
+        "F10"
+      ],
+      "summary": "The exception-filter list is duplicated from the public relay controller",
+      "label": "nit",
+      "evidence": "space-relay.controller.ts:88-98 repeats a filter list. Pulling it into a shared decorator is a preference, and the two lists already differ (QuotaExceededExceptionFilter).",
+      "category": "design"
+    }
+  ]
+}

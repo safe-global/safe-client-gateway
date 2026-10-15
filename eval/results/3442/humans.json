@@ -1,0 +1,24 @@
+{
+  "usd": 0.28125459999999997,
+  "head": "8343e99fd89ddbefd40030ec99e0e9f38a6b45bd",
+  "verdicts": [
+    {
+      "issue": 6,
+      "verdict": "open",
+      "present": true,
+      "evidence": "No commits after 8343e99fd (HEAD is the reviewed commit) and nobody replied. circuit-breaker.service.ts:228-235 still logs every HALF_OPEN rejection with loggingService.warn."
+    },
+    {
+      "issue": 11,
+      "verdict": "open",
+      "present": true,
+      "evidence": "No human reply and no later commits. circuit-breaker.service.spec.ts:15 still has `const circuitName = faker.string.alphanumeric();` at module scope, with no length."
+    },
+    {
+      "issue": 14,
+      "verdict": "open",
+      "present": true,
+      "evidence": "No reply and no later commits. The JSDoc on getEffectiveFailureThreshold (circuit-breaker.service.ts:339-348) still describes only the reopen threshold, even though line 220 also uses it as maxInFlight. The link between the two is explained only in the canProceedInHalfOpenState JSDoc (lines 206-209)."
+    }
+  ]
+}

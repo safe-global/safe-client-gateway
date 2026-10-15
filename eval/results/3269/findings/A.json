@@ -1,0 +1,85 @@
+{
+  "usd": 0.077656,
+  "findings": [
+    {
+      "file": "src/modules/billing/routes/billing.controller.ts",
+      "line": 177,
+      "claim": "The GET /v1/billing/sessions/:sessionId endpoint only applies AuthGuard and does not check ownership, so any signed-in user who knows a session ID can read another space's checkout session data, including customer, client_reference_id, metadata, subscription and invoice fields. The session lookup should be tied to a space the caller belongs to, either via a spaceId route parameter or by checking the session's customer/metadata against a space the caller is a member of."
+    },
+    {
+      "file": "src/modules/billing/routes/billing.controller.ts",
+      "line": 177,
+      "claim": "There is no test covering a non-member requesting another space's session on this endpoint."
+    },
+    {
+      "file": "src/modules/billing/routes/billing.controller.ts",
+      "line": 37,
+      "claim": "The returnUrl value is validated only with z.url(), which accepts any scheme and host including javascript: or an attacker-controlled domain, yet this value is used as the redirect target for Stripe checkout and the billing portal at lines 109 and 163. It should reuse the existing resolveAndValidateRedirectUrl helper from src/modules/auth/utils/auth-redirect.helper.ts, which enforces an allowed-domain configuration and validates protocol, domain, credentials and port."
+    },
+    {
+      "file": "src/modules/billing/routes/billing.service.ts",
+      "line": 22,
+      "claim": "The billing route service injects the IBillingApi datasource directly instead of going through a repository, and there is no billing repository under src/modules/billing/domain/. Route services should depend on a repository (e.g. an IBillingRepository) rather than calling external API datasources directly."
+    },
+    {
+      "file": "src/modules/billing/billing.module.ts",
+      "line": 17,
+      "claim": "The module wraps AuthModule, UsersModule and SpacesModule imports in forwardRef even though none of those modules import BillingModule (only app.module.ts does), so there is no circular dependency requiring it. Plain imports should be used instead."
+    },
+    {
+      "file": "src/modules/billing/routes/billing.controller.ts",
+      "line": 89,
+      "claim": "The planId, paymentLinkId and sessionId path parameters (used at lines 89, 161 and 179) are interpolated into upstream URL paths and into a cache key without any Zod or ValidationPipe validation, unlike spaceId which is validated. A bounded ID schema should be added for each of these parameters."
+    },
+    {
+      "file": "src/datasources/billing-api/billing-api.service.ts",
+      "line": 123,
+      "claim": "getCustomerSessionUrl calls fetch directly instead of going through INetworkService, making it the only fetch call in a datasource outside network.module.ts, and this bypasses the shared timeout and error-mapping behavior. It also returns response.text() to the client without validating that the body is a non-empty, well-formed URL, for example the response could be empty or HTML."
+    },
+    {
+      "file": "src/modules/billing/routes/billing.controller.ts",
+      "line": 56,
+      "claim": "None of the 6 new billing routes (lines 56-182) have integration or e2e test coverage, so nothing verifies that AuthGuard is applied to each route, that SpaceIdPipe rejects invalid IDs, or that the global exception filter maps errors correctly (403 for non-members, 422 for an invalid returnUrl or status). The existing service unit tests do not cover this wiring."
+    },
+    {
+      "file": "docker-compose.yml",
+      "line": 62,
+      "claim": "The compose file change replaces ${VAR-default} fallback values with env_file: .env, which is unrelated to the billing feature and causes docker compose up web to fail for anyone without a .env file. This change should be split into its own PR or changed so it still works without a .env file."
+    },
+    {
+      "file": "src/modules/billing/routes/billing.controller.ts",
+      "line": 64,
+      "claim": "The @ApiQuery decorator for the status parameter does not list the enum values even though SubscriptionStatusFilterSchema already defines them, so the generated Swagger documentation shows a free-form string that does not match the actual validated shape. It should reference SubscriptionStatusFilterSchema.options as the enum."
+    },
+    {
+      "file": "src/datasources/billing-api/upstream-customer-id.util.ts",
+      "line": null,
+      "claim": "This file is named with a *.util.ts suffix while every other helper file in the codebase uses *.utils.ts, making it inconsistent with the established naming convention. It should be renamed to upstream-customer-id.utils.ts, along with its spec file."
+    },
+    {
+      "file": "src/datasources/billing-api/entities/plan.entity.ts",
+      "line": 380,
+      "claim": "PlanSchema now requires a product field and changed billingCycle values from monthly/yearly to month/year, but cached plan responses stored under the existing keys are not versioned, so previously cached entries would fail to parse until they expire. This only matters if the feature is already deployed and the upstream shape changes at the same time as this release."
+    },
+    {
+      "file": "src/modules/billing/routes/billing.service.ts",
+      "line": 62,
+      "claim": "getSpacePaymentLinks deduplicates links using a Map built from [...spaceLinks, ...generalLinks], so when a shared ID exists the general link silently overrides the space link, and this precedence is not documented anywhere."
+    },
+    {
+      "file": "src/modules/billing/routes/billing.controller.ts",
+      "line": 56,
+      "claim": "The Swagger summary text \"Get a space subscriptions\" is grammatically incorrect and should read \"Get a space's subscriptions\"."
+    },
+    {
+      "file": "src/modules/billing/routes/billing.controller.ts",
+      "line": 157,
+      "claim": "getCheckoutUrl is implemented as a GET endpoint but creates an upstream checkout session, which is a side-effecting operation exposed via a method that should normally be idempotent/safe."
+    },
+    {
+      "file": "src/modules/billing/routes/billing.controller.ts",
+      "line": 157,
+      "claim": "paymentLinkId is not checked against the set of payment links the requesting space is allowed to use, so a caller could potentially reference a payment link belonging to another space."
+    }
+  ]
+}

@@ -1,0 +1,185 @@
+{
+  "usage": {
+    "usd": 0.5087592000000001,
+    "turns": 8,
+    "wallSeconds": 77
+  },
+  "issues": [
+    {
+      "findings": [
+        "F4",
+        "F7",
+        "F10"
+      ],
+      "label": "medium",
+      "summary": "Whitespace/dot chainIds still hit the chain collection endpoint; the `!chainId` guard only stops the empty string, and nothing tests the other values",
+      "evidence": "config-api.service.ts:78 only checks falsiness. Running `new URL('https://cfg/api/v1/chains/' + ' ')` or `'.'` in node gives `/api/v1/chains/`. `Number(' ')` is 0, so NumericStringSchema also accepts `' '` (a URL-encoded %20), and the collection-page 502 is still reachable even on the patched message routes. The new spec only tests `''`.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F3",
+        "F9",
+        "F16",
+        "F20",
+        "F22",
+        "F23",
+        "F26",
+        "F28",
+        "F29"
+      ],
+      "label": "medium",
+      "summary": "Of the four routes that gained pipes, only getMessageByHash has 422 tests",
+      "evidence": "The integration spec diff (around line 485) adds two tests, both for GET chains/:chainId/messages/:messageHash. The PR description says the empty-chainId case is parametrized across all four routes, but that is not what the diff does. Removing a pipe from any of the other three routes would not fail any test.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F1"
+      ],
+      "label": "low",
+      "summary": "The datasource guard silently changes empty-chainId responses on the 38 unvalidated routes from 502 to 404, and the PR description does not mention it",
+      "evidence": "config-api.service.ts:78-80 throws DataSourceError 404 for every caller. The PR description says 'Nothing changes below the controller' and does not list config-api.service.ts among the changes, so this behaviour change is undocumented. It is only unit-tested, not tested at route level.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F32"
+      ],
+      "label": "low",
+      "summary": "The same empty-chainId mistake now gets 422 on the message routes but 404 on unvalidated routes",
+      "evidence": "The ValidationPipe on messages.controller.ts:66 returns 422, while the getChain guard (config-api.service.ts:79) gives 404 on the other 38 `@Param('chainId')` routes. The inconsistency is real but minor, and the WA-3543 follow-up should resolve it.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F24"
+      ],
+      "label": "low",
+      "summary": "The datasource-level check contradicts the stated 'lower layers trust their callers' design and partly duplicates the controller pipe",
+      "evidence": "The PR description says nothing changes below the controller, yet config-api.service.ts:75-80 adds a presence check. The check does protect the unvalidated routes, so it is not purely redundant; the cost is that the design split is inconsistent and undocumented.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F27"
+      ],
+      "label": "low",
+      "summary": "The pipes use NumericStringSchema rather than ChainIdSchema, which contradicts the PR description and drops the length bound",
+      "evidence": "messages.controller.ts:66/103/147/192 use NumericStringSchema. The description says ChainIdSchema is used and lists changes to chain-id.schema.ts and space-safes that are not in the diff. Other route-param pipes (8 files) also use NumericStringSchema, so this is consistent with existing code, but it leaves CHAIN_ID_MAXLENGTH unenforced.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F5",
+        "F14",
+        "F15"
+      ],
+      "label": "low",
+      "summary": "messageHash is typed `Hash` but validated with HexSchema, which accepts any length including '0x'",
+      "evidence": "hex.schema.ts only refines with `isHex`, so '0x' or '0x1' passes at messages.controller.ts:67/193 and still costs one upstream 404. The effect is minor: a wasted call and an overstated type, not a failure.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F18"
+      ],
+      "label": "low",
+      "summary": "The suggestion to use NumericStringSchema in the datasource would not close the gap on its own",
+      "evidence": "NumericStringSchema accepts ' ' (Number(' ') === 0), which new URL still collapses to the collection path. Stricter validation there is reasonable, but the specific proposal is incomplete.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F6"
+      ],
+      "label": "nit",
+      "summary": "The rationale comment is three lines long",
+      "evidence": "config-api.service.ts:75-77. Comment length is a style preference with no concrete cost.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F21"
+      ],
+      "label": "nit",
+      "summary": "The spec uses the literal 404 while the implementation uses HttpStatus.NOT_FOUND",
+      "evidence": "config-api.service.spec.ts:122 versus config-api.service.ts:79. The values are equal, so this is purely stylistic.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F25"
+      ],
+      "label": "wrong",
+      "summary": "The claim that the DataSourceError message is empty is incorrect",
+      "evidence": "data-source.error.ts declares `readonly message` as a constructor parameter property, which is assigned after `super()`, so the message is 'Chain not found'. toThrow(err) does compare that message; it just does not check `code`.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F2"
+      ],
+      "label": "wrong",
+      "summary": "This describes the pre-PR failure mechanism, which the PR fixes for an empty chainId",
+      "evidence": "An empty chainId is now rejected by the pipe (messages.controller.ts:66) and by the guard (config-api.service.ts:78) before any fetch or cache write.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F13",
+        "F17"
+      ],
+      "label": "wrong",
+      "summary": "The unvalidated chainId routes are explicitly out of scope, and an empty chainId can no longer poison the cache",
+      "evidence": "The PR description's 'Out of scope' section tracks the 38 routes in WA-3543. The getChain guard at config-api.service.ts:78 now stops an empty chainId before the cache is touched on those routes too.",
+      "category": "product"
+    },
+    {
+      "findings": [
+        "F19"
+      ],
+      "label": "wrong",
+      "summary": "The PR body makes no '41 other sites' coverage claim",
+      "evidence": "The description explicitly says the 38 other routes remain unvalidated (out of scope), so it does not claim what this finding attacks.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F8",
+        "F30"
+      ],
+      "label": "wrong",
+      "summary": "The added messageHash and extra-route validation is already described in the PR description",
+      "evidence": "The Fix section says ChainIdSchema/HexSchema pipes go on all four routes of the messages controller, and a title does not need to list every change.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F11"
+      ],
+      "label": "wrong",
+      "summary": "The PR description does have Summary and Changes sections",
+      "evidence": "The description provided contains '## Summary' and '## Changes' headings.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F12"
+      ],
+      "label": "wrong",
+      "summary": "The PR title already has no scope",
+      "evidence": "The PR title is 'fix: reject an empty chainId instead of returning 502'. Only the commit message carries '(messages)'.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F31"
+      ],
+      "label": "unverifiable",
+      "summary": "Whether Fastify routes `/v1/chains//messages/...` to the handler with an empty param",
+      "evidence": "The test at messages.controller.integration.spec.ts:485 depends on find-my-way's empty-segment matching. That cannot be confirmed without running tests, which this review may not do.",
+      "category": "tests"
+    }
+  ]
+}

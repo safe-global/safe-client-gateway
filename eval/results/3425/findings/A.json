@@ -1,0 +1,35 @@
+{
+  "usd": 0.0622196,
+  "findings": [
+    {
+      "claim": "findSpaceForAuditOrFail is now a third identical copy of a helper duplicated elsewhere; it should be moved into one shared helper (for example next to ISpaceAuditRepository) instead of adding another private copy.",
+      "file": "src/modules/spaces/domain/address-books/address-book-requests.repository.ts",
+      "line": 230
+    },
+    {
+      "claim": "The test edit moving the mocked decrypt result into a 'decrypted' const and adding a blank line is unrelated to the feature and causes no behavior change; it should be dropped or moved to a separate PR.",
+      "file": "src/modules/spaces/domain/address-books/address-book-items.repository.spec.ts",
+      "line": 226
+    },
+    {
+      "claim": "New tests use hard-coded values such as the name 'Alice' and fake ciphertext like 'kms:v1:a' / 'kms:v1:n' instead of faker-generated or builder-generated data, which the project's testing convention requires; faker.person.fullName() and faker.string.alphanumeric() or similar should be used instead.",
+      "file": "src/modules/spaces/domain/address-books/address-book-requests.repository.spec.ts",
+      "line": 135
+    },
+    {
+      "claim": "reject() calls findOneOrFail, which also loads the requestedBy relation and decrypts the row, even though the audit record only needs address/name, making that join wasted work; the decrypt also runs even when the request is no longer pending and nothing gets recorded, so a slimmer lookup should be used or decryption deferred until rejected is confirmed true.",
+      "file": "src/modules/spaces/domain/address-books/address-book-requests.repository.ts",
+      "line": 202
+    },
+    {
+      "claim": "The code has redundant 'spaceId: spaceId' and mixes args.spaceId with a local spaceId variable for the same value in the same method; one form should be picked and written simply as 'spaceId,'.",
+      "file": "src/modules/spaces/domain/address-books/address-book-requests.repository.ts",
+      "line": 203
+    },
+    {
+      "claim": "No unit test verifies that a duplicate insert raises UniqueConstraintError and records no audit event now that unique-constraint handling lives inside the transaction; the existing e2e test only checks the 409 response, so a dedicated unit test should be added.",
+      "file": "src/modules/spaces/domain/address-books/address-book-requests.repository.spec.ts",
+      "line": 71
+    }
+  ]
+}

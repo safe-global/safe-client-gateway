@@ -1,0 +1,35 @@
+{
+  "usd": 0.06674160000000001,
+  "findings": [
+    {
+      "file": "src/modules/spaces/domain/address-books/address-book-items.repository.ts",
+      "line": 184,
+      "claim": "This repository still builds the limit message as `You can only add up to ${max - existing} more.` with no guard, so users at the limit see \"up to 0 more\" and users over the limit see a negative number."
+    },
+    {
+      "file": "src/modules/spaces/domain/address-books/user-address-book-items.repository.ts",
+      "line": 158,
+      "claim": "This repository has the same unguarded message-construction pattern, producing \"up to 0 more\" or a negative remaining count instead of the corrected wording applied elsewhere."
+    },
+    {
+      "file": "src/modules/spaces/routes/address-books.controller.e2e-spec.ts",
+      "line": 522,
+      "claim": "This e2e test still asserts the old \"…up to 0 more.\" text, so it would need updating once the same fix is applied to the address-book repositories."
+    },
+    {
+      "file": null,
+      "line": null,
+      "claim": "No shared helper exists for building this limit message, so the same string-construction logic is duplicated across the three repositories; extracting it into one small shared helper would prevent the fix from being applied inconsistently."
+    },
+    {
+      "file": "src/modules/spaces/domain/space-safes.repository.integration.spec.ts",
+      "line": 435,
+      "claim": "The new test only covers the remaining === 0 case; there is no test for existing > max (the case that previously produced \"add up to -N more\"), so that branch of the guard is unverified even though the same > 0 check handles it."
+    },
+    {
+      "file": "src/modules/spaces/domain/space-safes.repository.ts",
+      "line": 46,
+      "claim": "The limit check reads the current count and performs the insert as two separate, non-atomic operations, so two concurrent requests could both pass the check and together exceed the configured limit."
+    }
+  ]
+}

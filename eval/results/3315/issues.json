@@ -1,0 +1,230 @@
+{
+  "usage": {
+    "usd": 0.6376518000000001,
+    "turns": 11,
+    "wallSeconds": 94
+  },
+  "issues": [
+    {
+      "findings": [
+        "F8",
+        "F12",
+        "F20",
+        "F31",
+        "F33"
+      ],
+      "summary": "AUTH_ELEVATION_WINDOW_SECONDS is parsed with parseInt but never validated in RootConfigurationSchema; a bad value becomes NaN and every OIDC admin gets 403 on all gated routes",
+      "label": "medium",
+      "evidence": "configuration.ts:61-64 reads the var with parseInt, and grep finds it nowhere in configuration.schema.ts, while its sibling AUTH_STATE_TTL_MILLISECONDS is validated at schema.ts:120. With NaN, `ageSeconds <= NaN` is always false, so the service boots fine but denies every elevation (auth-payload.entity.ts:102-106). That breaks non-negotiable #7.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F22"
+      ],
+      "summary": "FF_MFA_STEP_UP is unvalidated and could fail with NaN",
+      "label": "wrong",
+      "evidence": "configuration.ts:481 builds a boolean with `?.toLowerCase() === 'true'`, so it cannot produce NaN. Most FF_ flags are also missing from the schema: only FF_SES_EMAIL and FF_BILLING_SERVICE appear there.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F1",
+        "F9",
+        "F26"
+      ],
+      "summary": "The mfaStepUp flag mapping has no comment naming an owner and a removal condition",
+      "label": "low",
+      "evidence": "configuration.ts:481 has no comment, but docs/agents/configuration-and-flags.md:51-57 requires one on new flags and says the first flag to land becomes the canonical example.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F2",
+        "F5",
+        "F21"
+      ],
+      "summary": "`as never` cast on the mock return value in the step-up tests",
+      "label": "nit",
+      "evidence": "oidc-auth.service.spec.ts:415 casts because buildAuth0Token is typed Record<string, unknown>. Typing it as the Auth0 token type would remove the cast, but the cost is test-only type looseness.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F11",
+        "F37"
+      ],
+      "summary": "Tests read signToken.mock.calls[0][0] instead of using toHaveBeenCalledWith",
+      "label": "nit",
+      "evidence": "The signedPayload() helper in oidc-auth.service.spec.ts is a readability preference. The assertions are still correct.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F3",
+        "F32"
+      ],
+      "summary": "elevation_required is signalled only through the ForbiddenException message, with no dedicated code field",
+      "label": "nit",
+      "evidence": "elevation.guard.ts:20 and :75 export a constant that clients compare for exact equality on `message`. This is a documented, deliberate contract (see the JSDoc and PR description), not a substring match, and no reshaping filter exists.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F4",
+        "F14"
+      ],
+      "summary": "Math.floor(Date.now()/1000) is duplicated rather than using a time helper",
+      "label": "nit",
+      "evidence": "toSecondsTimestamp (time.ts:9) takes a Date, so it is not a drop-in replacement. Two one-line inline expressions carry negligible drift risk.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F6"
+      ],
+      "summary": "The guard throws ForbiddenException rather than HttpExceptionNoLog for an expected rejection",
+      "label": "low",
+      "evidence": "elevation.guard.ts:75. Non-negotiable #10 asks for HttpExceptionNoLog on expected rejections, so each routine elevation challenge may be logged as an error. AUTH.md itself does not mention HttpExceptionNoLog, and the neighbouring guards also use plain exceptions.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F7"
+      ],
+      "summary": "ELEVATION_WINDOW_SECONDS test constant is duplicated across two spec files",
+      "label": "nit",
+      "evidence": "elevation.guard.spec.ts:18 and the integration spec each define their own value. They are independent tests, so drifting apart would not cause a failure.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F10",
+        "F17"
+      ],
+      "summary": "elevation.guard.spec builds payloads as hand-written literals instead of the existing auth payload builders",
+      "label": "low",
+      "evidence": "elevation.guard.spec.ts:34-45 builds the objects by hand (with faker values), even though oidcAuthPayloadDtoBuilder and siweAuthPayloadDtoBuilder exist and are used in auth-payload.entity.spec.ts. This is inconsistent with non-negotiable #6.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F13",
+        "F34"
+      ],
+      "summary": "Window-edge tests can flake when a second boundary falls between two Date.now() calls",
+      "label": "low",
+      "evidence": "Neither elevation.guard.spec.ts:98 nor auth-payload.entity.spec.ts:405 uses fake timers (grep finds no useFakeTimers or setSystemTime). The test computes nowSeconds() and hasFreshMfa calls Date.now() again, so the age can become window+1 and the 'fresh' assertion fails intermittently.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F28"
+      ],
+      "summary": "hasFreshMfa rejects future stamps with zero tolerance, so small clock drift between instances can cause a spurious 403 right after step-up",
+      "label": "low",
+      "evidence": "auth-payload.entity.ts:102-106 requires ageSeconds >= 0 on second-floored clocks, and the stamp is written by one instance and checked by another. Sub-second NTP drift across a second boundary gives -1. It fails closed and only prompts another challenge, and auth.clockSkewSeconds (configuration.ts:53) exists and could be reused.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F15"
+      ],
+      "summary": "The checkGuardIsApplied test utility may assert nothing",
+      "label": "low",
+      "evidence": "src/__tests__/util/check-guard.ts is not changed by this PR. Callers that iterate Object.values(prototype) get no class methods, because methods are non-enumerable, so the loops are likely empty. A real gap, but it predates the PR and sits outside its changes.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F16",
+        "F35"
+      ],
+      "summary": "AUTH.md does not document ElevationGuard, AUTH_ELEVATION_WINDOW_SECONDS, ?elevate=true or the elevation_required contract",
+      "label": "low",
+      "evidence": "grep for elevat/mfa in src/modules/auth/AUTH.md finds nothing. The config table at :252-258 and the Guards section at :171 were not updated.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F19"
+      ],
+      "summary": "The @ApiForbiddenResponse descriptions on gated routes don't mention the elevation_required cause",
+      "label": "low",
+      "evidence": "members.controller.ts:88-90 still describes only the admin-authorization 403. api-dtos-and-validation.md:99 expects Swagger to document each response, so API consumers would not learn of the new 403 cause.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F36"
+      ],
+      "summary": "Controllers in other modules import ElevationGuard directly from auth/routes",
+      "label": "low",
+      "evidence": "Technically this breaks non-negotiable #4, but the same controllers already import AuthGuard from '@/modules/auth/routes/guards/auth.guard' (spaces.controller.ts:30), so the PR follows the established pattern rather than creating a new one.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F18"
+      ],
+      "summary": "The per-route integration matrix duplicates unit-test coverage",
+      "label": "nit",
+      "evidence": "elevation.integration.spec.ts:272-309 is intentionally exhaustive per route. The redundancy costs test time but lets real wiring regressions surface per route.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F23"
+      ],
+      "summary": "The hardcoded multi-factor acr value should move to config",
+      "label": "nit",
+      "evidence": "auth0-api.service.ts:40 holds the standard OpenID PAPE multi-factor policy URI, which is a spec constant rather than environment-specific.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F24"
+      ],
+      "summary": "The options-object parameter `{ elevate = false }` is hard to read",
+      "label": "nit",
+      "evidence": "oidc-auth.service.ts:87 uses a common named-options idiom, so this is a style preference.",
+      "category": "style"
+    },
+    {
+      "findings": [
+        "F25"
+      ],
+      "summary": "PR description adds sections beyond the template",
+      "label": "nit",
+      "evidence": "The template has Summary and Changes. The extra sections add verification context without breaking the required structure.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F27"
+      ],
+      "summary": "PR title is not in Conventional Commits format",
+      "label": "wrong",
+      "evidence": "The actual PR title is 'feat: add step-up authentication for sensitive workspace actions', which is conventional and lowercase.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F29"
+      ],
+      "summary": "The OIDC-or-wallet invariant comment has no issue or RFC link",
+      "label": "nit",
+      "evidence": "elevation.guard.ts:64-69 already explains the invariant and names the code paths that enforce it (assertSignerAddress, extUserId IS NULL).",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F30"
+      ],
+      "summary": "The address-book PUT route splits guards across two @UseGuards decorators",
+      "label": "nit",
+      "evidence": "address-books.controller.ts:115-116. The separate rate-limit @UseGuards predates the PR, which only extended the existing AuthGuard line. Execution order still puts Auth and Elevation ahead of the rate limiter, as the PR states.",
+      "category": "style"
+    }
+  ]
+}

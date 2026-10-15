@@ -1,0 +1,11 @@
+{
+  "pr": 3284,
+  "reviewSha": "1c1e709c885fb07302f796ae2bd0dd17bc9c175b",
+  "baseSha": "3d98ac9ff0b8e3f1772fca60fd13ea689e6bc67c",
+  "system": "E",
+  "version": "github",
+  "runner": "collect",
+  "model": "human",
+  "commentSha": "1c1e709c885fb07302f796ae2bd0dd17bc9c175b",
+  "output": "src/modules/auth/oidc/auth0/datasources/auth0-api.service.ts:33\nshould we move it to config?\n\n---\n\nsrc/modules/auth/oidc/auth0/datasources/auth0-api.service.ts:203\nshould we validate it? or we trust its a correct one?\n\n---\n\nsrc/modules/auth/oidc/auth0/datasources/auth0-api.service.ts:208\nwhy do we cache it? do we expect a heavy load on this operation?\n\n---\n\nsrc/modules/auth/oidc/routes/oidc-auth.controller.ts:267\nso you can have multiple at the same time?\n\n---\n\nsrc/modules/auth/oidc/routes/oidc-auth.service.ts:39\ni think its getting crowded, we can extract it to `types` file or smth\n\n---\n\nsrc/modules/auth/oidc/routes/oidc-auth.service.ts:197\nis it possible to now have extUserId here?"
+}

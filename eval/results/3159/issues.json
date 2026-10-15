@@ -1,0 +1,94 @@
+{
+  "usage": {
+    "usd": 0.3664348,
+    "turns": 7,
+    "wallSeconds": 47
+  },
+  "issues": [
+    {
+      "findings": [
+        "F3",
+        "F4",
+        "F5",
+        "F11",
+        "F12"
+      ],
+      "summary": "No test checks that PortfolioRouteGuard is actually applied to the controller, or that the routes return 403 when the flag is off",
+      "label": "medium",
+      "evidence": "portfolio.controller.spec.ts:21 builds the controller with `new PortfolioController(service)`, so guards never run. The guard spec only calls canActivate() directly, and no integration spec covers /v1/portfolio, so deleting `@UseGuards` at portfolio.controller.ts:32 would leave CI green. The helper exists in src/__tests__/util/check-guard.ts, though F3 is wrong that surveys uses it: only its own spec does.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F1"
+      ],
+      "summary": "`!!process.env.FF_ZERION_ENABLED` treats the string \"false\" as enabled",
+      "label": "low",
+      "evidence": "configuration.ts:420-422 coerces any non-empty string to true, so FF_ZERION_ENABLED=false does not turn the kill-switch off. This is real, but those lines predate the PR and the PR does not change them.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F6"
+      ],
+      "summary": "The .env.sample descriptions for the Zerion flags don't mention that they now also gate /v1/portfolio",
+      "label": "low",
+      "evidence": ".env.sample.json:801-811 still says 'Enable Zerion balances...'. The flag now also turns the portfolio routes on or off, so the operator docs are incomplete.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F10"
+      ],
+      "summary": "Deployments that set neither Zerion env var will now get 403 from the portfolio routes",
+      "label": "unverifiable",
+      "evidence": "The guard at portfolio-route.guard.ts:16-20 returns false when neither variable is set (configuration.ts:421-422). Gating the routes is the PR's intent, and whether production sets these variables can't be settled from the code.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F2"
+      ],
+      "summary": "A disabled flag returns 403, while disabled alerts return 404",
+      "label": "wrong",
+      "evidence": "The PR description says a disabled flag should return 403, and the guard copies AlertsRouteGuard (alerts-route.guard.ts). The 404 for alerts comes from not registering the module at app.module.ts:108. Returning 403 is a deliberate design choice, not a defect.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F9"
+      ],
+      "summary": "The flag reference will go stale after the rename in #3157",
+      "label": "wrong",
+      "evidence": "The PR description says this outright: whichever PR merges second updates the reference. The reference at portfolio-route.guard.ts:18 is correct against current main (configuration.ts:420).",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F13"
+      ],
+      "summary": "The spec repeats the flag-name string literal",
+      "label": "nit",
+      "evidence": "portfolio-route.guard.spec.ts:23 asserts the literal key on purpose, which is normal for this kind of test. A rename would make the test fail loudly rather than silently, so this costs nothing.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F8"
+      ],
+      "summary": "The guard's JSDoc may become redundant after the flag rename",
+      "label": "nit",
+      "evidence": "portfolio-route.guard.ts:5-8 explains why a balances-named flag gates portfolio. The comment is harmless and useful today.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F7"
+      ],
+      "summary": "The `as MockedObject<IConfigurationService>` cast inside vi.mocked() is unnecessary and inconsistent with other tests",
+      "label": "wrong",
+      "evidence": "The `vi.mocked({...} as MockedObject<IConfigurationService>)` pattern shows up about 24 times across src, so the spec at portfolio-route.guard.spec.ts:6-8 follows the codebase convention.",
+      "category": "convention"
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "usd": 0.7166720000000001,
+  "findings": [
+    {
+      "file": "src/modules/billing/routes/billing.service.ts",
+      "line": 148,
+      "claim": "The PR bundles three unrelated behavior changes into a single branch: an offer-filter fix that matches the active plan by price id instead of name, Safe-seat capacity enforcement, and a change restricting checkout and plan changes to admins behind an elevation guard. Splitting these into separate PRs would make each easier to review, revert, and release, and at minimum the PR title and body should name all three changes."
+    },
+    {
+      "file": "src/modules/billing/routes/billing.controller.ts",
+      "line": 192,
+      "claim": "The checkout-url endpoint previously accepted any active member without a second factor, but now returns 403 for non-admin members and requires a fresh second factor, and the plan-change route similarly moves from member-only to admin-only access; this breaks an existing client contract without versioning, and although the Swagger docs were updated, it's unclear whether the web client is ready to handle the new 403 and elevation responses or whether the release is coordinated with it."
+    },
+    {
+      "file": "src/modules/billing/routes/billing.service.ts",
+      "line": 434,
+      "claim": "The seat quota metadata is parsed twice: assertSafeSeatCapacity calls parseSafeSeatQuota to decide whether to count Safes, and then hasSeatCapacity parses the same metadata again; hasSeatCapacity could instead accept the already-parsed quota, or the service could compare used against quota directly, removing the redundant parse and possibly the helper entirely."
+    },
+    {
+      "file": "src/modules/entitlements/domain/feature-package.mapper.ts",
+      "line": 58,
+      "claim": "The warning logged for a malformed FEATURE_SAFE_SEATS value includes only the raw value and no payment link id or space id, making it impossible to identify which Stripe link needs fixing; the billing caller should add the payment link id to the log, noting that this logging pattern was designed for webhook sync rather than a user-triggered request path."
+    },
+    {
+      "file": "src/modules/billing/routes/billing.service.ts",
+      "line": 424,
+      "claim": "The JSDoc comment on assertSafeSeatCapacity is missing its closing period, unlike the other doc comments in the file which end with one."
+    }
+  ]
+}

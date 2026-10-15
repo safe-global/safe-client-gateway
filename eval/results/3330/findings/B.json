@@ -1,0 +1,30 @@
+{
+  "usd": 0.0691376,
+  "findings": [
+    {
+      "file": ".github/workflows/architecture-check.yml",
+      "line": 133,
+      "claim": "The gh command allowlist entries for `gh pr view <N> --json:*` and `gh pr comment <N> --body:*` still accept arbitrary trailing arguments, so a `-R`/`--repo` flag could redirect the command to a different repository. This could let a prompt injection in the reviewed PR cause the workflow to read another repository's PR and post its contents publicly, or post the review verdict onto a PR in a different repository, though the actual reach depends on the installed GitHub App's permissions, which the file does not show."
+    },
+    {
+      "file": ".github/workflows/architecture-check.yml",
+      "line": 126,
+      "claim": "The comment stating that injection \"cannot redirect them at another PR\" is inaccurate because that guarantee only holds within the same repository; a redirect to a different repo via `-R` is not prevented."
+    },
+    {
+      "file": ".github/workflows/architecture-check.yml",
+      "line": 133,
+      "claim": "The fix of using exact allowlist entries (mirroring the existing `gh pr diff` entries, e.g. `Bash(gh pr view <N> --json baseRefName,title,body)` plus a fixed `--body-file <path>`) relies on the assumption that the `:*` suffix is a raw string-prefix match; this was not verified against the documentation for the bundled Claude Code version, and if `:*` actually behaves like a word-boundary match (as legacy docs suggest), the old rule was already exact and the new comment describing the fix would be incorrect."
+    },
+    {
+      "file": ".github/workflows/architecture-check.yml",
+      "line": 133,
+      "claim": "Making the allowlist entries exact and specific could deny some previously allowed command variants, such as `gh pr diff <N> --color=never`, `gh pr comment <N> -b \"...\"`, and `gh pr view <N> --comments`; in headless CI this could mean the workflow fails to post a verdict while the run still shows green."
+    },
+    {
+      "file": ".github/workflows/claude-code-review.yml",
+      "line": 90,
+      "claim": "This workflow uses `Bash(gh pr comment:*)`, `gh pr diff:*`, and `gh pr view:*` with no PR-number pin at all, which has the same repo-redirect gap as architecture-check.yml but is broader since it lacks even a number restriction."
+    }
+  ]
+}

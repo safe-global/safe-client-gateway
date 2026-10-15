@@ -1,0 +1,187 @@
+THREAD src/config/entities/__tests__/configuration.ts:207 resolved=true
+[LucieFaire 2026-07-14T09:03:45Z] nothing against it, but it kind of doesnt go very well with other FF defined here. We have `zerionPositions` already there, so just calling it `Zerion` would be confusing, what about `zerionBalances` or smth with a bit more context (yet i know it was partialy that before)
+[LucieFaire 2026-07-14T09:04:26Z] or if you say its for whole Zerion, should we lose `zerionPositions` ?
+[LucieFaire 2026-07-14T09:05:26Z] but would still then call it `zerion` then w/o `enabled`
+[vseehausen 2026-07-14T09:39:14Z] > or if you say its for whole Zerion, should we lose zerionPositions ?
+
+Yes, I think that is the way to go. 👍 
+
+> but would still then call it zerion then w/o enabled
+
+Right. 
+
+
+[vseehausen 2026-07-14T13:21:04Z] Let's merge this rename and consolidate the feature flags in another PR.
+
+THREAD src/config/entities/configuration.spec.ts:65 resolved=true
+[LucieFaire 2026-07-14T13:23:33Z] dont hurt to have but also not sure we really need these tests :) thye dont bring much value
+[vseehausen 2026-07-14T13:47:34Z] Yep, it's been one of the multiple Claude reviews that made me add them. I will leave them for now.
+[LucieFaire 2026-07-14T13:50:47Z] dont trust everything claude says :)
+
+COMMENT
+[vseehausen 2026-07-09T10:36:34Z] @claude review
+
+COMMENT
+[claude 2026-07-09T10:36:52Z] **Claude finished @vseehausen's task in 1m 35s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/29012165651)
+
+---
+### Claude PR Review
+
+- [x] Read changed files
+- [x] Analyze code quality, bugs, performance, security, tests
+- [x] Post review
+
+---
+
+Rename is applied consistently across sources, tests, `.env.sample.json`, and devcontainer — no lingering `zerionBalancesEnabled` / `FF_ZERION_BALANCES_CHAIN_IDS` references. A couple of small things worth flagging:
+
+### Issues
+
+**1. `FF_ZERION_ENABLED` parsing is inconsistent with the rest of the flags — `!!` makes `FF_ZERION_ENABLED=false` still truthy** (`src/config/entities/configuration.ts:409`)
+
+```ts
+zerionEnabled: !!process.env.FF_ZERION_ENABLED,
+```
+
+Every other feature flag in this block uses `.toLowerCase() === 'true'` (lines 407, 408, 412, 415, 416, 418…). With `!!`, any non-empty string — including `"false"`, `"0"`, `"no"` — enables the flag. This was tolerable when the env var was `FF_ZERION_BALANCES_CHAIN_IDS` (a "presence = enable" list), but the new name `FF_ZERION_ENABLED` strongly implies boolean semantics. Operators toggling `FF_ZERION_ENABLED=false` will be surprised.
+
+Suggest aligning with the rest:
+
+```ts
+zerionEnabled: process.env.FF_ZERION_ENABLED?.toLowerCase() === 'true',
+```
+
+Note this changes semantics vs. `main` (unset would now default to `false`), so the deploy note should be updated: any env that currently just *sets* `FF_ZERION_ENABLED` to any value (e.g. the chain-id list carried over from the legacy var) would need to become `FF_ZERION_ENABLED=true`.
+
+[Fix this →](https://claude.ai/code?q=In%20src%2Fconfig%2Fentities%2Fconfiguration.ts%3A409%20on%20branch%20chore%2Frename-zerion-enabled-flag%2C%20replace%20%60zerionEnabled%3A%20!!process.env.FF_ZERION_ENABLED%60%20with%20%60zerionEnabled%3A%20process.env.FF_ZERION_ENABLED%3F.toLowerCase()%20%3D%3D%3D%20%27true%27%60%20to%20match%20the%20other%20feature%20flags%20in%20the%20same%20block.%20Then%20update%20any%20dependent%20tests%20and%20the%20PR%20deploy%20note%20accordingly.&repo=safe-global/safe-client-gateway)
+
+**2. `.env.sample.json` entry is inconsistent** (`.env.sample.json:753-757`)
+
+```json
+{
+  "name": "FF_ZERION_ENABLED",
+  "description": "Enable Zerion balances provider (OPTIONAL)",
+  "defaultValue": true,
+  "required": true
+}
+```
+
+- `description` says `(OPTIONAL)` but `required: true`.
+- `defaultValue: true` combined with `!!` parsing means the flag is effectively always on in dev unless the env is unset — misleading.
+- Description still says "balances provider"; per the PR body, the flag now gates Zerion as a whole. Consider "Enable Zerion (OPTIONAL)".
+
+### Nits
+
+- `src/modules/balances/datasources/balances-api.manager.spec.ts:81,137` still mocks `features.zerionEnabled`, but `balances-api.manager.ts` doesn't read that key — dead mock (pre-existing under the old name, now carried over). Safe to drop while you're touching this file.
+
+### Otherwise LGTM
+
+- All rename call-sites updated.
+- Test expectations updated including the descriptive `it(...)` string on `safes.v2.controller.overview.integration.spec.ts:403`.
+- Deploy risk (silent flag drop for envs still on `FF_ZERION_BALANCES_CHAIN_IDS`) is called out in the PR body and confirmed with InfraSec.
+ • branch: `chore/rename-zerion-enabled-flag`
+
+COMMENT
+[vseehausen 2026-07-10T09:43:08Z] @claude review again
+
+COMMENT
+[claude 2026-07-10T09:43:25Z] **Claude finished @vseehausen's task in 1m 49s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/29083981145)
+
+---
+### Claude PR Review
+
+- [x] Load review tools
+- [x] Read changed files
+- [x] Analyze for issues
+- [x] Post review feedback
+
+---
+
+Small, well-scoped rename + strict-boolean fix. Consumers, tests, devcontainer, and sample env are all migrated consistently — no lingering `zerionBalancesEnabled` or `FF_ZERION_BALANCES_CHAIN_IDS` references. The strict `?.toLowerCase() === 'true'` parse matches the sibling `FF_*` flags (`FF_EMAIL`, `FF_SES_EMAIL`, `FF_DEBUG_LOGS`) and the new tests in `configuration.spec.ts` cover the meaningful cases (unset, `TRUE`/`True`/`true`, `false`/`0`/carried-over chain-id list).
+
+### Findings
+
+**Deploy risk — well flagged, but worth double-confirming (behavioral, not code)**
+`src/config/entities/configuration.ts:409` — the flag now defaults to **off** and only `true`/`TRUE`/… enables it. The PR body says InfraSec has confirmed, but concretely two silent-disable modes exist:
+- envs still on `FF_ZERION_BALANCES_CHAIN_IDS` (var dropped, no fallback anymore),
+- envs that carried the old chain-id list into `FF_ZERION_ENABLED` (previously truthy under `!!`, now `false` because the string isn't `"true"`).
+
+Since the previous PR body's stated intent was pure rename, and the strict-boolean parse was added later (commit `7eda67d`), it's worth confirming with ops that the rollout order is: **set `FF_ZERION_ENABLED=true` in every target env → then deploy**, not the reverse. No code change needed if that's already the plan.
+
+**Nit — `.env.sample.json` type inconsistency**
+`.env.sample.json:756` — `"defaultValue": "false"` is a string, but the adjacent `FF_*` entries (e.g. `FF_AUTH`, `FF_COUNTERFACTUAL_BALANCES`, `FF_DEBUG_LOGS`) use a bare boolean `true`. Cosmetic only; either raw `false` or aligning others to strings would be more uniform. `FF_SES_EMAIL` already uses the string form, so the file isn't consistent to begin with — take or leave.
+
+**Nit — test env cleanup**
+`src/config/entities/configuration.spec.ts:36-64` — the `afterEach` restores `FF_ZERION_ENABLED` only. If any other test in the same worker mutates `process.env.FF_ZERION_ENABLED` afterwards without cleanup, the isolation still holds here, but consider using `vi.stubEnv` / `vi.unstubAllEnvs` for symmetry with other suites in the repo (if that's the local convention). Optional.
+
+### Not findings, just confirmations
+- `safes.v2.service.ts` internal field rename + `resolveZerionEligibility` guard rewire look correct — the per-chain `zerionEnabledById` map is unchanged in shape.
+- No behavior regression in `balances-api.manager.spec.ts`: removing the `features.zerionBalancesEnabled → false` stub is safe because `getOrThrow` for the renamed key isn't invoked in that manager's path (the flag is only read in `SafesV2Service`).
+
+Overall: LGTM once the rollout ordering is confirmed.
+ · `chore/rename-zerion-enabled-flag`
+
+COMMENT
+[vseehausen 2026-07-10T10:08:16Z] Re: the review above —
+
+- **Rollout ordering**: confirmed with InfraSec that `FF_ZERION_ENABLED=true` is already set on both staging and production, so both silent-disable modes are contained. Deploy note updated accordingly.
+- **`defaultValue` type nit**: aligned to the bare boolean `false` in d9c10856c (bare booleans are the dominant style in the file, 27:1).
+- **`vi.stubEnv` nit**: left as is — `stubEnv` isn't used anywhere in the repo; the save/restore pattern matches the adjacent `trustProxy` suite in the same file.
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+COMMENT
+[vseehausen 2026-07-10T10:08:22Z] @claude review again.
+
+The deploy risk is contained, InfraSec confirmed the flag is set on staging and on production.
+
+COMMENT
+[claude 2026-07-10T10:08:40Z] **Claude finished @vseehausen's task in 1m 50s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/29085369569)
+
+---
+### Claude Code Review
+
+- [x] Read PR diff
+- [x] Review changed files
+- [x] Post review feedback
+
+---
+
+The rename is applied consistently and the parsing tightening is a real improvement. Nothing blocking — a couple of small notes below.
+
+**Nits (non-blocking):**
+
+- `src/modules/balances/routes/__tests__/controllers/zerion-balances.controller.integration.spec.ts:57` and `src/modules/collectibles/routes/__tests__/controllers/zerion-collectibles.controller.integration.spec.ts:37` still set `features.zerionEnabled: true` in their test config. After the rename, the only production consumer is `safes.v2.service.ts` (verified via `grep features.zerionEnabled src/`), so those overrides are dead stubs. Not harmful, but you could drop them for a tidier config.
+- `.env.sample.json:753` — the description reads *"must be explicitly set to 'true'; off when unset"*. Since the value is now parsed strictly as `'true'` (case-insensitive), that phrasing is accurate. Consider `"defaultValue": "false"` (string) to match the other `FF_*` samples in that file, but that depends on the sample renderer — bare boolean works too as the previous commit intended.
+
+**Well done:**
+
+- `configuration.ts:409` — strict boolean parsing matches the other `FF_*` flags; the old `!!process.env.FF_ZERION_ENABLED` would have treated `"false"` as truthy, so this is a real fix.
+- `configuration.spec.ts:36-65` — the `it.each(['false', '0', '1,10,137'])` case explicitly guards against a carried-over chain-id list from the legacy env var re-enabling Zerion. Nice regression-proofing given the migration story.
+- `balances-api.manager.spec.ts` correctly drops the stale `zerionBalancesEnabled` stubs — confirmed via grep that the manager doesn't read the flag anymore.
+
+Deploy risk looks contained given `FF_ZERION_ENABLED=true` is already set on staging and production per the PR body.
+ • Branch: `chore/rename-zerion-enabled-flag`
+
+COMMENT
+[vseehausen 2026-07-10T10:38:38Z] @claude review again. Deploy risk is confirmed and contained, no need to mention it again. The tests obviously work, so it's fine to set the flag at afterEach.
+
+COMMENT
+[claude 2026-07-10T10:38:56Z] **Claude finished @vseehausen's task in 1m 43s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/29086975161)
+
+---
+### Claude Code Review
+
+- [x] Read PR diff
+- [x] Review changed files
+- [x] Post review feedback
+
+---
+
+Re-reviewed after the strict-boolean parsing fix. Nothing to improve — LGTM.
+
+- **`configuration.ts:409`** — `?.toLowerCase() === 'true'` is consistent with every other `FF_*` flag; the previous `!!process.env.FF_ZERION_ENABLED` truthy check is genuinely fixed.
+- **`configuration.spec.ts:36-65`** — the `it.each(['false', '0', '1,10,137'])` case is well-chosen: it explicitly proves a carried-over `FF_ZERION_BALANCES_CHAIN_IDS` value (or a raw `"false"`) can no longer accidentally enable Zerion.
+- Rename is applied consistently — `grep zerionBalancesEnabled src/` and `grep FF_ZERION_BALANCES_CHAIN_IDS` both return zero hits.
+- **`.env.sample.json:753`** — `defaultValue: false` + `required: false` + the updated description all line up with the new parsing semantics.
+ • Branch: `chore/rename-zerion-enabled-flag`

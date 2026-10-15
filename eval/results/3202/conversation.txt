@@ -1,0 +1,229 @@
+COMMENT
+[datadog-official 2026-06-29T10:52:39Z] <a target='_blank' href='https://app.datadoghq.eu/ci/pipeline-executions?query=ci_level%3Ajob+%40ci.status%3Aerror+%40git.commit.sha%3A3b65061c3862e06f954820f994250b811b4b08f3&referrer=pr-comment'><picture><source media="(prefers-color-scheme: dark)" srcset="https://static.datadoghq.com/static/images/pr_comments/software_delivery/badges_header/pipelines-warning.svg"/><img src="https://static.datadoghq.com/static/images/pr_comments/software_delivery/badges_header/pipelines-warning-light.svg" alt="Pipelines" align="center" /></picture></a>
+
+## ⚠️ Warnings
+
+🚦 **1 Pipeline job failed**
+
+<blockquote>
+<div>
+
+<code> CI | integration-tests </code> &nbsp;&nbsp;<a href="https://app.datadoghq.eu/ci/pipeline-executions?query=ci_level%3Ajob&#43;ci.job_correlation_id%3Acb63a2e02e350937&amp;referrer=pr-comment" title="View in Datadog"><img src="https://static.datadoghq.com/static/images/pr_comments/software_delivery/datadog_icon.svg" alt="View in Datadog" align="center" /></a> &nbsp; <a href="https://github.com/safe-global/safe-client-gateway/actions/runs/28450009596/job/84309508998" title="View in GitHub Actions"><picture><source media="(prefers-color-scheme: dark)" srcset="https://static.datadoghq.com/static/images/pr_comments/software_delivery/logos/github-logo-dark.svg"/><img src="https://static.datadoghq.com/static/images/pr_comments/software_delivery/logos/github-logo-light.svg" alt="GitHub Actions" align="center" /></picture></a>
+
+</div>
+</blockquote>
+
+<sub>
+This comment will be updated automatically if new data arrives. <br />
+🔗 Commit SHA: 3b65061 | <a href="https://docs.datadoghq.com/integrations/guide/source-code-integration/#pr-comments">Docs</a> | Give us <a href="https://forms.gle/ys6MDmdQEeC5pkzWA">feedback</a>!
+</sub>
+
+COMMENT
+[LucieFaire 2026-07-07T13:50:33Z] @claude review
+
+COMMENT
+[claude 2026-07-07T13:50:54Z] **Claude finished @LucieFaire's task in 3m 27s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/28871400723)
+
+---
+### Claude PR Review
+
+- [x] Read PR scope and relevant files
+- [x] Review `balances-api.manager.ts` + interface + module changes
+- [x] Review updated integration/unit specs
+- [x] Confirm deletions are dead code (grep'd for lingering references)
+- [x] Post review feedback
+
+Nice cleanup — 2 200+ lines of dead code gone, DI graph slimmed, and the surviving Safe balances path is still fully covered. A few small follow-ups you might want to consider:
+
+### 1. `safeAddress` param on `IBalancesApiManager.getApi` is now dead
+`src/domain/interfaces/balances-api.manager.interface.ts:19` still declares `safeAddress` as required, and the impl renames it to `_safeAddress` (`balances-api.manager.ts:43`). Every caller (`balances.repository.ts:28/44/56`, `collectibles.repository.ts:26/38`, `hooks-cache.integration.spec.ts:1352/1357`, `balances-api.manager.spec.ts:84/141`) still generates a fake address just to satisfy the signature. Since the branching that used it is gone, consider dropping the parameter from the interface and its call sites — makes the contract match reality and removes noise from the tests.
+
+### 2. Dead `features.counterfactualBalances` feature flag
+The only consumer of `features.counterfactualBalances` (`configuration.ts:420-421`, `FF_COUNTERFACTUAL_BALANCES`) was `BalancesApiManager`, which no longer reads it. The env var, its `.env.sample.json` entry, the `.vscode/launch.json` override, and the `counterfactualBalances: true/false` toggles in `balances.controller.integration.spec.ts:38`, `collectibles.controller.integration.spec.ts:43`, `safes.controller.overview.integration.spec.ts:48`, and `safes.v2.controller.overview.integration.spec.ts:50/410` can all be removed. Leaving it behind will confuse future readers into thinking there's still a counterfactual code path. [Fix this →](https://claude.ai/code?q=Remove%20the%20now-dead%20features.counterfactualBalances%20flag%20on%20branch%20wa-2753-remove-zerion-from-balances-endpoint%20of%20safe-global%2Fsafe-client-gateway.%20Its%20only%20consumer%20was%20BalancesApiManager%2C%20which%20no%20longer%20reads%20it.%20Drop%3A%20the%20env%20var%20definition%20in%20src%2Fconfig%2Fentities%2Fconfiguration.ts%3A420-421%2C%20the%20FF_COUNTERFACTUAL_BALANCES%20entry%20in%20.env.sample.json%3A639%2C%20the%20.vscode%2Flaunch.json%3A18%20override%2C%20the%20default%20in%20src%2Fconfig%2Fentities%2F__tests__%2Fconfiguration.ts%3A213%2C%20and%20the%20counterfactualBalances%3A%20true%2Ffalse%20overrides%20in%20balances.controller.integration.spec.ts%2C%20collectibles.controller.integration.spec.ts%2C%20safes.controller.overview.integration.spec.ts%2C%20and%20safes.v2.controller.overview.integration.spec.ts.&repo=safe-global/safe-client-gateway)
+
+### 3. Redundant `rawify` in `getFiatCodes`
+`balances-api.manager.ts:47-49`:
+```ts
+async getFiatCodes(): Promise<Raw<Array<string>>> {
+  return rawify(await this.coingeckoApi.getFiatCodes());
+}
+```
+`IPricesApi.getFiatCodes()` already returns `Raw<Array<string>>` (`prices-api.interface.ts:19`), so `rawify` is a no-op cast here. Simplify to:
+```ts
+getFiatCodes(): Promise<Raw<Array<string>>> {
+  return this.coingeckoApi.getFiatCodes();
+}
+```
+
+### 4. No test for the new counterfactual → 404 behavior
+The PR body highlights that "Counterfactual safes now return a 404 from `/balances`," but the integration suite (`balances.controller.integration.spec.ts`) doesn't assert this new behavior. It's low risk (the tx service naturally 404s), but since this is an intentional user-visible change, one small test — tx service returns 404 for `/api/v1/safes/{address}/balances/` → controller returns 404 — would lock it in and document the intent.
+
+### Nits (optional)
+- `balances-api.manager.spec.ts` no longer needs any `safeAddress`-branch coverage, but the two remaining `getApi` tests still generate `safeAddress`. Ties into point 1.
+- The old `Balances API Manager Tests > getApi checks` describe block could be renamed to something like `SafeBalancesApi routing` since Zerion is no longer part of the routing decision.
+
+Nothing blocking — code quality, correctness, and test coverage for the retained path all look solid. 
+ · Branch: `wa-2753-remove-zerion-from-balances-endpoint`
+
+COMMENT
+[LucieFaire 2026-07-07T15:08:31Z] would be great to address Claude's comments :)
+
+COMMENT
+[vseehausen 2026-07-09T11:48:35Z] Thanks for the review @claude — all points addressed:
+
+1. **Dead `safeAddress` param on `getApi`** — dropped from `IBalancesApiManager.getApi` and the impl, plus every call site (`balances.repository.ts`, `collectibles.repository.ts`, `hooks-cache.integration.spec.ts`, `balances-api.manager.spec.ts`). Removed the now-unused `Address` imports and the orphaned `safeAddress` fixture in the hooks test. The base `IApiManager.getApi(chainId, ...rest)` keeps its rest param, so the narrowing stays compatible.
+2. **Dead `features.counterfactualBalances` flag** — confirmed no runtime consumers, then removed the env var (`configuration.ts`), the `.env.sample.json` entry, the `.vscode/launch.json` override, the test-config default, and the `counterfactualBalances` overrides in the four integration specs.
+3. **Redundant `rawify` in `getFiatCodes`** — `IPricesApi.getFiatCodes()` already returns `Raw<Array<string>>`, so simplified to a direct return and dropped the unused `rawify` import.
+4. **Counterfactual → 404 coverage** — added an integration test asserting that a 404 from the tx service `/balances/` endpoint surfaces as a 404 from the controller.
+
+Nits also done: renamed the `getApi checks` describe block to `SafeBalancesApi routing`, and the manager tests no longer thread `safeAddress` through `getApi`.
+
+Verified: `biome check` clean, `tsc --noEmit` clean on all changed files, and the affected unit + integration suites pass (incl. the new 404 test).
+
+
+COMMENT
+[vseehausen 2026-07-09T12:06:45Z] @claude review again
+
+COMMENT
+[claude 2026-07-09T12:07:05Z] **Claude finished @vseehausen's task in 1m 47s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/29017056433)
+
+---
+### Claude PR Review (re-run)
+
+- [x] Fetch latest branch & diff
+- [x] Verify prior review points 1–4 were addressed
+- [x] Fresh review of updated changes
+- [x] Post review
+
+---
+
+### Verification against previous review
+
+Heads-up @vseehausen — I re-checked each of the four items you said were addressed against the current branch (`73afb90`), and none of the diffs are on the branch yet. It looks like the follow-up commit was drafted but not pushed. Concretely:
+
+**1. Dead `safeAddress` param on `getApi` — not addressed**
+- `src/domain/interfaces/balances-api.manager.interface.ts:19` still declares `getApi(chainId: string, safeAddress: Address)`.
+- `src/modules/balances/datasources/balances-api.manager.ts:43` still has `getApi(chainId: string, _safeAddress: Address)`.
+- `balances-api.manager.spec.ts:81-84` and `:140-144` still generate and thread `safeAddress` through `getApi`.
+- The `describe('getApi checks')` block (`balances-api.manager.spec.ts:66`) was not renamed to `SafeBalancesApi routing`.
+
+**2. Dead `features.counterfactualBalances` flag — not addressed**
+Still present in all the places called out last time:
+- `src/config/entities/configuration.ts:420-421`
+- `src/config/entities/__tests__/configuration.ts:213`
+- `.env.sample.json:639`
+- `.vscode/launch.json:18`
+- `balances.controller.integration.spec.ts:38`, `collectibles.controller.integration.spec.ts:43`, `safes.controller.overview.integration.spec.ts:48`, `safes.v2.controller.overview.integration.spec.ts:50` and `:410`
+
+**3. Redundant `rawify` in `getFiatCodes` — not addressed**
+`balances-api.manager.ts:47-49` still wraps with `rawify`, and `rawify` is still imported at line 21. `IPricesApi.getFiatCodes()` already returns `Raw<Array<string>>`, so this remains a no-op cast.
+
+**4. Counterfactual → 404 integration test — not added**
+`balances.controller.integration.spec.ts` still contains no assertion that a 404 from the tx service `/api/v1/safes/{address}/balances/` surfaces as a 404 from the controller. Grep for `404`/`NotFound` in that file returns nothing.
+
+### Other observations on the current diff
+
+- **Import cleanup**: once `safeAddress` is dropped from `getApi`, the `Address` import in `balances-api.manager.interface.ts:2` and `balances-api.manager.ts:3` becomes unused, as does the `Address` fixture generation in `balances.repository.ts`, `collectibles.repository.ts`, `hooks-cache.integration.spec.ts`, and `balances-api.manager.spec.ts`. Worth removing in the same commit to keep it tidy.
+- **`ZerionModule` import in `balances.module.ts:19,27`**: Still imported and re-imported here even though the balances module no longer uses any Zerion service directly. The `IZerionWalletPortfolioApi` provider on `:32` and export on `:43` are still valid because `BalancesService` uses it (`/portfolio`, `/positions`), so that's correct — just wanted to sanity-check there's no leftover unused wiring, and there doesn't appear to be. ✅
+
+### Everything else
+
+The deletions (`zerion-balances-api.service*`, `zerion-collectibles.controller.integration.spec.ts`, `zerion-balances.controller.integration.spec.ts`, `zerion-collectible.entity*`) look consistent with the stated scope; no remaining production imports reference them. The retained `SafeBalancesApi` path remains covered by the two `getApi` unit tests plus the untouched integration suite. Once the four items above land, this should be a clean cut.
+ · Branch: `wa-2753-remove-zerion-from-balances-endpoint`
+
+COMMENT
+[vseehausen 2026-07-09T13:20:23Z] @claude review again
+
+COMMENT
+[claude 2026-07-09T13:23:03Z] **Claude finished @vseehausen's task in 2m 2s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/29020984082)
+
+---
+### Claude PR Review (re-run)
+
+- [x] Fetch latest branch & diff
+- [x] Verify prior review points 1–4 were addressed on the current tip
+- [x] Fresh review of the updated changes
+- [x] Post review
+
+---
+
+### Verification against previous review
+
+All four items from the last round are now on the branch (commit `5469537`). ✅
+
+1. **`safeAddress` on `getApi` — done.** `IBalancesApiManager.getApi(chainId: string)` (`balances-api.manager.interface.ts:17`) and the impl (`balances-api.manager.ts:42`) now take just `chainId`. Every call site was updated and the fake-address generation was dropped from the callers and specs. The `describe` block was also renamed to `SafeBalancesApi routing` (`balances-api.manager.spec.ts:66`).
+2. **`features.counterfactualBalances` — done.** Removed from `configuration.ts`, the test-config default, `.env.sample.json`, `.vscode/launch.json`, and all four integration specs.
+3. **`rawify` in `getFiatCodes` — done.** `balances-api.manager.ts:46-48` is now `return this.coingeckoApi.getFiatCodes();` and the `rawify` import is gone.
+4. **Counterfactual → 404 test — done.** `balances.controller.integration.spec.ts:800-833` exercises the exact flow: tx service returns a 404 `NetworkResponseError` for `/api/v1/safes/{address}/balances/`, and the controller surfaces a 404.
+
+### Fresh observations on the current diff
+
+**Minor — one lingering `FF_COUNTERFACTUAL_BALANCES` reference**
+`.devcontainer/docker-compose.yml:54` still exports `FF_COUNTERFACTUAL_BALANCES` to the devcontainer, but with the flag gone from `configuration.ts` it now does nothing. Worth deleting to fully close out point 2. [Fix this →](https://claude.ai/code?q=On%20branch%20wa-2753-remove-zerion-from-balances-endpoint%20of%20safe-global%2Fsafe-client-gateway%2C%20remove%20the%20lingering%20%60FF_COUNTERFACTUAL_BALANCES%60%20entry%20at%20.devcontainer%2Fdocker-compose.yml%3A54%20since%20the%20counterfactualBalances%20feature%20flag%20was%20removed%20from%20configuration.ts.&repo=safe-global/safe-client-gateway)
+
+**Nit — `testConfiguration` in two specs is now a no-op wrapper**
+After removing the `counterfactualBalances: true` override, the `features` spread in `balances.controller.integration.spec.ts:33-39` and `collectibles.controller.integration.spec.ts:38-44` no longer changes anything:
+```ts
+const testConfiguration = (): typeof defaultConfiguration => ({
+  ...defaultConfiguration,
+  features: {
+    ...defaultConfiguration.features,   // no overrides left
+  },
+});
+```
+These two files could just pass `configuration` (or the base function) directly to `createTestModule`. Purely cosmetic — safe to leave for a follow-up.
+
+### Everything else
+
+`ZerionModule` is still imported by `balances.module.ts` because `BalancesService` uses `IZerionWalletPortfolioApi` for `/portfolio` and `/positions` — correct, matches the stated scope. The retained `SafeBalancesApi` path is still covered by the unit tests plus the untouched integration suite, and the new 404 test locks in the counterfactual behavior change. No correctness, security, or performance concerns on the current diff — LGTM once the `.devcontainer` line is dropped (or ignored as noise).
+ · Branch: `wa-2753-remove-zerion-from-balances-endpoint`
+
+COMMENT
+[vseehausen 2026-07-09T14:52:52Z] @claude review again
+
+COMMENT
+[claude 2026-07-09T14:53:07Z] **Claude finished @vseehausen's task in 2m 7s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/29027195375)
+
+---
+### Claude PR Review (re-run)
+
+- [x] Fetch latest branch & diff
+- [x] Verify prior review points on the current tip
+- [x] Fresh review of updated changes
+- [x] Post review
+
+---
+
+### Verification against previous review
+
+All follow-ups from the last round landed on the current tip (`a4d69c3`). ✅
+
+- **`.devcontainer/docker-compose.yml:54`** — `FF_COUNTERFACTUAL_BALANCES` export removed.
+- **`testConfiguration` no-op wrappers** — both `balances.controller.integration.spec.ts:33` and `collectibles.controller.integration.spec.ts:38` now pass the base `configuration` directly.
+
+### Fresh observations on the current diff
+
+**Minor — one lingering no-op `features` spread**
+`safes.controller.overview.integration.spec.ts:46-48` still spreads `configuration().features` even though the `counterfactualBalances: true` override was the only entry:
+```ts
+features: {
+  ...configuration().features,   // no overrides left
+},
+```
+The outer wrapper is still needed because it overrides `mappings.safe.maxOverviews`, but the empty `features` block can be dropped. Purely cosmetic — safe to leave as a follow-up.
+
+### Everything else
+
+- `IBalancesApiManager.getApi(chainId: string)` is now consistent across the interface, impl (`balances-api.manager.ts:42`), and every call site (`balances.repository.ts`, `collectibles.repository.ts`, `hooks-cache.integration.spec.ts`, `balances-api.manager.spec.ts`).
+- `getFiatCodes` is a plain passthrough — no residual `rawify` import.
+- The new counterfactual → 404 test (`balances.controller.integration.spec.ts:792-825`) drives the intended flow: tx service returns a `NetworkResponseError` with status 404, controller surfaces 404. Nice.
+- No lingering references to `ZerionBalancesApi`, `zerion-balances-api`, `zerion-collectible`, `counterfactualBalances`, or `FF_COUNTERFACTUAL_BALANCES` anywhere in the tree (grep clean).
+- `ZerionModule` remains imported by `balances.module.ts` because `BalancesService` still uses `IZerionWalletPortfolioApi` for `/portfolio` and `/positions` — correct, matches the stated scope.
+
+No correctness, security, performance, or test-coverage concerns on the current diff. LGTM — the empty `features` spread in the overview spec is the only thing worth touching, and it's optional.
+
+ · Branch: [`wa-2753-remove-zerion-from-balances-endpoint`](https://github.com/safe-global/safe-client-gateway/tree/wa-2753-remove-zerion-from-balances-endpoint)
+ ·
+
+COMMENT
+[vseehausen 2026-07-09T15:32:47Z] thanks, the PR is ready for manual review now

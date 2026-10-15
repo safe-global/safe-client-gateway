@@ -1,0 +1,15 @@
+{
+  "usd": 0.046718,
+  "findings": [
+    {
+      "file": "src/modules/relay/datasources/schemas/rhinestone-error.schema.ts",
+      "line": 24,
+      "claim": "The exported type RhinestoneErrorResponse has no importers; the only consumer imports RhinestoneErrorResponseSchema alone, so this exported type is dead code that should be removed."
+    },
+    {
+      "file": "src/modules/relay/datasources/rhinestone-api.service.spec.ts",
+      "line": 214,
+      "claim": "Three tests (also at lines 247 and 268) hard-code the response literal { status: 400, statusText: 'Bad Request' } instead of generating these values with faker as done in the sibling test, even though the assertions in these tests are about context omission, truncation, and the error cap rather than the specific status value."
+    }
+  ]
+}

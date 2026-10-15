@@ -1,0 +1,20 @@
+{
+  "usd": 0.053037600000000004,
+  "findings": [
+    {
+      "file": ".yarnrc.yml",
+      "line": 18,
+      "claim": "The npmPreapprovedPackages block lists bare package names, and in the bundled Yarn source a bare name parses with range \"unknown\", which is treated as approved for any version, past or future. This removes the 7-day age-gate quarantine for these packages on every future bump, not just the current one, so a compromised npm account for either package could ship a malicious release that installs immediately; these packages supply the contract addresses the gateway trusts for relay sponsorship (src/modules/relay/domain/relay-transaction-helper.ts:210-217, :296-300) and for safe-shield analysis."
+    },
+    {
+      "file": ".yarnrc.yml",
+      "line": 20,
+      "claim": "A permanent, workspace-wide age-gate policy exemption is introduced inside what is otherwise a routine dependency-bump commit, and the exemption also covers @safe-global/safe-modules-deployments even though this diff does not bump that package (package.json:66 is still 3.0.8). This mixes an unrelated policy change into a scoped bump and exempts a package the change doesn't touch."
+    },
+    {
+      "file": "src/domain/common/utils/deployments.ts",
+      "line": 13,
+      "claim": "Because node_modules was not installed, it could not be confirmed that safe-deployments 1.37.62 still exports the internal _COMPAT_FALLBACK_HANDLER_DEPLOYMENTS symbol from dist/deployments, which this file imports; if the new version dropped or renamed that export, the import would fail at runtime."
+    }
+  ]
+}

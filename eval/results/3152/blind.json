@@ -1,0 +1,175 @@
+{
+  "pr": 3152,
+  "title": "fix: lower Zerion unsupported-network errors to warning",
+  "description": "## Summary\n\n- Chains without a Zerion mapping made `_getChainName` throw a plain `Error`, which `GlobalErrorFilter` mapped to a `500` and logged at **error** level — triggering CGW alerts for networks Zerion simply doesn't support (e.g. Base Sepolia `84532`, Fluent `25363`, Stable `988`).\n- Now throws `HttpExceptionNoLog` (`422`) and logs the condition at **warn** level, so the filter skips its auto error log. The endpoint still returns a non-2xx (now `422` instead of `500`, which is also more correct — it's not a server fault).\n- Applied to both the positions and balances Zerion datasources (identical message and root cause). `getCollectibles` is intentionally left untouched (unused, and its `try/catch` wraps errors via `HttpErrorFactory` anyway).\n\n## Related\n\n- [WA-2080](https://linear.app/safe-global/issue/WA-2080/lower-zerion-unsupported-network-errors-to-warning)",
+  "findings": [
+    {
+      "id": "F1",
+      "file": "src/modules/balances/datasources/zerion-balances-api.service.ts",
+      "line": 233,
+      "claim": "getCollectibles should call _getChainName before the try block, the same way getBalances does, or the catch block should re-throw HttpExceptionNoLog alongside ZodError, so the collectibles path returns the same 422 contract as balances instead of a 503."
+    },
+    {
+      "id": "F2",
+      "file": "src/modules/positions/datasources/zerion-positions-api.service.ts",
+      "line": 239,
+      "claim": "The positions error message incorrectly says 'balances retrieval via Zerion' instead of referring to positions; this appears to be leftover copy-paste text that has now also been carried into the new test spec."
+    },
+    {
+      "id": "F3",
+      "file": "src/modules/balances/datasources/zerion-balances-api.service.spec.ts",
+      "line": 201,
+      "claim": "The spec's use of rejects.toThrow(errorInstance) only compares the error message, so it would still pass if the code threw a plain Error with the same text or an HttpExceptionNoLog with a different status, meaning the test doesn't actually verify the 422 status code or the no-log exception class that are the point of the change."
+    },
+    {
+      "id": "F4",
+      "file": "src/modules/positions/datasources/zerion-positions-api.service.spec.ts",
+      "line": 377,
+      "claim": "The same weak assertion pattern (rejects.toThrow comparing only message) is used in the positions spec, so it likewise fails to verify the 422 status or the HttpExceptionNoLog class."
+    },
+    {
+      "id": "F5",
+      "file": "src/modules/positions/datasources/zerion-positions-api.service.ts",
+      "line": 241,
+      "claim": "The same 500-to-422 status change applies to the positions endpoint's error response."
+    },
+    {
+      "id": "F6",
+      "file": "src/modules/positions/datasources/zerion-positions-api.service.spec.ts",
+      "line": 369,
+      "claim": "The mismatched \"balances retrieval\" wording is also reflected in the positions spec, indicating the test was copied without updating the expected message to match the positions context."
+    },
+    {
+      "id": "F7",
+      "file": null,
+      "line": null,
+      "claim": "The PR description should mention this status code change so that web/mobile clients and any monitoring or alerting based on 5xx responses are aware of it."
+    },
+    {
+      "id": "F8",
+      "file": "src/modules/balances/datasources/zerion-balances-api.service.ts",
+      "line": 333,
+      "claim": "The HttpExceptionNoLog(422) thrown here for an unsupported chain is not the status actually returned by getCollectibles, since it gets converted to 503 by the error factory before reaching the client."
+    },
+    {
+      "id": "F9",
+      "file": "src/modules/positions/datasources/zerion-positions-api.service.ts",
+      "line": 240,
+      "claim": "The error message should be changed to refer to \"positions retrieval\" instead of \"balances retrieval\" to accurately describe the behavior of the positions datasource."
+    },
+    {
+      "id": "F10",
+      "file": "src/modules/balances/datasources/zerion-balances-api.service.ts",
+      "line": 333,
+      "claim": "For non-network errors these datasources already throw DataSourceError(message, code), which DataSourceErrorFilter does not log; using new DataSourceError(message, 422) instead of HttpExceptionNoLog would achieve the same result without introducing a route-layer HttpException into the datasource layer, which is inconsistent with existing conventions."
+    },
+    {
+      "id": "F11",
+      "file": "src/modules/balances/datasources/zerion-balances-api.service.ts",
+      "line": 206,
+      "claim": "Collectibles now also emits a warn log that did not exist before, since DataSourceErrorFilter never logged these errors previously."
+    },
+    {
+      "id": "F12",
+      "file": "src/modules/positions/datasources/zerion-positions-api.service.ts",
+      "line": 241,
+      "claim": "The same convention inconsistency (introducing HttpException into the datasource layer instead of using DataSourceError) applies to the positions service."
+    },
+    {
+      "id": "F13",
+      "file": "src/modules/balances/datasources/zerion-balances-api.service.ts",
+      "line": 233,
+      "claim": "The catch block only re-throws ZodError and lets everything else, including the new HttpExceptionNoLog, fall through to httpErrorFactory.from, which converts it into a 503 Service unavailable response."
+    },
+    {
+      "id": "F14",
+      "file": "src/modules/balances/datasources/zerion-balances-api.service.ts",
+      "line": 330,
+      "claim": "Before this change, a failed chain mapping fetch threw a plain Error that GlobalErrorFilter turned into a 500 and logged at error level, triggering alerts; now the same case only logs a warn and returns 422 via HttpExceptionNoLog, and nothing between the datasource and the controller logs it at error level."
+    },
+    {
+      "id": "F15",
+      "file": "src/modules/positions/datasources/zerion-positions-api.service.ts",
+      "line": 241,
+      "claim": "The public positions endpoint has the same status code change from 500 to 422 as the balances endpoint, with the same potential client-behavior impact."
+    },
+    {
+      "id": "F16",
+      "file": "src/modules/balances/datasources/zerion-balances-api.service.ts",
+      "line": 332,
+      "claim": "The new warning log is a plain template string without a LogType, so the chain id cannot be queried as a structured field, making these warnings harder to filter when tuning alerts."
+    },
+    {
+      "id": "F17",
+      "file": "src/modules/balances/datasources/zerion-balances-api.service.ts",
+      "line": 206,
+      "claim": "In getCollectibles, _getChainName runs inside the try block, so the new HttpExceptionNoLog thrown there is caught and rewrapped by httpErrorFactory.from() as a 503 Service unavailable, meaning an unsupported chain returns 503 for collectibles but 422 for balances, an inconsistency."
+    },
+    {
+      "id": "F18",
+      "file": "src/modules/balances/datasources/zerion-balances-api.service.ts",
+      "line": 333,
+      "claim": "The change makes the balances and positions routes return {statusCode: 422, message} instead of {code: 500, message: 'Internal server error'} for unsupported chains, which is a change to the external wire contract that clients, monitors, or alerts relying on 5xx responses may depend on."
+    },
+    {
+      "id": "F19",
+      "file": "src/modules/balances/datasources/zerion-balances-api.service.ts",
+      "line": 206,
+      "claim": "The collectibles endpoint calls the chain-name check inside the try block, so the new HttpExceptionNoLog(422) it throws is caught and rewritten by httpErrorFactory.from into a generic DataSourceError('Service unavailable', 503), losing its message; this means an unsupported chain returns 422 from getBalances but 503 from getCollectibles even though both log the same warning."
+    },
+    {
+      "id": "F20",
+      "file": "src/modules/balances/datasources/zerion-balances-api.service.ts",
+      "line": 330,
+      "claim": "_fetchChainMappings sets chainMappingsInitialized to true even when the mainnet or testnet fetch fails, so that network's mapping stays empty until the process restarts."
+    },
+    {
+      "id": "F21",
+      "file": "src/modules/balances/datasources/zerion-balances-api.service.spec.ts",
+      "line": 200,
+      "claim": "The test uses rejects.toThrow(new HttpExceptionNoLog(...)) which in Jest only compares the error message, not the status code or exception class, so a regression back to throwing a plain Error would still pass the test."
+    },
+    {
+      "id": "F22",
+      "file": "src/modules/positions/datasources/zerion-positions-api.service.ts",
+      "line": 240,
+      "claim": "The positions datasource's error message still reads as if it were about balances retrieval, apparently copied from the balances service, and since this text is now sent to clients in the 422 response body, it is misleading about what operation failed."
+    },
+    {
+      "id": "F23",
+      "file": "src/modules/balances/datasources/zerion-balances-api.service.ts",
+      "line": 333,
+      "claim": "The public balances endpoint now returns 422 where it previously returned 500, which could change client behavior for web and mobile clients that treat 4xx and 5xx differently (e.g., retry logic or UI); this should be confirmed with client teams or noted in the PR description."
+    },
+    {
+      "id": "F24",
+      "file": "src/modules/positions/datasources/zerion-positions-api.service.spec.ts",
+      "line": 376,
+      "claim": "The same weak assertion pattern (message-only comparison via rejects.toThrow) is used here, failing to verify the exception is actually an HttpExceptionNoLog with a 422 status."
+    },
+    {
+      "id": "F25",
+      "file": "src/modules/positions/datasources/zerion-positions-api.service.ts",
+      "line": 240,
+      "claim": "The positions service's warning log has the same plain-string logging issue, lacking a structured LogType payload."
+    },
+    {
+      "id": "F26",
+      "file": "src/modules/balances/datasources/zerion-balances-api.service.ts",
+      "line": 330,
+      "claim": "A brief Zerion /v1/chains failure on first use will permanently break counterfactual balances on that network for the life of the process, affecting every chain without balancesProvider.chainName (which can be null), with no error ever logged, making it indistinguishable from Zerion genuinely not supporting the chain."
+    },
+    {
+      "id": "F27",
+      "file": "src/modules/positions/datasources/zerion-positions-api.service.ts",
+      "line": 240,
+      "claim": "ZerionChainMappingService.getNetworkFromChainId already logs a warning for an unknown chain ID, so the newly added warn log means each unsupported-chain positions request now logs two warnings instead of one."
+    },
+    {
+      "id": "F28",
+      "file": "src/modules/balances/datasources/zerion-balances-api.service.spec.ts",
+      "line": 205,
+      "claim": "The tests should assert rejects.toBeInstanceOf(HttpExceptionNoLog) together with rejects.toHaveProperty('status', HttpStatus.UNPROCESSABLE_ENTITY), or catch the error and check getStatus(), and a corresponding collectibles test case should be added to cover the getCollectibles status-contract issue."
+    }
+  ]
+}

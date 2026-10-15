@@ -1,0 +1,70 @@
+{
+  "usd": 0.045338,
+  "findings": [
+    {
+      "file": "src/modules/spaces/routes/members.controller.e2e-spec.ts",
+      "line": 89,
+      "claim": "The createSpaceForSigner helper registers a brand-new wallet user but then creates the space using the caller's token, whose sub is still the builder's default value of 1-9, so the space ends up owned by whatever existing user happens to have that id rather than the user just registered."
+    },
+    {
+      "file": "src/modules/spaces/routes/members.controller.e2e-spec.ts",
+      "line": 72,
+      "claim": "On a fresh database this causes space creation to return 404 unless sub happens to match an existing user id, and on a shared database different tests' admins collide on the same user 1-9, causing activateIfPending to flip invite placeholders in that range to ACTIVE; the comment at this location describes the collision but the helper does not guard against it."
+    },
+    {
+      "file": "src/modules/spaces/routes/members.controller.e2e-spec.ts",
+      "line": 345,
+      "claim": "Only the admin-of-another-space test re-signs the token with the real user id, meaning the fix is not applied consistently across the other tests that rely on the helper."
+    },
+    {
+      "file": "src/modules/spaces/routes/members.controller.e2e-spec.ts",
+      "line": 124,
+      "claim": "userId/adminUserId is computed as Number(authPayloadDto.sub), which reads back the value the test itself put into the token rather than the id of the user actually created, so the assertion only works because of the token/user id collision described elsewhere."
+    },
+    {
+      "file": "src/modules/spaces/routes/members.controller.e2e-spec.ts",
+      "line": 1794,
+      "claim": "This site uses authPayloadDto.sub as a string while the other similar sites (lines 124, 1046, 1580) use Number(...), making the admin id extraction inconsistent."
+    },
+    {
+      "file": "src/modules/spaces/routes/members.controller.e2e-spec.ts",
+      "line": 87,
+      "claim": "The helper's comment, \"Registers the signer (a user must exist before a space can be created)\", is inaccurate because the registered user is never the one who actually creates the space."
+    },
+    {
+      "file": "src/modules/spaces/routes/members.controller.e2e-spec.ts",
+      "line": 243,
+      "claim": "A test was renamed from \"404 if the space does not exist\" to \"403 if the signer is not an active admin of the space\" but still uses a random, non-existent spaceId, so the name no longer describes what the test actually proves (that a missing space returns 403, not 404)."
+    },
+    {
+      "file": "src/modules/spaces/routes/members.controller.e2e-spec.ts",
+      "line": 1340,
+      "claim": "A similarly named test, \"403 if the user is not a member of the space\" with a note that the space does not even exist, has the same mismatch between test name and actual behavior being tested, though to a lesser degree."
+    },
+    {
+      "file": "src/modules/spaces/routes/members.controller.e2e-spec.ts",
+      "line": 1313,
+      "claim": "The variable nonUserAccessToken is assigned from nonMemberToken(), but the test now describes a non-member rather than a missing user, so the name should be nonMemberAccessToken to match its actual meaning."
+    },
+    {
+      "file": "src/modules/spaces/routes/members.controller.e2e-spec.ts",
+      "line": 1447,
+      "claim": "The same nonUserAccessToken naming mismatch as at line 1313 occurs here as well, while a differently-named variable at line 1930 already uses the correct nonMemberAccessToken form, showing the inconsistency."
+    },
+    {
+      "file": "src/modules/spaces/routes/members.controller.e2e-spec.ts",
+      "line": 845,
+      "claim": "The accept-422 test still builds inviteeAccessToken using jwtService.sign(inviteeAuthPayloadDto) with the default sub, unlike other invitee tokens in the same file that were moved to accessTokenForUserId(inviteResponse.body[0].userId), making this test inconsistent with the rest of the change even though it happens to pass because body validation runs before auth."
+    },
+    {
+      "file": "src/modules/spaces/routes/members.controller.e2e-spec.ts",
+      "line": null,
+      "claim": "Several negative-path tests were removed, including \"404 member does not exist\" for accept and decline, \"404 signer has no user\" for invite, get and delete, and \"404 not an active member\" for get; the replacement 403/404 mappings for these cases should be confirmed as covered by unit tests in the members service spec."
+    },
+    {
+      "file": "src/modules/spaces/routes/members.controller.e2e-spec.ts",
+      "line": null,
+      "claim": "The commit mixes a large refactor, extracting createSpaceForSigner across roughly 30 tests, into what is nominally a fix, going well beyond the scope the fix itself needs."
+    }
+  ]
+}

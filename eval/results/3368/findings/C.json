@@ -1,0 +1,30 @@
+{
+  "usd": 0.0632076,
+  "findings": [
+    {
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.ts",
+      "line": 65,
+      "claim": "SAFE_VERSIONS is a hardcoded singleton list that has not been derived from safe-deployments; since it is consumed by determineMasterCopyVersion, a future v1.6.0 mastercopy will not be recognized without manually editing this list."
+    },
+    {
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.ts",
+      "line": 82,
+      "claim": "MULTICHAIN_SUPPORTED_VERSIONS is a hardcoded singleton list used in isNetworkCompatible, so it will similarly fail to recognize future singleton versions until manually updated; these two lists should be derived from getSafeSingletonVersions()/getSafeL2SingletonVersions(), or the gap should be documented as a follow-up."
+    },
+    {
+      "file": "src/domain/common/utils/__tests__/safe.spec.ts",
+      "line": 913,
+      "claim": "The test hardcodes an inline version list (['1.3.0', '1.4.1', '1.5.0']) for hasAnySingletons, which defeats the purpose of deriving versions in production and will silently miss a future version; it should instead use getSafeSingletonVersions()/getSafeL2SingletonVersions() (or the same >=1.3.0 filter used in production) so the test tracks the package."
+    },
+    {
+      "file": "src/domain/common/utils/safe.ts",
+      "line": 225,
+      "claim": "detectSafeMigration has a silent catch (try { ... } catch { return null; }) that swallows errors; since this function is now the sole path for a real-world 422 failure mode, it should log a debug/warn message on the caught error to aid future incident triage."
+    },
+    {
+      "file": null,
+      "line": null,
+      "claim": "getSafeSingletonVersions() returns all versions the package ships, including pre-1.3.0 versions like 1.0.0, 1.1.1, and 1.2.0; a future caller that assumes these are all safe to feed into a SafeTx hash flow could be tripped up by the older entries, so the function should have a short JSDoc note clarifying this, or a helper that already filters to >=1.3.0 should be provided."
+    }
+  ]
+}

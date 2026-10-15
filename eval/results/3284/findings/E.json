@@ -1,0 +1,35 @@
+{
+  "usd": 0.0535996,
+  "findings": [
+    {
+      "file": "src/modules/auth/oidc/auth0/datasources/auth0-api.service.ts",
+      "line": 33,
+      "claim": "This value is hardcoded rather than being sourced from configuration, which may make it harder to change across environments."
+    },
+    {
+      "file": "src/modules/auth/oidc/auth0/datasources/auth0-api.service.ts",
+      "line": 203,
+      "claim": "The value is used without validation, relying on an assumption that it is already correct, which could allow malformed or unexpected data to propagate."
+    },
+    {
+      "file": "src/modules/auth/oidc/auth0/datasources/auth0-api.service.ts",
+      "line": 208,
+      "claim": "The result is cached without a clear justification for whether this operation is actually under heavy load, so the caching may be unnecessary."
+    },
+    {
+      "file": "src/modules/auth/oidc/routes/oidc-auth.controller.ts",
+      "line": 267,
+      "claim": "The code appears to allow multiple instances of this to exist at the same time, which may not be the intended behavior."
+    },
+    {
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.ts",
+      "line": 39,
+      "claim": "This section is becoming crowded and should be extracted into a separate types file for clarity."
+    },
+    {
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.ts",
+      "line": 197,
+      "claim": "It is unclear whether extUserId can be present at this point in the flow, raising a question about whether this case is handled correctly."
+    }
+  ]
+}

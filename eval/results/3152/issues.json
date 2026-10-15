@@ -1,0 +1,117 @@
+{
+  "usage": {
+    "usd": 0.43744459999999996,
+    "turns": 7,
+    "wallSeconds": 56
+  },
+  "issues": [
+    {
+      "findings": [
+        "F1",
+        "F8",
+        "F13",
+        "F17",
+        "F19",
+        "F28"
+      ],
+      "summary": "getCollectibles calls _getChainName inside try/catch, so the new HttpExceptionNoLog is rewrapped by HttpErrorFactory into a 503, unlike the 422 from balances.",
+      "label": "wrong",
+      "evidence": "zerion-balances-api.service.ts:206 is inside the try, and the catch at :243-247 does rewrap non-Zod errors as a 503 DataSourceError. This did not change: the old plain Error was also turned into a 503. The PR description says getCollectibles was deliberately left alone because its try/catch wraps errors via HttpErrorFactory, so this behaviour is intended. F28 also asks for stronger assertions, which is covered under the test-assertion issue.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F3",
+        "F4",
+        "F21",
+        "F24"
+      ],
+      "summary": "The specs use rejects.toThrow(new HttpExceptionNoLog(...)), which in Jest compares only the message. They never check the exception class or the 422 status that the PR is about.",
+      "label": "medium",
+      "evidence": "zerion-balances-api.service.spec.ts:201 and zerion-positions-api.service.spec.ts:377 pass an error instance to toThrow, and Jest then compares only the message. A regression to a plain Error with the same text, or to any other status, would still pass. That status and class are the behaviour this PR changes.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F2",
+        "F6",
+        "F9",
+        "F22"
+      ],
+      "summary": "The positions datasource's error message says 'balances retrieval via Zerion', and the new spec copies that wording.",
+      "label": "low",
+      "evidence": "zerion-positions-api.service.ts:239 builds the message as `Chain ... balances retrieval via Zerion is not configured`. The wording predates the PR, but the PR rewrites this line and now sends the text to clients in the 422 body. Only the wording is wrong; behaviour is not affected.",
+      "category": "style"
+    },
+    {
+      "findings": [
+        "F5",
+        "F7",
+        "F15",
+        "F18",
+        "F23"
+      ],
+      "summary": "The balances and positions endpoints now return 422 instead of 500 for unsupported chains, which changes the external contract.",
+      "label": "wrong",
+      "evidence": "The status change is the stated purpose of the PR. The description says outright that the endpoint now returns 422 instead of 500 and explains why, so F7's request to document it is already met. This is an intended, documented change, not a defect.",
+      "category": "product"
+    },
+    {
+      "findings": [
+        "F10",
+        "F12"
+      ],
+      "summary": "Datasources normally throw DataSourceError, which DataSourceErrorFilter does not log. Throwing HttpExceptionNoLog in the datasource layer breaks that convention.",
+      "label": "low",
+      "evidence": "Outside these two files, HttpExceptionNoLog appears only in domain/route helpers (message-verifier, transaction-verifier). DataSourceErrorFilter (data-source-error.filter.ts:21-31) replies without logging, so `new DataSourceError(message, 422)` would give the same outcome and follow the layer's conventions. The only cost is a small consistency issue.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F14"
+      ],
+      "summary": "When the chain-mapping fetch fails, the result now appears only as a warn plus 422, so a Zerion outage is no longer logged at error level.",
+      "label": "low",
+      "evidence": "When a /v1/chains fetch fails, _fetchChainMappings logs a warn (zerion-balances-api.service.ts:360-376) and marks the mappings initialized. After that, _getChainName finds no entry and throws HttpExceptionNoLog(422) with a warn. Before the PR this produced a 500 with an error log, so the change does weaken outage signalling a little. Still, the fetch failure is logged, and the scenario is uncommon.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F20",
+        "F26"
+      ],
+      "summary": "_fetchChainMappings sets chainMappingsInitialized=true even when a fetch fails, so a failed network's mapping stays empty until the process restarts.",
+      "label": "low",
+      "evidence": "zerion-balances-api.service.ts:379 sets chainMappingsInitialized = true whatever the outcome, and _ensureChainMappings then never retries. This is real but predates the PR and sits outside its changed lines. F26's claim that no error is logged is also overstated, because the fetch failure is logged as a warning.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F27"
+      ],
+      "summary": "For positions, ZerionChainMappingService.getNetworkFromChainId already warns on an unknown chain ID, so the new warn means each such request logs two warnings.",
+      "label": "low",
+      "evidence": "zerion-chain-mapping.service.ts:81-85 warns 'Unknown chain ID for Zerion mapping', and then zerion-positions-api.service.ts:240 warns again. The duplication is real, but it only adds log noise at warn level.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F11"
+      ],
+      "summary": "The collectibles path now emits a warn log it did not emit before.",
+      "label": "nit",
+      "evidence": "_getChainName is shared, so getCollectibles (zerion-balances-api.service.ts:206) now logs the warn before the 503 rewrap. That is accurate, but a warn for an unsupported chain does no harm and fits the intent of the PR.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F16",
+        "F25"
+      ],
+      "summary": "The new warning logs are plain template strings with no structured LogType payload.",
+      "label": "nit",
+      "evidence": "Other warns in the same files are also plain strings, for example 'Failed to fetch mainnet chains from Zerion' at zerion-balances-api.service.ts:360. The new lines follow the existing local style, so this is a matter of preference.",
+      "category": "convention"
+    }
+  ]
+}

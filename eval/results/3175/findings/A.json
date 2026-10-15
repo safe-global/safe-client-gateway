@@ -1,0 +1,40 @@
+{
+  "usd": 0.0459496,
+  "findings": [
+    {
+      "file": "src/modules/spaces/routes/safes/entities/create-space-safe.dto.entity.ts",
+      "line": 1,
+      "claim": "This moved file does not start with the required SPDX license header, so the license-headers CI job that runs insert-license on changed files should fail."
+    },
+    {
+      "file": "src/modules/spaces/routes/safes/entities/delete-space-safe.dto.entity.ts",
+      "line": 1,
+      "claim": "This moved file does not start with the required SPDX license header, so the license-headers CI job that runs insert-license on changed files should fail."
+    },
+    {
+      "file": "docs/engineering/conventions/project-structure.md",
+      "line": 143,
+      "claim": "The \"Copy\" list still names src/modules/spaces/routes/entities/address-book-request.dto.entity.ts, but that file has moved to src/modules/spaces/routes/address-books/entities/address-book-request.dto.entity.ts, so the documentation no longer matches the actual file layout."
+    },
+    {
+      "file": "docs/engineering/conventions/project-structure.md",
+      "line": 97,
+      "claim": "The glob src/modules/spaces/routes/*service.ts now only matches spaces.service.ts because the other route services moved into routes/{address-books,audit,members,safes}/, making the documented glob misleading."
+    },
+    {
+      "file": "docs/engineering/conventions/project-structure.md",
+      "line": 44,
+      "claim": "The guide still calls src/modules/spaces the large product-module example to copy without describing its new per-subdomain shape, so it no longer accurately represents the module's structure."
+    },
+    {
+      "file": "docs/engineering/conventions/project-structure.md",
+      "line": 106,
+      "claim": "The guide states that feature DB entities live under datasources/entities/, but spaces now uses datasources/<subdomain>/entities/, so the documented placement rule is out of date for this module."
+    },
+    {
+      "file": "src/modules/spaces/datasources/spaces/entities/space.entity.db.ts",
+      "line": 1,
+      "claim": "The core Space DB entity was placed in a spaces/ subfolder under datasources/, while the corresponding core files in domain/ (domain/spaces.repository.ts, domain/entities/space.entity.ts) and routes/ (routes/spaces.controller.ts) remain at the layer root, creating an inconsistent subdomain layout across layers; either the core entity should stay at the root of datasources/ or the spaces/ subfolder should be added consistently in all three layers."
+    }
+  ]
+}

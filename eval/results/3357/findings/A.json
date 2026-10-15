@@ -1,0 +1,15 @@
+{
+  "usd": 0.039929599999999996,
+  "findings": [
+    {
+      "file": ".github/workflows/linear-release.yml",
+      "line": 92,
+      "claim": "The manual release-URL lookup uses `gh api ... --jq '.html_url' || true`, which suppresses the exit code but not the command's output. When the tag exists but has no GitHub release, the API call returns a 404 and the JSON error body is likely printed to stdout without the jq filter applied, so the URL variable would contain the error JSON text instead of being empty, and that text would be attached to the Linear release as its link even though no link was intended."
+    },
+    {
+      "file": ".github/workflows/linear-release.yml",
+      "line": 39,
+      "claim": "The concurrency group key is not normalized: a release event uses the tag (e.g. v1.2.3), a manual run uses whatever version string was typed (e.g. 1.2.3), and a manual run with no version falls back to github.ref (e.g. refs/heads/main). Because these differ for what is effectively the same release, cancel-in-progress: false does not prevent two syncs of the same release from running concurrently, and whether that causes damage depends on whether the Linear sync operation is safe to repeat."
+    }
+  ]
+}

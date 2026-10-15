@@ -1,0 +1,55 @@
+{
+  "usd": 0.06154,
+  "findings": [
+    {
+      "file": "src/modules/entitlements/routes/guards/entitlement.guard.ts",
+      "line": 36,
+      "claim": "SafeSeatsGuard.canActivate runs before SpaceIdPipe, so both perform the same UUID-to-id lookup, and the guard's assertWithinQuota({delta:0}) triggers a live count query that the repository runs again inside its locked transaction; the golden path for POST /v1/spaces/:spaceId/safes ends up doing 2x space lookup and 2x seat count before the actual insert, which is redundant work."
+    },
+    {
+      "file": "src/modules/entitlements/routes/guards/entitlement.guard.ts",
+      "line": 36,
+      "claim": "Consider either letting the pipe run first and reading the numeric id off the request in the guard, or accepting that the write already gates and having the guard reject only on cached grant evidence instead of a live count."
+    },
+    {
+      "file": "src/modules/entitlements/routes/entitlements.service.ts",
+      "line": 186,
+      "claim": "admit uses Math.max(args.delta, 1), so calling it with delta: 0 silently behaves as if consuming 1, which is what makes the guard's limit check reject when used === quota, but this behavior is non-obvious from the call site."
+    },
+    {
+      "file": "src/modules/entitlements/domain/entitlement-enforcement.interface.ts",
+      "line": 11,
+      "claim": "A used >= grant.quota check would express the same limit condition explicitly instead of relying on the Math.max(delta, 1) trick, making the intent clearer without needing the doc-string explanation."
+    },
+    {
+      "file": "src/modules/entitlements/routes/entitlements.service.ts",
+      "line": 569,
+      "claim": "In materializeUnderLock the cache is deleted after commit, so a concurrent reader that missed the cache before the commit, computed old grants, and writes them back after the delete can re-poison the cache with the pre-materialization value for the full TTL (about 5 minutes), producing stale grants."
+    },
+    {
+      "file": "src/modules/entitlements/routes/entitlements.service.ts",
+      "line": 569,
+      "claim": "This cache-vs-materialization race window outlasts any single request and should either be acknowledged with a comment or fixed with a versioned cache key, such as including lastEventAt in the cache key suffix so a stale writer's key is orphaned."
+    },
+    {
+      "file": "src/modules/entitlements/routes/guards/space-id-param.schema.ts",
+      "line": 16,
+      "claim": "The schema uses .catch(undefined) to defer validation to SpaceIdPipe and then narrows the result with 'as UUID | undefined', which depends on UUID_REGEX in @/domain/common/constants staying looser than or equal to the pipe's own validation; if one side is tightened without the other, the guard could silently admit requests that the pipe then rejects."
+    },
+    {
+      "file": "src/modules/entitlements/routes/guards/entitlement.guard.spec.ts",
+      "line": null,
+      "claim": "There is no test asserting that the guard's UUID validation and SpaceIdPipe's validator stay in sync; a test importing UUID_REGEX and re-checking it against SpaceIdPipe's validator would catch future drift between the two."
+    },
+    {
+      "file": "src/modules/entitlements/routes/entitlements.service.ts",
+      "line": 73,
+      "claim": "EntitlementsService's constructor takes up to 13 injected dependencies because the class now handles resolve, cache, materialize, and enforce responsibilities; if a third gated feature is added, this could grow into a god-service unless the enforcement path (assertWithinQuota / prepareQuotaCheck / resolveGrant) is split into its own service."
+    },
+    {
+      "file": "src/modules/entitlements/routes/entitlements.service.ts",
+      "line": 240,
+      "claim": "preEnforcementQuotas is typed as Record<FeatureKey, () => number> with a closure like () => this.maxSafesPerSpace, but the closure only exists to capture a value off this; a plain Record<FeatureKey, number> initialized in the constructor would be equally exhaustive and simpler."
+    }
+  ]
+}

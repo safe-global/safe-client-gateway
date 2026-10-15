@@ -1,0 +1,55 @@
+{
+  "usd": 0.057556,
+  "findings": [
+    {
+      "file": "docs/agents/testing.md",
+      "line": 36,
+      "claim": "The guide states that _ci-node.yml is called by pull-request.yml, staging.yml and production.yml, but staging.yml and production.yml do not exist in the repository."
+    },
+    {
+      "file": "docs/agents/commits-and-prs.md",
+      "line": 166,
+      "claim": "The document says the build and deploy jobs live in staging.yml and production.yml, but those files do not exist; the jobs are still in ci.yml."
+    },
+    {
+      "file": ".github/workflows/_ci-node.yml",
+      "line": 276,
+      "claim": "A leftover, unfinished comment fragment about arm64 builds ('Production runs on arm64 only, so we build a single-arch image. We run on an') is left at the end of the file with no job following it, apparently left over from moving code out of ci.yml."
+    },
+    {
+      "file": "ci.yml",
+      "line": 39,
+      "claim": "The full two-line comment explaining the arm64 build (previously above docker-publish-staging) is now missing from ci.yml, even though src/modules/billing/README.md:192 still directs readers to ci.yml for that explanation."
+    },
+    {
+      "file": ".github/workflows/pull-request.yml",
+      "line": 30,
+      "claim": "Using secrets: inherit gives the test jobs access to every repository secret, including Docker Hub credentials (DOCKER_USER, DOCKER_PASSWORD) and autodeploy secrets (AUTODEPLOY_URL, AUTODEPLOY_TOKEN), when the jobs only need SAFE_CONFIG_BASE_URI."
+    },
+    {
+      "file": ".github/workflows/ci.yml",
+      "line": 37,
+      "claim": "Using secrets: inherit here also over-grants all repository secrets to jobs that only need SAFE_CONFIG_BASE_URI (referenced at _ci-node.yml:175 and :248); moving the CI jobs into a reusable workflow was an opportunity to narrow this that was not taken."
+    },
+    {
+      "file": ".github/workflows/_ci-node.yml",
+      "line": 17,
+      "claim": "New workflow_call inputs node_version, python_version and ref are added but neither caller (pull-request.yml or ci.yml) passes any of them, and ref is threaded into every checkout despite being unused."
+    },
+    {
+      "file": ".github/workflows/_ci-node.yml",
+      "line": 82,
+      "claim": "Making the Node version a configurable input leaves the '# Krypton' comment promising a guarantee about the Node version that is no longer ensured since the value can now vary via the unused input."
+    },
+    {
+      "file": ".github/workflows/ci.yml",
+      "line": 44,
+      "claim": "Deploy gating became stricter without being called out: docker-publish-staging and docker-publish-release previously waited only on biome and tests-finish, but now wait on the entire ci call, so a failing license-headers or env-validation job also blocks a staging deploy or release image, and the commit body describes the jobs as 'unchanged in substance' without mentioning this behavior change."
+    },
+    {
+      "file": null,
+      "line": null,
+      "claim": "The commit subject 'ci: Extract the quality gate into a reusable workflow' starts with a capital letter, violating the project's convention (docs/agents/commits-and-prs.md:13) of an imperative, lowercase-starting description; since main is squash-merged, only the PR title will end up in history, so the PR title should be corrected instead."
+    }
+  ]
+}

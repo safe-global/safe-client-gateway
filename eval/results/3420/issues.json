@@ -1,0 +1,213 @@
+{
+  "usage": {
+    "usd": 0.7652016,
+    "turns": 13,
+    "wallSeconds": 107
+  },
+  "issues": [
+    {
+      "findings": [
+        "F2",
+        "F1",
+        "F5"
+      ],
+      "summary": "Adding uuidPipe to the second spaceId binding turns the 400 for a malformed spaceId into a 422. No test that runs in CI catches it, and the existing e2e test that asserts 400 is not run in CI.",
+      "label": "medium",
+      "evidence": "billing.controller.ts:95/134/160/188/233/279 bind uuidPipe, a sync ValidationPipe that defaults to 422 (validation.pipe.ts:19), next to the async SpaceIdPipe that throws 400. I replicated Nest's Promise.all/reduce pipe resolution in node and the 422 rejection settles first. billing.controller.e2e-spec.ts:220-226 still expects 400, but CI runs only test:unit and test:integration (ci.yml:163,234), so it goes unnoticed.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F4",
+        "F7"
+      ],
+      "summary": "The uuidPipe change to four existing endpoints is outside the feature's scope and is not mentioned in the PR's Changes/Summary.",
+      "label": "low",
+      "evidence": "The diff changes the pre-existing handlers at billing.controller.ts:95,134,160,188, and the PR description lists only the new handlers for the controller. This is a documentation and scope issue; the defect it causes is covered separately.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F12"
+      ],
+      "summary": "The same-plan check compares price ids, but the offer filter excludes links by plan name. Switching billing interval within the same plan name (for example monthly to annual) is therefore rejected with 403.",
+      "label": "medium",
+      "evidence": "payment-link-offer.rules.ts:69-72 drops every general link whose planNameOf equals activePlanName, so an annual price of the current plan has no offered link. billing.service.ts:254 passes the price-id check, and paymentLinkForPlanOrFail then throws 403 'not available'. Whether this bites depends on the catalog having same-name interval variants.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F28",
+        "F20"
+      ],
+      "summary": "The new datasource methods parse inside the datasource instead of returning Raw<T>, and BillingService calls IBillingApi directly with no repository.",
+      "label": "low",
+      "evidence": "billing-api.service.ts:237-294 calls this.parse with schemas, and billing.service.ts calls this.billingApi directly. This goes against non-negotiable #3, but it matches the other seven methods, the module has no repository, and the PR description declares the BillingRepository conversion as a follow-up.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F3"
+      ],
+      "summary": "An ambiguous multi-link plan is logged at error level, although the code comment treats it as an expected case that the client resolves with paymentLinkId.",
+      "label": "low",
+      "evidence": "billing.service.ts:390-399: the comment says a negotiated link beside the general one is a normal case, yet loggingService.error fires on every PATCH that omits paymentLinkId in that situation. This adds noise to error alerting.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F21"
+      ],
+      "summary": "The preview does not signal that the PATCH will need a paymentLinkId when several offered links sell the price, so the client learns this only from a 409 on the PATCH.",
+      "label": "low",
+      "evidence": "billing.service.ts:185-186 deliberately skips link resolution ('a tie ... cannot matter here'), while paymentLinkForPlanOrFail returns 409 on a tie. This is a documented choice with a minor UX cost.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F10"
+      ],
+      "summary": "The preview endpoint's already-on-plan 409 (checked before the offer check) has no test.",
+      "label": "low",
+      "evidence": "The previewSubscriptionUpdate describe block (billing.service.spec.ts:734-811) covers success, non-member, not offered and not owned only, and the e2e preview tests (565-601) have no 409 case. The PATCH equivalent is tested at 915 and 1086.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F26"
+      ],
+      "summary": "The documented behaviour that a preview works for a canceled subscription has no test.",
+      "label": "low",
+      "evidence": "billing.service.ts:169-175 documents that there is no status gate on the preview, but no preview test uses a canceled or other non-updatable status, so a status gate added later would pass all tests.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F18"
+      ],
+      "summary": "The best-effort cache-clear catch drops the error and the customer id from its warning log.",
+      "label": "low",
+      "evidence": "billing-api.service.ts:285-289 uses `.catch(() => this.loggingService.warn('Failed to clear ...'))`, with no error and no upstreamCustomerId, so the log is hard to act on.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F19"
+      ],
+      "summary": "clearSubscriptions puts a cache-invalidation concern on the IBillingApi domain interface.",
+      "label": "low",
+      "evidence": "billing-api.interface.ts:78 adds clearSubscriptions 'for a change this datasource did not make', used by SubscriptionSyncService. It is a real layering smell, but it replaces a locally rebuilt cache key and so reduces duplication.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F8",
+        "F25"
+      ],
+      "summary": "The claim that one clear covers every cached filter depends on deleteByKey removing the whole hash, and this is not stated as a contract.",
+      "label": "nit",
+      "evidence": "billing-api.service.ts:297-303 relies on RedisCacheService.deleteByKey unlinking the whole key (redis.cache.service.ts:94-97), and the comment already says 'The whole key'. The hash-per-key model is how CacheRouter/CacheDir work throughout the repo.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F15"
+      ],
+      "summary": "findOwnedSubscription lists all of the customer's subscriptions to find one by id.",
+      "label": "nit",
+      "evidence": "billing.service.ts:336-347 calls the cache-first getSubscriptionsByCustomerId. Subscription lists per workspace are tiny and cached, and a direct lookup would also have to be scoped to the customer, so the cost is negligible.",
+      "category": "performance"
+    },
+    {
+      "findings": [
+        "F14"
+      ],
+      "summary": "There is no in-code TODO for preview-update being absent from the elevation tables.",
+      "label": "nit",
+      "evidence": "The PR description declares this as a follow-up, and it matches 11 other undeclared space-scoped GETs. A missing TODO comment has no concrete cost.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F16"
+      ],
+      "summary": "The not-found and same-plan guards are duplicated between preview and update.",
+      "label": "nit",
+      "evidence": "billing.service.ts:184-199 vs 232-255: each duplicate is two short checks, and the status check deliberately differs between the methods.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F17"
+      ],
+      "summary": "updateSubscription uses async/return await, unlike its siblings.",
+      "label": "nit",
+      "evidence": "billing-api.service.ts:260-261. This is a style inconsistency only, with no behavioural difference.",
+      "category": "style"
+    },
+    {
+      "findings": [
+        "F22"
+      ],
+      "summary": "The chained .then(async ...) before parse is dense.",
+      "label": "nit",
+      "evidence": "billing-api.service.ts:282-292. It is readability preference only, and the comment explains the ordering.",
+      "category": "style"
+    },
+    {
+      "findings": [
+        "F23"
+      ],
+      "summary": "No test covers encodeURIComponent on subscriptionId.",
+      "label": "nit",
+      "evidence": "billing-api.service.ts:314. opaqueIdPipe already restricts the input to URL-safe characters, so the encoding has no observable effect to test.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F11"
+      ],
+      "summary": "The e2e spec repeats error mappings that the service unit spec already covers.",
+      "label": "nit",
+      "evidence": "billing.controller.e2e-spec.ts:565-744. The e2e cases exercise the HTTP status mapping through the real filters, so they are not pure duplication; trimming them is a preference.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F24"
+      ],
+      "summary": "The elevation spec entry uses literal 'sub_1'/'price_1'/'dummy-public-key'.",
+      "label": "nit",
+      "evidence": "elevation.integration.spec.ts:116-118 follows the table's existing convention of literal path placeholders (for example `requests/1/approve` at line 108). The values are route placeholders and config, not domain fixtures.",
+      "category": "style"
+    },
+    {
+      "findings": [
+        "F27"
+      ],
+      "summary": "The billingApiMock omits clearSubscriptions, and the claim is that a future call would silently resolve to undefined.",
+      "label": "wrong",
+      "evidence": "billing.service.spec.ts:52-63. BillingService never calls clearSubscriptions, and if it did, calling an undefined property throws a TypeError immediately rather than resolving silently.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F9"
+      ],
+      "summary": "The claim is that the security.md example misdescribes patch because patch allows an optional body.",
+      "label": "wrong",
+      "evidence": "security.md:26 only lists the method names that route through buildUrl, which is accurate for patch (fetch.network.service.ts:101-113). It describes no body shape, and the optional data mirrors post.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F6",
+        "F13"
+      ],
+      "summary": "The claim is that a documented property is the only member of its type and should be removed.",
+      "label": "wrong",
+      "evidence": "subscription-update.entity.ts:15 (amount) and :27 (nextBillingDate) each sit in schemas with 3-4 fields, so neither is a sole member. The comments carry units (signed minor units, Unix seconds), and removing the property would break the schema.",
+      "category": "docs"
+    }
+  ]
+}

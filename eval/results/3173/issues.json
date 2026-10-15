@@ -1,0 +1,122 @@
+{
+  "usage": {
+    "usd": 0.48423000000000005,
+    "turns": 8,
+    "wallSeconds": 60
+  },
+  "issues": [
+    {
+      "findings": [
+        "F4",
+        "F3",
+        "F12",
+        "F24",
+        "F25",
+        "F18"
+      ],
+      "summary": "The skew-tolerated notBefore/expirationTime are copied into JWT nbf/exp, and jwt.verify has no clockTolerance. /v1/auth/verify then throws a non-HTTP error, returning 500 after the nonce is spent and the user is created.",
+      "label": "medium",
+      "evidence": "auth.service.ts:82-92 copies notBefore/expirationTime into nbf/exp. auth.controller.ts:136,205 calls getTokenPayloadWithClaims → decodeToken → jwt.verify (jwt.module.ts:58-66, no clockTolerance), which throws NotBeforeError/TokenExpiredError. global-error.filter.ts:29-35 maps non-HttpExceptions to 500, and siwe.repository.ts clears the nonce before this point. The login would have failed before the PR too, now with a clean 401, so this is mainly a worse failure mode plus a notBefore case the fix doesn't solve. An iat in the future (F25) is not checked by jsonwebtoken without maxAge.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F1",
+        "F6"
+      ],
+      "summary": "No endpoint/integration test covers a message accepted within the skew window all the way through AuthService and token issuance.",
+      "label": "medium",
+      "evidence": "The only integration change (auth.controller.integration.spec.ts ~398-407) tests rejection beyond the window, and siwe-message.entity.spec.ts only exercises the schema. An end-to-end test would have caught the nbf/exp 500 above.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F2"
+      ],
+      "summary": "AUTH.md says the skew allowance avoids rejecting valid messages, but within-skew notBefore/expirationTime still fail downstream.",
+      "label": "low",
+      "evidence": "AUTH.md:235 claims this. Because of the JWT nbf/exp verification failure, it only holds for issuedAt.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F10",
+        "F14",
+        "F19",
+        "F21"
+      ],
+      "summary": "AUTH_CLOCK_SKEW_SECONDS has no entry in the configuration schema, so negative, huge or non-numeric values are not rejected at startup.",
+      "label": "low",
+      "evidence": "configuration.schema.ts:63 validates AUTH_STATE_TTL_MILLISECONDS with .int().min(1) but has no AUTH_CLOCK_SKEW_SECONDS entry, and configuration.ts:52-55 parses it unchecked. A negative value makes the check `issuedAt > now + skewMs` reject fresh messages, and a huge value disables the expiry/notBefore checks. Both require operator misconfiguration.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F8",
+        "F13"
+      ],
+      "summary": "A NaN skew (non-numeric env) is silently treated as 0 by the truthiness check instead of surfacing an error.",
+      "label": "low",
+      "evidence": "siwe-message.entity.ts:59 `clockSkewSeconds ? clockSkewSeconds * 1_000 : 0` turns NaN into 0. This falls back safely to the pre-PR strict behaviour, but a misconfiguration goes unnoticed.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F17",
+        "F22"
+      ],
+      "summary": "clockSkewSeconds is optional with a no-skew branch, although the only caller always passes a number.",
+      "label": "nit",
+      "evidence": "siwe.repository.ts reads it with getOrThrow<number> and always passes it to buildSiweMessageSchema (siwe-message.entity.ts:30). The optional parameter costs nothing concrete beyond a style or readability point.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F7",
+        "F11",
+        "F15"
+      ],
+      "summary": "The Zod schema is rebuilt on every getValidatedSiweMessage call instead of once in the constructor.",
+      "label": "nit",
+      "evidence": "siwe.repository.ts:45 calls buildSiweMessageSchema(this.clockSkewSeconds) per call. Building a small Zod schema once per login is negligible, and caching it would be a style improvement only.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F9"
+      ],
+      "summary": "No configuration validator test for AUTH_CLOCK_SKEW_SECONDS.",
+      "label": "low",
+      "evidence": "src/config/configuration.validator.spec.ts has no case for it. There is also no schema entry to test (see the missing-validation issue), so the gap is mostly a symptom of that.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F5"
+      ],
+      "summary": "The 'Message yet valid' wording should be 'Message not yet valid'.",
+      "label": "nit",
+      "evidence": "siwe-message.entity.ts:81 keeps the pre-existing message text, which tests assert on. Only the wording is affected.",
+      "category": "style"
+    },
+    {
+      "findings": [
+        "F20"
+      ],
+      "summary": "The 'Message yet issued' wording should be 'Message not issued yet'.",
+      "label": "nit",
+      "evidence": "siwe-message.entity.ts:64 is the pre-existing message string, unchanged in meaning. Only the wording is affected.",
+      "category": "style"
+    },
+    {
+      "findings": [
+        "F16",
+        "F23"
+      ],
+      "summary": "The new AUTH.md table row is wider than its column and misaligns the Markdown table source.",
+      "label": "nit",
+      "evidence": "AUTH.md:257's description exceeds the 50-char column padding, and `yarn format` is `biome format`, which does not format Markdown. The rendered table is unaffected; only the raw source looks misaligned.",
+      "category": "style"
+    }
+  ]
+}

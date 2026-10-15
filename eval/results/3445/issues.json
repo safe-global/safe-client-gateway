@@ -1,0 +1,136 @@
+{
+  "usage": {
+    "usd": 0.7531994000000001,
+    "turns": 9,
+    "wallSeconds": 61
+  },
+  "issues": [
+    {
+      "findings": [
+        "F20"
+      ],
+      "summary": "session-url (billing portal) is still member-gated, not admin-gated as the PR says",
+      "label": "medium",
+      "evidence": "billing.service.ts:115 still calls assertSpaceMember in getSessionUrl, but the PR description says session-url now requires an admin. A non-admin member can still open the Stripe customer portal and manage the subscription there, which gets around the new admin-only rule on plan changes.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F4",
+        "F8",
+        "F10",
+        "F21"
+      ],
+      "summary": "Preview skips the Safe-seat capacity check, so its 'same reasons as the PATCH' docstring is now false",
+      "label": "medium",
+      "evidence": "previewSubscriptionUpdate (billing.service.ts:190-223) never calls assertSafeSeatCapacity, while updateSubscription does (billing.service.ts:269). So a downgrade preview returns a price that the PATCH then rejects with 409, and the docstring at billing.service.ts:183-188 ('bar one') is out of date.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F18"
+      ],
+      "summary": "Preview is still member-gated while the PATCH is admin-only, against the PR description",
+      "label": "low",
+      "evidence": "billing.service.ts:197 uses assertSpaceMember, but the PR description lists preview-update as admin-only. The endpoint is read-only, so the cost is inconsistency: a non-admin gets a quote and then a 403 on the PATCH.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F6",
+        "F11",
+        "F19"
+      ],
+      "summary": "No test checks that a non-admin active member is rejected, i.e. that the role filter holds",
+      "label": "medium",
+      "evidence": "The unit specs (billing.service.spec.ts:617, :1008) only mock spacesRepository.findOne to return null, and the e2e test (billing.controller.e2e-spec.ts:744) only covers a non-member. Reverting to a plain membership check, or dropping the ADMIN role filter in isAdmin, would fail no test.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F2",
+        "F12",
+        "F13",
+        "F14",
+        "F23"
+      ],
+      "summary": "Seat quota is parsed twice: once in assertSafeSeatCapacity, again inside hasSeatCapacity",
+      "label": "low",
+      "evidence": "billing.service.ts:434-442 calls parseSafeSeatQuota only for a null check, then hasSeatCapacity (payment-link-offer.rules.ts:50-56) parses the same metadata again. The work is cheap, but the two parses can drift apart (only one warns). F12's claim that hasSeatCapacity is 'unused' is wrong: billing.service.ts:442 still calls it.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F22"
+      ],
+      "summary": "The malformed-quota path is only tested for checkout, not for updateSubscription",
+      "label": "low",
+      "evidence": "The only malformed FEATURE_SAFE_SEATS spec is at billing.service.spec.ts:763 (checkout). The updateSubscription seat specs (:966, :986) cover only valid quotas. Both routes share the same helper, so the risk is small.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F3"
+      ],
+      "summary": "The malformed-quota warning does not name the payment link",
+      "label": "low",
+      "evidence": "feature-package.mapper.ts:58 logs only `Invalid FEATURE_SAFE_SEATS value: ${raw}`, and the caller at billing.service.ts:436-438 passes it through without adding the link id. That makes it hard to find which Stripe link is misconfigured.",
+      "category": "style"
+    },
+    {
+      "findings": [
+        "F17"
+      ],
+      "summary": "The PATCH 403 description leaves out the case of a named paymentLinkId that is not offered",
+      "label": "low",
+      "evidence": "paymentLinkForPlanOrFail throws ForbiddenException for an unoffered paymentLinkId (billing.service.ts:387-390), but billing.controller.ts:270 mentions only 'a plan this workspace is not offered'. This is a small documentation gap.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F7"
+      ],
+      "summary": "The 409 Swagger description packs four causes into one sentence",
+      "label": "nit",
+      "evidence": "billing.controller.ts:274-276 lists the four causes as prose. This is a style preference, and the server already returns a distinct message for each cause.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F5"
+      ],
+      "summary": "The assertSafeSeatCapacity JSDoc has no closing period",
+      "label": "nit",
+      "evidence": "billing.service.ts:425 ends 'current Safe count' with no period. This is purely cosmetic.",
+      "category": "style"
+    },
+    {
+      "findings": [
+        "F9",
+        "F15"
+      ],
+      "summary": "The PR bundles three concerns; the title names only one",
+      "label": "nit",
+      "evidence": "The PR description lists all three changes explicitly, and they are split into separate commits (8a9b1dbd7, 3a3b77031). Splitting them into separate PRs is a process preference with no defect.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F16"
+      ],
+      "summary": "The title has no breaking-change marker for the member-to-admin restriction",
+      "label": "nit",
+      "evidence": "The PR body already spells out that non-admins now get 403. Whether the title needs a '!' marker is a convention preference, not a code defect.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F1"
+      ],
+      "summary": "The new 403/elevation requirements may break the web client's contract",
+      "label": "unverifiable",
+      "evidence": "The behaviour change is real and intended (billing.controller.ts:192 adds ElevationGuard). Whether the frontend is ready for it, or the release is coordinated, cannot be settled from this repository.",
+      "category": "correctness"
+    }
+  ]
+}

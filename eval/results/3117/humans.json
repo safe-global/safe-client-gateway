@@ -1,0 +1,36 @@
+{
+  "usd": 0.361016,
+  "head": "5975959450c336279e3b35b8164d2ad27c1c3b2b",
+  "verdicts": [
+    {
+      "issue": 11,
+      "verdict": "open",
+      "present": true,
+      "evidence": "At 45fd98b and at HEAD, migrations/1779200000001-add-space-uuid.ts uses `DEFAULT gen_random_uuid()` and adds no pgcrypto extension. The author's reply only quoted and declined the DROP IF EXISTS part and never mentioned PG version or pgcrypto."
+    },
+    {
+      "issue": 13,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "The author first applied PooyaRaki's generatedMaps suggestion, then reverted it in d87b369 because TypeORM doesn't fill generatedMaps for UPDATE. HEAD keeps `result.raw[0] as Pick<Space,'id'|'uuid'> | undefined` (spaces.repository.ts:218), the same line as at 45fd98b."
+    },
+    {
+      "issue": 14,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "The author said that DROP ... IF EXISTS 'will go against the consistent repo convention'. down() still uses bare `DROP INDEX UQ_spaces_uuid` / `DROP COLUMN uuid` at HEAD."
+    },
+    {
+      "issue": 15,
+      "verdict": "open",
+      "present": true,
+      "evidence": "routes/entities/invitation.entity.ts still has `@ApiProperty({ type: Number }) userId` at both 45fd98b and HEAD. The bot raised this again in later reviews and nobody replied to it."
+    },
+    {
+      "issue": 21,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "At 45fd98b, space.entity.ts typed `uuid: string`. The author answered 'Updated', and commit c2577a1f0 ('harden typing with UUID instead of a string') switched it to UUID from crypto."
+    }
+  ]
+}

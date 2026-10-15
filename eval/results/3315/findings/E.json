@@ -1,0 +1,15 @@
+{
+  "usd": 0.0499896,
+  "findings": [
+    {
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.ts",
+      "line": 87,
+      "claim": "A parameter or value here is hard to read and should either have its type extracted into a proper named type or be simplified, for example to a boolean parameter with a default value of false."
+    },
+    {
+      "file": "src/modules/auth/oidc/auth0/datasources/auth0-api.service.ts",
+      "line": 40,
+      "claim": "A hardcoded value should potentially be moved into configuration (environment variables) with a default, since it is unclear whether this value will always remain the same."
+    }
+  ]
+}

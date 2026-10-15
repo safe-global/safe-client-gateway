@@ -1,0 +1,35 @@
+{
+  "usd": 0.0600356,
+  "findings": [
+    {
+      "file": "src/modules/fees/domain/entities/schemas/tx-fees-response.schema.ts",
+      "line": 8,
+      "claim": "z.coerce.string() runs String() on any input type (booleans, null, undefined, objects, BigInt), which is a fuzzier contract than necessary for validating an upstream API response; a union of string/nonnegative-int with a transform and regex pipe would keep the same external behavior while preventing surprising coercions."
+    },
+    {
+      "file": "src/modules/fees/domain/entities/schemas/tx-fees-response.schema.ts",
+      "line": 8,
+      "claim": "The regex ^\\d+$ accepts chainId '0', which is not a valid network id; the pattern should be tightened to /^[1-9]\\d*$/ to reject zero."
+    },
+    {
+      "file": "src/modules/fees/domain/entities/schemas/tx-fees-response.schema.ts",
+      "line": 8,
+      "claim": "Because String(1.0) === '1', a float value like 1.0 coerces to '1' and passes validation; restricting the numeric branch to an integer type would close this gap."
+    },
+    {
+      "file": "src/validation/entities/schemas/numeric-string.schema.ts",
+      "line": 14,
+      "claim": "The route controller already validates chainId with the existing NumericStringSchema, so introducing a separate regex-based rule in the new schema creates two chainId validation rules that can drift independently over time; building on the existing schema after coercion would keep them aligned."
+    },
+    {
+      "file": "src/modules/fees/domain/entities/schemas/__tests__/tx-fees-response.schema.spec.ts",
+      "line": 55,
+      "claim": "Test coverage is missing cases for chainId 0/'0' (if zero should be rejected), float values like 1.5/'1.5', leading-zero strings like '01' (whose acceptance behavior is undocumented), and boolean/null inputs to document current coercion behavior."
+    },
+    {
+      "file": "src/modules/fees/domain/entities/__tests__/tx-fees-response.builder.ts",
+      "line": 16,
+      "claim": "The builder generates chainId values only up to 99999, but real chain IDs can exceed this (e.g. Palm at 11297108109), so the generated range does not reflect the actual domain of possible values."
+    }
+  ]
+}

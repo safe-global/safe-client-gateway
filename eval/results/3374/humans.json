@@ -1,0 +1,36 @@
+{
+  "usd": 0.3205958,
+  "head": "4099c724769d56342845cd17cd72887068da1268",
+  "verdicts": [
+    {
+      "issue": 1,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "TimDaub replied \"done\" to \"assertExpirationTime still bounds Auth0's exp on the elevate path\", and commit a8ab43175 moved the assertion into getSessionExpiration. Note that the assertion still runs before the `!elevate` check (oidc-auth.service.ts:199-205), so it still fires on elevation, and the spec gained no test for this case."
+    },
+    {
+      "issue": 3,
+      "verdict": "open",
+      "present": true,
+      "evidence": "Nobody replied, and `if (priorExpiration > maxExpirationTime) return maxExpirationTime;` is still a Date comparison at HEAD (oidc-auth.service.ts:217-219)."
+    },
+    {
+      "issue": 6,
+      "verdict": "open",
+      "present": true,
+      "evidence": "Nobody replied, and `this.loggingService.debug(asError(err).message)` still has no context prefix at HEAD in getPriorExpiration."
+    },
+    {
+      "issue": 7,
+      "verdict": "open",
+      "present": true,
+      "evidence": "Nobody replied, and oidc-auth.service.spec.ts:607 still throws `new Error('jwt expired')`. The spec is unchanged after 0acc2918e."
+    },
+    {
+      "issue": 8,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "Nobody replied in the thread, but commit a8ab43175 added a `@throws {ForbiddenException}` doc to getSessionExpiration. It calls the over-max exp 'a tenant misconfiguration worth surfacing', which keeps the 403 as intended next to the documented 401 for a missing session."
+    }
+  ]
+}

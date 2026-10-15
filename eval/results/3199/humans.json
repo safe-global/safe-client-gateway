@@ -1,0 +1,36 @@
+{
+  "usd": 0.25947539999999997,
+  "head": "fd7c2b422184e05b36b1044b791761234e7ddc2f",
+  "verdicts": [
+    {
+      "issue": 15,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "LucieFaire's thread at safes.v2.service.ts:277 suggested dropping PortfolioResult; compojoom said it was done in fd7c2b42, and PortfolioResult no longer appears in safes.v2.service.ts at HEAD."
+    },
+    {
+      "issue": 16,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "Commit fd7c2b42 adds an early `if (!this.zerionBalancesEnabled) return new Map();` at safes.v2.service.ts:205-206, which is what the author said they did in the :229 thread."
+    },
+    {
+      "issue": 18,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "Commit fd7c2b42 rewrites FakeCacheService.incrWithTtl to use `?? 0` and a `nextValue` variable (fake.cache.service.ts:82-89), which is the reviewer's second suggested version."
+    },
+    {
+      "issue": 19,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "Commit fd7c2b42 inlines `await Promise.all(...)` into `return new Map(...)` in resolveChains (safes.v2.service.ts:181) and removes the intermediate `entries`, as the author said in the :202 thread."
+    },
+    {
+      "issue": 20,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "Commit fd7c2b42 cuts the incrWithTtl doc in cache.service.interface.ts down to 'Atomically increments a counter and sets its TTL on first creation, for fixed-window rate limiting', removing the Redis 6/7 detail."
+    }
+  ]
+}

@@ -1,0 +1,65 @@
+{
+  "usd": 0.062402000000000006,
+  "findings": [
+    {
+      "file": "spaces.controller.ts",
+      "line": 169,
+      "claim": "The GET /spaces/:id endpoint does not use LegacySpaceIdPipe like other legacy-accepting read endpoints, and instead calls spacesService.resolveUuid which results in 4 database queries per request instead of the 1+N pattern used elsewhere; since this is the hottest single-space read on the frontend, this extra overhead matters."
+    },
+    {
+      "file": "spaces.service.ts",
+      "line": 125,
+      "claim": "resolveUuid queries findIdByIdOrUuid to get id, then findOneOrFail to get uuid, then findSpaces runs additional queries keyed on uuid, producing redundant round-trips that could be avoided by using LegacySpaceIdPipe with findSpaces accepting a numeric spaceId, or by having findIdByIdOrUuid return both id and uuid in a single query."
+    },
+    {
+      "file": null,
+      "line": null,
+      "claim": "SpaceIdPipe and LegacySpaceIdPipe return inconsistent 400 error bodies for the same class of error (NestJS default 'Validation failed (uuid is expected)' vs custom 'Invalid space identifier'), contradicting the PR description's claim that client error contracts stay stable."
+    },
+    {
+      "file": "spaces.repository.ts",
+      "line": 232,
+      "claim": "findIdByIdOrUuid throws BadRequestException directly from the repository layer, coupling the repository to @nestjs/common; the error should ideally be thrown from the pipe instead, and the error message should be unified between both pipes."
+    },
+    {
+      "file": null,
+      "line": null,
+      "claim": "There is no unit or integration test coverage for the new repository methods findIdByUuid and findIdByIdOrUuid, nor for the new pipes SpaceIdPipe and LegacySpaceIdPipe."
+    },
+    {
+      "file": null,
+      "line": null,
+      "claim": "Missing test cases include: valid UUID resolving to id, valid numeric id resolving to id (legacy path), numeric value exceeding DB_MAX_SAFE_INTEGER returning 400, malformed string returning 400, syntactically valid UUID with no matching row returning 404, and numeric id on SpaceIdPipe (write endpoint) returning 400 with a corresponding e2e test on PATCH /spaces/:id."
+    },
+    {
+      "file": "spaces.repository.ts",
+      "line": 232,
+      "claim": "The UUID regex used in findIdByIdOrUuid does not enforce UUID version/variant bits the way ParseUUIDPipe does, so SpaceIdPipe and LegacySpaceIdPipe accept slightly different sets of valid UUIDs; the two code paths should share a single validation helper or both use ParseUUIDPipe."
+    },
+    {
+      "file": "members.controller.ts",
+      "line": 141,
+      "claim": "acceptInvite and declineInvite use SpaceIdPipe, which is UUID-only, so a previously emailed invite link containing a numeric space id will now fail with a 400 error; if numeric-id invite links are already in circulation, these two routes should keep using LegacySpaceIdPipe during the deprecation window since the user is acting on an existing link rather than entering new data."
+    },
+    {
+      "file": "migrations/1779200000000-add-space-uuid.ts",
+      "line": 15,
+      "claim": "The migration's down method uses bare DROP INDEX / DROP COLUMN, which is not idempotent; if the up migration partially fails (e.g., column added but index creation fails), the down migration will itself fail when trying to drop the missing index, so DROP INDEX IF EXISTS / DROP COLUMN IF EXISTS should be used instead."
+    },
+    {
+      "file": "migrations/1779200000000-add-space-uuid.ts",
+      "line": 15,
+      "claim": "It has not been confirmed whether gen_random_uuid() is available without the pgcrypto extension on all supported PostgreSQL versions, since versions earlier than PG 13 require the extension to be installed explicitly."
+    },
+    {
+      "file": "spaces.repository.ts",
+      "line": 32,
+      "claim": "A pre-existing '// TODO: Add tests' comment remains unaddressed, and the new methods added in this PR extend this test coverage gap rather than closing it."
+    },
+    {
+      "file": "routes/entities/invitation.entity.ts",
+      "line": null,
+      "claim": "The Invitation entity in users/domain/entities/invitation.entity.ts now types spaceId as Space['uuid'] (a string), but the separate Invitation entity in routes/entities/invitation.entity.ts still declares userId with @ApiProperty({ type: Number }), an inconsistency unrelated to this PR but noticeable while working in this area."
+    }
+  ]
+}

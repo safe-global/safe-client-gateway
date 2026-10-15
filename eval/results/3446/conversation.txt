@@ -1,0 +1,92 @@
+COMMENT
+[falvaradorodriguez 2026-09-18T10:37:55Z] @claude arch-review
+
+COMMENT
+[claude 2026-09-18T10:44:05Z] ## Architecture check
+
+Applicable guides: [ARCHITECTURE.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/ARCHITECTURE.md), [best-practices.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/best-practices.md), [nestjs-patterns.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/nestjs-patterns.md), [api-dtos-and-validation.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/api-dtos-and-validation.md), [security.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/security.md), [module-structure.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/module-structure.md), [caching-and-performance.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/caching-and-performance.md), [database-and-migrations.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/database-and-migrations.md), [testing.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/testing.md), [commits-and-prs.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/commits-and-prs.md), [reviewing.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/reviewing.md), [remarks.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/remarks.md).
+
+1. **[No stale guides](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/reviewing.md#L37)** — [docs/agents/nestjs-patterns.md:55](https://github.com/safe-global/safe-client-gateway/blob/0bdf10ca5c3097fd27b2b898f86d16383b86bf42/docs/agents/nestjs-patterns.md#L55) — the tally is updated to "seventeen guards", but the eighteen it counted are the files under `routes/**/guards/` or `routes/common/` (the 19th, `portfolio/v1/guards/portfolio-route.guard.ts`, sits outside both, which is why the sentence can claim "all under a `routes/guards/` directory"), and this diff deletes two of them — `entitlements/routes/guards/entitlement.guard.ts` and `safe-seats.guard.ts` — leaving sixteen. **Fix:** write `**Canonical example:** sixteen guards exist, all under a `+"`"+`routes/guards/`+"`"+` directory (or `+"`"+`routes/common/`+"`"+` for the cross-cutting ones).`
+
+**Verdict:** ❌ 1 finding
+
+<sub>Automated check of this repo's [agent guidelines](https://github.com/safe-global/safe-client-gateway/blob/main/AGENTS.md) — Claude applying the committed guides in `docs/agents/`, not its own opinion. Run by [architecture-check.yml](https://github.com/safe-global/safe-client-gateway/blob/main/.github/workflows/architecture-check.yml) on `@claude arch-review`; background in [the CI gate](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/agent-tooling.md#the-ci-gate). Advisory — reply to a finding by its number to discuss it.</sub>
+
+COMMENT
+[falvaradorodriguez 2026-09-18T10:47:33Z] > ## Architecture check
+> Applicable guides: [ARCHITECTURE.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/ARCHITECTURE.md), [best-practices.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/best-practices.md), [nestjs-patterns.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/nestjs-patterns.md), [api-dtos-and-validation.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/api-dtos-and-validation.md), [security.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/security.md), [module-structure.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/module-structure.md), [caching-and-performance.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/caching-and-performance.md), [database-and-migrations.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/database-and-migrations.md), [testing.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/testing.md), [commits-and-prs.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/commits-and-prs.md), [reviewing.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/reviewing.md), [remarks.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/remarks.md).
+> 
+ 1.  ✅ Updated! 
+
+
+
+
+COMMENT
+[falvaradorodriguez 2026-09-18T11:12:53Z] @claude review
+
+COMMENT
+[claude 2026-09-18T11:13:07Z] **Claude finished @falvaradorodriguez's task in 1m 43s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/35338515672)
+
+---
+### Code review
+
+Overall a well-scoped change with careful reasoning in the PR description; the seat-key contract, the lock-before-count sequence, and the guard removal are all defensible and well-tested. A few small things worth considering:
+
+#### 1. `SEAT_KEY` string is interpolated into raw SQL without wrapping the join column
+
+`src/modules/spaces/domain/safes/space-safes.repository.ts:33` defines `const SEAT_KEY = 'COALESCE(safe.address_index, safe.address)'`, hard-coded to the `safe` alias. It is then interpolated in `countNewSeats` at line 270 into a query that also aliases the join `AS safe`, so it works — but there's no compile-time check that any future rewrite (e.g., renaming the alias) will notice. A small comment near `SEAT_KEY` noting "requires the join alias `safe`" would harden this against a rename. Not a bug today.
+
+#### 2. `countNewSeats` sends duplicates through the query unnecessarily
+
+`space-safes.repository.ts:256-258` builds a `Set` of seat keys — good — but the whole set is then converted back to an array and unnested. Since `NOT EXISTS` semantics dedupe naturally, this is fine, but the intermediate `Set(...map(...))` allocation is unneeded once you plan to `unnest` the values; `Array.from(new Set(...))` is a wash. Optional: consider passing the raw array and letting SQL dedupe, or drop the Set — it's just style either way.
+
+#### 3. Docstring for `PreparedSpaceSafe.plaintextAddress` conflicts with usage
+
+`space-safes.repository.interface.ts:19-25` says "Only `insertRows` reads inside it," but `countNewSeats` now also reads `PreparedSpaceSafe` (well, a `Pick<...,'address'|'addressIndex'>` of it — `plaintextAddress` is not read). The docstring is technically still correct for `plaintextAddress`, but the surrounding wording ("Only `insertRows` reads inside it") is now stale for `PreparedSpaceSafe` overall. Consider tightening the wording to reflect the additional consumer, or narrow the type used by `countNewSeats` further.
+
+#### 4. `entitlements.rules.ts:fitsWithinQuota` semantics for `delta: 0`, over-quota space
+
+Confirmed by tests (`entitlements.rules.spec.ts:62-63`) and by `entitlements.service.integration.spec.ts:1269-1277`: a space *over* its quota (e.g. after a downgrade) is still rejected for a `delta: 0` add. The PR description acknowledges this is out of scope for the ticket, but note that in the seat-charging flow this means a downgraded Workspace cannot add a new chain to a Safe it already holds until it removes something. That is likely the desired product behavior — worth double-checking with product before shipping since PLA-1975 spec ("at its seat limit") is ambiguous vs. "over its limit."
+
+#### 5. Broadening `Pick` in `countNewSeats` weakens the type-safety of dedup
+
+`space-safes.repository.interface.ts:101-107` accepts `Pick<PreparedSpaceSafe, 'address' | 'addressIndex'>` — callers can pass any object satisfying that shape (e.g. a caller could pass unencrypted plaintext where a blind index exists). Today only `SpaceSafesService.create` invokes it, but if a future caller forgets to run `encryptRows` first, `addressIndex` will be `null` and the dedup key will be the plaintext, which will not match the encrypted rows already in the table — a silent overcount. Consider requiring the caller to hand over the exact `PreparedSpaceSafe` values, or add an assertion that when encryption is enabled `addressIndex` is not null.
+
+#### 6. Test coverage of the seat-lock concurrency case is good
+
+`space-safes.repository.integration.spec.ts:448-508` proves the lock+count+insert sequence works under concurrency — nice test. One small readability nit: the ad-hoc `addSafeUnderQuota` inline in the spec duplicates the `SpaceSafesService.create` sequence; consider extracting a helper closer to the service to keep the test asserting behavior of shared code rather than a re-implementation of it. Optional.
+
+#### 7. `spaces.service.ts:113-119`: `Promise.all` on a batch that can grow
+
+`countSeatsBySpaceIds` is now called once per listing with all space ids — good, single query. `resolveInvitedByNames` still fans out over wallets/emails. No issue for typical membership sizes, just noting that this is now the tightest place to catch a future N+1 if listings grow.
+
+#### 8. No new migration, per PR description
+
+The PR description carefully justifies not adding an index for the new seat-key filter target, with a measurement on 1M rows. That is the right process (per `database-and-migrations.md`); worth keeping the measurement notes in the commit body or as a follow-up doc so a future reviewer sees why the index rule was deliberately skipped here.
+
+---
+
+**Verdict:** No blocking issues. The guard removal and rewrite are well justified and covered by both unit and integration tests. Items 1, 3, 5 are the only ones that would meaningfully harden the code for future maintenance.
+ · Branch: `felipe/pla-1975-count-a-safe-on-multiple-chains-as-one-seat`
+
+COMMENT
+[falvaradorodriguez 2026-09-18T14:35:31Z] > **Claude finished Felipe Alvarado (@falvaradorodriguez)'s task in 1m 43s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/35338515672)
+> 
+> ### Code review
+> Overall a well-scoped change with careful reasoning in the PR description; the seat-key contract, the lock-before-count sequence, and the guard removal are all defensible and well-tested. A few small things worth considering:
+> 
+- 1: Not acting on this. A comment would only tell you after you'd broken it, and the real fix (a SAFE constant plus template literals in five more places) costs readability against a rename that can't go unnoticed: both queries have direct integration coverage. 
+
+- 2: The Set is load-bearing. NOT EXISTS dedupes the stored rows, not the requested keys: unnest emits one row per array element and COUNT(*) counts them all, so dropping it charges one seat per chain for a batch adding one address across several, the ticket's central case. Removing it turns space-safes.repository.integration.spec.ts:692 red with Expected 1, Received 2.
+
+- 3 & 5: Both fixed by one change: countNewSeats now takes plaintext addresses and derives the seat key itself through SpaceEncryptionService, so there is no parameter left to key wrong. That also drops the PreparedSpaceSafe dependency, which makes its docstring accurate again as written.
+
+- 4: At the limit it does admit, which is what the ticket asks for.
+
+- 6: Leaving it. The test predates this PR (the diff only renames countBySpaceId in it), and the duplication is deliberate: the simplified used + 1 > quota check isolates what it proves, that lockSeats serializes, from the entitlements machinery. Sharing a helper would pull the whole plan stack in, which space-safes.enforcement.integration.spec.ts already covers.
+
+- 7: resolveInvitedByNames is already batched: two fixed queries over a deduped id set (walletsRepository.find with In(userIds), then findEmailsByIds), so no fan-out there. The per-item work is the decryption instead, decryptAddress in the wallet loop and decryptName per visible member, which scales with members rather than spaces. Predates this PR and untouched by it.
+
+- 8: Good point, and it works here: squash commits on main keep their body, so I'll fold the index measurement into the squash body at merge time. It stays in the PR description too, which is where reviewing.md requires it.
+
+

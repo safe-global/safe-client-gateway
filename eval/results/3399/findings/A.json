@@ -1,0 +1,35 @@
+{
+  "usd": 0.0487676,
+  "findings": [
+    {
+      "file": "src/modules/entitlements/domain/subscriptions.repository.ts",
+      "line": 61,
+      "claim": "The SQL IN list in getSubscriptionSummary is built into the query string via toSqlList instead of being bound as a parameter, while the same file already binds an equivalent list as a parameter elsewhere; toSqlList's documentation states it is meant for entity CHECK constraints and partial-index predicates, not runtime queries. The values are currently constants so nothing can be injected today, but this establishes a second, inconsistent pattern for runtime queries that others may copy."
+    },
+    {
+      "file": "src/modules/entitlements/domain/subscriptions.repository.ts",
+      "line": 65,
+      "claim": "The raw database row returned by getRawOne is typed with a generic type parameter but never actually validated against that shape at runtime. hasEverSubscribed being a boolean depends on the Postgres driver's behavior for COUNT(*) > 0, and the camelCase field names rely on quoted aliases, so a wrong type would not be caught even though missing rows are handled via fallback defaults."
+    },
+    {
+      "file": "src/modules/billing/domain/payment-link-offer.rules.ts",
+      "line": 21,
+      "claim": "The helper gracePeriodOf is exported from the module solely so it can be tested directly in the spec file, even though production code never imports it, which conflicts with the guidance not to export symbols that aren't consumed externally and to test private logic through its public callers."
+    },
+    {
+      "file": "src/modules/billing/domain/payment-link-offer.rules.ts",
+      "line": 33,
+      "claim": "The helper planNameOf is exported from the module solely so it can be tested directly in the spec file, even though production code never imports it, which conflicts with the guidance not to export symbols that aren't consumed externally and to test private logic through its public callers."
+    },
+    {
+      "file": "src/modules/billing/routes/billing.service.spec.ts",
+      "line": 76,
+      "claim": "Test dates such as ENFORCEMENT_STARTS_AT, BEFORE_ENFORCEMENT, and AFTER_ENFORCEMENT are hard-coded rather than generated with faker, which is inconsistent with the pattern used elsewhere in the same PR (e.g., faker.date.recent() with millisecond offsets for boundaries) and with the repository's testing conventions."
+    },
+    {
+      "file": "src/modules/billing/routes/__tests__/billing.controller.e2e-spec.ts",
+      "line": 70,
+      "claim": "The e2e spec hard-codes enforcementStartsAt as new Date('2020-01-01T00:00:00Z') instead of generating it with faker.date.past(), inconsistent with the faker-based date generation pattern used elsewhere in the same PR."
+    }
+  ]
+}

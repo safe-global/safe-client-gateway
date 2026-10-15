@@ -1,0 +1,11 @@
+{
+  "pr": 3315,
+  "reviewSha": "030dec0f6cb4246907ed75dba000088126bf5275",
+  "baseSha": "d1f57d81b1b6ad20cdeaa182b4d7048397f55d36",
+  "system": "E",
+  "version": "github",
+  "runner": "collect",
+  "model": "human",
+  "commentSha": "030dec0f6cb4246907ed75dba000088126bf5275",
+  "output": "src/modules/auth/oidc/routes/oidc-auth.service.ts:87\nNit: This is very hard to read, we should either extract the type to a proper type or change it to something like:\n```suggestion\n   elevate: boolean = false,\n```\n\n---\n\nsrc/modules/auth/oidc/auth0/datasources/auth0-api.service.ts:40\nShall we move it to the config (env) with a default value or do you think it will always stay the same?"
+}

@@ -1,0 +1,45 @@
+{
+  "usd": 0.06882160000000001,
+  "findings": [
+    {
+      "file": "src/modules/counterfactual-safes/routes/counterfactual-safes.service.ts",
+      "line": 96,
+      "claim": "The batch endpoint now returns 409 and saves none of the submitted Safes if even one of up to 100 submitted Safes is already deployed, whereas previously the whole batch was saved; this means a client bulk-syncing locally stored counterfactual Safes loses the undeployed ones too, unlike the equivalent space endpoint which drops only the deployed Safes and saves the rest."
+    },
+    {
+      "file": "src/modules/counterfactual-safes/routes/counterfactual-safes.service.spec.ts",
+      "line": 76,
+      "claim": "There is no end-to-end test covering the new deployed-Safe 409 response, so the behavior is only unit tested rather than verified against the real controller and network stack."
+    },
+    {
+      "file": "__tests__/counterfactual-safes.controller.e2e-spec.ts",
+      "line": 94,
+      "claim": "The existing e2e POST tests never stub the network module, so they only pass because the deployed-Safe check errors and fails open; the path where a Safe is confirmed not deployed and then saved is never exercised end to end."
+    },
+    {
+      "file": "counterfactual-safes.service.spec.ts",
+      "line": null,
+      "claim": "The unit test mock for the deployed-Safe check matches only on the address, so a call that passed the wrong chainId to isSafe would not cause any test to fail."
+    },
+    {
+      "file": "counterfactual-safes.controller.ts",
+      "line": 50,
+      "claim": "The new 409 response is not documented in Swagger with an @ApiConflictResponse decorator, unlike other controllers that document conflicts this way, and the endpoint description does not mention that deployed Safes are rejected."
+    },
+    {
+      "file": "counterfactual-safes.service.ts",
+      "line": 83,
+      "claim": "The logic that calls isSafe and treats an error as \"not deployed\" duplicates the same loop already present in space-counterfactual-safes.service.ts, so any future change to the fail-open rule has to be made in two places."
+    },
+    {
+      "file": "counterfactual-safes.service.ts",
+      "line": 83,
+      "claim": "Each POST request starts up to 100 isSafe lookups concurrently with no limit on parallelism, and since counterfactual Safes are rarely cached as deployed, most of these lookups hit the Transaction Service directly."
+    },
+    {
+      "file": "counterfactual-safes.service.ts",
+      "line": 90,
+      "claim": "The catch block that fails open by returning false does not log anything at the service level, so when a deployed Safe is saved as counterfactual due to a failed check, nothing flags that this happened; an unsupported chain in getApi or a zod parse failure specifically is not logged anywhere, whereas the repo's usual pattern for fail-open catches is to call loggingService.warn."
+    }
+  ]
+}

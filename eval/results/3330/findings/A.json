@@ -1,0 +1,45 @@
+{
+  "usd": 0.0585696,
+  "findings": [
+    {
+      "file": ".github/workflows/architecture-check.yml",
+      "line": 133,
+      "claim": "Every allowlist rule ends with an open-ended `:*` match, so extra flags can follow the PR number, including gh's inherited `-R/--repo` option. An injected command such as `gh pr comment <N> --body \"...\" --repo <other-repo>` would still be permitted, letting the token post to a PR in a different repository despite the rule being scoped to a specific PR number."
+    },
+    {
+      "file": ".github/workflows/architecture-check.yml",
+      "line": 126,
+      "claim": "This gap contradicts the workflow's own comment (around lines 126-127) and the statement in docs/agents/agent-tooling.md:63 that a prompt injection cannot redirect these commands to another PR, since the repository can in fact be redirected via an unrestricted trailing flag."
+    },
+    {
+      "file": ".github/workflows/architecture-check.yml",
+      "line": 133,
+      "claim": "The allowlist rules should place `--repo ${{ github.repository }}` immediately after the PR number in each rule, or use deny rules for `--repo`/`-R` if the tooling supports them, to prevent the repository from being overridden."
+    },
+    {
+      "file": ".github/workflows/architecture-check.yml",
+      "line": 133,
+      "claim": "If `:*` is a plain string-prefix match, as the accompanying comment states, then the rule `gh pr comment <N> --body:*` also matches `gh pr comment <N> --body-file <path>`, which would let an injected command post the contents of an arbitrary file on the runner as a public PR comment."
+    },
+    {
+      "file": ".github/workflows/architecture-check.yml",
+      "line": 60,
+      "claim": "The file most exposed to such exfiltration is `.git/config`, which by default holds the checkout token saved by actions/checkout; the checkout step should set `persist-credentials: false` since the job never needs git credentials."
+    },
+    {
+      "file": ".github/workflows/architecture-check.yml",
+      "line": 133,
+      "claim": "If prefix matching is what is intended for these rules, they should instead end with a space-delimited token that cannot be extended, as the comment itself recommends, to prevent unintended flags like --body-file from matching."
+    },
+    {
+      "file": ".github/workflows/architecture-check.yml",
+      "line": 127,
+      "claim": "The comment's explanation of how the old `:*` suffix matched may be incorrect: documentation may describe it as equivalent to a word-boundary match (\" *\") rather than a plain prefix match, in which case the old rule `gh pr comment 123:*` would never have matched `gh pr comment 1234`, meaning the \"number-prefix gap\" cited as the motivation for this change did not actually exist in the CLI version being used."
+    },
+    {
+      "file": ".github/workflows/architecture-check.yml",
+      "line": 127,
+      "claim": "The comment's stated reasoning conflicts with the behavior implied elsewhere: if matching is a plain prefix, the `--body:*` rule is too permissive (as noted separately), but if matching is word-bounded, the comment misstates the reason for the change; the actual matching behavior of the bundled CLI should be verified and the comment reworded to match it."
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "pr": 3165,
+  "reviewSha": "52a760e7bd4a58ecaec16952690c1a3f2271ea97",
+  "baseSha": "13592e87317253b8204a838d6cf74d0b79076a92",
+  "system": "E",
+  "version": "github",
+  "runner": "collect",
+  "model": "human",
+  "commentSha": "52a760e7bd4a58ecaec16952690c1a3f2271ea97",
+  "output": "[review by LucieFaire]\n1 remark, otherwise 👍 \n\n---\n\nsrc/modules/spaces/routes/entities/address-book-request.dto.entity.ts:81\n`overwrite(...`\nhttps://zod.dev/v4?id=overwrite#overwrite"
+}

@@ -1,0 +1,20 @@
+{
+  "usd": 0.040481600000000006,
+  "findings": [
+    {
+      "file": "src/domain/common/schemas/name.schema.ts",
+      "line": 46,
+      "claim": "Calling makeNameSchema with minLength set to 0 allows an empty string to pass validation, and it's unclear whether that is the intended behavior."
+    },
+    {
+      "file": "src/domain/common/schemas/name.schema.ts",
+      "line": 91,
+      "claim": "The schema uses a chain of separate refine calls, which duplicates computation and spreads validation logic across multiple places; using superRefine instead would consolidate the validation into one place and avoid redundant work."
+    },
+    {
+      "file": "src/modules/csv-export/csv-utils/escape-csv-formula.ts",
+      "line": 20,
+      "claim": "FORMULA_TRIGGERS should be typed and used as a ReadonlySet so that lookups use the O(1) .has() method instead of an O(n) array search, consistent with how NUMERIC_COLUMNS is already declared; the corresponding lookup at line 27 also needs to be updated to use .has()."
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "usd": 0.0480396,
+  "findings": [
+    {
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.ts",
+      "line": 134,
+      "claim": "The expiration bound check runs before the code decides whether to take the elevate branch, so it can throw a ForbiddenException for an Auth0 exp claim that is discarded and never actually used when priorExpiration is substituted in its place. A tenant's ID token with a long-lived exp would break elevation for reasons unrelated to the elevated session's own lifetime."
+    },
+    {
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.ts",
+      "line": 134,
+      "claim": "On the elevate branch, an over-max expirationTime surfaces as a ForbiddenException while a missing prior session surfaces as an UnauthorizedException, even though both represent the same category of step-up failure; using a single exception type for both would be more consistent."
+    },
+    {
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.ts",
+      "line": 211,
+      "claim": "The debug log only prints the raw decode-failure message (e.g. 'jwt expired'), which is safe since it never includes token bytes, but lacks any surrounding context, making it hard to recognize the log line's origin in a shared log stream."
+    },
+    {
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.ts",
+      "line": 157,
+      "claim": "The min-of-two-Dates comparison is implemented with a conditional expression on Date objects rather than Math.min on their millisecond values; the result is correct but the conditional form is less direct for expressing a clamp-to-bound operation."
+    },
+    {
+      "file": "test/modules/auth/oidc/routes/oidc-auth.service.spec.ts",
+      "line": null,
+      "claim": "The test suite does not cover the interaction between an over-max Auth0 exp claim and a valid prior session on the elevate path, which is the exact scenario where the premature expiration bound check could incorrectly reject a valid step-up. A dedicated test would pin down the intended behavior for this case."
+    },
+    {
+      "file": "oidc-auth.service.spec.ts",
+      "line": 606,
+      "claim": "The test for the undecodable prior-session case throws a generic Error('jwt expired') rather than the actual TokenExpiredError or JsonWebTokenError types that decodeToken would raise in production, so the test does not exercise the real catch-path logic for those specific error types."
+    }
+  ]
+}

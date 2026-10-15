@@ -1,0 +1,193 @@
+THREAD src/modules/billing/routes/billing.service.ts:165 resolved=true
+[falvaradorodriguez 2026-08-28T09:34:29Z] This fires on every call, and `listOfferedPaymentLinks` is hit by both endpoints (`getSpacePaymentLinks` and `createCheckoutUrl`'s 403 gate), so one mistagged link produces an error log per `GET /payment-links` and per `POST /checkout-url`, indefinitely. What it reports is a static property of the general catalog, a single shared cached key (`billing_payment_links`, `billing-api.service.ts:162`), so we're logging at request cadence a fact that changes once per TTL, at the level that trips error rate alerting. The request itself succeeds; it's an operational misconfiguration to fix in Stripe, which is what `warn` is for and what the repo uses elsewhere for upstream data inconsistencies.
+[moisses89 2026-08-28T10:40:07Z]  Correct, staying at error; this needs the Stripe config fixed ASAP.
+
+THREAD src/modules/billing/domain/payment-link-offer.rules.ts:61 resolved=true
+[falvaradorodriguez 2026-08-28T09:35:05Z]  A never-subscribed workspace can only be offered a trial link, and a link only counts as a trial if it carries `trialPeriodDays`. If upstream isn't emitting it yet, every link reads as paid and every new workspace gets an empty catalog plus a 403 on checkout. The unclassified-trial log doesn't cover it either: `isUnclassifiedTrialLink` short-circuits on `isTrialLink`, so a missing `gracePeriod` is logged but a missing `trialPeriodDays` is silent. Worth logging when the general catalog yields zero offers for a space that has never subscribed, and confirming the deploy order against the billing service.
+[moisses89 2026-08-28T10:40:15Z] Stripe config issue, reading it as paid is correct. No code change.
+[falvaradorodriguez 2026-08-28T10:42:19Z] Perhaps we could set up an alert for this. WDYT @safe-global/safe-client-gateway-maintainers?
+
+THREAD src/modules/billing/domain/payment-link-offer.rules.ts:65 resolved=true
+[falvaradorodriguez 2026-08-28T09:40:23Z] `activePlanName` reads `ACTIVE_SUBSCRIPTION_STATUSES` (`subscriptions.repository.ts:61`), which is `['active', 'trialing']`, so a workspace trialing "Pro" has the paid Pro link excluded here and 403s on checkout for it. Grace periods carry no card, so they never auto convert: every pre-enforcement workspace that wants to stay on its plan when the 2 month grace ends has to go through checkout, and this is the link that hides it. 
+[moisses89 2026-08-28T10:40:40Z] Repurchase is handled in the frontend; it reappears in payment-links only if the trial ends unpaid.
+
+THREAD src/modules/entitlements/domain/subscriptions.repository.ts:59 resolved=true
+[falvaradorodriguez 2026-08-28T09:49:03Z] **Nit:** `hasEverSubscribed` counts every status, so an `incomplete_expired` row (initial payment never succeeded, no money moved) permanently turns trials off for the workspace, with no way back since those rows stay as history. Reachable via a negotiated space specific link whose card bounces: a pre-enforcement workspace silently loses its 2 month grace. `canceled`/`past_due`/`unpaid` are right to count; `incomplete_expired` looks like the wrong one. 
+[moisses89 2026-08-28T10:40:53Z] No change needed, free plan needs no payment; unpaid ones auto-cancel in Stripe, freeing another plan choice.
+
+THREAD src/modules/billing/domain/payment-link-offer.rules.ts:30 resolved=true
+[LucieFaire 2026-08-28T13:46:44Z] nit, can be shorter (but maybe its harder to read):
+```
+export function gracePeriodOf(link: PaymentLink): boolean | null {
+  const value = link.metadata[GRACE_PERIOD_METADATA_KEY];
+  return value === 'true' ? true : value === 'false' ? false : null;
+}
+```
+[moisses89 2026-08-28T14:56:14Z]  Nested ternary violates our biome lint rule https://github.com/safe-global/safe-client-gateway/blob/main/biome.json#L123
+
+THREAD src/modules/billing/routes/__tests__/billing.controller.e2e-spec.ts:119 resolved=true
+[LucieFaire 2026-08-28T13:47:52Z] nit: i think we dont need a comment here, many tests clear the cache, we have it in a lot of places
+[moisses89 2026-08-28T14:57:03Z] Done 9a85d312594e622b89b5ce6f250f5699a67e5454
+
+THREAD src/modules/billing/routes/billing.service.ts:181 resolved=true
+[LucieFaire 2026-08-28T13:59:36Z] nit:
+```
+const offeredGeneralLinks = generalLinks.filter((link) =>
+  isOfferedToSpace(link, eligibility),
+);
+
+return [
+  ...new Map(
+    [...offeredGeneralLinks, ...spaceLinks].map((link) => [link.id, link]),
+  ).values(),
+];
+```
+[moisses89 2026-08-28T14:57:11Z] Done 9a85d312594e622b89b5ce6f250f5699a67e5454
+
+THREAD src/modules/entitlements/domain/subscriptions.repository.integration.spec.ts:212 resolved=true
+[LucieFaire 2026-08-28T14:14:09Z] we can remove  `should report a terminal subscription as subscribed but on no plan` test and collapse others into one test which will then also cover the other statuses: `past_due, paused, unpaid`:
+```
+ // Every status outside ACTIVE_SUBSCRIPTION_STATUSES, listed literally
+    // rather than derived from it: the point is to pin which side of the line
+    // each one falls on, which a list computed from that constant could not do.
+    it.each([
+      'canceled',
+      'incomplete',
+      'incomplete_expired',
+      'past_due',
+      'paused',
+      'unpaid',
+    ] as const)(
+      'should report a %s subscription as subscribed but on no plan',
+      async (status) => {
+        const spaceId = await createSpace();
+        await subscribe(spaceId, status);
+
+        await expect(
+          subscriptionsRepository.getSubscriptionSummary(spaceId),
+        ).resolves.toStrictEqual({
+          hasEverSubscribed: true,
+          activePlanName: null,
+        });
+      },
+    );
+```
+[moisses89 2026-08-28T14:57:20Z] Done 9a85d312594e622b89b5ce6f250f5699a67e5454
+
+REVIEW DISMISSED
+[LucieFaire 2026-08-28T14:14:46Z] minor nits and test improv, otherwise good!
+
+COMMENT
+[moisses89 2026-08-27T15:52:47Z] @claude review
+
+COMMENT
+[claude 2026-08-27T15:53:01Z] **Claude finished @moisses89's task in 3m 3s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/33090240093)
+
+---
+### Claude PR Review
+
+Nice, well-scoped change — the pure offer rule plus the eligibility read is a clean split, and both are properly tested (unit + integration + e2e). A few things worth improving:
+
+---
+
+#### 1. Wasted DB round-trip on the never-subscribed path
+
+`src/modules/billing/routes/billing.service.ts:194-199`
+
+```ts
+const [spaceCreatedAt, hasEverSubscribed, activePlanName] =
+  await Promise.all([
+    this.spacesRepository.findCreatedAtById(spaceId),
+    this.subscriptionsRepository.hasAnySubscription(spaceId),
+    this.subscriptionsRepository.getActivePlanName(spaceId),
+  ]);
+```
+
+`isOfferedToSpace` only reads `activePlanName` when `hasEverSubscribed === true`, so for every never-subscribed workspace (the vast majority pre-enforcement) `getActivePlanName` fires a `SELECT` whose result is discarded. Either fold both into a single `subscription` query (one SELECT returning `exists` + `planName`), or resolve `activePlanName` conditionally.
+
+[Fix this →](https://claude.ai/code?q=In%20src%2Fmodules%2Fbilling%2Froutes%2Fbilling.service.ts%3A194%20on%20branch%20moisesf%2Fpla-1870-cgw-pre-enforcement-workspace-snapshot-offer-the-2-month%2C%20avoid%20the%20unused%20getActivePlanName%20query%20when%20hasEverSubscribed%20is%20false.%20Either%20merge%20hasAnySubscription%20and%20getActivePlanName%20into%20a%20single%20query%20over%20the%20subscriptions%20table%2C%20or%20await%20getActivePlanName%20only%20when%20hasAnySubscription%20is%20true.&repo=safe-global/safe-client-gateway)
+
+---
+
+#### 2. Checkout path now re-runs the full offer computation
+
+`src/modules/billing/routes/billing.service.ts:125`
+
+Every `POST /checkout-url` call now does: general catalog fetch + space-specific catalog fetch + 3 DB queries + the actual checkout POST. The upstream catalog reads are cached (good), but the three DB queries fire on every checkout attempt. If checkout is a hot enough path, consider a lighter-weight `assertOffered(paymentLinkId, spaceId)` that reuses cached catalogs and short-circuits DB reads.
+
+Not a blocker — the safety property (filtered list must match checkout) is worth the cost — but worth noting.
+
+---
+
+#### 3. `warnOnUnclassifiedTrials` will spam on every request
+
+`src/modules/billing/routes/billing.service.ts:163,179-189`
+
+The warn fires on **every** call to `listOfferedPaymentLinks`, which means every `GET /payment-links` and every `POST /checkout-url` for the same misconfigured catalog. In a bad configuration this can flood logs with the same message every request. Consider either:
+- logging at `debug`/rate-limited `warn` per link id (dedup via an in-memory Set for the process lifetime), or
+- moving the check to a catalog-refresh path (only warn when the datasource actually re-fetches).
+
+Same rationale the PR body cites ("look loudly instead of silently") still applies, just once rather than N times a minute.
+
+---
+
+#### 4. Style: `switch (true)` in `payment-link-offer.rules.ts:53`
+
+The four-arm `switch (true)` is unusual for this repo — a plain `if / else if` chain reads a bit more naturally and is easier to `git blame`. Purely a style call.
+
+---
+
+#### 5. Redundant `hasAnySubscription` when `getActivePlanName` covers the "on a plan" case
+
+`src/modules/entitlements/domain/subscriptions.repository.ts:44-73`
+
+Two very similar methods that always fire together. `getActivePlanName` already resolves whether an active subscription exists (non-null return); `hasAnySubscription` only adds coverage for terminal/incomplete rows. A single query returning `{ activePlanName, hasAnySubscription }` would halve round-trips and remove a code path that's hard to keep in sync. Feels like unnecessary API surface today.
+
+---
+
+#### 6. Minor: `parseEnforcementStartsAt` semantics
+
+`src/config/entities/configuration.ts:1073-1079`
+
+`new Date(envValue ?? '2099-01-01T00:00:00Z')` treats an **empty string** as "invalid → throw" but **unset** as "use default". That's the tested behavior, but it's slightly surprising for operators who set `ENTITLEMENTS_ENFORCEMENT_STARTS_AT=` in a `.env` file. Consider treating empty-string as unset (`envValue?.trim() || undefined`) for consistency with other keys in this file.
+
+---
+
+### Test coverage — good
+
+- `payment-link-offer.rules.spec.ts` covers all offer combinations including the boundary of `predatesEnforcement`.
+- `subscriptions.repository.integration.spec.ts` covers terminal/incomplete/active statuses and cross-space isolation for the two new methods.
+- Boundary test in `billing.service.spec.ts:456` correctly asserts the workspace created *exactly* at `ENFORCEMENT_STARTS_AT` is post-enforcement.
+- E2E covers the 403 rejection on the filtered checkout path.
+
+Nice work overall — the majority of comments are optimizations, not correctness issues.
+ • [Branch](https://github.com/safe-global/safe-client-gateway/tree/moisesf/pla-1870-cgw-pre-enforcement-workspace-snapshot-offer-the-2-month)
+
+COMMENT
+[moisses89 2026-08-28T08:37:42Z] https://github.com/safe-global/safe-client-gateway/pull/3399#issuecomment-5441694162
+1. Done: folded both into a single getSubscriptionSummary aggregate.
+2. Acknowledged: keeping it: billing service exposes no fetch-one.
+3. Fixed: now warns once per link id per process.
+4. Keeping it: the switch shape was explicitly requested in review.
+5. Done: same change as 1; hasAnySubscription removed.
+6. Keeping the throw: matches main's behavior; empty means misconfiguration.
+
+COMMENT
+[moisses89 2026-08-28T08:37:54Z] @claude arch-review
+
+COMMENT
+[claude 2026-08-28T08:46:21Z] ## Architecture check
+
+Guides applied: [ARCHITECTURE.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/ARCHITECTURE.md), [best-practices.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/best-practices.md), [nestjs-patterns.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/nestjs-patterns.md), [api-dtos-and-validation.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/api-dtos-and-validation.md), [security.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/security.md), [module-structure.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/module-structure.md), [caching-and-performance.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/caching-and-performance.md), [database-and-migrations.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/database-and-migrations.md), [testing.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/testing.md), [configuration-and-flags.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/configuration-and-flags.md), [commits-and-prs.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/commits-and-prs.md), [reviewing.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/reviewing.md), [remarks.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/remarks.md)
+
+1. **[Bounded in-process memos](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/caching-and-performance.md#L89)** — [src/modules/billing/routes/billing.service.ts:42](https://github.com/safe-global/safe-client-gateway/blob/a43549a08ebc5dbb84773bae664a37e1c93e0725/src/modules/billing/routes/billing.service.ts#L42) — `warnedUnclassifiedLinkIds` is a new ad hoc in-process memo with neither a cron clear nor a size bound, so it holds one entry per unclassified trial-link id for the whole process lifetime and never re-warns if a catalog is fixed and later re-broken. **Fix:** add an hourly `@Cron` method on `BillingService`, disabled when NODE_ENV is test (the shape `clearSignatureMemo` uses in `src/domain/common/entities/safe-signature.ts`), calling `this.warnedUnclassifiedLinkIds.clear()`; or cap the set size.
+2. **[R-006: Asserting that *an* error was thrown, not *which*](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/remarks.md#L128)** — [src/modules/entitlements/routes/entitlements.service.integration.spec.ts:1139](https://github.com/safe-global/safe-client-gateway/blob/a43549a08ebc5dbb84773bae664a37e1c93e0725/src/modules/entitlements/routes/entitlements.service.integration.spec.ts#L1139) — the rewritten assertion is a bare `toThrow()`, which passes for any throw including a TypeError from a typo on the line under test, while the sibling case added in `billing.service.spec.ts` does pin the message. **Fix:** `expect(() => buildService(undefined)).toThrow('No value set for key entitlements.enforcementStartsAt');`
+
+**Verdict:** ❌ 2 finding(s)
+
+<sub>Automated check of this repo's [agent guidelines](https://github.com/safe-global/safe-client-gateway/blob/main/AGENTS.md) — Claude applying the committed guides in `docs/agents/`, not its own opinion. Run by [architecture-check.yml](https://github.com/safe-global/safe-client-gateway/blob/main/.github/workflows/architecture-check.yml) on `@claude arch-review`; background in [the CI gate](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/agent-tooling.md#the-ci-gate). Advisory — reply to a finding by its number to discuss it.</sub>
+
+COMMENT
+[moisses89 2026-08-28T09:03:07Z] https://github.com/safe-global/safe-client-gateway/pull/3399#issuecomment-5450416500
+**Bounded in-process memos**:  Memo removed entirely; now logs an error on every occurrence.
+**R-006**: Asserting that an error was thrown, not which — Fixed; now pins the message, matching the billing sibling.

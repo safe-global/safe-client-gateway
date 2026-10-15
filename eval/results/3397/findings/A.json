@@ -1,0 +1,55 @@
+{
+  "usd": 0.594778,
+  "findings": [
+    {
+      "file": "src/modules/messages/routes/messages.controller.integration.spec.ts",
+      "line": 516,
+      "claim": "The PR adds chainId and messageHash validation to four routes, but only getMessageByHash has a test verifying that bad input returns 422; getMessagesBySafe, createMessage, and updateMessageSignature have no such tests, so if a validation pipe is later removed from any of those three routes no test would fail."
+    },
+    {
+      "file": "src/modules/messages/routes/messages.controller.ts",
+      "line": 103,
+      "claim": "The getMessagesBySafe route received new chainId validation but has no test confirming invalid input returns 422."
+    },
+    {
+      "file": "src/modules/messages/routes/messages.controller.ts",
+      "line": 147,
+      "claim": "The createMessage route received new chainId validation but has no test confirming invalid input returns 422."
+    },
+    {
+      "file": "src/modules/messages/routes/messages.controller.ts",
+      "line": 192,
+      "claim": "The updateMessageSignature route received new validation for both chainId and messageHash but has no test confirming invalid input returns 422 for either parameter."
+    },
+    {
+      "file": "src/modules/messages/routes/messages.controller.ts",
+      "line": 67,
+      "claim": "The messageHash parameter is typed as Hash (implying a 32-byte hash) but is validated with HexSchema, which accepts any 0x-prefixed hex string of any length, including bare \"0x\", and whose output type is plain string; this means the declared type claims more than what is actually checked. The only other route using HexSchema (relay.controller.ts:218-219) types its parameter as Hex instead, and either that convention or a schema enforcing 32 bytes should be used here."
+    },
+    {
+      "file": "src/modules/messages/routes/messages.controller.ts",
+      "line": 193,
+      "claim": "The messageHash parameter in updateMessageSignature is typed as Hash but validated only with HexSchema, which does not enforce the 32-byte length implied by the Hash type."
+    },
+    {
+      "file": "src/datasources/config-api/config-api.service.ts",
+      "line": 75,
+      "claim": "The empty-chainId presence check now exists in two places: the new controller-level validation pipe already rejects an empty chainId, while this datasource-level check duplicates that validation, contrary to the convention of validating at the controller and not repeating presence checks further down."
+    },
+    {
+      "file": "src/datasources/config-api/config-api.service.ts",
+      "line": 80,
+      "claim": "This change quietly alters the response code for an empty chainId on the other 38 untouched @Param('chainId') routes from 502 to 404, and this behavioral change is not covered by any test nor called out in the PR description beyond a code comment."
+    },
+    {
+      "file": "src/modules/messages/routes/messages.controller.ts",
+      "line": 67,
+      "claim": "The PR title only mentions handling an empty chainId, but it also adds hex validation to messageHash and chainId validation to the create, list, and signature routes; this related hardening should be listed in the PR description so reviewers do not mistake it for unrelated changes."
+    },
+    {
+      "file": "src/modules/messages/routes/messages.controller.ts",
+      "line": 193,
+      "claim": "The PR title only mentions handling an empty chainId, but this line's added chainId and messageHash validation on updateMessageSignature is additional scope not described in the PR title."
+    }
+  ]
+}

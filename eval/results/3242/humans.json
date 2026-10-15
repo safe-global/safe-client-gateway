@@ -1,0 +1,18 @@
+{
+  "usd": 0.2268922,
+  "head": "bc49dc3b7f0f8bde225323e5bacb32d710120224",
+  "verdicts": [
+    {
+      "issue": 3,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "vseehausen replied (2026-07-09T12:04:52Z) \"keeping the unbounded `while` as-is\" because a hard-coded fallback would give a deterministic name. bridge-name.entity.spec.ts is unchanged between e22f39d49 and HEAD, and the bot's re-review accepted this reasoning."
+    },
+    {
+      "issue": 4,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "The bot itself said \"no change needed\". The author replied \"Leaving #3 (name.builder note) as-is — agreed it's not reachable in practice.\" name.builder.ts is unchanged after e22f39d49."
+    }
+  ]
+}

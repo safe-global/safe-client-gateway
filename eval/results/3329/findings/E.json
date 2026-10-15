@@ -1,0 +1,15 @@
+{
+  "usd": 0.0496916,
+  "findings": [
+    {
+      "file": "src/modules/transactions/routes/mappers/common/settings-change.mapper.spec.ts",
+      "line": 292,
+      "claim": "The test uses a hardcoded value instead of a randomly generated one via faker, which reduces test robustness."
+    },
+    {
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts",
+      "line": 1752,
+      "claim": "Since the responses are mocked in this test, the chainId value should be made random rather than fixed."
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "usd": 0.0700336,
+  "findings": [
+    {
+      "file": "src/datasources/circuit-breaker/circuit-breaker.service.ts",
+      "line": 247,
+      "claim": "releaseHalfOpenProbe decrements halfOpenInFlight for any request that finishes while the circuit is HALF_OPEN, without checking whether that request was actually admitted as a probe during the current HALF_OPEN window. A request that started while the circuit was CLOSED or during an earlier HALF_OPEN window can finish later and free a slot it never took, allowing more probes to be admitted than the configured cap, which undermines the hanging-upstream protection the change is meant to provide."
+    },
+    {
+      "file": "src/datasources/circuit-breaker/circuit-breaker.service.ts",
+      "line": 209,
+      "claim": "A comment states that one round of probes is always enough to reach a verdict either way, but this is only true for reopening the circuit; closing the circuit requires a configurable number of consecutive successes (10 by default) while at most about 3 probes can run concurrently, so closing actually takes at least four rounds."
+    },
+    {
+      "file": "src/datasources/circuit-breaker/circuit-breaker.service.ts",
+      "line": 537,
+      "claim": "In isStale, the branch checking for a missing lastActivityTime can no longer be reached because circuits are now only created inside recordFailure, which sets lastActivityTime immediately, and the test that previously covered this branch was removed in this diff, leaving dead code without corresponding coverage."
+    },
+    {
+      "file": "src/datasources/circuit-breaker/circuit-breaker.service.spec.ts",
+      "line": 58,
+      "claim": "The JSDoc comment on the getRegisteredCircuit test helper says tests seed a circuit by recording a failure and then reading it back, but the helper itself only reads the circuit back; each test records the failure separately, so the comment misdescribes what the helper does."
+    },
+    {
+      "file": null,
+      "line": null,
+      "claim": "No test in network.module exercises the new HALF_OPEN rejection path end to end, leaving that behavior without direct test coverage."
+    }
+  ]
+}

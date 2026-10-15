@@ -1,0 +1,25 @@
+{
+  "usd": 0.046437599999999996,
+  "findings": [
+    {
+      "file": "src/datasources/circuit-breaker/circuit-breaker.service.ts",
+      "line": 376,
+      "claim": "The PR moves circuit registration into recordFailure, makes getOrRegisterCircuit private, gates recordSuccess on enabled, and drops the corresponding call site in network.module.ts, but this registration-lifecycle change is unrelated to the probe cap the PR is meant to introduce. The public getOrRegisterCircuit method and the prior recordFailure guard logic should be restored, the call in network.module.ts should be kept, and the lazy-registration change should be shipped as a separate PR."
+    },
+    {
+      "file": null,
+      "line": null,
+      "claim": "The PR title uses the feat type even though the change corrects HALF_OPEN behavior related to a prior outage, which should be classified as a fix rather than a new client-visible capability; the title should be changed to reflect a fix."
+    },
+    {
+      "file": "src/datasources/circuit-breaker/circuit-breaker.service.spec.ts",
+      "line": 19,
+      "claim": "Switching the entire test suite to vi.useFakeTimers() rewrites rolling-window, stale-cleanup, and metrics tests that do not exercise any probe behavior, mixing an unrelated test-infrastructure change into the diff. The fake timers usage should be scoped only to the HALF_OPEN describe block containing the new probe tests, or the suite-wide conversion should be submitted as its own separate change."
+    },
+    {
+      "file": "src/datasources/circuit-breaker/circuit-breaker.service.spec.ts",
+      "line": 485,
+      "claim": "The new recordSuccess test uses the literal string 'new-circuit' even though the assertion does not depend on that specific value and the suite already has a faker-backed name generator available. The literal should be replaced with the existing faker-generated circuit name."
+    }
+  ]
+}

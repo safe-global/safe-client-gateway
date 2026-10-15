@@ -1,0 +1,10 @@
+{
+  "usd": 0.0574676,
+  "findings": [
+    {
+      "file": "src/config/entities/postgres.config.ts",
+      "line": 45,
+      "claim": "The default behavior for null or undefined values in a find where clause has changed from silently ignoring them to throwing a TypeORMError, and the config does not set invalidWhereValuesBehavior to make this choice explicit. No current call site can trigger it today, but a future find call passing an optional undefined/null value into where would now throw a runtime error instead of being dropped, so the change should at least be mentioned in the PR description, and ideally invalidWhereValuesBehavior should be set explicitly to record the decision."
+    }
+  ]
+}

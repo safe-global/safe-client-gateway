@@ -1,0 +1,30 @@
+{
+  "usd": 0.047562,
+  "findings": [
+    {
+      "file": "datasources/spaces/",
+      "line": null,
+      "claim": "The new spaces/ subfolder convention is applied only in the datasources layer, while the domain and routes layers keep spaces-core files mixed at the top level alongside feature subfolders, creating an inconsistent structure across the three layers."
+    },
+    {
+      "file": "domain/entities/space.entity.ts",
+      "line": null,
+      "claim": "Spaces-core files in the domain layer are not grouped into a spaces/ subfolder even though the datasources layer now uses this convention, so a reader has to learn that files without a subfolder belong to the spaces feature."
+    },
+    {
+      "file": "routes/spaces.controller.ts",
+      "line": null,
+      "claim": "Spaces-core files in the routes layer (controller, service, DTO entities, guard) are not grouped into a spaces/ subfolder, leaving the same inconsistency as in the domain layer relative to datasources."
+    },
+    {
+      "file": null,
+      "line": null,
+      "claim": "The commit message in 976f1ed contains a typo (\"sl=plit\" instead of \"split\") that should be corrected on squash-merge."
+    },
+    {
+      "file": "datasources/safes/entities/space-safes.entity.db.ts",
+      "line": null,
+      "claim": "The file defines a single entity class SpaceSafe but the filename is plural, which is inconsistent naming; this is pre-existing but the refactor was an opportunity to fix it."
+    }
+  ]
+}

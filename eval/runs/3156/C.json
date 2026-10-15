@@ -1,0 +1,10 @@
+{
+  "pr": 3156,
+  "reviewSha": "4f4aaba779c476349a7c3ba92585f81a1a2adaef",
+  "baseSha": "ff7c7828f502c53d6bdbc92c63b4ea12ce1c591c",
+  "system": "C",
+  "version": "github",
+  "runner": "collect",
+  "model": "claude-code-action",
+  "output": "### Claude PR Review\n\n<img src=\"https://github.com/user-attachments/assets/5ac382c7-e004-429b-8e35-7feb3e8f9c6f\" width=\"14px\" height=\"14px\" style=\"vertical-align: middle; margin-left: 4px;\" /> Reviewing...\n\n- [x] Gather context\n- [ ] Read changed files\n- [ ] Provide review feedback\n\n[View job run](https://github.com/safe-global/safe-client-gateway/actions/runs/27410555459) · branch: `fix/space-access-require-active-member`"
+}

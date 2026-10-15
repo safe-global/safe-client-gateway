@@ -1,0 +1,10 @@
+{
+  "pr": 3368,
+  "reviewSha": "059fdf9c37f708df55d777f9623d4a7d6ab7f453",
+  "baseSha": "9ecb1eeba6c7264d2a4c74d7e314e72903b3037a",
+  "system": "D",
+  "version": "github",
+  "runner": "collect",
+  "model": "claude-code-action",
+  "output": "## Architecture check\n\nApplicable guides: best-practices.md, testing.md, commits-and-prs.md, reviewing.md (+ remarks.md)\n\nsrc/modules/safe-shield/recipient-analysis/recipient-analysis.service.ts:706 — No scope creep: the SafeToL2Migration rewrite and its supporting `getSafeToL2MigrationVersions` getter are behaviour-neutral by the PR description's own account, pulling a second module into a v1.5.0 SafeMigration fix (R-029).\nPR title — Allowed types: a behavior correction (unrecognised v1.5.0 `SafeMigration` causing 422s and `MalformedHash`) is typed `chore`, which the table reserves as a last resort and excludes in favour of `fix`.\n\n**Verdict:** ❌ 2 finding(s)"
+}

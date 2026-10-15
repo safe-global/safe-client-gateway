@@ -1,0 +1,15 @@
+{
+  "usd": 0.04897,
+  "findings": [
+    {
+      "file": "src/datasources/billing-api/billing-api.service.ts",
+      "line": 237,
+      "claim": "previewSubscriptionUpdate and updateSubscription return bare parsed types and call Schema.parse() directly inside the datasource, so no repository owns the parse boundary; deferring the conversion to a follow-up does not satisfy the requirement that raw data cross the datasource boundary as Raw<T> and be parsed only in a repository. The methods should be typed to return Promise<Raw<SubscriptionUpdatePreview>> / Promise<Raw<UpdateSubscriptionResult>> using rawify(data), with the schema parsing moved into a BillingRepository under src/modules/billing/domain/ that BillingService calls instead of calling IBillingApi directly."
+    },
+    {
+      "file": "src/modules/billing/routes/billing.controller.ts",
+      "line": 95,
+      "claim": "Four pre-existing handlers (lines 95, 134, 160, 188) have their second spaceUuid binding switched to use uuidPipe, a hardening change that none of the new endpoints in this PR require and that is not listed in the PR's Changes section. This should either be reverted to keep those bindings as they were and shipped as its own PR, or explicitly documented as a bullet under Changes and a line in the Summary."
+    }
+  ]
+}

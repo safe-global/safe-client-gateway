@@ -1,0 +1,30 @@
+{
+  "usd": 0.07257559999999999,
+  "findings": [
+    {
+      "file": "src/datasources/common/chain-api.manager.ts",
+      "line": 17,
+      "claim": "The cache does `this.apis[chainId] ??= await this.createApi(chainId)`, checking the slot before the await and writing after it without rechecking, so two concurrent first-time calls for the same chain each build their own instance and the second write overwrites the first in the cache. This was reproduced directly: two concurrent calls returned two different instances and the cache kept only the second, and the change newly introduces this race into BridgeApiFactory and SwapsApiFactory, which previously checked and set synchronously with no await and so could not race; a test exercising concurrent calls (e.g. Promise.all of two getApi calls for the same chain) is also missing."
+    },
+    {
+      "file": "src/modules/balances/datasources/balances-api.manager.ts",
+      "line": 54,
+      "claim": "`_getSafeBalancesApi` now does nothing but `return this.getOrCreateApi(chainId)` and has only one caller, `getApi`, while every other manager touched in the diff calls `getOrCreateApi` directly from `getApi`; the wrapper should be inlined for consistency."
+    },
+    {
+      "file": "src/modules/staking/datasources/kiln-api.manager.spec.ts",
+      "line": 99,
+      "claim": "The testnet test, and the caching/eviction tests, only cover the `staking` widget, so nothing verifies that `earn` reads from `earn.testnet.*`; moving the testnet case into the existing `it.each` over both widgets would close this gap."
+    },
+    {
+      "file": "src/datasources/common/chain-api.manager.ts",
+      "line": 25,
+      "claim": "The `!== undefined` check performed before calling `delete` on the cache is redundant, since `delete` on a missing key is already a no-op."
+    },
+    {
+      "file": "src/datasources/common/chain-api.manager.ts",
+      "line": 12,
+      "claim": "The cache is a plain `{}` keyed by `chainId`, which inherits prototype keys such as `constructor`, so `hasApi('constructor')` returns true; every manager previously had this issue individually, but now that the cache logic lives in one shared place, switching to a `Map<string, T>` would fix it everywhere at once."
+    }
+  ]
+}

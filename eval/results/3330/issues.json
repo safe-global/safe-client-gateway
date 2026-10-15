@@ -1,0 +1,70 @@
+{
+  "usage": {
+    "usd": 0.31303380000000003,
+    "turns": 3,
+    "wallSeconds": 40
+  },
+  "issues": [
+    {
+      "findings": [
+        "F1",
+        "F2",
+        "F12"
+      ],
+      "summary": "Unverified assumption that `:*` is a raw string-prefix match; if it is word-bounded, the motivating gap and the new comment are wrong",
+      "label": "unverifiable",
+      "evidence": ".github/workflows/architecture-check.yml:127-130 says `:*` is a string-prefix match, but the repo pins claude-code-action@v1.0.178 and nothing in it records how that bundled CLI matches `:*`. Older Claude Code builds did a plain startsWith, while current docs treat `:*` as equivalent to ` *` (word-bounded). The code alone can't settle which one applies.",
+      "category": "security"
+    },
+    {
+      "findings": [
+        "F4",
+        "F5",
+        "F6",
+        "F8",
+        "F13"
+      ],
+      "summary": "Trailing `:*` still allows `-R/--repo`, so an injection can redirect gh commands to another repository, and the \"cannot redirect\" comment and doc overstate the guarantee",
+      "label": "medium",
+      "evidence": ".github/workflows/architecture-check.yml:133 ends the view and comment entries with `--json:*` / `--body:*`, so `gh pr comment <N> --body \"x\" --repo other/repo` still matches the allowed prefix. The comment at :126 and docs/agents/agent-tooling.md:63 say an injection cannot redirect the comment, yet this PR's whole purpose is closing redirection gaps. How far a redirect reaches depends on the app token's scope, which the file doesn't show.",
+      "category": "security"
+    },
+    {
+      "findings": [
+        "F3",
+        "F10"
+      ],
+      "summary": "Under the comment's own prefix-match model, `--body:*` also matches `--body-file <path>`",
+      "label": "low",
+      "evidence": "If `:*` really is a string prefix, as :127-130 claims, then `gh pr comment <N> --body:*` at :133 also allows `--body-file /any/path`. That contradicts the comment's own rule that each entry must end on a token that can't be extended. The extra exposure is small, because the Read tool is already allowed and the agent can paste file contents into `--body`.",
+      "category": "security"
+    },
+    {
+      "findings": [
+        "F7"
+      ],
+      "summary": "Checkout step keeps default persist-credentials, leaving the token in .git/config where the Read tool can reach it",
+      "label": "low",
+      "evidence": ".github/workflows/architecture-check.yml:60-63 runs actions/checkout without `persist-credentials: false`, so the GITHUB_TOKEN is written into .git/config, and Read plus `gh pr comment --body` could post it. The problem is real, but it sits outside the lines this PR changes.",
+      "category": "security"
+    },
+    {
+      "findings": [
+        "F11"
+      ],
+      "summary": "claude-code-review.yml allows unpinned `gh pr comment:*`/`diff:*`/`view:*`",
+      "label": "low",
+      "evidence": ".github/workflows/claude-code-review.yml:90 has no PR-number pin at all, so it has the same redirect exposure in a broader form. That file is not touched by this PR, so this is at most low.",
+      "category": "security"
+    },
+    {
+      "findings": [
+        "F9"
+      ],
+      "summary": "Exact entries may deny command variants like `-b` or `--color=never`",
+      "label": "wrong",
+      "evidence": "The prompt at .github/workflows/architecture-check.yml:84-88 and :106-107 prescribes exactly `gh pr view <N> --json ...`, `gh pr diff <N> [--name-only]` and `gh pr comment <N> --body`, and the new entries were written to match those forms. Narrowing the allowed commands to those forms is the intended design, not a defect.",
+      "category": "correctness"
+    }
+  ]
+}

@@ -1,0 +1,75 @@
+{
+  "usd": 0.05688560000000001,
+  "findings": [
+    {
+      "file": "src/modules/billing/domain/billing-auth.service.ts",
+      "line": 59,
+      "claim": "The public key is only checked for presence at boot via getOrThrow, so a malformed or truncated PEM (common with env-var newline mangling) will pass startup and then cause every webhook verification to fail. The module claims to fail fast at boot, but that guarantee is not actually enforced; the constructor or config validator should attempt crypto.createPublicKey to validate the PEM at startup."
+    },
+    {
+      "file": "src/modules/billing/routes/guards/billing-webhook-auth.guard.ts",
+      "line": 40,
+      "claim": "The Authorization header is typed as string | string[] | undefined, but the code calls header?.startsWith('Bearer ') without checking the type; if the header is ever an array, this throws and results in an uncaught 500 error instead of the intended UnauthorizedException."
+    },
+    {
+      "file": "scripts/generate-token.ts",
+      "line": 81,
+      "claim": "expiresInDays has no upper bound, so a typo such as --expires-in 18250 would mint a token valid for roughly 50 years, far outliving the key rotation lifecycle; an upper cap (e.g. 10 years) should be enforced and a warning logged when the resolved value exceeds some threshold."
+    },
+    {
+      "file": "src/modules/billing/domain/billing-auth.service.ts",
+      "line": 79,
+      "claim": "Because iss equals aud by design, any other CGW-minted token targeted at itself for a different purpose would satisfy the iss and aud checks; the actual protection against crossover comes from a separate layer (SERVICE_ACCESS role/markers), and this dependency should be made explicit with an inline comment on verify()."
+    },
+    {
+      "file": "scripts/generate-token.ts",
+      "line": null,
+      "claim": "The main() function handles two signing modes (KMS and local) in a single ~60-line function; it should be split into separate mintViaKms and mintLocally functions, leaving main to handle argument parsing, orchestration, and printing."
+    },
+    {
+      "file": "src/datasources/kms/aws-kms-signer.service.ts",
+      "line": 11,
+      "claim": "KmsSignerConfig, IKmsSigner, and resolveCredentials are defined across two files instead of being consolidated; they should be moved into a dedicated interface/types file so the service file contains only the implementation."
+    },
+    {
+      "file": "src/modules/billing/domain/billing-auth.service.ts",
+      "line": null,
+      "claim": "BillingAuthService mixes DI-instance responsibilities (verify) with static factory methods (mint, mintViaSigner) that have no relation to the injected service other than sharing buildClaims; extracting a separate BillingTokenMinter module used by the CLI would remove the CLI's dependency on the DI-decorated class and make the 'app never signs' boundary structural rather than conventional."
+    },
+    {
+      "file": "src/modules/billing/domain/billing-auth.service.ts",
+      "line": 23,
+      "claim": "Constants and the BillingTokenClaimsArgs type are defined in billing-auth.service.ts but belong next to the entity/schema for consistency with the rest of the module."
+    },
+    {
+      "file": "src/datasources/kms/aws-kms-signer.service.spec.ts",
+      "line": null,
+      "claim": "The test suite never asserts the webIdentityTokenFile branch of resolveCredentials, leaving the IRSA credential path untested; a test case constructing with { webIdentityTokenFile: '...' } should be added."
+    },
+    {
+      "file": null,
+      "line": null,
+      "claim": "There is a coverage gap where the guard integration tests do not cover a token whose aud is an array containing the expected issuer alongside other values; since verify accepts a string audience against an array, a regression here could silently loosen authentication, so a test signing a token with aud: [ISSUER, 'other'] expecting a 202 response should be added."
+    },
+    {
+      "file": "src/modules/billing/domain/entities/billing-service-token.entity.spec.ts",
+      "line": null,
+      "claim": "The BillingServiceTokenSchema spec uses literal strings ('SERVICE_ACCESS', 'SERVICE_USER') instead of importing the exported constants (e.g. SERVICE_ACCESS_ROLE), creating a small risk of drift if the constant values change."
+    },
+    {
+      "file": "src/modules/billing/routes/billing.controller.ts",
+      "line": 6,
+      "claim": "Using path: '' together with @Post('/billing/webhooks') is awkward; giving the controller path: 'billing' and the route 'webhooks' would read more naturally and match the rest of the codebase's conventions."
+    },
+    {
+      "file": "src/modules/billing/routes/guards/billing-webhook-auth.guard.ts",
+      "line": null,
+      "claim": "The AUTH_HEADER_NAME constant declared inside BillingWebhookAuthGuard.getBearerToken has no reuse value as a local constant; it should either be lifted to a module-level constant or the indirection should be dropped."
+    },
+    {
+      "file": "src/datasources/kms/aws-kms-signer.service.ts",
+      "line": 38,
+      "claim": "SignCommand accepts a Uint8Array, making the Buffer.from(response.Signature) call on line 51 an unnecessary no-op copy since Buffer is already a Uint8Array on Node; the same applies to getPublicKey."
+    }
+  ]
+}

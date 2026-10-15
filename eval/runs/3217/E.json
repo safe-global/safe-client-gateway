@@ -1,0 +1,11 @@
+{
+  "pr": 3217,
+  "reviewSha": "b741d734c331490416ff430b4fd3657e384ad024",
+  "baseSha": "ad90ff097d42ada1a6ad7b2e36d8225d1fa119bf",
+  "system": "E",
+  "version": "github",
+  "runner": "collect",
+  "model": "human",
+  "commentSha": "de14fa0e5a8761bb9563f4ec9b78a4c3f784e32a",
+  "output": "src/modules/billing/routes/guards/billing-webhook-auth.guard.ts:21\n`BillingWebhookAuthGuard` injects the concrete `BillingAuthService` class, can we consider following the same pattern as `AuthGuard`, which injects an interface `IAuthRepository`?.\n\n---\n\nsrc/modules/billing/routes/guards/billing-webhook-auth.guard.ts:44\nJust to add coverage, can you add a test for empty key after Bearer?"
+}

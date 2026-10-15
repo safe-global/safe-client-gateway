@@ -1,0 +1,65 @@
+{
+  "usd": 0.0739516,
+  "findings": [
+    {
+      "file": "src/modules/billing/README.md",
+      "line": 129,
+      "claim": "The documentation instructs operators to mint production tokens by running node dist/scripts/generate-token.js inside the CGW image via the Docker or Kubernetes Job option, but the Dockerfile only copies scripts/generate-abis.js into the build stage and nest build compiles src/, so dist/scripts/generate-token.js never exists in the image, causing a 'Cannot find module' error on first production use."
+    },
+    {
+      "file": "Dockerfile",
+      "line": 9,
+      "claim": "Only scripts/generate-abis.js is copied into the build stage, so the token generation script referenced by the README is missing from the built image."
+    },
+    {
+      "file": "src/modules/billing/README.md",
+      "line": 144,
+      "claim": "The fallback command yarn generate-token also fails in the production image because ts-node is a devDependency and gets removed by yarn workspaces focus --production, leaving no way to run the script and forcing KMS as the only viable production path."
+    },
+    {
+      "file": "src/modules/billing/domain/entities/billing-service-token.entity.ts",
+      "line": 21,
+      "claim": "The exp field is optional in BillingServiceTokenSchema, so a correctly signed token without an expiration can be accepted indefinitely."
+    },
+    {
+      "file": "src/modules/billing/domain/billing-auth.service.ts",
+      "line": 76,
+      "claim": "No maxAge is enforced during verification, meaning tokens lacking an exp claim are not rejected on that basis."
+    },
+    {
+      "file": "scripts/generate-token.ts",
+      "line": 116,
+      "claim": "The safeguard preventing a local PEM key from being used in production relies on the CGW_ENV=production environment variable being set in the operator's own shell, but nothing enforces that this variable is set, so a production token can still be minted with a local key."
+    },
+    {
+      "file": "scripts/generate-token.ts",
+      "line": 81,
+      "claim": "The --expires-in argument is parsed with parseInt, which silently accepts invalid values such as 1.5 (interpreted as 1) or 30d (interpreted as 30), even though the README states the value must be a positive whole number."
+    },
+    {
+      "file": "src/modules/billing/routes/guards/billing-webhook-auth.guard.integration.spec.ts",
+      "line": 155,
+      "claim": "There is a test covering an expired token but none covering a token that has no exp claim at all, leaving that case unverified."
+    },
+    {
+      "file": "scripts/generate-token.ts",
+      "line": null,
+      "claim": "The CLI's argument validation logic has no tests at all."
+    },
+    {
+      "file": "src/datasources/kms/aws-kms-signer.service.ts",
+      "line": 16,
+      "claim": "resolveCredentials duplicates the pattern already used in src/modules/email/ses/datasources/aws-ses-email.service.ts:41, and only checks for the presence of webIdentityTokenFile even though fromTokenFile() reads the environment itself, indicating the value could be replaced with a boolean or the logic shared via a helper."
+    },
+    {
+      "file": "src/datasources/kms/kms-signer.interface.ts",
+      "line": 6,
+      "claim": "AGENTS.md expects each datasource to place its interface in src/domain/interfaces with a Symbol token and to have its own Nest module, but the KMS datasource has neither, so it deviates from the documented convention."
+    },
+    {
+      "file": "src/modules/billing/domain/billing-auth.service.ts",
+      "line": 8,
+      "claim": "The static mint and mintViaSigner methods call jwtClientFactory directly instead of going through the injected IJwtService, even though jwtClientFactory was exported specifically to support this, bypassing the established dependency injection pattern for the offline CLI path."
+    }
+  ]
+}

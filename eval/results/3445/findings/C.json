@@ -1,0 +1,25 @@
+{
+  "usd": 0.035774,
+  "findings": [
+    {
+      "file": "billing.service.ts",
+      "line": 190,
+      "claim": "previewSubscriptionUpdate does not call assertSafeSeatCapacity while updateSubscription does, contradicting the docstring which says the preview rejects for the same reasons as the PATCH except for requiring an updatable subscription. As a result, a downgrade preview can succeed and return a price even though the workspace has too many Safes for the target plan, and the subsequent PATCH call will then fail with a 409, so the client is shown a price it can never actually commit."
+    },
+    {
+      "file": "billing.service.ts",
+      "line": 428,
+      "claim": "assertSafeSeatCapacity parses the seat quota twice: once via parseSafeSeatQuota in the guard clause, and again inside hasSeatCapacity when it re-parses the same metadata. This is redundant work and can be simplified by parsing the quota once, guarding on null, and comparing used and quota directly, after which hasSeatCapacity would have no remaining callers and could be removed from payment-link-offer.rules.ts along with its unit tests."
+    },
+    {
+      "file": "billing.controller.ts",
+      "line": 274,
+      "claim": "The ApiConflictResponse documentation for the PATCH .../subscriptions/:subscriptionId endpoint merges four unrelated 409 causes into a single prose sentence, forcing clients to string-match the error message to tell the causes apart; if the server already returns distinct message strings, the OpenAPI description could instead use a bullet list or dedicated error codes to make the outcomes machine-distinguishable."
+    },
+    {
+      "file": "billing.controller.ts",
+      "line": 270,
+      "claim": "The OpenAPI 403 description for updateSubscription reads \"Not an admin, or a plan this workspace is not offered\" but omits a third case: the service also throws a ForbiddenException via paymentLinkForPlanOrFail when the given paymentLinkId is not in the offered set, so the documented wording is incomplete."
+    }
+  ]
+}

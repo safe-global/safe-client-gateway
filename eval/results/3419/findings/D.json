@@ -1,0 +1,20 @@
+{
+  "usd": 0.058949600000000005,
+  "findings": [
+    {
+      "file": "src/modules/tokens/routes/tokens.controller.ts",
+      "line": 103,
+      "claim": "Both new routes are unauthenticated address lookups and neither attaches a rate-limiting guard, so a single call to the batch route fans out up to 20 upstream Transaction Service requests with no per-caller bound. A dedicated rate limit guard should be added under the tokens routes with its own max/windowSeconds and applied to the controller."
+    },
+    {
+      "file": "src/modules/tokens/routes/tokens.controller.ts",
+      "line": 73,
+      "claim": "The chainId route parameters on both new handlers use a bare numeric string schema instead of the chain ID schema, deviating from the pattern that limits that bare schema to pre-existing routes. Both handlers should validate chainId using the ChainIdSchema via ValidationPipe instead."
+    },
+    {
+      "file": "src/modules/tokens/routes/entities/token-addresses.dto.entity.ts",
+      "line": 6,
+      "claim": "The maximum batch size enforced before the upstream fan-out is a hardcoded literal rather than a named, configuration-driven value, which the caching/performance rule requires. It should be moved into the configuration entity and schema, exposed as an environment variable, added to the env sample, and read via the configuration service."
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "usd": 0.024172,
+  "findings": [
+    {
+      "file": "src/modules/spaces/domain/entities/space.entity.ts",
+      "line": 20,
+      "claim": "The uuid field's type should use the UUID type imported from the crypto module instead of a plain string, to make the type more precise."
+    },
+    {
+      "file": "src/modules/spaces/domain/spaces.repository.ts",
+      "line": 218,
+      "claim": "The generated row from the insert result should be typed as Pick<Space, 'id' | 'uuid'> | undefined instead of a less precise or unsafe type, since generatedMaps can be empty and its element shape should be constrained to just the fields being used."
+    }
+  ]
+}

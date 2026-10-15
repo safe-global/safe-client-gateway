@@ -1,0 +1,50 @@
+{
+  "usd": 0.0510616,
+  "findings": [
+    {
+      "file": "src/modules/entitlements/routes/guards/entitlement.guard.ts",
+      "line": 36,
+      "claim": "The route's guards run AuthGuard then ElevationGuard then SafeSeatsGuard, and none of them checks space membership or admin status before SafeSeatsGuard looks up the target space by the client-supplied UUID and counts its Safes, so the quota check executes for unauthorized callers."
+    },
+    {
+      "file": "src/modules/spaces/routes/safes/space-safes.controller.ts",
+      "line": 94,
+      "claim": "Because the admin check (assertAdmin) only runs later inside the service, any logged-in user can POST to another space's /v1/spaces/<uuid>/safes endpoint and receive a 402 response containing that space's quota, used count, and resetsAt when it is full, or a 403 when it is not, leaking plan and usage data to non-members and wasting DB work on unauthorized requests."
+    },
+    {
+      "file": "src/modules/spaces/routes/safes/space-safes.service.ts",
+      "line": 40,
+      "claim": "assertAdmin is invoked too late in the request flow (inside the service) to prevent the earlier SafeSeatsGuard from exposing quota and usage information; membership or admin checks should happen inside the guard before assertWithinQuota is called, or the early guard should be removed and enforcement left to the write path."
+    },
+    {
+      "file": "src/modules/entitlements/routes/entitlements.service.ts",
+      "line": 216,
+      "claim": "The rejection response for exceeding the Safe seat limit changes from a 400 status with a plain message to a 402 status with a structured body ({code, feature, quota, used, resetsAt}) immediately upon deployment, rather than only at the stated enforcement date, even though the underlying quota check (staticGrant) already applies the same limit before that date."
+    },
+    {
+      "file": "src/modules/spaces/domain/safes/space-safes.repository.ts",
+      "line": null,
+      "claim": "The old BadRequestException with the message 'This Workspace only allows a maximum of N Safe Accounts…' was removed, so any client that keys on the previous 400 status code or matches that message text will break as soon as this commit is deployed, and nothing in the diff indicates clients have been updated or coordinated for this contract change."
+    },
+    {
+      "file": "src/modules/spaces/spaces.module.ts",
+      "line": 60,
+      "claim": "SpacesModule now imports EntitlementsModule via forwardRef, and since EntitlementsModule already imports SpacesModule via forwardRef, this creates a genuine two-way circular module dependency rather than the prior one-way relationship."
+    },
+    {
+      "file": "src/modules/entitlements/entitlements.module.ts",
+      "line": 22,
+      "claim": "The module's doc comment still claims it 'sits above that layer and can afford the cycle,' which is no longer accurate now that a real bidirectional dependency exists between EntitlementsModule and SpacesModule (the reverse import is at line 28); the enforcement pieces SpacesModule needs should be moved to a module that doesn't import SpacesModule, or the comment should be updated to explain the cycle."
+    },
+    {
+      "file": "src/modules/entitlements/routes/entitlements.service.ts",
+      "line": 223,
+      "claim": "The warning logged for a missing catalog row is a plain interpolated string without a LogType object, unlike the quota-exceeded warning a few lines above it in the same file which does use a LogType, so it should be changed to a structured log with a LogType."
+    },
+    {
+      "file": "src/modules/spaces/routes/safes/space-safes.controller.spec.ts",
+      "line": null,
+      "claim": "The new controller spec only verifies that the guard and filter are attached as metadata; there is no request-level test that sends an actual POST /v1/spaces/:spaceId/safes and verifies the full chain (guard ordering after AuthGuard, the filter converting the error into a 402 body, and the write-path check catching an over-limit batch), and such a test would also have caught the membership/authorization issue described separately."
+    }
+  ]
+}

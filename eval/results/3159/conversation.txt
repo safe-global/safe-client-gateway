@@ -1,0 +1,82 @@
+COMMENT
+[vseehausen 2026-07-09T10:36:52Z] @claude review
+
+COMMENT
+[claude 2026-07-09T10:37:04Z] **Claude finished @vseehausen's task in 1m 5s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/29012180759)
+
+---
+### Claude PR Review
+
+- [x] Read changed files
+- [x] Compare with existing `AlertsRouteGuard` pattern
+- [x] Analyze code quality, bugs, security, tests
+- [x] Post final review
+
+---
+
+Overall this is a clean, minimal change that mirrors the established `AlertsRouteGuard` pattern well. A few things to consider improving:
+
+### Suggestions
+
+**1. Missing integration/controller-level test for the guard wiring** — `src/modules/portfolio/v1/guards/portfolio-route.guard.spec.ts:1`
+
+The unit test verifies the guard's logic in isolation, but nothing verifies that:
+- `@UseGuards(PortfolioRouteGuard)` is actually applied to the controller (a future refactor removing the decorator would silently unblock the endpoint), and
+- Both `GET /v1/portfolio/:address` and `DELETE /v1/portfolio/:address` return `403` when the flag is off.
+
+The PR description makes the "GET and DELETE both return 403" claim explicitly, so it's worth an integration test that starts the Nest app with `features.zerionBalancesEnabled=false` and asserts a 403 on both routes. See `src/modules/balances/routes/__tests__/controllers/zerion-balances.controller.integration.spec.ts` for a similar setup.
+
+**2. Flag reference already known to be stale** — `src/modules/portfolio/v1/guards/portfolio-route.guard.ts:18`
+
+`features.zerionBalancesEnabled` is being renamed to `features.zerionEnabled` in #3157 (per the PR description). Once whichever PR merges second updates the reference, please also update the two identical string literals in `portfolio-route.guard.spec.ts:23` (and consider extracting the flag name to a shared constant if it will be referenced from more places, but that's optional).
+
+**3. JSDoc value** — `src/modules/portfolio/v1/guards/portfolio-route.guard.ts:5-8`
+
+The class doc explains the "why" (nice), but `AlertsRouteGuard` has none and the pattern is well established. Not a blocker — this comment does add real context because the flag name (`zerionBalancesEnabled`) doesn't obviously map to "portfolio". If you rename the flag to `zerionEnabled` per #3157, the comment becomes redundant and can be dropped.
+
+### Nits
+
+- `portfolio-route.guard.spec.ts:8` — the `as MockedObject<IConfigurationService>` cast around the object literal is unnecessary since `vi.mocked()` already returns a `MockedObject`; consumers of `IConfigurationService` in this codebase often just use `{ getOrThrow: vi.fn() } as jest.MockedObjectDeep<IConfigurationService>` or similar. Minor style thing.
+
+### What looks good
+
+- Guard is `@Injectable()` and consistent with `AlertsRouteGuard` — Nest will instantiate it correctly from the global config context, no module provider needed.
+- `getOrThrow` (rather than `get`) is the right choice — it prevents a silent "flag missing = endpoint open" failure mode.
+- Both `true` and `false` branches are covered in the unit test.
+- No security concerns: returning `false` from `canActivate` produces a `ForbiddenException` (403) as documented in the PR.
+ &middot; `feat/portfolio-route-zerion-guard`
+
+COMMENT
+[vseehausen 2026-07-10T09:44:29Z] @claude review again
+
+COMMENT
+[claude 2026-07-10T09:44:48Z] **Claude finished @vseehausen's task in 1m 42s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/29084054706)
+
+---
+### Claude Code Review
+
+- [x] Gather PR context and read changed files
+- [x] Analyze code quality, correctness, tests
+- [x] Post review feedback
+
+Overall: clean, small, and mirrors the existing `AlertsRouteGuard` pattern. A few minor notes only — nothing blocking.
+
+### Nits / suggestions
+
+**1. Naming — `zerionBalancesEnabled` gating `/portfolio` reads oddly**
+`src/modules/portfolio/v1/guards/portfolio-route.guard.ts:18` reads `features.zerionBalancesEnabled` for a route named `/portfolio`. The PR body already acknowledges this and points at #3157 which renames it to `features.zerionEnabled`. Just be sure whichever PR lands second updates this string — a stale reference here would still throw at DI init (`getOrThrow`), so at least you'll fail loudly rather than silently allow requests through.
+
+**2. Integration test — asymmetric coverage of `enabled=true`**
+`src/modules/portfolio/v1/portfolio.controller.integration.spec.ts:78` only exercises `DELETE` when the flag is on. `GET /portfolio/:address` when enabled is left unverified. Since `GET` would hit the real Zerion client in an integration test that would be brittle, a lightweight assertion like `.expect((res) => expect(res.status).not.toBe(403))` (or mocking the domain service) would confirm the guard path for the read route as well. Optional.
+
+**3. Test description is slightly stronger than the assertion**
+Same file, line 78: the `it` says "is not blocked by the guard" but the assertion is `expect(204)`. If `clearPortfolio` ever changes its status code, this test would fail for reasons unrelated to the guard. Consider either asserting `.not.toBe(403)` (matches the intent) or renaming the test to "returns 204 when the flag is enabled".
+
+**4. JSDoc wording**
+`portfolio-route.guard.ts:6-8` says "Zerion kill-switch" but the flag is scoped to balances. If Zerion is used elsewhere in the codebase and this flag doesn't disable those code paths, the doc slightly overpromises. Minor, will be moot once the flag is renamed.
+
+### Positives
+- Guard is `@Injectable()` and picked up by Nest's DI via `@UseGuards(...)` on the controller — no module wiring needed, matching the alerts approach.
+- Unit spec covers both true/false branches and verifies the exact config key.
+- Integration test isolates the flag-off case cleanly with an override configuration factory.
+ • [`feat/portfolio-route-zerion-guard`](https://github.com/safe-global/safe-client-gateway/tree/feat/portfolio-route-zerion-guard)

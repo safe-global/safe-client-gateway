@@ -1,0 +1,40 @@
+{
+  "usd": 0.0706836,
+  "findings": [
+    {
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.ts",
+      "line": 693,
+      "claim": "The change from a pinned '1.4.1' version check to getSafeToL2SetupVersions().some(...) has no service-level test exercising the new branch, since every 1.5.0 bridge test sets `to` to zeroAddress, making includesSetupToL2 always false. The commit message's claim that chains with only the 1.5.0 setup contract are no longer reported incompatible is therefore untested, and deployments.spec.ts only checks that the version list contains '1.4.1' and '1.5.0' rather than testing this behavior."
+    },
+    {
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.ts",
+      "line": 695,
+      "claim": "The new check passes if any SafeToL2Setup version has a canonical deployment on the target chain, without checking the actual safeAccountConfig.to address used or the version being tested. This means a Safe set up through SafeToL2Setup 1.4.1 could be marked compatible on a chain that only has the 1.5.0 setup contract (a different address), making the check looser and less accurate than the previous pinned-version check; matching `to` against the setup deployments, similar to how isFallbackHandlerDeployed matches the handler address, would be more correct."
+    },
+    {
+      "file": "src/domain/common/utils/__tests__/deployments.spec.ts",
+      "line": 13,
+      "claim": "The ExtensibleFallbackHandler address '0x85a8ca35…' is hardcoded in three places (deployments.spec.ts, contract-analysis.service.spec.ts, and recipient-analysis.service.spec.ts) instead of being derived from safe-deployments, e.g. via getExtensibleFallbackHandlerDeployments({ chainId, version: '1.5.0' })[0], even though the same spec file already derives values from the package elsewhere."
+    },
+    {
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts",
+      "line": 1752,
+      "claim": "The new test at lines 1752-1806 is a near-verbatim copy of the earlier test at lines 1696-1750, differing only in the fallbackHandler value and its comment, resulting in about 55 duplicated lines; using it.each over [CompatibilityFallbackHandler, ExtensibleFallbackHandler] would cover both cases without duplicating the test body."
+    },
+    {
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts",
+      "line": 1752,
+      "claim": "The test is named 'should not return INCOMPATIBLE_SAFE…' but its assertions actually check that BRIDGE[0].type === 'MISSING_OWNERSHIP' at lines 1803-1805, so the test name does not describe what it verifies, unlike its sibling test at line 1696 whose name matches its assertion."
+    },
+    {
+      "file": "src/domain/common/utils/deployments.ts",
+      "line": 138,
+      "claim": "getExtensibleFallbackHandlerDeployments is exported but has no callers or importers outside the module, including specs; its only caller is isExtensibleFallbackHandlerDeployed within the same file, so it should be kept module-local per the applicable rule, though the existing getFallbackHandlerDeployments follows the same pattern."
+    },
+    {
+      "file": "src/domain/common/utils/deployments.ts",
+      "line": 220,
+      "claim": "The JSDoc for the two new version-list functions states the results come back 'in descending order', but the implementation is a plain .map over the package's internal arrays, so the actual order depends on how the package stores the data and is unverified; this claim duplicates an existing unverified claim at line 207, and could not be confirmed because node_modules was not installed and no test checks the ordering."
+    }
+  ]
+}

@@ -1,0 +1,103 @@
+{
+  "pr": 3419,
+  "title": "feat(tokens): expose token metadata by address",
+  "description": "- Closes [WA-3516](https://linear.app/safe-global/issue/WA-3516/implement-get-chainschainidtokens)\r\n\r\n## Summary\r\n\r\nAdds two public read endpoints on the existing `tokens` module so clients can resolve token metadata (symbol, name, decimals, logo, trusted) from the Transaction Service by address, instead of freezing it into their own source:\r\n\r\n- `GET /v1/chains/{chainId}/tokens/{address}` — one token; 404 when the Transaction Service does not know it.\r\n- `GET /v1/chains/{chainId}/tokens?addresses=a,b,c` — up to 20 tokens in request order; addresses the Transaction Service does not know are omitted, any other upstream failure propagates.\r\n\r\nFirst consumer is the Space-level spending-limit token selector ([WA-3149](https://linear.app/safe-global/issue/WA-3149/build-the-chain-aware-token-selector), safe-wallet-monorepo #8662): its popular-token list keeps only per-chain addresses and resolves everything else through these routes, so the metadata can never drift from what the assets page already shows.\r\n\r\nTwo design points worth a reviewer's judgement. The batch route fans out at most 20 parallel single-token lookups; each is already cached per `(chainId, address)` by the existing datasource and covered by the per-chain circuit breaker, so no new caching was added and the fan-out is not chunked, matching the existing Safe-overview batch. Because that amplification sits behind an unauthenticated route, both routes carry a `TokensRateLimitGuard`: 60 requests per 60 seconds per caller per route, tunable via `TOKENS_RATE_LIMIT_MAX` and `TOKENS_RATE_LIMIT_WINDOW_SECONDS` — the first rate-limited GET in this repo, added after `@claude arch-review` flagged the abuse-controls rule.\r\n\r\nThe 20-address cap stays a named constant rather than a config value: it is a published API contract bound, interpolated into the OpenAPI descriptions, and two deployments advertising different bounds would be worse than one fixed number. The `Batch and chunk upstream calls` rule asks for config there, but its own canonical example (`CoingeckoApi.MAX_BATCH_SIZE`) is a static class constant, and that rule governs chunk sizes for splitting a large input rather than a validation bound that rejects with 422. Flagged for the reviewer rather than changed unilaterally.\r\n\r\n## Changes\r\n\r\n- `routes/tokens.controller.ts`: the two routes, every `@Param` and `@Query` through `new ValidationPipe(Schema)`, and a Swagger response for each outcome the routes can produce.\r\n- `routes/tokens.service.ts`: the only new logic. De-duplicates addresses case-insensitively, skips an address the Transaction Service returns 404 for, propagates the first non-404 failure, and preserves request order.\r\n- `routes/entities/token-addresses.dto.entity.ts`: parses the comma-separated `addresses` query into `Address[]`; empty or more than 20 entries fail validation with 422.\r\n- `routes/entities/token.dto.entity.ts`: Swagger classes for the Native / ERC-20 / ERC-721 union. Named `*TokenMetadata` because `components.schemas` is keyed by class name across the whole app and the balances module already owns `NativeToken` / `Erc20Token` / `Erc721Token`, which omit `trusted`.\r\n- `routes/guards/tokens-rate-limit.guard.ts`: `RateLimitGuard` subclass reading `tokens.rateLimit.*`.\r\n- `tokens.module.ts`: registers the controller and the route service.\r\n- `src/config/entities/configuration.ts`, `schemas/configuration.schema.ts`, `entities/__tests__/configuration.ts`, `.env.sample.json`: `TOKENS_RATE_LIMIT_MAX` / `TOKENS_RATE_LIMIT_WINDOW_SECONDS` (default 60 / 60), mapped, validated at boot with `.min(1)`, mirrored in the test config and documented.\r\n- Tests: address-schema spec (7), service spec (8), controller integration spec (14, two of them covering the rate limit).",
+  "findings": [
+    {
+      "id": "F1",
+      "file": "src/modules/tokens/routes/tokens.service.ts",
+      "line": null,
+      "claim": "The single-token endpoint returns 404 for an unknown chain while the new batch endpoint returns 200 [] for the same input, making the two endpoints behave inconsistently for the same error condition."
+    },
+    {
+      "id": "F2",
+      "file": "src/modules/tokens/routes/tokens.controller.ts",
+      "line": 39,
+      "claim": "This code should not be located here and needs to be moved elsewhere."
+    },
+    {
+      "id": "F3",
+      "file": "src/modules/tokens/routes/tokens.controller.integration.spec.ts",
+      "line": 163,
+      "claim": "The integration spec re-tests that a duplicate address is fetched only once, a case already covered by tokens.service.spec.ts, and this test also requires a .mock.calls workaround comment that could be removed entirely if the duplicate test were dropped."
+    },
+    {
+      "id": "F4",
+      "file": "src/modules/tokens/routes/tokens.service.ts",
+      "line": 43,
+      "claim": "Because the batch endpoint's isNotFound check can't distinguish an unknown chain from an unknown token, a request like GET /v1/chains/99999/tokens?addresses=0x... returns 200 [] rather than 404, so a client with a mistyped or unsupported chain ID cannot tell that from a chain with genuinely unknown tokens."
+    },
+    {
+      "id": "F5",
+      "file": "src/modules/tokens/routes/entities/token-addresses.dto.entity.ts",
+      "line": 6,
+      "claim": "The maximum batch size enforced before the upstream fan-out is a hardcoded literal rather than a named, configuration-driven value, which the caching/performance rule requires. It should be moved into the configuration entity and schema, exposed as an environment variable, added to the env sample, and read via the configuration service."
+    },
+    {
+      "id": "F6",
+      "file": "src/modules/tokens/routes/tokens.service.ts",
+      "line": 35,
+      "claim": "Addresses are lowercased again in the service via uniqBy even though TokenAddressesSchema already normalizes each address to its checksummed form via AddressSchema, so the lowercasing repeats work already done by validation; either drop it in favor of plain uniq() or add a comment explaining the service might be called without the controller's validation."
+    },
+    {
+      "id": "F7",
+      "file": "tokens.controller.ts",
+      "line": 65,
+      "claim": "The controller's documentation states the 404 response means 'The Transaction Service does not know this token,' but an unknown chain also produces the same 404, so the documentation is inaccurate or incomplete and should either be worded more broadly or explicitly cover the chain-not-found case."
+    },
+    {
+      "id": "F8",
+      "file": "src/modules/tokens/routes/tokens.controller.ts",
+      "line": 103,
+      "claim": "Both new routes are unauthenticated address lookups and neither attaches a rate-limiting guard, so a single call to the batch route fans out up to 20 upstream Transaction Service requests with no per-caller bound. A dedicated rate limit guard should be added under the tokens routes with its own max/windowSeconds and applied to the controller."
+    },
+    {
+      "id": "F9",
+      "file": "src/modules/tokens/routes/tokens.controller.integration.spec.ts",
+      "line": 206,
+      "claim": "The integration spec re-tests that submitting more than MAX_TOKEN_ADDRESSES returns 422, a case already covered by the lower-layer schema spec, so it duplicates coverage in a slower test."
+    },
+    {
+      "id": "F10",
+      "file": "tokens.controller.integration.spec.ts",
+      "line": 146,
+      "claim": "The batch integration test suite has no test case for an unknown chain or a Config Service failure, even though the single-token suite does test the analogous 503 case; such a test would have caught the batch endpoint's incorrect 200 [] behavior for unknown chains."
+    },
+    {
+      "id": "F11",
+      "file": "src/modules/tokens/routes/tokens.service.ts",
+      "line": 10,
+      "claim": "The batch tokens endpoint treats every DataSourceError with code 404 as an unknown token, but the underlying repository resolves the chain via transactionApiManager.getApi(chainId) first. For an unknown chainId, the Config Service's 404 is turned into the same DataSourceError(...,404) shape, so it gets swallowed just like a normal token-not-found error, causing an unknown chain to return 200 [] instead of a 404."
+    },
+    {
+      "id": "F12",
+      "file": "src/modules/tokens/routes/tokens.controller.integration.spec.ts",
+      "line": 219,
+      "claim": "The integration spec re-tests that one malformed address returns 422, a case already covered in token-addresses.dto.entity.spec.ts, duplicating coverage that should live only at the lowest layer that can prove it."
+    },
+    {
+      "id": "F13",
+      "file": "tokens.controller.integration.spec.ts",
+      "line": 233,
+      "claim": "One integration test manually reconstructs the entire mockUpstream routing setup just to introduce a single 503 response, adding roughly 15 unnecessary lines; adding a 'failing' array parameter to mockUpstream would simplify this."
+    },
+    {
+      "id": "F14",
+      "file": "src/modules/tokens/routes/tokens.controller.ts",
+      "line": 51,
+      "claim": "The public Swagger documentation text names the backend Transaction Service that supplies the data (also at lines 66 and 81, and in token.dto.entity.ts:23), when API descriptions should describe behavior from the caller's perspective without naming the internal backend."
+    },
+    {
+      "id": "F15",
+      "file": "tokens.service.ts",
+      "line": 35,
+      "claim": "The case-insensitive uniqBy logic in the service can never actually trigger from the controller because AddressSchema already checksums every address before it reaches the service, so the deduplication is effectively dead code whose defensive purpose is not documented in a comment."
+    },
+    {
+      "id": "F16",
+      "file": "src/modules/tokens/routes/tokens.controller.ts",
+      "line": 73,
+      "claim": "The chainId route parameters on both new handlers use a bare numeric string schema instead of the chain ID schema, deviating from the pattern that limits that bare schema to pre-existing routes. Both handlers should validate chainId using the ChainIdSchema via ValidationPipe instead."
+    }
+  ]
+}

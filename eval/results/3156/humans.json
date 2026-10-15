@@ -1,0 +1,18 @@
+{
+  "usd": 0.263174,
+  "head": "18d4fe1d2ece4ae015ef23e2fd77a314f5e43c3a",
+  "verdicts": [
+    {
+      "issue": 8,
+      "verdict": "accepted",
+      "present": false,
+      "evidence": "The rename thread at address-books.controller.e2e-spec.ts:799 shows vseehausen agreeing to use `createPendingMember`/`createActiveMember` and replying \"addressed in 4f4aaba\". At 4f4aaba the helper is `createPendingMember` (address-books.controller.e2e-spec.ts:799). The needless rename came from the earlier commit 2faca8135 and does not exist at the reviewed commit."
+    },
+    {
+      "issue": 9,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "TimDaub's comment describes the Slack-reported leak that this PR sets out to close (\"deny space data to pending invitees\", 2faca8135). The behaviour is intended: at 4f4aaba address-book-items.repository.ts limits lookups to ACTIVE members. LucieFaire approved the PR without asking for any change."
+    }
+  ]
+}

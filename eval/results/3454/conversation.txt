@@ -1,0 +1,179 @@
+THREAD src/modules/entitlements/domain/entitlement-enforcement.interface.ts:40 resolved=true
+[falvaradorodriguez 2026-09-22T07:04:04Z] It takes any FeatureKey but checks only grant.enabled, so a future caller passing sponsored_transactions (plan enabled, quota exhausted) is admitted and the metered allowance is silently bypassed.
+
+```suggestion
+    featureKey: BinaryFeature;
+```
+[moisses89 2026-09-22T11:15:02Z] Done https://github.com/safe-global/safe-client-gateway/pull/3454/changes/15e2b1f91b76bba2f1cdd3a4faed15656421b998
+
+THREAD src/modules/safe-shield/routes/space-safe-shield.controller.ts:47 resolved=true
+[falvaradorodriguez 2026-09-22T07:21:36Z] IMO, this controller and the associated service should live in the Safe Shield module. Every other Space-scoped route sits in the module that owns the capability, not in Spaces: space-relay.controller.ts, space-counterfactual-safes.controller.ts and entitlements.controller.ts all declare spaces/:spaceId/... from their own module and import SpacesModule, and all three do the same assertMember gating from outside Spaces, so the membership check is not a reason to live here. WDYT?
+[moisses89 2026-09-22T11:15:20Z] Done https://github.com/safe-global/safe-client-gateway/pull/3454/changes/66e46a1ec56760f7da8e89bf38f1807d5627db0a
+
+THREAD src/modules/safe-shield/routes/space-safe-shield.controller.ts:92 resolved=true
+[PooyaRaki 2026-09-22T11:48:35Z] We should use `ChainIdSchema`:
+`src/modules/chains/domain/entities/schemas/chain-id.schema.ts`
+[moisses89 2026-09-22T13:59:35Z] Applied. Note: ChainIdSchema doesn't add leading-zero or sign rejection, it's NumericStringSchema, so "007" and "-1" both still pass either way. 
+
+THREAD src/modules/safe-shield/routes/space-safe-shield.controller.ts:150 resolved=true
+[PooyaRaki 2026-09-22T11:49:37Z] Here as well, should use `src/modules/chains/domain/entities/schemas/chain-id.schema.ts`
+
+THREAD src/config/entities/__tests__/configuration.ts:253 resolved=true
+[LucieFaire 2026-09-22T13:42:14Z] should we call it copilot or safeShield? I think we should align on 1 name
+
+THREAD src/config/entities/schemas/configuration.schema.ts:142 resolved=true
+[LucieFaire 2026-09-22T13:42:26Z] same qs here about the name
+
+REVIEW COMMENTED
+[LucieFaire 2026-09-22T13:52:40Z] I am concerned that we have 2 notions for safe shield. I think we should stick to one, and call it all s-s and not copilot
+
+REVIEW APPROVED
+[LucieFaire 2026-09-22T14:45:21Z] 🚀 
+
+COMMENT
+[moisses89 2026-09-18T15:50:41Z] @claude review
+
+COMMENT
+[claude 2026-09-18T15:50:59Z] **Claude finished @moisses89's task in 4m 24s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/35364888244)
+
+---
+### Claude PR Review
+
+- [x] Read changed files
+- [x] Check code quality and best practices
+- [x] Check for bugs, security concerns, performance
+- [x] Check test coverage
+- [x] Post review
+
+Overall this PR is well-executed: the new gating chain (Core flag → 402; Spaces guard → membership + `copilot_scans` quota; service → `existsInSpace`) is clean, DI wiring uses the `useExisting` + Symbol pattern correctly, and both unit and integration coverage are solid. A handful of small items worth addressing:
+
+**Nits / improvements**
+
+1. **`CopilotCoreGatingGuard` reads config on every request** — `src/modules/safe-shield/guards/copilot-core-gating.guard.ts:14-17`. The rest of the repo (e.g. `EntitlementsService:112-117`) caches config values in the constructor. The `IConfigurationService` is memory-backed so the cost is small, but the convention is to resolve once at construction. Consider:
+   ```ts
+   private readonly disabled: boolean;
+   constructor(@Inject(IConfigurationService) config: IConfigurationService) {
+     this.disabled = config.getOrThrow<boolean>('features.copilotCoreDisabled');
+   }
+   ```
+   [Fix this →](https://claude.ai/code?q=Cache%20features.copilotCoreDisabled%20in%20the%20CopilotCoreGatingGuard%20constructor%20instead%20of%20reading%20it%20on%20every%20canActivate%20call.%20File%3A%20src%2Fmodules%2Fsafe-shield%2Fguards%2Fcopilot-core-gating.guard.ts%20lines%2014-17%20on%20branch%20moisesf%2Fpla-1964-cgw-enforce-copilot-plan-gating-keep-threat-analysis-free-on-2.&repo=safe-global/safe-client-gateway)
+
+2. **No dedicated unit test for `CopilotCoreGatingGuard`** — `src/modules/safe-shield/guards/copilot-core-gating.guard.ts`. It is exercised indirectly via the controller-metadata test at `safe-shield.controller.spec.ts:362-388` and the two behaviour tests at `safe-shield.controller.integration.spec.ts:263-284, 303-324`, but a small direct spec (flag on → throws `CopilotCoreDisabledError`; flag off → returns `true`) would mirror how `EntitlementGuard` and `SafeSeatsGuard` are covered and pin the exact error type. Optional but consistent.
+
+3. **Duplicate `findIdByUuid` per request on Spaces routes** — `EntitlementGuard.canActivate` (`src/modules/entitlements/routes/guards/entitlement.guard.ts:47`) resolves the space UUID → id, then `SpaceIdPipe.transform` (`src/routes/common/pipes/space-id.pipe.ts:35`) does the same lookup again for the controller param. Two round-trips per request for every gated Spaces endpoint. This is an existing pattern (also affects `SafeSeatsGuard`), so not new to this PR, but worth flagging as tech debt if performance surfaces later. No action required here.
+
+**Non-issues confirmed**
+
+- `CopilotCoreDisabledError`/`CopilotCoreDisabledExceptionFilter` mirror `QuotaExceededError`/`QuotaExceededExceptionFilter` — a valid repo pattern for structured 402 bodies.
+- `copilot_scans` typed as `binary` with `assertWithinQuota(delta: 0)` works: when the entitlement is granted, `grant.quota === null` short-circuits `admit`; when absent, `quota: 0` fails as expected. The integration spec exercises both branches (`space-safe-shield.controller.integration.spec.ts:144-179, 206-248`).
+- Auth ordering is correct: `AuthGuard` → `CopilotScansGuard` (membership + entitlement) → service check for Safe-belongs-to-Space, so a non-member never learns anything about the plan or the Safe registry.
+- Migration follows the raw-SQL convention with the correct dependents-first `down` ordering.
+- `FF_COPILOT_CORE_DISABLED` is declared in `configuration.ts`, `RootConfigurationSchema`, `configuration/__tests__/configuration.ts`, and `.env.sample.json` — matches the four-representations rule.
+- Route paths for the Spaces-scoped endpoints are consistent with the Core equivalents.
+ · [Branch](https://github.com/safe-global/safe-client-gateway/tree/moisesf/pla-1964-cgw-enforce-copilot-plan-gating-keep-threat-analysis-free-on-2)
+
+COMMENT
+[moisses89 2026-09-21T16:05:36Z] @claude review
+
+
+COMMENT
+[claude 2026-09-22T05:38:09Z] **Claude finished @moisses89's task in 4m 2s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/35623351138)
+
+---
+### Claude Code Review
+
+Reviewed 34 files (+1779/-202). Focused on gating correctness, DTO boundaries, security ordering, and test coverage. Only reporting things worth changing.
+
+#### Findings (nits / minor)
+
+1. **Misleading comment in `SafeShieldService`** — [`src/modules/safe-shield/safe-shield.service.ts:52`](https://github.com/safe-global/safe-client-gateway/blob/moisesf/pla-1964-cgw-enforce-copilot-plan-gating-keep-threat-analysis-free-on-2/src/modules/safe-shield/safe-shield.service.ts#L52) — the new JSDoc says *"this class lives in `routes/`"*, but the file is at `src/modules/safe-shield/safe-shield.service.ts` (the module hasn't been migrated to the canonical `routes/` skeleton). The rationale (reach via `ISafeShieldAnalysis`, not direct import) is still correct — just drop the location claim.
+
+2. **`FeatureNotGrantedExceptionFilter` duplicated per-handler** — [`space-safe-shield.controller.ts:87` and `:146`](https://github.com/safe-global/safe-client-gateway/blob/moisesf/pla-1964-cgw-enforce-copilot-plan-gating-keep-threat-analysis-free-on-2/src/modules/spaces/routes/safe-shield/space-safe-shield.controller.ts#L87). Every route on this controller is gated by `copilot_scans`, so `@UseFilters(FeatureNotGrantedExceptionFilter)` can move to the class level (same pattern is already used with `@UseGuards(AuthGuard)` at class level).
+
+3. **`FF_COPILOT_CORE_DISABLED` doesn't cover Core `counterparty-analysis`** — per the PR body this is intentional (mobile still calls it), but note that `SafeShieldService.analyzeCounterparty` still invokes `analyzeRecipients` internally ([`safe-shield.service.ts:98-103`](https://github.com/safe-global/safe-client-gateway/blob/moisesf/pla-1964-cgw-enforce-copilot-plan-gating-keep-threat-analysis-free-on-2/src/modules/safe-shield/safe-shield.service.ts#L98-L103)). Once the flag is turned on in prod, a client that wants to bypass it can hit `counterparty-analysis` and still get the recipient checks free on Core. Worth calling out in the removal plan when the flag is retired.
+
+4. **New `Space`-scoped endpoints have no rate limit** — [`space-safe-shield.controller.ts`](https://github.com/safe-global/safe-client-gateway/blob/moisesf/pla-1964-cgw-enforce-copilot-plan-gating-keep-threat-analysis-free-on-2/src/modules/spaces/routes/safe-shield/space-safe-shield.controller.ts). An authenticated member of a paid Space can trigger upstream Blockaid / recipient calls in a tight loop. Consistent with the existing Core endpoints, but the paid path is a new attack surface that upstream billing quotas won't cap (no counter is decremented for `copilot_scans` today — it's a Binary grant).
+
+5. **`FeatureGrantSchema` now has a required `enabled` field** — [`feature-grant.entity.ts:6`](https://github.com/safe-global/safe-client-gateway/blob/moisesf/pla-1964-cgw-enforce-copilot-plan-gating-keep-threat-analysis-free-on-2/src/modules/entitlements/domain/entities/feature-grant.entity.ts#L6). Existing cached rows will fail `CachedGrantsSchema.parse` after deploy. `readCachedGrants` already handles this gracefully (warn + recompute), so no correctness bug — just a brief warn-log spike + recompute burst on rollout that fades within the 300s TTL. Fine as-is; worth noting in release notes if the warn-log rate is monitored.
+
+#### Coverage / quality — LGTM
+
+- Ordering in `SpaceSafeShieldService.assertGated` (member → entitlement → Safe registry) is enforced by unit tests and the integration suite (`space-safe-shield.controller.integration.spec.ts` covers the four outcomes: 403 unauthenticated, 403 non-member, 402 no entitlement, 403 Safe not registered, 200 happy path).
+- `ISafeShieldAnalysis` interface + `useExisting: SafeShieldService` cleanly avoids a `routes/` import from Spaces.
+- Elevation table (`elevation.integration.spec.ts`) updated to list both new endpoints as ungated — good.
+- `AGENTS.md` non-negotiables respected: `ValidationPipe(Schema)` on every param/body, `@/` alias imports, cross-module import goes via `domain/`, guard placement on `AuthGuard`, cache invalidation via `deleteByKey` on materialization.
+
+Overall: the gating chain is coherent and the coverage matches the security model described. Fix (1) and (2), consider (3)–(5) as follow-ups.
+
+---
+ • Branch: [`moisesf/pla-1964-cgw-enforce-copilot-plan-gating-keep-threat-analysis-free-on-2`](https://github.com/safe-global/safe-client-gateway/tree/moisesf/pla-1964-cgw-enforce-copilot-plan-gating-keep-threat-analysis-free-on-2)
+
+COMMENT
+[falvaradorodriguez 2026-09-22T05:38:52Z] @claude arch-review
+
+COMMENT
+[claude 2026-09-22T05:44:48Z] ## Architecture check
+
+Guides applied: [module-structure.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/module-structure.md), [nestjs-patterns.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/nestjs-patterns.md), [api-dtos-and-validation.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/api-dtos-and-validation.md), [security.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/security.md), [configuration-and-flags.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/configuration-and-flags.md), [database-and-migrations.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/database-and-migrations.md), [caching-and-performance.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/caching-and-performance.md), [testing.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/testing.md), [best-practices.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/best-practices.md), [commits-and-prs.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/commits-and-prs.md), [reviewing.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/reviewing.md), [remarks.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/remarks.md).
+
+1. **[Guards: request admission only](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/nestjs-patterns.md#L49)** — [src/modules/safe-shield/guards/copilot-core-gating.guard.ts:8](https://github.com/safe-global/safe-client-gateway/blob/e176de09bf64bb3c548dd9a15e5dcac8e1bc4c4d/src/modules/safe-shield/guards/copilot-core-gating.guard.ts#L8) — the new guard sits in a module-root `guards/` directory, while the rule places every guard in the owning module's `routes/guards/`. **Fix:** move the file to `src/modules/safe-shield/routes/guards/copilot-core-gating.guard.ts` and update the two importers (`safe-shield.module.ts`, `safe-shield.controller.ts`) plus its spec.
+2. **[Canonical skeleton](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/module-structure.md#L10)** — [src/modules/safe-shield/errors/copilot-core-disabled.error.ts:7](https://github.com/safe-global/safe-client-gateway/blob/e176de09bf64bb3c548dd9a15e5dcac8e1bc4c4d/src/modules/safe-shield/errors/copilot-core-disabled.error.ts#L7) — a module-root `errors/` directory is not part of the canonical skeleton, and this same PR files the equivalent entitlements error under `domain/errors/` / `domain/exception-filters/`. **Fix:** move to `src/modules/safe-shield/domain/errors/copilot-core-disabled.error.ts` and `src/modules/safe-shield/domain/exception-filters/copilot-core-disabled.exception-filter.ts`, matching `src/modules/entitlements/domain/`.
+3. **[Feature flags](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/configuration-and-flags.md#L49)** — [src/config/entities/configuration.ts:495](https://github.com/safe-global/safe-client-gateway/blob/e176de09bf64bb3c548dd9a15e5dcac8e1bc4c4d/src/config/entities/configuration.ts#L495) — the new flag's comment states a removal condition but names no owner, which the rule requires for flags added from the guide onward. **Fix:** `// Copilot plan gating (PLA-1964). Remove the flag, and the guard on Core's recipient-check, once no client calls that route.`
+4. **[PR title](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/commits-and-prs.md#L66)** — PR title — `Moisesf/pla 1964 cgw enforce copilot plan gating keep threat analysis free on 2` is GitHub's branch-derived default: no type, no scope, capitalized, and `main` is squash-merged so it becomes the permanent commit subject. **Fix:** retitle to `feat(safe-shield): gate Copilot recipient/counterparty scans by plan`.
+5. **[PR body](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/commits-and-prs.md#L82)** — PR description — the body opens with bare prose and a Linear link instead of the template's `## Summary` section, so only one of the two required sections is present. **Fix:** add a `## Summary` heading above the opening paragraphs and move the Linear link inside it.
+6. **[Implementation matches the approved spec/plan](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/reviewing.md#L28)** — PR description — the `## Changes` bullets name a `CopilotScansGuard` and changes under `src/modules/spaces/domain/safes/`, neither of which is in the diff (a later commit dropped the guard in favour of gating inside `SpaceSafeShieldService`). **Fix:** rewrite those two bullets as `- src/modules/entitlements/ — new copilot_scans feature key, seed migration, assertFeatureGranted + FeatureNotGrantedError/filter` and `- src/modules/spaces/routes/safe-shield/ — membership, copilot_scans entitlement and Safe-in-Space checks in SpaceSafeShieldService`.
+
+**Verdict:** ❌ 6 finding(s)
+
+<sub>Automated check of this repo's [agent guidelines](https://github.com/safe-global/safe-client-gateway/blob/main/AGENTS.md) — Claude applying the committed guides in `docs/agents/`, not its own opinion. Run by [architecture-check.yml](https://github.com/safe-global/safe-client-gateway/blob/main/.github/workflows/architecture-check.yml) on `@claude arch-review`; background in [the CI gate](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/agent-tooling.md#the-ci-gate). Advisory — reply to a finding by its number to discuss it.</sub>
+
+COMMENT
+[moisses89 2026-09-22T09:08:40Z] > **Claude finished Moisés (@moisses89)'s task in 4m 2s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/35623351138)
+> 
+> ### Claude Code Review
+> Reviewed 34 files (+1779/-202). Focused on gating correctness, DTO boundaries, security ordering, and test coverage. Only reporting things worth changing.
+> 
+> #### Findings (nits / minor)
+> 1. **Misleading comment in `SafeShieldService`** — [`src/modules/safe-shield/safe-shield.service.ts:52`](https://github.com/safe-global/safe-client-gateway/blob/moisesf/pla-1964-cgw-enforce-copilot-plan-gating-keep-threat-analysis-free-on-2/src/modules/safe-shield/safe-shield.service.ts#L52) — the new JSDoc says _"this class lives in `routes/`"_, but the file is at `src/modules/safe-shield/safe-shield.service.ts` (the module hasn't been migrated to the canonical `routes/` skeleton). The rationale (reach via `ISafeShieldAnalysis`, not direct import) is still correct — just drop the location claim.
+> 2. **`FeatureNotGrantedExceptionFilter` duplicated per-handler** — [`space-safe-shield.controller.ts:87` and `:146`](https://github.com/safe-global/safe-client-gateway/blob/moisesf/pla-1964-cgw-enforce-copilot-plan-gating-keep-threat-analysis-free-on-2/src/modules/spaces/routes/safe-shield/space-safe-shield.controller.ts#L87). Every route on this controller is gated by `copilot_scans`, so `@UseFilters(FeatureNotGrantedExceptionFilter)` can move to the class level (same pattern is already used with `@UseGuards(AuthGuard)` at class level).
+> 3. **`FF_COPILOT_CORE_DISABLED` doesn't cover Core `counterparty-analysis`** — per the PR body this is intentional (mobile still calls it), but note that `SafeShieldService.analyzeCounterparty` still invokes `analyzeRecipients` internally ([`safe-shield.service.ts:98-103`](https://github.com/safe-global/safe-client-gateway/blob/moisesf/pla-1964-cgw-enforce-copilot-plan-gating-keep-threat-analysis-free-on-2/src/modules/safe-shield/safe-shield.service.ts#L98-L103)). Once the flag is turned on in prod, a client that wants to bypass it can hit `counterparty-analysis` and still get the recipient checks free on Core. Worth calling out in the removal plan when the flag is retired.
+> 4. **New `Space`-scoped endpoints have no rate limit** — [`space-safe-shield.controller.ts`](https://github.com/safe-global/safe-client-gateway/blob/moisesf/pla-1964-cgw-enforce-copilot-plan-gating-keep-threat-analysis-free-on-2/src/modules/spaces/routes/safe-shield/space-safe-shield.controller.ts). An authenticated member of a paid Space can trigger upstream Blockaid / recipient calls in a tight loop. Consistent with the existing Core endpoints, but the paid path is a new attack surface that upstream billing quotas won't cap (no counter is decremented for `copilot_scans` today — it's a Binary grant).
+> 5. **`FeatureGrantSchema` now has a required `enabled` field** — [`feature-grant.entity.ts:6`](https://github.com/safe-global/safe-client-gateway/blob/moisesf/pla-1964-cgw-enforce-copilot-plan-gating-keep-threat-analysis-free-on-2/src/modules/entitlements/domain/entities/feature-grant.entity.ts#L6). Existing cached rows will fail `CachedGrantsSchema.parse` after deploy. `readCachedGrants` already handles this gracefully (warn + recompute), so no correctness bug — just a brief warn-log spike + recompute burst on rollout that fades within the 300s TTL. Fine as-is; worth noting in release notes if the warn-log rate is monitored.
+> 
+> #### Coverage / quality — LGTM
+> * Ordering in `SpaceSafeShieldService.assertGated` (member → entitlement → Safe registry) is enforced by unit tests and the integration suite (`space-safe-shield.controller.integration.spec.ts` covers the four outcomes: 403 unauthenticated, 403 non-member, 402 no entitlement, 403 Safe not registered, 200 happy path).
+> * `ISafeShieldAnalysis` interface + `useExisting: SafeShieldService` cleanly avoids a `routes/` import from Spaces.
+> * Elevation table (`elevation.integration.spec.ts`) updated to list both new endpoints as ungated — good.
+> * `AGENTS.md` non-negotiables respected: `ValidationPipe(Schema)` on every param/body, `@/` alias imports, cross-module import goes via `domain/`, guard placement on `AuthGuard`, cache invalidation via `deleteByKey` on materialization.
+> 
+> Overall: the gating chain is coherent and the coverage matches the security model described. Fix (1) and (2), consider (3)–(5) as follow-ups.
+> 
+> • Branch: [`moisesf/pla-1964-cgw-enforce-copilot-plan-gating-keep-threat-analysis-free-on-2`](https://github.com/safe-global/safe-client-gateway/tree/moisesf/pla-1964-cgw-enforce-copilot-plan-gating-keep-threat-analysis-free-on-2)
+
+1. Fixed — dropped the routes/ claim from the comment.
+2. Fixed — filter moved to class level.
+3. Intentional (mobile still calls it). Documented the caveat in the flag comment.
+4. Disagree it's a new surface — same lack of rate limiting as before, now narrower: gated to authenticated paid Space members, vs. open to everyone on Core previously.
+5. No correctness bug — warn spike fades within the TTL. Staging only, no concern.
+
+COMMENT
+[moisses89 2026-09-22T09:12:58Z] > ## Architecture check
+> Guides applied: [module-structure.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/module-structure.md), [nestjs-patterns.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/nestjs-patterns.md), [api-dtos-and-validation.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/api-dtos-and-validation.md), [security.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/security.md), [configuration-and-flags.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/configuration-and-flags.md), [database-and-migrations.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/database-and-migrations.md), [caching-and-performance.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/caching-and-performance.md), [testing.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/testing.md), [best-practices.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/best-practices.md), [commits-and-prs.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/commits-and-prs.md), [reviewing.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/reviewing.md), [remarks.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/remarks.md).
+> 
+> 1. **[Guards: request admission only](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/nestjs-patterns.md#L49)** — [src/modules/safe-shield/guards/copilot-core-gating.guard.ts:8](https://github.com/safe-global/safe-client-gateway/blob/e176de09bf64bb3c548dd9a15e5dcac8e1bc4c4d/src/modules/safe-shield/guards/copilot-core-gating.guard.ts#L8) — the new guard sits in a module-root `guards/` directory, while the rule places every guard in the owning module's `routes/guards/`. **Fix:** move the file to `src/modules/safe-shield/routes/guards/copilot-core-gating.guard.ts` and update the two importers (`safe-shield.module.ts`, `safe-shield.controller.ts`) plus its spec.
+> 2. **[Canonical skeleton](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/module-structure.md#L10)** — [src/modules/safe-shield/errors/copilot-core-disabled.error.ts:7](https://github.com/safe-global/safe-client-gateway/blob/e176de09bf64bb3c548dd9a15e5dcac8e1bc4c4d/src/modules/safe-shield/errors/copilot-core-disabled.error.ts#L7) — a module-root `errors/` directory is not part of the canonical skeleton, and this same PR files the equivalent entitlements error under `domain/errors/` / `domain/exception-filters/`. **Fix:** move to `src/modules/safe-shield/domain/errors/copilot-core-disabled.error.ts` and `src/modules/safe-shield/domain/exception-filters/copilot-core-disabled.exception-filter.ts`, matching `src/modules/entitlements/domain/`.
+> 3. **[Feature flags](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/configuration-and-flags.md#L49)** — [src/config/entities/configuration.ts:495](https://github.com/safe-global/safe-client-gateway/blob/e176de09bf64bb3c548dd9a15e5dcac8e1bc4c4d/src/config/entities/configuration.ts#L495) — the new flag's comment states a removal condition but names no owner, which the rule requires for flags added from the guide onward. **Fix:** `// Copilot plan gating (PLA-1964). Remove the flag, and the guard on Core's recipient-check, once no client calls that route.`
+> 4. **[PR title](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/commits-and-prs.md#L66)** — PR title — `Moisesf/pla 1964 cgw enforce copilot plan gating keep threat analysis free on 2` is GitHub's branch-derived default: no type, no scope, capitalized, and `main` is squash-merged so it becomes the permanent commit subject. **Fix:** retitle to `feat(safe-shield): gate Copilot recipient/counterparty scans by plan`.
+> 5. **[PR body](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/commits-and-prs.md#L82)** — PR description — the body opens with bare prose and a Linear link instead of the template's `## Summary` section, so only one of the two required sections is present. **Fix:** add a `## Summary` heading above the opening paragraphs and move the Linear link inside it.
+> 6. **[Implementation matches the approved spec/plan](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/reviewing.md#L28)** — PR description — the `## Changes` bullets name a `CopilotScansGuard` and changes under `src/modules/spaces/domain/safes/`, neither of which is in the diff (a later commit dropped the guard in favour of gating inside `SpaceSafeShieldService`). **Fix:** rewrite those two bullets as `- src/modules/entitlements/ — new copilot_scans feature key, seed migration, assertFeatureGranted + FeatureNotGrantedError/filter` and `- src/modules/spaces/routes/safe-shield/ — membership, copilot_scans entitlement and Safe-in-Space checks in SpaceSafeShieldService`.
+> 
+> **Verdict:** ❌ 6 finding(s)
+> 
+> Automated check of this repo's [agent guidelines](https://github.com/safe-global/safe-client-gateway/blob/main/AGENTS.md) — Claude applying the committed guides in `docs/agents/`, not its own opinion. Run by [architecture-check.yml](https://github.com/safe-global/safe-client-gateway/blob/main/.github/workflows/architecture-check.yml) on `@claude arch-review`; background in [the CI gate](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/agent-tooling.md#the-ci-gate). Advisory — reply to a finding by its number to discuss it.
+
+1. Fixed — guard moved to routes/guards/.
+2. Fixed — errors/filter moved to domain/errors, domain/exception-filters, matching entitlements.
+3. Fixed — flag comment now names owner (PLA-1964); condition not yet set by the ticket, documented as such.
+4. Retitled, scope omitted — diff spans 3+ modules per convention.
+5. Fixed — added ## Summary heading, moved Linear link inside it.
+6. Fixed — rewrote the two stale bullets to match the actual diff.

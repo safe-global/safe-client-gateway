@@ -1,0 +1,45 @@
+{
+  "usd": 0.27238399999999996,
+  "findings": [
+    {
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.ts",
+      "line": 237,
+      "claim": "getPriorExpiration only checks that the session cookie is a validly signed token and reads its exp, without comparing the token's auth_method or sub against the userId that Auth0 just authenticated. This means the elevation-target check is missing at the point where the prior expiration is carried over."
+    },
+    {
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.ts",
+      "line": 180,
+      "claim": "The docblock states that a step-up 'elevates the session the user already has' and that rejecting a missing session prevents a step-up from doubling as a login backed only by Auth0's longer-lived SSO session, but the code does not enforce that the elevated session belongs to the same user, so this stated protection can be bypassed."
+    },
+    {
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.ts",
+      "line": null,
+      "claim": "The GET oidc/authorize?elevate=true endpoint is not guarded, meaning the callback is the only place where any check on the prior session occurs, so any live gateway cookie (including a SIWE session or an OIDC session belonging to a different account) passes and the callback signs an elevated token for whichever Auth0 user completed the challenge, using that other session's expiry."
+    },
+    {
+      "file": "src/modules/auth/oidc/routes/oidc-auth.controller.integration.spec.ts",
+      "line": 739,
+      "claim": "The integration test uses a prior token whose sub is random and unrelated to the user being signed in, which demonstrates the missing user-binding check rather than guarding against it."
+    },
+    {
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.ts",
+      "line": 237,
+      "claim": "The fix should require auth_method === AuthMethod.Oidc and sub === userId.toString() before carrying over the expiry, which may require resolving the user first or comparing after findOrCreate…, and otherwise reject; a unit test for a mismatched sub and one for a SIWE prior token should be added."
+    },
+    {
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.ts",
+      "line": 193,
+      "claim": "getSessionExpiration throws UnauthorizedException when there is no session but is not named to indicate it throws, whereas the convention is for such helpers to be named assert* or *OrFail, e.g. getSessionExpirationOrFail."
+    },
+    {
+      "file": "src/modules/auth/oidc/routes/oidc-auth.controller.integration.spec.ts",
+      "line": 813,
+      "claim": "The integration test 'should refuse to elevate when there is no session to elevate' duplicates the unit test 'should reject the step-up when there is no prior session' at oidc-auth.service.spec.ts:621, and the route's integration block already has a representative rejection test, so this negative path is tested redundantly at two layers instead of being kept at the lowest layer that can prove it."
+    },
+    {
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.ts",
+      "line": 226,
+      "claim": "The rationale explaining that the timeout is absolute because a step-up proves only the second factor is repeated in multiple places (the authenticateWithOidc @param at lines 91-94, the getSessionExpiration docblock at lines 182-185, the getPriorExpiration docblock at lines 226-229, and again in spec comments), when keeping it in a single docblock would suffice."
+    }
+  ]
+}

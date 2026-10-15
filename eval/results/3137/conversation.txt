@@ -1,0 +1,192 @@
+THREAD src/modules/fees/domain/entities/__tests__/tx-fees-response.builder.ts:16 resolved=true
+[PooyaRaki 2026-06-05T13:46:47Z] ```suggestion
+    .with('chainId', faker.string.numeric({ length: { min: 5, max: 10 }}))
+```
+[moisses89 2026-06-05T13:49:37Z] faker.string.numeric() allows leading zeros by default, so you can get values like "005"
+
+THREAD src/modules/fees/domain/entities/schemas/tx-fees-response.schema.ts:8 resolved=true
+[LucieFaire 2026-06-05T13:47:37Z] you can also use `ChainIdSchema` but that one allows negatives and floats... (not sure why we have it like that)
+[moisses89 2026-06-05T13:57:56Z] ok, then I'd prefer keep the regex here. Accept floats and negatives seems like an issue :) so I'd say that is something that can be handled in a different PR.
+
+REVIEW APPROVED
+[LucieFaire 2026-06-05T13:47:53Z] 👍 
+
+COMMENT
+[moisses89 2026-06-05T13:03:01Z] @claude review
+
+COMMENT
+[claude 2026-06-05T13:03:32Z] **Claude finished @moisses89's task in 1m 24s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/27016450609)
+
+---
+### Claude PR Review
+
+- [x] Load tools and gather context
+- [x] Read changed files
+- [x] Analyze code quality, bugs, performance, security, tests
+- [x] Post review feedback
+
+---
+
+### Summary
+
+The change is small, well-scoped, and aligned with the codebase's convention of treating `chainId` as a string everywhere else (`fees.controller.ts`, `fees.service.ts`, domain types). The OpenAPI example update and the test additions are good. A few suggestions below.
+
+### Suggestions
+
+**1. `z.coerce.string()` accepts non-string/non-number inputs silently** — `src/modules/fees/domain/entities/schemas/tx-fees-response.schema.ts:8`
+
+`z.coerce.string()` runs `String(input)` on **any** input type (booleans, `null`, `undefined`, objects, BigInt, etc.) before validating. The regex `^\d+$` catches most of these, but the contract is fuzzier than necessary for a response schema (you're validating an upstream API, not user input). A more explicit form keeps the same external behavior while preventing surprising coercions:
+
+```ts
+chainId: z.union([z.string(), z.number().int().nonnegative()])
+  .transform(String)
+  .pipe(z.string().regex(/^\d+$/)),
+```
+
+**2. `chainId: "0"` and float `1.0` are accepted** — same file/line
+
+- `^\d+$` matches `"0"`. Chain ID `0` isn't a valid network — consider `/^[1-9]\d*$/`.
+- `String(1.0) === "1"`, so a float `1.0` coerces and passes. Restricting the number branch to `.int()` (see snippet above) closes that.
+
+**3. Consider reusing the existing `NumericStringSchema`** — `src/validation/entities/schemas/numeric-string.schema.ts:14`
+
+The route controller already validates `chainId` with `NumericStringSchema`. Defining a different rule here means two schemas drift independently. If alignment is desired, build on top of it (after coercion) rather than introducing a new regex.
+
+**4. Test coverage gaps** — `src/modules/fees/domain/entities/schemas/__tests__/tx-fees-response.schema.spec.ts:55-60`
+
+Negative cases are good. Worth adding:
+- `chainId: 0` and `chainId: '0'` (if zero should be rejected)
+- `chainId: 1.5` / `chainId: '1.5'` (float rejection)
+- `chainId: '01'` (leading-zero behavior — currently accepted)
+- `chainId: true` / `chainId: null` (documents coercion behavior)
+
+**5. Builder upper bound** — `src/modules/fees/domain/entities/__tests__/tx-fees-response.builder.ts:16`
+
+Real chain IDs can exceed 99999 (Palm = 11297108109). Not a correctness issue, but `faker.number.int({ min: 1, max: 1_000_000_000 })` better reflects the domain.
+
+### Other checks
+- **Security**: No concerns — this is response-side validation.
+- **Performance**: Regex on a short string is negligible.
+- **Backwards compatibility**: Coercing number → string keeps the schema working during the upstream API transition, as described in the PR body. Good.
+ · [Branch](https://github.com/safe-global/safe-client-gateway/tree/moisesf/pla-1594-cgw-update-chainid-handling-from-number-to-string-in-fee)
+
+COMMENT
+[moisses89 2026-06-05T13:18:54Z] > **Claude finished @moisses89's task in 1m 24s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/27016450609)
+> 
+> ### Claude PR Review
+> * [x]  Load tools and gather context
+> * [x]  Read changed files
+> * [x]  Analyze code quality, bugs, performance, security, tests
+> * [x]  Post review feedback
+> 
+> ### Summary
+> The change is small, well-scoped, and aligned with the codebase's convention of treating `chainId` as a string everywhere else (`fees.controller.ts`, `fees.service.ts`, domain types). The OpenAPI example update and the test additions are good. A few suggestions below.
+> 
+> ### Suggestions
+> **1. `z.coerce.string()` accepts non-string/non-number inputs silently** — `src/modules/fees/domain/entities/schemas/tx-fees-response.schema.ts:8`
+> 
+> `z.coerce.string()` runs `String(input)` on **any** input type (booleans, `null`, `undefined`, objects, BigInt, etc.) before validating. The regex `^\d+$` catches most of these, but the contract is fuzzier than necessary for a response schema (you're validating an upstream API, not user input). A more explicit form keeps the same external behavior while preventing surprising coercions:
+> 
+> ```ts
+> chainId: z.union([z.string(), z.number().int().nonnegative()])
+>   .transform(String)
+>   .pipe(z.string().regex(/^\d+$/)),
+> ```
+> 
+> **2. `chainId: "0"` and float `1.0` are accepted** — same file/line
+> 
+> * `^\d+$` matches `"0"`. Chain ID `0` isn't a valid network — consider `/^[1-9]\d*$/`.
+> * `String(1.0) === "1"`, so a float `1.0` coerces and passes. Restricting the number branch to `.int()` (see snippet above) closes that.
+> 
+> **3. Consider reusing the existing `NumericStringSchema`** — `src/validation/entities/schemas/numeric-string.schema.ts:14`
+> 
+> The route controller already validates `chainId` with `NumericStringSchema`. Defining a different rule here means two schemas drift independently. If alignment is desired, build on top of it (after coercion) rather than introducing a new regex.
+> 
+> **4. Test coverage gaps** — `src/modules/fees/domain/entities/schemas/__tests__/tx-fees-response.schema.spec.ts:55-60`
+> 
+> Negative cases are good. Worth adding:
+> 
+> * `chainId: 0` and `chainId: '0'` (if zero should be rejected)
+> * `chainId: 1.5` / `chainId: '1.5'` (float rejection)
+> * `chainId: '01'` (leading-zero behavior — currently accepted)
+> * `chainId: true` / `chainId: null` (documents coercion behavior)
+> 
+> **5. Builder upper bound** — `src/modules/fees/domain/entities/__tests__/tx-fees-response.builder.ts:16`
+> 
+> Real chain IDs can exceed 99999 (Palm = 11297108109). Not a correctness issue, but `faker.number.int({ min: 1, max: 1_000_000_000 })` better reflects the domain.
+> 
+> ### Other checks
+> * **Security**: No concerns — this is response-side validation.
+> * **Performance**: Regex on a short string is negligible.
+> * **Backwards compatibility**: Coercing number → string keeps the schema working during the upstream API transition, as described in the PR body. Good.
+>   · [Branch](https://github.com/safe-global/safe-client-gateway/tree/moisesf/pla-1594-cgw-update-chainid-handling-from-number-to-string-in-fee)
+
+1- Covered by regex + tests (true, null, "" all rejected)
+2- Fixed: /^[1-9]\d*$/ rejects 0, 1.0 is moot in JS
+3- Dismissed: regex supersedes NumericStringSchema, no value in piping
+4- All cases covered in it.each
+5- Dismissed: irrelevant for test data
+
+COMMENT
+[moisses89 2026-06-05T13:20:52Z] @claude review
+
+COMMENT
+[claude 2026-06-05T13:21:12Z] **Claude finished @moisses89's task in 1m 8s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/27017317298)
+
+---
+### Claude PR Review
+
+- [x] Read changed files
+- [x] Analyze code quality, bugs, performance, security, tests
+- [x] Post review feedback
+
+---
+
+### Summary
+
+The latest commits resolve the substantive points from the prior review: the regex `^[1-9]\d*$` correctly rejects `0`, leading zeros, floats, negatives, and non-numeric coerced values; the test matrix in `tx-fees-response.schema.spec.ts:50-65` exercises those cases (`0`, `'0'`, `'01'`, `1.5`, `'1.5'`, `true`, `null`); and the builder generates integer-based numeric strings. LGTM.
+
+### Minor observations
+
+**1. `z.coerce.string()` still coerces unexpected inputs** — `src/modules/fees/domain/entities/schemas/tx-fees-response.schema.ts:8`
+
+The regex blocks the obvious bad values, but `z.coerce.string()` will happily call `String()` on any input first (e.g. `[1]` → `"1"` passes, `BigInt(5)` → `"5"` passes). For a response schema, this is fine in practice since upstream isn't returning those, but it does mean the type contract is "anything stringifiable to a numeric string" rather than "string or non-negative integer." If you want to keep it strict without changing accepted external inputs, `z.union([z.string(), z.number().int().nonnegative()]).transform(String).pipe(z.string().regex(/^[1-9]\d*$/))` does that. Take or leave — not blocking.
+
+**2. Test parity nit** — `src/modules/fees/domain/entities/schemas/__tests__/tx-fees-response.schema.spec.ts:55-60`
+
+The negative cases assert `result.success === false`, but the two happy-path tests verify `typeof result.data.chainId === 'string'`. Consider asserting the failure reason (`result.error.issues[0].path` includes `chainId`) on a couple of the negatives — guards against an unrelated field accidentally taking the blame for the failure later.
+
+### Other checks
+- **Security**: No concerns — response-side validation.
+- **Performance**: Negligible.
+- **Backwards compatibility**: Coercion handles both number and string responses during the upstream API transition. Good.
+ · [Branch](https://github.com/safe-global/safe-client-gateway/tree/moisesf/pla-1594-cgw-update-chainid-handling-from-number-to-string-in-fee)
+
+COMMENT
+[moisses89 2026-06-05T13:38:48Z] > **Claude finished @moisses89's task in 1m 8s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/27017317298)
+> 
+> ### Claude PR Review
+> * [x]  Read changed files
+> * [x]  Analyze code quality, bugs, performance, security, tests
+> * [x]  Post review feedback
+> 
+> ### Summary
+> The latest commits resolve the substantive points from the prior review: the regex `^[1-9]\d*$` correctly rejects `0`, leading zeros, floats, negatives, and non-numeric coerced values; the test matrix in `tx-fees-response.schema.spec.ts:50-65` exercises those cases (`0`, `'0'`, `'01'`, `1.5`, `'1.5'`, `true`, `null`); and the builder generates integer-based numeric strings. LGTM.
+> 
+> ### Minor observations
+> **1. `z.coerce.string()` still coerces unexpected inputs** — `src/modules/fees/domain/entities/schemas/tx-fees-response.schema.ts:8`
+> 
+> The regex blocks the obvious bad values, but `z.coerce.string()` will happily call `String()` on any input first (e.g. `[1]` → `"1"` passes, `BigInt(5)` → `"5"` passes). For a response schema, this is fine in practice since upstream isn't returning those, but it does mean the type contract is "anything stringifiable to a numeric string" rather than "string or non-negative integer." If you want to keep it strict without changing accepted external inputs, `z.union([z.string(), z.number().int().nonnegative()]).transform(String).pipe(z.string().regex(/^[1-9]\d*$/))` does that. Take or leave — not blocking.
+> 
+> **2. Test parity nit** — `src/modules/fees/domain/entities/schemas/__tests__/tx-fees-response.schema.spec.ts:55-60`
+> 
+> The negative cases assert `result.success === false`, but the two happy-path tests verify `typeof result.data.chainId === 'string'`. Consider asserting the failure reason (`result.error.issues[0].path` includes `chainId`) on a couple of the negatives — guards against an unrelated field accidentally taking the blame for the failure later.
+> 
+> ### Other checks
+> * **Security**: No concerns — response-side validation.
+> * **Performance**: Negligible.
+> * **Backwards compatibility**: Coercion handles both number and string responses during the upstream API transition. Good.
+>   · [Branch](https://github.com/safe-global/safe-client-gateway/tree/moisesf/pla-1594-cgw-update-chainid-handling-from-number-to-string-in-fee)
+
+1. Still needs the regex, z.union([z.string(), z.number().int().nonnegative()]) alone accepts "abc", "0", "-1" on the string branch.
+2. Dismissed, result.success === false is enough. Asserting issues[0].path tests Zod's field-mapping behavior, not our validation logic.

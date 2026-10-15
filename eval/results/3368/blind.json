@@ -1,0 +1,109 @@
+{
+  "pr": 3368,
+  "title": "fix: recognise v1.5.0 migrations for safes with unknown mastercopies",
+  "description": "## Summary\r\n\r\nWA-2933\r\n\r\nFor Safes whose mastercopy the Transaction Service does not recognise (`version = null`), CGW cannot compute `safeTxHash` from the Safe itself, so it infers the version from the transaction: a delegate call to an official `SafeMigration` contract identifies the target version (`detectSafeMigration`, added in #2746). That fix hardcoded the `SafeMigration` version to `1.4.1` and the candidate target versions to `['1.3.0', '1.4.1']`.\r\n\r\nNow that chains are being flipped to recommend v1.5.0, migration transactions for these Safes target the `SafeMigration` **1.5.0** contract, which the hardcoded check does not recognise. `safeTxHash` computation then fails for the exact population the inference exists for — rejecting proposals/confirmations with 422 and failing queue/history rendering with `MalformedHash`. This is the same defect #2746 fixed, reintroduced by the next contract release. (The web app routes some unknown-mastercopy Safes to the CLI, but that does not shield CGW: CLI-proposed migrations still land in the Transaction Service and must pass CGW's hash verification to render, and other clients propose through CGW directly.)\r\n\r\nInstead of appending `'1.5.0'` to the literals — and re-opening this bug at the next release — the versions are now derived from `@safe-global/safe-deployments`:\r\n\r\n- `SafeMigration` recognition checks the transaction target against **all** versions the package ships.\r\n- Target-version inference builds its candidates from the L1/L2 singleton versions in the package, filtered to `>=1.3.0` (the range `SafeMigration` can target). Any version in that range produces the same EIP-712 domain, so which candidate the loop picks does not affect the computed hash — the derivation changes recognition, not hashing.\r\n\r\nFuture `SafeMigration`/singleton releases are now covered by a `safe-deployments` dependency bump, with no code change.\r\n\r\n\r\n## Changes\r\n\r\n- `src/domain/common/utils/deployments.ts` — add version-list getters derived from the `safe-deployments` package constants: `getSafeSingletonVersions`, `getSafeL2SingletonVersions`, `getSafeMigrationVersions`\r\n- `src/domain/common/utils/safe.ts` — `detectSafeMigration` matches the transaction target against all known `SafeMigration` versions; target-version candidates come from `getSafeMigrationTargetVersions()` (singleton versions `>=1.3.0`, ascending) instead of a hardcoded list\r\n- `src/domain/common/utils/__tests__/deployments.spec.ts` — cases for the three new getters\r\n- `src/domain/common/utils/__tests__/safe.spec.ts` — migration-detection cases rewritten against package-derived versions (covers the 1.5.0 contract)",
+  "findings": [
+    {
+      "id": "F1",
+      "file": "src/domain/common/utils/__tests__/safe.spec.ts",
+      "line": 884,
+      "claim": "The opBNB test claims 'no singletons are deployed' for chain 204, but chain 204 actually has 1.3.0, 1.4.1 and 1.5.0 singletons, so the test's toThrow branch never actually executes and the test does not verify what it claims to."
+    },
+    {
+      "id": "F2",
+      "file": "src/domain/common/utils/safe.ts",
+      "line": 206,
+      "claim": "No test exercises a chain whose deployments only include the 1.5.0 singleton, which is the exact case the fix addresses; every SafeMigration test uses chainId '1', where the loop returns '1.3.0' regardless of whether the old or new version list is used, so the suite would still pass if the old hardcoded list were restored. Chains such as 5424, 9302, 38833, 613419 and 843843 only have 1.5.0 singletons and are untested, even though on the old code they would throw and on the new code they return '1.5.0'."
+    },
+    {
+      "id": "F3",
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.ts",
+      "line": 706,
+      "claim": "The SafeToL2Migration rewrite and its supporting getSafeToL2MigrationVersions getter are described as behaviour-neutral, yet they pull a second, unrelated module into what is meant to be a fix for v1.5.0 SafeMigration, expanding the scope of the change beyond what the fix requires."
+    },
+    {
+      "id": "F4",
+      "file": null,
+      "line": null,
+      "claim": "The PR title labels the change as a chore, but it actually corrects a behavior where an unrecognised v1.5.0 SafeMigration causes 422 errors and MalformedHash; this should be typed as fix rather than chore, since chore is meant to be used only as a last resort for such classifications."
+    },
+    {
+      "id": "F5",
+      "file": "recipient-analysis.service.ts",
+      "line": 707,
+      "claim": "recipient-analysis.service.ts now accepts any SafeToL2Migration version, but no test covers this behavior change; it currently works only because just one version (1.4.1) exists, so a test with a mocked or alternate version is needed to pin down the behavior."
+    },
+    {
+      "id": "F6",
+      "file": "safe.spec.ts",
+      "line": 913,
+      "claim": "The test asserts in an if/else branch depending on deployment data for chain 204, so its outcome depends on external package data rather than a controlled input, though this issue predates and is outside the current diff."
+    },
+    {
+      "id": "F7",
+      "file": "src/domain/common/utils/deployments.ts",
+      "line": 41,
+      "claim": "Adding typeof _getSafeMigrationDeployments to the DeploymentGetter union is unnecessary for this fix since formatDeployments(_getSafeMigrationDeployments, args) already compiled before this PR, making this an unrelated type change unless it's intended as consistency cleanup."
+    },
+    {
+      "id": "F8",
+      "file": "src/domain/common/utils/__tests__/safe.spec.ts",
+      "line": 913,
+      "claim": "The literal array ['1.3.0','1.4.1','1.5.0'] was extended by hand instead of being derived from the new getSafe(L2)SingletonVersions() helpers introduced by this change, which is inconsistent with the new derivation approach even though it doesn't currently affect any test outcome."
+    },
+    {
+      "id": "F9",
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.ts",
+      "line": 82,
+      "claim": "MULTICHAIN_SUPPORTED_VERSIONS is a hardcoded singleton list used in isNetworkCompatible, so it will similarly fail to recognize future singleton versions until manually updated; these two lists should be derived from getSafeSingletonVersions()/getSafeL2SingletonVersions(), or the gap should be documented as a follow-up."
+    },
+    {
+      "id": "F10",
+      "file": "src/domain/common/utils/__tests__/safe.spec.ts",
+      "line": 913,
+      "claim": "hasAnySingletons still hardcodes the version list ['1.3.0', '1.4.1', '1.5.0'] by hand instead of deriving it from getSafeMigrationTargetVersions(), so the next singleton release will make the test's list diverge from production again, which is exactly the kind of stale list this fix was meant to eliminate. It should instead be built from getSafeSingletonVersions() / getSafeL2SingletonVersions() filtered to >=1.3.0."
+    },
+    {
+      "id": "F11",
+      "file": "src/domain/common/utils/deployments.ts",
+      "line": 17,
+      "claim": "The code reads four additional underscore-prefixed arrays from dist/deployments that are not exported by the package's public index, increasing usage from 3 to 7 such internal arrays; relying on non-public exports could break if the package's internal structure changes."
+    },
+    {
+      "id": "F12",
+      "file": "src/domain/common/utils/__tests__/safe.spec.ts",
+      "line": 913,
+      "claim": "The test hardcodes an inline version list (['1.3.0', '1.4.1', '1.5.0']) for hasAnySingletons, which defeats the purpose of deriving versions in production and will silently miss a future version; it should instead use getSafeSingletonVersions()/getSafeL2SingletonVersions() (or the same >=1.3.0 filter used in production) so the test tracks the package."
+    },
+    {
+      "id": "F13",
+      "file": "src/domain/common/utils/safe.ts",
+      "line": 225,
+      "claim": "detectSafeMigration has a silent catch (try { ... } catch { return null; }) that swallows errors; since this function is now the sole path for a real-world 422 failure mode, it should log a debug/warn message on the caught error to aid future incident triage."
+    },
+    {
+      "id": "F14",
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.ts",
+      "line": 65,
+      "claim": "SAFE_VERSIONS is a hardcoded singleton list that has not been derived from safe-deployments; since it is consumed by determineMasterCopyVersion, a future v1.6.0 mastercopy will not be recognized without manually editing this list."
+    },
+    {
+      "id": "F15",
+      "file": null,
+      "line": null,
+      "claim": "getSafeSingletonVersions() returns all versions the package ships, including pre-1.3.0 versions like 1.0.0, 1.1.1, and 1.2.0; a future caller that assumes these are all safe to feed into a SafeTx hash flow could be tripped up by the older entries, so the function should have a short JSDoc note clarifying this, or a helper that already filters to >=1.3.0 should be provided."
+    },
+    {
+      "id": "F16",
+      "file": "src/domain/common/utils/deployments.ts",
+      "line": 245,
+      "claim": "The new JSDoc claims that _SAFE_*_DEPLOYMENTS.map(...) returns versions in descending order, but this could not be confirmed since node_modules isn't installed, leaving the ordering assumption unverified."
+    },
+    {
+      "id": "F17",
+      "file": "src/domain/common/utils/__tests__/safe.spec.ts",
+      "line": 704,
+      "claim": "describe.each(['1.4.1', '1.5.0']) pins the SafeMigration versions in the tests even though this same PR adds getSafeMigrationVersions(), so a future SafeMigration release won't be covered by these tests. If the pinning is deliberate (to fail loudly when the package drops a version), that should be documented in a comment; otherwise the tests should use describe.each(getSafeMigrationVersions())."
+    }
+  ]
+}

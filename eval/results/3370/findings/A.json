@@ -1,0 +1,60 @@
+{
+  "usd": 0.0626836,
+  "findings": [
+    {
+      "claim": "ExportApi now maps HTTP 451 errors, but there is no test at any level that checks its 451 response produces the new message and code, so a regression removing the mapping call would not be caught.",
+      "file": "src/modules/csv-export/v1/datasources/export-api.service.ts",
+      "line": 64
+    },
+    {
+      "claim": "The export-api spec only excludes 451 from the random status codes it tests, without asserting on the actual 451 behavior.",
+      "file": "src/modules/csv-export/v1/datasources/export-api.service.spec.ts",
+      "line": 143
+    },
+    {
+      "claim": "Of the three changed catch sites in SafeBalancesApi, only one is covered by a test; the other two have no test that would fail if the mapping call were removed.",
+      "file": "src/modules/balances/datasources/safe-balances-api.service.ts",
+      "line": 181
+    },
+    {
+      "claim": "A second catch site in SafeBalancesApi at line 221 similarly lacks test coverage for the mapping call.",
+      "file": "src/modules/balances/datasources/safe-balances-api.service.ts",
+      "line": 221
+    },
+    {
+      "claim": "The fixed text 'Safe is unavailable for legal reasons' is repeated literally as the fake upstream detail in five test locations even though nothing asserts on that value, which conflicts with the project's no-literal-fixtures convention that would use something like faker.lorem.sentence() to signal the value doesn't matter.",
+      "file": "banned-safe.helper.spec.ts",
+      "line": 22
+    },
+    {
+      "claim": "The same literal fixture text appears again without being asserted on, repeating the no-literal-fixtures issue.",
+      "file": "transaction-api.service.spec.ts",
+      "line": 430
+    },
+    {
+      "claim": "The same literal fixture text appears again without being asserted on, repeating the no-literal-fixtures issue.",
+      "file": "balances.controller.integration.spec.ts",
+      "line": 857
+    },
+    {
+      "claim": "The same literal fixture text appears again without being asserted on, repeating the no-literal-fixtures issue.",
+      "file": "safes.controller.integration.spec.ts",
+      "line": 2426
+    },
+    {
+      "claim": "The logic to pick a random error status code other than 451 is duplicated across three test files instead of being extracted into one shared helper like errorStatusCodeExcludingBannedSafe().",
+      "file": "banned-safe.helper.spec.ts",
+      "line": 36
+    },
+    {
+      "claim": "The same duplicated random-status-picking logic appears again instead of reusing a shared helper.",
+      "file": "export-api.service.spec.ts",
+      "line": 144
+    },
+    {
+      "claim": "The same duplicated random-status-picking logic appears again instead of reusing a shared helper.",
+      "file": "transaction-api.service.spec.ts",
+      "line": 75
+    }
+  ]
+}

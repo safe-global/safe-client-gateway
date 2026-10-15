@@ -1,0 +1,25 @@
+{
+  "usd": 0.0570136,
+  "findings": [
+    {
+      "file": "src/modules/auth/utils/auth-redirect.helper.ts",
+      "line": 139,
+      "claim": "The loopback hostname check relies on the WHATWG URL parser lowercasing hostnames (so LOCALHOST becomes localhost) rather than explicitly lowercasing the compared value, which makes the code's correctness dependent on an implicit guarantee that is easy to overlook when reading or modifying the code."
+    },
+    {
+      "file": "src/modules/auth/utils/auth-redirect.helper.ts",
+      "line": 138,
+      "claim": "The isHttps variable is only used once inside the loopback branch and once later, making the alias unnecessary indirection; inlining target.protocol === 'https:' directly would be clearer."
+    },
+    {
+      "file": "src/modules/auth/utils/auth-redirect.helper.spec.ts",
+      "line": 229,
+      "claim": "The tests for rejecting non-HTTP schemes only cover ftp://, leaving a gap in coverage for other schemes an attacker might attempt such as file:, javascript:, and data:."
+    },
+    {
+      "file": "src/modules/auth/utils/auth-redirect.helper.ts",
+      "line": null,
+      "claim": "The loopback hostname set matches RFC 8252's exact list (localhost, 127.0.0.1, ::1) but does not include the broader 127.0.0.0/8 block that RFC 5735 also defines as loopback; this scope decision is not documented in a code comment, risking a future reader mistakenly broadening the set without understanding the tradeoff."
+    }
+  ]
+}

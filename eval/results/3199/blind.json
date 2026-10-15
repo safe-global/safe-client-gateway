@@ -1,0 +1,163 @@
+{
+  "pr": 3199,
+  "title": "fix: Zerion /portfolio 429 storm — fetch-once-per-wallet + shared rate limit",
+  "description": "## Summary\n\n`GET /v2/safes` (with the per-chain `PORTFOLIO_ENDPOINT` flag on) called Zerion\n`GET /v1/wallets/{address}/portfolio` **once per `(chainId, address)` pair**, even though a\nportfolio response is **per-wallet and already contains every chain** (`positions_distribution_by_chain`)\nand the cache key is address-scoped. A Safe on N chains therefore triggered N identical, unthrottled\ncalls. With no rate limit, this exceeded Zerion's ~10 RPS account ceiling and produced an ~88% `429`\nrate, so multi-chain Safes intermittently dropped out of the overview.\n\nThis PR makes two structural fixes plus the honest degradation and observability they require:\n\n- **W1 — fetch once per wallet-identity.** `getSafeOverview` now fetches the portfolio once per\n  `(address, isTestnet, currency, trusted)` identity and slices the per-chain value, instead of once\n  per chain. `getChain` is deduped per `chainId`. Call count per request drops from O(chains) to\n  O(unique wallet-identities).\n- **W2 — shared cross-pod rate limit.** A `ZerionRateLimiter` enforces the account-wide budget\n  (global + optional per-address sub-budget) via a Redis fixed-window counter, so cluster traffic\n  stays under the ceiling and calls **succeed** (warming the existing 10s cache) instead of storming\n  `429`s. Every Zerion account consumer — wallet portfolio, balances, positions, and the portfolio\n  route — now shares this one budget.\n- **Honest degradation.** A failed/over-budget portfolio degrades the wallet to the balances\n  repository (a real computed total) — it is **never dropped on a 429** and **never shown a\n  fabricated `$0`**. Only a double failure (portfolio *and* balances-repo) drops the Safe.\n- **Redis-6-safe counter.** The existing `increment` relied on `EXPIRE … NX` (Redis 7.0+), so on\n  Redis 6 the window never resets. A new version-agnostic Lua `INCR`+`EXPIRE` counter (`incrWithTtl`)\n  works on both; the existing balances counter is migrated onto it.\n\n## Changes\n\n- `cache.service.interface.ts` / `redis.cache.service.ts` / `fake.cache.service.ts`: add\n  `incrWithTtl` (atomic Lua `INCR`+`EXPIRE`, Redis 6/7 safe) + tests.\n- `modules/zerion`: new `ZerionRateLimiter` (global + per-address tiers, fail-open on Redis errors)\n  exported from `ZerionModule`; `BalancesModule` now imports `ZerionModule`.\n- `ZerionBalancesApi` migrated off `increment`; `ZerionPositionsApi`, `ZerionPortfolioApi`, and\n  `ZerionWalletPortfolioApi` wired through the shared budget.\n- `SafesV2Service.getSafeOverview` restructured (fetch-once-per-identity + dedupe `getChain` +\n  honest degradation); new `LogType.PortfolioDegradedServe` for observability.\n- New config: `ZERION_RATE_LIMIT_PER_ADDRESS_CALLS_BY_PERIOD` / `_PERIOD_SECONDS` (per-address\n  sub-budget, disabled by default).\n- New specs: `zerion-rate-limiter.service.spec.ts`, `zerion-wallet-portfolio-api.service.spec.ts`,\n  `safes.v2.service.spec.ts`; extended balances, fake-cache, redis-integration, and overview\n  integration specs.\n\n> **Config (no code, required for the real ceiling):** code defaults are unchanged and\n> safe-by-default. To enforce a hard `<10 RPS` ceiling, set `ZERION_RATE_LIMIT_CALLS_BY_PERIOD` /\n> `ZERION_RATE_LIMIT_PERIOD_SECONDS` to a short window (e.g. `period=1, calls≈9`) per environment.\n\n## Affected flows\n\n- `/v2/safes` overview (primary): single-chain unchanged; multi-chain now one portfolio call.\n- `/balances`, `/positions`, portfolio route: now share the Zerion budget (can `429` under load;\n  previously unbounded).\n- Non-Zerion / flag-off chains and empty Safes: unchanged (real `$0` still renders).\n\n## Risks / not checked\n\n- Production Redis 6-vs-7 behaviour: the Lua counter is correct on both; not run against prod Redis.\n- Production rate-limit tuning is an ops/env step (defaults are safe placeholders).\n- Integration/e2e specs require a live Postgres + Redis and are not in CI; verified here via the unit\n  suite (full run green) + analysis of the affected integration assertions.\n\n## Visual summary\n\n```mermaid\nflowchart TD\n  R[\"GET /v2/safes — Safe on N chains, P pods\"] --> M[\"getSafeOverview\"]\n  subgraph Before\n    M -.->|\"getPortfolio per (chainId,address) — N identical, unthrottled\"| Zb[\"Zerion /portfolio\"]\n    Zb -.->|\"burst > 10 RPS → 429 (88%)\"| Drop[\"throws → Safe dropped\"]\n  end\n  subgraph After\n    M -->|\"fetch once per (address,isTestnet,currency,trusted)\"| RL[\"ZerionRateLimiter\\nglobal + per-address budget\"]\n    RL -->|\"within budget\"| Za[\"Zerion /portfolio (1 call)\"]\n    Za --> Slice[\"slice positions_distribution_by_chain → per chain\"]\n    RL -->|\"over budget / failure\"| Deg[\"degrade → balances repo\\n(never \\$0, never drop)\"]\n  end\n```\n\n## Checklist\n\n- [x] I've added unit tests for the new logic (rate limiter, wallet portfolio datasource, overview service)\n- [ ] I've tested the branch on mobile (n/a — backend gateway change)\n- [x] I've documented how it affects analytics (new `PortfolioDegradedServe` + `RateLimit{datasource,scope}` logs)\n",
+  "findings": [
+    {
+      "id": "F1",
+      "file": "src/modules/safe/routes/v2/safes.v2.service.spec.ts",
+      "line": 107,
+      "claim": "The 'one fetch per wallet across multiple chains' scenario is tested in both a unit test and an integration test (src/modules/safe/routes/v2/__tests__/safes.v2.controller.overview.integration.spec.ts:312), but this is a service-branch rule that the unit test alone already proves; the integration test could be shrunk to a wiring smoke test or dropped."
+    },
+    {
+      "id": "F2",
+      "file": "src/modules/zerion/datasources/zerion-rate-limiter.service.ts",
+      "line": 92,
+      "claim": "Setting the rate limit variable to 0 previously blocked every call, but the new limitCalls > 0 check makes 0 mean 'no limit', which silently reverses the meaning of an existing configuration value."
+    },
+    {
+      "id": "F3",
+      "file": null,
+      "line": null,
+      "claim": "The configuration variable's description still says only 'Maximum Zerion API calls per time period' and does not mention that the budget is now shared across all Zerion datasources or that a value of 0 disables the limit, unlike the newly added per-address variable which documents this."
+    },
+    {
+      "id": "F4",
+      "file": "src/routes/common/guards/rate-limit.guard.ts",
+      "line": 35,
+      "claim": "This code still calls increment rather than incrWithTtl, even though this PR's own documentation notes that the EXPIRE ... NX approach used by increment is broken on Redis 6, meaning the request rate-limit guard has a window that never resets."
+    },
+    {
+      "id": "F5",
+      "file": "src/modules/safe/routes/v2/safes.v2.service.ts",
+      "line": 277,
+      "claim": "The PortfolioResult union type and its 'degraded' status variant carry no information that changes behavior, since both a degraded result and a missing map key fall through to the same serveDegradedBalance path, making the union removable in favor of a plain Map<string, ZerionWalletPortfolio>; error logging and degraded-serve metrics are already handled independently of this marker at the point of failure and within serveDegradedBalance, respectively, so removing it would not lose that information, though it would collapse the distinction between 'fetch failed' and 'never fetched' into the same undefined value, which is currently not observable but forecloses cheaply distinguishing the two cases from the map later."
+    },
+    {
+      "id": "F6",
+      "file": "src/modules/safe/routes/v2/safes.v2.service.ts",
+      "line": 84,
+      "claim": "resolveZerionEligibility and resolveSafes both depend only on chainsById but are executed sequentially rather than concurrently, so every /v2/safes request pays an avoidable extra round trip; wrapping them in Promise.all would remove that latency."
+    },
+    {
+      "id": "F7",
+      "file": "src/modules/safe/routes/v2/safes.v2.service.ts",
+      "line": 229,
+      "claim": "The method does not short-circuit when the Zerion feature flag is disabled, performing unnecessary work instead of returning an empty map immediately in that case."
+    },
+    {
+      "id": "F8",
+      "file": "src/modules/safe/routes/v2/safes.v2.service.ts",
+      "line": 439,
+      "claim": "When the fallback path also fails, the same failure is logged twice at warn level, once here and again at the 'Error while getting Safe overview' log around line 138."
+    },
+    {
+      "id": "F9",
+      "file": "src/config/entities/configuration.ts",
+      "line": 140,
+      "claim": "The default limitCalls for the Zerion rate limiter stayed at 2 calls per 10 seconds even though three additional datasources (portfolio, positions, wallet-portfolio) now share that counter alongside balances, while the limiter's own doc comment states Zerion allows roughly 10 calls per second. Under this default, /v1/portfolio and /positions can start returning 429s under normal traffic that they never returned before, and /v2/safes would fall back to the balances service most of the time."
+    },
+    {
+      "id": "F10",
+      "file": "src/modules/zerion/datasources/zerion-rate-limiter.service.ts",
+      "line": 116,
+      "claim": "The fail-open log path interpolates the error into a plain string instead of using the structured log object format used elsewhere in the same class (e.g. the RateLimit log at line 127), which loses the type, datasource and scope information and makes a Redis failure hard to alert on; it should use a structured object such as { type: LogType.RateLimit, event: 'fail_open', datasource, detail: asError(error).message }, which requires passing datasource down into _increment."
+    },
+    {
+      "id": "F11",
+      "file": "src/datasources/cache/__tests__/fake.cache.service.ts",
+      "line": 89,
+      "claim": "The incrWithTtl implementation can be simplified into a shorter form; a version that assigns and returns the incremented value directly is more concise, though a slightly more verbose version with explicit intermediate variables may be preferable for readability."
+    },
+    {
+      "id": "F12",
+      "file": "src/datasources/cache/__tests__/fake.cache.service.ts",
+      "line": 82,
+      "claim": "incrWithTtl duplicates the body of increment almost verbatim instead of delegating to it, creating unnecessary duplicated logic that could drift out of sync."
+    },
+    {
+      "id": "F13",
+      "file": "src/modules/zerion/datasources/zerion-rate-limiter.service.ts",
+      "line": 76,
+      "claim": "The per-address limit only takes effect when an address argument is passed, and only the wallet-portfolio call site passes one; balances and portfolio do not, even though portfolio has args.address available. This means enabling ZERION_RATE_LIMIT_PER_ADDRESS_CALLS_BY_PERIOD would not stop a single busy wallet on /balances from consuming the whole shared budget, contradicting the documentation in .env.sample.json and the class's own doc comment."
+    },
+    {
+      "id": "F14",
+      "file": "src/modules/safe/routes/v2/safes.v2.service.ts",
+      "line": 182,
+      "claim": "Two doc comments ('today the chain is fetched per entry' and 'dropped during the per-entry build (as today)') describe the old behavior and will be inaccurate once merged, since unresolved chains are now dropped in resolveSafes (around line 161) rather than in the per-entry build; the comments should reference resolveSafes instead."
+    },
+    {
+      "id": "F15",
+      "file": "src/config/entities/configuration.ts",
+      "line": 140,
+      "claim": "Given the expanded scope of the shared rate-limit variable, the existing default value of 2 calls per 10 seconds is worth rechecking since it now governs more endpoints than before."
+    },
+    {
+      "id": "F16",
+      "file": "src/modules/safe/routes/v2/safes.v2.service.ts",
+      "line": 268,
+      "claim": "SafesV2Service calls the Zerion datasource (IZerionWalletPortfolioApi) directly rather than going through a repository, and this PR builds further logic on top of that direct call (batching per wallet, handling LimitReachedError/ZodError, importing the datasource entity type ZerionWalletPortfolio), growing a pattern that services should call repositories rather than datasources directly; a follow-up to move this behind IBalancesRepository would prevent the gap from widening further."
+    },
+    {
+      "id": "F17",
+      "file": "src/modules/safe/routes/v2/safes.v2.service.ts",
+      "line": 430,
+      "claim": "serveDegradedBalance logs at warn level every time the fallback path succeeds, once per Safe, which is an expected outcome and produces excessive warn-level noise (in addition to the limiter's own warn log and a nearby debug log) when Zerion is over budget for every Safe on a Zerion chain; an info/debug log or a counter would be more appropriate for what is effectively a metric signal."
+    },
+    {
+      "id": "F18",
+      "file": "src/modules/safe/routes/v2/safes.v2.service.ts",
+      "line": 202,
+      "claim": "The method builds an intermediate array of entries before constructing the result, when it could construct and return the Map directly, reducing unnecessary intermediate steps."
+    },
+    {
+      "id": "F19",
+      "file": "src/datasources/cache/cache.service.interface.ts",
+      "line": 34,
+      "claim": "The method documentation exposes Redis 6/7 version-specific implementation details instead of describing the method's behavior in implementation-agnostic terms."
+    },
+    {
+      "id": "F20",
+      "file": "src/modules/safe/routes/v2/safes.v2.service.ts",
+      "line": 11,
+      "claim": "The service injects the IZerionWalletPortfolioApi datasource directly rather than going through a repository, which conflicts with the project's documented layering rule that services should call repositories, not datasources; this predates the PR but the change increases reliance on it."
+    },
+    {
+      "id": "F21",
+      "file": "src/modules/positions/datasources/zerion-positions-api.service.ts",
+      "line": 109,
+      "claim": "The spec files for the Zerion positions and portfolio APIs only stub assertWithinBudget as a no-op mock without ever making it throw, asserting it was called, or importing LimitReachedError, so deleting the assertWithinBudget call in either service would leave all tests green."
+    },
+    {
+      "id": "F22",
+      "file": "src/modules/safe/routes/v2/safes.v2.service.ts",
+      "line": 191,
+      "claim": "No test exercises getChain failing, leaving the new code path that drops a single entry when its chain is missing unverified."
+    },
+    {
+      "id": "F23",
+      "file": "src/modules/zerion/datasources/zerion-rate-limiter.service.ts",
+      "line": 116,
+      "claim": "The fail-open warning log is emitted as a plain string while the sibling _logRateLimited method in the same file uses the structured { type: LogType… } format, making the fail-open event harder to query consistently with other rate-limit logs."
+    },
+    {
+      "id": "F24",
+      "file": ".env.sample.json",
+      "line": 1576,
+      "claim": "The ZERION_RATE_LIMIT_CALLS_BY_PERIOD variable previously limited only balances and collectibles calls, but now also limits positions, portfolio and Safe overview calls, so any deployment using the default value will make far fewer Zerion calls overall and overviews will fall back to the balances repository more often."
+    },
+    {
+      "id": "F25",
+      "file": "src/modules/safe/routes/v2/safes.v2.controller.ts",
+      "line": 73,
+      "claim": "The /v2/safes endpoint has no RateLimitGuard, so an anonymous caller can exhaust the shared Zerion rate-limit counter through this route; the PR does not introduce this exposure but shifts where the counter can be exhausted, since /balances and /collectibles could already exhaust it and /v2/safes previously hit Zerion with no limit at all."
+    },
+    {
+      "id": "F26",
+      "file": "src/modules/safe/routes/v2/safes.v2.service.ts",
+      "line": 299,
+      "claim": "The log branches that handle ZodError and LimitReachedError are never exercised because every relevant test rejects with a plain Error, leaving that logging logic untested."
+    }
+  ]
+}

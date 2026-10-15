@@ -1,0 +1,43 @@
+{
+  "pr": 3202,
+  "title": "refactor: remove Zerion as a balances API provider",
+  "description": "## Summary\n\n- `/portfolio` now serves all Zerion data, so Zerion is no longer needed in the `/balances` (or `/collectibles`) endpoint.\n- The Zerion fallback for counterfactual safes and the Zerion collectibles path were dead code — Datadog shows zero production traffic to them. Counterfactual safes now return a 404 from `/balances` instead of Zerion data.\n- Deletes the unused `ZerionBalancesApi` service, its collectibles entity/builder, and the dead integration specs.\n- Kept: `zerion-balance.entity`, `zerion-api.helpers`, and the wallet-portfolio service, which `/portfolio` and `/positions` still use.\n\n## Related\n\n- [WA-2753](https://linear.app/safe-global/issue/WA-2753/remove-zerion-as-an-api-provider-from-the-balances-endpoint)\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "findings": [
+    {
+      "id": "F1",
+      "file": "src/domain/interfaces/balances-api.manager.interface.ts",
+      "line": 19,
+      "claim": "The `safeAddress` parameter on `IBalancesApiManager.getApi` is still declared as required even though the implementation no longer uses it (renamed to `_safeAddress`), so every caller and test still has to generate a fake address just to satisfy a signature that no longer needs it."
+    },
+    {
+      "id": "F2",
+      "file": "src/domain/balances/balances-api.manager.ts",
+      "line": 47,
+      "claim": "In `getFiatCodes`, wrapping the result in `rawify` is redundant because `IPricesApi.getFiatCodes()` already returns `Raw<Array<string>>`, making the call an unnecessary no-op cast."
+    },
+    {
+      "id": "F3",
+      "file": "src/config/entities/configuration.ts",
+      "line": 420,
+      "claim": "The `features.counterfactualBalances` flag (`FF_COUNTERFACTUAL_BALANCES`) has no remaining consumer since `BalancesApiManager` no longer reads it, but the env var, its `.env.sample.json` entry, the `.vscode/launch.json` override, and the `counterfactualBalances: true/false` toggles in several integration specs are still present, which could mislead future readers into thinking a counterfactual code path still exists."
+    },
+    {
+      "id": "F4",
+      "file": "balances.controller.integration.spec.ts",
+      "line": null,
+      "claim": "The integration suite does not assert the new behavior described in the PR body where counterfactual safes return a 404 from `/balances`, so this intentional user-visible change is not locked in or documented by a test."
+    },
+    {
+      "id": "F5",
+      "file": "balances-api.manager.spec.ts",
+      "line": null,
+      "claim": "The describe block named `getApi checks` (under `Balances API Manager Tests`) no longer reflects what it tests, since Zerion is no longer part of the routing decision."
+    },
+    {
+      "id": "F6",
+      "file": "balances-api.manager.spec.ts",
+      "line": null,
+      "claim": "The two remaining `getApi` tests still generate a `safeAddress` value even though there is no longer any branch coverage that depends on it, leaving unnecessary test setup."
+    }
+  ]
+}

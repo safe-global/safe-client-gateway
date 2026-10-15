@@ -1,0 +1,11 @@
+{
+  "pr": 3156,
+  "reviewSha": "4f4aaba779c476349a7c3ba92585f81a1a2adaef",
+  "baseSha": "ff7c7828f502c53d6bdbc92c63b4ea12ce1c591c",
+  "system": "E",
+  "version": "github",
+  "runner": "collect",
+  "model": "human",
+  "commentSha": "6414977bd42ebb9ca2727f7d841e1402ed5e0156",
+  "output": "[review by gatleas17]\nPlease\n\n---\n\nsrc/modules/spaces/routes/address-books.controller.e2e-spec.ts:799\nwhy do we need to rename this method? I think the old name is a correct one as it purely invites the member. Or we could call it `createPendingMember`\n\n---\n\nI ran this branch locally with safe-wallet-monorepo and I again went through the same flow that I priorly had shared on [Slack](https://safelabsgmbh.slack.com/archives/C094UBQ6ML3/p1781096629997029?thread_ts=1781093390.495989&cid=C094UBQ6ML3). Workflow is as follows:\r\n\r\n  1. Create a new space with address A and invite address B\r\n  2. Create a shared workspace contact as address A\r\n  3. As address B open the frontend, use the old UI and go to a Safe of address B\r\n  4. Click \"New transaction\" on the Safe of address B and check if a dropdown opens with a workspace contact from the workspace of address A (that address B has yet to confirm)\r\n\r\n\r\nWith this branch, the contacts from the invited workspace don't show up anymore in the recipient input dropdown when I'm creating a new transaction.\r\n\r\nI won't do the code review here as I think someone with knowledge about CGW should do it\r\n\r\n\r\n"
+}

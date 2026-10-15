@@ -1,0 +1,166 @@
+{
+  "usage": {
+    "usd": 0.4194452,
+    "turns": 7,
+    "wallSeconds": 57
+  },
+  "issues": [
+    {
+      "findings": [
+        "F5"
+      ],
+      "summary": "No test covers non-production without allowedRedirectDomain, so reordering the loopback check would go unnoticed",
+      "label": "medium",
+      "evidence": "The spec's resolveAndValidateRedirectUrl block has only 'production (same-origin check)' and 'non-production with allowedRedirectDomain' describes (spec:97,151). The PR merged both same-origin cases into one guard at auth-redirect.helper.ts:130, and nothing tests the isProduction=false/no-domain branch. If the loopback check were moved above that guard, localhost would be accepted in every non-prod config and no test would fail.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F15",
+        "F18"
+      ],
+      "summary": "New loopback tests use faker.internet.port(), which can draw the scheme's default port and make toBe(url) fail",
+      "label": "low",
+      "evidence": "spec:212 and spec:222 build `http://host:${port}` and `https://localhost:${port}`. node confirms new URL('http://localhost:80/x').toString() drops the port, so the toBe(url) check fails when the draw is 80 (http) or 443 (https). The failure rate is about 1 in 65k runs.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F10"
+      ],
+      "summary": "Existing 'URL with port' rejection test can draw port 443, which normalises to a valid URL",
+      "label": "low",
+      "evidence": "spec:191-192 uses `https://app.${allowedDomain}:${faker.internet.port()}`. With port 443 the URL has no port after parsing, so it is accepted and the rejection test fails. Real but rare, and the lines predate the PR.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F11"
+      ],
+      "summary": "AUTH.md says non-HTTPS and explicit-port URLs are always rejected, which loopback redirects now contradict",
+      "label": "low",
+      "evidence": "src/modules/auth/AUTH.md:247 says 'Always rejected: non-HTTPS URLs, ... URLs with explicit ports', but auth-redirect.helper.ts:139-141 now accepts http/https loopback URLs with any port. The PR didn't update the docs.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F4",
+        "F12"
+      ],
+      "summary": ".env.sample description of AUTH_ALLOWED_REDIRECT_DOMAIN doesn't mention that setting it also enables loopback redirects",
+      "label": "low",
+      "evidence": ".env.sample.json:118 says only that setting it means 'any subdomain is accepted'. Per helper.ts:130-141, setting it in non-prod also allows localhost/127.0.0.1/[::1] over http with any port. This is a documentation gap.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F3"
+      ],
+      "summary": "OIDC service/controller docs say redirectUrl must be same-origin, which is inaccurate",
+      "label": "low",
+      "evidence": "oidc-auth.service.ts:113-118 and oidc-auth.controller.ts:78 say 'Must be same-origin', but non-prod already allowed subdomains and now allows loopback. The text predates the PR and sits outside the changed lines.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F14",
+        "F16"
+      ],
+      "summary": "Auth0 Allowed Logout URLs must include the loopback origins for logout via returnTo to work",
+      "label": "unverifiable",
+      "evidence": "auth.service.ts:136-147 passes the validated redirect as Auth0's returnTo, so Auth0 will reject any loopback URL missing from the tenant allowlist. Tenant configuration lives outside the repo and can't be checked here.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F19"
+      ],
+      "summary": "Loopback relaxation tied to AUTH_ALLOWED_REDIRECT_DOMAIN and applies to staging",
+      "label": "wrong",
+      "evidence": "The PR description says it is meant to let local frontends authenticate against staging/dev when AUTH_ALLOWED_REDIRECT_DOMAIN is set, and the JSDoc at helper.ts:111-120 says the same. This is an intended design choice, not a defect.",
+      "category": "security"
+    },
+    {
+      "findings": [
+        "F1"
+      ],
+      "summary": "Only ftp: is tested as a non-HTTP scheme on loopback",
+      "label": "nit",
+      "evidence": "helper.ts:140 rejects any protocol other than http:/https: on loopback, and javascript:/data:/file: URLs have no loopback hostname, so they fall to the isHttps branch and are rejected. More cases would add little.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F2"
+      ],
+      "summary": "Test name 'lookalike hostname suffixed with allowed name' is slightly misleading",
+      "label": "nit",
+      "evidence": "spec:233-235 tests `localhost.<random domain>`, a loopback name with an extra label, which has nothing to do with allowedRedirectDomain. Only the name is affected, not the behaviour.",
+      "category": "style"
+    },
+    {
+      "findings": [
+        "F6"
+      ],
+      "summary": "No blank line between LOOPBACK_HOSTNAMES and the following JSDoc",
+      "label": "nit",
+      "evidence": "helper.ts:6-7: the constant runs straight into the JSDoc. Purely cosmetic.",
+      "category": "style"
+    },
+    {
+      "findings": [
+        "F7"
+      ],
+      "summary": "isHttps alias is unnecessary",
+      "label": "nit",
+      "evidence": "helper.ts:138 defines isHttps and uses it at lines 140 and 144. This is style preference only.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F8",
+        "F13"
+      ],
+      "summary": "RFC 8252 citation is imperfect: it covers native apps, and §8.3 discourages the 'localhost' name",
+      "label": "nit",
+      "evidence": "helper.ts:117-120 cites RFC 8252 §7.3 for motivation, and the code behaves as intended. The fit between the RFC and this browser use case only affects the comment.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F9"
+      ],
+      "summary": "Some loopback rejection cases hard-code port 3000 instead of using faker",
+      "label": "nit",
+      "evidence": "spec:235,243,247 use :3000. The fixed port has no effect on the rejection tests. It's an inconsistency with no cost.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F17"
+      ],
+      "summary": "'should reject loopback in production' lives in the non-production describe block",
+      "label": "nit",
+      "evidence": "spec:254-267 builds its own prodConfig inside the 'non-production with allowedRedirectDomain' > 'loopback exception' block. The test is correct, so this is only about organisation.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F20"
+      ],
+      "summary": "The 127.0.0.0/8 exclusion isn't documented",
+      "label": "nit",
+      "evidence": "helper.ts:6 uses an exact set, and the JSDoc at line 117 says 'matched exactly'. Excluding the rest of the /8 is conservative and safe. A comment about it would be optional.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F21"
+      ],
+      "summary": "Loopback match relies on the URL parser lowercasing hostnames",
+      "label": "nit",
+      "evidence": "The WHATWG URL parser always lowercases hostnames (node: new URL('http://LOCALHOST/').hostname === 'localhost'). The allowed-domain branch at line 146 relies on the same guarantee. That guarantee is part of the spec, not a fragile assumption.",
+      "category": "correctness"
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "usd": 0.0490476,
+  "findings": [
+    {
+      "file": "src/modules/billing/routes/billing.service.ts",
+      "line": 194,
+      "claim": "getActivePlanName is queried unconditionally alongside hasAnySubscription, but isOfferedToSpace only uses its result when hasEverSubscribed is true, so for every never-subscribed workspace this SELECT executes and its result is discarded. This should either be folded into a single subscription query returning both exists and planName, or resolved conditionally only when hasAnySubscription is true."
+    },
+    {
+      "file": "src/modules/billing/routes/billing.service.ts",
+      "line": 125,
+      "claim": "Every POST /checkout-url call now performs the full offer computation (general catalog fetch, space-specific catalog fetch, three DB queries, plus the checkout POST itself); the three DB queries run on every checkout attempt even though the catalog reads are cached, which could be costly if checkout is a hot path. A lighter-weight assertOffered(paymentLinkId, spaceId) that reuses cached catalogs and short-circuits DB reads could be considered."
+    },
+    {
+      "file": "src/modules/billing/routes/billing.service.ts",
+      "line": 163,
+      "claim": "warnOnUnclassifiedTrials fires on every call to listOfferedPaymentLinks, meaning every GET /payment-links and POST /checkout-url request for the same misconfigured catalog logs the same warning, which could flood logs with repeated messages under a bad configuration. Logging at debug/rate-limited warn per link id with in-memory dedup, or moving the check to a catalog-refresh path so it only warns when the datasource actually re-fetches, would address this."
+    },
+    {
+      "file": "src/modules/billing/routes/payment-link-offer.rules.ts",
+      "line": 53,
+      "claim": "The four-arm switch (true) construct is unusual for this codebase; a plain if/else if chain would read more naturally and be easier to git blame."
+    },
+    {
+      "file": "src/modules/entitlements/domain/subscriptions.repository.ts",
+      "line": 44,
+      "claim": "hasAnySubscription and getActivePlanName are two very similar methods that always fire together, with getActivePlanName already implying whether an active subscription exists via a non-null return; hasAnySubscription only adds coverage for terminal/incomplete rows. A single query returning both activePlanName and hasAnySubscription would halve round-trips and remove a code path that is hard to keep in sync, making the current split feel like unnecessary API surface."
+    },
+    {
+      "file": "src/config/entities/configuration.ts",
+      "line": 1073,
+      "claim": "parseEnforcementStartsAt treats an empty string environment value as invalid (throwing) but an unset value as using the default, which is surprising behavior for operators who set ENTITLEMENTS_ENFORCEMENT_STARTS_AT= as an empty value in a .env file. Treating an empty string as unset (e.g., envValue?.trim() || undefined) would be more consistent with other keys in this file."
+    }
+  ]
+}

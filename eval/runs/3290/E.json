@@ -1,0 +1,11 @@
+{
+  "pr": 3290,
+  "reviewSha": "d670542b2277fbbc076d7d4252c3d1a830319de0",
+  "baseSha": "f666c95c7c4c9a1b0bffc278e8b30e73d5b2d51f",
+  "system": "E",
+  "version": "github",
+  "runner": "collect",
+  "model": "human",
+  "commentSha": "71f967f20ef744408fcfb8c64438c2995f2b2790",
+  "output": "[review by tongyaosafe]\nApproved. I think the comments are bit redundant. Maybe we can simplify them?\n\n---\n\nsrc/modules/counterfactual-safes/domain/counterfactual-safes.repository.integration.spec.ts:162\nI think this comment is bit redundent\n\n---\n\nsrc/modules/spaces/domain/safes/space-safes.repository.integration.spec.ts:127\nHere also. I think we don't need to explain explicitly\n\n---\n\nsrc/modules/spaces/domain/spaces.repository.integration.spec.ts:123\nhere the same"
+}

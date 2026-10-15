@@ -1,0 +1,73 @@
+{
+  "pr": 3154,
+  "title": "refactor: adjust error message text for max amount of safes in the space",
+  "description": "## Summary\r\n\r\nResolves: [WA-2471](https://linear.app/safe-global/issue/WA-2471/wrong-wording-when-the-40-space-limit-is-reached)\r\n\r\nProblem:\r\n<img width=\"450\" height=\"330\" alt=\"image\" src=\"https://github.com/user-attachments/assets/f585751c-5339-44f7-8c74-6adc5135aec4\" />\r\n\r\nFixes the confusing error message shown when adding Safes to a Space that is at its limit. Previously it read \"...maximum of 40 Safe Accounts. You can only add up to 0 more.\", which made no sense. Now the \"add up to N more\" sentence is only included when there is actually room left.\r\n\r\n## Changes\r\n\r\n- `space-safes.repository.ts`: only append \"You can only add up to N more.\" when `remaining > 0`; otherwise show just the limit message.\r\n- Added an integration test covering the at-limit case (message without the remaining-slots sentence).\r\n",
+  "findings": [
+    {
+      "id": "F1",
+      "file": "src/modules/spaces/domain/space-safes.repository.integration.spec.ts",
+      "line": 436,
+      "claim": "The new test inserts a user, a wallet, and a member, copied from a neighboring test, even though the create() call under test only uses spaceId, so a single space row would likely suffice and the extra setup is unnecessary."
+    },
+    {
+      "id": "F2",
+      "file": null,
+      "line": null,
+      "claim": "No shared helper exists for building this limit message, so the same string-construction logic is duplicated across the three repositories; extracting it into one small shared helper would prevent the fix from being applied inconsistently."
+    },
+    {
+      "id": "F3",
+      "file": "src/modules/spaces/domain/address-books/address-book-items.repository.ts",
+      "line": 184,
+      "claim": "This repository still builds the limit message as `You can only add up to ${max - existing} more.` with no guard, so users at the limit see \"up to 0 more\" and users over the limit see a negative number."
+    },
+    {
+      "id": "F4",
+      "file": "src/modules/spaces/domain/space-safes.repository.integration.spec.ts",
+      "line": 435,
+      "claim": "The new test only covers the remaining === 0 case; there is no test for existing > max (the case that previously produced \"add up to -N more\"), so that branch of the guard is unverified even though the same > 0 check handles it."
+    },
+    {
+      "id": "F5",
+      "file": "src/modules/spaces/domain/address-books/user-address-book-items.repository.ts",
+      "line": 158,
+      "claim": "This repository still produces the old wording ('You can only add up to 0 more.') when the limit is reached, so its error message is now inconsistent with the fixed message in the sibling space-safes repository."
+    },
+    {
+      "id": "F6",
+      "file": "src/modules/spaces/routes/address-books.controller.e2e-spec.ts",
+      "line": 522,
+      "claim": "This e2e test still asserts the old \"…up to 0 more.\" text, so it would need updating once the same fix is applied to the address-book repositories."
+    },
+    {
+      "id": "F7",
+      "file": "src/modules/spaces/domain/address-books/user-address-book-items.repository.ts",
+      "line": 158,
+      "claim": "This repository has the same unguarded message-construction pattern, producing \"up to 0 more\" or a negative remaining count instead of the corrected wording applied elsewhere."
+    },
+    {
+      "id": "F8",
+      "file": "src/modules/spaces/domain/address-books/address-book-items.repository.ts",
+      "line": 184,
+      "claim": "This repository still produces the old wording ('You can only add up to 0 more.') when the limit is reached, so its error message is now inconsistent with the fixed message in the sibling space-safes repository."
+    },
+    {
+      "id": "F9",
+      "file": "src/modules/spaces/domain/space-safes.repository.ts",
+      "line": 48,
+      "claim": "If maxSafesPerSpace is lowered in config below the number of Safes a Space already has, the remaining count becomes negative, and before this change that produced a message reading 'up to -N more'; no test covers this edge case after the fix."
+    },
+    {
+      "id": "F10",
+      "file": "src/modules/spaces/domain/space-safes.repository.ts",
+      "line": 46,
+      "claim": "The limit check reads the current count and performs the insert as two separate, non-atomic operations, so two concurrent requests could both pass the check and together exceed the configured limit."
+    },
+    {
+      "id": "F11",
+      "file": "src/modules/spaces/routes/address-books.controller.e2e-spec.ts",
+      "line": 522,
+      "claim": "This e2e test still asserts the old error text '...maximum of 1 Address Book Items. You can only add up to 0 more.', which will need to be updated if the other repositories' messages are ever fixed to match, since the three Workspace limit errors now read differently from one another."
+    }
+  ]
+}

@@ -1,0 +1,124 @@
+{
+  "usage": {
+    "usd": 0.5295272,
+    "turns": 11,
+    "wallSeconds": 78
+  },
+  "issues": [
+    {
+      "findings": [
+        "F6"
+      ],
+      "summary": "Integration tests no longer have compiled migrations: postgresConfig loads migrations from dist/migrations/*.js, which only `nest build` produced, so the DB is left unmigrated and tests fail",
+      "label": "high",
+      "evidence": "src/config/entities/postgres.config.ts:53 sets `migrations: ['dist/migrations/*.js']`, and integration specs build their DataSource from postgresConfig and run DatabaseMigrator (e.g. src/modules/spaces/domain/spaces.repository.integration.spec.ts:49-95). The PR changes .github/workflows/ci.yml:238 from `yarn run build` to `yarn generate-abis`, so dist/ is never created, no migrations run, tables are missing and the integration tests break. That contradicts the PR's claim that tests never use dist/.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F12",
+        "F14",
+        "F17",
+        "F20",
+        "F22",
+        "F26",
+        "F27"
+      ],
+      "summary": "Dropping `nest build` from the PR test jobs removes the only full TypeScript type-check; ts-jest only checks files that specs import, and biome does not type-check",
+      "label": "medium",
+      "evidence": "ci.yml:165 and :238 now run only `yarn generate-abis`. No other job runs tsc (package.json has no typecheck script; biome runs format/lint only). A type error in a file no spec imports (main.ts, unimported modules, migrations) now shows up only at the Dockerfile's `yarn run build` (Dockerfile:14), which runs after merge in docker-publish-staging.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F2",
+        "F8",
+        "F13",
+        "F15"
+      ],
+      "summary": "The public release image is now amd64-only, so arm64 consumers of the published image lose support",
+      "label": "low",
+      "evidence": "ci.yml:317 (release) and :291 (staging) now use `platforms: linux/amd64` and QEMU is removed. The PR description says this is intentional because production runs on amd64. The concern is valid for outside self-hosters of the public image, but the change is a deliberate, stated trade-off, not a bug.",
+      "category": "product"
+    },
+    {
+      "findings": [
+        "F16"
+      ],
+      "summary": "The comment saying main runs are 'never cancelled' is misleading: GitHub keeps only one pending run per concurrency group, so a queued main run can be superseded by a newer one",
+      "label": "low",
+      "evidence": "ci.yml:17-22 uses group `${{ github.workflow }}-${{ github.ref }}` with cancel-in-progress false on main. GitHub still replaces an already-pending run when a newer one queues, so with 3+ quick merges the middle commit gets no CI or deploy, and main runs are serialized. The newest commit still deploys, so the impact is minor.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F10",
+        "F23",
+        "F24",
+        "F25"
+      ],
+      "summary": "The cache keys hard-code the Node major version (node24/node22) apart from the node-version input, and the cache block is duplicated four times, so the two can drift",
+      "label": "low",
+      "evidence": "ci.yml:78/88 pair node-version '24.11.0' with key `node24` by hand (and 22.11.0 with node22 at :155/:157). They match today, but a major bump that misses the key would restore a stale node_modules. Native-addon risk is limited because .yarnrc.yml sets `enableScripts: false`.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F21"
+      ],
+      "summary": "setup-node's `cache: 'yarn'` still restores the yarn download cache when the node_modules cache hits and install is skipped",
+      "label": "low",
+      "evidence": "ci.yml:79/100/156/229 keep `cache: 'yarn'` while install is now gated on a node_modules cache miss. On warm runs that restore is wasted work: correct, but a small inefficiency.",
+      "category": "performance"
+    },
+    {
+      "findings": [
+        "F19"
+      ],
+      "summary": "cancel-in-progress is true for tag/release refs, but a cancel would need two overlapping runs for the same tag",
+      "label": "low",
+      "evidence": "ci.yml:21-22 groups by github.ref, so different release tags get separate groups and never cancel each other. Only a re-run or re-release of the same tag while one is in flight could cancel a push, which is an unlikely edge case.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F3",
+        "F5",
+        "F11",
+        "F18"
+      ],
+      "summary": "The node_modules cache has no restore-keys fallback, so any yarn.lock change forces a cold install",
+      "label": "nit",
+      "evidence": "ci.yml:85/101/157/230 use exact keys with no restore-keys. That is a deliberate bust-on-change design (see the comment at ci.yml:80-82), and the install still uses the setup-node yarn download cache. Adding a partial restore is an optional optimization.",
+      "category": "performance"
+    },
+    {
+      "findings": [
+        "F9"
+      ],
+      "summary": "The `github.ref == 'refs/heads/main'` check on docker-publish-staging is redundant now that push is scoped to main",
+      "label": "nit",
+      "evidence": "ci.yml:276 is an unchanged line. With `push.branches: [main]` the ref check can never be false for push events, but keeping it as defense-in-depth costs nothing.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F4"
+      ],
+      "summary": "The claim that the PR does not explain how the node_modules cache is invalidated",
+      "label": "wrong",
+      "evidence": "ci.yml:80-82 states that the cache is keyed on the lockfile plus Node major and that any dependency change busts it, and the key uses `hashFiles('yarn.lock')`. The invalidation strategy is documented and implemented.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F1",
+        "F7"
+      ],
+      "summary": "The claim that skipping postinstall on a warm cache could silently break jobs that need generated ABIs",
+      "label": "wrong",
+      "evidence": "The only jobs that need @/abis (unit-tests, integration-tests) now run `yarn generate-abis` explicitly (ci.yml:168, :239). env-validation runs scripts/validate-env-json.ts, which imports only fs, path and zod helpers, and biome does not resolve modules. A missing ABI would fail loudly with module-not-found, not silently.",
+      "category": "correctness"
+    }
+  ]
+}

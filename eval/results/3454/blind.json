@@ -1,0 +1,241 @@
+{
+  "pr": 3454,
+  "title": "feat: gate Copilot recipient/counterparty scans by plan entitlement",
+  "description": "## Summary\r\nCopilot's recipient-check, counterparty-analysis, and threat-analysis all run for free on Core today, with no plan check. This PR adds a flag to gate Core's recipient-check behind the paid plan; it's off by default, so nothing changes until it's turned on. Counterparty-analysis stays free on Core regardless of the flag — it's still used by mobile, so it isn't disabled yet. Threat-analysis stays free permanently.\r\n\r\nNew Spaces-scoped endpoints add paid-gated versions of both recipient-check and counterparty-analysis, behind the shared `copilot_scans` plan entitlement, and only for a Safe registered to that Space.\r\n\r\n`safe-shield/routes/guards/` lands ahead of the rest of that module's migration to the canonical skeleton — the controller and route services still sit at the module root; only the new guard follows `routes/guards/`.\r\n\r\nLinear: https://linear.app/safe-global/issue/PLA-1964/cgw-enforce-copilot-plan-gating-keep-threat-analysis-free-on-core\r\n\r\n## Changes\r\n- `src/modules/safe-shield/` — `FF_COPILOT_CORE_DISABLED` gate (`routes/guards/copilot-core-gating.guard.ts`, typed 402 error/filter) on Core's recipient-check only; new `ISafeShieldAnalysis` interface so Spaces can reuse the existing service\r\n- `src/modules/spaces/routes/safe-shield/` — new Spaces-scoped recipient-check and counterparty-analysis endpoints, gated by `copilot_scans` entitlement and Safe-to-Space membership (`existsInSpace`)\r\n- `src/modules/entitlements/` — new `copilot_scans` feature key, seed migration, `assertFeatureGranted` + `FeatureNotGrantedError`/filter\r\n- `src/config/`, `.env.sample.json` — `FF_COPILOT_CORE_DISABLED` flag declared and documented",
+  "findings": [
+    {
+      "id": "F1",
+      "file": "src/modules/safe-shield/guards/copilot-core-gating.guard.ts",
+      "line": 14,
+      "claim": "The guard reads the feature flag from configuration on every request instead of caching it once in the constructor, unlike the rest of the codebase which resolves config values at construction time."
+    },
+    {
+      "id": "F2",
+      "file": "src/modules/spaces/routes/safe-shield/space-safe-shield.service.spec.ts",
+      "line": 173,
+      "claim": "The test name references being 'within quota', but the underlying feature (copilot_scans) is a simple on/off flag with no quota concept, so the name misdescribes the behavior being tested."
+    },
+    {
+      "id": "F3",
+      "file": "src/modules/spaces/routes/safe-shield/space-safe-shield.service.spec.ts",
+      "line": 48,
+      "claim": "Test mocks typed as `Pick<>` subsets are cast up to the full interfaces rather than being constructed to match the full type directly."
+    },
+    {
+      "id": "F4",
+      "file": "src/modules/safe-shield/guards/copilot-core-gating.guard.ts",
+      "line": null,
+      "claim": "There is no dedicated unit test for this guard; it is only exercised indirectly through controller and integration tests, so a direct spec verifying both the flag-enabled (throws error) and flag-disabled (returns true) behavior is missing, unlike comparable guards in the codebase."
+    },
+    {
+      "id": "F5",
+      "file": "space-safe-shield.controller.integration.spec.ts",
+      "line": null,
+      "claim": "The same four negative test cases (unauthenticated, non-member, 402, unregistered Safe) are duplicated across both routes at the integration level and again at the unit level, when only one representative negative case per route should be tested in integration with the branch variations covered in unit tests."
+    },
+    {
+      "id": "F6",
+      "file": "space-safe-shield.controller.integration.spec.ts",
+      "line": 19,
+      "claim": "Imports use `as` aliases (e.g. createSpaceForSigner as createSpaceForSignerFixture) that were needed to avoid name clashes with local functions that have since been deleted, so the aliases are now unnecessary."
+    },
+    {
+      "id": "F7",
+      "file": "src/__tests__/util/space-fixtures.ts",
+      "line": 69,
+      "claim": "The code uses the raw template literal type `` `0x${string}` `` instead of the `Address` type, even though the file already imports from viem where that type is available."
+    },
+    {
+      "id": "F8",
+      "file": "src/modules/safe-shield/errors/copilot-core-disabled.error.ts",
+      "line": 1,
+      "claim": "The new error, exception filter, and guard files for safe-shield are placed in new root-level errors/ and guards/ folders instead of the module's standard locations (domain/errors/, domain/exception-filters/, routes/guards/), inconsistent with the module structure convention that the same diff otherwise follows for its entitlements files."
+    },
+    {
+      "id": "F9",
+      "file": "src/modules/spaces/routes/safe-shield/space-safe-shield.controller.ts",
+      "line": 28,
+      "claim": "The Spaces controller and service import safe-shield's internal DTOs and validation schema (CounterpartyAnalysisRequestSchema, CounterpartyAnalysisDto, CounterpartyAnalysisRequestDto, SingleRecipientAnalysisDto) directly from safe-shield's entities instead of through its domain layer, breaking the rule that a module should only be consumed via its domain interface. If those DTOs or schemas are later changed to fit safe-shield's own endpoint, the Spaces API's validation and Swagger docs would change unintentionally without anyone touching the Spaces module."
+    },
+    {
+      "id": "F10",
+      "file": "src/modules/safe-shield/domain/safe-shield-analysis.interface.ts",
+      "line": 14,
+      "claim": "A comment repeats the incorrect claim that this is part of safe-shield's 'routes/' layer, which does not match the actual file location."
+    },
+    {
+      "id": "F11",
+      "file": "src/modules/safe-shield/guards/copilot-core-gating.guard.ts",
+      "line": 8,
+      "claim": "The new guard is placed in a module-root guards/ directory instead of the owning module's routes/guards/ directory, breaking the established module structure convention. It should be moved to src/modules/safe-shield/routes/guards/copilot-core-gating.guard.ts, with the importers in safe-shield.module.ts and safe-shield.controller.ts and its spec file updated accordingly."
+    },
+    {
+      "id": "F12",
+      "file": "src/modules/safe-shield/errors/copilot-core-disabled.error.ts",
+      "line": 7,
+      "claim": "A module-root errors/ directory is used, which is not part of the canonical module skeleton, and it is inconsistent with the equivalent entitlements error in this same PR that is placed under domain/errors/ and domain/exception-filters/. The files should be moved to src/modules/safe-shield/domain/errors/copilot-core-disabled.error.ts and src/modules/safe-shield/domain/exception-filters/copilot-core-disabled.exception-filter.ts to match the pattern used in src/modules/entitlements/domain/."
+    },
+    {
+      "id": "F13",
+      "file": "src/modules/safe-shield/routes/space-safe-shield.controller.ts",
+      "line": 47,
+      "claim": "This controller and its associated service should live in the Safe Shield module rather than in Spaces, consistent with how other Space-scoped routes (space-relay.controller.ts, space-counterfactual-safes.controller.ts, entitlements.controller.ts) each declare their spaces/:spaceId/... routes from their own owning module while importing SpacesModule, and each performs the same assertMember gating from outside Spaces, meaning the membership check is not a valid reason for this controller to reside in Spaces."
+    },
+    {
+      "id": "F14",
+      "file": "space-safe-shield.controller.integration.spec.ts",
+      "line": 138,
+      "claim": "The test name references 'plan/quota state', but the underlying feature is a simple on/off flag with no quota concept, so the name misdescribes the behavior being tested."
+    },
+    {
+      "id": "F15",
+      "file": "entitlements.controller.integration.spec.ts",
+      "line": 17,
+      "claim": "Imports use `as` aliases (e.g. addSafes as addSafesFixture) that were needed to avoid name clashes with local functions that have since been deleted, so the aliases are now unnecessary."
+    },
+    {
+      "id": "F16",
+      "file": "src/modules/safe-shield/safe-shield.module.ts",
+      "line": 33,
+      "claim": "SafeShieldService is still exported from the module even though nothing outside the module uses it anymore, since consumers now go through the ISafeShieldAnalysis token; this contradicts the module's own comment stating the service is never imported directly, and only the token should be exported."
+    },
+    {
+      "id": "F17",
+      "file": "src/modules/safe-shield/safe-shield.service.ts",
+      "line": 51,
+      "claim": "A comment states that the class lives in a 'routes/' folder, but the file is actually located at the module root, not under routes/."
+    },
+    {
+      "id": "F18",
+      "file": "src/modules/spaces/routes/safe-shield/space-safe-shield.service.spec.ts",
+      "line": 174,
+      "claim": "A test casts a partial analysis response using `as Awaited<...>` instead of using the recipient/counterparty response builders available in analysis-responses.builder.ts."
+    },
+    {
+      "id": "F19",
+      "file": "src/modules/safe-shield/safe-shield.module.ts",
+      "line": 30,
+      "claim": "CopilotCoreGatingGuard and CopilotCoreDisabledExceptionFilter are registered as module providers, but they don't need to be since @UseGuards and @UseFilters instantiate them directly; this is also inconsistent with QuotaExceededExceptionFilter, which is not registered as a provider."
+    },
+    {
+      "id": "F20",
+      "file": "src/modules/entitlements/domain/entitlement-enforcement.interface.ts",
+      "line": 40,
+      "claim": "The interface accepts any FeatureKey but only checks grant.enabled, so a future caller passing a metered feature like sponsored_transactions would be admitted even when its quota is exhausted, silently bypassing the metered allowance. The parameter type should be narrowed to BinaryFeature to prevent this."
+    },
+    {
+      "id": "F21",
+      "file": "src/config/entities/configuration.ts",
+      "line": 495,
+      "claim": "The comment for the new feature flag states a removal condition but does not name an owner, which is required for flags added going forward. The comment should be updated to include the ticket/owner reference and the removal condition, e.g. referencing PLA-1964 and noting the flag and the guard on Core's recipient-check should be removed once no client calls that route."
+    },
+    {
+      "id": "F22",
+      "file": "space-safe-shield.controller.integration.spec.ts",
+      "line": 294,
+      "claim": "The test name references 'plan/quota state', but the underlying feature is a simple on/off flag with no quota concept, so the name misdescribes the behavior being tested."
+    },
+    {
+      "id": "F23",
+      "file": "entitlements.controller.integration.spec.ts",
+      "line": 196,
+      "claim": "A `spaceUuid: spaceId` rename adds no value and could be simplified."
+    },
+    {
+      "id": "F24",
+      "file": "src/modules/entitlements/routes/guards/entitlement.guard.ts",
+      "line": 47,
+      "claim": "The guard resolves the space UUID to an id via findIdByUuid, and the same lookup is repeated by SpaceIdPipe for the controller parameter, causing two redundant database round-trips per request on every gated Spaces endpoint."
+    },
+    {
+      "id": "F25",
+      "file": "safe-shield.controller.spec.ts",
+      "line": 42,
+      "claim": "A test helper (appliedNames and related metadata-key literals) duplicates an existing helper (filterNames) in space-safes.controller.spec.ts, and since this is now a second copy, it should be moved into a shared test utility location."
+    },
+    {
+      "id": "F26",
+      "file": null,
+      "line": null,
+      "claim": "The PR description opens with bare prose and a Linear link instead of starting with the required ## Summary section from the template, so only one of the two required sections is present. A ## Summary heading should be added above the opening paragraphs with the Linear link moved inside it."
+    },
+    {
+      "id": "F27",
+      "file": "src/modules/spaces/routes/safe-shield/space-safe-shield.service.spec.ts",
+      "line": 114,
+      "claim": "The test name references being 'within quota', but the underlying feature (copilot_scans) is a simple on/off flag with no quota concept, so the name misdescribes the behavior being tested."
+    },
+    {
+      "id": "F28",
+      "file": "src/modules/spaces/routes/safe-shield/space-safe-shield.service.spec.ts",
+      "line": 116,
+      "claim": "A test casts a partial analysis response using `as Awaited<...>` instead of using the recipient/counterparty response builders available in analysis-responses.builder.ts."
+    },
+    {
+      "id": "F29",
+      "file": null,
+      "line": null,
+      "claim": "The PR title is GitHub's branch-derived default text with no conventional type or scope and incorrect capitalization, and since main is squash-merged this title becomes the permanent commit subject. It should be retitled to something like feat(safe-shield): gate Copilot recipient/counterparty scans by plan."
+    },
+    {
+      "id": "F30",
+      "file": "src/modules/safe-shield/errors/copilot-core-disabled.error.ts",
+      "line": 6,
+      "claim": "A doc comment repeats the same 'recipient/counterparty' inaccuracy, describing counterparty analysis as gated when it is not."
+    },
+    {
+      "id": "F31",
+      "file": "src/modules/spaces/routes/safe-shield/space-safe-shield.service.spec.ts",
+      "line": 40,
+      "claim": "A test casts a plain object with `{ id: userId } as Member` instead of using the existing memberBuilder() helper."
+    },
+    {
+      "id": "F32",
+      "file": null,
+      "line": null,
+      "claim": "The PR description's Changes bullets reference a CopilotScansGuard and changes under src/modules/spaces/domain/safes/ that are not present in the diff, since a later commit replaced the guard with gating inside SpaceSafeShieldService, so the description no longer matches the actual implementation. The bullets should be rewritten to describe the entitlements module changes (new copilot_scans feature key, seed migration, assertFeatureGranted plus FeatureNotGrantedError/filter) and the spaces routes changes (membership, copilot_scans entitlement, and Safe-in-Space checks in SpaceSafeShieldService)."
+    },
+    {
+      "id": "F33",
+      "file": "src/config/entities/configuration.ts",
+      "line": 495,
+      "claim": "The comment on the new feature flag gives a removal condition but names no owner, whereas the project's configuration-and-flags convention requires both an owner and a condition on new flags, as shown by the nearby mfaStepUp flag."
+    },
+    {
+      "id": "F34",
+      "file": "src/modules/safe-shield/errors/copilot-core-disabled.error.ts",
+      "line": 13,
+      "claim": "The 402 error message sent to clients states that recipient and counterparty analysis both require a paid Space, but only recipient analysis is actually gated on Core; counterparty analysis remains free, which the message misrepresents."
+    },
+    {
+      "id": "F35",
+      "file": "src/__tests__/util/space-fixtures.ts",
+      "line": 54,
+      "claim": "The code uses the raw template literal type `` `0x${string}` `` instead of the `Address` type, even though the file already imports from viem where that type is available."
+    },
+    {
+      "id": "F36",
+      "file": "space-safes.enforcement.integration.spec.ts",
+      "line": 17,
+      "claim": "Imports use `as` aliases that were needed to avoid name clashes with local functions that have since been deleted, so the aliases are now unnecessary."
+    },
+    {
+      "id": "F37",
+      "file": "src/modules/safe-shield/guards/copilot-core-gating.guard.ts",
+      "line": 6,
+      "claim": "A doc comment repeats the same 'recipient/counterparty' inaccuracy, describing counterparty analysis as gated when it is not."
+    },
+    {
+      "id": "F38",
+      "file": "src/modules/safe-shield/errors/copilot-core-disabled.error.ts",
+      "line": 13,
+      "claim": "The 402 error message states that both recipient and counterparty analysis require a paid Space, but the gating guard only applies to recipient analysis, and counterparty analysis remains free on Core per the configuration and tests. Clients reading the error response would be given incorrect information about which feature is actually restricted."
+    },
+    {
+      "id": "F39",
+      "file": "src/modules/safe-shield/domain/safe-shield-analysis.interface.ts",
+      "line": 28,
+      "claim": "The transaction shape (to, value, data, operation) is typed inline in the analysis interface and duplicated in the Spaces service rather than referencing the existing TransactionBaseSchema-derived type, so the same shape is defined twice."
+    }
+  ]
+}

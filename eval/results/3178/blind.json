@@ -1,0 +1,193 @@
+{
+  "pr": 3178,
+  "title": "feat: enable utf-8 in names",
+  "description": "## Summary\r\n\r\nResolves: [WA-2668](https://linear.app/safe-global/issue/WA-2668/allow-unicode-characters-in-spaces-member-and-address-book-names-cgw)\r\n\r\nEnables full UTF-8 support in names (address book, spaces, members) so users can save names like `José`, `山田太郎`, `Анна`, `Contact #1`, and `maria@web.com`, while keeping validation safe via a character allowlist and hardening CSV export against formula injection.\r\n\r\nReplaces the previous ASCII-only regex with a Unicode-aware policy: names are NFC-normalized, invisible control/format characters are stripped, and only letters, marks, numbers, spaces, and a small punctuation set (`. _ - # @ & ' , ( )`) are permitted — any other visible character (e.g. `= + * / < > \" $ { }`, emoji) is rejected with a clear 422. This restores the \"no dangerous characters\" invariant the old allowlist provided, without limiting names to ASCII.\r\n\r\n## Changes\r\n\r\n- **Name validation (`name.schema.ts`)**\r\n  - NFC-normalize input and strip invisible `Cc`/`Cf` characters (bidi overrides, zero-width spaces, joiners — Trojan Source / CVE-2021-42574 defense).\r\n  - Allow letters/marks/numbers from any script + ` . _ - # @ & ' , ( )`.\r\n  - Reject any other visible character with `422`:\r\n    `Names can only contain letters, numbers, spaces and the characters . _ - # @ & ' , ( )`.\r\n  - Count length by code point (not UTF-16 units); per-rule error messages for too-short / too-long / disallowed-character.\r\n- **CSV export hardening**\r\n  - Add `escapeCsvFormula` and wire it into `CSV_OPTIONS.cast.string` to neutralize spreadsheet formula-injection triggers (`= + - @`, leading whitespace, full-width variants); numeric columns (`amount`, `payment`) are exempt.\r\n- **DB alignment (`address-book-item.entity.db.ts`)**\r\n  - Use `ADDRESS_BOOK_NAME_MAX_LENGTH` (50) for the `name` column to match the existing migration and the validation schema (previously the entity used 30).\r\n- **Tests**\r\n  - New/updated unit specs for `name.schema`, `sanitizeName`, `escapeCsvFormula`, and `nameBuilder`.\r\n  - E2e: UTF-8 round-trip (multi-script + allowed punctuation, bidi stripping) and a disallowed-character `422` case.\r\n\r\n### Notes for reviewers / FE\r\n- Emoji are intentionally **not** supported (dropped ZWJ/ZWNJ exemption) to remove the invisible-joiner spoofing vector.\r\n- The same policy now applies to space and member names (shared `makeNameSchema`).\r\n- The CSV escaper is the load-bearing defense for `= + @` in exported names — any new export format must apply equivalent escaping.\r\n",
+  "findings": [
+    {
+      "id": "F1",
+      "file": "src/domain/common/entities/name.builder.ts",
+      "line": 24,
+      "claim": "The builder truncates a generated name to 30 characters after selection, and with faker.person.fullName() the character at that position can be a space, producing a trailing-space value that sanitizeName then trims; this breaks the expectation that sanitizeName(name) equals name and can hand callers a value the schema would not return unchanged."
+    },
+    {
+      "id": "F2",
+      "file": "src/domain/common/schemas/name.schema.spec.ts",
+      "line": 11,
+      "claim": "The comment states the invisible characters are defined by code point to avoid editor/encoding ambiguity, but the following lines actually use raw invisible characters in the source rather than code-point escapes, contradicting the comment even though the same file elsewhere uses code-point escapes for other characters."
+    },
+    {
+      "id": "F3",
+      "file": "src/domain/common/entities/name.builder.ts",
+      "line": 9,
+      "claim": "The comment states that every sample already meets the minimum length, yet the code still applies padEnd, so the comment and the code are inconsistent; the padding would become meaningful if the trailing-space trim fix is applied, but as written one of the two (the padding or the comment) is unnecessary."
+    },
+    {
+      "id": "F4",
+      "file": "src/domain/common/schemas/name.schema.ts",
+      "line": 11,
+      "claim": "The comment claims the character allowlist excludes dangerous formula characters such as =, +, *, /, but the allowlist still permits '-' and '@', both of which are valid formula-injection triggers (e.g. '@SUM(A1)', '-1'), so the comment overstates the protection the schema itself provides."
+    },
+    {
+      "id": "F5",
+      "file": "src/domain/common/schemas/name.schema.ts",
+      "line": 46,
+      "claim": "Calling makeNameSchema with minLength set to 0 allows an empty string to pass validation, and it's unclear whether that is the intended behavior."
+    },
+    {
+      "id": "F6",
+      "file": "src/domain/common/entities/name.builder.ts",
+      "line": 8,
+      "claim": "The comment describing the sample names as Latin, accented, and Cyrillic is inaccurate since the list also includes a Japanese name."
+    },
+    {
+      "id": "F7",
+      "file": "src/domain/common/schemas/name.schema.ts",
+      "line": 9,
+      "claim": "A narrower stripping policy that removes only the dangerous Cf subset (bidi controls such as U+202A-U+202E and U+2066-U+2069, plus invisible separators) while keeping ZWJ/ZWNJ would avoid breaking legitimate names, since bidi overrides are the actual Trojan-Source vector and ZWJ/ZWNJ are visually neutral."
+    },
+    {
+      "id": "F8",
+      "file": "src/domain/common/entities/name.builder.ts",
+      "line": 24,
+      "claim": "Slicing faker's generated full name to NAME_MAX_LENGTH characters without trimming afterward can leave a trailing space when the cut lands right after a space, since about 23% of faker's full names (with prefixes/suffixes like Mrs., Dr., III, PhD) exceed 30 characters. Because NameSchema trims its input, the stored value then no longer equals the untrimmed builder output, causing intermittent test failures in name.builder.spec.ts, spaces.controller.e2e-spec.ts, and roughly 15 other builders that reuse nameBuilder(), and faker is not seeded in test/global-setup.ts so the failure isn't reproducible."
+    },
+    {
+      "id": "F9",
+      "file": "src/modules/csv-export/csv-utils/csv.service.spec.ts",
+      "line": 4,
+      "claim": "The generic CsvService spec now imports the v1-specific CSV_OPTIONS, coupling a general-purpose test file to a version-specific entity."
+    },
+    {
+      "id": "F10",
+      "file": "src/modules/csv-export/csv-utils/escape-csv-formula.ts",
+      "line": 20,
+      "claim": "FORMULA_TRIGGERS should be typed and used as a ReadonlySet so that lookups use the O(1) .has() method instead of an O(n) array search, consistent with how NUMERIC_COLUMNS is already declared; the corresponding lookup at line 27 also needs to be updated to use .has()."
+    },
+    {
+      "id": "F11",
+      "file": "src/domain/common/schemas/name.schema.ts",
+      "line": 17,
+      "claim": "Using \\p{N} in the character class admits more than plain digits, including \\p{No} characters such as vulgar fractions (½, ¼), Roman numerals (Ⅷ), and circled digits (①); if the intent is digits only, \\p{Nd} should be used instead."
+    },
+    {
+      "id": "F12",
+      "file": "src/domain/common/schemas/name.schema.ts",
+      "line": 91,
+      "claim": "The schema uses a chain of separate refine calls, which duplicates computation and spreads validation logic across multiple places; using superRefine instead would consolidate the validation into one place and avoid redundant work."
+    },
+    {
+      "id": "F13",
+      "file": "src/domain/common/schemas/name.schema.spec.ts",
+      "line": 154,
+      "claim": "With the default minimum length of 3, a name consisting only of invisible characters that get stripped to empty will fail with a length-based error message rather than a disallowed-character message, which is misleading since the user's input didn't violate a length constraint but was entirely composed of disallowed invisible characters."
+    },
+    {
+      "id": "F14",
+      "file": "src/modules/csv-export/v1/entities/csv-export.options.ts",
+      "line": 34,
+      "claim": "escapeCsvFormula relies on csv-stringify's cast.string, which only runs when the cell value is already a string; if any column's type changes to number or boolean in a future refactor, the formula-injection escaping would silently stop being applied to that column."
+    },
+    {
+      "id": "F15",
+      "file": "src/domain/common/schemas/name.schema.ts",
+      "line": 16,
+      "claim": "The name allowlist regex accepts strings that look blank or are visually deceptive, including sequences of U+3164 Hangul Filler characters, strings made only of combining marks, a single letter followed by many combining marks (zalgo text), punctuation-only strings like \"---\" or \"@@@\", and mixed-script lookalikes such as a Cyrillic \"А\" substituted for Latin \"A\" or full-width Latin letters. The previous regex required a letter or number at the start and between separators, so this is a behavior change; since member and address-book names are shown to other users in a space, blank-looking or lookalike names make it easier to impersonate a contact."
+    },
+    {
+      "id": "F16",
+      "file": "src/domain/common/schemas/name.schema.ts",
+      "line": 9,
+      "claim": "Stripping all Unicode Cf codepoints removes ZWJ (U+200D) and ZWNJ (U+200C), which are required for correct rendering of many Indic and Arabic/Persian-script names, not just emoji joiners. As a result, users typing such names will have their characters silently altered, and the PR description only mentions the emoji use case, not this collateral impact."
+    },
+    {
+      "id": "F17",
+      "file": "src/domain/common/schemas/name.schema.ts",
+      "line": 40,
+      "claim": "The minimum-length and maximum-length validation messages use inconsistent wording (\"at least N character(s)\" versus \"at most N characters\"), which is an inconsistency in the user-facing error text."
+    },
+    {
+      "id": "F18",
+      "file": "src/domain/common/schemas/name.schema.ts",
+      "line": 9,
+      "claim": "Stripping all Unicode Cc and Cf characters without replacing them with anything can join previously separated words and corrupt certain scripts: a newline-separated string like \"John\\nDoe\" becomes \"JohnDoe\", and removing ZWNJ (U+200C), which is required for correct Persian and Indic spelling, changes the rendering/meaning of words such as \"می‌خواهم\"."
+    },
+    {
+      "id": "F19",
+      "file": "src/domain/common/schemas/name.schema.ts",
+      "line": 14,
+      "claim": "The same allowlist gap applies to the en-dash (–) versus the ASCII hyphen (-), which is not accounted for in the current punctuation set or by any pre-validation normalization of these variants."
+    },
+    {
+      "id": "F20",
+      "file": "src/modules/csv-export/csv-utils/csv.service.spec.ts",
+      "line": 373,
+      "claim": "Tests covering '=', '+', leading space and leading newline duplicate coverage already present in escape-csv-formula.spec.ts, with only the numeric-column exemption tests and the wiring check being genuinely new."
+    },
+    {
+      "id": "F21",
+      "file": "src/modules/spaces/routes/address-books.controller.e2e-spec.ts",
+      "line": 329,
+      "claim": "The test uses a raw hidden Unicode character (U+202E) embedded directly in a string literal instead of an explicit code-point escape, the same ambiguity problem as in name.schema.spec.ts."
+    },
+    {
+      "id": "F22",
+      "file": "src/modules/csv-export/README.md",
+      "line": 30,
+      "claim": "The CSV Generation section documents CSV_OPTIONS but omits the newly added formula escaping behavior and the exemption of the amount/payment columns from it, and the column table is missing the nonce, payment, and gasTokenSymbol columns."
+    },
+    {
+      "id": "F23",
+      "file": "src/modules/csv-export/csv-utils/csv.service.spec.ts",
+      "line": 407,
+      "claim": "The test name claims that null symbols and notes are output as an empty cell, but the assertion only checks that the row starts with '8,' and contains no apostrophe, which would still pass even if the supposedly-null columns were not actually empty."
+    },
+    {
+      "id": "F24",
+      "file": "src/domain/common/schemas/name.schema.ts",
+      "line": 40,
+      "claim": "The minimum-length validation message uses the phrase 'at least N character(s) long' while the maximum-length message at line 43 uses 'at most N characters long', an inconsistent wording between the two related messages."
+    },
+    {
+      "id": "F25",
+      "file": "src/domain/common/entities/name.builder.ts",
+      "line": 23,
+      "claim": "Padding is computed using string length (UTF-16 code units) while the truncation on the next line and the schema's own validation count Unicode code points, creating an inconsistency between how length is measured in different parts of the code."
+    },
+    {
+      "id": "F26",
+      "file": "src/domain/common/schemas/name.schema.ts",
+      "line": 14,
+      "claim": "ALLOWED_PUNCTUATION includes the straight apostrophe (U+0027) but not the curly apostrophe (U+2019) that many macOS/iOS keyboards insert automatically, so a name like O'Brien typed with a curly apostrophe would be rejected, since U+2019 is classified as final punctuation rather than letter/mark/number."
+    },
+    {
+      "id": "F27",
+      "file": "src/modules/csv-export/csv-utils/escape-csv-formula.ts",
+      "line": 5,
+      "claim": "The comment stating that full-width characters (＝ ＋ － ＠) 'normalize to the ASCII forms' is inaccurate, since that only holds under NFKC normalization, while sanitizeName uses NFC, under which these full-width characters are not converted."
+    },
+    {
+      "id": "F28",
+      "file": "src/domain/common/entities/name.builder.ts",
+      "line": 24,
+      "claim": "Padding a generated name and then slicing it can cut a multi-codepoint grapheme cluster (e.g. an 'é' represented as 'e' + combining accent) at a code-point boundary in the middle of the cluster, producing malformed output."
+    },
+    {
+      "id": "F29",
+      "file": "src/domain/common/entities/name.builder.ts",
+      "line": 24,
+      "claim": "The test assertion that sanitizeName(name) === name depends on faker.person.fullName() never producing a name needing NFC normalization or with trailing whitespace, which is an unenforced property of Faker rather than something guaranteed by the code, making the assertion fragile."
+    },
+    {
+      "id": "F30",
+      "file": "src/modules/spaces/routes/address-books.controller.e2e-spec.ts",
+      "line": 315,
+      "claim": "The UTF-8 round-trip e2e test also re-checks bidi-override stripping, which is already covered in name.schema.spec.ts, making that portion of the e2e test redundant."
+    },
+    {
+      "id": "F31",
+      "file": "src/domain/common/schemas/name.schema.ts",
+      "line": 36,
+      "claim": "Length validation errors previously returned Zod codes too_small, too_big, and invalid_format, but now return code: 'custom', and the minimum-length error message wording changed to use \"character(s)\". Because ZodErrorFilter forwards the raw issue to API clients, any frontend or SDK that checks the specific error code will break without warning, and no test in the repository still asserts the old codes."
+    }
+  ]
+}

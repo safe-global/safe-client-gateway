@@ -1,0 +1,126 @@
+{
+  "usage": {
+    "usd": 0.374978,
+    "turns": 5,
+    "wallSeconds": 49
+  },
+  "issues": [
+    {
+      "findings": [
+        "F3",
+        "F10"
+      ],
+      "summary": "FF_ZERION_ENABLED parsed with `!!`, so 'false'/'0' still enable the flag, unlike sibling FF_* flags",
+      "label": "medium",
+      "evidence": "src/config/entities/configuration.ts:409 is `zerionEnabled: !!process.env.FF_ZERION_ENABLED` while lines 407-408 use `?.toLowerCase() === 'true'`. The PR rewrote this line and its description says strict boolean parsing was added, but the code does not do it, so `FF_ZERION_ENABLED=false` turns Zerion on.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F4"
+      ],
+      "summary": "No test covers the env var to flag mapping",
+      "label": "medium",
+      "evidence": "The diff touches no config parsing spec. Only the renamed mocks changed, even though the PR description says parsing tests were added. The removed fallback and the parsing semantics at configuration.ts:409 have no test.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F5",
+        "F15",
+        "F16",
+        "F21"
+      ],
+      "summary": "Removing the FF_ZERION_BALANCES_CHAIN_IDS fallback disables Zerion in environments that only set the legacy var",
+      "label": "wrong",
+      "evidence": "The removal is intentional and called out in the PR description, which says InfraSec confirmed FF_ZERION_ENABLED is set on staging and production. The behaviour at safes.v2.service.ts:205 is the intended result for environments without the new var.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F2"
+      ],
+      "summary": "Deploy note should mention that strict parsing changes the unset default",
+      "label": "wrong",
+      "evidence": "The code at configuration.ts:409 still uses `!!`, not toLowerCase. Also, an unset var was already false under the old `!!` expression, so strict parsing would not change the unset default. The description already tells operators to set FF_ZERION_ENABLED=true explicitly.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F11"
+      ],
+      "summary": "Nothing validates the features config at startup to catch a missing flag",
+      "label": "low",
+      "evidence": "This is pre-existing and outside the diff. A missing value falls back to false by design (the flag defaults to off), so startup validation would not flag it as an error.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F6",
+        "F12"
+      ],
+      "summary": ".env.sample.json description still says 'Enable Zerion balances provider'",
+      "label": "low",
+      "evidence": ".env.sample.json:754 was left unchanged, while the PR says the flag now gates Zerion as a whole. It is a small documentation mismatch.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F7"
+      ],
+      "summary": "defaultValue: true in the sample is misleading",
+      "label": "nit",
+      "evidence": "Every FF_* entry around .env.sample.json:747-763 uses `defaultValue: true`, and the PR did not change this entry. It is a sample-file convention with no runtime effect.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F19"
+      ],
+      "summary": "The entry says '(OPTIONAL)' but has required: true",
+      "label": "nit",
+      "evidence": "The same pattern appears on the neighbouring entries (e.g. FF_ZERION_POSITIONS_DISABLED at .env.sample.json:759-762) and predates the PR. It is a file-wide convention.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F1",
+        "F20",
+        "F9",
+        "F17"
+      ],
+      "summary": "Specs set or mock features.zerionEnabled although the code under test never reads it",
+      "label": "low",
+      "evidence": "grep shows the only production reader is safes.v2.service.ts:61-62. balances-api.manager.ts and the zerion balances/collectibles controllers never read it, so the overrides at balances-api.manager.spec.ts:81 and in the two integration specs are dead setup that could mislead readers.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F14",
+        "F18"
+      ],
+      "summary": "The name implies a global Zerion switch, but only SafesV2Service reads it; BalancesApiManager still routes counterfactual Safes to Zerion",
+      "label": "low",
+      "evidence": "balances-api.manager.ts:57-70 returns zerionBalancesApi without checking the flag, and only SafesV2Service reads it. The PR description explicitly defers consolidating the gating, so this is a naming/documentation mismatch rather than a regression.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F8"
+      ],
+      "summary": "The field this.zerionEnabled (global flag) has the same name as the per-chain zerionEnabled argument of resolveFiatBalance",
+      "label": "low",
+      "evidence": "safes.v2.service.ts:42 (global field) and :350/:353/:355 (per-chain eligibility argument) now share the name `zerionEnabled`. Before the rename they were distinct, so a future edit could swap them without a type error.",
+      "category": "style"
+    },
+    {
+      "findings": [
+        "F13"
+      ],
+      "summary": "The flag name is ambiguous next to zerionPositions",
+      "label": "nit",
+      "evidence": "src/config/entities/__tests__/configuration.ts:207 uses `zerionEnabled` next to `zerionPositions`. Choosing a different name is a naming preference with no concrete defect.",
+      "category": "style"
+    }
+  ]
+}

@@ -1,0 +1,133 @@
+{
+  "pr": 3423,
+  "title": "feat(safe): resolve zerion overview support from zerion's chain list",
+  "description": "## Summary\n\nFixes WA-2984. The `GET /v2/safes` overview decided per chain whether to use Zerion by checking the config service's `PORTFOLIO_ENDPOINT` feature and reading the Zerion network name from the chain's `balancesProvider`. New Zerion-supported chains therefore needed a manual config change, and a wrong name in config made the overview read another chain's slot of the wallet portfolio (Robinhood showed its Ethereum value). The overview now derives support from Zerion's own chain list, gated only by the global `FF_ZERION_ENABLED` kill switch, the same source the portfolio endpoint already uses.\n\nThe chain list is fetched once per environment (mainnet, testnet) present in the request instead of once per chain, and the lookup goes through a new `IZerionRepository` so the route service no longer imports a datasource from another module.\n\n## Changes\n\n- `src/modules/safe/routes/v2/safes.v2.service.ts`: replace the per-chain feature-flag check and the config-based chain name with a chainId to Zerion network map resolved via `IZerionRepository`, once per environment; a failed lookup logs a structured warning and falls back to the balances repository as before.\n- `src/modules/safe/safe.module.ts`: import `ZerionModule` instead of `FeatureFlagsModule`.\n- `src/modules/zerion/domain/zerion.repository.ts`, `zerion.repository.interface.ts`: new repository exposing `getNetworksByChainId(isTestnet)`; registered and exported in `zerion.module.ts`.\n- `src/modules/zerion/datasources/zerion-chain-mapping.service.ts`: `getChainIdToNetworkMapping` becomes public; the unknown-chain log drops from `warn` to `debug` since the overview now asks about every chain.\n- Tests: the unit spec mocks the repository per environment and adds a failed-lookup case; the integration spec serves Zerion's chain list in every mock, rewrites the two feature-flag tests as \"chain not listed\" and \"chain list request fails\", and drops the config-service v2 chain mock branches this endpoint no longer calls.\n\nFollow-ups outside this PR: the positions endpoint still reads `balancesProvider.chainName` first, and the pre-existing direct `IZerionWalletPortfolioApi` injection in the same service could move behind the same repository.\n",
+  "findings": [
+    {
+      "id": "F1",
+      "file": "src/modules/safe/routes/v2/safes.v2.service.ts",
+      "line": 76,
+      "claim": "The existing service comment stating the code never spends a Zerion call before validation is no longer accurate, since the chains lookup now runs before Safes are validated."
+    },
+    {
+      "id": "F2",
+      "file": "src/modules/zerion/datasources/zerion-chain-mapping.service.ts",
+      "line": 82,
+      "claim": "A log level change from warn to debug in getNetworkFromChainId is unrelated to this PR's stated purpose (the overview no longer calls this method) and only affects the positions caller, so it should be moved to its own PR or explained in the PR body."
+    },
+    {
+      "id": "F3",
+      "file": "src/modules/safe/routes/v2/safes.v2.service.spec.ts",
+      "line": null,
+      "claim": "There is no test covering the case where one environment's chain lookup fails while the other succeeds (e.g. testnet rejects while mainnet resolves), even though that per-environment isolation is the main new branch introduced by this change."
+    },
+    {
+      "id": "F4",
+      "file": "src/modules/safe/routes/v2/safes.v2.controller.overview.integration.spec.ts",
+      "line": 30,
+      "claim": "The zerionChains test helper is a literal fixture object rather than a builder, which goes against the repo's non-negotiable rule #6 for constructing test data, even though it matches an existing pattern elsewhere."
+    },
+    {
+      "id": "F5",
+      "file": "src/modules/zerion/datasources/zerion-chain-mapping.service.ts",
+      "line": 107,
+      "claim": "Concurrent requests hitting a cold cache each independently fetch the Zerion chain list rather than sharing a single in-flight request."
+    },
+    {
+      "id": "F6",
+      "file": "src/modules/zerion/datasources/zerion-chain-mapping.service.ts",
+      "line": 104,
+      "claim": "getChainIdToNetworkMapping was changed from private to public so the new repository can call it, but its comment still says \"(for positions)\" and it remains placed among the private helper methods; the comment should be updated to name the repository as a caller."
+    },
+    {
+      "id": "F7",
+      "file": "src/modules/zerion/domain/zerion.repository.ts",
+      "line": 12,
+      "claim": "The method was renamed from getChainIdToNetworkMapping to getNetworksByChainId, but this name slightly obscures the actual shape of the returned value, which is a map keyed by chainId whose value is a single network name; a name like getNetworkByChainId or getNetworkNameByChainId would better match the return shape."
+    },
+    {
+      "id": "F8",
+      "file": "src/modules/zerion/datasources/zerion-chain-mapping.service.ts",
+      "line": 82,
+      "claim": "The unknown-chain-ID log level was dropped from warn to debug in a shared helper that is also called by getNetworkFromChainId from the positions path, so unknown chains encountered there also lose their warning; if the positions endpoint relies on that warning to surface configuration drift, this is a silent regression that should be confirmed as intentional."
+    },
+    {
+      "id": "F9",
+      "file": "src/modules/safe/routes/v2/__tests__/safes.v2.controller.overview.integration.spec.ts",
+      "line": 31,
+      "claim": "The zerionChains test helper returns a loosely typed { data: Array<Record<string, unknown>> } instead of the existing ZerionChains type, so a future change to ZerionChainsSchema would not cause these tests to fail to compile; it should be typed as ZerionChains."
+    },
+    {
+      "id": "F10",
+      "file": "src/modules/safe/routes/v2/safes.v2.service.spec.ts",
+      "line": 303,
+      "claim": "The test name \"returns a real $0 for an enabled chain absent from the portfolio distribution\" still refers to \"enabled\", a concept this PR removes, and should instead refer to a Zerion-listed chain."
+    },
+    {
+      "id": "F11",
+      "file": "src/modules/zerion/datasources/zerion-chain-mapping.service.ts",
+      "line": 82,
+      "claim": "The warn log in getNetworkFromChainId was changed to debug, but this PR no longer calls that method; its only remaining caller is the positions path (src/modules/positions/datasources/zerion-positions-api.service.ts:222), so this unrelated change quietly hides unmapped-chain warnings for positions and is not mentioned in the commit message."
+    },
+    {
+      "id": "F12",
+      "file": "src/modules/safe/routes/v2/safes.v2.service.ts",
+      "line": 74,
+      "claim": "resolveZerionChainNames is awaited before resolveSafes, and on a cold or expired cache it triggers a live GET to Zerion's /v1/chains with no negative caching and no rate limiter, so only a successful result gets cached; if Zerion is slow or down, every overview request waits for the full network timeout before falling back to the balances repository, whereas previously the overview path never called /v1/chains at all."
+    },
+    {
+      "id": "F13",
+      "file": "src/modules/safe/routes/v2/safes.v2.service.ts",
+      "line": 204,
+      "claim": "The removal of the PORTFOLIO_ENDPOINT per-chain gate means every chain Zerion lists now goes through the Zerion portfolio path as soon as features.zerion is enabled, including chains that were never explicitly flagged on, widening the rollout at deploy time; it should be confirmed this expansion and the all-or-nothing features.zerion flag are an acceptable emergency lever, and this should be stated explicitly in the PR description."
+    },
+    {
+      "id": "F14",
+      "file": "src/modules/safe/routes/v2/safes.v2.service.ts",
+      "line": 214,
+      "claim": "A Map<boolean, Record<string, string>> is used as a key type when only two possible values ever exist; a plain object with named fields (e.g. mainnet/testnet) or two named locals would read more clearly and would remove the need for the [...new Set(chains.map(c => c.isTestnet))] pattern used below it."
+    },
+    {
+      "id": "F15",
+      "file": "src/modules/safe/routes/v2/safes.v2.service.ts",
+      "line": 225,
+      "claim": "The warn payload logged when resolveZerionChainNames fails reuses LogType.PortfolioRequestError, but the failing call is a chain-list request, not a portfolio request; reusing that log type will make dashboards over PortfolioRequestError noisy with a different failure class, and a distinct log type (e.g. ZerionChainListError) should be used so this degradation is separable from actual portfolio failures."
+    },
+    {
+      "id": "F16",
+      "file": "src/modules/safe/routes/v2/safes.v2.service.ts",
+      "line": 225,
+      "claim": "A failed chain-list lookup is logged with LogType.PortfolioRequestError even though no portfolio request was actually made, which will cause monitoring filtered on that log type to conflate \"chain list unavailable\" errors with genuine portfolio fetch failures."
+    },
+    {
+      "id": "F17",
+      "file": "src/modules/zerion/domain/zerion.repository.ts",
+      "line": 12,
+      "claim": "ZerionRepository merely forwards to getChainIdToNetworkMapping, whose private modifier was dropped to allow this, while schema parsing still happens in the datasource rather than the repository as required by the repo's non-negotiable rule #3; this pre-existing split is preserved rather than fixed, and there is no test covering the new repository or provider wiring directly."
+    },
+    {
+      "id": "F18",
+      "file": "src/modules/safe/routes/v2/safes.v2.service.ts",
+      "line": 138,
+      "claim": "The docstrings added on several new private helpers are longer than needed and describe WHAT the method does (e.g. 'Resolves each unique chainId once', 'Fetches one portfolio per unique wallet-identity'), which is already conveyed by the method name, rather than focusing on the WHY, which is the part worth keeping per repo conventions preferring no comments unless the reasoning is non-obvious."
+    },
+    {
+      "id": "F19",
+      "file": "src/modules/safe/routes/v2/safes.v2.service.spec.ts",
+      "line": 132,
+      "claim": "The commit's central claim that the chain list is read once per environment per request is not covered by any test asserting the call count of getNetworksByChainId (e.g., once for a 3-chain mainnet request, twice for mainnet plus testnet), and there is no test covering the case where one environment's lookup fails while the other succeeds."
+    },
+    {
+      "id": "F20",
+      "file": "src/modules/safe/routes/v2/safes.v2.service.ts",
+      "line": 204,
+      "claim": "The per-chain switch for the Zerion path has been removed. Previously a chain used Zerion only when the global flag was on, the chain had a name in the config service, and its PORTFOLIO_ENDPOINT flag was on; now, with features.zerion on, every chain in Zerion's list switches to the Zerion portfolio at deploy, so the only way to roll back one misbehaving chain is to disable Zerion entirely. The PR description does not state this rollout risk or show that it was signed off on, even though the change appears intentional."
+    },
+    {
+      "id": "F21",
+      "file": "src/modules/safe/routes/v2/safes.v2.service.ts",
+      "line": 235,
+      "claim": "The overview now resolves the Zerion chain name using only Zerion's mapping, while the positions endpoint still prefers chain.balancesProvider.chainName over the mapping, so a chain with a config-service override (e.g. a testnet missing from Zerion's list, or two networks sharing a chainId) behaves differently between the two endpoints, causing them to disagree on the same Safe's fiat value or causing the overview to silently fall back to the balances repository."
+    }
+  ]
+}

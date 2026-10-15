@@ -1,0 +1,50 @@
+{
+  "usd": 0.0828596,
+  "findings": [
+    {
+      "file": "src/modules/spaces/routes/members.controller.e2e-spec.ts",
+      "line": 87,
+      "claim": "The comments describing the createSpaceForSigner helper (around lines 72-74 and 87-88) say it makes the newly registered wallet user the space admin, but the space is actually created using a random 'sub' value (1-9), so the admin ends up being some other, older user rather than the one just registered."
+    },
+    {
+      "file": "src/modules/spaces/routes/members.controller.e2e-spec.ts",
+      "line": 87,
+      "claim": "Because the admin comes from a random sub rather than the newly created user, running the space-creation flow against an empty database with fewer than 9 existing users causes space creation to fail with a 404 response most of the time."
+    },
+    {
+      "file": "src/modules/spaces/routes/members.controller.e2e-spec.ts",
+      "line": 87,
+      "claim": "The space service also activates the shared user identified by the random sub if that user was pending, which silently mutates data that other tests depend on."
+    },
+    {
+      "file": "src/modules/spaces/routes/members.controller.e2e-spec.ts",
+      "line": 87,
+      "claim": "Since the same small set of users (identified by sub 1-9) accumulate every space created through this helper's default token, on a local database that is never wiped they eventually reach the per-user space limit (100-200), after which space creation starts returning 409 instead of succeeding."
+    },
+    {
+      "file": "src/modules/spaces/routes/members.controller.e2e-spec.ts",
+      "line": 1089,
+      "claim": "The user-record assertions (id: Number(sub), email: null, extUserId: null) depend on which pre-existing user happens to own the randomly chosen id, making these checks order-dependent and fragile rather than deterministic."
+    },
+    {
+      "file": "src/modules/spaces/routes/members.controller.e2e-spec.ts",
+      "line": 124,
+      "claim": "The helper should instead use the id returned from the wallet registration call to build the access token and return {spaceId, userId, accessToken}, removing the reliance on Number(authPayloadDto.sub) at lines 124, 1046, and 1580; at minimum the misleading comment should be corrected."
+    },
+    {
+      "file": "src/modules/spaces/routes/members.controller.e2e-spec.ts",
+      "line": 1633,
+      "claim": "The previously existing DELETE test 'should throw a 404 if the signer_address does not have a user' was removed and not replaced, so there is now no DELETE test covering a signer who is not a member of the space at all; a DELETE test using nonMemberToken() expecting a 403 'User is not an active admin.' response should be added."
+    },
+    {
+      "file": "src/modules/spaces/routes/members.controller.e2e-spec.ts",
+      "line": 743,
+      "claim": "The accept- and decline-invite 'no pending invite' tests (around lines 743 and 952) still construct their outsider token by hand instead of using the nonMemberToken() helper used elsewhere in the file, which is inconsistent with the rest of the test suite."
+    },
+    {
+      "file": "src/modules/spaces/routes/members.controller.e2e-spec.ts",
+      "line": 243,
+      "claim": "The test name '403 if the signer is not an active admin of the space' (around line 243) does not indicate that the test is actually exercising a non-existent space, making it hard to distinguish from the similarly named test at line 285; a more descriptive name (e.g. referencing a non-existent space) would clarify the distinction."
+    }
+  ]
+}

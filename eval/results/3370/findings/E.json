@@ -1,0 +1,15 @@
+{
+  "usd": 0.040555999999999995,
+  "findings": [
+    {
+      "file": "src/modules/safe/routes/safes.controller.integration.spec.ts",
+      "line": 2424,
+      "claim": "The test casts a value instead of constructing an actual Response object, which is less type-safe and less representative of real behavior."
+    },
+    {
+      "file": "src/modules/balances/datasources/safe-balances-api.service.ts",
+      "line": 109,
+      "claim": "There is no dedicated response mapper for this API call, making it harder to handle additional response codes if that becomes necessary in the future."
+    }
+  ]
+}

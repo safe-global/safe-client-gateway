@@ -1,0 +1,20 @@
+{
+  "usd": 0.04349360000000001,
+  "findings": [
+    {
+      "file": null,
+      "line": null,
+      "claim": "The PR description's Summary and Changes sections are truncated mid-word in multiple places, making several described changes unreadable; these sections should be reposted complete."
+    },
+    {
+      "file": "src/modules/entitlements/subscription-sync.module.ts",
+      "line": 30,
+      "claim": "This module places a second root-level *.module.ts file inside an existing module, which does not match the canonical skeleton (only one <kebab-name>.module.ts at the root) and is inconsistent with how the module's other auxiliary Nest modules are organized in the layer they wire (e.g. routes/entitlements-routes.module.ts, domain/entitlements-repository.module.ts). The file should be moved to src/modules/entitlements/routes/subscription-sync.module.ts, next to the service it provides, with the import in src/modules/billing/billing.module.ts updated accordingly."
+    },
+    {
+      "file": "src/modules/entitlements/routes/guards/entitlement.guard.ts",
+      "line": 18,
+      "claim": "EntitlementGuard is introduced as an abstract base class parameterized over featureKey even though only one subclass currently exists, which risks a speculative abstraction; the PR description that would justify this by referencing a planned second subclass is itself truncated and does not identify the follow-up work. The follow-up adding the second EntitlementGuard subclass should be explicitly named in the Summary, or the base class should be collapsed into the single existing subclass until a second consumer actually requires the abstraction."
+    }
+  ]
+}

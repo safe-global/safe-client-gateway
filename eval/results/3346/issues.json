@@ -1,0 +1,262 @@
+{
+  "usage": {
+    "usd": 0.9037978000000001,
+    "turns": 15,
+    "wallSeconds": 112
+  },
+  "issues": [
+    {
+      "findings": [
+        "F8",
+        "F20"
+      ],
+      "summary": "SpaceSeatSelection is removed from forFeature/test DataSource, but its entity files and table are still there",
+      "label": "low",
+      "evidence": "entitlements-repository.module.ts:25-30 no longer registers SpaceSeatSelection, yet datasources/entities/space-seat-selection.entity.db.ts and domain/entities/space-seat-selection.entity.ts still exist. orm.config.ts:8 globs *.entity.db.js, so the ORM CLI still loads them, and there is no drop migration at HEAD even though the PR description says there is one. This leaves dead, inconsistent code but nothing breaks at runtime.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F2",
+        "F3"
+      ],
+      "summary": "resolveFeature falls through to the Metered shape for any unhandled FeatureType, with no exhaustiveness check",
+      "label": "low",
+      "evidence": "entitlements.service.ts:366-394 checks Binary and Value, then returns an object with a literal `type: FeatureType.Metered`. That still compiles if a fourth enum member is added, so the new type would be served as metered without any error. With today's three-member enum the behaviour is correct, so this is a maintainability risk only.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F5",
+        "F9"
+      ],
+      "summary": "The controller imports SpaceIdPipe from the spaces module's routes/",
+      "label": "low",
+      "evidence": "entitlements.controller.ts:18 imports @/modules/spaces/routes/pipes/space-id.pipe. docs/agents/module-structure.md:83 names exactly this import (in billing.controller) as an anti-example that is 'not precedent'.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F21",
+        "F24"
+      ],
+      "summary": "The service imports assertMember from the spaces module's routes/utils",
+      "label": "low",
+      "evidence": "entitlements.service.ts:37 imports @/modules/spaces/routes/utils/space-assert.utils, which breaks the rule that other modules are reached only through their domain/ (module-structure.md:77). The service already injects IMembersRepository and could do the check itself.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F1"
+      ],
+      "summary": "FeatureKey is a plain string, not a union of FEATURE_KEYS",
+      "label": "low",
+      "evidence": "feature.entity.ts:12 has `export type FeatureKey = string`, so the compiler does not enforce membership in FEATURE_KEYS, while the PR description calls it a 'named enum'. The looseness looks deliberate (test fixtures use unpublished keys such as security_hub), so the cost is the mismatch with the description.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F33"
+      ],
+      "summary": "A spec comment describes FeatureKey as an enum and puts the dispatch in the repository",
+      "label": "low",
+      "evidence": "entitlements.service.integration.spec.ts:59-60 mentions the 'real FeatureKey enum' and says 'the repository dispatches stock counting by key'. In fact FeatureKey is `string` (feature.entity.ts:12) and the dispatch is EntitlementsService.stockCounters (entitlements.service.ts:458).",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F15",
+        "F22"
+      ],
+      "summary": "Test title and comment still refer to the removed over-limit concept",
+      "label": "low",
+      "evidence": "entitlements.service.integration.spec.ts:594-601 says 'what the endpoint names as over-limit' and 'reports no over-limit feature', but the overLimit field was reverted (commit 3321fee1c) and the tests only assert quota and used.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F26"
+      ],
+      "summary": "An active subscription with a null currentPeriodStart falls back to the Free-tier window",
+      "label": "low",
+      "evidence": "entitlements.rules.ts:82 and :105 use `cycle?.currentPeriodStart`, and space-subscription.entity.ts:14 allows null, so such a subscription would be bucketed from the space's creation date. Only event-metered features reach this code, and none is seeded yet, so the impact is latent.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F7"
+      ],
+      "summary": "loadRelationIds makes row.feature a raw id while it is still typed as Feature",
+      "label": "low",
+      "evidence": "space-feature-usage.repository.ts:43-48 relies on `Number(row.feature)` against a relation typed as the Feature entity. The code works, but the type lies and needs a comment to explain it.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F10"
+      ],
+      "summary": "The spaces row is read twice per request (pipe, then createdAt)",
+      "label": "low",
+      "evidence": "SpaceIdPipe runs findIdByUuid (space-id.pipe.ts:36), then getSpaceCreatedAtOrFail runs a second findOne on the same row (entitlements.service.ts:470), plus the membership query. That is one avoidable round trip per request, a small cost.",
+      "category": "performance"
+    },
+    {
+      "findings": [
+        "F31"
+      ],
+      "summary": "No test covers the combined FF_BILLING_SERVICE && FF_USERS gate",
+      "label": "low",
+      "evidence": "app.module.ts:125 gates EntitlementsRoutesModule on both flags. The controller spec turns both on, and no test checks that the route is absent when only one flag is on, so a regression to `||` would go unnoticed.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F30",
+        "F11"
+      ],
+      "summary": "The hand-rolled materializedSubscription() fixture duplicates materializedSubscriptionBuilder and uses literals",
+      "label": "low",
+      "evidence": "entitlements.service.integration.spec.ts:368-380 builds a literal object with planId 'business' and fixed dates, while the same file imports and widely uses materializedSubscriptionBuilder (line 23, 673+). The literals go against the builders + faker rule.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F12",
+        "F18",
+        "F19"
+      ],
+      "summary": "The per-suite test database create/drop is hand-rolled and duplicated across two specs",
+      "label": "low",
+      "evidence": "The adminQuery helper plus CREATE DATABASE appears verbatim in entitlements.controller.integration.spec.ts:53-70 and subscription-sync.service.integration.spec.ts:66-85. src/__tests__/db.factory.ts:22,27 already provides createTestDatabase/destroyTestDatabase, though on a postgres.js connection rather than TypeORM.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F4"
+      ],
+      "summary": "EntitlementsRoutesModule sits at the module root rather than under routes/",
+      "label": "nit",
+      "evidence": "The canonical skeleton puts <module>.module.ts at the module root, and entitlements-routes.module.ts:26 sits next to entitlements.module.ts. Placing it in routes/ is a preference with no concrete cost.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F17",
+        "F23"
+      ],
+      "summary": "toEntitlementsResponse copies fields without transforming anything",
+      "label": "nit",
+      "evidence": "entitlements.service.ts:481-494 rebuilds plan field by field and passes entitlements through unchanged. The mapper is redundant but harmless, and it keeps a seam between domain and DTO.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F6"
+      ],
+      "summary": "afterEach uses nine copy-pasted delete blocks instead of a loop",
+      "label": "nit",
+      "evidence": "entitlements.service.integration.spec.ts:235-280 repeats the same delete chain nine times where the old code looped over entities. This is a style choice only.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F32",
+        "F35"
+      ],
+      "summary": "createSpace swaps nameBuilder() for faker.company.name()",
+      "label": "nit",
+      "evidence": "The diff removes the nameBuilder import and uses faker.company.name() at spec:292. Both are faker-generated, so this is a stylistic drive-by with no behavioural cost.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F29"
+      ],
+      "summary": "addMember's inviteExpiresAt/role parameters are unused",
+      "label": "nit",
+      "evidence": "The only call site is spec:1095, `addMember(spaceId, 'ACTIVE')`, so the INVITED branch and the role default are dead test-helper code.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F27"
+      ],
+      "summary": "The rules spec's feature() spreads overrides instead of using builder .with()",
+      "label": "nit",
+      "evidence": "entitlements.rules.spec.ts:12-14 spreads a Partial over featureBuilder().build(). It is equivalent and only a style preference.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F28"
+      ],
+      "summary": "The freePeriod = 0 boundary is not tested",
+      "label": "nit",
+      "evidence": "entitlements.rules.ts:85 and :108 handle 0 explicitly by falling back to createdAt or null, and the code is correct. Only a test case is missing, for a feature type that is not seeded yet.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F36"
+      ],
+      "summary": "The FEATURE_METADATA_PREFIX comment gives keys that are not in FEATURE_KEYS",
+      "label": "nit",
+      "evidence": "entitlements.constants.ts:70-73 shows the metadata format with examples (FEATURE_SECURITY_HUB, etc.). They illustrate encodings and do not claim to be the published catalog.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F37"
+      ],
+      "summary": "Promise.all still runs the sibling queries when the space is missing",
+      "label": "nit",
+      "evidence": "entitlements.service.ts:77-81 runs the reads in parallel on purpose (the comment says so). On the HTTP path, assertMember already implies the space exists, so the wasted work only arises for a nonexistent space on a direct call.",
+      "category": "performance"
+    },
+    {
+      "findings": [
+        "F25"
+      ],
+      "summary": "No HTTP test for a request without a token",
+      "label": "nit",
+      "evidence": "entitlements.controller.integration.spec.ts:223-228 asserts AuthGuard is applied with checkGuardIsApplied, which is the repo's pattern. AuthGuard's own behaviour is covered elsewhere, so a request-level test would add little.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F13"
+      ],
+      "summary": "The claim that spaceId is unused in the usage repository interface",
+      "label": "wrong",
+      "evidence": "space-feature-usage.repository.ts:40 uses `space: { id: args.spaceId }` in the where clause. Only the per-period entries omit spaceId (via Omit<UsageKey,'spaceId'>).",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F16"
+      ],
+      "summary": "The seed's free_enabled=false/free_quota=0 differs from test fixtures",
+      "label": "wrong",
+      "evidence": "The PR description says safe_seats grants nothing on its free_* columns because there is no free plan. The suites own their databases and seed their own fixture values on purpose (spec:53-56).",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F34"
+      ],
+      "summary": "The seed down() deletes unconditionally and discards dependents",
+      "label": "wrong",
+      "evidence": "migrations/1787148838500-seed-features.ts:17-18 documents that undoing the seed discards purchased rows and counters because of ON DELETE RESTRICT, and the PR description states it too. This is intended behaviour.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F14"
+      ],
+      "summary": "Single-element enums on the discriminator properties",
+      "label": "wrong",
+      "evidence": "entitlements-response.entity.ts:49,58 use `enum: [FeatureType.X]` to pin each oneOf variant's discriminator value, which is the correct OpenAPI pattern. No repo convention forbidding it exists in docs/agents.",
+      "category": "design"
+    }
+  ]
+}

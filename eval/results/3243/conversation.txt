@@ -1,0 +1,44 @@
+COMMENT
+[PooyaRaki 2026-07-09T15:30:38Z] @claude review
+
+COMMENT
+[claude 2026-07-09T15:30:53Z] **Claude finished @PooyaRaki's task in 59s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/29029797485)
+
+---
+### Claude PR Review
+
+- [x] Load PR context
+- [x] Read changed files
+- [x] Analyze for code quality, bugs, security, tests
+- [x] Post final review
+
+---
+
+Overall the change is well-scoped, correctly gated to non-production, and the security reasoning in the PR body holds up (exact-match loopback set, userinfo rejection, no port/scheme downgrade for the configured domain branch). A few small suggestions:
+
+#### 1. Consider case-insensitive hostname handling (defense-in-depth)
+`src/modules/auth/utils/auth-redirect.helper.ts:139` uses `LOOPBACK_HOSTNAMES.has(target.hostname)`. WHATWG's `URL` parser does lowercase the hostname today, so `LOCALHOST` becomes `localhost` and this works — but the guarantee is easy to miss when reading the code. Lowercasing the compared hostname (or adding a one-line comment noting the reliance on WHATWG normalization) makes the invariant explicit and cheap to preserve.
+
+#### 2. Minor readability nit
+`src/modules/auth/utils/auth-redirect.helper.ts:138-141`:
+```ts
+const isHttps = target.protocol === 'https:';
+if (LOOPBACK_HOSTNAMES.has(target.hostname)) {
+  return target.protocol === 'http:' || isHttps;
+}
+```
+The `isHttps` alias is used once inside the loopback branch and once later. Inline it or drop the alias for clarity:
+```ts
+if (LOOPBACK_HOSTNAMES.has(target.hostname)) {
+  return target.protocol === 'http:' || target.protocol === 'https:';
+}
+```
+
+#### 3. Test coverage gap — missing scheme rejection cases
+`src/modules/auth/utils/auth-redirect.helper.spec.ts:229-247` only covers `ftp://` for non-HTTP schemes. Worth adding at least `file:`, `javascript:`, and `data:` (these are the schemes an attacker would try if they got any control over the redirect input). One `it.each` line each is enough.
+
+#### 4. Optional: RFC-8252 scope note
+RFC 8252 §7.3 lists exactly `localhost`, `127.0.0.1`, and `::1`, which matches the code. However, the wider `127.0.0.0/8` block is also loopback per RFC 5735. Not a bug — just a decision worth flagging in a code comment so a future reader doesn't "helpfully" broaden the set.
+
+Nothing here blocks the PR; the production path is untouched and the loopback branch is properly restricted.
+ · [Branch](https://github.com/safe-global/safe-client-gateway/tree/wa-2807/adjust-cgw-to-allow-auth-from-local-wallet-app)

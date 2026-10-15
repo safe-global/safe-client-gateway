@@ -1,0 +1,40 @@
+{
+  "usd": 0.056262,
+  "findings": [
+    {
+      "file": "src/modules/relay/routes/relay.controller.integration.spec.ts",
+      "line": 2944,
+      "claim": "The relayer is now chosen from the chain's config-service relayerType instead of env config, and a RelayerNotAvailableExceptionFilter was added to both POST /relay and GET /relay/:safeAddress, but no integration test sends a chain with relayerType null or an unimplemented type and checks for a 403 response body. Existing coverage only tests the underlying switch statement in relay.manager.spec.ts, not that the filter is actually wired to the routes, so a route-level 403 smoke test should be added for each endpoint."
+    },
+    {
+      "file": ".env.sample.json",
+      "line": 1161,
+      "claim": "RELAY_DAILY_LIMIT_CHAIN_IDS is still marked required: true and RELAY_FEE_CHAIN_IDS is still listed in the env sample, even though the PR removed both from configuration.schema.ts and configuration.ts, so the documented env metadata no longer matches the runtime configuration and both entries should be removed."
+    },
+    {
+      "file": "src/modules/relay/domain/relay.manager.ts",
+      "line": 7,
+      "claim": "The import alias `type RelayerType as RelayerTypeValue` is unnecessary because RelayerType already serves as both the const value and the type, and the sibling relay-manager.interface.ts file in the same diff uses `RelayerType | null` directly without aliasing, so the alias should be dropped for consistency between the two files."
+    },
+    {
+      "file": "src/modules/chains/domain/entities/__tests__/chain.builder.ts",
+      "line": 57,
+      "claim": "The `as Chain['relayerType']` cast is unnecessary since `faker.helpers.arrayElement([...Object.values(RelayerType), null])` already infers the type `RelayerType | null`, and keeping the cast would hide future type drift instead of letting the compiler catch it, so it should be removed."
+    },
+    {
+      "file": "src/modules/relay/routes/relay.controller.ts",
+      "line": 78,
+      "claim": "Both the POST /relay and GET /relay/:safeAddress endpoints can now return 403 (no relayer defined, or relayer type not implemented), but neither endpoint declares an @ApiForbiddenResponse in Swagger, and for the GET endpoint this is a newly introduced status code that should be documented."
+    },
+    {
+      "file": "src/modules/relay/domain/relay.manager.ts",
+      "line": 59,
+      "claim": "Before this change, a chain with no relayer config fell back to DailyLimitRelayer for backward compatibility; now it results in a 403, so relaying will stop working on any chain until the config service sets relayerType for it, and this should be confirmed as in place before deploying."
+    },
+    {
+      "file": "chain.schema.ts",
+      "line": 108,
+      "claim": "The schema uses .catch(null) so a missing relayerType field or an unknown relayer type value from the config service silently falls through to the same 403 path with nothing logged, making it hard to distinguish a real absence of relayer config from a parsing failure; adding a warn log when the value fails to parse would make this easier to spot."
+    }
+  ]
+}

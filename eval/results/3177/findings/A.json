@@ -1,0 +1,35 @@
+{
+  "usd": 0.042269600000000004,
+  "findings": [
+    {
+      "file": ".github/workflows/ci.yml",
+      "line": 301,
+      "claim": "The empty-tag guard step can never fail: the job only runs for release events where github.event.action == 'released', and a GitHub release always has a tag_name, so $RELEASE_TAG cannot be empty and the exit 1 branch is dead code."
+    },
+    {
+      "file": ".github/workflows/ci.yml",
+      "line": 301,
+      "claim": "The step is named 'Validate release tag' but does not actually validate that the tag is a well-formed Docker tag (matching [A-Za-z0-9_.-], at most 128 characters), which is the one thing that could actually break the image push, so the name promises more than the step does."
+    },
+    {
+      "file": ".github/workflows/ci.yml",
+      "line": 301,
+      "claim": "The step should either be dropped or changed to check the Docker tag format so its behavior matches its name."
+    },
+    {
+      "file": ".github/workflows/ci.yml",
+      "line": 294,
+      "claim": "The switch from github.ref_name to github.event.release.tag_name has no explanation, even though this file otherwise documents similar choices in comments elsewhere (e.g. ci.yml:6-9, :262-263, :265-267), and the commit message has no body either, leaving no reason for the change even though on release events the two values are identical and produce no visible effect."
+    },
+    {
+      "file": ".github/workflows/ci.yml",
+      "line": 284,
+      "claim": "The docker-publish-staging job still uses github.ref_name while docker-publish-release now uses github.event.release.tag_name, and without a comment explaining the rationale, a future reader won't know why the two jobs diverge."
+    },
+    {
+      "file": ".github/workflows/ci.yml",
+      "line": 294,
+      "claim": "A one-line comment should be added above RELEASE_TAG explaining the reason for using github.event.release.tag_name instead of github.ref_name, for example that the release's tag is the source of truth even if the workflow is re-run or triggered from a different ref."
+    }
+  ]
+}

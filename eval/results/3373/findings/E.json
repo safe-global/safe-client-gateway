@@ -1,0 +1,10 @@
+{
+  "usd": 0.049491600000000004,
+  "findings": [
+    {
+      "file": "src/modules/relay/datasources/rhinestone-api.service.ts",
+      "line": 142,
+      "claim": "Three functions in this service are pure functions with no dependency on instance state, so they should be extracted outside of the service class. Keeping them as methods forces every formatting test case to go through relay() and drag along mockRejectedValue, rejects.toThrow, and a mocked logger, instead of being testable in isolation."
+    }
+  ]
+}

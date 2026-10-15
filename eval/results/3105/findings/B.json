@@ -1,0 +1,65 @@
+{
+  "usd": 0.244276,
+  "findings": [
+    {
+      "file": "src/modules/relay/domain/relayers/no-fee-campaign.relayer.ts",
+      "line": 81,
+      "claim": "getRelayer now selects NoFeeCampaignRelayer whenever the config service reports NO_FEE_CAMPAIGN, removing the prior check that also required a local relay.noFeeCampaign[chainId] entry. The relay() method then reads this.relayConfiguration[chainId].maxGasLimit without a guard, while its sibling methods canRelay and getRelaysRemaining do have such a guard, so a chain flagged NO_FEE_CAMPAIGN in the config service but not present locally (locally only chains 1 and 11155111 are defined) will cause POST /v1/chains/:id/relay to throw a TypeError and return a 500."
+    },
+    {
+      "file": "src/modules/relay/domain/relay.manager.ts",
+      "line": 55,
+      "claim": "This is the call site that reaches the unguarded no-fee-campaign relayer logic, and nothing upstream (LimitAddressesMapper, controller filters) prevents the resulting TypeError from propagating as an unhandled 500."
+    },
+    {
+      "file": "src/modules/relay/domain/relay.manager.ts",
+      "line": 59,
+      "claim": "A null relayer type now throws NoRelayerDefinedError and returns 403, whereas previously any unconfigured chain fell back to DailyLimitRelayer with an explicit backward-compatibility comment; this fallback has been removed."
+    },
+    {
+      "file": "src/modules/chains/domain/entities/schemas/chain.schema.ts",
+      "line": 108,
+      "claim": "The schema's .catch(null) turns both a missing relayerType field and any unrecognized value into null, which now results in a 403 instead of the previous daily-limit fallback, affecting both POST relay and GET relays-remaining endpoints."
+    },
+    {
+      "file": null,
+      "line": null,
+      "claim": ".env.sample.json defaulted RELAY_DAILY_LIMIT_CHAIN_IDS to Sepolia only, meaning most chains that currently relay successfully do so via the fallback that was removed; if this deploys before the config service sets relayerType on every chain, relaying on those chains will start returning 403 immediately."
+    },
+    {
+      "file": "src/modules/relay/routes/relay.controller.ts",
+      "line": 82,
+      "claim": "The new 403 path is not tested end to end: no integration test covers a null or GTF relayer type on POST relay or GET relays-remaining, so the filter wiring and response body for this case are unverified."
+    },
+    {
+      "file": "src/modules/relay/routes/relay.controller.ts",
+      "line": 156,
+      "claim": "No controller test covers RELAY_FEE routing, and if RelayerNotAvailableExceptionFilter were dropped from either @UseFilters decorator, the existing test suite would still pass, meaning the wiring isn't actually protected by tests."
+    },
+    {
+      "file": "src/modules/chains/domain/entities/schemas/chain.schema.ts",
+      "line": 108,
+      "claim": "The .catch(null) silently converts an unknown relayer type value from the config service (e.g. a new, unhandled value) into a 'no relayer defined' result with no logging, making a misconfiguration indistinguishable from an intentional block. The swallowed value should be logged."
+    },
+    {
+      "file": "src/modules/chains/domain/entities/schemas/chain.schema.ts",
+      "line": 6,
+      "claim": "The shared chains domain schema now imports from modules/relay, while relay and fees already import ChainsModule, creating a bidirectional dependency between the modules (no runtime cycle currently since the entity itself has no imports). The RelayerType enum would better belong with the chain entity or in a shared domain location."
+    },
+    {
+      "file": ".env.sample.json",
+      "line": 1161,
+      "claim": "The file still documents the removed RELAY_DAILY_LIMIT_CHAIN_IDS variable (marked required: true) and RELAY_FEE_CHAIN_IDS, which are no longer used; yarn env:validate will warn about both as extra variables."
+    },
+    {
+      "file": "src/modules/relay/routes/relay.controller.ts",
+      "line": null,
+      "claim": "The relay endpoints lack an @ApiForbiddenResponse decorator even though 403 is now a documented possible outcome; RelayDenied has the same gap, predating this change."
+    },
+    {
+      "file": "src/modules/relay/domain/relay.manager.ts",
+      "line": 6,
+      "claim": "RelayerType is imported twice in this file, once as a value and once as a type alias (RelayerTypeValue), whereas relay-manager.interface.ts imports it only once; a single import would suffice since the name serves as both value and type."
+    }
+  ]
+}

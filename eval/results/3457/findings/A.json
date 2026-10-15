@@ -1,0 +1,25 @@
+{
+  "usd": 0.056535600000000005,
+  "findings": [
+    {
+      "file": "src/modules/billing/routes/billing.service.ts",
+      "line": 421,
+      "claim": "The comment on assertSafeSeatCapacity still describes the check as being against the workspace's current Safe count, but the underlying call now counts seats (one per Safe address, regardless of how many chains that Safe is on), so the comment no longer matches the behavior."
+    },
+    {
+      "file": "src/modules/billing/routes/billing.service.ts",
+      "line": 442,
+      "claim": "The error message text refers to the workspace's current Safes, but the value being compared is now a seat count rather than a count of Safes, so the message is misleading to users who see it."
+    },
+    {
+      "file": "src/modules/billing/routes/billing.service.spec.ts",
+      "line": 711,
+      "claim": "The renamed mock countSeatsBySpaceId is only stubbed with a return value and its call arguments are never asserted, so if the service passed the wrong id (e.g. spaceUuid instead of args.spaceId) the seat-capacity tests would still pass without catching the bug."
+    },
+    {
+      "file": "src/modules/billing/routes/billing.service.spec.ts",
+      "line": 702,
+      "claim": "Several test names still say \"...the workspace's current Safes\" even though the assertion now compares a seat count, so the test names no longer describe what is actually being verified."
+    }
+  ]
+}

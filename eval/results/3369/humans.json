@@ -1,0 +1,24 @@
+{
+  "usd": 0.33247720000000003,
+  "head": "5d1a778b5980fb2e9c6d2973db1b57aa3d5438a1",
+  "verdicts": [
+    {
+      "issue": 4,
+      "verdict": "open",
+      "present": false,
+      "evidence": "At dd402c04 the commits-and-prs.md:91 Why paragraph listed only one requirement (\"One `reviewing.md` requirement still lands here: ratchet-baseline growth…\"). The five-item enumeration came in later commits (df135a560/c8f3f730b). The bot said it was \"not a blocker\", nobody replied, and HEAD still has it as prose."
+    },
+    {
+      "issue": 10,
+      "verdict": "open",
+      "present": true,
+      "evidence": "module-structure.md:33 at dd402c04 already had the long staged-rollout paragraph (the why-not-domain/ reasoning plus the declared-series/linked-follow-up condition in long sentences). Commit 0f8cf83c2 later added the parity-with-reviewing.md clause but did not split it. Nobody responded to the non-blocking remark."
+    },
+    {
+      "issue": 11,
+      "verdict": "open",
+      "present": true,
+      "evidence": "The never-shipped-field text at api-dtos-and-validation.md:113 is identical at dd402c04 and HEAD (the file is not in `git diff dd402c04 HEAD`). The review's clause-break suggestion got no reply."
+    }
+  ]
+}

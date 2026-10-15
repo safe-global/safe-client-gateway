@@ -1,0 +1,35 @@
+{
+  "usd": 0.055493600000000004,
+  "findings": [
+    {
+      "file": "src/modules/entitlements/domain/space-feature-usage.repository.interface.ts",
+      "line": 10,
+      "claim": "The spaceId parameter is unused (omitted) in every implementation, so its presence in the interface is unjustified."
+    },
+    {
+      "file": "src/modules/entitlements/routes/entitlements.controller.integration.spec.ts",
+      "line": 223,
+      "claim": "A test case for the unauthenticated scenario (expecting a 403 when no access token is provided) is missing and should be added."
+    },
+    {
+      "file": "src/modules/entitlements/routes/entitlements.controller.integration.spec.ts",
+      "line": 67,
+      "claim": "Test database creation and teardown are done manually with raw admin queries instead of using the existing TestDbFactory helper, which would simplify the code."
+    },
+    {
+      "file": "src/modules/entitlements/routes/subscription-sync.service.integration.spec.ts",
+      "line": 81,
+      "claim": "This test also manually creates/destroys the test database instead of using the TestDbFactory helper."
+    },
+    {
+      "file": "src/modules/entitlements/routes/entitlements.service.ts",
+      "line": 382,
+      "claim": "The current conditional logic could be implemented as a switch/case instead, which would provide a compile-time exhaustiveness check and prevent a differing type from silently falling through unhandled."
+    },
+    {
+      "file": "src/modules/entitlements/routes/entitlements.service.integration.spec.ts",
+      "line": 369,
+      "claim": "This function appears to duplicate functionality already provided by the existing materializedSubscriptionBuilder, raising the question of why a separate function is needed."
+    }
+  ]
+}

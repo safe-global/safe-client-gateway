@@ -1,0 +1,60 @@
+{
+  "usd": 0.060729599999999995,
+  "findings": [
+    {
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.ts",
+      "line": 687,
+      "claim": "The PR adds '1.5.0' to MULTICHAIN_SUPPORTED_VERSIONS, but checkVersionCompatibility still checks the SafeToL2Setup and SafeToL2Migration conditions using a fixed version '1.4.1' instead of the Safe's actual version. For a 1.5.0 Safe, a chain that only has 1.4.1 helpers could pass when it should be MISSING_OWNERSHIP, and a chain that only has 1.5.0 helpers could be wrongly rejected."
+    },
+    {
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts",
+      "line": 1727,
+      "claim": "Both new tests set 'to' to zeroAddress, which skips the code path affected by the version-compatibility bug entirely, so no test exercises the case where the wrong helper version is checked. A test where 'to' is not the zero address is needed to cover this."
+    },
+    {
+      "file": "src/modules/transactions/routes/entities/settings-changes/settings-change.entity.ts",
+      "line": 9,
+      "claim": "This changes the external API: setModuleGuard transactions used to come back as Custom, but now come back as SettingsChange with two new enum values, SET_MODULE_GUARD and DELETE_MODULE_GUARD. Clients with an exhaustive switch on settingsInfo.type need to handle the new values, and it's unclear whether this was confirmed with client teams or noted in the PR body."
+    },
+    {
+      "file": ".yarnrc.yml",
+      "line": 17,
+      "claim": "Setting npmPreapprovedPackages to '@safe-global/*' lets the entire scope skip the 7-day npmMinimalAgeGate permanently, not just for this version bump. This is a repo-wide supply-chain policy change bundled into a feature PR, meaning a compromised @safe-global publish would install with no quarantine period; it should be split into its own PR with justification or scoped more narrowly."
+    },
+    {
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts",
+      "line": 1714,
+      "claim": "The new tests hardcode the 1.5.0 singleton, proxy factory, and fallback-handler addresses (with 'as Address' casts) instead of reading them from getSafeSingletonDeployment/getProxyFactoryDeployment/getCompatibilityFallbackHandlerDeployment, which is fragile if those addresses change."
+    },
+    {
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts",
+      "line": 1752,
+      "claim": "The INCOMPATIBLE_SAFE test depends on chain 1101 having no 1.5.0 deployments in the real safe-deployments data; a future data update that adds 1.5.0 support there would break the test for a reason unrelated to the code under test. Mocking the deployment lookups or asserting the condition explicitly would make the dependency clear."
+    },
+    {
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts",
+      "line": 1695,
+      "claim": "The two new tests consist of roughly 50 near-identical lines each, differing only in chain ID and expected status, which duplicates setup logic that could be extracted into a helper or expressed with it.each."
+    },
+    {
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.ts",
+      "line": 163,
+      "claim": "Recipient/bridge results are cached, so results already cached under the old verdict for 1.5.0 Safes will continue to be served until the cache TTL (expirationTimeInSeconds.default) expires; this staleness should be noted or the cache key bumped if it matters."
+    },
+    {
+      "file": "src/modules/transactions/routes/mappers/common/settings-change.mapper.spec.ts",
+      "line": 292,
+      "claim": "The zero address is written as a literal instead of using viem's zeroAddress, which another spec added in this same PR already imports; the existing DeleteGuard test at line 255 has the same issue."
+    },
+    {
+      "file": "src/modules/transactions/routes/mappers/common/settings-change.mapper.spec.ts",
+      "line": 308,
+      "claim": "This test only checks that a static array contains a string, which duplicates coverage already provided by the SetModuleGuard/DeleteModuleGuard tests. A test through transaction-info.mapper showing that a setModuleGuard transaction is classified as SettingsChange would provide more meaningful coverage of the API change."
+    },
+    {
+      "file": "src/modules/transactions/routes/mappers/common/settings-change.mapper.ts",
+      "line": 191,
+      "claim": "The function name handleGuardLike is vague and does not describe its behavior; a name like mapGuardSetting or handleGuardAddressSetting would better convey its purpose."
+    }
+  ]
+}

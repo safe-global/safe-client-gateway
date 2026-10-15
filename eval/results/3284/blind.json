@@ -1,0 +1,193 @@
+{
+  "pr": 3284,
+  "title": "feat: Allow switching authenticators",
+  "description": "fixes WA-2850 \r\n\r\n ## Summary\r\n\r\n  Allows a signed-in OIDC user to switch their TOTP authenticator (e.g. moving to a new phone) without support intervention. Demo: [Linear project update](https://linear.app/safe-global/project/workspace-2fa-26155ec54c2d/activity#project-update-5d3c5ad7).\r\n\r\n  Flow: the frontend starts a re-enrollment via `GET /v1/auth/oidc/authorize?enroll=true`. The Auth0 post-login Action (`ext-enroll-otp`, deployed via terraform-auth0-module) challenges the user with a **recovery code**, then forces enrollment of a **new TOTP**. On the callback, CGW deletes the superseded TOTP method(s), keeping only the newest, so the account never ends up with stale authenticators.\r\n\r\n  ```mermaid\r\n  sequenceDiagram\r\n    participant W as Web app\r\n    participant C as CGW\r\n    participant A as Auth0\r\n    W->>C: GET /oidc/authorize?enroll=true\r\n    C->>A: /authorize (enroll marked in state)\r\n    A->>A: recovery-code challenge and new TOTP enrollment (Action)\r\n    A->>C: /oidc/callback (code)\r\n    C->>A: exchange code, verify ID token\r\n    C->>A: Management API - list methods, delete superseded TOTPs\r\n    C->>W: session cookie and redirect\r\n  ```\r\n\r\n  ## Changes\r\n\r\n  - `GET /v1/auth/oidc/authorize` accepts `enroll=true`, carried through the OAuth `state`\r\n  - `GET /v1/auth/oidc/mfa/authenticators` lists the user's authentication methods\r\n  - `cleanupSupersededAuthenticators`: after an enroll round-trip, deletes all TOTP methods except the newest; aborts (no deletions) if any method lacks `created_at`\r\n  - Auth0 Management API client (list/delete authentication methods) with the token cached in Redis until shortly before expiry\r\n  - Unit + integration tests for the above\r\n\r\n  ## Deployment\r\n\r\n  Deploy together with [terraform-auth0 PR #21](https://github.com/safe-global/terraform-auth0-module/pull/21) (Action + Management API scopes + tenant flag) — CGW's enroll flow fails closed without it. [Frontend PR #8320](https://github.com/safe-global/safe-wallet-monorepo/pull/8320) can ship later.\r\n\r\n  Rollback: revert CGW; the tenant config is backwards-compatible with the previous build.\r\n\r\n  ## How to test\r\n\r\nIf you want to test this by click through on your local machine you'll have to create a separate account/tenant on auth0, use the terraform-auth0-module to clone the company config, get a Google Cloud key, and then, if you manage to put the right env vars, you should be able to locally test this. I'm happy to help you setting this up.\r\n",
+  "findings": [
+    {
+      "id": "F1",
+      "file": "src/modules/auth/oidc/auth0/datasources/auth0-api.service.spec.ts",
+      "line": null,
+      "claim": "The spec constructs new CacheDir('auth0_management_api_token', '') by hand four times in the Management API token caching tests instead of calling CacheRouter.getAuth0ManagementApiTokenCacheDir(), duplicating the key string so the tests would still pass even if the router's key changed."
+    },
+    {
+      "id": "F2",
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.ts",
+      "line": 186,
+      "claim": "created_at values are cast with 'as string', an unsafe cast that a type guard or the created_at schema change would eliminate."
+    },
+    {
+      "id": "F3",
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.ts",
+      "line": 203,
+      "claim": "An authenticated wallet (SIWE) user with no linked OIDC identity receives a 401 UnauthorizedException from the code, but the Swagger documentation on the controller only documents a 403 labeled 'Not authenticated', which is a mismatch since the user is actually authenticated but simply cannot use this feature; the documented responses should match the actual returned status code, and this also affects wallet users being able to reach this route at all."
+    },
+    {
+      "id": "F4",
+      "file": "src/modules/auth/oidc/auth0/datasources/auth0-api.service.ts",
+      "line": 203,
+      "claim": "The value is used without validation, relying on an assumption that it is already correct, which could allow malformed or unexpected data to propagate."
+    },
+    {
+      "id": "F5",
+      "file": "src/modules/auth/oidc/auth0/datasources/auth0-api.service.ts",
+      "line": 33,
+      "claim": "MANAGEMENT_API_TOKEN_TTL_BUFFER_IN_SECONDS is hardcoded to 60 rather than being configurable, though this is less significant since the main TTL is driven by the provider's expires_in value."
+    },
+    {
+      "id": "F6",
+      "file": "src/modules/auth/oidc/auth0/datasources/auth0-api.service.ts",
+      "line": 208,
+      "claim": "The result is cached without a clear justification for whether this operation is actually under heavy load, so the caching may be unnecessary."
+    },
+    {
+      "id": "F7",
+      "file": "src/modules/auth/oidc/routes/oidc-auth.controller.integration.spec.ts",
+      "line": null,
+      "claim": "There are no tests covering the new controller behavior: that cleanup only runs for enrollment states, that a cleanup failure does not block login, that the enroll parameter rejects values other than true, and that GET oidc/mfa/authenticators returns 403 without a session; reverting the controller's enrollment branch today would not fail any test."
+    },
+    {
+      "id": "F8",
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.ts",
+      "line": 198,
+      "claim": "getExtUserId computes Number(authPayload.getUserId()) itself instead of calling the existing getAuthenticatedUserIdOrFail helper; since getUserId() can return undefined, this local computation can silently produce NaN where the shared helper would throw, and the same pattern is repeated in the spec file at lines 739, 757, and 781."
+    },
+    {
+      "id": "F9",
+      "file": "src/modules/auth/oidc/routes/oidc-auth.controller.ts",
+      "line": 267,
+      "claim": "The code appears to allow multiple instances of this to exist at the same time, which may not be the intended behavior."
+    },
+    {
+      "id": "F10",
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.ts",
+      "line": 11,
+      "claim": "The route service imports TOTP_AUTHENTICATION_METHOD_TYPE directly from the datasource entities file, and the repository interface also exposes this datasource entity type, whereas domain-level types and constants should live under domain/entities/ so the route layer does not depend on datasource files."
+    },
+    {
+      "id": "F11",
+      "file": "src/modules/auth/oidc/routes/oidc-auth.controller.ts",
+      "line": 99,
+      "claim": "Swagger documents the enroll query parameter as type Boolean, but the validator is z.literal('true').optional(), so a value of ?enroll=false is rejected even though it appears to be a valid documented boolean; the repo's own example for this pattern uses z.enum(['true','false']).optional().transform(...) instead."
+    },
+    {
+      "id": "F12",
+      "file": "src/datasources/auth0/auth0-api.service.ts",
+      "line": 94,
+      "claim": "There is no test verifying that ext-enroll-otp is added to the authorization URL."
+    },
+    {
+      "id": "F13",
+      "file": "src/modules/auth/oidc/auth0/datasources/auth0-api.service.ts",
+      "line": 132,
+      "claim": "The existing Auth0 flow returns a Raw<> type from the API layer and parses it with Zod in the repository, but the new listUserAuthenticationMethods parses the response inside the API service instead, with the repository just passing it through, which is inconsistent with the module's own convention that repositories validate with Zod."
+    },
+    {
+      "id": "F14",
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.ts",
+      "line": 197,
+      "claim": "It is unclear whether extUserId can be present at this point in the flow, raising a question about whether this case is handled correctly."
+    },
+    {
+      "id": "F15",
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.spec.ts",
+      "line": 689,
+      "claim": "Tests construct the user object using inline casts like { extUserId } as Awaited<ReturnType<IUsersRepository['findOneOrFail']>> instead of using the existing userBuilder() helper, and authentication-method fixtures are also written as inline literals rather than through a builder."
+    },
+    {
+      "id": "F16",
+      "file": "src/modules/auth/AUTH.md",
+      "line": null,
+      "claim": "The documentation is not updated to describe the new enroll parameter, the new endpoint, or the new deployment requirement that the Auth0 application needs a Management API grant with read: and delete:authentication_methods scopes; that requirement currently exists only as a code comment."
+    },
+    {
+      "id": "F17",
+      "file": "src/modules/auth/oidc/routes/oidc-auth.controller.ts",
+      "line": 223,
+      "claim": "The integration spec has no coverage for the new GET oidc/mfa/authenticators route, including guard wiring and a representative 4xx response, and no coverage for the enroll callback branch where a cleanup failure is swallowed while login still succeeds; the service unit tests also don't cover route wiring or this error mapping."
+    },
+    {
+      "id": "F18",
+      "file": "src/modules/auth/oidc/auth0/datasources/entities/auth0-otp-association.entity.ts",
+      "line": 1,
+      "claim": "Three new entity files (auth0-otp-association.entity.ts, mfa-enrollment-session.entity.ts, otp-code.entity.ts) define schemas that are never referenced anywhere in src/, indicating they are dead code left over from a different design and should be removed or moved into the PR that actually uses them."
+    },
+    {
+      "id": "F19",
+      "file": "src/datasources/auth0/auth0-api.service.ts",
+      "line": 162,
+      "claim": "The cached Management API token is never cleared after receiving a 401 or 403 response, so a token issued before required scopes were granted keeps failing for up to its full lifetime (Auth0's default is 24 hours) instead of being refreshed."
+    },
+    {
+      "id": "F20",
+      "file": "src/modules/auth/oidc/routes/oidc-auth.controller.ts",
+      "line": 228,
+      "claim": "Any error during factor cleanup is caught and only logged as a warning, after which login proceeds normally and neither the user nor the frontend is told that the old factor was not removed, so a lost or compromised device can remain enrolled while the user believes it was cleaned up."
+    },
+    {
+      "id": "F21",
+      "file": "src/modules/auth/oidc/routes/oidc-auth.controller.ts",
+      "line": 262,
+      "claim": "@ApiOkResponse has no response type specified because Authenticator is a TypeScript type rather than a DTO class, so Swagger cannot document the response shape."
+    },
+    {
+      "id": "F22",
+      "file": "src/modules/auth/oidc/routes/entities/mfa-enrollment-session.entity.ts",
+      "line": null,
+      "claim": "Three new entity schemas (MfaEnrollmentSession, otp-code.entity.ts, and auth0-otp-association.entity.ts) are added but nothing in the codebase currently uses them; they should either be wired up (e.g. using MfaEnrollmentSession.supersededIds for the cleanup fix) or removed."
+    },
+    {
+      "id": "F23",
+      "file": "src/datasources/auth0/auth0-api.service.ts",
+      "line": 203,
+      "claim": "A tenant-wide Management API token capable of listing and deleting any user's MFA factors is stored in Redis unencrypted under a single global key, which is riskier than the existing pattern used for Firebase tokens because of the greater damage this token can cause if exposed."
+    },
+    {
+      "id": "F24",
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.ts",
+      "line": 35,
+      "claim": "The new endpoint's response type Authenticator is a plain type declared inside the service rather than an entity class with @ApiProperty decorators, and the corresponding @ApiOkResponse in the controller has no type specified, so the response shape is missing from the generated OpenAPI output; the vast majority of other @ApiOkResponse usages in the repo do set a type."
+    },
+    {
+      "id": "F25",
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.ts",
+      "line": 161,
+      "claim": "Any callback whose state has enroll: true deletes every TOTP factor except the newest one, without checking that a new factor was actually enrolled during the round-trip or recording which factors existed beforehand. A user with multiple TOTP devices who starts enrollment but reaches the callback without a new factor being added (e.g. the enrollment Action is skipped or misconfigured) will have an existing, still-used device deleted with no recovery."
+    },
+    {
+      "id": "F26",
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.ts",
+      "line": 189,
+      "claim": "Superseded TOTP methods are deleted one await at a time inside the callback request even though the deletes don't depend on each other, so using Promise.all or allSettled would both speed this up and prevent one failure from leaving the rest undeleted."
+    },
+    {
+      "id": "F27",
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.ts",
+      "line": 186,
+      "claim": "The expression a.created_at as string casts away an optional type after a separate .some() guard rather than narrowing it properly, for example by mapping to a normalized object after the guard or using a type predicate filter."
+    },
+    {
+      "id": "F28",
+      "file": "src/modules/auth/oidc/auth0/datasources/auth0-api.service.ts",
+      "line": 201,
+      "claim": "A Management API token with tenant-wide scope is stored in the shared Redis cache as plain text; it is worth confirming this storage approach is intentional, or alternatively keeping the token in memory only, since an in-flight request mechanism already exists for it."
+    },
+    {
+      "id": "F29",
+      "file": "src/modules/auth/oidc/auth0/datasources/auth0-api.service.ts",
+      "line": 33,
+      "claim": "This value is hardcoded rather than being sourced from configuration, which may make it harder to change across environments."
+    },
+    {
+      "id": "F30",
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.ts",
+      "line": 184,
+      "claim": "The created_at field used to sort factors is validated only as z.string(), so Date.parse can return NaN for malformed values, making the sort order arbitrary and risking that the wrong (still-in-use) device is identified as newest and kept while a valid one is deleted."
+    },
+    {
+      "id": "F31",
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.ts",
+      "line": 39,
+      "claim": "This section is becoming crowded and should be extracted into a separate types file for clarity."
+    }
+  ]
+}

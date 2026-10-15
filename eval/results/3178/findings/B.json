@@ -1,0 +1,35 @@
+{
+  "usd": 0.063234,
+  "findings": [
+    {
+      "file": "src/domain/common/entities/name.builder.ts",
+      "line": 24,
+      "claim": "Slicing faker's generated full name to NAME_MAX_LENGTH characters without trimming afterward can leave a trailing space when the cut lands right after a space, since about 23% of faker's full names (with prefixes/suffixes like Mrs., Dr., III, PhD) exceed 30 characters. Because NameSchema trims its input, the stored value then no longer equals the untrimmed builder output, causing intermittent test failures in name.builder.spec.ts, spaces.controller.e2e-spec.ts, and roughly 15 other builders that reuse nameBuilder(), and faker is not seeded in test/global-setup.ts so the failure isn't reproducible."
+    },
+    {
+      "file": "src/domain/common/schemas/name.schema.ts",
+      "line": 16,
+      "claim": "The name allowlist regex accepts strings that look blank or are visually deceptive, including sequences of U+3164 Hangul Filler characters, strings made only of combining marks, a single letter followed by many combining marks (zalgo text), punctuation-only strings like \"---\" or \"@@@\", and mixed-script lookalikes such as a Cyrillic \"А\" substituted for Latin \"A\" or full-width Latin letters. The previous regex required a letter or number at the start and between separators, so this is a behavior change; since member and address-book names are shown to other users in a space, blank-looking or lookalike names make it easier to impersonate a contact."
+    },
+    {
+      "file": "src/domain/common/schemas/name.schema.ts",
+      "line": 36,
+      "claim": "Length validation errors previously returned Zod codes too_small, too_big, and invalid_format, but now return code: 'custom', and the minimum-length error message wording changed to use \"character(s)\". Because ZodErrorFilter forwards the raw issue to API clients, any frontend or SDK that checks the specific error code will break without warning, and no test in the repository still asserts the old codes."
+    },
+    {
+      "file": "src/domain/common/schemas/name.schema.ts",
+      "line": 9,
+      "claim": "Stripping all Unicode Cc and Cf characters without replacing them with anything can join previously separated words and corrupt certain scripts: a newline-separated string like \"John\\nDoe\" becomes \"JohnDoe\", and removing ZWNJ (U+200C), which is required for correct Persian and Indic spelling, changes the rendering/meaning of words such as \"می‌خواهم\"."
+    },
+    {
+      "file": "src/domain/common/schemas/name.schema.ts",
+      "line": 40,
+      "claim": "The minimum-length and maximum-length validation messages use inconsistent wording (\"at least N character(s)\" versus \"at most N characters\"), which is an inconsistency in the user-facing error text."
+    },
+    {
+      "file": "src/domain/common/entities/name.builder.ts",
+      "line": 9,
+      "claim": "The comment states that every sample already meets the minimum length, yet the code still applies padEnd, so the comment and the code are inconsistent; the padding would become meaningful if the trailing-space trim fix is applied, but as written one of the two (the padding or the comment) is unnecessary."
+    }
+  ]
+}

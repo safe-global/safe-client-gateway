@@ -1,0 +1,35 @@
+{
+  "usd": 0.06726760000000001,
+  "findings": [
+    {
+      "file": ".github/workflows/ci.yml",
+      "line": 165,
+      "claim": "The build step in the PR test jobs was changed from `yarn run build` (which runs `nest build`, i.e. `tsc`) to plain `yarn generate-abis`, and nothing else in CI performs a full TypeScript compile since biome does not type-check and ts-jest only checks files that a spec actually imports."
+    },
+    {
+      "file": ".github/workflows/ci.yml",
+      "line": 238,
+      "claim": "Because jest's `roots` is scoped to `./src` and migration files are loaded by glob at runtime rather than imported by any spec, a type error in files such as `migrations/*.ts` (or any other untested `src` file) will pass PR CI and only be caught later by the `yarn run build` step in the Dockerfile during `docker-publish-staging`, after the change has already merged, leaving `main` broken and blocking the staging deploy."
+    },
+    {
+      "file": ".github/workflows/ci.yml",
+      "line": 291,
+      "claim": "QEMU was removed and the build platforms were narrowed to `linux/amd64` only for both the `:staging` and the public `:latest`/`:<tag>` release images, so consumers pulling the public image on arm64 (e.g. Apple Silicon developers, Graviton hosts, self-hosters) would get a 'no matching manifest' error."
+    },
+    {
+      "file": ".github/workflows/ci.yml",
+      "line": 17,
+      "claim": "The comment stating that `main` runs are 'never cancelled' is misleading: GitHub only keeps one queued run per concurrency group, so if three or more quick merges land, the middle commit's run can be cancelled before it starts, leaving that commit without a CI result or staging deploy, and `main` runs are now effectively serialized."
+    },
+    {
+      "file": ".github/workflows/ci.yml",
+      "line": 79,
+      "claim": "Using `setup-node` with `cache: 'yarn'` causes `.yarn/cache` to be restored in every job even when the `node_modules` cache already hits and the install step is skipped, wasting that restore work on every warm run."
+    },
+    {
+      "file": ".github/workflows/ci.yml",
+      "line": 83,
+      "claim": "The cache-plus-conditional-install block is duplicated four times across the workflow, and the cache key hard-codes `node24`/`node22` separately from the actual `node-version` value, so bumping the Node version in one place without updating the other leaves a stale cache key."
+    }
+  ]
+}

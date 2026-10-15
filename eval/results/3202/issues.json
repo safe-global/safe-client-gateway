@@ -1,0 +1,55 @@
+{
+  "usage": {
+    "usd": 0.4401902,
+    "turns": 10,
+    "wallSeconds": 62
+  },
+  "issues": [
+    {
+      "findings": [
+        "F4"
+      ],
+      "summary": "No integration test asserts the new counterfactual-Safe → 404 behaviour of /balances",
+      "label": "medium",
+      "evidence": "The working tree is at the base (7d6bca570), so I checked the merged PR commit 890a02e97 instead. Its squash message says the author added this test in a later round of review fixes, which means the reviewed version did not have it. Returning a 404 instead of Zerion data is a deliberate change users can see, and without a test a regression here could go unnoticed.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F3"
+      ],
+      "summary": "The features.counterfactualBalances / FF_COUNTERFACTUAL_BALANCES flag is dead but still present in config, the env sample, launch.json and the specs",
+      "label": "low",
+      "evidence": "At the base, the flag is only read in balances-api.manager.ts:49, and the PR removes that read. The flag is still defined in configuration.ts:430, .env.sample.json:663, .vscode/launch.json:18 and several specs. A later PR commit removed all of these, which confirms they were left behind.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F1",
+        "F6"
+      ],
+      "summary": "getApi keeps a required safeAddress parameter the implementation no longer uses, so callers and tests generate throwaway addresses",
+      "label": "low",
+      "evidence": "Once the Zerion/isSafe branch is gone, getApi only calls _getSafeBalancesApi(chainId). The safeAddress parameter in balances-api.manager.interface.ts:22 no longer does anything, and callers and specs still have to build fake addresses to pass it. This is a small maintainability cost, and the final commit dropped the parameter and those fake addresses.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F2"
+      ],
+      "summary": "The rawify wrapper in getFiatCodes is a redundant cast",
+      "label": "nit",
+      "evidence": "IPricesApi.getFiatCodes() already returns Promise<Raw<Array<string>>> (prices-api.interface.ts:19), so wrapping it in rawify again does nothing at runtime. The final version returns the result directly (balances-api.manager.ts:46-47).",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F5"
+      ],
+      "summary": "The 'getApi checks' describe block name is stale now that there is no Zerion routing",
+      "label": "nit",
+      "evidence": "Only the test's name is affected, not its behaviour. The author later renamed the block to 'SafeBalancesApi routing'.",
+      "category": "style"
+    }
+  ]
+}

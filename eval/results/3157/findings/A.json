@@ -1,0 +1,20 @@
+{
+  "usd": 0.045933600000000005,
+  "findings": [
+    {
+      "file": "src/modules/safe/routes/v2/safes.v2.service.ts",
+      "line": 42,
+      "claim": "The class field this.zerionEnabled (a global feature flag) now has the same name as the zerionEnabled argument of resolveFiatBalance, which represents a different, per-chain eligibility check. Before the rename these were distinguishable as zerionBalancesEnabled vs zerionEnabled, and a future edit could substitute one for the other without a type error, silently skipping the per-chain check; the argument should be renamed (e.g. isZerionEligible or useZerionPortfolio) or the field renamed to something more specific like isZerionFeatureEnabled."
+    },
+    {
+      "file": "src/config/entities/configuration.ts",
+      "line": 409,
+      "claim": "Removing the legacy FF_ZERION_BALANCES_CHAIN_IDS fallback is a breaking change to the deployment contract: any environment that only sets the legacy variable will silently have Zerion disabled after deploy. The PR description should state that operators must set FF_ZERION_ENABLED, and the infra/helm values for every environment should be checked to confirm they already use the new variable name."
+    },
+    {
+      "file": "src/modules/balances/datasources/balances-api.manager.spec.ts",
+      "line": 81,
+      "claim": "Several test specs set features.zerionEnabled even though the code under test never reads that flag (the only production reader is SafesV2Service, and balances-api.manager.ts has no reference to it), making these overrides dead setup that could mislead readers and should be cleaned up in a separate PR."
+    }
+  ]
+}

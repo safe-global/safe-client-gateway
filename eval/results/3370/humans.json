@@ -1,0 +1,24 @@
+{
+  "usd": 0.3328274,
+  "head": "bf0ef89a325e62642775917553a52671d23c6c1f",
+  "verdicts": [
+    {
+      "issue": 6,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "The author turned down the rename in the 2026-08-20 16:25 comment (\"Code review #4 — naming. Declining…\"), citing R-017 and the deliberate Transaction-Service scoping. `mapBannedSafeError` is still the name at HEAD in src/datasources/errors/helpers/banned-safe.helper.ts:36."
+    },
+    {
+      "issue": 7,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "In the safe-balances-api.service.ts:109 thread, the author argued against a status→message table: it would be a speculative abstraction, and the codebase has no such maps. PooyaRaki asked nothing further and the thread was resolved. No MESSAGE_BY_STATUS was added, and HEAD still calls `mapBannedSafeError` at safe-balances-api.service.ts:109/181/221."
+    },
+    {
+      "issue": 8,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "The author agreed in the safes.controller.integration.spec.ts:2424 thread. Commit e310c2c changed the 13 NetworkResponseError sites this PR adds to use `new Response(null, { status })`. The cast was already there at b89c2025, around line 2423 of that spec."
+    }
+  ]
+}

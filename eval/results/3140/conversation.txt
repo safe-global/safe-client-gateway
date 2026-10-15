@@ -1,0 +1,243 @@
+THREAD .github/workflows/ci.yml:88 resolved=true
+[LucieFaire 2026-06-18T12:22:27Z] in pair with what Clovis mentioned:
+The cache is keyed on `hashFiles('yarn.lock')` and `yarn install --immutable` is
+skipped on a hit. Two concerns:
+
+1. **Skipped integrity check.** On a cache hit we never run `yarn install
+   --immutable`, so the lockfile-vs-contents verification never happens. Whatever
+   is in the cached `node_modules` is trusted as-is and then executed by
+   `yarn generate-abis` / the test run — in jobs that hold `secrets.GITHUB_TOKEN`
+   and `secrets.SAFE_CONFIG_BASE_URI`.
+
+2. **Cache poisoning.** Anyone who can push a branch (collaborator / compromised
+   account) can write a cache entry. Tampering with `node_modules` while keeping
+   `yarn.lock` byte-identical produces the same key, which then gets restored on
+   other branches and on `main`.
+
+`setup-node` already does `cache: 'yarn'` (the download cache). Suggest dropping
+the `node_modules` cache and keeping an unconditional `yarn install --immutable` —
+it's fast on a warm download cache and preserves the integrity check. Trades a bit
+of speed for removing the poisoning + integrity-skip vector.
+
+REVIEW COMMENTED
+[clovisdasilvaneto 2026-06-08T09:54:21Z] I see now we are caching the node_modules could you explain me how the cache will be invalidated when we update or add new dependencies? Which strategy is it going to use?
+
+COMMENT
+[PooyaRaki 2026-06-15T08:18:54Z] @clovisdasilvaneto 
+``` bash
+key: node-modules-${{ runner.os }}-node24-${{ hashFiles('yarn.lock') }}
+```
+The last part - hashing the lock file - is how we invalidate the cache. So if you add a new dep the hash would be different as a result the cache would be invalidated.
+
+COMMENT
+[LucieFaire 2026-06-18T12:17:20Z] @claude review
+
+COMMENT
+[claude 2026-06-18T12:17:37Z] **Claude finished @LucieFaire's task in 1m 47s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/27758831596)
+
+---
+### Claude PR Review
+
+- [x] Load context
+- [x] Read `.github/workflows/ci.yml`
+- [x] Analyze the diff
+- [x] Post review feedback
+
+---
+
+Nice cleanup — the dedup/cache/single-arch wins are solid. A few things worth tightening before merge:
+
+### Things to improve
+
+**1. Dropping `nest build` removes TypeScript type-coverage on PRs**
+`yarn build` was `generate-abis && nest build`; the new step is just `generate-abis`. Jest with `ts-jest` only type-checks files transitively imported by tests, so type errors in code paths not exercised by tests (e.g. a new controller wired into a module but with no spec) will now only surface on the staging Docker build — which runs **only on `main`**. That regresses the PR safety net.
+
+Cheap fix: add an explicit `yarn run tsc --noEmit` (or `yarn nest build` retained for one job only) to either `biome` or `unit-tests`. Type-checking is fast and doesn't need the test fixture services. `ci.yml:168`, `ci.yml:239`.
+
+**2. Redundant `if:` on `docker-publish-staging`**
+```yaml
+if: (github.event_name == 'push' && github.ref == 'refs/heads/main')
+```
+The `push:` trigger is now scoped to `branches: [main]`, so the `github.ref` check is dead weight. Simplify to `if: github.event_name == 'push'`. `ci.yml:276`.
+
+**3. Cache miss = full reinstall (no `restore-keys`)**
+Any `yarn.lock` change busts the cache completely. Adding a partial restore key lets yarn install only what's new instead of relinking from scratch:
+```yaml
+key: node-modules-${{ runner.os }}-node24-${{ hashFiles('yarn.lock') }}
+restore-keys: |
+  node-modules-${{ runner.os }}-node24-
+```
+Note: when restoring a partial hit you must still run `yarn install --immutable` (which the existing `if: steps.node-modules.outputs.cache-hit != 'true'` already does — `cache-hit` is only `true` on an exact key match, so this composes correctly). Applies to all four caching jobs. `ci.yml:85-90`, `ci.yml:101-108`, `ci.yml:157-164`, `ci.yml:230-237`.
+
+**4. `postinstall: yarn generate-abis` interaction with the cache**
+`generate-abis` writes to `abis/` (per the `@/abis` moduleNameMapper, `<rootDir>/abis`), which is **outside** the cached `node_modules`. On a warm cache, `yarn install` is skipped, so the postinstall hook is skipped too — which is why you correctly added an explicit `yarn generate-abis` to the test jobs. Confirm that `env-validation` and `biome` truly never touch `@/abis` (they look fine today, but worth a one-line check at review time so a future import doesn't silently break biome on a warm-cache run). `ci.yml:91`, `ci.yml:109-110`.
+
+**5. Concurrency on releases**
+`cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}` evaluates to `true` for tag refs, so two overlapping releases could cancel each other mid-Docker-push. Rare, but if you want to be defensive:
+```yaml
+cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+```
+`ci.yml:22`.
+
+### Looks good
+
+- Push-trigger scoping + concurrency group correctly avoids double-runs on PRs while protecting `main` deploys.
+- Cache key includes Node major — prevents node22/node24 native-module collisions.
+- arm64 drop is reasonable given amd64-only production, and native amd64 build will be much faster than QEMU.
+ • Branch: [`ci/speed-improvements`](https://github.com/safe-global/safe-client-gateway/tree/ci/speed-improvements)
+
+COMMENT
+[datadog-official 2026-06-18T12:21:39Z] <a target='_blank' href='https://app.datadoghq.eu/ci/pipeline-executions?query=ci_level%3Ajob+%40ci.status%3Aerror+%40git.commit.sha%3Acda62e3b44b765af94c8696b2e043833f0e097d7&referrer=pr-comment'><picture><source media="(prefers-color-scheme: dark)" srcset="https://static.datadoghq.com/static/images/pr_comments/software_delivery/badges_header/pipelines-warning.svg"/><img src="https://static.datadoghq.com/static/images/pr_comments/software_delivery/badges_header/pipelines-warning-light.svg" alt="Pipelines" align="center" /></picture></a>
+
+## ⚠️ Warnings
+
+🚦 **2 Pipeline jobs failed**
+
+<blockquote>
+<div>
+
+<code> CI | integration-tests </code> &nbsp;&nbsp;<a href="https://app.datadoghq.eu/ci/pipeline-executions?query=ci_level%3Ajob&#43;ci.job_correlation_id%3A7d1de11644ba6670&amp;referrer=pr-comment" title="View in Datadog"><img src="https://static.datadoghq.com/static/images/pr_comments/software_delivery/datadog_icon.svg" alt="View in Datadog" align="center" /></a> &nbsp; <a href="https://github.com/safe-global/safe-client-gateway/actions/runs/27824084038/job/82343971555" title="View in GitHub Actions"><picture><source media="(prefers-color-scheme: dark)" srcset="https://static.datadoghq.com/static/images/pr_comments/software_delivery/logos/github-logo-dark.svg"/><img src="https://static.datadoghq.com/static/images/pr_comments/software_delivery/logos/github-logo-light.svg" alt="GitHub Actions" align="center" /></picture></a>
+
+
+<code> CI | unit-tests </code> &nbsp;&nbsp;<a href="https://app.datadoghq.eu/ci/pipeline-executions?query=ci_level%3Ajob&#43;ci.job_correlation_id%3A9647d0ceef439f66&amp;referrer=pr-comment" title="View in Datadog"><img src="https://static.datadoghq.com/static/images/pr_comments/software_delivery/datadog_icon.svg" alt="View in Datadog" align="center" /></a> &nbsp; <a href="https://github.com/safe-global/safe-client-gateway/actions/runs/27824084038/job/82343971569" title="View in GitHub Actions"><picture><source media="(prefers-color-scheme: dark)" srcset="https://static.datadoghq.com/static/images/pr_comments/software_delivery/logos/github-logo-dark.svg"/><img src="https://static.datadoghq.com/static/images/pr_comments/software_delivery/logos/github-logo-light.svg" alt="GitHub Actions" align="center" /></picture></a>
+
+</div>
+</blockquote>
+
+<sub>
+This comment will be updated automatically if new data arrives. <br />
+🔗 Commit SHA: cda62e3 | <a href="https://docs.datadoghq.com/integrations/guide/source-code-integration/#pr-comments">Docs</a> | Give us <a href="https://forms.gle/ys6MDmdQEeC5pkzWA">feedback</a>!
+</sub>
+
+COMMENT
+[LucieFaire 2026-06-18T12:31:17Z] hm I wonder if because of these improvements - the tests are failing? DB seems to not have the latest migrations
+
+COMMENT
+[PooyaRaki 2026-06-19T11:53:42Z] → AI review thread:
+
+  Validated each point against the repo — outcomes below. Changes in cda62e3b.
+
+  **1. Type coverage — valid, fixed.** Confirmed `nest build` was a real type-check: `nest-cli.json` sets no builder, so it defaults to tsc and compiled the whole program. ts-jest only checks files a test imports, so dropping it did lose PR-wide type checking. Added an explicit
+  no-emit check to the `biome` job: `yarn generate-abis` + `yarn tsc --noEmit -p tsconfig.build.json` (same scope `nest build` covered — prod `src`, specs stay on ts-jest). Verified locally: passes, ~4s, no DB/services needed.
+
+  **2. Redundant `if` — keeping it intentionally.** Correct that `on.push.branches: [main]` already makes it redundant today. But this job pushes the `:staging` image and chains into `autodeploy`, so I'd rather it stay self-guarding if the push trigger is ever broadened. Left the ref
+  check in with a comment explaining why.
+
+  **3. `restore-keys` — moot.** We went the other way on caching (see the security thread): the `node_modules` cache is removed entirely, so there's nothing to add restore-keys to.
+
+  **4. postinstall/abis — confirmed.** `abis/` is generated, not committed; `biome` (static lint) and `env:validate` never resolve `@/abis`, so they don't need it. Note `enableScripts: false` means the `postinstall` hook doesn't auto-run on install anyway, so the explicit
+  `generate-abis` in the test jobs is required, not just warm-cache insurance.
+
+  **5. Release concurrency — no change.** The group is keyed on `github.ref`, so two different release tags land in different concurrency groups and can't cancel each other. The only shared-group case is re-running the same tag. Current config is correct.
+
+  → @clovisdasilvaneto  & @LucieFaire (cache security) thread:
+
+  The integrity-skip concern is valid — and sharper than it first looks. `enableHardenedMode` only runs during `yarn install`, so caching the linked `node_modules` and skipping install on a hit silently bypasses the supply-chain verification we explicitly opted into. The `cache:
+  'yarn'` download cache is different — yarn checksum-verifies it against the lockfile on install — so it's not trusted as-is the way `node_modules` is.
+
+  One correction on the poisoning path: GitHub Actions cache is branch-scoped. `main` (default branch) restores only caches written on `main`, and writing those needs merge access; a feature-branch cache doesn't propagate to `main` or to sibling branches. So the "restored on other
+  branches and on main" route doesn't actually hold. Doesn't change the conclusion though.
+
+  Took the recommendation (cda62e3b): removed the `node_modules` cache from all four jobs, kept `setup-node` `cache: 'yarn'` + an unconditional `yarn install --immutable`. Tarball downloads stay cached (the expensive part), and hardened-mode verification now runs on every job. I'll
+  check the warm-cache install time in the first run to confirm the speed cost is small.
+
+COMMENT
+[PooyaRaki 2026-06-19T11:53:51Z] @claude review again
+
+COMMENT
+[claude 2026-06-19T11:54:09Z] **Claude finished @PooyaRaki's task in 2m 3s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/27824142522)
+
+---
+### Claude PR Review (round 2)
+
+- [x] Load context
+- [x] Read `.github/workflows/ci.yml` (post-`cda62e3`)
+- [x] Re-verify prior review thread resolutions
+- [x] Spot-check `tsconfig.build.json`, `.yarnrc.yml`, `package.json`
+- [x] Post review feedback
+
+---
+
+The follow-up commit cleanly addresses both prior review threads. Verified each:
+
+- **Supply-chain integrity** — `.yarnrc.yml` has `enableHardenedMode: true` and `enableScripts: false`. Dropping the `node_modules` cache restores hardened-mode verification on every job, and confirms why the explicit `yarn generate-abis` in the test jobs is required (postinstall doesn't auto-run with `enableScripts: false`). Correct call.
+- **PR type-check** — `tsconfig.build.json` excludes `test`, `**/*spec.ts`, `**/__tests__/*`, so `tsc --noEmit -p tsconfig.build.json` covers exactly what `nest build` covered (production `src`). Specs stay on ts-jest. Good scope match.
+- **Redundant `if:` on `docker-publish-staging`** — keeping it self-guarding with the explanatory comment is reasonable.
+- **Release concurrency** — group is keyed on `github.ref`, so two different tags are in different groups. Correct.
+
+### Minor nits (non-blocking)
+
+**1. `biome` job is now lint + format + type-check, with sequential failures**
+`format-check` → `lint-check` → `generate-abis` → `tsc --noEmit` runs serially. A format error blocks the type-check from ever surfacing, so a dev fixes formatting, pushes, then discovers a type error on the next run. Cheap fix: split `tsc --noEmit` into its own job (`type-check`) so both signals come back from the same push. Optional — keeps PR feedback latency lower at the cost of one more job. `ci.yml:88-105`.
+
+**2. `tsconfig.json` has `"incremental": true` but no `.tsbuildinfo` cache**
+Each `tsc --noEmit` run writes `.tsbuildinfo` that is then discarded. Wasted disk writes only — negligible — but worth noting if you ever want to cache the incremental file across runs to speed up the type-check. `tsconfig.json:14`.
+
+**3. `yarn generate-abis` now runs in three jobs**
+It's a `node ./scripts/generate-abis.js` invocation — presumably fast — but if it grows you could cache `abis/` keyed on the source it derives from. Skip unless it shows up in CI timing.
+
+### Looks good
+
+- Trigger scoping + concurrency configuration is correct: PRs run once, in-flight `main` deploys are protected, releases are isolated by ref.
+- Removing the `node_modules` cache for supply-chain integrity is the right tradeoff — the `setup-node` yarn download cache still keeps tarball fetching off the hot path.
+- Type-check scope (`tsconfig.build.json`) matches the original `nest build` exactly. No coverage regression on PRs.
+- amd64-only Docker builds drop QEMU overhead and match production. Good.
+ • Branch: [`ci/speed-improvements`](https://github.com/safe-global/safe-client-gateway/tree/ci/speed-improvements)
+
+COMMENT
+[PooyaRaki 2026-06-19T12:17:17Z] Addressed the round-2 nits — keeping all three as-is, reasoning below:
+  
+  1. Splitting tsc --noEmit into its own type-check job
+
+  Holding off on this one. This branch's goal is to cut pipeline runtime, and a separate job re-pays the expensive setup (checkout + setup-node + yarn install --immutable) just to move one tsc step. The current ordering is also intentionally fail-fast: the near-instant
+  format-check/lint-check gate the slower generate-abis + tsc, so most failing PRs never burn runner minutes on the type-check. The masking case (format error hides a type error) is low-probability since format issues are auto-fixable and caught by pre-commit locally. Net runner cost
+  outweighs the DX gain here — happy to revisit if format-masking actually bites in practice.
+
+  2. incremental: true without a .tsbuildinfo cache
+
+  incremental is there for the production nest build, not CI. On a fresh CI checkout the build-info file lands in dist/ and is discarded — negligible, as noted. Caching it across runs adds a source-keyed cache for marginal gain (cold cache on every first PR push regardless), and
+  dropping incremental would penalize the real build. Leaving it.
+
+  3. yarn generate-abis across three jobs
+
+  It's a fast synchronous node ./scripts/generate-abis.js — reads JSON from node_modules/@safe-global/safe-deployments and writes abis/safe. Won't show up in CI timing, so skipping the abis/ cache to avoid the key-management overhead.
+
+  All three are non-blocking; no functional changes this round.
+
+COMMENT
+[PooyaRaki 2026-06-19T12:34:03Z] @claude review again
+
+COMMENT
+[claude 2026-06-19T12:34:15Z] **Claude finished @PooyaRaki's task in 1m 11s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/27825966285)
+
+---
+### Claude PR Review (round 3)
+
+- [x] Load context
+- [x] Read `.github/workflows/ci.yml` (post-`7a7c9f2`)
+- [x] Verify round-2 reasoning + migrations fix
+- [x] Post final review
+
+---
+
+Verified the current state. The new commit `7a7c9f2` correctly fixes the integration-tests breakage — `postgres.config.ts:53` reads `dist/migrations/*.js`, so `generate-abis` alone leaves migrations unloaded. Restoring `yarn build` for that job only is the right scope.
+
+Your round-2 responses all check out:
+
+1. **Single `biome` job for lint + format + type-check** — fail-fast ordering is intentional and the runner-cost argument is fair; not worth splitting.
+2. **`incremental: true`** — production-build setting, CI ignores it. Fine to leave.
+3. **`generate-abis` × 3 jobs** — trivially fast; caching `abis/` would be premature.
+
+### One small observation (non-blocking)
+
+With `yarn build` restored in `integration-tests`, that job now does a full `nest build` (tsc compile). `biome` also does `tsc --noEmit -p tsconfig.build.json`. Both run in parallel so no wall-clock cost — but `biome` finishes much earlier and gives the fail-fast type-error signal, which is exactly what you want. No change recommended; just noting the overlap is intentional and useful.
+
+### Looks good
+
+- Trigger scoping, concurrency group, and supply-chain integrity (`yarn install --immutable` unconditional) are all correctly configured.
+- Type-check coverage on PRs is restored via `biome` (`tsc --noEmit -p tsconfig.build.json`) — matches what `nest build` covered before.
+- `integration-tests` correctly uses `yarn build` for migrations; `unit-tests` correctly stays on `generate-abis` since it doesn't need `dist/`.
+- amd64-only Docker build is the right call for amd64-only production.
+
+LGTM — ship it.
+ • Branch: [`ci/speed-improvements`](https://github.com/safe-global/safe-client-gateway/tree/ci/speed-improvements)

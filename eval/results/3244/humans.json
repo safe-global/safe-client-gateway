@@ -1,0 +1,30 @@
+{
+  "usd": 0.35110060000000004,
+  "head": "02ece294ef4fd5a30c0a9bb7769db442b745f063",
+  "verdicts": [
+    {
+      "issue": 5,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "yagopv answered \"nope only taskId\", meaning Rhinestone only returns taskId, so no createdAt is built on purpose. Later commit 5cd2a5ca5 removed the optional createdAt field from RelayTaskStatusSchema instead of filling it in."
+    },
+    {
+      "issue": 8,
+      "verdict": "accepted",
+      "present": false,
+      "evidence": "yagopv agreed to remove it and replied \"done\". Commit c38d09663 \"fix: Remove cURL from LOG\" (2026-07-10) came before 9a6867a, whose formatError logs only the status and response body; 8de90a6ee later dropped the body too."
+    },
+    {
+      "issue": 11,
+      "verdict": "accepted",
+      "present": false,
+      "evidence": "yagopv replied \"done\". Commit 124bdcaf4 (before 9a6867a) updated docker-compose.yml, and line 76 at 9a6867a already has RELAY_PROVIDER_API_KEY."
+    },
+    {
+      "issue": 18,
+      "verdict": "accepted",
+      "present": false,
+      "evidence": "yagopv replied \"done\". Commit 10136bf86 \"fix: Remove Gelato info\" came before 9a6867a, and `git grep -i gelato` finds nothing at either 9a6867a or HEAD."
+    }
+  ]
+}

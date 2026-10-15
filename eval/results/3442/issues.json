@@ -1,0 +1,156 @@
+{
+  "usage": {
+    "usd": 0.583484,
+    "turns": 9,
+    "wallSeconds": 83
+  },
+  "issues": [
+    {
+      "findings": [
+        "F9",
+        "F15",
+        "F22",
+        "F23"
+      ],
+      "summary": "The HALF_OPEN slot counter is released by any success or failure recorded while HALF_OPEN, including late results from requests that never took a slot in the current window, so the cap can be exceeded",
+      "label": "medium",
+      "evidence": "circuit-breaker.service.ts:247-252 decrements whenever recordSuccess/recordFailure (292-299, 384-386) runs in HALF_OPEN, and the counter is reset to 0 at 267 and 461. A request admitted while CLOSED, or in an earlier window, that finishes in a new window frees a slot it never held, so more than ceil(threshold×rate/100) probes can be in flight. That is what the PR is meant to prevent. The overshoot is bounded because late failures still count toward reopening.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F8",
+        "F3",
+        "F12"
+      ],
+      "summary": "The comment says 'one round of probes is always enough to reach a verdict either way', but closing needs threshold consecutive successes while at most the effective failure threshold can be in flight, so closing takes several rounds and gets slower as the half-open rate is lowered",
+      "label": "low",
+      "evidence": "circuit-breaker.service.ts:311 closes only when consecutiveSuccesses >= config.threshold (10), while the cap from getEffectiveFailureThreshold is 3 with the defaults, so closing takes at least 4 rounds. The comment at ~209 and configuration.ts:550-552 only describe the reopen side. This is a documentation mismatch plus a slightly slower close, not a correctness bug.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F17",
+        "F19"
+      ],
+      "summary": "canProceed/canProceedOrFail now reserve a HALF_OPEN slot as a side effect, but their name and JSDoc still describe a read-only check",
+      "label": "low",
+      "evidence": "The JSDoc at circuit-breaker.service.ts:84-93 and 110-115 still says only 'false if circuit is open', while line 105 now increments halfOpenInFlight. The only caller, network.module.ts:142-156, records a result on every path after admission, so the leak F17 describes is only a risk for future callers.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F6",
+        "F25"
+      ],
+      "summary": "No network-wrapper integration test covers HALF_OPEN probe admission and slot release end to end",
+      "label": "low",
+      "evidence": "network.module.integration.spec.ts has no HALF_OPEN case. Slot release depends on the wrapper at network.module.ts:142-156 calling record* on every completion path, which it currently does, and the service-level spec covers the cap itself. The remaining gap is modest.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F10"
+      ],
+      "summary": "The isStale branch for a missing lastActivityTime is now unreachable, and the test that covered it was removed",
+      "label": "low",
+      "evidence": "Circuits are created only through recordFailure (circuit-breaker.service.ts:377), which sets lastActivityTime at line 392 synchronously, so the check at line 537 can never be true. The base spec's 'should remove zero-failure circuits as stale' test was removed in this diff.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F26"
+      ],
+      "summary": "The ARCHITECTURE.md formula for the probe cap leaves out the ceil rounding the code applies",
+      "label": "low",
+      "evidence": "ARCHITECTURE.md:260 says 'threshold × halfOpenFailureRateThreshold / 100', while circuit-breaker.service.ts:351 uses Math.ceil. For example, threshold 5 with rate 30 gives a cap of 2, not 1.5. The PR body itself uses ceil.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F4"
+      ],
+      "summary": "Every rejected HALF_OPEN request logs at warn level, which can be noisy during incidents",
+      "label": "low",
+      "evidence": "circuit-breaker.service.ts:228 warns per rejected request. This mirrors the existing per-request OPEN warn at line 192, so it adds volume only during HALF_OPEN windows and follows established practice.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F18"
+      ],
+      "summary": "The PR title uses feat, but the change corrects HALF_OPEN behaviour",
+      "label": "low",
+      "evidence": "docs/agents/commits-and-prs.md:34 defines fix as 'a behavior correction', and the PR frames this as the correction behind an outage. That fits fix better than feat (line 33). The only cost is release-note and history filtering.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F1",
+        "F5",
+        "F13",
+        "F14",
+        "F21"
+      ],
+      "summary": "The lazy-registration refactor (recordFailure registers circuits, getOrRegisterCircuit made private, network.module call dropped, recordSuccess gated on enabled) is bundled with the probe cap",
+      "label": "nit",
+      "evidence": "The PR description explicitly lists 'lazy registration from recordFailure' and the network.module.ts drop, so the change is called out, and the pieces are small and coherent (circuit-breaker.service.ts:135, 292, 372-377). Whether to split the PR is a process preference; no defect follows from bundling.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F11",
+        "F20"
+      ],
+      "summary": "The new recordSuccess test uses the literal 'new-circuit' instead of the faker-backed circuitName",
+      "label": "nit",
+      "evidence": "circuit-breaker.service.spec.ts:485 is a new test that follows the pre-existing 'new-circuit' literals at 474-493. The value does not affect the assertion, so this is only a style inconsistency.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F24"
+      ],
+      "summary": "The edited deleteAll test keeps the literal 'circuit-1'/'circuit-2' names",
+      "label": "nit",
+      "evidence": "circuit-breaker.service.spec.ts:417-425 uses literal names as opaque keys. The assertions do not depend on the values, so this is style only.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F2"
+      ],
+      "summary": "faker.string.alphanumeric() with no length produces a 1-character shared circuit name",
+      "label": "nit",
+      "evidence": "circuit-breaker.service.spec.ts:15 does default to length 1, but every test builds a fresh service and no test uses a single-character literal name. The collision is hypothetical.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F7"
+      ],
+      "summary": "The getRegisteredCircuit JSDoc describes the seeding pattern, not only what the helper does",
+      "label": "nit",
+      "evidence": "circuit-breaker.service.spec.ts:58-60 explains why tests record a failure before calling the helper. It describes the usage pattern around the helper rather than misstating the helper's behaviour, so the wording is at most slightly loose.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F27"
+      ],
+      "summary": "The suite-wide switch to vi.useFakeTimers() mixes an unrelated test-infrastructure change into the diff",
+      "label": "nit",
+      "evidence": "circuit-breaker.service.spec.ts:18-28 replaces the old done-callback, real-timer tests suite-wide. That is a coherent cleanup that the new timing-dependent probe tests benefit from; scoping it differently is a preference.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F16"
+      ],
+      "summary": "The claim is that the double use of getEffectiveFailureThreshold as both probe cap and reopen threshold is undocumented",
+      "label": "wrong",
+      "evidence": "The JSDoc of canProceedInHalfOpenState (circuit-breaker.service.ts:204-214) states that it admits only 'fewer probes ... than the number of failures that would re-open the circuit (see getEffectiveFailureThreshold)'. configuration.ts and .env.sample.json document the coupling too.",
+      "category": "docs"
+    }
+  ]
+}

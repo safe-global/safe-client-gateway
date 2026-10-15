@@ -1,0 +1,295 @@
+{
+  "prs": 60,
+  "human": {
+    "counts": {
+      "prsWithHumanComments": 31,
+      "humanIssues": 84,
+      "notAtReviewSha": 8,
+      "accepted": 57,
+      "rejected": 26,
+      "open": 1,
+      "strict": 50,
+      "broad": 51,
+      "cOnlyIssues": 150,
+      "cOnlyAccepted": 57
+    },
+    "strict": {
+      "A": {
+        "n": 50,
+        "hit": 11,
+        "rate": 0.22
+      },
+      "B": {
+        "n": 50,
+        "hit": 4,
+        "rate": 0.08
+      },
+      "C": {
+        "n": 34,
+        "hit": 4,
+        "rate": 0.11764705882352941
+      },
+      "D": {
+        "n": 24,
+        "hit": 0,
+        "rate": 0
+      }
+    },
+    "broad": {
+      "A": {
+        "n": 51,
+        "hit": 11,
+        "rate": 0.21568627450980393
+      },
+      "B": {
+        "n": 51,
+        "hit": 4,
+        "rate": 0.0784313725490196
+      },
+      "C": {
+        "n": 34,
+        "hit": 4,
+        "rate": 0.11764705882352941
+      },
+      "D": {
+        "n": 25,
+        "hit": 0,
+        "rate": 0
+      }
+    },
+    "withC": {
+      "A": {
+        "n": 91,
+        "hit": 6,
+        "rate": 0.06593406593406594
+      },
+      "B": {
+        "n": 91,
+        "hit": 3,
+        "rate": 0.03296703296703297
+      },
+      "C": {
+        "n": 91,
+        "hit": 61,
+        "rate": 0.6703296703296703
+      },
+      "D": {
+        "n": 48,
+        "hit": 0,
+        "rate": 0
+      }
+    },
+    "withCHumanOnly": {
+      "A": {
+        "n": 34,
+        "hit": 6,
+        "rate": 0.17647058823529413
+      },
+      "B": {
+        "n": 34,
+        "hit": 3,
+        "rate": 0.08823529411764706
+      },
+      "C": {
+        "n": 34,
+        "hit": 4,
+        "rate": 0.11764705882352941
+      },
+      "D": {
+        "n": 23,
+        "hit": 0,
+        "rate": 0
+      }
+    }
+  },
+  "findings": {
+    "A": {
+      "prs": 60,
+      "findings": 485,
+      "issues": 367,
+      "issuesPerPr": 6.116666666666666,
+      "validIssues": 198,
+      "validPerPr": 3.3,
+      "medium": 34,
+      "validShare": 0.5395095367847411,
+      "nitShare": 0.3869209809264305,
+      "wrongShare": 0.05449591280653951,
+      "usdPerPr": 0.9867250433333331
+    },
+    "B": {
+      "prs": 60,
+      "findings": 431,
+      "issues": 349,
+      "issuesPerPr": 5.816666666666666,
+      "validIssues": 258,
+      "validPerPr": 4.3,
+      "medium": 61,
+      "validShare": 0.7392550143266475,
+      "nitShare": 0.166189111747851,
+      "wrongShare": 0.06303724928366762,
+      "usdPerPr": 4.0396722899999995
+    },
+    "C": {
+      "prs": 40,
+      "findings": 256,
+      "issues": 222,
+      "issuesPerPr": 5.55,
+      "validIssues": 84,
+      "validPerPr": 2.1,
+      "medium": 17,
+      "validShare": 0.3783783783783784,
+      "nitShare": 0.3963963963963964,
+      "wrongShare": 0.2072072072072072,
+      "usdPerPr": null
+    },
+    "D": {
+      "prs": 25,
+      "findings": 73,
+      "issues": 69,
+      "issuesPerPr": 2.76,
+      "validIssues": 32,
+      "validPerPr": 1.28,
+      "medium": 5,
+      "validShare": 0.463768115942029,
+      "nitShare": 0.3188405797101449,
+      "wrongShare": 0.21739130434782608,
+      "usdPerPr": null
+    },
+    "E": {
+      "prs": 60,
+      "findings": 88,
+      "issues": 84,
+      "issuesPerPr": 1.4,
+      "validIssues": 15,
+      "validPerPr": 0.25,
+      "medium": 5,
+      "validShare": 0.17857142857142858,
+      "nitShare": 0.4642857142857143,
+      "wrongShare": 0.32142857142857145,
+      "usdPerPr": null
+    }
+  },
+  "combos": {
+    "A+B": {
+      "prs": 60,
+      "human": {
+        "n": 50,
+        "hit": 12
+      },
+      "issues": 571,
+      "validIssues": 349,
+      "validShare": 0.6112084063047285,
+      "validPerPr": 5.816666666666666
+    },
+    "A+C": {
+      "prs": 40,
+      "human": {
+        "n": 34,
+        "hit": 9
+      },
+      "issues": 430,
+      "validIssues": 184,
+      "validShare": 0.42790697674418604,
+      "validPerPr": 4.6
+    },
+    "B+C": {
+      "prs": 40,
+      "human": {
+        "n": 34,
+        "hit": 6
+      },
+      "issues": 416,
+      "validIssues": 226,
+      "validShare": 0.5432692307692307,
+      "validPerPr": 5.65
+    },
+    "A+B+C": {
+      "prs": 40,
+      "human": {
+        "n": 34,
+        "hit": 9
+      },
+      "issues": 560,
+      "validIssues": 277,
+      "validShare": 0.49464285714285716,
+      "validPerPr": 6.925
+    },
+    "A+D": {
+      "prs": 25,
+      "human": {
+        "n": 24,
+        "hit": 4
+      },
+      "issues": 189,
+      "validIssues": 96,
+      "validShare": 0.5079365079365079,
+      "validPerPr": 3.84
+    },
+    "B+D": {
+      "prs": 25,
+      "human": {
+        "n": 24,
+        "hit": 1
+      },
+      "issues": 191,
+      "validIssues": 120,
+      "validShare": 0.6282722513089005,
+      "validPerPr": 4.8
+    },
+    "A+B+D": {
+      "prs": 25,
+      "human": {
+        "n": 24,
+        "hit": 5
+      },
+      "issues": 273,
+      "validIssues": 155,
+      "validShare": 0.5677655677655677,
+      "validPerPr": 6.2
+    },
+    "C+D": {
+      "prs": 19,
+      "human": {
+        "n": 23,
+        "hit": 4
+      },
+      "issues": 146,
+      "validIssues": 52,
+      "validShare": 0.3561643835616438,
+      "validPerPr": 2.736842105263158
+    },
+    "A+C+D": {
+      "prs": 19,
+      "human": {
+        "n": 23,
+        "hit": 7
+      },
+      "issues": 237,
+      "validIssues": 100,
+      "validShare": 0.4219409282700422,
+      "validPerPr": 5.2631578947368425
+    },
+    "B+C+D": {
+      "prs": 19,
+      "human": {
+        "n": 23,
+        "hit": 4
+      },
+      "issues": 228,
+      "validIssues": 112,
+      "validShare": 0.49122807017543857,
+      "validPerPr": 5.894736842105263
+    },
+    "A+B+C+D": {
+      "prs": 19,
+      "human": {
+        "n": 23,
+        "hit": 7
+      },
+      "issues": 297,
+      "validIssues": 142,
+      "validShare": 0.4781144781144781,
+      "validPerPr": 7.473684210526316
+    }
+  }
+}

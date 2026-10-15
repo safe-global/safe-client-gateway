@@ -1,0 +1,133 @@
+{
+  "pr": 3157,
+  "title": "chore: rename zerionBalancesEnabled flag to zerion",
+  "description": "## Summary\n\n- Renames the `features.zerionBalancesEnabled` feature flag to `features.zerion` — it gates Zerion as a whole, not just balances. The `FF_ZERION_ENABLED` env var is unchanged.\n- Drops the legacy `FF_ZERION_BALANCES_CHAIN_IDS` env var fallback, plus its `.env.sample.json` and devcontainer entries. The flag is now driven solely by `FF_ZERION_ENABLED`.\n- Parses `FF_ZERION_ENABLED` as a strict boolean like the other `FF_*` flags: only the literal `true` (case-insensitive) enables it. Previously any non-empty value — including `false` or a carried-over chain-id list — enabled the flag.\n- Updates all consumers (`safes.v2.service`, portfolio v1 route guard) and affected specs, and adds parsing tests for the flag.\n\n⚠️ **Deploy note:** the flag now defaults to **off** when unset — Zerion is only enabled where `FF_ZERION_ENABLED=true` is set explicitly. Confirmed with InfraSec that `FF_ZERION_ENABLED=true` is already set on both staging and production, so the rollout ordering (env var first, then deploy) is satisfied and this can go out safely.\n\n## Out of scope (follow-up)\n\nConsolidating all Zerion gating behind `features.zerion` — replacing `features.zerionPositions` / `FF_ZERION_POSITIONS_DISABLED` and the per-chain `PORTFOLIO_ENDPOINT` / `balancesProvider.chainName` gates with the Zerion supported-chain list — is intentionally left for a follow-up PR.\n\n## Related\n\n- [WA-2750](https://linear.app/safe-global/issue/WA-2750/rename-zerionbalancesenabled-flag-to-zerionenabled) (part of [WA-2749](https://linear.app/safe-global/issue/WA-2749/refactor-balances-and-portfolio-endpoint-at-cgw))\n- Rebased on top of #3199 (per-chain Zerion eligibility), which now reads this flag via `resolveZerionEligibility` — the rename is applied there too.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "findings": [
+    {
+      "id": "F1",
+      "file": "src/modules/zerion/zerion-balances.controller.integration.spec.ts",
+      "line": 57,
+      "claim": "Setting `zerionEnabled: true` in this test has no real effect, since the flag doesn't govern the codepath being exercised, which is misleading about what the flag controls."
+    },
+    {
+      "id": "F2",
+      "file": "src/config/entities/configuration.ts",
+      "line": 409,
+      "claim": "Changing the parsing to `.toLowerCase() === 'true'` would change semantics versus main, since an unset variable would now default to false, so the deploy note should be updated to clarify that any environment currently just setting FF_ZERION_ENABLED to any value (carried over from the legacy chain-id list variable) would need to explicitly set it to FF_ZERION_ENABLED=true."
+    },
+    {
+      "id": "F3",
+      "file": "src/config/entities/configuration.ts",
+      "line": 409,
+      "claim": "The zerionEnabled flag is parsed using `!!process.env.FF_ZERION_ENABLED` while every other feature flag in the same block uses `.toLowerCase() === 'true'`, so any non-empty string including \"false\", \"0\", or \"no\" would enable the flag. The new name FF_ZERION_ENABLED implies boolean semantics, so operators setting it to false would be surprised that it still enables the feature."
+    },
+    {
+      "id": "F4",
+      "file": "src/config/entities/configuration.ts",
+      "line": 409,
+      "claim": "There is no test covering the mapping from the environment variable to the flag, so dropping the fallback again, or reintroducing it by accident, would not be caught by any test."
+    },
+    {
+      "id": "F5",
+      "file": "src/config/entities/configuration.ts",
+      "line": 409,
+      "claim": "Removing the legacy FF_ZERION_BALANCES_CHAIN_IDS fallback is a breaking change to the deployment contract: any environment that only sets the legacy variable will silently have Zerion disabled after deploy. The PR description should state that operators must set FF_ZERION_ENABLED, and the infra/helm values for every environment should be checked to confirm they already use the new variable name."
+    },
+    {
+      "id": "F6",
+      "file": ".env.sample.json",
+      "line": 754,
+      "claim": "The description \"Enable Zerion balances provider\" for the flag matches neither the flag's old scope nor its new, narrower scope, so it should be clarified or the flag should be renamed (e.g. `zerionPortfolio`) or made to actually gate the other Zerion paths."
+    },
+    {
+      "id": "F7",
+      "file": ".env.sample.json",
+      "line": 755,
+      "claim": "The entry sets defaultValue: true, which combined with the `!!` parsing means the flag is effectively always on in dev unless the env var is completely unset, which is misleading."
+    },
+    {
+      "id": "F8",
+      "file": "src/modules/safe/routes/v2/safes.v2.service.ts",
+      "line": 42,
+      "claim": "The class field this.zerionEnabled (a global feature flag) now has the same name as the zerionEnabled argument of resolveFiatBalance, which represents a different, per-chain eligibility check. Before the rename these were distinguishable as zerionBalancesEnabled vs zerionEnabled, and a future edit could substitute one for the other without a type error, silently skipping the per-chain check; the argument should be renamed (e.g. isZerionEligible or useZerionPortfolio) or the field renamed to something more specific like isZerionFeatureEnabled."
+    },
+    {
+      "id": "F9",
+      "file": "src/modules/balances/datasources/balances-api.manager.spec.ts",
+      "line": 81,
+      "claim": "The spec still mocks features.zerionEnabled, but balances-api.manager.ts no longer reads that key, making this a dead mock left over from the old flag name that could be removed while the file is being touched."
+    },
+    {
+      "id": "F10",
+      "file": "src/config/entities/configuration.ts",
+      "line": 409,
+      "claim": "`!!process.env.FF_ZERION_ENABLED` treats any set value, including `FF_ZERION_ENABLED=false`, as enabled, unlike sibling flags (`FF_EMAIL`, `FF_AUTH`, `FF_USERS`) which use `?.toLowerCase() === 'true'`; this line was rewritten in this change, so aligning it with the sibling pattern is an option, though it would change behavior for anyone currently setting a non-'true' value, and deployments should be checked first."
+    },
+    {
+      "id": "F11",
+      "file": "src/config/entities/configuration.ts",
+      "line": 409,
+      "claim": "Nothing at startup validates or catches this misconfiguration: the config schema doesn't validate `features`, and there are no deployment manifests in the repo to check the flag against, so the regression would go unnoticed."
+    },
+    {
+      "id": "F12",
+      "file": ".env.sample.json",
+      "line": 754,
+      "claim": "The description still refers to \"balances provider\" even though, per the PR body, the flag now gates Zerion as a whole rather than just the balances provider, so the description should be updated (e.g., to \"Enable Zerion (OPTIONAL)\")."
+    },
+    {
+      "id": "F13",
+      "file": "src/config/entities/__tests__/configuration.ts",
+      "line": 207,
+      "claim": "The feature flag name does not fit well alongside the other feature flags defined here, since `zerionPositions` already exists and naming this one just `Zerion` would be confusing; it should be named something like `zerionBalances` or another name that gives more context."
+    },
+    {
+      "id": "F14",
+      "file": "src/config/entities/configuration.ts",
+      "line": 409,
+      "claim": "The new name `zerionEnabled`, and the commit message's description of it as gating Zerion as a whole, implies a global switch, but only `SafesV2Service` actually reads it."
+    },
+    {
+      "id": "F15",
+      "file": "src/config/entities/configuration.ts",
+      "line": 409,
+      "claim": "The fallback `|| !!process.env.FF_ZERION_BALANCES_CHAIN_IDS` was removed, so an environment that still only sets the legacy variable will now compute `zerionEnabled = false`."
+    },
+    {
+      "id": "F16",
+      "file": "src/config/entities/configuration.ts",
+      "line": 409,
+      "claim": "Before merging, every environment's infra/secret configuration should be checked to confirm `FF_ZERION_ENABLED` is set, or alternatively a transitional release should keep reading the legacy variable and log a deprecation warning."
+    },
+    {
+      "id": "F17",
+      "file": "src/modules/balances/datasources/balances-api.manager.spec.ts",
+      "line": 81,
+      "claim": "Several test specs set features.zerionEnabled even though the code under test never reads that flag (the only production reader is SafesV2Service, and balances-api.manager.ts has no reference to it), making these overrides dead setup that could mislead readers and should be cleaned up in a separate PR."
+    },
+    {
+      "id": "F18",
+      "file": "src/modules/balances-api/balances-api.manager.ts",
+      "line": 65,
+      "claim": "`BalancesApiManager` still routes counterfactual Safes to Zerion regardless of the flag's value, so the flag does not actually gate all Zerion code paths despite its name suggesting it does."
+    },
+    {
+      "id": "F19",
+      "file": ".env.sample.json",
+      "line": 753,
+      "claim": "The FF_ZERION_ENABLED entry's description says \"(OPTIONAL)\" but the entry also has required: true, which is contradictory."
+    },
+    {
+      "id": "F20",
+      "file": "src/modules/zerion/zerion-collectibles.controller.integration.spec.ts",
+      "line": 37,
+      "claim": "Setting `zerionEnabled: true` in this test has no real effect, since the flag doesn't govern the codepath being exercised."
+    },
+    {
+      "id": "F21",
+      "file": "src/modules/safes/v2/safes.v2.service.ts",
+      "line": 205,
+      "claim": "When `zerionEnabled` becomes false due to the removed fallback, this returns an empty map, causing the Safes v2 overview to fall back to the Safe balances API on every chain instead of Zerion."
+    }
+  ]
+}

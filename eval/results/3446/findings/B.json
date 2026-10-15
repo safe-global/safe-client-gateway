@@ -1,0 +1,25 @@
+{
+  "usd": 0.0620116,
+  "findings": [
+    {
+      "file": "src/modules/spaces/routes/spaces.service.ts",
+      "line": 153,
+      "claim": "The safeCount field on the spaces listing used to count one row per chain but now counts distinct Safe addresses across chains, while the Swagger description on get-space.dto.entity.ts still says it is the total count of Safes in the space, so a Safe on 3 chains now reports safeCount 1 even though GET /v1/spaces/:id/safes returns 3 entries, and a client comparing the two or labeling the count per-network would get inconsistent numbers with no indication the meaning changed."
+    },
+    {
+      "file": "src/modules/spaces/routes/entities/get-space.dto.entity.ts",
+      "line": 69,
+      "claim": "The ApiProperty description for safeCount does not reflect that the value now represents distinct Safe addresses across chains rather than a count of per-chain rows; it should be updated to describe the new semantics, and the PR description should mention the change so API clients are aware."
+    },
+    {
+      "file": "src/modules/spaces/routes/safes/space-safes.service.ts",
+      "line": 53,
+      "claim": "With SafeSeatsGuard removed, a workspace that is already over its seat limit only receives its 402 rejection after encryptRows has made one KMS call per Safe in the payload and after a transaction has acquired the advisory lock, whereas previously the guard rejected the request before incurring any KMS calls; since the payload array has no maximum length, an admin retrying a large over-limit batch would repeatedly pay this cost."
+    },
+    {
+      "file": "src/modules/spaces/routes/safes/space-safe.dto.entity.ts",
+      "line": 14,
+      "claim": "The Safe payload schema (SpaceSafesSchema) has no maximum array length, which allows arbitrarily large batches to be submitted and processed (including KMS encryption calls) before any over-limit check occurs; adding a max size constraint or a cheap pre-check before encryption would bound this cost."
+    }
+  ]
+}

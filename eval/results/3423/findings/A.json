@@ -1,0 +1,40 @@
+{
+  "usd": 0.0492676,
+  "findings": [
+    {
+      "file": "src/modules/safe/routes/v2/safes.v2.service.ts",
+      "line": 204,
+      "claim": "The per-chain switch for the Zerion path has been removed. Previously a chain used Zerion only when the global flag was on, the chain had a name in the config service, and its PORTFOLIO_ENDPOINT flag was on; now, with features.zerion on, every chain in Zerion's list switches to the Zerion portfolio at deploy, so the only way to roll back one misbehaving chain is to disable Zerion entirely. The PR description does not state this rollout risk or show that it was signed off on, even though the change appears intentional."
+    },
+    {
+      "file": "src/modules/zerion/datasources/zerion-chain-mapping.service.ts",
+      "line": 82,
+      "claim": "The warn log in getNetworkFromChainId was changed to debug, but this PR no longer calls that method; its only remaining caller is the positions path (src/modules/positions/datasources/zerion-positions-api.service.ts:222), so this unrelated change quietly hides unmapped-chain warnings for positions and is not mentioned in the commit message."
+    },
+    {
+      "file": "src/modules/zerion/datasources/zerion-chain-mapping.service.ts",
+      "line": 104,
+      "claim": "getChainIdToNetworkMapping was changed from private to public so the new repository can call it, but its comment still says \"(for positions)\" and it remains placed among the private helper methods; the comment should be updated to name the repository as a caller."
+    },
+    {
+      "file": "src/modules/safe/routes/v2/safes.v2.service.ts",
+      "line": 225,
+      "claim": "A failed chain-list lookup is logged with LogType.PortfolioRequestError even though no portfolio request was actually made, which will cause monitoring filtered on that log type to conflate \"chain list unavailable\" errors with genuine portfolio fetch failures."
+    },
+    {
+      "file": "src/modules/safe/routes/v2/safes.v2.service.spec.ts",
+      "line": 132,
+      "claim": "The commit's central claim that the chain list is read once per environment per request is not covered by any test asserting the call count of getNetworksByChainId (e.g., once for a 3-chain mainnet request, twice for mainnet plus testnet), and there is no test covering the case where one environment's lookup fails while the other succeeds."
+    },
+    {
+      "file": "src/modules/safe/routes/v2/__tests__/safes.v2.controller.overview.integration.spec.ts",
+      "line": 31,
+      "claim": "The zerionChains test helper returns a loosely typed { data: Array<Record<string, unknown>> } instead of the existing ZerionChains type, so a future change to ZerionChainsSchema would not cause these tests to fail to compile; it should be typed as ZerionChains."
+    },
+    {
+      "file": "src/modules/safe/routes/v2/safes.v2.service.spec.ts",
+      "line": 303,
+      "claim": "The test name \"returns a real $0 for an enabled chain absent from the portfolio distribution\" still refers to \"enabled\", a concept this PR removes, and should instead refer to a Zerion-listed chain."
+    }
+  ]
+}

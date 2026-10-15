@@ -1,0 +1,199 @@
+{
+  "pr": 3399,
+  "title": "feat: add pre enforcement filtered payment links",
+  "description": "<!--\r\n  SPDX-License-Identifier: FSL-1.1-MIT\r\n -->\r\n## Summary\r\n\r\n`GET /v1/billing/spaces/:spaceId/payment-links` returned the full upstream catalog, so a workspace saw offers it could not take. It now returns only what the workspace is eligible for, and `.../checkout-url` rejects anything outside that set with a 403 — otherwise the filtered list would only be a hint.\r\n\r\nThe rule: a workspace that has never subscribed is offered exactly one trial, the one matching its enforcement side (the legacy grace for workspaces created before `ENTITLEMENTS_ENFORCEMENT_STARTS_AT`, the standard trial otherwise). Once it has subscribed in any status, trials are off and every paid link is offered except the plan it is already on. Links negotiated for a single customer are always offered — they are not subject to the general rule. An absent or unmatched `planName` never excludes, so under-tagging cannot hide a purchase option.\r\n\r\nTwo rollout notes for reviewers. `ENTITLEMENTS_ENFORCEMENT_STARTS_AT` defaults to `2099-01-01`, so until it is set every workspace reads as pre-enforcement and is offered the legacy grace — the deliberate direction, since over-granting grace beats under-granting it. And a trial link whose `gracePeriod` metadata is missing or unrecognized is offered to nobody, which makes an untagged catalog look like an empty one; that case now logs a warning naming the dropped link ids rather than silently serving fewer offers.\r\n\r\nAlso here: `entitlements.enforcementStartsAt` is parsed to a `Date` once at config load and throws on an unparseable value, replacing the same parse-or-throw block that had been copied into two service constructors. `RootConfigurationSchema` does not cover this on its own — `configuration.validator` skips validation entirely under `NODE_ENV=test`, and an `Invalid Date` would read as \"enforcement off, grace for everyone\". No new env var, no migration.\r\n\r\nOne deliberate perf choice: reading the active plan name uses a new single-column repository query instead of `getActiveSubscriptionBySpaceId`, which hydrates the entitlements/feature relation tree to serve one string.\r\n\r\nPLA-1870\r\n\r\n## Changes\r\n\r\n- `src/modules/billing/domain/` — `payment-link-offer.rules.ts`: the offer predicate and its `gracePeriod`/`planName` metadata readers, plus specs\r\n- `src/modules/billing/routes/` — `billing.service.ts` filters the general catalog, merges space-specific links over it, gates checkout on the same rule, and warns on unclassified trial links\r\n- `src/modules/entitlements/domain/` — `hasAnySubscription` and `getActivePlanName` on the subscriptions repository; `predatesEnforcement` rule; `GRACE_PERIOD_METADATA_KEY`\r\n- `src/modules/spaces/domain/` — `findCreatedAtById` accessor, replacing two copies of the same hand-composed query\r\n- `src/config/entities/` — parse `enforcementStartsAt` to a `Date` at load time, with specs for the default, a valid value, and malformed input\r\n- `src/datasources/billing-api/entities/` — additive optional `trialPeriodDays` on the payment-link schema and DTO, plus a `trialPaymentLinkBuilder`\r\n",
+  "findings": [
+    {
+      "id": "F1",
+      "file": "src/modules/billing/routes/billing.service.spec.ts",
+      "line": 76,
+      "claim": "Test dates such as ENFORCEMENT_STARTS_AT, BEFORE_ENFORCEMENT, and AFTER_ENFORCEMENT are hard-coded rather than generated with faker, which is inconsistent with the pattern used elsewhere in the same PR (e.g., faker.date.recent() with millisecond offsets for boundaries) and with the repository's testing conventions."
+    },
+    {
+      "id": "F2",
+      "file": "src/modules/billing/domain/payment-link-offer.rules.ts",
+      "line": 65,
+      "claim": "activePlanName relies on ACTIVE_SUBSCRIPTION_STATUSES (['active', 'trialing']), so a workspace trialing a paid plan (e.g. Pro) has that paid Pro link excluded and 403s on checkout for it. Since grace periods carry no card and never auto-convert, every pre-enforcement workspace that wants to keep its current plan when the 2-month grace ends must go through checkout, and this logic hides the link they need to do so."
+    },
+    {
+      "id": "F3",
+      "file": "src/config/entities/configuration.ts",
+      "line": 1070,
+      "claim": "parseEnforcementStartsAt accepts a date-only string such as '2026-10-01', a value the removed DateStringSchema check used to reject, and no test covers this input; outside NODE_ENV=test this is still caught at boot by the RootConfigurationSchema z.iso.datetime() check, so the gap is only exposed in test mode."
+    },
+    {
+      "id": "F4",
+      "file": "src/modules/billing/routes/__tests__/billing.controller.e2e-spec.ts",
+      "line": 70,
+      "claim": "The e2e spec hard-codes enforcementStartsAt as new Date('2020-01-01T00:00:00Z') instead of generating it with faker.date.past(), inconsistent with the faker-based date generation pattern used elsewhere in the same PR."
+    },
+    {
+      "id": "F5",
+      "file": "src/modules/billing/routes/billing.service.ts",
+      "line": 42,
+      "claim": "warnedUnclassifiedLinkIds is a new ad hoc in-process memo with no cron clear and no size bound, so it holds one entry per unclassified trial-link id for the lifetime of the process and will never re-warn if a catalog issue is fixed and later re-broken."
+    },
+    {
+      "id": "F6",
+      "file": "src/modules/billing/routes/billing.service.ts",
+      "line": 194,
+      "claim": "getActivePlanName is queried unconditionally alongside hasAnySubscription, but isOfferedToSpace only uses its result when hasEverSubscribed is true, so for every never-subscribed workspace this SELECT executes and its result is discarded. This should either be folded into a single subscription query returning both exists and planName, or resolved conditionally only when hasAnySubscription is true."
+    },
+    {
+      "id": "F7",
+      "file": "src/modules/entitlements/domain/subscriptions.repository.ts",
+      "line": 65,
+      "claim": "The raw database row returned by getRawOne is typed with a generic type parameter but never actually validated against that shape at runtime. hasEverSubscribed being a boolean depends on the Postgres driver's behavior for COUNT(*) > 0, and the camelCase field names rely on quoted aliases, so a wrong type would not be caught even though missing rows are handled via fallback defaults."
+    },
+    {
+      "id": "F8",
+      "file": "src/modules/billing/routes/__tests__/billing.controller.e2e-spec.ts",
+      "line": 119,
+      "claim": "The comment explaining cache clearing in this test is unnecessary since many other tests clear the cache the same way without such a comment."
+    },
+    {
+      "id": "F9",
+      "file": "src/modules/billing/domain/payment-link-offer.rules.ts",
+      "line": 61,
+      "claim": "A link only counts as a trial if it carries trialPeriodDays, so if upstream isn't emitting that field yet, every link is read as paid, causing every new (never-subscribed) workspace to get an empty catalog and a 403 on checkout. The existing unclassified-trial logging doesn't catch this case either, since isUnclassifiedTrialLink short-circuits on isTrialLink, meaning a missing gracePeriod is logged but a missing trialPeriodDays is silent; logging should be added for when the general catalog yields zero offers for a never-subscribed space, and the deploy order against the billing service should be confirmed."
+    },
+    {
+      "id": "F10",
+      "file": "src/datasources/billing-api/entities/payment-link.entity.ts",
+      "line": 42,
+      "claim": "trialPeriodDays is a new optional field and it is unclear whether billing-api actually sends it yet; if it does not, every trial link would be read as a paid link, causing a space that has never subscribed to see no general links at all, and the unclassified-trial warning would not fire since it only inspects trial links."
+    },
+    {
+      "id": "F11",
+      "file": "src/modules/entitlements/domain/subscriptions.repository.ts",
+      "line": 59,
+      "claim": "hasEverSubscribed counts every subscription status, so an incomplete_expired row (where the initial payment never succeeded and no money moved) permanently disables trials for the workspace with no way back, since those rows remain as history. This is reachable via a negotiated space-specific link whose card bounces, causing a pre-enforcement workspace to silently lose its 2-month grace; unlike canceled/past_due/unpaid which are correctly counted, incomplete_expired appears to be the wrong status to include."
+    },
+    {
+      "id": "F12",
+      "file": "src/modules/billing/routes/payment-link-offer.rules.ts",
+      "line": 53,
+      "claim": "The four-arm switch (true) construct is unusual for this codebase; a plain if/else if chain would read more naturally and be easier to git blame."
+    },
+    {
+      "id": "F13",
+      "file": "src/modules/billing/domain/payment-link-offer.rules.ts",
+      "line": 33,
+      "claim": "The helper planNameOf is exported from the module solely so it can be tested directly in the spec file, even though production code never imports it, which conflicts with the guidance not to export symbols that aren't consumed externally and to test private logic through its public callers."
+    },
+    {
+      "id": "F14",
+      "file": "src/modules/billing/routes/billing.service.ts",
+      "line": 181,
+      "claim": "The logic for merging offered general links with space links can be simplified/shortened using a filter followed by a Map-based deduplication by link id."
+    },
+    {
+      "id": "F15",
+      "file": "src/modules/billing/routes/billing.service.ts",
+      "line": 167,
+      "claim": "The two existing tests for shared-id link precedence both use a paid general link for a space that has never subscribed, a case where isOfferedToSpace already excludes the general link before it reaches the id-keyed map, so the tests do not actually exercise or verify that the space-specific link wins when both links are eligible; reversing the spread order or removing the dedupe logic entirely would still pass these tests."
+    },
+    {
+      "id": "F16",
+      "file": null,
+      "line": null,
+      "claim": "The PR description/runbook does not state whether the live catalog has been retagged with gracePeriod before deploy, which is needed to avoid the rollout gap described above."
+    },
+    {
+      "id": "F17",
+      "file": "src/modules/billing/routes/billing.service.ts",
+      "line": 163,
+      "claim": "warnOnUnclassifiedTrials fires on every call to listOfferedPaymentLinks, meaning every GET /payment-links and POST /checkout-url request for the same misconfigured catalog logs the same warning, which could flood logs with repeated messages under a bad configuration. Logging at debug/rate-limited warn per link id with in-memory dedup, or moving the check to a catalog-refresh path so it only warns when the datasource actually re-fetches, would address this."
+    },
+    {
+      "id": "F18",
+      "file": "src/modules/billing/domain/payment-link-offer.rules.ts",
+      "line": 41,
+      "claim": "The filter is not gated by any feature flag; it applies as soon as enforcementStartsAt is reached, and FF_BILLING_SERVICE only disables the entire billing module rather than this specific filter, so there is no way to turn off just the new filtering behavior without a redeploy."
+    },
+    {
+      "id": "F19",
+      "file": "src/modules/entitlements/domain/subscriptions.repository.ts",
+      "line": 61,
+      "claim": "The SQL IN list in getSubscriptionSummary is built into the query string via toSqlList instead of being bound as a parameter, while the same file already binds an equivalent list as a parameter elsewhere; toSqlList's documentation states it is meant for entity CHECK constraints and partial-index predicates, not runtime queries. The values are currently constants so nothing can be injected today, but this establishes a second, inconsistent pattern for runtime queries that others may copy."
+    },
+    {
+      "id": "F20",
+      "file": "src/config/entities/configuration.ts",
+      "line": 1073,
+      "claim": "parseEnforcementStartsAt treats an empty string environment value as invalid (throwing) but an unset value as using the default, which is surprising behavior for operators who set ENTITLEMENTS_ENFORCEMENT_STARTS_AT= as an empty value in a .env file. Treating an empty string as unset (e.g., envValue?.trim() || undefined) would be more consistent with other keys in this file."
+    },
+    {
+      "id": "F21",
+      "file": "src/modules/billing/routes/billing.service.ts",
+      "line": 165,
+      "claim": "An error is logged on every call to listOfferedPaymentLinks, which is hit by both GET /payment-links and POST /checkout-url, so a single mistagged link produces an error log per request indefinitely even though what's being reported is a static, cached, catalog-level fact that only changes once per TTL. The request itself succeeds and the underlying issue is an upstream Stripe misconfiguration, so this should be logged at warn level (as done elsewhere in the repo for upstream data inconsistencies) rather than error, since error-level logging at request cadence trips error rate alerting unnecessarily."
+    },
+    {
+      "id": "F22",
+      "file": "src/modules/billing/domain/payment-link-offer.rules.ts",
+      "line": 21,
+      "claim": "The helper gracePeriodOf is exported from the module solely so it can be tested directly in the spec file, even though production code never imports it, which conflicts with the guidance not to export symbols that aren't consumed externally and to test private logic through its public callers."
+    },
+    {
+      "id": "F23",
+      "file": "src/config/entities/configuration.ts",
+      "line": 1070,
+      "claim": "Either a test case should be added for the date-only enforcementStartsAt input, or the comment claiming the parser 'fails loudly' should be narrowed to reflect that it does not fail in test mode."
+    },
+    {
+      "id": "F24",
+      "file": "src/modules/entitlements/routes/entitlements.service.integration.spec.ts",
+      "line": 1139,
+      "claim": "The rewritten assertion uses a bare toThrow(), which passes for any thrown error including a TypeError from an unrelated typo in the code under test, unlike the sibling case in billing.service.spec.ts which pins the specific error message."
+    },
+    {
+      "id": "F25",
+      "file": "src/modules/billing/routes/billing.service.ts",
+      "line": 128,
+      "claim": "createCheckoutUrl reuses the same filtered list, so attempting to check out a trial link that lacks the gracePeriod tag now returns a 403 instead of opening a Stripe session."
+    },
+    {
+      "id": "F26",
+      "file": "src/modules/billing/routes/billing.service.ts",
+      "line": 153,
+      "claim": "The new offer filter drops any trial link lacking the newly introduced gracePeriod metadata, and since this metadata is new in the diff, every existing trial link in the catalog is untagged unless retagged out of band, so those offers disappear right after deploy."
+    },
+    {
+      "id": "F27",
+      "file": "src/modules/billing/domain/payment-link-offer.rules.ts",
+      "line": 30,
+      "claim": "The gracePeriodOf function can be written more concisely using nested ternaries, though it was noted this alternative form may be harder to read."
+    },
+    {
+      "id": "F28",
+      "file": "src/modules/entitlements/domain/subscriptions.repository.ts",
+      "line": 44,
+      "claim": "hasAnySubscription and getActivePlanName are two very similar methods that always fire together, with getActivePlanName already implying whether an active subscription exists via a non-null return; hasAnySubscription only adds coverage for terminal/incomplete rows. A single query returning both activePlanName and hasAnySubscription would halve round-trips and remove a code path that is hard to keep in sync, making the current split feel like unnecessary API surface."
+    },
+    {
+      "id": "F29",
+      "file": "src/modules/entitlements/domain/subscriptions.repository.integration.spec.ts",
+      "line": 212,
+      "claim": "The test 'should report a terminal subscription as subscribed but on no plan' is redundant and should be removed, with its coverage and that of similar tests for past_due, paused, and unpaid statuses collapsed into a single parameterized test iterating over all statuses outside ACTIVE_SUBSCRIPTION_STATUSES, listed literally rather than derived from the constant so the test still pins which side of the line each status falls on."
+    },
+    {
+      "id": "F30",
+      "file": "src/modules/billing/routes/billing.service.ts",
+      "line": 43,
+      "claim": "warnedUnclassifiedLinkIds on the singleton service never evicts entries once added, meaning it grows unboundedly over the process lifetime, even though in practice it stays small because it is only fed by the admin-curated general catalog."
+    },
+    {
+      "id": "F31",
+      "file": "src/modules/billing/routes/billing.service.ts",
+      "line": 125,
+      "claim": "Every POST /checkout-url call now performs the full offer computation (general catalog fetch, space-specific catalog fetch, three DB queries, plus the checkout POST itself); the three DB queries run on every checkout attempt even though the catalog reads are cached, which could be costly if checkout is a hot path. A lighter-weight assertOffered(paymentLinkId, spaceId) that reuses cached catalogs and short-circuits DB reads could be considered."
+    },
+    {
+      "id": "F32",
+      "file": "src/modules/billing/routes/billing.service.ts",
+      "line": 167,
+      "claim": "Neither billing.service.spec.ts nor billing.controller.e2e-spec.ts includes a case where the general link is actually offered (hasEverSubscribed true with a differing paid plan) to confirm the space-specific link still takes precedence."
+    }
+  ]
+}

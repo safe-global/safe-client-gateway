@@ -1,0 +1,30 @@
+{
+  "usd": 0.051429600000000006,
+  "findings": [
+    {
+      "file": "src/app.module.ts",
+      "line": 125,
+      "claim": "The gate combining billingService and users flags on EntitlementsRoutesModule uses && with no test covering the case where the two flags differ, so changing the operator to || would not be caught by CI."
+    },
+    {
+      "file": "src/modules/entitlements/domain/entitlements.rules.ts",
+      "line": 85,
+      "claim": "The freePeriod > 0 check creates a boundary condition at 0, which the Zod schema permits, but the existing specs only exercise 30 and null, leaving the behavior at 0 unverified. The same issue applies at line 108."
+    },
+    {
+      "file": "src/modules/entitlements/routes/entitlements.service.ts",
+      "line": 481,
+      "claim": "toEntitlementsResponse duplicates the ResolvedEntitlements fields one by one even though the plan mapping is already constructed elsewhere in the same file and the DTO classes already implement the resolved types, so the response could instead be built by returning resolveEntitlements directly or mapping plan in a single place. The duplication spans lines 481-494."
+    },
+    {
+      "file": "src/modules/entitlements/domain/entitlements-repository.module.ts",
+      "line": 27,
+      "claim": "SpaceSeatSelection was removed from forFeature, and because autoLoadEntities is true the app no longer registers it, but the corresponding entity files (space-seat-selection.entity.db.ts and domain/entities/space-seat-selection.entity.ts) remain and are still picked up by the ORM CLI via orm.config.ts, leaving orphaned files; this change is also unrelated to the entitlements endpoint being added."
+    },
+    {
+      "file": "src/modules/entitlements/domain/entitlements.rules.ts",
+      "line": 82,
+      "claim": "The check if (cycle?.currentPeriodStart) treats an active, paid subscription whose currentPeriodStart is null, which the upstream schema allows, the same as the Free tier, which would cause usage to be bucketed from the space's creation date instead of the billing cycle; this could not be confirmed because the only currently seeded feature is stock-metered and returns before reaching this line, so it only matters once an event-metered feature is seeded. The same pattern occurs at line 105."
+    }
+  ]
+}

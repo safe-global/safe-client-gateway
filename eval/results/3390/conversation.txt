@@ -1,0 +1,185 @@
+THREAD src/modules/spaces/domain/safes/space-safes.repository.ts:66 resolved=true
+[falvaradorodriguez 2026-08-25T12:38:37Z] Only callback in a repository interface here, so: the count must be taken under the Space's lock inside the writing transaction. Without it, 9 of 9 concurrent adds passed a quota of 4.
+`create` owns that transaction because it encrypts first: field encryption is on in prod, so each address is a KMS round-trip that has to stay out of the lock.
+The quota decision belongs to `entitlements`, so it arrives as a required, synchronous rule (resolved by `prepareQuotaCheck`). Nothing does I/O under the lock, and a new caller can't insert Safes without stating a seat rule.
+Alternatives: caller owns the transaction (tried, reverted, since it puts KMS inside the lock), a plain `seatQuota` number (moves the 402 and the quota event into `spaces`, and `null` disables the limit silently), or three methods prepare/check/insert (no callback, but the caller can run them out of order or skip the check and it still compiles, which is the dangerous part).
+[moisses89 2026-08-26T07:33:27Z] Here is another option. Split the write into three functions, one job each: encrypt, count, insert. The service opens the transaction:
+
+```ts
+const assertSeats = await this.entitlementEnforcement.prepareQuotaCheck({ ... });
+const rows = await this.spaceSafesRepository.encryptRows(spaceId, payload);   // KMS, before the lock
+await this.postgresDatabaseService.transaction(async (em) => {
+  await this.spaceSafesRepository.lockSeats(spaceId, em);
+  assertSeats(await this.spaceSafesRepository.countBySpaceId(spaceId, em));
+  await this.spaceSafesRepository.insertRows(rows, em);
+});
+```
+
+The KMS calls still happen before the lock, so that problem does not come back.
+
+This breaks the rule that a route service should not talk to the database. I think it is worth it. The transaction should live where the use case lives. We already do this in `address-book-requests.service.ts:115`, where a route service opens a transaction and passes the `entityManager` to two repositories. Six repository interfaces already accept an `EntityManager`, so nothing new is needed.
+
+Why I like it:
+
+- Small functions can be reused. Right now every new use case has to add another parameter to `create`. This PR added `assertSeats` for that reason, and the list keeps growing.
+- If adding Safes ever has to be saved together with a write from another repository, the transaction has to move up anyway. Better to put it there now than to change the shape twice.
+- It reads from top to bottom. No function is passed down to be called somewhere you cannot see.
+- Each piece can be tested on its own.
+
+About the required callback: I do not think it stops anyone from forgetting the check. If someone can forget it, they can also pass the wrong rule. `space-safes.repository.integration.spec.ts` already passes `noSeatLimit = () => {}` and it compiles fine. A required parameter only forces you to pass something. It does not force you to pass the right thing, so both mistakes end the same way.
+
+I think this should be covered by tests instead. We need an integration test that proves you cannot add a Safe above the quota.
+
+That test does not exist today. Every test we have fakes one half. The repository test makes up its own seat rule, and `entitlements.service.integration.spec.ts:162` uses a stub for `ISpaceSafesRepository`, so the Safe count is never real. No test goes from `POST /v1/spaces/:id/safes` through the guard, the service, real entitlements and the real repository, and then checks the 402 and the row count in the table. I would want that test either way, whatever shape we pick.
+
+One downside I accept: `encryptRows` gives the service rows that hold ciphertext and `addressIndex`, and today all five Spaces repositories keep encryption inside the repository. If that bothers us, `encryptRows` can return an opaque type that the service just passes along without looking inside.
+[falvaradorodriguez 2026-08-26T11:00:48Z] You’re right. I’ve added the test you mentioned and then applied the change to all three functions. I see your point. If the test covers this, we shouldn’t have any problems.
+
+I have also added a test to check that the encryption is still working correctly once a safe seat has been added
+
+THREAD src/modules/entitlements/routes/entitlements.service.ts:221 resolved=true
+[moisses89 2026-08-26T09:35:32Z]  `new Date() < InvalidDate ` is false, a typo in `ENTITLEMENTS_ENFORCEMENT_STARTS_AT` silently turns enforcement on everywhere instead of
+failing at boot. 
+Also I would like to see in the rules domain file a function like `isEnforcementActive(now, startsAt)`
+[falvaradorodriguez 2026-08-26T10:58:03Z] Added https://github.com/safe-global/safe-client-gateway/pull/3390/commits/a8e1ba18f41ba41bbcfa92ddc2d8d6fcbb471d3f
+
+THREAD src/modules/entitlements/routes/entitlements.service.ts:193 resolved=true
+[moisses89 2026-08-26T09:41:02Z] `fitsWithinQuota({quota, used, delta}) `on rules
+[falvaradorodriguez 2026-08-26T10:57:58Z] Added https://github.com/safe-global/safe-client-gateway/pull/3390/commits/a8e1ba18f41ba41bbcfa92ddc2d8d6fcbb471d3f
+
+THREAD src/modules/entitlements/routes/entitlements.service.ts:253 resolved=true
+[moisses89 2026-08-26T09:54:43Z] I would add a TODO for metered features.
+The function description should just describe the function not what is missing. 
+[falvaradorodriguez 2026-08-26T10:57:54Z] Added https://github.com/safe-global/safe-client-gateway/pull/3390/commits/a8e1ba18f41ba41bbcfa92ddc2d8d6fcbb471d3f
+
+COMMENT
+[falvaradorodriguez 2026-08-25T15:21:23Z] @claude arch-review
+
+COMMENT
+[claude 2026-08-25T15:27:34Z] ## Architecture check
+
+Guides applied: [ARCHITECTURE.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/ARCHITECTURE.md), [best-practices.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/best-practices.md), [nestjs-patterns.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/nestjs-patterns.md), [api-dtos-and-validation.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/api-dtos-and-validation.md), [security.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/security.md), [module-structure.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/module-structure.md), [caching-and-performance.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/caching-and-performance.md), [database-and-migrations.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/database-and-migrations.md), [testing.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/testing.md), [configuration-and-flags.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/configuration-and-flags.md), [commits-and-prs.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/commits-and-prs.md), [reviewing.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/reviewing.md), [remarks.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/remarks.md)
+
+1. **[PR body](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/commits-and-prs.md#L84)** — PR description — the text is truncated mid-word in both required sections (`## Summary`: "under an advisory l it", "there is atest that fails", "takes the plan rule as a required caller checking around it", "the over-limit act1827's refinement thread", "Stripe trials cover the grace pergic"; `## Changes`: "the canonical `QUOTA_EXCEEDE", "the webhook sync moves to `Subscripta route cannot require", "the route declares the guard and the filter, and docu", "imported from where actice for `AuthGuard`"), so several of the changes cannot be read at all. **Fix:** re-post `## Summary` and `## Changes` with every cut sentence completed.
+
+2. **[Canonical skeleton](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/module-structure.md#L12)** — [src/modules/entitlements/subscription-sync.module.ts:30](https://github.com/safe-global/safe-client-gateway/blob/e27616f6cd7792b65596387d77d7859ed9d9d148/src/modules/entitlements/subscription-sync.module.ts#L30) — a second root-level `*.module.ts` inside an existing module, where the skeleton lists only `<kebab-name>.module.ts` at the root; no module under `src/modules/` has two today, and this module's own auxiliary Nest modules sit in the layer they wire (`routes/entitlements-routes.module.ts`, `domain/entitlements-repository.module.ts`). **Fix:** move the file to `src/modules/entitlements/routes/subscription-sync.module.ts`, beside the `routes/subscription-sync.service.ts` it provides, and update the import in `src/modules/billing/billing.module.ts` to `@/modules/entitlements/routes/subscription-sync.module`.
+
+3. **[No speculative abstractions, unused exports, or dead code introduced (YAGNI)](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/reviewing.md#L48)** — [src/modules/entitlements/routes/guards/entitlement.guard.ts:18](https://github.com/safe-global/safe-client-gateway/blob/e27616f6cd7792b65596387d77d7859ed9d9d148/src/modules/entitlements/routes/guards/entitlement.guard.ts#L18) — `EntitlementGuard` is an abstract base parameterised over `featureKey` for the one subclass that exists, and the staged-delivery sentence that would exempt it breaks off ("The next consumer is the over-limit act1827's refinement thread") without identifying the follow-up that adds the second subclass. **Fix:** state the follow-up in `## Summary` — e.g. "PLA-NNNN adds `<Feature>Guard` as the second `EntitlementGuard` subclass" — or collapse the base into `SafeSeatsGuard` and extract it when the second gate lands.
+
+**Verdict:** ❌ 3 finding(s)
+
+<sub>Automated check of this repo's [agent guidelines](https://github.com/safe-global/safe-client-gateway/blob/main/AGENTS.md) — Claude applying the committed guides in `docs/agents/`, not its own opinion. Run by [architecture-check.yml](https://github.com/safe-global/safe-client-gateway/blob/main/.github/workflows/architecture-check.yml) on `@claude arch-review`; background in [the CI gate](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/agent-tooling.md#the-ci-gate). Advisory — reply to a finding by its number to discuss it.</sub>
+
+COMMENT
+[falvaradorodriguez 2026-08-25T15:41:28Z] > ## Architecture check
+> Guides applied: [ARCHITECTURE.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/ARCHITECTURE.md), [best-practices.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/best-practices.md), [nestjs-patterns.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/nestjs-patterns.md), [api-dtos-and-validation.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/api-dtos-and-validation.md), [security.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/security.md), [module-structure.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/module-structure.md), [caching-and-performance.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/caching-and-performance.md), [database-and-migrations.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/database-and-migrations.md), [testing.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/testing.md), [configuration-and-flags.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/configuration-and-flags.md), [commits-and-prs.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/commits-and-prs.md), [reviewing.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/reviewing.md), [remarks.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/remarks.md)
+> 
+> 1. **[PR body](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/commits-and-prs.md#L84)** — PR description — the text is truncated mid-word in both required sections (`## Summary`: "under an advisory l it", "there is atest that fails", "takes the plan rule as a required caller checking around it", "the over-limit act1827's refinement thread", "Stripe trials cover the grace pergic"; `## Changes`: "the canonical `QUOTA_EXCEEDE", "the webhook sync moves to `Subscripta route cannot require", "the route declares the guard and the filter, and docu", "imported from where actice for `AuthGuard`"), so several of the changes cannot be read at all. **Fix:** re-post `## Summary` and `## Changes` with every cut sentence completed.
+
+Updated!
+
+> 2. **[Canonical skeleton](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/module-structure.md#L12)** — [src/modules/entitlements/subscription-sync.module.ts:30](https://github.com/safe-global/safe-client-gateway/blob/e27616f6cd7792b65596387d77d7859ed9d9d148/src/modules/entitlements/subscription-sync.module.ts#L30) — a second root-level `*.module.ts` inside an existing module, where the skeleton lists only `<kebab-name>.module.ts` at the root; no module under `src/modules/` has two today, and this module's own auxiliary Nest modules sit in the layer they wire (`routes/entitlements-routes.module.ts`, `domain/entitlements-repository.module.ts`). **Fix:** move the file to `src/modules/entitlements/routes/subscription-sync.module.ts`, beside the `routes/subscription-sync.service.ts` it provides, and update the import in `src/modules/billing/billing.module.ts` to `@/modules/entitlements/routes/subscription-sync.module`.
+
+
+Kept at the module root on purpose: only one of the two rules here is explicit. Under `routes/`, `BillingModule` imports another module's `routes/`, which non-negotiable 4 forbids and the guard carve-out this PR adds explicitly does not cover. At the root nothing explicit is broken: the skeleton lists `<kebab-name>.module.ts` there without forbidding a second one, so what stands against it is absence of precedent, not a rule. (An earlier run of this check asked for exactly this move, flagging the import; that comment was deleted since.)
+
+`domain/` would satisfy both, but it drags `SubscriptionSyncService` with it, and that service depends on `EntitlementsService` in `routes/`. Separate change. Happy to move it back if we prefer the skeleton reading, but then the import rule needs a carve-out for a provider-only module that another module composes.
+
+> 3. **[No speculative abstractions, unused exports, or dead code introduced (YAGNI)](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/reviewing.md#L48)** — [src/modules/entitlements/routes/guards/entitlement.guard.ts:18](https://github.com/safe-global/safe-client-gateway/blob/e27616f6cd7792b65596387d77d7859ed9d9d148/src/modules/entitlements/routes/guards/entitlement.guard.ts#L18) — `EntitlementGuard` is an abstract base parameterised over `featureKey` for the one subclass that exists, and the staged-delivery sentence that would exempt it breaks off ("The next consumer is the over-limit act1827's refinement thread") without identifying the follow-up that adds the second subclass. **Fix:** state the follow-up in `## Summary` — e.g. "PLA-NNNN adds `<Feature>Guard` as the second `EntitlementGuard` subclass" — or collapse the base into `SafeSeatsGuard` and extract it when the second gate lands.
+> 
+> **Verdict:** ❌ 3 finding(s)
+> 
+> Automated check of this repo's [agent guidelines](https://github.com/safe-global/safe-client-gateway/blob/main/AGENTS.md) — Claude applying the committed guides in `docs/agents/`, not its own opinion. Run by [architecture-check.yml](https://github.com/safe-global/safe-client-gateway/blob/main/.github/workflows/architecture-check.yml) on `@claude arch-review`; background in [the CI gate](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/agent-tooling.md#the-ci-gate). Advisory — reply to a finding by its number to discuss it.
+
+Declared in `## Summary` now: it names what the follow-up lands (one `EntitlementGuard` subclass per gated feature, starting with `SecurityHubGuard`) and who decides it (the over-limit action set still open in PLA-1827's refinement). No link because the ticket is not filed yet, which `module-structure.md`'s staged-delivery bar allows: "a named-but-unlinked follow-up satisfies this, the same bar the staged-delivery check in `reviewing.md` sets".
+
+COMMENT
+[falvaradorodriguez 2026-08-25T15:41:49Z] @claude review
+
+COMMENT
+[claude 2026-08-25T15:42:05Z] **Claude finished @falvaradorodriguez's task in 3m 38s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/32867401907)
+
+---
+### Review
+
+Read the entitlements service, guards, filter, error, spaces repository/service/controller, and specs. This is a well-thought-out change; the transaction ownership + advisory lock + prepared quota check split is a genuinely nice shape. A few things worth improving:
+
+#### 1. Guard does a redundant DB round-trip + live count on every gated POST
+
+`SafeSeatsGuard.canActivate` runs **before** `SpaceIdPipe`, so both perform a lookup by UUID:
+
+- guard: `spacesRepository.findIdByUuid(spaceUuid)` — [`entitlement.guard.ts:36`](https://github.com/safe-global/safe-client-gateway/blob/e27616f6cd7792b65596387d77d7859ed9d9d148/src/modules/entitlements/routes/guards/entitlement.guard.ts#L36)
+- pipe: same lookup a moment later inside `@Param('spaceId', SpaceIdPipe)`
+
+Then `assertWithinQuota({ delta: 0 })` triggers a live `countBySpaceId` (via `stockCounters.safe_seats`) — a query the repository will run **again** inside its locked transaction. So the golden-path `POST /v1/spaces/:spaceId/safes` under a plan does: 2× space lookup + 2× seat count + the actual insert. Two of those four are the guard being defensive about "already at limit" before the payload is parsed. Consider either (a) letting the pipe run first and reading the numeric id off the request in the guard, or (b) accepting that the write already gates and rejecting from the guard only on **cached** grant evidence (skip the live count).
+
+#### 2. `admit(delta: 0)` silently means "consume 1"
+
+[`entitlements.service.ts:186`](https://github.com/safe-global/safe-client-gateway/blob/e27616f6cd7792b65596387d77d7859ed9d9d148/src/modules/entitlements/routes/entitlements.service.ts#L186) does `Math.max(args.delta, 1)`. That's what makes the guard's "am I at the limit?" call reject when `used === quota`, which is correct — but it's non-obvious that `delta: 0` reports over-limit-by-one. The `IEntitlementEnforcement` doc string [notes the intent](https://github.com/safe-global/safe-client-gateway/blob/e27616f6cd7792b65596387d77d7859ed9d9d148/src/modules/entitlements/domain/entitlement-enforcement.interface.ts#L11), but a `used >= grant.quota` check would say what it means without the `max(delta, 1)` sleight of hand.
+
+#### 3. Cache-vs-materialization race can leave stale grants for up to TTL
+
+In `materializeUnderLock` ([`entitlements.service.ts:569-573`](https://github.com/safe-global/safe-client-gateway/blob/e27616f6cd7792b65596387d77d7859ed9d9d148/src/modules/entitlements/routes/entitlements.service.ts#L569)) the cache is deleted **after** commit. A concurrent reader that missed the cache **before** the commit, computed old grants, and writes them back **after** the delete will re-poison the cache with the pre-materialization value for the full 5-min TTL. In practice this window is small and the PR body accepts a similar Free-tier lag, but it's a race that outlasts any single request; worth either a comment acknowledging it or a versioned key (e.g. include `lastEventAt` in the cache-dir suffix so a stale writer's key is orphaned).
+
+#### 4. `EntitlementGuard.canActivate` — schema `catch(undefined)` + `as UUID` is fragile
+
+[`space-id-param.schema.ts:16-19`](https://github.com/safe-global/safe-client-gateway/blob/e27616f6cd7792b65596387d77d7859ed9d9d148/src/modules/entitlements/routes/guards/space-id-param.schema.ts#L16) uses `.catch(undefined)` to defer everything to `SpaceIdPipe`, then narrows with `as UUID | undefined`. This depends on `UUID_REGEX` in `@/domain/common/constants` staying looser than or equal to the pipe's own validation. If someone tightens the guard schema and forgets the pipe (or vice versa), the guard silently starts admitting requests that the pipe then rejects — the current tests cover the lax case, but there's no assertion that guard vs pipe stay in sync. A one-liner test in `entitlement.guard.spec.ts` importing `UUID_REGEX` and re-checking against `SpaceIdPipe`'s validator would prevent that drift.
+
+#### 5. Minor: `EntitlementsService` constructor is up to 13 injections
+
+[`entitlements.service.ts:73-95`](https://github.com/safe-global/safe-client-gateway/blob/e27616f6cd7792b65596387d77d7859ed9d9d148/src/modules/entitlements/routes/entitlements.service.ts#L73) — the class now does resolve, cache, materialize, and enforce. That's within tolerance for now, but if a third gated feature lands here (per the follow-up in the PR description), splitting the enforcement path (`assertWithinQuota` / `prepareQuotaCheck` / `resolveGrant`) into its own `EntitlementEnforcementService` would keep this from becoming a god-service. Not a blocker for this PR.
+
+#### 6. Nit: `preEnforcementQuotas` returns a closure per lookup
+
+[`entitlements.service.ts:240-242`](https://github.com/safe-global/safe-client-gateway/blob/e27616f6cd7792b65596387d77d7859ed9d9d148/src/modules/entitlements/routes/entitlements.service.ts#L240): `Record<FeatureKey, () => number>` with `() => this.maxSafesPerSpace` is exhaustive by type, which is nice, but the closure only exists because the value is captured off `this`. A plain `Record<FeatureKey, number>` initialised in the constructor (`{ safe_seats: this.maxSafesPerSpace }`) would be equivalently exhaustive and clearer to read — the "goes away after the date" comment supports keeping it minimal, not making it callable.
+
+#### Nothing critical
+
+The concurrent-additions integration test at [`space-safes.repository.integration.spec.ts:416`](https://github.com/safe-global/safe-client-gateway/blob/e27616f6cd7792b65596387d77d7859ed9d9d148/src/modules/spaces/domain/safes/space-safes.repository.integration.spec.ts#L416) is exactly the right proof-of-life for the lock — it fails without the advisory lock and passes with it, and the assertion is on the *observable* count, not the mechanism. Nice.
+
+COMMENT
+[falvaradorodriguez 2026-08-25T16:02:29Z] > **Claude finished Felipe Alvarado (@falvaradorodriguez)'s task in 3m 38s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/32867401907)
+> 
+> ### Review
+> Read the entitlements service, guards, filter, error, spaces repository/service/controller, and specs. This is a well-thought-out change; the transaction ownership + advisory lock + prepared quota check split is a genuinely nice shape. A few things worth improving:
+> 
+> #### 1. Guard does a redundant DB round-trip + live count on every gated POST
+> `SafeSeatsGuard.canActivate` runs **before** `SpaceIdPipe`, so both perform a lookup by UUID:
+> 
+> * guard: `spacesRepository.findIdByUuid(spaceUuid)` — [`entitlement.guard.ts:36`](https://github.com/safe-global/safe-client-gateway/blob/e27616f6cd7792b65596387d77d7859ed9d9d148/src/modules/entitlements/routes/guards/entitlement.guard.ts#L36)
+> * pipe: same lookup a moment later inside `@Param('spaceId', SpaceIdPipe)`
+> 
+> Then `assertWithinQuota({ delta: 0 })` triggers a live `countBySpaceId` (via `stockCounters.safe_seats`) — a query the repository will run **again** inside its locked transaction. So the golden-path `POST /v1/spaces/:spaceId/safes` under a plan does: 2× space lookup + 2× seat count + the actual insert. Two of those four are the guard being defensive about "already at limit" before the payload is parsed. Consider either (a) letting the pipe run first and reading the numeric id off the request in the guard, or (b) accepting that the write already gates and rejecting from the guard only on **cached** grant evidence (skip the live count).
+> 
+Option (a) is not available: guards run before pipes in Nest, so the guard cannot read the id `SpaceIdPipe` resolves. Option (b) is, and it is the open decision here: on a quantity route the guard only ever rejects a subset of what the write rejects, so it belongs on binary gates where `delta: 0` is the whole answer. Taking that to the feature owner rather than deciding it in this PR.
+
+> #### 2. `admit(delta: 0)` silently means "consume 1"
+> [`entitlements.service.ts:186`](https://github.com/safe-global/safe-client-gateway/blob/e27616f6cd7792b65596387d77d7859ed9d9d148/src/modules/entitlements/routes/entitlements.service.ts#L186) does `Math.max(args.delta, 1)`. That's what makes the guard's "am I at the limit?" call reject when `used === quota`, which is correct — but it's non-obvious that `delta: 0` reports over-limit-by-one. The `IEntitlementEnforcement` doc string [notes the intent](https://github.com/safe-global/safe-client-gateway/blob/e27616f6cd7792b65596387d77d7859ed9d9d148/src/modules/entitlements/domain/entitlement-enforcement.interface.ts#L11), but a `used >= grant.quota` check would say what it means without the `max(delta, 1)` sleight of hand.
+> 
+Fixed: the `max(delta, 1)` is gone, the condition now reads `used < quota && used + delta <= quota`
+
+> #### 3. Cache-vs-materialization race can leave stale grants for up to TTL
+> In `materializeUnderLock` ([`entitlements.service.ts:569-573`](https://github.com/safe-global/safe-client-gateway/blob/e27616f6cd7792b65596387d77d7859ed9d9d148/src/modules/entitlements/routes/entitlements.service.ts#L569)) the cache is deleted **after** commit. A concurrent reader that missed the cache **before** the commit, computed old grants, and writes them back **after** the delete will re-poison the cache with the pre-materialization value for the full 5-min TTL. In practice this window is small and the PR body accepts a similar Free-tier lag, but it's a race that outlasts any single request; worth either a comment acknowledging it or a versioned key (e.g. include `lastEventAt` in the cache-dir suffix so a stale writer's key is orphaned).
+> 
+
+Fixed: closed with the mechanism the repo already has for this exact race, `deleteByKey` writes an `invalidationTimeMs:<key>` marker and the grant is no longer written back if that marker is newer than the read that computed it (same guard as `CacheFirstDataSource._shouldBeCached`). 
+
+> #### 4. `EntitlementGuard.canActivate` — schema `catch(undefined)` + `as UUID` is fragile
+> [`space-id-param.schema.ts:16-19`](https://github.com/safe-global/safe-client-gateway/blob/e27616f6cd7792b65596387d77d7859ed9d9d148/src/modules/entitlements/routes/guards/space-id-param.schema.ts#L16) uses `.catch(undefined)` to defer everything to `SpaceIdPipe`, then narrows with `as UUID | undefined`. This depends on `UUID_REGEX` in `@/domain/common/constants` staying looser than or equal to the pipe's own validation. If someone tightens the guard schema and forgets the pipe (or vice versa), the guard silently starts admitting requests that the pipe then rejects — the current tests cover the lax case, but there's no assertion that guard vs pipe stay in sync. A one-liner test in `entitlement.guard.spec.ts` importing `UUID_REGEX` and re-checking against `SpaceIdPipe`'s validator would prevent that drift.
+> 
+Fixed:  added a test asserting the guard's schema admits exactly what `UUID_REGEX` admits, so guard and pipe cannot drift silently.
+
+> #### 5. Minor: `EntitlementsService` constructor is up to 13 injections
+> [`entitlements.service.ts:73-95`](https://github.com/safe-global/safe-client-gateway/blob/e27616f6cd7792b65596387d77d7859ed9d9d148/src/modules/entitlements/routes/entitlements.service.ts#L73) — the class now does resolve, cache, materialize, and enforce. That's within tolerance for now, but if a third gated feature lands here (per the follow-up in the PR description), splitting the enforcement path (`assertWithinQuota` / `prepareQuotaCheck` / `resolveGrant`) into its own `EntitlementEnforcementService` would keep this from becoming a god-service. Not a blocker for this PR.
+> 
+
+Agreed, and worth being precise about the direction: the seam is real, not cosmetic. The enforcement path needs 6 of the 13 injections (features, subscriptions, seat count, cache, config, logging); the rest belong to materialization and to the endpoint. But the split should land the engine in `entitlements/domain/`, not as a second service in `routes/`, so a non-HTTP caller such as a job or a backfill can enforce a quota without importing another module's `routes/`. That means moving code this PR does not otherwise touch and relocating the module's service layer, so it is better as its own change than folded in here.
+> #### 6. Nit: `preEnforcementQuotas` returns a closure per lookup
+> [`entitlements.service.ts:240-242`](https://github.com/safe-global/safe-client-gateway/blob/e27616f6cd7792b65596387d77d7859ed9d9d148/src/modules/entitlements/routes/entitlements.service.ts#L240): `Record<FeatureKey, () => number>` with `() => this.maxSafesPerSpace` is exhaustive by type, which is nice, but the closure only exists because the value is captured off `this`. A plain `Record<FeatureKey, number>` initialised in the constructor (`{ safe_seats: this.maxSafesPerSpace }`) would be equivalently exhaustive and clearer to read — the "goes away after the date" comment supports keeping it minimal, not making it callable.
+> 
+Fixed: now a plain `Record<FeatureKey, number>` built in the constructor (it cannot be a field initialiser: those run before the constructor body and would capture `undefined`).
+
+> #### Nothing critical
+> The concurrent-additions integration test at [`space-safes.repository.integration.spec.ts:416`](https://github.com/safe-global/safe-client-gateway/blob/e27616f6cd7792b65596387d77d7859ed9d9d148/src/modules/spaces/domain/safes/space-safes.repository.integration.spec.ts#L416) is exactly the right proof-of-life for the lock — it fails without the advisory lock and passes with it, and the assertion is on the _observable_ count, not the mechanism. Nice.
+
+

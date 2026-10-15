@@ -1,0 +1,115 @@
+{
+  "pr": 3156,
+  "title": "fix(spaces): require ACTIVE membership to access space contents",
+  "description": "Resolves [WA-2542](https://linear.app/safe-global/issue/WA-2542/block-workspace-access-for-pending-invite-users)\r\n\r\n## Summary\r\nPending (`INVITED`) members could access a space's contents **before accepting** the invite. Two authorization paths allowed active-or-pending members; both are now restricted to `ACTIVE`:\r\n\r\n- **`getSpaceAs`** (shared space address book — `AddressBooksController`): an invited member could read the space address book, so it surfaced in their wallet before joining. **This is the main fix.**\r\n- **`assertMember`** (user/private address book, space safes, counterfactual safes, address-book requests): invited members could read/write these too.\r\n\r\nInvited users must now accept first; the invitation itself stays visible (listing still uses the active-or-pending rule).\r\n\r\n## Tests\r\n- Repository integration: new test that a **non-expired invited** member is denied the shared address book (the previously-untested hole).\r\n- `space-assert` unit spec updated to ACTIVE-only.\r\n- `user-address-book` e2e: accept the invite in the member helper; add a **403 for an unaccepted invite** and a **403 for a non-member**.\r\n- `address-books` e2e: accept the invite in the 'as member' read tests.\r\n\r\n## Notes\r\n- The other `assertMember`-gated e2e specs (`space-safes`, `address-book-requests`, `counterfactual-safes`) still set members up via invite-without-accept and may need the same accept step — relying on CI to confirm.\r\n- Some `user-address-book` / shared-address-book e2e assertions are already red on `main` (the new `spaceUuid` field from #3117, exact-match `.expect()`); not touched here.",
+  "findings": [
+    {
+      "id": "F1",
+      "file": "src/modules/spaces/routes/spaces.controller.e2e-spec.ts",
+      "line": 511,
+      "claim": "The test 'Should return a space by its id for an invited member' is unchanged even though the underlying access rule changed, so it still expects an invitee to see the admin's active row instead of the new trimmed view."
+    },
+    {
+      "id": "F2",
+      "file": "src/modules/spaces/routes/address-book-requests.controller.e2e-spec.ts",
+      "line": 522,
+      "claim": "The createActiveMember helper is duplicated with an identical body across three separate spec files instead of being factored into a shared e2e helper, increasing maintenance overhead for repeated changes."
+    },
+    {
+      "id": "F3",
+      "file": "src/modules/spaces/routes/address-books.controller.e2e-spec.ts",
+      "line": 183,
+      "claim": "The renamed createPendingMember helper's 'declined membership → 404' test uses the same unbound token, so it cannot distinguish a declined invitee from a completely unrelated stranger."
+    },
+    {
+      "id": "F4",
+      "file": "src/modules/spaces/routes/spaces.controller.ts",
+      "line": 146,
+      "claim": "The Swagger documentation for GET /spaces/:id has the same outdated description as the /spaces endpoint and was not updated to reflect the new invitee-restricted response, unlike the members endpoint which was updated."
+    },
+    {
+      "id": "F5",
+      "file": "src/modules/spaces/routes/spaces.service.ts",
+      "line": 128,
+      "claim": "Returning safeCount: 0 for an invitee is indistinguishable from a space that genuinely has no safes, which changes the response contract for any client that displays this count and could mislead consumers."
+    },
+    {
+      "id": "F6",
+      "file": "src/modules/spaces/routes/utils/__tests__/space-assert.utils.spec.ts",
+      "line": 83,
+      "claim": "The new unit test asserting a ForbiddenException is thrown for a pending member has identical setup and assertions to the adjacent test for a non-member (both mock findOne to return null and expect ForbiddenException), so it does not exercise anything specific to the pending-member case despite its name suggesting otherwise; it should be removed or merged into the non-member test."
+    },
+    {
+      "id": "F7",
+      "file": "src/modules/spaces/routes/address-books.controller.e2e-spec.ts",
+      "line": 804,
+      "claim": "The createPendingMember helper in the address-books e2e spec still signs a token using memberAuthPayloadDto, whose sub is a random single-digit string rather than the invited user's actual id, unlike the sibling helper in user-address-book.controller.e2e-spec.ts which was fixed to sign the invite response's userId; the test that relies on it only passes because the random sub happens to match the invitee's id, making the test non-deterministic and not actually verifying what it claims to."
+    },
+    {
+      "id": "F8",
+      "file": "src/modules/spaces/routes/utils/__tests__/space-assert.utils.spec.ts",
+      "line": 83,
+      "claim": "The 'pending member' test mocks findOne to return null, which makes it identical to the separate 'not a member' test and never actually sets up or exercises a pending-member scenario."
+    },
+    {
+      "id": "F9",
+      "file": "src/modules/spaces/routes/spaces.controller.ts",
+      "line": 146,
+      "claim": "The Swagger description for GET /spaces/:id still says the user must be a member of or invited to the space to access it, but the endpoint now returns a filtered roster and safeCount: 0 for pending invitees, and unlike the equivalent description in members.controller.ts this one was not updated to reflect the new behavior."
+    },
+    {
+      "id": "F10",
+      "file": "src/modules/spaces/routes/spaces.controller.ts",
+      "line": 123,
+      "claim": "The Swagger documentation for GET /spaces still describes returning the full members list and safe count, which is no longer accurate for invitees who now only get their own row and a safeCount of 0."
+    },
+    {
+      "id": "F11",
+      "file": "src/modules/spaces/routes/spaces.controller.ts",
+      "line": 123,
+      "claim": "The Swagger description for GET /spaces still says it returns the count of Safes in each space, but for a pending invitee the endpoint now returns safeCount: 0, so API consumers would misread the zero as meaning no Safes rather than that the data is hidden pending acceptance."
+    },
+    {
+      "id": "F12",
+      "file": "src/modules/spaces/routes/address-books.controller.e2e-spec.ts",
+      "line": 799,
+      "claim": "The equivalent invited-member test here has the same unbound-token problem, meaning there is no reliable end-to-end coverage of the new trimmed view for GET /spaces/:id."
+    },
+    {
+      "id": "F13",
+      "file": "src/modules/users/domain/members.repository.ts",
+      "line": 513,
+      "claim": "The optional relations parameter is now always called with { user: true } by both call sites, yet it remains a parameter instead of being hard-coded, and the JSDoc that previously explained why it varied was deleted without replacement."
+    },
+    {
+      "id": "F14",
+      "file": "src/modules/spaces/routes/spaces.controller.e2e-spec.ts",
+      "line": 511,
+      "claim": "Because the token's sub does not match the real invitee, the request most likely 404s earlier in spaces.service.ts before reaching the new filtering logic, making the test flaky or passing by coincidence rather than verifying the intended behavior."
+    },
+    {
+      "id": "F15",
+      "file": "src/modules/spaces/routes/spaces.controller.e2e-spec.ts",
+      "line": 511,
+      "claim": "The member token in this test is signed with a random, unbound siwe payload rather than the invitee's real user id, so the request does not actually act as the invited user and the test does not really exercise the invitee path."
+    },
+    {
+      "id": "F16",
+      "file": "src/modules/spaces/routes/address-book-requests.controller.e2e-spec.ts",
+      "line": 522,
+      "claim": "The createActiveMember invite-then-accept helper is duplicated across three e2e spec files and the copies have already diverged in how they build the auth token (two build it inline with .with('sub', ...) while the third uses a local accessTokenForUserId helper), which is the same drift responsible for the token bug found in the address-books helper; a single shared spaces e2e test helper would prevent this kind of divergence."
+    },
+    {
+      "id": "F17",
+      "file": "src/modules/spaces/routes/address-books.controller.e2e-spec.ts",
+      "line": 799,
+      "claim": "The method was renamed without apparent need; the previous name was accurate since the method purely invites the member, and an alternative name such as createPendingMember could be used instead."
+    },
+    {
+      "id": "F18",
+      "file": null,
+      "line": null,
+      "claim": "After this branch's changes, workspace contacts from an invited (not-yet-confirmed) workspace no longer appear in the recipient input dropdown when creating a new transaction, breaking a previously working flow where an invited member could see the inviting workspace's shared contacts."
+    }
+  ]
+}

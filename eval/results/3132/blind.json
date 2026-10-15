@@ -1,0 +1,139 @@
+{
+  "pr": 3132,
+  "title": "fix: members e2e tests",
+  "description": "## Summary\r\n\r\nWith the current changes to workspace members' management, the current e2e tests were failing and also did not contain any checks for OIDC-users. Now they are up to date\r\n\r\n\r\n",
+  "findings": [
+    {
+      "id": "F1",
+      "file": "src/modules/spaces/routes/members.controller.e2e-spec.ts",
+      "line": 243,
+      "claim": "The test name '403 if the signer is not an active admin of the space' (around line 243) does not indicate that the test is actually exercising a non-existent space, making it hard to distinguish from the similarly named test at line 285; a more descriptive name (e.g. referencing a non-existent space) would clarify the distinction."
+    },
+    {
+      "id": "F2",
+      "file": "src/modules/spaces/routes/members.controller.e2e-spec.ts",
+      "line": 1089,
+      "claim": "The user-record assertions (id: Number(sub), email: null, extUserId: null) depend on which pre-existing user happens to own the randomly chosen id, making these checks order-dependent and fragile rather than deterministic."
+    },
+    {
+      "id": "F3",
+      "file": "src/modules/spaces/routes/members.controller.e2e-spec.ts",
+      "line": 1794,
+      "claim": "This site uses authPayloadDto.sub as a string while the other similar sites (lines 124, 1046, 1580) use Number(...), making the admin id extraction inconsistent."
+    },
+    {
+      "id": "F4",
+      "file": "src/modules/spaces/routes/members.controller.e2e-spec.ts",
+      "line": 72,
+      "claim": "On a fresh database this causes space creation to return 404 unless sub happens to match an existing user id, and on a shared database different tests' admins collide on the same user 1-9, causing activateIfPending to flip invite placeholders in that range to ACTIVE; the comment at this location describes the collision but the helper does not guard against it."
+    },
+    {
+      "id": "F5",
+      "file": "src/modules/spaces/routes/members.controller.e2e-spec.ts",
+      "line": 124,
+      "claim": "The helper should instead use the id returned from the wallet registration call to build the access token and return {spaceId, userId, accessToken}, removing the reliance on Number(authPayloadDto.sub) at lines 124, 1046, and 1580; at minimum the misleading comment should be corrected."
+    },
+    {
+      "id": "F6",
+      "file": "src/modules/spaces/routes/members.controller.e2e-spec.ts",
+      "line": 1633,
+      "claim": "The previously existing DELETE test 'should throw a 404 if the signer_address does not have a user' was removed and not replaced, so there is now no DELETE test covering a signer who is not a member of the space at all; a DELETE test using nonMemberToken() expecting a 403 'User is not an active admin.' response should be added."
+    },
+    {
+      "id": "F7",
+      "file": "src/modules/spaces/routes/members.controller.e2e-spec.ts",
+      "line": 1313,
+      "claim": "The variable nonUserAccessToken is assigned from nonMemberToken(), but the test now describes a non-member rather than a missing user, so the name should be nonMemberAccessToken to match its actual meaning."
+    },
+    {
+      "id": "F8",
+      "file": "src/modules/spaces/routes/members.controller.e2e-spec.ts",
+      "line": 89,
+      "claim": "The createSpaceForSigner helper registers a brand-new wallet user but then creates the space using the caller's token, whose sub is still the builder's default value of 1-9, so the space ends up owned by whatever existing user happens to have that id rather than the user just registered."
+    },
+    {
+      "id": "F9",
+      "file": "src/modules/spaces/routes/members.controller.e2e-spec.ts",
+      "line": 87,
+      "claim": "The space service also activates the shared user identified by the random sub if that user was pending, which silently mutates data that other tests depend on."
+    },
+    {
+      "id": "F10",
+      "file": "src/modules/spaces/routes/members.controller.e2e-spec.ts",
+      "line": 743,
+      "claim": "The accept- and decline-invite 'no pending invite' tests (around lines 743 and 952) still construct their outsider token by hand instead of using the nonMemberToken() helper used elsewhere in the file, which is inconsistent with the rest of the test suite."
+    },
+    {
+      "id": "F11",
+      "file": "src/modules/spaces/routes/members.controller.e2e-spec.ts",
+      "line": null,
+      "claim": "The commit mixes a large refactor, extracting createSpaceForSigner across roughly 30 tests, into what is nominally a fix, going well beyond the scope the fix itself needs."
+    },
+    {
+      "id": "F12",
+      "file": "src/modules/spaces/routes/members.controller.e2e-spec.ts",
+      "line": 1447,
+      "claim": "The same nonUserAccessToken naming mismatch as at line 1313 occurs here as well, while a differently-named variable at line 1930 already uses the correct nonMemberAccessToken form, showing the inconsistency."
+    },
+    {
+      "id": "F13",
+      "file": "src/modules/spaces/routes/members.controller.e2e-spec.ts",
+      "line": 87,
+      "claim": "The comments describing the createSpaceForSigner helper (around lines 72-74 and 87-88) say it makes the newly registered wallet user the space admin, but the space is actually created using a random 'sub' value (1-9), so the admin ends up being some other, older user rather than the one just registered."
+    },
+    {
+      "id": "F14",
+      "file": "src/modules/spaces/routes/members.controller.e2e-spec.ts",
+      "line": null,
+      "claim": "Several negative-path tests were removed, including \"404 member does not exist\" for accept and decline, \"404 signer has no user\" for invite, get and delete, and \"404 not an active member\" for get; the replacement 403/404 mappings for these cases should be confirmed as covered by unit tests in the members service spec."
+    },
+    {
+      "id": "F15",
+      "file": "src/modules/spaces/routes/members.controller.e2e-spec.ts",
+      "line": 87,
+      "claim": "Since the same small set of users (identified by sub 1-9) accumulate every space created through this helper's default token, on a local database that is never wiped they eventually reach the per-user space limit (100-200), after which space creation starts returning 409 instead of succeeding."
+    },
+    {
+      "id": "F16",
+      "file": "src/modules/spaces/routes/members.controller.e2e-spec.ts",
+      "line": 243,
+      "claim": "A test was renamed from \"404 if the space does not exist\" to \"403 if the signer is not an active admin of the space\" but still uses a random, non-existent spaceId, so the name no longer describes what the test actually proves (that a missing space returns 403, not 404)."
+    },
+    {
+      "id": "F17",
+      "file": "src/modules/spaces/routes/members.controller.e2e-spec.ts",
+      "line": 87,
+      "claim": "The helper's comment, \"Registers the signer (a user must exist before a space can be created)\", is inaccurate because the registered user is never the one who actually creates the space."
+    },
+    {
+      "id": "F18",
+      "file": "src/modules/spaces/routes/members.controller.e2e-spec.ts",
+      "line": 87,
+      "claim": "Because the admin comes from a random sub rather than the newly created user, running the space-creation flow against an empty database with fewer than 9 existing users causes space creation to fail with a 404 response most of the time."
+    },
+    {
+      "id": "F19",
+      "file": "src/modules/spaces/routes/members.controller.e2e-spec.ts",
+      "line": 124,
+      "claim": "userId/adminUserId is computed as Number(authPayloadDto.sub), which reads back the value the test itself put into the token rather than the id of the user actually created, so the assertion only works because of the token/user id collision described elsewhere."
+    },
+    {
+      "id": "F20",
+      "file": "src/modules/spaces/routes/members.controller.e2e-spec.ts",
+      "line": 1340,
+      "claim": "A similarly named test, \"403 if the user is not a member of the space\" with a note that the space does not even exist, has the same mismatch between test name and actual behavior being tested, though to a lesser degree."
+    },
+    {
+      "id": "F21",
+      "file": "src/modules/spaces/routes/members.controller.e2e-spec.ts",
+      "line": 845,
+      "claim": "The accept-422 test still builds inviteeAccessToken using jwtService.sign(inviteeAuthPayloadDto) with the default sub, unlike other invitee tokens in the same file that were moved to accessTokenForUserId(inviteResponse.body[0].userId), making this test inconsistent with the rest of the change even though it happens to pass because body validation runs before auth."
+    },
+    {
+      "id": "F22",
+      "file": "src/modules/spaces/routes/members.controller.e2e-spec.ts",
+      "line": 345,
+      "claim": "Only the admin-of-another-space test re-signs the token with the real user id, meaning the fix is not applied consistently across the other tests that rely on the helper."
+    }
+  ]
+}

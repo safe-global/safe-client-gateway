@@ -1,0 +1,30 @@
+{
+  "usd": 0.739776,
+  "findings": [
+    {
+      "file": "src/modules/spaces/routes/safe-shield/space-safe-shield.controller.ts",
+      "line": 28,
+      "claim": "The Spaces controller and service import safe-shield's internal DTOs and validation schema (CounterpartyAnalysisRequestSchema, CounterpartyAnalysisDto, CounterpartyAnalysisRequestDto, SingleRecipientAnalysisDto) directly from safe-shield's entities instead of through its domain layer, breaking the rule that a module should only be consumed via its domain interface. If those DTOs or schemas are later changed to fit safe-shield's own endpoint, the Spaces API's validation and Swagger docs would change unintentionally without anyone touching the Spaces module."
+    },
+    {
+      "file": "src/modules/safe-shield/errors/copilot-core-disabled.error.ts",
+      "line": 13,
+      "claim": "The 402 error message states that both recipient and counterparty analysis require a paid Space, but the gating guard only applies to recipient analysis, and counterparty analysis remains free on Core per the configuration and tests. Clients reading the error response would be given incorrect information about which feature is actually restricted."
+    },
+    {
+      "file": "src/config/entities/configuration.ts",
+      "line": 495,
+      "claim": "The comment on the new feature flag gives a removal condition but names no owner, whereas the project's configuration-and-flags convention requires both an owner and a condition on new flags, as shown by the nearby mfaStepUp flag."
+    },
+    {
+      "file": "src/modules/safe-shield/errors/copilot-core-disabled.error.ts",
+      "line": 1,
+      "claim": "The new error, exception filter, and guard files for safe-shield are placed in new root-level errors/ and guards/ folders instead of the module's standard locations (domain/errors/, domain/exception-filters/, routes/guards/), inconsistent with the module structure convention that the same diff otherwise follows for its entitlements files."
+    },
+    {
+      "file": "src/modules/safe-shield/domain/safe-shield-analysis.interface.ts",
+      "line": 28,
+      "claim": "The transaction shape (to, value, data, operation) is typed inline in the analysis interface and duplicated in the Spaces service rather than referencing the existing TransactionBaseSchema-derived type, so the same shape is defined twice."
+    }
+  ]
+}

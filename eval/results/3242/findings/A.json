@@ -1,0 +1,25 @@
+{
+  "usd": 0.0597916,
+  "findings": [
+    {
+      "file": "src/modules/chains/feature-flags/feature-flag.service.integration.spec.ts",
+      "line": 23,
+      "claim": "The code checks `if (app)` before closing but still uses the optional chaining operator on `app?.close()`, which is redundant since the surrounding check already rules out undefined; this appears to be a side effect of a bulk find-and-replace and should be reverted to a plain `app.close()` call or have the redundant check removed."
+    },
+    {
+      "file": "src/modules/messages/routes/messages.controller.integration.spec.ts",
+      "line": 49,
+      "claim": "The code checks `if (app)` before closing but still uses the optional chaining operator on `app?.close()`, which is redundant since the surrounding check already rules out undefined; this appears to be a side effect of a bulk find-and-replace and should be reverted to a plain `app.close()` call or have the redundant check removed."
+    },
+    {
+      "file": "src/modules/chains/feature-flags/feature-flag.service.integration.spec.ts",
+      "line": 97,
+      "claim": "The optional chaining on `await app?.close()` is applied to a local `const app` that was already initialized and had `init()` called on it a few lines earlier, so it can never be undefined at this point, making the change pure churn; it should be reverted to `await app.close();`."
+    },
+    {
+      "file": "src/domain/common/entities/name.builder.ts",
+      "line": 26,
+      "claim": "There is no test that reliably exercises the truncation edge case where a name is cut at NAME_MAX_LENGTH (30 characters) landing just after a space; the only coverage comes from 50 random runs in name.builder.spec.ts (lines 13-19) that only hit this case when a randomly generated full name happens to be longer than 30 characters with a space at position 30, which is rare, so the regression is not reliably tested. A test should be added that mocks or selects a long name with a space at index 29 and asserts that NameSchema.parse succeeds and sanitizeName(name) === name."
+    }
+  ]
+}

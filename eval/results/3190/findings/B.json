@@ -1,0 +1,45 @@
+{
+  "usd": 0.0720536,
+  "findings": [
+    {
+      "file": "src/main.ts",
+      "line": 37,
+      "claim": "The server call to app.listen only passes the port and no host, so Fastify defaults to binding to localhost only instead of all interfaces as Express did. This breaks connectivity from Docker/nginx and Kubernetes probes, since traffic proxied to the container can no longer reach the process."
+    },
+    {
+      "file": "src/app.provider.ts",
+      "line": 63,
+      "claim": "Fastify's router matches paths case-sensitively and treats a trailing slash as a distinct route, unlike Express which did neither by default. Existing clients calling endpoints with a trailing slash or mixed-case paths will now receive 404 responses."
+    },
+    {
+      "file": "src/routes/common/http/http-request.utils.ts",
+      "line": 27,
+      "claim": "In production, headers are only ever read through getHeaderFromCollection because Fastify requests lack .get()/.header(), but the unit spec still mocks request.get and the logger integration spec only covers the case where headers are missing. This means a break in the lowercase lookup or array handling of headers would not be caught by any test."
+    },
+    {
+      "file": "src/app.provider.ts",
+      "line": 38,
+      "claim": "parseBodyLimit is only tested with the values '1mb' and '8', leaving kb/gb units, decimal amounts, and the invalid-value error path untested."
+    },
+    {
+      "file": "src/routes/common/http/http-request.utils.ts",
+      "line": 31,
+      "claim": "The HeaderReader type and the request.header?.() / request.get?.() branches mirror the Express API that this PR removes, and are only ever reached by test mocks, making them dead code that should be simplified."
+    },
+    {
+      "file": "src/app.provider.ts",
+      "line": 69,
+      "claim": "The new Fastify adapter code still reads configuration keys named express.jsonLimit and express.trustProxy, and the related env vars and comments in the configuration entities still reference Express documentation, which is inconsistent with the migration away from Express."
+    },
+    {
+      "file": "src/config/entities/configuration.ts",
+      "line": 382,
+      "claim": "Environment variable names and comments still point to Express documentation even though the framework has been migrated to Fastify."
+    },
+    {
+      "file": null,
+      "line": null,
+      "claim": "Unmatched routes are now handled by Fastify's own not-found handler, which returns a message like 'Route GET:/x not found' instead of Express's 'Cannot GET /x', and no custom not-found handler was added to preserve the old response body; clients that depend on the old error body may break."
+    }
+  ]
+}

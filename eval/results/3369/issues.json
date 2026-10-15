@@ -1,0 +1,121 @@
+{
+  "usage": {
+    "usd": 0.440906,
+    "turns": 8,
+    "wallSeconds": 60
+  },
+  "issues": [
+    {
+      "findings": [
+        "F2",
+        "F13",
+        "F14"
+      ],
+      "summary": "The transitive-registration allowance says a module may skip app.module.ts only when it serves a single consumer, but most of the cited examples have several consumers.",
+      "label": "medium",
+      "evidence": "docs/agents/module-structure.md:133 cites siwe, queues and email as single-consumer examples. SiweModule is imported by src/modules/auth/auth.module.ts and src/modules/users/users.module.ts. The queues module is imported by health.module.ts and hooks.module.ts. The email modules (ses/pushwoosh) are imported by spaces.module.ts and alerts.module.ts. The examples contradict the rule stated in the same sentence, which is the main change of this docs PR.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F1",
+        "F9"
+      ],
+      "summary": "The two guides set different bars for staged delivery: module-structure.md requires a link to the follow-up PR, while reviewing.md only requires stating which follow-up consumes the artifact.",
+      "label": "low",
+      "evidence": "docs/agents/module-structure.md:33 says 'links the follow-up PR'. docs/agents/reviewing.md:48 says 'states which follow-up consumes it'. The first PR of a series often can't link a follow-up that doesn't exist yet, so reviewers applying the two guides would judge the same PR differently.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F3",
+        "F15"
+      ],
+      "summary": "Other statements of the 'routes/ only when HTTP endpoints exist' convention were left unqualified and don't point to the new staged-delivery exception.",
+      "label": "low",
+      "evidence": "module-structure.md:12 (the Rule line) and :19 (the skeleton comment), docs/agents/ARCHITECTURE.md:86, and the description in .claude/skills/cgw-module-structure/SKILL.md still say routes/ exists only with endpoints. The exception at module-structure.md:33 is the only place the qualification appears, so this is a small documentation inconsistency.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F8"
+      ],
+      "summary": "commits-and-prs.md still says only one reviewing.md requirement goes in the PR body, even though this diff adds more requirements for the description text.",
+      "label": "low",
+      "evidence": "docs/agents/commits-and-prs.md:91 is unchanged at HEAD ('One reviewing.md requirement still lands here'). This diff adds three more description-text requirements: a declared series (reviewing.md:48), a linked follow-up (module-structure.md:33) and a never-shipped-field justification (api-dtos-and-validation.md:113). The PR-body guide is now incomplete.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F5"
+      ],
+      "summary": "The claim that commits-and-prs.md enumerates five requirements as a long paragraph",
+      "label": "wrong",
+      "evidence": "At HEAD, docs/agents/commits-and-prs.md:91 mentions only one requirement, and the file isn't touched by this diff (git diff shows only three files changed). The enumeration F5 critiques does not exist.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F7"
+      ],
+      "summary": "'A module with its own HTTP surface registers directly' is ambiguous for a module that has routes/ but no controller yet, such as EntitlementsModule.",
+      "label": "low",
+      "evidence": "src/modules/entitlements/routes/ contains only services, and module-structure.md:33 allows routes/ to land before its controller. module-structure.md:133 doesn't say whether the module must move to direct registration once its controller lands. This is a real ambiguity, but a minor one.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F16"
+      ],
+      "summary": "The 'upstream never populated' example ignores fields that are serialized as null, which released clients still decode.",
+      "label": "low",
+      "evidence": "api-dtos-and-validation.md:113 treats a never-populated field as one no client ever parsed. But a nullable field sent as null is still a key that strict decoders consume, so removing it can break those clients. The reasoning holds, although the validUntil cite is not clearly an instance (it is typed number in swap-transfer-transaction-info.entity.ts:73).",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F10"
+      ],
+      "summary": "The never-shipped-field exception doesn't say which environment's flag state counts.",
+      "label": "low",
+      "evidence": "api-dtos-and-validation.md:113 says 'behind a disabled feature flag since it was introduced' without naming an environment. A flag enabled in staging could have let real clients parse the field. The mandatory PR-description justification limits the risk, so this is a minor ambiguity.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F4"
+      ],
+      "summary": "The PR/commit title doesn't mention the API-versioning addition.",
+      "label": "nit",
+      "evidence": "The PR description explicitly covers the versioning paragraph as one of the accepted rebuttals from the same adjudication, so the change is related and documented. Only the title wording is at stake.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F6"
+      ],
+      "summary": "The rule doesn't address flag-gating being bypassed if another module later imports EntitlementsModule.",
+      "label": "nit",
+      "evidence": "src/app.module.ts:97 gates BillingModule behind a flag. A hypothetical future import that bypasses it would be a problem in that future code, not a defect in this guide sentence. The concern is speculative.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F11"
+      ],
+      "summary": "The staged-rollout paragraph packs several ideas into long sentences.",
+      "label": "nit",
+      "evidence": "module-structure.md:33 is dense but unambiguous. This is a readability preference with no concrete cost.",
+      "category": "style"
+    },
+    {
+      "findings": [
+        "F12"
+      ],
+      "summary": "The never-shipped-field sentence could use a clause break.",
+      "label": "nit",
+      "evidence": "api-dtos-and-validation.md:113 already reads correctly. The suggestion is purely stylistic.",
+      "category": "style"
+    }
+  ]
+}

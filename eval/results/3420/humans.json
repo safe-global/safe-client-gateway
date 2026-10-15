@@ -1,0 +1,60 @@
+{
+  "usd": 0.3215226,
+  "head": "ac896507da4a0db34fca654d39772a143c08ba5c",
+  "verdicts": [
+    {
+      "issue": 5,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "The author replied to item 2 that the quote depends only on the price, so the preview's answer is the same for every candidate link, and only the PATCH has to pick a link because it copies metadata. The preview was not changed."
+    },
+    {
+      "issue": 9,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "The author declined item 1: src/domain/interfaces/ already holds 18 clear* methods, and moving the call out of the interface would put Redis knowledge back into SubscriptionSyncService. clearSubscriptions is still at src/domain/interfaces/billing-api.interface.ts:80."
+    },
+    {
+      "issue": 10,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "The author answered item 4 with \"Done\" and documented the drops-every-filter contract on getBillingSubscriptionsCacheKey at src/datasources/cache/cache.router.ts:1214-1221."
+    },
+    {
+      "issue": 11,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "The author replied to item 3 that the upstream has no by-id route and that fetching every status is deliberate, so a canceled subscription gets a 409 rather than a 404. The lookup was left as it was."
+    },
+    {
+      "issue": 12,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "The author declined item 6: preview-update is one of 12 undeclared space-scoped routes, so a TODO on this one route would misdescribe the gap. No TODO was added."
+    },
+    {
+      "issue": 15,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "The author replied to item 7 that the nesting is the error funnel: parse awaits the promise inside its own try, so HttpErrorFactory can turn a network rejection into a DataSourceError. The chain was kept."
+    },
+    {
+      "issue": 19,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "The author answered item 5 with \"Done via Pick\". After LucieFaire's comment, the Pick was reverted and the mock was rebuilt on IBillingRepository with an explicit `clearSubscriptions: vi.fn()` (src/modules/billing/routes/billing.service.spec.ts:61)."
+    },
+    {
+      "issue": 20,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "The author replied to item 8 that patch mirrors post exactly, and that the security.md line they touched is about buildUrl and query strings, not bodies, so it makes no claim either way."
+    },
+    {
+      "issue": 21,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "In both subscription-update.entity.ts threads, yagopv asked for the lone commented property to be removed. The author replied \"Done\" with a link to commit ecba65e34, and both threads are resolved."
+    }
+  ]
+}

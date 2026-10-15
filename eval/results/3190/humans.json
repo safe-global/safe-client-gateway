@@ -1,0 +1,60 @@
+{
+  "usd": 0.4277128,
+  "head": "6ac517477f99613d095987a485ff7605b2be1774",
+  "verdicts": [
+    {
+      "issue": 2,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "At 61942e7 the regex in src/app.provider.ts only accepted b|kb|mb|gb. Commit b82551190 (\"accepting tb/pb units in parseBodyLimit\") widened it to b|kb|mb|gb|tb|pb (src/app.provider.ts:66)."
+    },
+    {
+      "issue": 6,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "src/modules/auth/utils/auth-cookie.utils.spec.ts did not exist at 61942e7. Commit b82551190 added it, including the test 'treats maxAge as seconds and derives Expires in milliseconds'."
+    },
+    {
+      "issue": 8,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "Neither passthrough handler changed. PooyaRaki's 2026-06-24 reply declined the test-coverage items as 'already exercised by existing integration specs', and the bot's final review raised no further objection."
+    },
+    {
+      "issue": 9,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "PooyaRaki declined it: 'Express did not throw on a missing Host; it produced http://undefined/…. No regression.' The 'localhost' fallback is still at src/routes/common/http/http-request.utils.ts:76, and the final bot review accepted that rationale."
+    },
+    {
+      "issue": 10,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "At 61942e7 the middleware typed req as `IncomingMessage & { originalUrl?: string }`. Commit b82551190 changed it to the shared `RequestLike` (src/middleware/not-found-logger.middleware.ts:10,29)."
+    },
+    {
+      "issue": 16,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "At 61942e7 the code was `maxAge: Math.floor(stateMaxAge / 1_000)`. b82551190 changed it to Math.max(1, Math.floor(...)) (oidc-auth.controller.ts:116), and 79ba7422e added a .min(1_000) schema guard on AUTH_STATE_TTL_MILLISECONDS."
+    },
+    {
+      "issue": 17,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "PooyaRaki declined it: 'Tenderly rawBody HMAC — pre-existing, behaviour-affecting; out of scope for this PR.' tenderly-signature.guard.ts:57 still uses JSON.stringify(args.body)."
+    },
+    {
+      "issue": 18,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "PooyaRaki declined it: 'parseBodyLimit('1.5b')→1 — deliberate bytes-library parity, documented and tested.' The decimal-permitting regex and Math.floor are unchanged at src/app.provider.ts:66-73."
+    },
+    {
+      "issue": 25,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "Commit ca0a23f0c says it fixes 'several parity gaps that failed the integration-tests CI job' (trailing slash, maxParamLength, Set-Cookie, 302 redirects, null response, versioning in test app)."
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "usd": 0.0336056,
+  "findings": [
+    {
+      "file": "src/modules/counterfactual-safes/domain/counterfactual-safes.repository.integration.spec.ts",
+      "line": 162,
+      "claim": "This comment is redundant and could be simplified or removed."
+    },
+    {
+      "file": "src/modules/spaces/domain/safes/space-safes.repository.integration.spec.ts",
+      "line": 127,
+      "claim": "This comment is redundant, explicitly explaining something that does not need explicit explanation."
+    },
+    {
+      "file": "src/modules/spaces/domain/spaces.repository.integration.spec.ts",
+      "line": 123,
+      "claim": "This comment is redundant in the same way as the other flagged comments."
+    }
+  ]
+}

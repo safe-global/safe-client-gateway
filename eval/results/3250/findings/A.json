@@ -1,0 +1,30 @@
+{
+  "usd": 0.0457876,
+  "findings": [
+    {
+      "file": "src/modules/counterfactual-safes/routes/counterfactual-safes.service.ts",
+      "line": 83,
+      "claim": "The per-Safe deployment check duplicates the same Promise.all/try-catch logic already present in filterUndeployed in space-counterfactual-safes.service.ts, meaning the two copies must be kept in sync manually; if one is changed (e.g. adding logging or switching to allSettled) and the other is not, GET and POST could disagree about what counts as a deployed Safe."
+    },
+    {
+      "file": "src/modules/counterfactual-safes/routes/counterfactual-safes.service.ts",
+      "line": 90,
+      "claim": "The catch block in the fail-open path swallows errors without logging a warning, so if the transaction service is down, already-deployed Safes get saved as counterfactual and the failure is undetectable; a warn log with chainId, address, and the error should be added before returning false."
+    },
+    {
+      "file": "src/modules/counterfactual-safes/routes/counterfactual-safes.controller.ts",
+      "line": 57,
+      "claim": "The Swagger documentation for the POST endpoint does not declare the new 409 response that can now occur when a Safe is already deployed, only documenting 201 and 401, so API consumers aren't informed of this new response case; an @ApiConflictResponse decorator should be added, similar to what members.controller.ts already does."
+    },
+    {
+      "file": "src/modules/counterfactual-safes/routes/counterfactual-safes.service.spec.ts",
+      "line": 23,
+      "claim": "The test builds the DTO manually field-by-field (14 fields) instead of using a shared builder, creating a third separate copy of the DTO shape alongside the two existing buildCounterfactualSafe helpers in the e2e specs, which will drift apart as the DTO changes; a shared createCounterfactualSafeDtoBuilder() should be added and reused."
+    },
+    {
+      "file": "src/modules/counterfactual-safes/routes/__tests__/counterfactual-safes.controller.e2e-spec.ts",
+      "line": 95,
+      "claim": "The e2e POST tests don't stub the transaction service's isSafe call, so they likely pass only because isSafe fails and is caught by the fail-open branch, meaning the route-level path where a deployed Safe returns 409 is never actually exercised; the isSafe response should be stubbed explicitly (false for happy paths, plus one case returning true expecting 409)."
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "usd": 0.06898560000000001,
+  "findings": [
+    {
+      "file": ".env.sample.json",
+      "line": 118,
+      "claim": "The description for AUTH_ALLOWED_REDIRECT_DOMAIN still says setting the variable only allows any subdomain to be accepted, but after this change setting it also allows http/https redirects to localhost, 127.0.0.1 and [::1] on any port. An operator reading the sample won't know that enabling subdomain redirects also enables loopback redirects, so the description should be updated in this PR."
+    },
+    {
+      "file": "src/modules/auth/utils/auth-redirect.helper.spec.ts",
+      "line": 212,
+      "claim": "Tests build URLs like http://${host}:${faker.internet.port()}/... and https://localhost:${port}/... and assert equality with toBe(url), but if faker happens to pick the default port for the scheme (80 for http, 443 for https), URL normalization drops the port and the assertion fails, making the test flaky (roughly 1 in 65536 runs). A fixed non-default port, or a port range excluding 80 and 443, should be used instead."
+    },
+    {
+      "file": "src/modules/auth/utils/auth-redirect.helper.spec.ts",
+      "line": 254,
+      "claim": "The test 'should reject loopback in production' is placed inside the describe block for 'non-production with allowedRedirectDomain' and builds its own production config there, rather than being placed in the existing 'production (same-origin check)' block or its own dedicated describe block, making the test organization inconsistent with its content."
+    },
+    {
+      "file": "src/modules/auth/utils/auth-redirect.helper.spec.ts",
+      "line": 233,
+      "claim": "The test named 'lookalike hostname suffixed with allowed name' actually tests localhost.<random-domain>, which is a loopback name with an extra domain label appended and has nothing to do with allowedRedirectDomain; the name should instead describe it as a loopback name followed by an extra domain label."
+    },
+    {
+      "file": "src/modules/auth/utils/auth-redirect.helper.spec.ts",
+      "line": 242,
+      "claim": "The userinfo and ftp test cases hard-code port 3000 instead of using faker like the other test cases, making the test data generation inconsistent."
+    },
+    {
+      "file": "src/modules/auth/utils/auth-redirect.helper.ts",
+      "line": 130,
+      "claim": "The loopback exception relaxes strict protocol/port checks and conservative defaults for loopback addresses in every non-production environment that sets AUTH_ALLOWED_REDIRECT_DOMAIN, not just development environments, and staging is included among the affected environments; this ties a security relaxation to an unrelated configuration setting rather than a dedicated flag."
+    },
+    {
+      "file": "src/modules/auth/utils/auth-redirect.helper.ts",
+      "line": 130,
+      "claim": "The JSDoc justifies the loopback exception by citing RFC 8252 §7.3, which addresses native app redirects, but the exception is being applied here to browser redirects on deployed (non-local) environments, which is a different threat context than the cited RFC covers."
+    },
+    {
+      "file": "src/modules/auth/utils/auth-redirect.helper.ts",
+      "line": 130,
+      "claim": "Auth0's allowed callback/logout URL lists must include the loopback origins for logout to actually work with this change, which is a dependency that should be verified/noted."
+    },
+    {
+      "file": "src/modules/auth/utils/auth-redirect.helper.ts",
+      "line": 6,
+      "claim": "The new LOOPBACK_HOSTNAMES constant runs directly into the JSDoc comment of buildAuth0LogoutBaseUrl with no blank line separating them, continuing an existing formatting inconsistency from the AUTH0_LOGOUT_PATH line above it."
+    }
+  ]
+}

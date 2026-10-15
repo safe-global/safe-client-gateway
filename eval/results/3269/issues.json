@@ -1,0 +1,264 @@
+{
+  "usage": {
+    "usd": 0.6748964000000001,
+    "turns": 9,
+    "wallSeconds": 95
+  },
+  "issues": [
+    {
+      "findings": [
+        "F3",
+        "F4",
+        "F31"
+      ],
+      "summary": "No controller/e2e tests for the six new routes (guards, SpaceIdPipe 400, 403, returnUrl validation)",
+      "label": "medium",
+      "evidence": "The only new test is src/modules/billing/routes/billing.service.spec.ts, and it calls the service directly. Nothing exercises @UseGuards(AuthGuard) or the pipes at billing.controller.ts:65-182, so removing a guard would leave every test passing.",
+      "findings_note": "",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F33",
+        "F41",
+        "F44",
+        "F8",
+        "F23"
+      ],
+      "summary": "GET /billing/sessions/:sessionId has no ownership or membership check",
+      "label": "medium",
+      "evidence": "billing.controller.ts:177-182 applies only AuthGuard, and billing.service.ts getCheckoutSession skips assertSpaceMember, which the four space-scoped methods all call. Any logged-in user holding a session id gets back customer, metadata and amounts. Stripe session ids are long random strings rather than guessable, so the real exposure depends on ids leaking.",
+      "category": "security"
+    },
+    {
+      "findings": [
+        "F17",
+        "F29",
+        "F37"
+      ],
+      "summary": "planId, paymentLinkId and sessionId are interpolated into upstream URL paths without validation",
+      "label": "medium",
+      "evidence": "billing-api.service.ts:82, 190 and 210 build `${baseUri}/api/v1/plans/${planId}` and similar paths from raw @Param values. Only spaceId is validated. find-my-way (9.6.0 in yarn.lock) decodes %2F in params, so '..' segments can reach other upstream paths using CGW's bearer token. Zod parsing of the response limits what leaks back.",
+      "category": "security"
+    },
+    {
+      "findings": [
+        "F9",
+        "F16",
+        "F34"
+      ],
+      "summary": "returnUrl only checked with z.url(), with no allowlisted origin",
+      "label": "low",
+      "evidence": "billing.controller.ts:37 is `z.url()`, which accepts any host, and the value goes to Stripe as the portal/checkout return URL (billing.service.ts). resolveAndValidateRedirectUrl already exists in src/modules/auth/utils/auth-redirect.helper.ts. The endpoint returns JSON, so abuse is limited to phishing with the attacker's own Stripe sessions.",
+      "category": "security"
+    },
+    {
+      "findings": [
+        "F13",
+        "F22",
+        "F36"
+      ],
+      "summary": "The checkout-url endpoint is a GET that creates a Stripe checkout session, with no rate limit",
+      "label": "low",
+      "evidence": "billing.controller.ts:157 uses @Get, but createCheckoutSession does a networkService.post (billing-api.service.ts ~185), and the code comment says it creates a resource. With a SameSite=Lax cookie a top-level cross-site GET can trigger it, but the only effect is an unused session.",
+      "category": "security"
+    },
+    {
+      "findings": [
+        "F10",
+        "F20"
+      ],
+      "summary": "Payment-link de-dup lets the general-catalog entry overwrite the space-specific one",
+      "label": "low",
+      "evidence": "billing.service.ts:73-76 builds `new Map([...spaceLinks, ...generalLinks])`, so the last entry for an id (general) wins while keeping the first position. A shared id is most likely the same Stripe object, so differing payloads are unlikely, and the precedence is undocumented.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F11",
+        "F46"
+      ],
+      "summary": "The de-dup test uses the same object in both lists, so precedence isn't tested",
+      "label": "low",
+      "evidence": "billing.service.spec.ts:184-197 mocks both listPaymentLinks calls with [sharedLink] and asserts [sharedLink]. It would pass whichever list took precedence.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F6"
+      ],
+      "summary": "The PR description says Space.id (numeric) is the upstreamCustomerId, but the code uses the space UUID",
+      "label": "low",
+      "evidence": "billing.service.ts passes `upstreamCustomerId: args.spaceUuid` everywhere, and billing-api.service.ts strips its dashes. The numeric spaceId is used only for the membership check.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F28"
+      ],
+      "summary": "An upper-case space UUID maps to a different upstream customer id and cache key",
+      "label": "low",
+      "evidence": "UUID_REGEX (constants.ts:18) is case-insensitive, and billing.controller.ts binds the raw param as spaceUuid, which is then passed through stripDashes unchanged. An upper-case UUID therefore creates a distinct customer id and cache key. Clients normally send lower case.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F7",
+        "F25",
+        "F38"
+      ],
+      "summary": "getCustomerSessionUrl uses raw fetch instead of NetworkService, and the text body isn't validated",
+      "label": "low",
+      "evidence": "billing-api.service.ts:123 is the only datasource fetch outside network.module.ts:80. The docstring gives the reason (a plain-text body), but it loses NetworkService's shared logging and handling, and response.text() is returned unvalidated.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F26"
+      ],
+      "summary": "The fetch test doesn't assert that the timeout signal is passed",
+      "label": "nit",
+      "evidence": "billing-api.service.spec.ts:297 uses objectContaining({headers}), so dropping `signal: AbortSignal.timeout(...)` would go unnoticed. This is minor test strength.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F14",
+        "F19"
+      ],
+      "summary": "BillingService injects the IBillingApi datasource directly, with no repository layer",
+      "label": "low",
+      "evidence": "billing.service.ts:22 injects IBillingApi, which contradicts the AGENTS.md rule that services call repositories, never datasources. fees.service.ts:20 already does the same, so there is precedent.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F40"
+      ],
+      "summary": "paymentLinkId isn't checked against the links available to the space",
+      "label": "low",
+      "evidence": "createCheckoutUrl (billing.service.ts ~85-97) forwards any paymentLinkId with the caller's own customer id. Whether a space-specific link can be used by another space depends on safe-billing-service, which isn't visible here.",
+      "category": "security"
+    },
+    {
+      "findings": [
+        "F18",
+        "F43"
+      ],
+      "summary": "docker-compose now requires a .env file",
+      "label": "low",
+      "evidence": "The diff adds `env_file: .env` and removes all the ${VAR-default} fallbacks from docker-compose.yml:62. Compose fails when the file is missing, and the change is unrelated to billing. It affects local dev only.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F24",
+        "F30"
+      ],
+      "summary": "spaceId is bound twice per handler (pipe and raw), across four handlers",
+      "label": "low",
+      "evidence": "billing.controller.ts:68-69, 106-107, 132-133 and 160-161 each bind @Param('spaceId', SpaceIdPipe) and @Param('spaceId'). The pattern is subtle and costs a findIdByUuid lookup plus a separate member lookup, but it works.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F21"
+      ],
+      "summary": "The checkout-session test builds its expected value with the mapping function under test",
+      "label": "low",
+      "evidence": "billing.service.spec.ts:272 expects toEqual(toCheckoutSessionDto(checkoutSession)), so a swapped field inside toCheckoutSessionDto wouldn't be caught.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F15"
+      ],
+      "summary": "Product and subscription metadata values are non-nullable strings, while payment-link metadata allows null",
+      "label": "low",
+      "evidence": "plan.entity.ts:24 and subscription.entity.ts:43 use z.record(z.string(), z.string()), while payment-link.entity.ts allows z.string().nullable(). Stripe metadata values are always strings, so a null would be unusual, but the inconsistency could cause a parse failure.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F39"
+      ],
+      "summary": "Swagger @ApiQuery for status doesn't list the enum values",
+      "label": "low",
+      "evidence": "billing.controller.ts:64 is `@ApiQuery({ name: 'status', required: false })` with no enum, although SubscriptionStatusFilterSchema defines the allowed values.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F5"
+      ],
+      "summary": "planId and sessionId have no @ApiParam descriptions",
+      "label": "nit",
+      "evidence": "billing.controller.ts:85-89 and 174-179 have no @ApiParam, but Swagger still lists the params from @Param(). Only the description and example are missing.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F2"
+      ],
+      "summary": "The plan schema change could fail on old cached entries",
+      "label": "wrong",
+      "evidence": "CacheFirstDataSource caches the raw upstream body, and PlanSchema parses it on each read (billing-api.service.ts request/parse), so an old entry fails only if the upstream shape itself differs. This is the same risk as a live response, not a cache-versioning problem.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F12",
+        "F32"
+      ],
+      "summary": "Unneeded forwardRef on the AuthModule, UsersModule and SpacesModule imports",
+      "label": "nit",
+      "evidence": "billing.module.ts:17-19. No module imports BillingModule, so there's no cycle through billing. The wrappers are harmless and mirror spaces.module.ts.",
+      "category": "style"
+    },
+    {
+      "findings": [
+        "F35"
+      ],
+      "summary": "The .util.ts suffix is inconsistent with the .utils.ts convention",
+      "label": "nit",
+      "evidence": "upstream-customer-id.util.ts is the only *.util.ts file in the repo, against 11 *.utils.ts files.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F1"
+      ],
+      "summary": "The @ApiParam('spaceId') block is duplicated four times",
+      "label": "nit",
+      "evidence": "billing.controller.ts:57, 94, 121 and 143 repeat the same decorator. It's boilerplate with no functional cost.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F45"
+      ],
+      "summary": "The Swagger summary 'Get a space subscriptions' is ungrammatical",
+      "label": "nit",
+      "evidence": "billing.controller.ts:56 has this wording. Cosmetic only.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F42"
+      ],
+      "summary": "The metadata record schema is duplicated instead of shared",
+      "label": "nit",
+      "evidence": "plan.entity.ts:24 and subscription.entity.ts redefine z.record(z.string(), z.string()) rather than reusing a shared schema. It's a style point.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F27"
+      ],
+      "summary": "The general payment-link catalog isn't paged",
+      "label": "nit",
+      "evidence": "billing.service.ts:68-76 merges the full catalog, but upstream listPaymentLinks returns an unpaged list anyway, and the catalog is expected to be small.",
+      "category": "performance"
+    }
+  ]
+}

@@ -1,0 +1,127 @@
+{
+  "pr": 3446,
+  "title": "feat: count a Safe on several chains as one seat",
+  "description": "- Closes [PLA-1975](https://linear.app/safe-global/issue/PLA-1975/count-a-safe-on-multiple-chains-as-one-seat)\r\n\r\n## Summary\r\n\r\nA Safe address takes one seat in a Workspace however many chains it is on, and releases it only when its last chain is removed. Two rows are the same Safe when the address matches, with no owners or threshold check, which is already how the web app groups them. Safes stay stored per chain and users keep adding and removing per chain; only the counting changes.\r\n\r\nThe seat key is `COALESCE(address_index, address)`, mirroring the two partial unique indexes the encryption migration already created. `address` is non-deterministic KMS ciphertext, so equality goes through the blind index where a row has one. The blind index is computed whenever `ENCRYPTION_INDEX_KEY` is configured, including with encryption disabled, so a rollback keeps every row on the same key. \r\n\r\nTwo things in this diff go beyond the ticket and need saying.\r\n\r\n**`SafeSeatsGuard` and its `EntitlementGuard` base are deleted.** The guard asked `assertWithinQuota` with `delta: 0`, and the old `fitsWithinQuota` (`used < quota && …`) refused that at the limit, which is the exact case the ticket requires to admit: a new chain for a Safe the Workspace already holds. It cannot be fixed in place. A guard runs before the validation pipe, so it cannot know what the payload consumes, and giving it the addresses would mean reading seat keys outside the transaction's lock, i.e. duplicating the use case behind an answer that can go stale. The 402 still comes from the check inside the write, which is where it was already decided for a batch. A side effect worth having: the guard ran before any membership assertion, so a non-member could probe a Workspace's remaining seats. At the limit it answered 402 with `quota`, `used` and `resetsAt`, and below it a 403. That path now hits `assertAdmin` first.\r\n\r\n**`fitsWithinQuota` drops the `used < quota` conjunct**, and it is shared with `sponsored_transactions`. For `delta >= 1` the two expressions are identical, since `used + delta <= quota` already implies `used < quota`, and `workspace.relayer.ts` passes `RELAYS_PER_CALL`, which is never 0. They differ only at `delta: 0`, which nothing produced before this PR except the deleted guard. A Workspace *over* its quota after a downgrade still gets a 402 for a zero-cost add; that is unchanged from before and outside the ticket, which says \"at its seat limit\".\r\n\r\nNo migration. The seat key is a new filter target, so `database-and-migrations.md`'s \"Index in the same migration\" rule was checked against a measurement rather than assumed: on a 1M-row copy of `space_safes`, adding `(\"space_id\", (COALESCE(address_index, address)))` leaves the plan unchanged. The planner keeps choosing the narrower `IDX_SS_space_id`, and the `NOT EXISTS` becomes a Hash Anti Join (one index scan of the space's rows, hashed, probed by the requested keys). Rows per space are bounded by the seat quota itself, so the index would have cost writes for a structure Postgres ignores.\r\n\r\nTwo client-visible consequences for whoever ships this: the `used` reported for existing Workspaces drops in one step, and `safeCount` changes meaning. PLA-1976 carries the web app side.\r\n\r\n## Changes\r\n\r\n- `src/modules/spaces/domain/safes/`: `countBySpaceId` becomes `countSeatsBySpaceId`/`countSeatsBySpaceIds` (`COUNT(DISTINCT …)`), plus `countNewSeats` for what a pending insert would add. Both raw reads parsed with Zod\r\n- `src/modules/spaces/routes/safes/`: the seat check moves inside the transaction, under `lockSeats`, and consumes `{ used, delta }`. `SafeSeatsGuard` off the route\r\n- `src/modules/spaces/routes/spaces.service.ts`: `safeCount` from the repository's seat count. The listing stops loading the `safes` relation, and every Safe's ciphertext with it\r\n- `src/modules/entitlements/domain/`: `fitsWithinQuota` as above. `delta` moves from `prepareQuotaCheck` to the check it returns, because what an action consumes now depends on state read under the caller's lock\r\n- `src/modules/entitlements/routes/guards/`: `entitlement.guard.ts`, `safe-seats.guard.ts`, `space-id-param.schema.ts` and the guard spec deleted. Module providers and exports follow\r\n- `docs/agents/module-structure.md`, `docs/agents/nestjs-patterns.md`: both cited the deleted guards as canonical examples\r\n- Tests: three integration cases for the ticket's requirement (one seat across chains, a held Safe's new chain at the limit, a batch charged only for what it adds), and the `delta: 0` rows restored to the `fitsWithinQuota` table",
+  "findings": [
+    {
+      "id": "F1",
+      "file": "src/modules/spaces/routes/safes/space-safe.dto.entity.ts",
+      "line": 14,
+      "claim": "The Safe payload schema (SpaceSafesSchema) has no maximum array length, which allows arbitrarily large batches to be submitted and processed (including KMS encryption calls) before any over-limit check occurs; adding a max size constraint or a cheap pre-check before encryption would bound this cost."
+    },
+    {
+      "id": "F2",
+      "file": "src/modules/spaces/routes/spaces.service.ts",
+      "line": 153,
+      "claim": "The safeCount field on the spaces listing used to count one row per chain but now counts distinct Safe addresses across chains, while the Swagger description on get-space.dto.entity.ts still says it is the total count of Safes in the space, so a Safe on 3 chains now reports safeCount 1 even though GET /v1/spaces/:id/safes returns 3 entries, and a client comparing the two or labeling the count per-network would get inconsistent numbers with no indication the meaning changed."
+    },
+    {
+      "id": "F3",
+      "file": "src/modules/spaces/domain/safes/space-safes.repository.ts",
+      "line": 256,
+      "claim": "countNewSeats builds a Set of seat keys and then converts it back into an array to unnest into the query, but since the SQL uses NOT EXISTS semantics that already dedupe, the intermediate Set allocation is unnecessary."
+    },
+    {
+      "id": "F4",
+      "file": "space-safes.repository.interface.ts",
+      "line": 101,
+      "claim": "Broadening the parameter type in countNewSeats to Pick<PreparedSpaceSafe, 'address' | 'addressIndex'> lets any caller pass an object with that shape rather than requiring the exact prepared/encrypted values; if a future caller forgets to run encryptRows first, addressIndex will be null and the dedup key will fall back to plaintext, which won't match already-encrypted rows in the table, causing a silent overcount of seats."
+    },
+    {
+      "id": "F5",
+      "file": "src/modules/spaces/routes/safes/space-safes.enforcement.integration.spec.ts",
+      "line": 261,
+      "claim": "This test case (another chain admitted at the limit) duplicates lower-layer coverage and could serve as the single representative end-to-end case to keep while the others are removed."
+    },
+    {
+      "id": "F6",
+      "file": "entitlements.rules.ts",
+      "line": null,
+      "claim": "fitsWithinQuota rejects a delta: 0 add for a space that is already over its quota (e.g. after a downgrade), meaning such a space cannot add a new chain to a Safe it already holds until it removes something; this behavior should be confirmed with product since the PLA-1975 spec wording ('at its seat limit') is ambiguous as to whether it also covers being over the limit."
+    },
+    {
+      "id": "F7",
+      "file": "src/modules/spaces/routes/entities/get-space.dto.entity.ts",
+      "line": 69,
+      "claim": "The ApiProperty description for safeCount does not reflect that the value now represents distinct Safe addresses across chains rather than a count of per-chain rows; it should be updated to describe the new semantics, and the PR description should mention the change so API clients are aware."
+    },
+    {
+      "id": "F8",
+      "file": "database-and-migrations.md",
+      "line": null,
+      "claim": "The PR justifies skipping a new index for the seat-key filter based on a measurement on 1M rows, but that measurement reasoning should be kept in the commit body or a follow-up doc so future reviewers can see why the usual indexing rule was deliberately skipped here."
+    },
+    {
+      "id": "F9",
+      "file": "space-safes.repository.interface.ts",
+      "line": 19,
+      "claim": "The docstring for PreparedSpaceSafe.plaintextAddress states that only insertRows reads inside it, but countNewSeats now also reads from a Pick of PreparedSpaceSafe, making the surrounding wording about the type's consumers stale."
+    },
+    {
+      "id": "F10",
+      "file": "src/modules/spaces/domain/safes/space-safes.repository.ts",
+      "line": 33,
+      "claim": "The SEAT_KEY constant hard-codes a SQL fragment that assumes a join alias of `safe`, but there is no compile-time check tying them together, so a future rename of that alias would silently break the query without being caught."
+    },
+    {
+      "id": "F11",
+      "file": "src/modules/spaces/routes/safes/space-safes.service.ts",
+      "line": 53,
+      "claim": "With SafeSeatsGuard removed, a workspace that is already over its seat limit only receives its 402 rejection after encryptRows has made one KMS call per Safe in the payload and after a transaction has acquired the advisory lock, whereas previously the guard rejected the request before incurring any KMS calls; since the payload array has no maximum length, an admin retrying a large over-limit batch would repeatedly pay this cost."
+    },
+    {
+      "id": "F12",
+      "file": "src/modules/spaces/routes/safes/space-safes.enforcement.integration.spec.ts",
+      "line": 290,
+      "claim": "This test also hard-codes the literal chain ID '137' rather than generating it, repeating the same pattern flagged elsewhere in the new test data."
+    },
+    {
+      "id": "F13",
+      "file": "src/modules/spaces/routes/spaces.service.ts",
+      "line": 153,
+      "claim": "This is the service method whose return value no longer matches the safeCount field's documented meaning, since it now counts distinct Safe addresses instead of total Safe rows across chains."
+    },
+    {
+      "id": "F14",
+      "file": "src/modules/spaces/routes/entities/get-space.dto.entity.ts",
+      "line": 69,
+      "claim": "The safeCount field description still says 'Total count of Safes in the space', but the underlying service now returns the number of distinct Safe addresses (seats) rather than the number of rows, so a Safe present on three chains now returns 1 instead of 3. This changes the meaning of the field for existing API clients without any note in Swagger or the PR description, so the description should be updated and the web and mobile teams should confirm a Safe-seat number is what they intend to display."
+    },
+    {
+      "id": "F15",
+      "file": "src/modules/spaces/routes/safes/space-safes.enforcement.integration.spec.ts",
+      "line": 271,
+      "claim": "This test hard-codes the literal chain ID '137' instead of generating it, similar to the other new test data that should use faker-generated values unless the route specifically needs real chain IDs."
+    },
+    {
+      "id": "F16",
+      "file": "docs/agents/nestjs-patterns.md",
+      "line": 55,
+      "claim": "The guide states there are seventeen guards, but this diff removes two guards (entitlements/routes/guards/entitlement.guard.ts and safe-seats.guard.ts), so the count is now stale and should read sixteen. The sentence also inaccurately implies all guards live under a routes/guards/ directory, when one guard (portfolio/v1/guards/portfolio-route.guard.ts) sits outside that pattern, so the text should be corrected to state sixteen guards exist, all under a routes/guards/ directory (or routes/common/ for the cross-cutting ones)."
+    },
+    {
+      "id": "F17",
+      "file": "src/modules/spaces/routes/safes/space-safes.enforcement.integration.spec.ts",
+      "line": 277,
+      "claim": "This mixed-batch end-to-end test case duplicates coverage already present in the repository, service, and rules-level specs and should be reconsidered per the one-check-per-route testing convention."
+    },
+    {
+      "id": "F18",
+      "file": "space-safes.repository.integration.spec.ts",
+      "line": 448,
+      "claim": "The ad-hoc addSafeUnderQuota helper defined inline in the concurrency test duplicates the SpaceSafesService.create sequence, so the test partly asserts behavior against a re-implementation of the service logic rather than the shared code itself."
+    },
+    {
+      "id": "F19",
+      "file": "src/modules/spaces/routes/safes/space-safes.enforcement.integration.spec.ts",
+      "line": 241,
+      "claim": "New end-to-end HTTP test cases duplicate coverage already provided by lower-layer tests (repository, service, and rules specs), so the branch-level negative cases should be pushed down and only one representative end-to-end case kept."
+    },
+    {
+      "id": "F20",
+      "file": "src/modules/spaces/routes/safes/space-safes.enforcement.integration.spec.ts",
+      "line": 250,
+      "claim": "New test data hard-codes literal chain IDs (['1', '137', '8453']) instead of generating them, which conflicts with local precedent in the same diff where the repository spec generates chain IDs via faker."
+    }
+  ]
+}

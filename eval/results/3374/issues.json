@@ -1,0 +1,117 @@
+{
+  "usage": {
+    "usd": 0.4144978,
+    "turns": 6,
+    "wallSeconds": 46
+  },
+  "issues": [
+    {
+      "findings": [
+        "F14",
+        "F16",
+        "F17",
+        "F20",
+        "F3",
+        "F8",
+        "F1",
+        "F10"
+      ],
+      "summary": "The step-up does not check that the prior session belongs to the same user or was an OIDC session: any valid gateway cookie (another user's, or a SIWE session) passes, and its exp is carried over.",
+      "label": "medium",
+      "evidence": "oidc-auth.service.ts:231-243 only calls decodeToken(...).exp, and no auth_method/sub comparison with userId (resolved at :149) is done anywhere. So the docblock's promise at :183-191 that it 'elevates the session the user already has' is not enforced. The integration test (spec:737-741) even signs a random sub, and the unit tests never check sub, so a regression here would go unnoticed. The impact is limited because MFA is still required and the old behaviour minted a fresh session anyway.",
+      "category": "security"
+    },
+    {
+      "findings": [
+        "F4",
+        "F5"
+      ],
+      "summary": "assertExpirationTime still runs on Auth0's exp on the elevate path, even though that value is discarded in favour of the prior expiry; there is no test for this interaction.",
+      "label": "low",
+      "evidence": "oidc-auth.service.ts:134-140 runs before getSessionExpiration (:142), and on elevation the expirationTime is ignored (:208-220). This check predates the PR and applied to elevation before too. It only bites when Auth0's ID-token exp exceeds the configured max validity, which is unlikely.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F6",
+        "F11"
+      ],
+      "summary": "The absolute-timeout rationale is repeated across several docblocks.",
+      "label": "nit",
+      "evidence": "oidc-auth.service.ts:91-94, :183-186 and :226-228 do restate the same reasoning, but this is only documentation redundancy with no functional cost.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F7"
+      ],
+      "summary": "The clamp uses a Date comparison instead of Math.min.",
+      "label": "nit",
+      "evidence": "oidc-auth.service.ts:216-220 is correct and readable; this is pure style.",
+      "category": "style"
+    },
+    {
+      "findings": [
+        "F2"
+      ],
+      "summary": "The integration spec hand-builds the prior-session payload instead of using oidcAuthPayloadDtoBuilder.",
+      "label": "nit",
+      "evidence": "oidc-auth.controller.integration.spec.ts:737-741 uses faker for sub and a minimal payload for jwtService.sign. It is not a literal fixture, so this is a consistency preference only.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F9"
+      ],
+      "summary": "Claim that the PR title is a capitalised, non-imperative noun phrase.",
+      "label": "wrong",
+      "evidence": "The actual PR title is 'fix(auth): keep the prior session expiry on step-up', which is lowercase, imperative and conventional-commit style.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F12"
+      ],
+      "summary": "The decode-failure debug log has no contextual prefix.",
+      "label": "nit",
+      "evidence": "oidc-auth.service.ts:241 logs only asError(err).message at debug level. Adding context would be nicer, but a debug line has little concrete cost.",
+      "category": "style"
+    },
+    {
+      "findings": [
+        "F13"
+      ],
+      "summary": "The unit test throws a generic Error rather than TokenExpiredError.",
+      "label": "wrong",
+      "evidence": "The catch at oidc-auth.service.ts:238-242 has no error-type-specific logic; it handles any error the same way. So a generic Error exercises exactly the real path.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F15"
+      ],
+      "summary": "Over-max exp raises ForbiddenException while a missing session raises UnauthorizedException.",
+      "label": "nit",
+      "evidence": "The ForbiddenException comes from the pre-existing shared assertExpirationTime (token-expiration.utils.ts:14), which is also used by SIWE login. Both errors are redirected to the client the same way, so the difference is stylistic.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F18"
+      ],
+      "summary": "The 'no session to elevate' negative path is tested at both the unit and integration layers.",
+      "label": "nit",
+      "evidence": "oidc-auth.controller.integration.spec.ts:813 and service.spec.ts:621 overlap, but the integration test also covers the controller passing the cookie (or its absence) through, so the redundancy is cheap and arguably useful.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F19"
+      ],
+      "summary": "getSessionExpiration throws but is not named with an OrFail/assert prefix.",
+      "label": "nit",
+      "evidence": "No such naming convention is documented in docs/agents, and the @throws is clearly documented at oidc-auth.service.ts:188-191.",
+      "category": "convention"
+    }
+  ]
+}

@@ -1,0 +1,79 @@
+{
+  "pr": 3357,
+  "title": "ci: sync releases to the Linear release pipeline",
+  "description": "## Summary\n\nExtends [WA-2846](https://linear.app/safe-global/issue/WA-2846/integrate-github-with-linear-releases-web-mobile) to the Client Gateway. That one wired the web and mobile pipelines in the wallet monorepo ([safe-wallet-monorepo#8291](https://github.com/safe-global/safe-wallet-monorepo/pull/8291)) and deliberately left CGW out of scope; this is that follow-up.\n\nPublishing a GitHub release now records it in the [CGW pipeline](https://linear.app/safe-global/pipeline/cgw-7ua/releases) in Linear, so you can tell which issues are actually live instead of just merged. Same action as the wallet repo, pinned to the same commit, adapted to how we release. Two differences, both because our flow is simpler: we have no release branch or code freeze, so everything hangs off the published GitHub release rather than a release-start workflow; and the CGW pipeline is **continuous**, so a release auto-completes the moment it syncs. No separate `complete` call, and its single `Released` stage means there's nothing to move between.\n\nIt lives in its own workflow rather than in `ci.yml` so Linear never rides on the docker build. The sync fails loudly instead of failing open: if Linear is unreachable or rejects the key, the run goes red and you re-run it from the Actions UI. That's safe here because this workflow publishes nothing itself, so a red run can't block or revert a release that already shipped.\n\n**Before this works**, someone needs to add `LINEAR_ACCESS_KEY` as a repo secret — the CGW pipeline's access key from its Linear settings, not a personal API key.\n\nThe risk worth flagging: our commit subjects don't carry Linear issue IDs. They look like `feat: recognise Safe 1.5.0 as a known, trusted version (#3329)`, while the wallet's look like `feat(web): support 1.5.0 in multichain creation (WA-2930)`. The action falls back to PR references, which may resolve through the Linear/GitHub integration, but I couldn't verify that. With no manual trigger there's no way to dry-run first, so the next published tag is also the first real test — if the Linear release comes back with no issues attached, that's the missing issue keys, not a broken workflow, and the fix is putting them in PR titles. Nothing has run yet; YAML and the inline shell are syntax-checked.\n\n## Changes\n\n**`.github/workflows/linear-release.yml`** (new)\n\n- Triggers only on `release: [released]`. Resolves the version from the tag (`v1.122.0` → `1.122.0`) and runs `sync` with the GitHub release attached as a link.\n- Checks out the release tag rather than a branch, so the commit scan covers that release's history.\n- Full history (`fetch-depth: 0`) so the action can scan commits. No `include_paths` — we're not a monorepo, so any path filter would silently drop commits.\n- Reads the tag and release URL straight off the event, so it makes no API calls of its own.\n- `timeout-minutes: 10`, matching how `claude-code-review.yml` and `architecture-check.yml` bound their jobs.\n",
+  "findings": [
+    {
+      "id": "F1",
+      "file": ".github/workflows/linear-release.yml",
+      "line": 92,
+      "claim": "The manual release-URL lookup uses `gh api ... --jq '.html_url' || true`, which suppresses the exit code but not the command's output. When the tag exists but has no GitHub release, the API call returns a 404 and the JSON error body is likely printed to stdout without the jq filter applied, so the URL variable would contain the error JSON text instead of being empty, and that text would be attached to the Linear release as its link even though no link was intended."
+    },
+    {
+      "id": "F2",
+      "file": ".github/workflows/linear-release.yml",
+      "line": 39,
+      "claim": "The workflow-level concurrency.group is built from the raw trigger values before the Resolve release step normalizes the version, so a published release, a manual run with an unprefixed version, and a manual run with no version produce different group names for what is effectively the same release, allowing two sync calls for the same release to run concurrently instead of queuing behind each other."
+    },
+    {
+      "id": "F3",
+      "file": ".github/workflows/linear-release.yml",
+      "line": 39,
+      "claim": "The concurrency group key falls back to github.ref for manual dispatches without a version input, so two manual dispatches from the same branch that resolve to the same version still serialize on the branch ref rather than being grouped by the resolved version, making the group less informative than it could be."
+    },
+    {
+      "id": "F4",
+      "file": null,
+      "line": null,
+      "claim": "The commit message in 5506983 explains why unversioned manual runs share a concurrency group but does not mention or document the separate v-prefix mismatch that also causes releases to land in different concurrency groups."
+    },
+    {
+      "id": "F5",
+      "file": ".github/workflows/linear-release.yml",
+      "line": 39,
+      "claim": "The concurrency group key is not normalized: a release event uses the tag (e.g. v1.2.3), a manual run uses whatever version string was typed (e.g. 1.2.3), and a manual run with no version falls back to github.ref (e.g. refs/heads/main). Because these differ for what is effectively the same release, cancel-in-progress: false does not prevent two syncs of the same release from running concurrently, and whether that causes damage depends on whether the Linear sync operation is safe to repeat."
+    },
+    {
+      "id": "F6",
+      "file": ".github/workflows/linear-release.yml",
+      "line": 95,
+      "claim": "On workflow_dispatch, github.event.release is undefined, so the links field is empty and the re-synced Linear release loses its link back to the corresponding GitHub release."
+    },
+    {
+      "id": "F7",
+      "file": ".github/workflows/linear-release.yml",
+      "line": null,
+      "claim": "The manual version input is only checked for emptiness, so a malformed value like 1.1220 or v1.122 would silently propagate into the Linear API instead of failing fast in the workflow."
+    },
+    {
+      "id": "F8",
+      "file": ".github/workflows/linear-release.yml",
+      "line": 96,
+      "claim": "On the release trigger, inputs.dry_run is unset and expands to an empty string rather than an explicit boolean, which happens to behave as falsy but relies on subtle, implicit behavior instead of an explicit fallback."
+    },
+    {
+      "id": "F9",
+      "file": ".github/workflows/linear-release.yml",
+      "line": 24,
+      "claim": "The necessity of this line or configuration is unclear and should be justified or explained."
+    },
+    {
+      "id": "F10",
+      "file": ".github/workflows/linear-release.yml",
+      "line": null,
+      "claim": "The input names passed to linear/linear-release-action (access_key, command, version, links, dry_run) were not verified against the action's action.yml because network access was blocked, so a misspelled input name could be silently ignored."
+    },
+    {
+      "id": "F11",
+      "file": ".github/workflows/linear-release.yml",
+      "line": 55,
+      "claim": "On workflow_dispatch with a specific version input, the checkout ref falls back to github.ref (the branch the run was launched from) instead of the tag for that version, so a backfill for an older release would scan commits from the current branch rather than that release's history if the action derives its commit range from the checked-out HEAD."
+    },
+    {
+      "id": "F12",
+      "file": null,
+      "line": null,
+      "claim": "The PR body includes extra sections (\"Before this works\" and \"Not verified\") beyond the template's Summary and Changes sections; the secret-setup prerequisite and verification status should instead be described in the Summary section's prose."
+    }
+  ]
+}

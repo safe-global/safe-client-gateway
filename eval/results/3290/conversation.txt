@@ -1,0 +1,144 @@
+THREAD src/modules/counterfactual-safes/domain/counterfactual-safes.repository.integration.spec.ts:162 resolved=true
+[tongyaosafe 2026-07-23T09:41:12Z] I think this comment is bit redundent
+[PooyaRaki 2026-07-23T09:51:28Z] https://github.com/safe-global/safe-client-gateway/pull/3290/commits/23d8b06974be2826be7342393ffdcccb79112ea1
+
+THREAD src/modules/spaces/domain/safes/space-safes.repository.integration.spec.ts:127 resolved=true
+[tongyaosafe 2026-07-23T09:41:57Z] Here also. I think we don't need to explain explicitly
+[PooyaRaki 2026-07-23T09:51:26Z] https://github.com/safe-global/safe-client-gateway/pull/3290/commits/23d8b06974be2826be7342393ffdcccb79112ea1
+
+THREAD src/modules/spaces/domain/spaces.repository.integration.spec.ts:123 resolved=true
+[tongyaosafe 2026-07-23T09:42:12Z] here the same
+[PooyaRaki 2026-07-23T09:51:23Z] https://github.com/safe-global/safe-client-gateway/pull/3290/commits/23d8b06974be2826be7342393ffdcccb79112ea1
+
+REVIEW DISMISSED
+[tongyaosafe 2026-07-23T09:43:08Z] Approved. I think the comments are bit redundant. Maybe we can simplify them?
+
+REVIEW APPROVED
+[tongyaosafe 2026-07-23T09:58:08Z] 🚀 
+
+COMMENT
+[datadog-official 2026-07-22T16:54:39Z] <a target='_blank' href='https://app.datadoghq.eu/ci/pipeline-executions?query=ci_level%3Ajob+%40ci.status%3Aerror+%40git.commit.sha%3Aca8d589371ca7d1077a16cecee4fb0857583b9bf&referrer=pr-comment&start=1784737415000'><picture><source media="(prefers-color-scheme: dark)" srcset="https://static.datadoghq.com/static/images/pr_comments/software_delivery/badges_header/pipelines-warning.svg"/><img src="https://static.datadoghq.com/static/images/pr_comments/software_delivery/badges_header/pipelines-warning-light.svg" alt="Pipelines" align="center" /></picture></a>
+
+## ⚠️ Warnings
+
+🚦 **1 Pipeline job failed**
+
+<blockquote>
+<div>
+
+<code> CI | biome </code> &nbsp;&nbsp;<a href="https://app.datadoghq.eu/ci/pipeline-executions?query=ci_level%3Ajob&#43;ci.job_correlation_id%3A99ed40d8d9c4a345&amp;referrer=pr-comment&amp;start=1784737415000" title="View in Datadog"><img src="https://static.datadoghq.com/static/images/pr_comments/software_delivery/datadog_icon.svg" alt="View in Datadog" align="center" /></a> &nbsp; <a href="https://github.com/safe-global/safe-client-gateway/actions/runs/29940016234/job/88991199843" title="View in GitHub Actions"><picture><source media="(prefers-color-scheme: dark)" srcset="https://static.datadoghq.com/static/images/pr_comments/software_delivery/logos/github-logo-dark.svg"/><img src="https://static.datadoghq.com/static/images/pr_comments/software_delivery/logos/github-logo-light.svg" alt="GitHub Actions" align="center" /></picture></a>
+
+</div>
+</blockquote>
+
+Useful? React with 👍 / 👎
+
+<sub>
+This comment will be updated automatically if new data arrives. <br />
+🔗 Commit SHA: ca8d589 | <a href="https://docs.datadoghq.com/integrations/guide/source-code-integration/#pr-comments">Docs</a> | Give us <a href="https://forms.gle/ys6MDmdQEeC5pkzWA">feedback</a>!
+</sub>
+
+COMMENT
+[PooyaRaki 2026-07-22T17:10:54Z] @claude review
+
+COMMENT
+[claude 2026-07-22T17:11:10Z] **Claude finished @PooyaRaki's task in 2m 40s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/29941251840)
+
+---
+### Claude PR Review
+
+- [x] Read repo/PR context
+- [x] Analyze PR diff vs `origin/main`
+- [x] Review key changed files (repos, services, tests, config)
+- [x] Check for issues (correctness, security, test coverage, performance)
+- [x] Post final review
+
+---
+
+Overall this is a clean, well-scoped upgrade. The advisory rationale is sound, and the `FindOptionsRelations` and `PostgresDataSourceOptions` migrations look complete (grepped for leftover `relations: [...]` shorthand — none remain). A few things worth improving:
+
+### Suggestions
+
+1. **`enum.ts` — silent behavior change on unknown values via getEnumKey**
+   `src/domain/common/utils/enum.ts:36-42`: the `from` transformer now returns `keyof T | null`, which is a good fix for nullable enum columns. However, `getEnumKey` still throws `Invalid enum value` for non-null-but-unknown values, so the new signature `keyof T | null` is slightly misleading — callers that check `=== null` won't catch corrupt/legacy rows (they get an exception). Consider either:
+   - narrowing to `keyof T | null` intentionally and documenting that non-null invalid values still throw, or
+   - returning `null` for unknown values too (softer, matches typical ORM transformers).
+   Either is defensible; the current mix is worth an explicit choice + brief comment.
+
+2. **Test cleanup pattern — documented in one place, replicated in five**
+   The rationale comment about `.where('1=1')` being rejected by TypeORM lives only in `counterfactual-safes.repository.integration.spec.ts:157`. The same pattern is now used unexplained in `space-audit`, `space-safes`, `spaces`, `members`, `users`, `wallets`, `notifications`. A future reader touching one of those five will re-add `.where('1=1')` reflexively. Either move the comment to a shared truncate helper or add a one-line pointer comment to each spec.
+
+3. **`counterfactual-safes.repository.ts:229-234` — inconsistent delete style**
+   Switched from `manager.delete(entity, ids)` to `createQueryBuilder().delete().from(...).whereInIds(...).execute()`, but `users.repository.ts:294` still uses `manager.delete(DbUser, userId)` (single id, so unaffected). If the change was driven by an API-shape issue in 1.x with array deletes, a code comment explaining *why* the query-builder form is preferred would help future readers avoid regressing it. Also consider `.where({ id: In(ids) })` — more idiomatic in modern TypeORM than `whereInIds` (which is marked as legacy in recent releases).
+
+4. **Integration/e2e tests not verified locally**
+   PR notes flag this explicitly — worth confirming CI is green before merge, especially since the `.delete().execute()` truncate pattern and the new eager-loading behavior only exercise under a real DB.
+
+### Nits
+
+- `notifications.repository.integration.spec.ts:503-506`: fine as-is, but the two-relation object could align with the surrounding style (single-line array previously). Non-blocking.
+- No behavioral changes needed for the `orderBy` CVE — confirmed there is only one `orderBy` call on a `SelectQueryBuilder` with a hardcoded literal (`space-audit.repository.ts:99`).
+
+### Not concerns
+
+- The `relations: { x: true }` migrations are all correct and complete.
+- `PostgresConnectionOptions` → `PostgresDataSourceOptions` rename is applied consistently.
+- `enum.spec.ts` null-case test is a good addition.
+
+---
+ · Branch: `chore/upgrade-typeorm-1.1.0`
+
+COMMENT
+[PooyaRaki 2026-07-22T17:21:12Z] Verified each point against the code before making changes — all checked out.
+
+  - enum.ts: confirmed from() returns keyof T | null but still throws via getEnumKey for non-null unrecognized values. Kept the current behavior (data corruption should stay loud) and added a comment on databaseEnumTransformer.from() clarifying that only null is treated as absence — a
+  non-null value that doesn't match a known enum member is corrupt/legacy data, not absence.
+  - Truncate comment duplication: confirmed only counterfactual-safes.repository.integration.spec.ts had the rationale — the other five specs (spaces, members, users, wallets, notifications) had no comment at all, not even an unexplained repeat. Added a one-line pointer comment at each
+  site back to the full rationale.
+  - whereInIds vs manager.delete inconsistency: confirmed users.repository.ts:294 still uses manager.delete(DbUser, userId), unaffected since it's a single id. Left as-is — checked TypeORM 1.1.0's source and found no @deprecated marker on whereInIds, so I didn't treat that as an
+  established fact to act on.
+  - orderBy CVE / relations migration / PostgresDataSourceOptions rename: re-confirmed, no changes needed.
+  
+  Commit: c6c61fdb
+
+COMMENT
+[PooyaRaki 2026-07-22T17:21:35Z] @claude review addressed the remarks
+
+COMMENT
+[claude 2026-07-22T17:21:47Z] **Claude finished @PooyaRaki's task in 1m 45s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/29941997070)
+
+---
+### Claude PR Review — follow-up
+
+- [x] Fetch latest branch state
+- [x] Verify enum.ts documentation update
+- [x] Verify truncate pointer comments added
+- [x] Verify whereInIds/manager.delete rationale
+- [x] Post final assessment
+
+---
+
+Thanks for the thorough responses. Verified each change in `c6c61fd`.
+
+### Confirmed addressed
+
+- **`enum.ts:36-46`** — the `from()` transformer now has a clear comment explaining that `null` is intentionally treated as absence while non-null unknown values still throw as corrupt data. Good, that ambiguity is gone.
+- **Truncate rationale** — pointer comments added to `notifications.repository.integration.spec.ts:179-183`, `spaces.repository.integration.spec.ts:122-125`, `members.repository.integration.spec.ts:159-162`, `users.repository.integration.spec.ts:127-129`, `wallets.repository.integration.spec.ts:101-103`. A future reader touching these will now find the rationale.
+- **`whereInIds` vs `manager.delete`** — reasonable call to leave `users.repository.ts:294` as-is (single-id, no advisory in 1.1.0). No action needed.
+
+### One small miss
+
+**`space-safes.repository.integration.spec.ts:123-131`** — this spec still has the same unexplained `.createQueryBuilder().delete().execute()` truncate loop with only the `// Delete in dependency order to avoid deadlocks` comment, and no pointer to the `counterfactual-safes` rationale. It's the same pattern the other five specs got a pointer for; likely just missed in the sweep. Adding a similar one-line comment here would close the loop.
+
+`space-audit.repository.integration.spec.ts:149-160` uses the same delete style, but its existing comment covers a different concern (audit rows are intentionally NOT deleted). Optional to add the WHERE-1=1 pointer there too; not blocking.
+
+### Everything else
+
+LGTM — the TypeORM 1.1.0 upgrade itself, the `FindOptionsRelations` object-form migration, the `PostgresDataSourceOptions` rename, and the `.where('1=1')` removal are all clean and consistent.
+ · Branch: `chore/upgrade-typeorm-1.1.0`
+
+COMMENT
+[PooyaRaki 2026-07-22T17:25:31Z] Confirmed — space-safes.repository.integration.spec.ts:126-131 was genuinely missed in the earlier sweep. Added the pointer comment there, and also added it to space-audit.repository.integration.spec.ts:149-160, since its existing comment covers a different concern (why audit rows
+  aren't deleted) and didn't explain the WHERE-1=1 pattern either.
+
+  Commit: 71f967f2

@@ -1,0 +1,184 @@
+THREAD src/modules/relay/domain/relayers/workspace.relayer.ts:98 resolved=true
+[moisses89 2026-09-16T08:21:50Z] I understand the idea but there is a risk of race condition and give extra sponsored transactions.
+Maybe another approach would be increment first and if the relay fails discount.
+[falvaradorodriguez 2026-09-16T12:06:27Z] I agree, it's worth the change. Applied.
+
+THREAD src/modules/entitlements/domain/entitlements.constants.ts:42 resolved=true
+[moisses89 2026-09-16T08:29:56Z] Unlike `isStockMeteredFeature` above, this returns a plain `boolean`, not `feature is T & {...}`. 
+No bug today (`eventPeriodStart` takes a plain `Feature`), but worth making it a real predicate for consistency
+[falvaradorodriguez 2026-09-16T12:14:31Z] Done
+
+THREAD src/modules/relay/routes/space-relay.controller.ts:98 resolved=true
+[moisses89 2026-09-16T08:42:34Z] maybe we can put this in a common place. 
+```
+export const SharedRelayExceptionFilters = () =>
+  applyDecorators(
+    UseFilters(
+      RelayDeniedExceptionFilter,
+      RelayerNotAvailableExceptionFilter,
+      InvalidMultiSendExceptionFilter,
+      InvalidTransferExceptionFilter,
+      UnofficialMasterCopyExceptionFilter,
+      UnofficialMultiSendExceptionFilter,
+      UnofficialProxyFactoryExceptionFilter,
+      UnofficialSignerFactoryExceptionFilter,
+    ),
+  );
+```
+
+[falvaradorodriguez 2026-09-16T10:54:41Z] Makes sense. Applied.
+
+THREAD src/modules/relay/domain/relayers/workspace.relayer.ts:102 resolved=true
+[moisses89 2026-09-16T08:46:32Z] Could we promise.all the last three awaits? looks like there are not dependencies between them. 
+[falvaradorodriguez 2026-09-16T10:48:45Z] They are independent, but the order matters. Each one can reject the request, and they run from the cheapest to the most expensive, so a Safe that does not belong to the workspace, or an exhausted allowance, is refused before we ever call Tenderly. With Promise.all we would pay for that external call on requests we are going to reject, and it does not cancel the other promises when one of them fails. It would also make the 403 and the 402 depend on which check finishes first, so the same request could return either one. In the happy path the simulation takes most of the time anyway, so running them together would save very little.
+
+THREAD src/modules/entitlements/routes/entitlements.service.ts:213 resolved=true
+[LucieFaire 2026-09-17T09:21:36Z] Could we preserve the counter selected by `consumeQuota()` and use it for the refund? 
+Calling `resolveGrant()` again here can select a different billing period if a subscription webhook arrives while the relay request is in flight. For example, consumption increments period A to 1, the webhook advances to period B, and a failed relay then refunds B to -1 while A remains charged. With a quota of 1, that negative usage permits two successful submissions in B. Returning a reservation containing the original `featureId, periodStart, spaceId and delta` would let the refund reverse the correct increment. Maybe makes sense to add test for such a scenario as well.
+[falvaradorodriguez 2026-09-17T11:33:26Z] Good catch! Fixed as you suggested. consumeQuota now returns ConsumedQuota { spaceId, period, delta }, and refundQuota takes it, so the refund credits the row that was charged instead of resolving the grant again. Added the test you mentioned.
+
+THREAD src/modules/relay/domain/relayers/workspace.relayer.ts:126 resolved=true
+[LucieFaire 2026-09-17T09:24:20Z] Maybe we should distinguish confirmed provider rejections from failures where the submission outcome is `unknown`? 
+`RhinestoneApi` converts timeouts and response-parsing failures into DataSourceError too, following the repository's `One error funnel per layer`.
+The provider may have accepted the transaction before the response is lost or cannot be parsed, so receiving no `taskId` does not establish that submission failed. Refunding in that case removes a potentially successful submission from usage and allows the workspace to exceed its allowance. 
+[falvaradorodriguez 2026-09-17T11:34:09Z] You are right about the mechanim, but the existing route (/v1/chains/{chainId}/relay) already behaves this way. DailyLimitRelayer increments the count after relayApi.relay returns, so any throw leaves nothing counted, including a 2xx whose body we cannot read. Keeping both routes consistent seems better than making this one stricter, so if we want to close it I would create a ticket and do the refactor for both.
+[LucieFaire 2026-09-17T11:41:10Z] ko yeah makes sense, lets be consistent then
+
+THREAD src/modules/entitlements/domain/entities/feature-grant.entity.ts:20 resolved=true
+[LucieFaire 2026-09-17T09:26:32Z] Should we handle existing cached grants before making counter mandatory? The base branch stores only quota and resetsAt under the same Redis key. After deployment, `CachedGrantsSchema.parse()` rejects those entries because nullable still requires the counter property to exist. This makes quota checks—including existing Safe-seat checks—fail until the entry expires . 
+[falvaradorodriguez 2026-09-17T11:34:28Z] Good point. In practice the key should be empty because this ships together, but staging has a past ENTITLEMENTS_ENFORCEMENT_STARTS_AT, so entries in the old shape can be there, and a rolling deploy would keep writing them while the new instances read. Applied.
+
+
+THREAD src/modules/spaces/routes/elevation.integration.spec.ts:160 resolved=true
+[LucieFaire 2026-09-17T09:45:09Z] im not sure i understand this comment here
+[falvaradorodriguez 2026-09-17T11:34:43Z] Fair, it was not saying much. Removed.
+
+THREAD src/modules/relay/domain/exception-filters/relay-calldata.exception-filters.ts:13 resolved=true
+[LucieFaire 2026-09-17T09:58:25Z] suggestion:
+```
+/**
+ * Exception filters shared by every relay endpoint (`RelayController` and
+ * `SpaceRelayController`). They map the errors thrown while the relay service
+ * validates the calldata to HTTP responses:
+ *
+ * - the relayer refused the request or is unavailable,
+ * - the calldata is not a recognised Safe transaction (multiSend, transfer),
+ * - the calldata targets a contract that is not an official Safe deployment
+ *   (master copy, MultiSend, ProxyFactory, signer factory).
+ *
+ * Errors specific to one endpoint (e.g. rate limits or space quotas) are not
+ * included here; each controller adds those with its own `@UseFilters`.
+ */
+```
+[falvaradorodriguez 2026-09-17T11:34:54Z] Applied!
+
+
+THREAD src/modules/relay/domain/relay-simulation.service.ts:27 resolved=true
+[LucieFaire 2026-09-17T10:00:43Z] could we please move this out to types/constant files to be consistent :)
+[falvaradorodriguez 2026-09-17T11:35:05Z] Moved! 
+
+REVIEW COMMENTED
+[LucieFaire 2026-09-17T10:02:24Z] couple of tiny ones
+
+COMMENT
+[falvaradorodriguez 2026-09-15T12:28:49Z] @claude arch-review
+
+COMMENT
+[claude 2026-09-15T12:35:42Z] ## Architecture check
+
+Guides applied: [ARCHITECTURE.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/ARCHITECTURE.md), [module-structure.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/module-structure.md), [api-dtos-and-validation.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/api-dtos-and-validation.md), [security.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/security.md), [nestjs-patterns.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/nestjs-patterns.md), [best-practices.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/best-practices.md), [caching-and-performance.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/caching-and-performance.md), [database-and-migrations.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/database-and-migrations.md), [configuration-and-flags.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/configuration-and-flags.md), [testing.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/testing.md), [commits-and-prs.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/commits-and-prs.md), [reviewing.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/reviewing.md), [remarks.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/remarks.md).
+
+1. **[Cross-module imports via domain only](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/module-structure.md#L73)** — [src/modules/relay/routes/space-relay.controller.ts:44](https://github.com/safe-global/safe-client-gateway/blob/2bdf6ac8d0c100a07c5eda90423466f7d42cad3a/src/modules/relay/routes/space-relay.controller.ts#L44) — the new code reaches into two other modules' `routes/` trees three times (`SpaceIdPipe` here, `Auth` at [line 25](https://github.com/safe-global/safe-client-gateway/blob/2bdf6ac8d0c100a07c5eda90423466f7d42cad3a/src/modules/relay/routes/space-relay.controller.ts#L25), `assertMember` at [space-relay.service.ts:9](https://github.com/safe-global/safe-client-gateway/blob/2bdf6ac8d0c100a07c5eda90423466f7d42cad3a/src/modules/relay/routes/space-relay.service.ts#L9)), while the rule's single exception covers guards only — a pipe, a decorator and a route util stay off limits, which is also AGENTS.md non-negotiable 4. **Fix:** move `space-id.pipe.ts` and `space-assert.utils.ts` under `@/modules/spaces/domain/`, move the `@Auth()` decorator to `src/routes/common/auth/auth.decorator.ts` (the guide's named home for a cross-cutting HTTP-layer artifact), and update the existing importers.
+2. **[Splitting a change](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/commits-and-prs.md#L128)** — [src/modules/relay/domain/relay-simulation.service.ts:1](https://github.com/safe-global/safe-client-gateway/blob/2bdf6ac8d0c100a07c5eda90423466f7d42cad3a/src/modules/relay/domain/relay-simulation.service.ts#L1) — three behaviour-preserving extractions (`RelaySimulationService` out of `RelayFeeRelayer`, `resolveTarget` out of `getLimitAddresses`, `safeMatch` out of `addSafes`) ship in the same 30-file diff as the new route and the entitlements event-metering change, the mixed-concern shape [R-029](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/remarks.md#L435) names. **Fix:** land the three extractions first as `refactor(relay): extract the simulation gate and the relay target resolver`, then the feature on top.
+3. **[Swagger completeness](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/api-dtos-and-validation.md#L93)** — [src/modules/relay/routes/space-relay.controller.ts:88](https://github.com/safe-global/safe-client-gateway/blob/2bdf6ac8d0c100a07c5eda90423466f7d42cad3a/src/modules/relay/routes/space-relay.controller.ts#L88) — the handler can answer 501 (`RelayerTypeNotImplementedError` on a `GTF` chain, mapped by `RelayerNotAvailableExceptionFilter`), but no response decorator documents that outcome. **Fix:** add `@ApiResponse({ status: HttpStatus.NOT_IMPLEMENTED, description: 'The chain relayer type is not supported' })` beside the existing response decorators.
+4. **[R-006: Asserting that an error was thrown, not which](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/remarks.md#L128)** — [src/modules/relay/domain/relayers/__tests__/workspace.relayer.spec.ts:350](https://github.com/safe-global/safe-client-gateway/blob/2bdf6ac8d0c100a07c5eda90423466f7d42cad3a/src/modules/relay/domain/relayers/__tests__/workspace.relayer.spec.ts#L350) — the bare `rejects.toThrow()` passes for any rejection, including an unrelated `TypeError` from the line under test. **Fix:** hold the rejection in a const (`const submissionFailed = new Error(faker.lorem.sentence());`), pass it to `mockRelayApi.relay.mockRejectedValue`, and assert `rejects.toThrow(submissionFailed)` as the sibling cases in the same file do.
+
+**Verdict:** ❌ 4 finding(s)
+
+<sub>Automated check of this repo's [agent guidelines](https://github.com/safe-global/safe-client-gateway/blob/main/AGENTS.md) — Claude applying the committed guides in `docs/agents/`, not its own opinion. Run by [architecture-check.yml](https://github.com/safe-global/safe-client-gateway/blob/main/.github/workflows/architecture-check.yml) on `@claude arch-review`; background in [the CI gate](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/agent-tooling.md#the-ci-gate). Advisory — reply to a finding by its number to discuss it.</sub>
+
+COMMENT
+[falvaradorodriguez 2026-09-15T13:13:55Z] > ## Architecture check
+> Guides applied: [ARCHITECTURE.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/ARCHITECTURE.md), [module-structure.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/module-structure.md), [api-dtos-and-validation.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/api-dtos-and-validation.md), [security.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/security.md), [nestjs-patterns.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/nestjs-patterns.md), [best-practices.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/best-practices.md), [caching-and-performance.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/caching-and-performance.md), [database-and-migrations.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/database-and-migrations.md), [configuration-and-flags.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/configuration-and-flags.md), [testing.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/testing.md), [commits-and-prs.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/commits-and-prs.md), [reviewing.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/reviewing.md), [remarks.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/remarks.md).
+> 
+- 1: ✅ https://github.com/safe-global/safe-client-gateway/pull/3437/commits/4ff1b96c286f5d96a0a733a25e74ee7bb7b127a7
+
+- 2: 👎 Each extraction exists because this change adds a second consumer to code that had one — landed first they'd be a service extracted for its only caller and a mapper returning a field nobody reads. They're behaviour-preserving: both existing specs keep every assertion and still pass. The fair point is revertability, so if that's the concern I'd rather drop the pre-relay simulation from this PR than split the refactors away from the reason they exist.
+
+- 3: ✅ https://github.com/safe-global/safe-client-gateway/pull/3437/commits/fe652e54281189f2cb0ec5ddf36d29485367634b
+
+- 4: ✅ https://github.com/safe-global/safe-client-gateway/pull/3437/commits/fe652e54281189f2cb0ec5ddf36d29485367634b
+
+COMMENT
+[falvaradorodriguez 2026-09-15T13:14:20Z] @claude review
+
+COMMENT
+[claude 2026-09-15T13:14:37Z] **Claude finished @falvaradorodriguez's task in 3m 29s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/34973722255)
+
+---
+### Claude Code Review
+
+- [x] Read the new relay route (controller / service / module / DTO)
+- [x] Review `WorkspaceRelayer` and `RelaySimulationService`
+- [x] Review entitlements changes (grants, usage, enforcement)
+- [x] Review the migration and any DB/repo changes
+- [x] Review the moved `SpaceIdPipe`, `@Auth()`, `assertMember`
+- [x] Post consolidated feedback
+
+The arch-review already covered the guide-level items (module boundaries, Swagger completeness, the bare `rejects.toThrow` test). Below are the remaining things I'd flag — focused on correctness, observability, and a small tidy-up. Nothing here is blocking.
+
+---
+
+#### 1. Silent quota bypass when `recordUsage` fails — needs an alert, not just a log
+
+[`workspace.relayer.ts:113-123`](https://github.com/safe-global/safe-client-gateway/blob/4ff1b96c286f5d96a0a733a25e74ee7bb7b127a7/src/modules/relay/domain/relayers/workspace.relayer.ts#L113-L123) catches `recordUsage` errors and drops them to a `warn` log. The reasoning ("a relay already made cannot fail because the counter did") is correct — but the failure mode is that a persistent DB fault lets every workspace relay unlimited transactions at your expense, and the only signal is warn-level noise mixed with everything else. Consider:
+
+- Using `error` level, or a dedicated `LogType` (e.g. `LogType.QuotaRecordFailed`) so an alerting rule can key on it directly. Same pattern the `LogType.QuotaExceeded` event already uses in `entitlements.service.ts:227`.
+- Or emitting a metric counter so it's graphable, not just log-searchable.
+
+#### 2. `EntitlementsService.recordUsage` silently no-ops when `grant.counter === null`
+
+[`entitlements.service.ts:194-208`](https://github.com/safe-global/safe-client-gateway/blob/4ff1b96c286f5d96a0a733a25e74ee7bb7b127a7/src/modules/entitlements/routes/entitlements.service.ts#L194-L208) — if the cached grant has `counter: null` for a feature that is `Exclude<FeatureKey, StockMeteredFeature>`, it warns and returns. That's the same silent-bypass shape as #1: a stale/broken cache entry disables usage recording without failing loudly. The interface type already excludes stock-metered keys, so any `null` counter reaching here is unexpected state. Consider throwing instead of returning quietly — the caller in `WorkspaceRelayer` already has an error-catching wrapper around it, so it would still not break the relay, but the failure would be surfaced.
+
+#### 3. Concurrent-admission overshoot is documented — is it monitored?
+
+The PR description calls this out honestly: "concurrent callers being admitted against the same count and together overshooting the allowance." The `incrementUsage` upsert returns the post-increment `used` value ([`space-feature-usage.repository.ts:83-84`](https://github.com/safe-global/safe-client-gateway/blob/4ff1b96c286f5d96a0a733a25e74ee7bb7b127a7/src/modules/entitlements/domain/space-feature-usage.repository.ts#L83-L84)) but nothing consumes it. That returned value is exactly what would let you detect the overshoot post-hoc:
+
+```ts
+const usedAfter = await this.spaceFeatureUsageRepository.incrementUsage({ ... });
+if (grant.quota !== null && usedAfter > grant.quota) {
+  this.loggingService.warn({ type: LogType.QuotaOvershoot, ... });
+}
+```
+
+Not needed to ship, but leaves you blind to how often the trade-off actually bites in production.
+
+#### 4. `SpaceRelayModule` — likely unneeded `forwardRef`s
+
+[`space-relay.module.ts:31-33`](https://github.com/safe-global/safe-client-gateway/blob/4ff1b96c286f5d96a0a733a25e74ee7bb7b127a7/src/modules/relay/space-relay.module.ts#L31-L33) wraps `AuthModule`, `SpacesModule`, and `UsersModule` in `forwardRef`. `forwardRef` is only needed when two modules import each other; none of those three imports `SpaceRelayModule`. If Nest doesn't complain, plain imports will work and be clearer. The module docstring already explains why it's a separate module — the `forwardRef`s aren't part of that story.
+
+#### 5. `countFeatureUsage` — synthetic narrowing object
+
+[`entitlements.service.ts:291-295`](https://github.com/safe-global/safe-client-gateway/blob/4ff1b96c286f5d96a0a733a25e74ee7bb7b127a7/src/modules/entitlements/routes/entitlements.service.ts#L291-L295) builds `const feature = { key: args.featureKey }` just so the type guard narrows. Small thing, but the guard could take a plain key (`isStockMeteredFeatureKey`) and the object goes away. Not worth a change on its own — mention if you touch this file again.
+
+#### 6. `WorkspaceRelayer` — hardcoded `'workspace'` literal as relayer name
+
+[`workspace.relayer.ts:148`](https://github.com/safe-global/safe-client-gateway/blob/4ff1b96c286f5d96a0a733a25e74ee7bb7b127a7/src/modules/relay/domain/relayers/workspace.relayer.ts#L148) passes `relayer: 'workspace'` to `assertRelayable`; `SIMULATED_RELAYERS` in `relay-simulation.service.ts` lives elsewhere. A typo here compiles because the argument type is `SimulatedRelayer` and `'workspace'` happens to be a member — but a symbol-level constant colocated with `SIMULATED_RELAYERS` would remove the "magic string" nit R-018 tends to flag.
+
+---
+
+**Verdict:** ✅ Nothing blocking. Items 1–2 are the ones I'd genuinely address before merge — the silent-bypass paths are the kind of thing that only fires once you're relying on the counter for billing decisions, and by then it's expensive to notice.
+ • Branch: `felipe/pla-1829-backend-make-gas-sponsoring-plan-aware`
+
+COMMENT
+[falvaradorodriguez 2026-09-15T13:50:15Z] > **Claude finished Felipe Alvarado (@falvaradorodriguez)'s task in 3m 29s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/34973722255)
+
+> 
+> The arch-review already covered the guide-level items (module boundaries, Swagger completeness, the bare `rejects.toThrow` test). Below are the remaining things I'd flag — focused on correctness, observability, and a small tidy-up. Nothing here is blocking.
+> 
+
+- 1, 2, 4, 5: Done ✅ https://github.com/safe-global/safe-client-gateway/pull/3437/commits/abc0f045bfdcc2fc59fe37194dae6343b1486a37
+
+- 3: Skipped. The event needs two relays from the same workspace overlapping the few hundred ms between the check and the record, against a quota of tens per month, and it costs one sponsored transaction when it does — a warn with no alert behind it wouldn't change any decision.
+
+- 6: A typo wouldn't compile: the parameter is typed SimulatedRelayer, so only the two members of the union are accepted, and a rename would break the call sites the same way. Referencing the constant would also mean exporting SIMULATED_RELAYERS again, which the arch-review asked me to stop doing as an unused export.

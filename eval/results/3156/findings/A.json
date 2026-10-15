@@ -1,0 +1,30 @@
+{
+  "usd": 0.0694096,
+  "findings": [
+    {
+      "claim": "The Swagger description for GET /spaces still says it returns the count of Safes in each space, but for a pending invitee the endpoint now returns safeCount: 0, so API consumers would misread the zero as meaning no Safes rather than that the data is hidden pending acceptance.",
+      "file": "src/modules/spaces/routes/spaces.controller.ts",
+      "line": 123
+    },
+    {
+      "claim": "The Swagger description for GET /spaces/:id still says the user must be a member of or invited to the space to access it, but the endpoint now returns a filtered roster and safeCount: 0 for pending invitees, and unlike the equivalent description in members.controller.ts this one was not updated to reflect the new behavior.",
+      "file": "src/modules/spaces/routes/spaces.controller.ts",
+      "line": 146
+    },
+    {
+      "claim": "The createPendingMember helper in the address-books e2e spec still signs a token using memberAuthPayloadDto, whose sub is a random single-digit string rather than the invited user's actual id, unlike the sibling helper in user-address-book.controller.e2e-spec.ts which was fixed to sign the invite response's userId; the test that relies on it only passes because the random sub happens to match the invitee's id, making the test non-deterministic and not actually verifying what it claims to.",
+      "file": "src/modules/spaces/routes/address-books.controller.e2e-spec.ts",
+      "line": 804
+    },
+    {
+      "claim": "The new unit test asserting a ForbiddenException is thrown for a pending member has identical setup and assertions to the adjacent test for a non-member (both mock findOne to return null and expect ForbiddenException), so it does not exercise anything specific to the pending-member case despite its name suggesting otherwise; it should be removed or merged into the non-member test.",
+      "file": "src/modules/spaces/routes/utils/__tests__/space-assert.utils.spec.ts",
+      "line": 83
+    },
+    {
+      "claim": "The createActiveMember invite-then-accept helper is duplicated across three e2e spec files and the copies have already diverged in how they build the auth token (two build it inline with .with('sub', ...) while the third uses a local accessTokenForUserId helper), which is the same drift responsible for the token bug found in the address-books helper; a single shared spaces e2e test helper would prevent this kind of divergence.",
+      "file": "src/modules/spaces/routes/address-book-requests.controller.e2e-spec.ts",
+      "line": 522
+    }
+  ]
+}

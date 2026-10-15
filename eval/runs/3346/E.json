@@ -1,0 +1,11 @@
+{
+  "pr": 3346,
+  "reviewSha": "e3a1ca7b228def1a78d1297e3438ff13f93f15f6",
+  "baseSha": "482232a40249c7bee55a23a97031c50c3842ed33",
+  "system": "E",
+  "version": "github",
+  "runner": "collect",
+  "model": "human",
+  "commentSha": "b23453cf9df58a6eb41c4a2c2e6f0eceb283794e",
+  "output": "[review by falvaradorodriguez]\nLGTM!\n\n---\n\nsrc/modules/entitlements/domain/space-feature-usage.repository.interface.ts:10\nwhy do you need spaceId if you omit it everywhere anyway?\n\n\n---\n\nsrc/modules/entitlements/routes/entitlements.controller.integration.spec.ts:223\nnit: can also add a test for unauth case\n```\n    it('returns 403 without an access token', async () => {\n      const { spaceId } = await createSpaceForSigner();\n\n      await request(app.getHttpServer())\n        .get(`/v1/spaces/${spaceId}/entitlements`)\n        .expect(403);\n    });\n```\n\n---\n\nsrc/modules/entitlements/routes/entitlements.controller.integration.spec.ts:67\ninstead of creating it manually, you can use a test helper:\n```\n  let testDatabase: postgres.Sql;\n  const testDbFactory = new TestDbFactory();\n```\n\nThen line:\n```\nawait adminQuery(`CREATE DATABASE ${testDatabaseName}`);\n```\nbecomes\n```\ntestDatabase = await testDbFactory.createTestDatabase(testDatabaseName);\n```\n\nand\n```\nawait adminQuery(\n      `DROP DATABASE IF EXISTS ${testDatabaseName} WITH (FORCE)`,\n    );\n```\nbecomes\n```\nawait testDbFactory.destroyTestDatabase(testDatabase);\n```\n\n\n---\n\nsrc/modules/entitlements/routes/subscription-sync.service.integration.spec.ts:81\nsame here, please use `TestDbFactory()`\n\n---\n\nsrc/modules/entitlements/routes/entitlements.service.ts:382\nnit: think the switch/case could also work here, and it would give a compile-time check, unless u want a diff type to silently fail through\n\n---\n\nsrc/modules/entitlements/routes/entitlements.service.integration.spec.ts:369\nwhy do we need this function if there is already a `materializedSubscriptionBuilder` ?"
+}

@@ -1,0 +1,20 @@
+{
+  "usd": 0.0575716,
+  "findings": [
+    {
+      "file": ".yarnrc.yml",
+      "line": 20,
+      "claim": "The preapproval exemption in npmPreapprovedPackages includes @safe-global/safe-modules-deployments, but this PR only bumps @safe-global/safe-deployments; that package stays at 3.0.8 (already introduced by a prior Dependabot PR) and is unrelated to this bump, so it should either be dropped from this change or moved to its own PR with its own justification."
+    },
+    {
+      "file": ".yarnrc.yml",
+      "line": 17,
+      "claim": "The npmPreapprovedPackages entries permanently exempt these packages from npmMinimalAgeGate, making this a lasting supply-chain policy change bundled into a routine build(deps) commit; loosening the hardened-install gate should be a separate chore/ci PR reviewed on its own so it is deliberate and easy to find later via bisect or audit, or alternatively the bump should simply wait out the 7-day age gate instead of adding an exemption."
+    },
+    {
+      "file": ".github/dependabot.yml",
+      "line": 12,
+      "claim": "The comment 'default-days: 7 # Aligns with minimumReleaseAge / npmMinimalAgeGate' is now partially inaccurate because the age gate has exemptions for the two @safe-global packages while Dependabot still waits the full 7 days for them, so the two settings have drifted apart; either add a Dependabot cooldown.exclude entry for the preapproved packages or update the comment to note the exemption."
+    }
+  ]
+}

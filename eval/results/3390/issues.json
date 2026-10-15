@@ -1,0 +1,210 @@
+{
+  "usage": {
+    "usd": 0.7133712,
+    "turns": 10,
+    "wallSeconds": 88
+  },
+  "issues": [
+    {
+      "findings": [
+        "F1",
+        "F3",
+        "F10",
+        "F18",
+        "F37"
+      ],
+      "summary": "SafeSeatsGuard counts and answers 402 with quota/used/resetsAt before assertAdmin runs, so a non-member can read another Workspace's plan and usage",
+      "label": "medium",
+      "evidence": "The controller applies only AuthGuard at class level (space-safes.controller.ts:48), then ElevationGuard and SafeSeatsGuard (:94). ElevationGuard checks no membership, and assertAdmin only runs later in space-safes.service.ts:40, so any logged-in user who knows a Space UUID gets a 402 with that Space's seat data (or a 403 if it isn't full). Before this PR the service checked admin before counting. F37 is a view on where to fix this, not a separate defect.",
+      "category": "security"
+    },
+    {
+      "findings": [
+        "F38",
+        "F14"
+      ],
+      "summary": "Addresses are KMS-encrypted before the seat check, and the batch size is unbounded, so an oversized batch pays N KMS calls before being rejected",
+      "label": "low",
+      "evidence": "space-safes.repository.ts:71-84 encrypts every address before assertSeats runs inside the transaction, and SpaceSafesSchema (space-safe.dto.entity.ts:13-15) has no .max(). The guard's delta:0 check only catches a Space already at its limit. The old code rejected before encrypting. Only admins reach this path and the body size limit bounds it, so the impact is limited.",
+      "category": "performance"
+    },
+    {
+      "findings": [
+        "F7",
+        "F19",
+        "F20",
+        "F31",
+        "F39"
+      ],
+      "summary": "Race between a cache-miss read and the post-commit invalidation can re-cache pre-materialization grants for one TTL",
+      "label": "low",
+      "evidence": "getCachedGrants (entitlements.service.ts:262-277) computes and hSets without versioning, and materialize deletes the key after commit (:569-573). A reader that computed before the commit and writes after the delete leaves stale grants for up to the TTL. The window is narrow and the cache is not used before the enforcement date. F20 overstates this: an upgrade stays stale only in this race, since materialization otherwise invalidates the key.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F8",
+        "F16",
+        "F32",
+        "F26"
+      ],
+      "summary": "Seat-limit rejection changes from 400 with prose to 402 QUOTA_EXCEEDED on deploy, not on the enforcement date",
+      "label": "wrong",
+      "evidence": "The PR description says this is intended and client-visible: it 'takes effect on deploy, not on the enforcement date', and it cites precedent for changing this response without a new version. The behaviour at entitlements.service.ts:199/215 matches that deliberate choice.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F40"
+      ],
+      "summary": "The resolveGrant comment says deploying 'enforces nothing', though the response status changes on deploy",
+      "label": "nit",
+      "evidence": "entitlements.service.ts:207-209 is about which quota number applies, and it is accurate there: before the date the limit is the same static one. The wording could mention the status change, but the comment is not wrong about what it describes.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F6",
+        "F27",
+        "F30"
+      ],
+      "summary": "No request-level test exercises POST /spaces/:id/safes returning 402 through the guard, filter and write path",
+      "label": "medium",
+      "evidence": "space-safes.controller.spec.ts only asserts guard/filter metadata, and grep finds no 402/QUOTA assertions in any spaces spec. The chain is new client-visible behaviour, and the missing authorization ordering (see the guard issue) is exactly the kind of regression such a test would catch.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F29"
+      ],
+      "summary": "The e2e suite is not run in CI",
+      "label": "low",
+      "evidence": "docs/agents/testing.md:34,98 confirms nothing in ci.yml runs *.e2e-spec.ts. That is true but predates the PR and is unrelated to its changes.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F11",
+        "F28",
+        "F34"
+      ],
+      "summary": "The guard duplicates SpaceIdPipe's UUID lookup and the repository's seat count, adding DB round-trips per request",
+      "label": "low",
+      "evidence": "entitlement.guard.ts:36 calls findIdByUuid, which SpaceIdPipe repeats, and assertWithinQuota counts live (entitlements.service.ts:160), which the repository counts again under the lock (space-safes.repository.ts:89). The extra queries are real but cheap and indexed.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F2"
+      ],
+      "summary": "The seat advisory lock is held across the audit log's KMS encryption call",
+      "label": "low",
+      "evidence": "space-safes.repository.ts:104 calls spaceAuditRepository.record inside the locked transaction, and space-audit.repository.ts:53 calls encryptAuditPayload (KMS). This conflicts with the comment's stated goal of keeping the critical section DB-local, but it only lengthens the lock for one Space and only when audit log and encryption are both enabled.",
+      "category": "performance"
+    },
+    {
+      "findings": [
+        "F13",
+        "F24"
+      ],
+      "summary": "SpacesModule and EntitlementsModule now import each other via forwardRef, and the module comment no longer describes the cycle accurately",
+      "label": "low",
+      "evidence": "spaces.module.ts:60 adds forwardRef(() => EntitlementsModule), while entitlements.module.ts:28 already imports SpacesModule. The comment at :19-22 still says the module 'sits above that layer and can afford the cycle'. forwardRef makes it work, so the cost is maintainability and a stale comment.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F5"
+      ],
+      "summary": "The space-scoped advisory-lock helper is duplicated, and lock namespaces are kept apart only by comments",
+      "label": "low",
+      "evidence": "The same pg_advisory_xact_lock($1,$2) pattern appears in subscriptions.repository.ts:103 and space-safes.repository.ts:53 (namespace 1827). A namespace collision would only be caught by review, but only two sites exist today.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F12"
+      ],
+      "summary": "No test covers the missing-catalog-row fallback to the static limit",
+      "label": "low",
+      "evidence": "entitlements.service.ts:221-227 handles grant===undefined, and the integration spec has no case for a feature key absent from the catalog. It is a small branch that is rare in practice.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F17"
+      ],
+      "summary": "The missing-catalog-row warning is an unstructured string without a LogType",
+      "label": "nit",
+      "evidence": "entitlements.service.ts:223 differs from the structured QuotaExceeded log at :191, but it matches the existing unstructured warns in the same file (e.g. :544).",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F15"
+      ],
+      "summary": "The PR description is truncated mid-word in several places",
+      "label": "low",
+      "evidence": "The given description visibly has text dropped: '`SafeSeatsdeclared shape', 'starting with `SecurityHot filed yet', 'resolves what a plan grants tWithinQuota`', 'and docu'. This is a real documentation defect in the PR body.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F21",
+        "F23"
+      ],
+      "summary": "EntitlementGuard is an abstract base with only one subclass",
+      "label": "nit",
+      "evidence": "entitlement.guard.ts:18 has one subclass (safe-seats.guard.ts). The PR description explicitly frames it as the declared shape for the per-feature gates to follow, so this is a design preference.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F4",
+        "F25"
+      ],
+      "summary": "EntitlementsService is growing in dependencies and responsibilities (resolve, cache, materialize, enforce)",
+      "label": "nit",
+      "evidence": "The constructor at entitlements.service.ts:73-96 takes 11 dependencies. Splitting it is a speculative refactor with no concrete defect today.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F9"
+      ],
+      "summary": "subscription-sync.module.ts sits at the module root instead of the layer it wires",
+      "label": "nit",
+      "evidence": "The PR description gives the placement as deliberate, and module-structure.md:135 was updated to reference SubscriptionSyncModule. The location is a style choice with no concrete cost.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F22",
+        "F33"
+      ],
+      "summary": "Math.max(delta, 1) is a non-obvious way to reject at the limit when delta is 0",
+      "label": "nit",
+      "evidence": "entitlements.service.ts:184-187 has an inline comment explaining it. For delta 0, used+1<=quota is equivalent to used<quota, so the behaviour is correct and this is readability only.",
+      "category": "style"
+    },
+    {
+      "findings": [
+        "F35",
+        "F41"
+      ],
+      "summary": "The guard's UUID schema could drift from SpaceIdPipe's validation",
+      "label": "nit",
+      "evidence": "space-id-param.schema.ts imports the same UUID_REGEX that space-id.pipe.ts:9,32 uses, so the two share one source of truth, and the comment documents the intent. Drift would need someone to change one side on purpose.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F36"
+      ],
+      "summary": "preEnforcementQuotas uses closures where plain numbers would do",
+      "label": "nit",
+      "evidence": "entitlements.service.ts:240-242. The closure is needed because the field initializer runs before the constructor assigns maxSafesPerSpace, so a plain value would need restructuring. Pure style.",
+      "category": "style"
+    }
+  ]
+}

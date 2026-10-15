@@ -1,0 +1,30 @@
+{
+  "usd": 0.31229179999999995,
+  "head": "2681e8bc0526f788b3a2dacdad1e3d7819a8a7e3",
+  "verdicts": [
+    {
+      "issue": 3,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "Strict parsing landed in 7eda67d49. On 2026-07-10 vseehausen wrote that InfraSec confirmed FF_ZERION_ENABLED=true is set on staging and production and that the \"Deploy note [was] updated accordingly\"."
+    },
+    {
+      "issue": 6,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "At b219480, .env.sample.json:755 had \"defaultValue\": true. Commit 7eda67d49 changed it to \"false\", and d9c10856c made it the bare boolean false (.env.sample.json:821 at HEAD)."
+    },
+    {
+      "issue": 7,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "At b219480, .env.sample.json:754-756 had the description \"(OPTIONAL)\" but \"required\": true. Commit 7eda67d49 set \"required\": false and reworded the description, and its message says it marks the flag optional."
+    },
+    {
+      "issue": 11,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "In the configuration.ts:207 thread, vseehausen agreed to call it `zerion` without `enabled` and to fold zerionPositions into it in a later PR. Commit faaddbf88 renamed features.zerionEnabled to features.zerion (src/config/entities/configuration.ts:427)."
+    }
+  ]
+}

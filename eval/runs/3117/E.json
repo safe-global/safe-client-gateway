@@ -1,0 +1,11 @@
+{
+  "pr": 3117,
+  "reviewSha": "710cdf131c8b2e5faf26829e415da403c09ddb87",
+  "baseSha": "9d62854507a9382e19f86f2ef80688d32c39e46b",
+  "system": "E",
+  "version": "github",
+  "runner": "collect",
+  "model": "human",
+  "commentSha": "9815b018fbb5da3b38404ab422e84fdf54abecc9",
+  "output": "src/modules/spaces/domain/entities/space.entity.ts:20\n```suggestion\nimport { UUID } from 'crypto';\n\nuuid: UUID;\n```\n\n---\n\nsrc/modules/spaces/domain/spaces.repository.ts:218\n```suggestion\n  const row = result.generatedMaps[0] as Pick<Space, 'id' | 'uuid'> | undefined;\n```"
+}

@@ -1,0 +1,15 @@
+{
+  "usd": 0.03290560000000001,
+  "findings": [
+    {
+      "file": "src/datasources/billing-api/entities/subscription-update.entity.ts",
+      "line": 27,
+      "claim": "A property that is the only member of its type/interface is documented with comments, which is unusual unless the comments are especially valuable; the property should be removed."
+    },
+    {
+      "file": "src/datasources/billing-api/entities/subscription-update.entity.ts",
+      "line": 15,
+      "claim": "A property that is the only member of its type/interface is documented with comments, which is unusual unless the comments are especially valuable; the property should be removed."
+    }
+  ]
+}

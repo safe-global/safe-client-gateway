@@ -1,0 +1,10 @@
+{
+  "usd": 0.032277600000000004,
+  "findings": [
+    {
+      "file": "src/config/entities/__tests__/configuration.ts",
+      "line": 207,
+      "claim": "The feature flag name does not fit well alongside the other feature flags defined here, since `zerionPositions` already exists and naming this one just `Zerion` would be confusing; it should be named something like `zerionBalances` or another name that gives more context."
+    }
+  ]
+}

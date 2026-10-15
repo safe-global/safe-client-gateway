@@ -1,0 +1,24 @@
+{
+  "usd": 0.28804359999999996,
+  "head": "539225117c0a2cffcf45d8a83e2d2cb551202051",
+  "verdicts": [
+    {
+      "issue": 6,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "At 539225117, address-book-requests.repository.spec.ts:74,79-80,135,150-151 uses the literals 'Alice' and 'kms:v1:a'/'kms:v1:n'. The author LucieFaire replied to the arch-review findings that \"they do not make sense\", and no commits were added after 539225117."
+    },
+    {
+      "issue": 9,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "At 539225117, space-audit-event.entity.ts:146-149 defines AddressBookDeletedEventSchema with `payload: AddressBookEntrySchema`. The author declined the findings (\"they do not make sense\"), and the code did not change after 539225117."
+    },
+    {
+      "issue": 10,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "The base..539225117 diff changes address-book-items.repository.spec.ts (8 lines). LucieFaire rejected the arch-review findings as not making sense, and there are no later commits."
+    }
+  ]
+}

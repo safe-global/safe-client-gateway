@@ -1,0 +1,35 @@
+{
+  "usd": 0.0594196,
+  "findings": [
+    {
+      "file": "src/modules/portfolio/v1/guards/portfolio-route.guard.spec.ts",
+      "line": 1,
+      "claim": "The unit test only verifies the guard's logic in isolation and does not confirm that @UseGuards(PortfolioRouteGuard) is actually applied to the controller, so a future refactor removing the decorator would silently unblock the endpoint."
+    },
+    {
+      "file": "src/modules/portfolio/v1/guards/portfolio-route.guard.spec.ts",
+      "line": 1,
+      "claim": "There is no integration test confirming that both GET /v1/portfolio/:address and DELETE /v1/portfolio/:address return 403 when the feature flag is off, even though the PR description explicitly claims this behavior."
+    },
+    {
+      "file": "src/modules/portfolio/v1/guards/portfolio-route.guard.ts",
+      "line": 18,
+      "claim": "The guard references features.zerionBalancesEnabled, but this flag is already known to be renamed to features.zerionEnabled in a separate PR (#3157), so the reference will become stale once one of the PRs merges."
+    },
+    {
+      "file": "src/modules/portfolio/v1/guards/portfolio-route.guard.spec.ts",
+      "line": 23,
+      "claim": "The flag name string literal is duplicated in the spec file, so when the flag is renamed the identical string literals here must also be updated to stay in sync with the guard implementation."
+    },
+    {
+      "file": "src/modules/portfolio/v1/guards/portfolio-route.guard.ts",
+      "line": 5,
+      "claim": "The class-level JSDoc explaining the flag rationale will become redundant if the flag is renamed to zerionEnabled per #3157, since the name would then map more obviously to 'portfolio'."
+    },
+    {
+      "file": "src/modules/portfolio/v1/guards/portfolio-route.guard.spec.ts",
+      "line": 8,
+      "claim": "The 'as MockedObject<IConfigurationService>' cast around the object literal is unnecessary because vi.mocked() already returns a MockedObject, which is inconsistent with how other tests in the codebase mock IConfigurationService."
+    }
+  ]
+}

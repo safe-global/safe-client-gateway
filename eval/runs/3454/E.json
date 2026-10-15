@@ -1,0 +1,11 @@
+{
+  "pr": 3454,
+  "reviewSha": "e176de09bf64bb3c548dd9a15e5dcac8e1bc4c4d",
+  "baseSha": "200cd0a04459310e7c6a78559c11216eb0b4d8b5",
+  "system": "E",
+  "version": "github",
+  "runner": "collect",
+  "model": "human",
+  "commentSha": "e176de09bf64bb3c548dd9a15e5dcac8e1bc4c4d",
+  "output": "src/modules/entitlements/domain/entitlement-enforcement.interface.ts:40\nIt takes any FeatureKey but checks only grant.enabled, so a future caller passing sponsored_transactions (plan enabled, quota exhausted) is admitted and the metered allowance is silently bypassed.\n\n```suggestion\n    featureKey: BinaryFeature;\n```\n\n---\n\nsrc/modules/safe-shield/routes/space-safe-shield.controller.ts:47\nIMO, this controller and the associated service should live in the Safe Shield module. Every other Space-scoped route sits in the module that owns the capability, not in Spaces: space-relay.controller.ts, space-counterfactual-safes.controller.ts and entitlements.controller.ts all declare spaces/:spaceId/... from their own module and import SpacesModule, and all three do the same assertMember gating from outside Spaces, so the membership check is not a reason to live here. WDYT?"
+}

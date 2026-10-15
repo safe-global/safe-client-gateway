@@ -1,0 +1,85 @@
+{
+  "pr": 3264,
+  "title": "chore: refactor Manager API classes",
+  "description": "## Summary\r\n\r\nExtracts the per-chain API caching boilerplate — duplicated across 8 datasource managers/factories — into a single generic base class, and collapses the near-verbatim `EarnApiManager`/`StakingApiManager` clone pair into one shared implementation.\r\n\r\n### New: `ChainApiManager<T>`\r\n\r\n`src/datasources/common/chain-api.manager.ts` owns the lazy per-chain cache that every manager previously reimplemented:\r\n\r\n- `protected abstract createApi(chainId)` — subclasses define only how an instance is built\r\n- `protected getOrCreateApi(chainId)` — returns the cached instance or creates and caches it (`??=`, preserving the original lazy/memoized semantics)\r\n- `destroyApi(chainId)` — evicts, so the next retrieval rebuilds (e.g. after `CHAIN_UPDATED`)\r\n- `protected hasApi(chainId)` — for subclasses that need to know whether anything was cached\r\n\r\nThe base deliberately exposes no public `getApi`: each subclass declares its own one-line `getApi` (keeping interface conformance explicit), which also lets `BalancesApiManager` reuse the cache mechanics despite a different public API.\r\n\r\n### Refactored to extend it\r\n\r\n- `staking-api.manager.ts`, `earn-api.manager.ts`, `swaps-api.factory.ts`, `bridge-api.factory.ts`, `transaction-api.manager.ts`, `balances-api.manager.ts`, `csv-export/v1/datasources/export-api.manager.ts`, `blockchain-api.manager.ts`\r\n- Special cases preserved exactly:\r\n  - `BlockchainApiManager` overrides `destroyApi` to keep its best-effort RPC cache eviction, including the early return when no client was cached\r\n  - `BalancesApiManager` keeps its own `getApi` and inherits the cache for `SafeBalancesApi` instances\r\n\r\n### Earn/Staking collapse\r\n\r\n`EarnApiManager` was an author-acknowledged copy of `StakingApiManager` (only the config key prefix and the `KilnApi` widget arg differed). The shared logic now lives in abstract `KilnApiManager` (`src/modules/staking/datasources/kiln-api.manager.ts`), parameterized by a `widget: 'staking' | 'earn'` field; both concrete classes are now 8 lines and keep their names, so `staking.module.ts` / `earn.module.ts` providers are untouched.",
+  "findings": [
+    {
+      "id": "F1",
+      "file": "src/modules/balances/datasources/balances-api.manager.ts",
+      "line": 46,
+      "claim": "getApi wraps a call through a private _getSafeBalancesApi method that is only ever called from getApi itself, adding an unnecessary layer; it should be inlined to directly call getOrCreateApi, matching the simpler pattern used by the other managers."
+    },
+    {
+      "id": "F2",
+      "file": "src/datasources/common/chain-api.manager.ts",
+      "line": 25,
+      "claim": "The if-guard checking whether apis[chainId] is defined before calling delete is unnecessary, since delete on a non-existent key is already a no-op; it should simply be delete this.apis[chainId]. The pre-check is meaningful only in BlockchainApiManager's override, which already uses hasApi() for that purpose, so the base class guard adds no value."
+    },
+    {
+      "id": "F3",
+      "file": "src/modules/staking/datasources/kiln-api.manager.spec.ts",
+      "line": 61,
+      "claim": "The unit spec bootstraps the module with Test.createTestingModule instead of constructing the service directly with new StakingApiManager(...), which is inconsistent with the convention used by nearly all other unit specs and mixes a wiring/DI concern into a unit test. Suggested fix is to instantiate the class directly and, if the Nest wiring check is still wanted, keep or move a single such test into an integration spec."
+    },
+    {
+      "id": "F4",
+      "file": "src/datasources/common/chain-api.manager.ts",
+      "line": 17,
+      "claim": "The cache does `this.apis[chainId] ??= await this.createApi(chainId)`, checking the slot before the await and writing after it without rechecking, so two concurrent first-time calls for the same chain each build their own instance and the second write overwrites the first in the cache. This was reproduced directly: two concurrent calls returned two different instances and the cache kept only the second, and the change newly introduces this race into BridgeApiFactory and SwapsApiFactory, which previously checked and set synchronously with no await and so could not race; a test exercising concurrent calls (e.g. Promise.all of two getApi calls for the same chain) is also missing."
+    },
+    {
+      "id": "F5",
+      "file": "src/datasources/common/chain-api.manager.ts",
+      "line": 25,
+      "claim": "The `!== undefined` check performed before calling `delete` on the cache is redundant, since `delete` on a missing key is already a no-op."
+    },
+    {
+      "id": "F6",
+      "file": "src/modules/balances/datasources/balances-api.manager.ts",
+      "line": 54,
+      "claim": "`_getSafeBalancesApi` now does nothing but `return this.getOrCreateApi(chainId)` and has only one caller, `getApi`, while every other manager touched in the diff calls `getOrCreateApi` directly from `getApi`; the wrapper should be inlined for consistency."
+    },
+    {
+      "id": "F7",
+      "file": "src/modules/staking/datasources/kiln-api.manager.spec.ts",
+      "line": 99,
+      "claim": "The testnet branch is only exercised via mockConfig('staking') and not for the 'earn' widget, even though widget parameterization is the central point of the KilnApiManager collapse; extending the existing it.each to cover both mainnet and testnet for both widgets would ensure both configuration paths are tested for each widget."
+    },
+    {
+      "id": "F8",
+      "file": "src/datasources/common/chain-api.manager.ts",
+      "line": 12,
+      "claim": "The cache is a plain `{}` keyed by `chainId`, which inherits prototype keys such as `constructor`, so `hasApi('constructor')` returns true; every manager previously had this issue individually, but now that the cache logic lives in one shared place, switching to a `Map<string, T>` would fix it everywhere at once."
+    },
+    {
+      "id": "F9",
+      "file": "src/datasources/common/chain-api.manager.ts",
+      "line": 16,
+      "claim": "getOrCreateApi is not safe against concurrent calls for the same chainId: two calls arriving before the first await resolves will both see apis[chainId] as undefined and both invoke createApi, causing a double-create. This matches pre-refactor behavior so it is not a new regression, but now that the pattern is centralized, storing a Promise<T> in the map (Record<string, Promise<T>>) would fix the race for all managers at once."
+    },
+    {
+      "id": "F10",
+      "file": "src/datasources/common/chain-api.manager.ts",
+      "line": 26,
+      "claim": "In destroyApi, the guard 'if (this.apis[chainId] !== undefined)' before the delete is unnecessary because deleting a missing key is already a no-op; this was copied from the old per-manager code and could be simplified to a plain delete this.apis[chainId] in the new shared base class."
+    },
+    {
+      "id": "F11",
+      "file": "src/modules/balances/datasources/balances-api.manager.ts",
+      "line": 54,
+      "claim": "_getSafeBalancesApi now only calls this.getOrCreateApi(chainId) and has a single caller (getApi), making it a pointless pass-through wrapper that other managers avoid by calling getOrCreateApi directly from getApi; it could be inlined and the helper deleted."
+    },
+    {
+      "id": "F12",
+      "file": "src/modules/earn/datasources/earn-api.manager.ts",
+      "line": 5,
+      "claim": "A loose comment between the imports and the class duplicates the JSDoc already present on the parent class (kiln-api.manager.ts:20-21) explaining that each widget deployment is its own Kiln 'organization'; it should be deleted or converted into a short JSDoc on the class instead of being repeated."
+    },
+    {
+      "id": "F13",
+      "file": "src/modules/staking/datasources/kiln-api.manager.spec.ts",
+      "line": 99,
+      "claim": "The testnet test, and the caching/eviction tests, only cover the `staking` widget, so nothing verifies that `earn` reads from `earn.testnet.*`; moving the testnet case into the existing `it.each` over both widgets would close this gap."
+    }
+  ]
+}

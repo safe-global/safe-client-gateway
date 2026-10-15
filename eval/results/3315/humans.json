@@ -1,0 +1,42 @@
+{
+  "usd": 0.3581594,
+  "head": "92ce8adb12f4bd01a57c0be27b494ddae7808acc",
+  "verdicts": [
+    {
+      "issue": 5,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "In their reply TimDaub listed this under \"Not changed\": they want to settle the client-facing error contract deliberately once the consumer (WA-2726) exists, not as review cleanup. At HEAD, src/routes/common/auth/elevation.guard.ts:79 still sends only the 'elevation_required' message string, now through HttpExceptionNoLog, with no code field."
+    },
+    {
+      "issue": 8,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "TimDaub replied that the duplication is \"deliberate\": a shared constant equal to the production default would let a guard that hardcodes the value still pass. Both constants remain at elevation.integration.spec.ts:28 and elevation.guard.spec.ts:20."
+    },
+    {
+      "issue": 17,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "On the auth0-api.service.ts:40 thread, TimDaub said they had no strong opinion and don't expect the value to change, and the thread was resolved. MULTI_FACTOR_ACR_VALUE is still hardcoded at auth0-api.service.ts:41."
+    },
+    {
+      "issue": 18,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "Commit d990f9420 replaced `{ elevate = false }: { elevate?: boolean } = {}` with `elevate = false` in oidc-auth.service.ts, and TimDaub answered PooyaRaki's thread with \"Addressed here\"."
+    },
+    {
+      "issue": 21,
+      "verdict": "open",
+      "present": true,
+      "evidence": "Nobody replied to this nit, and the 'OIDC or wallet, never both' comment moved to src/routes/common/auth/elevation.guard.ts:63 unchanged, still with no issue or RFC link."
+    },
+    {
+      "issue": 22,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "TimDaub's reply says the route was consolidated in bfdb584c. address-books.controller.ts:116 now has a single `@UseGuards(AuthGuard, ElevationGuard, SpacesAddressBookRateLimitGuard)`, where 030dec0f had two decorators."
+    }
+  ]
+}

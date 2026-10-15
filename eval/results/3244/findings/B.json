@@ -1,0 +1,55 @@
+{
+  "usd": 0.411668,
+  "findings": [
+    {
+      "file": "src/modules/relay/routes/relay.controller.ts",
+      "line": 175,
+      "claim": "The taskId route parameter has no validation pipe before being inserted into the Rhinestone status URL, so a crafted value containing path traversal or a decoded '?' can redirect the credentialed request (sent with the project-wide x-api-key header) to an arbitrary path on the Rhinestone host, since the route itself has no auth guard."
+    },
+    {
+      "file": "src/common/network/http-error-factory.ts",
+      "line": 19,
+      "claim": "The upstream error message is passed back to the caller unchanged, so an attacker exploiting the unvalidated taskId can see part of the response from whatever Rhinestone path they reached."
+    },
+    {
+      "file": "src/modules/relay/domain/relayers/daily-limit.relayer.ts",
+      "line": 74,
+      "claim": "This relayer forwards safeTxHash to Rhinestone without checking it, even though Rhinestone documents the field as required for execTransaction and to be omitted for multiSend/deployments, so requests can reach Rhinestone missing a hash it needs or carrying a hash that doesn't match the calldata."
+    },
+    {
+      "file": "src/modules/relay/domain/relayers/no-fee-campaign.relayer.ts",
+      "line": 111,
+      "claim": "This relayer likewise forwards safeTxHash without validating or requiring it for execTransaction or stripping it for multiSend/deployment calls, unlike RelayFeeRelayer which does enforce this."
+    },
+    {
+      "file": "src/modules/relay/datasources/rhinestone-api.service.ts",
+      "line": 132,
+      "claim": "Rhinestone's status field is passed through unmapped even though the public DTO still documents Gelato's status codes (100/110/200/400/500); if Rhinestone uses different codes, clients polling status would be silently misled."
+    },
+    {
+      "file": "src/modules/relay/routes/relay.controller.integration.spec.ts",
+      "line": 475,
+      "claim": "No test sends safeTxHash on the daily-limit or no-fee-campaign chains or asserts it in the outgoing request body, and neither relayer has a unit spec, so the missing validation behavior is untested."
+    },
+    {
+      "file": "src/config/entities/schemas/configuration.schema.ts",
+      "line": 186,
+      "claim": "RELAY_PROVIDER_API_KEY is introduced as a new required configuration variable while the previous 12 per-chain keys were removed, so production deployment will fail to boot if this variable is not provisioned beforehand."
+    },
+    {
+      "file": "src/config/entities/schemas/configuration.schema.ts",
+      "line": 186,
+      "claim": "getTaskStatus no longer checks chainId at all, because the removed per-chain key lookup previously served as that check, so this validation was lost in the change."
+    },
+    {
+      "file": "src/modules/relay/domain/entities/relay-task-status.entity.ts",
+      "line": 7,
+      "claim": "The blockHash, blockNumber, gasUsed and createdAt fields were made optional but are never set anywhere in the code, so they should be removed rather than left as unused optional fields."
+    },
+    {
+      "file": "src/modules/relay/datasources/rhinestone-api.service.ts",
+      "line": 62,
+      "claim": "formatError logs the full upstream response body, which may echo back request data, so only the status and message should be logged instead."
+    }
+  ]
+}

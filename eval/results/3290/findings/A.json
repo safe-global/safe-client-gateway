@@ -1,0 +1,65 @@
+{
+  "usd": 0.7245940000000001,
+  "findings": [
+    {
+      "file": "src/domain/common/utils/enum.ts",
+      "line": 36,
+      "claim": "The enum transformer's `from` function now has a return type of `keyof T | null`, meaning it can return null, but every column using this transformer is typed as non-nullable."
+    },
+    {
+      "file": "src/domain/common/entities/users.entity.db.ts",
+      "line": 29,
+      "claim": "This column uses the enum transformer but is typed as non-nullable, so if the transformer ever returns null, it would reach code that assumes the value can never be null."
+    },
+    {
+      "file": "src/domain/common/entities/member.entity.db.ts",
+      "line": 71,
+      "claim": "This column uses the enum transformer but is typed as non-nullable, so if the transformer ever returns null, it would reach code that assumes the value can never be null."
+    },
+    {
+      "file": "src/domain/common/entities/member.entity.db.ts",
+      "line": 78,
+      "claim": "This column uses the enum transformer but is typed as non-nullable, so if the transformer ever returns null, it would reach code that assumes the value can never be null."
+    },
+    {
+      "file": "src/domain/common/entities/space.entity.db.ts",
+      "line": 41,
+      "claim": "This column uses the enum transformer but is typed as non-nullable, so if the transformer ever returns null, it would reach code that assumes the value can never be null."
+    },
+    {
+      "file": "src/domain/common/entities/address-book-request.entity.db.ts",
+      "line": 91,
+      "claim": "This column uses the enum transformer but is typed as non-nullable, so if the transformer ever returns null, it would reach code that assumes the value can never be null."
+    },
+    {
+      "file": "src/domain/common/utils/enum.ts",
+      "line": 37,
+      "claim": "The reason the transformer can now produce a null value is documented only in a commit message, not in the code, so a short comment should be added there naming the case that produces null, or that case should be covered with an integration test; without one, a later cleanup could remove the branch."
+    },
+    {
+      "file": "src/modules/counterfactual-safes/domain/counterfactual-safes.repository.ts",
+      "line": 229,
+      "claim": "The delete operation was switched from `manager.delete(Entity, ids)` to a `createQueryBuilder().delete().from(...).whereInIds(...)` chain, introducing a new idiom that appears nowhere else in the codebase, while other repositories still use the `EntityManager.delete` shorthand."
+    },
+    {
+      "file": "src/modules/counterfactual-safes/domain/counterfactual-safes.repository.ts",
+      "line": 229,
+      "claim": "The commit message justifies the new query-builder delete by saying it 'matches the pattern already used elsewhere,' but the only other query-builder deletes in the codebase are in test cleanup, not production repositories, so the stated justification does not hold."
+    },
+    {
+      "file": "src/modules/counterfactual-safes/domain/counterfactual-safes.repository.ts",
+      "line": 229,
+      "claim": "The commit message states the new query-builder form is used because it 'has no such validation,' meaning it deliberately bypasses TypeORM 1.1's empty-criteria guard; either the shorthand criteria form (e.g. `manager.delete(CounterfactualSafeUser, { id: In(ids) })`) should be used instead, or a comment should explain why the query builder is needed, since avoiding the guard is only safe here because of the `targets.length === 0` check just above."
+    },
+    {
+      "file": "src/modules/counterfactual-safes/domain/counterfactual-safes.repository.integration.spec.ts",
+      "line": 160,
+      "claim": "A comment explaining why `.where('1=1')` was dropped appears only in this one file, while the same change was made in seven other integration specs (notifications, space-audit, space-safes, spaces, members, users, wallets) without any comment; either remove the comment or keep it in only one place for consistency."
+    },
+    {
+      "file": "src/domain/common/utils/__tests__/enum.spec.ts",
+      "line": 104,
+      "claim": "No integration spec reproduces the query where a transformed column actually hydrates as null, even though that scenario is the reason the nullable return type was introduced and would also serve as the source for the comment suggested regarding the transformer's null path."
+    }
+  ]
+}

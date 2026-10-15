@@ -1,0 +1,113 @@
+{
+  "usage": {
+    "usd": 0.5208294,
+    "turns": 9,
+    "wallSeconds": 60
+  },
+  "issues": [
+    {
+      "findings": [
+        "F1",
+        "F4",
+        "F11"
+      ],
+      "summary": "Batch route swallows the Config Service 404 for an unknown chain and returns 200 [], while the single route returns 404",
+      "label": "medium",
+      "evidence": "tokens.service.ts:10-11 treats any DataSourceError with code 404 as 'unknown token'. token.repository.ts:21 calls transactionApiManager.getApi first, and config-api.service.ts:84-85 turns a Config Service 404 into DataSourceError(…,404) via http-error-factory.ts:21. So GET /v1/chains/99999/tokens?addresses=… gives 200 [], and a client can't tell a bad chain ID from unknown tokens.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F8"
+      ],
+      "summary": "No rate-limit guard on the unauthenticated lookup routes, although the PR description says one was added",
+      "label": "medium",
+      "evidence": "tokens.controller.ts has no @UseGuards. There is no routes/guards directory, and nothing in src/modules/tokens or configuration.ts matches TOKENS_RATE/RateLimit. That breaks security.md:134 (unauthenticated lookups attach a RateLimitGuard subclass), and the batch route fans out to up to 20 upstream calls. The description's TokensRateLimitGuard and config changes are not in this commit.",
+      "category": "security"
+    },
+    {
+      "findings": [
+        "F16"
+      ],
+      "summary": "New routes validate chainId with bare NumericStringSchema instead of ChainIdSchema",
+      "label": "low",
+      "evidence": "tokens.controller.ts:73 and :105 use NumericStringSchema. api-dtos-and-validation.md:11 says existing bare uses predate ChainIdSchema and 'are also not precedent to extend'. The practical cost is only the missing length bound.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F7"
+      ],
+      "summary": "The single route's 404 Swagger text leaves out the unknown-chain case",
+      "label": "low",
+      "evidence": "tokens.controller.ts:65-67 describes the 404 as 'The Transaction Service does not know this token'. The Config Service's 404 for an unknown chain also comes back as a 404 through the same DataSourceError path, so the documentation is incomplete.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F10"
+      ],
+      "summary": "Batch integration suite has no unknown-chain / Config Service failure case",
+      "label": "low",
+      "evidence": "tokens.controller.integration.spec.ts:146-255 has no chain-failure test, while the single-token suite has one at :135. Such a test would have exposed the swallowed-404 behaviour. The defect itself is covered by the unknown-chain issue above.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F6",
+        "F15"
+      ],
+      "summary": "Case-insensitive uniqBy in the service is redundant, because AddressSchema already checksums",
+      "label": "nit",
+      "evidence": "address.schema.ts runs getAddress, so after the controller's validation duplicates are already identical strings. token-addresses.dto.entity.ts:11 and its spec (line 32) document that de-duplication is deliberately left to the service, and the service can be called directly. Lowercasing the key costs nothing and is harmless.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F3",
+        "F9",
+        "F12"
+      ],
+      "summary": "Integration spec repeats cases already covered by the schema and service unit specs",
+      "label": "nit",
+      "evidence": "The duplicate lookup (spec:163), the >MAX 422 (:206) and the malformed-address 422 (:219) are also covered in tokens.service.spec.ts:146 and token-addresses.dto.entity.spec.ts. The integration tests also prove that the pipe is wired into the route, so the overlap is only a style concern.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F13"
+      ],
+      "summary": "The 503 test rebuilds the mockUpstream routing inline",
+      "label": "nit",
+      "evidence": "tokens.controller.integration.spec.ts:229-254 rewrites the mock routing so it can inject a 503. Adding a parameter to mockUpstream would shorten it, but this is test ergonomics with no defect.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F14"
+      ],
+      "summary": "Swagger descriptions name the internal Transaction Service",
+      "label": "nit",
+      "evidence": "tokens.controller.ts:51 and :81 mention the Transaction Service. I found no rule in docs/agents that forbids naming the upstream, and it is useful context for callers, so this is a wording preference.",
+      "category": "security"
+    },
+    {
+      "findings": [
+        "F5"
+      ],
+      "summary": "MAX_TOKEN_ADDRESSES should be config-driven",
+      "label": "wrong",
+      "evidence": "token-addresses.dto.entity.ts:6 is a validation bound that rejects with 422, not a chunk size. The rule at caching-and-performance.md:61 is about chunk sizes for upstream batching. The PR description explicitly defends a fixed public-contract bound that is interpolated into the OpenAPI docs.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F2"
+      ],
+      "summary": "Vague claim that controller code at line 39 belongs elsewhere",
+      "label": "wrong",
+      "evidence": "tokens.controller.ts:39 is the @ApiTags/@ApiExtraModels/@Controller decorator block, in src/modules/tokens/routes/, which is the canonical location in module-structure.md. The finding names no concrete destination or rule.",
+      "category": "docs"
+    }
+  ]
+}

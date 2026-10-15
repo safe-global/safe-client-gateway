@@ -1,0 +1,12 @@
+{
+  "usd": 0.24445679999999997,
+  "head": "17f4589bedf361e62e56aabff36a4acee17292f7",
+  "verdicts": [
+    {
+      "issue": 3,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "The `npmPreapprovedPackages` block for both @safe-global packages is already in .yarnrc.yml:15-18 at 17f4589be, and this PR has no commits after that one. On the resolved .yarnrc.yml:18 thread, the author answered PooyaRaki's comment with a link to follow-up PR #3333. That PR removes the exemption in commit 48e416e67, \"chore: drop the npm age-gate exemption now the bump is locked\"."
+    }
+  ]
+}

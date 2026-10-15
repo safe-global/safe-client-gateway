@@ -1,0 +1,30 @@
+{
+  "usd": 0.0603216,
+  "findings": [
+    {
+      "file": "src/modules/notifications/domain/push/push-notification.service.ts",
+      "line": 439,
+      "claim": "The destructuring that strips the trusted field always removes trusted: true because processEvent already filters out trusted: false events earlier, making the code read as if it defends against a false value it will never see; a comment clarifying that the strip removes filtering metadata rather than guarding against false would help future readers understand the invariant."
+    },
+    {
+      "file": "src/modules/hooks/routes/entities/schemas/incoming-token.schema.ts",
+      "line": 11,
+      "claim": "Making trusted a required boolean tightly couples the schema to the Transaction Service always emitting that field; if the Transaction Service ever regresses and omits trusted, every INCOMING_TOKEN/OUTGOING_TOKEN webhook will fail validation (422) and silently drop cache-invalidation side effects such as balance and collectible cache clears, not just push notifications."
+    },
+    {
+      "file": "src/modules/hooks/routes/entities/schemas/outgoing-token.schema.ts",
+      "line": null,
+      "claim": "OutgoingTokenEventSchema does not export an OutgoingTokenEvent type, unlike incoming-token.schema.ts which exports IncomingTokenEvent, leaving an inconsistency between the two schema files."
+    },
+    {
+      "file": "src/modules/notifications/domain/push/push-notification.service.ts",
+      "line": 93,
+      "claim": "The log level used for spam-dropped events is info, matching other lifecycle logs, but if spam volume is high these logs could dominate the log stream; a lower log level such as debug or rate-limited sampling may be more appropriate."
+    },
+    {
+      "file": "src/modules/notifications/domain/push/push-notification.service.ts",
+      "line": 100,
+      "claim": "When an event is dropped as spam, the early return skips the NotificationEventProcessed log (with deliveryJobCount: 0), so only NotificationSpamTokenDropped fires; any dashboards or queries relying on NotificationEventProcessed as a signal that an event was seen will not see spam-dropped events."
+    }
+  ]
+}

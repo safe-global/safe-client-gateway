@@ -1,0 +1,35 @@
+{
+  "usd": 0.0639276,
+  "findings": [
+    {
+      "file": "src/modules/safe-queue/safe-queue.service.ts",
+      "line": 218,
+      "claim": "Before this fix, a transaction with to: null caused the batch chunk's safeParse to fail, dropping the whole chunk; in resolveMultisigTransaction (src/modules/safe/domain/safe.repository.ts:603) this forced a fallback to the Transaction Service. The new spec only verifies the schema in isolation, and neither safe-queue.service.spec.ts nor safe.repository.spec.ts pins down the batch-drop or fallback behavior, so the actual regression the user observed has no test coverage."
+    },
+    {
+      "file": "src/modules/safe-queue/safe-queue.service.ts",
+      "line": 218,
+      "claim": "A batch-path test case (a chunk containing a null-to row should be kept rather than dropped) and a single-tx case (a pending tx served from the queue should resolve to = zeroAddress) should be added to cover the regression."
+    },
+    {
+      "file": "src/modules/safe-queue/entities/multisig-transaction.entity.ts",
+      "line": 46,
+      "claim": "Using .nullish() instead of .nullable() means the schema accepts a body with no to key at all, not just an explicit to: null. Previously such a body failed to parse and fell back to the Transaction Service, but now it parses successfully and a pending transaction is served from the queue with its recipient mapped to the zero address (src/modules/safe-queue/mappers/transaction.mapper.ts:40), which could misrepresent the transaction's recipient if the Queue Service does not actually omit the field for this reason."
+    },
+    {
+      "file": "src/modules/safe-queue/entities/multisig-transaction.entity.ts",
+      "line": 46,
+      "claim": "If the Queue Service does not omit the to key (only sends it as null), .nullable() should be used instead of .nullish(), and the test covering a missing to key should be dropped since it would no longer reflect valid input."
+    },
+    {
+      "file": null,
+      "line": null,
+      "claim": "There is no documentation in the repository confirming what a null to field means upstream in the Queue Service (i.e., whether it sends to: null, omits the key entirely, or something else), which makes it unclear whether mapping null to the zero address is the correct interpretation."
+    },
+    {
+      "file": null,
+      "line": null,
+      "claim": "The PR body should include a line clarifying what a null to value means upstream (in the Queue Service), since this assumption underlies the whole fix and is not otherwise verifiable from the codebase."
+    }
+  ]
+}

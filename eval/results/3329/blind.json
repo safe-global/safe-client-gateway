@@ -1,0 +1,187 @@
+{
+  "pr": 3329,
+  "title": "feat: recognise Safe 1.5.0 as a known, trusted version",
+  "description": "## Summary\r\n\r\nCloses WA-2921\r\n\r\nTeaches the CGW paths that reason about Safe versions to recognise 1.5.0,\r\nahead of the per-chain rollout (WA-2937). Without this, every 1.5.0 Safe\r\nbridging to its own address gets a spurious CRITICAL `INCOMPATIBLE_SAFE`\r\nfrom Safe Shield, and the new privileged `setModuleGuard` method renders as\r\na raw contract interaction.\r\n\r\nAll changes rely only on deployment data already present in the pinned\r\n1.37.58; the chain-coverage bump ships separately in\r\n`tongyao/wa-2936-bump-safe-deployments` and neither PR depends on the\r\nother. Two items from the original ticket needed no code (see the\r\nscope-audit comment on WA-2921): the safe mapper's version state is driven\r\nby Config Service + Transaction Service data, and the\r\nofficial-fallback-handler check already derives its version list\r\ndynamically from `safe-deployments`.\r\n\r\nAPI impact is additive only: `setModuleGuard` transactions move from\r\n`txInfo.type: \"Custom\"` to `\"SettingsChange\"` with two new\r\n`settingsInfo.type` values; existing clients degrade gracefully.\r\n\r\n## Changes\r\n\r\n- `src/modules/safe-shield/recipient-analysis/` — add `1.5.0` to\r\n  `SAFE_VERSIONS` and `MULTICHAIN_SUPPORTED_VERSIONS`; tests cover both a\r\n  compatible target chain (Sepolia) and a randomly selected 1.4.1-only\r\n  target chain\r\n- `src/modules/transactions/routes/` — decode `setModuleGuard` into\r\n  `SET_MODULE_GUARD` / `DELETE_MODULE_GUARD` settings-change entities via a\r\n  shared guard-like handler (zero address deletes, mirroring `setGuard`);\r\n  OpenAPI registration included\r\n\r\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\r\n",
+  "findings": [
+    {
+      "id": "F1",
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.ts",
+      "line": 163,
+      "claim": "Recipient/bridge results are cached, so results already cached under the old verdict for 1.5.0 Safes will continue to be served until the cache TTL (expirationTimeInSeconds.default) expires; this staleness should be noted or the cache key bumped if it matters."
+    },
+    {
+      "id": "F2",
+      "file": "recipient-analysis.service.spec.ts",
+      "line": 1726,
+      "claim": "Both new 1.5.0 tests force `to = zeroAddress`, so the setupToL2 branch affected by the version-compatibility bug is never actually exercised by tests; a 1.5.0 plus SafeToL2Setup 1.5.0 test case targeting one of the 7 affected chains should be added."
+    },
+    {
+      "id": "F3",
+      "file": null,
+      "line": null,
+      "claim": "The PR title includes an issue reference (WA-2921), and because the merge strategy is squash-merge this becomes a permanent commit subject carrying an issue reference that should instead be reserved for the commit body; none of the last 400 subjects on main follow this pattern."
+    },
+    {
+      "id": "F4",
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts",
+      "line": 1695,
+      "claim": "The new test only covers a 1.5.0 Safe on a chain with 1.5.0 deployments returning MISSING_OWNERSHIP, but there is no test for a 1.5.0 Safe on a chain without 1.5.0 deployments still returning INCOMPATIBLE_SAFE; without that negative-path test, a future regression in checkVersionCompatibility (e.g. short-circuiting to true) could silently mark 1.5.0 as compatible on all chains without being caught."
+    },
+    {
+      "id": "F5",
+      "file": "src/modules/transactions/routes/mappers/common/settings-change.mapper.spec.ts",
+      "line": 308,
+      "claim": "A test asserts that SETTINGS_CHANGE_METHODS contains the literal value the same diff just added to it, which merely restates the implementation rather than verifying behavior and is already implied by the two mapper tests preceding it."
+    },
+    {
+      "id": "F6",
+      "file": "src/modules/transactions/routes/mappers/common/settings-change.mapper.ts",
+      "line": 187,
+      "claim": "handleSetModuleGuard duplicates handleSetGuard almost verbatim, differing only in class names, param index, and the NULL_ADDRESS branch; extracting a shared helper that takes the Set/Delete entity constructors would remove the duplication and the risk of the two implementations drifting apart in future changes."
+    },
+    {
+      "id": "F7",
+      "file": "src/modules/transactions/routes/mappers/common/settings-change.mapper.ts",
+      "line": 191,
+      "claim": "The function name handleGuardLike is vague and does not describe its behavior; a name like mapGuardSetting or handleGuardAddressSetting would better convey its purpose."
+    },
+    {
+      "id": "F8",
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts",
+      "line": 1714,
+      "claim": "The new tests hardcode the 1.5.0 singleton, proxy factory, and fallback-handler addresses (with 'as Address' casts) instead of reading them from getSafeSingletonDeployment/getProxyFactoryDeployment/getCompatibilityFallbackHandlerDeployment, which is fragile if those addresses change."
+    },
+    {
+      "id": "F9",
+      "file": ".yarnrc.yml",
+      "line": null,
+      "claim": "Setting npmPreapprovedPackages to a wildcard '@safe-global/*' bypasses the 7-day cooling-off age gate for any package published under that scope, so a compromised @safe-global npm publish token could get a malicious version into CI/prod immediately instead of after a week; narrowing the list to the specific packages actually consumed, or documenting the threat model, would reduce this exposure."
+    },
+    {
+      "id": "F10",
+      "file": "settings-change.mapper.ts",
+      "line": 47,
+      "claim": "No test checks that a setModuleGuard self-call is now classified as SettingsChange instead of Custom; the existing toContain test on the list is only a stand-in for this behavior, referencing related code at transaction-info.mapper.ts:582."
+    },
+    {
+      "id": "F11",
+      "file": ".yarnrc.yml",
+      "line": 18,
+      "claim": "The commit message claims the wildcard matches a safe-wallet-monorepo convention, but this could not be verified."
+    },
+    {
+      "id": "F12",
+      "file": "recipient-analysis.service.spec.ts",
+      "line": 1695,
+      "claim": "The two new tests repeat about 45 lines of setup (the 1.5.0 creation transaction and the getApi mock) and differ only in chain ID and expected status; this duplicated setup should be pulled into a local helper function."
+    },
+    {
+      "id": "F13",
+      "file": ".yarnrc.yml",
+      "line": 18,
+      "claim": "npmPreapprovedPackages: ['@safe-global/*'] exempts the entire @safe-global scope from the 7-day npmMinimalAgeGate, even though only safe-deployments needed the exemption; this also covers the untouched safe-modules-deployments package and any future @safe-global package, leaving risk of malicious code executing on import (install-time scripts are still blocked by enableScripts: false). The wildcard should be narrowed to @safe-global/safe-deployments specifically, or removed once the 1.37.62 version is 7 days old."
+    },
+    {
+      "id": "F14",
+      "file": "src/modules/transactions/routes/mappers/common/settings-change.mapper.ts",
+      "line": null,
+      "claim": "handleSetModuleGuard compares a decoded address string to the all-lowercase NULL_ADDRESS constant using strict inequality, inheriting the same fragility as handleSetGuard: this works only because the zero address has no checksum bits, and the pattern is now duplicated in a second place."
+    },
+    {
+      "id": "F15",
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.ts",
+      "line": 687,
+      "claim": "The PR adds '1.5.0' to MULTICHAIN_SUPPORTED_VERSIONS, but checkVersionCompatibility still checks the SafeToL2Setup and SafeToL2Migration conditions using a fixed version '1.4.1' instead of the Safe's actual version. For a 1.5.0 Safe, a chain that only has 1.4.1 helpers could pass when it should be MISSING_OWNERSHIP, and a chain that only has 1.5.0 helpers could be wrongly rejected."
+    },
+    {
+      "id": "F16",
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts",
+      "line": 1727,
+      "claim": "Both new tests set 'to' to zeroAddress, which skips the code path affected by the version-compatibility bug entirely, so no test exercises the case where the wrong helper version is checked. A test where 'to' is not the zero address is needed to cover this."
+    },
+    {
+      "id": "F17",
+      "file": "package.json",
+      "line": 65,
+      "claim": "The PR combines a dependency bump, a supply-chain-gate policy change, and feature work across two unrelated modules (safe-shield recipient analysis and transactions settings mapper), which makes it too large since it mixes a dependency bump with feature work and touches more than one module for reasons that are not a single mechanical consequence."
+    },
+    {
+      "id": "F18",
+      "file": ".yarnrc.yml",
+      "line": 18,
+      "claim": "Adding npmPreapprovedPackages: ['@safe-global/*'] creates a standing, repo-wide exemption from the 7-day npmMinimalAgeGate for every in-house package, which is broader than what the single safe-deployments bump requires and is not a necessary consequence of recognising Safe 1.5.0."
+    },
+    {
+      "id": "F19",
+      "file": "src/modules/transactions/routes/mappers/common/settings-change.mapper.spec.ts",
+      "line": 292,
+      "claim": "The zero address is written as a literal instead of using viem's zeroAddress, which another spec added in this same PR already imports; the existing DeleteGuard test at line 255 has the same issue."
+    },
+    {
+      "id": "F20",
+      "file": "src/modules/transactions/routes/mappers/common/settings-change.mapper.spec.ts",
+      "line": 292,
+      "claim": "The test uses a hardcoded value instead of a randomly generated one via faker, which reduces test robustness."
+    },
+    {
+      "id": "F21",
+      "file": "recipient-analysis.service.spec.ts",
+      "line": 1782,
+      "claim": "Both new 1.5.0 tests force `to = zeroAddress`, so the setupToL2 branch affected by the version-compatibility bug is never actually exercised by tests; a 1.5.0 plus SafeToL2Setup 1.5.0 test case targeting one of the 7 affected chains should be added."
+    },
+    {
+      "id": "F22",
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.ts",
+      "line": 698,
+      "claim": "Because the version check is hardcoded to 1.4.1, on 7 chains that have the 1.5.0 singleton and 1.5.0 SafeToL2Setup but not the 1.4.1 SafeToL2Setup (chain IDs 5424, 7979, 9302, 38833, 613419, 843843, 37714555429), a 1.5.0 Safe created with setupToL2 that bridges to one of these chains incorrectly gets flagged as INCOMPATIBLE_SAFE."
+    },
+    {
+      "id": "F23",
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts",
+      "line": 1752,
+      "claim": "The INCOMPATIBLE_SAFE test depends on chain 1101 having no 1.5.0 deployments in the real safe-deployments data; a future data update that adds 1.5.0 support there would break the test for a reason unrelated to the code under test. Mocking the deployment lookups or asserting the condition explicitly would make the dependency clear."
+    },
+    {
+      "id": "F24",
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.ts",
+      "line": 689,
+      "claim": "The fix should look up the SafeToL2Setup deployment for the version actually being checked, or verify that safeAccountConfig.to is truly a SafeToL2Setup deployment for that version on the target chain, and separately decide what the migration check should do for 1.5.0 since that version has no SafeToL2Migration."
+    },
+    {
+      "id": "F25",
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts",
+      "line": 1752,
+      "claim": "Since the responses are mocked in this test, the chainId value should be made random rather than fixed."
+    },
+    {
+      "id": "F26",
+      "file": ".yarnrc.yml",
+      "line": 17,
+      "claim": "Setting npmPreapprovedPackages to '@safe-global/*' lets the entire scope skip the 7-day npmMinimalAgeGate permanently, not just for this version bump. This is a repo-wide supply-chain policy change bundled into a feature PR, meaning a compromised @safe-global publish would install with no quarantine period; it should be split into its own PR with justification or scoped more narrowly."
+    },
+    {
+      "id": "F27",
+      "file": "src/modules/transactions/routes/mappers/common/settings-change.mapper.spec.ts",
+      "line": 308,
+      "claim": "This test only checks that a static array contains a string, which duplicates coverage already provided by the SetModuleGuard/DeleteModuleGuard tests. A test through transaction-info.mapper showing that a setModuleGuard transaction is classified as SettingsChange would provide more meaningful coverage of the API change."
+    },
+    {
+      "id": "F28",
+      "file": "src/modules/transactions/routes/entities/settings-changes/settings-change.entity.ts",
+      "line": 9,
+      "claim": "This changes the external API: setModuleGuard transactions used to come back as Custom, but now come back as SettingsChange with two new enum values, SET_MODULE_GUARD and DELETE_MODULE_GUARD. Clients with an exhaustive switch on settingsInfo.type need to handle the new values, and it's unclear whether this was confirmed with client teams or noted in the PR body."
+    },
+    {
+      "id": "F29",
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts",
+      "line": 1695,
+      "claim": "The two new tests consist of roughly 50 near-identical lines each, differing only in chain ID and expected status, which duplicates setup logic that could be extracted into a helper or expressed with it.each."
+    },
+    {
+      "id": "F30",
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.ts",
+      "line": 689,
+      "claim": "The PR adds '1.5.0' to MULTICHAIN_SUPPORTED_VERSIONS, but checkVersionCompatibility still passes a literal version '1.4.1' to hasCanonicalDeploymentSafeToL2Setup and hasCanonicalDeploymentSafeToL2Migration, ignoring its own version argument; in safe-deployments, 1.5.0 has its own distinct SafeToL2Setup address and no SafeToL2Migration at all."
+    }
+  ]
+}

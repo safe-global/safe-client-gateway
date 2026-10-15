@@ -1,0 +1,48 @@
+{
+  "usd": 0.2791276,
+  "head": "409c88489837d3de1649e858e0a087fe7bd1c2eb",
+  "verdicts": [
+    {
+      "issue": 2,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "Author replied '3 & 5: Both fixed by one change'; commit 409c88489 changes countNewSeats to take plaintext `addresses`, which removes its PreparedSpaceSafe dependency (space-safes.repository.interface.ts), so the docstring is accurate again."
+    },
+    {
+      "issue": 3,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "Commit 409c88489 swaps `rowsToInsert: Array<Pick<PreparedSpaceSafe,...>>` for `addresses: Array<SpaceSafe['address']>` and derives the seat key inside the repository, and the author said this fixes it."
+    },
+    {
+      "issue": 4,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "Author replied '1: Not acting on this', saying the integration tests cover both queries. SEAT_KEY was not changed after the review."
+    },
+    {
+      "issue": 5,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "Author replied that 'The Set is load-bearing': without it, one address added across several chains is charged a seat per chain (space-safes.repository.integration.spec.ts:692 would fail)."
+    },
+    {
+      "issue": 6,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "Author replied '4: At the limit it does admit, which is what the ticket asks for', so the over-quota rejection is intended. The code did not change."
+    },
+    {
+      "issue": 10,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "Author replied '6: Leaving it' and called the duplication deliberate: it isolates the lockSeats serialization from the entitlements machinery."
+    },
+    {
+      "issue": 11,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "Author replied '8: Good point', and committed to adding the index measurement to the squash commit body at merge time. It also stays in the PR description."
+    }
+  ]
+}

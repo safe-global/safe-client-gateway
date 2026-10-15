@@ -1,0 +1,36 @@
+{
+  "usd": 0.34586399999999995,
+  "head": "21cd66effff2e1b4e80184eca01aec66f8bcf96b",
+  "verdicts": [
+    {
+      "issue": 3,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "At 6fadd78, getChain's `!chainId` guard returned 404 while the message routes returned 422. The author called the point \"fair\" (comment of 2026-08-28), reworded the PR body and opened a follow-up in WA-3543. Commit 0bdbad0cb then removed the datasource guard, so validation now happens only at the controller."
+    },
+    {
+      "issue": 8,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "The three-line comment is at config-api.service.ts:75-77 in 6fadd78. The author wrote \"Trimmed to two lines\" in 4424a1bc. It later became TSDoc in 089c4dbe, and the guard itself was removed in 0bdbad0cb."
+    },
+    {
+      "issue": 9,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "At 6fadd78, config-api.service.spec.ts:122 asserts `new DataSourceError('Chain not found', 404)`. The author said \"The spec now asserts HttpStatus.NOT_FOUND instead of the literal\" (pushed in 4424a1bc)."
+    },
+    {
+      "issue": 10,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "The author declined point 4, the `toThrow` part of the bot's review, on 2026-08-28. They showed that `message` is a parameter property and that `toThrow` also compares `code`: changing 404 to 999 makes the test fail. They left the assertion as it was."
+    },
+    {
+      "issue": 13,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "The author agreed that \"the body overclaimed\" about the 41 other sites and reworded the PR body so the guard is not presented as a substitute for piping the remaining `@Param('chainId')` sites. The follow-up is tracked in WA-3543."
+    }
+  ]
+}

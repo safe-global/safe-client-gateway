@@ -1,0 +1,127 @@
+{
+  "pr": 3250,
+  "title": "fix: reject deployed safes on POST for counterfactual safes",
+  "description": "## Summary\r\n\r\nResolves: [WA-2856](https://linear.app/safe-global/issue/WA-2856/cgw-guard-for-post-counterfactual-safes-reject-writes-for-already)\r\n\r\nLayer 2 of the counterfactual-safes hardening: reject writes for already-deployed Safes (layer 1 is [#3247](https://github.com/safe-global/safe-client-gateway/pull/3247)).\r\n\r\n`POST /v1/users/counterfactual-safes` previously accepted creation params for any address, with no check that the Safe was still undeployed. A row is only meant to hold a *predicted* Safe, so persisting a deployed address creates a stale record that later surfaces the Safe as counterfactual.\r\n\r\nThe create service now cross-checks each submitted Safe against the transaction service (`isSafe`) before persisting. If any Safe in the batch is already deployed, the whole request is rejected with `409 Conflict` and nothing is written (atomic, consistent with the endpoint's existing 409 on param collisions). Fail-open: if the deployment check errors, the write is allowed, matching the read-side filter.\r\n\r\nFollows the read-side filter (previous PR). A frontend guard in `persistCounterfactualSafe` and cleanup of existing stale rows will follow.\r\n\r\n## Changes\r\n\r\n- Reject `POST /counterfactual-safes` with 409 when any submitted Safe is already deployed on-chain (`CounterfactualSafesService.create` → `assertNoneDeployed`), via `ISafeRepository.isSafe`, run in parallel, fail-open on error.\r\n- Inject `SafeRepositoryModule` into `CounterfactualSafesModule`.\r\n- Add unit tests for `CounterfactualSafesService.create`: all-undeployed persists, any-deployed rejects with 409 and persists nothing, fail-open on check error.",
+  "findings": [
+    {
+      "id": "F1",
+      "file": "counterfactual-safes.service.spec.ts",
+      "line": 22,
+      "claim": "The DTO builder in the test re-implements the same field-mapping already performed in CounterfactualSafesService.create (e.g. to becomes setupTo, data becomes setupData), duplicating logic between test and implementation; a shared createCounterfactualSafeDtoBuilder() in the domain builders would keep the DTO shape asserted in one place and prevent tests from drifting when the DTO changes."
+    },
+    {
+      "id": "F2",
+      "file": "counterfactual-safes.service.ts",
+      "line": 90,
+      "claim": "The catch blocks in assertNoneDeployed and filterUndeployed swallow all errors without any logging, so if the transaction service is down or returns malformed data, the endpoint silently continues and there is no observability into the guard being effectively disabled; a LoggingService should be injected and a warn-level log (chainId, address, error) added."
+    },
+    {
+      "id": "F3",
+      "file": "src/modules/counterfactual-safes/routes/counterfactual-safes.service.ts",
+      "line": 83,
+      "claim": "The per-Safe deployment check duplicates the same Promise.all/try-catch logic already present in filterUndeployed in space-counterfactual-safes.service.ts, meaning the two copies must be kept in sync manually; if one is changed (e.g. adding logging or switching to allSettled) and the other is not, GET and POST could disagree about what counts as a deployed Safe."
+    },
+    {
+      "id": "F4",
+      "file": "counterfactual-safes.service.ts",
+      "line": 83,
+      "claim": "Each POST request starts up to 100 isSafe lookups concurrently with no limit on parallelism, and since counterfactual Safes are rarely cached as deployed, most of these lookups hit the Transaction Service directly."
+    },
+    {
+      "id": "F5",
+      "file": "src/modules/counterfactual-safes/routes/counterfactual-safes.service.ts",
+      "line": 96,
+      "claim": "The batch endpoint now returns 409 and saves none of the submitted Safes if even one of up to 100 submitted Safes is already deployed, whereas previously the whole batch was saved; this means a client bulk-syncing locally stored counterfactual Safes loses the undeployed ones too, unlike the equivalent space endpoint which drops only the deployed Safes and saves the rest."
+    },
+    {
+      "id": "F6",
+      "file": "src/modules/counterfactual-safes/routes/counterfactual-safes.service.spec.ts",
+      "line": 76,
+      "claim": "There is no end-to-end test covering the new deployed-Safe 409 response, so the behavior is only unit tested rather than verified against the real controller and network stack."
+    },
+    {
+      "id": "F7",
+      "file": "counterfactual-safes.service.ts",
+      "line": 80,
+      "claim": "assertNoneDeployed and filterUndeployed in space-counterfactual-safes.service.ts implement the same logic of mapping over Safes, calling isSafe in parallel, and failing open on error; this duplication should be extracted into a shared helper so future changes to the fail-open policy or error logging only need to be made in one place."
+    },
+    {
+      "id": "F8",
+      "file": "counterfactual-safes.controller.ts",
+      "line": 50,
+      "claim": "The new 409 response is not documented in Swagger with an @ApiConflictResponse decorator, unlike other controllers that document conflicts this way, and the endpoint description does not mention that deployed Safes are rejected."
+    },
+    {
+      "id": "F9",
+      "file": "src/modules/counterfactual-safes/routes/counterfactual-safes.service.ts",
+      "line": 90,
+      "claim": "The isSafe function does not accept an AbortSignal, so once one promise in the map iteration confirms a Safe is deployed, the other already-launched promises cannot be aborted, missing a potential optimization."
+    },
+    {
+      "id": "F10",
+      "file": "src/modules/counterfactual-safes/routes/counterfactual-safes.service.ts",
+      "line": 90,
+      "claim": "The catch block in the fail-open path swallows errors without logging a warning, so if the transaction service is down, already-deployed Safes get saved as counterfactual and the failure is undetectable; a warn log with chainId, address, and the error should be added before returning false."
+    },
+    {
+      "id": "F11",
+      "file": "src/modules/counterfactual-safes/routes/__tests__/counterfactual-safes.controller.e2e-spec.ts",
+      "line": 95,
+      "claim": "The e2e POST tests don't stub the transaction service's isSafe call, so they likely pass only because isSafe fails and is caught by the fail-open branch, meaning the route-level path where a deployed Safe returns 409 is never actually exercised; the isSafe response should be stubbed explicitly (false for happy paths, plus one case returning true expecting 409)."
+    },
+    {
+      "id": "F12",
+      "file": "counterfactual-safes.service.ts",
+      "line": 83,
+      "claim": "The logic that calls isSafe and treats an error as \"not deployed\" duplicates the same loop already present in space-counterfactual-safes.service.ts, so any future change to the fail-open rule has to be made in two places."
+    },
+    {
+      "id": "F13",
+      "file": "counterfactual-safes.service.ts",
+      "line": 80,
+      "claim": "If a batched POST includes the same (chainId, address) pair twice, isSafe is invoked once per occurrence instead of being deduplicated, causing redundant transaction-service requests; a Map-based dedupe keyed by chainId and address would avoid this in assertNoneDeployed, and the same issue may apply to filterUndeployed if the underlying repository can return duplicates."
+    },
+    {
+      "id": "F14",
+      "file": "counterfactual-safes.service.spec.ts",
+      "line": null,
+      "claim": "The unit test mock for the deployed-Safe check matches only on the address, so a call that passed the wrong chainId to isSafe would not cause any test to fail."
+    },
+    {
+      "id": "F15",
+      "file": "src/modules/counterfactual-safes/routes/counterfactual-safes.service.spec.ts",
+      "line": 23,
+      "claim": "The test builds the DTO manually field-by-field (14 fields) instead of using a shared builder, creating a third separate copy of the DTO shape alongside the two existing buildCounterfactualSafe helpers in the e2e specs, which will drift apart as the DTO changes; a shared createCounterfactualSafeDtoBuilder() should be added and reused."
+    },
+    {
+      "id": "F16",
+      "file": "src/modules/counterfactual-safes/routes/counterfactual-safes.controller.ts",
+      "line": 57,
+      "claim": "The Swagger documentation for the POST endpoint does not declare the new 409 response that can now occur when a Safe is already deployed, only documenting 201 and 401, so API consumers aren't informed of this new response case; an @ApiConflictResponse decorator should be added, similar to what members.controller.ts already does."
+    },
+    {
+      "id": "F17",
+      "file": "counterfactual-safes.service.ts",
+      "line": 78,
+      "claim": "The comments explaining the code describe what the code does (reject if any deployed) rather than the non-obvious why (the fail-open reasoning), and should be trimmed to focus on the fail-open rationale; the same applies to the comment in space-counterfactual-safes.service.ts."
+    },
+    {
+      "id": "F18",
+      "file": "space-counterfactual-safes.service.ts",
+      "line": null,
+      "claim": "After filtering, a chain whose Safes were all deployed will be missing entirely from the response safes object, but the tests only assert on non-empty chains, so it is unverified whether clients rely on an empty array being present per chain; if they do, transformCounterfactualSafesResponse may need to preserve empty buckets."
+    },
+    {
+      "id": "F19",
+      "file": "__tests__/counterfactual-safes.controller.e2e-spec.ts",
+      "line": 94,
+      "claim": "The existing e2e POST tests never stub the network module, so they only pass because the deployed-Safe check errors and fails open; the path where a Safe is confirmed not deployed and then saved is never exercised end to end."
+    },
+    {
+      "id": "F20",
+      "file": "counterfactual-safes.service.ts",
+      "line": 90,
+      "claim": "The catch block that fails open by returning false does not log anything at the service level, so when a deployed Safe is saved as counterfactual due to a failed check, nothing flags that this happened; an unsupported chain in getApi or a zod parse failure specifically is not logged anywhere, whereas the repo's usual pattern for fail-open catches is to call loggingService.warn."
+    }
+  ]
+}

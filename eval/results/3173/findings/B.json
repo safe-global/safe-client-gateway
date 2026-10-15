@@ -1,0 +1,40 @@
+{
+  "usd": 0.0740336,
+  "findings": [
+    {
+      "file": "src/modules/siwe/domain/entities/siwe-message.entity.ts",
+      "line": 68,
+      "claim": "The schema now accepts a notBefore up to 30 seconds in the future and an expirationTime up to 30 seconds in the past, and these values are copied unchanged into the JWT nbf/exp claims. Because jwt.verify is called elsewhere with no clockTolerance configured, it throws NotBeforeError or TokenExpiredError, which are not HttpExceptions, so the global error filter returns a 500 instead of the clean 401 that was returned before this change."
+    },
+    {
+      "file": "src/modules/siwe/domain/entities/siwe-message.entity.ts",
+      "line": 68,
+      "claim": "By the time this failure occurs, the nonce has already been cleared and findOrCreateByWalletAddress has already run, so a client with clock skew ends up with a spent nonce and a 500 error and must start the login flow over. Even when the immediate call doesn't throw, other guarded requests using verifyToken would still reject the token until nbf passes."
+    },
+    {
+      "file": "src/modules/siwe/domain/entities/siwe-message.entity.ts",
+      "line": 68,
+      "claim": "The fix should apply the clock-skew tolerance only to issuedAt (the case described by the commit), since iat is not checked by jsonwebtoken unless maxAge is set; if tolerance is kept on notBefore/expirationTime, values should be clamped before signing or clockTolerance should be passed to both verify and decode, and an endpoint test should be added for each case."
+    },
+    {
+      "file": "src/config/entities/configuration.ts",
+      "line": 52,
+      "claim": "AUTH_CLOCK_SKEW_SECONDS is not validated in configuration.schema.ts the way AUTH_STATE_TTL_MILLISECONDS is (with .int().min(1)), so bad values fail silently: a negative value rejects every fresh message, a huge value accepts stale messages, and a non-numeric value becomes NaN and silently turns into 0."
+    },
+    {
+      "file": "src/modules/auth/routes/auth.controller.integration.spec.ts",
+      "line": 398,
+      "claim": "Endpoint tests only cover the case where notBefore/expirationTime are expired beyond the skew window; there is no /v1/auth/verify test for values within the skew window, which would have caught the 500-instead-of-401 regression. The unit tests in siwe-message.entity.spec.ts only exercise the schema, not the downstream verification behavior."
+    },
+    {
+      "file": "src/modules/siwe/domain/entities/siwe-message.entity.ts",
+      "line": 30,
+      "claim": "clockSkewSeconds is declared optional and checked for truthiness even though the only caller always passes a number; the truthy check also silently hides a NaN or 0 config value. It should be made required and used directly instead of being guarded by a truthy check."
+    },
+    {
+      "file": "src/modules/siwe/domain/siwe.repository.ts",
+      "line": 45,
+      "claim": "The Zod schema is rebuilt on every verify call even though the clock-skew value never changes after startup; it should be built once in the constructor instead."
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+THREAD .yarnrc.yml:18 resolved=true
+[PooyaRaki 2026-08-07T15:06:57Z] We should not pre approve any package regardless of being internal/external.
+[tongyaosafe 2026-08-07T15:34:53Z] https://github.com/safe-global/safe-client-gateway/pull/3333
+
+COMMENT
+[PooyaRaki 2026-08-07T15:08:28Z] @claude arch-review
+
+COMMENT
+[PooyaRaki 2026-08-07T15:22:12Z] @claude arch-review
+
+COMMENT
+[claude 2026-08-07T15:24:57Z] ## Architecture check
+
+Applicable guides: `docs/agents/testing.md`, `docs/agents/best-practices.md`, `docs/agents/commits-and-prs.md` (no routing-table row covers `.yarnrc.yml`, `package.json`, or `yarn.lock`).
+
+`.yarnrc.yml:20` — No speculative abstractions: the `@safe-global/safe-modules-deployments` pre-approval has no reader in this diff — its pin stays at 3.0.8, so nothing here needs an age-gate exemption for it, and it widens the bypass ahead of an anticipated future bump.
+
+**Verdict:** ❌ 1 finding(s)

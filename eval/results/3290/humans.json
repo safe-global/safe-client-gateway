@@ -1,0 +1,36 @@
+{
+  "usd": 0.34469819999999995,
+  "head": "9fca87343c76aae1c3c4ca29410354bf64cd84b9",
+  "verdicts": [
+    {
+      "issue": 4,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "PooyaRaki replied that the throw is intentional and added a comment in databaseEnumTransformer.from() (ff6e96cf2, src/domain/common/utils/enum.ts:37-40) saying non-null unknown values still throw. The follow-up bot review confirmed it was addressed."
+    },
+    {
+      "issue": 7,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "tongyaosafe's thread at counterfactual-safes spec :162 got a reply from the author linking commit 23d8b06, and the thread was resolved. The full-rationale comment was already there at 264455 and is still at HEAD (lines 160-162)."
+    },
+    {
+      "issue": 8,
+      "verdict": "accepted",
+      "present": false,
+      "evidence": "The pointer comments in spaces and space-safes specs were added after the review in ff6e96cf2 and bde0e067f. The author then removed them in 9fca87343 (\"remove outdated comments…\"), linked from the resolved threads, leaving only \"// Delete in dependency order to avoid deadlocks.\""
+    },
+    {
+      "issue": 9,
+      "verdict": "open",
+      "present": true,
+      "evidence": "Nobody replied to the notifications spec nit. The multi-line `relations: { notification_type: true, notification_subscription: true }` object is unchanged."
+    },
+    {
+      "issue": 10,
+      "verdict": "open",
+      "present": true,
+      "evidence": "No human replied about confirming CI or running integration/e2e tests. The only CI signal in the thread is Datadog's biome failure on ca8d589, and no follow-up confirms CI passed."
+    }
+  ]
+}

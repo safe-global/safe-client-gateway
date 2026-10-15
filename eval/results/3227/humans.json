@@ -1,0 +1,24 @@
+{
+  "usd": 0.225917,
+  "head": "b23e47f42f8a81a2a1990c81558e956dd6cc5ade",
+  "verdicts": [
+    {
+      "issue": 4,
+      "verdict": "open",
+      "present": true,
+      "evidence": "push-notification.service.ts:92-101 still logs NotificationSpamTokenDropped and returns 0 before NotificationEventProcessed. The only commit after 98904e8 is the main merge (42f89465e), which doesn't touch this file, and nobody replied to the bot."
+    },
+    {
+      "issue": 9,
+      "verdict": "open",
+      "present": true,
+      "evidence": "The comment at push-notification.service.ts:440 still only talks about FCM string types and says nothing about `trusted` always being true there. The file is unchanged since 98904e8 and nobody responded."
+    },
+    {
+      "issue": 11,
+      "verdict": "open",
+      "present": true,
+      "evidence": "outgoing-token.schema.ts still exports only OutgoingTokenEventSchema, both at base 42f89465e and at HEAD, so this was already there before the PR. Nobody reacted and the code didn't change."
+    }
+  ]
+}

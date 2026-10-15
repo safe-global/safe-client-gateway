@@ -1,0 +1,30 @@
+{
+  "usd": 0.2780824,
+  "head": "c028a3194104fdd7dfdbfab6436bf07cd9ff5cea",
+  "verdicts": [
+    {
+      "issue": 3,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "PooyaRaki asked to read addresses from deployments; the author replied 'fixed' citing 19a166391, which swaps the literal masterCopy/factory/handler addresses for getSafeSingletonDeployments/getProxyFactoryDeployments/getExtensibleFallbackHandlerDeployments in recipient-analysis.service.spec.ts. The same was done in contract-analysis.service.spec.ts."
+    },
+    {
+      "issue": 4,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "The author replied 'fixed. And a comment to explain' (19a166391). The test now asserts `expect(bridgeResultTypes).not.toContain('INCOMPATIBLE_SAFE')` and has a comment explaining why the result is MISSING_OWNERSHIP."
+    },
+    {
+      "issue": 5,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "At 15a14b7 the test checked only BRIDGE[0].type. Commit 19a166391 maps the whole BRIDGE array and asserts `.not.toContain('INCOMPATIBLE_SAFE')`, plus `toEqual(['MISSING_OWNERSHIP'])`, and the author answered the bot review with 'fixed.'"
+    },
+    {
+      "issue": 9,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "PooyaRaki suggested renaming the title to 'return VERIFIED'; the author replied 'fixed' citing c028a3194, which renames the test to 'should return VERIFIED when the handler is the official ExtensibleFallbackHandler' in contract-analysis.service.spec.ts."
+    }
+  ]
+}

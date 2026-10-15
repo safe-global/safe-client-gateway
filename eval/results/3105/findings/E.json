@@ -1,0 +1,30 @@
+{
+  "usd": 0.0352716,
+  "findings": [
+    {
+      "file": null,
+      "line": null,
+      "claim": "The PR throws a NoRelayerDefinedError when no relayer is defined, which contradicts the Stage 1 (kill switch) behavior where no relayer configured should fall back to the current production flow of no fee collection and non-mandatory Gelato relay, rather than erroring."
+    },
+    {
+      "file": ".env.sample.json",
+      "line": null,
+      "claim": "Leftover references to the environment variables RELAY_DAILY_LIMIT_CHAIN_IDS, RELAY_FEE_CHAIN_IDS, and RELAY_SIMULATION_CHAIN_IDS remain in this file even though they should have been removed."
+    },
+    {
+      "file": ".devcontainer/docker-compose.yml",
+      "line": null,
+      "claim": "Leftover references to the environment variables RELAY_DAILY_LIMIT_CHAIN_IDS, RELAY_FEE_CHAIN_IDS, and RELAY_SIMULATION_CHAIN_IDS remain in this file even though they should have been removed."
+    },
+    {
+      "file": "src/modules/fees/routes/fees.service.ts",
+      "line": 56,
+      "claim": "The logic here may be incomplete because it should simply retrieve the configured relayer, but this approach may not hold for Phase 3, where a new specific GTF relayer will exist."
+    },
+    {
+      "file": "src/modules/fees/routes/fees.service.ts",
+      "line": 56,
+      "claim": "The error message \"Pay with Safe not available for this chain.\" is inaccurate since Pay with Safe will actually be available in Phase 3; a clearer message would state that no relayer using the Fee Service is configured for this chain."
+    }
+  ]
+}

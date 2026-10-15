@@ -1,0 +1,229 @@
+{
+  "pr": 3346,
+  "title": "feat: expose a space's entitlements over HTTP",
+  "description": "<!--\r\n  SPDX-License-Identifier: FSL-1.1-MIT\r\n -->\r\n## Summary\r\n\r\nFollow-up of #3327, now merged, so this branch sits directly on `main`. It adds `GET /v1/spaces/:spaceId/entitlements` on top of the data model that PR shipped, plus the first seed of the feature catalog. It also drops `space_seat_selection`: product narrowed the scope, so a workspace simply holds the Safes its plan allows instead of choosing which ones keep the org layer. The `PUT /seat-selection` endpoint earlier revisions carried is gone with it, and the table #3327 created for that endpoint never had a reader or a writer.\r\n\r\nAny active member can read it, behind `AuthGuard`. Resolution returns one entry per catalog feature; the active subscription's purchased package wins over the catalog's defaults, and both branches emit the same shape, so a client never learns which one served it. `enabled` says only whether the feature is active, and the purchased row carries that answer. Metered usage is counted two ways: `safe_seats` is a live `COUNT` over the table the `spaces` module owns, while event-metered features read the `space_feature_usage` counter for the current period — the billing cycle when subscribed, otherwise a `free_period`-day window anchored at the workspace's creation date.\r\n\r\nThe entries are a discriminated union on `type`, published as `oneOf` with an OpenAPI discriminator and an explicit mapping (the wire values are not the schema names, so an SDK could not resolve the variant otherwise). A metered entry always carries quota, usage and reset window as required fields; binary and value entries never carry them. That beats one flat shape of optionals because `quota: null` already means unlimited — on a binary entry the same null would have to mean \"does not apply\" too, in the one field the enforcement layer will read. Each DTO class `implements` its domain variant, so drift stops compiling.\r\n\r\nThree migrations, one concern each. The first seeds `safe_seats`, the first feature product has signed off, granting nothing on its `free_*` columns since there is no free plan; its `down()` clears the feature's purchased rows and counters first, as both reference it with `ON DELETE RESTRICT`. The second indexes `space_safes.space_id`, which the endpoint counts on every request and which the table's three `chain_id`-leading indexes cannot serve — on 20k rows across 2k workspaces, 267 shared buffers and a `Seq Scan` become 12 and a `Bitmap Index Scan`. The third drops `space_seat_selection`, empty in every environment; its create lives in a merged migration, so this is a new file rather than an edit in place, and its `down()` restores the table with its index, its `updated_at` trigger and both foreign keys. The catalog keys ship as a named enum (`FeatureKey`), with an integration test asserting the seeded catalog equals that list.\r\n\r\nThe HTTP surface lives in `EntitlementsRoutesModule`, which `AppModule` imports only when `FF_BILLING_SERVICE` and `FF_USERS` are both on. It is separate because `BillingModule` imports `EntitlementsModule` behind the billing flag alone, and a controller declared there would have served regardless of `FF_USERS`.\r\n\r\nLinear: PLA-1722\r\n\r\n## Changes\r\n\r\n- `routes/` — `EntitlementsController`; the `EntitlementsPlan` and `Binary`/`Value`/`MeteredEntitlement` DTOs behind the `oneOf` discriminator; `EntitlementsService.resolveEntitlements`/`getEntitlements`.\r\n- `domain/entitlements.rules.ts` — pure derivation: catalog fallback, usage-window start, `resetsAt`.\r\n- `domain/entities/resolved-entitlements.entity.ts` — the resolved shape as a discriminated union, one variant per feature type.\r\n- `domain/entities/feature.entity.ts` — `FEATURE_KEYS`, the published catalog list.\r\n- `domain/entitlements.constants.ts` — `STOCK_METERED_FEATURES`, now `satisfies` the published keys; the service's exhaustive `Record` still fails to compile until a new key's counter is wired.\r\n- `domain/space-feature-usage.repository.ts` (+ interface, + DI) — period-keyed usage reads.\r\n- `domain/subscriptions.repository.ts` — `getActiveSubscriptionBySpaceId`, with the package and each row's feature.\r\n- `spaces/domain/safes/space-safes.repository.ts` — `countBySpaceId`, the live seat count.\r\n- `routes/entitlements-routes.module.ts`, `entitlements.module.ts`, `src/app.module.ts` — the HTTP surface split out and gated.\r\n- `migrations/` — the `safe_seats` seed, the `space_safes.space_id` index and the `space_seat_selection` drop, one migration each.\r\n- Deleted — `space-seat-selection.entity.db.ts` and its domain schema, with nothing referencing them.\r\n- Specs — unit coverage of every derivation branch, integration coverage against a real database, and HTTP coverage of guards, status codes and response shape. The controller suite is an integration spec because CI runs only the `unit` and `integration` projects; both app-booting suites own their database, since `features` is global and each seeds its own values.\r\n\r\n",
+  "findings": [
+    {
+      "id": "F1",
+      "file": "src/modules/entitlements/domain/entities/feature.entity.ts",
+      "line": 12,
+      "claim": "FeatureKey is typed as a plain string instead of a union of FEATURE_KEYS, so it accepts any string and no longer enforces membership in FEATURE_KEYS at compile time. This means the OpenAPI enum documentation becomes a docs-only contract, and drift between the type and the actual allowed keys would only be caught by a runtime integration test rather than the compiler."
+    },
+    {
+      "id": "F2",
+      "file": "src/modules/entitlements/routes/entitlements.service.ts",
+      "line": 382,
+      "claim": "The current conditional logic could be implemented as a switch/case instead, which would provide a compile-time exhaustiveness check and prevent a differing type from silently falling through unhandled."
+    },
+    {
+      "id": "F3",
+      "file": "src/modules/entitlements/routes/entitlements.service.ts",
+      "line": 366,
+      "claim": "resolveFeature checks for FeatureType.Binary and FeatureType.Value explicitly but falls through to returning a Metered-shaped object for any other type, including one added in the future. If a fourth FeatureType is introduced, it would silently be served as Metered with resetsAt/quota/used fields without a compile error, unlike the exhaustive handling used for stockCounters."
+    },
+    {
+      "id": "F4",
+      "file": "src/modules/entitlements/entitlements-routes.module.ts",
+      "line": 26,
+      "claim": "A second Nest module is defined at the module root instead of under routes/, deviating from the canonical module structure used elsewhere in the repo (e.g. src/modules/delegate/routes/delegates.module.ts) and inconsistent with this module's own domain/entitlements-repository.module.ts placement."
+    },
+    {
+      "id": "F5",
+      "file": "src/modules/entitlements/routes/entitlements.controller.ts",
+      "line": null,
+      "claim": "The controller imports SpaceIdPipe from the spaces module's routes/pipes path, crossing module boundaries and bypassing the domain/ import rule."
+    },
+    {
+      "id": "F6",
+      "file": "src/modules/entitlements/routes/entitlements.service.integration.spec.ts",
+      "line": 235,
+      "claim": "The afterEach block replaced a loop over entities with nine copy-pasted delete().execute() blocks, when a loop over an ordered entity array would achieve the same behavior with less duplication."
+    },
+    {
+      "id": "F7",
+      "file": "src/modules/entitlements/domain/space-feature-usage.repository.ts",
+      "line": 46,
+      "claim": "loadRelationIds causes row.feature to actually hold a raw id, but it is still typed as Feature, requiring a Number(row.feature) workaround; selecting the FK column explicitly (e.g. via RelationId or an explicit query-builder select) would keep the type accurate."
+    },
+    {
+      "id": "F8",
+      "file": "src/modules/entitlements/domain/entitlements-repository.module.ts",
+      "line": 27,
+      "claim": "SpaceSeatSelection was removed from forFeature, and because autoLoadEntities is true the app no longer registers it, but the corresponding entity files (space-seat-selection.entity.db.ts and domain/entities/space-seat-selection.entity.ts) remain and are still picked up by the ORM CLI via orm.config.ts, leaving orphaned files; this change is also unrelated to the entitlements endpoint being added."
+    },
+    {
+      "id": "F9",
+      "file": "src/modules/entitlements/routes/entitlements.controller.ts",
+      "line": 18,
+      "claim": "The controller imports space-id.pipe from another module's routes directory (@/modules/spaces/routes/pipes/space-id.pipe) instead of going through that module's domain layer, which is the exact anti-pattern the module structure guide calls out by name as something not to imitate."
+    },
+    {
+      "id": "F10",
+      "file": "src/modules/entitlements/routes/entitlements.service.ts",
+      "line": 470,
+      "claim": "getSpaceCreatedAtOrFail queries the spaces table again immediately after SpaceIdPipe already resolved the same row via findIdByUuid, resulting in three DB round trips (pipe, assertMember, createdAt) before any entitlement data is read."
+    },
+    {
+      "id": "F11",
+      "file": "src/modules/entitlements/routes/entitlements.service.integration.spec.ts",
+      "line": 369,
+      "claim": "This function appears to duplicate functionality already provided by the existing materializedSubscriptionBuilder, raising the question of why a separate function is needed."
+    },
+    {
+      "id": "F12",
+      "file": "src/modules/entitlements/routes/entitlements.controller.integration.spec.ts",
+      "line": 53,
+      "claim": "The adminQuery helper plus create/drop-database setup is duplicated verbatim between this file and subscription-sync.service.integration.spec.ts instead of being shared."
+    },
+    {
+      "id": "F13",
+      "file": "src/modules/entitlements/domain/space-feature-usage.repository.interface.ts",
+      "line": 10,
+      "claim": "The spaceId parameter is unused (omitted) in every implementation, so its presence in the interface is unjustified."
+    },
+    {
+      "id": "F14",
+      "file": "src/modules/entitlements/routes/entities/entitlements-response.entity.ts",
+      "line": 49,
+      "claim": "Several @ApiProperty declarations use single-element literal-array enums (enum: [FeatureType.X]), which the applicable convention advises against, though a single-value discriminator may be a reasonable exception worth documenting."
+    },
+    {
+      "id": "F15",
+      "file": "src/modules/entitlements/routes/entitlements.service.integration.spec.ts",
+      "line": 601,
+      "claim": "The test title still says 'reports no over-limit feature' but only asserts quota/used values, because the per-entitlement overLimit field was removed in a later commit."
+    },
+    {
+      "id": "F16",
+      "file": "migrations/1787148838500-seed-features.ts",
+      "line": 13,
+      "claim": "The seed migration sets safe_seats with free_enabled = false and free_quota = 0, while both test suites use freeEnabled: true and freeQuota: 2; this discrepancy should be confirmed with product before merge if not already signed off."
+    },
+    {
+      "id": "F17",
+      "file": "src/modules/entitlements/routes/entitlements.service.ts",
+      "line": 481,
+      "claim": "toEntitlementsResponse duplicates the ResolvedEntitlements fields one by one even though the plan mapping is already constructed elsewhere in the same file and the DTO classes already implement the resolved types, so the response could instead be built by returning resolveEntitlements directly or mapping plan in a single place. The duplication spans lines 481-494."
+    },
+    {
+      "id": "F18",
+      "file": "src/modules/entitlements/routes/entitlements.controller.integration.spec.ts",
+      "line": 67,
+      "claim": "Test database creation and teardown are done manually with raw admin queries instead of using the existing TestDbFactory helper, which would simplify the code."
+    },
+    {
+      "id": "F19",
+      "file": "src/modules/entitlements/routes/subscription-sync.service.integration.spec.ts",
+      "line": 81,
+      "claim": "This test also manually creates/destroys the test database instead of using the TestDbFactory helper."
+    },
+    {
+      "id": "F20",
+      "file": "src/modules/entitlements/domain/entitlements-repository.module.ts",
+      "line": 25,
+      "claim": "SpaceSeatSelection was removed from TypeOrmModule.forFeature and the test DataSource, unregistering the entity (since entities otherwise load only via autoLoadEntities), yet the entity file, its domain schema, and the table created by the create-entitlements migration all remain; this change is unrelated to the endpoint being added and leaves dead/inconsistent code."
+    },
+    {
+      "id": "F21",
+      "file": "src/modules/entitlements/routes/entitlements.service.ts",
+      "line": 37,
+      "claim": "This file imports assertMember from the spaces module's routes/utils path, crossing module boundaries and bypassing the domain/ import rule, though there is precedent for this elsewhere in the codebase."
+    },
+    {
+      "id": "F22",
+      "file": "src/modules/entitlements/routes/entitlements.service.integration.spec.ts",
+      "line": 594,
+      "claim": "A comment says the state 'is what the endpoint names as over-limit', but the endpoint no longer exposes an over-limit concept."
+    },
+    {
+      "id": "F23",
+      "file": "src/modules/entitlements/routes/entitlements.service.ts",
+      "line": 481,
+      "claim": "toEntitlementsResponse copies the plan field by field and passes entitlements through unchanged, so the mapper performs no real transformation; returning resolved directly, or having EntitlementsPlan implement ResolvedPlan to tie the types together, would be simpler."
+    },
+    {
+      "id": "F24",
+      "file": "src/modules/entitlements/routes/entitlements.service.ts",
+      "line": 37,
+      "claim": "The service imports assertMember from another module's routes/utils (@/modules/spaces/routes/utils/space-assert.utils) rather than that module's domain layer, even though the service already injects IMembersRepository and could use that instead."
+    },
+    {
+      "id": "F25",
+      "file": "src/modules/entitlements/routes/entitlements.controller.integration.spec.ts",
+      "line": 223,
+      "claim": "A test case for the unauthenticated scenario (expecting a 403 when no access token is provided) is missing and should be added."
+    },
+    {
+      "id": "F26",
+      "file": "src/modules/entitlements/domain/entitlements.rules.ts",
+      "line": 82,
+      "claim": "The check if (cycle?.currentPeriodStart) treats an active, paid subscription whose currentPeriodStart is null, which the upstream schema allows, the same as the Free tier, which would cause usage to be bucketed from the space's creation date instead of the billing cycle; this could not be confirmed because the only currently seeded feature is stock-metered and returns before reaching this line, so it only matters once an event-metered feature is seeded. The same pattern occurs at line 105."
+    },
+    {
+      "id": "F27",
+      "file": "src/modules/entitlements/domain/entitlements.rules.spec.ts",
+      "line": 12,
+      "claim": "feature() spreads a Partial over featureBuilder().build() instead of using the builder's .with(...) method, duplicating builder functionality by hand."
+    },
+    {
+      "id": "F28",
+      "file": "src/modules/entitlements/domain/entitlements.rules.ts",
+      "line": 85,
+      "claim": "The freePeriod > 0 check creates a boundary condition at 0, which the Zod schema permits, but the existing specs only exercise 30 and null, leaving the behavior at 0 unverified. The same issue applies at line 108."
+    },
+    {
+      "id": "F29",
+      "file": "src/modules/entitlements/routes/entitlements.service.integration.spec.ts",
+      "line": 332,
+      "claim": "The addMember helper takes inviteExpiresAt and role parameters (defaulting role to 'MEMBER'), but the only call site uses just addMember(spaceId, 'ACTIVE'), leaving those parameters and the INVITED branch dead code."
+    },
+    {
+      "id": "F30",
+      "file": "src/modules/entitlements/routes/entitlements.service.integration.spec.ts",
+      "line": 368,
+      "claim": "A hand-rolled materializedSubscription() fixture builds a literal object with hard-coded planId and fixed dates, duplicating the existing materializedSubscriptionBuilder() that the same file already imports and uses elsewhere."
+    },
+    {
+      "id": "F31",
+      "file": "src/app.module.ts",
+      "line": 125,
+      "claim": "The gate combining billingService and users flags on EntitlementsRoutesModule uses && with no test covering the case where the two flags differ, so changing the operator to || would not be caught by CI."
+    },
+    {
+      "id": "F32",
+      "file": "src/modules/entitlements/routes/entitlements.service.integration.spec.ts",
+      "line": 292,
+      "claim": "createSpace was changed to use faker.company.name() instead of the shared nameBuilder(), moving away from the shared builder without explanation."
+    },
+    {
+      "id": "F33",
+      "file": "src/modules/entitlements/routes/entitlements.service.integration.spec.ts",
+      "line": 59,
+      "claim": "A comment references the 'real FeatureKey enum' and says the repository dispatches stock counting by key, but FeatureKey is actually just a string type and the dispatch logic lives in EntitlementsService.stockCounters."
+    },
+    {
+      "id": "F34",
+      "file": "migrations/1787148838500-seed-features.ts",
+      "line": 12,
+      "claim": "The migration's up() uses ON CONFLICT (\"key\") DO NOTHING making it idempotent, but down() deletes rows and their dependents unconditionally, even if a given feature row was inserted by something else in the meantime, so down() is destructive rather than a strict inverse of up()."
+    },
+    {
+      "id": "F35",
+      "file": "src/modules/entitlements/routes/entitlements.service.integration.spec.ts",
+      "line": 292,
+      "claim": "createSpace() replaces the shared nameBuilder() with faker.company.name(), an unexplained drive-by change unrelated to the entitlements work being reviewed."
+    },
+    {
+      "id": "F36",
+      "file": "src/modules/entitlements/domain/entitlements.constants.ts",
+      "line": 70,
+      "claim": "The comment near FEATURE_METADATA_PREFIX references feature keys such as SECURITY_HUB, SPONSORED_TRANSACTIONS, and SWAP_FEE_TIER that are not present in FEATURE_KEYS, which currently only contains safe_seats, so the documentation is ahead of or inconsistent with the actual catalog of keys."
+    },
+    {
+      "id": "F37",
+      "file": "src/modules/entitlements/routes/entitlements.service.ts",
+      "line": 77,
+      "claim": "resolveEntitlements uses Promise.all to fetch spaceCreatedAt, features, and activeSubscription concurrently, so for a non-existent space the other two queries still run to completion before the existence check's rejection surfaces, wasting work. This is also relevant because the method is reachable directly and not only through the HTTP path where assertMember would throw first."
+    }
+  ]
+}

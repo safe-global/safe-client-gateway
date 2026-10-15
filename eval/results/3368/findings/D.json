@@ -1,0 +1,15 @@
+{
+  "usd": 0.0513356,
+  "findings": [
+    {
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.ts",
+      "line": 706,
+      "claim": "The SafeToL2Migration rewrite and its supporting getSafeToL2MigrationVersions getter are described as behaviour-neutral, yet they pull a second, unrelated module into what is meant to be a fix for v1.5.0 SafeMigration, expanding the scope of the change beyond what the fix requires."
+    },
+    {
+      "file": null,
+      "line": null,
+      "claim": "The PR title labels the change as a chore, but it actually corrects a behavior where an unrecognised v1.5.0 SafeMigration causes 422 errors and MalformedHash; this should be typed as fix rather than chore, since chore is meant to be used only as a last resort for such classifications."
+    }
+  ]
+}

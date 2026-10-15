@@ -1,0 +1,91 @@
+{
+  "pr": 3165,
+  "title": "feat: accept the proposed contact inline on address book requests, drop private items",
+  "description": "## Summary\n\nSpaces members propose address book contacts by sending the full contact (`address`, `name`, `chainIds`) in the create-request body. Previously the endpoint only accepted an `address` and resolved the rest from the member's **private address book item**, which forced clients to upload a private copy first.\n\nPrivate contacts never shipped to production (staging-only) and are removed entirely: they were invisible to the space audit log, and the upload-then-request dance deleted the client's local copy — a rejected request made the contact vanish.\n\nThe web app counterpart (local-storage contacts + single-call request flow) follows in `safe-global/safe-wallet-monorepo`.\n\n```mermaid\nflowchart TB\n  subgraph Before\n    L1[Client contact] -->|1. PUT private item| P1[(user_address_book_items)]\n    C1[\"POST request { address }\"] -->|lookup name+chainIds, 404 if missing| P1\n    P1 --> R1[(address_book_requests)]\n  end\n  subgraph After\n    L2[Client contact] -->|\"POST request { address, name, chainIds }\"| R2[(address_book_requests)]\n    R2 -->|admin approves| S2[(shared address book + ADDRESS_BOOK_UPSERTED audit event)]\n  end\n```\n\n## Changes\n\n**Commit 1 — request endpoint accepts the contact inline**\n\n- `CreateAddressBookRequestDto` → `{ address, name, chainIds }`, validated with the shared-book schema (`makeNameSchema` ≤50 chars, `AddressSchema`, `ChainIdSchema[]` with `.min(1)` + dedupe transform) + schema spec\n- `createRequest` writes the body directly to `address_book_requests` (the row already stores name/address/chainIds); the private-item lookup and its 404 are gone\n- Authorization tightened: `assertActiveMember` — INVITED (not yet accepted) members can no longer create requests\n- Anti-abuse (the 500-item private-items cap was the only indirect bound before):\n  - max pending requests per (user, space): `spaces.addressBookRequests.maxPending`, default 100 (`SPACES_MAX_PENDING_ADDRESS_BOOK_REQUESTS_PER_USER`)\n  - rate limit on POST: `SpacesAddressBookRequestsRateLimitGuard`, `spaces.rateLimit.addressBookRequestCreation`, default 100/600s\n- Migration: unique constraint `(space, requester, address)` becomes a **partial unique index on PENDING only** — a rejected address can be requested again; duplicate pending requests still 409\n- `approve`/`reject` untouched (they already read from the request row only)\n\n**Commit 2 — remove the private address book module**\n\n- Deletes the `user_address_book_items` entity, domain entity, repository + interface, controller, service, DTOs, e2e spec, and module wiring\n- Migration drops the `user_address_book_items` table (pre-prod; staging data abandoned)\n- Requests e2e spec rewritten for the new flow: submitted-contact creation, 422 validation, 403 for unauthenticated/INVITED, 409 duplicate pending, re-request after rejection, pending cap, approve→shared-book copy, reject\n\n## Testing\n\n- New DTO schema spec (8 tests), spaces unit suites green (176)\n- Requests e2e spec green (17/17) against dockerised Postgres, including the INVITED-403 and re-request-after-rejection paths\n- `tsc --noEmit` and biome clean\n\n## Deploy note\n\nThe currently deployed staging web app still uses the old flow; between this deploy and the wallet-monorepo PR, \"Request to add\" / private contacts on staging are non-functional (422/404). Staging-only and expected — land the web PR right after.",
+  "findings": [
+    {
+      "id": "F1",
+      "file": "src/modules/spaces/routes/entities/address-book-request.dto.entity.ts",
+      "line": 100,
+      "claim": "The Zod schema requires at least one chain id, but the corresponding @ApiProperty only documents this constraint in free-text description rather than via a minItems: 1 constraint, so the published Swagger schema does not match the actual validation, unlike the name field where maxLength is already set."
+    },
+    {
+      "id": "F2",
+      "file": "src/modules/spaces/routes/address-book-requests.controller.e2e-spec.ts",
+      "line": 107,
+      "claim": "The end-to-end tests for invalid name and empty chainIds returning 422 duplicate checks already covered by the new address-book-request.dto.entity.spec.ts, so one of the two redundant tests should be removed to keep only one representative 422 wiring test per route."
+    },
+    {
+      "id": "F3",
+      "file": "src/modules/spaces/routes/guards/spaces-address-book-requests-rate-limit.guard.ts",
+      "line": 15,
+      "claim": "The new rate-limit guard has no test coverage: address-book-requests.controller.e2e-spec.ts does not configure a rate-limit override or assert a 429 response, unlike the sibling address-books.controller.e2e-spec.ts which tests this pattern with initApp({ rateLimit: { max: 1, ... } }) and .expect(429)."
+    },
+    {
+      "id": "F4",
+      "file": "src/modules/spaces/routes/address-book-requests.service.ts",
+      "line": 83,
+      "claim": "The limit-exceeded message uses lowercase \"workspace\" while the module's other limit messages use the format \"This Workspace only allows a maximum of N …\", making the wording inconsistent with existing messages."
+    },
+    {
+      "id": "F5",
+      "file": "src/modules/spaces/routes/address-book-requests.service.ts",
+      "line": null,
+      "claim": "AddressBookRequestsService has no unit spec."
+    },
+    {
+      "id": "F6",
+      "file": "src/modules/spaces/routes/address-book-requests.service.ts",
+      "line": 83,
+      "claim": "The pending-request limit count and check are implemented in the service rather than in the repository, unlike every other limit in this module, which is checked inside its repository alongside its config read (e.g. address-book-items.repository.ts, space-safes.repository.ts, spaces.repository). Moving the count and limit check into AddressBookRequestsRepository.create, next to the unique-constraint handling, would remove the service's need for IConfigurationService and countPending."
+    },
+    {
+      "id": "F7",
+      "file": "src/modules/spaces/routes/address-book-requests.service.ts",
+      "line": 83,
+      "claim": "countPending and create are executed as separate calls with no shared transaction, so two concurrent requests from the same user can both read a pending count of N-1 and both succeed in inserting, allowing the total to exceed maxPending. The per-IP rate limit reduces the likelihood but does not prevent it; performing the count and insert in one transaction inside the repository would close this gap."
+    },
+    {
+      "id": "F8",
+      "file": "docs/engineering/sources/working/module-inventory.md",
+      "line": 82,
+      "claim": "This working document still refers to UserAddressBookItem and \"private address books\", a feature this PR deletes, so the documentation no longer matches the code."
+    },
+    {
+      "id": "F9",
+      "file": "src/modules/spaces/routes/address-book-requests.service.ts",
+      "line": 84,
+      "claim": "countPending() and create() run as two separate queries without a transaction or lock, so concurrent POSTs from the same user for different addresses can each read a count below the pending limit and all insert, letting the pending-request cap be exceeded. The partial unique index only prevents duplicate addresses and does not enforce the count limit."
+    },
+    {
+      "id": "F10",
+      "file": "src/modules/spaces/domain/address-books/address-book-requests.repository.ts",
+      "line": 80,
+      "claim": "The countPending logic and its limit check (using >=, and counting only PENDING requests) are covered only by end-to-end tests. There is no test verifying that approved or rejected requests are excluded from the count, or that the limit is enforced per space and per user, unlike existing precedent where such limits are covered by repository integration specs (e.g. address-book-items.repository.integration.spec.ts, space-safes.repository.integration.spec.ts)."
+    },
+    {
+      "id": "F11",
+      "file": "src/modules/spaces/routes/entities/address-book-request.dto.entity.ts",
+      "line": 81,
+      "claim": "The code could use Zod's overwrite() method here instead of the current approach, referencing the corresponding Zod v4 documentation."
+    },
+    {
+      "id": "F12",
+      "file": "docs/engineering/sources/working/open-question-options.md",
+      "line": 245,
+      "claim": "This working document still refers to UserAddressBookItem and \"private address books\", a feature this PR deletes, so the documentation no longer matches the code."
+    },
+    {
+      "id": "F13",
+      "file": "src/modules/spaces/routes/address-book-requests.service.ts",
+      "line": 75,
+      "claim": "Because the unique index is now partial (status = 0), a request for an address that was already approved no longer blocks a new proposal for that same address, allowing repeat proposals that approve() silently overwrites the existing contact's name and chainIds via upsertMany in address-book-items.repository.ts."
+    },
+    {
+      "id": "F14",
+      "file": "migrations/1781300000000-address-book-requests-pending-unique.ts",
+      "line": 57,
+      "claim": "The down() migration re-adds the full UNIQUE (space_id, requested_by, address) constraint, but a user who had a request rejected and then re-requested the same address (a flow this PR allows) will have two rows for that key, causing ADD CONSTRAINT to fail when rolling back."
+    }
+  ]
+}

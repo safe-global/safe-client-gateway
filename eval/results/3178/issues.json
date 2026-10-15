@@ -1,0 +1,232 @@
+{
+  "usage": {
+    "usd": 0.5462916,
+    "turns": 8,
+    "wallSeconds": 100
+  },
+  "issues": [
+    {
+      "findings": [
+        "F1",
+        "F8",
+        "F29"
+      ],
+      "summary": "nameBuilder slices faker fullName to 30 code points without trimming, so it can produce a trailing space that sanitizeName strips, which makes tests flaky",
+      "label": "medium",
+      "evidence": "name.builder.ts:24 slices `[...padded].slice(0, 30)` and never trims. faker.person.fullName() can go over 30 chars (prefixes and suffixes like Mrs./III/PhD), and faker is not seeded globally. If the cut lands right after a space, `sanitizeName(name) === name` in name.builder.spec.ts:18 fails, and so do e2e equality checks against the builder output. This happens intermittently.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F7",
+        "F16",
+        "F18"
+      ],
+      "summary": "Stripping all Cc/Cf removes ZWNJ/ZWJ, which Persian/Indic spelling needs, and joins newline-separated words",
+      "label": "low",
+      "evidence": "name.schema.ts:9 strips every \\p{Cc}\\p{Cf}, so U+200C/U+200D and \\n are removed silently. For example, 'John\\nDoe' becomes 'JohnDoe'. The PR says dropping the joiners was a deliberate trade-off for emoji and spoofing, but it does not mention that this also changes some Persian/Indic names. That impact is real but small.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F15"
+      ],
+      "summary": "Allowlist accepts names that look blank or contain only punctuation or marks (Hangul Filler, '---', combining-only, zalgo), where the old regex required a letter or number",
+      "label": "medium",
+      "evidence": "name.schema.ts:16-19 uses `^[\\p{L}\\p{M}\\p{N} ._\\-#@&',()]*$`. It does not require any letter or number, and U+3164 is \\p{Lo}. So '---', '@@@', three Hangul Fillers, or a name made only of combining marks passes validation. The old regex (`^[a-zA-Z0-9]+(?:[ ._-][a-zA-Z0-9]+)*$`) rejected all of these. Other members of a space see these names, which makes it easier to impersonate a contact.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F31"
+      ],
+      "summary": "Validation issue codes changed from too_small/too_big/invalid_format to custom, and the min-length message wording changed, and ZodErrorFilter sends both to clients",
+      "label": "low",
+      "evidence": "name.schema.ts:36-45 replaces .min/.max/.regex with .refine, so every issue now has code 'custom'. zod-error.filter.ts:36-42 returns the raw first issue in the 422 body. This is a real API change, but it only affects a client that branches on the code.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F19",
+        "F26"
+      ],
+      "summary": "Allowlist rejects common typographic variants such as the curly apostrophe (U+2019) and the en-dash (U+2013)",
+      "label": "low",
+      "evidence": "name.schema.ts:14 lists only ASCII ' and -. U+2019 is \\p{Pf} and U+2013 is \\p{Pd}, so O’Brien typed with smart punctuation gets a 422, even though the comment names O'Brien as a supported case. The error message is clear, so this is a usability problem rather than data loss.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F2",
+        "F21"
+      ],
+      "summary": "Tests embed raw invisible characters instead of \\u escapes, and one comment claims they are defined by code point",
+      "label": "low",
+      "evidence": "name.schema.spec.ts:11-16 says the characters are 'defined by code point', but lines 13-16 hold raw bytes (cat -v shows M-bM-^@M-^K etc.). address-books.controller.e2e-spec.ts:329 also puts a raw U+202E inside 'ab‮cd'. Both are hard to see in review and fragile under editor or encoding changes.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F4"
+      ],
+      "summary": "The allowlist comment says formula characters are excluded, but '-' and '@' are still allowed",
+      "label": "nit",
+      "evidence": "name.schema.ts:11-13 names only = + * / as excluded, and that statement is accurate. The PR description says outright that the CSV escaper is the defense for - and @. The comment could be clearer, but it does not misstate anything.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F5"
+      ],
+      "summary": "makeNameSchema({minLength: 0}) would accept an empty string",
+      "label": "wrong",
+      "evidence": "No caller passes minLength 0. Every call in src uses the default min of 3 (e.g. address-book-item.entity.ts:12, member.entity.ts:42). A caller who explicitly sets min to 0 is asking for empty names, so accepting them is correct.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F6"
+      ],
+      "summary": "Builder comment lists Latin, accented and Cyrillic samples but leaves out the Japanese one",
+      "label": "low",
+      "evidence": "name.builder.ts:8 says 'Latin, accented, and Cyrillic', but line 15 includes '山田太郎'. This is a small comment mismatch.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F3"
+      ],
+      "summary": "padEnd is dead code, because the comment and the samples guarantee min length",
+      "label": "nit",
+      "evidence": "name.builder.ts:10 says every sample is at least 3 code points, and faker fullName always is, so the padEnd on line 23 never runs. It is harmless redundancy.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F25"
+      ],
+      "summary": "Padding check uses UTF-16 length while truncation uses code points",
+      "label": "nit",
+      "evidence": "name.builder.ts:23 uses pick.length and line 24 uses [...padded]. With the fixed samples, neither path is affected by the difference.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F28"
+      ],
+      "summary": "Slicing by code point could split a grapheme cluster",
+      "label": "wrong",
+      "evidence": "The only sample that can exceed 30 code points is faker's en fullName, which is ASCII. The accented samples are NFC and short. So name.builder.ts:24 never cuts inside a combining sequence.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F11"
+      ],
+      "summary": "\\p{N} admits fractions, Roman numerals and circled digits",
+      "label": "nit",
+      "evidence": "name.schema.ts:17 uses \\p{N}, which does accept ½, Ⅷ and ①. These characters are harmless in names, and the PR intends 'numbers from any script'.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F12"
+      ],
+      "summary": "Chained refines could be one superRefine",
+      "label": "nit",
+      "evidence": "name.schema.ts:36-45 has three small refines, each doing trivial work. Merging them is a style choice.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F13"
+      ],
+      "summary": "Input made only of invisible characters fails with a length error instead of a disallowed-character error",
+      "label": "nit",
+      "evidence": "After stripping, the value is '', which passes the `*` regex and then fails min length (name.schema.ts:40). A length error is a reasonable message for input that is empty after sanitizing.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F17",
+        "F24"
+      ],
+      "summary": "Min and max messages are worded inconsistently ('character(s)' vs 'characters')",
+      "label": "nit",
+      "evidence": "name.schema.ts:40 and :43 differ in wording only.",
+      "category": "style"
+    },
+    {
+      "findings": [
+        "F14"
+      ],
+      "summary": "Formula escaping runs only for string-typed cells via cast.string",
+      "label": "nit",
+      "evidence": "csv-export.options.ts:34 hooks cast.string. The user-controlled columns are all strings today, and the spec at csv.service.spec.ts:~400 documents this. The risk is only a hypothetical future type change.",
+      "category": "security"
+    },
+    {
+      "findings": [
+        "F9"
+      ],
+      "summary": "Generic CsvService spec imports the v1 CSV_OPTIONS",
+      "label": "nit",
+      "evidence": "csv.service.spec.ts:4. This is an integration check of the real wiring and has no concrete cost.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F10"
+      ],
+      "summary": "FORMULA_TRIGGERS could be a Set",
+      "label": "nit",
+      "evidence": "escape-csv-formula.ts:6-19 is a 12-element array. .includes on it costs nothing that matters.",
+      "category": "performance"
+    },
+    {
+      "findings": [
+        "F20"
+      ],
+      "summary": "csv.service.spec formula tests overlap with escape-csv-formula.spec",
+      "label": "nit",
+      "evidence": "csv.service.spec.ts:373+ repeats trigger cases, but they check that the escaper is actually wired into CSV_OPTIONS. The overlap is harmless.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F30"
+      ],
+      "summary": "E2e test re-checks bidi stripping that the unit tests already cover",
+      "label": "nit",
+      "evidence": "address-books.controller.e2e-spec.ts:329 checks stripping end-to-end through the DB. That is a different layer from the unit test, so it is only redundant in a minor way.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F22"
+      ],
+      "summary": "CSV README does not mention formula escaping or the numeric exemption, and its column table lacks nonce/payment/gasTokenSymbol",
+      "label": "low",
+      "evidence": "src/modules/csv-export/README.md:30-46 lists 13 columns and says nothing about escaping. CSV_OPTIONS has 16 columns plus the new cast.string escaping. The docs are out of date.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F23"
+      ],
+      "summary": "The 'empty cell for null symbols/notes' test does not check that those cells are empty",
+      "label": "low",
+      "evidence": "csv.service.spec.ts:~407-414 only checks `startsWith('8,')` and that the line has no apostrophe. It would still pass if a null column printed something other than an empty field without an apostrophe.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F27"
+      ],
+      "summary": "Comment says full-width triggers 'normalize to the ASCII forms', but NFC does not do that",
+      "label": "low",
+      "evidence": "escape-csv-formula.ts:5. ＝＋－＠ map to ASCII only under NFKC, and sanitizeName uses NFC (name.schema.ts:25). The code handles these characters correctly by listing them explicitly; the comment is just misleading.",
+      "category": "docs"
+    }
+  ]
+}

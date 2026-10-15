@@ -1,0 +1,126 @@
+{
+  "usage": {
+    "usd": 0.4686216,
+    "turns": 8,
+    "wallSeconds": 58
+  },
+  "issues": [
+    {
+      "findings": [
+        "F6",
+        "F9",
+        "F13",
+        "F18",
+        "F21"
+      ],
+      "summary": "Required `trusted` field makes events that omit it fail validation (422 over HTTP, dropped over AMQP), which loses cache invalidation and notifications.",
+      "label": "wrong",
+      "evidence": "incoming-token.schema.ts:11 does make the field required, and the controller (hooks.controller.ts:50) and hooks.repository.ts:42 would reject such payloads. The PR description says this is deliberate: the Transaction Service always sends `trusted` (unknown tokens come as false) and no deployment predates the flag. So the risk only exists if an upstream contract the PR says was verified gets broken.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F2",
+        "F8",
+        "F15"
+      ],
+      "summary": "`trusted` is required on OUTGOING_TOKEN even though nothing reads it there.",
+      "label": "wrong",
+      "evidence": "outgoing-token.schema.ts:11 adds the field and nothing reads it. The PR description explicitly calls this 'wire-format parity only', and upstream sends it for both directions. So this is an intentional design choice, not a defect.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F7",
+        "F14"
+      ],
+      "summary": "`!event.trusted` treats a missing field the same as false; the check should be `=== false`.",
+      "label": "wrong",
+      "evidence": "Once validated, `trusted` is always a boolean (`z.boolean()`, required, incoming-token.schema.ts:11), so for any event that passed the schema `!event.trusted` and `=== false` mean the same thing. The claim assumes the field can be optional, which the PR does not allow. The one real gap, in-flight queue jobs, is covered separately under F10.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F10"
+      ],
+      "summary": "PUSH_NOTIFICATION_EVENT jobs queued before the deploy are not re-parsed, so INCOMING_TOKEN jobs without `trusted` get silently dropped as spam.",
+      "label": "low",
+      "evidence": "push-notification.consumer.ts:46-48 passes `job.data.event` straight to processEvent without re-validating. For a pre-deploy job `trusted` is undefined, so `!event.trusted` (push-notification.service.ts:92) drops it. This is a short, one-off window during rollout and only affects notifications (the cache has already been cleared), so the impact is low.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F3"
+      ],
+      "summary": "Spam-dropped events return early and skip the NotificationEventProcessed log.",
+      "label": "low",
+      "evidence": "The early `return 0` at push-notification.service.ts:100 skips the NotificationEventProcessed log at line 160, whereas a normal event with no subscribers still logs it with deliveryJobCount 0 (spec:695). The early return for non-notifiable events (line 87) already skips this log, and a dedicated drop log replaces it, so the observability cost is small.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F4",
+        "F16"
+      ],
+      "summary": "An info-level log for every spam drop could produce a lot of log volume during airdrop campaigns.",
+      "label": "low",
+      "evidence": "push-notification.service.ts:93 logs at info once per dropped event. Events are per Safe, so a large spam airdrop would produce one log line per recipient Safe. That is the same volume as the NotificationEventProcessed log it replaces, so the cost is real but minor.",
+      "category": "performance"
+    },
+    {
+      "findings": [
+        "F12",
+        "F19"
+      ],
+      "summary": "AMQP messages that fail schema validation are logged and then acked, so they are lost for good.",
+      "label": "low",
+      "evidence": "hooks.repository.ts:40-46 catches the parse error and only logs it, and queues-api.service.ts:35 (actually under src/modules/queues/datasources/) always acks in `.finally`. This behaviour predates the PR and is outside the changed lines. The file paths given in the findings are also wrong.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F1"
+      ],
+      "summary": "Cache-invalidation specs only use `trusted: true` for token events.",
+      "label": "nit",
+      "evidence": "hooks-cache.integration.spec.ts:93 onwards. Cache clearing never reads `trusted`, and missing or non-boolean values are covered by the schema specs (incoming/outgoing-token.schema.spec.ts). Adding `false` cases there would not test any branch that depends on the flag.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F5"
+      ],
+      "summary": "No unit test for processEvent receiving an event without `trusted`.",
+      "label": "nit",
+      "evidence": "The schema specs already reject a missing `trusted` (the `'trusted' as const` case in the missing-field tests). processEvent can only see it undefined through stale queue jobs (F10), so a service-level test would add little.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F11"
+      ],
+      "summary": "The strip of `trusted` could explain that the flag is always true by that point.",
+      "label": "nit",
+      "evidence": "push-notification.service.ts:439-443 already has a comment saying the strip exists because FCM data must be strings, and notification.entity.ts says it is filtering metadata. A further comment is a readability preference only.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F20"
+      ],
+      "summary": "The spam drop is tested at both the integration and unit level.",
+      "label": "nit",
+      "evidence": "push-notification.integration.spec.ts:369 exercises the real BullMQ queue path, while the service spec at line 183 uses mocks. Some overlap between layers is normal and costs nothing concrete.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F17"
+      ],
+      "summary": "outgoing-token.schema.ts does not export an OutgoingTokenEvent type.",
+      "label": "wrong",
+      "evidence": "The inferred type is exported as `OutgoingToken` from src/modules/hooks/routes/entities/outgoing-token.entity.ts:5, so a type does exist. Its location is a pre-existing convention the PR did not touch.",
+      "category": "convention"
+    }
+  ]
+}

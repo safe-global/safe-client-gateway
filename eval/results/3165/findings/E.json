@@ -1,0 +1,10 @@
+{
+  "usd": 0.0331376,
+  "findings": [
+    {
+      "file": "src/modules/spaces/routes/entities/address-book-request.dto.entity.ts",
+      "line": 81,
+      "claim": "The code could use Zod's overwrite() method here instead of the current approach, referencing the corresponding Zod v4 documentation."
+    }
+  ]
+}

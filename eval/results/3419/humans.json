@@ -1,0 +1,12 @@
+{
+  "usd": 0.34161759999999997,
+  "head": "3eee9a0fde8f950aa4ffc75ece3c789f5cf0c644",
+  "verdicts": [
+    {
+      "issue": 10,
+      "verdict": "open",
+      "present": true,
+      "evidence": "LucieFaire's thread on tokens.controller.ts:39 (\"ideally this should not leave here\") was posted 2026-09-11, after the last commit (3eee9a0f, 2026-09-10). Nobody replied and the thread is still unresolved. At HEAD, line 39 closes the module-level TOKEN_SCHEMA const, which was already in the controller at d7f4a964 (lines 31-37) and did not move."
+    }
+  ]
+}

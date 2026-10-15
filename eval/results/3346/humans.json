@@ -1,0 +1,60 @@
+{
+  "usd": 0.5025890000000001,
+  "head": "10d440eaa678d1eb54bf8c44b8a5f5a0921643f9",
+  "verdicts": [
+    {
+      "issue": 1,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "At e3a1ca7, resolveFeature used if-chains that fell through to Metered. Commit 7203fe45c replaced them with an exhaustive switch whose default does `const unhandled: never` (entitlements.service.ts). LucieFaire noted it was addressed, and moisses89 confirmed."
+    },
+    {
+      "issue": 4,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "At e3a1ca7, feature.entity.ts had `export type FeatureKey = string`. It is now `(typeof FEATURE_KEYS)[number]` with an `isFeatureKey` guard, and moisses89 replied \"✅ Closed. FeatureKey is the union now\"."
+    },
+    {
+      "issue": 11,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "At e3a1ca7, the local `function materializedSubscription(` sat at entitlements.service.integration.spec.ts:368. It is gone at HEAD, where only materializedSubscriptionBuilder is used. moisses89 said all of LucieFaire's comments were applied in 1f4c4b0a3."
+    },
+    {
+      "issue": 12,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "Commit 1f4c4b0a3 replaced the hand-rolled adminQuery CREATE/DROP DATABASE helper with TestDbFactory.createTestDatabase/destroyTestDatabase. The change is in both entitlements.controller.integration.spec.ts and subscription-sync.service.integration.spec.ts."
+    },
+    {
+      "issue": 20,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "The comment in entitlements.constants.ts was rewritten to list the keys the Business plan actually sends and to explain that the seed lags the plan. moisses89 replied \"✅ Fixed, and it was wrong not aspirational\"."
+    },
+    {
+      "issue": 21,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "moisses89 replied \"❌ Left as is: checking existence first adds a round trip to the happy path\". The Promise.all is unchanged at entitlements.service.ts:87."
+    },
+    {
+      "issue": 22,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "A 'returns 403 without an access token' test was added to entitlements.controller.integration.spec.ts after e3a1ca7, following LucieFaire's suggestion."
+    },
+    {
+      "issue": 23,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "spaceId was removed from UsageKey in space-feature-usage.repository.interface.ts (commit 1f4c4b0a3, \"narrow UsageKey\"), and periods is now `Array<UsageKey>` instead of `Omit<UsageKey,'spaceId'>`. The thread is resolved, and moisses89 said all of LucieFaire's comments were applied."
+    },
+    {
+      "issue": 25,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "moisses89 replied \"❌ Intentional: a feature that no longer exists has no entitlements. Documented in down()\". The down() in migrations/1787148838500-seed-features.ts is the same as it was at e3a1ca7."
+    }
+  ]
+}

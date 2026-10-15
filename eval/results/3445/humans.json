@@ -1,0 +1,24 @@
+{
+  "usd": 0.566513,
+  "head": "919cdb06ec66229a90e298ac212aa129cb3d04ce",
+  "verdicts": [
+    {
+      "issue": 0,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "At ccc4841c0, getSessionUrl called assertSpaceMember. Commit 57e5955c8 (\"restrict the session-url and preview-update routes to admins\") changed it to assertSpaceAdmin (billing.service.ts:114) and added a 403 'Not an admin' to the Swagger docs. The author replied to yagopv with \"pushed last changes.\""
+    },
+    {
+      "issue": 7,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "Commit b3d234747 changed the PATCH ApiForbiddenResponse to 'Not an admin, a plan this workspace is not offered, or a named paymentLinkId this workspace is not offered' in billing.controller.ts."
+    },
+    {
+      "issue": 8,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "Commit b3d234747 replaced the single-sentence 409 description in billing.controller.ts with a 'One of:' bullet list of the four causes."
+    }
+  ]
+}

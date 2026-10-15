@@ -1,0 +1,233 @@
+{
+  "usage": {
+    "usd": 1.0007068000000001,
+    "turns": 17,
+    "wallSeconds": 178
+  },
+  "issues": [
+    {
+      "findings": [
+        "F38",
+        "F16"
+      ],
+      "label": "high",
+      "summary": "Breaking API change: response `id` switches from number to UUID string, and write routes (including accept/decline invite) reject numeric IDs via SpaceIdPipe",
+      "evidence": "create-space.dto.entity.ts:20 now types `id` as `Space['uuid']` (String), and spaces.service.ts returns `id: space.uuid`, so no numeric `id` is kept. SpaceIdPipe (UUID-only) is used on PATCH/DELETE spaces (spaces.controller.ts:211,249), invite/accept/decline (members.controller.ts:100,145,184) and the other write routes. This contradicts the PR description, which says every route uses LegacySpaceIdPipe and the numeric id is kept, so FE clients still using numeric IDs would break.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F17",
+        "F33",
+        "F21"
+      ],
+      "label": "medium",
+      "summary": "Some responses still return the numeric spaceId, which clients can't pass back to UUID-only write routes and which still exposes the internal id",
+      "evidence": "address-books.service.ts:75 and address-book-requests.service.ts:182 return `spaceId: spaceId.toString()` built from the numeric PK. SurveyResponseResultDto (submit-survey-response.dto.entity.ts:31) declares `spaceId: Space['id']` as a Number. The matching PUT/POST routes use SpaceIdPipe, which rejects numeric input with a 400.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F1",
+        "F7",
+        "F9",
+        "F34",
+        "F5",
+        "F18"
+      ],
+      "label": "medium",
+      "summary": "Little test coverage for the new pipes and repository lookups (findIdByUuid / findIdByIdOrUuid)",
+      "evidence": "There is no space-id.pipe.spec.ts, and spaces.repository.integration.spec.ts only adds `uuid` to expectations, with no tests for findIdByUuid or findIdByIdOrUuid. The e2e tests only send `faker.string.alpha()` (space-safes e2e :576, :871), plus one numeric legacy test in surveys. Nothing covers the DB_MAX_SAFE_INTEGER overflow or \"0\", and nothing checks that numeric IDs are rejected on SpaceIdPipe routes, so swapping the pipes would still pass.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F15",
+        "F10",
+        "F23",
+        "F29"
+      ],
+      "label": "low",
+      "summary": "Two different UUID validators with different 400 messages (ParseUUIDPipe vs a hand-written regex)",
+      "evidence": "SpaceIdPipe uses ParseUUIDPipe ('Validation failed (uuid is expected)', asserted at space-safes e2e :600). LegacySpaceIdPipe uses the regex at spaces.repository.ts:245 ('Invalid space identifier', e2e :881). ParseUUIDPipe's 'all' pattern also enforces version and variant bits and the regex does not. This contradicts the PR's claim of a single shared 400 body, but the practical impact is small.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F3",
+        "F8",
+        "F13",
+        "F40"
+      ],
+      "label": "low",
+      "summary": "GET /spaces/:id skips the pipe and resolveUuid makes redundant sequential queries",
+      "evidence": "spaces.controller.ts:170 takes a raw `@Param('id') idOrUuid: string`. spaces.service.ts:125 calls findIdByIdOrUuid, then findOneOrFail to get the uuid, and then getActiveOrInvitedSpace queries by uuid. That is one or two extra round-trips per request, which is a real but modest performance cost.",
+      "category": "performance"
+    },
+    {
+      "findings": [
+        "F6",
+        "F19"
+      ],
+      "label": "low",
+      "summary": "Parsing the input format and throwing BadRequestException happens in the repository instead of the pipe",
+      "evidence": "spaces.repository.ts:232-251 regex-parses the raw route param and throws BadRequestException. That is input validation belonging at the controller/pipe edge, which AGENTS.md's layering implies. It is a maintainability issue, not a functional bug.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F37"
+      ],
+      "label": "low",
+      "summary": "The legacy numeric path now returns 404 for a missing space and 403 for a non-member, which lets callers probe whether a space ID exists",
+      "evidence": "findIdByIdOrUuid calls findOneOrFail (spaces.repository.ts:96, 'Space not found.') before assertMember. Previously a missing space returned 403 from assertMember (space-assert.utils.ts:52). Numeric IDs are acknowledged as enumerable during the transition window, so the added exposure is limited.",
+      "category": "security"
+    },
+    {
+      "findings": [
+        "F24",
+        "F31"
+      ],
+      "label": "low",
+      "summary": "The migration timestamp duplicates an existing migration",
+      "evidence": "migrations/ contains both 1779200000000-add-member-invite-expires-at.ts and 1779200000000-add-space-uuid.ts. TypeORM tracks pending migrations by name, so both still run, but the order and revert behaviour between them is ambiguous. F31's claim that an already-merged 1780900000000 migration exists is wrong, because no such file is present.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F12",
+        "F39"
+      ],
+      "label": "low",
+      "summary": "The entity's `unique: true` doesn't match the migration's explicitly named UQ_spaces_uuid index, so migration:generate would show schema drift",
+      "evidence": "space.entity.db.ts:26 uses `unique: true`, which gives an auto-hashed constraint name, while the migration creates `UNIQUE INDEX UQ_spaces_uuid`. Other entities use named `@Unique('UQ_...')` (e.g. address-book-item.entity.db.ts:18), and package.json has a migration:generate script.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F35"
+      ],
+      "label": "low",
+      "summary": "The volatile gen_random_uuid() default rewrites the table, and the index is built without CONCURRENTLY",
+      "evidence": "In Postgres, ADD COLUMN with a volatile default forces a full table rewrite under ACCESS EXCLUSIVE, and CREATE UNIQUE INDEX without CONCURRENTLY blocks writes (migration lines 6-12). This is fine for a small `spaces` table, but it contradicts the 'online-safe' wording in the PR description.",
+      "category": "performance"
+    },
+    {
+      "findings": [
+        "F22"
+      ],
+      "label": "low",
+      "summary": "The new update() RETURNING/NotFound behaviour is not directly tested",
+      "evidence": "spaces.repository.ts:200-217 now uses RETURNING and throws when no row comes back. The service spec mocks `update` and the integration test doesn't assert on the missing-row path, so a regression there wouldn't be caught, though the impact is small.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F26"
+      ],
+      "label": "low",
+      "summary": "gen_random_uuid() needs PG13+ or the pgcrypto extension",
+      "evidence": "docker-compose.yml:11 uses postgres:14.8, where gen_random_uuid is built in, and this is the only migration that uses it. The production version can't be checked from the repo, but local and CI are fine.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F11"
+      ],
+      "label": "wrong",
+      "summary": "The claim that the bounds check duplicates RowSchema.shape.id",
+      "evidence": "row.entity.ts:11 defines `id: z.number().int()` with no upper bound, so RowSchema never enforced DB_MAX_SAFE_INTEGER. The new check is stricter, not a duplicate of an existing bound.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F20"
+      ],
+      "label": "wrong",
+      "summary": "Suggests typing the insert/update row as Pick<Space,'id'|'uuid'> | undefined",
+      "evidence": "spaces.repository.ts:215 already casts `result.raw[0] as Pick<Space, 'id' | 'uuid'> | undefined` and guards against undefined.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F32"
+      ],
+      "label": "wrong",
+      "summary": "The down migration is not idempotent after a partial failure",
+      "evidence": "TypeORM runs migrations in a transaction by default, so a failed `up` rolls back entirely and no half-applied state is left for `down` to hit.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F30"
+      ],
+      "label": "wrong",
+      "summary": "The Invitation DTO's userId type is inconsistent",
+      "evidence": "routes/entities/invitation.entity.ts:13-14 declares `userId: User['id']` with type Number, which is correct because user IDs are numeric. There is no inconsistency.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F25"
+      ],
+      "label": "nit",
+      "summary": "Unchecked cast of result.raw[0]",
+      "evidence": "spaces.repository.ts:215 casts a RETURNING row whose columns are fixed to id and uuid. A schema parse would add little.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F28"
+      ],
+      "label": "nit",
+      "summary": "The domain entity uses z.string().uuid() instead of the shared UuidSchema",
+      "evidence": "space.entity.ts:27 uses z.string().uuid() while UuidSchema exists. The claim that this makes the pipes validate differently is wrong, because the pipes don't use the entity schema.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F4"
+      ],
+      "label": "nit",
+      "summary": "The pipes are registered and exported as module providers without need",
+      "evidence": "spaces.module.ts:94-104 provides and exports both pipes. Nest can instantiate class pipes from the controller's module injector as long as ISpacesRepository is available there, so this is extra surface with no functional cost.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F2"
+      ],
+      "label": "nit",
+      "summary": "Unrelated `return` → `async`/`return await` rewrites",
+      "evidence": "address-books.controller.ts:77 and similar spots change style only, with no behaviour difference.",
+      "category": "style"
+    },
+    {
+      "findings": [
+        "F36"
+      ],
+      "label": "nit",
+      "summary": "Unrelated `/docs` .gitignore entry",
+      "evidence": "The .gitignore:64 change is unrelated to the PR. `git ls-files docs` returns nothing, so no tracked convention docs are affected.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F14"
+      ],
+      "label": "nit",
+      "summary": "Use the crypto UUID type for uuid",
+      "evidence": "space.entity.ts:20 uses `string`. This is a stricter-typing preference with no concrete cost.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F27"
+      ],
+      "label": "nit",
+      "summary": "The new methods lack doc comments",
+      "evidence": "findIdByUuid and findIdByIdOrUuid have self-descriptive names and a TODO. This is a documentation preference.",
+      "category": "docs"
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "usd": 0.050974,
+  "findings": [
+    {
+      "file": "src/modules/spaces/domain/address-books/address-book-items.repository.ts",
+      "line": 184,
+      "claim": "This repository still produces the old wording ('You can only add up to 0 more.') when the limit is reached, so its error message is now inconsistent with the fixed message in the sibling space-safes repository."
+    },
+    {
+      "file": "src/modules/spaces/domain/address-books/user-address-book-items.repository.ts",
+      "line": 158,
+      "claim": "This repository still produces the old wording ('You can only add up to 0 more.') when the limit is reached, so its error message is now inconsistent with the fixed message in the sibling space-safes repository."
+    },
+    {
+      "file": "src/modules/spaces/routes/address-books.controller.e2e-spec.ts",
+      "line": 522,
+      "claim": "This e2e test still asserts the old error text '...maximum of 1 Address Book Items. You can only add up to 0 more.', which will need to be updated if the other repositories' messages are ever fixed to match, since the three Workspace limit errors now read differently from one another."
+    },
+    {
+      "file": "src/modules/spaces/domain/space-safes.repository.ts",
+      "line": 48,
+      "claim": "If maxSafesPerSpace is lowered in config below the number of Safes a Space already has, the remaining count becomes negative, and before this change that produced a message reading 'up to -N more'; no test covers this edge case after the fix."
+    },
+    {
+      "file": "src/modules/spaces/domain/space-safes.repository.integration.spec.ts",
+      "line": 436,
+      "claim": "The new test inserts a user, a wallet, and a member, copied from a neighboring test, even though the create() call under test only uses spaceId, so a single space row would likely suffice and the extra setup is unnecessary."
+    }
+  ]
+}

@@ -1,0 +1,234 @@
+THREAD src/domain/common/schemas/name.schema.ts:46 resolved=true
+[LucieFaire 2026-06-23T14:25:42Z] qs: if I do:
+```
+makeNameSchema({ minLegth: 0 }) 
+```
+this would allows for empty string - that is expected?
+[vmosharova 2026-06-24T13:39:48Z] Yes, it allows an empty string in this case - it is a flexibility added for the future optional name fields. Right now there is a default length 3 for all names.
+
+THREAD src/domain/common/schemas/name.schema.ts:91 resolved=true
+[LucieFaire 2026-06-23T14:28:47Z] we could use `superRefine` instead of chain of `refine`s to keep validation in 1 place and avoid duplicated computations.
+
+```
+const getNameLength = (name: string): number => [...name].length;
+
+export const makeNameSchema = (args?: {
+  minLength?: number;
+  maxLength?: number;
+}): z.ZodType<string> => {
+  const min = args?.minLength ?? NAME_MIN_LENGTH;
+  const max = args?.maxLength ?? NAME_MAX_LENGTH;
+
+  return z
+    .string()
+    .transform(sanitizeName)
+    .superRefine((name, ctx) => {
+      const isEmpty = name.length === 0;
+
+      if (isEmpty) {
+        if (min > 0) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: EMPTY_NAME_MESSAGE,
+          });
+        }
+
+        return;
+      }
+
+      if (!ALLOWED_NAME_REGEX.test(name)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: DISALLOWED_CHARACTER_MESSAGE,
+        });
+      }
+
+      const length = getNameLength(name);
+
+      if (length < min) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `Names must be at least ${min} character(s) long`,
+        });
+      }
+
+      if (length > max) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `Names must be at most ${max} characters long`,
+        });
+      }
+    });
+};
+[vmosharova 2026-06-24T14:13:36Z] Addressed: [cb5250e](https://github.com/safe-global/safe-client-gateway/pull/3178/commits/cb5250eedfc7a1d8f111321de8b86cd9569626f8)
+
+THREAD src/modules/csv-export/csv-utils/escape-csv-formula.ts:20 resolved=true
+[LucieFaire 2026-06-23T15:35:21Z] ```
+const FORMULA_TRIGGERS: ReadonlySet<string> = new Set([
+  '=',
+  '+',
+  '-',
+  '@',
+  ' ',
+  '\t',
+  '\r',
+  '\n',
+  '＝',
+  '＋',
+  '－',
+  '＠',
+]);
+```
+We can make it a `ReadonlySet<string>` so that the lookup uses `.has()` (L27, **need update too**) and (O(1)) — matching how NUMERIC_COLUMNS is already declared (instead of O(n) where n is the length of array 😄)
+[vmosharova 2026-06-24T14:00:41Z] Nice idea, thanks!
+[vmosharova 2026-06-24T14:13:24Z] Addressed: [40510d4](https://github.com/safe-global/safe-client-gateway/pull/3178/changes/40510d494f6791f13f421d1f3a4ead8844636ac2)
+
+REVIEW COMMENTED
+[LucieFaire 2026-06-23T14:46:19Z] ~~I dont understand why CSV export is part of this ticket? We dont have any spaces-related data there and no user input~~
+
+It ok to have CSV fix here too
+
+COMMENT
+[datadog-official 2026-06-22T16:04:16Z] <a target='_blank' href='https://app.datadoghq.eu/ci/pipeline-executions?query=ci_level%3Ajob+%40ci.status%3Aerror+%40git.commit.sha%3A1fd2688c4a2ec517706f3d7b589995893c09d8c9&referrer=pr-comment'><picture><source media="(prefers-color-scheme: dark)" srcset="https://static.datadoghq.com/static/images/pr_comments/software_delivery/badges_header/pipelines-warning.svg"/><img src="https://static.datadoghq.com/static/images/pr_comments/software_delivery/badges_header/pipelines-warning-light.svg" alt="Pipelines" align="center" /></picture></a>
+
+## ⚠️ Warnings
+
+🚦 **1 Pipeline job failed**
+
+<blockquote>
+<div>
+
+<code> CI | integration-tests </code> &nbsp;&nbsp;<a href="https://app.datadoghq.eu/ci/pipeline-executions?query=ci_level%3Ajob&#43;ci.job_correlation_id%3Aa200b7bf38e078e9&amp;referrer=pr-comment" title="View in Datadog"><img src="https://static.datadoghq.com/static/images/pr_comments/software_delivery/datadog_icon.svg" alt="View in Datadog" align="center" /></a> &nbsp; <a href="https://github.com/safe-global/safe-client-gateway/actions/runs/28011112489/job/82904249087" title="View in GitHub Actions"><picture><source media="(prefers-color-scheme: dark)" srcset="https://static.datadoghq.com/static/images/pr_comments/software_delivery/logos/github-logo-dark.svg"/><img src="https://static.datadoghq.com/static/images/pr_comments/software_delivery/logos/github-logo-light.svg" alt="GitHub Actions" align="center" /></picture></a>
+
+</div>
+</blockquote>
+
+<sub>
+This comment will be updated automatically if new data arrives. <br />
+🔗 Commit SHA: 1fd2688 | <a href="https://docs.datadoghq.com/integrations/guide/source-code-integration/#pr-comments">Docs</a> | Give us <a href="https://forms.gle/ys6MDmdQEeC5pkzWA">feedback</a>!
+</sub>
+
+COMMENT
+[vmosharova 2026-06-22T16:15:39Z] @claude review
+
+COMMENT
+[claude 2026-06-22T16:15:59Z] **Claude finished @vmosharova's task in 1m 53s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/27967131013)
+
+---
+### Claude PR Review
+
+- [x] Read changed files
+- [x] Analyze validation logic and CSV escaping
+- [x] Check tests and entity changes
+- [x] Post final review
+
+Overall: solid security-focused change with good test coverage. A few findings to consider — none are blockers.
+
+---
+
+### Findings
+
+**1. Stripping `\p{Cf}` will break legitimate Indic / Arabic / Persian names** — `src/domain/common/schemas/name.schema.ts:9`
+
+`INVISIBLE_CHARACTERS` strips all `Cf` codepoints, including ZWJ (U+200D) and ZWNJ (U+200C). These are not just emoji joiners — they are required for correct rendering of many South/Southeast Asian and Arabic-script names (e.g. Devanagari conjuncts, Persian `میخواهم`-style ZWNJ usage). After this change, a user typing such a name will see their characters silently mutated. The PR description correctly cites Trojan Source as motivation, but only mentions dropping the *emoji* ZWJ exemption — the collateral impact on Indic/Persian names isn't called out.
+
+Suggestion: at minimum document this tradeoff. A safer policy is to strip only the dangerous `Cf` subset (bidi controls U+202A–U+202E, U+2066–U+2069, invisible separators, etc.) and keep ZWJ/ZWNJ. Bidi overrides are the actual Trojan-Source vector — ZWJ/ZWNJ are visually neutral and don't enable that attack.
+
+**2. `escapeCsvFormula` is bypassed for non-string cells** — `src/modules/csv-export/v1/entities/csv-export.options.ts:34`
+
+`csv-stringify`'s `cast.string` only fires when the value is already a string. The existing spec at `csv.service.spec.ts:407` actually shows this: `null` notes "bypass cast.string entirely" and emit empty. That's fine for `null`, but it also means if any column ever produces a `number` or `boolean` (e.g. an upstream refactor changes `note`'s type), the escape disappears silently. Defense-in-depth: add a `number` cast or coerce in the column extractor for free-text columns, or assert with a type test that `note`/`assetSymbol`/`gasTokenSymbol`/`from`/`to` are always strings.
+
+**3. `nameBuilder` round-trip assertion is fragile under Faker variation** — `src/domain/common/entities/name.builder.ts:24`
+
+`name.builder.spec.ts:18` asserts `sanitizeName(name) === name`. This depends on `faker.person.fullName()` never emitting a name that needs NFC normalization or has trailing whitespace. That's *currently* true for the default locale but it's a property of Faker, not enforced here. If you want the invariant to hold robustly, run the picked name through `sanitizeName` inside `nameBuilder` before padding/slicing. Bonus: padding then slicing currently can produce a name that ends with a code-point boundary mid-grapheme-cluster (e.g. truncating an `é` decomposed into `e + ́`) — though NFC + sanitize first avoids that.
+
+**4. Misleading comment about full-width normalization** — `src/modules/csv-export/csv-utils/escape-csv-formula.ts:5`
+
+Comment says full-width `＝ ＋ － ＠` "normalize to the ASCII forms". That's only true under **NFKC**, not NFC. `sanitizeName` uses NFC, so full-width chars survive normalization and would be rejected by the name allowlist anyway — but the CSV escaper sees the raw value, so it correctly lists them as triggers. The defense is right; the explanatory comment is just inaccurate.
+
+**5. `ALLOWED_PUNCTUATION` includes `'` (U+0027), but users will frequently paste `’` (U+2019, curly apostrophe)** — `src/domain/common/schemas/name.schema.ts:14`
+
+`O'Brien` works; `O'Brien` (the curly variant most macOS/iOS keyboards auto-insert) doesn't. `’` is `\p{Pf}` (final punctuation), not letter/mark/number. Consider either adding it explicitly or NFKC-normalizing curly quotes to straight before validation. Same goes for `–` (en-dash) vs `-`.
+
+**6. `\p{N}` admits more than digits** — `src/domain/common/schemas/name.schema.ts:17`
+
+`\p{N}` includes `\p{No}` (other numbers): vulgar fractions (`½`, `¼`), Roman numerals (`Ⅷ`), circled digits (`①`). Probably acceptable, but if the intent is "digits only" use `\p{Nd}`. Not a security issue.
+
+**7. Empty after stripping** — `src/domain/common/schemas/name.schema.spec.ts:154`
+
+Good test. Note that with the default `min=3`, the rejection message will be the length-min message rather than disallowed-character, which is slightly misleading UX (the user typed only invisibles, didn't violate length). Consider reordering refinements so disallowed-character fires first when nothing remains, or add a dedicated message for "empty after sanitization".
+
+---
+
+### Nits
+
+- `escape-csv-formula.ts:6` — `FORMULA_TRIGGERS` is a small array; `.includes` on the first char is fine, but a `Set` is conventional and slightly clearer intent.
+- `name.schema.ts:14` — escaping `-` inside the character-class string (`\\-`) is necessary only if it's not first/last; since it's interpolated into a class via template, the current escape is correct, just verify the comment in code reflects that.
+- `csv-export.options.ts:7` — `NUMERIC_COLUMNS` exempts `amount`/`payment`. Worth a one-line comment in code (already implicit via name) that these values come from internal transaction data, not user input — that exemption is the load-bearing assumption.
+ • Branch: `feat/enable-utf-8-in-names`
+
+COMMENT
+[vmosharova 2026-06-22T16:46:01Z] > Findings
+
+Fixed 1, 4, 5 and 7 in [5c4fd0b](https://github.com/safe-global/safe-client-gateway/pull/3178/commits/5c4fd0b39ecc3b9c518d1ad31c11609939a2c393).
+
+
+COMMENT
+[vmosharova 2026-06-22T16:46:43Z] @claude review
+
+COMMENT
+[claude 2026-06-22T16:47:05Z] **Claude finished @vmosharova's task in 2m 4s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/27969010710)
+
+---
+### Re-review of `feat/enable-utf-8-in-names` (after 5c4fd0b)
+
+- [x] Read changed files
+- [x] Re-verify validation, CSV escaping, entity, tests
+- [x] Post review
+
+Verified the fixes from 5c4fd0b — smart-punctuation folding (`’→'`, `–/—/−→-`), dedicated `EMPTY_NAME_MESSAGE` ordered before the disallowed/length refinements, ZWJ/ZWNJ Persian/Indic tradeoff is now called out in `name.schema.ts:8`, and the full-width comment in `escape-csv-formula.ts:6` correctly attributes the fold to NFKC. Good iteration.
+
+A few remaining things worth considering — none blockers.
+
+---
+
+**1. `escapeCsvFormula` still bypassed for non-string cells** — `src/modules/csv-export/v1/entities/csv-export.options.ts:34`
+
+`csv-stringify`'s `cast.string` only fires when the value is already a string (`csv.service.spec.ts:405-416` confirms this for `null`). If a future refactor changes a free-text column (`note`, `assetSymbol`, `gasTokenSymbol`) to ever emit a `number`/`boolean`, the escape disappears silently. Defense-in-depth: add a `cast.number` that round-trips through `escapeCsvFormula` for non-numeric columns, or coerce these fields to `string` in the extractor. Raised previously; flagging again as the only real defense-in-depth gap.
+
+**2. `nameBuilder` round-trip assertion is still Faker-dependent** — `src/domain/common/entities/name.builder.ts:20`
+
+`name.builder.spec.ts:18` asserts `sanitizeName(name) === name` after picking `faker.person.fullName()`. That holds for the default `en` locale today but is a property of Faker, not enforced. A locale switch (or Faker upstream change) could produce a value with a non-NFC sequence or whitespace and the test would start failing intermittently. Robust fix: run the picked value through `sanitizeName` *inside* `nameBuilder` before the pad/slice, so the builder's output is invariant under sanitization by construction.
+
+Also: `[...padded].slice(0, NAME_MAX_LENGTH).join('')` slices at code-point boundaries, which is fine for the current NFC-precomposed sample set but would mangle combining-mark scripts (e.g. Devanagari) if the samples grow. Not actionable today, just a footnote.
+
+**3. `\p{N}` admits `\p{No}` (Roman numerals, vulgar fractions, circled digits)** — `src/domain/common/schemas/name.schema.ts:22`
+
+If the intent is "digits", use `\p{Nd}`. Probably acceptable as-is — not a security issue, just a scope point.
+
+**4. Nit: `FORMULA_TRIGGERS.includes(str[0])` is fine, but `Set` is conventional** — `src/modules/csv-export/csv-utils/escape-csv-formula.ts:27`
+
+Same `O(n)` either way at this size; just a clarity nudge.
+
+---
+
+### Test coverage
+Good. UTF-8 acceptance + smart-punctuation folding + invisible stripping + disallowed-character rejection + dedicated empty-name path are all covered in unit + e2e. CSV formula-injection covers `=/+/-/@`, leading whitespace, full-width forms, the numeric-column exemption, and the null bypass.
+ • Branch: `feat/enable-utf-8-in-names`
+
+COMMENT
+[vmosharova 2026-06-23T08:23:53Z] > A few remaining things worth considering — none blockers.
+
+Fixed 1 and 2 in [1fd2688](https://github.com/safe-global/safe-client-gateway/pull/3178/changes/1fd2688c4a2ec517706f3d7b589995893c09d8c9)
+
+COMMENT
+[TimDaub 2026-06-25T07:46:36Z] If we trust csv-stringify, we should consider using their [formula escape function](https://csv.js.org/stringify/options/escape_formulas/#example). I hope that is applicable advice here. The benefits would be:
+
+- We already trust the library (I guess we chose it wisely)
+- Less code to maintain
+- Potentially this library (if it is good) does a better job than what we cook in-house
+
+Drawbacks:
+
+- I don't know if their implementation is good or better than ours
+- npm Supply chain risk

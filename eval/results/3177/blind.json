@@ -1,0 +1,79 @@
+{
+  "pr": 3177,
+  "title": "fix(ci): use release payload tag for Docker publish",
+  "description": "## Summary\r\nFixes the release Docker publish job by using the GitHub Release payload tag instead of `github.ref_name` when setting the image version and Docker tag.\r\n\r\nThis prevents release builds from producing an empty Docker tag like:\r\n```\r\nsafeglobal/safe-client-gateway-nest:\r\n```\r\n\r\n## Changes\r\n\r\nAdded `RELEASE_TAG` from `github.event.release.tag_name`\r\nUpdated release Docker `VERSION` build arg to use `RELEASE_TAG`\r\nUpdated release Docker image tag to use `RELEASE_TAG`\r\n",
+  "findings": [
+    {
+      "id": "F1",
+      "file": ".github/workflows/ci.yml",
+      "line": 301,
+      "claim": "The step should either be dropped or changed to check the Docker tag format so its behavior matches its name."
+    },
+    {
+      "id": "F2",
+      "file": ".github/workflows/ci.yml",
+      "line": 301,
+      "claim": "The validation only checks that the release tag is non-empty; it does not guard against malformed tags containing whitespace or characters that Docker would reject, so a stricter check such as a regex match could be added for more defensive validation."
+    },
+    {
+      "id": "F3",
+      "file": ".github/workflows/ci.yml",
+      "line": 321,
+      "claim": "Every 'released' event also pushes the ':latest' tag, so publishing a patch release on an older release line (for example 1.9.1 after 2.0.0 has already shipped) would point ':latest' back at the older build."
+    },
+    {
+      "id": "F4",
+      "file": ".github/workflows/ci.yml",
+      "line": 302,
+      "claim": "The 'Validate release tag' step checks for a value that cannot be empty in this context, since tag_name is a required field on a published release and the job only runs when action is 'released', so the check is ineffective. It also fails to catch tag values with characters Docker rejects, such as '/', '+' or spaces, which pass validation but later cause build-push-action to fail with an invalid reference format error."
+    },
+    {
+      "id": "F5",
+      "file": ".github/workflows/ci.yml",
+      "line": 21,
+      "claim": "The concurrency group is keyed on github.ref rather than the release payload; if the motivation for this change is that github.ref cannot be trusted on release events, the same concern would apply here, though in practice github.ref is refs/tags/<tag> on these events so it is likely fine."
+    },
+    {
+      "id": "F6",
+      "file": ".github/workflows/ci.yml",
+      "line": 301,
+      "claim": "The empty-tag guard step can never fail: the job only runs for release events where github.event.action == 'released', and a GitHub release always has a tag_name, so $RELEASE_TAG cannot be empty and the exit 1 branch is dead code."
+    },
+    {
+      "id": "F7",
+      "file": ".github/workflows/ci.yml",
+      "line": 301,
+      "claim": "The step is named 'Validate release tag' but does not actually validate that the tag is a well-formed Docker tag (matching [A-Za-z0-9_.-], at most 128 characters), which is the one thing that could actually break the image push, so the name promises more than the step does."
+    },
+    {
+      "id": "F8",
+      "file": ".github/workflows/ci.yml",
+      "line": 294,
+      "claim": "A one-line comment should be added above RELEASE_TAG explaining the reason for using github.event.release.tag_name instead of github.ref_name, for example that the release's tag is the source of truth even if the workflow is re-run or triggered from a different ref."
+    },
+    {
+      "id": "F9",
+      "file": ".github/workflows/ci.yml",
+      "line": 301,
+      "claim": "The 'Validate release tag' step runs after the checkout step, so the job could fail sooner if the validation ran before checking out the repository."
+    },
+    {
+      "id": "F10",
+      "file": ".github/workflows/ci.yml",
+      "line": 284,
+      "claim": "The docker-publish-staging job still uses github.ref_name while docker-publish-release now uses github.event.release.tag_name, and without a comment explaining the rationale, a future reader won't know why the two jobs diverge."
+    },
+    {
+      "id": "F11",
+      "file": ".github/workflows/ci.yml",
+      "line": 294,
+      "claim": "The switch from github.ref_name to github.event.release.tag_name has no explanation, even though this file otherwise documents similar choices in comments elsewhere (e.g. ci.yml:6-9, :262-263, :265-267), and the commit message has no body either, leaving no reason for the change even though on release events the two values are identical and produce no visible effect."
+    },
+    {
+      "id": "F12",
+      "file": ".github/workflows/ci.yml",
+      "line": null,
+      "claim": "A hotfix release built from an older minor version branch would cause the ':latest' tag to move backwards, since tagging logic does not account for release order relative to the tip."
+    }
+  ]
+}

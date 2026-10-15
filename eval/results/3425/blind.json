@@ -1,0 +1,133 @@
+{
+  "pr": 3425,
+  "title": "feat: audit log address book requests",
+  "description": "## Summary\r\n\r\nPending address book requests created by Workspace members, and their rejection by an admin, left no trace in the Workspace audit log. Only the approve path was covered, indirectly, through the existing `ADDRESS_BOOK_UPSERTED` event emitted when the approved item is upserted.\r\n\r\nThis PR adds two audit event types, `ADDRESS_BOOK_REQUEST_CREATED` and `ADDRESS_BOOK_REQUEST_REJECTED`.\r\n\r\nResolves [WA-2618](https://linear.app/safe-global/issue/WA-2618/activity-pending-address-book-requests-from-members-are-not-logged)\r\n\r\n## Changes\r\n\r\n- `src/modules/spaces/domain/audit/entities/space-audit-event.entity.ts` — add `ADDRESS_BOOK_REQUEST_CREATED` / `ADDRESS_BOOK_REQUEST_REJECTED` to the enum\r\n- `src/modules/spaces/domain/address-books/address-book-requests.repository.ts` — inject `ISpaceAuditRepository`; wrap `create()` in `db.transaction` and record the created event; add `reject()` (transactional transition + audit); `findOneOrFail` accepts an optional `EntityManager`; add `findSpaceForAuditOrFail` helper (404 when the Workspace is missing)\r\n- `src/modules/spaces/domain/address-books/address-book-requests.repository.interface.ts` — declare `reject()` and the optional `entityManager` on `findOneOrFail`\r\n- `src/modules/spaces/routes/address-books/address-book-requests.service.ts` — `reject()` calls the new repository method instead of `transitionFromPending`",
+  "findings": [
+    {
+      "id": "F1",
+      "file": "src/modules/spaces/domain/address-books/address-book-requests.repository.ts",
+      "line": 202,
+      "claim": "Rejecting a request that does not exist now returns 404 instead of 400; while this matches the Swagger docs and how approve behaves, no e2e test covers this behavior change and the PR description should call it out."
+    },
+    {
+      "id": "F2",
+      "file": "src/modules/spaces/domain/address-books/address-book-requests.repository.ts",
+      "line": 151,
+      "claim": "The UniqueConstraintError mapping now executes inside the new transaction, and this path is not covered by any test, either before or after the change."
+    },
+    {
+      "id": "F3",
+      "file": "src/modules/spaces/domain/address-books/address-book-requests.repository.spec.ts",
+      "line": 71,
+      "claim": "No unit test verifies that a duplicate insert raises UniqueConstraintError and records no audit event now that unique-constraint handling lives inside the transaction; the existing e2e test only checks the 409 response, so a dedicated unit test should be added."
+    },
+    {
+      "id": "F4",
+      "file": "src/modules/spaces/domain/address-books/address-book-requests.repository.ts",
+      "line": 210,
+      "claim": "Within the same reject method, the DB-sourced spaceId is mixed with args.spaceId rather than consistently using one source, which is confusing and inconsistent."
+    },
+    {
+      "id": "F5",
+      "file": "src/modules/spaces/domain/address-books/address-book-requests.repository.spec.ts",
+      "line": 150,
+      "claim": "The new reject/create test cases hard-code the asserted contact name as \"Alice\" even though no assertion depends on that exact value, while the sibling entity spec in the same PR uses faker for it; it should use faker.person.fullName() and pass that value consistently at both sites."
+    },
+    {
+      "id": "F6",
+      "file": "src/modules/spaces/domain/address-books/address-book-requests.repository.spec.ts",
+      "line": 135,
+      "claim": "New tests use hard-coded values such as the name 'Alice' and fake ciphertext like 'kms:v1:a' / 'kms:v1:n' instead of faker-generated or builder-generated data, which the project's testing convention requires; faker.person.fullName() and faker.string.alphanumeric() or similar should be used instead."
+    },
+    {
+      "id": "F7",
+      "file": "src/modules/spaces/domain/address-books/address-book-items.repository.spec.ts",
+      "line": 231,
+      "claim": "This spec file has no behavioural change, only a blank line and a single-use 'decrypted' intermediate variable, and is unrelated to the audit-log change and not listed in the PR description; it should be reverted to its base-branch content."
+    },
+    {
+      "id": "F8",
+      "file": "src/modules/spaces/domain/address-books/address-book-requests.repository.spec.ts",
+      "line": 150,
+      "claim": "The new reject/create test cases hard-code the asserted contact name as \"Alice\" (also at line 135) even though no assertion depends on that exact value, while the sibling entity spec in the same PR uses faker for the equivalent value. The name should be generated with faker.person.fullName() and that value used at both sites."
+    },
+    {
+      "id": "F9",
+      "file": "src/modules/spaces/domain/address-books/address-book-items.repository.spec.ts",
+      "line": 226,
+      "claim": "The test edit moving the mocked decrypt result into a 'decrypted' const and adding a blank line is unrelated to the feature and causes no behavior change; it should be dropped or moved to a separate PR."
+    },
+    {
+      "id": "F10",
+      "file": "src/modules/spaces/domain/address-books/address-book-requests.repository.ts",
+      "line": 210,
+      "claim": "The property assignment 'spaceId: spaceId' can be written using the shorthand 'spaceId', consistent with the rest of the file."
+    },
+    {
+      "id": "F11",
+      "file": "src/modules/spaces/domain/address-books/address-book-requests.repository.ts",
+      "line": 202,
+      "claim": "reject() calls findOneOrFail, which also loads the requestedBy relation and decrypts the row, even though the audit record only needs address/name, making that join wasted work; the decrypt also runs even when the request is no longer pending and nothing gets recorded, so a slimmer lookup should be used or decryption deferred until rejected is confirmed true."
+    },
+    {
+      "id": "F12",
+      "file": "address-book-requests.repository.spec.ts",
+      "line": 61,
+      "claim": "No test checks that the audit write is atomic with the request create/reject operation; the transaction mock simply invokes the callback without verifying atomicity, and no e2e test in address-book-requests.controller.e2e-spec.ts asserts that audit rows are written for request create or reject."
+    },
+    {
+      "id": "F13",
+      "file": "src/modules/spaces/domain/address-books/address-book-requests.repository.ts",
+      "line": 139,
+      "claim": "The create operation similarly performs an extra space lookup before its main operation; this one is a cheap query without a KMS call, but it follows the same pattern as the reject issue."
+    },
+    {
+      "id": "F14",
+      "file": "src/modules/spaces/domain/address-books/address-book-requests.repository.ts",
+      "line": 203,
+      "claim": "The code has redundant 'spaceId: spaceId' and mixes args.spaceId with a local spaceId variable for the same value in the same method; one form should be picked and written simply as 'spaceId,'."
+    },
+    {
+      "id": "F15",
+      "file": "src/modules/spaces/domain/address-books/address-book-requests.repository.ts",
+      "line": 193,
+      "claim": "Sibling operations use two different transaction patterns: approve runs its transaction in the service while reject now runs its transaction in the repository, creating an architectural inconsistency."
+    },
+    {
+      "id": "F16",
+      "file": "src/modules/spaces/domain/address-books/address-book-items.repository.spec.ts",
+      "line": 231,
+      "claim": "This file carries no behavioral change, only a blank line and a single-use decrypted intermediate variable, and is unrelated to the audit-log change and unlisted in the PR description. It should be reverted to its base-branch content."
+    },
+    {
+      "id": "F17",
+      "file": "src/modules/spaces/domain/address-books/address-book-requests.repository.ts",
+      "line": 198,
+      "claim": "The reject operation performs a space lookup, a request read, and a KMS decrypt inside the transaction before the conditional UPDATE, even though the audit repository returns early and never uses the decrypted values when the audit-log feature flag is off, and these values are also wasted when the request is no longer pending. This turns what used to be a single UPDATE into a flow where a slow or failing KMS call can make reject fail with a 500 (even with auditing disabled) and holds a pooled DB connection open during the KMS round-trip."
+    },
+    {
+      "id": "F18",
+      "file": "src/modules/spaces/domain/audit/entities/space-audit-event.entity.ts",
+      "line": 148,
+      "claim": "The existing AddressBookDeletedEventSchema is rewritten to reuse AddressBookEntrySchema, an opportunistic cleanup of code outside the task's stated scope, which the PR description records only as adding entries to the enum for this file. It should instead restore payload: z.object({ address: AddressSchema, name: z.string() }) on AddressBookDeletedEventSchema and leave the two new request event schemas as the only additions here."
+    },
+    {
+      "id": "F19",
+      "file": "address-book-requests.repository.spec.ts",
+      "line": 149,
+      "claim": "The new tests hard-code values such as 'Alice' and 'kms:v1:a' instead of using builders and faker, which violates the project's non-negotiable rule requiring builders and faker; the file already did this before, but the diff adds more instances."
+    },
+    {
+      "id": "F20",
+      "file": "src/modules/spaces/domain/address-books/address-book-requests.repository.ts",
+      "line": 230,
+      "claim": "findSpaceForAuditOrFail is now a third identical copy of a helper duplicated elsewhere; it should be moved into one shared helper (for example next to ISpaceAuditRepository) instead of adding another private copy."
+    },
+    {
+      "id": "F21",
+      "file": "src/modules/spaces/domain/audit/entities/space-audit-event.entity.ts",
+      "line": 148,
+      "claim": "The existing AddressBookDeletedEventSchema was rewritten to reuse AddressBookEntrySchema, an opportunistic cleanup outside the task's stated scope, which the PR description only records as adding entries to the enum for this file; it should be restored to its original payload definition, leaving only the two new request event schemas as additions."
+    }
+  ]
+}

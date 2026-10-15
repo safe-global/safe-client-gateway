@@ -1,0 +1,60 @@
+{
+  "usd": 0.34319220000000006,
+  "head": "40510d494f6791f13f421d1f3a4ead8844636ac2",
+  "verdicts": [
+    {
+      "issue": 4,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "At aad865 ALLOWED_PUNCTUATION had only ASCII ' and -. The author said they fixed it (\"Fixed 1, 4, 5 and 7\"), and commit 87ca89ad2 added SMART_PUNCTUATION folding (’→', –/—/−→-) in name.schema.ts:11-15."
+    },
+    {
+      "issue": 7,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "In the name.schema.ts:46 thread, vmosharova said allowing an empty string when minLength is 0 is intended, for future optional name fields. HEAD keeps this: the `if (min > 0)` guard in superRefine."
+    },
+    {
+      "issue": 11,
+      "verdict": "open",
+      "present": true,
+      "evidence": "The bot called this a footnote that isn't actionable yet, and nobody responded. name.builder.ts still slices by code point with `[...padded].slice(0, NAME_MAX_LENGTH)`; 2fe513f only added sanitizeName before it."
+    },
+    {
+      "issue": 12,
+      "verdict": "open",
+      "present": true,
+      "evidence": "The author's replies list the fixed items and don't include this one, and nobody else reacted. ALLOWED_NAME_REGEX still uses `\\p{N}` at HEAD (name.schema.ts:21-24)."
+    },
+    {
+      "issue": 13,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "At aad865 makeNameSchema used a chain of three .refine calls. LucieFaire suggested superRefine, and the author replied \"Addressed: cb5250e\", which merges them into one superRefine."
+    },
+    {
+      "issue": 14,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "At aad865 an input that was empty after stripping failed on the min-length refine. The author listed item 7 as fixed, and 87ca89ad2 added EMPTY_NAME_MESSAGE, which is checked first."
+    },
+    {
+      "issue": 16,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "At aad865 csv-export.options.ts escaped only through cast.string. The author said \"Fixed 1 and 2 in 1fd2688\" (rebased as 2fe513f), which adds castCell for the string, number, boolean and bigint casts."
+    },
+    {
+      "issue": 18,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "At aad865 FORMULA_TRIGGERS was an array checked with .includes. The author replied \"Addressed: 40510d4\", which turns it into a ReadonlySet checked with .has."
+    },
+    {
+      "issue": 23,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "At aad865 the comment said the full-width variants \"normalize to the ASCII forms\". The author listed item 4 as fixed, and 87ca89ad2 rewrote the comment to credit NFKC folding, noting that the NFC pipeline leaves them intact."
+    }
+  ]
+}

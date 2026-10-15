@@ -1,0 +1,11 @@
+{
+  "pr": 3250,
+  "reviewSha": "bc3a1750bce43aab2942ea46a22c4fbed14bcf9a",
+  "baseSha": "047c3abc6f2ec06e50f7d4b6a06fc24383a1201a",
+  "system": "E",
+  "version": "github",
+  "runner": "collect",
+  "model": "human",
+  "commentSha": "4b0a4fe9f1899076f1b212eb862d5c8a52175426",
+  "output": "[review by TimDaub]\nLooks good to me!\n\nJust left an optional comment for further improving, maybe even in a follow up ticket\n\n---\n\nsrc/modules/counterfactual-safes/routes/counterfactual-safes.service.ts:90\nOne nice optimization that is sadly not possible (unless we even change `isSafe`) is if `isSafe` would accept an `signal: AbortSignal` then as soon as we would have found one Promise returning that a Safe is deployed, we could have aborted all other, already launched Promises launched in the map iteration. \n\nIn fact, what would be nice is if there was a `Promise.some` we could just use here. But from what I know TS/JS doesn't have this :/"
+}

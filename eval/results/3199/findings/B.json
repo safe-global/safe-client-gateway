@@ -1,0 +1,60 @@
+{
+  "usd": 0.05827800000000001,
+  "findings": [
+    {
+      "file": "src/config/entities/configuration.ts",
+      "line": 140,
+      "claim": "The default limitCalls for the Zerion rate limiter stayed at 2 calls per 10 seconds even though three additional datasources (portfolio, positions, wallet-portfolio) now share that counter alongside balances, while the limiter's own doc comment states Zerion allows roughly 10 calls per second. Under this default, /v1/portfolio and /positions can start returning 429s under normal traffic that they never returned before, and /v2/safes would fall back to the balances service most of the time."
+    },
+    {
+      "file": "src/modules/positions/datasources/zerion-positions-api.service.ts",
+      "line": 109,
+      "claim": "The spec files for the Zerion positions and portfolio APIs only stub assertWithinBudget as a no-op mock without ever making it throw, asserting it was called, or importing LimitReachedError, so deleting the assertWithinBudget call in either service would leave all tests green."
+    },
+    {
+      "file": "src/modules/zerion/datasources/zerion-rate-limiter.service.ts",
+      "line": 76,
+      "claim": "The per-address limit only takes effect when an address argument is passed, and only the wallet-portfolio call site passes one; balances and portfolio do not, even though portfolio has args.address available. This means enabling ZERION_RATE_LIMIT_PER_ADDRESS_CALLS_BY_PERIOD would not stop a single busy wallet on /balances from consuming the whole shared budget, contradicting the documentation in .env.sample.json and the class's own doc comment."
+    },
+    {
+      "file": "src/modules/safe/routes/v2/safes.v2.service.ts",
+      "line": 84,
+      "claim": "resolveZerionEligibility and resolveSafes both depend only on chainsById but are executed sequentially rather than concurrently, so every /v2/safes request pays an avoidable extra round trip; wrapping them in Promise.all would remove that latency."
+    },
+    {
+      "file": "src/modules/safe/routes/v2/safes.v2.service.ts",
+      "line": 191,
+      "claim": "No test exercises getChain failing, leaving the new code path that drops a single entry when its chain is missing unverified."
+    },
+    {
+      "file": "src/modules/safe/routes/v2/safes.v2.service.ts",
+      "line": 299,
+      "claim": "The log branches that handle ZodError and LimitReachedError are never exercised because every relevant test rejects with a plain Error, leaving that logging logic untested."
+    },
+    {
+      "file": "src/datasources/cache/__tests__/fake.cache.service.ts",
+      "line": 82,
+      "claim": "incrWithTtl duplicates the body of increment almost verbatim instead of delegating to it, creating unnecessary duplicated logic that could drift out of sync."
+    },
+    {
+      "file": "src/modules/zerion/datasources/zerion-rate-limiter.service.ts",
+      "line": 116,
+      "claim": "The fail-open warning log is emitted as a plain string while the sibling _logRateLimited method in the same file uses the structured { type: LogType… } format, making the fail-open event harder to query consistently with other rate-limit logs."
+    },
+    {
+      "file": "src/routes/common/guards/rate-limit.guard.ts",
+      "line": 35,
+      "claim": "This code still calls increment rather than incrWithTtl, even though this PR's own documentation notes that the EXPIRE ... NX approach used by increment is broken on Redis 6, meaning the request rate-limit guard has a window that never resets."
+    },
+    {
+      "file": "src/modules/safe/routes/v2/safes.v2.service.ts",
+      "line": 11,
+      "claim": "The service injects the IZerionWalletPortfolioApi datasource directly rather than going through a repository, which conflicts with the project's documented layering rule that services should call repositories, not datasources; this predates the PR but the change increases reliance on it."
+    },
+    {
+      "file": "src/modules/safe/routes/v2/safes.v2.controller.ts",
+      "line": 73,
+      "claim": "The /v2/safes endpoint has no RateLimitGuard, so an anonymous caller can exhaust the shared Zerion rate-limit counter through this route; the PR does not introduce this exposure but shifts where the counter can be exhausted, since /balances and /collectibles could already exhaust it and /v2/safes previously hit Zerion with no limit at all."
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+{
+  "usd": 0.0656156,
+  "findings": [
+    {
+      "claim": "The GET session-by-id route has no ownership check: any authenticated user can fetch any session by its ID and receive amountTotal, customer, subscription, invoice, and metadata, since session IDs are opaque but effectively guessable across users. The caller should be required to be a member of the space referenced by client_reference_id/customer, or the session should be resolved through a space-scoped route.",
+      "file": "src/modules/billing/routes/billing.controller.ts",
+      "line": 177
+    },
+    {
+      "claim": "The returnUrl schema (z.url()) accepts any well-formed absolute URL, including attacker-controlled origins, creating an open-redirect vector since the value is embedded in Stripe hosted flows and served back to users. It should be restricted to an allowlist of trusted origins instead of accepting any URL.",
+      "file": "src/modules/billing/routes/billing.controller.ts",
+      "line": 37
+    },
+    {
+      "claim": "In getSpacePaymentLinks, building a Map from [...spaceLinks, ...generalLinks] lets later entries overwrite earlier ones, so a duplicate ID keeps the general link and discards the space-specific one, silently dropping space-specific metadata/pricing overrides. Either generalLinks should be placed first or the space entry should be explicitly preferred.",
+      "file": "src/modules/billing/routes/billing.service.ts",
+      "line": 69
+    },
+    {
+      "claim": "The existing test for de-duplication only asserts count using identical objects in both lists, so it does not catch the inverted precedence bug in the de-dup logic.",
+      "file": "src/modules/billing/routes/billing.service.spec.ts",
+      "line": 184
+    },
+    {
+      "claim": "The pattern of reading the same route param twice (once with SpaceIdPipe for the numeric id, once raw for the UUID) is repeated four times, which is subtle and easy to break on a future rename, and causes every space-scoped billing call to run findIdByUuid plus a separate membersRepository.findOne lookup, adding an extra DB round-trip.",
+      "file": "src/modules/billing/routes/billing.controller.ts",
+      "line": 68
+    },
+    {
+      "claim": "planId, paymentLinkId, and sessionId path parameters have no format validation and are interpolated verbatim into API URLs in billing-api.service.ts, which is a mild footgun for unvalidated input in path segments (e.g. encoded slashes or unusual characters).",
+      "file": "src/modules/billing/routes/billing.controller.ts",
+      "line": 89
+    },
+    {
+      "claim": "Only billing.service.spec.ts was added; there is no controller/e2e coverage for the new endpoints, so guard application (AuthGuard on each new route), 400 responses on invalid UUID via SpaceIdPipe, 401/403 paths, and returnUrl validation are not exercised at the HTTP level.",
+      "file": null,
+      "line": null
+    },
+    {
+      "claim": "The de-dup test uses the same object in both the space and general lists, so it would pass under either precedence order; it should instead use two objects sharing the same id but with different active/metadata values to actually lock in the intended behavior.",
+      "file": "src/modules/billing/routes/billing.service.spec.ts",
+      "line": 184
+    }
+  ]
+}

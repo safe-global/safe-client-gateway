@@ -1,0 +1,10 @@
+{
+  "usd": 0.0484396,
+  "findings": [
+    {
+      "file": null,
+      "line": null,
+      "claim": "The subscription management URL creation flow lacks the same admin-only protection applied elsewhere, allowing a non-admin member to use it to manage the subscription."
+    }
+  ]
+}

@@ -1,0 +1,211 @@
+{
+  "usage": {
+    "usd": 0.5928983999999999,
+    "turns": 8,
+    "wallSeconds": 76
+  },
+  "issues": [
+    {
+      "findings": [
+        "F9",
+        "F15",
+        "F24"
+      ],
+      "summary": "Default 2 calls/10s global budget now governs positions, portfolio and wallet-portfolio as well as balances",
+      "label": "medium",
+      "evidence": "configuration.ts:140-143 keeps the default of 2 per 10s, and the limiter now sits in front of positions (zerion-positions-api.service.ts:109), portfolio (zerion-portfolio-api.service.ts:122) and wallet-portfolio (:99). Any deployment still on the default will get new 429s on /positions and the portfolio route, and /v2/safes will mostly degrade. The PR description says tuning is left to ops, but the defaults it calls safe really do change behaviour.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F21"
+      ],
+      "summary": "Positions and portfolio specs stub assertWithinBudget as a no-op and never check that it is called",
+      "label": "medium",
+      "evidence": "zerion-positions-api.service.spec.ts:26 and zerion-portfolio-api.service.spec.ts:57 only define `assertWithinBudget: vi.fn()`, and neither file has a toHaveBeenCalled or LimitReachedError case. Removing the budget call from either service would leave every test green.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F13"
+      ],
+      "summary": "Per-address sub-budget is only enforced for wallet-portfolio; balances, collectibles, positions and portfolio pass no address",
+      "label": "low",
+      "evidence": "Only zerion-wallet-portfolio-api.service.ts:99-102 passes `address`. The balances (:136, :198), positions (:109) and portfolio (:122) calls omit it, so enabling the per-address config would not isolate a hot wallet on those routes, despite the class doc at lines 26-27. The tier is off by default, so this is low.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F2"
+      ],
+      "summary": "limitCalls=0 used to block every call and now disables the limit",
+      "label": "low",
+      "evidence": "The old check was `current > this.limitCalls`, which is always true for 0. The new check at zerion-rate-limiter.service.ts:92 is `if (this.limitCalls > 0)`, which skips enforcement. It is a real reversal of meaning, but a value of 0 is unlikely to be configured in practice.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F3"
+      ],
+      "summary": "ZERION_RATE_LIMIT_CALLS_BY_PERIOD description not updated for its wider scope or the 0-disables meaning",
+      "label": "low",
+      "evidence": ".env.sample.json:1576 still reads 'Maximum Zerion API calls per time period', while the new per-address entry at :1588 does document that 0 disables it. This is a documentation mismatch only.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F8"
+      ],
+      "summary": "A double failure logs the same error twice at warn level",
+      "label": "low",
+      "evidence": "serveDegradedBalance warns at safes.v2.service.ts:438-445 and rethrows, and the rejected overview is then warned again at :137-139. That is a small amount of duplicate log noise.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F17"
+      ],
+      "summary": "A successful degraded serve logs at warn level once per Safe",
+      "label": "low",
+      "evidence": "safes.v2.service.ts:429-435 warns every time the fallback succeeds, which is an expected outcome when the budget is exhausted. Under sustained over-budget this adds warn noise on top of the limiter's own warn at zerion-rate-limiter.service.ts:127.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F10",
+        "F23"
+      ],
+      "summary": "The fail-open log is a plain string, unlike the structured RateLimit log in the same class",
+      "label": "low",
+      "evidence": "zerion-rate-limiter.service.ts:116-118 interpolates the error into a string, while _logRateLimited at :127-133 uses `{type: LogType.RateLimit, ...}`. Redis fail-open events therefore cannot be queried or alerted on by type or datasource.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F14"
+      ],
+      "summary": "The resolveChains doc comment describes the old per-entry drop behaviour",
+      "label": "low",
+      "evidence": "safes.v2.service.ts:182-184 says '(today the chain is fetched per entry)' and 'dropped during the per-entry build (as today)', but unresolved chains are now dropped in resolveSafes at :159-161. The comment is stale and misleading.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F6"
+      ],
+      "summary": "resolveZerionEligibility and resolveSafes run one after the other although they are independent",
+      "label": "low",
+      "evidence": "safes.v2.service.ts:84 and :88 are awaited in turn, and both depend only on chainsById. Running them with Promise.all would save one round of latency (feature-flag lookups against getSafe), a minor performance gain.",
+      "category": "performance"
+    },
+    {
+      "findings": [
+        "F22"
+      ],
+      "summary": "No test covers getChain failing, the resolveChains null path",
+      "label": "low",
+      "evidence": "Every getChain mock in safes.v2.service.spec.ts (lines 113, 142, 171, 200, ...) resolves successfully, so the catch at safes.v2.service.ts:194-198 and the drop at :160-161 are untested. The path is small, which keeps this low.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F26"
+      ],
+      "summary": "The ZodError and LimitReachedError logging branches are untested",
+      "label": "low",
+      "evidence": "The spec rejects getPortfolio only with plain Errors (safes.v2.service.spec.ts:203, :246), so the branches at safes.v2.service.ts:304-318 never run. The code is logging only, so behaviour is not at risk.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F16",
+        "F20"
+      ],
+      "summary": "SafesV2Service calls the Zerion wallet-portfolio datasource directly instead of going through a repository",
+      "label": "low",
+      "evidence": "safes.v2.service.ts:60-61 injects IZerionWalletPortfolioApi, which goes against AGENTS.md ('Services ... call repositories (never datasources)'). The injection predates the PR, but the PR builds more logic on it at :268.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F4"
+      ],
+      "summary": "RateLimitGuard still uses increment, which relies on EXPIRE NX",
+      "label": "low",
+      "evidence": "rate-limit.guard.ts:35 calls cacheService.increment, which uses `expire(..., 'NX')` at redis.cache.service.ts:127, the same Redis 6 problem the PR documents. The file is outside the PR's changes, so this is at most low.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F25"
+      ],
+      "summary": "/v2/safes has no RateLimitGuard, so anonymous callers can drain the shared Zerion budget",
+      "label": "low",
+      "evidence": "safes.v2.controller.ts:73 has `@Get('safes')` with no guard. The route was already unguarded and previously hit Zerion without any limit; the PR only changes which counter gets consumed, and it degrades rather than failing.",
+      "category": "security"
+    },
+    {
+      "findings": [
+        "F5"
+      ],
+      "summary": "The PortfolioResult 'degraded' variant behaves the same as a missing key",
+      "label": "nit",
+      "evidence": "At safes.v2.service.ts:380-393 both a 'degraded' result and an undefined one fall through to serveDegradedBalance. The union is harmless and reads explicitly, so this is a style preference.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F7"
+      ],
+      "summary": "resolveZerionEligibility does not short-circuit when Zerion is disabled",
+      "label": "nit",
+      "evidence": "When zerionBalancesEnabled is false, each chain returns false synchronously at safes.v2.service.ts:216-223 with no I/O, and fetchPortfoliosOncePerIdentity then finds no identities. The saving would be negligible.",
+      "category": "performance"
+    },
+    {
+      "findings": [
+        "F12"
+      ],
+      "summary": "The fake incrWithTtl duplicates increment",
+      "label": "nit",
+      "evidence": "fake.cache.service.ts:82-87 copies the body at :72-80. This is a four-line test fake, so there is little real cost.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F11"
+      ],
+      "summary": "The fake incrWithTtl could be written more concisely",
+      "label": "nit",
+      "evidence": "fake.cache.service.ts:82-87 is purely a stylistic simplification.",
+      "category": "style"
+    },
+    {
+      "findings": [
+        "F18"
+      ],
+      "summary": "resolveChains builds an entries array before constructing the Map",
+      "label": "nit",
+      "evidence": "`new Map(await Promise.all(...))` at safes.v2.service.ts:190-202 is idiomatic, so there is no concrete cost.",
+      "category": "style"
+    },
+    {
+      "findings": [
+        "F19"
+      ],
+      "summary": "The interface doc mentions Redis 6/7 implementation details",
+      "label": "nit",
+      "evidence": "cache.service.interface.ts:29-32 explains why to prefer incrWithTtl over increment, which is useful guidance for callers. This is a style preference.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F1"
+      ],
+      "summary": "The unit test and the integration test duplicate the 'one fetch per wallet' scenario",
+      "label": "nit",
+      "evidence": "safes.v2.service.spec.ts:107 and the integration spec both cover it, but the integration test also exercises the real wiring. Choosing between them is a test-strategy preference.",
+      "category": "tests"
+    }
+  ]
+}

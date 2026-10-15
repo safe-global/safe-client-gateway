@@ -1,0 +1,115 @@
+{
+  "usage": {
+    "usd": 0.46439600000000003,
+    "turns": 5,
+    "wallSeconds": 48
+  },
+  "issues": [
+    {
+      "findings": [
+        "F8",
+        "F14"
+      ],
+      "summary": "TransactionApi.mapError checks nonFieldErrors before the 451 banned-Safe rewrite, so a 451 carrying nonFieldErrors forwards the upstream text",
+      "label": "low",
+      "evidence": "src/modules/transactions/datasources/transaction-api.service.ts:1193-1204 returns early from the nonFieldErrors branch, and mapBannedSafeError runs only after it. The PR description says the 451 check runs first and that a test pins the order, but the code at HEAD does neither. The Transaction Service does not currently send this payload shape, so the impact is an unlikely edge case.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F1",
+        "F2",
+        "F4",
+        "F6",
+        "F15",
+        "F17",
+        "F25"
+      ],
+      "summary": "The mapBannedSafeError call sites in SafeBalancesApi (getBalance, getCollectibles) and ExportApi have no 451 test",
+      "label": "medium",
+      "evidence": "The diff contains no safe-balances-api spec, no collectibles integration case and no 451 assertion in export-api.service.spec.ts (it only excludes 451 at :143). Only getBalances (balances.controller.integration.spec.ts:838) and TransactionApi.getSafe are tested, so removing the wrapper at safe-balances-api.service.ts:181/:221 or export-api.service.ts:64 would go unnoticed. The PR description lists these tests, but they are not in this commit.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F7",
+        "F12",
+        "F19",
+        "F20",
+        "F21"
+      ],
+      "summary": "The loop that draws a random error status other than 451 is copy-pasted across three spec files instead of living in a shared helper",
+      "label": "low",
+      "evidence": "The same do/while loop appears in banned-safe.helper.spec.ts:36, export-api.service.spec.ts:143 and as a local function at transaction-api.service.spec.ts:75. The shared src/__tests__/faker.ts helper the PR description mentions is not changed in this diff.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F3",
+        "F13",
+        "F16",
+        "F18",
+        "F24",
+        "F26"
+      ],
+      "summary": "The literal string 'Safe is unavailable for legal reasons' is hard-coded as the upstream detail in five places, where faker would do",
+      "label": "low",
+      "evidence": "The literal appears at banned-safe.helper.spec.ts:22 and :69, transaction-api.service.spec.ts:430, balances.controller.integration.spec.ts:857 and safes.controller.integration.spec.ts:2426. The mapper discards the value and nothing asserts on it, which goes against AGENTS.md non-negotiable #6 (builders + faker, no literal fixtures).",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F5"
+      ],
+      "summary": "The canonical example in api-dtos-and-validation.md no longer matches the SafeBalancesApi catch sites",
+      "label": "low",
+      "evidence": "docs/agents/api-dtos-and-validation.md:121 quotes `throw this.httpErrorFactory.from(error)` for getBalances/getCollectibles. Those lines now read `from(mapBannedSafeError(error))` (safe-balances-api.service.ts:109, :181), so the doc is out of date.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F9"
+      ],
+      "summary": "The claim that asserting via mock.calls.length breaks a repo-wide convention",
+      "label": "wrong",
+      "evidence": "No guide under docs/agents requires toHaveBeenCalledTimes (a grep finds nothing), and balances.controller.integration.spec.ts already uses `mock.calls.length` 9 times, so the new test follows local style.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F11"
+      ],
+      "summary": "The name mapBannedSafeError is tied to the upstream's cause rather than to the 451 status",
+      "label": "nit",
+      "evidence": "The PR deliberately scopes the helper to Transaction Service datasources, where 451 always means a banned Safe (banned-safe.helper.ts doc comment, ARCHITECTURE.md addition). Renaming has no concrete benefit today.",
+      "category": "style"
+    },
+    {
+      "findings": [
+        "F10"
+      ],
+      "summary": "There is no dedicated response mapper for SafeBalancesApi errors",
+      "label": "nit",
+      "evidence": "This is speculative future-proofing. mapBannedSafeError already is the shared mapping seam at safe-balances-api.service.ts:109, and nothing currently needs more handling.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F22"
+      ],
+      "summary": "Tests build the error with `{ status } as Response` instead of a real Response",
+      "label": "nit",
+      "evidence": "`as Response` casts are the existing pattern for building NetworkResponseError across the repo's specs (for example the pre-existing TransactionApi cases). The new test at safes.controller.integration.spec.ts:2424 follows that pattern at no concrete cost.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F23"
+      ],
+      "summary": "The local helper sits between the describe-scoped const and let declarations",
+      "label": "nit",
+      "evidence": "transaction-api.service.spec.ts:70-83 places the function inside describe before the `let` block. This is purely a layout preference with no functional effect.",
+      "category": "style"
+    }
+  ]
+}

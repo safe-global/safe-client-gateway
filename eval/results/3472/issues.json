@@ -1,0 +1,102 @@
+{
+  "usage": {
+    "usd": 0.4690442,
+    "turns": 6,
+    "wallSeconds": 47
+  },
+  "issues": [
+    {
+      "findings": [
+        "F2",
+        "F16",
+        "F4",
+        "F5"
+      ],
+      "summary": "Deploy jobs now wait on the whole reusable workflow (needs: [ci]) instead of only biome and tests-finish. That makes license-headers and env-validation new blockers for staging, autodeploy and release, and the change isn't called out.",
+      "label": "low",
+      "evidence": "ci.yml:44 and :81 are now `needs: [ci]`; base ci.yml:275/312 had `needs: [biome, tests-finish]`. Autodeploy's own needs are unchanged (ci.yml:128, still docker-publish-staging), so F4 is wrong on that detail, but autodeploy is still blocked transitively. The gate is stricter, not weaker, and the PR says that one `needs` line changed, so the impact is minor.",
+      "label_rationale": "",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F1",
+        "F7",
+        "F6",
+        "F9"
+      ],
+      "summary": "Updated docs point to staging.yml and production.yml, which don't exist. commits-and-prs.md also says the build/deploy jobs live there, when they are still in ci.yml.",
+      "label": "low",
+      "evidence": "docs/agents/testing.md:36 and docs/agents/commits-and-prs.md:166 name staging.yml/production.yml, but .github/workflows holds only _ci-node.yml, ci.yml, pull-request.yml and unrelated workflows. The build jobs are at ci.yml:39-136. This is a real documentation mismatch that misleads readers.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F8",
+        "F13",
+        "F12"
+      ],
+      "summary": "The two-line arm64 comment was split during the move. Half of it dangles at the end of _ci-node.yml, and ci.yml lost the explanation that the billing README points readers to.",
+      "label": "low",
+      "evidence": "_ci-node.yml:277 ends with the fragment `# Production runs on arm64 only, ... We run on an` and no job follows. The base ci.yml:268-269 held the full comment above docker-publish-staging, which is now gone from ci.yml:39. src/modules/billing/README.md:192 still refers readers to ci.yml for the arm64 detail.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F3",
+        "F18"
+      ],
+      "summary": "No caller sets the new node_version, python_version and ref inputs, so for now they do nothing.",
+      "label": "nit",
+      "evidence": "ci.yml:35-37 and pull-request.yml:28-30 pass only `secrets: inherit`; the defaults at _ci-node.yml:18-29 match the old hardcoded values. The PR describes these inputs as deliberate, since later PRs will use them, and they have no concrete cost today.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F11"
+      ],
+      "summary": "If a caller ever sets ref, the license-headers diff (BASE_REF..HEAD) would compare the event's base against a different checked-out commit.",
+      "label": "low",
+      "evidence": "_ci-node.yml:41 checks out inputs.ref, while BASE_REF at :49-53 comes from github.event (PR base or `before`), and the diff runs against HEAD. A non-default ref would check the wrong range. This is latent only: no caller passes ref today.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F14",
+        "F20"
+      ],
+      "summary": "The '# Krypton' comments sit next to a parameterized node version.",
+      "label": "nit",
+      "evidence": "_ci-node.yml:82/100/164/234. The default is still 24.11.0 (Krypton) at :21, and no caller overrides it, so the comment is accurate for every actual run.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F15",
+        "F17"
+      ],
+      "summary": "`secrets: inherit` hands all repository secrets to the reusable, when only SAFE_CONFIG_BASE_URI is needed.",
+      "label": "nit",
+      "evidence": "Before this PR, the same jobs ran inside ci.yml, which already had access to every repo secret; a reusable workflow only exposes the secrets its steps reference (_ci-node.yml:175, :248). Exposure doesn't change. Passing just SAFE_CONFIG_BASE_URI would be tighter hardening, but it isn't a regression.",
+      "category": "security"
+    },
+    {
+      "findings": [
+        "F10"
+      ],
+      "summary": "The commit subject and PR title start the description with a capital letter ('Extract'), against the repo's lowercase-initial convention.",
+      "label": "low",
+      "evidence": "docs/agents/commits-and-prs.md:13 requires a lowercase-initial description. The PR title `feat(ci): Extract ...` breaks that rule, and since main is squash-merged it becomes the permanent history entry; `git log main` already shows `ci: Extract the quality gate ... (#3472)`.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F19"
+      ],
+      "summary": "Claim that the required-check rename should be called out prominently in the PR body.",
+      "label": "wrong",
+      "evidence": "The PR body already says in capitals: 'REQUIRED CHECKS MUST BE RENAMED WHEN THIS MERGES', names each new check, and repeats this in the closing note. It is already prominent.",
+      "category": "docs"
+    }
+  ]
+}

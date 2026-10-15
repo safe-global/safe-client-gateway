@@ -1,0 +1,45 @@
+{
+  "usd": 0.0505456,
+  "findings": [
+    {
+      "file": "src/config/entities/schemas/configuration.schema.ts",
+      "line": null,
+      "claim": "AUTH_ELEVATION_WINDOW_SECONDS (introduced in src/config/entities/configuration.ts:61-64) and FF_MFA_STEP_UP (introduced at :481) are not declared in the schema, unlike the sibling AUTH_STATE_TTL_MILLISECONDS which is validated with min(1000); every env var should appear in both files."
+    },
+    {
+      "file": "src/config/entities/configuration.ts",
+      "line": 61,
+      "claim": "Because AUTH_ELEVATION_WINDOW_SECONDS is unvalidated, setting it to a non-numeric value causes Number.parseInt to yield NaN, making the age comparison always false, which permanently forces 403 elevation_required for every OIDC user; this fails closed but silently, in a way that looks like Auth0 is broken."
+    },
+    {
+      "file": "src/modules/auth/routes/guards/elevation.guard.ts",
+      "line": 75,
+      "claim": "The elevation_required condition is signalled only via the message string in a ForbiddenException, so clients must substring-match on message to distinguish it from other 403 responses, and any future exception filter that reshapes the error body would silently break that client contract; a dedicated code field should be used instead."
+    },
+    {
+      "file": "src/modules/auth/routes/guards/elevation.guard.ts",
+      "line": null,
+      "claim": "The e2e test (elevation.integration.spec.ts) currently asserts on body.message rather than a dedicated error code, which should be pinned to the corrected shape if a code field is introduced."
+    },
+    {
+      "file": "src/modules/spaces/routes/address-books/address-books.controller.ts",
+      "line": 115,
+      "claim": "The address-book PUT route splits guards across two separate @UseGuards decorators (SpacesAddressBookRateLimitGuard, then AuthGuard/ElevationGuard); this relies on Nest's undocumented-to-the-reader behavior of merging decorator arrays in order, is the only route in the changed set structured this way, and makes guard execution order unclear compared to the rest of the diff which uses a single combined @UseGuards call."
+    },
+    {
+      "file": "elevation.guard.spec.ts",
+      "line": 18,
+      "claim": "The constant ELEVATION_WINDOW_SECONDS = 5 * 60 is duplicated in this file and in elevation.integration.spec.ts:28, each with near-identical comments explaining the mismatch from the production default; extracting a shared test constant or builder would prevent the two from drifting apart."
+    },
+    {
+      "file": "src/modules/auth/routes/guards/elevation.guard.ts",
+      "line": 64,
+      "claim": "The comment describing the 'OIDC or wallet, never both' invariant is load-bearing but lacks a link to an issue, RFC, or commit, making the invariant hard to verify independently."
+    },
+    {
+      "file": "oidc-auth.service.ts",
+      "line": 143,
+      "claim": "The expression hasFreshMfa ? Math.floor(Date.now() / 1_000) : undefined is duplicated here and in auth-payload.entity.ts:102; extracting a small nowSeconds() helper would prevent the two implementations from drifting apart."
+    }
+  ]
+}

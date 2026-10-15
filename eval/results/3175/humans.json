@@ -1,0 +1,12 @@
+{
+  "usd": 0.2213868,
+  "head": "976f1ed710c87a6cd0dd4df2fd87d841550a2573",
+  "verdicts": [
+    {
+      "issue": 7,
+      "present": true,
+      "verdict": "open",
+      "evidence": "No commits after 976f1ed, and src/modules/spaces/datasources/safes/entities/space-safes.entity.db.ts is still named in the plural at HEAD. Nobody responded to finding #3 in the Claude review comment."
+    }
+  ]
+}

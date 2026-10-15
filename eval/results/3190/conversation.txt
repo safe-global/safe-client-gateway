@@ -1,0 +1,291 @@
+REVIEW DISMISSED
+[LucieFaire 2026-07-13T11:29:29Z] Lets deploy to staging and see how it behaves
+
+COMMENT
+[datadog-official 2026-06-23T16:46:48Z] <a target='_blank' href='https://app.datadoghq.eu/ci/pipeline-executions?query=ci_level%3Ajob+%40ci.status%3Aerror+%40git.commit.sha%3A49ef8cb9c78e478ff9e97c1a1d9704b503194d2a&referrer=pr-comment'><picture><source media="(prefers-color-scheme: dark)" srcset="https://static.datadoghq.com/static/images/pr_comments/software_delivery/badges_header/pipelines-warning.svg"/><img src="https://static.datadoghq.com/static/images/pr_comments/software_delivery/badges_header/pipelines-warning-light.svg" alt="Pipelines" align="center" /></picture></a>
+
+## ⚠️ Warnings
+
+🚦 **1 Pipeline job failed**
+
+<blockquote>
+<div>
+
+<code> CI | unit-tests </code> &nbsp;&nbsp;<a href="https://app.datadoghq.eu/ci/pipeline-executions?query=ci_level%3Ajob&#43;ci.job_correlation_id%3A704e792cc58bf1d1&amp;referrer=pr-comment" title="View in Datadog"><img src="https://static.datadoghq.com/static/images/pr_comments/software_delivery/datadog_icon.svg" alt="View in Datadog" align="center" /></a> &nbsp; <a href="https://github.com/safe-global/safe-client-gateway/actions/runs/28103796321/job/83212421831" title="View in GitHub Actions"><picture><source media="(prefers-color-scheme: dark)" srcset="https://static.datadoghq.com/static/images/pr_comments/software_delivery/logos/github-logo-dark.svg"/><img src="https://static.datadoghq.com/static/images/pr_comments/software_delivery/logos/github-logo-light.svg" alt="GitHub Actions" align="center" /></picture></a>
+
+</div>
+</blockquote>
+
+<sub>
+This comment will be updated automatically if new data arrives. <br />
+🔗 Commit SHA: 49ef8cb | <a href="https://docs.datadoghq.com/integrations/guide/source-code-integration/#pr-comments">Docs</a> | Give us <a href="https://forms.gle/ys6MDmdQEeC5pkzWA">feedback</a>!
+</sub>
+
+COMMENT
+[PooyaRaki 2026-06-23T16:58:49Z] @claude review
+
+COMMENT
+[claude 2026-06-23T16:59:07Z] **Claude finished @PooyaRaki's task in 4m 37s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/28042634532)
+
+---
+### Claude PR Review — Express → Fastify migration
+
+- [x] Load review tools
+- [x] Read key changed files
+- [x] Identify bugs, regressions, security & test coverage gaps
+- [x] Post review feedback
+
+Overall, this is a clean, well-scoped migration. Below are the things worth tightening before merge.
+
+---
+
+#### 🐛 Potential bugs
+
+1. **`Math.floor(stateMaxAge / 1_000)` can round a sub-second TTL to `0`** — `src/modules/auth/oidc/routes/oidc-auth.controller.ts:110`. If `auth.stateTtlMs` is ever configured below `1000`, the OIDC state cookie is written with `maxAge: 0` and is effectively unset, breaking the `state` check in the callback. Today's defaults make this unlikely, but it's an easy footgun. Prefer `Math.max(1, Math.ceil(stateMaxAge / 1_000))` and consider asserting the lower bound at startup. [Fix this →](https://claude.ai/code?q=On%20branch%20feat%2Ffastify%2C%20in%20src%2Fmodules%2Fauth%2Foidc%2Froutes%2Foidc-auth.controller.ts%20line%20110%2C%20replace%20Math.floor(stateMaxAge%20%2F%201_000)%20with%20Math.max(1%2C%20Math.ceil(stateMaxAge%20%2F%201_000))%20so%20sub-second%20stateTtlMs%20values%20don%27t%20zero%20out%20the%20cookie.&repo=safe-global/safe-client-gateway)
+
+2. **`parseBodyLimit` is stricter than the old `bytes` parser it replaces** — `src/app.provider.ts:38-56`. The previous Express config used `body-parser` which delegates to the `bytes` library and accepts e.g. `tb`, `pb`, and looser whitespace/casing rules. The new regex only matches `b|kb|mb|gb` and `\d+(?:\.\d+)?`. A previously valid `EXPRESS_JSON_LIMIT=1tb` (or `'1 KiB'`) now throws at bootstrap. Worth either:
+   - documenting the supported units in the env-var docstring at `src/config/entities/configuration.ts:386`, **and/or**
+   - reusing the `bytes` package (already a transitive dep) to preserve compatibility.
+
+3. **`NotFoundLoggerMiddleware` types the request as raw `IncomingMessage`** — `src/middleware/not-found-logger.middleware.ts:25`. This works because `@fastify/middie` (used by NestJS' Fastify middleware adapter) does set `originalUrl`, but it isn't part of the Node type. Type drift may make a future change silently fall back to `req.url`. Consider importing the shared `RequestLike` from `http-request.utils.ts` for consistency.
+
+4. **`createTestApplication` skips production-equivalent adapter config** — `src/__tests__/test-app.provider.ts:18`. It calls `new FastifyAdapter()` with no `trustProxy`/`bodyLimit`, while `TestAppProvider.provide()` correctly uses `createFastifyAdapter(configurationService)`. Tests that exercise either should standardize on the configured adapter, otherwise behaviour-drift between integration tests and production is invisible.
+
+#### 🔐 Security / robustness
+
+5. **`getRouteUrl` silently falls back to `'localhost'`** — `src/routes/common/http/http-request.utils.ts:69-74`. If the `Host` header is missing (unusual but possible from internal probes), pagination cursors and any audit logs that include this URL will contain a misleading authority. Previously Express would throw because `request.get('Host')` returned `undefined` and the URL constructor failed. Recommend throwing here too, or at minimum logging a warning, to surface misconfigured callers rather than masking them.
+
+6. **`TenderlySignatureGuard` HMAC over re-stringified body** — `src/modules/alerts/routes/guards/tenderly-signature.guard.ts:57` (pre-existing, but now even more relevant under Fastify). Re-serializing the parsed JSON to compute the HMAC depends on Fastify's parser preserving the exact byte representation that the sender signed. Insertion-order is preserved by `secure-json-parse`, but whitespace, number formatting, and Unicode escapes are not guaranteed. Long-term, prefer Fastify's `rawBody` / a `preParsing` hook to verify against the actual received bytes.
+
+#### 🧪 Test coverage
+
+7. **No assertions on the new seconds-vs-milliseconds cookie units.** The `maxAge`/`getSecondsUntil` change is exactly the kind of unit conversion that warrants a regression test (e.g. an integration test verifying the `Set-Cookie: Max-Age=...` value falls in the expected seconds-range). I didn't find one — `src/app.provider.spec.ts` covers `trustProxy`/`bodyLimit` well, but cookie units are uncovered.
+
+8. **Datadog reports the `integration-tests` job failed** for commit `61942e7`. The PR description already flags integration/e2e as pending — please make sure those are green before merge, since the Fastify `ready()` change in `initTestApplication` and the cookie-unit changes are the most likely culprits if anything regressed.
+
+#### 🧹 Quality / nits
+
+9. The config namespace `express.*` and the docstring "bytes library for parsing" at `src/config/entities/configuration.ts:385-387` are now stale. The PR description calls this out as a deferred rename; an inline `TODO` or comment update would prevent confusion for the next reader.
+
+10. `parseBodyLimit("1.5b")` returns `Math.floor(1.5 * 1) = 1` — harmless but indicates the regex permits decimals where they're meaningless. A minor tweak (`b` not allowing decimals) would surface bad configs earlier.
+
+11. **`@Res({ passthrough: true })` + `Promise<void>` handlers** (e.g. `auth.controller.ts:127`, `oidc-auth.controller.ts:94`) — under Fastify, NestJS will auto-send `undefined`. Behaviour is fine, but a quick e2e check that `POST /v1/auth/verify` returns `200 ""` (not `204`) is worth confirming during smoke testing.
+
+#### ✅ What looks good
+
+- The `createFastifyAdapterFromConfiguration` split keeping adapter creation pure & testable is the right call given Fastify's construction-time config requirement.
+- `RequestLike` abstraction in `http-request.utils.ts` is a nice insulation layer — guards/decorators/filters look largely portable now.
+- `@fastify/cookie` is registered as a Fastify plugin (`app.register(...)`) instead of a Nest middleware — correct path.
+- Cookie unit conversion (ms → s) appears applied consistently at every cookie call-site I audited.
+
+Nothing here is blocking on its own; #1 and #2 are the two I'd want addressed (or explicitly accepted) before merging.
+
+---
+ · Branch: [`feat/fastify`](https://github.com/safe-global/safe-client-gateway/tree/feat/fastify)
+
+COMMENT
+[PooyaRaki 2026-06-24T13:17:57Z] @claude review
+
+COMMENT
+[claude 2026-06-24T13:18:16Z] **Claude finished @PooyaRaki's task in 3m 34s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/28101383019)
+
+---
+### Claude PR Review — Express → Fastify migration
+
+- [x] Read key changed files
+- [x] Identify bugs, regressions, security, performance & test coverage gaps
+- [x] Post review feedback
+
+Most of the prior review feedback has been addressed (sub-second TTL guard at `oidc-auth.controller.ts:116`, `tb`/`pb` units in `parseBodyLimit`, `RequestLike` in `NotFoundLoggerMiddleware`, cookie-unit regression tests in `auth-cookie.utils.spec.ts`). Remaining items below — none are blocking on their own.
+
+---
+
+#### 🐛 Bugs / correctness
+
+1. **`targeted-messaging.controller.ts:86-90` returns `204 No Content` with a body.** Under Fastify, a `204` reply is required by spec to have no body; the framework strips it (or warns) — but the intent of `send({})` is unclear and the behaviour changes vs. the Express era which would happily emit `{}` at 204. If clients ever parsed the empty object, this is a silent contract change. Either return `200` with `{}` or drop the body and return `204` with `.send()`. [Fix this →](https://claude.ai/code?q=On%20branch%20feat%2Ffastify%2C%20src%2Fmodules%2Ftargeted-messaging%2Froutes%2Ftargeted-messaging.controller.ts%20line%2086-90%3A%20returning%20HTTP%20204%20with%20a%20body%20.send(%7B%7D)%20is%20a%20spec%20violation%20Fastify%20strips.%20Either%20switch%20to%20200%20with%20%7B%7D%20or%20204%20with%20no%20body%2C%20whichever%20matches%20the%20prior%20Express%20contract.&repo=safe-global/safe-client-gateway)
+
+2. **`getRouteUrl` still silently falls back to `'localhost'`** — `src/routes/common/http/http-request.utils.ts:69-74`. Used by `PaginationDataDecorator` and `RouteUrlDecorator`, so a missing `Host` header (rare but possible from internal probes or misbehaving load-balancers) bakes a misleading authority into pagination cursors that clients then send back. Express would have thrown via `URL(...)` because it returned `undefined`. Prefer throwing/logging here over masking. [Fix this →](https://claude.ai/code?q=On%20branch%20feat%2Ffastify%2C%20src%2Froutes%2Fcommon%2Fhttp%2Fhttp-request.utils.ts%20line%2069-74%3A%20getRouteUrl%20silently%20falls%20back%20to%20'localhost'%20when%20Host%20is%20missing.%20Throw%20a%20descriptive%20error%20instead%20so%20misconfigured%20callers%20surface%20rather%20than%20producing%20pagination%20cursors%20with%20a%20bogus%20authority.&repo=safe-global/safe-client-gateway)
+
+3. **`parseBodyLimit('1.5b')` silently returns `1`** — `src/app.provider.ts:73`. The regex permits decimals for the `b` unit where they're meaningless; `Math.floor(1.5 * 1) = 1` masks a bad config. Restrict the bytes group to integers: `^(\d+)\s*b$|^(\d+(?:\.\d+)?)\s*(kb|mb|gb|tb|pb)$` or assert no decimal for `b`.
+
+#### 🔐 Security / robustness
+
+4. **`TenderlySignatureGuard` HMAC over re-stringified body** — `src/modules/alerts/routes/guards/tenderly-signature.guard.ts:57` (pre-existing, but Fastify makes it worth flagging). `JSON.stringify(args.body)` depends on the Fastify parser preserving the exact byte representation that the sender signed. Insertion order is preserved by `secure-json-parse`, but whitespace, number formatting, and Unicode escapes are not guaranteed. Long-term, register Fastify's `rawBody` plugin / a `preParsing` hook and HMAC the actual received bytes.
+
+5. **`OidcAuthService.stateTtlMs` has no startup assertion against sub-second values.** The cookie path is now bounded (`max(1, …)`), but a configured `stateTtlMs < 1000` silently becomes a 1-second TTL — likely unreachable for the user, breaking the callback state check. Assert `>= 1_000` at module init (or in `configuration.ts`) so misconfiguration fails fast rather than degrading behaviour.
+
+#### 🧪 Test coverage
+
+6. **`createTestApplication` diverges from prod adapter config** — `src/__tests__/test-app.provider.ts:26`. The comment explains the trade-off, but specs using this helper won't catch a regression in body-limit or trust-proxy parsing. Worth either funneling all helpers through `createFastifyAdapter` or adding an integration test that asserts the production adapter is constructed with the configured options end-to-end.
+
+7. **No coverage of the `targeted-messaging` 204-body behaviour.** Given #1 above, an integration assertion on the actual `Set-Cookie`/`Content-Length` of the not-found branch would lock the contract down.
+
+#### 🧹 Quality / nits
+
+8. **Stale `express.*` namespace and docstring** — `src/config/entities/configuration.ts:382-397`. The PR notes this is a deferred rename. A `TODO(fastify-rename)` marker would help the next reader.
+
+9. **`@app.module.ts:151` — `ServeStaticModule.forRoot({ exclude: ['{*any}'] })`.** Fastify pattern syntax; please verify in a `yarn start` smoke test that `/favicon.png` / `/logo.svg` (consumed by the Swagger UI at `/api`) are still served correctly — the prior Express `*` exclude semantics aren't 1-to-1.
+
+10. **`@Res({ passthrough: true })` with `Promise<void>` handlers** (e.g. `auth.controller.ts:127`, `155`, `oidc-auth.controller.ts:94`, `161`) — under Fastify with NestJS auto-send, response will be an empty body. Behaviour-correct, but an e2e assertion on `POST /v1/auth/verify` / `POST /v1/auth/logout` returning `200` with empty body would prevent silent drift.
+
+#### ✅ What looks good
+
+- Clean split between `createFastifyAdapterFromConfiguration` (pure) and `createFastifyAdapter` (DI-bound), letting `main.ts` build the adapter before the container exists.
+- `FASTIFY_ROUTER_OPTIONS` (`ignoreTrailingSlash` + raised `maxParamLength`) restores two non-obvious Express behaviours that would have produced spurious 404s.
+- `NullResponseInterceptor` preserves the Express empty-body contract for `null` returns — a subtle Fastify gotcha caught well.
+- `RequestLike` abstraction in `http-request.utils.ts` keeps guards/decorators/filters portable.
+- Cookie unit conversion (ms → s) appears applied consistently at every cookie call-site I audited, and `getSetCookieOptions` adds an explicit `expires` to preserve the previous Express `Max-Age`+`Expires` pair.
+
+---
+ · Branch: [`feat/fastify`](https://github.com/safe-global/safe-client-gateway/tree/feat/fastify)
+
+COMMENT
+[PooyaRaki 2026-06-24T13:56:16Z] @claude review
+
+COMMENT
+[claude 2026-06-24T13:56:36Z] ### Claude PR Review — Express → Fastify migration
+
+- [x] Load review tools
+- [ ] Read key changed files
+- [ ] Identify issues to improve
+- [ ] Post review feedback
+
+<img src="https://github.com/user-attachments/assets/5ac382c7-e004-429b-8e35-7feb3e8f9c6f" width="14px" height="14px" style="vertical-align: middle; margin-left: 4px;" />
+
+[View job run](https://github.com/safe-global/safe-client-gateway/actions/runs/28103813724)
+
+COMMENT
+[PooyaRaki 2026-06-24T13:57:43Z]  All prior review feedback has been addressed. Latest commit (49ef8cb9) covers the remaining items:
+  
+  - AUTH_STATE_TTL_MILLISECONDS now rejects sub-second values at startup (.min(1_000)) — misconfiguration fails fast instead of silently collapsing the OIDC state cookie TTL.
+  - targeted-messaging 204 branch now calls .send() with no body, consistent with HTTP spec and Fastify's own behaviour.
+  - Deferred express.* config rename marked TODO(fastify-rename) for greppability.
+
+  Items not actioned (with rationale):
+  - getRouteUrl localhost fallback — Express did not throw on a missing Host; it produced http://undefined/…. No regression.
+  - parseBodyLimit('1.5b')→1 — deliberate bytes-library parity, documented and tested.
+  - Tenderly rawBody HMAC — pre-existing, behaviour-affecting; out of scope for this PR.
+  - ServeStaticModule exclude — unchanged from main, not a migration artifact.
+  - Test coverage items — all three scenarios are already exercised by existing integration specs.
+
+COMMENT
+[PooyaRaki 2026-06-24T13:58:30Z] @claude review
+
+COMMENT
+[claude 2026-06-24T13:58:46Z] **Claude finished @PooyaRaki's task in 4m 1s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/28103955243)
+
+---
+### Claude PR Review — Express → Fastify migration
+
+- [x] Load review tools
+- [x] Read key changed files
+- [x] Identify issues to improve
+- [x] Post review feedback
+
+Prior review rounds have addressed the bulk of issues. The migration is in good shape — the remaining items are minor and none are blocking.
+
+---
+
+#### 🐛 Bugs / correctness
+
+1. **`maxParamLength: 1024` is broader than required** — `src/app.provider.ts:44`. The justification (composite ids like `multisig_<address>_<safeTxHash>`) caps out around ~118 chars. 1024 lets clients pass kilobyte-long path segments that then flow through every `ValidationPipe`/`zod` parser downstream — gratuitous work and a mild DoS vector. Tightening to `256` (~2× the longest legitimate id) preserves the fix without the surface. [Fix this →](https://claude.ai/code?q=On%20branch%20feat%2Ffastify%2C%20src%2Fapp.provider.ts%20line%2044%3A%20tighten%20FASTIFY_ROUTER_OPTIONS.maxParamLength%20from%201024%20to%20256%20%E2%80%94%20still%202x%20the%20longest%20legitimate%20composite%20id%20(~118%20chars)%20but%20avoids%20accepting%20kilobyte-long%20path%20segments%20that%20then%20flow%20through%20every%20validator.&repo=safe-global/safe-client-gateway)
+
+2. **`getRoutePath` falls back to the resolved request path** — `src/routes/common/http/http-request.utils.ts:50-57`. When `routeOptions.url`/`route.path`/`path` are all absent, the function returns the actual URL (e.g. `/v1/chains/1/safes/0xabc…`) instead of the route template (`/v1/chains/:chainId/safes/:safeAddress`). Under Fastify `routeOptions.url` should always be present on a matched route, but if anything goes through this path (e.g. 404 logging), it will silently explode log cardinality in Datadog. An assertion or explicit `'unknown'` sentinel would surface the regression instead of masking it.
+
+3. **`logging/utils.ts:43` — `request.method ?? 'UNKNOWN'`** is unreachable under Fastify (`method` is always set on the request). Either drop the fallback or, if the intent is to support the raw Node request from `NotFoundLoggerMiddleware`, document it — right now it reads like defensive code with no triggering case.
+
+#### 🔐 Security / robustness
+
+4. **`TenderlySignatureGuard` HMAC over re-stringified body** — `src/modules/alerts/routes/guards/tenderly-signature.guard.ts:57`. Pre-existing and intentionally out of scope per the author, but flagged again because Fastify's parser behaviour (whitespace, number formatting, Unicode escaping) is what now binds the HMAC contract. Worth tracking as a follow-up: register a `preParsing` hook / `fastify-raw-body` and HMAC the actual received bytes.
+
+5. **`@fastify/middie` is used implicitly via `MiddlewareConsumer.apply(...)` but not a direct dependency** in `package.json`. NestJS pulls it transitively today; pinning it explicitly insulates the bootstrap from upstream peer-dep churn.
+
+#### 🧪 Test coverage
+
+6. **No regression test for the Fastify route-options.** `app.provider.spec.ts` covers `trustProxy`/`bodyLimit` well, but `ignoreTrailingSlash` and `maxParamLength` (both load-bearing for not 404-ing legitimate traffic) aren't asserted. A 2-line supertest case each would prevent silent reversion.
+
+7. **No coverage of the OIDC state cookie TTL clamp** — `oidc-auth.controller.ts:116`. The `Math.max(1, Math.floor(stateMaxAge / 1_000))` guard is exactly the kind of arithmetic edge case worth a unit test (`stateMaxAge = 500 → maxAge = 1`).
+
+#### 🧹 Quality / nits
+
+8. **`auth.controller.ts:155` — `logout` declared `void`, `logoutWithRedirect` declared `void`, `verify` declared `Promise<void>`** — under Fastify with `@Res({ passthrough: true })`, NestJS auto-sends. Functionally fine, but a one-line e2e assertion on `POST /v1/auth/verify` returning `200` with no body would lock the contract.
+
+9. **`NullResponseInterceptor` only maps top-level `null`** — `null` nested inside an object (e.g. `{ value: null }`) is preserved, which is correct. The docstring already notes this; consider adding a brief unit test for the nested case to make the contract explicit.
+
+#### ✅ What looks good
+
+- `createFastifyAdapterFromConfiguration` / `createFastifyAdapter` split keeps `main.ts` able to build the adapter before the DI container — clean separation.
+- `FASTIFY_ROUTER_OPTIONS` restores Express' tolerant routing without scattering config across the codebase.
+- `parseBodyLimit` mirrors the `bytes` library's unit set (`b…pb`), and the parser tests cover both the integer and decimal paths plus whitespace/case normalisation.
+- `RequestLike` abstraction lets guards/decorators/filters/middleware share one shape across `FastifyRequest` and the raw Node `IncomingMessage` that middie hands to `NotFoundLoggerMiddleware`.
+- `getSetCookieOptions` reasserting `expires` alongside `Max-Age` preserves the Express `Set-Cookie` shape that callers/proxies may already depend on.
+- `AUTH_STATE_TTL_MILLISECONDS` `.min(1_000)` guard at the schema layer is the correct place to fail fast on misconfiguration.
+
+Nothing here blocks merge; #1 (`maxParamLength`) is the one I'd most encourage tightening before this lands.
+
+---
+
+· Branch: [`feat/fastify`](https://github.com/safe-global/safe-client-gateway/tree/feat/fastify) ·
+
+COMMENT
+[PooyaRaki 2026-06-24T14:14:07Z]  Reduced maxParamLength from `1024` → `256` based on review feedback.
+ 
+The longest real composite id in the API is `multisig_<address>_<safeTxHash>`, which caps out around ~`118` chars. `256` is ~`2`× that, giving a comfortable safety margin for any legitimate value while closing the gap that previously let clients send kilobyte-long path segments — those would flow through ValidationPipe/zod on every matched request, adding gratuitous overhead and creating a mild DoS surface. `1024` was set conservatively during the initial migration; `256` is the right long-term value.
+
+COMMENT
+[PooyaRaki 2026-06-24T14:14:25Z] @claude do a final review, all the previous remarks are fixed.
+
+COMMENT
+[PooyaRaki 2026-06-24T14:16:34Z] @claude review all the remarks are fixed.
+
+COMMENT
+[claude 2026-06-24T14:16:52Z] **Claude finished @PooyaRaki's task in 1m 57s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/28105119521)
+
+---
+### Claude PR Review — Express → Fastify migration (final pass)
+
+- [x] Load review tools
+- [x] Read latest changed files
+- [x] Verify prior remarks are addressed
+- [x] Post final review feedback
+
+Confirmed the latest changes against prior review rounds. The migration is in a good state to merge — nothing blocking remains.
+
+---
+
+#### ✅ Prior remarks addressed
+
+- **`FASTIFY_ROUTER_OPTIONS.maxParamLength`** tightened from `1024` → `256` (`src/app.provider.ts:44`). Comment correctly justifies "~2× the longest legitimate id".
+- **`getRoutePath` sentinel** — `src/routes/common/http/http-request.utils.ts:50-60` now returns `'unknown'` on the unmatched path instead of the actual URL, preventing log-cardinality explosion in Datadog. The inline comment explains the contract.
+- **`AUTH_STATE_TTL_MILLISECONDS` startup guard** — `src/config/entities/schemas/configuration.schema.ts:66` rejects sub-second values via `.min(1_000)`, so misconfiguration fails fast. The cookie-side `Math.max(1, Math.floor(...))` at `oidc-auth.controller.ts:116` is a sound second layer of defence.
+- **Targeted-messaging 204 body** — `src/modules/targeted-messaging/routes/targeted-messaging.controller.ts:89-92` now calls `.send()` with no body, matching the HTTP spec and Fastify's own behaviour.
+- **`request.method ?? 'UNKNOWN'`** documented at `src/logging/utils.ts:43-45` as a type-required sentinel — fine.
+- **`TODO(fastify-rename)`** marker added at `src/config/entities/configuration.ts:387-389`.
+
+#### 🟡 Items intentionally deferred (rationale accepted)
+
+- `getRouteUrl` localhost fallback — Express produced `http://undefined/…` rather than throwing, so this is not a regression.
+- `parseBodyLimit('1.5b') → 1` — deliberate `bytes`-library parity; covered by `app.provider.spec.ts:133-135`.
+- Tenderly `rawBody` HMAC — pre-existing and behaviour-affecting; out of scope.
+- `ServeStaticModule.forRoot({ exclude: ['{*any}'] })` — unchanged from `main`.
+
+#### 🧹 Minor nits (non-blocking, optional)
+
+1. **`createTestApplication` adapter divergence is acknowledged in code** (`src/__tests__/test-app.provider.ts:22-26`) — leaving Fastify defaults for `trustProxy`/`bodyLimit` here is reasonable, but if a future spec needs to assert production-equivalent body-size handling, funneling through `createFastifyAdapter` (as `TestAppProvider.provide()` already does) is the safer choice.
+
+2. **`getRoutePath` fallback chain** still keeps `request.route?.path ?? request.path` — under Fastify, `routeOptions.url` is the canonical source on a matched route, so the intermediate fallbacks are unreachable in practice. Not worth ripping out, but a one-line comment that they exist only to satisfy the shared `RequestLike` shape used by the raw `IncomingMessage` middie path would prevent confusion.
+
+#### ✅ What looks good
+
+- `createFastifyAdapterFromConfiguration` / `createFastifyAdapter` split keeps `main.ts` able to build the adapter before the DI container exists — clean separation.
+- `FASTIFY_ROUTER_OPTIONS` (`ignoreTrailingSlash`, `maxParamLength: 256`) restores Express' tolerant routing without admitting kilobyte-long path segments.
+- `parseBodyLimit` mirrors the `bytes` library's unit set (`b…pb`); tests cover integer, decimal, whitespace, and case-insensitive paths.
+- `RequestLike` abstraction (`src/routes/common/http/http-request.utils.ts:12-25`) keeps guards/decorators/filters/middleware portable across `FastifyRequest` and the raw Node `IncomingMessage` that middie hands to `NotFoundLoggerMiddleware`.
+- `getSetCookieOptions` reasserting `expires` alongside `Max-Age` preserves the Express `Set-Cookie` shape callers/proxies may depend on, and `auth-cookie.utils.spec.ts` covers the seconds-vs-milliseconds contract.
+- `AUTH_STATE_TTL_MILLISECONDS` `.min(1_000)` at the schema layer is the right place to fail fast on misconfiguration.
+
+LGTM — no further changes needed from my side. Suggest confirming `yarn test:integration` and `yarn test:e2e` are green in CI before merge.
+
+---
+
+· Branch: [`feat/fastify`](https://github.com/safe-global/safe-client-gateway/tree/feat/fastify) ·

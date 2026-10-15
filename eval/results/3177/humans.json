@@ -1,0 +1,12 @@
+{
+  "usd": 0.2073966,
+  "head": "3e2d6af06aed89464ec3cadde20ab8c8fbf28848",
+  "verdicts": [
+    {
+      "issue": 6,
+      "verdict": "open",
+      "present": true,
+      "evidence": "At 3e2d6af06 (which is also the final head, with no later commits), .github/workflows/ci.yml:301-306 still has the 'Validate release tag' step after actions/checkout. Nobody replied to the bot's optional suggestion."
+    }
+  ]
+}

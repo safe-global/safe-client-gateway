@@ -1,0 +1,50 @@
+{
+  "usd": 0.08527960000000001,
+  "findings": [
+    {
+      "file": "src/modules/auth/domain/entities/auth-payload.entity.ts",
+      "line": 106,
+      "claim": "hasFreshMfa rejects any mfa_verified_at timestamp that appears to be in the future with zero tolerance, but the stamp is written on one gateway instance's clock and checked on another, so even a one second clock drift between instances causes a user to receive a 403 elevation_required immediately after a successful step-up. The codebase already has a clockSkewSeconds mechanism for this kind of drift elsewhere that could be reused, and the fix should allow ageSeconds >= -clockSkewSeconds along with a test covering a 1-5 second skew rather than only the current 10,000 second case."
+    },
+    {
+      "file": "src/config/entities/configuration.ts",
+      "line": 481,
+      "claim": "The new mfaStepUp flag lacks a comment naming an owner and a removal condition, which the configuration-and-flags documentation requires, and since this is the first such flag to land it sets the precedent example for future flags."
+    },
+    {
+      "file": "src/modules/auth/routes/guards/elevation.guard.spec.ts",
+      "line": 34,
+      "claim": "The oidcPayload() and siwePayload() test helpers are hand-written object literals that duplicate the oidcAuthPayloadDtoBuilder and siweAuthPayloadDtoBuilder already used elsewhere in the PR, violating the project's builders-only rule for tests."
+    },
+    {
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.spec.ts",
+      "line": 415,
+      "claim": "Two newly added lines repeat previously flagged review issues: casting a value with 'as never' to satisfy the type checker instead of using a properly typed mock value, and asserting via signToken.mock.calls[0][0] instead of toHaveBeenCalledWith(expect.objectContaining(...))."
+    },
+    {
+      "file": "src/modules/spaces/routes/members/members.controller.ts",
+      "line": 88,
+      "claim": "The existing @ApiForbiddenResponse descriptions on this and all 12 gated routes do not mention the new 403 elevation_required cause, even though clients are expected to match on it, and the repo convention is for these descriptions to list every cause of a 403 response."
+    },
+    {
+      "file": "src/modules/auth/domain/entities/auth-payload.entity.ts",
+      "line": 102,
+      "claim": "Both this file and oidc-auth.service.ts compute Math.floor(Date.now() / 1_000) inline instead of using the existing toSecondsTimestamp helper from the shared time utility module, which oidc-auth.service.ts already imports another helper from."
+    },
+    {
+      "file": "src/config/entities/configuration.ts",
+      "line": 61,
+      "claim": "AUTH_ELEVATION_WINDOW_SECONDS is missing from RootConfigurationSchema unlike its sibling AUTH_STATE_TTL_MILLISECONDS, so a bad or missing value silently becomes NaN and every gated route then returns 403 instead of the application failing at boot; adding a coerced, validated schema entry would prevent this."
+    },
+    {
+      "file": "src/modules/auth/routes/guards/elevation.guard.ts",
+      "line": 75,
+      "claim": "The guard throws a plain ForbiddenException rather than HttpExceptionNoLog for an expected rejection, which the auth module's own documentation asks for, even though this may reflect a stale doc since no other code in the module currently uses HttpExceptionNoLog either."
+    },
+    {
+      "file": "src/__tests__/util/check-guard.ts",
+      "line": 8,
+      "claim": "This test utility calls expect() inside a .some() callback, and combined with Object.values(prototype) returning an empty array under the project's es2024 target, the 'should require authentication for every endpoint' assertion checks nothing across 10 spec files; iterating Object.getOwnPropertyNames(prototype) with a plain boolean predicate would make these tests actually verify behavior, and some routes guarded only at class level would likely fail once the check is real."
+    }
+  ]
+}

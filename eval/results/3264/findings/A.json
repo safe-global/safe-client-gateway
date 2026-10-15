@@ -1,0 +1,25 @@
+{
+  "usd": 0.0592796,
+  "findings": [
+    {
+      "file": "src/modules/staking/datasources/kiln-api.manager.spec.ts",
+      "line": 61,
+      "claim": "The unit spec bootstraps the module with Test.createTestingModule instead of constructing the service directly with new StakingApiManager(...), which is inconsistent with the convention used by nearly all other unit specs and mixes a wiring/DI concern into a unit test. Suggested fix is to instantiate the class directly and, if the Nest wiring check is still wanted, keep or move a single such test into an integration spec."
+    },
+    {
+      "file": "src/modules/balances/datasources/balances-api.manager.ts",
+      "line": 54,
+      "claim": "_getSafeBalancesApi now only calls this.getOrCreateApi(chainId) and has a single caller (getApi), making it a pointless pass-through wrapper that other managers avoid by calling getOrCreateApi directly from getApi; it could be inlined and the helper deleted."
+    },
+    {
+      "file": "src/modules/earn/datasources/earn-api.manager.ts",
+      "line": 5,
+      "claim": "A loose comment between the imports and the class duplicates the JSDoc already present on the parent class (kiln-api.manager.ts:20-21) explaining that each widget deployment is its own Kiln 'organization'; it should be deleted or converted into a short JSDoc on the class instead of being repeated."
+    },
+    {
+      "file": "src/datasources/common/chain-api.manager.ts",
+      "line": 26,
+      "claim": "In destroyApi, the guard 'if (this.apis[chainId] !== undefined)' before the delete is unnecessary because deleting a missing key is already a no-op; this was copied from the old per-manager code and could be simplified to a plain delete this.apis[chainId] in the new shared base class."
+    }
+  ]
+}

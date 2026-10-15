@@ -1,0 +1,96 @@
+{
+  "usd": 0.7219051999999999,
+  "head": "ee8e745690e158edd16fcedb353b123a8d05d840",
+  "verdicts": [
+    {
+      "issue": 1,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "The author called it 'Accepted risk. We will make sure this does not happen' and told yagopv that no relayer means connected wallets pay, which is the intended default. relay.manager.ts still throws NoRelayerDefinedError on null."
+    },
+    {
+      "issue": 4,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "Commit 26734bd83 ('Remove unused variables', linked by akshay-ap as 2d413d6) removes RELAY_DAILY_LIMIT_CHAIN_IDS and RELAY_FEE_CHAIN_IDS from .env.sample.json. Both were there at e6b01d9."
+    },
+    {
+      "issue": 5,
+      "verdict": "accepted",
+      "present": false,
+      "evidence": ".devcontainer/docker-compose.yml did not exist at e6b01d9; it came in from main (adfdbd0d3). Commit 26734bd83 removed the leftover relay env line from it after yagopv's review."
+    },
+    {
+      "issue": 7,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "The author answered the bot's point 3 (inconsistent error codes) with 'Invalid'. fees.service.ts still throws BadRequestException (400) while relay returns 403."
+    },
+    {
+      "issue": 9,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "The author replied 'Fixed' (391da53 / e3baab40b). RelayerTypeNotImplementedError now extends NotImplementedException, and the exception filter returns 501 for it."
+    },
+    {
+      "issue": 10,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "At e6b01d9, relay-fee.relayer.ts:121-131 forwarded safeTxHash to canRelay without a check. Commit 5b100c7ba (the author's 'Restored existing behavior' d4db3c9) adds a guard that returns {remaining:0, limit:0} when safeTxHash is missing."
+    },
+    {
+      "issue": 11,
+      "verdict": "open",
+      "present": true,
+      "evidence": "Nobody replied to this. relay.manager.spec.ts only unit-tests null → NoRelayerDefinedError, and no integration test for a chain without relayer config was added after e6b01d9."
+    },
+    {
+      "issue": 12,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "The bot's second review #4, which suggested the cache-invalidation hook, got 'Accepted risk. We will make sure this does not happen' from the author. No hook was added."
+    },
+    {
+      "issue": 15,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "Fixed with the author's 391da53 (e3baab40b): the RelayerTypeNotImplementedError constructor now takes `relayerType: RelayerType` instead of `string`."
+    },
+    {
+      "issue": 16,
+      "verdict": "open",
+      "present": true,
+      "evidence": "Nobody reacted to this minor point. At HEAD, relayer-type.entity.ts still uses the const object plus `(typeof RelayerType)[keyof typeof RelayerType]`."
+    },
+    {
+      "issue": 17,
+      "verdict": "open",
+      "present": true,
+      "evidence": "The author did not answer the bot's #7. relay.controller.ts:129 and :212 still apply RelayerNotAvailableExceptionFilter on each method rather than on the class."
+    },
+    {
+      "issue": 18,
+      "verdict": "open",
+      "present": true,
+      "evidence": "Nobody replied. relay.controller.integration.spec.ts:82 still defines relayerTypeForChainId and uses it to build the relayer."
+    },
+    {
+      "issue": 19,
+      "verdict": "open",
+      "present": true,
+      "evidence": "Nobody reacted. The networkService.get.mockImplementation stub is still repeated in many tests at HEAD (spec lines 224, 315, 373, 425, …)."
+    },
+    {
+      "issue": 20,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "The author replied 'lets do that' and linked 28bb6a4 (607193af7). The message is now 'Accessing fee preview is only available for chains with RELAY_FEE relayer'."
+    },
+    {
+      "issue": 21,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "akshay-ap said 'This PR is not supporting GTF relayer' and that it will change later. The check `chain.relayer?.type !== RELAY_FEE` was kept."
+    }
+  ]
+}

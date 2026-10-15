@@ -1,0 +1,20 @@
+{
+  "usd": 0.0422716,
+  "findings": [
+    {
+      "file": "src/modules/relay/datasources/schemas/rhinestone-error.schema.ts",
+      "line": 24,
+      "claim": "The exported type alias RhinestoneErrorResponse has no importers anywhere in the codebase, since rhinestone-api.service.ts only imports RhinestoneErrorResponseSchema, making it dead code that should be deleted."
+    },
+    {
+      "file": "src/modules/relay/datasources/rhinestone-api.service.spec.ts",
+      "line": 214,
+      "claim": "Three new tests hard-code literal fixture values ({ status: 400, statusText: 'Bad Request' }) instead of generating them with faker.internet.httpStatusCode and faker.lorem.words, inconsistent with the pattern used in the pre-existing sibling test and the first new test case, and inconsistent with the project's testing guideline against literal fixtures."
+    },
+    {
+      "file": "src/modules/relay/datasources/rhinestone-api.service.ts",
+      "line": 116,
+      "claim": "In describeUpstreamError, messages are sliced to MAX_LOGGED_UPSTREAM_ERRORS before being filtered for non-empty content, so if the first N entries happen to be whitespace-only, all diagnostic content is dropped even though later entries could contain a real error reason; filtering before slicing would preserve the diagnosis."
+    }
+  ]
+}

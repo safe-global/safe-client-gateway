@@ -1,0 +1,20 @@
+{
+  "usd": 0.0582536,
+  "findings": [
+    {
+      "file": "src/modules/portfolio/v1/portfolio.controller.ts",
+      "line": 32,
+      "claim": "No test verifies that the PortfolioRouteGuard is actually attached to the controller via @UseGuards. The guard's own spec only tests canActivate() in isolation, and the controller spec builds the controller directly without guards running, so if the @UseGuards decorator were removed, all tests would still pass while the feature-flag kill-switch silently stopped working."
+    },
+    {
+      "file": "src/__tests__/util/check-guard.ts",
+      "line": null,
+      "claim": "The repository already has a checkGuardIsApplied helper (used elsewhere, e.g. surveys.controller.integration.spec.ts:162) that should be used to assert the guard is applied to the class, since the guard metadata lives on the class rather than individual methods. Alternatively, an integration smoke test could confirm a 403 response when the flag is off."
+    },
+    {
+      "file": ".env.sample.json",
+      "line": 801,
+      "claim": "The descriptions for FF_ZERION_ENABLED and FF_ZERION_BALANCES_CHAIN_IDS still only mention enabling Zerion balances, but after this change they also control whether the /v1/portfolio routes respond at all, returning 403 when unset. This is a real behavior change for deployments that don't set these variables, and it should be reflected in both the config descriptions and the PR description so operators are not surprised."
+    }
+  ]
+}

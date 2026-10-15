@@ -1,0 +1,10 @@
+{
+  "pr": 3334,
+  "reviewSha": "15a14b7bdf1b974e3154e9d24d05cf989f68e1f7",
+  "baseSha": "7f0589e82bd748e06210eb2573e694dbf41e525d",
+  "system": "D",
+  "version": "github",
+  "runner": "collect",
+  "model": "claude-code-action",
+  "output": "## Architecture check\n\nApplicable guides: ARCHITECTURE.md, best-practices.md, module-structure.md, testing.md, commits-and-prs.md, reviewing.md + remarks.md.\n\nsrc/domain/common/utils/deployments.ts:138 — No speculative abstractions: `getExtensibleFallbackHandlerDeployments` is exported but nothing imports it — its only caller is `isExtensibleFallbackHandlerDeployed` in the same file (the identically-shaped `getFallbackHandlerDeployments` is existing drift, not precedent).\n\n**Verdict:** ❌ 1 finding"
+}

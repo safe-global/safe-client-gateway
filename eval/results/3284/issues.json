@@ -1,0 +1,241 @@
+{
+  "usage": {
+    "usd": 0.5838435999999999,
+    "turns": 8,
+    "wallSeconds": 88
+  },
+  "issues": [
+    {
+      "findings": [
+        "F25"
+      ],
+      "summary": "Enroll callback deletes all but newest TOTP without verifying a new factor was enrolled",
+      "label": "medium",
+      "evidence": "oidc-auth.service.ts:161-194 deletes every TOTP except the newest whenever state.enroll is true; nothing records the pre-existing set or checks that a new factor appeared, so a missing/misconfigured Action would delete a still-used device, despite the PR claiming it 'fails closed'.",
+      "findings_order": 0,
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F7",
+        "F17"
+      ],
+      "summary": "No integration tests for the controller enroll branch, cleanup error swallowing, enroll validation, or the new authenticators route",
+      "label": "medium",
+      "evidence": "The diff changes no *.integration.spec.ts file; the controller branch at oidc-auth.controller.ts:228-236 and the GET oidc/mfa/authenticators route (guard, 403) have no coverage, so reverting them would not fail any test.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F20"
+      ],
+      "summary": "Cleanup failures are swallowed so the old authenticator may stay enrolled with no notice",
+      "label": "medium",
+      "evidence": "oidc-auth.controller.ts:228-236 catches any cleanup error, logs a warning and finishes login normally; the user/frontend is not told, so a lost device can stay enrolled even though the feature exists to remove it.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F12"
+      ],
+      "summary": "No test asserts ext-enroll-otp is added to the authorize URL",
+      "label": "medium",
+      "evidence": "auth0-api.service.ts:90-95 sets ext-enroll-otp when enroll is true; grepping the specs finds no assertion for it. If it regressed, the Action would not enroll a new factor but the callback would still delete TOTPs.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F18",
+        "F22"
+      ],
+      "summary": "Unused entity schemas (OTP association, MFA enrollment session, OTP code) are dead code",
+      "label": "low",
+      "evidence": "Nothing in src references Auth0OtpAssociationSchema, MfaEnrollmentSessionSchema or OtpCodeSchema outside their own files. They look left over from an earlier MFA-API design.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F19"
+      ],
+      "summary": "Cached Management API token is not invalidated on 401/403",
+      "label": "low",
+      "evidence": "auth0-api.service.ts getManagementApiToken/fetchManagementApiToken never delete the cache entry on an auth error, so a token issued before scopes were granted stays in use until expires_in minus 60s. This is an edge case tied to deployment order.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F23",
+        "F28"
+      ],
+      "summary": "Tenant-wide Management API token stored in plain text in shared Redis",
+      "label": "low",
+      "evidence": "auth0-api.service.ts:203-208 hSets the raw token under a global key. That matches the existing Firebase OAuth2 token pattern (cache.router.ts:267), so it is a design risk worth noting and not a clear defect.",
+      "category": "security"
+    },
+    {
+      "findings": [
+        "F3"
+      ],
+      "summary": "Unlinked (SIWE) users get a 401 while Swagger documents only a 403",
+      "label": "low",
+      "evidence": "oidc-auth.service.ts:202-203 throws UnauthorizedException (401), but the controller documents only @ApiForbiddenResponse ('Not authenticated'), which is what AuthGuard returns when it gives false. This is a documentation mismatch.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F11"
+      ],
+      "summary": "enroll is documented as Boolean but only the literal 'true' is accepted",
+      "label": "low",
+      "evidence": "oidc-auth.controller.ts:99-117 uses @ApiQuery type Boolean, but the validator is z.literal('true').optional(), so ?enroll=false returns 400 even though the docs imply it is valid.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F21",
+        "F24"
+      ],
+      "summary": "The authenticators endpoint's response has no Swagger type",
+      "label": "low",
+      "evidence": "Authenticator is a plain TS type (oidc-auth.service.ts:35-40) and @ApiOkResponse at controller.ts:262 has no type, so the OpenAPI output has no schema for the response. Most other @ApiOkResponse uses in the repo set a type.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F16"
+      ],
+      "summary": "AUTH.md does not document the enroll flow, new endpoint or Management API scope requirement",
+      "label": "low",
+      "evidence": "src/modules/auth/AUTH.md has no mention of enroll, authentication methods or Management API grants. The scope requirement exists only in a comment on fetchManagementApiToken.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F13"
+      ],
+      "summary": "Authentication-methods response is Zod-parsed in the API service, not the repository",
+      "label": "low",
+      "evidence": "auth0-api.service.ts:132 parses with Auth0AuthenticationMethodsSchema, while the existing token flow returns Raw<> and parses in auth0.repository.ts. That is inconsistent with the documented rule that repositories validate.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F10"
+      ],
+      "summary": "Route service and repository interface depend on datasource entity files",
+      "label": "low",
+      "evidence": "oidc-auth.service.ts:11 imports TOTP_AUTHENTICATION_METHOD_TYPE, and auth0.repository.interface.ts imports Auth0AuthenticationMethod, both from datasources/entities. That breaks the layering, though the cost is small.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F8"
+      ],
+      "summary": "getExtUserId does not use the shared getAuthenticatedUserIdOrFail helper",
+      "label": "low",
+      "evidence": "oidc-auth.service.ts:199 uses Number(authPayload.getUserId()). The route is behind AuthGuard with a verified JWT, so NaN is very unlikely, but the shared helper in assert-authenticated.utils.ts exists for exactly this.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F30"
+      ],
+      "summary": "Malformed created_at gives NaN and an arbitrary sort order",
+      "label": "low",
+      "evidence": "created_at is z.string().optional() (auth0-authentication-method.entity.ts), and Date.parse on a non-ISO string gives NaN, making the sort at oidc-auth.service.ts:184-187 unreliable. Auth0 returns ISO timestamps, so this is unlikely in practice.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F2",
+        "F27"
+      ],
+      "summary": "created_at is cast with 'as string' after a separate .some() guard",
+      "label": "nit",
+      "evidence": "oidc-auth.service.ts:178-186: the guard just before it makes the cast safe at runtime, so only type-narrowing style is at stake.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F26"
+      ],
+      "summary": "Superseded TOTPs are deleted one at a time",
+      "label": "nit",
+      "evidence": "oidc-auth.service.ts:189-194 awaits each delete in turn. Usually only one method is deleted, and Promise.all would not prevent partial deletion either.",
+      "category": "performance"
+    },
+    {
+      "findings": [
+        "F5",
+        "F29"
+      ],
+      "summary": "Token TTL buffer is hardcoded to 60s",
+      "label": "nit",
+      "evidence": "auth0-api.service.ts:33 is a small safety margin subtracted from the provider's expires_in. Making it configurable has no concrete benefit.",
+      "category": "style"
+    },
+    {
+      "findings": [
+        "F1"
+      ],
+      "summary": "Spec builds CacheDir('auth0_management_api_token','') by hand instead of using CacheRouter",
+      "label": "nit",
+      "evidence": "auth0-api.service.spec.ts:147,190,196 (three places, not four) hardcode the key. Style/robustness preference.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F15"
+      ],
+      "summary": "Spec uses inline casts instead of userBuilder",
+      "label": "nit",
+      "evidence": "oidc-auth.service.spec.ts:689 onward casts { extUserId } to the findOneOrFail return type. Test-style preference with no concrete defect.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F31"
+      ],
+      "summary": "Types section should move to a separate file",
+      "label": "nit",
+      "evidence": "oidc-auth.service.ts:29-40 holds only two small types, so this is a preference.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F4"
+      ],
+      "summary": "Value used without validation",
+      "label": "wrong",
+      "evidence": "At auth0-api.service.ts:~201-208 the access_token and expires_in cached come from ManagementApiTokenResponseSchema.parse, so they are validated.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F6"
+      ],
+      "summary": "Caching may be unnecessary",
+      "label": "wrong",
+      "evidence": "Caching the client-credentials Management API token is standard (Auth0 rate-limits /oauth/token and tokens last hours); auth0-api.service.ts:201-208 caches it for expires_in minus 60s, which is clearly intended.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F14"
+      ],
+      "summary": "Unclear whether extUserId can be missing",
+      "label": "wrong",
+      "evidence": "oidc-auth.service.ts:202-204 explicitly throws when extUserId is missing, and cleanupSupersededAuthenticators returns early at line 163, so the case is handled.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F9"
+      ],
+      "summary": "Multiple instances may exist at the same time",
+      "label": "wrong",
+      "evidence": "controller.ts:267 is the stateless listAuthenticators handler, and the vague claim names no concrete concurrency or duplication problem the code shows.",
+      "category": "correctness"
+    }
+  ]
+}

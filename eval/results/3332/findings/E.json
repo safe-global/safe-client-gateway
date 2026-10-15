@@ -1,0 +1,10 @@
+{
+  "usd": 0.0483016,
+  "findings": [
+    {
+      "file": ".yarnrc.yml",
+      "line": 18,
+      "claim": "The configuration pre-approves certain packages, but no package should be pre-approved regardless of whether it is internal or external."
+    }
+  ]
+}

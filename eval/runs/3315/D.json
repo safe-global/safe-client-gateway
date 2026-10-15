@@ -1,0 +1,10 @@
+{
+  "pr": 3315,
+  "reviewSha": "030dec0f6cb4246907ed75dba000088126bf5275",
+  "baseSha": "d1f57d81b1b6ad20cdeaa182b4d7048397f55d36",
+  "system": "D",
+  "version": "github",
+  "runner": "collect",
+  "model": "claude-code-action",
+  "output": "## Architecture check\n\nGuides applied: security.md, configuration-and-flags.md, nestjs-patterns.md, api-dtos-and-validation.md, module-structure.md, caching-and-performance.md, best-practices.md, testing.md, commits-and-prs.md, remarks.md.\n\nsrc/config/entities/configuration.ts:62 — Every env var through the schema: `AUTH_ELEVATION_WINDOW_SECONDS` (and `FF_MFA_STEP_UP` at :481) are read in `configuration.ts` but declared in neither `RootConfigurationSchema` nor its `superRefine`, so a non-numeric window silently becomes `NaN` at request time instead of failing at boot (non-negotiable #7; R-025).\nsrc/config/entities/configuration.ts:481 — Feature flags: the new `mfaStepUp` mapping carries no comment naming an owner and the condition under which the flag comes out.\nPR title — PR title: `Add step-up authentication (elevation) for sensitive workspace actions` has no Conventional Commits type and is capitalized; squash-merge lands it on `main` verbatim as a subject no type filter matches (`feat(auth): …`).\nsrc/modules/spaces/routes/spaces.controller.ts:32 — Cross-module imports via domain only: the `spaces` controllers import `@/modules/auth/routes/guards/elevation.guard` (5 more in members/address-books/space-safes), extending the anti-example the guide names for `auth.decorator`.\nsrc/modules/auth/oidc/routes/oidc-auth.service.spec.ts:415 — R-002 (`as never` to satisfy a mock signature): `mockResolvedValue(buildAuth0Token(amr) as never)`.\nsrc/modules/auth/oidc/routes/oidc-auth.service.spec.ts:426 — R-005 (asserting on `.mock.calls`): `signToken.mock.calls[0][0]` instead of `toHaveBeenCalledWith`.\nPR description — PR body: five `##` sections beyond `## Summary`/`## Changes` (`Verified against a real Auth0 tenant`, `Note on the Auth0 side`, `How to test it`, `Visual summary`, `Feature flag`); the template is those two sections and nothing more.\n\n**Verdict:** ❌ 7 finding(s)"
+}

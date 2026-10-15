@@ -1,0 +1,11 @@
+{
+  "pr": 3105,
+  "reviewSha": "8ed1fc2060b528701b1b7700e1e35a64cae0799b",
+  "baseSha": "e88f197950c0d8a17fd8b38fedb2a392b576b793",
+  "system": "E",
+  "version": "github",
+  "runner": "collect",
+  "model": "human",
+  "commentSha": "5daff6269e07390ab37aba5f23d2a72e3c431c4d",
+  "output": "[review by yagopv]\n@akshay-ap this PR launch a `NoRelayerDefinedError` when no relayer is defined. This is against the:\n\n> Stage 1 — current behaviour (default / kill switch): no fee collected; Gelato relay not mandatory (non-Gelato/EOA flow allowed). Reverting to this stage is the kill switch / security fallback.\n\nDefined in https://linear.app/safe-global/issue/PLA-1560/backend-per-chain-gtf-stage-flag-3-stages-incl-kill-switch\n\nOr am I missing something? I thought that when the relayer is not defined, we default to the current production interface where connected wallets pay\n\n---\n\n[review by yagopv]\nThere are leftovers of the env variables RELAY_DAILY_LIMIT_CHAIN_IDS, RELAY_FEE_CHAIN_IDS, RELAY_SIMULATION_CHAIN_IDS in .env.sample.json and .devcontainer/docker-compose.yml\n\n---\n\nsrc/modules/fees/routes/fees.service.ts:56\nIs this correct instead simply retrieving the configured relayer and that's it? I believe this is not true for Phase 3, as we will have a new specific GTF relayer (I guess)\n\nAdditionally, the error seems strange to me: \"Pay with Safe not available for this chain.\" Technically, we will be able to \"Pay with Safe\" in Phase 3, right?  More accurate would be something like \"You haven't configured a relayer for this chain that uses the Fee Service.\""
+}

@@ -1,0 +1,217 @@
+{
+  "usage": {
+    "usd": 0.6674276,
+    "turns": 9,
+    "wallSeconds": 91
+  },
+  "issues": [
+    {
+      "findings": [
+        "F15",
+        "F32"
+      ],
+      "summary": "Shared-id precedence tests never have an eligible general link, so dedupe/order is not exercised",
+      "label": "medium",
+      "evidence": "billing.service.spec.ts:118-124 defaults to hasEverSubscribed:false and the spec at :342 uses paid paymentLinkBuilder() links (trialPeriodDays null), so isOfferedToSpace drops the general link before the Map at billing.service.ts:170; the e2e at billing.controller.e2e-spec.ts:285 has the same shape. Swapping the spread order would still pass.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F9",
+        "F10"
+      ],
+      "summary": "Trial detection depends on new optional trialPeriodDays; if upstream omits it, never-subscribed workspaces silently get an empty catalog",
+      "label": "medium",
+      "evidence": "payment-link-offer.rules.ts:38-40 treats a missing trialPeriodDays as paid, and :61-62 offers no paid link to a never-subscribed space, while isUnclassifiedTrialLink (:43-45) only fires for links already classed as trials. Nothing logs this case, and whether billing-api sends the field can't be checked from this repo.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F26",
+        "F25",
+        "F16"
+      ],
+      "summary": "Untagged trial links are dropped from the list and 403 at checkout until the catalog is retagged",
+      "label": "low",
+      "evidence": "This is intended: the PR description says an untagged trial link is offered to nobody, and billing.service.ts:183-198 logs a warning for it. The only real gap is that the description doesn't say the live catalog was retagged before deploy.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F2"
+      ],
+      "summary": "A workspace trialing a paid plan has that plan's paid link hidden",
+      "label": "unverifiable",
+      "evidence": "ACTIVE_SUBSCRIPTION_STATUSES includes 'trialing' (entitlements.constants.ts:41-44), so activePlanName excludes that plan's link at payment-link-offer.rules.ts:65-67, as the PR description says. Whether a grace trial can only become paid through a fresh checkout, rather than the customer portal, depends on how Stripe/billing is set up, which the code doesn't show.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F11"
+      ],
+      "summary": "incomplete_expired subscriptions permanently disable trials",
+      "label": "wrong",
+      "evidence": "This is intended: the PR says 'Once it has subscribed in any status, trials are off', and subscriptions.repository.integration.spec.ts:199-212 deliberately pins incomplete_expired as having subscribed.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F5",
+        "F30"
+      ],
+      "summary": "warnedUnclassifiedLinkIds is never cleared, so there is no re-warn after a catalog is fixed and broken again",
+      "label": "low",
+      "evidence": "billing.service.ts:43 is a process-lifetime Set with no eviction. It is small because it is fed only by the curated general catalog, but a link that is fixed and later mistagged again won't warn until a restart.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F17",
+        "F21"
+      ],
+      "summary": "Unclassified-trial log fires on every request at error level",
+      "label": "wrong",
+      "evidence": "billing.service.ts:183-197 dedupes by link id through warnedUnclassifiedLinkIds and logs with loggingService.warn, not error.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F6",
+        "F28"
+      ],
+      "summary": "Two separate subscription queries where one would do",
+      "label": "wrong",
+      "evidence": "At HEAD, getOfferEligibility (billing.service.ts:200-206) calls one getSubscriptionSummary aggregate (subscriptions.repository.ts:48-70) that returns both hasEverSubscribed and activePlanName.",
+      "category": "performance"
+    },
+    {
+      "findings": [
+        "F3",
+        "F23"
+      ],
+      "summary": "Date-only enforcementStartsAt is accepted in test mode, and its test was removed",
+      "label": "low",
+      "evidence": "configuration.ts:1073-1078 only rejects an Invalid Date, so '2026-10-01' parses. The PR removed the case that rejected it (entitlements.service.integration.spec.ts:1132), and only RootConfigurationSchema's z.iso.datetime() (configuration.schema.ts:179) catches it, outside NODE_ENV=test.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F20"
+      ],
+      "summary": "Empty ENTITLEMENTS_ENFORCEMENT_STARTS_AT throws instead of falling back to the default",
+      "label": "low",
+      "evidence": "The ?? at configuration.ts:1074 lets '' through, and new Date('') is invalid, so it throws. The schema's z.iso.datetime().optional() rejects '' at boot anyway, so this is only a consistency point against files that use ||.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F7"
+      ],
+      "summary": "getRawOne result is typed but not runtime-validated",
+      "label": "low",
+      "evidence": "subscriptions.repository.ts:57-69 casts the raw row through a generic. node-pg does return a boolean for COUNT(*) > 0, and the integration specs assert toStrictEqual with true, so the behaviour is covered, but the shape is never parsed.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F19"
+      ],
+      "summary": "toSqlList interpolated into a runtime query instead of a bound parameter",
+      "label": "low",
+      "evidence": "subscriptions.repository.ts:61 inlines toSqlList(ACTIVE_SUBSCRIPTION_STATUSES), whose doc (sql.utils.ts:5-12) scopes it to CHECK constraints and index predicates, while the same file binds In([...]) at :42. The values are constants, so nothing can be injected; it's an inconsistent pattern others may copy.",
+      "category": "security"
+    },
+    {
+      "findings": [
+        "F13",
+        "F22"
+      ],
+      "summary": "gracePeriodOf/planNameOf exported only for tests",
+      "label": "low",
+      "evidence": "grep shows the only consumer outside payment-link-offer.rules.ts is payment-link-offer.rules.spec.ts; production code imports only isOfferedToSpace and isUnclassifiedTrialLink.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F18"
+      ],
+      "summary": "No feature flag for the new filtering",
+      "label": "low",
+      "evidence": "The filter in billing.service.ts:167 applies as soon as it is deployed. It isn't gated on enforcementStartsAt, as the claim suggests, and it can only be turned off with the whole billing module. The PR chose this deliberately, so it's a minor rollout concern.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F31"
+      ],
+      "summary": "Checkout recomputes the full offer set, including DB reads",
+      "label": "low",
+      "evidence": "billing.service.ts:127 runs listOfferedPaymentLinks: two cached catalog reads plus findCreatedAtById and one aggregate query. Checkout is a low-frequency route, so the extra cost is small.",
+      "category": "performance"
+    },
+    {
+      "findings": [
+        "F24"
+      ],
+      "summary": "Bare toThrow() in the enforcement-date integration test",
+      "label": "low",
+      "evidence": "entitlements.service.integration.spec.ts:1139 uses toThrow() with no message, which was already true before the PR, whereas billing.service.spec.ts:160 pins 'No value set for key entitlements.enforcementStartsAt'.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F1",
+        "F4"
+      ],
+      "summary": "Hard-coded boundary dates in billing specs instead of faker",
+      "label": "nit",
+      "evidence": "billing.service.spec.ts:76-78 and billing.controller.e2e-spec.ts:70 use literal dates. These are deliberate boundary constants for the enforcement split, not entity fixtures, so the cost is only style consistency.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F14"
+      ],
+      "summary": "Merge could use filter plus Map dedupe",
+      "label": "wrong",
+      "evidence": "billing.service.ts:167-173 already does exactly that: a filter followed by an id-keyed Map.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F8"
+      ],
+      "summary": "Cache-clear comment is unnecessary",
+      "label": "nit",
+      "evidence": "The comment at billing.controller.e2e-spec.ts:119-121 explains a non-obvious customer-independent cache key; keeping or removing it is a matter of preference.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F12"
+      ],
+      "summary": "switch(true) instead of if/else chain",
+      "label": "nit",
+      "evidence": "payment-link-offer.rules.ts:53-68 is readable and commented case by case; the choice is purely stylistic.",
+      "category": "style"
+    },
+    {
+      "findings": [
+        "F27"
+      ],
+      "summary": "gracePeriodOf could use nested ternaries",
+      "label": "nit",
+      "evidence": "payment-link-offer.rules.ts:21-31 is clear as written; the reviewer themselves says the alternative is harder to read.",
+      "category": "style"
+    },
+    {
+      "findings": [
+        "F29"
+      ],
+      "summary": "Collapse the terminal-status tests into one parameterized test",
+      "label": "nit",
+      "evidence": "subscriptions.repository.integration.spec.ts:187-212 already parameterizes part of these cases; merging the rest is a test-organisation preference with no coverage gain.",
+      "category": "tests"
+    }
+  ]
+}

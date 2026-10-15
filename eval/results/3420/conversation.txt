@@ -1,0 +1,138 @@
+THREAD src/datasources/billing-api/entities/subscription-update.entity.ts:27 resolved=true
+[yagopv 2026-09-09T12:40:19Z] Having only 1 prop with comments is strange unless super useful. I would remove it
+[falvaradorodriguez 2026-09-09T13:12:39Z] Done https://github.com/safe-global/safe-client-gateway/pull/3420/commits/ecba65e34f9e15ef6ebe93cfcc33528cd02abe50
+
+THREAD src/datasources/billing-api/entities/subscription-update.entity.ts:15 resolved=true
+[yagopv 2026-09-09T12:40:49Z] Having only 1 prop with comments is strange unless super useful. I would remove it
+[falvaradorodriguez 2026-09-09T13:12:35Z] Done https://github.com/safe-global/safe-client-gateway/pull/3420/commits/ecba65e34f9e15ef6ebe93cfcc33528cd02abe50
+
+THREAD src/modules/billing/routes/billing.service.spec.ts:76 resolved=true
+[LucieFaire 2026-09-10T12:09:21Z] im not sure why we need this? Why not have `as MockedObject<IBillingApi>` ?
+[LucieFaire 2026-09-10T12:16:49Z] then we dont need to do `as unknown as IBillingApi,`
+[falvaradorodriguez 2026-09-10T13:47:09Z]  Agree, I added the “Pick” after Claude's review comment, and it didn’t add anything. Reverted.
+
+THREAD src/modules/billing/routes/billing.service.ts:61 resolved=true
+[LucieFaire 2026-09-10T12:10:01Z] can we move these to a constant file?
+[falvaradorodriguez 2026-09-10T13:47:13Z] Yes, makes sense. Moved.
+
+THREAD src/datasources/billing-api/billing-api.service.ts:42 resolved=true
+[LucieFaire 2026-09-10T12:15:49Z] Hm, I realized that this class violates our [validation boundary rule](https://github.com/safe-global/safe-client-gateway/blob/felipe/pla-1950-cgw-subscription-upgradedowngrade-preview-update-update/docs/agents/api-dtos-and-validation.md#rawt-at-the-boundary) and [layer placement](https://github.com/safe-global/safe-client-gateway/blob/felipe/pla-1950-cgw-subscription-upgradedowngrade-preview-update-update/docs/agents/module-structure.md#layer-placement).
+
+All billing datasource methods parse and return domain objects directly to BillingService, there is no billing repository that should be in charge or parsing
+[falvaradorodriguez 2026-09-10T13:47:26Z] You are right, I skipped it from the arch-review because it is the whole class, not just the two methods this PR adds, and that felt like a big change to bring in here. But since the arch-review flagged it too and now you, I have just done it.
+
+THREAD src/datasources/billing-api/billing-api.service.ts:160 resolved=true
+[LucieFaire 2026-09-10T14:09:10Z] is this type correct? should it not be `Raw<{ paymentLinks: Array<PaymentLink> }>` ?
+[falvaradorodriguez 2026-09-10T15:17:52Z] This was wrong 😓 fixed!
+
+THREAD src/datasources/billing-api/billing-api.service.ts:42 resolved=true
+[LucieFaire 2026-09-10T14:28:20Z] are listPlans and getCustomer dead dead methods or just not wired yet?
+
+I checked the response types, and I think there is mismatch between what is declared and the actual one:
+
+| Method | Declared | Actual body | Evidence |
+|---|---|---|---|
+| `listPlans` | `Raw<Array<Plan>>` | `{ plans: [...] }` | `src/datasources/billing-api/billing-api.service.spec.ts:138` mocks `{ plans }`, with a comment saying the envelope reaches the repository unopened |
+| `getCustomer` | `Raw<Customer>` | `{ customer: {...} }` | `src/datasources/billing-api/billing-api.service.spec.ts:216` mocks `{ customer }` |
+| `getSubscriptionsByCustomerId` | `Raw<Array<Subscription>>` | `{ subscriptions: [...] }` | `src/modules/billing/domain/billing.repository.ts:37-39` unwraps it via `SubscriptionsSchema` |
+| `listPaymentLinks` | `Raw<Array<PaymentLink>>` | `{ paymentLinks: [...] }` | `src/modules/billing/domain/billing.repository.ts:41-43` unwraps it via `PaymentLinksSchema` |
+[falvaradorodriguez 2026-09-10T15:17:48Z] Good catch!! 
+
+This datasource was created without being 100% clear on its intended use, and it wasn't clear whether those methods were actually being used. I deleted them. If they're needed, we can always add them back. 
+
+As for the types, I think that issue is resolved by fixing the other two comments.
+
+THREAD src/modules/billing/domain/billing.repository.ts:43 resolved=true
+[LucieFaire 2026-09-10T14:29:07Z] i think we should move those to entity declarations
+[falvaradorodriguez 2026-09-10T15:17:56Z] Done.
+
+COMMENT
+[falvaradorodriguez 2026-09-09T10:33:26Z] @claude arch-review
+
+COMMENT
+[claude 2026-09-09T10:38:36Z] ## Architecture check
+
+Guides applied: [ARCHITECTURE.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/ARCHITECTURE.md), [best-practices.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/best-practices.md), [nestjs-patterns.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/nestjs-patterns.md), [api-dtos-and-validation.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/api-dtos-and-validation.md), [security.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/security.md), [module-structure.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/module-structure.md), [caching-and-performance.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/caching-and-performance.md), [testing.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/testing.md), [commits-and-prs.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/commits-and-prs.md), [reviewing.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/reviewing.md), [remarks.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/remarks.md).
+
+1. **[`Raw<T>` at the boundary](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/api-dtos-and-validation.md#L61)** — [src/datasources/billing-api/billing-api.service.ts:237](https://github.com/safe-global/safe-client-gateway/blob/21153d5b21f32a3be4789c989b10ee107deb05f3/src/datasources/billing-api/billing-api.service.ts#L237) — `previewSubscriptionUpdate` and `updateSubscription` return bare `SubscriptionUpdatePreview`/`UpdateSubscriptionResult` and run `Schema.parse()` inside the datasource, so no repository owns the parse boundary (the PR description declares the conversion as a follow-up, which the rule does not waive). **Fix:** type both as `Promise<Raw<SubscriptionUpdatePreview>>` / `Promise<Raw<UpdateSubscriptionResult>>` returning `rawify(data)`, and move `SubscriptionUpdatePreviewSchema.parse()` / `UpdateSubscriptionResultSchema.parse()` into a `BillingRepository` under `src/modules/billing/domain/` that `BillingService` calls instead of `IBillingApi`.
+2. **[No scope creep](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/reviewing.md#L31)** — [src/modules/billing/routes/billing.controller.ts:95](https://github.com/safe-global/safe-client-gateway/blob/21153d5b21f32a3be4789c989b10ee107deb05f3/src/modules/billing/routes/billing.controller.ts#L95) — four pre-existing handlers (lines 95, 134, 160, 188) have their second `spaceUuid` binding switched to `uuidPipe`, a hardening neither new endpoint requires and which the `## Changes` section does not list. **Fix:** drop `uuidPipe` from those four bindings, leaving them as they were, and ship that hardening as its own PR; or record it as a bullet under `## Changes` and a line in `## Summary`.
+
+**Verdict:** ❌ 2 finding(s)
+
+<sub>Automated check of this repo's [agent guidelines](https://github.com/safe-global/safe-client-gateway/blob/main/AGENTS.md) — Claude applying the committed guides in `docs/agents/`, not its own opinion. Run by [architecture-check.yml](https://github.com/safe-global/safe-client-gateway/blob/main/.github/workflows/architecture-check.yml) on `@claude arch-review`; background in [the CI gate](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/agent-tooling.md#the-ci-gate). Advisory — reply to a finding by its number to discuss it.</sub>
+
+COMMENT
+[falvaradorodriguez 2026-09-09T10:39:40Z] @claude review
+
+COMMENT
+[claude 2026-09-09T10:39:56Z] **Claude finished @falvaradorodriguez's task in 3m 46s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/34341409902)
+
+---
+### Claude PR review
+
+- [x] Read changed files
+- [x] Analyze code quality, bugs, perf, security, tests
+- [x] Post review feedback
+
+Focused on what's still worth improving beyond the earlier `@claude arch-review` (which already flagged the `Raw<T>` boundary in the two new datasource methods and the `uuidPipe` scope creep at `billing.controller.ts` lines 95/134/160/188). Won't repeat those.
+
+---
+
+#### Design / boundaries
+
+1. **`IBillingApi.clearSubscriptions` leaks cache into the domain interface** — `src/domain/interfaces/billing-api.interface.ts:78`. The domain contract now advertises a cache-invalidation method purely so `SubscriptionSyncService` can call it (`subscription-sync.service.ts:268`). That inverts the layer rule: the domain shouldn't know Redis exists. It works today, but the more principled home is a small cache helper next to the datasource (or the pending `BillingRepository`); the webhook path can depend on that directly and `IBillingApi` goes back to describing upstream shape only. Worth folding into the same follow-up as the `Raw<T>` conversion so it doesn't ossify.
+
+2. **Preview/PATCH inconsistency around ambiguous prices** — `billing.service.ts:186` deliberately skips link resolution in `previewSubscriptionUpdate` because the upstream keys on price alone, but `updateSubscription` (line 391-402) throws 409 with `"specify which paymentLinkId to use"` in exactly the multi-link case. A client can therefore obtain a quote it can never apply without a follow-up round trip to discover it needs a `paymentLinkId`. Either surface the ambiguity in the preview response (list the candidate links) or reject the preview symmetrically — right now the mismatch is only visible after the PATCH fails.
+
+#### Correctness / small bugs
+
+3. **`findOwnedSubscription` reads *all* statuses to find one id** — `billing.service.ts:343-354`. It fetches every subscription for the customer and `.find(...)`s by id, which is fine for a normal customer but grows linearly with historical (canceled/expired) subscriptions. If the upstream has a `GET /subscriptions/:id` scoped by customer, prefer it. If not, at minimum the "already-cached-under-`all`" cache dir avoids re-hitting the upstream, so the concern is bounded — noting only because the comment implies status doesn't matter, and it does at the payload-size level.
+
+4. **`clearSubscriptions` uses the parent key, relying on `deleteByKey` to drop every filter** — `cache.router.ts:1229` + `billing-api.service.ts:301`. The comment "*the subscription may be listed under any cached filter*" is only true if `deleteByKey` deletes the whole hash (not one field). This holds for the current `ICacheService.deleteByKey`, but the coupling is implicit — a spec or a code comment on `getBillingSubscriptionsCacheKey` making the "drops all fields" contract explicit would keep a future cache refactor from silently leaving stale filters behind.
+
+#### Tests
+
+5. **`billing.service.spec.ts:52-63` — the `billingApiMock` object doesn't declare `clearSubscriptions`**, and the `as MockedObject<IBillingApi>` cast hides it. `BillingService` happens not to call it, but if it ever does (e.g. after the repository conversion), the mock will silently return `undefined` on a `Promise`-returning method — nastier than a clear "method not implemented" failure. Either declare it as `vi.fn()` in the mock or narrow the type to `MockedObject<Pick<IBillingApi, ...actually used methods>>`. The `SubscriptionSyncService` spec already uses the `Pick` pattern for other repositories — same idea.
+
+6. **Elevation coverage of `preview-update` is deliberately absent** — the PR body calls this out and points at 11 sibling GETs in the same state. The rule doesn't require it, but a `TODO(PLA-XXXX)` comment beside the `@UseGuards(AuthGuard)` on `billing.controller.ts:229` would make the follow-up discoverable from the code, not only from the description.
+
+#### Nits
+
+7. **`billing-api.service.ts:266-295` — the `.then(async …).then(parse)` chain** is dense. A straight `const { data } = await this.networkService.patch(...); await this.clearSubscriptions(...).catch(...); return this.parse(Promise.resolve(data), schema);` reads the same intent (cache clears before parse fails) with one less callback level. Style only.
+
+8. **`security.md` doc update lists `patch`** — good; keep an eye on the `patch` example not gaining a body-less variant, because `FetchNetworkService.patch` allows `data?: object` and calls `JSON.stringify(undefined)` → `body: undefined`. Harmless, but not the shape the doc implies.
+
+---
+
+Overall this is a well-scoped, well-tested change with clear reasoning in the code comments, and the trickiest parts (ordering of the "already on plan" check, cache-clear-before-parse, `paymentLinkId` treated as untrusted) are all explicitly justified. The above are quality-of-life items rather than blockers.
+ · Branch: `felipe/pla-1950-cgw-subscription-upgradedowngrade-preview-update-update`
+
+COMMENT
+[falvaradorodriguez 2026-09-09T11:00:40Z] > ## Architecture check
+> Guides applied: [ARCHITECTURE.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/ARCHITECTURE.md), [best-practices.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/best-practices.md), [nestjs-patterns.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/nestjs-patterns.md), [api-dtos-and-validation.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/api-dtos-and-validation.md), [security.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/security.md), [module-structure.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/module-structure.md), [caching-and-performance.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/caching-and-performance.md), [testing.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/testing.md), [commits-and-prs.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/commits-and-prs.md), [reviewing.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/reviewing.md), [remarks.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/remarks.md).
+> 
+
+- 1: IBillingApi has 9 data-returning methods and 12 call sites across two modules, none behind a repository; converting only these two buys a half-seam for most of the price of converting all of them. Leaving it as the module-wide deviation it already is: everything here is validated today, what is missing is the compile-time guarantee, and that is worth doing as one deliberate change rather than piecemeal from a feature PR.
+
+- 2: done: the four pre-existing bindings are back to @Param('spaceId'), uuidPipe only on the two new handlers.
+
+COMMENT
+[falvaradorodriguez 2026-09-09T11:57:49Z] > **Claude finished Felipe Alvarado (@falvaradorodriguez)'s task in 3m 46s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/34341409902)
+>
+
+- 1:  src/domain/interfaces/ holds datasource contracts, not domain entities, and 18 clear* methods already live there across six of them (11 on ITransactionApi alone). clearSubscriptions is the eighteenth.
+It also moved knowledge out of the domain rather than in: SubscriptionSyncService used to build the cache key itself and call deleteByKey; now it knows nothing about Redis. A cache helper it depended on instead would put that back.
+
+- 2: The candidate links share the price, that is what makes the case ambiguous, and the quote depends only on the price, so the preview's answer is the same either way. What differs is the metadata copied on write, which is why only the PATCH has to pick one.
+
+- 3: The upstream has no by-id route — only GET :customerId/subscriptions and the preview-update one — so the find is the only way in. Fetching every status is deliberate too: filtering to active/trialing would make a canceled subscription look absent, and the PATCH would answer 404 instead of 409 "not in an updatable state".
+
+- 4: Done ✅  Documented on the getter itself: "The key, not a dir: the status filter is the hash *field*, so deleting this key drops every filter cached for the customer at once. A caller that needs one filter gone on its own cannot use this." The existing cache-service integration test only exercises a single field, so pinning the multi-field contract belongs with `ICacheService`, not here.
+
+- 5: Done ✅  via Pick. Declaring clearSubscriptions: vi.fn() would have added a mock entry nothing calls, which the arch-review had me delete from spacesRepositoryMock in this same PR. The narrowed type needs as unknown as IBillingApi at the two construction sites, as the sync spec does.
+
+- 6: A TODO here would point at the wrong thing: the preview is one of 12 undeclared space-scoped routes across four modules, so the gap is the table rather than this route, and singling this one out would misdescribe it.
+
+- 7: The nesting is the error funnel, not decoration: `parse` takes the unresolved promise and awaits it inside its own `try`, which is where `HttpErrorFactory` turns a network rejection into a `DataSourceError`. Awaiting the call outside would let that escape as a raw `NetworkResponseError`. Every method in the file passes the promise in the same way.
+
+- 8: `patch` mirrors `post` exactly — same optional `data`, same `JSON.stringify(args.data)` — so a body-less call behaves as it always has on POST. The line I touched in security.md is about `buildUrl` and query strings, not bodies, so it makes no claim either way.

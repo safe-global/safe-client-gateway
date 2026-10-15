@@ -1,0 +1,30 @@
+{
+  "usd": 0.30457000000000006,
+  "head": "f744d26c8cebf1c28537acb26ab845e55c318c5b",
+  "verdicts": [
+    {
+      "issue": 5,
+      "verdict": "open",
+      "present": true,
+      "evidence": "portfolio-route.guard.ts:18 still reads 'features.zerionBalancesEnabled' at HEAD, and no commit after 9ebe58e renames it. Nobody replied to the bot's point."
+    },
+    {
+      "issue": 6,
+      "verdict": "open",
+      "present": true,
+      "evidence": "portfolio-route.guard.spec.ts still hard-codes the 'features.zerionBalancesEnabled' literal in the test names and the toHaveBeenCalledWith assertion, and no shared constant was extracted. Nobody responded."
+    },
+    {
+      "issue": 7,
+      "verdict": "open",
+      "present": true,
+      "evidence": "The JSDoc at portfolio-route.guard.ts:5-8 is unchanged at HEAD and the flag was not renamed. Nobody discussed it."
+    },
+    {
+      "issue": 8,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "At 9ebe58e the spec wrapped the cast object in vi.mocked({...} as MockedObject<IConfigurationService>). Commit 4b1f5b348 dropped the vi.mocked() wrapper and kept only the plain cast, which removes the redundancy the bot flagged."
+    }
+  ]
+}

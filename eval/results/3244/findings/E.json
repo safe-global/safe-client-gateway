@@ -1,0 +1,25 @@
+{
+  "usd": 0.0520776,
+  "findings": [
+    {
+      "file": "src/modules/relay/datasources/rhinestone-api.service.ts",
+      "line": 61,
+      "claim": "The error includes information that lets a developer reconstruct the curl command, which is unnecessary since the developer can already build the curl command by looking at the error."
+    },
+    {
+      "file": "src/modules/relay/datasources/rhinestone-api.service.ts",
+      "line": 141,
+      "claim": "The constructed object is missing a createdAt field even though the relay task status entity defines one, so the returned data may not match the expected entity shape."
+    },
+    {
+      "file": "src/modules/relay/datasources/rhinestone-api.service.ts",
+      "line": 127,
+      "claim": "The code still references Gelato even though after this PR nothing related to Gelato should remain, and other locations in the codebase should be checked for the same leftover reference."
+    },
+    {
+      "file": "src/config/entities/schemas/configuration.schema.ts",
+      "line": 186,
+      "claim": "The corresponding configuration value should also be updated in docker-compose.yml to stay consistent with this schema change."
+    }
+  ]
+}

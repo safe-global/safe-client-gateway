@@ -1,0 +1,42 @@
+{
+  "usd": 0.3321228,
+  "head": "de4376df130282e904bdc24c9fa2145b31b4bf65",
+  "verdicts": [
+    {
+      "issue": 2,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "At 5506983 line 39 still fell back to `github.ref` for the concurrency group. Commit 7a4d9b5 removed workflow_dispatch, so the group is now just the tag (HEAD line 30), and gfendres's mapping table lists #5 as \"Gone in 7a4d9b5\"."
+    },
+    {
+      "issue": 4,
+      "verdict": "accepted",
+      "present": false,
+      "evidence": "At 5506983 lines 88-98 already look up the release URL with `gh api .../releases/tags/$TAG`. The manual path was later dropped in 7a4d9b5, and `links` now comes from `github.event.release.html_url` (HEAD line 64). gfendres marked it addressed."
+    },
+    {
+      "issue": 5,
+      "verdict": "accepted",
+      "present": false,
+      "evidence": "At 5506983 lines 67-75 already check `INPUT_VERSION` against the regex `^[0-9]+\\.[0-9]+\\.[0-9]+$`. The input was then removed entirely in 7a4d9b5, which gfendres's table calls \"Gone\"."
+    },
+    {
+      "issue": 6,
+      "verdict": "accepted",
+      "present": false,
+      "evidence": "At 5506983 line 121 already reads `dry_run: ${{ inputs.dry_run || false }}`. The dry_run input was dropped in 7a4d9b5, and the author's table says \"Gone in 7a4d9b5\"."
+    },
+    {
+      "issue": 7,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "In thread linear-release.yml:24, PooyaRaki asked \"Why do we need it?\" and then \"Let's drop it.\" gfendres replied \"Done in `7a4d9b5`\", and HEAD lines 23-25 have only the release trigger."
+    },
+    {
+      "issue": 9,
+      "verdict": "accepted",
+      "present": false,
+      "evidence": "At 5506983 line 107 already checks out `refs/tags/${{ steps.release.outputs.tag }}`, which the author credits as \"Fixed in 5506983\". HEAD line 46 checks out `refs/tags/${{ github.event.release.tag_name }}`."
+    }
+  ]
+}

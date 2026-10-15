@@ -1,0 +1,10 @@
+{
+  "pr": 3370,
+  "reviewSha": "b89c2025ef33949a9b4c0a0610d36026b9663b22",
+  "baseSha": "482232a40249c7bee55a23a97031c50c3842ed33",
+  "system": "D",
+  "version": "github",
+  "runner": "collect",
+  "model": "claude-code-action",
+  "output": "## Architecture check\n\nGuides applied: ARCHITECTURE.md, best-practices.md, api-dtos-and-validation.md, module-structure.md, caching-and-performance.md, testing.md, commits-and-prs.md (+ remarks.md).\n\n- `docs/agents/api-dtos-and-validation.md:121` — No stale guides: the \"One error funnel per layer\" canonical example still quotes `catch (error) { throw this.httpErrorFactory.from(error); }` for `SafeBalancesApi`'s `getBalances`/`getCollectibles`, which this diff rewrote to `from(mapBannedSafeError(error))` (`src/modules/balances/datasources/safe-balances-api.service.ts:109,181`).\n- `src/datasources/errors/helpers/banned-safe.helper.spec.ts:22` — Builders and faker only (R-004): the upstream payload is the hard-coded `{ detail: 'Safe is unavailable for legal reasons' }` although no assertion depends on that text (the mapper discards it) and the sibling case uses `faker.word.words()`; repeated at `:69` and in both new integration specs.\n\n**Verdict:** ❌ 2 finding(s)"
+}

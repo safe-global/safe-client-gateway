@@ -1,0 +1,247 @@
+{
+  "pr": 3117,
+  "title": "feat: UUID as spaceId instead of numeric value",
+  "description": "## Summary\r\n\r\nResolves: [WA-1583](https://linear.app/safe-global/issue/WA-1583/replace-sequential-spaceid-with-global-uuid)\r\n\r\nMigrates the public Spaces API from sequential numeric primary keys to UUIDs as the externally-visible Space identifier, while keeping a short-lived numeric-ID fallback on all Space routes so the frontend can roll out the change without a hard cutover.\r\n\r\n**Why:**\r\n\r\n- Numeric, sequential IDs leak space-creation volume and let clients enumerate other tenants' spaces. UUIDs remove both.\r\n- A UUID-based contract is a prerequisite for upcoming sharing/invite-link work, where the identifier ends up in URLs and emails.\r\n\r\n**Approach:**\r\n\r\n- The internal numeric PK (`spaces.id`) is unchanged — all foreign keys, joins, and indexes keep working as-is. A new `uuid` column is added alongside it and becomes the identifier the API exposes.\r\n- Resolution from the public UUID to the internal `id` happens at the edge, in NestJS pipes, so services and repositories continue to operate on `number` IDs and remain unaware of the encoding.\r\n- During the deprecation window, routes accept **either** a UUID or the legacy numeric ID (`LegacySpaceIdPipe`) so cached FE links and not-yet-migrated FE calls keep working. A strict UUID-only pipe (`SpaceIdPipe`) is implemented and wired into the module, ready to replace the legacy pipe in a follow-up PR once the FE sends UUIDs everywhere. The legacy path is TODO-marked for removal.\r\n\r\n## Changes\r\n\r\n**Database**\r\n\r\n- New migration `migrations/1779200000001-add-space-uuid.ts`: adds `uuid UUID NOT NULL DEFAULT gen_random_uuid()` to `spaces` plus a unique index (`UQ_spaces_uuid`). Existing rows are backfilled server-side via the column default. Reversible (`down` drops the index and column).\r\n- `Space` DB entity (`spaces/datasources/entities/space.entity.db.ts`) exposes the new `uuid` column as immutable (`update: false`, `unique: true`).\r\n- Domain `Space` entity/schema (`spaces/domain/entities/space.entity.ts`) adds `uuid` validated by `UuidSchema`.\r\n\r\n**Pipes (new) — `src/modules/spaces/routes/pipes/space-id.pipe.ts`**\r\n\r\n- `SpaceIdPipe`: validates input as a UUID (regex), then resolves to the numeric PK via `ISpacesRepository.findIdByUuid`. Wired into `SpacesModule` and ready for the follow-up cutover; not yet attached to any route.\r\n- `LegacySpaceIdPipe`: accepts a UUID **or** a base-10 numeric string bounded by `DB_MAX_SAFE_INTEGER`; delegates to `findIdByIdOrUuid`. Currently used on every Space route. Both pipes return `Space['id']` (`number`), so downstream services are unchanged, and both reject malformed input with a single shared 400 body (`Invalid space identifier`) regardless of which pipe validates.\r\n\r\n**Repository / domain**\r\n\r\n- `ISpacesRepository` gains `findIdByUuid(uuid)` and the temporary `findIdByIdOrUuid(value)` (TODO-marked for removal). The legacy method branches numeric-vs-UUID and looks up the row, relying on the pipe to have validated input format upstream.\r\n- `SpacesRepository.create` and `update` now return `uuid` alongside `id` (`update` uses a `RETURNING` clause).\r\n- Error wording standardized: `update()` now throws `Workspace not found.` (was `Space not found.`) to match the rest of the repository.\r\n\r\n**Controllers** — pipes wired into route params; no behavioural change beyond identifier handling. Every route currently uses `LegacySpaceIdPipe`:\r\n\r\n- `spaces` (`spaces.controller.ts`): `GET /:id`, `PATCH /:id`, `DELETE /:id`.\r\n- `members` (`members.controller.ts`): invite / accept / decline / `GET members` / `GET membership` / role / alias / remove / leave.\r\n- `space-safes`, `address-books`, `address-book-requests`, `user-address-book`, `surveys`, and `space-counterfactual-safes`: all Space-scoped routes.\r\n\r\n**DTOs** — responses now expose `uuid`:\r\n\r\n- `GetSpaceResponse`, `CreateSpaceResponse`, `UpdateSpaceResponse`, and `Invitation` add a `uuid` string field. The numeric `id` is retained but marked `deprecated` (\"use uuid; kept for FE fallback\").\r\n- Swagger `@ApiParam` examples updated to UUIDs; legacy-accepting routes call out numeric acceptance as deprecated in their descriptions.\r\n\r\n**Tests**\r\n\r\n- New unit specs for both pipes (`space-id.pipe.spec.ts`): UUID resolution (case-insensitive), numeric resolution and `DB_MAX_SAFE_INTEGER` boundary, malformed/empty/over-max rejection with the shared 400 message, and `NotFoundException` propagation.\r\n- e2e specs (spaces, members, space-safes, address-books, surveys) updated to send/expect UUIDs, with new cases for malformed identifiers returning 400.\r\n- Integration and unit specs for `SpacesRepository`, `SpacesService`, and `SurveysService` aligned with the new shape (and the corrected `Workspace not found.` message).\r\n\r\n## Notes (rollout / reviewers)\r\n\r\n- The migration is additive and online-safe: the column default fills existing rows server-side, no app-level backfill.\r\n- **Current state vs. final state:** unlike the eventual design, *all* routes — reads and writes — currently accept numeric IDs via `LegacySpaceIdPipe`. This is intentional for the FE-compatibility window; numeric IDs stay enumerable until the follow-up PR.\r\n- **Follow-up PR (FE-coordinated):** once the FE sends UUIDs everywhere, swap `LegacySpaceIdPipe` → `SpaceIdPipe` (starting with mutating routes), then drop `findIdByIdOrUuid`, `LegacySpaceIdPipe`, and the deprecated numeric `id` response fields. All legacy paths are TODO-marked to make the cleanup obvious.\r\n",
+  "findings": [
+    {
+      "id": "F1",
+      "file": null,
+      "line": null,
+      "claim": "There is no unit or integration test coverage for the new repository methods findIdByUuid and findIdByIdOrUuid, nor for the new pipes SpaceIdPipe and LegacySpaceIdPipe."
+    },
+    {
+      "id": "F2",
+      "file": "src/modules/spaces/routes/address-books.controller.ts",
+      "line": 77,
+      "claim": "Several methods are changed from return this.service… to async/return await without any need introduced by the UUID change, adding unrelated modifications to the diff."
+    },
+    {
+      "id": "F3",
+      "file": "src/modules/spaces/routes/spaces.controller.ts",
+      "line": 170,
+      "claim": "The GET /v1/spaces/:id route declares @Param('id') idOrUuid: string with no validation pipe, and its resolveUuid implementation performs a lookup to get the ID, another lookup to get the UUID, and then a further query by UUID in findSpaces, resulting in two extra database queries per request; it is also the only legacy route skipping LegacySpaceIdPipe, and should use that pipe and resolve to the UUID in a single query."
+    },
+    {
+      "id": "F4",
+      "file": "src/modules/spaces/spaces.module.ts",
+      "line": 94,
+      "claim": "The new pipes are registered and exported as module providers even though Nest can already instantiate class-based pipes passed via @Param(..., Pipe) from the controller module's injector, since they only need ISpacesRepository, which is already exported; this adds unnecessary module surface unless there is a specific reason to expose them as providers."
+    },
+    {
+      "id": "F5",
+      "file": "src/modules/spaces/domain/spaces.repository.ts",
+      "line": 233,
+      "claim": "The DB_MAX_SAFE_INTEGER overflow guard and the \"0\" input on the legacy numeric ID path are not covered by any test; the only existing test of this path uses a small in-range ID."
+    },
+    {
+      "id": "F6",
+      "file": "spaces.repository.ts",
+      "line": 232,
+      "claim": "findIdByIdOrUuid throws BadRequestException directly from the repository layer, coupling the repository to @nestjs/common; the error should ideally be thrown from the pipe instead, and the error message should be unified between both pipes."
+    },
+    {
+      "id": "F7",
+      "file": null,
+      "line": null,
+      "claim": "Missing test cases include: valid UUID resolving to id, valid numeric id resolving to id (legacy path), numeric value exceeding DB_MAX_SAFE_INTEGER returning 400, malformed string returning 400, syntactically valid UUID with no matching row returning 404, and numeric id on SpaceIdPipe (write endpoint) returning 400 with a corresponding e2e test on PATCH /spaces/:id."
+    },
+    {
+      "id": "F8",
+      "file": "spaces.service.ts",
+      "line": 125,
+      "claim": "resolveUuid queries findIdByIdOrUuid to get id, then findOneOrFail to get uuid, then findSpaces runs additional queries keyed on uuid, producing redundant round-trips that could be avoided by using LegacySpaceIdPipe with findSpaces accepting a numeric spaceId, or by having findIdByIdOrUuid return both id and uuid in a single query."
+    },
+    {
+      "id": "F9",
+      "file": "src/modules/spaces/routes/pipes/space-id.pipe.ts",
+      "line": null,
+      "claim": "The new pipes and resolver logic (SpaceIdPipe, LegacySpaceIdPipe, findIdByUuid, findIdByIdOrUuid, resolveUuid) have almost no unit or integration test coverage; only one e2e test covers an invalid letters-only ID and one survey integration test covers the legacy numeric path, leaving untested cases such as a numeric ID above DB_MAX_SAFE_INTEGER returning 400, a non-UUID value on a SpaceIdPipe route returning 400, update on a missing row throwing NotFoundException, and the legacy numeric path on the spaces, members and address-book routes."
+    },
+    {
+      "id": "F10",
+      "file": "spaces.repository.ts",
+      "line": 232,
+      "claim": "The UUID regex used in findIdByIdOrUuid does not enforce UUID version/variant bits the way ParseUUIDPipe does, so SpaceIdPipe and LegacySpaceIdPipe accept slightly different sets of valid UUIDs; the two code paths should share a single validation helper or both use ParseUUIDPipe."
+    },
+    {
+      "id": "F11",
+      "file": "src/modules/spaces/domain/spaces.repository.ts",
+      "line": 233,
+      "claim": "The numeric-ID bounds check is rebuilt by hand instead of reusing RowSchema.shape.id, which previously provided this validation, duplicating logic and risking inconsistent bounds checking."
+    },
+    {
+      "id": "F12",
+      "file": "src/modules/spaces/datasources/entities/space.entity.db.ts",
+      "line": 26,
+      "claim": "The entity declares the uuid column with an unnamed unique: true, which makes TypeORM expect an auto-generated UQ_<hash> constraint name, while the migration creates a unique index explicitly named UQ_spaces_uuid, so the schema and entity definitions diverge and migration:generate will report a difference; the column should use a named @Index or @Unique matching UQ_spaces_uuid instead of unique: true."
+    },
+    {
+      "id": "F13",
+      "file": "spaces.controller.ts",
+      "line": 169,
+      "claim": "The GET /spaces/:id endpoint does not use LegacySpaceIdPipe like other legacy-accepting read endpoints, and instead calls spacesService.resolveUuid which results in 4 database queries per request instead of the 1+N pattern used elsewhere; since this is the hottest single-space read on the frontend, this extra overhead matters."
+    },
+    {
+      "id": "F14",
+      "file": "src/modules/spaces/domain/entities/space.entity.ts",
+      "line": 20,
+      "claim": "The uuid field's type should use the UUID type imported from the crypto module instead of a plain string, to make the type more precise."
+    },
+    {
+      "id": "F15",
+      "file": null,
+      "line": null,
+      "claim": "SpaceIdPipe and LegacySpaceIdPipe return inconsistent 400 error bodies for the same class of error (NestJS default 'Validation failed (uuid is expected)' vs custom 'Invalid space identifier'), contradicting the PR description's claim that client error contracts stay stable."
+    },
+    {
+      "id": "F16",
+      "file": "members.controller.ts",
+      "line": 141,
+      "claim": "acceptInvite and declineInvite use SpaceIdPipe, which is UUID-only, so a previously emailed invite link containing a numeric space id will now fail with a 400 error; if numeric-id invite links are already in circulation, these two routes should keep using LegacySpaceIdPipe during the deprecation window since the user is acting on an existing link rather than entering new data."
+    },
+    {
+      "id": "F17",
+      "file": "src/modules/spaces/routes/address-books.service.ts",
+      "line": 75,
+      "claim": "This response still sets spaceId to the numeric primary key instead of the UUID, so a client that takes this spaceId and calls a write route like PUT .../address-book will be rejected with a 400 by SpaceIdPipe, and the numeric ID the UUID was meant to hide remains exposed."
+    },
+    {
+      "id": "F18",
+      "file": "spaces.repository.ts",
+      "line": 32,
+      "claim": "A pre-existing '// TODO: Add tests' comment remains unaddressed, and the new methods added in this PR extend this test coverage gap rather than closing it."
+    },
+    {
+      "id": "F19",
+      "file": "src/modules/spaces/domain/spaces.repository.ts",
+      "line": 232,
+      "claim": "findIdByIdOrUuid parses the raw route parameter with regexes and throws the HTTP-level BadRequestException from inside the repository, whereas input validation is expected to happen at the controller via Zod/ValidationPipe and repositories should only map persistence failures; the numeric/UUID parsing should move into LegacySpaceIdPipe and the repository should expose plain lookups by UUID or numeric ID."
+    },
+    {
+      "id": "F20",
+      "file": "src/modules/spaces/domain/spaces.repository.ts",
+      "line": 218,
+      "claim": "The generated row from the insert result should be typed as Pick<Space, 'id' | 'uuid'> | undefined instead of a less precise or unsafe type, since generatedMaps can be empty and its element shape should be constrained to just the fields being used."
+    },
+    {
+      "id": "F21",
+      "file": "src/modules/surveys/routes/entities/submit-survey-response.dto.entity.ts",
+      "line": 31,
+      "claim": "This response still sets spaceId to the numeric primary key instead of the UUID, so a client that takes this spaceId and calls the survey submit write route will be rejected with a 400 by SpaceIdPipe, and the numeric ID the UUID was meant to hide remains exposed."
+    },
+    {
+      "id": "F22",
+      "file": "src/modules/spaces/domain/spaces.repository.ts",
+      "line": 200,
+      "claim": "The new update() behavior, which uses UPDATE ... RETURNING id, uuid and throws NotFoundException when no row is returned, is untested: the integration test ignores the return value and the service spec mocks the repository, so reverting to the old implementation would not fail any test."
+    },
+    {
+      "id": "F23",
+      "file": "src/modules/spaces/domain/spaces.repository.ts",
+      "line": 245,
+      "claim": "There are two separate UUID validators, a hand-written regex here and ParseUUIDPipe elsewhere, that produce different 400 error messages (Invalid space identifier vs Validation failed (uuid is expected)); a single validator should be used instead."
+    },
+    {
+      "id": "F24",
+      "file": "migrations/1779200000000-add-space-uuid.ts",
+      "line": 4,
+      "claim": "The migration timestamp 1779200000000 is already used by add-member-invite-expires-at.ts, leaving the relative execution order of the two migrations undefined."
+    },
+    {
+      "id": "F25",
+      "file": "src/modules/spaces/domain/spaces.repository.ts",
+      "line": 215,
+      "claim": "result.raw[0] is cast as Pick<Space, 'id' | 'uuid'> | undefined without validating the actual shape of the raw driver row, contradicting the expectation that repositories validate raw query results; the row should be parsed with a schema or obtained via result.generatedMaps or a narrow select instead of an unchecked cast."
+    },
+    {
+      "id": "F26",
+      "file": "migrations/1779200000000-add-space-uuid.ts",
+      "line": 15,
+      "claim": "It has not been confirmed whether gen_random_uuid() is available without the pgcrypto extension on all supported PostgreSQL versions, since versions earlier than PG 13 require the extension to be installed explicitly."
+    },
+    {
+      "id": "F27",
+      "file": "src/modules/spaces/domain/spaces.repository.ts",
+      "line": null,
+      "claim": "The new public methods findIdByUuid, findIdByIdOrUuid and resolveUuid have no documentation beyond their TODOs, leaving their behavior undocumented."
+    },
+    {
+      "id": "F28",
+      "file": "src/modules/spaces/domain/entities/space.entity.ts",
+      "line": 27,
+      "claim": "The entity uses z.string().uuid() directly instead of the shared UuidSchema (src/validation/entities/schemas/uuid.schema.ts), so the two new pipes end up validating UUIDs in two different ways."
+    },
+    {
+      "id": "F29",
+      "file": "src/modules/spaces/domain/spaces.repository.ts",
+      "line": 245,
+      "claim": "A UUID regex is hand-written even though the shared UuidSchema and ParseUUIDPipe already exist in the codebase, duplicating validation logic that could drift from the shared implementation."
+    },
+    {
+      "id": "F30",
+      "file": "routes/entities/invitation.entity.ts",
+      "line": null,
+      "claim": "The Invitation entity in users/domain/entities/invitation.entity.ts now types spaceId as Space['uuid'] (a string), but the separate Invitation entity in routes/entities/invitation.entity.ts still declares userId with @ApiProperty({ type: Number }), an inconsistency unrelated to this PR but noticeable while working in this area."
+    },
+    {
+      "id": "F31",
+      "file": "migrations/1779200000000-add-space-uuid.ts",
+      "line": 4,
+      "claim": "The migration reuses a timestamp already used by migrations/1779200000000-add-member-invite-expires-at.ts and is older than the already-merged 1780900000000-member-name-length.ts, so the two same-timestamp migrations run in an undefined order and environments that already applied later migrations may treat this one as out of sequence; the timestamp should be regenerated to be later than 1780900000000."
+    },
+    {
+      "id": "F32",
+      "file": "migrations/1779200000000-add-space-uuid.ts",
+      "line": 15,
+      "claim": "The migration's down method uses bare DROP INDEX / DROP COLUMN, which is not idempotent; if the up migration partially fails (e.g., column added but index creation fails), the down migration will itself fail when trying to drop the missing index, so DROP INDEX IF EXISTS / DROP COLUMN IF EXISTS should be used instead."
+    },
+    {
+      "id": "F33",
+      "file": "src/modules/spaces/routes/address-book-requests.service.ts",
+      "line": 182,
+      "claim": "This response still sets spaceId to the numeric primary key instead of the UUID, so a client that takes this spaceId and calls a write route like POST .../requests will be rejected with a 400 by SpaceIdPipe, and the numeric ID the UUID was meant to hide remains exposed."
+    },
+    {
+      "id": "F34",
+      "file": "src/modules/spaces/routes/pipes/space-id.pipe.ts",
+      "line": 16,
+      "claim": "No test proves that write routes reject numeric space IDs; the e2e specs were switched to generate UUIDs but the only invalid-ID test sends alphabetic junk, so swapping SpaceIdPipe for LegacySpaceIdPipe would still pass every test."
+    },
+    {
+      "id": "F35",
+      "file": "migrations/1779200000000-add-space-uuid.ts",
+      "line": 8,
+      "claim": "The uuid column's default uses gen_random_uuid(), a volatile default that causes Postgres to rewrite the entire table, and the subsequent unique index is created without CONCURRENTLY, locking the spaces table for writes during both steps; this is only acceptable while the table stays small."
+    },
+    {
+      "id": "F36",
+      "file": ".gitignore",
+      "line": 64,
+      "claim": "The new /docs entry ignores the entire docs/ tree, including docs/engineering convention docs, which is unrelated to the space UUID change and should be in a separate PR or scoped to a narrower local exclude."
+    },
+    {
+      "id": "F37",
+      "file": "src/modules/spaces/domain/spaces.repository.ts",
+      "line": 232,
+      "claim": "The legacy numeric path looks up the space before checking membership, so a missing space now returns 404 while an existing space the caller isn't a member of returns 403, whereas previously assertMember returned 403 for both; since IDs are sequential, this lets any authenticated user enumerate how many spaces exist."
+    },
+    {
+      "id": "F38",
+      "file": "src/modules/spaces/routes/entities/create-space.dto.entity.ts",
+      "line": 20,
+      "claim": "The space id in API responses changes from a number to a UUID string across create, get/list, update, and invitation (spaceId) DTOs, and all write routes (POST/PUT/PATCH/DELETE) now reject numeric IDs with a 400 via SpaceIdPipe while only GET routes keep a numeric fallback, so any released client still sending or reading numeric IDs will break on writes and on the response shape; the change needs versioning or a backward-compatible transition period accepting both ID formats."
+    },
+    {
+      "id": "F39",
+      "file": "space.entity.db.ts",
+      "line": 26,
+      "claim": "unique: true on this column makes TypeORM expect a constraint with an auto-generated hashed name, but the migration creates an index named UQ_spaces_uuid instead, which will cause migration:generate to report drift; the repo convention is a named @Unique('UQ_...') or @Index."
+    },
+    {
+      "id": "F40",
+      "file": "src/modules/spaces/spaces.service.ts",
+      "line": 125,
+      "claim": "resolveUuid performs two sequential queries (value to id, then id to uuid) before findSpaces, which are both wasted when the input is already a UUID; the route also doesn't follow the pipe pattern used by other routes."
+    }
+  ]
+}

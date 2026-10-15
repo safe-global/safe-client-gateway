@@ -1,0 +1,248 @@
+{
+  "usage": {
+    "usd": 0.6842252000000001,
+    "turns": 11,
+    "wallSeconds": 89
+  },
+  "issues": [
+    {
+      "findings": [
+        "F1"
+      ],
+      "summary": "Guard reads flag per request instead of caching in constructor",
+      "label": "wrong",
+      "evidence": "src/modules/safe-shield/guards/copilot-core-gating.guard.ts:15-17 resolves `features.copilotCoreDisabled` once in the constructor into `this.disabled`; canActivate only reads the field.",
+      "category": "performance"
+    },
+    {
+      "findings": [
+        "F4"
+      ],
+      "summary": "No dedicated unit test for CopilotCoreGatingGuard",
+      "label": "wrong",
+      "evidence": "src/modules/safe-shield/guards/copilot-core-gating.guard.spec.ts:13-19 tests both the flag-on case (throws CopilotCoreDisabledError) and the flag-off case (returns true).",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F8",
+        "F11",
+        "F12"
+      ],
+      "summary": "New safe-shield guard/error/filter live in non-canonical root-level guards/ and errors/ folders",
+      "label": "low",
+      "evidence": "The files sit at src/modules/safe-shield/guards/ and errors/. module-structure.md:79 names `routes/guards/` as the home for a guard, and the entitlements error/filter in this PR use domain/errors and domain/exception-filters. The PR description even claims `routes/guards/`. Consistency and maintainability cost only.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F10",
+        "F17"
+      ],
+      "summary": "Comments claim SafeShieldService lives in `routes/`, but it's at the module root",
+      "label": "low",
+      "evidence": "src/modules/safe-shield/safe-shield.service.ts:50-51 and domain/safe-shield-analysis.interface.ts:14 refer to `routes/`, yet no src/modules/safe-shield/routes directory exists. Documentation mismatch.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F30",
+        "F34",
+        "F37",
+        "F38"
+      ],
+      "summary": "Error message and doc comments say counterparty analysis is gated on Core, but only recipient-check is",
+      "label": "low",
+      "evidence": "copilot-core-disabled.error.ts:6,13 and copilot-core-gating.guard.ts:6 say 'recipient/counterparty'. safe-shield.controller.ts applies the guard only to analyzeRecipient, so the 402 message clients receive overstates the restriction.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F21",
+        "F33"
+      ],
+      "summary": "New feature flag comment names a removal condition but no owner",
+      "label": "low",
+      "evidence": "configuration.ts:495 says only 'Disables Core's recipient-check. Remove once no client calls it.' configuration-and-flags.md:51,57 requires new flags to carry an owner and a condition, as mfaStepUp does.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F9"
+      ],
+      "summary": "Spaces controller imports safe-shield DTOs/schemas from its entities/, not domain/",
+      "label": "low",
+      "evidence": "space-safe-shield.controller.ts:28-31 imports from `@/modules/safe-shield/entities/...`. Non-negotiable #4 limits cross-module imports to `domain/`, so the Spaces API contract is coupled to safe-shield's endpoint DTOs.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F13"
+      ],
+      "summary": "Space-scoped safe-shield controller placed in Spaces rather than the owning module",
+      "label": "low",
+      "evidence": "space-relay, space-counterfactual-safes and entitlements controllers declare `spaces/:spaceId/...` routes in their owning modules, while this PR puts SpaceSafeShieldController in src/modules/spaces/routes/safe-shield/. This is an inconsistent placement choice; behaviour is unaffected.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F16"
+      ],
+      "summary": "SafeShieldService still exported despite having no external consumer",
+      "label": "low",
+      "evidence": "safe-shield.module.ts:33 exports SafeShieldService alongside the token. Grep finds no import of SafeShieldService outside safe-shield, and the new comment says it is 'never imported directly'.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F20"
+      ],
+      "summary": "assertFeatureGranted accepts any FeatureKey and only checks `enabled`",
+      "label": "low",
+      "evidence": "entitlement-enforcement.interface.ts:38-41 types featureKey as FeatureKey, and entitlements.service.ts:195-196 checks only grant.enabled. A future caller passing a metered key would bypass quota. The only current caller uses 'copilot_scans', so this is a latent risk.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F39"
+      ],
+      "summary": "Transaction shape typed inline and duplicated rather than reusing a shared type",
+      "label": "low",
+      "evidence": "The {to,value,data,operation} shape is written out in safe-shield-analysis.interface.ts:27-32 and again in space-safe-shield.service.ts:51-56. A TransactionBaseSchema exists in src/domain/common/schemas. Minor duplication.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F25"
+      ],
+      "summary": "appliedNames test helper duplicates filterNames in another spec",
+      "label": "low",
+      "evidence": "safe-shield.controller.spec.ts:45 appliedNames and space-safes.controller.spec.ts:8 filterNames do the same metadata lookup. This is minor test-helper duplication.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F6",
+        "F15",
+        "F36"
+      ],
+      "summary": "Unnecessary `as ...Fixture` import aliases",
+      "label": "nit",
+      "evidence": "All three specs alias addSafes/createSpaceForSigner to *Fixture, and none defines a local function with the original name. The aliases are redundant but harmless.",
+      "category": "style"
+    },
+    {
+      "findings": [
+        "F2",
+        "F14",
+        "F22",
+        "F27"
+      ],
+      "summary": "Test names mention quota for a binary copilot_scans feature",
+      "label": "nit",
+      "evidence": "space-safe-shield.service.spec.ts:114,173 say 'within quota', and the integration spec at :138,294 says 'plan/quota state', but copilot_scans is gated through assertFeatureGranted. Only the wording is off.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F18",
+        "F28"
+      ],
+      "summary": "Partial analysis responses cast with `as Awaited<...>` instead of using builders",
+      "label": "nit",
+      "evidence": "space-safe-shield.service.spec.ts:116,174 cast partial objects, although src/modules/safe-shield/entities/__tests__/builders/analysis-responses.builder.ts exists. This is a style issue in test code.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F31"
+      ],
+      "summary": "`{ id: userId } as Member` instead of memberBuilder",
+      "label": "nit",
+      "evidence": "space-safe-shield.service.spec.ts:40 casts a literal even though memberBuilder is used elsewhere. It has no behavioural impact.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F3"
+      ],
+      "summary": "Pick<> mocks cast up to full interfaces",
+      "label": "nit",
+      "evidence": "space-safe-shield.service.spec.ts:47-50 casts Pick-typed mocks. This is a common pattern and a style preference.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F5"
+      ],
+      "summary": "Negative cases duplicated across integration and unit tests",
+      "label": "nit",
+      "evidence": "Repeating negative cases across both routes and both test levels is a test-design preference with no defect.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F7",
+        "F35"
+      ],
+      "summary": "`0x${string}` used instead of viem's Address type",
+      "label": "nit",
+      "evidence": "space-fixtures.ts:54,69 use the template literal type. It is equivalent to Address, so this is purely style.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F19"
+      ],
+      "summary": "Guard and filter registered as module providers unnecessarily",
+      "label": "nit",
+      "evidence": "safe-shield.module.ts:30-31 registers them, and @UseGuards/@UseFilters would resolve them anyway. Grep shows QuotaExceededExceptionFilter isn't registered in any module. Harmless inconsistency.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F23"
+      ],
+      "summary": "`spaceUuid: spaceId` destructuring rename",
+      "label": "nit",
+      "evidence": "entitlements.controller.integration.spec.ts:196 renames the variable. Readability preference only.",
+      "category": "style"
+    },
+    {
+      "findings": [
+        "F24"
+      ],
+      "summary": "EntitlementGuard and SpaceIdPipe both look up the space ID, doubling DB round-trips",
+      "label": "wrong",
+      "evidence": "The new Spaces routes don't use EntitlementGuard, which gates inside SpaceSafeShieldService.assertGated (space-safe-shield.service.ts:74-96). entitlement.guard.ts is not in the PR diff.",
+      "category": "performance"
+    },
+    {
+      "findings": [
+        "F26"
+      ],
+      "summary": "PR description lacks a ## Summary section",
+      "label": "wrong",
+      "evidence": "The provided PR description begins with '## Summary' and has the Linear link inside it.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F29"
+      ],
+      "summary": "PR title is branch-derived and non-conventional",
+      "label": "wrong",
+      "evidence": "The title is 'feat: gate Copilot recipient/counterparty scans by plan entitlement', which is already a conventional-commit title.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F32"
+      ],
+      "summary": "PR description references CopilotScansGuard and spaces/domain/safes changes not in the diff",
+      "label": "wrong",
+      "evidence": "The current description doesn't mention CopilotScansGuard. Its Changes bullets already describe the entitlements changes and the Spaces-service gating via existsInSpace.",
+      "category": "docs"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "usd": 0.0328296,
+  "findings": [
+    {
+      "file": null,
+      "line": null,
+      "claim": "The PR body includes extra sections (\"Before this works\" and \"Not verified\") beyond the template's Summary and Changes sections; the secret-setup prerequisite and verification status should instead be described in the Summary section's prose."
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "pr": 3295,
+  "title": "Title: build(deps): bump transitive dependencies",
+  "description": "## Summary\r\n\r\n  Bumps three transitive dependencies to their latest patch releases and\r\n  dedupes an existing duplicate. Lockfile-only changes; no direct\r\n  dependency or application code is affected.\r\n \r\n  ## Changes\r\n\r\n  - **fast-uri** `3.1.3` → `3.1.4` (via fastify ajv / fast-json-stringify)\r\n  - **brace-expansion** `5.0.5` → `5.0.7` (via @fastify/static → glob → minimatch)\r\n  - **postcss** deduped onto `8.5.15` — the `^8.3.11` range (via\r\n    sanitize-html) was resolving to a separate `8.5.3` copy; it now shares\r\n    the `8.5.15` resolution already present in the tree, dropping the\r\n    now-orphaned `nanoid@3.3.8` entry",
+  "findings": [
+    {
+      "id": "F1",
+      "file": "yarn.lock",
+      "line": 5674,
+      "claim": "The minimatch upgrade commit message states versions 3.1.4 and 9.0.8, but the lockfile actually ends up at 3.1.5 and 9.0.9, so the commit message does not match the final resolved versions."
+    },
+    {
+      "id": "F2",
+      "file": "yarn.lock",
+      "line": 5849,
+      "claim": "node-gyp is bumped across a major version, from 10.2.0 to 13.0.1, pulling in new major versions of tar, nopt, and which; this changes how native modules are built and its compatibility with Node 24.11 was not verified by actually building anything."
+    },
+    {
+      "id": "F3",
+      "file": "yarn.lock",
+      "line": 5673,
+      "claim": "The commit titled 'bump minimatch (3.1.4 / 9.0.8)' actually installs minimatch 3.1.5 and 9.0.9, and its body separately states 3.1.4 and 9.0.7 as the fixed versions, so the commit message no longer matches what the lockfile contains."
+    },
+    {
+      "id": "F4",
+      "file": "yarn.lock",
+      "line": 6216,
+      "claim": "A separate postcss entry (the ^8.3.11 range) still resolves to 8.5.15 while another copy resolves to 8.5.19, leaving two different postcss versions present in the lockfile after the bump."
+    },
+    {
+      "id": "F5",
+      "file": "yarn.lock",
+      "line": 7179,
+      "claim": "tinyglobby has two resolved copies in the lockfile (0.2.17 and 0.2.16) instead of being deduplicated to one version."
+    },
+    {
+      "id": "F6",
+      "file": "yarn.lock",
+      "line": null,
+      "claim": "Because the reviewer was instructed not to install or run anything, `yarn install --immutable` was not run, so the lockfile's internal consistency was not verified and must be confirmed by CI instead."
+    },
+    {
+      "id": "F7",
+      "file": "yarn.lock",
+      "line": 3349,
+      "claim": "A commit states that brace-expansion 2.x is intentionally left untouched, but a later commit bumps it to 2.1.2 anyway, contradicting the earlier commit's stated intent and potentially conflicting or duplicating work in a separate typeorm PR that also touches brace-expansion 2.x."
+    },
+    {
+      "id": "F8",
+      "file": "yarn.lock",
+      "line": 6227,
+      "claim": "The postcss upgrade commit message states version 8.5.15, but vite's copy of postcss actually resolves to 8.5.19, so the commit message does not match the final resolved version."
+    }
+  ]
+}

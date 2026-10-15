@@ -1,0 +1,55 @@
+{
+  "usd": 0.0736716,
+  "findings": [
+    {
+      "file": "src/config/entities/configuration.ts",
+      "line": 61,
+      "claim": "AUTH_ELEVATION_WINDOW_SECONDS is parsed with Number.parseInt but is never added to RootConfigurationSchema, unlike its neighbour AUTH_STATE_TTL_MILLISECONDS which is validated with z.coerce.number().int().min(1_000).optional(). A bad value like \"30m\" becomes NaN, and since ageSeconds <= NaN is always false, every OIDC admin gets 403 elevation_required on every gated route when the flag is on, while the app still boots normally; zero or negative values are also accepted without error."
+    },
+    {
+      "file": "src/config/entities/configuration.ts",
+      "line": 481,
+      "claim": "The new mfaStepUp flag mapping lacks a comment naming who owns the flag and under what condition it should be removed, which the feature-flag documentation requires."
+    },
+    {
+      "file": "src/modules/auth/AUTH.md",
+      "line": 171,
+      "claim": "The \"Guards and Decorators\" section lists AuthGuard, OptionalAuthGuard and OidcAuthRateLimitGuard but omits the new ElevationGuard, its SIWE exemption, and the elevation_required contract that clients rely on."
+    },
+    {
+      "file": "src/modules/auth/AUTH.md",
+      "line": 252,
+      "claim": "The \"Other Auth Config\" table is missing the new AUTH_ELEVATION_WINDOW_SECONDS variable, and the ?elevate=true query parameter on authorize plus the amr check in the callback are not documented anywhere."
+    },
+    {
+      "file": "src/modules/auth/routes/guards/elevation.guard.spec.ts",
+      "line": 34,
+      "claim": "oidcPayload and siwePayload are constructed as hand-written object literals instead of using the existing oidcAuthPayloadDtoBuilder() and siweAuthPayloadDtoBuilder() builders already used elsewhere in this PR (auth-payload.entity.spec.ts and elevation.integration.spec.ts), which is inconsistent with the established test convention."
+    },
+    {
+      "file": "src/modules/auth/domain/entities/__tests__/auth-payload.entity.spec.ts",
+      "line": 405,
+      "claim": "The test for the exact window edge (300 seconds) builds its timestamp with Date.now(), and since hasFreshMfa calls Date.now() again separately, a clock crossing a second boundary between the two calls can push the age to 301, causing the \"fresh\" assertion to fail intermittently."
+    },
+    {
+      "file": "src/modules/auth/routes/guards/elevation.guard.spec.ts",
+      "line": 98,
+      "claim": "The \"very edge of the window\" test has the same intermittent failure risk as the auth-payload.entity.spec.ts edge case, since it relies on two separate Date.now() calls instead of a frozen clock; other specs in the codebase (oidc-auth.service.spec.ts:48) already use vi.useFakeTimers() and vi.setSystemTime() to avoid this."
+    },
+    {
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.spec.ts",
+      "line": 415,
+      "claim": "buildAuth0Token(amr) as never uses a type cast to satisfy a mock signature, hiding type drift, whereas the other cases in the same file (lines 93, 140, 182) pass a typed object directly into mockResolvedValue without a cast; giving buildAuth0Token the repository's actual return type (Auth0Token) instead of Record<string, unknown> would remove the need for the cast."
+    },
+    {
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.spec.ts",
+      "line": 426,
+      "claim": "signedPayload() reads authRepositoryMock.signToken.mock.calls[0][0] as Record<string, unknown> and indexes into mock.calls directly (used by assertions from lines 428–469), instead of using expect(...).toHaveBeenCalledWith(expect.objectContaining(...)) style assertions, including expect.not.objectContaining for cases where the stamp should be absent."
+    },
+    {
+      "file": "src/modules/spaces/routes/elevation.integration.spec.ts",
+      "line": 272,
+      "claim": "The describe.each(GATED_ROUTES) block (lines 272–309) repeats five cases per gated route (never-MFA, expired, fresh, SIWE-exempt, unauthenticated), but the expired, fresh, and SIWE cases duplicate coverage already present in elevation.guard.spec.ts; per route it would suffice to keep one rejection test and one allow test, leaving the window and SIWE branches to the unit tests."
+    }
+  ]
+}

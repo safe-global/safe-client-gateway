@@ -1,0 +1,55 @@
+{
+  "usd": 0.08938960000000001,
+  "findings": [
+    {
+      "file": "src/modules/billing/routes/billing.controller.ts",
+      "line": 95,
+      "claim": "The new uuidPipe applied to the second spaceId binding defaults to returning HTTP 422 instead of 400 for a malformed spaceId, changing the response code on four existing GET routes (and the two new ones) because NestJS resolves parameter pipes concurrently and the synchronous ValidationPipe throw settles before SpaceIdPipe's async rejection."
+    },
+    {
+      "file": "billing.controller.e2e-spec.ts",
+      "line": 220,
+      "claim": "An existing, untouched e2e test still asserts a 400 response for this malformed-spaceId case and will fail once the status code changes, but the e2e project is not run by yarn test or by CI, so this regression would not be caught automatically."
+    },
+    {
+      "file": "billing.service.ts",
+      "line": 254,
+      "claim": "The 'already on this plan' check compares price ids while the offer filter in payment-link-offer.rules.ts excludes links by plan name, so switching between monthly and annual billing within the same plan name could incorrectly be rejected with a 403 'plan not available' error, depending on what the live billing catalog contains."
+    },
+    {
+      "file": "billing.controller.ts",
+      "line": 62,
+      "claim": "No test distinguishes the behavior of uuidPipe from SpaceIdPipe, which is why the status-code regression went unnoticed; the new routes need a malformed-spaceId test case plus a case using a UUID that the regex accepts but zod rejects."
+    },
+    {
+      "file": "billing.service.ts",
+      "line": 196,
+      "claim": "The preview endpoint's same-plan 409 response has no test coverage; only the equivalent behavior on the PATCH endpoint is tested."
+    },
+    {
+      "file": "billing.service.ts",
+      "line": 169,
+      "claim": "The docstring states that a preview works for a canceled subscription, but no test verifies this claim, so a future status gate could be introduced without any test failing."
+    },
+    {
+      "file": "billing-api.service.ts",
+      "line": 314,
+      "claim": "Nothing tests the encodeURIComponent(subscriptionId) call, although it currently has no practical effect since opaqueIdPipe already restricts the input to [A-Za-z0-9_-]."
+    },
+    {
+      "file": "billing.service.ts",
+      "line": 184,
+      "claim": "The not-found and same-plan guard logic is duplicated between two methods (also at line 232-255), though the status check that differs between them is described as intentional and documented rather than an oversight."
+    },
+    {
+      "file": "billing-api.service.ts",
+      "line": 260,
+      "claim": "updateSubscription is declared async and uses 'return await this.parse(...)' while its four sibling methods simply 'return this.parse(...)' without the redundant async/await, making the pattern inconsistent."
+    },
+    {
+      "file": "billing.service.ts",
+      "line": 205,
+      "claim": "The new methods call the IBillingApi datasource directly instead of going through a repository, which conflicts with the module-structure rule, though the module has never had a repository and six existing methods already follow this same direct-call pattern."
+    }
+  ]
+}

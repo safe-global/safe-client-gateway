@@ -1,0 +1,35 @@
+{
+  "usd": 0.06544760000000001,
+  "findings": [
+    {
+      "file": "src/modules/relay/routes/space-relay.controller.ts",
+      "line": 44,
+      "claim": "The new code imports SpaceIdPipe, the Auth decorator, and assertMember directly from other modules' routes/ trees rather than through their domain layers, but the module-structure rule's only exception for such cross-module reach is for guards, so a pipe, a decorator, and a route utility are being imported in violation of that rule."
+    },
+    {
+      "file": "src/modules/relay/routes/space-relay.controller.ts",
+      "line": 25,
+      "claim": "The Auth decorator is imported directly from another module's routes tree instead of from a shared, cross-cutting location, violating the cross-module import rule."
+    },
+    {
+      "file": "src/modules/relay/routes/space-relay.service.ts",
+      "line": 9,
+      "claim": "assertMember is imported directly from another module's routes tree instead of through its domain layer, violating the cross-module import rule; it should live under the spaces module's domain directory."
+    },
+    {
+      "file": "src/modules/relay/domain/relay-simulation.service.ts",
+      "line": 1,
+      "claim": "Three behaviour-preserving refactors (extracting RelaySimulationService from RelayFeeRelayer, extracting resolveTarget from getLimitAddresses, and extracting safeMatch from addSafes) are bundled into the same large diff as the new route and the entitlements event-metering change, mixing unrelated concerns in one PR and making it harder to review; the refactors should be split into their own preceding commit/PR before the feature changes land."
+    },
+    {
+      "file": "src/modules/relay/routes/space-relay.controller.ts",
+      "line": 88,
+      "claim": "The handler can return a 501 response (RelayerTypeNotImplementedError on a GTF chain, mapped by RelayerNotAvailableExceptionFilter) but no Swagger response decorator documents this outcome, leaving the API documentation incomplete."
+    },
+    {
+      "file": "src/modules/relay/domain/relayers/__tests__/workspace.relayer.spec.ts",
+      "line": 350,
+      "claim": "The test uses a bare rejects.toThrow() which passes for any rejection, including an unrelated TypeError thrown from the line under test, so it doesn't actually verify that the expected error occurred; it should assert against a specific error instance instead, consistent with sibling test cases in the same file."
+    }
+  ]
+}

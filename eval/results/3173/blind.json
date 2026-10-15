@@ -1,0 +1,157 @@
+{
+  "pr": 3173,
+  "title": "fix: tolerate client/server clock skew when validating SiWe message t…",
+  "description": "## Summary\r\n\r\n  SiWe login intermittently failed with `401 \"Invalid message\"` immediately after signing, then succeeded after waiting ~1 minute. Root cause: the SiWe message time bounds (`issuedAt`, `expirationTime`, `notBefore`) were compared against the server clock with **zero tolerance**. When\r\n  the client clock runs ahead of the server clock (clock skew), a freshly-signed message's `issuedAt` is in the future relative to the server and is rejected as \"Message yet issued\" until the server clock catches up.\r\n\r\n  This adds a configurable clock-skew allowance, applied symmetrically to the three time bounds, mirroring the leeway used by JWT/OIDC validators. Replay protection and freshness remain enforced independently by the single-use, TTL-bound nonce, so the tolerance does not weaken those\r\n  guarantees.\r\n\r\n  ## Changes\r\n\r\n  - Convert `SiweMessageSchema` into a factory `buildSiweMessageSchema(clockSkewSeconds?)` that applies the skew to the `issuedAt` / `expirationTime` / `notBefore` checks (follows the existing `page.schema.factory.ts` schema-factory pattern).\r\n  - `SiweRepository` reads `auth.clockSkewSeconds` via `IConfigurationService` and passes it into the schema.\r\n  - Add `auth.clockSkewSeconds` config, sourced from `AUTH_CLOCK_SKEW_SECONDS` (default **30s**).\r\n  - Document `AUTH_CLOCK_SKEW_SECONDS` in `.env.sample.json` and `src/modules/auth/AUTH.md`.\r\n  - Add a `buildSiweMessageSchema` unit spec (the schema had none) covering within/beyond-tolerance boundaries for all three bounds and asserting the configured skew is honored.\r\n  - Update the message-expiry integration test to expire beyond the tolerance window.",
+  "findings": [
+    {
+      "id": "F1",
+      "file": "src/modules/auth/routes/auth.controller.integration.spec.ts",
+      "line": 398,
+      "claim": "Endpoint tests only cover the case where notBefore/expirationTime are expired beyond the skew window; there is no /v1/auth/verify test for values within the skew window, which would have caught the 500-instead-of-401 regression. The unit tests in siwe-message.entity.spec.ts only exercise the schema, not the downstream verification behavior."
+    },
+    {
+      "id": "F2",
+      "file": "AUTH.md",
+      "line": 235,
+      "claim": "The documentation states the clock-skew allowance avoids rejecting valid messages, but because issued tokens can end up unusable, that claim does not hold for the accepted-within-skew case."
+    },
+    {
+      "id": "F3",
+      "file": "src/modules/siwe/domain/entities/siwe-message.entity.ts",
+      "line": 68,
+      "claim": "By the time this failure occurs, the nonce has already been cleared and findOrCreateByWalletAddress has already run, so a client with clock skew ends up with a spent nonce and a 500 error and must start the login flow over. Even when the immediate call doesn't throw, other guarded requests using verifyToken would still reject the token until nbf passes."
+    },
+    {
+      "id": "F4",
+      "file": "src/modules/siwe/domain/entities/siwe-message.entity.ts",
+      "line": 68,
+      "claim": "The schema now accepts a notBefore up to 30 seconds in the future and an expirationTime up to 30 seconds in the past, and these values are copied unchanged into the JWT nbf/exp claims. Because jwt.verify is called elsewhere with no clockTolerance configured, it throws NotBeforeError or TokenExpiredError, which are not HttpExceptions, so the global error filter returns a 500 instead of the clean 401 that was returned before this change."
+    },
+    {
+      "id": "F5",
+      "file": "src/modules/siwe/domain/entities/siwe-message.entity.ts",
+      "line": 81,
+      "claim": "The message text on this line should be changed to 'Message not yet valid'."
+    },
+    {
+      "id": "F6",
+      "file": "src/modules/auth/routes/auth.controller.integration.spec.ts",
+      "line": 407,
+      "claim": "The only integration test change covers the rejection case; no test exercises a SiWe message that is accepted because it falls within the clock-skew allowance, all the way through AuthService."
+    },
+    {
+      "id": "F7",
+      "file": "src/modules/siwe/domain/siwe.repository.ts",
+      "line": 45,
+      "claim": "The Zod schema is rebuilt on every verify call even though the clock-skew value never changes after startup; it should be built once in the constructor instead."
+    },
+    {
+      "id": "F8",
+      "file": "src/modules/siwe/domain/entities/siwe-message.entity.ts",
+      "line": 59,
+      "claim": "The optional parameter's truthiness check (clockSkewSeconds ? … : 0) also masks the NaN handling problem, since a NaN value is falsy and silently resolves to zero skew instead of an error."
+    },
+    {
+      "id": "F9",
+      "file": "src/config/entities/schemas/configuration.schema.ts",
+      "line": 63,
+      "claim": "No test case was added to configuration.validator.spec.ts covering validation of the new AUTH_CLOCK_SKEW_SECONDS value."
+    },
+    {
+      "id": "F10",
+      "file": "src/config/entities/configuration.ts",
+      "line": 52,
+      "claim": "A negative AUTH_CLOCK_SKEW_SECONDS value produces a negative skewMs, which makes the issuedAt check reject every freshly signed message and breaks SiWe login."
+    },
+    {
+      "id": "F11",
+      "file": "src/modules/siwe/domain/siwe.repository.ts",
+      "line": 45,
+      "claim": "buildSiweMessageSchema appears to run on every login even though clockSkewSeconds never changes, so the resulting siweMessageSchema is always identical; it should be moved to the constructor to avoid rebuilding it unnecessarily on each call."
+    },
+    {
+      "id": "F12",
+      "file": "src/modules/auth/routes/auth.service.ts",
+      "line": 92,
+      "claim": "AuthService copies the SiWe message's expirationTime directly into the JWT exp claim, so a message that expired up to the skew allowance ago is now accepted but produces a token that is already expired."
+    },
+    {
+      "id": "F13",
+      "file": "src/modules/siwe/domain/entities/siwe-message.entity.ts",
+      "line": 59,
+      "claim": "Because the value isn't validated, a non-numeric AUTH_CLOCK_SKEW_SECONDS becomes NaN, and the truthiness check silently treats that as a skew of zero instead of surfacing an error."
+    },
+    {
+      "id": "F14",
+      "file": "src/config/entities/schemas/configuration.schema.ts",
+      "line": 63,
+      "claim": "The new AUTH_CLOCK_SKEW_SECONDS environment variable is read and parsed in configuration.ts but has no corresponding entry in the configuration schema, unlike every other nearby AUTH_* numeric setting, so an invalid value is never rejected at startup."
+    },
+    {
+      "id": "F15",
+      "file": "src/modules/siwe/domain/siwe.repository.ts",
+      "line": 45,
+      "claim": "buildSiweMessageSchema(this.clockSkewSeconds) is called on every getValidatedSiweMessage invocation even though the skew value is fixed once in the constructor, so the schema is rebuilt unnecessarily on each call instead of being built once and cached."
+    },
+    {
+      "id": "F16",
+      "file": "src/modules/auth/AUTH.md",
+      "line": 257,
+      "claim": "The newly added table row is wider than its column, breaking the Markdown table's alignment, and running yarn format (Biome) will not fix this since Biome does not reformat Markdown tables."
+    },
+    {
+      "id": "F17",
+      "file": "src/modules/siwe/domain/entities/siwe-message.entity.ts",
+      "line": 30,
+      "claim": "clockSkewSeconds is declared as an optional parameter even though the only caller always passes a number from getOrThrow, making the associated no-skew branch dead code."
+    },
+    {
+      "id": "F18",
+      "file": "src/modules/siwe/domain/entities/siwe-message.entity.ts",
+      "line": 68,
+      "claim": "The fix should apply the clock-skew tolerance only to issuedAt (the case described by the commit), since iat is not checked by jsonwebtoken unless maxAge is set; if tolerance is kept on notBefore/expirationTime, values should be clamped before signing or clockTolerance should be passed to both verify and decode, and an endpoint test should be added for each case."
+    },
+    {
+      "id": "F19",
+      "file": "src/config/entities/configuration.ts",
+      "line": 52,
+      "claim": "AUTH_CLOCK_SKEW_SECONDS is not validated in configuration.schema.ts the way AUTH_STATE_TTL_MILLISECONDS is (with .int().min(1)), so bad values fail silently: a negative value rejects every fresh message, a huge value accepts stale messages, and a non-numeric value becomes NaN and silently turns into 0."
+    },
+    {
+      "id": "F20",
+      "file": "src/modules/siwe/domain/entities/siwe-message.entity.ts",
+      "line": 64,
+      "claim": "The wording of this message may be incorrect and should instead read 'message not issued yet', since the current text does not accurately describe the condition being reported."
+    },
+    {
+      "id": "F21",
+      "file": "src/config/entities/configuration.ts",
+      "line": 52,
+      "claim": "An unbounded, very large AUTH_CLOCK_SKEW_SECONDS value effectively disables the expirationTime and notBefore checks entirely."
+    },
+    {
+      "id": "F22",
+      "file": "src/modules/siwe/domain/entities/siwe-message.entity.ts",
+      "line": 30,
+      "claim": "clockSkewSeconds is declared optional and checked for truthiness even though the only caller always passes a number; the truthy check also silently hides a NaN or 0 config value. It should be made required and used directly instead of being guarded by a truthy check."
+    },
+    {
+      "id": "F23",
+      "file": "src/modules/auth/AUTH.md",
+      "line": 257,
+      "claim": "The table in this section should be reformatted, as its current formatting is not ideal."
+    },
+    {
+      "id": "F24",
+      "file": "src/datasources/jwt/jwt.module.ts",
+      "line": null,
+      "claim": "JWT verification has no clockTolerance configured, so tokens with exp/iat/nbf skewed by the new allowance end up being rejected when they are actually used, defeating the purpose of the allowance."
+    },
+    {
+      "id": "F25",
+      "file": "src/modules/auth/routes/auth.service.ts",
+      "line": 92,
+      "claim": "Similarly, an issuedAt or notBefore value up to the skew allowance in the future is copied directly into the token's iat/nbf claims, producing tokens with future issued/not-before times."
+    }
+  ]
+}

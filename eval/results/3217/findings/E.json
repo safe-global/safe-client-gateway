@@ -1,0 +1,15 @@
+{
+  "usd": 0.0504956,
+  "findings": [
+    {
+      "file": "src/modules/billing/routes/guards/billing-webhook-auth.guard.ts",
+      "line": 21,
+      "claim": "BillingWebhookAuthGuard depends on the concrete BillingAuthService class rather than an interface, unlike AuthGuard which depends on the IAuthRepository interface, making the code inconsistent with the established pattern."
+    },
+    {
+      "file": "src/modules/billing/routes/guards/billing-webhook-auth.guard.ts",
+      "line": 44,
+      "claim": "There is no test covering the case of an empty key following the Bearer prefix, leaving that scenario unverified."
+    }
+  ]
+}

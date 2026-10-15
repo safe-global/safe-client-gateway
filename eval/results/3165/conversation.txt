@@ -1,0 +1,41 @@
+THREAD src/modules/spaces/datasources/entities/address-book-request.entity.db.ts:26 resolved=true
+[chatgpt-codex-connector 2026-06-12T14:59:31Z] **<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Block resubmitting approved contacts**
+
+Because the replacement uniqueness constraint only applies while `status = 0`, once an admin approves a request the same requester can immediately submit another request for the same address; `AddressBookRequestsService.createRequest` only counts pending rows and does not check the shared address book or approved requests. In that scenario, each approval upserts the already-shared contact again and creates duplicate pending/admin/audit work, even though the retry behavior described by the change is only needed after rejection.
+
+Useful? React with 👍 / 👎.
+[compojoom 2026-06-12T15:51:13Z] you have to draw the line somewhere. The described behavior makes no sense. 
+
+THREAD src/modules/spaces/routes/entities/address-book-request.dto.entity.ts:81 resolved=true
+[LucieFaire 2026-06-12T15:37:47Z] `overwrite(...`
+https://zod.dev/v4?id=overwrite#overwrite
+[compojoom 2026-06-12T15:55:47Z] Good point — switched to `.overwrite(...)` in 2de5086c.
+
+REVIEW COMMENTED
+[chatgpt-codex-connector 2026-06-12T14:59:31Z] 
+### 💡 Codex Review
+
+Here are some automated review suggestions for this pull request.
+
+**Reviewed commit:** `52a760e7bd`
+    
+
+<details> <summary>ℹ️ About Codex in GitHub</summary>
+<br/>
+
+[Your team has set up Codex to review pull requests in this repo](https://chatgpt.com/codex/cloud/settings/general). Reviews are triggered when you
+- Open a pull request for review
+- Mark a draft as ready
+- Comment "@codex review".
+
+If Codex has suggestions, it will comment; otherwise it will react with 👍.
+
+
+
+
+Codex can also answer questions or update the PR. Try commenting "@codex address that feedback".
+            
+</details>
+
+REVIEW DISMISSED
+[LucieFaire 2026-06-12T15:38:47Z] 1 remark, otherwise 👍 

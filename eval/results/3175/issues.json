@@ -1,0 +1,95 @@
+{
+  "usage": {
+    "usd": 0.32553740000000003,
+    "turns": 5,
+    "wallSeconds": 39
+  },
+  "issues": [
+    {
+      "findings": [
+        "F1",
+        "F13",
+        "F14",
+        "F15"
+      ],
+      "summary": "Moved create/delete-space-safe DTO files lack the required SPDX license header",
+      "label": "low",
+      "evidence": "src/modules/spaces/routes/safes/entities/create-space-safe.dto.entity.ts:1 and delete-space-safe.dto.entity.ts:1 start with `import {`, and both are renamed with edits (R068). They are the only changed files without the header, which breaks the AGENTS.md rule. The claim in F13/F14 that CI would fail is wrong, because the CI filter skips renamed files (see F3).",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F3",
+        "F8"
+      ],
+      "summary": "CI license check uses --diff-filter=AM, so renamed files are never checked",
+      "label": "low",
+      "evidence": ".github/workflows/ci.yml:63 runs `git diff --name-only --diff-filter=AM`. Rename detection reports these moves as R0xx, so they are left out, which is why the two headerless DTOs above pass CI. The gap is real, but the file is outside this PR's diff.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F2",
+        "F16"
+      ],
+      "summary": "Typo 'sl=plit' in commit message 976f1ed",
+      "label": "nit",
+      "evidence": "`git log` shows `976f1ed71 chore: sl=plit into domain subfolders`. It is cosmetic and goes away on squash-merge.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F4",
+        "F5",
+        "F11",
+        "F18"
+      ],
+      "summary": "docs/engineering/conventions/project-structure.md is claimed to be out of date for the new spaces layout",
+      "label": "wrong",
+      "evidence": "No project-structure.md exists anywhere in the checkout (`find . -name project-structure.md` returns nothing, and there is no docs/ directory), so there is no documentation to be out of date.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F6",
+        "F9"
+      ],
+      "summary": "users domain members repository imports InviteUserInput from the spaces routes layer",
+      "label": "low",
+      "evidence": "members.repository.interface.ts:11 and members.repository.ts:32 import from '@/modules/spaces/routes/members/entities/invite-users.dto.entity'. The base commit already imported from routes/entities, so this layering inversion predates the PR; the PR only touches the import lines.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F10",
+        "F17"
+      ],
+      "summary": "address-book-items repository (domain) imports UpsertAddressBookItemsDto from the routes layer",
+      "label": "low",
+      "evidence": "address-book-items.repository.ts:18 and address-book-items.repository.interface.ts:7 import from routes/address-books/entities. This domain→routes dependency existed before the move and runs against the AGENTS.md layering, but the PR only rewrote the paths.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F7",
+        "F12",
+        "F19",
+        "F21",
+        "F22"
+      ],
+      "summary": "Spaces-core files get a spaces/ subfolder only in datasources, not in domain or routes",
+      "label": "low",
+      "evidence": "datasources/ contains spaces/, while domain/ keeps spaces.repository*.ts plus entities/ at the root, and routes/ keeps spaces.controller.ts/spaces.service.ts at the root. The inconsistency is real, but it only makes placement a bit less predictable and does not change behaviour.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F20"
+      ],
+      "summary": "space-safes.entity.db.ts has a plural filename for a single SpaceSafe entity",
+      "label": "nit",
+      "evidence": "The file was renamed as-is (R092) from datasources/entities/space-safes.entity.db.ts, so the naming predates the PR and is purely stylistic.",
+      "category": "style"
+    }
+  ]
+}

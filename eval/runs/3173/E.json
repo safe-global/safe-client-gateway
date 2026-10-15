@@ -1,0 +1,11 @@
+{
+  "pr": 3173,
+  "reviewSha": "8e3da11c62df95f2f94ef3fb2a63b83f116bf7ab",
+  "baseSha": "11360c1fed3e04e6d2fc6b6bf02ac4fa582a12b0",
+  "system": "E",
+  "version": "github",
+  "runner": "collect",
+  "model": "human",
+  "commentSha": "8e3da11c62df95f2f94ef3fb2a63b83f116bf7ab",
+  "output": "src/modules/auth/AUTH.md:257\nnit: table should probably be re-formatted.\n\n---\n\nsrc/modules/siwe/domain/entities/siwe-message.entity.ts:81\n```suggestion\n          message: 'Message not yet valid',\n```\n\n---\n\nsrc/modules/siwe/domain/entities/siwe-message.entity.ts:64\nShouldn't that be \"message not issued yet\"?\n\n---\n\nsrc/modules/siwe/domain/siwe.repository.ts:45\nA small suggestion / discussion:\r\nSeems `buildSiweMessageSchema` will run for every login? but `this.clockSkewSeconds` never change, so `siweMessageSchema` will always be the same? Maybe it is worth to move it to constructor?"
+}

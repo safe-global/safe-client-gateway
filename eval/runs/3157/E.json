@@ -1,0 +1,11 @@
+{
+  "pr": 3157,
+  "reviewSha": "b219480713aa5b1a5d996665638c6c30ba5fd721",
+  "baseSha": "af9dcae60eb43305524362a8b432e7a1b62a8c99",
+  "system": "E",
+  "version": "github",
+  "runner": "collect",
+  "model": "human",
+  "commentSha": "d9c10856c86b478e33bdff154125b1e3d90b09df",
+  "output": "src/config/entities/__tests__/configuration.ts:207\nnothing against it, but it kind of doesnt go very well with other FF defined here. We have `zerionPositions` already there, so just calling it `Zerion` would be confusing, what about `zerionBalances` or smth with a bit more context (yet i know it was partialy that before)"
+}

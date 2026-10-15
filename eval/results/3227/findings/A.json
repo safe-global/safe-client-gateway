@@ -1,0 +1,20 @@
+{
+  "usd": 0.052374,
+  "findings": [
+    {
+      "file": "src/modules/hooks/routes/entities/schemas/incoming-token.schema.ts",
+      "line": 11,
+      "claim": "The trusted field is required on the incoming and outgoing token schemas, so any payload missing it fails validation; the queue consumer parses the event in a try/catch and drops the whole event as an error when trusted is absent, and the HTTP endpoint returns a 422. If any upstream deployment does not yet send trusted, token-transfer events are lost entirely, breaking push notifications and cache invalidation for balances, collectibles and transactions. The field should be made optional or given a default (e.g. trusted: z.boolean().optional() or .default(true)) with the spam check written as event.trusted === false, and the related tests updated accordingly."
+    },
+    {
+      "file": "src/modules/hooks/routes/entities/schemas/outgoing-token.schema.ts",
+      "line": 11,
+      "claim": "The trusted field was added to the outgoing-token schema as well, but nothing in the code reads it since only INCOMING_TOKEN is filtered and stripped; making it required here widens the breaking-change risk without adding any behavior. It should be dropped from the outgoing schema, or made optional until it is actually used, which would also mean reverting the outgoing-token.builder.ts change and the extra fixture lines."
+    },
+    {
+      "file": "src/modules/notifications/domain/push/push-notification.integration.spec.ts",
+      "line": 369,
+      "claim": "The scenario of an event being dropped before subscriber resolution is tested redundantly at both the integration layer and the unit layer (push-notification.service.spec.ts:183), where the unit test already proves the drop, the absence of a subscriber lookup, and that nothing is enqueued. The redundant test should be removed, keeping only the unit test, or the integration test should be trimmed to cover just the queue wiring."
+    }
+  ]
+}

@@ -1,0 +1,169 @@
+{
+  "pr": 3442,
+  "title": "feat(circuit-breaker): cap in-flight probes while HALF_OPEN",
+  "description": "<!--\r\n  SPDX-License-Identifier: FSL-1.1-MIT\r\n -->\r\n## Summary\r\nWhile HALF_OPEN the circuit breaker admitted every request until enough of them had failed to re-open the circuit. Against a hanging upstream those failures only land when the request times out, so with the 30 s production HTTP timeout a whole timeout's worth of traffic piled up on the dead service once per half-open window.\r\nThis is the pattern behind the data-decoder outage on 2026-09-09, where CGW→decoder traffic amplified 17× and gateway p95 latency reached 30 s.\r\n\r\nHALF_OPEN now admits at most as many concurrent probes as the number of failures that would re-open the circuit (`ceil(threshold × halfOpenFailureRateThreshold / 100)`, 3 with the defaults) and rejects the rest with the existing 503. Probe slots are released on both `recordSuccess` and `recordFailure` and reset on every state\r\ntransition, so late results from a re-opened circuit cannot leak a slot. \r\n\r\nNo new configuration: the cap is derived, so one round of probes is always enough to reach a verdict either way and the two half-open settings cannot drift apart.\r\n\r\n## Changes\r\n- `src/datasources/circuit-breaker/circuit-breaker.service.ts` — `halfOpenInFlight` counter; `canProceedInHalfOpenState` admits up to `getEffectiveFailureThreshold` probes; slot release in `recordSuccess`/`recordFailure`; reset on transitions; lazy registration from `recordFailure`; \r\n\r\n- `src/datasources/circuit-breaker/circuit-breaker.service.spec.ts` — probe-cap tests; lazy-registration tests; suite moved to `vi.useFakeTimers()` and a faker-backed circuit name\r\n- `src/datasources/network/network.module.ts` — drop the explicit`getOrRegisterCircuit` call\r\n- `src/config/entities/configuration.ts`, `.env.sample.json` — document that the half-open rate also sets the probe cap\r\n- `docs/agents/ARCHITECTURE.md` — one sentence on the half-open probe bound\r\n",
+  "findings": [
+    {
+      "id": "F1",
+      "file": "src/datasources/network/network.module.ts",
+      "line": 150,
+      "claim": "The getOrRegisterCircuit call is removed from network.module.ts as part of the bundled registration refactor, which is a separate concern from the probe cap change and should be split into its own PR or explicitly named in the PR body."
+    },
+    {
+      "id": "F2",
+      "file": "circuit-breaker.service.spec.ts",
+      "line": 15,
+      "claim": "circuitName is declared with faker.string.alphanumeric() at module scope, which defaults to a 1-character name shared across every test; this is fragile because a future test adding an explicit single-character circuit name like 'a' or 'b' could collide with it."
+    },
+    {
+      "id": "F3",
+      "file": "configuration.ts",
+      "line": null,
+      "claim": "The configuration.ts comment documents that the probe cap is coupled to the reopen threshold but omits the resulting close-time consequence, so a user tuning halfOpenFailureRateThreshold down would be surprised by the slower close."
+    },
+    {
+      "id": "F4",
+      "file": "src/datasources/circuit-breaker/circuit-breaker.service.ts",
+      "line": 228,
+      "claim": "Every rejected HALF_OPEN request is logged at warn level, and during an outage with a hanging upstream and many concurrent callers this can generate a large volume of warn logs across pods, potentially dominating logs during an incident alongside the existing OPEN-state rejection warn logs."
+    },
+    {
+      "id": "F5",
+      "file": "src/datasources/circuit-breaker/circuit-breaker.service.ts",
+      "line": 372,
+      "claim": "recordFailure now registers circuits itself, a behavioral change unrelated to the probe cap fix that is bundled into the same PR rather than split out or called out explicitly in the PR description."
+    },
+    {
+      "id": "F6",
+      "file": null,
+      "line": null,
+      "claim": "No test in network.module exercises the new HALF_OPEN rejection path end to end, leaving that behavior without direct test coverage."
+    },
+    {
+      "id": "F7",
+      "file": "src/datasources/circuit-breaker/circuit-breaker.service.spec.ts",
+      "line": 58,
+      "claim": "The JSDoc comment on the getRegisteredCircuit test helper says tests seed a circuit by recording a failure and then reading it back, but the helper itself only reads the circuit back; each test records the failure separately, so the comment misdescribes what the helper does."
+    },
+    {
+      "id": "F8",
+      "file": "src/datasources/circuit-breaker/circuit-breaker.service.ts",
+      "line": 209,
+      "claim": "A comment states that one round of probes is always enough to reach a verdict either way, but this is only true for reopening the circuit; closing the circuit requires a configurable number of consecutive successes (10 by default) while at most about 3 probes can run concurrently, so closing actually takes at least four rounds."
+    },
+    {
+      "id": "F9",
+      "file": "src/datasources/circuit-breaker/circuit-breaker.service.ts",
+      "line": null,
+      "claim": "A recordSuccess call that returns late from a probe issued in a previous HALF_OPEN window can still pass the state === HALF_OPEN check and release a probe slot belonging to a new window, allowing an extra admission beyond the intended cap since the counter is only clamped at zero rather than tied to a specific probe."
+    },
+    {
+      "id": "F10",
+      "file": "src/datasources/circuit-breaker/circuit-breaker.service.ts",
+      "line": 537,
+      "claim": "In isStale, the branch checking for a missing lastActivityTime can no longer be reached because circuits are now only created inside recordFailure, which sets lastActivityTime immediately, and the test that previously covered this branch was removed in this diff, leaving dead code without corresponding coverage."
+    },
+    {
+      "id": "F11",
+      "file": "src/datasources/circuit-breaker/circuit-breaker.service.spec.ts",
+      "line": 485,
+      "claim": "The new recordSuccess test uses the literal string 'new-circuit' even though the assertion does not depend on that specific value and the suite already has a faker-backed name generator available. The literal should be replaced with the existing faker-generated circuit name."
+    },
+    {
+      "id": "F12",
+      "file": "src/datasources/circuit-breaker/circuit-breaker.service.ts",
+      "line": null,
+      "claim": "With default configuration (threshold=10, halfOpenFailureRateThreshold=30 giving a probe cap of 3), the circuit needs about four sequential rounds of admitted probes to accumulate enough successes to close, so lowering halfOpenFailureRateThreshold to make reopening more aggressive also shrinks the probe cap and lengthens the time to close, which is not obvious from the configuration alone."
+    },
+    {
+      "id": "F13",
+      "file": "src/datasources/circuit-breaker/circuit-breaker.service.ts",
+      "line": 376,
+      "claim": "The PR moves circuit registration into recordFailure, makes getOrRegisterCircuit private, gates recordSuccess on enabled, and drops the corresponding call site in network.module.ts, but this registration-lifecycle change is unrelated to the probe cap the PR is meant to introduce. The public getOrRegisterCircuit method and the prior recordFailure guard logic should be restored, the call in network.module.ts should be kept, and the lazy-registration change should be shipped as a separate PR."
+    },
+    {
+      "id": "F14",
+      "file": "src/datasources/circuit-breaker/circuit-breaker.service.ts",
+      "line": 292,
+      "claim": "recordSuccess now checks the enabled flag, another change unrelated to the probe cap fix bundled into this PR, increasing the size and review difficulty of the diff."
+    },
+    {
+      "id": "F15",
+      "file": "src/datasources/circuit-breaker/circuit-breaker.service.ts",
+      "line": 247,
+      "claim": "releaseHalfOpenProbe decrements halfOpenInFlight for any request that finishes while the circuit is HALF_OPEN, without checking whether that request was actually admitted as a probe during the current HALF_OPEN window. A request that started while the circuit was CLOSED or during an earlier HALF_OPEN window can finish later and free a slot it never took, allowing more probes to be admitted than the configured cap, which undermines the hanging-upstream protection the change is meant to provide."
+    },
+    {
+      "id": "F16",
+      "file": "src/datasources/circuit-breaker/circuit-breaker.service.ts",
+      "line": 220,
+      "claim": "getEffectiveFailureThreshold is used with two different meanings — as maxInFlight here and as the reopen threshold in recordFailure — and the code does not document that these are intentionally the same value, requiring the reader to infer the coupling."
+    },
+    {
+      "id": "F17",
+      "file": "src/datasources/circuit-breaker/circuit-breaker.service.ts",
+      "line": 84,
+      "claim": "canProceed now reserves a slot by incrementing halfOpenInFlight, but its name and JSDoc still describe it as a read-only check; a caller that only calls it to check status without later calling recordSuccess or recordFailure will hold a slot forever, and once enough slots are held this way every request gets blocked until stale-circuit cleanup removes the circuit after 10x rollingWindow."
+    },
+    {
+      "id": "F18",
+      "file": null,
+      "line": null,
+      "claim": "The PR title uses the feat type even though the change corrects HALF_OPEN behavior related to a prior outage, which should be classified as a fix rather than a new client-visible capability; the title should be changed to reflect a fix."
+    },
+    {
+      "id": "F19",
+      "file": "src/datasources/circuit-breaker/circuit-breaker.service.ts",
+      "line": 112,
+      "claim": "The JSDoc for canProceed (returns false if circuit is open) and canProceedOrFail (throws if circuit is open) is out of date because it does not mention that a true/non-throwing result in HALF_OPEN also reserves a probe slot that must be released via record*, and does not cover the case where the circuit is full in HALF_OPEN."
+    },
+    {
+      "id": "F20",
+      "file": "src/datasources/circuit-breaker/circuit-breaker.service.spec.ts",
+      "line": 485,
+      "claim": "The new recordSuccess test uses the literal circuit name 'new-circuit' instead of the faker-generated circuitName used elsewhere in the file, making the test suite inconsistent with the stated convention of using faker values instead of literals."
+    },
+    {
+      "id": "F21",
+      "file": "src/datasources/circuit-breaker/circuit-breaker.service.ts",
+      "line": 135,
+      "claim": "getOrRegisterCircuit is changed to private as part of an unrelated refactor bundled into this PR rather than a separate change scoped to the probe cap fix, making the diff harder to review."
+    },
+    {
+      "id": "F22",
+      "file": "src/datasources/circuit-breaker/circuit-breaker.service.ts",
+      "line": 247,
+      "claim": "releaseHalfOpenProbe releases a probe slot whenever a success or failure is recorded during HALF_OPEN, even if the underlying request never took a slot, such as a request admitted while CLOSED or a probe from an earlier HALF_OPEN window whose counter was reset to 0 by transitionToOpen or transitionToHalfOpen. As a result more requests than the intended cap (e.g. 3 when threshold is 10 and rate is 30) can reach the upstream simultaneously, making the cap effectively soft rather than a hard limit, though it remains bounded because late failures still count toward re-opening."
+    },
+    {
+      "id": "F23",
+      "file": "src/datasources/circuit-breaker/circuit-breaker.service.ts",
+      "line": null,
+      "claim": "Using a coarse shared counter instead of a per-probe token returned from canProceed/canProceedOrFail and consumed by recordSuccess/recordFailure means slot release cannot be tied to the specific probe that acquired it, which is the root cause of the late-release issue; this tradeoff is undocumented in code."
+    },
+    {
+      "id": "F24",
+      "file": "src/datasources/circuit-breaker/circuit-breaker.service.spec.ts",
+      "line": 417,
+      "claim": "The edited 'circuit-1' and 'circuit-2' tests kept their literal circuit name strings instead of being updated to use faker-generated values, leaving the spec file inconsistent since the rest of the file was moved to faker-generated circuitName."
+    },
+    {
+      "id": "F25",
+      "file": "src/datasources/network/network.module.ts",
+      "line": 142,
+      "claim": "There is no test through the network wrapper verifying the probe cap end-to-end, even though releasing a slot depends on the wrapper calling record* on every completion path; for example a 4xx response calls recordSuccess while a blocked request throws before the try block and so records nothing, and network.module.integration.spec.ts has no HALF_OPEN case covering this."
+    },
+    {
+      "id": "F26",
+      "file": "docs/agents/ARCHITECTURE.md",
+      "line": 260,
+      "claim": "The ARCHITECTURE doc gives the probe cap formula as threshold x halfOpenFailureRateThreshold / 100 without noting that the code rounds up with Math.ceil (circuit-breaker.service.ts:351), so the documented formula does not match the implementation's rounding behavior."
+    },
+    {
+      "id": "F27",
+      "file": "src/datasources/circuit-breaker/circuit-breaker.service.spec.ts",
+      "line": 19,
+      "claim": "Switching the entire test suite to vi.useFakeTimers() rewrites rolling-window, stale-cleanup, and metrics tests that do not exercise any probe behavior, mixing an unrelated test-infrastructure change into the diff. The fake timers usage should be scoped only to the HALF_OPEN describe block containing the new probe tests, or the suite-wide conversion should be submitted as its own separate change."
+    }
+  ]
+}

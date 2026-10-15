@@ -1,0 +1,159 @@
+{
+  "usage": {
+    "usd": 0.531325,
+    "turns": 7,
+    "wallSeconds": 68
+  },
+  "issues": [
+    {
+      "findings": [
+        "F3",
+        "F19"
+      ],
+      "summary": "No test for mixed per-environment lookup failure, and no test that the chain list is fetched once per environment",
+      "label": "medium",
+      "evidence": "safes.v2.service.spec.ts mocks getNetworksByChainId (line 98) but never asserts its call count, and the only failure test (line 266) rejects for every environment. Fetching once per environment with per-environment isolation is the PR's main new behaviour (safes.v2.service.ts:214-233), so a regression there would go unnoticed.",
+      "label_note": "",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F2",
+        "F8",
+        "F11"
+      ],
+      "summary": "The warn→debug change in getNetworkFromChainId only affects positions, not the overview",
+      "label": "low",
+      "evidence": "The overview calls getChainIdToNetworkMapping through ZerionRepository (zerion.repository.ts:15), so the PR body's reason for the change doesn't hold. The only remaining caller is positions (zerion-positions-api.service.ts:222). Its _getChainName still warns 'not configured' when no name resolves, so little visibility is lost.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F15",
+        "F16"
+      ],
+      "summary": "Chain-list lookup failure is logged as PortfolioRequestError",
+      "label": "low",
+      "evidence": "safes.v2.service.ts:225 reuses LogType.PortfolioRequestError for a /v1/chains failure, so it gets mixed in with real portfolio fetch errors (lines 314-329, and zerion-portfolio-api.service.ts:165). This is a small monitoring cost.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F12"
+      ],
+      "summary": "Chain-list lookup is on the critical path with no negative caching, so a Zerion outage adds a timeout to each overview request",
+      "label": "low",
+      "evidence": "When the cache is cold or the fetch fails, _fetchAndCacheMapping (zerion-chain-mapping.service.ts:160ff) runs on every request and only successes are cached. It is awaited at safes.v2.service.ts:74. Portfolio calls hit Zerion during an outage anyway, so the extra impact is limited latency.",
+      "category": "performance"
+    },
+    {
+      "findings": [
+        "F5"
+      ],
+      "summary": "Concurrent cold-cache requests don't share one in-flight chain-list fetch",
+      "label": "low",
+      "evidence": "getChainIdToNetworkMapping checks the cache and then fetches, with no in-flight dedupe (zerion-chain-mapping.service.ts:107-128). This existed before the PR; the overview now just calls it more often. The window is short and cached for the TTL.",
+      "category": "performance"
+    },
+    {
+      "findings": [
+        "F1"
+      ],
+      "summary": "The comment says validation happens before any Zerion call, but the chain-list lookup now runs first",
+      "label": "low",
+      "evidence": "safes.v2.service.ts:74 awaits resolveZerionChainNames, which may hit Zerion /v1/chains, before the comment and resolveSafes at lines 76-78. Portfolio calls are still gated on validated entries, so this is a documentation mismatch.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F6"
+      ],
+      "summary": "getChainIdToNetworkMapping is now public, but its doc still says '(for positions)'",
+      "label": "low",
+      "evidence": "zerion-chain-mapping.service.ts:104-107 still says '(for positions)' and sits among private helpers, while its real callers are now getNetworkFromChainId and ZerionRepository. The doc is stale.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F17"
+      ],
+      "summary": "The new repository only forwards to the datasource; schema parsing stays in the datasource and the repository has no test",
+      "label": "low",
+      "evidence": "zerion.repository.ts:12-18 just delegates. ZerionChainsSchema.parse happens in the datasource (zerion-chain-mapping.service.ts:169), which goes against the Raw<T>/repository-parse convention. The split existed before, but the new repository keeps it. The repository is thin, so the cost is minor.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F4"
+      ],
+      "summary": "The zerionChains test helper is a literal fixture rather than a builder",
+      "label": "nit",
+      "evidence": "The integration spec at lines 30-44 builds the chain list from fixed network names. These have to match specific Zerion network names and chain IDs, so randomising them with faker adds little. No zerion-chain builder exists to reuse.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F9"
+      ],
+      "summary": "The zerionChains helper is loosely typed instead of using ZerionChains",
+      "label": "nit",
+      "evidence": "Line 33 returns { data: Array<Record<string, unknown>> }. Typing it would catch schema drift at compile time, but the payload is parsed by ZerionChainsSchema at runtime and the tests would fail then anyway.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F10"
+      ],
+      "summary": "A test name still says 'enabled chain'",
+      "label": "nit",
+      "evidence": "The test at safes.v2.service.spec.ts:303 is still named 'enabled chain'; the PR's wording is 'Zerion-listed'. This is only naming.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F7"
+      ],
+      "summary": "The name getNetworksByChainId vs getNetworkByChainId",
+      "label": "nit",
+      "evidence": "The method returns Record<chainId, network> (zerion.repository.interface.ts:8). A plural 'networks' for the whole map is a reasonable name, so this is naming preference.",
+      "category": "style"
+    },
+    {
+      "findings": [
+        "F14"
+      ],
+      "summary": "Map<boolean, …> could be named mainnet/testnet locals",
+      "label": "nit",
+      "evidence": "safes.v2.service.ts:214-218 works correctly, and the Set of isTestnet values usefully skips fetching an environment that isn't in the request. This is style only.",
+      "category": "style"
+    },
+    {
+      "findings": [
+        "F18"
+      ],
+      "summary": "Docstrings on private helpers describe what they do rather than why",
+      "label": "wrong",
+      "evidence": "The cited docstrings on resolveSafes and resolveChains (safes.v2.service.ts:138, 171) were not added by this PR. The PR only edited the resolveZerionChainNames and fetchPortfoliosOncePerIdentity docs, and those explain non-obvious behaviour (once per environment, fallback semantics).",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F13",
+        "F20"
+      ],
+      "summary": "Removing the per-chain PORTFOLIO_ENDPOINT gate widens the rollout to every chain Zerion lists",
+      "label": "wrong",
+      "evidence": "This is the stated intent of the PR: 'derives support from Zerion's own chain list, gated only by the global FF_ZERION_ENABLED kill switch'. The description names the kill switch as the only lever, so the claim that it was left unstated is incorrect.",
+      "category": "product"
+    },
+    {
+      "findings": [
+        "F21"
+      ],
+      "summary": "Overview and positions now resolve Zerion chain names differently",
+      "label": "wrong",
+      "evidence": "The PR description lists 'the positions endpoint still reads balancesProvider.chainName first' as a known follow-up. The overview dropped the config name on purpose, because a wrong config name caused the Robinhood bug. Falling back for chains Zerion doesn't list is correct, because the portfolio has no slot for them.",
+      "category": "correctness"
+    }
+  ]
+}

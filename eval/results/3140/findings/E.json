@@ -1,0 +1,15 @@
+{
+  "usd": 0.0323676,
+  "findings": [
+    {
+      "file": null,
+      "line": null,
+      "claim": "The PR caches node_modules but does not explain how the cache will be invalidated when dependencies are updated or added, and it is unclear what invalidation strategy is used."
+    },
+    {
+      "file": null,
+      "line": null,
+      "claim": "Tests appear to be failing, possibly because of the caching changes, and the database seems to be missing the latest migrations."
+    }
+  ]
+}

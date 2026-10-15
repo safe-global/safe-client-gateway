@@ -1,0 +1,10 @@
+{
+  "pr": 3329,
+  "reviewSha": "1dbe35df81275fd1afbca6f1e5300ea9b0a18cc7",
+  "baseSha": "d1f57d81b1b6ad20cdeaa182b4d7048397f55d36",
+  "system": "D",
+  "version": "github",
+  "runner": "collect",
+  "model": "claude-code-action",
+  "output": "## Architecture check\n\nGuides applied: `commits-and-prs.md`, `api-dtos-and-validation.md`, `best-practices.md`, `module-structure.md`, `testing.md`, `remarks.md`.\n\n- `package.json:65` — Splitting a change: one PR carries a dependency bump, a supply-chain-gate policy change, and feature work in two unrelated modules (`safe-shield` recipient analysis, `transactions` settings mapper), which the guide lists as too large on two counts (\"mixes a dependency bump with feature work\", \"changes more than one module for reasons that are not a single mechanical consequence\").\n- `.yarnrc.yml:18` — No scope creep: `npmPreapprovedPackages: ['@safe-global/*']` is a standing, repo-wide exemption from the 7-day `npmMinimalAgeGate` for every in-house package, broader than the single `safe-deployments` bump requires and not a consequence of recognising Safe 1.5.0.\n- PR title — Linking: the title carries `(WA-2921)`, and squash-merge makes it a permanent commit subject with an issue reference the guide reserves for the body (0 of the last 400 subjects on `main` do this).\n- `src/modules/transactions/routes/mappers/common/settings-change.mapper.spec.ts:308` — R-008 (Tests that assert the framework, not the behavior): asserts `SETTINGS_CHANGE_METHODS` contains the literal the same diff just added to it, already implied by the two mapper tests above it.\n\n**Verdict:** ❌ 4 finding(s)"
+}

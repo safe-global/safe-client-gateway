@@ -1,0 +1,198 @@
+COMMENT
+[vseehausen 2026-09-09T16:21:12Z] @claude review
+
+COMMENT
+[claude 2026-09-09T16:21:30Z] **Claude finished @vseehausen's task in 1m 43s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/34376184925)
+
+---
+### Claude PR Review
+
+- [x] Read changed files
+- [x] Analyze against repo conventions
+- [x] Post review
+
+Overall the change is a clean, well-motivated refactor: correct use of the module boundary (route service goes through the new `IZerionRepository` instead of reaching into another module's datasource), single portfolio fetch per environment, and thoughtful degrade paths. Below are things worth improving before merge — all minor.
+
+#### Nits / suggestions
+
+**1. `Map<boolean, ...>` is a slightly clumsy key** — `src/modules/safe/routes/v2/safes.v2.service.ts:214`
+
+```ts
+const networksByEnvironment = new Map<boolean, Record<string, string>>();
+```
+
+Only two possible values ever exist. A plain object `{ mainnet, testnet }` (or two named locals) would read more clearly and remove the `[...new Set(chains.map(c => c.isTestnet))]` dance below it. Not a bug — readability only.
+
+**2. Zerion chain list is fetched even when no request chain uses that environment** — `src/modules/safe/routes/v2/safes.v2.service.ts:215-234`
+
+`resolveZerionChainNames` fans out on `[...new Set(chains.map(c => c.isTestnet))]`, which is correct today. Fine as-is, but note that a request containing only unresolved chains (`chain === null` for all entries) will short-circuit before the fetch — that's already handled by the `.filter((c): c is Chain => c !== null)` on line 211. Good.
+
+**3. `resolveZerionChainNames` warn payload uses `LogType.PortfolioRequestError`** — `src/modules/safe/routes/v2/safes.v2.service.ts:225`
+
+The failing call is not a portfolio request — it's the chain-list request. Reusing `PortfolioRequestError` here will make dashboards over that LogType noisy with a different failure class. Consider a distinct log type (e.g. `ZerionChainListError`) so degradation caused by the chain-list lookup is separable from actual portfolio failures.
+
+**4. Log severity change in the mapping service is intentional but subtle** — `src/modules/zerion/datasources/zerion-chain-mapping.service.ts:82`
+
+Dropping the unknown-chain-ID log from `warn` to `debug` is correct given the overview now probes every chain, but the same helper is still called by `getNetworkFromChainId` from the positions path — every unknown chain there also loses its warning. If the positions endpoint relies on that warning to surface config drift, it silently goes away. Worth confirming that isn't a regression the follow-up you mention will need to re-add.
+
+**5. `ZerionRepository` is a one-line pass-through** — `src/modules/zerion/domain/zerion.repository.ts:12-18`
+
+It exists to satisfy the module-boundary rule (route services import via `domain/`), which is fine and correct. The rename `getChainIdToNetworkMapping` → `getNetworksByChainId` slightly obscures the shape: the returned map is keyed by chainId and the value is a network name (singular). `getNetworkByChainId` (or `getNetworkNameByChainId`) matches the return shape better.
+
+**6. Docstrings on the new private helpers are on the longer side** — `src/modules/safe/routes/v2/safes.v2.service.ts:138-142, 171-175, 196-203, 244-249, 301-306, 386-390, 402-406, 436-439`
+
+`cgw-best-practices` prefers no comments unless the WHY is non-obvious. Several of these describe WHAT (`Resolves each unique chainId once`, `Fetches one portfolio per unique wallet-identity`) which the method name already conveys; the WHY parts (why validate-first, why per-identity) are the parts worth keeping.
+
+**7. Test coverage looks solid** — unit spec covers Zerion-listed vs. not, both-environment split, Zerion chain lookup failure, and the absent-from-distribution real-zero. Integration spec includes chain-list-request-failure. No visible gap.
+
+Nothing here blocks merge; item 3 (log type) and item 4 (dropped warning) are the two worth a second look before shipping.
+ · [Branch](https://github.com/safe-global/safe-client-gateway/tree/wa-2984-remove-chain-specific-zerion-portfolio-endpoint-feature-flag)
+
+COMMENT
+[vseehausen 2026-09-11T09:54:06Z] @claude review
+
+COMMENT
+[claude 2026-09-11T09:54:22Z] **Claude finished @vseehausen's task in 2m 9s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/34586538795)
+
+---
+### Claude Code Review
+
+- [x] Read PR diff and changed files
+- [x] Analyze code quality, correctness, security, performance, tests
+- [x] Post review
+
+Overall this is a solid refactor: source-of-truth for Zerion support is now Zerion itself, and the extra repository layer keeps `SafesV2Service` from reaching into another module's datasource. A few things worth improving before merge.
+
+---
+
+### Potential correctness issues
+
+**1. Case sensitivity between the chain list and the portfolio distribution keys**
+`ZerionChainMappingService._fetchAndCacheMapping` lower-cases the network name (`mapping[networkName.toLowerCase()] = decimalChainId`), so values of `chainIdToNetwork` are lowercase. In `safes.v2.service.ts:399-401`, the lookup is `positions_distribution_by_chain[zerionChainName]`. If Zerion ever returns a mixed-case chain key in the portfolio (e.g. `Ethereum`), the lookup silently misses and every Safe on that chain falls back to `serveDegradedBalance` — the exact bug class this PR set out to prevent. Either normalize the distribution keys on read, or add a short comment/test pinning that Zerion is lowercase on both endpoints. This is currently only guarded by test data that uses lowercase.
+
+**2. `resolveZerionChainNames` — empty-object sentinel is confusing**
+```ts
+const none: Record<string, string> = {};
+const [mainnet, testnet] = await Promise.all([
+  chains.some((chain) => !chain.isTestnet) ? this.getZerionNetworkNames(false) : none,
+  ...
+]);
+```
+The shared `none` literal is only safe because nothing mutates it. Prefer `Promise.resolve({})` (or just `{}` — `Promise.all` accepts non-thenables) per branch. Also `.some(...)` scans the full chain list twice; a single `chains.reduce`/two flags avoids the double pass.
+
+**3. `Chain | null` map — small typing nit**
+`resolveChains` returns `Map<string, Chain | null>`, and `resolveSafes` throws when it's null. Consider modeling the "resolved chains" set as a `Map<string, Chain>` (drop nulls at construction) and letting per-entry lookups get `undefined`, so downstream code can't accidentally forget the null case.
+
+---
+
+### Cleanups / consistency
+
+**4. Interface naming vs underlying service** — `IZerionRepository.getNetworkNamesByChainId` wraps `ZerionChainMappingService.getChainIdToNetworkMapping`. Two different names for the same shape (`Record<chainId, networkName>`). Aligning on one direction ("chainIdToNetwork") in both places would make the datasource ↔ repository boundary less surprising.
+
+**5. Thin repository** — `ZerionRepository` is a pure pass-through. That's tolerated to satisfy the "route service ↔ repository" boundary, but if this is the only method the repo will ever host, add a note; if the follow-up will move `IZerionWalletPortfolioApi` behind it (as the PR body suggests), this is fine as-is.
+
+**6. Duplicate error log message** — `resolveSafes` and the top-level `settledOverviews` loop both log `Error while getting Safe overview: …`, so the same phrase covers two very different failure origins (Safe resolution vs. balance/queue). Distinguishing them helps triage.
+
+**7. Integration test setup is repetitive** — every `networkService.get.mockImplementation` now includes an identical `${zerionBaseUri}/v1/chains` branch. A small `mockZerionChainsList(networkService)` helper (or a `beforeEach` default that per-test mocks override) would remove ~40 lines of duplicated setup.
+
+---
+
+### Test coverage
+
+Good coverage overall: happy paths, degraded, chain-list-fails, chain-not-listed, non-finite reducer, and empty-distribution `$0`. Two small gaps:
+
+- No test for a **testnet-only** overview request (the mainnet branch is skipped) — the current tests all include a mainnet chain.
+- The `should handle Zerion API failures gracefully…` integration test drops the failed Safe because there is no `/balances/` mock for `safeInfo1`, so it exercises "portfolio + fallback both fail" rather than "portfolio fails, fallback succeeds". Consider adding a balances mock for `safeInfo1` to assert the graceful degradation the title implies.
+
+---
+
+### Non-issues (already good)
+
+- `features.zerion` flag correctly gates all Zerion work (cached in ctor per repo convention).
+- `Promise.allSettled` on the outer loop preserves per-Safe isolation.
+- `getPortfolioIdentityKey` correctly deduplicates by `(address, isTestnet, currency, trusted)`.
+- New `LogType.ZerionChainListError` is a structured log with sensible fields.
+ • branch `wa-2984-remove-chain-specific-zerion-portfolio-endpoint-feature-flag`
+
+COMMENT
+[vseehausen 2026-09-15T10:14:13Z] @claude review again
+
+Addressed in 6142e124: distribution keys lower-cased at the schema (1), single pass without the shared sentinel (2), repository method aligned with the datasource name (4), plus the testnet-only unit test and the balances fallback in the Zerion-failure integration test.
+
+Left as is: the `Chain | null` map (3, pre-existing structure), the thin repository (5, follow-up named in the description), the duplicate overview log message (6, pre-existing), and the per-test chain-list mock (7, this spec's convention).
+
+
+COMMENT
+[claude 2026-09-15T10:14:28Z] **Claude finished @vseehausen's task in 1m 41s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/34956869856)
+
+---
+### Claude Code Re-review
+
+- [x] Fetch latest commit 6142e124 and inspect changes
+- [x] Verify point (1) — lowercase distribution keys at schema
+- [x] Verify point (2) — single pass without shared sentinel
+- [x] Verify point (4) — repository method aligned with datasource name
+- [x] Verify new testnet-only unit test
+- [x] Verify balances fallback in Zerion-failure integration test
+- [x] Post final review
+
+Follow-up commit addresses the substantive concerns cleanly. LGTM with a couple of small nits.
+
+---
+
+### Verified
+
+- **(1) Schema-side lowercasing** — `ZerionWalletPortfolioAttributesSchema` now `.transform()`s `positions_distribution_by_chain` keys via `Object.fromEntries(...toLowerCase())` (`src/modules/balances/datasources/entities/zerion-wallet-portfolio.entity.ts:14-25`), with a dedicated spec pinning the behavior (`.../zerion-wallet-portfolio.entity.spec.ts:5-24`). Best possible fix — the invariant is enforced at the boundary, not at the callsite.
+- **(2) No shared sentinel** — `resolveZerionChainNames` now uses two boolean flags and inline `{}` per branch (`src/modules/safe/routes/v2/safes.v2.service.ts:211-218`). Object identity concern gone.
+- **(4) Naming alignment** — `IZerionRepository.getChainIdToNetworkMapping` matches the underlying `ZerionChainMappingService` method exactly.
+- **Testnet-only test** — `safes.v2.service.spec.ts:133-152` asserts `.toHaveBeenCalledExactlyOnceWith(true)`, so a regression that always fetches mainnet would fail.
+- **Balances fallback integration test** — `safeInfo1` now degrades to the balances repo and asserts `fiatTotal: '100'` from the native-coin path, so the case actually exercises "portfolio fails, fallback succeeds".
+
+---
+
+### Minor nits (non-blocking)
+
+**1. Missing SPDX header on modified file** — `src/modules/balances/datasources/entities/zerion-wallet-portfolio.entity.ts` was modified in this PR but starts with a JSDoc block, no `// SPDX-License-Identifier: FSL-1.1-MIT` on line 1. Per AGENTS.md, every file modified after 2026-02-16 must carry the header; every other file in the diff already does. CI's `license-headers` job will flag this. [Fix this →](https://claude.ai/code?q=Add%20the%20SPDX%20license%20header%20%60%2F%2F%20SPDX-License-Identifier%3A%20FSL-1.1-MIT%60%20as%20line%201%20of%20src%2Fmodules%2Fbalances%2Fdatasources%2Fentities%2Fzerion-wallet-portfolio.entity.ts%20on%20branch%20wa-2984-remove-chain-specific-zerion-portfolio-endpoint-feature-flag&repo=safe-global/safe-client-gateway)
+
+**2. `Promise.all` typing** — `[mainnet, testnet]: Array<Record<string, string>>` (`safes.v2.service.ts:213`) loosens the tuple to an array; a tuple type `[Record<string, string>, Record<string, string>]` (or just letting inference do it) preserves per-slot typing. Tiny.
+
+**3. Transform key collision** — if Zerion ever returns both `Ethereum` and `ethereum` in the same distribution, `Object.fromEntries` silently keeps the last one. Extremely unlikely in practice, and dropping one is still better than the previous case-sensitive miss, so worth noting only for future readers.
+
+---
+ • branch `wa-2984-remove-chain-specific-zerion-portfolio-endpoint-feature-flag`
+
+COMMENT
+[vseehausen 2026-09-15T10:20:38Z] @claude review again
+
+Fixed in the latest commit: SPDX header on `zerion-wallet-portfolio.entity.ts` (1) and a tuple type for the two environment maps (2). On (3): we trust the Zerion API to return valid data, so no dedupe handling for mixed-case duplicate keys.
+
+
+COMMENT
+[claude 2026-09-15T10:20:53Z] **Claude finished @vseehausen's task in 57s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/34957437595)
+
+---
+### Claude Code Re-review
+
+- [x] Fetch latest commit (`89cecf3`) and inspect the two fixes
+- [x] Verify SPDX header on `zerion-wallet-portfolio.entity.ts`
+- [x] Verify tuple type on `resolveZerionChainNames`
+- [x] Scan the full diff for anything new worth flagging
+- [x] Post final verdict
+
+Both fixes land cleanly and nothing else changed. LGTM.
+
+---
+
+### Verified
+
+- **SPDX header** — `src/modules/balances/datasources/entities/zerion-wallet-portfolio.entity.ts:1` now carries `// SPDX-License-Identifier: FSL-1.1-MIT`; CI's `license-headers` job will pass.
+- **Tuple type** — `safes.v2.service.ts:213-217` destructures into `[Record<string, string>, Record<string, string>]`, so `mainnet` and `testnet` keep independent slot types and `Promise.all` narrows to a 2-tuple instead of collapsing to `Array<...>`.
+- **Scope** — commit touches only those two hunks; no incidental drive-by changes.
+
+### Non-issue
+
+On the mixed-case dedupe point (3): agreed — trusting the upstream and dropping one on collision is strictly better than the previous silent case-sensitive miss. Fine to leave as-is.
+
+Ship it.
+
+--- • branch `wa-2984-remove-chain-specific-zerion-portfolio-endpoint-feature-flag`

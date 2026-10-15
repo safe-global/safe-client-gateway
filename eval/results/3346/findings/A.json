@@ -1,0 +1,90 @@
+{
+  "usd": 0.0770496,
+  "findings": [
+    {
+      "file": "src/modules/entitlements/routes/entitlements.service.integration.spec.ts",
+      "line": 601,
+      "claim": "The test title still says 'reports no over-limit feature' but only asserts quota/used values, because the per-entitlement overLimit field was removed in a later commit."
+    },
+    {
+      "file": "src/modules/entitlements/routes/entitlements.service.integration.spec.ts",
+      "line": 594,
+      "claim": "A comment says the state 'is what the endpoint names as over-limit', but the endpoint no longer exposes an over-limit concept."
+    },
+    {
+      "file": "src/modules/entitlements/routes/entitlements.service.integration.spec.ts",
+      "line": 59,
+      "claim": "A comment references the 'real FeatureKey enum' and says the repository dispatches stock counting by key, but FeatureKey is actually just a string type and the dispatch logic lives in EntitlementsService.stockCounters."
+    },
+    {
+      "file": "src/modules/entitlements/routes/entitlements.service.integration.spec.ts",
+      "line": 368,
+      "claim": "A hand-rolled materializedSubscription() fixture builds a literal object with hard-coded planId and fixed dates, duplicating the existing materializedSubscriptionBuilder() that the same file already imports and uses elsewhere."
+    },
+    {
+      "file": "src/modules/entitlements/domain/entitlements.rules.spec.ts",
+      "line": 12,
+      "claim": "feature() spreads a Partial over featureBuilder().build() instead of using the builder's .with(...) method, duplicating builder functionality by hand."
+    },
+    {
+      "file": "src/modules/entitlements/domain/entitlements-repository.module.ts",
+      "line": 25,
+      "claim": "SpaceSeatSelection was removed from TypeOrmModule.forFeature and the test DataSource, unregistering the entity (since entities otherwise load only via autoLoadEntities), yet the entity file, its domain schema, and the table created by the create-entitlements migration all remain; this change is unrelated to the endpoint being added and leaves dead/inconsistent code."
+    },
+    {
+      "file": "src/modules/entitlements/routes/entitlements.service.integration.spec.ts",
+      "line": 292,
+      "claim": "createSpace was changed to use faker.company.name() instead of the shared nameBuilder(), moving away from the shared builder without explanation."
+    },
+    {
+      "file": "src/modules/entitlements/routes/entitlements.service.integration.spec.ts",
+      "line": 332,
+      "claim": "The addMember helper takes inviteExpiresAt and role parameters (defaulting role to 'MEMBER'), but the only call site uses just addMember(spaceId, 'ACTIVE'), leaving those parameters and the INVITED branch dead code."
+    },
+    {
+      "file": "src/modules/entitlements/routes/entitlements.controller.integration.spec.ts",
+      "line": 53,
+      "claim": "The adminQuery helper plus create/drop-database setup is duplicated verbatim between this file and subscription-sync.service.integration.spec.ts instead of being shared."
+    },
+    {
+      "file": "src/modules/entitlements/routes/entitlements.service.integration.spec.ts",
+      "line": 235,
+      "claim": "The afterEach block replaced a loop over entities with nine copy-pasted delete().execute() blocks, when a loop over an ordered entity array would achieve the same behavior with less duplication."
+    },
+    {
+      "file": "src/modules/entitlements/domain/space-feature-usage.repository.ts",
+      "line": 46,
+      "claim": "loadRelationIds causes row.feature to actually hold a raw id, but it is still typed as Feature, requiring a Number(row.feature) workaround; selecting the FK column explicitly (e.g. via RelationId or an explicit query-builder select) would keep the type accurate."
+    },
+    {
+      "file": "src/modules/entitlements/routes/entitlements.service.ts",
+      "line": 37,
+      "claim": "This file imports assertMember from the spaces module's routes/utils path, crossing module boundaries and bypassing the domain/ import rule, though there is precedent for this elsewhere in the codebase."
+    },
+    {
+      "file": "src/modules/entitlements/routes/entitlements.controller.ts",
+      "line": null,
+      "claim": "The controller imports SpaceIdPipe from the spaces module's routes/pipes path, crossing module boundaries and bypassing the domain/ import rule."
+    },
+    {
+      "file": "src/modules/entitlements/routes/entitlements.service.ts",
+      "line": 481,
+      "claim": "toEntitlementsResponse copies the plan field by field and passes entitlements through unchanged, so the mapper performs no real transformation; returning resolved directly, or having EntitlementsPlan implement ResolvedPlan to tie the types together, would be simpler."
+    },
+    {
+      "file": "src/modules/entitlements/routes/entitlements.service.ts",
+      "line": 470,
+      "claim": "getSpaceCreatedAtOrFail queries the spaces table again immediately after SpaceIdPipe already resolved the same row via findIdByUuid, resulting in three DB round trips (pipe, assertMember, createdAt) before any entitlement data is read."
+    },
+    {
+      "file": "src/modules/entitlements/routes/entities/entitlements-response.entity.ts",
+      "line": 49,
+      "claim": "Several @ApiProperty declarations use single-element literal-array enums (enum: [FeatureType.X]), which the applicable convention advises against, though a single-value discriminator may be a reasonable exception worth documenting."
+    },
+    {
+      "file": "migrations/1787148838500-seed-features.ts",
+      "line": 13,
+      "claim": "The seed migration sets safe_seats with free_enabled = false and free_quota = 0, while both test suites use freeEnabled: true and freeQuota: 2; this discrepancy should be confirmed with product before merge if not already signed off."
+    }
+  ]
+}

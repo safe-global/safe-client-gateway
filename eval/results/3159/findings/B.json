@@ -1,0 +1,25 @@
+{
+  "usd": 0.0660976,
+  "findings": [
+    {
+      "claim": "No test fails if the @UseGuards(PortfolioRouteGuard) decorator is removed from the controller: the controller spec instantiates the controller directly with 'new', so Nest never runs its guards, the guard's own spec only tests canActivate() in isolation, and there is no integration or e2e spec for portfolio routes. This means the feature-flag kill-switch could be deleted during a refactor while CI stays green, leaving the gated third-party calls active even though operators believe them disabled.",
+      "file": "src/modules/portfolio/v1/portfolio.controller.ts",
+      "line": 32
+    },
+    {
+      "claim": "The GET and DELETE /v1/portfolio/:address routes, which previously worked without any flag, now return 403 in any environment where neither FF_ZERION_ENABLED nor FF_ZERION_BALANCES_CHAIN_IDS is set, and it is not confirmed what production actually sets for these variables.",
+      "file": "src/modules/portfolio/v1/guards/portfolio-route.guard.ts",
+      "line": 16
+    },
+    {
+      "claim": "The flag check uses !!process.env.FF_ZERION_ENABLED, which treats the string \"false\" as truthy, so setting the environment variable to \"false\" does not disable the feature; operators must unset the variable entirely to use the kill-switch as described in the guard's doc comment.",
+      "file": "src/config/entities/configuration.ts",
+      "line": 421
+    },
+    {
+      "claim": "When the feature flag is off, the portfolio routes return 403 \"Forbidden resource\", whereas the alerts module returns 404 when disabled because it isn't registered at all; this inconsistency could lead clients to misinterpret the 403 as an authentication/authorization failure rather than a disabled feature.",
+      "file": "src/app.module.ts",
+      "line": 108
+    }
+  ]
+}

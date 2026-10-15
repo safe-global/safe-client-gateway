@@ -1,0 +1,80 @@
+REVIEW DISMISSED
+[rahulrumalla 2026-06-22T13:52:15Z] I can see that this is mostly a chore to organize better without any business logic change (from my manual review). LGTM. 
+
+COMMENT
+[datadog-official 2026-06-19T15:41:44Z] <a target='_blank' href='https://app.datadoghq.eu/ci/pipeline-executions?query=ci_level%3Ajob+%40ci.status%3Aerror+%40git.commit.sha%3Add9ac3e269170941c32e8ceb04f54b38c16a0618&referrer=pr-comment'><picture><source media="(prefers-color-scheme: dark)" srcset="https://static.datadoghq.com/static/images/pr_comments/software_delivery/badges_header/pipelines-warning.svg"/><img src="https://static.datadoghq.com/static/images/pr_comments/software_delivery/badges_header/pipelines-warning-light.svg" alt="Pipelines" align="center" /></picture></a>
+
+## ⚠️ Warnings
+
+🚦 **1 Pipeline job failed**
+
+<blockquote>
+<div>
+
+<code> CI | unit-tests </code> &nbsp;&nbsp;<a href="https://app.datadoghq.eu/ci/pipeline-executions?query=ci_level%3Ajob&#43;ci.job_correlation_id%3A8582aee2ca7535fc&amp;referrer=pr-comment" title="View in Datadog"><img src="https://static.datadoghq.com/static/images/pr_comments/software_delivery/datadog_icon.svg" alt="View in Datadog" align="center" /></a> &nbsp; <a href="https://github.com/safe-global/safe-client-gateway/actions/runs/27834989542/job/82380758059" title="View in GitHub Actions"><picture><source media="(prefers-color-scheme: dark)" srcset="https://static.datadoghq.com/static/images/pr_comments/software_delivery/logos/github-logo-dark.svg"/><img src="https://static.datadoghq.com/static/images/pr_comments/software_delivery/logos/github-logo-light.svg" alt="GitHub Actions" align="center" /></picture></a>
+
+</div>
+</blockquote>
+
+<sub>
+This comment will be updated automatically if new data arrives. <br />
+🔗 Commit SHA: dd9ac3e | <a href="https://docs.datadoghq.com/integrations/guide/source-code-integration/#pr-comments">Docs</a> | Give us <a href="https://forms.gle/ys6MDmdQEeC5pkzWA">feedback</a>!
+</sub>
+
+COMMENT
+[LucieFaire 2026-06-22T14:05:46Z] > I can see that this is mostly a chore to organize better without any business logic change (from my manual review). LGTM.
+
+yes, its purely cosmetic, becuase the module grew so much i was very hard to navigate different parts of it: address-book, members and so on.
+
+COMMENT
+[PooyaRaki 2026-06-23T11:50:23Z] @claude review
+
+COMMENT
+[claude 2026-06-23T11:50:37Z] **Claude finished @PooyaRaki's task in 1m 42s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/28024058794)
+
+---
+### Claude PR Review
+
+- [x] Inspect diff vs `origin/main`
+- [x] Check module wiring (`spaces.module.ts`)
+- [x] Verify no logic changes (pure moves)
+- [x] Cross-check tests still reference moved files
+- [x] Post review
+
+Verified this is a pure structural refactor — every `M` hunk is an import-path update, every `R` is a file move. `spaces.module.ts` re-wires correctly, and no leftover imports point at the old paths. Below are improvements to consider, not blockers.
+
+---
+
+### Findings
+
+**1. Asymmetric "spaces core" grouping across the three layers** *(suggestion)*
+
+The new `*/spaces/` subfolder convention is applied only to `datasources/`. The other two layers keep the spaces-core files at the top, mixed with feature subfolders:
+
+| Layer | Spaces-core location | Feature subfolders alongside |
+|---|---|---|
+| `datasources/` | `datasources/spaces/entities/space.entity.db.ts` | `address-books/`, `audit/`, `safes/` |
+| `domain/` | `domain/entities/space.entity.ts`, `domain/spaces.repository*.ts` | `address-books/`, `audit/`, `safes/` |
+| `routes/` | `routes/spaces.{controller,service}.ts`, `routes/entities/{create,get,update}-space.dto.entity.ts`, `routes/guards/spaces-creation-rate-limit.guard.ts` | `address-books/`, `audit/`, `members/`, `safes/` |
+
+Either move the spaces-core files into a `spaces/` subfolder in `domain/` and `routes/`, or drop the `datasources/spaces/` subfolder. As-is, a reader has to learn "stuff without a subfolder = the spaces feature." Picking one rule and applying it everywhere is consistent with the PR's stated goal of improving navigability.
+
+**2. Commit message typo** *(nit)*
+
+`976f1ed` — "chore: sl=plit into domain subfolders" → "chore: split into domain subfolders". Worth fixing on squash-merge.
+
+**3. Naming nit — already present, not introduced here**
+
+`datasources/safes/entities/space-safes.entity.db.ts` defines a single entity class `SpaceSafe`; the filename is plural while the class is singular. Pre-existing; flagging only because the move was a chance to tidy. Skip if not worth the churn.
+
+---
+
+### Other checks
+
+- DI tokens, controllers, route paths, schemas: unchanged ✓
+- Test colocations look right (e.g. `space-assert.utils.spec.ts` moved next to `space-assert.utils.ts`) ✓
+- Cross-module imports in `counterfactual-safes`, `surveys`, `users`, `wallets` are all updated ✓
+- No `.eslintrc`/`tsconfig` path-alias changes needed — all imports use the existing `@/` alias ✓
+
+LGTM as a pure-rename refactor; the asymmetry above is the only structural thing worth a second look before merge.
+ · branch: `chore/spaces-subfolder`

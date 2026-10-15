@@ -1,0 +1,10 @@
+{
+  "pr": 3332,
+  "reviewSha": "17f4589bedf361e62e56aabff36a4acee17292f7",
+  "baseSha": "d1f57d81b1b6ad20cdeaa182b4d7048397f55d36",
+  "system": "D",
+  "version": "github",
+  "runner": "collect",
+  "model": "claude-code-action",
+  "output": "## Architecture check\n\nApplicable guides: `docs/agents/testing.md`, `docs/agents/best-practices.md`, `docs/agents/commits-and-prs.md` (no routing-table row covers `.yarnrc.yml`, `package.json`, or `yarn.lock`).\n\n`.yarnrc.yml:20` — No speculative abstractions: the `@safe-global/safe-modules-deployments` pre-approval has no reader in this diff — its pin stays at 3.0.8, so nothing here needs an age-gate exemption for it, and it widens the bypass ahead of an anticipated future bump.\n\n**Verdict:** ❌ 1 finding(s)"
+}

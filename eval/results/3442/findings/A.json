@@ -1,0 +1,60 @@
+{
+  "usd": 0.061427999999999996,
+  "findings": [
+    {
+      "file": "src/datasources/circuit-breaker/circuit-breaker.service.ts",
+      "line": 247,
+      "claim": "releaseHalfOpenProbe releases a probe slot whenever a success or failure is recorded during HALF_OPEN, even if the underlying request never took a slot, such as a request admitted while CLOSED or a probe from an earlier HALF_OPEN window whose counter was reset to 0 by transitionToOpen or transitionToHalfOpen. As a result more requests than the intended cap (e.g. 3 when threshold is 10 and rate is 30) can reach the upstream simultaneously, making the cap effectively soft rather than a hard limit, though it remains bounded because late failures still count toward re-opening."
+    },
+    {
+      "file": "src/datasources/circuit-breaker/circuit-breaker.service.ts",
+      "line": 84,
+      "claim": "canProceed now reserves a slot by incrementing halfOpenInFlight, but its name and JSDoc still describe it as a read-only check; a caller that only calls it to check status without later calling recordSuccess or recordFailure will hold a slot forever, and once enough slots are held this way every request gets blocked until stale-circuit cleanup removes the circuit after 10x rollingWindow."
+    },
+    {
+      "file": "src/datasources/circuit-breaker/circuit-breaker.service.ts",
+      "line": 112,
+      "claim": "The JSDoc for canProceed (returns false if circuit is open) and canProceedOrFail (throws if circuit is open) is out of date because it does not mention that a true/non-throwing result in HALF_OPEN also reserves a probe slot that must be released via record*, and does not cover the case where the circuit is full in HALF_OPEN."
+    },
+    {
+      "file": "src/datasources/circuit-breaker/circuit-breaker.service.ts",
+      "line": 135,
+      "claim": "getOrRegisterCircuit is changed to private as part of an unrelated refactor bundled into this PR rather than a separate change scoped to the probe cap fix, making the diff harder to review."
+    },
+    {
+      "file": "src/datasources/circuit-breaker/circuit-breaker.service.ts",
+      "line": 372,
+      "claim": "recordFailure now registers circuits itself, a behavioral change unrelated to the probe cap fix that is bundled into the same PR rather than split out or called out explicitly in the PR description."
+    },
+    {
+      "file": "src/datasources/circuit-breaker/circuit-breaker.service.ts",
+      "line": 292,
+      "claim": "recordSuccess now checks the enabled flag, another change unrelated to the probe cap fix bundled into this PR, increasing the size and review difficulty of the diff."
+    },
+    {
+      "file": "src/datasources/network/network.module.ts",
+      "line": 150,
+      "claim": "The getOrRegisterCircuit call is removed from network.module.ts as part of the bundled registration refactor, which is a separate concern from the probe cap change and should be split into its own PR or explicitly named in the PR body."
+    },
+    {
+      "file": "src/datasources/circuit-breaker/circuit-breaker.service.spec.ts",
+      "line": 485,
+      "claim": "The new recordSuccess test uses the literal circuit name 'new-circuit' instead of the faker-generated circuitName used elsewhere in the file, making the test suite inconsistent with the stated convention of using faker values instead of literals."
+    },
+    {
+      "file": "src/datasources/circuit-breaker/circuit-breaker.service.spec.ts",
+      "line": 417,
+      "claim": "The edited 'circuit-1' and 'circuit-2' tests kept their literal circuit name strings instead of being updated to use faker-generated values, leaving the spec file inconsistent since the rest of the file was moved to faker-generated circuitName."
+    },
+    {
+      "file": "src/datasources/network/network.module.ts",
+      "line": 142,
+      "claim": "There is no test through the network wrapper verifying the probe cap end-to-end, even though releasing a slot depends on the wrapper calling record* on every completion path; for example a 4xx response calls recordSuccess while a blocked request throws before the try block and so records nothing, and network.module.integration.spec.ts has no HALF_OPEN case covering this."
+    },
+    {
+      "file": "docs/agents/ARCHITECTURE.md",
+      "line": 260,
+      "claim": "The ARCHITECTURE doc gives the probe cap formula as threshold x halfOpenFailureRateThreshold / 100 without noting that the code rounds up with Math.ceil (circuit-breaker.service.ts:351), so the documented formula does not match the implementation's rounding behavior."
+    }
+  ]
+}

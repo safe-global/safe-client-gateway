@@ -1,0 +1,20 @@
+{
+  "usd": 0.0620676,
+  "findings": [
+    {
+      "file": null,
+      "line": null,
+      "claim": "The pull request bundles three independent concerns in a single diff across three modules: a fix to match the active plan by price id rather than display name, a new 409 response for seat capacity limits on two endpoints, and a change narrowing createCheckoutUrl and updateSubscription from member to admin access together with a new elevation guard. These should be split into separate commits/PRs in order: the price-id matching fix, the seat-capacity rejection feature, and the admin-only authorization change."
+    },
+    {
+      "file": null,
+      "line": null,
+      "claim": "The PR title, which becomes the permanent squash commit subject, does not carry a breaking-change marker even though two already-shipped endpoints will stop serving non-admin members, turning previously successful requests into 403 responses. The title should be marked as a breaking change, e.g. using a '!' marker, with the member-to-admin behavior change explained in the summary."
+    },
+    {
+      "file": "src/modules/billing/routes/billing.service.ts",
+      "line": 442,
+      "claim": "assertSafeSeatCapacity parses the seat quota from metadata only to check whether it is null and then discards the parsed value, after which hasSeatCapacity parses the same metadata a second time to get the value it needs. The already-parsed quota should be reused directly instead of re-parsing, and the now-unused hasSeatCapacity export and its associated spec block in payment-link-offer.rules.ts should be removed."
+    }
+  ]
+}

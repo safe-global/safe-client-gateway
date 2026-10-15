@@ -1,0 +1,43 @@
+{
+  "pr": 3367,
+  "title": "build(deps): resolve open dependabot advisories",
+  "description": "## Summary\n\nClears 15 of the 16 open Dependabot alerts on `main`. All of them are transitive — no direct dependency of this service is itself vulnerable — so the fix is a lockfile lift plus one direct bump where a parent pins the vulnerable version exactly.\n\n**`find-my-way`** was pinned to `9.6.0` by `@nestjs/platform-fastify@11.1.28`. Bumping that dependency to `11.1.29` pulls in `find-my-way@9.7.0` and also aligns it with `@nestjs/common`/`@nestjs/core`, which are already on `11.1.29`. As a side effect the peer requirement on `@fastify/static` improves: `11.1.29` requests `^10.1.2`, which the project's `10.1.3` satisfies (`11.1.28` requested `^8 || ^9`, which it did not).\n\nEverything else resolved inside the existing semver ranges via `yarn up -R`. `@nestjs/platform-fastify@11.2.x` and `find-my-way@9.8.0` were left alone as too young for the 7-day `npmMinimalAgeGate` in `.yarnrc.yml`; `9.7.0` is above the advisory's `<=9.6.0` vulnerable range, so it is sufficient.\n\n**One alert is deliberately left open:** the `js-yaml` 5.x DoS advisory (`>=5.0.0 <=5.2.1`, high). `@nestjs/swagger@11.4.6` pins `js-yaml@5.2.1` exactly, and `11.4.7` already ships the fix upstream (it pins `5.3.0`) — it is just younger than the age gate right now. Rather than carry a `resolutions` entry that would have to be removed again, this clears on the next `@nestjs/swagger` bump.\n\n`yarn npm audit --all --recursive` reports no other security advisories. The three remaining entries it prints are npm *deprecation* notices, not advisories, and all are dev-only transitives with no fixed version available: `@sinonjs/text-encoding` and `lodash.get` (via `aws-sdk-client-mock` → `sinon`) and `cron-parser@4` (via `bullmq`).\n\nVerified with `yarn format`, `yarn lint`, `yarn build`, and `yarn test` (348 files, 6169 tests passing).\n\n## Changes\n\n- `package.json` — bump `@nestjs/platform-fastify` `11.1.28` → `11.1.29`\n- `yarn.lock` — patched transitives: `brace-expansion` `1.1.16` → `1.1.18` and `5.0.7` → `5.0.9`, `fast-uri` `3.1.4` → `3.1.5`, `find-my-way` `9.6.0` → `9.7.0`, `js-yaml` `4.3.0` → `4.3.1`, `nanoid` `3.3.12` → `3.3.18`, `postcss` `8.5.15`/`8.5.19` → `8.5.26`, `tar` `7.5.20` → `7.5.22`, `undici` `8.7.0` → `8.10.0`",
+  "findings": [
+    {
+      "id": "F1",
+      "file": "yarn.lock",
+      "line": 4888,
+      "claim": "js-yaml@5.2.1 is still resolved in the lockfile even though the PR's goal is to clear the open advisories; it is pinned exactly by the production dependency @nestjs/swagger@11.4.6 (package.json:63), so the known js-yaml advisory remains in the production dependency tree after this change. Bumping @nestjs/swagger to 11.4.7 would resolve it, and is preferable to adding a resolutions override that fights the exact pin."
+    },
+    {
+      "id": "F2",
+      "file": null,
+      "line": null,
+      "claim": "The commit body's phrase 'lift the transitive resolutions' could be misread as adding Yarn resolutions entries, when in fact no resolutions were added and the upgrades are lockfile-only changes within existing semver ranges; if this text is reused as the PR body, wording such as 're-resolve transitive dependencies in yarn.lock' would state it more clearly."
+    },
+    {
+      "id": "F3",
+      "file": "yarn.lock",
+      "line": 1699,
+      "claim": "The dependency @nestjs/serve-static 5.0.5 still declares a peer range of ^8.0.4 || ^9.0.0 for @fastify/static, which the installed @fastify/static 10.1.3 does not satisfy; since ServeStaticModule is used in src/app.module.ts, this pre-existing peer mismatch remains unresolved, though it was not introduced by this PR."
+    },
+    {
+      "id": "F4",
+      "file": null,
+      "line": null,
+      "claim": "The find-my-way bump from 9.6.0 to 9.7.0 restructures its core matching loop (a new while(true) in find, isParamSafe flipped, and a fallback for optional params), which changes routing behavior for every endpoint alongside the app's ignoreTrailingSlash and maxParamLength settings (src/app.provider.ts:36-46). Since no tests, install, or build were run as part of the review, this routing change has not been verified and could introduce a regression that only CI would catch."
+    },
+    {
+      "id": "F5",
+      "file": "package.json",
+      "line": 52,
+      "claim": "@fastify/cookie is pinned with a caret range (^11.1.1) instead of an exact version, which is an exception to the convention that runtime dependencies be pinned exactly; it is unchanged by this diff but could be addressed as a follow-up."
+    },
+    {
+      "id": "F6",
+      "file": "package.json",
+      "line": 53,
+      "claim": "@fastify/static is pinned with a caret range (^10.1.3) instead of an exact version, which is an exception to the convention that runtime dependencies be pinned exactly; it is unchanged by this diff but could be addressed as a follow-up."
+    }
+  ]
+}

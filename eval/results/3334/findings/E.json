@@ -1,0 +1,25 @@
+{
+  "usd": 0.052623600000000006,
+  "findings": [
+    {
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts",
+      "line": 1753,
+      "claim": "The value used here should instead be read from deployments rather than hardcoded."
+    },
+    {
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts",
+      "line": 1772,
+      "claim": "These values should be read from the deployments library instead of being duplicated or hardcoded in the test."
+    },
+    {
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts",
+      "line": 1804,
+      "claim": "The test title states it should not return INCOMPATIBLE_SAFE, but the assertion in the test body checks for MISSING_OWNERSHIP, making the test's intent confusing and mismatched between title and implementation."
+    },
+    {
+      "file": "src/modules/safe-shield/contract-analysis/contract-analysis.service.spec.ts",
+      "line": 1282,
+      "claim": "The test title is unclear or inaccurate and should be rewritten to specify that it verifies VERIFIED is returned when the handler is the official ExtensibleFallbackHandler."
+    }
+  ]
+}

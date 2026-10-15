@@ -1,0 +1,36 @@
+{
+  "usd": 0.2654278,
+  "head": "1ff34495ebe277858085e6696e87e7fff8da32cd",
+  "verdicts": [
+    {
+      "issue": 1,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "In the billing.service.ts:110 thread and the follow-up comment, falvaradorodriguez said leaving it out was intentional: a session can't be reliably mapped back to a space, so they left the endpoint as-is. The code was not changed."
+    },
+    {
+      "issue": 6,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "At 64c48dc, billing.service.spec.ts:184-199 used a single sharedLink in both lists. Commit f4a251a8d changed the test to use two distinct objects with the same id and different `active`, as the author's reply states."
+    },
+    {
+      "issue": 7,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "The author agreed the IDs are UUIDs, which the code uses at 64c48dc. They fixed the swagger error in commit 64c48dc ('Fix spaceId in swagger') and said they had updated it."
+    },
+    {
+      "issue": 9,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "At 64c48dc, getCustomerSessionUrl called raw fetch. Commit 1ff34495e switched it to networkService.get with responseType 'text' and passed the body through this.parse(..., z.string()). The author replied 'Done' in the billing-api.service.ts:111 thread."
+    },
+    {
+      "issue": 24,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "In the plan.entity.ts:24 thread the author replied 'Yep, totally agree', and commit 4498ea4b1 ('Reuse Stripe metadata record') makes the schema shared."
+    }
+  ]
+}

@@ -1,0 +1,199 @@
+{
+  "pr": 3397,
+  "title": "fix: reject an empty chainId instead of returning 502",
+  "description": "Resolves: https://linear.app/safe-global/issue/WA-3510/fix-5xx-and-redirect-on-the-message-by-hash-endpoint\n\n## Summary\n\n`GET /v1/chains/:chainId/messages/:messageHash` returned 502 on **4.5%** of requests (1,168 5xx of 25,906 over 30 days). Every one arrived with an **empty `chainId`** — `/v1/chains//messages/0x…` — and no request carrying a real chain has ever 502'd on this route.\n\n`@Param('chainId')` had no validation pipe, so `''` reached `ConfigApi.getChain`, which built `/api/v1/chains/` — the chain *collection* endpoint. That returns **200** with a page payload, `ChainSchema.parse` throws, and `ZodErrorFilter` maps the domain-level `ZodError` to `BAD_GATEWAY`. The page was then cached under the key `_chain`, so later requests failed identically from cache until the TTL expired. The transaction service is never called on this path: traces show a single outbound span (config service, 200) and no `*-safe-transaction-web` span — so this is neither an upstream fault nor a timeout.\n\n## Fix\n\nValidate at the boundary. `chainId` goes through `ChainIdSchema` and `messageHash` through `HexSchema` on all four routes of the messages controller, so a malformed value is rejected with **422** before any datasource is touched. Nothing changes below the controller: lower layers trust their callers.\n\nThis removes 99.3% of the endpoint's 5xx (1,160 of 1,168), taking its error rate from **4.51% to ~0.03%**. The remainder are eight genuine circuit-breaker 503s over 30 days, which clears the route to rejoin the CGW journey SLOs.\n\nVerified locally against staging with real message hashes taken from `env:staging` traces: an empty chainId goes 502 → 422, real chains still return 200, wrong-chain lookups still return 404.\n\nIndependent of #3398 — either can merge first.\n\n## Out of scope\n\n38 other routes still take `@Param('chainId')` without a pipe, so an empty chainId on those still reaches `getChain`. Tracked in WA-3543.\n\n## Changes\n\n- `src/modules/messages/routes/messages.controller.ts` — `ChainIdSchema` / `HexSchema` pipes on all four routes.\n- `src/modules/messages/routes/messages.controller.integration.spec.ts` — parametrized empty-chainId case across all four routes, asserting 422 and no upstream call.\n- `src/modules/spaces/routes/safes/space-safes.controller.e2e-spec.ts` — length assertions read `CHAIN_ID_MAXLENGTH` instead of repeating the literals.\n- `src/modules/chains/domain/entities/schemas/chain-id.schema.ts` — typo in the validation message.\n",
+  "findings": [
+    {
+      "id": "F1",
+      "file": "src/datasources/config-api/config-api.service.ts",
+      "line": 80,
+      "claim": "This change quietly alters the response code for an empty chainId on the other 38 untouched @Param('chainId') routes from 502 to 404, and this behavioral change is not covered by any test nor called out in the PR description beyond a code comment."
+    },
+    {
+      "id": "F2",
+      "file": null,
+      "line": null,
+      "claim": "When the request is redirected to the chain list endpoint, `ChainSchema.parse` rejects the list response shape, `ZodErrorFilter` maps that to a 502, and the erroneous response gets cached under a junk key, silently poisoning the cache."
+    },
+    {
+      "id": "F3",
+      "file": "src/modules/messages/routes/messages.controller.ts",
+      "line": 103,
+      "claim": "The getMessagesBySafe route received new chainId validation but has no test confirming invalid input returns 422."
+    },
+    {
+      "id": "F4",
+      "file": "src/datasources/config-api/config-api.service.ts",
+      "line": 78,
+      "claim": "The new `if (!chainId)` check only rejects an empty string, but values like ' ', '.', '?', or '#' (sent url-encoded) still pass the check even though the comment claims it covers every caller."
+    },
+    {
+      "id": "F5",
+      "file": "src/modules/messages/routes/messages.controller.ts",
+      "line": 67,
+      "claim": "The messageHash parameter is typed as Hash (implying a 32-byte hash) but is validated with HexSchema, which accepts any 0x-prefixed hex string of any length, including bare \"0x\", and whose output type is plain string; this means the declared type claims more than what is actually checked. The only other route using HexSchema (relay.controller.ts:218-219) types its parameter as Hex instead, and either that convention or a schema enforcing 32 bytes should be used here."
+    },
+    {
+      "id": "F6",
+      "file": "src/datasources/config-api/config-api.service.ts",
+      "line": 75,
+      "claim": "The three-line comment explaining the rationale for the empty-chainId check is longer than necessary and could be trimmed to a single line stating that an empty chainId would hit the chain collection endpoint and cache-poison '_chain', matching the terser commenting style used elsewhere in the file."
+    },
+    {
+      "id": "F7",
+      "file": "src/datasources/network/fetch.network.service.ts",
+      "line": 163,
+      "claim": "`FetchNetworkService.buildUrl` uses `new URL(...)`, which collapses a chainId like ' ', '.', '?', or '#' into an empty path segment, turning `/api/v1/chains/<chainId>` into the chain list endpoint `/api/v1/chains/` instead of a single-chain request."
+    },
+    {
+      "id": "F8",
+      "file": "src/modules/messages/routes/messages.controller.ts",
+      "line": 67,
+      "claim": "The PR title only mentions handling an empty chainId, but it also adds hex validation to messageHash and chainId validation to the create, list, and signature routes; this related hardening should be listed in the PR description so reviewers do not mistake it for unrelated changes."
+    },
+    {
+      "id": "F9",
+      "file": "src/modules/messages/routes/messages.controller.ts",
+      "line": 103,
+      "claim": "`getMessagesBySafe` has no test demonstrating that an invalid chainId or related param is rejected with a 422 before reaching upstream services."
+    },
+    {
+      "id": "F10",
+      "file": "src/datasources/config-api/config-api.service.spec.ts",
+      "line": 120,
+      "claim": "There is no parameterised unit test covering invalid chainId values such as '', ' ', '.', '?', and '#' alongside the existing test for the new check, so the gap in validation is not caught by tests."
+    },
+    {
+      "id": "F11",
+      "file": null,
+      "line": null,
+      "claim": "The PR description contains sections named Problem, Cause, Impact, Verification, and Follow-up but omits a Summary section, when only Summary and Changes sections are expected; the extra prose should be folded into a Summary section alongside Changes."
+    },
+    {
+      "id": "F12",
+      "file": "src/datasources/config-api/config-api.service.ts",
+      "line": 79,
+      "claim": "The PR title scopes the change to (messages) even though it also modifies shared infrastructure code, so the scope should be omitted from the title (e.g. 'fix: reject an empty chainId instead of returning 502')."
+    },
+    {
+      "id": "F13",
+      "file": "src/modules/chains/routes/chains.controller.ts",
+      "line": 73,
+      "claim": "The `GET /v1/chains/:chainId` route, and 38 other routes using `@Param('chainId')`, still have no chainId validation, so they remain reachable with the same malformed values that trigger the list-endpoint bug."
+    },
+    {
+      "id": "F14",
+      "file": "src/modules/messages/routes/messages.controller.ts",
+      "line": 193,
+      "claim": "The messageHash parameter in updateMessageSignature is typed as Hash but validated only with HexSchema, which does not enforce the 32-byte length implied by the Hash type."
+    },
+    {
+      "id": "F15",
+      "file": "src/validation/entities/schemas",
+      "line": null,
+      "claim": "`HexSchema` accepts `'0x'` and hex strings of any length, so a malformed `messageHash` like `0x1` passes validation and still results in one wasted upstream call that returns 404; no stricter 32-byte hash schema exists to reference instead."
+    },
+    {
+      "id": "F16",
+      "file": "src/modules/messages/routes/messages.controller.ts",
+      "line": 192,
+      "claim": "`updateMessageSignature` has no test covering invalid `chainId` or `messageHash` params (lines 192-193) being rejected with a 422 before reaching upstream services."
+    },
+    {
+      "id": "F17",
+      "file": "src/modules/{balances,safe-apps,data-decoder,owners,estimations,safe,chains,recovery,positions,collectibles,delegate,transactions,notifications/v1}/routes/*.controller.ts",
+      "line": null,
+      "claim": "Numerous controllers still accept a bare @Param('chainId') string with no ValidationPipe, so an empty or otherwise invalid chainId can still poison the '_chain' cache and cause a cached error until TTL expiry, just through a different route than the one this PR fixes."
+    },
+    {
+      "id": "F18",
+      "file": "src/datasources/config-api/config-api.service.ts",
+      "line": 78,
+      "claim": "The fix should replace the empty-string check with a real validation, e.g. using `NumericStringSchema.safeParse(chainId).success` and throwing a `DataSourceError` with a 404 status when it fails, matching the validation used at the route level."
+    },
+    {
+      "id": "F19",
+      "file": "src/modules/{balances,safe-apps,data-decoder,owners,estimations,safe,chains,recovery,positions,collectibles,delegate,transactions,notifications/v1}/routes/*.controller.ts",
+      "line": null,
+      "claim": "Because the fix is applied only to this specific route pattern via getChain rather than by validating input at the parameter level, the PR body's claim of covering 41 other sites is true only for this exact bug, not for input-validation gaps in general."
+    },
+    {
+      "id": "F20",
+      "file": "src/modules/messages/routes/messages.controller.ts",
+      "line": 147,
+      "claim": "The createMessage route received new chainId validation but has no test confirming invalid input returns 422."
+    },
+    {
+      "id": "F21",
+      "file": "config-api.service.spec.ts",
+      "line": 122,
+      "claim": "The guard implementation uses HttpStatus.NOT_FOUND while the corresponding spec asserts against the numeric literal 404, which is an inconsistency in how the same status code is referenced between implementation and test."
+    },
+    {
+      "id": "F22",
+      "file": "src/modules/messages/routes/messages.controller.integration.spec.ts",
+      "line": 516,
+      "claim": "The PR adds chainId and messageHash validation to four routes, but only getMessageByHash has a test verifying that bad input returns 422; getMessagesBySafe, createMessage, and updateMessageSignature have no such tests, so if a validation pipe is later removed from any of those three routes no test would fail."
+    },
+    {
+      "id": "F23",
+      "file": "src/modules/messages/routes/messages.controller.integration.spec.ts",
+      "line": 485,
+      "claim": "Parameter validation was added to four handlers, but the new 422 tests only cover one of them (`GET chains/:chainId/messages/:messageHash`); there are no tests verifying that invalid params on `getMessagesBySafe`, `createMessage`, or `updateMessageSignature` return 422 without making an upstream call."
+    },
+    {
+      "id": "F24",
+      "file": "src/datasources/config-api/config-api.service.ts",
+      "line": 75,
+      "claim": "The empty-chainId presence check now exists in two places: the new controller-level validation pipe already rejects an empty chainId, while this datasource-level check duplicates that validation, contrary to the convention of validating at the controller and not repeating presence checks further down."
+    },
+    {
+      "id": "F25",
+      "file": "config-api.service.spec.ts",
+      "line": 120,
+      "claim": "The unit test uses .rejects.toThrow(new DataSourceError(...)), but since DataSourceError's constructor calls a bare super(), the thrown error's message is empty, so the assertion only passes on equality of two empty message strings rather than verifying the intended code: 404; a matcher like toMatchObject({ message: 'Chain not found', code: 404 }) would actually pin the expected error."
+    },
+    {
+      "id": "F26",
+      "file": "src/modules/messages/routes/messages.controller.ts",
+      "line": 147,
+      "claim": "`createMessage` has no test demonstrating that an invalid param is rejected with a 422 before reaching upstream services."
+    },
+    {
+      "id": "F27",
+      "file": "src/modules/messages/routes/messages.controller.ts",
+      "line": 66,
+      "claim": "The four new chainId parameter pipes (lines 66, 103, 147, 192) use a bare NumericStringSchema instead of the dedicated ChainIdSchema, extending a pattern that predates the ChainIdSchema convention rather than following the established one; each should import ChainIdSchema and use `@Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string` instead."
+    },
+    {
+      "id": "F28",
+      "file": "src/modules/messages/routes/messages.controller.ts",
+      "line": 192,
+      "claim": "The updateMessageSignature route received new validation for both chainId and messageHash but has no test confirming invalid input returns 422 for either parameter."
+    },
+    {
+      "id": "F29",
+      "file": "messages.controller.integration.spec.ts",
+      "line": 485,
+      "claim": "The controller change affects all four message-related routes, but integration tests only cover GET .../messages/:messageHash; there is no integration test for safes/:safeAddress/messages, POST .../messages, or POST .../messages/:messageHash/signatures, so a future regression on those three routes could go unnoticed."
+    },
+    {
+      "id": "F30",
+      "file": "src/modules/messages/routes/messages.controller.ts",
+      "line": 193,
+      "claim": "The PR title only mentions handling an empty chainId, but this line's added chainId and messageHash validation on updateMessageSignature is additional scope not described in the PR title."
+    },
+    {
+      "id": "F31",
+      "file": null,
+      "line": null,
+      "claim": "The claim that Fastify matches a route like `/v1/chains//messages/...` with an empty chainId, which the new integration test relies on, is based on the commit message and code reading rather than having been verified by actually running it."
+    },
+    {
+      "id": "F32",
+      "file": null,
+      "line": null,
+      "claim": "After this change, the same invalid chainId input produces a 422 response on routes protected by ValidationPipe but a 404 response on other bare-@Param routes protected only by the getChain guard, creating inconsistent status codes for the same client mistake."
+    }
+  ]
+}

@@ -1,0 +1,100 @@
+{
+  "usd": 0.08447560000000001,
+  "findings": [
+    {
+      "file": "src/modules/entitlements/routes/entitlements.service.ts",
+      "line": 207,
+      "claim": "The seat-limit enforcement date defaults to 2099, which only selects which quota number applies; admit() always throws QuotaExceededError regardless of that date, so the previous 400 response with the text \"This Workspace only allows a maximum of N Safe Accounts…\" becomes a 402 with body {code:\"QUOTA_EXCEEDED\",…} as soon as this deploys."
+    },
+    {
+      "file": "src/modules/entitlements/routes/entitlements.service.ts",
+      "line": 207,
+      "claim": "A code comment claims that deploying this change enforces nothing, but that claim is misleading given the response code change described above."
+    },
+    {
+      "file": "src/modules/spaces/routes/safes/space-safes.controller.ts",
+      "line": 88,
+      "claim": "Either the old 400 status and body should be kept until the enforcement date arrives, or web and mobile clients should be confirmed to handle the new 402 response before this ships, and the misleading comment should be corrected."
+    },
+    {
+      "file": "src/modules/entitlements/routes/guards/entitlement.guard.ts",
+      "line": 36,
+      "claim": "findIdByUuid is now called twice per add-Safe request (once in entitlement.guard.ts and once in space-id.pipe.ts), and countBySpaceId is also called twice (in entitlements.service.ts and space-safes.repository.ts), turning what was 2 DB round-trips per request into 5, with 2 additional Redis hGet calls once the enforcement date passes."
+    },
+    {
+      "file": "src/modules/entitlements/routes/guards/entitlement.guard.ts",
+      "line": 36,
+      "claim": "SafeSeatsGuard runs before assertAdmin, so a non-member making a request can receive another space's quota/used/resetsAt data in the 402 response body, whereas getEntitlements protects the same data behind assertMember."
+    },
+    {
+      "file": "src/modules/entitlements/routes/entitlements.service.ts",
+      "line": 262,
+      "claim": "A request that misses the plan cache can read the plan without a lock; if it reads before an upgrade or downgrade commits and then writes to cache after the post-commit deleteByKey runs, the stale (old) grants get written back into the cache."
+    },
+    {
+      "file": "src/modules/entitlements/domain/entities/feature-grant.entity.ts",
+      "line": 13,
+      "claim": "The cached plan value has no version stamp, so nothing detects when a cached value is stale; a space that just upgraded can keep getting 402 responses for up to the cache TTL (300s), and a downgraded space can exceed its new limit for the same window."
+    },
+    {
+      "file": "src/modules/entitlements/routes/entitlements.service.ts",
+      "line": 262,
+      "claim": "The cached value should be stamped with the subscription's event time so older writes are ignored or skipped, or the cache write should be made conditional, to prevent stale plan data from being cached after an upgrade or downgrade."
+    },
+    {
+      "file": "src/modules/spaces/routes/safes/space-safes.controller.ts",
+      "line": 94,
+      "claim": "The new 402 response path has no end-to-end HTTP test even though the existing e2e spec already covers 401/403/404/422/400 for this route; the new tests only check decorator metadata or use mocks instead of exercising the real HTTP stack."
+    },
+    {
+      "file": "src/modules/spaces/routes/safes/space-safes.controller.ts",
+      "line": 94,
+      "claim": "Tests should be added covering: a space at its limit receiving 402 with the documented body, a space under the limit receiving 201, and a non-member hitting an at-limit space (relevant to the guard ordering issue)."
+    },
+    {
+      "file": null,
+      "line": null,
+      "claim": "The e2e test suite that would cover this new path is not run in CI, per docs/agents/testing.md, so these gaps are not currently caught automatically."
+    },
+    {
+      "file": "src/modules/spaces/domain/safes/space-safes.repository.ts",
+      "line": 71,
+      "claim": "Every Safe address is KMS-encrypted (via GenerateDataKey) before the seat/quota check runs, so a batch that would push the space over its limit still pays for N encryption calls before being rejected, whereas the old code rejected first."
+    },
+    {
+      "file": "src/modules/spaces/domain/safes/space-safe.dto.entity.ts",
+      "line": 14,
+      "claim": "There is no .max() validation on the batch size in the DTO, which would otherwise bound the number of encryption calls performed before the quota check rejects an oversized batch."
+    },
+    {
+      "file": "src/modules/entitlements/routes/entitlements.service.ts",
+      "line": 1,
+      "claim": "This routes/ service grew from 22 to 29 first-party imports and now owns both grant caching and the cross-module IEntitlementEnforcement implementation, mixing responsibilities that should be separated; the cache and grants logic should be moved into a domain/ collaborator per docs/agents/ARCHITECTURE.md:101-102."
+    },
+    {
+      "file": "src/modules/entitlements/routes/entitlements.service.ts",
+      "line": 221,
+      "claim": "No test covers the fallback behavior when a feature has no catalog row, where the code logs a warning and falls back to the static limit."
+    },
+    {
+      "file": "src/modules/entitlements/routes/guards/entitlement.guard.ts",
+      "line": 36,
+      "claim": "Fixing the non-member data leak by adding assertMember directly inside the guard would add an extra query and worsen the duplicate-query performance problem; the guard-based fix location is worse than moving the check into SpaceSafesService.create."
+    },
+    {
+      "file": "src/modules/entitlements/routes/guards/entitlement.guard.ts",
+      "line": 18,
+      "claim": "The guard is implemented as an abstract class with only one subclass, which may be unnecessary abstraction given only a single current use."
+    },
+    {
+      "file": "src/modules/spaces/domain/safes/space-safes.repository.ts",
+      "line": 86,
+      "claim": "The seat lock is held across the audit log's KMS call, and the KMS client has no timeout configured, which could prolong lock hold time; this only manifests when FF_SPACE_AUDIT_LOG and ENCRYPTION_ENABLED are both enabled."
+    },
+    {
+      "file": "src/modules/spaces/domain/safes/space-safes.repository.ts",
+      "line": 22,
+      "claim": "This is now a second copy of the space-scoped advisory-lock pattern, duplicated from src/modules/entitlements/domain/subscriptions.repository.ts:16-17,96-106, with lock namespaces 132, 1643 and 1827 kept apart only by comments rather than by a compile-time guarantee; a shared helper with a namespace map would turn a namespace collision into a compile error."
+    }
+  ]
+}

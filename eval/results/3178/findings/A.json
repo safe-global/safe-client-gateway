@@ -1,0 +1,65 @@
+{
+  "usd": 0.0693156,
+  "findings": [
+    {
+      "file": "src/domain/common/entities/name.builder.ts",
+      "line": 24,
+      "claim": "The builder truncates a generated name to 30 characters after selection, and with faker.person.fullName() the character at that position can be a space, producing a trailing-space value that sanitizeName then trims; this breaks the expectation that sanitizeName(name) equals name and can hand callers a value the schema would not return unchanged."
+    },
+    {
+      "file": "src/domain/common/schemas/name.schema.spec.ts",
+      "line": 11,
+      "claim": "The comment states the invisible characters are defined by code point to avoid editor/encoding ambiguity, but the following lines actually use raw invisible characters in the source rather than code-point escapes, contradicting the comment even though the same file elsewhere uses code-point escapes for other characters."
+    },
+    {
+      "file": "src/modules/spaces/routes/address-books.controller.e2e-spec.ts",
+      "line": 329,
+      "claim": "The test uses a raw hidden Unicode character (U+202E) embedded directly in a string literal instead of an explicit code-point escape, the same ambiguity problem as in name.schema.spec.ts."
+    },
+    {
+      "file": "src/domain/common/entities/name.builder.ts",
+      "line": 8,
+      "claim": "The comment describing the sample names as Latin, accented, and Cyrillic is inaccurate since the list also includes a Japanese name."
+    },
+    {
+      "file": "src/domain/common/entities/name.builder.ts",
+      "line": 23,
+      "claim": "Padding is computed using string length (UTF-16 code units) while the truncation on the next line and the schema's own validation count Unicode code points, creating an inconsistency between how length is measured in different parts of the code."
+    },
+    {
+      "file": "src/domain/common/schemas/name.schema.ts",
+      "line": 11,
+      "claim": "The comment claims the character allowlist excludes dangerous formula characters such as =, +, *, /, but the allowlist still permits '-' and '@', both of which are valid formula-injection triggers (e.g. '@SUM(A1)', '-1'), so the comment overstates the protection the schema itself provides."
+    },
+    {
+      "file": "src/domain/common/schemas/name.schema.ts",
+      "line": 40,
+      "claim": "The minimum-length validation message uses the phrase 'at least N character(s) long' while the maximum-length message at line 43 uses 'at most N characters long', an inconsistent wording between the two related messages."
+    },
+    {
+      "file": "src/modules/csv-export/csv-utils/csv.service.spec.ts",
+      "line": 4,
+      "claim": "The generic CsvService spec now imports the v1-specific CSV_OPTIONS, coupling a general-purpose test file to a version-specific entity."
+    },
+    {
+      "file": "src/modules/csv-export/csv-utils/csv.service.spec.ts",
+      "line": 373,
+      "claim": "Tests covering '=', '+', leading space and leading newline duplicate coverage already present in escape-csv-formula.spec.ts, with only the numeric-column exemption tests and the wiring check being genuinely new."
+    },
+    {
+      "file": "src/modules/csv-export/csv-utils/csv.service.spec.ts",
+      "line": 407,
+      "claim": "The test name claims that null symbols and notes are output as an empty cell, but the assertion only checks that the row starts with '8,' and contains no apostrophe, which would still pass even if the supposedly-null columns were not actually empty."
+    },
+    {
+      "file": "src/modules/spaces/routes/address-books.controller.e2e-spec.ts",
+      "line": 315,
+      "claim": "The UTF-8 round-trip e2e test also re-checks bidi-override stripping, which is already covered in name.schema.spec.ts, making that portion of the e2e test redundant."
+    },
+    {
+      "file": "src/modules/csv-export/README.md",
+      "line": 30,
+      "claim": "The CSV Generation section documents CSV_OPTIONS but omits the newly added formula escaping behavior and the exemption of the amount/payment columns from it, and the column table is missing the nonce, payment, and gasTokenSymbol columns."
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "usd": 0.0827256,
+  "findings": [
+    {
+      "file": "src/modules/entitlements/domain/entities/feature-grant.entity.ts",
+      "line": 15,
+      "claim": "The new counter field is defined as nullable but not optional, so entitlement entries already cached from before this change have no counter key at all, which causes CachedGrantsSchema.parse to throw with no catch, and the global Zod filter turns that into a 502 response for any workspace hitting a quota-gated action while the stale cache entry is still present. Because the cache key is unchanged, old entries also lack a sponsored_transactions entry, which would fail closed to a quota of 0 even if counter were made optional, so the cache key needs to be versioned rather than just loosening the schema."
+    },
+    {
+      "file": "src/modules/entitlements/routes/entitlements.service.ts",
+      "line": 338,
+      "claim": "No test covers the new hasClosedWindow check that skips the cache once a grant's window has closed: no spec imports it, no test pre-seeds a cached grant with a past resetsAt, and no test uses fake timers, so deleting that branch would not fail the existing suite."
+    },
+    {
+      "file": "src/modules/entitlements/routes/entitlements.service.ts",
+      "line": 338,
+      "claim": "For a paid plan, resetsAt equals currentPeriodEnd, which only moves via a webhook; while a renewal webhook lags, every quota check misses the cache, causing three Postgres reads and a rewrite of the same stale blob each time, and one stale grant discards the cache for the entire space, including safe_seats."
+    },
+    {
+      "file": "src/modules/entitlements/routes/workspace.relayer.ts",
+      "line": 86,
+      "claim": "The allowance is checked, then the paid relay is executed, then usage is recorded, with no lock across the three steps, so a member issuing concurrent requests can exceed the quota; the overshoot only affects the relay budget of that member's own workspace."
+    },
+    {
+      "file": "src/modules/entitlements/routes/entitlements.service.ts",
+      "line": 189,
+      "claim": "The quota check and the usage record each resolve the grant separately, so a relay that spans the moment a billing period rolls over is admitted against the old period but recorded into the new one, an off-by-at-most-one-unit discrepancy that makes the new period stricter rather than looser."
+    },
+    {
+      "file": "src/modules/space-safes/space-safes.repository.ts",
+      "line": 184,
+      "claim": "existsInSpace is only tested with encryption disabled; the encrypted blind-index branch of safeMatch is exercised indirectly through the delete test, but the repository.exists() call itself is untested under encryption, which also happens to be off by default."
+    },
+    {
+      "file": "src/modules/entitlements/routes/workspace.relayer.ts",
+      "line": 75,
+      "claim": "This code restates RelayManager's logic for which relayer types are supported, but the fallback differs: RelayManager blocks any relayer type it doesn't recognize, while this code allows it, and only a change to the RelayerType enum could exploit that gap."
+    },
+    {
+      "file": "src/modules/space-relay/routes/space-relay.controller.ts",
+      "line": 25,
+      "claim": "The controller and service import auth.decorator, space-id.pipe, and space-assert.utils from other modules' routes/ folders, which is a documented anti-example of cross-module imports; two of the three imports have existing domain-level alternatives (ISpacesRepository.findIdByUuid and IMembersRepository.findOne) that could be used instead."
+    },
+    {
+      "file": "src/modules/entitlements/routes/entitlements.service.ts",
+      "line": 196,
+      "claim": "The recordUsage failure warnings are plain string logs rather than structured logs following the { type: LogType.QuotaExceeded, ... } pattern used elsewhere in the same file, which makes a lost usage unit harder to alert on."
+    },
+    {
+      "file": "src/modules/entitlements/routes/entitlements.service.integration.spec.ts",
+      "line": 1183,
+      "claim": "The sponsoredSubscription and sponsoredPlan test helpers are near-identical and could be merged to reduce duplication."
+    },
+    {
+      "file": "src/modules/entitlements/routes/workspace.relayer.ts",
+      "line": 83,
+      "claim": "The ownership check and the quota check run sequentially rather than in parallel; running them in parallel would break an existing test that asserts no quota check happens for a Safe the workspace doesn't hold."
+    },
+    {
+      "file": "src/modules/entitlements/routes/workspace.relayer.ts",
+      "line": 114,
+      "claim": "A failed usage write is only logged, so that relay is never counted against the quota, though this matches the behavior of DailyLimitRelayer and is already covered by a test."
+    },
+    {
+      "file": "src/modules/space-safes/space-safes.repository.interface.ts",
+      "line": 70,
+      "claim": "The new doc comment uses a two-line format that no other block in the same file uses, though some older files in the codebase do use that format and no rule or tool enforces a single convention."
+    }
+  ]
+}

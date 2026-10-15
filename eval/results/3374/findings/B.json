@@ -1,0 +1,25 @@
+{
+  "usd": 0.27163000000000004,
+  "findings": [
+    {
+      "claim": "The step-up flow's getPriorExpiration only verifies the cookie's signature and reads its exp field, without checking that auth_method equals 'oidc' or that the cookie's sub matches the userId returned by findOrCreateByExtUserIdAndEmail. As a result, a step-up can proceed using a valid session cookie from any user or from a non-OIDC login method (e.g. a wallet/SIWE session), letting someone complete Auth0 and MFA as a different account while the elevated token still inherits the throwaway session's expiry.",
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.ts",
+      "line": 237
+    },
+    {
+      "claim": "The comment describing the rejection logic states that it prevents a step-up from acting as a login based solely on Auth0's SSO session, but the actual check does not enforce that the elevating cookie belongs to the same user or was created via OIDC, so the code does not match the stated intent.",
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.ts",
+      "line": 188
+    },
+    {
+      "claim": "The existing 'session lifetime on step-up' tests mock decodeToken using oidcAuthPayloadDtoBuilder with a sub value that is never asserted against, so none of them would catch a missing or incorrect check of sub versus userId or auth_method. Tests should be added using a mismatched sub and a SIWE-style payload, both expecting UnauthorizedException and no call to signToken.",
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.spec.ts",
+      "line": 505
+    },
+    {
+      "claim": "The rationale that a step-up must not reset the absolute session timeout is repeated in three places: the @param doc comment, getSessionExpiration, and getPriorExpiration. This duplication should be consolidated into a single location, with getPriorExpiration's doc trimmed to describe only what it returns.",
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.ts",
+      "line": 223
+    }
+  ]
+}

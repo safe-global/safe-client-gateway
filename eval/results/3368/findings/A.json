@@ -1,0 +1,35 @@
+{
+  "usd": 0.06268560000000001,
+  "findings": [
+    {
+      "file": "src/domain/common/utils/__tests__/safe.spec.ts",
+      "line": 913,
+      "claim": "hasAnySingletons still hardcodes the version list ['1.3.0', '1.4.1', '1.5.0'] by hand instead of deriving it from getSafeMigrationTargetVersions(), so the next singleton release will make the test's list diverge from production again, which is exactly the kind of stale list this fix was meant to eliminate. It should instead be built from getSafeSingletonVersions() / getSafeL2SingletonVersions() filtered to >=1.3.0."
+    },
+    {
+      "file": "src/domain/common/utils/__tests__/safe.spec.ts",
+      "line": 704,
+      "claim": "describe.each(['1.4.1', '1.5.0']) pins the SafeMigration versions in the tests even though this same PR adds getSafeMigrationVersions(), so a future SafeMigration release won't be covered by these tests. If the pinning is deliberate (to fail loudly when the package drops a version), that should be documented in a comment; otherwise the tests should use describe.each(getSafeMigrationVersions())."
+    },
+    {
+      "file": "src/domain/common/utils/deployments.ts",
+      "line": 41,
+      "claim": "Adding typeof _getSafeMigrationDeployments to the DeploymentGetter union is unnecessary for this fix since formatDeployments(_getSafeMigrationDeployments, args) already compiled before this PR, making this an unrelated type change unless it's intended as consistency cleanup."
+    },
+    {
+      "file": "src/domain/common/utils/deployments.ts",
+      "line": 245,
+      "claim": "The new JSDoc claims that _SAFE_*_DEPLOYMENTS.map(...) returns versions in descending order, but this could not be confirmed since node_modules isn't installed, leaving the ordering assumption unverified."
+    },
+    {
+      "file": "recipient-analysis.service.ts",
+      "line": 707,
+      "claim": "recipient-analysis.service.ts now accepts any SafeToL2Migration version, but no test covers this behavior change; it currently works only because just one version (1.4.1) exists, so a test with a mocked or alternate version is needed to pin down the behavior."
+    },
+    {
+      "file": "safe.spec.ts",
+      "line": 913,
+      "claim": "The test asserts in an if/else branch depending on deployment data for chain 204, so its outcome depends on external package data rather than a controlled input, though this issue predates and is outside the current diff."
+    }
+  ]
+}

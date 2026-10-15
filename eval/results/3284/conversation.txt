@@ -1,0 +1,47 @@
+THREAD src/modules/auth/oidc/auth0/datasources/auth0-api.service.ts:33 resolved=true
+[LucieFaire 2026-07-24T14:42:07Z] should we move it to config?
+[TimDaub 2026-07-27T06:35:50Z] [5b7bb51](https://github.com/safe-global/safe-client-gateway/pull/3284/commits/5b7bb5187d0fed9d5ed7200589402c71ab295cd6)
+
+THREAD src/modules/auth/oidc/auth0/datasources/auth0-api.service.ts:203 resolved=true
+[LucieFaire 2026-07-24T14:44:18Z] should we validate it? or we trust its a correct one?
+[TimDaub 2026-07-27T14:14:56Z] We decided against validating the `access_token`.
+
+THREAD src/modules/auth/oidc/auth0/datasources/auth0-api.service.ts:208 resolved=true
+[LucieFaire 2026-07-24T14:44:42Z] why do we cache it? do we expect a heavy load on this operation?
+[TimDaub 2026-07-27T06:26:59Z] I followed @PooyaRaki's advice and basically copied the [Firebase oauth token function](https://github.com/safe-global/safe-client-gateway/blob/3d98ac9ff0b8e3f1772fca60fd13ea689e6bc67c/src/datasources/push-notifications-api/firebase-cloud-messaging-api.service.ts#L169-L198)
+
+THREAD src/modules/auth/oidc/routes/oidc-auth.controller.ts:267 resolved=true
+[LucieFaire 2026-07-24T14:51:29Z] so you can have multiple at the same time?
+[TimDaub 2026-07-27T06:55:16Z] For a short period of time, yes, it is possible to have two authenticators. When we send the user to auth0, they're adding a new authenticator, and only upon returning we're deleting their old one. See diagram below
+
+<img width="634" height="472" alt="Image" src="https://github.com/user-attachments/assets/9182165c-e2fc-4bc2-9a23-037e1e3a5a40" />
+
+THREAD src/modules/auth/oidc/routes/oidc-auth.service.ts:39 resolved=true
+[LucieFaire 2026-07-24T14:52:58Z] i think its getting crowded, we can extract it to `types` file or smth
+[TimDaub 2026-07-27T06:40:14Z] [ba4e04e](https://github.com/safe-global/safe-client-gateway/pull/3284/commits/ba4e04e127f8a94e40b3931d76d99d76af187cc4)
+
+THREAD src/modules/auth/oidc/routes/oidc-auth.service.ts:197 resolved=true
+[LucieFaire 2026-07-24T14:54:47Z] is it possible to now have extUserId here?
+[TimDaub 2026-07-27T07:08:56Z] It's very unlikely, but it can happen. E.g. a SIWE user could intentionally call listAuthenticators, but then user.extUserId would be null here.
+
+COMMENT
+[datadog-official 2026-07-24T09:20:51Z] <a target='_blank' href='https://app.datadoghq.eu/ci/pipeline-executions?query=ci_level%3Ajob+%40ci.status%3Aerror+%40git.commit.sha%3Aba61adc34a384e1b13c1aff176589d45674b5202&referrer=pr-comment&start=1785134560000'><picture><source media="(prefers-color-scheme: dark)" srcset="https://static.datadoghq.com/static/images/pr_comments/software_delivery/badges_header/pipelines-warning.svg"/><img src="https://static.datadoghq.com/static/images/pr_comments/software_delivery/badges_header/pipelines-warning-light.svg" alt="Pipelines" align="center" /></picture></a>
+
+## ⚠️ Warnings
+
+🚦 **1 Pipeline job failed**
+
+<blockquote>
+<div>
+
+<code> CI | biome </code> &nbsp;&nbsp;<a href="https://app.datadoghq.eu/ci/pipeline-executions?query=ci_level%3Ajob&#43;ci.job_correlation_id%3Af9cde5cfe1adf288&amp;referrer=pr-comment&amp;start=1785134560000" title="View in Datadog"><img src="https://static.datadoghq.com/static/images/pr_comments/software_delivery/datadog_icon.svg" alt="View in Datadog" align="center" /></a> &nbsp; <a href="https://github.com/safe-global/safe-client-gateway/actions/runs/30245336276/job/89911025106" title="View in GitHub Actions"><picture><source media="(prefers-color-scheme: dark)" srcset="https://static.datadoghq.com/static/images/pr_comments/software_delivery/logos/github-logo-dark.svg"/><img src="https://static.datadoghq.com/static/images/pr_comments/software_delivery/logos/github-logo-light.svg" alt="GitHub Actions" align="center" /></picture></a>
+
+</div>
+</blockquote>
+
+Useful? React with 👍 / 👎
+
+<sub>
+This comment will be updated automatically if new data arrives. <br />
+🔗 Commit SHA: ba61adc | <a href="https://docs.datadoghq.com/integrations/guide/source-code-integration/#pr-comments">Docs</a> | Give us <a href="https://forms.gle/ys6MDmdQEeC5pkzWA">feedback</a>!
+</sub>

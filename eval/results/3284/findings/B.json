@@ -1,0 +1,60 @@
+{
+  "usd": 0.0859636,
+  "findings": [
+    {
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.ts",
+      "line": 161,
+      "claim": "Any callback whose state has enroll: true deletes every TOTP factor except the newest one, without checking that a new factor was actually enrolled during the round-trip or recording which factors existed beforehand. A user with multiple TOTP devices who starts enrollment but reaches the callback without a new factor being added (e.g. the enrollment Action is skipped or misconfigured) will have an existing, still-used device deleted with no recovery."
+    },
+    {
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.ts",
+      "line": 184,
+      "claim": "The created_at field used to sort factors is validated only as z.string(), so Date.parse can return NaN for malformed values, making the sort order arbitrary and risking that the wrong (still-in-use) device is identified as newest and kept while a valid one is deleted."
+    },
+    {
+      "file": "src/modules/auth/oidc/routes/oidc-auth.controller.ts",
+      "line": 228,
+      "claim": "Any error during factor cleanup is caught and only logged as a warning, after which login proceeds normally and neither the user nor the frontend is told that the old factor was not removed, so a lost or compromised device can remain enrolled while the user believes it was cleaned up."
+    },
+    {
+      "file": "src/modules/auth/oidc/routes/oidc-auth.controller.integration.spec.ts",
+      "line": null,
+      "claim": "There are no tests covering the new controller behavior: that cleanup only runs for enrollment states, that a cleanup failure does not block login, that the enroll parameter rejects values other than true, and that GET oidc/mfa/authenticators returns 403 without a session; reverting the controller's enrollment branch today would not fail any test."
+    },
+    {
+      "file": "src/datasources/auth0/auth0-api.service.ts",
+      "line": 94,
+      "claim": "There is no test verifying that ext-enroll-otp is added to the authorization URL."
+    },
+    {
+      "file": "src/datasources/auth0/auth0-api.service.ts",
+      "line": 162,
+      "claim": "The cached Management API token is never cleared after receiving a 401 or 403 response, so a token issued before required scopes were granted keeps failing for up to its full lifetime (Auth0's default is 24 hours) instead of being refreshed."
+    },
+    {
+      "file": "src/datasources/auth0/auth0-api.service.ts",
+      "line": 203,
+      "claim": "A tenant-wide Management API token capable of listing and deleting any user's MFA factors is stored in Redis unencrypted under a single global key, which is riskier than the existing pattern used for Firebase tokens because of the greater damage this token can cause if exposed."
+    },
+    {
+      "file": "src/modules/auth/oidc/routes/entities/mfa-enrollment-session.entity.ts",
+      "line": null,
+      "claim": "Three new entity schemas (MfaEnrollmentSession, otp-code.entity.ts, and auth0-otp-association.entity.ts) are added but nothing in the codebase currently uses them; they should either be wired up (e.g. using MfaEnrollmentSession.supersededIds for the cleanup fix) or removed."
+    },
+    {
+      "file": "src/modules/auth/AUTH.md",
+      "line": null,
+      "claim": "The documentation is not updated to describe the new enroll parameter, the new endpoint, or the new deployment requirement that the Auth0 application needs a Management API grant with read: and delete:authentication_methods scopes; that requirement currently exists only as a code comment."
+    },
+    {
+      "file": "src/modules/auth/oidc/routes/oidc-auth.controller.ts",
+      "line": 262,
+      "claim": "@ApiOkResponse has no response type specified because Authenticator is a TypeScript type rather than a DTO class, so Swagger cannot document the response shape."
+    },
+    {
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.ts",
+      "line": 186,
+      "claim": "created_at values are cast with 'as string', an unsafe cast that a type guard or the created_at schema change would eliminate."
+    }
+  ]
+}

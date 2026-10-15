@@ -1,0 +1,11 @@
+{
+  "pr": 3437,
+  "reviewSha": "2bdf6ac8d0c100a07c5eda90423466f7d42cad3a",
+  "baseSha": "e72f501349658b1f6628568db6df31fd1e4b6213",
+  "system": "E",
+  "version": "github",
+  "runner": "collect",
+  "model": "human",
+  "commentSha": "abc0f045bfdcc2fc59fe37194dae6343b1486a37",
+  "output": "src/modules/relay/domain/relayers/workspace.relayer.ts:98\nI understand the idea but there is a risk of race condition and give extra sponsored transactions.\r\nMaybe another approach would be increment first and if the relay fails discount.\n\n---\n\nsrc/modules/entitlements/domain/entitlements.constants.ts:42\nUnlike `isStockMeteredFeature` above, this returns a plain `boolean`, not `feature is T & {...}`. \nNo bug today (`eventPeriodStart` takes a plain `Feature`), but worth making it a real predicate for consistency\n\n---\n\nsrc/modules/relay/routes/space-relay.controller.ts:98\nmaybe we can put this in a common place. \n```\nexport const SharedRelayExceptionFilters = () =>\n  applyDecorators(\n    UseFilters(\n      RelayDeniedExceptionFilter,\n      RelayerNotAvailableExceptionFilter,\n      InvalidMultiSendExceptionFilter,\n      InvalidTransferExceptionFilter,\n      UnofficialMasterCopyExceptionFilter,\n      UnofficialMultiSendExceptionFilter,\n      UnofficialProxyFactoryExceptionFilter,\n      UnofficialSignerFactoryExceptionFilter,\n    ),\n  );\n```\n\n\n---\n\nsrc/modules/relay/domain/relayers/workspace.relayer.ts:102\nCould we promise.all the last three awaits? looks like there are not dependencies between them. "
+}

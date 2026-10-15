@@ -1,0 +1,11 @@
+{
+  "pr": 3140,
+  "reviewSha": "41a939ce5c8ecdbbb687b60efb7e93d3896dcc75",
+  "baseSha": "11360c1fed3e04e6d2fc6b6bf02ac4fa582a12b0",
+  "system": "E",
+  "version": "github",
+  "runner": "collect",
+  "model": "human",
+  "commentSha": "81244177f0c925e99c494586064a0caf83e75912",
+  "output": "[review by clovisdasilvaneto]\nI see now we are caching the node_modules could you explain me how the cache will be invalidated when we update or add new dependencies? Which strategy is it going to use?\n\n---\n\nhm I wonder if because of these improvements - the tests are failing? DB seems to not have the latest migrations"
+}

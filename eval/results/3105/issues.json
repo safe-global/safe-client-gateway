@@ -1,0 +1,222 @@
+{
+  "usage": {
+    "usd": 0.6367963999999999,
+    "turns": 9,
+    "wallSeconds": 89
+  },
+  "issues": [
+    {
+      "findings": [
+        "F2",
+        "F37"
+      ],
+      "summary": "NoFeeCampaignRelayer.relay() dereferences relayConfiguration[chainId].maxGasLimit without a guard, and routing no longer requires a local noFeeCampaign entry",
+      "label": "medium",
+      "evidence": "no-fee-campaign.relayer.ts:81-83 reads `this.relayConfiguration[...].maxGasLimit` unguarded, while getRelaysRemaining guards `!chainConfiguration`. The old relay.manager check `noFeeCampaignConfigurationPerChain !== undefined` was removed, so a chain the config service flags NO_FEE_CAMPAIGN without local config now throws a TypeError, which surfaces as a 500.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F20",
+        "F21",
+        "F24",
+        "F36",
+        "F3",
+        "F27"
+      ],
+      "summary": "The DailyLimitRelayer fallback is gone: a null or missing relayerType now returns 403, which is a rollout risk if the config service isn't populated first",
+      "label": "medium",
+      "evidence": "relay.manager.ts:59 `default: throw new NoRelayerDefinedError()` replaces the old backward-compat fallback. With `.catch(null)` (chain.schema.ts:108), a missing field also becomes null. The PR intends this (it's listed under \"Up for discussion\"), but relaying on unconfigured chains breaks unless config-service PR #1555 is deployed and populated first.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F22",
+        "F30",
+        "F12"
+      ],
+      "summary": "No integration test checks the 403 response through RelayerNotAvailableExceptionFilter, or RELAY_FEE routing at the controller level",
+      "label": "medium",
+      "evidence": "relay.controller.integration.spec.ts has no 403/FORBIDDEN or RELAY_FEE cases. relayerTypeForChainId only ever returns NO_FEE_CAMPAIGN/DAILY_LIMIT for the chains under test. The only coverage is the unit switch in relay.manager.spec.ts:65-73, so dropping the @UseFilters entries would go unnoticed.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F5",
+        "F19",
+        "F33"
+      ],
+      "summary": "`.catch(null)` on relayerType silently turns unknown values into null with no log",
+      "label": "low",
+      "evidence": "chain.schema.ts:108 `z.enum(RelayerType).nullable().catch(null)` drops the invalid value with no logging, so a misconfigured config-service value looks the same as a deliberate 'no relayer'. This is a real observability gap, but minor.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F1",
+        "F34",
+        "F13"
+      ],
+      "summary": ".env.sample.json still documents the removed RELAY_DAILY_LIMIT_CHAIN_IDS (required: true) and RELAY_FEE_CHAIN_IDS",
+      "label": "low",
+      "evidence": ".env.sample.json:1161-1171 still lists both variables, even though they were removed from configuration.schema.ts and configuration.ts. RELAY_SIMULATION_CHAIN_IDS (mentioned in F13) does not exist, but the main claim holds.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F16"
+      ],
+      "summary": "Leftover relay env vars in .devcontainer/docker-compose.yml",
+      "label": "wrong",
+      "evidence": "There is no .devcontainer directory in the repo, and grep finds these variables only in .env.sample.json.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F23"
+      ],
+      "summary": "Chains domain schema imports RelayerType from the relay module, creating a bidirectional module dependency",
+      "label": "low",
+      "evidence": "chain.schema.ts:6 and chain.builder.ts:17 import from @/modules/relay, and relay.domain.module.ts now imports ChainsModule. There is no runtime cycle, but the layering is inverted.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F17"
+      ],
+      "summary": "Fees returns 400 while relay returns 403 when a chain lacks the relevant relayer",
+      "label": "low",
+      "evidence": "fees.service.ts:24-28 throws BadRequestException, while relay.manager.ts throws ForbiddenException subclasses. These are different endpoints, but the inconsistency is real and minor.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F15",
+        "F18"
+      ],
+      "summary": "Relay endpoints don't declare @ApiForbiddenResponse for the new 403 outcomes",
+      "label": "low",
+      "evidence": "grep finds no ApiForbiddenResponse in relay.controller.ts. GET :safeAddress (line 156) can now return 403 through RelayerNotAvailableExceptionFilter, and the Swagger docs don't mention it.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F7",
+        "F31"
+      ],
+      "summary": "403 Forbidden is a questionable status for 'no relayer defined' or 'relayer type not implemented' (server/config gaps)",
+      "label": "nit",
+      "evidence": "no-relayer-defined.error.ts and relayer-type-not-implemented.error.ts both extend ForbiddenException. Choosing a status code is a design preference, and the PR description explicitly leaves this behaviour up for discussion.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F28"
+      ],
+      "summary": "RelayFeeRelayer.getRelaysRemaining forwards an undefined safeTxHash, supposedly a regression from removing the enabledChainIds guard",
+      "label": "wrong",
+      "evidence": "The removed guard at relay-fee.relayer.ts:~125 only short-circuited on chain mismatch. Before the PR, an enabled chain already forwarded an undefined safeTxHash. Routing now guarantees the chain is RELAY_FEE, so behaviour for that case is unchanged.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F8"
+      ],
+      "summary": "No test asserts strict-mode behaviour for a chain without relayer config",
+      "label": "wrong",
+      "evidence": "relay.manager.spec.ts:71 `should throw NoRelayerDefinedError when relayerType is null` covers exactly this case at unit level.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F14"
+      ],
+      "summary": "Chain caching delays relayer-mode changes, and there's no hook to invalidate the cache",
+      "label": "wrong",
+      "evidence": "CHAIN_UPDATE config events already invalidate the chain cache (event-cache.helper.ts:112,514; hooks.repository.ts:55), so a hook does exist. The cited file src/config/config-api.service.ts is also not the right path.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F26",
+        "F35"
+      ],
+      "summary": "The `type RelayerType as RelayerTypeValue` alias in relay.manager.ts is unnecessary",
+      "label": "nit",
+      "evidence": "relay.manager.ts:5-8 aliases the type even though the RelayerType name already works as both value and type, as relay-manager.interface.ts shows. This is purely stylistic.",
+      "category": "style"
+    },
+    {
+      "findings": [
+        "F25"
+      ],
+      "summary": "The `as Chain['relayerType']` cast in chain.builder is redundant",
+      "label": "nit",
+      "evidence": "chain.builder.ts:52-57: `arrayElement([...Object.values(RelayerType), null])` already infers `RelayerType | null`. The cast is harmless and exists only in a test builder.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F29"
+      ],
+      "summary": "RelayerTypeNotImplementedError takes a string rather than RelayerType",
+      "label": "nit",
+      "evidence": "relayer-type-not-implemented.error.ts:5 `relayerType: string`. Narrowing it to RelayerType would be a minor type-precision improvement.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F32"
+      ],
+      "summary": "RelayerType uses the const-object plus `(typeof X)[keyof typeof X]` idiom instead of an enum",
+      "label": "nit",
+      "evidence": "relayer-type.entity.ts:2-9. The codebase uses both `export enum` (43 files) and `as const` objects (30 files), so this is a style preference.",
+      "category": "style"
+    },
+    {
+      "findings": [
+        "F10"
+      ],
+      "summary": "RelayerNotAvailableExceptionFilter is applied per method rather than on the controller class",
+      "label": "nit",
+      "evidence": "relay.controller.ts:82 and :156 add it to each route. That is correct today, and the future-endpoint risk is speculative.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F9"
+      ],
+      "summary": "The relayerTypeForChainId test helper re-derives the old env-var partition",
+      "label": "nit",
+      "evidence": "relay.controller.integration.spec.ts:80-88. This is a test-readability preference with no correctness impact.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F11"
+      ],
+      "summary": "The networkService.get chain stub is duplicated across tests",
+      "label": "nit",
+      "evidence": "The integration spec repeats mockImplementation blocks, matching the existing style of the file. Extracting a helper is a preference.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F4"
+      ],
+      "summary": "The 'Pay with Safe not available for this chain' message is inaccurate",
+      "label": "nit",
+      "evidence": "fees.service.ts:26-28 keeps the pre-existing message. Whether the wording fits a future Phase 3 is a copy preference.",
+      "category": "product"
+    },
+    {
+      "findings": [
+        "F6"
+      ],
+      "summary": "The fee-service check may not hold for Phase 3's GTF relayer",
+      "label": "unverifiable",
+      "evidence": "fees.service.ts:25 checks `relayerType !== RELAY_FEE`. Whether this fits Phase 3 depends on product plans that aren't in the code.",
+      "category": "design"
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "usd": 0.06771360000000001,
+  "findings": [
+    {
+      "file": "src/modules/tokens/routes/tokens.controller.ts",
+      "line": 51,
+      "claim": "The public Swagger documentation text names the backend Transaction Service that supplies the data (also at lines 66 and 81, and in token.dto.entity.ts:23), when API descriptions should describe behavior from the caller's perspective without naming the internal backend."
+    },
+    {
+      "file": "src/modules/tokens/routes/tokens.service.ts",
+      "line": 35,
+      "claim": "Addresses are lowercased again in the service via uniqBy even though TokenAddressesSchema already normalizes each address to its checksummed form via AddressSchema, so the lowercasing repeats work already done by validation; either drop it in favor of plain uniq() or add a comment explaining the service might be called without the controller's validation."
+    },
+    {
+      "file": "src/modules/tokens/routes/tokens.controller.integration.spec.ts",
+      "line": 206,
+      "claim": "The integration spec re-tests that submitting more than MAX_TOKEN_ADDRESSES returns 422, a case already covered by the lower-layer schema spec, so it duplicates coverage in a slower test."
+    },
+    {
+      "file": "src/modules/tokens/routes/tokens.controller.integration.spec.ts",
+      "line": 219,
+      "claim": "The integration spec re-tests that one malformed address returns 422, a case already covered in token-addresses.dto.entity.spec.ts, duplicating coverage that should live only at the lowest layer that can prove it."
+    },
+    {
+      "file": "src/modules/tokens/routes/tokens.controller.integration.spec.ts",
+      "line": 163,
+      "claim": "The integration spec re-tests that a duplicate address is fetched only once, a case already covered by tokens.service.spec.ts, and this test also requires a .mock.calls workaround comment that could be removed entirely if the duplicate test were dropped."
+    }
+  ]
+}

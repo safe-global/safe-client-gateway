@@ -1,0 +1,50 @@
+{
+  "usd": 0.0651556,
+  "findings": [
+    {
+      "file": ".github/workflows/ci.yml",
+      "line": 165,
+      "claim": "The removed 'yarn run build' step used to type-check every file listed in tsconfig.build.json, but the replacement relies on ts-jest, which only type-checks files that a test imports, so files like main.ts, migrations, and modules with no spec are no longer type-checked, and biome does not type-check either."
+    },
+    {
+      "file": ".github/workflows/ci.yml",
+      "line": 165,
+      "claim": "The only remaining full build is in the Dockerfile's 'yarn run build' step, which runs only in docker-publish-staging and docker-publish-release, meaning a type error in a file no test imports can pass PR CI and then break the staging image build and autodeploy after merge."
+    },
+    {
+      "file": ".github/workflows/ci.yml",
+      "line": 165,
+      "claim": "A cheap 'yarn tsc --noEmit -p tsconfig.build.json' step should be added (for example in the biome job), or the PR description should state that dropping this type-check gate is intentional."
+    },
+    {
+      "file": ".github/workflows/ci.yml",
+      "line": 317,
+      "claim": "docker-publish-release pushes the safeglobal/safe-client-gateway-nest tag and latest images as amd64-only now instead of multi-arch (linux/amd64,linux/arm64), which can silently break or slow down (via emulation) self-hosters running on ARM platforms such as Apple Silicon or ARM servers, since the repo is open source and the published image is a public contract, not just Safe's own deployment."
+    },
+    {
+      "file": ".github/workflows/ci.yml",
+      "line": 317,
+      "claim": "The justification given ('Production runs on amd64 only') only covers Safe's own deployment and does not justify dropping arm64 from the publicly published release image; this change is also only loosely related to the PR's stated goal of speeding up CI."
+    },
+    {
+      "file": ".github/workflows/ci.yml",
+      "line": 317,
+      "claim": "arm64 support should be kept in the release job and dropped only for staging, or the change should be called out explicitly in release notes or the PR description, ideally split into a separate PR."
+    },
+    {
+      "file": ".github/workflows/ci.yml",
+      "line": 88,
+      "claim": "The cache keys hardcode the Node major version (e.g. 'node24' or 'node22') as a separately hand-typed string next to the node-version input (e.g. '24.11.0' or '22.11.0'), so the two values can drift out of sync."
+    },
+    {
+      "file": ".github/workflows/ci.yml",
+      "line": 88,
+      "claim": "If someone bumps node-version to a new major version without updating the hardcoded key, the job will restore a node_modules cache built for the old Node version and skip yarn install, causing native modules built for the old Node version to be loaded and fail."
+    },
+    {
+      "file": ".github/workflows/ci.yml",
+      "line": 88,
+      "claim": "The cache key should be derived from the actual Node version instead of hand-typed, for example by giving setup-node an id and using its node-version output in the key, or by reading the version from .nvmrc, which already contains '24.11.0'."
+    }
+  ]
+}

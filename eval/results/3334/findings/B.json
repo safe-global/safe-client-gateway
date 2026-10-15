@@ -1,0 +1,20 @@
+{
+  "usd": 0.045346,
+  "findings": [
+    {
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.ts",
+      "line": 693,
+      "claim": "areSetupToL2ConditionsMet now passes as long as any SafeToL2Setup version has a canonical deployment on the target chain, without checking that the Safe's own safeAccountConfig.to matches that contract or that the setup version matches the version being tested. Since SafeToL2Setup 1.4.1 and 1.5.0 live at different addresses and several chains only have the 1.5.0 deployment, a 1.4.1 Safe bridged to one of those chains (for example chain 7979) would now be reported compatible even though its setup delegatecall targets a nonexistent contract, silently failing to switch the proxy to the L2 singleton and suppressing a warning that used to fire correctly."
+    },
+    {
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts",
+      "line": 1713,
+      "claim": "No service test exercises the SafeToL2Setup change: the new test sets `to` to zeroAddress, so the setup branch never actually runs, and the only new coverage is a deployments-level test that getSafeToL2SetupVersions returns ['1.4.1','1.5.0']. This means the fix claimed in the commit message is untested and the regression described (a 1.4.1 Safe incorrectly reported compatible on chain 7979) would pass CI; tests are needed for a 1.5.0 Safe bridged to a chain with only the 1.5.0 setup (should be compatible) and a 1.4.1 Safe bridged to chain 7979 (should be INCOMPATIBLE_SAFE)."
+    },
+    {
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.ts",
+      "line": 678,
+      "claim": "The \"CompatibilityFallbackHandler OR ExtensibleFallbackHandler\" check is now duplicated by hand in both recipient-analysis.service.ts and contract-analysis.service.ts:453, with the recipient-analysis version also passing the same three arguments twice, so any future official handler type would need to be added in multiple places, the same kind of omission that caused this change to be needed; a shared isOfficialFallbackHandlerDeployed(args) helper in src/domain/common/utils/deployments.ts, alongside isFallbackHandlerDeployed, would remove the duplication."
+    }
+  ]
+}

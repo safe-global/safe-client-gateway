@@ -1,0 +1,163 @@
+{
+  "pr": 3370,
+  "title": "feat: handle HTTP 451 banned-Safe responses with a custom message",
+  "description": "## Summary\n\nThe Transaction Service now answers every Safe-scoped endpoint with HTTP 451 Unavailable For Legal Reasons when a Safe is banned from the indexer (safe-global/safe-transaction-service#2966), reporting the reason under `detail`.\n\nCGW already forwarded the 451 status correctly — `HttpErrorFactory` produces a `DataSourceError` carrying the upstream status, and `DataSourceErrorFilter` turns it into the response. The gap was the message: the factory only reads the `message` key from an upstream error body, and DRF sends `detail`, so a banned Safe reached clients as `451 {\"code\": 451, \"message\": \"An error occurred\"}`.\n\nThis adds `mapBannedSafeError`, which rewrites a 451 payload into the shape the factory reads, and applies it in the three datasources that call the Transaction Service. Clients now get `451 {\"code\": 451, \"message\": \"Unavailable for legal reasons\"}`. The upstream `detail` text is deliberately not forwarded — it is not client-facing copy and its shape is not part of a contract CGW relies on.\n\nThe mapping sits in those datasources rather than inside `HttpErrorFactory` because 451 only carries this meaning for the Transaction Service. Putting it in the shared factory was the first attempt, and it broke ~40 existing specs across `staking`, `community`, `recovery` and `data-decoder` that encode \"any 4xx/5xx forwards `data.message`\" and draw a random error status that can land on 451 — a global branch would have changed the error contract for every upstream and pulled four unrelated modules into this diff. Scoping it keeps the production change to five files and leaves those specs untouched.\n\nThe message is status-semantic rather than Safe-specific for the same reason: the helper feeds a shared factory, and the 451 status is the machine-readable signal clients switch on.\n\nWithin `TransactionApi.mapError`, the 451 check runs before the existing `nonFieldErrors` branch: the status identifies a banned Safe, so it decides regardless of payload shape, even one the Transaction Service does not currently pair with 451.\n\nTwo related behaviours are left as-is and worth a reviewer's attention:\n\n- `GET /v1/safes` (multi-Safe overview) collects results with `Promise.allSettled` and drops rejected entries with a `warn` log, so a banned Safe is omitted from the list rather than surfacing 451. That is the existing behaviour for every upstream failure on that endpoint, and arguably right for a batch read; changing it would also change how 404s and 500s behave there, so it is not in this PR.\n- 451 is not negatively cached. `CacheFirstDataSource` caches only 404s, so a banned Safe reaches the Transaction Service on every poll. The Transaction Service made its ban check a deliberately uncached indexed lookup so a ban applies immediately; caching it in CGW would delay un-banning by a TTL.\n\nVerification: `yarn format`, `yarn lint` and `yarn build` clean; `yarn test` green (353 files, 6262 passed, 18 skipped). Every new test was checked to be load-bearing by reverting the production change it covers — including the `mapError` ordering fix, which fails against the previous branch order, and each of the three `SafeBalancesApi` funnels, which fail with their catch site reverted. Specs that draw a random error status were run under multiple `FAKER_SEED` values (with `staking` as an untouched control) to confirm no seed sensitivity.\n\nRefs WA-2969.\n\n## Changes\n\n**Production**\n\n- `src/datasources/errors/constants.ts` — new: `UNAVAILABLE_FOR_LEGAL_REASONS_STATUS` (451 is absent from Nest's `HttpStatus`) and the paired client-facing message\n- `src/datasources/errors/helpers/banned-safe.helper.ts` — new: `isBannedSafeError` (status-only predicate) and `mapBannedSafeError`, which rewrites a 451 payload before `HttpErrorFactory` reads it and passes anything else through untouched\n- `src/modules/transactions/datasources/transaction-api.service.ts` — apply it in the existing `mapError` seam, ahead of the `nonFieldErrors` branch, covering all 37 catch sites\n- `src/modules/balances/datasources/safe-balances-api.service.ts` — apply it at the three catch sites (`getBalances`, `getBalance`, `getCollectibles`)\n- `src/modules/csv-export/v1/datasources/export-api.service.ts` — apply it at the `/export/` catch site\n\n**Tests**\n\n- `src/datasources/errors/helpers/banned-safe.helper.spec.ts` — new: the 451 rewrite, the predicate (including a payload shape the Transaction Service does not send), the three pass-through cases, and the resulting `DataSourceError` once funneled through `HttpErrorFactory`\n- `src/__tests__/faker.ts` — new shared `errorStatusCodeExcluding(...excluded)`; 451 now has dedicated handling, so a spec asserting the generic forward path must not draw it\n- `src/modules/transactions/datasources/transaction-api.service.spec.ts` — the 31 `should forward a %s error` cases route through that helper instead of repeating the loop; `getSafe` gains a banned-Safe case and one pinning the branch order\n- `src/modules/csv-export/v1/datasources/export-api.service.spec.ts` — same helper for its one random-status case\n- `src/modules/balances/datasources/safe-balances-api.service.spec.ts` — new: parameterised over all three read methods, asserting a 451 yields the dedicated message and that any other status still forwards the upstream one. This is the only coverage of `getBalance`, which no route reaches (it bypasses the cache and its only caller is the no-fee relayer validation path); for its two siblings it complements the route-level cases below with fast, isolated coverage of the same wiring\n- `src/modules/safe/routes/safes.controller.integration.spec.ts` — route-level 451 through `TransactionApi`\n- `src/modules/balances/routes/balances.controller.integration.spec.ts` — route-level 451 through `SafeBalancesApi.getBalances`\n- `src/modules/collectibles/routes/collectibles.controller.integration.spec.ts` — route-level 451 through `SafeBalancesApi.getCollectibles`\n\n**Docs**\n\n- `docs/agents/ARCHITECTURE.md` — document the",
+  "findings": [
+    {
+      "id": "F1",
+      "file": "src/modules/balances/routes/balances.controller.integration.spec.ts",
+      "line": 838,
+      "claim": "The new integration test covers the /balances/usd route for the banned-Safe path but does not add a mirrored test for /collectibles, even though both getBalances and getCollectibles now apply mapBannedSafeError in SafeBalancesApi, so route-level wiring for the second catch site is only verified at the datasource level, not the integration level."
+    },
+    {
+      "id": "F2",
+      "file": "src/modules/csv-export/v1/datasources/export-api.service.spec.ts",
+      "line": 143,
+      "claim": "The export-api spec only excludes 451 from the random status codes it tests, without asserting on the actual 451 behavior."
+    },
+    {
+      "id": "F3",
+      "file": "safes.controller.integration.spec.ts",
+      "line": 2426,
+      "claim": "The same literal fixture text appears again without being asserted on, repeating the no-literal-fixtures issue."
+    },
+    {
+      "id": "F4",
+      "file": "src/modules/csv-export/v1/datasources/export-api.service.spec.ts",
+      "line": 143,
+      "claim": "A 'should forward a banned-Safe error' test case should be added to export-api.service.spec.ts, plus a collectibles 451 integration case, to cover the paths currently untested."
+    },
+    {
+      "id": "F5",
+      "file": "docs/agents/api-dtos-and-validation.md",
+      "line": 121,
+      "claim": "The canonical example for the one-error-funnel-per-layer guide still shows the old pattern `catch (error) { throw this.httpErrorFactory.from(error); }` for SafeBalancesApi's getBalances/getCollectibles, but the diff changed these to use `from(mapBannedSafeError(error))`, so the documentation is now stale relative to src/modules/balances/datasources/safe-balances-api.service.ts:109 and :181."
+    },
+    {
+      "id": "F6",
+      "file": "src/modules/balances/datasources/safe-balances-api.service.ts",
+      "line": 221,
+      "claim": "A second catch site in SafeBalancesApi at line 221 similarly lacks test coverage for the mapping call."
+    },
+    {
+      "id": "F7",
+      "file": "banned-safe.helper.spec.ts",
+      "line": 36,
+      "claim": "The 'random error status except 451' do/while loop is duplicated across three spec files even though the commit message implies a single shared helper, and the helper is actually only local to the TransactionApi spec; it should be moved into a shared test utility and imported by all three specs instead of being copy-pasted."
+    },
+    {
+      "id": "F8",
+      "file": "src/modules/transactions/datasources/transaction-api.service.ts",
+      "line": 1193,
+      "claim": "The mapError method checks for a nonFieldErrors payload before calling mapBannedSafeError, so a response that is both a 451 and contains a nonFieldErrors array would never reach the banned-Safe rewrite; reordering to check the banned-Safe case first would make the logic robust to this upstream payload shape even though it is unlikely under the current contract."
+    },
+    {
+      "id": "F9",
+      "file": "src/modules/balances/routes/balances.controller.integration.spec.ts",
+      "line": 872,
+      "claim": "The new test asserts networkService.get.mock.calls.length instead of using a proper matcher; although this matches the file's existing local style, it violates the repo-wide convention that calls should be asserted with expect(networkService.get).toHaveBeenCalledTimes(2)."
+    },
+    {
+      "id": "F10",
+      "file": "src/modules/balances/datasources/safe-balances-api.service.ts",
+      "line": 109,
+      "claim": "There is no dedicated response mapper for this API call, making it harder to handle additional response codes if that becomes necessary in the future."
+    },
+    {
+      "id": "F11",
+      "file": "src/datasources/errors/helpers/banned-safe.helper.ts",
+      "line": null,
+      "claim": "The helper is named mapBannedSafeError after the specific upstream cause (banned Safe) rather than after its actual behavior of rewriting any 451 response payload into a message field that HttpErrorFactory can read, so if another upstream later returns 451 for a different reason, the name would be misleading; a name like map451ResponsePayload would better reflect its function."
+    },
+    {
+      "id": "F12",
+      "file": "src/datasources/errors/helpers/banned-safe.helper.spec.ts",
+      "line": 36,
+      "claim": "The same status-excluding helper loop (looping faker.internet.httpStatusCode until it isn't UNAVAILABLE_FOR_LEGAL_REASONS_STATUS) is duplicated across three spec files instead of being extracted into a shared test utility such as src/__tests__/faker.ts, which would remove duplication and centralize future exclusions."
+    },
+    {
+      "id": "F13",
+      "file": "banned-safe.helper.spec.ts",
+      "line": 22,
+      "claim": "The fixed text 'Safe is unavailable for legal reasons' is repeated literally as the fake upstream detail in five test locations even though nothing asserts on that value, which conflicts with the project's no-literal-fixtures convention that would use something like faker.lorem.sentence() to signal the value doesn't matter."
+    },
+    {
+      "id": "F14",
+      "file": "transaction-api.service.ts",
+      "line": 1193,
+      "claim": "If the upstream service sends a 451 response with a nonFieldErrors field instead of detail, TransactionApi.mapError would forward that nonFieldErrors message to the client because its first branch matches before mapBannedSafeError runs, meaning the banned-Safe handling would not apply in that case."
+    },
+    {
+      "id": "F15",
+      "file": "src/modules/balances/datasources/safe-balances-api.service.ts",
+      "line": 181,
+      "claim": "Of the three changed catch sites in SafeBalancesApi, only one is covered by a test; the other two have no test that would fail if the mapping call were removed."
+    },
+    {
+      "id": "F16",
+      "file": "balances.controller.integration.spec.ts",
+      "line": 857,
+      "claim": "The same literal fixture text appears again without being asserted on, repeating the no-literal-fixtures issue."
+    },
+    {
+      "id": "F17",
+      "file": "src/modules/csv-export/v1/datasources/export-api.service.ts",
+      "line": 64,
+      "claim": "ExportApi now maps HTTP 451 errors, but there is no test at any level that checks its 451 response produces the new message and code, so a regression removing the mapping call would not be caught."
+    },
+    {
+      "id": "F18",
+      "file": "banned-safe.helper.spec.ts",
+      "line": 22,
+      "claim": "The upstream reason is hardcoded as the literal string 'Safe is unavailable for legal reasons' in five places even though no assertion depends on the exact text, which conflicts with the project rule that test data should come from faker; it should be replaced with something like { detail: faker.word.words() }."
+    },
+    {
+      "id": "F19",
+      "file": "export-api.service.spec.ts",
+      "line": 144,
+      "claim": "The same duplicated random-status-picking logic appears again instead of reusing a shared helper."
+    },
+    {
+      "id": "F20",
+      "file": "transaction-api.service.spec.ts",
+      "line": 75,
+      "claim": "The same duplicated random-status-picking logic appears again instead of reusing a shared helper."
+    },
+    {
+      "id": "F21",
+      "file": "banned-safe.helper.spec.ts",
+      "line": 36,
+      "claim": "The logic to pick a random error status code other than 451 is duplicated across three test files instead of being extracted into one shared helper like errorStatusCodeExcludingBannedSafe()."
+    },
+    {
+      "id": "F22",
+      "file": "src/modules/safe/routes/safes.controller.integration.spec.ts",
+      "line": 2424,
+      "claim": "The test casts a value instead of constructing an actual Response object, which is less type-safe and less representative of real behavior."
+    },
+    {
+      "id": "F23",
+      "file": "transaction-api.service.spec.ts",
+      "line": 70,
+      "claim": "The new helper function is placed between the const baseUrl declaration and the let declarations, which doesn't match how other specs lay out their local helpers; moving it above the describe block would be more consistent."
+    },
+    {
+      "id": "F24",
+      "file": "src/datasources/errors/helpers/banned-safe.helper.spec.ts",
+      "line": 22,
+      "claim": "The test hard-codes the upstream payload text `{ detail: 'Safe is unavailable for legal reasons' }` even though no assertion depends on that exact string since the mapper discards it, and a sibling test case instead uses faker.word.words(); this same hard-coded text also appears at line 69 and in both new integration specs."
+    },
+    {
+      "id": "F25",
+      "file": "src/modules/csv-export/v1/datasources/export-api.service.ts",
+      "line": 64,
+      "claim": "No test covers the 451 banned-Safe path for ExportApi, SafeBalancesApi.getBalance, or getCollectibles; the ExportApi spec only excludes 451 and the integration test covers getBalances only, so removing one of these error-mapping wrappers would silently regress those endpoints to returning a generic error with nothing catching it."
+    },
+    {
+      "id": "F26",
+      "file": "transaction-api.service.spec.ts",
+      "line": 430,
+      "claim": "The same literal fixture text appears again without being asserted on, repeating the no-literal-fixtures issue."
+    }
+  ]
+}

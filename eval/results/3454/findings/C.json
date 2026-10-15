@@ -1,0 +1,20 @@
+{
+  "usd": 0.046599600000000005,
+  "findings": [
+    {
+      "file": "src/modules/safe-shield/guards/copilot-core-gating.guard.ts",
+      "line": 14,
+      "claim": "The guard reads the feature flag from configuration on every request instead of caching it once in the constructor, unlike the rest of the codebase which resolves config values at construction time."
+    },
+    {
+      "file": "src/modules/safe-shield/guards/copilot-core-gating.guard.ts",
+      "line": null,
+      "claim": "There is no dedicated unit test for this guard; it is only exercised indirectly through controller and integration tests, so a direct spec verifying both the flag-enabled (throws error) and flag-disabled (returns true) behavior is missing, unlike comparable guards in the codebase."
+    },
+    {
+      "file": "src/modules/entitlements/routes/guards/entitlement.guard.ts",
+      "line": 47,
+      "claim": "The guard resolves the space UUID to an id via findIdByUuid, and the same lookup is repeated by SpaceIdPipe for the controller parameter, causing two redundant database round-trips per request on every gated Spaces endpoint."
+    }
+  ]
+}

@@ -1,0 +1,175 @@
+{
+  "pr": 3420,
+  "title": "feat: add subscription plan change endpoints",
+  "description": "- Closes [PLA-1950](https://linear.app/safe-global/issue/PLA-1950/cgw-subscription-upgradedowngrade-preview-update-update-endpoints)\r\n\r\n## Summary\r\nAdd the two endpoints that let a workspace move an existing subscription between the plans it is offered — a preview of the prorated cost, and the change itself. Both are space-scoped: the billing customer is the workspace, not the user.\r\n\r\nThe target plan is resolved to one of the workspace's offered payment links, reusing the existing offer rules, so a plan change cannot bypass the pre-enforcement filtering from PLA-1870. That link matters beyond authorization: the upstream copies its metadata onto the subscription, and the entitlements are derived from that metadata, so a caller-supplied `paymentLinkId` is validated against the offered set rather than trusted — an unchecked pair would bill one plan and entitle the workspace to another. `prorationBehavior` is a server-side constant and is never read from the request.\r\n\r\nAuthorization is space membership, matching the pre-existing `createCheckoutUrl`: starting a paid subscription is open to any member, so gating only the change would put the stricter check on the weaker half. The PATCH additionally requires a fresh second factor (`ElevationGuard`) and is recorded in the gated table of `elevation.integration.spec.ts`. The sibling billing routes — `checkout-url`, and `session-url`, whose Stripe portal can cancel a subscription — are knowingly not gated yet; that decision is a separate PR.\r\n\r\nCache invalidation lands here: the PATCH drops the customer's cached subscriptions as soon as the upstream confirms the write. It does not resync the materialized entitlements, which follow the upstream's webhook exactly as they do after a checkout.\r\n\r\nDeclared follow-ups, deliberately not in this PR:\r\n- The two new datasource methods parse inside the datasource instead of returning `Raw<T>`, consistent with the other seven methods of `billing-api.service.ts`. The module has no repository seam to move the parse to, and converting two methods in isolation would leave a partial boundary; the module-wide conversion (a `BillingRepository` under `src/modules/billing/domain/`) is the follow-up.\r\n- `GET .../preview-update` is not declared in either elevation table, matching 11 other space-scoped GETs across four modules that are equally undeclared. Closing that gap, plus a completeness check, is its own ticket.\r\n\r\n## Changes\r\n- `src/modules/billing/routes/` — the two handlers, the request DTO, the response DTOs, and the offer/ownership/conflict checks in `BillingService`\r\n- `src/modules/billing/domain/` — `offersPlan()` beside the existing offer rules\r\n- `src/datasources/billing-api/` — `previewSubscriptionUpdate()`, `updateSubscription()` and `clearSubscriptions()`, plus builders and entities\r\n- `src/domain/interfaces/billing-api.interface.ts` — the three new methods\r\n- `src/datasources/network/` — `patch()` on `INetworkService` and `FetchNetworkService`, generalizing the existing `postWithBody`\r\n- `src/datasources/cache/cache.router.ts` — `getBillingSubscriptionsCacheKey()`\r\n- `src/modules/entitlements/routes/subscription-sync.service.ts` — invalidate via the datasource's `clearSubscriptions()` instead of rebuilding the key locally\r\n- `src/modules/spaces/routes/elevation.integration.spec.ts` — the PATCH in `GATED_ROUTES`\r\n- `docs/agents/security.md` — the `buildUrl` example now lists `patch`",
+  "findings": [
+    {
+      "id": "F1",
+      "file": "billing.controller.ts",
+      "line": 62,
+      "claim": "No test distinguishes the behavior of uuidPipe from SpaceIdPipe, which is why the status-code regression went unnoticed; the new routes need a malformed-spaceId test case plus a case using a UUID that the regex accepts but zod rejects."
+    },
+    {
+      "id": "F2",
+      "file": "src/modules/billing/routes/billing.controller.ts",
+      "line": 95,
+      "claim": "The new uuidPipe applied to the second spaceId binding defaults to returning HTTP 422 instead of 400 for a malformed spaceId, changing the response code on four existing GET routes (and the two new ones) because NestJS resolves parameter pipes concurrently and the synchronous ValidationPipe throw settles before SpaceIdPipe's async rejection."
+    },
+    {
+      "id": "F3",
+      "file": "src/modules/billing/routes/billing.service.ts",
+      "line": 394,
+      "claim": "When several offered links sell the same plan, the code logs at error level and returns 409, even though the accompanying comment indicates this is a normal, expected situation (a negotiated link alongside the general one) that the optional paymentLinkId field exists to resolve; any client omitting that field will trigger an error log, so the level should be warn or the log removed."
+    },
+    {
+      "id": "F4",
+      "file": "src/modules/billing/routes/billing.controller.ts",
+      "line": 95,
+      "claim": "uuidPipe is added to four existing endpoints unrelated to this plan-change feature, causing those endpoints to now reject a malformed spaceId differently than before; this behavior change should be called out separately in the PR description even though it reuses the same pipe needed by the new routes."
+    },
+    {
+      "id": "F5",
+      "file": "billing.controller.e2e-spec.ts",
+      "line": 220,
+      "claim": "An existing, untouched e2e test still asserts a 400 response for this malformed-spaceId case and will fail once the status code changes, but the e2e project is not run by yarn test or by CI, so this regression would not be caught automatically."
+    },
+    {
+      "id": "F6",
+      "file": "src/datasources/billing-api/entities/subscription-update.entity.ts",
+      "line": 27,
+      "claim": "A property that is the only member of its type/interface is documented with comments, which is unusual unless the comments are especially valuable; the property should be removed."
+    },
+    {
+      "id": "F7",
+      "file": "src/modules/billing/routes/billing.controller.ts",
+      "line": 95,
+      "claim": "Four pre-existing handlers (lines 95, 134, 160, 188) have their second spaceUuid binding switched to use uuidPipe, a hardening change that none of the new endpoints in this PR require and that is not listed in the PR's Changes section. This should either be reverted to keep those bindings as they were and shipped as its own PR, or explicitly documented as a bullet under Changes and a line in the Summary."
+    },
+    {
+      "id": "F8",
+      "file": "billing-api.service.ts",
+      "line": 301,
+      "claim": "The comment stating a subscription may be listed under any cached filter depends on deleteByKey deleting a whole hash rather than a single field, and this dependency is not made explicit anywhere near getBillingSubscriptionsCacheKey."
+    },
+    {
+      "id": "F9",
+      "file": "security.md",
+      "line": null,
+      "claim": "The doc's patch example does not reflect that FetchNetworkService.patch allows a body-less variant (data optional, calling JSON.stringify(undefined)), so the documentation implies a shape that doesn't match a possible actual call."
+    },
+    {
+      "id": "F10",
+      "file": "billing.service.ts",
+      "line": 196,
+      "claim": "The preview endpoint's same-plan 409 response has no test coverage; only the equivalent behavior on the PATCH endpoint is tested."
+    },
+    {
+      "id": "F11",
+      "file": "src/modules/billing/routes/__tests__/billing.controller.e2e-spec.ts",
+      "line": 565,
+      "claim": "The e2e spec duplicates error-case tests already covered by the service unit spec, repeating checks like plan not offered (403), subscription belonging to another customer (404), paymentLinkId not offered (403), already on the plan (409), and not a member (403) across multiple lines (565, 584, 689, 709, 744). Only one representative 4xx mapping check per route should remain at the e2e level, alongside the existing 422 validation tests, with the rest removed."
+    },
+    {
+      "id": "F12",
+      "file": "billing.service.ts",
+      "line": 254,
+      "claim": "The 'already on this plan' check compares price ids while the offer filter in payment-link-offer.rules.ts excludes links by plan name, so switching between monthly and annual billing within the same plan name could incorrectly be rejected with a 403 'plan not available' error, depending on what the live billing catalog contains."
+    },
+    {
+      "id": "F13",
+      "file": "src/datasources/billing-api/entities/subscription-update.entity.ts",
+      "line": 15,
+      "claim": "A property that is the only member of its type/interface is documented with comments, which is unusual unless the comments are especially valuable; the property should be removed."
+    },
+    {
+      "id": "F14",
+      "file": "billing.controller.ts",
+      "line": 229,
+      "claim": "Test/authorization elevation coverage for the preview-update endpoint is absent, and there is no TODO or comment near the AuthGuard usage referencing the follow-up ticket, making this gap discoverable only from the PR description rather than from the code itself."
+    },
+    {
+      "id": "F15",
+      "file": "billing.service.ts",
+      "line": 343,
+      "claim": "findOwnedSubscription fetches all subscriptions for a customer across every status and then searches the list for one id, which scales linearly with historical canceled or expired subscriptions instead of querying a single subscription scoped by id and customer if such an endpoint exists upstream."
+    },
+    {
+      "id": "F16",
+      "file": "billing.service.ts",
+      "line": 184,
+      "claim": "The not-found and same-plan guard logic is duplicated between two methods (also at line 232-255), though the status check that differs between them is described as intentional and documented rather than an oversight."
+    },
+    {
+      "id": "F17",
+      "file": "billing-api.service.ts",
+      "line": 260,
+      "claim": "updateSubscription is declared async and uses 'return await this.parse(...)' while its four sibling methods simply 'return this.parse(...)' without the redundant async/await, making the pattern inconsistent."
+    },
+    {
+      "id": "F18",
+      "file": "src/datasources/billing-api/billing-api.service.ts",
+      "line": 286,
+      "claim": "The catch handler discards the caught error and omits the customer identifier, logging only a generic warning; it should capture the error with asError and include upstreamCustomerId so the log is actionable."
+    },
+    {
+      "id": "F19",
+      "file": "src/domain/interfaces/billing-api.interface.ts",
+      "line": 78,
+      "claim": "The domain interface IBillingApi includes a clearSubscriptions method that exists only to let SubscriptionSyncService invalidate a cache, which leaks a caching concern into the domain layer and violates the expectation that the domain contract should only describe upstream shape rather than know about the cache implementation."
+    },
+    {
+      "id": "F20",
+      "file": "billing.service.ts",
+      "line": 205,
+      "claim": "The new methods call the IBillingApi datasource directly instead of going through a repository, which conflicts with the module-structure rule, though the module has never had a repository and six existing methods already follow this same direct-call pattern."
+    },
+    {
+      "id": "F21",
+      "file": "billing.service.ts",
+      "line": 186,
+      "claim": "previewSubscriptionUpdate skips link resolution for ambiguous prices while updateSubscription rejects the same multi-link case with a 409 requiring a paymentLinkId, so a client can get a preview quote that later fails on PATCH without having been told upfront that it needs to specify a payment link."
+    },
+    {
+      "id": "F22",
+      "file": "billing-api.service.ts",
+      "line": 266,
+      "claim": "The chained '.then(async ...).then(parse)' construct is dense and harder to read than an equivalent using straightforward await statements, even though it preserves the same behavior of clearing cache before parsing."
+    },
+    {
+      "id": "F23",
+      "file": "billing-api.service.ts",
+      "line": 314,
+      "claim": "Nothing tests the encodeURIComponent(subscriptionId) call, although it currently has no practical effect since opaqueIdPipe already restricts the input to [A-Za-z0-9_-]."
+    },
+    {
+      "id": "F24",
+      "file": "src/modules/spaces/routes/elevation.integration.spec.ts",
+      "line": 116,
+      "claim": "Test values such as 'sub_1', 'price_1', and 'dummy-public-key' are hard-coded rather than generated via builders and faker as the repository convention requires; faker.string.alphanumeric() would satisfy the OpaqueIdSchema used here."
+    },
+    {
+      "id": "F25",
+      "file": "cache.router.ts",
+      "line": 1229,
+      "claim": "clearSubscriptions relies on deleteByKey removing the entire cache hash so that a subscription cached under any filter is cleared, but this behavior is only implicit in the current ICacheService.deleteByKey implementation and isn't documented as a contract, risking silent staleness if the cache implementation changes."
+    },
+    {
+      "id": "F26",
+      "file": "billing.service.ts",
+      "line": 169,
+      "claim": "The docstring states that a preview works for a canceled subscription, but no test verifies this claim, so a future status gate could be introduced without any test failing."
+    },
+    {
+      "id": "F27",
+      "file": "billing.service.spec.ts",
+      "line": 52,
+      "claim": "The billingApiMock object used in tests does not declare a clearSubscriptions method, and casting it with 'as MockedObject<IBillingApi>' hides the omission; if BillingService is later changed to call this method, the mock would silently resolve to undefined on a promise-returning call instead of failing clearly."
+    },
+    {
+      "id": "F28",
+      "file": "src/datasources/billing-api/billing-api.service.ts",
+      "line": 237,
+      "claim": "previewSubscriptionUpdate and updateSubscription return bare parsed types and call Schema.parse() directly inside the datasource, so no repository owns the parse boundary; deferring the conversion to a follow-up does not satisfy the requirement that raw data cross the datasource boundary as Raw<T> and be parsed only in a repository. The methods should be typed to return Promise<Raw<SubscriptionUpdatePreview>> / Promise<Raw<UpdateSubscriptionResult>> using rawify(data), with the schema parsing moved into a BillingRepository under src/modules/billing/domain/ that BillingService calls instead of calling IBillingApi directly."
+    }
+  ]
+}

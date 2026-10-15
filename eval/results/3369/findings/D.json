@@ -1,0 +1,20 @@
+{
+  "usd": 0.0529036,
+  "findings": [
+    {
+      "file": "docs/agents/module-structure.md",
+      "line": 133,
+      "claim": "The new transitive-registration allowance requires a module that only serves the one module it's wired to, but the cited example, SiweModule, is imported by both UsersModule and AuthModule, so the example contradicts the condition stated in the same sentence."
+    },
+    {
+      "file": "docs/agents/commits-and-prs.md",
+      "line": 91,
+      "claim": "The PR body rule still states that one reviewing.md requirement lands here, but this diff adds three more description-content requirements (declared multi-PR series, linked follow-up PR, never-shipped-field justification) without updating that enumeration."
+    },
+    {
+      "file": "docs/agents/ARCHITECTURE.md",
+      "line": 86,
+      "claim": "The Module anatomy skeleton still says routes/ exists only if HTTP endpoints exist, but the new staged-rollout paragraph in module-structure.md qualifies this convention, so the duplicated convention was updated in only one of the two guides."
+    }
+  ]
+}

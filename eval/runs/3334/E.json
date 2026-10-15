@@ -1,0 +1,11 @@
+{
+  "pr": 3334,
+  "reviewSha": "15a14b7bdf1b974e3154e9d24d05cf989f68e1f7",
+  "baseSha": "7f0589e82bd748e06210eb2573e694dbf41e525d",
+  "system": "E",
+  "version": "github",
+  "runner": "collect",
+  "model": "human",
+  "commentSha": "e3ec55b3187d6d579f2168c644877b2896a009b8",
+  "output": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts:1753\nNit: We should read this from deployments.\n\n---\n\nsrc/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts:1772\nNit: Can we read them from the deployments library?\n\n---\n\nsrc/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts:1804\nThe test title expects it to not return `INCOMPATIBLE_SAFE` but we're checking `MISSING_OWNERSHIP` here. This is a bit confusing.\n\n---\n\nsrc/modules/safe-shield/contract-analysis/contract-analysis.service.spec.ts:1282\nThe title should be something like:\n```\nShould return `VERIFIED` when the handler is the official ExtensibleFallbackHandler.\n```"
+}

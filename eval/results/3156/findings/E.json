@@ -1,0 +1,15 @@
+{
+  "usd": 0.0535516,
+  "findings": [
+    {
+      "file": "src/modules/spaces/routes/address-books.controller.e2e-spec.ts",
+      "line": 799,
+      "claim": "The method was renamed without apparent need; the previous name was accurate since the method purely invites the member, and an alternative name such as createPendingMember could be used instead."
+    },
+    {
+      "file": null,
+      "line": null,
+      "claim": "After this branch's changes, workspace contacts from an invited (not-yet-confirmed) workspace no longer appear in the recipient input dropdown when creating a new transaction, breaking a previously working flow where an invited member could see the inviting workspace's shared contacts."
+    }
+  ]
+}

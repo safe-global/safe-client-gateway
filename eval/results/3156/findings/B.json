@@ -1,0 +1,60 @@
+{
+  "usd": 0.07351959999999999,
+  "findings": [
+    {
+      "file": "src/modules/spaces/routes/spaces.controller.e2e-spec.ts",
+      "line": 511,
+      "claim": "The test 'Should return a space by its id for an invited member' is unchanged even though the underlying access rule changed, so it still expects an invitee to see the admin's active row instead of the new trimmed view."
+    },
+    {
+      "file": "src/modules/spaces/routes/spaces.controller.e2e-spec.ts",
+      "line": 511,
+      "claim": "The member token in this test is signed with a random, unbound siwe payload rather than the invitee's real user id, so the request does not actually act as the invited user and the test does not really exercise the invitee path."
+    },
+    {
+      "file": "src/modules/spaces/routes/address-books.controller.e2e-spec.ts",
+      "line": 799,
+      "claim": "The equivalent invited-member test here has the same unbound-token problem, meaning there is no reliable end-to-end coverage of the new trimmed view for GET /spaces/:id."
+    },
+    {
+      "file": "src/modules/spaces/routes/address-books.controller.e2e-spec.ts",
+      "line": 183,
+      "claim": "The renamed createPendingMember helper's 'declined membership → 404' test uses the same unbound token, so it cannot distinguish a declined invitee from a completely unrelated stranger."
+    },
+    {
+      "file": "src/modules/spaces/routes/spaces.controller.e2e-spec.ts",
+      "line": 511,
+      "claim": "Because the token's sub does not match the real invitee, the request most likely 404s earlier in spaces.service.ts before reaching the new filtering logic, making the test flaky or passing by coincidence rather than verifying the intended behavior."
+    },
+    {
+      "file": "src/modules/spaces/routes/utils/__tests__/space-assert.utils.spec.ts",
+      "line": 83,
+      "claim": "The 'pending member' test mocks findOne to return null, which makes it identical to the separate 'not a member' test and never actually sets up or exercises a pending-member scenario."
+    },
+    {
+      "file": "src/modules/spaces/routes/spaces.controller.ts",
+      "line": 123,
+      "claim": "The Swagger documentation for GET /spaces still describes returning the full members list and safe count, which is no longer accurate for invitees who now only get their own row and a safeCount of 0."
+    },
+    {
+      "file": "src/modules/spaces/routes/spaces.controller.ts",
+      "line": 146,
+      "claim": "The Swagger documentation for GET /spaces/:id has the same outdated description as the /spaces endpoint and was not updated to reflect the new invitee-restricted response, unlike the members endpoint which was updated."
+    },
+    {
+      "file": "src/modules/spaces/routes/spaces.service.ts",
+      "line": 128,
+      "claim": "Returning safeCount: 0 for an invitee is indistinguishable from a space that genuinely has no safes, which changes the response contract for any client that displays this count and could mislead consumers."
+    },
+    {
+      "file": "src/modules/users/domain/members.repository.ts",
+      "line": 513,
+      "claim": "The optional relations parameter is now always called with { user: true } by both call sites, yet it remains a parameter instead of being hard-coded, and the JSDoc that previously explained why it varied was deleted without replacement."
+    },
+    {
+      "file": "src/modules/spaces/routes/address-book-requests.controller.e2e-spec.ts",
+      "line": 522,
+      "claim": "The createActiveMember helper is duplicated with an identical body across three separate spec files instead of being factored into a shared e2e helper, increasing maintenance overhead for repeated changes."
+    }
+  ]
+}

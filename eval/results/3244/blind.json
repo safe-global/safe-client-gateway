@@ -1,0 +1,259 @@
+{
+  "pr": 3244,
+  "title": "feat: replace Gelato with Rhinestone as the relay provider",
+  "description": "## Summary\r\n\r\nReplaces Gelato with Rhinestone as the relay provider. Relay submission and task-status\r\npolling move from Gelato's JSON-RPC endpoint to Rhinestone's REST API, and the twelve\r\nper-chain API keys collapse into a single project-level key.\r\n\r\n## Changes\r\n\r\n**Relay provider migration and configuration simplification:**\r\n\r\n* Updated `.env.sample.json` and configuration files to use a single `RELAY_PROVIDER_API_KEY` (project-level key) instead of per-chain keys, and changed the default relay provider base URI to Rhinestone (`https://v1.orchestrator.rhinestone.dev`). [[1]](diffhunk://#diff-ab7dd5bc4f296032b95e861acb01d599f30e41cd04a5e8a1378145286e96858fL1324-R1330) [[2]](diffhunk://#diff-a13ec7a4d04b743754a74ef5f390ded5f6b6aeb41e68de735adba4f15b9df7edL693-R701)\r\n* Updated the configuration schema and validator tests to expect only `RELAY_PROVIDER_API_KEY` instead of per-chain keys. [[1]](diffhunk://#diff-6bedff3adfc4c76d39fae16033ea8bf7e94e073d2a5334c075041cac5e255a63L131-R131) [[2]](diffhunk://#diff-885cfe573d195b536beaa5c07edd3c5d5d4aabc0fcac19cb08d580700ff5bd6fL43-R43) [[3]](diffhunk://#diff-885cfe573d195b536beaa5c07edd3c5d5d4aabc0fcac19cb08d580700ff5bd6fL118-R107) [[4]](diffhunk://#diff-885cfe573d195b536beaa5c07edd3c5d5d4aabc0fcac19cb08d580700ff5bd6fL184-R162) [[5]](diffhunk://#diff-885cfe573d195b536beaa5c07edd3c5d5d4aabc0fcac19cb08d580700ff5bd6fL251-R218)\r\n* Simplified the `relay.apiKey` configuration from an object mapping chain IDs to keys, to a single string value. [[1]](diffhunk://#diff-8e9fd4781f9f2ef0d5ba9d9c955b9d74d993588ca787837d4da9e103dd3373d0L354-R354) [[2]](diffhunk://#diff-a13ec7a4d04b743754a74ef5f390ded5f6b6aeb41e68de735adba4f15b9df7edL693-R701)\r\n\r\n**Code and test updates:**\r\n* Added new `rhinestone-api.service.ts` using the Rhinestone API integration\r\n* Updated the `IRelayApi` interface to allow an optional `safeTxHash` parameter in the `relay` method.\r\n* Removed the now-obsolete `gelato-api.service.spec.ts` test file, which was specific to the old Gelato per-chain key setup.\r\n* Added a new `RELAY_SUPPORTED_CHAIN_IDS` constant for use in relay tests, reflecting supported chains with the new project-level key approach.",
+  "findings": [
+    {
+      "id": "F1",
+      "file": null,
+      "line": null,
+      "claim": "The daily-limit and no-fee-campaign relayers have no unit spec covering safeTxHash forwarding; only relay-fee.relayer.spec.ts and the datasource spec cover it."
+    },
+    {
+      "id": "F2",
+      "file": "src/modules/relay/domain/entities/relay-task-status.entity.ts",
+      "line": 7,
+      "claim": "The blockHash, blockNumber, gasUsed and createdAt fields were made optional but are never set anywhere in the code, so they should be removed rather than left as unused optional fields."
+    },
+    {
+      "id": "F3",
+      "file": "src/__tests__/deployments.helper.ts",
+      "line": 148,
+      "claim": "A name such as RELAY_TEST_CHAIN_IDS, placed next to the relay tests, would better convey what the list actually represents."
+    },
+    {
+      "id": "F4",
+      "file": "src/modules/relay/datasources/rhinestone-api.service.ts",
+      "line": 132,
+      "claim": "Rhinestone's status field is passed through unmapped even though the public DTO still documents Gelato's status codes (100/110/200/400/500); if Rhinestone uses different codes, clients polling status would be silently misled."
+    },
+    {
+      "id": "F5",
+      "file": "src/modules/relay/datasources/rhinestone-api.service.ts",
+      "line": 119,
+      "claim": "A ValidationPipe with a strict taskId schema (such as UUID or hex, matching whatever format Rhinestone uses) should be added, and chainId should also be validated with NumericStringSchema, consistent with the sibling route at relay.controller.ts:214."
+    },
+    {
+      "id": "F6",
+      "file": "src/__tests__/deployments.helper.ts",
+      "line": 148,
+      "claim": "RELAY_SUPPORTED_CHAIN_IDS is misleadingly named and placed: its own doc comment states the list is not the runtime gate (that role belongs to relayer.type), yet it is named as if it were the supported-chains source of truth and lives in the general deployments helper rather than next to the relay tests."
+    },
+    {
+      "id": "F7",
+      "file": "src/modules/relay/routes/relay.controller.ts",
+      "line": 175,
+      "claim": "The taskId route parameter has no validation pipe before being inserted into the Rhinestone status URL, so a crafted value containing path traversal or a decoded '?' can redirect the credentialed request (sent with the project-wide x-api-key header) to an arbitrary path on the Rhinestone host, since the route itself has no auth guard."
+    },
+    {
+      "id": "F8",
+      "file": "src/modules/relay/datasources/rhinestone-api.service.ts",
+      "line": 132,
+      "claim": "Status values should be validated against the documented set or explicitly mapped from Rhinestone's statuses, and tests should cover each status."
+    },
+    {
+      "id": "F9",
+      "file": "src/modules/relay/routes/entities/relay-task-status.entity.ts",
+      "line": 17,
+      "claim": "The public DTO still documents Gelato's status codes ([100, 110, 200, 400, 500]); if Rhinestone uses different codes, clients will silently misread task status."
+    },
+    {
+      "id": "F10",
+      "file": null,
+      "line": null,
+      "claim": "The PR description is missing the required '## Changes' section; the per-area bullets are instead placed under bold labels inside the '## Summary' section."
+    },
+    {
+      "id": "F11",
+      "file": "src/modules/relay/domain/entities/relay-task-status.entity.ts",
+      "line": 16,
+      "claim": "createdAt (and blockHash/blockNumber/gasUsed) were relaxed to .optional() rather than removed, but after this migration RelayTaskStatusSchema is parsed nowhere and no code path can populate those four fields, making the optionality speculative rather than necessary."
+    },
+    {
+      "id": "F12",
+      "file": "src/modules/relay/domain/entities/relay-task-status.entity.ts",
+      "line": 16,
+      "claim": "receipt.transactionHash remains typed as z.string() in the domain schema while the provider schema uses HexSchema; it could use HexSchema in both places for consistency."
+    },
+    {
+      "id": "F13",
+      "file": "src/modules/relay/datasources/rhinestone-api.service.spec.ts",
+      "line": 197,
+      "claim": "There is no test for a malformed provider response, which should fail schema parsing and map to a DataSourceError."
+    },
+    {
+      "id": "F14",
+      "file": "src/modules/relay/datasources/rhinestone-api.service.ts",
+      "line": 141,
+      "claim": "The constructed object is missing a createdAt field even though the relay task status entity defines one, so the returned data may not match the expected entity shape."
+    },
+    {
+      "id": "F15",
+      "file": "src/config/entities/schemas/configuration.schema.ts",
+      "line": 186,
+      "claim": "getTaskStatus no longer checks chainId at all, because the removed per-chain key lookup previously served as that check, so this validation was lost in the change."
+    },
+    {
+      "id": "F16",
+      "file": "src/modules/relay/domain/entities/relay-task-status.entity.ts",
+      "line": 7,
+      "claim": "These unused fields should either be dropped from RelayTaskStatusSchema or kept required, rather than left optional and unpopulated."
+    },
+    {
+      "id": "F17",
+      "file": "src/modules/relay/datasources/rhinestone-api.service.ts",
+      "line": 62,
+      "claim": "formatError runs JSON.stringify(error.data) on the entire unverified, size-unbounded upstream response body and logs it at error level, which may echo back request fields."
+    },
+    {
+      "id": "F18",
+      "file": "src/modules/relay/domain/relayers/daily-limit.relayer.ts",
+      "line": 74,
+      "claim": "This relayer forwards safeTxHash to Rhinestone without checking it, even though Rhinestone documents the field as required for execTransaction and to be omitted for multiSend/deployments, so requests can reach Rhinestone missing a hash it needs or carrying a hash that doesn't match the calldata."
+    },
+    {
+      "id": "F19",
+      "file": "src/config/entities/schemas/configuration.schema.ts",
+      "line": 186,
+      "claim": "RELAY_PROVIDER_API_KEY is introduced as a new required configuration variable while the previous 12 per-chain keys were removed, so production deployment will fail to boot if this variable is not provisioned beforehand."
+    },
+    {
+      "id": "F20",
+      "file": "src/modules/relay/datasources/rhinestone-api.service.ts",
+      "line": 68,
+      "claim": "formatError logs the entire upstream error payload via JSON.stringify(error.data) rather than using an explicit whitelisted set of fields, risking logging of unintended or sensitive data."
+    },
+    {
+      "id": "F21",
+      "file": "src/modules/relay/routes/relay.controller.ts",
+      "line": 175,
+      "claim": "taskId comes from a bare @Param('taskId') with no ValidationPipe applied, so it is never checked before being used to build the outbound request path."
+    },
+    {
+      "id": "F22",
+      "file": "src/modules/relay/datasources/rhinestone-api.service.ts",
+      "line": 132,
+      "claim": "RhinestoneTaskStatusResponseSchema.status is typed as a bare z.number() with no validation of its actual values."
+    },
+    {
+      "id": "F23",
+      "file": "src/modules/relay/datasources/rhinestone-api.service.ts",
+      "line": 62,
+      "claim": "formatError logs the full upstream response body, which may echo back request data, so only the status and message should be logged instead."
+    },
+    {
+      "id": "F24",
+      "file": "src/config/entities/configuration.ts",
+      "line": 709,
+      "claim": "An environment that still has RELAY_PROVIDER_API_BASE_URI set to Gelato will boot normally (since only RELAY_PROVIDER_API_KEY is now required) and then send Rhinestone-shaped requests to the Gelato endpoint, failing late rather than at startup."
+    },
+    {
+      "id": "F25",
+      "file": "src/modules/relay/datasources/rhinestone-api.service.ts",
+      "line": 52,
+      "claim": "headers() rebuilds the same constant object on every call instead of being computed once; a private readonly headers field set up in the constructor would be simpler."
+    },
+    {
+      "id": "F26",
+      "file": null,
+      "line": null,
+      "claim": "The PR title 'feat: Rhinestone Relay Provider' is a capitalized noun phrase rather than an imperative, lowercase-initial description, and since squash-merge is used it becomes the permanent commit subject on main."
+    },
+    {
+      "id": "F27",
+      "file": "src/config/entities/configuration.ts",
+      "line": 709,
+      "claim": "The PR description should include a rollout step covering updating or unsetting RELAY_PROVIDER_API_BASE_URI, setting RELAY_PROVIDER_API_KEY, and removing the old RELAY_PROVIDER_API_KEY_* variables."
+    },
+    {
+      "id": "F28",
+      "file": "src/common/network/http-error-factory.ts",
+      "line": 19,
+      "claim": "The upstream error message is passed back to the caller unchanged, so an attacker exploiting the unvalidated taskId can see part of the response from whatever Rhinestone path they reached."
+    },
+    {
+      "id": "F29",
+      "file": "src/modules/relay/datasources/rhinestone-api.service.ts",
+      "line": 127,
+      "claim": "The code still references Gelato even though after this PR nothing related to Gelato should remain, and other locations in the codebase should be checked for the same leftover reference."
+    },
+    {
+      "id": "F30",
+      "file": "src/modules/relay/datasources/rhinestone-api.service.spec.ts",
+      "line": 139,
+      "claim": "The error tests build { status: 400 } as Response with no body and only check toHaveBeenCalledTimes(1), so neither branch of formatError (the status=...body=... rendering nor the fallback for a non-NetworkResponseError) is actually exercised."
+    },
+    {
+      "id": "F31",
+      "file": "src/modules/relay/datasources/rhinestone-api.service.ts",
+      "line": 62,
+      "claim": "The logged upstream error body should be truncated to a fixed maximum length and/or reduced to only known fields such as message/code."
+    },
+    {
+      "id": "F32",
+      "file": "src/modules/relay/datasources/rhinestone-api.service.ts",
+      "line": 117,
+      "claim": "getTaskStatus returns a bare RelayTaskStatus assembled inside the datasource instead of Raw<RelayTaskStatus>, and RelayRepository.getTaskStatus never calls RelayTaskStatusSchema.parse(), so the upstream shape is never validated against the domain schema."
+    },
+    {
+      "id": "F33",
+      "file": "src/modules/relay/routes/relay.controller.integration.spec.ts",
+      "line": null,
+      "claim": "At least one POST /relay integration case should assert networkService.post was called with expect.objectContaining({ safeTxHash })."
+    },
+    {
+      "id": "F34",
+      "file": "src/config/entities/schemas/configuration.schema.ts",
+      "line": 186,
+      "claim": "The corresponding configuration value should also be updated in docker-compose.yml to stay consistent with this schema change."
+    },
+    {
+      "id": "F35",
+      "file": "src/modules/relay/datasources/rhinestone-api.service.spec.ts",
+      "line": 72,
+      "claim": "The test uses a bare .toThrow() with no argument, which only asserts that some error was thrown rather than which specific error, reducing the test's ability to catch regressions; the same issue occurs at line 88."
+    },
+    {
+      "id": "F36",
+      "file": "src/modules/relay/routes/relay.controller.integration.spec.ts",
+      "line": 475,
+      "claim": "No test sends safeTxHash on the daily-limit or no-fee-campaign chains or asserts it in the outgoing request body, and neither relayer has a unit spec, so the missing validation behavior is untested."
+    },
+    {
+      "id": "F37",
+      "file": "src/modules/relay/datasources/rhinestone-api.service.ts",
+      "line": 61,
+      "claim": "The error includes information that lets a developer reconstruct the curl command, which is unnecessary since the developer can already build the curl command by looking at the error."
+    },
+    {
+      "id": "F38",
+      "file": "src/modules/relay/domain/relayers/no-fee-campaign.relayer.ts",
+      "line": 111,
+      "claim": "This relayer likewise forwards safeTxHash without validating or requiring it for execTransaction or stripping it for multiSend/deployment calls, unlike RelayFeeRelayer which does enforce this."
+    },
+    {
+      "id": "F39",
+      "file": "src/modules/relay/domain/entities/relay-task-status.entity.ts",
+      "line": 7,
+      "claim": "blockHash, blockNumber, gasUsed and createdAt became optional in RelayTaskStatusSchema, but the Rhinestone mapper never populates them, so these optional fields are always empty and hide drift between the schema and actual data."
+    },
+    {
+      "id": "F40",
+      "file": "src/modules/relay/datasources/rhinestone-api.service.ts",
+      "line": 119,
+      "claim": "The taskId parameter is interpolated directly into the outbound URL path (`${baseUri}/safe-transactions/${taskId}/status`) without validation, and the request carries the project-wide x-api-key; a value containing '../', '?' or '#' could redirect an authenticated GET to a different Rhinestone endpoint, with the response passed back to the client."
+    },
+    {
+      "id": "F41",
+      "file": "src/modules/relay/routes/relay.controller.integration.spec.ts",
+      "line": 230,
+      "claim": "The PR adds forwarding of safeTxHash into the provider body (in daily-limit.relayer.ts:74, no-fee-campaign.relayer.ts:111, relay-fee.relayer.ts:173), but no integration test in the POST relay cases (around lines 230-1180) checks that the posted body actually contains safeTxHash."
+    },
+    {
+      "id": "F42",
+      "file": "src/modules/relay/datasources/rhinestone-api.service.ts",
+      "line": 84,
+      "claim": "The relay method has the same issue: DailyLimitRelayer and NoFeeCampaignRelayer return the value unparsed against the domain schema."
+    }
+  ]
+}

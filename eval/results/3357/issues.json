@@ -1,0 +1,109 @@
+{
+  "usage": {
+    "usd": 0.3163464,
+    "turns": 3,
+    "wallSeconds": 37
+  },
+  "issues": [
+    {
+      "findings": [
+        "F1"
+      ],
+      "summary": "`gh api ... --jq '.html_url' || true` can capture the 404 error JSON body as the release URL",
+      "label": "low",
+      "evidence": "At .github/workflows/linear-release.yml:92, gh skips the --jq filter on an HTTP error and writes the raw error body to stdout, so the error JSON would end up in `url=` and be sent to Linear as a link. This only happens on a manual run for a tag that exists but has no GitHub release, which is unusual.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F2",
+        "F5"
+      ],
+      "summary": "The concurrency group is keyed on raw inputs, so `v1.2.3` and `1.2.3` for the same release land in different groups",
+      "label": "low",
+      "evidence": "Line 39 uses `github.event.release.tag_name || inputs.version || github.ref`, while normalization only happens later at lines 70-86. A release event (`v1.2.3`) and a manual `1.2.3` run can therefore sync the same release at the same time. Hitting this needs a manual re-sync during an automated run, and the sync is a repeatable upsert, so the impact is small.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F3"
+      ],
+      "summary": "Unversioned manual dispatches are grouped by branch ref rather than by resolved version",
+      "label": "nit",
+      "evidence": "The fallback to `github.ref` at line 39 is deliberate: commit 5506983 says unversioned dispatches should serialize. Calling the group key \"less informative\" names no concrete failure.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F4"
+      ],
+      "summary": "The commit message does not mention the v-prefix mismatch in concurrency groups",
+      "label": "nit",
+      "evidence": "This is about the commit message text, not code behaviour. The underlying issue is already covered by F2/F5.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F6"
+      ],
+      "summary": "The manual run loses the GitHub release link",
+      "label": "wrong",
+      "evidence": "Lines 90-93 look the URL up by tag via `gh api repos/$REPO/releases/tags/$TAG` when the event carries none, and lines 98/120 pass it as `links`.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F7"
+      ],
+      "summary": "The manual version input is only checked for emptiness",
+      "label": "wrong",
+      "evidence": "Lines 70-74 strip the `v` and reject anything that does not match `^[0-9]+\\.[0-9]+\\.[0-9]+$`, so `1.1220` and `v1.122` fail the run.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F8"
+      ],
+      "summary": "dry_run expands to an empty string on the release trigger",
+      "label": "wrong",
+      "evidence": "Line 121 already uses `${{ inputs.dry_run || false }}`, an explicit false fallback.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F9"
+      ],
+      "summary": "Vague claim that the workflow_dispatch trigger at line 24 needs justifying",
+      "label": "nit",
+      "evidence": "The header comment at lines 13-14 explains the manual path as the backfill/repair tool. The finding names no concrete problem.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F10"
+      ],
+      "summary": "The action's input names were not verified against its action.yml",
+      "label": "unverifiable",
+      "evidence": "Lines 117-121 pass access_key/command/version/links/dry_run to an action pinned by SHA, but action.yml is not in the repo and the network is off, so this cannot be settled here.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F11"
+      ],
+      "summary": "A manual backfill checks out the branch instead of the release tag",
+      "label": "wrong",
+      "evidence": "Line 107 checks out `refs/tags/${{ steps.release.outputs.tag }}`, which is resolved before checkout for both triggers (lines 52-99). A backfill scans that release's history.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F12"
+      ],
+      "summary": "The PR body has extra sections beyond Summary and Changes",
+      "label": "wrong",
+      "evidence": "The PR description has only `## Summary` and `## Changes` headings. \"Before this works\" is bold inline text inside Summary, and there is no \"Not verified\" section.",
+      "category": "convention"
+    }
+  ]
+}

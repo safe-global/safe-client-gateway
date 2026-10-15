@@ -1,0 +1,30 @@
+{
+  "usd": 0.055552000000000004,
+  "findings": [
+    {
+      "file": "src/modules/billing/routes/__tests__/billing.controller.e2e-spec.ts",
+      "line": 565,
+      "claim": "The e2e spec duplicates error-case tests already covered by the service unit spec, repeating checks like plan not offered (403), subscription belonging to another customer (404), paymentLinkId not offered (403), already on the plan (409), and not a member (403) across multiple lines (565, 584, 689, 709, 744). Only one representative 4xx mapping check per route should remain at the e2e level, alongside the existing 422 validation tests, with the rest removed."
+    },
+    {
+      "file": "src/modules/billing/routes/billing.service.ts",
+      "line": 394,
+      "claim": "When several offered links sell the same plan, the code logs at error level and returns 409, even though the accompanying comment indicates this is a normal, expected situation (a negotiated link alongside the general one) that the optional paymentLinkId field exists to resolve; any client omitting that field will trigger an error log, so the level should be warn or the log removed."
+    },
+    {
+      "file": "src/datasources/billing-api/billing-api.service.ts",
+      "line": 286,
+      "claim": "The catch handler discards the caught error and omits the customer identifier, logging only a generic warning; it should capture the error with asError and include upstreamCustomerId so the log is actionable."
+    },
+    {
+      "file": "src/modules/spaces/routes/elevation.integration.spec.ts",
+      "line": 116,
+      "claim": "Test values such as 'sub_1', 'price_1', and 'dummy-public-key' are hard-coded rather than generated via builders and faker as the repository convention requires; faker.string.alphanumeric() would satisfy the OpaqueIdSchema used here."
+    },
+    {
+      "file": "src/modules/billing/routes/billing.controller.ts",
+      "line": 95,
+      "claim": "uuidPipe is added to four existing endpoints unrelated to this plan-change feature, causing those endpoints to now reject a malformed spaceId differently than before; this behavior change should be called out separately in the PR description even though it reuses the same pipe needed by the new routes."
+    }
+  ]
+}

@@ -1,0 +1,120 @@
+COMMENT
+[PooyaRaki 2026-08-19T16:26:05Z] @claude arch-review
+
+COMMENT
+[claude 2026-08-19T16:30:01Z] ## Architecture check
+
+Applicable guides: `docs/agents/commits-and-prs.md` (PR title/body row), `docs/agents/reviewing.md` + `docs/agents/remarks.md` (review standard); no code-rule guide applies — the diff is confined to three `docs/agents/*.md` files.
+
+docs/agents/module-structure.md:133 — Implementation matches the approved spec/plan: the new transitive-registration allowance is conditioned on a module that "only serves that one", yet cites `siwe` as an example of the same wiring yet `SiweModule` is imported by both `UsersModule` (`src/modules/users/users.module.ts:26`) and `AuthModule` (`src/modules/auth/auth.module.ts:10`), so the example contradicts the condition the same sentence states.
+docs/agents/commits-and-prs.md:91 — No stale guides: that PR body rule still asserts "One `reviewing.md` requirement still lands here" (ratchet-baseline growth), but this diff adds three more description-content requirements (declared multi-PR series, linked follow-up PR, never-shipped-field justification) and does not update the enumeration.
+docs/agents/ARCHITECTURE.md:86 — No stale guides: the Module anatomy skeleton still states `routes/` exists "only if HTTP endpoints exist", which the new staged-rollout paragraph in `module-structure.md` qualifies; the duplicated convention was updated in only one of the two guides.
+
+**Verdict:** ❌ 3 finding(s)
+
+COMMENT
+[PooyaRaki 2026-08-20T08:16:58Z] @claude arch-review
+
+COMMENT
+[claude 2026-08-20T08:19:34Z] ## Architecture check
+
+Applicable guides: `reviewing.md` + `remarks.md` (this is a PR review), `commits-and-prs.md` (PR title/body). The code-governing guides (`best-practices.md`, `nestjs-patterns.md`, `api-dtos-and-validation.md`, `security.md`, `module-structure.md`, `caching-and-performance.md`, `database-and-migrations.md`, `testing.md`, `configuration-and-flags.md`, `agent-tooling.md`) are not applicable — the diff is confined to `docs/agents/*.md` with no `src/`, test, config, or `.claude/` change.
+
+PR description — PR body: the `## Changes` section lists only `module-structure.md`, `reviewing.md`, and `api-dtos-and-validation.md`, omitting the two other changed files (`docs/agents/ARCHITECTURE.md`, `docs/agents/commits-and-prs.md`), so the per-area bullets do not cover the diff.
+
+**Verdict:** ❌ 1 finding(s)
+
+COMMENT
+[PooyaRaki 2026-08-20T08:33:13Z] @claude arch-review
+
+COMMENT
+[claude 2026-08-20T08:36:16Z] ## Architecture check
+
+Applicable guides: none — docs-only change to `docs/agents/`; no `AGENTS.md` routing-table row matches (per reviewing.md Part 1, "When no guide applies… the review states so explicitly"). Findings below are Part 2.
+
+docs/agents/module-structure.md:133 — No stale guides: the new discriminator "Every module that declares a controller registers directly" is contradicted by five controller-declaring modules wired transitively — `delegate/routes/delegates.module.ts`, `delegate/routes/v2/delegates.v2.module.ts`, `notifications/routes/v1/notifications.module.ts`, `notifications/routes/v2/notifications.module.ts`, `csv-export/v1/csv-export.module.ts:47`.
+docs/agents/commits-and-prs.md:91 — No stale guides: the sentence enumerates "Four guide requirements" as the complete set of PR-description-text requirements, but omits `caching-and-performance.md:127` (perf measurement, explicitly "not a commit message or a chat thread") and `security.md:32` (`OptionalAuthGuard` justification recorded in the PR description).
+
+**Verdict:** ❌ 2 finding(s)
+
+COMMENT
+[PooyaRaki 2026-08-20T08:53:55Z] @claude arch-review
+
+COMMENT
+[claude 2026-08-20T08:57:38Z] ## Architecture check
+
+Applicable guides: `docs/agents/commits-and-prs.md` (PR title/body/commits). The remaining changes are confined to `docs/agents/*.md` and match no other routing-table row.
+
+- `.claude/skills/cgw-commits-and-prs/SKILL.md:16` — No stale guides: the diff rewrites the PR-body rule to enumerate all five description-text requirements and declare the set open, but the skill loading that guide still presents the ratchet-baseline justification as the only one.
+- PR description (`## Summary`, `## Changes` bullet 1) — PR body: the body describes the transitive-registration allowance as "keyed on the module declaring no controller of its own", which commit `34e7eb46` replaced with `module-structure.md`'s reachability wording stating the wiring is *not* tied to declaring a controller.
+- commits `13adc59f` (84 chars), `34e7eb46` (82 chars) — Commit subject format: subject exceeds the 72-character budget.
+
+**Verdict:** ❌ 3 finding(s)
+
+COMMENT
+[PooyaRaki 2026-08-20T09:29:05Z] @claude arch-review
+
+COMMENT
+[claude 2026-08-20T09:31:53Z] ## Architecture check
+
+Applicable guides: `docs/agents/agent-tooling.md` (the `.claude/skills/cgw-commits-and-prs/SKILL.md` change), `docs/agents/commits-and-prs.md` (PR title and body), `docs/agents/reviewing.md` + `docs/agents/remarks.md` (review standard). All other routing-table rows are not applicable — the diff touches no `src/` file.
+
+no findings
+
+**Verdict:** ✅ compliant
+
+COMMENT
+[PooyaRaki 2026-08-20T09:50:01Z] @claude arch-review
+
+COMMENT
+[claude 2026-08-20T09:53:18Z] ## Architecture check
+
+Applicable guides: `docs/agents/commits-and-prs.md` (PR title/body), `docs/agents/agent-tooling.md` (`.claude/skills/cgw-commits-and-prs/SKILL.md`), `docs/agents/reviewing.md` + `docs/agents/remarks.md` (review standard). No code-facing row of the routing table matches — the diff is docs plus one skill loader.
+
+docs/agents/commits-and-prs.md:92 — No stale guides: the new enumeration states the `module-structure.md` requirement as "the link to the follow-up PR when `routes/` lands ahead of its controller", but module-structure.md:33 sets the bar at identification ("a link where that PR already exists, otherwise a statement of what it lands"), so the two guides landed in this PR disagree on the condition and a reader of the stricter one would reject a compliant first-of-series PR.
+
+**Verdict:** ❌ 1 finding
+
+COMMENT
+[PooyaRaki 2026-08-20T10:31:16Z] @claude arch-review
+
+COMMENT
+[claude 2026-08-20T10:34:09Z] ## Architecture check
+
+Applicable guides: `docs/agents/agent-tooling.md`, `docs/agents/commits-and-prs.md`, `docs/agents/reviewing.md` (+ `docs/agents/remarks.md`).
+
+no findings
+
+**Verdict:** ✅ compliant
+
+COMMENT
+[PooyaRaki 2026-08-20T10:34:20Z] @claude review
+
+COMMENT
+[claude 2026-08-20T10:34:35Z] **Claude finished @PooyaRaki's task in 2m 28s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/32359585529)
+
+---
+### Review
+
+Docs-only change (six `docs/agents/*.md` and one `.claude/skills/*/SKILL.md`, +10/-3). Verified every cross-reference against the referenced guide, and every claim against the code the guide describes.
+
+**Cross-references — all confirmed:**
+
+- `commits-and-prs.md:91` enumerates five description-text requirements. Each is present in the guide it names: `reviewing.md:43` (ratchet-baseline), `reviewing.md:48` (staged delivery), `module-structure.md:33` (`routes/` ahead of controller), `api-dtos-and-validation.md:113` (never-shipped field), `caching-and-performance.md:127` (perf measurement), `security.md:32` (`OptionalAuthGuard` justification). "Open set" caveat is stated.
+- `module-structure.md:33` staged-delivery bar and `reviewing.md:48` staged-delivery bar now agree — both accept a named-but-unlinked follow-up.
+- `ARCHITECTURE.md:96` pointer to `module-structure.md` keeps the qualification single-sourced.
+
+**Reachability example (`module-structure.md:133`):** `EntitlementsModule` through `BillingModule`, `siwe` through both `AuthModule` and `UsersModule`, and the three controller-bearing sub-modules (`delegate/routes/`, `notifications/routes/v2/`, `csv-export/v1/`) are each verifiable from the current tree. The prior "declares a controller" discriminator was correctly dropped.
+
+**Skill loader (`.claude/skills/cgw-commits-and-prs/SKILL.md:16`):** defers to the doc for the enumeration; agent-tooling.md's "loaders don't restate what the guide owns" convention is satisfied.
+
+**Minor readability observations (not blockers):**
+
+- `commits-and-prs.md:91` is now one long prose paragraph enumerating five items. A bulleted list would scan faster, but the surrounding rules use prose too, so this is consistent with the doc's style.
+- `api-dtos-and-validation.md:113` packs the whole never-shipped-field rule into one sentence. Readable, but a clause break after "in place:" would help without changing meaning.
+- `module-structure.md:33` similarly runs three ideas together (why route services can't sit under `domain/`, the follow-up-identification bar, the parity with `reviewing.md`). Content is right; a sentence split would ease first-read.
+
+**No stale-guide risk introduced by this PR:** the "open set" framing and per-item guide attribution mean adding a sixth description-text requirement won't leave `commits-and-prs.md:91` stale so long as the subject/owner pattern is preserved.
+
+**Verdict:** ✅ Ready to merge. No correctness issues.
+ · [`docs-agents-staged-delivery-guides`](https://github.com/safe-global/safe-client-gateway/tree/docs-agents-staged-delivery-guides)

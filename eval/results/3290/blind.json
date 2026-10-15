@@ -1,0 +1,139 @@
+{
+  "pr": 3290,
+  "title": "chore(deps): upgrade typeorm to 1.1.0",
+  "description": "## Summary\r\n\r\n  - Upgrades typeorm from 0.3.28 to 1.1.0, the current stable release line.\r\n  - Primary driver: an unpatched advisory affecting UpdateQueryBuilder/SoftDeleteQueryBuilder — the order argument passed to orderBy/addOrderBy on those builders is concatenated into generated SQL without validation, permitting blind SQL injection via the sort direction\r\n  (SelectQueryBuilder.orderBy was already unaffected). Fixed upstream in 0.3.29/1.0.0.\r\n    - Verified this was not currently exploitable in this codebase: this project only connects to Postgres (no MySQL/MariaDB driver, and the advisory is scoped to those), and the only orderBy/addOrderBy call in the codebase runs on a SelectQueryBuilder with a hardcoded literal, not user\r\n  input. Upgrading anyway as defense-in-depth since it's a direct dependency of our ORM.\r\n  - Went with 1.1.0 (latest) rather than the minimal 0.3.29 patch per request, picking up additional upstream fixes (aggregate-column resolution, an eager-loading bug that could overwrite manually-set relations, a migration query-runner leak, returning option for update/upsert).\r\n\r\n##  Breaking changes migrated\r\n\r\n  - typeorm/driver/postgres/PostgresConnectionOptions was renamed to typeorm/driver/postgres/PostgresDataSourceOptions — updated the one import/type usage in src/config/entities/postgres.config.ts.\r\n  - FindOptionsRelations no longer accepts the string-array shorthand (relations: ['x']); TypeORM 1.x requires the object form (relations: { x: true }). Updated all 4 affected call sites in notifications/spaces repositories and services.\r\n  - Updated the corresponding assertion in spaces.service.spec.ts to match the new relations shape.\r\n\r\n##  Test plan\r\n\r\n  - [x] nest build — passes with no TypeScript errors.\r\n  - [x] yarn test:unit — full suite green: 336 files / 5727 passed / 18 skipped (pre-existing skips, unrelated).\r\n  - [ ] yarn test:integration / yarn test:e2e — not run in this environment (require live Postgres/Redis); please run in CI before merge.\r\n  - [ ] Sanity-check any code relying on eager-loading + manually-set relations together, given the upstream fix changes that interaction — no such pattern found during review, but worth a second look in CI.",
+  "findings": [
+    {
+      "id": "F1",
+      "file": "src/modules/counterfactual-safes/domain/counterfactual-safes.repository.ts",
+      "line": 229,
+      "claim": "The delete operation was switched from `manager.delete(Entity, ids)` to a `createQueryBuilder().delete().from(...).whereInIds(...)` chain, introducing a new idiom that appears nowhere else in the codebase, while other repositories still use the `EntityManager.delete` shorthand."
+    },
+    {
+      "id": "F2",
+      "file": "src/config/entities/postgres.config.ts",
+      "line": 45,
+      "claim": "The default behavior for null or undefined values in a find where clause has changed from silently ignoring them to throwing a TypeORMError, and the config does not set invalidWhereValuesBehavior to make this choice explicit. No current call site can trigger it today, but a future find call passing an optional undefined/null value into where would now throw a runtime error instead of being dropped, so the change should at least be mentioned in the PR description, and ideally invalidWhereValuesBehavior should be set explicitly to record the decision."
+    },
+    {
+      "id": "F3",
+      "file": "src/domain/common/utils/__tests__/enum.spec.ts",
+      "line": 104,
+      "claim": "No integration spec reproduces the query where a transformed column actually hydrates as null, even though that scenario is the reason the nullable return type was introduced and would also serve as the source for the comment suggested regarding the transformer's null path."
+    },
+    {
+      "id": "F4",
+      "file": "counterfactual-safes.repository.ts",
+      "line": 229,
+      "claim": "The delete logic was changed from manager.delete(entity, ids) to a createQueryBuilder().delete().from(...).whereInIds(...).execute() form, but there is no comment explaining why this query-builder style is needed, which risks a future regression back to the simpler form if the original motivation (e.g., an API-shape issue with array deletes in TypeORM 1.x) is not documented. Additionally, whereInIds is marked legacy in recent TypeORM releases, so using '.where({ id: In(ids) })' would be more idiomatic."
+    },
+    {
+      "id": "F5",
+      "file": "src/domain/common/entities/member.entity.db.ts",
+      "line": 71,
+      "claim": "This column uses the enum transformer but is typed as non-nullable, so if the transformer ever returns null, it would reach code that assumes the value can never be null."
+    },
+    {
+      "id": "F6",
+      "file": null,
+      "line": null,
+      "claim": "The PR description itself flags that integration and e2e tests were not verified locally, which is worth confirming is green in CI before merging, particularly because the new '.delete().execute()' truncate pattern and the new eager-loading behavior only get exercised against a real database."
+    },
+    {
+      "id": "F7",
+      "file": "src/domain/common/entities/users.entity.db.ts",
+      "line": 29,
+      "claim": "This column uses the enum transformer but is typed as non-nullable, so if the transformer ever returns null, it would reach code that assumes the value can never be null."
+    },
+    {
+      "id": "F8",
+      "file": "counterfactual-safes.repository.integration.spec.ts",
+      "line": 157,
+      "claim": "The explanatory comment about why '.where(1=1)' is rejected by TypeORM exists only in this one spec file, while the same cleanup pattern is repeated without explanation across five other spec files (space-audit, space-safes, spaces, members, users, wallets, notifications), risking that a future contributor editing one of those files will reflexively reintroduce '.where(1=1)'. The comment should be moved to a shared truncate helper or a pointer comment should be added to each of the other specs."
+    },
+    {
+      "id": "F9",
+      "file": "src/domain/common/entities/address-book-request.entity.db.ts",
+      "line": 91,
+      "claim": "This column uses the enum transformer but is typed as non-nullable, so if the transformer ever returns null, it would reach code that assumes the value can never be null."
+    },
+    {
+      "id": "F10",
+      "file": "src/modules/counterfactual-safes/domain/counterfactual-safes.repository.ts",
+      "line": 229,
+      "claim": "The commit message states the new query-builder form is used because it 'has no such validation,' meaning it deliberately bypasses TypeORM 1.1's empty-criteria guard; either the shorthand criteria form (e.g. `manager.delete(CounterfactualSafeUser, { id: In(ids) })`) should be used instead, or a comment should explain why the query builder is needed, since avoiding the guard is only safe here because of the `targets.length === 0` check just above."
+    },
+    {
+      "id": "F11",
+      "file": "src/domain/common/utils/enum.ts",
+      "line": 36,
+      "claim": "The from transformer now returns keyof T | null, but getEnumKey still throws an Invalid enum value error for non-null unknown values, so the new return type is misleading and callers that only check for null will not catch corrupt or legacy rows because those trigger an exception instead. Either the type should be narrowed with documentation that non-null invalid values still throw, or unknown values should also return null to match typical ORM transformer behavior, but the current mixed behavior needs an explicit choice and a brief comment."
+    },
+    {
+      "id": "F12",
+      "file": "src/modules/spaces/domain/spaces.repository.integration.spec.ts",
+      "line": 123,
+      "claim": "This comment is redundant in the same way as the other flagged comments."
+    },
+    {
+      "id": "F13",
+      "file": "src/domain/common/utils/enum.ts",
+      "line": 36,
+      "claim": "The enum transformer's `from` function now has a return type of `keyof T | null`, meaning it can return null, but every column using this transformer is typed as non-nullable."
+    },
+    {
+      "id": "F14",
+      "file": "src/modules/counterfactual-safes/domain/counterfactual-safes.repository.integration.spec.ts",
+      "line": 160,
+      "claim": "A comment explaining why `.where('1=1')` was dropped appears only in this one file, while the same change was made in seven other integration specs (notifications, space-audit, space-safes, spaces, members, users, wallets) without any comment; either remove the comment or keep it in only one place for consistency."
+    },
+    {
+      "id": "F15",
+      "file": "src/domain/common/entities/space.entity.db.ts",
+      "line": 41,
+      "claim": "This column uses the enum transformer but is typed as non-nullable, so if the transformer ever returns null, it would reach code that assumes the value can never be null."
+    },
+    {
+      "id": "F16",
+      "file": "src/modules/counterfactual-safes/domain/counterfactual-safes.repository.ts",
+      "line": 229,
+      "claim": "The commit message justifies the new query-builder delete by saying it 'matches the pattern already used elsewhere,' but the only other query-builder deletes in the codebase are in test cleanup, not production repositories, so the stated justification does not hold."
+    },
+    {
+      "id": "F17",
+      "file": "notifications.repository.integration.spec.ts",
+      "line": 503,
+      "claim": "The two-relation object in this test could be aligned with the surrounding style, which previously used a single-line array format."
+    },
+    {
+      "id": "F18",
+      "file": "src/domain/common/utils/enum.ts",
+      "line": 37,
+      "claim": "The reason the transformer can now produce a null value is documented only in a commit message, not in the code, so a short comment should be added there naming the case that produces null, or that case should be covered with an integration test; without one, a later cleanup could remove the branch."
+    },
+    {
+      "id": "F19",
+      "file": "src/domain/common/entities/member.entity.db.ts",
+      "line": 78,
+      "claim": "This column uses the enum transformer but is typed as non-nullable, so if the transformer ever returns null, it would reach code that assumes the value can never be null."
+    },
+    {
+      "id": "F20",
+      "file": "src/modules/spaces/domain/safes/space-safes.repository.integration.spec.ts",
+      "line": 127,
+      "claim": "This comment is redundant, explicitly explaining something that does not need explicit explanation."
+    },
+    {
+      "id": "F21",
+      "file": "src/modules/counterfactual-safes/domain/counterfactual-safes.repository.integration.spec.ts",
+      "line": 162,
+      "claim": "This comment is redundant and could be simplified or removed."
+    },
+    {
+      "id": "F22",
+      "file": "users.repository.ts",
+      "line": 294,
+      "claim": "This file still uses manager.delete(DbUser, userId) while counterfactual-safes.repository.ts switched to a different delete pattern, creating an inconsistency in delete style across the codebase, though this instance is unaffected since it deletes a single id rather than an array."
+    }
+  ]
+}

@@ -1,0 +1,176 @@
+THREAD src/datasources/cache/cache.service.interface.ts:26 resolved=true
+[chatgpt-codex-connector 2026-06-25T15:25:40Z] **<sub><sub>![P1 Badge](https://img.shields.io/badge/P1-orange?style=flat)</sub></sub>  Add the required SPDX header**
+
+This modified TypeScript file still starts with an import instead of the required `// SPDX-License-Identifier: FSL-1.1-MIT` header. The AGENTS.md license rule says every modified `.ts` file must include that header, and the documented `license-headers` CI/pre-commit check will reject the change until it is added.
+
+Useful? React with 👍 / 👎.
+
+THREAD src/modules/zerion/zerion.module.ts:4 resolved=true
+[chatgpt-codex-connector 2026-06-25T15:25:40Z] **<sub><sub>![P1 Badge](https://img.shields.io/badge/P1-orange?style=flat)</sub></sub>  Add the required SPDX header**
+
+This modified TypeScript file also lacks the required `// SPDX-License-Identifier: FSL-1.1-MIT` header at the very top. Because the AGENTS.md rule applies to every modified `.ts` file, this will fail the license-header check even though the new rate-limiter file has the header.
+
+Useful? React with 👍 / 👎.
+
+THREAD src/modules/safe/routes/v2/safes.v2.service.ts:84 resolved=true
+[chatgpt-codex-connector 2026-06-25T15:25:40Z] **<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Avoid fetching portfolios before validating Safes**
+
+In requests that include a non-Safe address on a portfolio-enabled chain, this prefetch runs before `safeRepository.getSafe` rejects that entry, so the gateway now spends a Zerion call and consumes the shared rate-limit budget for an overview that will be dropped. The previous flow fetched the Safe first and only hit Zerion afterward; with the new global budget, invalid or stale Safe inputs can degrade unrelated valid overviews in the same window.
+
+Useful? React with 👍 / 👎.
+[compojoom 2026-06-25T15:36:55Z] Good catch — fixed in e6bfd68a. `getSafeOverview` now resolves and validates every Safe up front (`resolveSafes`) and only builds wallet-identities (and fetches portfolios) from validated entries. A non-Safe/stale address is dropped before any Zerion call, so it no longer spends a call or consumes the shared budget. The fetch-once-per-identity dedup is preserved. Added a unit test covering 'non-Safe address ⇒ no `getPortfolio` + dropped'.
+
+THREAD src/modules/balances/datasources/zerion-balances-api.service.ts:200 resolved=true
+[chatgpt-codex-connector 2026-06-25T15:25:40Z] **<sub><sub>![P2 Badge](https://img.shields.io/badge/P2-yellow?style=flat)</sub></sub>  Preserve rate-limit errors for collectibles**
+
+When the shared limiter rejects a collectibles cache miss, this `assertWithinBudget` throws `LimitReachedError` inside a `catch` block that only rethrows `ZodError`; the error is then wrapped by `httpErrorFactory.from(error)` as a 503 instead of the intended 429. This affects `/balances` collectible requests under the Zerion budget, unlike balances/positions where `LimitReachedError` is explicitly preserved.
+
+Useful? React with 👍 / 👎.
+[compojoom 2026-06-25T15:36:56Z] Fixed in e6bfd68a — `getCollectibles` now rethrows `LimitReachedError` (alongside `ZodError`) so an over-budget request surfaces as 429 instead of being wrapped into a 5xx, matching `getBalances`. Added a unit test asserting the error is rethrown and not passed through `httpErrorFactory.from`.
+
+THREAD src/datasources/cache/__tests__/fake.cache.service.ts:89 resolved=true
+[LucieFaire 2026-06-25T18:51:19Z] hah can make it 1 liner:
+```
+incrWithTtl(cacheKey: string, _ttlSeconds: number): Promise<number> {
+  return Promise.resolve(
+    (this.cache[cacheKey] = ((this.cache[cacheKey] as number | undefined) ?? 0) + 1)
+  );
+}
+```
+but maybe its a bit too cryptic, there is another version:
+```
+incrWithTtl(cacheKey: string, _ttlSeconds: number): Promise<number> {
+  const currentValue = (this.cache[cacheKey] as number | undefined) ?? 0;
+  const nextValue = currentValue + 1;
+
+  this.cache[cacheKey] = nextValue;
+
+  return Promise.resolve(nextValue);
+}
+```
+
+[compojoom 2026-06-26T12:54:48Z] Done in fd7c2b42 — went with the explicit `?? 0` / `nextValue` version (kept it over the one-liner for readability).
+
+THREAD src/datasources/cache/cache.service.interface.ts:34 resolved=true
+[LucieFaire 2026-06-25T18:52:10Z] maybe we can hide the Redis6/7 details and just specify what the method does?
+[compojoom 2026-06-26T12:54:57Z] Done in fd7c2b42 — trimmed the doc to what the method does (atomic incr + TTL on first creation, for fixed-window rate limiting) and dropped the Redis 6/7 implementation detail.
+
+THREAD src/modules/safe/routes/v2/safes.v2.service.ts:202 resolved=true
+[LucieFaire 2026-06-25T19:01:04Z] nit: we can return a Map right away:
+```
+    return new Map(
+      await Promise.all(
+        uniqueChainIds.map(async (chainId): Promise<[string, Chain | null]> => {
+          try {
+            return [chainId, await this.chainsRepository.getChain(chainId)];
+          } catch (error) {
+            this.loggingService.warn(
+              `Error while getting chain ${chainId}: ${asError(error)} `,
+            );
+            return [chainId, null];
+          }
+        }),
+      ),
+    );
+```
+[compojoom 2026-06-26T12:54:59Z] Done in fd7c2b42 — inlined the `await Promise.all(...)` into `new Map(...)`, dropping the intermediate `entries`.
+
+THREAD src/modules/safe/routes/v2/safes.v2.service.ts:229 resolved=true
+[LucieFaire 2026-06-25T19:04:07Z] we can short-cIrcuit here in case Zerion FF is off:
+```
+    if (!this.zerionBalancesEnabled) {
+      return new Map();
+    }
+    return new Map(
+      await Promise.all(
+        [...chainsById.entries()].map(
+          async ([chainId, chain]): Promise<[string, boolean]> => {
+            if (!(chain && this.getZerionChainName(chain))) {
+              return [chainId, false];
+            }
+            return [
+              chainId,
+              await this.isPortfolioEndpointFeatureEnabled(chain),
+            ];
+          },
+        ),
+      ),
+    );
+```
+[compojoom 2026-06-26T12:55:00Z] Done in fd7c2b42 — added an early `return new Map()` when `zerionBalancesEnabled` is off, and dropped the now-redundant flag check from the inner condition.
+
+THREAD src/modules/safe/routes/v2/safes.v2.service.ts:277 resolved=true
+[LucieFaire 2026-06-25T19:22:13Z] `PortfolioResult` / the `degraded` variant looks droppable — can simplify to a plain portfolio map
+
+The `degraded` status doesn't carry any information that changes behavior. The only reader is `resolveFiatBalance`.
+
+A degraded result and a missing key both fall through to `serveDegradedBalance` — same outcome. And the two things the marker might seem to be "for" are already handled elsewhere:
+
+* Error logging happens once per failed identity in the catch via `logPortfolioFetchError`.
+* The degraded-serve metric is emitted per-Safe inside `serveDegradedBalance`.
+So neither depends on the stored marker. We could drop the `PortfolioResult` union entirely and make the map `Map<string, ZerionWalletPortfolio>`: the catch just doesn't set anything, and the reader becomes:
+
+```
+const portfolio = args.portfoliosByIdentity.get(key);
+if (portfolio) {
+  const value = this.extractChainFiatBalance(portfolio, chain);
+  if (value !== null) return value;
+}
+return await this.serveDegradedBalance({ ... });
+```
+That deletes the union, both status literals, and the results.set(key, { status: 'degraded' }) line.
+
+Caveat for the record: this collapses "fetch failed" and "never fetched" into the same undefined. Today that's moot — every Zerion-enabled identity always gets a result, and the early !zerionEnabled return means we never look up the map for disabled chains, so there's no observable difference. The only thing we'd give up is cheaply distinguishing the two off the map later (e.g. a "fetched-but-failed" metric read from the map rather than at the failure site) — and since the failure is already logged + metered where it happens, that seems fine to lose.
+[compojoom 2026-06-26T12:55:02Z] Done in fd7c2b42 — dropped the `PortfolioResult` union. The map now stores `ZerionWalletPortfolio` directly; a failed fetch is simply a missing key and the reader degrades via `serveDegradedBalance`. The failure is already logged + metered at the failure site, so nothing is lost.
+
+REVIEW COMMENTED
+[chatgpt-codex-connector 2026-06-25T15:25:40Z] 
+### 💡 Codex Review
+
+Here are some automated review suggestions for this pull request.
+
+**Reviewed commit:** `ab51b33481`
+    
+
+<details> <summary>ℹ️ About Codex in GitHub</summary>
+<br/>
+
+[Your team has set up Codex to review pull requests in this repo](https://chatgpt.com/codex/cloud/settings/general). Reviews are triggered when you
+- Open a pull request for review
+- Mark a draft as ready
+- Comment "@codex review".
+
+If Codex has suggestions, it will comment; otherwise it will react with 👍.
+
+
+
+
+Codex can also answer questions or update the PR. Try commenting "@codex address that feedback".
+            
+</details>
+
+REVIEW APPROVED
+[LucieFaire 2026-06-26T12:57:29Z] LGTM
+
+COMMENT
+[datadog-official 2026-06-25T15:20:05Z] <a target='_blank' href='https://app.datadoghq.eu/ci/pipeline-executions?query=ci_level%3Ajob+%40ci.status%3Aerror+%40git.commit.sha%3Aab51b33481ae806c75fac230589fa81858fa607b&referrer=pr-comment'><picture><source media="(prefers-color-scheme: dark)" srcset="https://static.datadoghq.com/static/images/pr_comments/software_delivery/badges_header/pipelines-warning.svg"/><img src="https://static.datadoghq.com/static/images/pr_comments/software_delivery/badges_header/pipelines-warning-light.svg" alt="Pipelines" align="center" /></picture></a>
+
+## ⚠️ Warnings
+
+🚦 **2 Pipeline jobs failed**
+
+<blockquote>
+<div>
+
+<code> CI | env-validation </code> &nbsp;&nbsp;<a href="https://app.datadoghq.eu/ci/pipeline-executions?query=ci_level%3Ajob&#43;ci.job_correlation_id%3Aeadf8c7b3a0b0128&amp;referrer=pr-comment" title="View in Datadog"><img src="https://static.datadoghq.com/static/images/pr_comments/software_delivery/datadog_icon.svg" alt="View in Datadog" align="center" /></a> &nbsp; <a href="https://github.com/safe-global/safe-client-gateway/actions/runs/28180738693/job/83469384109" title="View in GitHub Actions"><picture><source media="(prefers-color-scheme: dark)" srcset="https://static.datadoghq.com/static/images/pr_comments/software_delivery/logos/github-logo-dark.svg"/><img src="https://static.datadoghq.com/static/images/pr_comments/software_delivery/logos/github-logo-light.svg" alt="GitHub Actions" align="center" /></picture></a>
+
+
+<code> CI | license-headers </code> &nbsp;&nbsp;<a href="https://app.datadoghq.eu/ci/pipeline-executions?query=ci_level%3Ajob&#43;ci.job_correlation_id%3A47e6a7d0566a61bd&amp;referrer=pr-comment" title="View in Datadog"><img src="https://static.datadoghq.com/static/images/pr_comments/software_delivery/datadog_icon.svg" alt="View in Datadog" align="center" /></a> &nbsp; <a href="https://github.com/safe-global/safe-client-gateway/actions/runs/28180738693/job/83469384204" title="View in GitHub Actions"><picture><source media="(prefers-color-scheme: dark)" srcset="https://static.datadoghq.com/static/images/pr_comments/software_delivery/logos/github-logo-dark.svg"/><img src="https://static.datadoghq.com/static/images/pr_comments/software_delivery/logos/github-logo-light.svg" alt="GitHub Actions" align="center" /></picture></a>
+
+</div>
+</blockquote>
+
+<sub>
+This comment will be updated automatically if new data arrives. <br />
+🔗 Commit SHA: ab51b33 | <a href="https://docs.datadoghq.com/integrations/guide/source-code-integration/#pr-comments">Docs</a> | Give us <a href="https://forms.gle/ys6MDmdQEeC5pkzWA">feedback</a>!
+</sub>

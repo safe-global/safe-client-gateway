@@ -1,0 +1,283 @@
+THREAD src/modules/billing/routes/guards/billing-webhook-auth.guard.ts:21 resolved=true
+[moisses89 2026-07-01T08:58:01Z] `BillingWebhookAuthGuard` injects the concrete `BillingAuthService` class, can we consider following the same pattern as `AuthGuard`, which injects an interface `IAuthRepository`?.
+[LucieFaire 2026-07-01T11:38:17Z] hey, thanks for pointing out. I feel like calling that class `AuthRepository` was maybe not exactly correct. (an there is an interface primarily cause the convention is: repo + interface).
+It only calls JWT methods and doesnt have any data access. If we look at `CapthaGuard`, for instance, it also contains a concrete service. I dont expect us to have diff implementation for billing auth, so I would argue service is a correct choice
+
+THREAD src/modules/billing/routes/guards/billing-webhook-auth.guard.ts:44 resolved=true
+[moisses89 2026-07-01T09:13:42Z] Just to add coverage, can you add a test for empty key after Bearer?
+[LucieFaire 2026-07-01T10:34:27Z] [a3de9e6](https://github.com/safe-global/safe-client-gateway/pull/3217/commits/a3de9e611429f3115331c1433ef9740427bf2c91)
+
+THREAD src/modules/billing/routes/guards/billing-webhook-auth.guard.ts:39 resolved=true
+[PooyaRaki 2026-07-02T10:38:32Z] Nit: We could make the header name configurable.
+```suggestion
+   const AUTH_HEADER_NAME = 'Authorization';
+    const header = request.headers[AUTH_HEADER_NAME];
+```
+
+THREAD src/modules/billing/routes/guards/billing-webhook-auth.guard.ts:20 resolved=true
+[PooyaRaki 2026-07-02T10:40:03Z] We could use or extend the current `AuthGuard` and support passing the auth property as a header value. The code here is mostly duplicated.
+[LucieFaire 2026-07-06T07:20:48Z] From my analysis, the similarity is mostly superficial, and merging would couple two security paths. I would argue against coupling these two together
+
+THREAD src/modules/billing/domain/billing-auth.service.ts:52 resolved=true
+[PooyaRaki 2026-07-02T10:41:50Z] Nit: We can handle it in our validator. We should validate this env variable and transform it if it's valid.
+[LucieFaire 2026-07-03T12:00:18Z] i moved it to `configuration.ts` directly becuase it wont be applied in schema or validator as they are used strictly as a pass/fail gate.
+
+THREAD src/modules/billing/domain/billing-auth.service.spec.ts:62 resolved=true
+[PooyaRaki 2026-07-02T11:55:26Z] We should use a random number
+
+THREAD src/modules/billing/domain/billing-auth.service.spec.ts:77 resolved=true
+[PooyaRaki 2026-07-02T11:55:36Z] We should use `faker`.
+
+THREAD src/modules/billing/domain/billing-auth.service.spec.ts:13 resolved=true
+[PooyaRaki 2026-07-02T11:55:53Z] Should be a random string.
+
+THREAD src/modules/billing/domain/billing-auth.service.spec.ts:119 resolved=true
+[PooyaRaki 2026-07-02T12:02:18Z] It's a bit unclear in this test where the `SERVICE_ACCESS` value is coming from and why, I know that's the default. Can we randomly pass a role when we mint a token and make sure that the role is returned when we decode the token?
+[LucieFaire 2026-07-06T07:24:36Z] The role can't be randomized as it's not a mint input. `buildClaims` specifically sets roles: [SERVICE_ACCESS_ROLE] in order to mint exactly one credential type (a service token) as per contract. Adding a role parameter would contradict that.
+[LucieFaire 2026-07-06T07:25:49Z] but i changed the test to check for a constant value and not a literal one :)
+
+THREAD src/modules/billing/domain/billing-auth.service.spec.ts:188 resolved=true
+[PooyaRaki 2026-07-02T12:04:37Z] Nit: We should check the exact error here.
+
+THREAD src/modules/billing/routes/guards/billing-webhook-auth.guard.integration.spec.ts:21 resolved=true
+[PooyaRaki 2026-07-07T09:15:26Z] Nit: We should use `faker` here as well
+[LucieFaire 2026-07-07T09:39:14Z] [01c4018](https://github.com/safe-global/safe-client-gateway/pull/3217/commits/01c40180571914632cee93438c2392ff7ee20d75)
+
+THREAD scripts/generate-token.ts:68 resolved=true
+[PooyaRaki 2026-07-07T09:43:27Z] This method is quite large and very hard to follow, especially with the local private key logic which is handled in an `if` condition. We should extract it to several smaller methods for maintainability.
+
+THREAD scripts/generate-token.ts:121 resolved=true
+[PooyaRaki 2026-07-07T09:45:12Z] Nit: We could also check this in the env variable validator and ensure it doesn't exist in production.
+
+THREAD src/datasources/kms/aws-kms-signer.service.spec.ts:16 resolved=true
+[PooyaRaki 2026-07-07T09:47:58Z] It's used only once on line 23, we could remove the `const` and pass the object directly to the constructor.
+
+THREAD src/datasources/kms/aws-kms-signer.service.ts:11 resolved=true
+[PooyaRaki 2026-07-07T09:48:18Z] Interface should be extracted to another file.
+
+THREAD src/datasources/kms/aws-kms-signer.service.ts:16 resolved=true
+[PooyaRaki 2026-07-07T09:48:33Z] Helpers should also be extracted to another file.
+
+THREAD src/datasources/kms/aws-kms-signer.service.ts:20 resolved=true
+[PooyaRaki 2026-07-07T09:49:53Z] QQ: Should we use dedicated credentials for this instance instead of the default ones?
+[LucieFaire 2026-07-07T11:22:02Z] in practise we should not need static params as everything would be in token file. This is just a fallback, that would fail if we invoke the methods. I think we can leave it as is
+
+THREAD src/modules/billing/domain/billing-auth.service.ts:23 resolved=true
+[PooyaRaki 2026-07-07T09:51:06Z] const and `type` should be extracted to a separate file.
+
+THREAD src/modules/billing/domain/billing-auth.service.ts:72 resolved=true
+[PooyaRaki 2026-07-07T09:54:04Z] Shouldn't the issuer be different from the audience? In this case I expect the issuer to be the billing service and the audience to be `CGW`
+[LucieFaire 2026-07-07T11:52:28Z] CGW issues the token, provides it to billing-service, so that billing-service can use it to auth in CGW. Thus issuer and audience are both CGW. We have the same pattern for auth0
+
+COMMENT
+[datadog-official 2026-06-30T13:01:37Z] <a target='_blank' href='https://app.datadoghq.eu/ci/pipeline-executions?query=ci_level%3Ajob+%40ci.status%3Aerror+%40git.commit.sha%3A895fd720f06940a2c8930c78a76935eb8908b6e6&referrer=pr-comment'><picture><source media="(prefers-color-scheme: dark)" srcset="https://static.datadoghq.com/static/images/pr_comments/software_delivery/badges_header/pipelines-warning.svg"/><img src="https://static.datadoghq.com/static/images/pr_comments/software_delivery/badges_header/pipelines-warning-light.svg" alt="Pipelines" align="center" /></picture></a>
+
+## ⚠️ Warnings
+
+🚦 **2 Pipeline jobs failed**
+
+<blockquote>
+<div>
+
+<code> CI | biome </code> &nbsp;&nbsp;<a href="https://app.datadoghq.eu/ci/pipeline-executions?query=ci_level%3Ajob&#43;ci.job_correlation_id%3A4f01a24bd5351090&amp;referrer=pr-comment" title="View in Datadog"><img src="https://static.datadoghq.com/static/images/pr_comments/software_delivery/datadog_icon.svg" alt="View in Datadog" align="center" /></a> &nbsp; <a href="https://github.com/safe-global/safe-client-gateway/actions/runs/28657311112/job/84989431225" title="View in GitHub Actions"><picture><source media="(prefers-color-scheme: dark)" srcset="https://static.datadoghq.com/static/images/pr_comments/software_delivery/logos/github-logo-dark.svg"/><img src="https://static.datadoghq.com/static/images/pr_comments/software_delivery/logos/github-logo-light.svg" alt="GitHub Actions" align="center" /></picture></a>
+
+
+<code> CI | integration-tests </code> &nbsp;&nbsp;<a href="https://app.datadoghq.eu/ci/pipeline-executions?query=ci_level%3Ajob&#43;ci.job_correlation_id%3A9ec71c21f01e5d28&amp;referrer=pr-comment" title="View in Datadog"><img src="https://static.datadoghq.com/static/images/pr_comments/software_delivery/datadog_icon.svg" alt="View in Datadog" align="center" /></a> &nbsp; <a href="https://github.com/safe-global/safe-client-gateway/actions/runs/28657311112/job/84989431132" title="View in GitHub Actions"><picture><source media="(prefers-color-scheme: dark)" srcset="https://static.datadoghq.com/static/images/pr_comments/software_delivery/logos/github-logo-dark.svg"/><img src="https://static.datadoghq.com/static/images/pr_comments/software_delivery/logos/github-logo-light.svg" alt="GitHub Actions" align="center" /></picture></a>
+
+</div>
+</blockquote>
+
+<sub>
+This comment will be updated automatically if new data arrives. <br />
+🔗 Commit SHA: 895fd72 | <a href="https://docs.datadoghq.com/integrations/guide/source-code-integration/#pr-comments">Docs</a> | Give us <a href="https://forms.gle/ys6MDmdQEeC5pkzWA">feedback</a>!
+</sub>
+
+COMMENT
+[PooyaRaki 2026-07-07T10:23:07Z] @claude review
+
+COMMENT
+[claude 2026-07-07T10:23:19Z] **Claude finished @PooyaRaki's task in 2m 52s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/28859136113)
+
+---
+### Claude PR Review
+
+- [x] Read changed files
+- [x] Analyze code quality, bugs, security, tests
+- [x] Post review feedback
+
+Overall the design is clean: pinned to ES256, offline verification, feature-flag gated, symmetric mint/verify claim shape, and dual signing paths (local PEM / KMS). A few improvements below, most minor.
+
+---
+
+### Correctness / robustness
+
+**1. Public key is only presence-checked at boot** — `src/modules/billing/domain/billing-auth.service.ts:59-61`
+`getOrThrow` guards a missing key, but a malformed / truncated PEM (very common with env-var newline mangling) will pass boot and then fail every single webhook. The module already claims to "fail fast at boot" — make that true by attempting `crypto.createPublicKey({ key, format: 'pem' })` in the constructor (or in the config validator, gated on `FF_BILLING_WEBHOOK=true` + production/staging).
+
+**2. `Authorization` header can be `string[]` per Express types** — `src/modules/billing/routes/guards/billing-webhook-auth.guard.ts:40-45`
+`request.headers.authorization` is typed `string | string[] | undefined`. If it's ever an array, `header?.startsWith('Bearer ')` throws (arrays have no `startsWith`) — the 500 will bypass the `UnauthorizedException` path. In practice Node collapses the header, but guard against the type contract:
+```ts
+const header = request.headers.authorization;
+if (typeof header !== 'string' || !header.startsWith('Bearer ')) return null;
+```
+
+**3. `expiresInDays` is unbounded** — `scripts/generate-token.ts:81-88`
+A typo like `--expires-in 18250` mints a ~50-year token that survives the entire key rotation lifecycle. Consider an upper cap (e.g. 10y) and log the resolved value with a warning above some threshold.
+
+**4. `iss === aud` is intentional but worth a hardening pass** — `src/modules/billing/domain/billing-auth.service.ts:79-80`
+Documented ("receiver issues the credential"), but this means any other CGW-minted token targeted at itself for a different purpose would satisfy `iss`+`aud`. Layer‑2 (`SERVICE_ACCESS` role/markers) is what actually prevents crossover — fine, but worth an inline comment on `verify()` making that dependency explicit.
+
+---
+
+### Structure / maintainability
+
+**5. `scripts/generate-token.ts:main()` handles two signing modes in one 60-line function.**
+Split into `mintViaKms(claimsArgs, kms)` and `mintLocally(claimsArgs, config)`; keep `main` doing arg parsing + orchestration + printing. (Also raised inline by PooyaRaki.)
+
+**6. `KmsSignerConfig`, `IKmsSigner`, and `resolveCredentials` live in two files.** — `src/datasources/kms/aws-kms-signer.service.ts:11-22`
+Move the interface + config type + helper into `kms-signer.interface.ts` (or a dedicated `kms-signer.types.ts`) so the service file is only the implementation.
+
+**7. `BillingAuthService` mixes DI-instance responsibilities (verify) with static factory methods (`mint`, `mintViaSigner`).**
+Works, but the static methods have nothing to do with the injected service — they only exist here because they share `buildClaims`. Extracting `BillingTokenMinter` (pure module, used by the CLI) from `BillingAuthService` (Nest-injected verifier) would remove the CLI's dependency on the DI-decorated class and make the "app never signs" boundary structural rather than by convention.
+
+**8. Constants + type in `billing-auth.service.ts`** — line 23 and `BillingTokenClaimsArgs` type — belong next to the entity/schema for consistency with the rest of the module.
+
+---
+
+### Tests
+
+**9. `aws-kms-signer.service.spec.ts` never asserts the `webIdentityTokenFile` branch of `resolveCredentials`.**
+Add a case constructing with `{ webIdentityTokenFile: '...' }` to lock in the IRSA path.
+
+**10. Coverage gap: guard integration doesn't test a token whose `aud` is an array containing the expected issuer alongside other values** — the mint path emits `aud: [issuer]`, but verify accepts `audience: string` against an array, and a regression here would silently loosen auth. One extra `signServiceToken({ aud: [ISSUER, 'other'] })` → 202 case would pin it.
+
+**11. `BillingServiceTokenSchema` spec** — `src/modules/billing/domain/entities/billing-service-token.entity.spec.ts` — uses literal strings (`'SERVICE_ACCESS'`, `'SERVICE_USER'`) instead of the exported constants. Small drift risk; import `SERVICE_ACCESS_ROLE` etc. from the entity.
+
+---
+
+### Nits
+
+- `src/modules/billing/routes/billing.controller.ts:6` — `path: ''` with `@Post('/billing/webhooks')` is a bit odd; giving the controller `path: 'billing'` and the route `'webhooks'` reads more naturally and matches the rest of the codebase.
+- `BillingWebhookAuthGuard.getBearerToken` — the constant `AUTH_HEADER_NAME` inside the method has no reuse value; either lift it to a module const or drop the indirection.
+- `src/datasources/kms/aws-kms-signer.service.ts:38` — `SignCommand` accepts `Uint8Array`; the `Buffer.from(response.Signature)` on line 51 is a no-op copy on Node (Buffer *is* a Uint8Array). Same for `getPublicKey`.
+
+---
+ · Branch: `PLA-1678/cgw-implement-billing-service-webhook-receiver-authentication-service`
+
+COMMENT
+[LucieFaire 2026-07-07T12:43:06Z] @claude review again
+
+COMMENT
+[claude 2026-07-07T12:43:21Z] **Claude finished @LucieFaire's task in 2m 30s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/28867003083)
+
+---
+### Claude PR Review — second pass
+
+- [x] Read changed files
+- [x] Analyze code quality, bugs, security, tests
+- [x] Post review feedback
+
+Nice cleanup since the last pass — `generate-token.ts` is split, the KMS interface/config extracted, constants live next to the entity, the guard has empty-token coverage, and the `aud`-as-array happy path is now tested. Remaining items:
+
+---
+
+#### Correctness
+
+**1. `resolveAwsCredentials` accepts a token-file path but never uses it** — `src/datasources/common/utils/aws-credentials.utils.ts:14-18`
+```ts
+return webIdentityTokenFile ? fromTokenFile() : undefined;
+```
+The argument is used only as a boolean gate; `fromTokenFile()` is called with no options, so the SDK reads `AWS_WEB_IDENTITY_TOKEN_FILE` from the environment. If a caller ever passes a non-default path (config-derived, tests, or a future non-EKS setup), it will silently be ignored and the SDK will use env instead. Either forward it — `fromTokenFile({ webIdentityTokenFile })` — or change the signature to a `boolean` so the contract matches the behaviour.
+
+**2. Public key isn't parsed at boot** — `src/modules/billing/domain/billing-auth.service.ts:51-53`
+`getOrThrow` only checks presence. A malformed PEM (very common with env-var newline handling) survives boot and 401s every request. The README already promises "fail fast at boot" — a one-liner `crypto.createPublicKey({ key: this.publicKey, format: 'pem' })` in the constructor makes that true, and would have caught the escaped-newline case that motivated the `replace(/\\n/g, '\n')` in `configuration.ts:541-544`.
+
+**3. `Authorization` header type contract** — `src/modules/billing/routes/guards/billing-webhook-auth.guard.ts:40`
+`request.headers.authorization` is typed `string | string[] | undefined`. Node collapses it in practice, but if it's ever an array `header?.startsWith('Bearer ')` throws, and the resulting 500 skips the `UnauthorizedException` path. Guard the type:
+```ts
+if (typeof header !== 'string' || !header.startsWith('Bearer ')) return null;
+```
+
+**4. `expiresInDays` upper bound** — `scripts/generate-token.ts:89-99`
+`--expires-in 18250` mints a ~50-year token that outlives any key rotation. A cap (e.g. 10y) plus a warn-log above some threshold prevents fat-finger accidents.
+
+---
+
+#### Design
+
+**5. `BillingAuthService` mixes DI-instance responsibilities with static factories.**
+`verify` needs Nest DI; `mint`/`mintViaSigner` are pure and only share `buildClaims`. Extracting a `BillingTokenMinter` (pure module used by the CLI) leaves `BillingAuthService` as the injected verifier and makes the "app never signs" boundary structural, not by convention. Would also let the CLI stop importing `@Injectable()` code just to reach static methods.
+
+**6. Controller path** — `src/modules/billing/routes/billing.controller.ts:6-13`
+`@Controller({ path: '' })` combined with `@Post('/billing/webhooks')` reads oddly. `path: 'billing'` + `@Post('webhooks')` matches the rest of the codebase and would also make the guard reusable if more billing routes get added.
+
+---
+
+#### Minor
+
+- `AwsKmsSignerService.sign` — `Buffer.from(response.Signature)` (line 41) is a no-op copy on Node since `Buffer` **is** a `Uint8Array`. Same for `getPublicKey`. Return `response.Signature` / `response.PublicKey` directly.
+- Guard's `UnauthorizedException("No bearer token provided…")` (line 28) leaks a bit of info compared to the plain `UnauthorizedException()` on the verify-failure path. Consider keeping them symmetric.
+- `BillingServiceTokenSchema` — `data.service_name`, `permission_type`, `user_type` are all `.optional()` and then enforced in `superRefine`. Could be tightened by making the `data` object's inner fields required at the schema level for the data-marker branch, but it's mostly stylistic.
+
+---
+ · Branch: `PLA-1678/cgw-implement-billing-service-webhook-receiver-authentication-service`
+
+COMMENT
+[LucieFaire 2026-07-07T12:56:52Z] Claude review:
+Addressed (2,5,6,8), (1,3,4,7) is irrelevant, added extra tests (9-11) and resolved the nits.
+
+
+COMMENT
+[PooyaRaki 2026-07-07T14:02:48Z] @claude review
+As @LucieFaire said:
+
+> Addressed (2,5,6,8), (1,3,4,7) is irrelevant, added extra tests (9-11) and resolved the nits.
+
+Check all the previous remarks from yourself and other reviewers.
+
+COMMENT
+[claude 2026-07-07T14:03:09Z] **Claude finished @PooyaRaki's task in 3m 1s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/28872253607)
+
+---
+### Claude PR Re-Review
+
+Re-checked the tree against my previous notes and other reviewers' remarks. LucieFaire's summary tracks well against the current code.
+
+- [x] Verify claimed fixes (2, 5, 6, 8)
+- [x] Verify added tests (9, 10, 11)
+- [x] Verify nits resolution
+- [x] Check other reviewers' remaining remarks
+
+---
+
+### Verification of prior remarks
+
+**Addressed cleanly**
+- **(5)** `scripts/generate-token.ts` split into `parseCliArgs` / `resolveSubject` / `resolveExpiresInDays` / `mintViaKms` / `mintViaLocalKey` / `printResult` — `main()` is now orchestration only. ✓
+- **(6)** `IKmsSigner` → `src/datasources/kms/kms-signer.interface.ts`, `KmsSignerConfig` → `src/datasources/kms/entities/kms-signer-config.entity.ts`, `resolveAwsCredentials` → `src/datasources/common/utils/aws-credentials.utils.ts`. `aws-kms-signer.service.ts` is now just the implementation. ✓
+- **(8)** Constants (`SERVICE_ACCESS_ROLE`, etc.) live in the entity; `BillingTokenClaims` type moved to `billing-token-claims.entity.ts`; `DEFAULT_BILLING_SERVICE_TOKEN_SUBJECT` in `billing-auth.constants.ts`. ✓
+- **(2)** No code change was needed — `IncomingHttpHeaders['authorization']` is typed `string | undefined` in Node, so the concern was theoretical. ✓
+
+**Marked "irrelevant" — agreed**
+- **(1)** PEM shape validation at boot — acceptable to defer; a bad PEM will show up on the first `verify()` warn log.
+- **(3)** `expiresInDays` upper cap — ops tool, explicit intent, fine to leave.
+- **(4)** `iss === aud` — clarified in-thread, matches the Auth0 self-issued pattern.
+- **(7)** Static `mint*` methods keep the CLI decoupled from Nest DI without needing a separate `BillingTokenMinter`.
+
+**New tests present and correct**
+- **(9)** `src/datasources/kms/aws-kms-signer.service.spec.ts:32` — IRSA branch is covered (`fromTokenFile` invoked when `webIdentityTokenFile` is set, and not invoked otherwise). ✓
+- **(10)** `src/modules/billing/routes/guards/billing-webhook-auth.guard.integration.spec.ts:155` — audience-array case pinned. ✓
+- **(11)** `src/modules/billing/domain/entities/billing-service-token.entity.spec.ts:5-8` — now imports the exported constants. ✓
+
+---
+
+### Remaining nits (small, non-blocking)
+
+1. **Controller path split still reads oddly** — `src/modules/billing/routes/billing.controller.ts:6-13`: `@Controller({ path: '' })` + `@Post('/billing/webhooks')`. Splitting into `@Controller({ path: 'billing' })` + `@Post('webhooks')` is more idiomatic and matches the rest of the codebase. Was listed under "nits" in my previous review but wasn't picked up.
+
+2. **`Buffer.from(response.Signature)` no-op copies** — `src/datasources/kms/aws-kms-signer.service.ts:41,51`: KMS SDK returns `Uint8Array`, and Node `Buffer` *is* a `Uint8Array` — the wrap is unnecessary. Tiny; feel free to leave.
+
+Everything else looks good — approving in spirit, LGTM aside from the two cosmetic items above.
+
+---
+ · Branch: `PLA-1678/cgw-implement-billing-service-webhook-receiver-authentication-service`

@@ -1,0 +1,47 @@
+{
+  "usage": {
+    "usd": 0.32379299999999994,
+    "turns": 5,
+    "wallSeconds": 34
+  },
+  "issues": [
+    {
+      "findings": [
+        "F1",
+        "F2",
+        "F3"
+      ],
+      "summary": "Test names, error message and doc comment still say 'current Safes' / 'Safe count' although the check now counts seats",
+      "label": "wrong",
+      "evidence": "The interface defines a seat as one per Safe address across chains (space-safes.repository.interface.ts:80-84), so countSeatsBySpaceId is exactly the number of distinct Safes. That makes 'current Safes' (billing.service.ts:421, :442; spec :702, :731) more accurate than it was under the old per-row count, not less.",
+      "category": "style"
+    },
+    {
+      "findings": [
+        "F4"
+      ],
+      "summary": "The PR/commit calls this a rename, but for billing it changes behaviour: rows were counted before, distinct addresses now, so the capacity check is looser for multi-chain Safes",
+      "label": "low",
+      "evidence": "countSeatsBySpaceId deduplicates per address (space-safes.repository.ts:216-224; interface :80-84), while the removed countBySpaceId counted rows. That makes billing.service.ts:437 a semantic change as well as a rename. The change is intended and matches #3446's seat rule, so what's off is only the description wording.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F5"
+      ],
+      "summary": "The seat-capacity tests never check which id countSeatsBySpaceId is called with",
+      "label": "low",
+      "evidence": "The spec only stubs the return value (billing.service.spec.ts:714, :745, :968, :988), and no toHaveBeenCalledWith is used on the count mock. Passing the wrong id would therefore go unnoticed. The gap predates the PR, which only renamed these lines.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F6"
+      ],
+      "summary": "No billing test for a Safe on several chains counting as one seat",
+      "label": "low",
+      "evidence": "BillingService unit tests mock the count, so the multi-chain dedup belongs to the repository. #3446 already covers it in space-safes.repository.integration.spec.ts. A billing-level case would add little beyond checking that the right method is wired.",
+      "category": "tests"
+    }
+  ]
+}

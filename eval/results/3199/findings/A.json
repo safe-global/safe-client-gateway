@@ -1,0 +1,55 @@
+{
+  "usd": 0.063946,
+  "findings": [
+    {
+      "file": ".env.sample.json",
+      "line": 1576,
+      "claim": "The ZERION_RATE_LIMIT_CALLS_BY_PERIOD variable previously limited only balances and collectibles calls, but now also limits positions, portfolio and Safe overview calls, so any deployment using the default value will make far fewer Zerion calls overall and overviews will fall back to the balances repository more often."
+    },
+    {
+      "file": "src/modules/zerion/datasources/zerion-rate-limiter.service.ts",
+      "line": 92,
+      "claim": "Setting the rate limit variable to 0 previously blocked every call, but the new limitCalls > 0 check makes 0 mean 'no limit', which silently reverses the meaning of an existing configuration value."
+    },
+    {
+      "file": null,
+      "line": null,
+      "claim": "The configuration variable's description still says only 'Maximum Zerion API calls per time period' and does not mention that the budget is now shared across all Zerion datasources or that a value of 0 disables the limit, unlike the newly added per-address variable which documents this."
+    },
+    {
+      "file": "src/config/entities/configuration.ts",
+      "line": 140,
+      "claim": "Given the expanded scope of the shared rate-limit variable, the existing default value of 2 calls per 10 seconds is worth rechecking since it now governs more endpoints than before."
+    },
+    {
+      "file": "src/modules/safe/routes/v2/safes.v2.service.ts",
+      "line": 430,
+      "claim": "serveDegradedBalance logs at warn level every time the fallback path succeeds, once per Safe, which is an expected outcome and produces excessive warn-level noise (in addition to the limiter's own warn log and a nearby debug log) when Zerion is over budget for every Safe on a Zerion chain; an info/debug log or a counter would be more appropriate for what is effectively a metric signal."
+    },
+    {
+      "file": "src/modules/safe/routes/v2/safes.v2.service.ts",
+      "line": 439,
+      "claim": "When the fallback path also fails, the same failure is logged twice at warn level, once here and again at the 'Error while getting Safe overview' log around line 138."
+    },
+    {
+      "file": "src/modules/safe/routes/v2/safes.v2.service.ts",
+      "line": 182,
+      "claim": "Two doc comments ('today the chain is fetched per entry' and 'dropped during the per-entry build (as today)') describe the old behavior and will be inaccurate once merged, since unresolved chains are now dropped in resolveSafes (around line 161) rather than in the per-entry build; the comments should reference resolveSafes instead."
+    },
+    {
+      "file": "src/modules/zerion/datasources/zerion-rate-limiter.service.ts",
+      "line": 116,
+      "claim": "The fail-open log path interpolates the error into a plain string instead of using the structured log object format used elsewhere in the same class (e.g. the RateLimit log at line 127), which loses the type, datasource and scope information and makes a Redis failure hard to alert on; it should use a structured object such as { type: LogType.RateLimit, event: 'fail_open', datasource, detail: asError(error).message }, which requires passing datasource down into _increment."
+    },
+    {
+      "file": "src/modules/safe/routes/v2/safes.v2.service.spec.ts",
+      "line": 107,
+      "claim": "The 'one fetch per wallet across multiple chains' scenario is tested in both a unit test and an integration test (src/modules/safe/routes/v2/__tests__/safes.v2.controller.overview.integration.spec.ts:312), but this is a service-branch rule that the unit test alone already proves; the integration test could be shrunk to a wiring smoke test or dropped."
+    },
+    {
+      "file": "src/modules/safe/routes/v2/safes.v2.service.ts",
+      "line": 268,
+      "claim": "SafesV2Service calls the Zerion datasource (IZerionWalletPortfolioApi) directly rather than going through a repository, and this PR builds further logic on top of that direct call (batching per wallet, handling LimitReachedError/ZodError, importing the datasource entity type ZerionWalletPortfolio), growing a pattern that services should call repositories rather than datasources directly; a follow-up to move this behind IBalancesRepository would prevent the gap from widening further."
+    }
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "usd": 0.06031360000000001,
+  "findings": [
+    {
+      "file": "src/modules/fees/routes/entities/fee-preview-response.entity.ts",
+      "line": 12,
+      "claim": "FeePreviewTxData.chainId changes from number to string in the response of the already-released v1 route POST /v1/chains/:chainId/fees/:safeAddress/preview, without any versioning or explicit backward-compatibility handling. Clients doing numeric comparisons like chainId === 1 or relying on typed decoding will break silently, and the PR should at least confirm and state that web and mobile clients are ready for the change."
+    },
+    {
+      "file": "src/modules/fees/domain/entities/schemas/__tests__/tx-fees-response.schema.spec.ts",
+      "line": 27,
+      "claim": "Both new tests use the pattern expect(result.success).toBe(true) followed by an if (result.success) guard, which is a redundant assertion style; the test should assert directly on the parsed data instead, e.g. via TxDataResponseSchema.parse(txData).chainId or expect(result).toEqual({...})."
+    },
+    {
+      "file": "src/modules/fees/domain/entities/schemas/__tests__/tx-fees-response.schema.spec.ts",
+      "line": 14,
+      "claim": "The same 8-field txData object literal is duplicated three more times in the spec instead of reusing the existing txDataResponseBuilder() from tx-fees-response.builder.ts, which the spec file already imports; the builder should be used (e.g. txDataResponseBuilder().with('chainId', '1').build()) instead of copy-pasted literals."
+    },
+    {
+      "file": "src/modules/fees/domain/entities/schemas/tx-fees-response.schema.ts",
+      "line": 8,
+      "claim": "Chain-ID validation is written inline as z.coerce.string().regex(/^\\d+$/) instead of reusing the shared ChainIdSchema that already exists and is used in 8 other files; the inline regex also lacks the CHAIN_ID_MAXLENGTH bound that ChainIdSchema enforces, so it accepts a numeric string of any length, and if the divergence is intentional it should be explained with a comment."
+    }
+  ]
+}

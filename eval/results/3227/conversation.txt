@@ -1,0 +1,48 @@
+COMMENT
+[LucieFaire 2026-07-06T10:44:52Z] @claude review
+
+COMMENT
+[claude 2026-07-06T10:46:42Z] **Claude finished @LucieFaire's task in 2m 9s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/28785978831)
+
+---
+### Claude PR Review
+
+- [x] Gather context & read changed files
+- [x] Analyze code quality, bugs, performance, security
+- [x] Review test coverage
+- [x] Post final review
+
+Overall: clean, well-scoped, thoroughly tested. A few points to consider:
+
+#### Nits / minor suggestions
+
+1. **Dead branch in `mapIncomingAssetEventNotification` for `trusted: false`** — `src/modules/notifications/domain/push/push-notification.service.ts:439-443`
+
+   By the time `mapIncomingAssetEventNotification` runs, `processEvent` (`push-notification.service.ts:92-101`) has already dropped every `INCOMING_TOKEN` with `trusted: false`. So the destructure at line 441 always strips `trusted: true`. The FCM-string comment is correct, but the strip's purpose is more accurately *"remove the filtering metadata before serializing"* rather than *"defend against `false`."* A one-liner clarifying the invariant would help future readers understand why both the drop and the strip exist.
+
+2. **Making `trusted` a required boolean is a tight coupling with Transaction Service** — `src/modules/hooks/routes/entities/schemas/incoming-token.schema.ts:11`, `outgoing-token.schema.ts:11`
+
+   The PR description notes this is deliberate (upstream always emits it post-PLA-1661). Fine, but worth flagging: if the Transaction Service ever regresses and omits `trusted`, every `INCOMING_TOKEN`/`OUTGOING_TOKEN` webhook will 422 and silently drop cache-invalidation side effects (balance/collectible cache clears) — not just pushes. An optional-with-default (`z.boolean().default(false)`) would be safer at the schema layer; the semantic risk is that `default(false)` on a missing field would nuke pushes rather than send them. Since "conservative = drop" is likely the desired failure mode, the current strict form is defensible; just be aware the blast radius extends beyond notifications.
+
+3. **`OutgoingTokenEventSchema` doesn't export `OutgoingTokenEvent` type** — `src/modules/hooks/routes/entities/schemas/outgoing-token.schema.ts`
+
+   Pre-existing asymmetry vs. `incoming-token.schema.ts` (which exports `IncomingTokenEvent`). Not introduced by this PR, just noting the inconsistency stayed.
+
+4. **Log level for spam drops** — `push-notification.service.ts:93`
+
+   `info` is consistent with the rest of the notification lifecycle logs. However, if spam volume is meaningful, these could dominate the log stream. Consider whether `debug` is more appropriate, or add a rate-limited sampling if you want production visibility without noise. Not blocking.
+
+5. **`NotificationEventProcessed` log is skipped for dropped events** — `push-notification.service.ts:100`
+
+   The early return means only `NotificationSpamTokenDropped` fires; the standard `NotificationEventProcessed` (with `deliveryJobCount: 0`) does not. If dashboards/queries are built around `NotificationEventProcessed` as a "we saw an event" beacon, spam-dropped events will be invisible there. Consider whether both logs should fire, or document that `NotificationSpamTokenDropped` serves as the terminal log for that path.
+
+#### Positives
+
+- Filtering happens before Safe/subscriber lookups — no wasted I/O for spam.
+- `IncomingTokenNotification = Omit<IncomingTokenEvent, 'trusted'>` correctly enforces the strip at the type level.
+- Schema tests cover both boolean values, non-boolean rejection, and missing-field rejection.
+- Integration test (`push-notification.integration.spec.ts:369-394`) verifies the full "drop before subscriber lookup" path, not just the unit-level branch.
+- Delivery-payload assertion (`push-notification.service.spec.ts:202-230`) catches accidental `trusted` leakage into FCM.
+
+No blocking issues.
+ · Branch: `dasha/wa-1677-filter-spam-token-push-notifications`

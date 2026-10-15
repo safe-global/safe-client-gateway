@@ -1,0 +1,10 @@
+{
+  "usd": 0.0327756,
+  "findings": [
+    {
+      "file": "src/modules/counterfactual-safes/routes/counterfactual-safes.service.ts",
+      "line": 90,
+      "claim": "The isSafe function does not accept an AbortSignal, so once one promise in the map iteration confirms a Safe is deployed, the other already-launched promises cannot be aborted, missing a potential optimization."
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "usd": 0.051415600000000006,
+  "findings": [
+    {
+      "file": "src/modules/hooks/routes/entities/schemas/incoming-token.schema.ts",
+      "line": 11,
+      "claim": "trusted: z.boolean() is now required on the INCOMING_TOKEN schema (and outgoing-token.schema.ts:11 for OUTGOING_TOKEN), and both schemas are part of the EventSchema union, so a producer that omits the field causes EventSchema.parse to reject the whole event."
+    },
+    {
+      "file": "src/modules/hooks/repository/hooks.repository.ts",
+      "line": 42,
+      "claim": "When a message fails schema validation over AMQP, the error is only logged and the message is still acked, so the event is permanently lost."
+    },
+    {
+      "file": "src/modules/notifications/domain/push/queues-api.service.ts",
+      "line": 26,
+      "claim": "The queue service acks messages regardless of validation failure, meaning rejected events cannot be reprocessed."
+    },
+    {
+      "file": "src/modules/hooks/routes/hooks.controller.ts",
+      "line": 50,
+      "claim": "Over HTTP, an event missing the trusted field is rejected outright by ValidationPipe, causing the whole request to fail rather than just ignoring the missing field."
+    },
+    {
+      "file": null,
+      "line": null,
+      "claim": "Because rejected events never clear the cache, balances, collectibles, transfers and transactions can go stale, and all push notifications for that event are lost, not just the spam-related ones."
+    },
+    {
+      "file": "src/modules/notifications/domain/push/event-to-notify.entity.ts",
+      "line": 23,
+      "claim": "OUTGOING_TOKEN never reads the trusted field, so making it required on that schema adds risk of rejected events without providing any benefit."
+    },
+    {
+      "file": "src/modules/hooks/routes/entities/schemas/outgoing-token.schema.ts",
+      "line": 11,
+      "claim": "The trusted field should be made optional (as is already done for a new producer field in chain-update.schema.ts:8), or dropped entirely from OUTGOING_TOKEN since it is unused there."
+    },
+    {
+      "file": "src/modules/notifications/domain/push/push-notification.service.ts",
+      "line": 92,
+      "claim": "The check `!event.trusted` treats a missing trusted field the same as an explicit false, so any event without the field is wrongly treated as spam and dropped."
+    },
+    {
+      "file": "src/modules/notifications/domain/push/consumers/push-notification.consumer.ts",
+      "line": 46,
+      "claim": "BullMQ PUSH_NOTIFICATION_EVENT jobs queued before a deploy go straight to processEvent without re-parsing, so pre-existing jobs lacking trusted will be dropped and logged as NotificationSpamTokenDropped instead of surfacing as errors; this also affects any event once trusted is made optional."
+    },
+    {
+      "file": "src/modules/notifications/domain/push/push-notification.service.ts",
+      "line": 92,
+      "claim": "The spam check should compare event.trusted === false explicitly, so that only an explicit false flag from the Transaction Service drops a notification, rather than treating missing/undefined as spam."
+    },
+    {
+      "file": "src/modules/hooks/routes/hooks-cache.integration.spec.ts",
+      "line": 93,
+      "claim": "Every cache-invalidation test case for token events uses trusted: true, so there is no test coverage confirming that an untrusted (false) or missing-trusted token event still clears the cache or reaches enqueueEvent."
+    },
+    {
+      "file": "src/modules/notifications/domain/push/push-notification.service.spec.ts",
+      "line": 183,
+      "claim": "There is no unit test covering the case where the trusted field is missing from an event."
+    },
+    {
+      "file": "src/modules/notifications/domain/push/push-notification.service.ts",
+      "line": 93,
+      "claim": "An info-level log is emitted for every dropped spam event; since spam airdrops can hit many Safes at once, this could generate high log volume."
+    }
+  ]
+}

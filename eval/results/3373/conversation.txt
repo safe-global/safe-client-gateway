@@ -1,0 +1,81 @@
+THREAD src/modules/relay/datasources/rhinestone-api.service.ts:142 resolved=true
+[LucieFaire 2026-08-21T13:27:08Z] I dont want to block the PR and testing of rhinestone, but these 3 func are pure functions with no instance state. Ideally they should live outside of the service,so that we can test them in isolation and not through relay() - as every formatting case has to drag along mockRejectedValue + rejects.toThrow + a mocked logger and so on.
+[dasanra 2026-08-21T15:18:36Z] I will tackle this under #3372 instead, as functionality of this PR is accepted and we need it as soon as possible for easier debug.
+
+COMMENT
+[dasanra 2026-08-21T13:00:49Z] @claude arch-review
+
+COMMENT
+[claude 2026-08-21T13:05:16Z] ## Architecture check
+
+Applicable guides: [best-practices.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/best-practices.md), [api-dtos-and-validation.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/api-dtos-and-validation.md), [caching-and-performance.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/caching-and-performance.md), [security.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/security.md), [module-structure.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/module-structure.md), [testing.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/testing.md), [commits-and-prs.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/commits-and-prs.md), [reviewing.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/reviewing.md), [remarks.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/remarks.md)
+
+1. **[No speculative abstractions, unused exports, or dead code introduced (YAGNI)](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/reviewing.md#L45)** — [src/modules/relay/datasources/schemas/rhinestone-error.schema.ts:24](https://github.com/safe-global/safe-client-gateway/blob/e2b0a57aa57765f9c8525bcb0c2877a95f6ee543/src/modules/relay/datasources/schemas/rhinestone-error.schema.ts#L24) — `RhinestoneErrorResponse` is exported but nothing imports it; the only consumer, `rhinestone-api.service.ts`, imports `RhinestoneErrorResponseSchema` alone. **Fix:** delete lines 24-26 (`export type RhinestoneErrorResponse = z.infer<typeof RhinestoneErrorResponseSchema>;`).
+2. **[Builders and faker only](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/testing.md#L68)** — [src/modules/relay/datasources/rhinestone-api.service.spec.ts:214](https://github.com/safe-global/safe-client-gateway/blob/e2b0a57aa57765f9c8525bcb0c2877a95f6ee543/src/modules/relay/datasources/rhinestone-api.service.spec.ts#L214) — the response literal hard-codes `{ status: 400, statusText: 'Bad Request' }` (also at lines 247 and 268) in three tests whose assertions are about `context` omission, truncation and the error cap, not about the status — the shape of [R-004](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/remarks.md#L90). **Fix:** in each of those three tests use the same faker inputs as the first new case and the pre-existing sibling test — `const status = faker.internet.httpStatusCode({ types: ['clientError'] }); const statusText = faker.lorem.words();`, pass `{ status, statusText } as Response`, and interpolate `status=${status} ${statusText}` into the expected log line.
+
+**Verdict:** ❌ 2 finding(s)
+
+<sub>Automated check of this repo's [agent guidelines](https://github.com/safe-global/safe-client-gateway/blob/main/AGENTS.md) — Claude applying the committed guides in `docs/agents/`, not its own opinion. Run by [architecture-check.yml](https://github.com/safe-global/safe-client-gateway/blob/main/.github/workflows/architecture-check.yml) on `@claude arch-review`; background in [the CI gate](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/agent-tooling.md#the-ci-gate). Advisory — reply to a finding by its number to discuss it.</sub>
+
+COMMENT
+[PooyaRaki 2026-08-21T13:11:42Z] @claude review
+
+COMMENT
+[claude 2026-08-21T13:11:56Z] **Claude finished @PooyaRaki's task in 58s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/32485580511)
+
+---
+### Claude PR Review
+
+- [x] Read PR context
+- [x] Analyze changed files
+- [x] Post review feedback
+
+---
+
+Focused review — things to improve only.
+
+### Findings
+
+**1. Dead export in the new schema file — [`schemas/rhinestone-error.schema.ts:24-26`](https://github.com/safe-global/safe-client-gateway/blob/chore/improve-relay-service-logging/src/modules/relay/datasources/schemas/rhinestone-error.schema.ts#L24-L26)**
+
+`RhinestoneErrorResponse` is exported but nothing imports it — `rhinestone-api.service.ts` imports only `RhinestoneErrorResponseSchema`. This is dead code (YAGNI).
+
+```ts
+export type RhinestoneErrorResponse = z.infer<
+  typeof RhinestoneErrorResponseSchema
+>;
+```
+
+Delete these three lines. [Fix this →](https://claude.ai/code?q=In%20src%2Fmodules%2Frelay%2Fdatasources%2Fschemas%2Frhinestone-error.schema.ts%20on%20branch%20chore%2Fimprove-relay-service-logging%2C%20delete%20the%20unused%20exported%20type%20alias%20RhinestoneErrorResponse%20on%20lines%2024-26.%20Nothing%20imports%20it.&repo=safe-global/safe-client-gateway)
+
+**2. Literal fixtures in three of the new tests — [`rhinestone-api.service.spec.ts:214`, `:247`, `:268`](https://github.com/safe-global/safe-client-gateway/blob/chore/improve-relay-service-logging/src/modules/relay/datasources/rhinestone-api.service.spec.ts#L214)**
+
+The three "should not log the context…", "should collapse newlines…" and "should cap the number of…" tests hard-code `{ status: 400, statusText: 'Bad Request' }`. The pre-existing sibling test and the first new case both use `faker.internet.httpStatusCode(...)` + `faker.lorem.words()`, which is what the testing guide requires (builders + faker; no literal fixtures — R-004).
+
+Replace with the same pattern already used in the file:
+
+```ts
+const status = faker.internet.httpStatusCode({ types: ['clientError'] });
+const statusText = faker.lorem.words();
+// … { status, statusText } as Response …
+// expected log line: `status=${status} ${statusText} …`
+```
+
+[Fix this →](https://claude.ai/code?q=In%20src%2Fmodules%2Frelay%2Fdatasources%2Frhinestone-api.service.spec.ts%20on%20branch%20chore%2Fimprove-relay-service-logging%2C%20replace%20the%20hard-coded%20%7B%20status%3A%20400%2C%20statusText%3A%20%27Bad%20Request%27%20%7D%20literals%20at%20lines%20214%2C%20247%20and%20268%20with%20faker%20values%20-%20const%20status%20%3D%20faker.internet.httpStatusCode(%7B%20types%3A%20%5B%27clientError%27%5D%20%7D)%3B%20const%20statusText%20%3D%20faker.lorem.words()%3B%20-%20and%20interpolate%20them%20into%20the%20expected%20log%20line%2C%20matching%20the%20pattern%20already%20used%20in%20the%20preceding%20tests%20in%20the%20file.&repo=safe-global/safe-client-gateway)
+
+**3. Nit — `.slice()` before `.filter()` in `describeUpstreamError` — [`rhinestone-api.service.ts:116-119`](https://github.com/safe-global/safe-client-gateway/blob/chore/improve-relay-service-logging/src/modules/relay/datasources/rhinestone-api.service.ts#L116-L119)**
+
+```ts
+const messages = (parsed.data.errors ?? [])
+  .slice(0, MAX_LOGGED_UPSTREAM_ERRORS)
+  .map((error) => this.truncateForLog(error.message))
+  .filter((message) => message.length > 0);
+```
+
+If the first N entries have whitespace-only messages, all diagnostic content is dropped even when later entries would carry a real reason. Filtering *before* slicing would preserve the diagnosis. Very minor — Rhinestone is unlikely to emit empty leading messages — feel free to keep as-is.
+
+### Otherwise
+- Log-injection guard (`\s+` collapse), length cap, and the deliberate `context` omission are correctly modelled by the schema (undeclared keys stripped) and asserted by the "should not log the context" test — nicely done.
+- The "keep the provider error detail out of the thrown error" test is a good regression guard against future leaks of upstream text into the client-facing payload.
+- `formatError` is shared correctly with `getTaskStatus`; the `NetworkRequestError` branch also has a test.
+ • Branch: `chore/improve-relay-service-logging`

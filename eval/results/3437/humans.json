@@ -1,0 +1,54 @@
+{
+  "usd": 0.3942994,
+  "head": "6488429c5497c0e646f1e622c326846fbefb89f2",
+  "verdicts": [
+    {
+      "issue": 2,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "moisses89 flagged the race at workspace.relayer.ts:98 and the author replied \"Applied\". Commit e3685d072 (\"reserve the allowance in one transaction with its check\") replaces the assertWithinQuota→relay→recordUsage sequence that existed at 2bdf6ac8d."
+    },
+    {
+      "issue": 13,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "At 2bdf6ac8d, entitlements.service.ts:195 logged a warn and returned when grant.counter was null. Commit abc0f045b makes it throw instead, and the author replied that items 1, 2, 4 and 5 were done."
+    },
+    {
+      "issue": 15,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "The author turned down the Promise.all change at workspace.relayer.ts:102. They said the checks run in order from cheapest to most expensive, so a request that will be rejected never reaches Tenderly, and running them together would make the 403 vs 402 result depend on timing."
+    },
+    {
+      "issue": 16,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "The author answered bot item 6 by saying a typo wouldn't compile because the parameter is typed SimulatedRelayer. `relayer: 'workspace'` is still in workspace.relayer.ts:165 at HEAD."
+    },
+    {
+      "issue": 17,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "space-relay.module.ts:31-33 wrapped AuthModule, SpacesModule and UsersModule in forwardRef at 2bdf6ac8d. Commit abc0f045b switches them to plain imports (the author's reply lists item 4 as done)."
+    },
+    {
+      "issue": 18,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "At 2bdf6ac8d, isEventMeteredFeature in entitlements.constants.ts:36-38 returned `boolean`. The author replied \"Done\", and commit 9124d9034 narrows the return type."
+    },
+    {
+      "issue": 19,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "At 2bdf6ac8d, entitlements.service.ts:292 built `const feature = { key: args.featureKey }`. Commit abc0f045b replaces it with isStockMeteredFeatureKey(args.featureKey)."
+    },
+    {
+      "issue": 24,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "At 2bdf6ac8d, space-relay.controller.ts:94-103 repeated the relay filter list. The author replied \"Applied\", and commit ff371574b moves the shared filters into relay-calldata.exception-filters.ts, which both controllers now use."
+    }
+  ]
+}

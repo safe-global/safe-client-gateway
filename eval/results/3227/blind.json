@@ -1,0 +1,133 @@
+{
+  "pr": 3227,
+  "title": "feat: Filter spam token push notifications",
+  "description": "## Summary\r\n\r\nResolves [WA-1677](https://linear.app/safe-global/issue/WA-1677/filter-spam-token-push-notifications-on-mobile)\r\n\r\nSafe{Mobile} sends push notifications for incoming ERC20 transfers that the app itself then hides as spam — the user gets a push, opens the app, and sees nothing.\r\n\r\nSince [PLA-1661](https://linear.app/safe-global/issue/PLA-1661) ([safe-transaction-service#2906](https://github.com/safe-global/safe-transaction-service/pull/2906)), `INCOMING_TOKEN` / `OUTGOING_TOKEN` webhook events carry a `trusted` boolean resolved by the Transaction Service from its curated trusted-token set. This PR parses that flag and drops incoming-token push notifications when the token is not trusted, so pushes match what the app actually shows.\r\n\r\nThis supersedes the earlier Zerion/balances-lookup approach (#3160) — no extra lookups are needed anymore; the decision ships on the event itself.\r\n\r\n## Changes\r\n\r\n- **Event schemas** (`src/modules/hooks/routes/entities/schemas/incoming-token.schema.ts`, `outgoing-token.schema.ts`): added `trusted: z.boolean()`. The field is **required**: the Transaction Service emits it unconditionally for both directions and both ERC20/ERC721 (verified against the upstream PR — unknown tokens come through as `trusted: false`, never omitted), and no deployments predate the flag. `OUTGOING_TOKEN` never triggers pushes; its schema change is wire-format parity only.\r\n- **Push notification filtering** (`src/modules/notifications/domain/push/push-notification.service.ts`): `processEvent` drops `INCOMING_TOKEN` events with `trusted: false` right after the notifiable-type gate, before any Safe/subscriber lookups. Each drop is logged with the new `NOTIFICATION_SPAM_TOKEN_DROPPED` log type (`src/domain/common/entities/log-type.entity.ts`) for observability.\r\n- **FCM payload unchanged**: the `trusted` flag is stripped before the delivery job is queued (`mapIncomingAssetEventNotification`), and `IncomingTokenNotification` is now `Omit<IncomingTokenEvent, 'trusted'>` (`src/modules/notifications/domain/v2/entities/notification.entity.ts`). `FirebaseNotification['data']` only accepts string values, so passing the boolean through would have made FCM reject every delivered token push — and the flag carries no information for the client anyway (only trusted events survive filtering). The push payload mobile receives is byte-identical to today's.\r\n- **Tests**: event builders default to `trusted: true`; inline token-event payloads in the hooks integration/e2e specs gained the now-required field; new cases cover schema validation (accepts booleans, rejects missing/non-boolean), the drop path (no delivery jobs, no subscriber fetch, spam log emitted), the send path (`trusted: true` flows as before, end-to-end through the queue), and that the delivery payload contains no `trusted` key.\r\n\r\n## Behavior\r\n\r\n| Event | Before | After |\r\n|---|---|---|\r\n| `INCOMING_TOKEN`, `trusted: true` | push sent | push sent (unchanged payload) |\r\n| `INCOMING_TOKEN`, `trusted: false` (spam/unknown token) | push sent | **dropped**, logged as `NOTIFICATION_SPAM_TOKEN_DROPPED` |\r\n| `INCOMING_ETHER`, executed/pending/message/module events | push sent | unchanged |\r\n\r\nNote: `INCOMING_TOKEN` covers ERC721 as well, so incoming-NFT pushes follow the same trusted-set semantics decided upstream in PLA-1661. No new notification settings are introduced.\r\n",
+  "findings": [
+    {
+      "id": "F1",
+      "file": "src/modules/hooks/routes/hooks-cache.integration.spec.ts",
+      "line": 93,
+      "claim": "Every cache-invalidation test case for token events uses trusted: true, so there is no test coverage confirming that an untrusted (false) or missing-trusted token event still clears the cache or reaches enqueueEvent."
+    },
+    {
+      "id": "F2",
+      "file": "src/modules/notifications/domain/push/event-to-notify.entity.ts",
+      "line": 23,
+      "claim": "OUTGOING_TOKEN never reads the trusted field, so making it required on that schema adds risk of rejected events without providing any benefit."
+    },
+    {
+      "id": "F3",
+      "file": "src/modules/notifications/domain/push/push-notification.service.ts",
+      "line": 100,
+      "claim": "When an event is dropped as spam, the early return skips the NotificationEventProcessed log (with deliveryJobCount: 0), so only NotificationSpamTokenDropped fires; any dashboards or queries relying on NotificationEventProcessed as a signal that an event was seen will not see spam-dropped events."
+    },
+    {
+      "id": "F4",
+      "file": "src/modules/notifications/domain/push/push-notification.service.ts",
+      "line": 93,
+      "claim": "The log level used for spam-dropped events is info, matching other lifecycle logs, but if spam volume is high these logs could dominate the log stream; a lower log level such as debug or rate-limited sampling may be more appropriate."
+    },
+    {
+      "id": "F5",
+      "file": "src/modules/notifications/domain/push/push-notification.service.spec.ts",
+      "line": 183,
+      "claim": "There is no unit test covering the case where the trusted field is missing from an event."
+    },
+    {
+      "id": "F6",
+      "file": "src/modules/hooks/routes/entities/schemas/incoming-token.schema.ts",
+      "line": 11,
+      "claim": "The trusted field is required on the incoming and outgoing token schemas, so any payload missing it fails validation; the queue consumer parses the event in a try/catch and drops the whole event as an error when trusted is absent, and the HTTP endpoint returns a 422. If any upstream deployment does not yet send trusted, token-transfer events are lost entirely, breaking push notifications and cache invalidation for balances, collectibles and transactions. The field should be made optional or given a default (e.g. trusted: z.boolean().optional() or .default(true)) with the spam check written as event.trusted === false, and the related tests updated accordingly."
+    },
+    {
+      "id": "F7",
+      "file": "src/modules/notifications/domain/push/push-notification.service.ts",
+      "line": 92,
+      "claim": "The check `!event.trusted` treats a missing trusted field the same as an explicit false, so any event without the field is wrongly treated as spam and dropped."
+    },
+    {
+      "id": "F8",
+      "file": "src/modules/hooks/routes/entities/schemas/outgoing-token.schema.ts",
+      "line": 11,
+      "claim": "The trusted field should be made optional (as is already done for a new producer field in chain-update.schema.ts:8), or dropped entirely from OUTGOING_TOKEN since it is unused there."
+    },
+    {
+      "id": "F9",
+      "file": "src/modules/hooks/routes/entities/schemas/incoming-token.schema.ts",
+      "line": 11,
+      "claim": "trusted: z.boolean() is now required on the INCOMING_TOKEN schema (and outgoing-token.schema.ts:11 for OUTGOING_TOKEN), and both schemas are part of the EventSchema union, so a producer that omits the field causes EventSchema.parse to reject the whole event."
+    },
+    {
+      "id": "F10",
+      "file": "src/modules/notifications/domain/push/consumers/push-notification.consumer.ts",
+      "line": 46,
+      "claim": "BullMQ PUSH_NOTIFICATION_EVENT jobs queued before a deploy go straight to processEvent without re-parsing, so pre-existing jobs lacking trusted will be dropped and logged as NotificationSpamTokenDropped instead of surfacing as errors; this also affects any event once trusted is made optional."
+    },
+    {
+      "id": "F11",
+      "file": "src/modules/notifications/domain/push/push-notification.service.ts",
+      "line": 439,
+      "claim": "The destructuring that strips the trusted field always removes trusted: true because processEvent already filters out trusted: false events earlier, making the code read as if it defends against a false value it will never see; a comment clarifying that the strip removes filtering metadata rather than guarding against false would help future readers understand the invariant."
+    },
+    {
+      "id": "F12",
+      "file": "src/modules/hooks/repository/hooks.repository.ts",
+      "line": 42,
+      "claim": "When a message fails schema validation over AMQP, the error is only logged and the message is still acked, so the event is permanently lost."
+    },
+    {
+      "id": "F13",
+      "file": "src/modules/hooks/routes/entities/schemas/incoming-token.schema.ts",
+      "line": 11,
+      "claim": "Making trusted a required boolean tightly couples the schema to the Transaction Service always emitting that field; if the Transaction Service ever regresses and omits trusted, every INCOMING_TOKEN/OUTGOING_TOKEN webhook will fail validation (422) and silently drop cache-invalidation side effects such as balance and collectible cache clears, not just push notifications."
+    },
+    {
+      "id": "F14",
+      "file": "src/modules/notifications/domain/push/push-notification.service.ts",
+      "line": 92,
+      "claim": "The spam check should compare event.trusted === false explicitly, so that only an explicit false flag from the Transaction Service drops a notification, rather than treating missing/undefined as spam."
+    },
+    {
+      "id": "F15",
+      "file": "src/modules/hooks/routes/entities/schemas/outgoing-token.schema.ts",
+      "line": 11,
+      "claim": "The trusted field was added to the outgoing-token schema as well, but nothing in the code reads it since only INCOMING_TOKEN is filtered and stripped; making it required here widens the breaking-change risk without adding any behavior. It should be dropped from the outgoing schema, or made optional until it is actually used, which would also mean reverting the outgoing-token.builder.ts change and the extra fixture lines."
+    },
+    {
+      "id": "F16",
+      "file": "src/modules/notifications/domain/push/push-notification.service.ts",
+      "line": 93,
+      "claim": "An info-level log is emitted for every dropped spam event; since spam airdrops can hit many Safes at once, this could generate high log volume."
+    },
+    {
+      "id": "F17",
+      "file": "src/modules/hooks/routes/entities/schemas/outgoing-token.schema.ts",
+      "line": null,
+      "claim": "OutgoingTokenEventSchema does not export an OutgoingTokenEvent type, unlike incoming-token.schema.ts which exports IncomingTokenEvent, leaving an inconsistency between the two schema files."
+    },
+    {
+      "id": "F18",
+      "file": null,
+      "line": null,
+      "claim": "Because rejected events never clear the cache, balances, collectibles, transfers and transactions can go stale, and all push notifications for that event are lost, not just the spam-related ones."
+    },
+    {
+      "id": "F19",
+      "file": "src/modules/notifications/domain/push/queues-api.service.ts",
+      "line": 26,
+      "claim": "The queue service acks messages regardless of validation failure, meaning rejected events cannot be reprocessed."
+    },
+    {
+      "id": "F20",
+      "file": "src/modules/notifications/domain/push/push-notification.integration.spec.ts",
+      "line": 369,
+      "claim": "The scenario of an event being dropped before subscriber resolution is tested redundantly at both the integration layer and the unit layer (push-notification.service.spec.ts:183), where the unit test already proves the drop, the absence of a subscriber lookup, and that nothing is enqueued. The redundant test should be removed, keeping only the unit test, or the integration test should be trimmed to cover just the queue wiring."
+    },
+    {
+      "id": "F21",
+      "file": "src/modules/hooks/routes/hooks.controller.ts",
+      "line": 50,
+      "claim": "Over HTTP, an event missing the trusted field is rejected outright by ValidationPipe, causing the whole request to fail rather than just ignoring the missing field."
+    }
+  ]
+}

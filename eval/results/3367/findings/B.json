@@ -1,0 +1,15 @@
+{
+  "usd": 0.0495236,
+  "findings": [
+    {
+      "file": "yarn.lock",
+      "line": 4888,
+      "claim": "js-yaml@5.2.1 is still resolved in the lockfile even though the PR's goal is to clear the open advisories; it is pinned exactly by the production dependency @nestjs/swagger@11.4.6 (package.json:63), so the known js-yaml advisory remains in the production dependency tree after this change. Bumping @nestjs/swagger to 11.4.7 would resolve it, and is preferable to adding a resolutions override that fights the exact pin."
+    },
+    {
+      "file": null,
+      "line": null,
+      "claim": "The find-my-way bump from 9.6.0 to 9.7.0 restructures its core matching loop (a new while(true) in find, isParamSafe flipped, and a fallback for optional params), which changes routing behavior for every endpoint alongside the app's ignoreTrailingSlash and maxParamLength settings (src/app.provider.ts:36-46). Since no tests, install, or build were run as part of the review, this routing change has not been verified and could introduce a regression that only CI would catch."
+    }
+  ]
+}

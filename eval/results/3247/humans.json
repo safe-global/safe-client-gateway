@@ -1,0 +1,24 @@
+{
+  "usd": 0.2395754,
+  "head": "3f9d775f7fc97f17157d7f440481a1a558195984",
+  "verdicts": [
+    {
+      "issue": 3,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "At 99f4b82 the spec used `faker.string.uuid()` with `target.get(spaceId as never, ...)`; commit 3f9d775 changed it to `faker.number.int({ min: 1 })` and removed the `as never` casts, which answers LucieFaire's threads at lines 62 and 97."
+    },
+    {
+      "issue": 4,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "At 99f4b82 the spec mocked findOne with `{ id: userId } as never`; commit 3f9d775 imports `memberBuilder` and uses `memberBuilder().with('id', userId).build()` (spec line 49)."
+    },
+    {
+      "issue": 5,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "LucieFaire's thread at spec:17 asked to drop the cast to unknown; vmosharova replied 'Dropped mock casts here: 3f9d775', and that commit changed `as unknown as MockedObject<...>` to `as MockedObject<...>`."
+    }
+  ]
+}

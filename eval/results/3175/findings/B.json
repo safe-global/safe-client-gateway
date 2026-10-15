@@ -1,0 +1,55 @@
+{
+  "usd": 0.055037600000000006,
+  "findings": [
+    {
+      "file": "src/modules/spaces/routes/safes/entities/create-space-safe.dto.entity.ts",
+      "line": 1,
+      "claim": "This file was moved and edited but is missing the required '// SPDX-License-Identifier: FSL-1.1-MIT' header that project convention requires on every created or modified file."
+    },
+    {
+      "file": "src/modules/spaces/routes/safes/entities/delete-space-safe.dto.entity.ts",
+      "line": 1,
+      "claim": "This file was moved and edited but is missing the required '// SPDX-License-Identifier: FSL-1.1-MIT' header that project convention requires on every created or modified file."
+    },
+    {
+      "file": ".github/workflows/ci.yml",
+      "line": 63,
+      "claim": "The CI license-check step builds its file list with 'git diff --name-only --diff-filter=AM', which excludes files git reports as renames; since the moved DTO files are detected as renames, CI will not flag their missing license headers."
+    },
+    {
+      "file": "src/modules/spaces/datasources/spaces/entities/space.entity.db.ts",
+      "line": 1,
+      "claim": "Code for the 'spaces' area is now split across three different organizational patterns depending on layer: datasources code sits in a new 'datasources/spaces/' subfolder, while domain and routes code remain at their layer root, making it unclear where a new spaces-related file should be placed going forward."
+    },
+    {
+      "file": null,
+      "line": null,
+      "claim": "The commit message for 976f1ed contains a typo, reading 'chore: sl=plit into domain subfolders' instead of the intended wording."
+    },
+    {
+      "file": "src/modules/users/domain/members/members.repository.ts",
+      "line": 32,
+      "claim": "Domain-layer code imports 'InviteUserInput' from the routes layer ('spaces/routes/members/entities/'), which violates the layering order defined in AGENTS.md; this pre-existing issue is now more visible after the file move."
+    },
+    {
+      "file": "src/modules/users/domain/members/members.repository.interface.ts",
+      "line": 11,
+      "claim": "Domain-layer code imports 'InviteUserInput' from the routes layer ('spaces/routes/members/entities/'), which violates the layering order defined in AGENTS.md; this pre-existing issue is now more visible after the file move."
+    },
+    {
+      "file": "src/modules/spaces/domain/address-books/address-book-items.repository.ts",
+      "line": 18,
+      "claim": "Domain-layer code imports 'UpsertAddressBookItemsDto' from the routes layer, violating the layering order defined in AGENTS.md; this pre-existing issue is now more visible after the file move."
+    },
+    {
+      "file": "src/modules/spaces/domain/address-books/address-book-items.repository.interface.ts",
+      "line": 7,
+      "claim": "Domain-layer code imports 'UpsertAddressBookItemsDto' from the routes layer, violating the layering order defined in AGENTS.md; this pre-existing issue is now more visible after the file move."
+    },
+    {
+      "file": ".github/workflows/ci.yml",
+      "line": 63,
+      "claim": "The CI license-check step's use of '--diff-filter=AM' means it never checks renamed files for license headers; changing the filter to 'AMR' would close this gap, though the fix is outside the scope of this diff."
+    }
+  ]
+}

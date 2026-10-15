@@ -1,0 +1,77 @@
+{
+  "usage": {
+    "usd": 0.26616280000000003,
+    "turns": 3,
+    "wallSeconds": 29
+  },
+  "issues": [
+    {
+      "findings": [
+        "F6",
+        "F4"
+      ],
+      "summary": "The empty-tag guard can essentially never trigger, because a 'released' event always carries a tag_name.",
+      "label": "nit",
+      "evidence": ".github/workflows/ci.yml:290 only runs the job when action == 'released', and GitHub requires a tag for every release, so the `-z` check at :301-305 is effectively dead. It is harmless belt-and-braces that matches the PR's stated goal of never pushing an empty tag, so the concrete cost is nil.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F1",
+        "F2",
+        "F7"
+      ],
+      "summary": "'Validate release tag' only checks for an empty value, not that the tag is a valid Docker tag.",
+      "label": "low",
+      "evidence": ".github/workflows/ci.yml:301-305 tests only `-z \"$RELEASE_TAG\"`. A git tag containing '/' or '+' would pass this check and then fail in build-push-action at :318-319. Release tags here are in practice semver-like, so this is a minor gap and a name/behaviour mismatch.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F3",
+        "F12"
+      ],
+      "summary": "Every release pushes ':latest', so a patch release on an older line moves latest backwards.",
+      "label": "low",
+      "evidence": ".github/workflows/ci.yml:320 always tags `:latest` on any released event. This is real, but the behaviour predates the PR and that line is unchanged, so it is out of scope and at most low.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F5"
+      ],
+      "summary": "The concurrency group uses github.ref rather than the release payload.",
+      "label": "wrong",
+      "evidence": ".github/workflows/ci.yml:21. On release events github.ref is refs/tags/<tag>, so the grouping works. The finding itself concedes it is likely fine, and there is no defect.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F8",
+        "F11"
+      ],
+      "summary": "No comment explains why release.tag_name replaces github.ref_name.",
+      "label": "nit",
+      "evidence": ".github/workflows/ci.yml:294-295 adds RELEASE_TAG with no inline rationale, while the file comments other choices (:6-9, :262-267). The rationale is in the PR description, so the missing comment is a documentation preference with little concrete cost.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F10"
+      ],
+      "summary": "The staging job still uses github.ref_name with no comment explaining the difference.",
+      "label": "nit",
+      "evidence": ".github/workflows/ci.yml:284 runs only on push to main, where ref_name is reliably 'main'. The difference is natural given the event type and needs no change.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F9"
+      ],
+      "summary": "The validation step runs after checkout rather than before it.",
+      "label": "nit",
+      "evidence": ".github/workflows/ci.yml:296-305: checkout comes before the validation step. Moving validation first would save only a few seconds in a case that practically never happens.",
+      "category": "design"
+    }
+  ]
+}

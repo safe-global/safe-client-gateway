@@ -1,0 +1,10 @@
+{
+  "pr": 3331,
+  "reviewSha": "cb8a2dea563d51ab36dbc94c0479c7665c40dacb",
+  "baseSha": "227605e5c8a077d78b24456a38bd7cc65bae6fc1",
+  "system": "D",
+  "version": "github",
+  "runner": "collect",
+  "model": "claude-code-action",
+  "output": "## Architecture check\n\nApplicable guides: `docs/agents/agent-tooling.md` (\"The CI gate\"), `docs/agents/commits-and-prs.md`, `docs/agents/remarks.md`.\n\nno findings\n\n**Verdict:** ✅ compliant"
+}

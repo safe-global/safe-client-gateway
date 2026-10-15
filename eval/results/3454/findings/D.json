@@ -1,0 +1,35 @@
+{
+  "usd": 0.0693576,
+  "findings": [
+    {
+      "file": "src/modules/safe-shield/guards/copilot-core-gating.guard.ts",
+      "line": 8,
+      "claim": "The new guard is placed in a module-root guards/ directory instead of the owning module's routes/guards/ directory, breaking the established module structure convention. It should be moved to src/modules/safe-shield/routes/guards/copilot-core-gating.guard.ts, with the importers in safe-shield.module.ts and safe-shield.controller.ts and its spec file updated accordingly."
+    },
+    {
+      "file": "src/modules/safe-shield/errors/copilot-core-disabled.error.ts",
+      "line": 7,
+      "claim": "A module-root errors/ directory is used, which is not part of the canonical module skeleton, and it is inconsistent with the equivalent entitlements error in this same PR that is placed under domain/errors/ and domain/exception-filters/. The files should be moved to src/modules/safe-shield/domain/errors/copilot-core-disabled.error.ts and src/modules/safe-shield/domain/exception-filters/copilot-core-disabled.exception-filter.ts to match the pattern used in src/modules/entitlements/domain/."
+    },
+    {
+      "file": "src/config/entities/configuration.ts",
+      "line": 495,
+      "claim": "The comment for the new feature flag states a removal condition but does not name an owner, which is required for flags added going forward. The comment should be updated to include the ticket/owner reference and the removal condition, e.g. referencing PLA-1964 and noting the flag and the guard on Core's recipient-check should be removed once no client calls that route."
+    },
+    {
+      "file": null,
+      "line": null,
+      "claim": "The PR title is GitHub's branch-derived default text with no conventional type or scope and incorrect capitalization, and since main is squash-merged this title becomes the permanent commit subject. It should be retitled to something like feat(safe-shield): gate Copilot recipient/counterparty scans by plan."
+    },
+    {
+      "file": null,
+      "line": null,
+      "claim": "The PR description opens with bare prose and a Linear link instead of starting with the required ## Summary section from the template, so only one of the two required sections is present. A ## Summary heading should be added above the opening paragraphs with the Linear link moved inside it."
+    },
+    {
+      "file": null,
+      "line": null,
+      "claim": "The PR description's Changes bullets reference a CopilotScansGuard and changes under src/modules/spaces/domain/safes/ that are not present in the diff, since a later commit replaced the guard with gating inside SpaceSafeShieldService, so the description no longer matches the actual implementation. The bullets should be rewritten to describe the entitlements module changes (new copilot_scans feature key, seed migration, assertFeatureGranted plus FeatureNotGrantedError/filter) and the spaces routes changes (membership, copilot_scans entitlement, and Safe-in-Space checks in SpaceSafeShieldService)."
+    }
+  ]
+}

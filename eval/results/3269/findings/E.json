@@ -1,0 +1,25 @@
+{
+  "usd": 0.0349136,
+  "findings": [
+    {
+      "file": "src/datasources/billing-api/entities/plan.entity.ts",
+      "line": 24,
+      "claim": "The schema duplicates PaymentLinkMetadataSchema instead of reusing it under a more generic name, both here and in other places."
+    },
+    {
+      "file": "src/modules/billing/routes/billing.service.ts",
+      "line": 110,
+      "claim": "This function is missing an assertSpaceMember assertion that the other functions in this file have, which is an inconsistency that could allow access without the expected authorization check."
+    },
+    {
+      "file": "src/datasources/billing-api/billing-api.service.ts",
+      "line": 111,
+      "claim": "Bypassing NetworkService skips functionality such as logging and the circuit breaker; NetworkService should instead be extended with an option to avoid calling response.json() rather than bypassing it."
+    },
+    {
+      "file": null,
+      "line": null,
+      "claim": "The PR description appears outdated regarding whether Space.id is the workspace uuid."
+    }
+  ]
+}

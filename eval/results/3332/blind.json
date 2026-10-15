@@ -1,0 +1,55 @@
+{
+  "pr": 3332,
+  "title": "build(deps): bump @safe-global/safe-deployments to 1.37.62",
+  "description": "## Summary\r\n\r\nBump the exact pin from 1.37.58 to 1.37.62, growing v1.5.0 deployment\r\ncoverage from 86 to 120 chains (adds Gnosis, Polygon, Arbitrum, Optimism,\r\nAvalanche, zkSync Era, Linea, Mantle, among others). Part of the Safe 1.5.0\r\nrollout (WA-2936).\r\n\r\nThis adds an `npmPreapprovedPackages` entry to `.yarnrc.yml`: 1.37.62 was\r\npublished inside the 7-day `npmMinimalAgeGate` window, so the pin is not\r\ninstallable without an exemption. The list deliberately names the two\r\nin-house packages this service consumes instead of `'@safe-global/*'`, so a\r\ncompromised org publish token gains no instant path into CI for every\r\npackage under the scope.\r\n\r\n## Changes\r\n\r\n- `package.json` / `yarn.lock` — `@safe-global/safe-deployments` 1.37.58 → 1.37.62\r\n- `.yarnrc.yml` — age-gate exemption for the two in-house packages we consume\r\n- `src/__tests__/deployments.helper.spec.ts` — per-chain version fixtures gain 1.5.0 on Gnosis (data change from the bump), plus the SPDX header the pre-commit hook requires on touched files\r\n",
+  "findings": [
+    {
+      "id": "F1",
+      "file": ".yarnrc.yml",
+      "line": 20,
+      "claim": "The preapproval exemption in npmPreapprovedPackages includes @safe-global/safe-modules-deployments, but this PR only bumps @safe-global/safe-deployments; that package stays at 3.0.8 (already introduced by a prior Dependabot PR) and is unrelated to this bump, so it should either be dropped from this change or moved to its own PR with its own justification."
+    },
+    {
+      "id": "F2",
+      "file": ".yarnrc.yml",
+      "line": 18,
+      "claim": "The npmPreapprovedPackages block lists bare package names, and in the bundled Yarn source a bare name parses with range \"unknown\", which is treated as approved for any version, past or future. This removes the 7-day age-gate quarantine for these packages on every future bump, not just the current one, so a compromised npm account for either package could ship a malicious release that installs immediately; these packages supply the contract addresses the gateway trusts for relay sponsorship (src/modules/relay/domain/relay-transaction-helper.ts:210-217, :296-300) and for safe-shield analysis."
+    },
+    {
+      "id": "F3",
+      "file": ".yarnrc.yml",
+      "line": 20,
+      "claim": "The pre-approval added for @safe-global/safe-modules-deployments has no reader in this diff, since its pin remains at 3.0.8, so no age-gate exemption is needed for it here, and adding it now widens the bypass ahead of an anticipated future version bump rather than when it's actually needed."
+    },
+    {
+      "id": "F4",
+      "file": ".yarnrc.yml",
+      "line": 17,
+      "claim": "The npmPreapprovedPackages entries permanently exempt these packages from npmMinimalAgeGate, making this a lasting supply-chain policy change bundled into a routine build(deps) commit; loosening the hardened-install gate should be a separate chore/ci PR reviewed on its own so it is deliberate and easy to find later via bisect or audit, or alternatively the bump should simply wait out the 7-day age gate instead of adding an exemption."
+    },
+    {
+      "id": "F5",
+      "file": ".yarnrc.yml",
+      "line": 18,
+      "claim": "The configuration pre-approves certain packages, but no package should be pre-approved regardless of whether it is internal or external."
+    },
+    {
+      "id": "F6",
+      "file": ".github/dependabot.yml",
+      "line": 12,
+      "claim": "The comment 'default-days: 7 # Aligns with minimumReleaseAge / npmMinimalAgeGate' is now partially inaccurate because the age gate has exemptions for the two @safe-global packages while Dependabot still waits the full 7 days for them, so the two settings have drifted apart; either add a Dependabot cooldown.exclude entry for the preapproved packages or update the comment to note the exemption."
+    },
+    {
+      "id": "F7",
+      "file": ".yarnrc.yml",
+      "line": 20,
+      "claim": "A permanent, workspace-wide age-gate policy exemption is introduced inside what is otherwise a routine dependency-bump commit, and the exemption also covers @safe-global/safe-modules-deployments even though this diff does not bump that package (package.json:66 is still 3.0.8). This mixes an unrelated policy change into a scoped bump and exempts a package the change doesn't touch."
+    },
+    {
+      "id": "F8",
+      "file": "src/domain/common/utils/deployments.ts",
+      "line": 13,
+      "claim": "Because node_modules was not installed, it could not be confirmed that safe-deployments 1.37.62 still exports the internal _COMPAT_FALLBACK_HANDLER_DEPLOYMENTS symbol from dist/deployments, which this file imports; if the new version dropped or renamed that export, the import would fail at runtime."
+    }
+  ]
+}

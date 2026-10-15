@@ -1,0 +1,199 @@
+{
+  "pr": 3190,
+  "title": "feat: migrate HTTP platform from Express to Fastify",
+  "description": "## What\r\n\r\nMigrates the gateway's HTTP platform from **Express to Fastify**: swaps `@nestjs/platform-express` → `@nestjs/platform-fastify`, replaces `cookie-parser` with `@fastify/cookie`, and adds `@fastify/static` for static assets.\r\n\r\n## Why\r\n\r\nFastify offers lower per-request overhead and a more modern plugin model. This is an internal infrastructure change intended to be behaviour-preserving for clients.\r\n\r\n## Key changes\r\n\r\n- **Adapter built from config at bootstrap.** Fastify needs `trustProxy` and the JSON `bodyLimit` at construction time — *before* the DI container exists — so `main.ts` reads the raw configuration and builds the adapter directly (`createFastifyAdapterFromConfiguration`). This replaces the old Express `app.set('trust proxy')` / `app.use(json(...))` post-construction setup. - **Request access abstracted** behind `src/routes/common/http/http-request.utils.ts` (`getHeader` / `getRoutePath` / `getRouteParam` / `getRouteUrl`), so guards, interceptors, filters and decorators no longer depend on Express types.\r\n- **Response API migrated:** `res.json()` → `res.send()`, `res.cookie()` → `res.setCookie()`, `res.set()`/`.header()` → `reply.header()`, `res.headersSent` → `reply.sent`, `res.redirect(code, url)` → `res.redirect(url, code)`.\r\n- **Cookie `maxAge` is now in seconds** (Fastify/`@fastify/cookie`) rather than milliseconds (Express) — auth and OIDC flows updated accordingly (`getSecondsUntil`, ms→s conversions).\r\n- **Test harness:** `createTestApplication` / `initTestApplication` call Fastify's `ready()` after `init()` so `supertest` can reach the server; all boot specs (integration + e2e) use them.\r\n- **Removed the `AppProvider` / `DefaultAppProvider` abstraction** — the production bootstrap is inlined into `main.ts`, and `TestAppProvider` is now a standalone test helper (its public `provide()` API is unchanged, so consumer specs were untouched).\r\n\r\n  ## Testing\r\n\r\n- ✅ Unit suite: **5363 passing**, 0 failing.\r\n- ✅ Production build typecheck (`tsconfig.build.json`): clean.\r\n- ✅ Biome: clean.\r\n- ⏳ **Integration & e2e** require live Redis/Postgres/AMQP and must be verified in CI / locally.\r\n\r\n## Reviewer notes\r\n\r\n- Please confirm `yarn test:integration` and `yarn test:e2e` are green in CI.\r\n- A quick `yarn start` smoke test is worthwhile to confirm Fastify boots with Swagger (`/api`), static assets, and cookie auth.\r\n- The config namespace is still named `express.*` (`jsonLimit`, `trustProxy`) — left as-is to avoid touching deployed env vars; can be renamed in a follow-up.\r\n\r\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "findings": [
+    {
+      "id": "F1",
+      "file": "src/app.provider.ts",
+      "line": 38,
+      "claim": "The new parseBodyLimit regex only matches units b|kb|mb|gb with a plain numeric prefix, whereas the previous body-parser/bytes-based config accepted additional units like tb/pb and looser whitespace or casing, so a previously valid value such as EXPRESS_JSON_LIMIT=1tb or '1 KiB' will now throw at bootstrap."
+    },
+    {
+      "id": "F2",
+      "file": "src/modules/auth/routes/auth.controller.ts",
+      "line": 127,
+      "claim": "Handlers using @Res({ passthrough: true }) with a Promise<void> return type (e.g. this one and oidc-auth.controller.ts:94) will have NestJS auto-send undefined under Fastify, so it should be confirmed during smoke testing that endpoints like POST /v1/auth/verify still return 200 with an empty body rather than a 204."
+    },
+    {
+      "id": "F3",
+      "file": "src/main.ts",
+      "line": 37,
+      "claim": "The server call to app.listen only passes the port and no host, so Fastify defaults to binding to localhost only instead of all interfaces as Express did. This breaks connectivity from Docker/nginx and Kubernetes probes, since traffic proxied to the container can no longer reach the process."
+    },
+    {
+      "id": "F4",
+      "file": "src/app.provider.ts",
+      "line": 34,
+      "claim": "`parseBodyLimit` has several distinct branches (undefined input defaulting, a plain integer, decimal values with a unit like `1.5mb`, and invalid input that should throw) but its only test coverage is a single 413 case that boots the entire Nest application; these are pure functions and should have direct unit tests, particularly for the throw path since that determines whether a bad config fails fast at startup."
+    },
+    {
+      "id": "F5",
+      "file": "src/app.provider.spec.ts",
+      "line": 71,
+      "claim": "The spec lost its explanatory comments describing the right-to-left walk over the `X-Forwarded-For` header, even though that behavior is unchanged and is security-relevant."
+    },
+    {
+      "id": "F6",
+      "file": "package.json",
+      "line": 49,
+      "claim": "The `@fastify/cookie` and `@fastify/static` dependencies use caret version ranges instead of being pinned to exact versions, while other packages bumped in the same change (such as `@nestjs/platform-fastify`) are pinned exactly; `@fastify/cookie` in particular handles the auth cookie, so an unpinned range there is riskier."
+    },
+    {
+      "id": "F7",
+      "file": "src/app.provider.ts",
+      "line": 34,
+      "claim": "`parseTrustProxy` has no direct test covering its numeric-vs-string input handling."
+    },
+    {
+      "id": "F8",
+      "file": "src/app.provider.ts",
+      "line": null,
+      "claim": "parseBodyLimit(\"1.5b\") returns Math.floor(1.5 * 1) = 1, showing the regex allows decimal values for the byte unit where fractional bytes are meaningless, which could let malformed configuration values pass silently instead of failing validation."
+    },
+    {
+      "id": "F9",
+      "file": "src/routes/common/http/http-request.utils.ts",
+      "line": 69,
+      "claim": "getRouteUrl silently falls back to 'localhost' when the Host header is missing, whereas Express previously threw in this case; pagination cursors and audit logs that include this URL could end up with a misleading authority instead of surfacing the misconfiguration."
+    },
+    {
+      "id": "F10",
+      "file": "src/config/entities/configuration.ts",
+      "line": 383,
+      "claim": "The configuration comments and `.env.sample.json` description still describe the old Express body-limit behavior (parsed by the `bytes` library, defaulting to '100kb', linking to expressjs.com and supporting `tb`/`pb` units), but the limit is now parsed by a local `parseBodyLimit` function that only accepts `b/kb/mb/gb`, and Fastify's `bodyLimit` applies to all content types rather than just JSON as before; the documentation should be updated to match the new behavior even though the config key names can stay the same for compatibility."
+    },
+    {
+      "id": "F11",
+      "file": "src/routes/common/http/http-request.utils.ts",
+      "line": 27,
+      "claim": "In production, headers are only ever read through getHeaderFromCollection because Fastify requests lack .get()/.header(), but the unit spec still mocks request.get and the logger integration spec only covers the case where headers are missing. This means a break in the lowercase lookup or array handling of headers would not be caught by any test."
+    },
+    {
+      "id": "F12",
+      "file": "src/app.provider.ts",
+      "line": 69,
+      "claim": "The new Fastify adapter code still reads configuration keys named express.jsonLimit and express.trustProxy, and the related env vars and comments in the configuration entities still reference Express documentation, which is inconsistent with the migration away from Express."
+    },
+    {
+      "id": "F13",
+      "file": "src/routes/common/http/http-request.utils.ts",
+      "line": 31,
+      "claim": "The HeaderReader type and the request.header?.() / request.get?.() branches mirror the Express API that this PR removes, and are only ever reached by test mocks, making them dead code that should be simplified."
+    },
+    {
+      "id": "F14",
+      "file": "src/app.provider.spec.ts",
+      "line": null,
+      "claim": "There is no test asserting the new seconds-vs-milliseconds cookie unit conversion, such as an integration test checking that the Set-Cookie Max-Age value falls in the expected seconds range, despite this being exactly the kind of unit conversion prone to regression."
+    },
+    {
+      "id": "F15",
+      "file": "src/config/entities/configuration.ts",
+      "line": 385,
+      "claim": "The config namespace express.* and its docstring referencing the 'bytes library for parsing' are now stale after the migration and no longer accurately describe the parsing behavior."
+    },
+    {
+      "id": "F16",
+      "file": "src/app.provider.ts",
+      "line": 63,
+      "claim": "Fastify's router matches paths case-sensitively and treats a trailing slash as a distinct route, unlike Express which did neither by default. Existing clients calling endpoints with a trailing slash or mixed-case paths will now receive 404 responses."
+    },
+    {
+      "id": "F17",
+      "file": "src/app.provider.ts",
+      "line": 34,
+      "claim": "`parseTrustProxy` and `parseBodyLimit` are exported from the module but are only used within that same file, so they should not be exported."
+    },
+    {
+      "id": "F18",
+      "file": null,
+      "line": null,
+      "claim": "Unmatched routes are now handled by Fastify's own not-found handler, which returns a message like 'Route GET:/x not found' instead of Express's 'Cannot GET /x', and no custom not-found handler was added to preserve the old response body; clients that depend on the old error body may break."
+    },
+    {
+      "id": "F19",
+      "file": "src/app.provider.ts",
+      "line": 34,
+      "claim": "The removed `configureTrustProxy` function had JSDoc explaining the difference between hop-count and subnet-list trust-proxy values, including a reference link, but the new `parseTrustProxy` and `createFastifyAdapter` functions that replaced it have no documentation at all."
+    },
+    {
+      "id": "F20",
+      "file": "src/middleware/not-found-logger.middleware.ts",
+      "line": 25,
+      "claim": "NotFoundLoggerMiddleware types the request as raw IncomingMessage even though it relies on originalUrl, which is set by @fastify/middie but is not part of the Node type; this type drift could let a future change silently fall back to req.url without a type error."
+    },
+    {
+      "id": "F21",
+      "file": "src/app.provider.ts",
+      "line": 38,
+      "claim": "parseBodyLimit is only tested with the values '1mb' and '8', leaving kb/gb units, decimal amounts, and the invalid-value error path untested."
+    },
+    {
+      "id": "F22",
+      "file": "src/app.provider.ts",
+      "line": 69,
+      "claim": "`createFastifyAdapter` is exported as if for production use but is actually only consumed by tests, while `main.ts` builds its own Fastify adapter directly from the raw `configuration()` output rather than through `IConfigurationService`; as a result production and tests configure the adapter through two different code paths, meaning the function that the spec exercises is not the one production actually runs."
+    },
+    {
+      "id": "F23",
+      "file": "src/modules/auth/utils/auth-cookie.utils.ts",
+      "line": 3,
+      "claim": "A local `CookieOptions` type was introduced to replace the old import from the `express` types, but `@fastify/cookie` (which the code now calls via `res.setCookie`) already exports an equivalent options type, `CookieSerializeOptions`; reusing that type would keep it in sync automatically if the library's options change."
+    },
+    {
+      "id": "F24",
+      "file": "src/routes/common/http/http-request.utils.ts",
+      "line": 8,
+      "claim": "The `RequestLike` type and its helper functions still contain fallback branches for Express-specific request shapes (`header()`, `get()`, `route.path`, `path`) that can never execute now that Express has been removed and only `FastifyRequest` objects are passed in; typing the helpers directly against `FastifyRequest` would eliminate this dead code."
+    },
+    {
+      "id": "F25",
+      "file": "src/__tests__/test-app.provider.ts",
+      "line": 17,
+      "claim": "The helper builds a bare Fastify adapter with no `trustProxy` or `bodyLimit` configuration, so it configures the adapter differently from `TestAppProvider`; 15 specs use this helper while 67 specs use `TestAppProvider`, leaving two inconsistent ways of constructing a test application."
+    },
+    {
+      "id": "F26",
+      "file": "src/modules/auth/oidc/routes/oidc-auth.controller.ts",
+      "line": 110,
+      "claim": "Math.floor(stateMaxAge / 1_000) can round a sub-second TTL down to 0, which would set the OIDC state cookie's maxAge to 0 and effectively unset it, breaking the state check in the callback if auth.stateTtlMs is ever configured below 1000ms."
+    },
+    {
+      "id": "F27",
+      "file": "src/config/entities/configuration.ts",
+      "line": 382,
+      "claim": "Environment variable names and comments still point to Express documentation even though the framework has been migrated to Fastify."
+    },
+    {
+      "id": "F28",
+      "file": null,
+      "line": null,
+      "claim": "The integration-tests CI job reported as failed for the relevant commit, and this should be resolved before merge since the Fastify ready() change in initTestApplication and the cookie-unit changes are likely causes."
+    },
+    {
+      "id": "F29",
+      "file": "src/__tests__/test-app.provider.ts",
+      "line": 17,
+      "claim": "`createTestApplication` casts the result of `module.createNestApplication(new FastifyAdapter())` to `NestFastifyApplication` with `as`, even though `createNestApplication` accepts a generic type parameter that is already used elsewhere (e.g. in `provide()`), making the cast unnecessary."
+    },
+    {
+      "id": "F30",
+      "file": "src/modules/alerts/routes/guards/tenderly-signature.guard.ts",
+      "line": 57,
+      "claim": "TenderlySignatureGuard computes its HMAC over the re-stringified parsed JSON body rather than the raw bytes received; this depends on the parser preserving the sender's exact byte representation (whitespace, number formatting, Unicode escapes), which is not guaranteed even though insertion order is preserved."
+    },
+    {
+      "id": "F31",
+      "file": "src/__tests__/test-app.provider.ts",
+      "line": 18,
+      "claim": "createTestApplication instantiates FastifyAdapter directly with no trustProxy or bodyLimit configuration, unlike TestAppProvider.provide() which uses createFastifyAdapter(configurationService), so tests using the former do not exercise the same adapter configuration as production and could mask behavior differences."
+    },
+    {
+      "id": "F32",
+      "file": "src/logging/utils.ts",
+      "line": 43,
+      "claim": "The expression `request.method ?? 'UNKNOWN'` is dead code because Fastify always sets a `method` property on its request objects, so the fallback can never be reached."
+    }
+  ]
+}

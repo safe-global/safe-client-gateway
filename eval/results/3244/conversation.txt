@@ -1,0 +1,126 @@
+THREAD src/modules/relay/datasources/rhinestone-api.service.ts:61 resolved=true
+[akshay-ap 2026-07-10T10:01:16Z] why do we need this in error? Developer can build curl command by looking at the error.
+[yagopv 2026-07-10T10:41:36Z] Is only for testing hehe. Will remove before merge. Is useful for me to report them 
+[falvaradorodriguez 2026-07-10T11:12:24Z] Agree with Akshay, this shouldn’t be here
+[yagopv 2026-07-10T11:39:22Z] done
+
+THREAD src/modules/relay/datasources/rhinestone-api.service.ts:141 resolved=true
+[akshay-ap 2026-07-10T10:14:15Z] no `createdAt`? 
+
+https://github.com/safe-global/safe-client-gateway/blob/b915eb7e1b5a98560ab770ff72f4446daa5329f8/src/modules/relay/domain/entities/relay-task-status.entity.ts#L15
+[yagopv 2026-07-10T10:42:03Z] nope only taskId
+
+THREAD src/modules/relay/datasources/rhinestone-api.service.ts:127 resolved=true
+[falvaradorodriguez 2026-07-10T11:13:30Z] We shouldn’t mention Gelato here; after this PR, there won’t be anything related to it. Can you check elsewhere?
+[yagopv 2026-07-10T11:39:10Z] done
+
+THREAD src/config/entities/schemas/configuration.schema.ts:186 resolved=true
+[falvaradorodriguez 2026-07-10T11:28:16Z] We should update this in `docker-compose.yml`
+[yagopv 2026-07-10T11:50:12Z] done
+
+THREAD src/__tests__/deployments.helper.ts:148 resolved=true
+[PooyaRaki 2026-08-19T15:47:04Z] Can we read these values from ENV/ config service so that in case we want to add a new network we don't need a deployment?
+[dasanra 2026-08-20T10:46:50Z] This is a test helper, I would not point it to ENV/config service for that. This way they are atomic and isolated from external config.
+[PooyaRaki 2026-08-20T12:57:18Z] I’ll leave it up to your discretion but I'd highly recommend we replace it with something to read from the deployment repo:
+```ts
+// deployments.helper.ts
+  export function getDeploymentChainIds(): Array<string> {
+    return Object.keys(versionsByDeploymentByChainId.Safe);
+  }
+
+  // each relay spec
+  const supportedChainIds = faker.helpers.arrayElements(getDeploymentChainIds(), 3);
+```
+
+THREAD src/modules/relay/routes/relay.controller.ts:53 resolved=true
+[PooyaRaki 2026-08-19T15:49:24Z] Nit: We should extract it to a separate file.
+[dasanra 2026-08-19T16:21:49Z] Done https://github.com/safe-global/safe-client-gateway/pull/3244/commits/76d96bb1822b2cd0ab94e28cc43434b2e3e8f0d4
+
+THREAD src/modules/relay/datasources/rhinestone-api.service.ts:99 resolved=true
+[PooyaRaki 2026-08-19T15:52:52Z] We could inline this object and remove the `const`
+[dasanra 2026-08-19T16:22:00Z] Done https://github.com/safe-global/safe-client-gateway/pull/3244/commits/02ece294ef4fd5a30c0a9bb7769db442b745f063
+
+THREAD src/modules/relay/datasources/rhinestone-api.service.ts:158 resolved=true
+[PooyaRaki 2026-08-19T15:54:34Z] Why should we change to `Raw` here?
+[dasanra 2026-08-20T10:45:56Z] This is pre-existing, it was like that in the `gelato-api.service.ts`. From my perspective this should not be part of the migration.
+[PooyaRaki 2026-08-20T11:53:32Z] We should remove the comment then.
+
+REVIEW DISMISSED
+[falvaradorodriguez 2026-07-10T13:34:49Z] LGTM
+
+REVIEW DISMISSED
+[LucieFaire 2026-07-13T09:58:43Z] 👍 
+
+REVIEW APPROVED
+[PooyaRaki 2026-08-20T14:29:23Z] Approved to unblock but we need to ensure Claude remarks are fixed either here or in a follow up PR.
+
+COMMENT
+[datadog-official 2026-07-10T11:47:05Z] <a target='_blank' href='https://app.datadoghq.eu/ci/pipeline-executions?query=ci_level%3Ajob+%40ci.status%3Aerror+%40git.commit.sha%3Ab04b7dfa2e760db43af55ba6971f7a11a33913c2&referrer=pr-comment&start=1784894871000'><picture><source media="(prefers-color-scheme: dark)" srcset="https://static.datadoghq.com/static/images/pr_comments/software_delivery/badges_header/pipelines-warning.svg"/><img src="https://static.datadoghq.com/static/images/pr_comments/software_delivery/badges_header/pipelines-warning-light.svg" alt="Pipelines" align="center" /></picture></a>
+
+## ⚠️ Warnings
+
+🚦 **1 Pipeline job failed**
+
+<blockquote>
+<div>
+
+<code> CI | biome </code> &nbsp;&nbsp;<a href="https://app.datadoghq.eu/ci/pipeline-executions?query=ci_level%3Ajob&#43;ci.job_correlation_id%3A2c1c8a9afcd75fdd&amp;referrer=pr-comment&amp;start=1784894871000" title="View in Datadog"><img src="https://static.datadoghq.com/static/images/pr_comments/software_delivery/datadog_icon.svg" alt="View in Datadog" align="center" /></a> &nbsp; <a href="https://github.com/safe-global/safe-client-gateway/actions/runs/30093801134/job/89482937362" title="View in GitHub Actions"><picture><source media="(prefers-color-scheme: dark)" srcset="https://static.datadoghq.com/static/images/pr_comments/software_delivery/logos/github-logo-dark.svg"/><img src="https://static.datadoghq.com/static/images/pr_comments/software_delivery/logos/github-logo-light.svg" alt="GitHub Actions" align="center" /></picture></a>
+
+</div>
+</blockquote>
+
+Useful? React with 👍 / 👎
+
+<sub>
+This comment will be updated automatically if new data arrives. <br />
+🔗 Commit SHA: b04b7df | <a href="https://docs.datadoghq.com/integrations/guide/source-code-integration/#pr-comments">Docs</a> | Give us <a href="https://forms.gle/ys6MDmdQEeC5pkzWA">feedback</a>!
+</sub>
+
+COMMENT
+[PooyaRaki 2026-08-19T10:52:14Z] @claude arch-review
+
+COMMENT
+[claude 2026-08-19T10:58:30Z] ## Architecture check
+
+Applicable guides: ARCHITECTURE.md, best-practices.md, nestjs-patterns.md, api-dtos-and-validation.md, security.md, module-structure.md, caching-and-performance.md, testing.md, configuration-and-flags.md, commits-and-prs.md, reviewing.md + remarks.md.
+
+- `src/modules/relay/datasources/rhinestone-api.service.ts:117` — **`Raw<T>` at the boundary**: `getTaskStatus` returns a bare `RelayTaskStatus` assembled inside the datasource instead of `Raw<RelayTaskStatus>`, and `RelayRepository.getTaskStatus` never calls `RelayTaskStatusSchema.parse()`, so the upstream shape is never validated against the domain schema (same for `relay` at :84, which `DailyLimitRelayer`/`NoFeeCampaignRelayer` return unparsed).
+- `src/modules/relay/domain/entities/relay-task-status.entity.ts:16` — **No speculative abstractions**: `createdAt` (and `blockHash`/`blockNumber`/`gasUsed` at :7-9) were relaxed to `.optional()` rather than removed, but after this migration `RelayTaskStatusSchema` is parsed nowhere and no code path can populate those four fields.
+- `src/modules/relay/datasources/rhinestone-api.service.ts:68` — **Structured logging only**: `formatError` logs the entire upstream error payload via `JSON.stringify(error.data)` rather than an explicit whitelisted field set.
+- PR title — **PR title**: `feat: Rhinestone Relay Provider` is a capitalized noun phrase, not an imperative lowercase-initial description, and squash-merge makes it the permanent `main` subject.
+- PR description — **PR body**: the required `## Changes` section is absent; the per-area bullets sit under bold labels inside `## Summary`.
+- `src/modules/relay/datasources/rhinestone-api.service.spec.ts:72` — **R-006** (asserting that *an* error was thrown, not *which*): bare `.toThrow()` with no argument, also at :88.
+
+**Verdict:** ❌ 6 finding(s)
+
+COMMENT
+[dasanra 2026-08-19T14:59:46Z] @claude arch-review
+
+COMMENT
+[claude 2026-08-19T15:06:34Z] ## Architecture check
+
+Applicable guides: ARCHITECTURE.md, api-dtos-and-validation.md, best-practices.md, nestjs-patterns.md, security.md, module-structure.md, caching-and-performance.md, configuration-and-flags.md, testing.md, commits-and-prs.md, reviewing.md + remarks.md.
+
+- `src/modules/relay/datasources/rhinestone-api.service.ts:97` — **`Raw<T>` at the boundary**: the new datasource parses the provider payload itself and returns domain entities (`Promise<Relay>`, and `Promise<RelayTaskStatus>` at :130), so `RelayRepository.getTaskStatus` (`relay.repository.ts:42`) returns upstream-derived data no repository ever parses (carried over from the deleted `GelatoApi`, but re-introduced in a new file).
+- `src/modules/relay/routes/relay.controller.ts:156` — **ValidationPipe everywhere**: the newly added `chainId` pipes (also :188) use bare `NumericStringSchema` instead of `ChainIdSchema`, which the guide states is "not precedent to extend".
+- `src/modules/relay/routes/relay.controller.ts:53` — **Named constants over inline magic values** (also R-011): the opaque-id validator (`min(1).max(255).regex(/^[A-Za-z0-9_-]+$/)`) is re-typed inline, duplicating `billing.controller.ts:41`'s `opaqueIdPipe` rather than extracting one shared schema.
+- PR description — **Implementation matches the approved spec/plan**: the `## Changes` list omits the new route-param validation and its integration tests, and the removal of `createdAt`/`blockHash`/`blockNumber`/`gasUsed` from `RelayTaskStatusSchema`.
+
+**Verdict:** ❌ 4 finding(s)
+
+COMMENT
+[PooyaRaki 2026-08-20T11:52:30Z] @claude arch-check
+
+COMMENT
+[PooyaRaki 2026-08-20T12:53:24Z] @claude arch-review
+
+COMMENT
+[claude 2026-08-20T12:59:04Z] ## Architecture check
+
+Guides applied: ARCHITECTURE.md, api-dtos-and-validation.md, security.md, best-practices.md, nestjs-patterns.md, module-structure.md, caching-and-performance.md, configuration-and-flags.md, testing.md, commits-and-prs.md, reviewing.md + remarks.md (database-and-migrations.md and agent-tooling.md do not apply).
+
+- `src/modules/relay/datasources/rhinestone-api.service.ts:97` — `Raw<T>` at the boundary: the new datasource returns bare `Relay`/`RelayTaskStatus` and calls `RhinestoneRelayResponseSchema.parse`/`RhinestoneTaskStatusResponseSchema.parse` itself instead of returning `Raw<T>` for `RelayRepository` to parse (non-negotiable #3; carried over from the deleted `GelatoApi`, but re-established in a new file).
+- `src/modules/billing/routes/billing.controller.ts:40` — No scope creep: extracting the inline opaque-id schema and rewiring the billing controller to it is a second module changed for reasons unrelated to the relay-provider migration, and it is absent from the `## Changes` section of the PR description (R-029).
+- `src/modules/relay/routes/relay.controller.ts:143` — ValidationPipe everywhere: the two newly added `chainId` pipes (also `:175`) use bare `NumericStringSchema`, which the guide grandfathers for existing pipes but explicitly marks as "not precedent to extend" — a newly piped chain-id param takes `ChainIdSchema`.
+
+**Verdict:** ❌ 3 finding(s)

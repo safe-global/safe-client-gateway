@@ -1,0 +1,30 @@
+{
+  "usd": 0.34096820000000005,
+  "head": "4b0a4fe9f1899076f1b212eb862d5c8a52175426",
+  "verdicts": [
+    {
+      "issue": 8,
+      "verdict": "open",
+      "present": true,
+      "evidence": "At bc3a175, assertNoneDeployed/filterUndeployed call isSafe once per payload item with no dedupe, and they still do at HEAD (counterfactual-safes.service.ts:90-109, space-counterfactual-safes.service.ts:70-89). Nobody replied to this bot point; the only later commit, 4b0a4fe9f, just adds logging."
+    },
+    {
+      "issue": 9,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "TimDaub said it was 'sadly not possible' without changing isSafe and called it optional or a follow-up ticket. vmosharova replied only with thanks and the thread was resolved with no code change; Promise.all with no AbortSignal is still at counterfactual-safes.service.ts:90."
+    },
+    {
+      "issue": 10,
+      "verdict": "open",
+      "present": true,
+      "evidence": "The 'Reject the whole request if any submitted Safe is already deployed…' comment is unchanged from bc3a175 to HEAD (counterfactual-safes.service.ts:85-86). Commit 4b0a4fe9f added new fail-open comments but did not trim this one, and nobody discussed it."
+    },
+    {
+      "issue": 11,
+      "verdict": "open",
+      "present": true,
+      "evidence": "At bc3a175 and at HEAD, filterUndeployed's output is passed straight to transformCounterfactualSafesResponse (space-counterfactual-safes.service.ts:60-63), so a chain whose Safes were all removed disappears from the response. No commit or reply dealt with this."
+    }
+  ]
+}

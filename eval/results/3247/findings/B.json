@@ -1,0 +1,25 @@
+{
+  "usd": 0.047963599999999995,
+  "findings": [
+    {
+      "file": "src/modules/counterfactual-safes/routes/space-counterfactual-safes.service.ts",
+      "line": 70,
+      "claim": "The catch block returns false without logging the error, so a Transaction Service outage, an unsupported chain, or a response that fails Zod parsing is silently treated as \"not deployed\", causing deployed Safes to still be shown as counterfactual with no log trail to diagnose it."
+    },
+    {
+      "file": "src/modules/counterfactual-safes/routes/space-counterfactual-safes.service.spec.ts",
+      "line": 71,
+      "claim": "The isSafe mocks match only on address, and no test asserts what arguments isSafe was called with, so a bug that passed the wrong chainId would not be caught by these tests."
+    },
+    {
+      "file": "src/modules/counterfactual-safes/routes/__tests__/space-counterfactual-safes.controller.e2e-spec.ts",
+      "line": 209,
+      "claim": "There is no end-to-end test verifying that a deployed Safe is actually removed from the list; the existing e2e tests use a bare vi.fn() network mock that causes isSafe to throw, so they pass because errors are swallowed by the catch, not because the filtering logic works."
+    },
+    {
+      "file": "src/modules/counterfactual-safes/routes/counterfactual-safes.service.ts",
+      "line": 46,
+      "claim": "The user-scoped GET endpoint reads the same rows as the space endpoint but does not apply the new deployed-Safe filtering, so for a deployed Safe the space endpoint and the user endpoint will now return inconsistent results; additionally nothing removes counterfactual rows when a Safe is created (the SAFE_CREATED handler in event-cache.helper.ts:653 only clears the cache), leaving the underlying stale data in place."
+    }
+  ]
+}

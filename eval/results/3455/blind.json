@@ -1,0 +1,61 @@
+{
+  "pr": 3455,
+  "title": "fix(safe-queue): map a null `to` from the Queue Service to the zero address",
+  "description": "## Summary\n\nThe Queue Service returns `to: null` for transactions with no recipient, while the Transaction Service returns the zero address for the same case. The queue entity schema rejected `null`, so response validation broke whenever the Queue Service returned such a transaction.\n\n`to` in `SafeQueueMultisigTransactionSchema` now accepts `null` or a missing value and transforms it to viem's `zeroAddress`, keeping the domain `MultisigTransaction.to` non-nullable and the client-facing shape identical across both upstreams. A nullable `to` was avoided because it would require changing the shared `TransactionBaseSchema`, every mapper, and the client contract; mapping to the zero address instead matches what the Transaction Service already does.\n\n## Changes\n\n- `src/modules/safe-queue/entities/multisig-transaction.entity.ts`: `to` now accepts `null`/missing and transforms to `zeroAddress`.\n- `src/modules/safe-queue/entities/__tests__/multisig-transaction.entity.spec.ts`: new spec covering null, missing, checksummed and invalid `to` values.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "findings": [
+    {
+      "id": "F1",
+      "file": "src/modules/safe-queue/safe-queue.service.ts",
+      "line": 218,
+      "claim": "A batch-path test case (a chunk containing a null-to row should be kept rather than dropped) and a single-tx case (a pending tx served from the queue should resolve to = zeroAddress) should be added to cover the regression."
+    },
+    {
+      "id": "F2",
+      "file": null,
+      "line": null,
+      "claim": "There is no documentation in the repository confirming what a null to field means upstream in the Queue Service (i.e., whether it sends to: null, omits the key entirely, or something else), which makes it unclear whether mapping null to the zero address is the correct interpretation."
+    },
+    {
+      "id": "F3",
+      "file": "src/modules/safe-queue/safe-queue.service.ts",
+      "line": 218,
+      "claim": "Before this fix, a transaction with to: null caused the batch chunk's safeParse to fail, dropping the whole chunk; in resolveMultisigTransaction (src/modules/safe/domain/safe.repository.ts:603) this forced a fallback to the Transaction Service. The new spec only verifies the schema in isolation, and neither safe-queue.service.spec.ts nor safe.repository.spec.ts pins down the batch-drop or fallback behavior, so the actual regression the user observed has no test coverage."
+    },
+    {
+      "id": "F4",
+      "file": "src/modules/safe-queue/entities/multisig-transaction.entity.ts",
+      "line": 46,
+      "claim": "The schema silently maps an upstream `null` `to` value to the zero address without any comment explaining why, and the commit message has no body either, even though every other nullable address field in this schema uses `NullableAddressSchema` instead, making this deliberate difference unexplained; a one-line comment noting that the Queue Service returns null where the Transaction Service returns the zero address would clarify the intent."
+    },
+    {
+      "id": "F5",
+      "file": "src/modules/safe-queue/entities/multisig-transaction.entity.ts",
+      "line": 46,
+      "claim": "If the Queue Service does not omit the to key (only sends it as null), .nullable() should be used instead of .nullish(), and the test covering a missing to key should be dropped since it would no longer reflect valid input."
+    },
+    {
+      "id": "F6",
+      "file": null,
+      "line": null,
+      "claim": "The PR body should include a line clarifying what a null to value means upstream (in the Queue Service), since this assumption underlies the whole fix and is not otherwise verifiable from the codebase."
+    },
+    {
+      "id": "F7",
+      "file": "src/modules/safe-queue/entities/__tests__/multisig-transaction.entity.spec.ts",
+      "line": 31,
+      "claim": "The test casts a value with `as `0x${string}`` while no other spec in the repo uses that form, whereas `toLowerCase() as Address` appears 52 times elsewhere, so the cast style is inconsistent with existing convention; using `import type { Address } from 'viem'` and `as Address` would match it."
+    },
+    {
+      "id": "F8",
+      "file": "src/modules/safe-queue/entities/multisig-transaction.entity.ts",
+      "line": 46,
+      "claim": "Using .nullish() instead of .nullable() means the schema accepts a body with no to key at all, not just an explicit to: null. Previously such a body failed to parse and fell back to the Transaction Service, but now it parses successfully and a pending transaction is served from the queue with its recipient mapped to the zero address (src/modules/safe-queue/mappers/transaction.mapper.ts:40), which could misrepresent the transaction's recipient if the Queue Service does not actually omit the field for this reason."
+    },
+    {
+      "id": "F9",
+      "file": "src/modules/safe-queue/entities/multisig-transaction.entity.ts",
+      "line": 46,
+      "claim": "It is unclear whether the zero address is actually the correct semantic meaning of a null `to` value, since the mapper passes `tx.to` straight through to clients, so if null could mean something other than 'sent to the zero address' this mapping would hide that distinction from callers; this should be confirmed against the Queue Service contract and stated in the explanatory comment."
+    }
+  ]
+}

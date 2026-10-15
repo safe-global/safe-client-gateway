@@ -1,0 +1,133 @@
+{
+  "pr": 3243,
+  "title": "feat(auth): add loopback for localhost redirect",
+  "description": "## Summary\r\nresolves [WA-2807](https://linear.app/safe-global/issue/WA-2807/adjust-cgw-to-allow-auth-from-local-wallet-app)\r\n\r\nAllows locally running frontends (e.g. `http://localhost:3000`) to authenticate against deployed non-production CGW instances (staging/dev). Previously the post-login/logout redirect validation rejected localhost targets on three counts — non-HTTPS scheme, explicit port, and hostname outside `AUTH_ALLOWED_REDIRECT_DOMAIN` — making it impossible to develop a web app locally against staging auth.\r\n\r\n## Changes\r\n\r\n- **Loopback redirect exception** in `src/modules/auth/utils/auth-redirect.helper.ts`: in non-production environments with `AUTH_ALLOWED_REDIRECT_DOMAIN` set, redirect URLs targeting loopback hosts (`localhost`, `127.0.0.1`, `[::1]`) are now allowed over `http:` or `https:` with any port. This follows the loopback exception of [RFC 8252 §7.3](https://datatracker.ietf.org/doc/html/rfc8252#section-7.3).\r\n- **Refactored `isAllowedRedirectUrl`** from nested conditionals into flat guards: production same-origin check first, then a shared userinfo rejection, then one policy branch per hostname class (loopback vs. allowed domain).\r\n- **Tests**: new `loopback exception` block covering accepted hosts (with/without port, http/https), lookalike-hostname rejections, userinfo rejection, non-HTTP scheme rejection, and production still rejecting loopback.\r\n\r\n## Security considerations\r\n\r\n- **Production behavior is unchanged** — strict same-origin validation against `AUTH_POST_LOGIN_REDIRECT_URI`; the loopback branch is unreachable when `application.isProduction` is true.\r\n- **No suffix matching on loopback hosts** — hostnames are compared exactly against a fixed set, so lookalikes such as `localhost.attacker.com` or `127.0.0.1.evil.dev` are still rejected.\r\n- **URLs carrying userinfo** (`http://user:pass@localhost`) are still rejected.\r\n- **Loopback redirects are not remotely exploitable**: the redirect lands on the requesting user's own machine, and no token travels in the URL (the access token is set as an `httpOnly` cookie on the CGW domain before the redirect).\r\n\r\n",
+  "findings": [
+    {
+      "id": "F1",
+      "file": "src/modules/auth/utils/auth-redirect.helper.spec.ts",
+      "line": 229,
+      "claim": "The tests for rejecting non-HTTP schemes only cover ftp://, leaving a gap in coverage for other schemes an attacker might attempt such as file:, javascript:, and data:."
+    },
+    {
+      "id": "F2",
+      "file": "src/modules/auth/utils/auth-redirect.helper.spec.ts",
+      "line": 233,
+      "claim": "The test named 'lookalike hostname suffixed with allowed name' actually tests localhost.<random-domain>, which is a loopback name with an extra domain label appended and has nothing to do with allowedRedirectDomain; the name should instead describe it as a loopback name followed by an extra domain label."
+    },
+    {
+      "id": "F3",
+      "file": "oidc-auth.service.ts",
+      "line": 113,
+      "claim": "The JSDoc states that redirectUrl 'Must be same-origin', which was already inaccurate before this change because subdomains were allowed, and is now further from correct given the added loopback exception."
+    },
+    {
+      "id": "F4",
+      "file": ".env.sample.json",
+      "line": 118,
+      "claim": "The description of AUTH_ALLOWED_REDIRECT_DOMAIN states that setting it means any subdomain is accepted, but omits that setting it also enables the loopback exception."
+    },
+    {
+      "id": "F5",
+      "file": "auth-redirect.helper.ts",
+      "line": 130,
+      "claim": "There is no test covering the non-production case without allowedRedirectDomain set; if the loopback check were moved above this line's check, loopback URLs would be incorrectly accepted in every non-production configuration and the existing test suite would not catch it."
+    },
+    {
+      "id": "F6",
+      "file": "src/modules/auth/utils/auth-redirect.helper.ts",
+      "line": 6,
+      "claim": "The new LOOPBACK_HOSTNAMES constant runs directly into the JSDoc comment of buildAuth0LogoutBaseUrl with no blank line separating them, continuing an existing formatting inconsistency from the AUTH0_LOGOUT_PATH line above it."
+    },
+    {
+      "id": "F7",
+      "file": "src/modules/auth/utils/auth-redirect.helper.ts",
+      "line": 138,
+      "claim": "The isHttps variable is only used once inside the loopback branch and once later, making the alias unnecessary indirection; inlining target.protocol === 'https:' directly would be clearer."
+    },
+    {
+      "id": "F8",
+      "file": null,
+      "line": null,
+      "claim": "RFC 8252 section 8.3 marks the use of the hostname 'localhost' (as opposed to an IP literal) as not recommended, which makes the related documentation comment less accurate even though browsers still treat localhost as loopback."
+    },
+    {
+      "id": "F9",
+      "file": "src/modules/auth/utils/auth-redirect.helper.spec.ts",
+      "line": 242,
+      "claim": "The userinfo and ftp test cases hard-code port 3000 instead of using faker like the other test cases, making the test data generation inconsistent."
+    },
+    {
+      "id": "F10",
+      "file": "auth-redirect.helper.spec.ts",
+      "line": 193,
+      "claim": "The existing test that checks rejection of a URL with an explicit port has the same faker-generated-port issue: it can draw 443, producing a URL that is actually valid and causing the rejection test to fail."
+    },
+    {
+      "id": "F11",
+      "file": "src/modules/auth/AUTH.md",
+      "line": 246,
+      "claim": "The documentation states that non-HTTPS URLs, URLs with credentials, and URLs with explicit ports are always rejected, but the code now accepts loopback URLs over http with any port, so the documented behavior no longer matches the implementation."
+    },
+    {
+      "id": "F12",
+      "file": ".env.sample.json",
+      "line": 118,
+      "claim": "The description for AUTH_ALLOWED_REDIRECT_DOMAIN still says setting the variable only allows any subdomain to be accepted, but after this change setting it also allows http/https redirects to localhost, 127.0.0.1 and [::1] on any port. An operator reading the sample won't know that enabling subdomain redirects also enables loopback redirects, so the description should be updated in this PR."
+    },
+    {
+      "id": "F13",
+      "file": "src/modules/auth/utils/auth-redirect.helper.ts",
+      "line": 130,
+      "claim": "The JSDoc justifies the loopback exception by citing RFC 8252 §7.3, which addresses native app redirects, but the exception is being applied here to browser redirects on deployed (non-local) environments, which is a different threat context than the cited RFC covers."
+    },
+    {
+      "id": "F14",
+      "file": "auth.service.ts",
+      "line": 147,
+      "claim": "For OIDC users, getLogoutRedirectUrl sends the loopback URL to Auth0 as the returnTo parameter, which Auth0 will reject unless the tenant's Allowed Logout URLs list includes those localhost origins."
+    },
+    {
+      "id": "F15",
+      "file": "auth-redirect.helper.spec.ts",
+      "line": 212,
+      "claim": "The test uses faker.internet.port(), which can generate 80 or 443; since new URL() drops default ports from its serialized string, the test's toBe(url) comparison can fail intermittently when one of those values is drawn."
+    },
+    {
+      "id": "F16",
+      "file": "src/modules/auth/utils/auth-redirect.helper.ts",
+      "line": 130,
+      "claim": "Auth0's allowed callback/logout URL lists must include the loopback origins for logout to actually work with this change, which is a dependency that should be verified/noted."
+    },
+    {
+      "id": "F17",
+      "file": "src/modules/auth/utils/auth-redirect.helper.spec.ts",
+      "line": 254,
+      "claim": "The test 'should reject loopback in production' is placed inside the describe block for 'non-production with allowedRedirectDomain' and builds its own production config there, rather than being placed in the existing 'production (same-origin check)' block or its own dedicated describe block, making the test organization inconsistent with its content."
+    },
+    {
+      "id": "F18",
+      "file": "src/modules/auth/utils/auth-redirect.helper.spec.ts",
+      "line": 212,
+      "claim": "Tests build URLs like http://${host}:${faker.internet.port()}/... and https://localhost:${port}/... and assert equality with toBe(url), but if faker happens to pick the default port for the scheme (80 for http, 443 for https), URL normalization drops the port and the assertion fails, making the test flaky (roughly 1 in 65536 runs). A fixed non-default port, or a port range excluding 80 and 443, should be used instead."
+    },
+    {
+      "id": "F19",
+      "file": "src/modules/auth/utils/auth-redirect.helper.ts",
+      "line": 130,
+      "claim": "The loopback exception relaxes strict protocol/port checks and conservative defaults for loopback addresses in every non-production environment that sets AUTH_ALLOWED_REDIRECT_DOMAIN, not just development environments, and staging is included among the affected environments; this ties a security relaxation to an unrelated configuration setting rather than a dedicated flag."
+    },
+    {
+      "id": "F20",
+      "file": "src/modules/auth/utils/auth-redirect.helper.ts",
+      "line": null,
+      "claim": "The loopback hostname set matches RFC 8252's exact list (localhost, 127.0.0.1, ::1) but does not include the broader 127.0.0.0/8 block that RFC 5735 also defines as loopback; this scope decision is not documented in a code comment, risking a future reader mistakenly broadening the set without understanding the tradeoff."
+    },
+    {
+      "id": "F21",
+      "file": "src/modules/auth/utils/auth-redirect.helper.ts",
+      "line": 139,
+      "claim": "The loopback hostname check relies on the WHATWG URL parser lowercasing hostnames (so LOCALHOST becomes localhost) rather than explicitly lowercasing the compared value, which makes the code's correctness dependent on an implicit guarantee that is easy to overlook when reading or modifying the code."
+    }
+  ]
+}

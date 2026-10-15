@@ -1,0 +1,268 @@
+THREAD src/modules/fees/routes/fees.service.ts:56 resolved=true
+[yagopv 2026-06-11T11:02:11Z] Is this correct instead simply retrieving the configured relayer and that's it? I believe this is not true for Phase 3, as we will have a new specific GTF relayer (I guess)
+
+Additionally, the error seems strange to me: "Pay with Safe not available for this chain." Technically, we will be able to "Pay with Safe" in Phase 3, right?  More accurate would be something like "You haven't configured a relayer for this chain that uses the Fee Service."
+[akshay-ap 2026-06-11T11:20:09Z] > Is this correct instead simply retrieving the configured relayer and that's it? I believe this is not true for Phase 3, as we will have a new specific GTF relayer (I guess)
+
+Yes, we will have GTF specific relayer and make changes again later. This PR is not supporting GTF relayer.
+[akshay-ap 2026-06-11T11:21:10Z] > You haven't configured a relayer for this chain that uses the Fee Service.
+
+lets do that.
+[akshay-ap 2026-06-11T11:41:35Z] https://github.com/safe-global/safe-client-gateway/pull/3105/commits/28bb6a4d4e7dd3e613099fa4070fb918abb3aa45
+
+THREAD src/modules/chains/domain/entities/schemas/chain.schema.ts:79 resolved=true
+[LucieFaire 2026-06-19T11:04:03Z] ```
+const booleanWithFalseFallback = z.boolean().catch(false);
+
+export const RelayerSchema = z.object({
+  type: z.enum(RelayerType).nullable().catch(null),
+  safeCreationSponsored: booleanWithFalseFallback,
+  safeTransactionSponsored: booleanWithFalseFallback,
+  enableTenderlySimulationBeforeRelay: booleanWithFalseFallback,
+});
+```
+you can skip `.default(false)` as `.catch(false)` already handles undefined, invalid strings, null, numbers, etc.
+[akshay-ap 2026-06-19T12:00:14Z] https://github.com/safe-global/safe-client-gateway/pull/3105/commits/0ab3dd7066978657109e361b2fe79dce75bd37c8
+
+THREAD src/modules/chains/routes/entities/chain.entity.ts:102 resolved=true
+[LucieFaire 2026-06-19T11:08:58Z] so it can be `some value | null  | undefined` ? According to schema I dont see `undefined` allowed.
+I think Swagger decorator should be:
+```
+@ApiProperty({ type: Relayer, nullable: true })
+```
+[akshay-ap 2026-06-19T12:20:44Z] https://github.com/safe-global/safe-client-gateway/pull/3105/commits/52e08ea60634d2f7d77c2edc41e26f218837380b
+
+REVIEW COMMENTED
+[yagopv 2026-06-10T11:57:15Z] @akshay-ap this PR launch a `NoRelayerDefinedError` when no relayer is defined. This is against the:
+
+> Stage 1 — current behaviour (default / kill switch): no fee collected; Gelato relay not mandatory (non-Gelato/EOA flow allowed). Reverting to this stage is the kill switch / security fallback.
+
+Defined in https://linear.app/safe-global/issue/PLA-1560/backend-per-chain-gtf-stage-flag-3-stages-incl-kill-switch
+
+Or am I missing something? I thought that when the relayer is not defined, we default to the current production interface where connected wallets pay
+
+REVIEW COMMENTED
+[yagopv 2026-06-11T10:50:25Z] There are leftovers of the env variables RELAY_DAILY_LIMIT_CHAIN_IDS, RELAY_FEE_CHAIN_IDS, RELAY_SIMULATION_CHAIN_IDS in .env.sample.json and .devcontainer/docker-compose.yml
+
+REVIEW DISMISSED
+[LucieFaire 2026-06-19T11:18:13Z] 2 small remarks, otherwise looks good !
+
+COMMENT
+[PooyaRaki 2026-06-04T08:37:22Z] @claude review
+
+COMMENT
+[claude 2026-06-04T08:37:41Z] **Claude finished @PooyaRaki's task in 3m 0s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/26940715429)
+
+---
+### Claude PR Review
+
+- [x] Read CLAUDE.md and gather context
+- [x] Analyze the diff
+- [x] Review key files (relay manager, repository, fees service, schemas)
+- [x] Post review feedback
+
+---
+
+Nice cleanup — pulling relayer selection out of env vars and into the chain config is a clear improvement, and the new `RelayManager` is much easier to read. A few things worth addressing before merging:
+
+#### 1. Backward-compat fallback removed — rollout risk
+`src/modules/relay/domain/relay.manager.ts:50` — the previous code fell back to `DailyLimitRelayer` for any unconfigured chain. Now `null` → `NoRelayerDefinedError` (403). If the config service hasn't been rolled out with `relayerType` populated for every supported chain when CGW deploys, every `POST /v1/chains/:id/relay` call on those chains will start 403'ing. Worth confirming the config-service PR (safe-config-service#1555) ships first **and** is fully populated before this lands. Also worth a unit/integration test asserting the strict-mode behavior on a chain that has historically been "no env config, falls back to daily limit".
+
+#### 2. Schema silently swallows unknown relayer types
+`src/modules/chains/domain/entities/schemas/chain.schema.ts:108`
+```ts
+relayerType: z.enum(RelayerType).nullable().catch(null),
+```
+`.catch(null)` means any new relayer-type string introduced by the config service (e.g. a future `GTF_V2`) silently becomes `null` here → `NoRelayerDefinedError` → 403, with no log line to explain it. Consider logging in the `.catch` path (use a transform) so this divergence is observable instead of being a silent outage waiting to happen.
+
+#### 3. `RelayerTypeNotImplementedError` returns 403 Forbidden — wrong status
+`src/modules/relay/domain/errors/relayer-type-not-implemented.error.ts:3-7` extends `ForbiddenException`. Semantically this is "the server hasn't implemented this yet", not "you're not allowed". `501 Not Implemented` (or `503`) communicates the situation more honestly to clients and to dashboards/alerting. Same applies to `NoRelayerDefinedError` arguably (it's a server config gap, not a permission denial), though 403 is at least less misleading there.
+
+#### 4. Inconsistent error status between fees and relay paths for the same state
+- `src/modules/fees/routes/fees.service.ts:24-28` → `BadRequestException` (400) when `relayerType !== RELAY_FEE`.
+- `src/modules/relay/domain/relay.manager.ts` → `NoRelayerDefinedError` (403) / `RelayerTypeNotImplementedError` (403).
+
+Both paths represent "chain not configured for this kind of relay" but return different statuses with different messages. Consider unifying so clients can handle a single contract.
+
+#### 5. `getRelaysRemaining` type drift between interface and impl
+- `src/modules/relay/domain/interfaces/relayer.interface.ts:51-55` declares `safeTxHash?: Hex` (optional).
+- `src/modules/relay/domain/relayers/relay-fee.relayer.ts:121-125` declares `safeTxHash: Hex` (required) and unconditionally forwards it to `feeServiceApi.canRelay`.
+
+The controller (`relay.controller.ts:161-167`) sends it through as optional. A request to a `RELAY_FEE` chain without `safeTxHash` now hits the fee service with `undefined` — previously the `enabledChainIds` guard short-circuited and the chain-mismatch case returned `{ remaining: 0, limit: 0 }`. Either narrow the interface, or add an explicit guard returning `{ remaining: 0, limit: 0 }` when `safeTxHash` is absent.
+
+#### 6. Exception filter applied per-method instead of class-level
+`src/modules/relay/routes/relay.controller.ts:79-90` and `:156` register `RelayerNotAvailableExceptionFilter` on each route individually. Both routes that go through `RelayManager.getRelayer` need it; promoting it to `@UseFilters` at the class level removes the chance of forgetting it on a future endpoint.
+
+#### 7. Cache TTL changes the rollout story for relayer config
+`chainsRepository.getChain` is cache-backed (`config-api.service.ts:75-82`). Previously, switching a chain's relayer mode required a CGW redeploy; now it requires a config-service update **plus** waiting out the chain cache (or running `clearChain`). Worth either a note in the PR description on operator workflow, or an admin hook to invalidate when relayer config changes.
+
+#### 8. Test helper hard-codes chain partition
+`src/modules/relay/routes/relay.controller.integration.spec.ts:80-88` introduces `relayerTypeForChainId` that re-derives the relayer type from `dailyLimitChainIds` / `noFeeCampaignSupportedChainIds` test constants. This is the old env-var partition reimplemented inside the test. Cleaner to set `relayerType` directly on the chain builder per test case — it'd make the routing logic the SUT actually exercises more explicit.
+
+#### Minor
+- `relayer-type.entity.ts:9` — `(typeof RelayerType)[keyof typeof RelayerType]` works but a TS `enum` or `as const satisfies Record<string,string>` is the codebase's more usual idiom; not a blocker.
+- `RelayerTypeNotImplementedError`'s `relayerType` parameter is typed `string` — narrow to `RelayerType` since callers only pass known enum values.
+- The integration test repeats the same `networkService.get.mockImplementation` chain-config stub in four tests — extract to a `mockChain(chain)` helper.
+
+Overall test coverage on the new branching logic looks solid; the main concerns are the **rollout sequencing (#1)**, **silent catch in the schema (#2)**, and **status-code semantics (#3/#4)**.
+ • Branch: `feat/relay-type-from-config-service`
+
+COMMENT
+[akshay-ap 2026-06-09T12:34:46Z] @claude review
+
+
+COMMENT
+[claude 2026-06-09T12:35:05Z] **Claude finished @akshay-ap's task in 1m 21s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/27206455540)
+
+---
+### Claude PR Review
+
+- [x] Read CLAUDE.md and gather context
+- [x] Analyze the diff
+- [x] Review key files
+- [x] Post review feedback
+
+---
+
+Nice refactor — moving relayer selection out of env vars and into per-chain config is a clear improvement. A few things to consider before merging:
+
+#### 1. Schema silently swallows unknown relayer types
+`src/modules/chains/domain/entities/schemas/chain.schema.ts:75`
+
+```ts
+type: z.enum(RelayerType).nullable().catch(null),
+```
+
+Any future relayer type added in the config service (e.g. `GTF_V2`) becomes `null` here, which then triggers `NoRelayerDefinedError` → 403 with no log line. This is a silent outage waiting to happen. Use `z.preprocess` / `.transform` and `loggingService.warn` on the fallback so divergence is observable.
+
+#### 2. `RelayerTypeNotImplementedError` → 403 is the wrong status
+`src/modules/relay/domain/errors/relayer-type-not-implemented.error.ts:4` extends `ForbiddenException`. Semantically this is "server hasn't implemented this," not "you're not allowed." Use `HttpStatus.NOT_IMPLEMENTED` (501) in the exception filter (the filter currently hard-codes 403 for both cases). Also narrow `relayerType: string` → `RelayerType` since callers only pass enum values.
+
+#### 3. Inconsistent error codes for the same logical state
+- `src/modules/fees/routes/fees.service.ts:25-28` → 400 (`BadRequestException`) when `relayer.type !== RELAY_FEE`.
+- `src/modules/relay/domain/relay.manager.ts:60` → 403 (`NoRelayerDefinedError`).
+
+Both mean "chain not configured for this relay flow." Pick one contract so clients can branch consistently.
+
+#### 4. Rollout sequencing risk
+`src/modules/relay/domain/relay.manager.ts:50` — the old behavior fell back to `DailyLimitRelayer` for unconfigured chains. Now any chain whose `relayer.type` is `null` in the config-service response returns 403. Coupled with the chain cache in `config-api.service.ts`, a partial config-service rollout (or a stale cache window) means live 403s on `POST /v1/chains/:id/relay`. Confirm the config-service PR ships first and is fully populated, and consider an admin hook to invalidate the chain cache when relayer config changes.
+
+#### 5. `relayerBuilder` returns `null` ~20% of the time by default
+`src/modules/chains/domain/entities/__tests__/relayer.builder.ts:13-18`
+
+```ts
+.with('type', faker.helpers.arrayElement([...Object.values(RelayerType), null]))
+```
+
+Any test that uses `chainBuilder().build()` without overriding `relayer.type` will randomly route to `GTF` (501-ish) or `null` (403). Either default to a valid non-`GTF` value, or always force the field explicitly in tests — otherwise this becomes a flaky-test source.
+
+#### 6. `getRelaysRemaining` behavior change for RELAY_FEE without `safeTxHash`
+`src/modules/relay/domain/relayers/relay-fee.relayer.ts:332-336` — when no `safeTxHash` is provided on a `RELAY_FEE` chain, it now returns `{ remaining: 1, limit: 1 }` optimistically (was `{ 0, 0 }` previously via the env-var guard). Clients polling without `safeTxHash` will see a different contract. Worth a doc note and/or a test asserting this is intentional.
+
+#### 7. Exception filter applied per-method
+`src/modules/relay/routes/relay.controller.ts:129` and `:212` register `RelayerNotAvailableExceptionFilter` on each route. Since every route in this controller routes through `RelayManager.getRelayer`, promote it to a class-level `@UseFilters` to remove the chance of forgetting it on a future endpoint.
+
+#### Minor
+- `src/modules/relay/domain/relay.repository.ts:30,52` — `chain.relayer?.type ?? null` is duplicated; consider a small helper or destructure once.
+- `src/modules/relay/routes/relay.controller.integration.spec.ts:80-88` — `relayerTypeForChainId` reimplements the old env-var partition inside the test; setting `relayerType` directly on the chain builder per case would make the routing logic the SUT actually exercises more explicit.
+
+---
+
+Test coverage on the new branching logic looks solid. Top concerns are **#1 (silent schema catch)**, **#2/#3 (status-code semantics)**, and **#4 (rollout sequencing)**.
+ • Branch: `feat/relay-type-from-config-service`
+
+COMMENT
+[akshay-ap 2026-06-10T11:20:19Z] > **Claude finished @akshay-ap's task in 1m 21s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/27206455540)
+> 
+> ### Claude PR Review
+> * [x]  Read CLAUDE.md and gather context
+> * [x]  Analyze the diff
+> * [x]  Review key files
+> * [x]  Post review feedback
+> 
+> Nice refactor — moving relayer selection out of env vars and into per-chain config is a clear improvement. A few things to consider before merging:
+> 
+> #### 1. Schema silently swallows unknown relayer types
+> `src/modules/chains/domain/entities/schemas/chain.schema.ts:75`
+> 
+> ```ts
+> type: z.enum(RelayerType).nullable().catch(null),
+> ```
+> 
+> Any future relayer type added in the config service (e.g. `GTF_V2`) becomes `null` here, which then triggers `NoRelayerDefinedError` → 403 with no log line. This is a silent outage waiting to happen. Use `z.preprocess` / `.transform` and `loggingService.warn` on the fallback so divergence is observable.
+> 
+> #### 2. `RelayerTypeNotImplementedError` → 403 is the wrong status
+> `src/modules/relay/domain/errors/relayer-type-not-implemented.error.ts:4` extends `ForbiddenException`. Semantically this is "server hasn't implemented this," not "you're not allowed." Use `HttpStatus.NOT_IMPLEMENTED` (501) in the exception filter (the filter currently hard-codes 403 for both cases). Also narrow `relayerType: string` → `RelayerType` since callers only pass enum values.
+> 
+> #### 3. Inconsistent error codes for the same logical state
+> * `src/modules/fees/routes/fees.service.ts:25-28` → 400 (`BadRequestException`) when `relayer.type !== RELAY_FEE`.
+> * `src/modules/relay/domain/relay.manager.ts:60` → 403 (`NoRelayerDefinedError`).
+> 
+> Both mean "chain not configured for this relay flow." Pick one contract so clients can branch consistently.
+> 
+> #### 4. Rollout sequencing risk
+> `src/modules/relay/domain/relay.manager.ts:50` — the old behavior fell back to `DailyLimitRelayer` for unconfigured chains. Now any chain whose `relayer.type` is `null` in the config-service response returns 403. Coupled with the chain cache in `config-api.service.ts`, a partial config-service rollout (or a stale cache window) means live 403s on `POST /v1/chains/:id/relay`. Confirm the config-service PR ships first and is fully populated, and consider an admin hook to invalidate the chain cache when relayer config changes.
+> 
+> #### 5. `relayerBuilder` returns `null` ~20% of the time by default
+> `src/modules/chains/domain/entities/__tests__/relayer.builder.ts:13-18`
+> 
+> ```ts
+> .with('type', faker.helpers.arrayElement([...Object.values(RelayerType), null]))
+> ```
+> 
+> Any test that uses `chainBuilder().build()` without overriding `relayer.type` will randomly route to `GTF` (501-ish) or `null` (403). Either default to a valid non-`GTF` value, or always force the field explicitly in tests — otherwise this becomes a flaky-test source.
+> 
+> #### 6. `getRelaysRemaining` behavior change for RELAY_FEE without `safeTxHash`
+> `src/modules/relay/domain/relayers/relay-fee.relayer.ts:332-336` — when no `safeTxHash` is provided on a `RELAY_FEE` chain, it now returns `{ remaining: 1, limit: 1 }` optimistically (was `{ 0, 0 }` previously via the env-var guard). Clients polling without `safeTxHash` will see a different contract. Worth a doc note and/or a test asserting this is intentional.
+> 
+> #### 7. Exception filter applied per-method
+> `src/modules/relay/routes/relay.controller.ts:129` and `:212` register `RelayerNotAvailableExceptionFilter` on each route. Since every route in this controller routes through `RelayManager.getRelayer`, promote it to a class-level `@UseFilters` to remove the chance of forgetting it on a future endpoint.
+> 
+> #### Minor
+> * `src/modules/relay/domain/relay.repository.ts:30,52` — `chain.relayer?.type ?? null` is duplicated; consider a small helper or destructure once.
+> * `src/modules/relay/routes/relay.controller.integration.spec.ts:80-88` — `relayerTypeForChainId` reimplements the old env-var partition inside the test; setting `relayerType` directly on the chain builder per case would make the routing logic the SUT actually exercises more explicit.
+> 
+> Test coverage on the new branching logic looks solid. Top concerns are **#1 (silent schema catch)**, **#2/#3 (status-code semantics)**, and **#4 (rollout sequencing)**. • Branch: `feat/relay-type-from-config-service`
+
+1. Invalid
+2. Fixed https://github.com/safe-global/safe-client-gateway/pull/3105/commits/391da53f91a77f82aaf8ebc5f6bd17c9162ab591
+3. Invalid
+4. Accepted risk. We will make sure this does not happen
+5. Fixed https://github.com/safe-global/safe-client-gateway/pull/3105/commits/8f9a4e929c2abed4f712724e98d6af918c693b84
+6. Restored existing behavior https://github.com/safe-global/safe-client-gateway/pull/3105/commits/d4db3c92a1ad14e6c21499c1e58831624889433f
+
+COMMENT
+[akshay-ap 2026-06-10T12:37:13Z] > @akshay-ap this PR launch a `NoRelayerDefinedError` when no relayer is defined. This is against the:
+> 
+> > Stage 1 — current behaviour (default / kill switch): no fee collected; Gelato relay not mandatory (non-Gelato/EOA flow allowed). Reverting to this stage is the kill switch / security fallback.
+> 
+> Defined in https://linear.app/safe-global/issue/PLA-1560/backend-per-chain-gtf-stage-flag-3-stages-incl-kill-switch
+> 
+> Or am I missing something? I thought that when the relayer is not defined, we default to the current production interface where connected wallets pay
+
+No relayer enabled means connected connected wallets pay for the transaction. Gelato relayer/Fee service will not be involved. This is the current default behavior on Mainnet.
+
+COMMENT
+[akshay-ap 2026-06-11T11:32:58Z] > There are leftovers of the env variables RELAY_DAILY_LIMIT_CHAIN_IDS, RELAY_FEE_CHAIN_IDS, RELAY_SIMULATION_CHAIN_IDS in .env.sample.json and .devcontainer/docker-compose.yml
+
+https://github.com/safe-global/safe-client-gateway/pull/3105/commits/2d413d64da7212017793cc99fc569fd4b0ea1534
+
+COMMENT
+[datadog-official 2026-06-19T12:06:15Z] <a target='_blank' href='https://app.datadoghq.eu/ci/pipeline-executions?query=ci_level%3Ajob+%40ci.status%3Aerror+%40git.commit.sha%3A0ab3dd7066978657109e361b2fe79dce75bd37c8&referrer=pr-comment'><picture><source media="(prefers-color-scheme: dark)" srcset="https://static.datadoghq.com/static/images/pr_comments/software_delivery/badges_header/pipelines-warning.svg"/><img src="https://static.datadoghq.com/static/images/pr_comments/software_delivery/badges_header/pipelines-warning-light.svg" alt="Pipelines" align="center" /></picture></a>
+
+## ⚠️ Warnings
+
+🚦 **1 Pipeline job failed**
+
+<blockquote>
+<div>
+
+<code> CI | integration-tests </code> &nbsp;&nbsp;<a href="https://app.datadoghq.eu/ci/pipeline-executions?query=ci_level%3Ajob&#43;ci.job_correlation_id%3Aee16bad2ff322489&amp;referrer=pr-comment" title="View in Datadog"><img src="https://static.datadoghq.com/static/images/pr_comments/software_delivery/datadog_icon.svg" alt="View in Datadog" align="center" /></a> &nbsp; <a href="https://github.com/safe-global/safe-client-gateway/actions/runs/27824407526/job/82345071336" title="View in GitHub Actions"><picture><source media="(prefers-color-scheme: dark)" srcset="https://static.datadoghq.com/static/images/pr_comments/software_delivery/logos/github-logo-dark.svg"/><img src="https://static.datadoghq.com/static/images/pr_comments/software_delivery/logos/github-logo-light.svg" alt="GitHub Actions" align="center" /></picture></a>
+
+</div>
+</blockquote>
+
+<sub>
+This comment will be updated automatically if new data arrives. <br />
+🔗 Commit SHA: 0ab3dd7 | <a href="https://docs.datadoghq.com/integrations/guide/source-code-integration/#pr-comments">Docs</a> | Give us <a href="https://forms.gle/ys6MDmdQEeC5pkzWA">feedback</a>!
+</sub>

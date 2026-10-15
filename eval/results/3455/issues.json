@@ -1,0 +1,66 @@
+{
+  "usage": {
+    "usd": 0.32818780000000003,
+    "turns": 5,
+    "wallSeconds": 37
+  },
+  "issues": [
+    {
+      "findings": [
+        "F1",
+        "F3"
+      ],
+      "summary": "No service- or repository-level test covering a null-`to` row in the batch chunk path or the queue-vs-Transaction-Service fallback",
+      "label": "low",
+      "evidence": "The PR adds only a schema spec (multisig-transaction.entity.spec.ts). The batch path (safe-queue.service.ts:212-218) and the mapper (transaction.mapper.ts:40) get no test with a null `to`. The fix itself is the schema transform at entity.ts:46, and the new spec covers that directly, so a regression of the fix would still be caught. The extra coverage would help but its absence is minor.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F5",
+        "F8"
+      ],
+      "summary": "`.nullish()` also accepts a missing `to` key, not only an explicit `null`",
+      "label": "low",
+      "evidence": "entity.ts:46 uses `.nullish()`. The PR description says on purpose that `to` accepts \"`null` or a missing value\", and the spec tests the missing case. So this is intended, not a bug. The remaining risk is small: a malformed body that is missing `to` now parses and gets the zero address instead of failing and falling back to the Transaction Service.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F2",
+        "F9"
+      ],
+      "summary": "Nothing in the repo confirms what a null `to` from the Queue Service means",
+      "label": "unverifiable",
+      "evidence": "The PR description says the Queue Service returns `to: null` for transactions with no recipient, and that the Transaction Service returns the zero address for the same case. Neither the Queue Service contract nor its semantics are in the repo, so whether zero address is the right meaning cannot be settled from the code.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F4"
+      ],
+      "summary": "No code comment explains why `to` maps null to zeroAddress instead of using NullableAddressSchema",
+      "label": "low",
+      "evidence": "entity.ts:46 differs from the NullableAddressSchema fields around it with no inline comment, and the commit message has no body (checked with `git log -1`). The reasoning is only in the PR description, so a later reader could 'fix' it back to nullable.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F6"
+      ],
+      "summary": "The PR body should say what a null `to` means upstream",
+      "label": "wrong",
+      "evidence": "The PR description already says this: \"The Queue Service returns `to: null` for transactions with no recipient, while the Transaction Service returns the zero address for the same case.\"",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F7"
+      ],
+      "summary": "The test uses a `` as `0x${string}` `` cast where the repo convention is `as Address`",
+      "label": "nit",
+      "evidence": "multisig-transaction.entity.spec.ts:31 is the only spec that uses this cast form. The repo has 52 uses of `toLowerCase() as Address`. The two types are identical, so this is only a style difference.",
+      "category": "convention"
+    }
+  ]
+}

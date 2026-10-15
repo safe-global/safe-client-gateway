@@ -1,0 +1,30 @@
+{
+  "usd": 0.0589476,
+  "findings": [
+    {
+      "file": ".github/workflows/linear-release.yml",
+      "line": 55,
+      "claim": "On workflow_dispatch with a specific version input, the checkout ref falls back to github.ref (the branch the run was launched from) instead of the tag for that version, so a backfill for an older release would scan commits from the current branch rather than that release's history if the action derives its commit range from the checked-out HEAD."
+    },
+    {
+      "file": ".github/workflows/linear-release.yml",
+      "line": 95,
+      "claim": "On workflow_dispatch, github.event.release is undefined, so the links field is empty and the re-synced Linear release loses its link back to the corresponding GitHub release."
+    },
+    {
+      "file": ".github/workflows/linear-release.yml",
+      "line": 96,
+      "claim": "On the release trigger, inputs.dry_run is unset and expands to an empty string rather than an explicit boolean, which happens to behave as falsy but relies on subtle, implicit behavior instead of an explicit fallback."
+    },
+    {
+      "file": ".github/workflows/linear-release.yml",
+      "line": null,
+      "claim": "The manual version input is only checked for emptiness, so a malformed value like 1.1220 or v1.122 would silently propagate into the Linear API instead of failing fast in the workflow."
+    },
+    {
+      "file": ".github/workflows/linear-release.yml",
+      "line": 39,
+      "claim": "The concurrency group key falls back to github.ref for manual dispatches without a version input, so two manual dispatches from the same branch that resolve to the same version still serialize on the branch ref rather than being grouped by the resolved version, making the group less informative than it could be."
+    }
+  ]
+}

@@ -1,0 +1,127 @@
+{
+  "pr": 3472,
+  "title": "feat(ci): Extract the quality gate into a reusable workflow",
+  "description": "\r\n## Summary\r\n\r\nPull requests now enter through pull-request.yml, which calls _ci-node.yml. ci.yml calls the same reusable for its own gating, so there is one definition of the quality gate with two entry points instead of a copy per event.\r\n\r\nThe jobs themselves are unchanged in substance — license-headers, env-validation, biome plus tsc --noEmit, unit and integration tests with their redis/postgres/rabbitmq services, and the parallel Coveralls reporting. What changed around them: the Node and Python versions and the checkout ref are inputs, and callers pass `secrets: inherit` so the job bodies keep reading SAFE_CONFIG_BASE_URI as they did.\r\n\r\n## Changes\r\n\r\nci.yml keeps docker-publish-staging, docker-publish-release and autodeploy, now gated on the reusable instead of on two of its own jobs. Nothing about building or deploying changes here; this is the PR gate only. It is the first of four PRs, so that removing the repo's only CI is not one 978-line change.\r\n\r\nREQUIRED CHECKS MUST BE RENAMED WHEN THIS MERGES. Branch protection requires \"tests (test:cov)\", \"tests-finish\" and \"biome\". Called through a reusable those become \"ci / tests (test:cov)\", \"ci / tests-finish\" and \"ci / biome\". A required check that no longer reports is never satisfied, so every open PR in the repo blocks until branch protection is updated — not just this one.\r\n\r\npull-request.yml carries its own concurrency group. ci.yml used to cancel superseded PR runs through its group; without this, rapid pushes to a PR would pile up runners instead.\r\n\r\nThree guides described ci.yml's jobs by name and are updated here. The billing README's arm64 link stays pointing at ci.yml, which still holds the build jobs until the next PR.\r\n\r\nRefs: \r\n[WA-3407](https://linear.app/safe-global/issue/WA-3407/event-driven-cicd-pipeline-migration-safe-client-gateway)\r\n[WA-3420](https://linear.app/safe-global/issue/WA-3420/implement-reusable-workflows-ci-node-build-image-deploy-release)\r\n[WA-3421](https://linear.app/safe-global/issue/WA-3421/implement-caller-workflows-pull-request-staging-release-please)\r\n[WA-3424](https://linear.app/safe-global/issue/WA-3421/implement-caller-workflows-pull-request-staging-release-please)\r\n\r\n> Note: this PR changes neither how releases are cut nor how anything deploys.\r\n\r\n> Releases are still created by hand in GitHub → Releases. ci.yml keeps its release: released trigger, builds the same image, and pushes the same tags to Docker Hub and GHCR. The Linear sync is untouched. release-please is not in this PR — that is PR C, and it will be additive: the bot starts maintaining a Release PR, but cutting one by hand keeps working until the team decides to switch.\r\n\r\n> Deploys do not change either. The three build and deploy jobs are identical to main apart from one line in two of them (needs: [biome, tests-finish] → needs: [ci]), and autodeploy is untouched. A push to main still builds :staging and still calls the webhook.\r\n\r\n> The one real change: the checks become ci / biome, ci / tests (test:cov) and ci / tests-finish, and they have to be renamed in the ruleset when this merges — the control-plane PR is ready.\r\n\r\n",
+  "findings": [
+    {
+      "id": "F1",
+      "file": "docs/agents/testing.md",
+      "line": 36,
+      "claim": "This file states that _ci-node.yml is called by pull-request.yml, staging.yml and production.yml, but staging.yml and production.yml do not exist in the repository, so the documentation points to files that aren't there."
+    },
+    {
+      "id": "F2",
+      "file": ".github/workflows/ci.yml",
+      "line": 44,
+      "claim": "Deploy gating became stricter without being called out: docker-publish-staging and docker-publish-release previously waited only on biome and tests-finish, but now wait on the entire ci call, so a failing license-headers or env-validation job also blocks a staging deploy or release image, and the commit body describes the jobs as 'unchanged in substance' without mentioning this behavior change."
+    },
+    {
+      "id": "F3",
+      "file": ".github/workflows/_ci-node.yml",
+      "line": 17,
+      "claim": "None of the callers (ci.yml:35-37, pull-request.yml:27-30) set the node_version, python_version, or ref inputs defined on the reusable workflow, so these inputs currently have no effect from any caller."
+    },
+    {
+      "id": "F4",
+      "file": ".github/workflows/ci.yml",
+      "line": 81,
+      "claim": "The needs condition for autodeploy changed from [biome, tests-finish] to [ci], so on a push to main a failure in license-headers or env-validation now blocks autodeploy, contradicting the commit message's claim that nothing about building or deploying changes."
+    },
+    {
+      "id": "F5",
+      "file": null,
+      "line": null,
+      "claim": "On a release event, env-validation becomes a newly blocking dependency for deploy jobs because license-headers is skipped on release events and a skipped job doesn't fail the caller workflow, meaning the effective deploy gate differs from before in a way not mentioned in the commit message."
+    },
+    {
+      "id": "F6",
+      "file": "docs/agents/commits-and-prs.md",
+      "line": 166,
+      "claim": "The document says the build and deploy jobs live in staging.yml and production.yml, but those files do not exist; the jobs are still in ci.yml."
+    },
+    {
+      "id": "F7",
+      "file": "docs/agents/testing.md",
+      "line": 36,
+      "claim": "The guide states that _ci-node.yml is called by pull-request.yml, staging.yml and production.yml, but staging.yml and production.yml do not exist in the repository."
+    },
+    {
+      "id": "F8",
+      "file": ".github/workflows/_ci-node.yml",
+      "line": 277,
+      "claim": "Moving the job body split a two-line comment about production running on arm64 in half, leaving a dangling fragment in the reusable workflow while the corresponding explanation above docker-publish-staging in ci.yml:39 was lost entirely."
+    },
+    {
+      "id": "F9",
+      "file": "docs/agents/commits-and-prs.md",
+      "line": 166,
+      "claim": "This file states that the build and deploy jobs live in staging.yml and production.yml, but those files don't exist; build and deploy logic is still in ci.yml, making the documentation stale."
+    },
+    {
+      "id": "F10",
+      "file": null,
+      "line": null,
+      "claim": "The commit subject 'ci: Extract the quality gate into a reusable workflow' starts with a capital letter, violating the project's convention (docs/agents/commits-and-prs.md:13) of an imperative, lowercase-starting description; since main is squash-merged, only the PR title will end up in history, so the PR title should be corrected instead."
+    },
+    {
+      "id": "F11",
+      "file": ".github/workflows/_ci-node.yml",
+      "line": 17,
+      "claim": "The ref input, if ever set by a caller, would reach the license-headers diff logic, which assumes HEAD is the triggering commit; introducing an unused ref input without addressing this assumption could cause incorrect diff behavior once a caller starts passing it."
+    },
+    {
+      "id": "F12",
+      "file": "ci.yml",
+      "line": 39,
+      "claim": "The full two-line comment explaining the arm64 build (previously above docker-publish-staging) is now missing from ci.yml, even though src/modules/billing/README.md:192 still directs readers to ci.yml for that explanation."
+    },
+    {
+      "id": "F13",
+      "file": ".github/workflows/_ci-node.yml",
+      "line": 276,
+      "claim": "A leftover, unfinished comment fragment about arm64 builds ('Production runs on arm64 only, so we build a single-arch image. We run on an') is left at the end of the file with no job following it, apparently left over from moving code out of ci.yml."
+    },
+    {
+      "id": "F14",
+      "file": ".github/workflows/_ci-node.yml",
+      "line": 82,
+      "claim": "Making the Node version a configurable input leaves the '# Krypton' comment promising a guarantee about the Node version that is no longer ensured since the value can now vary via the unused input."
+    },
+    {
+      "id": "F15",
+      "file": ".github/workflows/ci.yml",
+      "line": 37,
+      "claim": "Using secrets: inherit here also over-grants all repository secrets to jobs that only need SAFE_CONFIG_BASE_URI (referenced at _ci-node.yml:175 and :248); moving the CI jobs into a reusable workflow was an opportunity to narrow this that was not taken."
+    },
+    {
+      "id": "F16",
+      "file": ".github/workflows/ci.yml",
+      "line": 44,
+      "claim": "The needs condition changed from [biome, tests-finish] to [ci], which now waits on the entire reusable workflow; this means a failure in license-headers or env-validation on a push to main would now block docker-publish-staging, whereas before staging still deployed in that case."
+    },
+    {
+      "id": "F17",
+      "file": ".github/workflows/pull-request.yml",
+      "line": 30,
+      "claim": "Using secrets: inherit gives the test jobs access to every repository secret, including Docker Hub credentials (DOCKER_USER, DOCKER_PASSWORD) and autodeploy secrets (AUTODEPLOY_URL, AUTODEPLOY_TOKEN), when the jobs only need SAFE_CONFIG_BASE_URI."
+    },
+    {
+      "id": "F18",
+      "file": ".github/workflows/_ci-node.yml",
+      "line": 17,
+      "claim": "New workflow_call inputs node_version, python_version and ref are added but neither caller (pull-request.yml or ci.yml) passes any of them, and ref is threaded into every checkout despite being unused."
+    },
+    {
+      "id": "F19",
+      "file": null,
+      "line": null,
+      "claim": "After this change, the required check names reported to branch protection will be 'ci / ...' instead of the previous names ('tests (test:cov)', 'tests-finish', 'biome'), so branch protection settings must be updated at merge time or every open PR in the repository will be blocked; this should be called out prominently in the PR body rather than only in the commit message."
+    },
+    {
+      "id": "F20",
+      "file": ".github/workflows/_ci-node.yml",
+      "line": 82,
+      "claim": "The '# Krypton' comments at lines 82, 100, 164 and 234 are now misleading because the workflow's version references are parameterized via unused inputs rather than hardcoded as the comments imply."
+    }
+  ]
+}

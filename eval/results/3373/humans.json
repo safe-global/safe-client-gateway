@@ -1,0 +1,18 @@
+{
+  "usd": 0.249996,
+  "head": "e2b0a57aa57765f9c8525bcb0c2877a95f6ee543",
+  "verdicts": [
+    {
+      "issue": 5,
+      "verdict": "open",
+      "present": true,
+      "evidence": "rhinestone-api.service.ts:116-119 still slices to MAX_LOGGED_UPSTREAM_ERRORS before filtering out empty messages. No commits were made after e2b0a57aa, and no human replied to the bot's nit."
+    },
+    {
+      "issue": 10,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "In the resolved thread at rhinestone-api.service.ts:142, dasanra declined to make the change in this PR (\"I will tackle this under #3372 instead\"), and no commits followed e2b0a57aa. The helpers are still class methods."
+    }
+  ]
+}

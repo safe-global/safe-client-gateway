@@ -1,0 +1,30 @@
+{
+  "usd": 0.0606336,
+  "findings": [
+    {
+      "file": "src/modules/entitlements/domain/entities/feature.entity.ts",
+      "line": 12,
+      "claim": "FeatureKey is typed as a plain string instead of a union of FEATURE_KEYS, so it accepts any string and no longer enforces membership in FEATURE_KEYS at compile time. This means the OpenAPI enum documentation becomes a docs-only contract, and drift between the type and the actual allowed keys would only be caught by a runtime integration test rather than the compiler."
+    },
+    {
+      "file": "src/modules/entitlements/routes/entitlements.service.ts",
+      "line": 366,
+      "claim": "resolveFeature checks for FeatureType.Binary and FeatureType.Value explicitly but falls through to returning a Metered-shaped object for any other type, including one added in the future. If a fourth FeatureType is introduced, it would silently be served as Metered with resetsAt/quota/used fields without a compile error, unlike the exhaustive handling used for stockCounters."
+    },
+    {
+      "file": "src/modules/entitlements/routes/entitlements.service.ts",
+      "line": 77,
+      "claim": "resolveEntitlements uses Promise.all to fetch spaceCreatedAt, features, and activeSubscription concurrently, so for a non-existent space the other two queries still run to completion before the existence check's rejection surfaces, wasting work. This is also relevant because the method is reachable directly and not only through the HTTP path where assertMember would throw first."
+    },
+    {
+      "file": "migrations/1787148838500-seed-features.ts",
+      "line": 12,
+      "claim": "The migration's up() uses ON CONFLICT (\"key\") DO NOTHING making it idempotent, but down() deletes rows and their dependents unconditionally, even if a given feature row was inserted by something else in the meantime, so down() is destructive rather than a strict inverse of up()."
+    },
+    {
+      "file": "src/modules/entitlements/domain/entitlements.constants.ts",
+      "line": 70,
+      "claim": "The comment near FEATURE_METADATA_PREFIX references feature keys such as SECURITY_HUB, SPONSORED_TRANSACTIONS, and SWAP_FEE_TIER that are not present in FEATURE_KEYS, which currently only contains safe_seats, so the documentation is ahead of or inconsistent with the actual catalog of keys."
+    }
+  ]
+}

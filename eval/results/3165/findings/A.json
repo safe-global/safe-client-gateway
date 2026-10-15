@@ -1,0 +1,50 @@
+{
+  "usd": 0.0722136,
+  "findings": [
+    {
+      "file": "src/modules/spaces/routes/address-book-requests.service.ts",
+      "line": 83,
+      "claim": "The pending-request limit count and check are implemented in the service rather than in the repository, unlike every other limit in this module, which is checked inside its repository alongside its config read (e.g. address-book-items.repository.ts, space-safes.repository.ts, spaces.repository). Moving the count and limit check into AddressBookRequestsRepository.create, next to the unique-constraint handling, would remove the service's need for IConfigurationService and countPending."
+    },
+    {
+      "file": "src/modules/spaces/routes/address-book-requests.service.ts",
+      "line": 83,
+      "claim": "The limit-exceeded message uses lowercase \"workspace\" while the module's other limit messages use the format \"This Workspace only allows a maximum of N …\", making the wording inconsistent with existing messages."
+    },
+    {
+      "file": "src/modules/spaces/routes/address-book-requests.service.ts",
+      "line": 83,
+      "claim": "countPending and create are executed as separate calls with no shared transaction, so two concurrent requests from the same user can both read a pending count of N-1 and both succeed in inserting, allowing the total to exceed maxPending. The per-IP rate limit reduces the likelihood but does not prevent it; performing the count and insert in one transaction inside the repository would close this gap."
+    },
+    {
+      "file": "src/modules/spaces/domain/address-books/address-book-requests.repository.ts",
+      "line": 80,
+      "claim": "The countPending logic and its limit check (using >=, and counting only PENDING requests) are covered only by end-to-end tests. There is no test verifying that approved or rejected requests are excluded from the count, or that the limit is enforced per space and per user, unlike existing precedent where such limits are covered by repository integration specs (e.g. address-book-items.repository.integration.spec.ts, space-safes.repository.integration.spec.ts)."
+    },
+    {
+      "file": "src/modules/spaces/routes/address-book-requests.service.ts",
+      "line": null,
+      "claim": "AddressBookRequestsService has no unit spec."
+    },
+    {
+      "file": "src/modules/spaces/routes/address-book-requests.controller.e2e-spec.ts",
+      "line": 107,
+      "claim": "The end-to-end tests for invalid name and empty chainIds returning 422 duplicate checks already covered by the new address-book-request.dto.entity.spec.ts, so one of the two redundant tests should be removed to keep only one representative 422 wiring test per route."
+    },
+    {
+      "file": "src/modules/spaces/routes/entities/address-book-request.dto.entity.ts",
+      "line": 100,
+      "claim": "The Zod schema requires at least one chain id, but the corresponding @ApiProperty only documents this constraint in free-text description rather than via a minItems: 1 constraint, so the published Swagger schema does not match the actual validation, unlike the name field where maxLength is already set."
+    },
+    {
+      "file": "docs/engineering/sources/working/open-question-options.md",
+      "line": 245,
+      "claim": "This working document still refers to UserAddressBookItem and \"private address books\", a feature this PR deletes, so the documentation no longer matches the code."
+    },
+    {
+      "file": "docs/engineering/sources/working/module-inventory.md",
+      "line": 82,
+      "claim": "This working document still refers to UserAddressBookItem and \"private address books\", a feature this PR deletes, so the documentation no longer matches the code."
+    }
+  ]
+}

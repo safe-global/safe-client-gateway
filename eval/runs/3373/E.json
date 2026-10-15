@@ -1,0 +1,11 @@
+{
+  "pr": 3373,
+  "reviewSha": "e2b0a57aa57765f9c8525bcb0c2877a95f6ee543",
+  "baseSha": "482232a40249c7bee55a23a97031c50c3842ed33",
+  "system": "E",
+  "version": "github",
+  "runner": "collect",
+  "model": "human",
+  "commentSha": "e2b0a57aa57765f9c8525bcb0c2877a95f6ee543",
+  "output": "src/modules/relay/datasources/rhinestone-api.service.ts:142\nI dont want to block the PR and testing of rhinestone, but these 3 func are pure functions with no instance state. Ideally they should live outside of the service,so that we can test them in isolation and not through relay() - as every formatting case has to drag along mockRejectedValue + rejects.toThrow + a mocked logger and so on."
+}

@@ -1,0 +1,203 @@
+THREAD src/modules/spaces/routes/address-books.controller.e2e-spec.ts:799 resolved=true
+[LucieFaire 2026-06-10T19:56:48Z] why do we need to rename this method? I think the old name is a correct one as it purely invites the member. Or we could call it `createPendingMember`
+[vseehausen 2026-06-12T10:24:51Z] Yes. I wanted to avoid confusion. We could use `createPendingMember` and `createActiveMember`.
+[vseehausen 2026-06-12T10:38:33Z] addressed in 4f4aaba779c476349a7c3ba92585f81a1a2adaef
+
+THREAD src/modules/spaces/routes/address-books.controller.e2e-spec.ts:596 resolved=true
+[copilot-pull-request-reviewer 2026-06-12T06:52:07Z] This test is meant to validate authorization for a non-admin MEMBER, but it currently uses `invitePendingMember` (INVITED status). With ACTIVE-only content access, the 404 may be caused by the pending status rather than the lack of ADMIN role, reducing the test's signal. Use an accepted (ACTIVE) non-admin member here.
+[vseehausen 2026-06-12T10:38:34Z] addressed in 4f4aaba779c476349a7c3ba92585f81a1a2adaef
+
+THREAD src/modules/spaces/routes/address-books.controller.e2e-spec.ts:726 resolved=true
+[copilot-pull-request-reviewer 2026-06-12T06:52:08Z] This test is meant to validate authorization for a non-admin MEMBER, but it currently uses `invitePendingMember` (INVITED status). With ACTIVE-only content access, the 404 may be caused by the pending status rather than the lack of ADMIN role, reducing the test's signal. Use an accepted (ACTIVE) non-admin member here.
+[LucieFaire 2026-06-12T09:35:57Z] seems like a valid point no?
+[vseehausen 2026-06-12T10:38:35Z] addressed in 4f4aaba779c476349a7c3ba92585f81a1a2adaef
+
+THREAD src/modules/spaces/routes/address-books.controller.e2e-spec.ts:820 resolved=true
+[LucieFaire 2026-06-12T08:42:51Z] maybe this could be called `createActiveMember`? Then you dont need a comment its its self-explanatory :)
+[vseehausen 2026-06-12T10:38:37Z] addressed in 4f4aaba779c476349a7c3ba92585f81a1a2adaef
+
+THREAD src/modules/spaces/routes/members.controller.ts:241 resolved=true
+[LucieFaire 2026-06-12T08:44:47Z] hm `receives only their own membership row,` sounds a bit weird, does it mean they only see their own membership state?
+[vseehausen 2026-06-12T10:25:13Z] Yes.
+[vseehausen 2026-06-12T10:38:38Z] addressed in 4f4aaba779c476349a7c3ba92585f81a1a2adaef
+
+THREAD src/modules/spaces/routes/user-address-book.controller.e2e-spec.ts:275 resolved=true
+[LucieFaire 2026-06-12T08:58:11Z] `should forbid access to a pending member` ?
+[vseehausen 2026-06-12T10:38:39Z] addressed in 4f4aaba779c476349a7c3ba92585f81a1a2adaef
+
+THREAD src/modules/spaces/routes/user-address-book.controller.e2e-spec.ts:463 resolved=true
+[LucieFaire 2026-06-12T08:58:50Z] i would also keep the name as it was. 
+[vseehausen 2026-06-12T10:38:40Z] addressed in 4f4aaba779c476349a7c3ba92585f81a1a2adaef
+
+THREAD src/modules/spaces/routes/user-address-book.controller.e2e-spec.ts:487 resolved=true
+[LucieFaire 2026-06-12T08:59:16Z] same here
+[vseehausen 2026-06-12T10:38:42Z] addressed in 4f4aaba779c476349a7c3ba92585f81a1a2adaef
+
+THREAD src/modules/users/domain/members.repository.integration.spec.ts:2214 resolved=true
+[LucieFaire 2026-06-12T09:00:05Z] `pending member` ? I think if we use the same wording everywhere it would be easier to undertand :)
+[vseehausen 2026-06-12T10:38:43Z] addressed in 4f4aaba779c476349a7c3ba92585f81a1a2adaef
+
+REVIEW DISMISSED
+[gatleas17 2026-06-10T17:22:49Z] Please
+
+REVIEW COMMENTED
+[copilot-pull-request-reviewer 2026-06-12T06:52:08Z] ## Pull request overview
+
+This PR closes an authorization gap where `INVITED` (pending) members could access workspace/space contents before accepting an invite, by tightening multiple “active-or-pending” authorization paths to `ACTIVE`-only while keeping invite visibility for listing flows.
+
+**Changes:**
+- Restrict “space content” access checks (e.g., `assertMember`, shared address book access) to `ACTIVE` memberships only.
+- Adjust members/spaces read models so pending invitees only see their own membership row (no roster) and get `safeCount: 0`.
+- Update unit/integration/e2e coverage to reflect ACTIVE-only access expectations and add regression tests for the previously untested holes.
+
+### Reviewed changes
+
+Copilot reviewed 12 out of 12 changed files in this pull request and generated 2 comments.
+
+<details>
+<summary>Show a summary per file</summary>
+
+| File | Description |
+| ---- | ----------- |
+| src/modules/users/domain/members.repository.ts | Returns only the caller’s own membership row for pending invitees; blocks alias updates for non-ACTIVE memberships. |
+| src/modules/users/domain/members.repository.integration.spec.ts | Adds coverage for pending-invite roster restriction and ACTIVE-only alias update behavior. |
+| src/modules/spaces/routes/utils/space-assert.utils.ts | Changes `assertMember` to require `status: 'ACTIVE'`. |
+| src/modules/spaces/routes/utils/__tests__/space-assert.utils.spec.ts | Updates specs to reflect ACTIVE-only membership assertion. |
+| src/modules/spaces/routes/user-address-book.controller.e2e-spec.ts | Updates helpers/tests to accept invites for ACTIVE-only content access; adds 403 cases for pending/non-member. |
+| src/modules/spaces/routes/spaces.service.ts | Hides roster/safe counts for pending invitees while preserving invite listing. |
+| src/modules/spaces/routes/spaces.service.spec.ts | Adds/updates tests for pending-invite visibility behavior (roster + safeCount hidden). |
+| src/modules/spaces/routes/members.controller.ts | Documents pending-invite behavior on the “Get space members” endpoint. |
+| src/modules/spaces/routes/address-books.controller.e2e-spec.ts | Updates member setup helpers to distinguish pending vs active access to shared address books. |
+| src/modules/spaces/routes/address-book-requests.controller.e2e-spec.ts | Renames member invite helper but needs alignment with ACTIVE-only access after `assertMember` change. |
+| src/modules/spaces/domain/address-books/address-book-items.repository.ts | Restricts address-book space lookup to `ACTIVE` members only. |
+| src/modules/spaces/domain/address-books/address-book-items.repository.integration.spec.ts | Adds regression coverage ensuring INVITED users cannot read space address book items. |
+</details>
+
+
+
+
+<details>
+<summary>Comments suppressed due to low confidence (1)</summary>
+
+**src/modules/spaces/routes/address-book-requests.controller.e2e-spec.ts:539**
+* `invitePendingMember` only creates an INVITED membership and does not accept it, but the endpoints exercised in this spec call `assertMember(...)` (now ACTIVE-only). As written, these tests will start failing with 403 once pending members are blocked from space contents. Update the helper to accept the invite (or add an `inviteActiveMember` helper) so the caller is ACTIVE before hitting `/address-book/private` and `/address-book/requests`.
+```
+  const invitePendingMember = async (args: {
+    spaceId: string;
+    adminAccessToken: string;
+  }): Promise<{ memberAccessToken: string }> => {
+    const memberAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
+    const memberAccessToken = jwtService.sign(memberAuthPayloadDto);
+    const member = {
+      role: 'MEMBER',
+      name: faker.person.firstName(),
+      address: memberAuthPayloadDto.signer_address,
+    };
+    await request(app.getHttpServer())
+      .post(`/v1/spaces/${args.spaceId}/members/invite`)
+      .set('Cookie', [`access_token=${args.adminAccessToken}`])
+      .send({ users: [member] })
+      .expect(201);
+    return { memberAccessToken };
+  };
+```
+</details>
+
+
+
+---
+
+💡 <a href="/safe-global/safe-client-gateway/new/main?filename=.github/instructions/*.instructions.md" class="Link--inTextBlock" target="_blank" rel="noopener noreferrer">Add Copilot custom instructions</a> for smarter, more guided reviews. <a href="https://docs.github.com/en/copilot/customizing-copilot/adding-repository-custom-instructions-for-github-copilot" class="Link--inTextBlock" target="_blank" rel="noopener noreferrer">Learn how to get started</a>.
+
+REVIEW DISMISSED
+[LucieFaire 2026-06-12T11:31:29Z] LGTM
+
+COMMENT
+[TimDaub 2026-06-10T13:53:00Z] I ran this branch locally with safe-wallet-monorepo and I again went through the same flow that I priorly had shared on [Slack](https://safelabsgmbh.slack.com/archives/C094UBQ6ML3/p1781096629997029?thread_ts=1781093390.495989&cid=C094UBQ6ML3). Workflow is as follows:
+
+  1. Create a new space with address A and invite address B
+  2. Create a shared workspace contact as address A
+  3. As address B open the frontend, use the old UI and go to a Safe of address B
+  4. Click "New transaction" on the Safe of address B and check if a dropdown opens with a workspace contact from the workspace of address A (that address B has yet to confirm)
+
+
+With this branch, the contacts from the invited workspace don't show up anymore in the recipient input dropdown when I'm creating a new transaction.
+
+I won't do the code review here as I think someone with knowledge about CGW should do it
+
+
+
+
+COMMENT
+[vseehausen 2026-06-12T10:38:58Z] @claude review
+
+COMMENT
+[claude 2026-06-12T10:39:11Z] ### Claude PR Review
+
+<img src="https://github.com/user-attachments/assets/5ac382c7-e004-429b-8e35-7feb3e8f9c6f" width="14px" height="14px" style="vertical-align: middle; margin-left: 4px;" /> Reviewing...
+
+- [x] Gather context
+- [ ] Read changed files
+- [ ] Provide review feedback
+
+[View job run](https://github.com/safe-global/safe-client-gateway/actions/runs/27410555459) · branch: `fix/space-access-require-active-member`
+
+COMMENT
+[claude 2026-06-12T11:30:23Z] **Claude finished @vseehausen's task in 2m 10s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/27410555459)
+
+---
+### Claude PR Review
+
+The fix correctly tightens both authorization paths (`assertMember` and `getSpaceAs`) to `ACTIVE`, and the `spaces.service` change properly hides the roster and `safeCount` from pending invitees. Below are the things worth improving.
+
+---
+
+#### 1. Test helper duplication across three e2e specs
+
+`createActiveMember` / `createPendingMember` are now near-verbatim copies in:
+
+- `address-books.controller.e2e-spec.ts:798-846`
+- `user-address-book.controller.e2e-spec.ts:458-510`
+- `address-book-requests.controller.e2e-spec.ts:521-549`
+
+Same body (invite → mint JWT from returned `userId` → optionally accept). Extract to a shared test util (e.g. `src/modules/spaces/__tests__/helpers/members.ts`) — otherwise the next ACTIVE/INVITED rule change will need to be repeated 3× and will inevitably drift.
+
+#### 2. Inconsistent `accessTokenForUserId` extraction
+
+`user-address-book.controller.e2e-spec.ts:454-457` extracts a tidy `accessTokenForUserId` helper, but `address-books.controller.e2e-spec.ts:830-834` and `address-book-requests.controller.e2e-spec.ts:541-545` inline the same `siweAuthPayloadDtoBuilder().with('sub', …).build()` pattern. Fold them into the shared helper from item 1.
+
+#### 3. `updateAlias` for pending invitee returns 404, not 403
+
+`src/modules/users/domain/members.repository.ts:411` now narrows the WHERE to `status: 'ACTIVE'`. When a pending invitee calls `PATCH /members/alias`, `updateResult.affected === 0` triggers `NotFoundException` ([repository.ts:415-417](https://github.com/safe-global/safe-client-gateway/blob/fix/space-access-require-active-member/src/modules/users/domain/members.repository.ts#L415-L417)). Everywhere else in this PR a pending caller is rejected with `ForbiddenException` (via `assertMember`). For semantic consistency, prefer calling `assertMember` first, then performing the update — that way the rule lives in one place. ([Fix this →](https://claude.ai/code?q=In%20src%2Fmodules%2Fusers%2Fdomain%2Fmembers.repository.ts%20updateAlias%2C%20call%20assertMember%20first%20so%20a%20pending%20invitee%20gets%20403%20rather%20than%20404%2C%20matching%20the%20rest%20of%20the%20PR.&repo=safe-global/safe-client-gateway))
+
+#### 4. JWT `signer_address` ≠ invited address in the helpers
+
+In all three helpers the access token is built from a fresh `siweAuthPayloadDtoBuilder()` that only overrides `sub`. The token's `signer_address` is unrelated to the wallet that was invited. Auth keys on `sub` so it works, but any future test that asserts wallet-derived state via the SIWE payload will silently use the wrong address. A comment on the helper (or reusing `memberAuthPayloadDto` with `sub` overridden) would prevent that footgun.
+
+#### 5. Minor: roster query still fetches all members for pending invitees
+
+`spaces.service.ts:83-100` queries the space with `relations: { members: true, safes: true }` even when the caller is `INVITED`, then filters in JS at `spaces.service.ts:111-113`. Correct, but a pending invitee still triggers a wide read. If a space grows large this could matter — easy follow-up is to skip those relations when `callerIsActive` is false for that space.
+
+#### 6. Swagger description for `safeCount` not updated
+
+`members.controller.ts` got the "pending only sees own row" note, but the spaces list/get endpoints don't mention that pending invitees see `safeCount: 0`. Worth a one-line addition to the `getSpaces` / `getSpace` swagger so clients aren't surprised.
+
+---
+
+#### Tests
+Coverage looks solid:
+- `member-repository.integration.spec.ts` covers both the pending-roster restriction and the ACTIVE-only alias.
+- `address-book-items.repository.integration.spec.ts:15` covers the previously-untested hole (the main bug).
+- `user-address-book.controller.e2e-spec.ts` adds the 403-for-pending and 403-for-non-member cases.
+
+The remaining gap is what's noted in the PR description: `space-safes` and `counterfactual-safes` still set members up via invite-without-accept and weren't touched here. CI will catch them, but I'd add the accept step in this PR rather than fixing forward.
+
+---
+
+- [x] Read changed files and diff vs `origin/main`
+- [x] Analyze quality, bugs, performance, security, tests
+- [x] Post review
+ · [Branch](https://github.com/safe-global/safe-client-gateway/tree/fix/space-access-require-active-member)
+
+COMMENT
+[vseehausen 2026-06-12T13:42:24Z] Thanks, 3. addressed, all other are fine for now, can be optimized later.

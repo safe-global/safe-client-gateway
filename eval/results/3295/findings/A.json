@@ -1,0 +1,30 @@
+{
+  "usd": 0.040639999999999996,
+  "findings": [
+    {
+      "file": "yarn.lock",
+      "line": 5674,
+      "claim": "The minimatch upgrade commit message states versions 3.1.4 and 9.0.8, but the lockfile actually ends up at 3.1.5 and 9.0.9, so the commit message does not match the final resolved versions."
+    },
+    {
+      "file": "yarn.lock",
+      "line": 6227,
+      "claim": "The postcss upgrade commit message states version 8.5.15, but vite's copy of postcss actually resolves to 8.5.19, so the commit message does not match the final resolved version."
+    },
+    {
+      "file": "yarn.lock",
+      "line": 6216,
+      "claim": "A separate postcss entry (the ^8.3.11 range) still resolves to 8.5.15 while another copy resolves to 8.5.19, leaving two different postcss versions present in the lockfile after the bump."
+    },
+    {
+      "file": "yarn.lock",
+      "line": 5849,
+      "claim": "node-gyp is bumped across a major version, from 10.2.0 to 13.0.1, pulling in new major versions of tar, nopt, and which; this changes how native modules are built and its compatibility with Node 24.11 was not verified by actually building anything."
+    },
+    {
+      "file": "yarn.lock",
+      "line": null,
+      "claim": "Because the reviewer was instructed not to install or run anything, `yarn install --immutable` was not run, so the lockfile's internal consistency was not verified and must be confirmed by CI instead."
+    }
+  ]
+}

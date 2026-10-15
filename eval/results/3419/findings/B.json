@@ -1,0 +1,40 @@
+{
+  "usd": 0.0474156,
+  "findings": [
+    {
+      "claim": "The batch tokens endpoint treats every DataSourceError with code 404 as an unknown token, but the underlying repository resolves the chain via transactionApiManager.getApi(chainId) first. For an unknown chainId, the Config Service's 404 is turned into the same DataSourceError(...,404) shape, so it gets swallowed just like a normal token-not-found error, causing an unknown chain to return 200 [] instead of a 404.",
+      "file": "src/modules/tokens/routes/tokens.service.ts",
+      "line": 10
+    },
+    {
+      "claim": "Because the batch endpoint's isNotFound check can't distinguish an unknown chain from an unknown token, a request like GET /v1/chains/99999/tokens?addresses=0x... returns 200 [] rather than 404, so a client with a mistyped or unsupported chain ID cannot tell that from a chain with genuinely unknown tokens.",
+      "file": "src/modules/tokens/routes/tokens.service.ts",
+      "line": 43
+    },
+    {
+      "claim": "The single-token endpoint returns 404 for an unknown chain while the new batch endpoint returns 200 [] for the same input, making the two endpoints behave inconsistently for the same error condition.",
+      "file": "src/modules/tokens/routes/tokens.service.ts",
+      "line": null
+    },
+    {
+      "claim": "The batch integration test suite has no test case for an unknown chain or a Config Service failure, even though the single-token suite does test the analogous 503 case; such a test would have caught the batch endpoint's incorrect 200 [] behavior for unknown chains.",
+      "file": "tokens.controller.integration.spec.ts",
+      "line": 146
+    },
+    {
+      "claim": "The controller's documentation states the 404 response means 'The Transaction Service does not know this token,' but an unknown chain also produces the same 404, so the documentation is inaccurate or incomplete and should either be worded more broadly or explicitly cover the chain-not-found case.",
+      "file": "tokens.controller.ts",
+      "line": 65
+    },
+    {
+      "claim": "One integration test manually reconstructs the entire mockUpstream routing setup just to introduce a single 503 response, adding roughly 15 unnecessary lines; adding a 'failing' array parameter to mockUpstream would simplify this.",
+      "file": "tokens.controller.integration.spec.ts",
+      "line": 233
+    },
+    {
+      "claim": "The case-insensitive uniqBy logic in the service can never actually trigger from the controller because AddressSchema already checksums every address before it reaches the service, so the deduplication is effectively dead code whose defensive purpose is not documented in a comment.",
+      "file": "tokens.service.ts",
+      "line": 35
+    }
+  ]
+}

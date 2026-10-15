@@ -1,0 +1,65 @@
+{
+  "usage": {
+    "usd": 0.3021572,
+    "turns": 4,
+    "wallSeconds": 36
+  },
+  "issues": [
+    {
+      "findings": [
+        "F2"
+      ],
+      "summary": "Bare package names in npmPreapprovedPackages exempt every future version of both packages from the 7-day age gate, not just 1.37.62",
+      "label": "medium",
+      "evidence": "The bundled Yarn source (.yarn/releases/yarn-4.14.1.cjs, g0t) returns true when `s.range===\"unknown\"`, and that is what a bare descriptor parses to, so .yarnrc.yml:18-20 approves any version of either package permanently. The exact pins in package.json:65-66 and Dependabot's 7-day cooldown reduce the exposure, but a manual bump could still install a freshly published malicious release of packages that supply trusted contract addresses. Pinning a range such as '@safe-global/safe-deployments@1.37.62' would scope the exemption to this bump.",
+      "category": "security"
+    },
+    {
+      "findings": [
+        "F1",
+        "F3",
+        "F7"
+      ],
+      "summary": "The exemption also covers @safe-global/safe-modules-deployments, which this PR does not bump and which needs no exemption",
+      "label": "low",
+      "evidence": "package.json:66 still pins 3.0.8. That version came in with 214477ec9 (Aug 6 2026), long past the 7-day gate, yet .yarnrc.yml:20 exempts the package anyway. This widens the bypass with nothing in the PR needing it.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F4"
+      ],
+      "summary": "A supply-chain policy change is bundled into a build(deps) PR",
+      "label": "nit",
+      "evidence": "The PR description openly states the exemption and explains it: 1.37.62 cannot be installed without it, so the change belongs with the bump. The permanence concern is already covered by the F2 issue, and splitting the PR is a process preference.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F5"
+      ],
+      "summary": "No package should ever be pre-approved",
+      "label": "nit",
+      "evidence": "This is a blanket policy opinion with no concrete defect behind it. The real risk (unbounded version scope) is captured by the F2 issue.",
+      "category": "security"
+    },
+    {
+      "findings": [
+        "F6"
+      ],
+      "summary": "The Dependabot cooldown comment is now slightly misaligned with the age-gate exemptions",
+      "label": "nit",
+      "evidence": ".github/dependabot.yml:12 is outside the diff, and the 7-day cooldown still matches npmMinimalAgeGate=10080. Dependabot waiting longer than the gate requires for two packages costs nothing concrete.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F8"
+      ],
+      "summary": "Cannot confirm that 1.37.62 still exports _COMPAT_FALLBACK_HANDLER_DEPLOYMENTS",
+      "label": "unverifiable",
+      "evidence": "src/domain/common/utils/deployments.ts:13 imports from the package's dist/deployments, and node_modules is not installed here, so the export cannot be checked. The PR's updated deployments.helper.spec.ts fixtures suggest the tests were run against the new version, but that cannot be settled from the code.",
+      "category": "correctness"
+    }
+  ]
+}

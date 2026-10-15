@@ -1,0 +1,25 @@
+{
+  "usd": 0.0592096,
+  "findings": [
+    {
+      "file": "src/datasources/common/chain-api.manager.ts",
+      "line": 25,
+      "claim": "The if-guard checking whether apis[chainId] is defined before calling delete is unnecessary, since delete on a non-existent key is already a no-op; it should simply be delete this.apis[chainId]. The pre-check is meaningful only in BlockchainApiManager's override, which already uses hasApi() for that purpose, so the base class guard adds no value."
+    },
+    {
+      "file": "src/modules/balances/datasources/balances-api.manager.ts",
+      "line": 46,
+      "claim": "getApi wraps a call through a private _getSafeBalancesApi method that is only ever called from getApi itself, adding an unnecessary layer; it should be inlined to directly call getOrCreateApi, matching the simpler pattern used by the other managers."
+    },
+    {
+      "file": "src/datasources/common/chain-api.manager.ts",
+      "line": 16,
+      "claim": "getOrCreateApi is not safe against concurrent calls for the same chainId: two calls arriving before the first await resolves will both see apis[chainId] as undefined and both invoke createApi, causing a double-create. This matches pre-refactor behavior so it is not a new regression, but now that the pattern is centralized, storing a Promise<T> in the map (Record<string, Promise<T>>) would fix the race for all managers at once."
+    },
+    {
+      "file": "src/modules/staking/datasources/kiln-api.manager.spec.ts",
+      "line": 99,
+      "claim": "The testnet branch is only exercised via mockConfig('staking') and not for the 'earn' widget, even though widget parameterization is the central point of the KilnApiManager collapse; extending the existing it.each to cover both mainnet and testnet for both widgets would ensure both configuration paths are tested for each widget."
+    }
+  ]
+}

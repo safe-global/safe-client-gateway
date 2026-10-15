@@ -1,0 +1,249 @@
+{
+  "usage": {
+    "usd": 0.6134502,
+    "turns": 10,
+    "wallSeconds": 98
+  },
+  "issues": [
+    {
+      "findings": [
+        "F3"
+      ],
+      "summary": "app.listen(port) with no host makes Fastify bind to localhost only, so the process can't be reached from inside a container",
+      "label": "high",
+      "evidence": "src/main.ts:37 calls `app.listen(applicationPort)`. Under NestJS's FastifyAdapter, Fastify listens on 127.0.0.1 unless '0.0.0.0' is passed (Express bound to all interfaces). The service runs in Docker behind nginx (docker-compose.yml), so proxied traffic and probes would fail.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F16"
+      ],
+      "summary": "Fastify routes are case-sensitive and treat a trailing slash as a different route, unlike Express",
+      "label": "medium",
+      "evidence": "src/app.provider.ts:63 builds the FastifyAdapter with only trustProxy and bodyLimit. It sets neither ignoreTrailingSlash nor caseSensitive:false, so `/v1/chains/` or mixed-case paths that Express matched now return 404. This goes against the PR's stated goal of preserving behaviour.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F1"
+      ],
+      "summary": "parseBodyLimit no longer accepts the tb/pb units that the old `bytes` parser allowed",
+      "label": "low",
+      "evidence": "src/app.provider.ts:49 only matches b|kb|mb|gb. The input is lowercased and the regex allows whitespace, so casing and spacing still work, and 'KiB' was never valid in `bytes` either. Only tb/pb are lost, and no realistic body limit uses them.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F10",
+        "F12",
+        "F15",
+        "F27"
+      ],
+      "summary": "Config comments still describe Express/body-parser behaviour (bytes library, '100kb' default, expressjs links) and keep the express.* naming",
+      "label": "low",
+      "evidence": "src/config/entities/configuration.ts:383-393 still cites the bytes library and Express docs, but parsing is now done by the local parseBodyLimit and applies to every content type. The PR description says keeping the express.* key and env names is deliberate, so only the stale comments are a real (documentation) problem.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F4",
+        "F21"
+      ],
+      "summary": "parseBodyLimit has no direct unit tests for units, decimals or the invalid-input throw",
+      "label": "low",
+      "evidence": "src/app.provider.spec.ts:98 only tests '8' (413) plus the default '1mb'. The throw path at src/app.provider.ts:50 and the kb/gb/decimal branches are never exercised.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F7"
+      ],
+      "summary": "parseTrustProxy's numeric vs string handling is said to be untested",
+      "label": "wrong",
+      "evidence": "src/app.provider.spec.ts:58-88 exercises string presets ('loopback, uniquelocal') and numeric hop counts ('1', '0') through createFastifyAdapter, so both branches are covered.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F14"
+      ],
+      "summary": "No test is said to check the seconds-based cookie Max-Age",
+      "label": "wrong",
+      "evidence": "auth.controller.integration.spec.ts:141-156 and oidc-auth.controller.integration.spec.ts:184,356-394 assert `Max-Age=${getSecondsUntil(...)}` and `Max-Age=${stateMaxAge}` in Set-Cookie.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F18"
+      ],
+      "summary": "The 404 body for unmatched routes is said to change to Fastify's default",
+      "label": "wrong",
+      "evidence": "NestJS's RoutesResolver registers its own not-found handler on every adapter via setNotFoundHandler, and it throws NotFoundException(`Cannot ${method} ${url}`). The old 'Cannot GET /x' body is therefore kept under Fastify.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F2"
+      ],
+      "summary": "Passthrough void handlers are said to need a check that they return 200 rather than 204",
+      "label": "wrong",
+      "evidence": "src/modules/auth/routes/auth.controller.ts:125 has @HttpCode(200) on verify. With a passthrough response Nest sends undefined under both Express and Fastify, which gives the declared status with an empty body. No defect is identified.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F9"
+      ],
+      "summary": "getRouteUrl is said to replace an old Express throw with a silent 'localhost' fallback when Host is missing",
+      "label": "wrong",
+      "evidence": "The old code at a8ca169 src/routes/common/decorators/utils.ts built `${protocol}://${request.get('Host')}...`, which gives 'http://undefined/...' and does not throw. HTTP/1.1 also requires the Host header, so the fallback almost never runs.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F20"
+      ],
+      "summary": "NotFoundLoggerMiddleware is said to type the request as bare IncomingMessage while using originalUrl",
+      "label": "wrong",
+      "evidence": "src/middleware/not-found-logger.middleware.ts:26 types it as `IncomingMessage & { originalUrl?: string }`, so originalUrl is explicitly typed.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F13",
+        "F24"
+      ],
+      "summary": "The Express-shaped fallbacks in RequestLike (get/header/route.path/path) are dead code in production",
+      "label": "low",
+      "evidence": "src/routes/common/http/http-request.utils.ts:7-25,36-54: FastifyRequest has none of get(), header(), route.path or path, so only test mocks reach those branches. Keeping them costs maintenance and hides the real code path from tests (see F11).",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F11"
+      ],
+      "summary": "Unit tests mock request.get, so the header-collection path that production actually uses is untested",
+      "label": "low",
+      "evidence": "src/routes/common/http/http-request.utils.spec.ts:13-40 mocks `get`. That makes getHeader return through the `request.get?.()` branch, so getHeaderFromCollection (the lowercase lookup and array handling) is never tested, even though production relies on it.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F25",
+        "F31"
+      ],
+      "summary": "createTestApplication builds a bare FastifyAdapter without the trustProxy/bodyLimit config that TestAppProvider applies",
+      "label": "low",
+      "evidence": "src/__tests__/test-app.provider.ts:17-20 uses `new FastifyAdapter()`, while provide() uses createFastifyAdapter(configurationService). The 16 call sites therefore run a different adapter setup, which could hide 413/IP behaviour differences.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F22"
+      ],
+      "summary": "createFastifyAdapter is used only by tests, while production reads the raw configuration() output",
+      "label": "low",
+      "evidence": "src/main.ts:16-19 calls createFastifyAdapterFromConfiguration(configuration().express), and createFastifyAdapter (src/app.provider.ts:69) wraps that same function. The adapter construction is shared, and only the config source differs. The code comment explains why (DI isn't available yet), so the claim that tests run a different code path is overstated.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F6"
+      ],
+      "summary": "@fastify/cookie and @fastify/static use caret ranges while most runtime dependencies are pinned",
+      "label": "low",
+      "evidence": "package.json:49-50 uses ^11.0.2 and ^9.1.3, but most dependencies next to them, including @nestjs/platform-fastify, are exact. Some (bullmq, @blockaid/client) also use carets, and yarn.lock limits the risk.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F26"
+      ],
+      "summary": "Math.floor(stateMaxAge/1000) gives maxAge 0 for sub-second state TTLs",
+      "label": "low",
+      "evidence": "src/modules/auth/oidc/routes/oidc-auth.controller.ts:110 would produce Max-Age=0 and the cookie would expire immediately. That only happens if auth.stateTtlMs is set below 1000ms, which is unrealistic for an OIDC round-trip.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F30"
+      ],
+      "summary": "The Tenderly HMAC is computed over the re-stringified parsed body, not the raw bytes",
+      "label": "low",
+      "evidence": "src/modules/alerts/routes/guards/tenderly-signature.guard.ts:57 uses JSON.stringify(args.body). The same approach existed under Express, so this predates the PR and only the request type changed here.",
+      "category": "security"
+    },
+    {
+      "findings": [
+        "F8"
+      ],
+      "summary": "parseBodyLimit accepts fractional bytes such as '1.5b'",
+      "label": "nit",
+      "evidence": "src/app.provider.ts:49-56 floors it to 1. It's harmless, and `bytes` behaved the same way.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F17"
+      ],
+      "summary": "parseTrustProxy/parseBodyLimit are exported but only used inside the file",
+      "label": "nit",
+      "evidence": "src/app.provider.ts:34,38. The unnecessary exports have no concrete cost.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F19"
+      ],
+      "summary": "The new adapter helpers lack the JSDoc the old configureTrustProxy had",
+      "label": "nit",
+      "evidence": "src/app.provider.ts:34-75 has no doc comments, but configuration.ts:386-392 still documents the trustProxy semantics.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F5"
+      ],
+      "summary": "The explanatory comments on the X-Forwarded-For walk were removed from the spec",
+      "label": "nit",
+      "evidence": "The src/app.provider.spec.ts diff around lines 71/91 drops the comments. Test behaviour is unchanged.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F23"
+      ],
+      "summary": "A local CookieOptions type is used instead of @fastify/cookie's CookieSerializeOptions",
+      "label": "nit",
+      "evidence": "src/modules/auth/utils/auth-cookie.utils.ts:3-9 is a small, structurally compatible subset. This is a style preference.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F29"
+      ],
+      "summary": "createTestApplication uses an `as` cast instead of the generic parameter",
+      "label": "nit",
+      "evidence": "src/__tests__/test-app.provider.ts:18-20. provide() uses the generic `createNestApplication<NestFastifyApplication>`, so this is only a style inconsistency.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F32"
+      ],
+      "summary": "`request.method ?? 'UNKNOWN'` is an unreachable fallback",
+      "label": "nit",
+      "evidence": "src/logging/utils.ts:43. RequestLike types method as optional, so the fallback satisfies the type. It is harmless.",
+      "category": "style"
+    },
+    {
+      "findings": [
+        "F28"
+      ],
+      "summary": "The integration-tests CI job reportedly failed",
+      "label": "unverifiable",
+      "evidence": "CI results can't be seen from a read-only checkout without network access, and the PR itself says integration/e2e tests still need to be verified.",
+      "category": "tests"
+    }
+  ]
+}

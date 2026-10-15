@@ -1,0 +1,45 @@
+{
+  "usd": 0.059185600000000005,
+  "findings": [
+    {
+      "file": "src/config/entities/configuration.ts",
+      "line": 62,
+      "claim": "AUTH_ELEVATION_WINDOW_SECONDS is read in configuration.ts but is not declared in RootConfigurationSchema or validated in its superRefine, so a non-numeric value silently becomes NaN at request time instead of failing at boot."
+    },
+    {
+      "file": "src/config/entities/configuration.ts",
+      "line": 481,
+      "claim": "FF_MFA_STEP_UP is likewise read but not declared in the schema or validated, allowing the same silent NaN/invalid-value failure mode instead of a boot-time error."
+    },
+    {
+      "file": "src/config/entities/configuration.ts",
+      "line": 481,
+      "claim": "The new mfaStepUp feature flag mapping has no comment identifying an owner or the condition under which the flag should be removed."
+    },
+    {
+      "file": null,
+      "line": null,
+      "claim": "The PR title 'Add step-up authentication (elevation) for sensitive workspace actions' does not follow Conventional Commits format and is capitalized, so a squash merge would land a commit subject on main that no type-based filter (e.g. feat(auth): ...) would match."
+    },
+    {
+      "file": "src/modules/spaces/routes/spaces.controller.ts",
+      "line": 32,
+      "claim": "The spaces controller (and five others in members/address-books/space-safes) imports @/modules/auth/routes/guards/elevation.guard directly across module boundaries, extending a cross-module import anti-pattern the project guidance specifically calls out for auth.decorator."
+    },
+    {
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.spec.ts",
+      "line": 415,
+      "claim": "The test uses 'as never' to force a mock return value (mockResolvedValue(buildAuth0Token(amr) as never)) to satisfy a mock's type signature, bypassing type safety in the test."
+    },
+    {
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.spec.ts",
+      "line": 426,
+      "claim": "The test asserts behavior by directly indexing into signToken.mock.calls[0][0] rather than using toHaveBeenCalledWith, which is a less readable and less robust assertion pattern."
+    },
+    {
+      "file": null,
+      "line": null,
+      "claim": "The PR description contains five additional ## sections beyond the template's Summary and Changes sections (Verified against a real Auth0 tenant, Note on the Auth0 side, How to test it, Visual summary, Feature flag), deviating from the PR template which specifies only those two sections."
+    }
+  ]
+}

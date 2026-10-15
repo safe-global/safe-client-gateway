@@ -1,0 +1,45 @@
+{
+  "usd": 0.05131960000000001,
+  "findings": [
+    {
+      "file": "src/modules/billing/routes/billing.service.ts",
+      "line": 165,
+      "claim": "An error is logged on every call to listOfferedPaymentLinks, which is hit by both GET /payment-links and POST /checkout-url, so a single mistagged link produces an error log per request indefinitely even though what's being reported is a static, cached, catalog-level fact that only changes once per TTL. The request itself succeeds and the underlying issue is an upstream Stripe misconfiguration, so this should be logged at warn level (as done elsewhere in the repo for upstream data inconsistencies) rather than error, since error-level logging at request cadence trips error rate alerting unnecessarily."
+    },
+    {
+      "file": "src/modules/billing/domain/payment-link-offer.rules.ts",
+      "line": 61,
+      "claim": "A link only counts as a trial if it carries trialPeriodDays, so if upstream isn't emitting that field yet, every link is read as paid, causing every new (never-subscribed) workspace to get an empty catalog and a 403 on checkout. The existing unclassified-trial logging doesn't catch this case either, since isUnclassifiedTrialLink short-circuits on isTrialLink, meaning a missing gracePeriod is logged but a missing trialPeriodDays is silent; logging should be added for when the general catalog yields zero offers for a never-subscribed space, and the deploy order against the billing service should be confirmed."
+    },
+    {
+      "file": "src/modules/billing/domain/payment-link-offer.rules.ts",
+      "line": 65,
+      "claim": "activePlanName relies on ACTIVE_SUBSCRIPTION_STATUSES (['active', 'trialing']), so a workspace trialing a paid plan (e.g. Pro) has that paid Pro link excluded and 403s on checkout for it. Since grace periods carry no card and never auto-convert, every pre-enforcement workspace that wants to keep its current plan when the 2-month grace ends must go through checkout, and this logic hides the link they need to do so."
+    },
+    {
+      "file": "src/modules/entitlements/domain/subscriptions.repository.ts",
+      "line": 59,
+      "claim": "hasEverSubscribed counts every subscription status, so an incomplete_expired row (where the initial payment never succeeded and no money moved) permanently disables trials for the workspace with no way back, since those rows remain as history. This is reachable via a negotiated space-specific link whose card bounces, causing a pre-enforcement workspace to silently lose its 2-month grace; unlike canceled/past_due/unpaid which are correctly counted, incomplete_expired appears to be the wrong status to include."
+    },
+    {
+      "file": "src/modules/billing/domain/payment-link-offer.rules.ts",
+      "line": 30,
+      "claim": "The gracePeriodOf function can be written more concisely using nested ternaries, though it was noted this alternative form may be harder to read."
+    },
+    {
+      "file": "src/modules/billing/routes/__tests__/billing.controller.e2e-spec.ts",
+      "line": 119,
+      "claim": "The comment explaining cache clearing in this test is unnecessary since many other tests clear the cache the same way without such a comment."
+    },
+    {
+      "file": "src/modules/billing/routes/billing.service.ts",
+      "line": 181,
+      "claim": "The logic for merging offered general links with space links can be simplified/shortened using a filter followed by a Map-based deduplication by link id."
+    },
+    {
+      "file": "src/modules/entitlements/domain/subscriptions.repository.integration.spec.ts",
+      "line": 212,
+      "claim": "The test 'should report a terminal subscription as subscribed but on no plan' is redundant and should be removed, with its coverage and that of similar tests for past_due, paused, and unpaid statuses collapsed into a single parameterized test iterating over all statuses outside ACTIVE_SUBSCRIPTION_STATUSES, listed literally rather than derived from the constant so the test still pins which side of the line each status falls on."
+    }
+  ]
+}

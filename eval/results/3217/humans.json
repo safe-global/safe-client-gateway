@@ -1,0 +1,84 @@
+{
+  "usd": 0.477785,
+  "head": "82bad06874306a52b4e02316edb600a8e30762b6",
+  "verdicts": [
+    {
+      "issue": 8,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "LucieFaire called this item 'irrelevant' (2026-07-07 12:56), and the Claude re-review agreed ('ops tool, explicit intent, fine to leave'). resolveExpiresInDays in scripts/generate-token.ts still only checks that the value is positive."
+    },
+    {
+      "issue": 11,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "A later commit added a 'credentials' describe block to src/datasources/kms/aws-kms-signer.service.spec.ts. It asserts that fromTokenFile is called when webIdentityTokenFile is set and not called when it is absent."
+    },
+    {
+      "issue": 12,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "A test 'accepts a token whose audience list contains the expected issuer among others' was added to billing-webhook-auth.guard.integration.spec.ts:155, with aud [ISSUER, faker domain] → 202."
+    },
+    {
+      "issue": 13,
+      "verdict": "accepted",
+      "present": false,
+      "evidence": "The author replied with commit a3de9e6, which is before the reviewed commit. The test 'rejects a Bearer header with an empty token' is already at guard.integration.spec.ts:111 in 01c4018."
+    },
+    {
+      "issue": 14,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "The author listed this among the items they considered irrelevant. The Claude re-review agreed that IncomingHttpHeaders['authorization'] is typed string|undefined, so the concern was theoretical. The guard still uses `header?.startsWith('Bearer ')` without a typeof check."
+    },
+    {
+      "issue": 15,
+      "verdict": "open",
+      "present": true,
+      "evidence": "`Buffer.from(response.Signature)` and `Buffer.from(response.PublicKey)` are still at aws-kms-signer.service.ts:41,51. The final Claude re-review noted it was never picked up, and no human responded to it specifically."
+    },
+    {
+      "issue": 16,
+      "verdict": "open",
+      "present": true,
+      "evidence": "billing.controller.ts still has `path: ''` with `@Post('/billing/webhooks')`. The final Claude review flagged it as not picked up, and no human replied."
+    },
+    {
+      "issue": 22,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "KmsSignerConfig moved to src/datasources/kms/entities/kms-signer-config.entity.ts, and resolveCredentials became resolveAwsCredentials in src/datasources/common/utils/aws-credentials.utils.ts."
+    },
+    {
+      "issue": 26,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "billing-service-token.entity.spec.ts now imports SERVICE_ACCESS_ROLE, SERVICE_ACCESS_PERMISSION_TYPE and SERVICE_USER_TYPE and uses them in place of the literals."
+    },
+    {
+      "issue": 31,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "In the guard.ts:21 thread, LucieFaire argued that a concrete service is correct (like CaptchaGuard, and no alternate implementation is expected). The guard still injects BillingAuthService."
+    },
+    {
+      "issue": 33,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "BillingTokenClaimsArgs moved to entities/billing-token-claims.entity.ts (as BillingTokenClaims), and DEFAULT_BILLING_SERVICE_TOKEN_SUBJECT moved to billing-auth.constants.ts. Both were removed from billing-auth.service.ts."
+    },
+    {
+      "issue": 34,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "scripts/generate-token.ts was split into resolveSubject, resolveExpiresInDays, mintViaKms, mintViaLocalKey and printResult, leaving main() to orchestrate. This also answers PooyaRaki's thread at line 68."
+    },
+    {
+      "issue": 35,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "The author marked the iss===aud item as irrelevant and explained the self-issued pattern in the billing-auth.service.ts:72 thread, and the Claude re-review agreed. No crossover comment was added to verify()."
+    }
+  ]
+}

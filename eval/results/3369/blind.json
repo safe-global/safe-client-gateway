@@ -1,0 +1,103 @@
+{
+  "pr": 3369,
+  "title": "docs: codify staged delivery and transitive module registration",
+  "description": "## Summary\r\n\r\n  Adjudicating the five Architecture Check findings on #3327 against the author's rebuttals showed the code needed only the log-level fix (which already landed in-PR); the other four traced back to gaps in the guides rather than defects in the PR. This encodes the accepted rebuttals so\r\n  the next staged rollout isn't re-flagged:\r\n\r\n  - The new-module checklist demanded a direct `app.module.ts` entry, but transitive wiring is normal here — 14 module directories have no directly-registered class at all (`backbone`, `blockchain`, `bridge`, `earn`, `email`, `entitlements`, `human-description`, `queues`, `siwe`,\r\n  `staking`, `swaps`, `tokens`, `wallets`, `zerion`), and controller-bearing sub-modules like `delegate/routes/` and `csv-export/v1/` are reached through their parent too. The checklist now asks for a path from `app.module.ts`, direct or transitive, since reachability is the actual\r\n  invariant.\r\n  - Neither the YAGNI check in reviewing.md nor the canonical skeleton in module-structure.md had room for a declared multi-PR series, so a schema-first PR (tables whose readers land in a linked follow-up) and a `routes/` directory landing one PR ahead of its controller both produced\r\n  findings. Both now exempt staged delivery — conditional on the PR description itself declaring the series and identifying the follow-up, so an undeclared \"we'll use it later\" is still a finding and the arch-check workflow can verify the condition from the description it already\r\n  fetches.\r\n  - The URI-versioning rule already keyed breaking changes on an *already-shipped client's* parsing, but didn't say how to treat a field no released client could ever have parsed (an endpoint flag-gated since introduction, or a field upstream never populated). Such a field may now change\r\n  in place, but only when the PR description states the justification — runtime flag state and upstream behavior aren't visible in a diff.\r\n \r\n  Follow-up commits address arch-check findings against this PR's own earlier commits, most of them the same mistake: a guide sentence that quantifies over the whole repo (a universal, or a closed count) is falsifiable by one counterexample, which is what the no-stale-guides check looks\r\n  for. The first pass replaced the wrong `app.module.ts` condition with \"every module that declares a controller registers directly\" and enumerated \"four\" description-text requirements; declaring a controller turns out not to discriminate at all, and there are at least six such\r\n  requirements. Both sentences now state what is invariant and leave the requirement set explicitly open. The duplicated-convention sites in other guides are reconciled in the same pass.\r\n\r\n  No change to the arch-check workflow itself — it reads these guides at run time. The `cgw-*` skills are meant to be loaders, but `cgw-commits-and-prs` had restated the PR-body rule instead of pointing at it, so rewording that rule left the skill contradicting it; it now defers the\r\n  enumeration to the doc, which is also what stops the next addition from needing two edits. A sweep over every skill confirms none of the others restates a rule this branch touches.\r\n\r\n  ## Changes\r\n  \r\n  - `docs/agents/module-structure.md` — new-module checklist now requires a path from `src/app.module.ts`, direct or transitive, rather than a direct entry; staged-rollout paragraph in the canonical skeleton rule, whose follow-up bar is identification rather than a link so the first PR\r\n  of a series can satisfy it\r\n  - `docs/agents/reviewing.md` — staged-delivery sub-bullet under the YAGNI check\r\n  - `docs/agents/api-dtos-and-validation.md` — never-shipped-field paragraph under URI versioning\r\n  - `docs/agents/commits-and-prs.md` — PR-body rule now names every requirement other guides place on the description text, attributed to the owning guide and marked as an open set\r\n  - `docs/agents/ARCHITECTURE.md` — pointer sentence after the duplicated module skeleton noting the staged-delivery qualification, keeping the conditions single-sourced in `module-structure.md`\r\n  - `.claude/skills/cgw-commits-and-prs/SKILL.md` — the loader stops restating which justifications belong in the PR description and defers to the guide",
+  "findings": [
+    {
+      "id": "F1",
+      "file": "docs/agents/module-structure.md",
+      "line": 33,
+      "claim": "The staged-delivery requirement here (linking the follow-up PR) conflicts with the requirement in docs/agents/reviewing.md:48 (stating which follow-up consumes it), and linking the follow-up PR may be impossible when that PR does not yet exist; the two documents should agree on one requirement and cross-reference it."
+    },
+    {
+      "id": "F2",
+      "file": "docs/agents/module-structure.md",
+      "line": 133,
+      "claim": "The text states that a module may skip registration in app.module.ts when it 'only serves that one' consuming module, then cites backbone, email, siwe and queues as examples wired the same way, but siwe is consumed by both auth.module.ts and users.module.ts, queues is consumed by two different sub-modules in health.module.ts and hooks.module.ts, and email is not a single module at all but two separate providers (pushwoosh and ses) used by different modules. Only backbone and EntitlementsModule actually match the stated rule, so the examples would teach a wrong precedent about when registration can be skipped."
+    },
+    {
+      "id": "F3",
+      "file": "docs/agents/module-structure.md",
+      "line": 12,
+      "claim": "The Rule line, the skeleton comment, and the skill description still state that routes/ is used only when the module exposes HTTP endpoints, without qualification, even though a new exception elsewhere in the same document overrides this rule; the unqualified Rule line should point to the exception."
+    },
+    {
+      "id": "F4",
+      "file": null,
+      "line": null,
+      "claim": "The commit dd402c04a is titled 'codify staged delivery and transitive module registration' but also adds an unrelated API-versioning exception in api-dtos-and-validation.md; since the branch is squash-merged, the PR title becomes the only historical record and should mention all changes or the unrelated change should be split into its own PR."
+    },
+    {
+      "id": "F5",
+      "file": "docs/agents/commits-and-prs.md",
+      "line": 91,
+      "claim": "The five description-text requirements are enumerated as one long prose paragraph, which is harder to scan than a bulleted list would be."
+    },
+    {
+      "id": "F6",
+      "file": "docs/agents/module-structure.md",
+      "line": 133,
+      "claim": "The new registration rule does not address feature-flag inheritance: EntitlementsModule is only loaded because its parent BillingModule is gated behind a feature flag in app.module.ts, so if a second module later imports EntitlementsModule directly, it would load even when the billing flag is off, bypassing the existing gating."
+    },
+    {
+      "id": "F7",
+      "file": "docs/agents/module-structure.md",
+      "line": 133,
+      "claim": "The rule that 'a module with its own HTTP surface registers directly' is ambiguous for EntitlementsModule, whose routes/ directory contains services but no controller yet; combined with the separate rule allowing routes/ to land before its controller, it is unclear whether such a module must move to app.module.ts once the controller is added."
+    },
+    {
+      "id": "F8",
+      "file": "docs/agents/commits-and-prs.md",
+      "line": 91,
+      "claim": "The PR body rule still states that one reviewing.md requirement lands here, but this diff adds three more description-content requirements (declared multi-PR series, linked follow-up PR, never-shipped-field justification) without updating that enumeration."
+    },
+    {
+      "id": "F9",
+      "file": "docs/agents/module-structure.md",
+      "line": 33,
+      "claim": "This guide requires a PR description to link the follow-up PR that adds the controller for a staged module, while docs/agents/reviewing.md:48 only requires stating which follow-up consumes it; the differing evidence bars mean reviewers applying the two guides could judge the same PR inconsistently."
+    },
+    {
+      "id": "F10",
+      "file": "docs/agents/api-dtos-and-validation.md",
+      "line": 113,
+      "claim": "The exception allowing in-place removal or renaming of a field when its endpoint has sat behind a disabled feature flag does not specify which environment's flag state counts; since flags can differ per environment, a flag disabled in production could still be enabled in staging or dev where real clients have already parsed the field."
+    },
+    {
+      "id": "F11",
+      "file": "docs/agents/module-structure.md",
+      "line": 33,
+      "claim": "This passage runs three separate ideas together (why route services can't sit under domain/, the follow-up-identification bar, and parity with reviewing.md), and splitting it into separate sentences would ease first-read comprehension."
+    },
+    {
+      "id": "F12",
+      "file": "docs/agents/api-dtos-and-validation.md",
+      "line": 113,
+      "claim": "The never-shipped-field rule is packed into a single sentence; adding a clause break after \"in place:\" would improve readability without changing its meaning."
+    },
+    {
+      "id": "F13",
+      "file": "docs/agents/module-structure.md",
+      "line": 133,
+      "claim": "The rule states a module can skip its own app.module.ts entry when the new module only serves one module, but two of the four cited examples (SiweModule and QueuesApiModule) are actually imported by more than one module, so the condition and the examples give opposite answers for a module serving two consumers."
+    },
+    {
+      "id": "F14",
+      "file": "docs/agents/module-structure.md",
+      "line": 133,
+      "claim": "The new transitive-registration allowance requires a module that only serves the one module it's wired to, but the cited example, SiweModule, is imported by both UsersModule and AuthModule, so the example contradicts the condition stated in the same sentence."
+    },
+    {
+      "id": "F15",
+      "file": "docs/agents/ARCHITECTURE.md",
+      "line": 86,
+      "claim": "The Module anatomy skeleton still says routes/ exists only if HTTP endpoints exist, but the new staged-rollout paragraph in module-structure.md qualifies this convention, so the duplicated convention was updated in only one of the two guides."
+    },
+    {
+      "id": "F16",
+      "file": "docs/agents/api-dtos-and-validation.md",
+      "line": 113,
+      "claim": "The doc cites 'a field the upstream never actually populated' as an example of a field no client could have parsed, but if the field was declared nullable and sent as null, released clients have already been receiving and decoding that key, and strict decoders (e.g. kotlinx.serialization or generated OpenAPI clients) fail when the key disappears, so the example does not support the claim; the existing validUntil field is an instance of this ambiguous case."
+    }
+  ]
+}

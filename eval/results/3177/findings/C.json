@@ -1,0 +1,20 @@
+{
+  "usd": 0.0538956,
+  "findings": [
+    {
+      "file": ".github/workflows/ci.yml",
+      "line": 301,
+      "claim": "The 'Validate release tag' step runs after the checkout step, so the job could fail sooner if the validation ran before checking out the repository."
+    },
+    {
+      "file": ".github/workflows/ci.yml",
+      "line": 301,
+      "claim": "The validation only checks that the release tag is non-empty; it does not guard against malformed tags containing whitespace or characters that Docker would reject, so a stricter check such as a regex match could be added for more defensive validation."
+    },
+    {
+      "file": ".github/workflows/ci.yml",
+      "line": null,
+      "claim": "A hotfix release built from an older minor version branch would cause the ':latest' tag to move backwards, since tagging logic does not account for release order relative to the tip."
+    }
+  ]
+}

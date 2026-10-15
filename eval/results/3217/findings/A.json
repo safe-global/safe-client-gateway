@@ -1,0 +1,110 @@
+{
+  "usd": 0.413026,
+  "findings": [
+    {
+      "file": "src/config/entities/schemas/configuration.schema.ts",
+      "line": 55,
+      "claim": "The fallback for BILLING_WEBHOOK_JWT_ISSUER uses `??`, which only substitutes a default when the variable is unset, so an empty string value passes through unchanged and getOrThrow accepts it."
+    },
+    {
+      "file": "src/modules/billing/domain/billing-auth.service.ts",
+      "line": 59,
+      "claim": "JwtService.verify also uses `??` for the issuer, so an empty-string issuer is preserved rather than replaced, and jsonwebtoken only enforces issuer/audience checks when those options are truthy, meaning an empty string silently disables both checks."
+    },
+    {
+      "file": "src/config/entities/configuration.ts",
+      "line": 546,
+      "claim": "With BILLING_WEBHOOK_JWT_ISSUER set to an empty string, any ES256 token signed by the matching key is accepted regardless of its iss/aud claims, which should instead use `||` and a schema of `z.string().trim().min(1).optional()` similar to TX_SERVICE_API_KEY."
+    },
+    {
+      "file": "src/config/entities/schemas/configuration.schema.ts",
+      "line": 54,
+      "claim": "BILLING_WEBHOOK_JWT_PUBLIC_KEY is not made conditionally required via superRefine the way AWS_WEB_IDENTITY_TOKEN_FILE is required when FF_SES_EMAIL is on, so a missing key is not caught at config-check time."
+    },
+    {
+      "file": "src/config/entities/schemas/configuration.schema.ts",
+      "line": 190,
+      "claim": "A missing public key only fails later while the app is wiring up services, producing a vague error message ('No value set for key billing.webhook.publicKey') instead of failing fast at startup."
+    },
+    {
+      "file": "src/modules/billing/domain/billing-auth.service.ts",
+      "line": 59,
+      "claim": "A malformed PEM public key is never parsed or validated at startup; every webhook call then simply receives a 401 plus a warn log instead of the app failing to start, so the key should be parsed once in the constructor (e.g. with createPublicKey)."
+    },
+    {
+      "file": "src/modules/billing/routes/guards/billing-webhook-auth.guard.integration.spec.ts",
+      "line": 125,
+      "claim": "Rejection cases for wrong algorithm (HS256), wrong issuer, wrong audience, and expired tokens are only tested in the integration spec and never covered in the unit spec, even though each branch should be tested in the lowest-level spec that can prove it."
+    },
+    {
+      "file": "src/modules/billing/domain/billing-auth.service.spec.ts",
+      "line": 105,
+      "claim": "Wrong key, 'not a service token', and malformed token cases are duplicated across both the unit and integration specs, when only one 401 case plus the success case and checkGuardIsApplied should remain at the integration level while per-branch rejections belong in the unit spec."
+    },
+    {
+      "file": "src/modules/billing/domain/billing-auth.service.ts",
+      "line": 87,
+      "claim": "Error handling logs the error by manually writing `error instanceof Error ? error.message : 'unknown error'` instead of using the repo's existing asError helper from @/logging/utils, which is already used in 33 other files."
+    },
+    {
+      "file": "src/modules/billing/domain/billing-auth.service.ts",
+      "line": 95,
+      "claim": "Both log calls emit plain strings rather than structured entries with a LogType, unlike the repo's other guards such as rate-limit.guard.ts:53 and blocklist.guard.ts:55."
+    },
+    {
+      "file": "src/datasources/kms/kms-signer.interface.ts",
+      "line": 6,
+      "claim": "IKmsSigner has only one implementation and nothing actually uses the interface (mintViaSigner takes a plain callback, and the CLI uses the concrete class directly), making the interface unused dead code."
+    },
+    {
+      "file": "src/datasources/kms/aws-kms-signer.service.ts",
+      "line": 11,
+      "claim": "KmsSignerConfig is exported but only used within its own file, and the interface/config pattern also does not follow the AGENTS.md convention that data-source interfaces live in src/domain/interfaces/ with their own module."
+    },
+    {
+      "file": "src/datasources/jwt/jwt.module.ts",
+      "line": 10,
+      "claim": "jwtClientFactory is exported from the JWT module and called directly inside a domain service, bypassing the injected IJwtService abstraction."
+    },
+    {
+      "file": "src/modules/billing/domain/billing-auth.service.ts",
+      "line": 8,
+      "claim": "BillingAuthService mixes two responsibilities: verify runs inside the running app while the static mint and mintViaSigner methods are only used by the CLI, yet all of this ships together in the runtime module."
+    },
+    {
+      "file": "src/modules/billing/domain/billing-auth.service.ts",
+      "line": 146,
+      "claim": "The class lives in domain/ and wraps a data source (the JWT/KMS signer), which per the repo's layering convention (as with AuthRepository and its interface/module) makes it a repository rather than a service, so minting should move into the script or a separate helper and verify should depend only on the injected service."
+    },
+    {
+      "file": "src/modules/billing/domain/billing-auth.service.ts",
+      "line": 192,
+      "claim": "CLI-only minting logic (mint/mintViaSigner) is included in the same class as the runtime verify logic, mixing CLI-only code into the running application module."
+    },
+    {
+      "file": "scripts/generate-token.ts",
+      "line": 121,
+      "claim": "BILLING_WEBHOOK_JWT_PRIVATE_KEY is read by the CLI script but is missing from .env.sample.json, unlike the other CLI-only variable BILLING_WEBHOOK_JWT_KMS_KEY_ID which is listed there."
+    },
+    {
+      "file": ".env.sample.json",
+      "line": 140,
+      "claim": "The new BILLING_* entries are inserted between AUTH0_CLIENT_ID and AUTH0_CLIENT_SECRET, splitting the existing Auth0 configuration group."
+    },
+    {
+      "file": "src/config/entities/schemas/configuration.schema.ts",
+      "line": 54,
+      "claim": "The new BILLING_* schema entries are likewise inserted between the Auth0 client ID and secret entries, splitting that group in the schema file as well as in .env.sample.json."
+    },
+    {
+      "file": "src/modules/billing/routes/guards/billing-webhook-auth.guard.ts",
+      "line": 21,
+      "claim": "The guard stores a BillingAuthService instance in a field named tokenService, and the field name does not match the actual type it holds."
+    },
+    {
+      "file": "src/modules/billing/routes/guards/billing-webhook-auth.guard.ts",
+      "line": 39,
+      "claim": "AUTH_HEADER_NAME is declared as a constant inside the getBearerToken function rather than at the top of the file, or alternatively could simply be the inline string 'authorization'."
+    }
+  ]
+}

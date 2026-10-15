@@ -1,0 +1,30 @@
+{
+  "usd": 0.2420818,
+  "head": "2c7a44508723ff3a62fe683355953e2ca20a38d9",
+  "verdicts": [
+    {
+      "issue": 6,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "At 8e3da11 the schema was built inside getValidatedSiweMessage via buildSiweMessageSchema(this.clockSkewSeconds). Commit 6dcb6b6be moved it into the constructor as this.siweMessageSchema, and the author replied \"Done\" in the siwe.repository.ts:45 thread."
+    },
+    {
+      "issue": 8,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "At 8e3da11, siwe-message.entity.ts:81 still read 'Message yet valid'. Commit 6dcb6b6be changed it to 'Message not yet valid', matching nlordell's suggestion, and the author linked that commit in the thread."
+    },
+    {
+      "issue": 9,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "At 8e3da11, siwe-message.entity.ts:64 still read 'Message yet issued'. Commit 6dcb6b6be changed it to 'Message not yet issued', which fixes the wording compojoom asked for, and the author linked that commit in the thread."
+    },
+    {
+      "issue": 10,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "At 8e3da11 the AUTH_CLOCK_SKEW_SECONDS row in AUTH.md was wider than the Description column. Commit 2c7a44508 re-padded every row to line up, and the author replied \"Done\" in the AUTH.md:257 thread."
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+COMMENT
+[PooyaRaki 2026-09-21T09:15:23Z] @claude review
+
+COMMENT
+[PooyaRaki 2026-09-21T09:15:33Z] @claude arch-review
+
+COMMENT
+[claude 2026-09-21T09:15:38Z] **Claude finished @PooyaRaki's task in 2m 51s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/35582234399)
+
+---
+### Claude PR Review
+
+- [x] Read changed files
+- [x] Analyze circuit breaker service changes
+- [x] Analyze test coverage
+- [x] Analyze interface, config, network module, and docs updates
+- [x] Post review feedback
+
+---
+
+Overall this is a clean, well-motivated fix. The coupling of the probe cap to the reopen threshold is elegant — one round of probes is always enough to reach a verdict either way, and no new knob to drift. Slot bookkeeping is symmetric (success and failure both release), and both transitions (`transitionToHalfOpen`, `transitionToOpen`) zero the counter so a subsequent window starts clean. Test coverage exercises the cap, both release paths, the reopen reset, and lazy registration.
+
+A few things worth considering:
+
+### 1. Warn-level log on every rejected HALF_OPEN request — spam risk during the exact scenario this PR addresses
+`src/datasources/circuit-breaker/circuit-breaker.service.ts:228-235` logs at `warn` per rejected request. In the outage this cap is meant to survive (hanging upstream, many concurrent callers), the number of rejections per HALF_OPEN window can be large × pods × seconds. Consider `debug`, or a rate-limited/coalesced warn (e.g. only once per HALF_OPEN entry). Not blocking, but the OPEN-state rejection logs at `warn` too and together they may dominate logs during an incident.
+
+### 2. Late `recordSuccess` from a prior HALF_OPEN window can release a slot in a new window
+Scenario: circuit was HALF_OPEN → OPEN → (after `timeout`) → HALF_OPEN again. If a probe from the earlier window finally returns and calls `recordSuccess`, `state === HALF_OPEN` is true, so `releaseHalfOpenProbe` decrements a slot that belongs to a *new* probe. `Math.max(0, …)` protects against negatives but does not prevent an extra admission (the freed slot can be handed to another caller). In production this requires ≥ 30 s between windows, so unlikely with the default 30 s HTTP timeout — but the two are equal, so it's not impossible. A per-probe token returned from `canProceed`/`canProceedOrFail` and consumed by `recordSuccess`/`recordFailure` would make this robust; the current coarse counter is what the PR intentionally uses. Worth acknowledging in a comment on `releaseHalfOpenProbe`, or accepting as a documented trade-off.
+
+### 3. Close-threshold vs probe cap creates a slow close under defaults
+With defaults `threshold=10`, `halfOpenFailureRateThreshold=30` → probe cap 3, but consecutive successes to close = 10. So HALF_OPEN needs ~4 sequential rounds of admitted probes to close. This is a design choice, not a bug, but users tuning `halfOpenFailureRateThreshold` down (to make reopen more aggressive) also shrink the probe cap proportionally and lengthen close time. The `configuration.ts` comment mentions the cap coupling but not the close-time consequence — a line there would prevent surprise.
+
+### 4. `getEffectiveFailureThreshold` now has two meanings
+`src/datasources/circuit-breaker/circuit-breaker.service.ts:220` uses it as `maxInFlight`, while `recordFailure` uses it as the reopen threshold. The reader has to know they're intentionally equal. A one-liner in the method's JSDoc — "In HALF_OPEN this doubles as the concurrent-probe cap" — makes the coupling explicit without changing behaviour.
+
+### 5. Nit: test-module-scope circuit name
+`circuit-breaker.service.spec.ts:15` — `const circuitName = faker.string.alphanumeric()` at module scope defaults to length 1 and is shared across every `it`. Faker is seeded so it's deterministic, but a 1-char name is fragile if a future test adds an explicit `'a'`/`'b'` circuit. Consider `faker.string.alphanumeric({ length: 10 })` or inline names.
+
+### Positives
+- Removing the explicit `getOrRegisterCircuit` from `network.module.ts` and moving registration lazy inside `recordFailure` is the right simplification.
+- `transitionToOpen` zeroing `halfOpenInFlight` (l. 461) closes the obvious leak from the previous design.
+- The `Discard old failures` handling correctly skips in HALF_OPEN by branching before `discardOldFailures` — that avoids double-counting the transition reset.
+
+Nothing here blocks merging; the two most useful follow-ups are the log-level question (#1) and a short comment acknowledging the late-slot-release edge (#2).
+ • Branch: [`feat/circuit-breaker-half-open-in-flight-cap`](https://github.com/safe-global/safe-client-gateway/tree/feat/circuit-breaker-half-open-in-flight-cap)
+
+COMMENT
+[claude 2026-09-21T09:20:10Z] ## Architecture check
+
+Applicable guides: [reviewing.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/reviewing.md), [remarks.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/remarks.md), [best-practices.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/best-practices.md), [caching-and-performance.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/caching-and-performance.md), [configuration-and-flags.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/configuration-and-flags.md), [nestjs-patterns.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/nestjs-patterns.md), [testing.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/testing.md), [commits-and-prs.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/commits-and-prs.md).
+
+1. **[No scope creep](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/reviewing.md#L31)** — [src/datasources/circuit-breaker/circuit-breaker.service.ts:376](https://github.com/safe-global/safe-client-gateway/blob/8343e99fd89ddbefd40030ec99e0e9f38a6b45bd/src/datasources/circuit-breaker/circuit-breaker.service.ts#L376) — moving circuit registration into `recordFailure` (plus making `getOrRegisterCircuit` private, gating `recordSuccess` on `enabled` at [:292](https://github.com/safe-global/safe-client-gateway/blob/8343e99fd89ddbefd40030ec99e0e9f38a6b45bd/src/datasources/circuit-breaker/circuit-breaker.service.ts#L292), and dropping the call site at [network.module.ts:153](https://github.com/safe-global/safe-client-gateway/blob/8343e99fd89ddbefd40030ec99e0e9f38a6b45bd/src/datasources/network/network.module.ts#L153)) is a registration-lifecycle change the probe cap does not depend on. **Fix:** keep `public getOrRegisterCircuit`, restore `const circuit = this.circuits.get(name); if (!(this.enabled && circuit) || circuit.metrics.state === CircuitState.OPEN) { return; }` in `recordFailure`, restore `circuitBreakerService.getOrRegisterCircuit(circuitBreaker.key);` in `network.module.ts`, and ship lazy registration as its own PR.
+2. **[Allowed types](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/commits-and-prs.md#L29)** — PR title — `feat` is reserved for a new client-visible capability, while this corrects the HALF_OPEN behavior behind the 2026-09-09 outage, which the type table assigns to `fix`. **Fix:** retitle to `fix(circuit-breaker): cap in-flight probes while HALF_OPEN`.
+3. **[R-029: A PR carrying more than one concern](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/remarks.md#L435)** — [src/datasources/circuit-breaker/circuit-breaker.service.spec.ts:19](https://github.com/safe-global/safe-client-gateway/blob/8343e99fd89ddbefd40030ec99e0e9f38a6b45bd/src/datasources/circuit-breaker/circuit-breaker.service.spec.ts#L19) — the suite-wide switch to `vi.useFakeTimers()` rewrites rolling-window, stale-cleanup and metrics tests that never exercise a probe, adding a second concern to the diff. **Fix:** scope `vi.useFakeTimers()` to the HALF_OPEN describe block the new probe tests live in, or land the suite conversion separately as `test(circuit-breaker): move the suite to fake timers`.
+4. **[R-004: Literal test data instead of faker](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/remarks.md#L90)** — [src/datasources/circuit-breaker/circuit-breaker.service.spec.ts:485](https://github.com/safe-global/safe-client-gateway/blob/8343e99fd89ddbefd40030ec99e0e9f38a6b45bd/src/datasources/circuit-breaker/circuit-breaker.service.spec.ts#L485) — the new `recordSuccess` test passes the literal `new-circuit` although nothing in the assertion depends on that value and the suite already has a faker-backed name. **Fix:** use `service.recordSuccess(circuitName); expect(service.get(circuitName)).toBeUndefined();`.
+
+**Verdict:** ❌ 4 finding(s)
+
+<sub>Automated check of this repo's [agent guidelines](https://github.com/safe-global/safe-client-gateway/blob/main/AGENTS.md) — Claude applying the committed guides in `docs/agents/`, not its own opinion. Run by [architecture-check.yml](https://github.com/safe-global/safe-client-gateway/blob/main/.github/workflows/architecture-check.yml) on `@claude arch-review`; background in [the CI gate](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/agent-tooling.md#the-ci-gate). Advisory — reply to a finding by its number to discuss it.</sub>

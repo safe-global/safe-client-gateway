@@ -1,0 +1,15 @@
+{
+  "usd": 0.0563476,
+  "findings": [
+    {
+      "file": "src/modules/billing/routes/billing.service.ts",
+      "line": 42,
+      "claim": "warnedUnclassifiedLinkIds is a new ad hoc in-process memo with no cron clear and no size bound, so it holds one entry per unclassified trial-link id for the lifetime of the process and will never re-warn if a catalog issue is fixed and later re-broken."
+    },
+    {
+      "file": "src/modules/entitlements/routes/entitlements.service.integration.spec.ts",
+      "line": 1139,
+      "claim": "The rewritten assertion uses a bare toThrow(), which passes for any thrown error including a TypeError from an unrelated typo in the code under test, unlike the sibling case in billing.service.spec.ts which pins the specific error message."
+    }
+  ]
+}

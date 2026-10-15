@@ -1,0 +1,10 @@
+{
+  "usd": 0.0483496,
+  "findings": [
+    {
+      "file": "src/modules/tokens/routes/tokens.controller.ts",
+      "line": 39,
+      "claim": "This code should not be located here and needs to be moved elsewhere."
+    }
+  ]
+}

@@ -1,0 +1,283 @@
+{
+  "pr": 3269,
+  "title": "feat: implement billing endpoints in CGW",
+  "description": "- Closes [PLA-1678](https://linear.app/safe-global/issue/PLA-1678/cgw-implement-billing-service-webhook-receiver-authentication-service)\r\n\r\n## Summary\r\n\r\nThis PR implements the billing and Stripe proxy endpoints in Client Gateway as part of **PLA-1755**, replacing `safe-auth-service` as the proxy between Wallet Web and `safe-billing-service`.\r\n\r\nMost of the outbound HTTP client infrastructure (`IBillingApi`, `BillingApi`, and its configuration) was already introduced during the webhook work in **PLA-1678**. This PR builds on that work by:\r\n\r\n* Adding the missing client-facing billing endpoints.\r\n* Fixing several issues in the existing billing client.\r\n* Wiring the new functionality into the routes layer.\r\n\r\n## Endpoints added\r\n\r\n* `GET /v1/billing/spaces/:spaceId (uuid)/subscriptions`\r\n* `GET /v1/billing/plans/:planId`\r\n* `GET /v1/billing/spaces/:spaceId/session-url`\r\n* `GET /v1/billing/spaces/:spaceId/payment-links`\r\n* `GET /v1/billing/spaces/:spaceId/payment-links/:paymentLinkId/checkout-url`\r\n* `GET /v1/billing/sessions/:sessionId`\r\n\r\nAll endpoints are protected by `AuthGuard`.\r\n\r\nSpace-scoped endpoints also require the user to be an active member of the corresponding space.\r\n\r\n## Key decisions\r\n\r\n### Use `Space.id` as `upstreamCustomerId`\r\n\r\n`safe-auth-service` previously used its own `user_id` as the customer identifier sent to `safe-billing-service`.\r\n\r\nClient Gateway does not have an equivalent per-user billing concept, so the numeric `Space.id` is used instead. This mirrors the workspace-style abstraction previously provided by `safe-auth-service`.\r\n\r\nAuthorization for space-scoped endpoints reuses the existing `Member` and `SpaceIdPipe` helpers from the `spaces` module. No new authorization mechanism was introduced.\r\n\r\n### Merge payment-link endpoints\r\n\r\nInstead of exposing separate endpoints for space-specific and general-catalog payment links, the following endpoint now retrieves both:\r\n\r\n```\r\nGET /v1/billing/spaces/:spaceId/payment-links\r\n```\r\n\r\nBoth requests to `safe-billing-service` are executed concurrently. Their results are then combined and de-duplicated by payment-link ID.\r\n",
+  "findings": [
+    {
+      "id": "F1",
+      "file": "src/modules/billing/routes/billing.controller.ts",
+      "line": 57,
+      "claim": "The same 6-line @ApiParam('spaceId') block is duplicated four times (also at lines 94, 121, 143), which is repeated boilerplate that could be factored out."
+    },
+    {
+      "id": "F2",
+      "file": "src/datasources/billing-api/entities/plan.entity.ts",
+      "line": 380,
+      "claim": "PlanSchema now requires a product field and changed billingCycle values from monthly/yearly to month/year, but cached plan responses stored under the existing keys are not versioned, so previously cached entries would fail to parse until they expire. This only matters if the feature is already deployed and the upstream shape changes at the same time as this release."
+    },
+    {
+      "id": "F3",
+      "file": "src/modules/billing/routes/billing.controller.ts",
+      "line": 65,
+      "claim": "None of the six new routes (billing.controller.ts:65-182) has an HTTP-level test exercising AuthGuard, the SpaceIdPipe 400 response, the non-member 403, or the returnUrl 400 through a real request; billing.service.spec.ts only calls the service directly, so deleting @UseGuards(AuthGuard) from any route would leave every test green. A billing.controller.e2e-spec.ts modelled on space-safes.controller.e2e-spec.ts should be added, including checkGuardIsApplied for every handler plus 400, 403 and unauthenticated cases."
+    },
+    {
+      "id": "F4",
+      "file": "src/modules/billing/routes/billing.controller.ts",
+      "line": 56,
+      "claim": "None of the 6 new billing routes (lines 56-182) have integration or e2e test coverage, so nothing verifies that AuthGuard is applied to each route, that SpaceIdPipe rejects invalid IDs, or that the global exception filter maps errors correctly (403 for non-members, 422 for an invalid returnUrl or status). The existing service unit tests do not cover this wiring."
+    },
+    {
+      "id": "F5",
+      "file": "src/modules/billing/routes/billing.controller.ts",
+      "line": 85,
+      "claim": "planId and sessionId parameters (also at line 174) have no @ApiParam decorator, so while Swagger still lists them from @Param(), their description and example are missing."
+    },
+    {
+      "id": "F6",
+      "file": null,
+      "line": null,
+      "claim": "The PR description appears outdated regarding whether Space.id is the workspace uuid."
+    },
+    {
+      "id": "F7",
+      "file": "src/datasources/billing-api/billing-api.service.ts",
+      "line": 123,
+      "claim": "getCustomerSessionUrl calls fetch directly instead of going through INetworkService, making it the only fetch call in a datasource outside network.module.ts, and this bypasses the shared timeout and error-mapping behavior. It also returns response.text() to the client without validating that the body is a non-empty, well-formed URL, for example the response could be empty or HTML."
+    },
+    {
+      "id": "F8",
+      "file": "src/modules/billing/routes/billing.service.ts",
+      "line": 110,
+      "claim": "This function is missing an assertSpaceMember assertion that the other functions in this file have, which is an inconsistency that could allow access without the expected authorization check."
+    },
+    {
+      "id": "F9",
+      "file": "src/modules/billing/routes/billing.controller.ts",
+      "line": 37,
+      "claim": "The returnUrl schema (z.url()) accepts any well-formed absolute URL, including attacker-controlled origins, creating an open-redirect vector since the value is embedded in Stripe hosted flows and served back to users. It should be restricted to an allowlist of trusted origins instead of accepting any URL."
+    },
+    {
+      "id": "F10",
+      "file": "src/modules/billing/routes/billing.service.ts",
+      "line": 62,
+      "claim": "getSpacePaymentLinks deduplicates links using a Map built from [...spaceLinks, ...generalLinks], so when a shared ID exists the general link silently overrides the space link, and this precedence is not documented anywhere."
+    },
+    {
+      "id": "F11",
+      "file": "src/modules/billing/routes/billing.service.spec.ts",
+      "line": 184,
+      "claim": "The de-dup test uses the same object in both the space and general lists, so it would pass under either precedence order; it should instead use two objects sharing the same id but with different active/metadata values to actually lock in the intended behavior."
+    },
+    {
+      "id": "F12",
+      "file": "src/modules/billing/billing.module.ts",
+      "line": 17,
+      "claim": "Three forwardRef wrappers are used (lines 17-19) but they do not appear to break any actual circular dependency."
+    },
+    {
+      "id": "F13",
+      "file": "src/modules/billing/routes/billing.controller.ts",
+      "line": 157,
+      "claim": "getCheckoutUrl is implemented as a GET endpoint but creates an upstream checkout session, which is a side-effecting operation exposed via a method that should normally be idempotent/safe."
+    },
+    {
+      "id": "F14",
+      "file": "src/modules/billing/routes/billing.service.ts",
+      "line": 22,
+      "claim": "The billing route service injects the IBillingApi datasource directly instead of going through a repository, and there is no billing repository under src/modules/billing/domain/. Route services should depend on a repository (e.g. an IBillingRepository) rather than calling external API datasources directly."
+    },
+    {
+      "id": "F15",
+      "file": "src/datasources/billing-api/entities/plan.entity.ts",
+      "line": 24,
+      "claim": "Metadata values are typed as z.string() in plan.entity.ts and subscription.entity.ts (line 43), while PaymentLinkMetadataSchema in the same diff allows null; a null metadata value would turn plan and subscription responses into a 502."
+    },
+    {
+      "id": "F16",
+      "file": "src/modules/billing/routes/billing.controller.ts",
+      "line": 37,
+      "claim": "The returnUrl value is validated only with z.url(), which accepts any scheme and host including javascript: or an attacker-controlled domain, yet this value is used as the redirect target for Stripe checkout and the billing portal at lines 109 and 163. It should reuse the existing resolveAndValidateRedirectUrl helper from src/modules/auth/utils/auth-redirect.helper.ts, which enforces an allowed-domain configuration and validates protocol, domain, credentials and port."
+    },
+    {
+      "id": "F17",
+      "file": "src/datasources/billing-api/billing-api.service.ts",
+      "line": 190,
+      "claim": "paymentLinkId, planId (line 90) and sessionId (line 210) are passed unvalidated into the upstream URL; with the pinned find-my-way@9.6.0, a value like ..%2F..%2F in a path param decodes to ../../ and new URL() then collapses the path onto a different upstream endpoint. These requests carry CGW's own bearer token, and getPlan needs only a login rather than space membership, so these three params should be restricted to ^[A-Za-z0-9_]+$ via ValidationPipe, with the final pathname prefix asserted as a second layer before sending."
+    },
+    {
+      "id": "F18",
+      "file": "docker-compose.yml",
+      "line": 62,
+      "claim": "env_file: .env is marked required, so without a .env file, docker compose up for web, nginx, or config fails, whereas these worked on the base branch; setting required: false would fix this, though the README does direct users to create a .env file first."
+    },
+    {
+      "id": "F19",
+      "file": "src/modules/billing/routes/billing.service.ts",
+      "line": 22,
+      "claim": "BillingService injects the IBillingApi datasource directly, but AGENTS.md:17 states that services should call repositories, never datasources, so this violates the project's stated layering convention."
+    },
+    {
+      "id": "F20",
+      "file": "src/modules/billing/routes/billing.service.ts",
+      "line": 69,
+      "claim": "In getSpacePaymentLinks, building a Map from [...spaceLinks, ...generalLinks] lets later entries overwrite earlier ones, so a duplicate ID keeps the general link and discards the space-specific one, silently dropping space-specific metadata/pricing overrides. Either generalLinks should be placed first or the space entry should be explicitly preferred."
+    },
+    {
+      "id": "F21",
+      "file": "src/modules/billing/routes/billing.service.spec.ts",
+      "line": 272,
+      "claim": "The assertion expect(result).toEqual(toCheckoutSessionDto(checkoutSession)) builds its expected value using the function under test itself, so a swapped field such as amountTotal versus amountSubtotal would still pass; the test should instead compare against a hand-written literal."
+    },
+    {
+      "id": "F22",
+      "file": "src/modules/billing/routes/billing.controller.ts",
+      "line": 158,
+      "claim": "getCheckoutUrl is implemented on a @Get route but actually creates a resource (a Stripe session); it should be renamed to createCheckoutUrl and implemented as @Post to match its side effect."
+    },
+    {
+      "id": "F23",
+      "file": "src/modules/billing/routes/billing.controller.ts",
+      "line": 177,
+      "claim": "There is no test covering a non-member requesting another space's session on this endpoint."
+    },
+    {
+      "id": "F24",
+      "file": "src/modules/billing/routes/billing.controller.ts",
+      "line": 68,
+      "claim": "spaceId is bound twice in the same handler, once as a numeric id and once as a UUID, which raises a question of whether both bindings are actually necessary."
+    },
+    {
+      "id": "F25",
+      "file": "src/datasources/billing-api/billing-api.service.ts",
+      "line": 111,
+      "claim": "This code uses a raw fetch call that skips NetworkService's logging, request dedupe and dependency-injection test seam."
+    },
+    {
+      "id": "F26",
+      "file": "src/datasources/billing-api/billing-api.service.spec.ts",
+      "line": 297,
+      "claim": "The objectContaining({headers}) assertion would not detect if the AbortSignal.timeout on the raw fetch call were dropped, weakening the test's ability to catch that regression."
+    },
+    {
+      "id": "F27",
+      "file": "src/modules/billing/routes/billing.service.ts",
+      "line": 73,
+      "claim": "The full general payment-link catalog is merged into every response without paging."
+    },
+    {
+      "id": "F28",
+      "file": "src/modules/billing/routes/billing.controller.ts",
+      "line": 69,
+      "claim": "spaceUuid is used as-is without normalization (also at lines 106, 132, 160); an upper-case UUID would pass SpaceIdPipe but create a separate cache key and a separate upstream customer id from the lower-case form. Applying .toLowerCase() would fix this."
+    },
+    {
+      "id": "F29",
+      "file": "src/modules/billing/routes/billing.controller.ts",
+      "line": 89,
+      "claim": "The planId, paymentLinkId and sessionId path parameters (used at lines 89, 161 and 179) are interpolated into upstream URL paths and into a cache key without any Zod or ValidationPipe validation, unlike spaceId which is validated. A bounded ID schema should be added for each of these parameters."
+    },
+    {
+      "id": "F30",
+      "file": "src/modules/billing/routes/billing.controller.ts",
+      "line": 68,
+      "claim": "The pattern of reading the same route param twice (once with SpaceIdPipe for the numeric id, once raw for the UUID) is repeated four times, which is subtle and easy to break on a future rename, and causes every space-scoped billing call to run findIdByUuid plus a separate membersRepository.findOne lookup, adding an extra DB round-trip."
+    },
+    {
+      "id": "F31",
+      "file": null,
+      "line": null,
+      "claim": "Only billing.service.spec.ts was added; there is no controller/e2e coverage for the new endpoints, so guard application (AuthGuard on each new route), 400 responses on invalid UUID via SpaceIdPipe, 401/403 paths, and returnUrl validation are not exercised at the HTTP level."
+    },
+    {
+      "id": "F32",
+      "file": "src/modules/billing/billing.module.ts",
+      "line": 17,
+      "claim": "The module wraps AuthModule, UsersModule and SpacesModule imports in forwardRef even though none of those modules import BillingModule (only app.module.ts does), so there is no circular dependency requiring it. Plain imports should be used instead."
+    },
+    {
+      "id": "F33",
+      "file": "src/modules/billing/routes/billing.controller.ts",
+      "line": 177,
+      "claim": "The GET session-by-id route has no ownership check: any authenticated user can fetch any session by its ID and receive amountTotal, customer, subscription, invoice, and metadata, since session IDs are opaque but effectively guessable across users. The caller should be required to be a member of the space referenced by client_reference_id/customer, or the session should be resolved through a space-scoped route."
+    },
+    {
+      "id": "F34",
+      "file": "src/modules/billing/routes/billing.controller.ts",
+      "line": 37,
+      "claim": "The returnUrl parameter is validated with z.url(), which accepts any host and even a javascript: scheme; this could be an open redirect if the upstream service does not allowlist the value."
+    },
+    {
+      "id": "F35",
+      "file": "src/datasources/billing-api/upstream-customer-id.util.ts",
+      "line": null,
+      "claim": "This file is named with a *.util.ts suffix while every other helper file in the codebase uses *.utils.ts, making it inconsistent with the established naming convention. It should be renamed to upstream-customer-id.utils.ts, along with its spec file."
+    },
+    {
+      "id": "F36",
+      "file": "src/modules/billing/routes/billing.controller.ts",
+      "line": 157,
+      "claim": "This GET endpoint creates a Stripe checkout session on every call and has no RateLimitGuard; since auth relies on a SameSite=Lax cookie, a cross-site link click can trigger session creation."
+    },
+    {
+      "id": "F37",
+      "file": "src/modules/billing/routes/billing.controller.ts",
+      "line": 89,
+      "claim": "planId, paymentLinkId, and sessionId path parameters have no format validation and are interpolated verbatim into API URLs in billing-api.service.ts, which is a mild footgun for unvalidated input in path segments (e.g. encoded slashes or unusual characters)."
+    },
+    {
+      "id": "F38",
+      "file": "src/datasources/billing-api/billing-api.service.ts",
+      "line": 111,
+      "claim": "Bypassing NetworkService skips functionality such as logging and the circuit breaker; NetworkService should instead be extended with an option to avoid calling response.json() rather than bypassing it."
+    },
+    {
+      "id": "F39",
+      "file": "src/modules/billing/routes/billing.controller.ts",
+      "line": 64,
+      "claim": "The @ApiQuery decorator for the status parameter does not list the enum values even though SubscriptionStatusFilterSchema already defines them, so the generated Swagger documentation shows a free-form string that does not match the actual validated shape. It should reference SubscriptionStatusFilterSchema.options as the enum."
+    },
+    {
+      "id": "F40",
+      "file": "src/modules/billing/routes/billing.controller.ts",
+      "line": 157,
+      "claim": "paymentLinkId is not checked against the set of payment links the requesting space is allowed to use, so a caller could potentially reference a payment link belonging to another space."
+    },
+    {
+      "id": "F41",
+      "file": "src/modules/billing/routes/billing.controller.ts",
+      "line": 177,
+      "claim": "The GET /v1/billing/sessions/:sessionId endpoint only applies AuthGuard and does not check ownership, so any signed-in user who knows a session ID can read another space's checkout session data, including customer, client_reference_id, metadata, subscription and invoice fields. The session lookup should be tied to a space the caller belongs to, either via a spaceId route parameter or by checking the session's customer/metadata against a space the caller is a member of."
+    },
+    {
+      "id": "F42",
+      "file": "src/datasources/billing-api/entities/plan.entity.ts",
+      "line": 24,
+      "claim": "The schema duplicates PaymentLinkMetadataSchema instead of reusing it under a more generic name, both here and in other places."
+    },
+    {
+      "id": "F43",
+      "file": "docker-compose.yml",
+      "line": 62,
+      "claim": "The compose file change replaces ${VAR-default} fallback values with env_file: .env, which is unrelated to the billing feature and causes docker compose up web to fail for anyone without a .env file. This change should be split into its own PR or changed so it still works without a .env file."
+    },
+    {
+      "id": "F44",
+      "file": "src/modules/billing/routes/billing.service.ts",
+      "line": 98,
+      "claim": "The GET /v1/billing/sessions/:sessionId route (handler at billing.controller.ts:177) is protected only by AuthGuard, and getCheckoutSession never calls assertSpaceMember the way the other four space methods do, and the route has no spaceId to check against. Any logged-in user who obtains another space's Stripe sessionId can read that session's customer, metadata and amounts, and session ids can end up exposed in browser history, Referer headers and screenshots; the route should move to /spaces/:spaceId/sessions/:sessionId, call assertSpaceMember, and verify that withDashes(session.customer) equals spaceUuid before returning the session."
+    },
+    {
+      "id": "F45",
+      "file": "src/modules/billing/routes/billing.controller.ts",
+      "line": 56,
+      "claim": "The Swagger summary text \"Get a space subscriptions\" is grammatically incorrect and should read \"Get a space's subscriptions\"."
+    },
+    {
+      "id": "F46",
+      "file": "src/modules/billing/routes/billing.service.spec.ts",
+      "line": 184,
+      "claim": "The existing test for de-duplication only asserts count using identical objects in both lists, so it does not catch the inverted precedence bug in the de-dup logic."
+    }
+  ]
+}

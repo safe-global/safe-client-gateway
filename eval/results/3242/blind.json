@@ -1,0 +1,79 @@
+{
+  "pr": 3242,
+  "title": "fix(tests): resolve remaining flaky tests after Vitest migration",
+  "description": "## Summary\n\nFixes three tests that kept flaking **after** #3139. All three were visible in Datadog CI Pipeline Health but missed by our own flaky-test report, whose log parser is Jest-specific and went blind once the suite moved to Vitest (#3136).\n\n- **`name.builder`** — `nameBuilder()` sanitized (trimmed) the faker name and *then* truncated to `NAME_MAX_LENGTH`; the cut could land right after a space and re-introduce trailing whitespace, so `sanitizeName(name) !== name`. Now re-`sanitizeName()` after truncation so the result is a fixed point.\n- **`bridge-name.entity.spec`** — the \"unknown bridge name\" case used `faker.word.noun()`, which can itself be a bridge name (`omni`, `polygon`, `across`, `gnosis`, …), making `safeParse` succeed and the assertion flip to `expected false to deeply equal …`. Now resamples until the word is genuinely not a bridge name.\n- **Integration specs (61 files)** — `afterEach`/`afterAll` called `await app.close()` unguarded, so any `beforeEach` failure left `app` undefined and every test in the file reported `Cannot read properties of undefined (reading 'close')` instead of the real error (the \"27 tests fail at teardown\" cascade). Guarded with `await app?.close()`.\n\n## Testing\n\n- `yarn test:unit` for `name.builder` + `bridge-name.entity` → pass\n- `biome check` clean; `tsc` introduces no new errors\n\n## Related\n\n- WA-1753\n- Follows #3139 (clearMocks + seeded faker)\n",
+  "findings": [
+    {
+      "id": "F1",
+      "file": "bridge-name.entity.spec.ts",
+      "line": 21,
+      "claim": "The resample loop that keeps drawing a new name while it matches an existing bridge name has no upper bound, so with a seeded faker there is no guarantee it terminates, even though in practice this is very unlikely given the large vocabulary versus only 20 bridge names."
+    },
+    {
+      "id": "F2",
+      "file": "src/modules/chains/feature-flags/feature-flag.service.integration.spec.ts",
+      "line": 23,
+      "claim": "The bulk swap produced `if (app) await app?.close();`, where the optional-chaining `?.` is redundant because the preceding `if (app)` check already guards the call and nothing can change `app` in between."
+    },
+    {
+      "id": "F3",
+      "file": "src/modules/messages/routes/messages.controller.integration.spec.ts",
+      "line": 49,
+      "claim": "The bulk swap produced `if (app) { await app?.close(); }`, where the `?.` is redundant given the surrounding `if (app)` check, the same issue as in the feature-flag integration spec."
+    },
+    {
+      "id": "F4",
+      "file": "src/modules/messages/routes/messages.controller.integration.spec.ts",
+      "line": 49,
+      "claim": "The code checks `if (app)` before closing but still uses the optional chaining operator on `app?.close()`, which is redundant since the surrounding check already rules out undefined; this appears to be a side effect of a bulk find-and-replace and should be reverted to a plain `app.close()` call or have the redundant check removed."
+    },
+    {
+      "id": "F5",
+      "file": "feature-flag.service.integration.spec.ts",
+      "line": 23,
+      "claim": "The `if (app)` guard combined with `await app?.close()` is redundant since the if already narrows app to be defined, and it is inconsistent with the pattern used everywhere else in the PR, which just calls `await app?.close();` without the if."
+    },
+    {
+      "id": "F6",
+      "file": null,
+      "line": null,
+      "claim": "No new tests were added specifically for the name.builder and bridge-name fixes."
+    },
+    {
+      "id": "F7",
+      "file": "messages.controller.integration.spec.ts",
+      "line": 49,
+      "claim": "This file still contains one `if (app)` guard around `await app?.close()`, which has the same redundancy issue noted for feature-flag.service.integration.spec.ts."
+    },
+    {
+      "id": "F8",
+      "file": "name.builder.ts",
+      "line": 28,
+      "claim": "After slicing and re-sanitizing the name, trimming trailing whitespace could theoretically bring the result below NAME_MIN_LENGTH, meaning the builder no longer strictly guarantees a minimum length in a pathological case, though this is not reachable given current SAMPLE_NAMES and faker.person.fullName() outputs."
+    },
+    {
+      "id": "F9",
+      "file": "src/modules/chains/feature-flags/feature-flag.service.integration.spec.ts",
+      "line": 23,
+      "claim": "The code checks `if (app)` before closing but still uses the optional chaining operator on `app?.close()`, which is redundant since the surrounding check already rules out undefined; this appears to be a side effect of a bulk find-and-replace and should be reverted to a plain `app.close()` call or have the redundant check removed."
+    },
+    {
+      "id": "F10",
+      "file": "src/domain/common/entities/name.builder.ts",
+      "line": 26,
+      "claim": "There is no test that reliably exercises the truncation edge case where a name is cut at NAME_MAX_LENGTH (30 characters) landing just after a space; the only coverage comes from 50 random runs in name.builder.spec.ts (lines 13-19) that only hit this case when a randomly generated full name happens to be longer than 30 characters with a space at position 30, which is rare, so the regression is not reliably tested. A test should be added that mocks or selects a long name with a space at index 29 and asserts that NameSchema.parse succeeds and sanitizeName(name) === name."
+    },
+    {
+      "id": "F11",
+      "file": "src/modules/chains/feature-flags/feature-flag.service.integration.spec.ts",
+      "line": 97,
+      "claim": "The optional chaining on `await app?.close()` is applied to a local `const app` that was already initialized and had `init()` called on it a few lines earlier, so it can never be undefined at this point, making the change pure churn; it should be reverted to `await app.close();`."
+    },
+    {
+      "id": "F12",
+      "file": "src/domain/common/entities/name.builder.ts",
+      "line": 28,
+      "claim": "The fix that reruns sanitizeName after the 30-character cut is only exercised by the existing random 50-run idempotence test, which is the same test that was flaking, so there is no test that reliably fails if this fix is reverted; the bug only triggers in roughly 1 in 1,400 runs, and a simulated revert only failed the suite about 0.05% of the time, meaning a regression could go unnoticed until CI flakes again."
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+{
+  "usd": 0.0628196,
+  "findings": [
+    {
+      "file": "src/modules/auth/oidc/routes/oidc-auth.controller.ts",
+      "line": 110,
+      "claim": "Math.floor(stateMaxAge / 1_000) can round a sub-second TTL down to 0, which would set the OIDC state cookie's maxAge to 0 and effectively unset it, breaking the state check in the callback if auth.stateTtlMs is ever configured below 1000ms."
+    },
+    {
+      "file": "src/app.provider.ts",
+      "line": 38,
+      "claim": "The new parseBodyLimit regex only matches units b|kb|mb|gb with a plain numeric prefix, whereas the previous body-parser/bytes-based config accepted additional units like tb/pb and looser whitespace or casing, so a previously valid value such as EXPRESS_JSON_LIMIT=1tb or '1 KiB' will now throw at bootstrap."
+    },
+    {
+      "file": "src/middleware/not-found-logger.middleware.ts",
+      "line": 25,
+      "claim": "NotFoundLoggerMiddleware types the request as raw IncomingMessage even though it relies on originalUrl, which is set by @fastify/middie but is not part of the Node type; this type drift could let a future change silently fall back to req.url without a type error."
+    },
+    {
+      "file": "src/__tests__/test-app.provider.ts",
+      "line": 18,
+      "claim": "createTestApplication instantiates FastifyAdapter directly with no trustProxy or bodyLimit configuration, unlike TestAppProvider.provide() which uses createFastifyAdapter(configurationService), so tests using the former do not exercise the same adapter configuration as production and could mask behavior differences."
+    },
+    {
+      "file": "src/routes/common/http/http-request.utils.ts",
+      "line": 69,
+      "claim": "getRouteUrl silently falls back to 'localhost' when the Host header is missing, whereas Express previously threw in this case; pagination cursors and audit logs that include this URL could end up with a misleading authority instead of surfacing the misconfiguration."
+    },
+    {
+      "file": "src/modules/alerts/routes/guards/tenderly-signature.guard.ts",
+      "line": 57,
+      "claim": "TenderlySignatureGuard computes its HMAC over the re-stringified parsed JSON body rather than the raw bytes received; this depends on the parser preserving the sender's exact byte representation (whitespace, number formatting, Unicode escapes), which is not guaranteed even though insertion order is preserved."
+    },
+    {
+      "file": "src/app.provider.spec.ts",
+      "line": null,
+      "claim": "There is no test asserting the new seconds-vs-milliseconds cookie unit conversion, such as an integration test checking that the Set-Cookie Max-Age value falls in the expected seconds range, despite this being exactly the kind of unit conversion prone to regression."
+    },
+    {
+      "file": null,
+      "line": null,
+      "claim": "The integration-tests CI job reported as failed for the relevant commit, and this should be resolved before merge since the Fastify ready() change in initTestApplication and the cookie-unit changes are likely causes."
+    },
+    {
+      "file": "src/config/entities/configuration.ts",
+      "line": 385,
+      "claim": "The config namespace express.* and its docstring referencing the 'bytes library for parsing' are now stale after the migration and no longer accurately describe the parsing behavior."
+    },
+    {
+      "file": "src/app.provider.ts",
+      "line": null,
+      "claim": "parseBodyLimit(\"1.5b\") returns Math.floor(1.5 * 1) = 1, showing the regex allows decimal values for the byte unit where fractional bytes are meaningless, which could let malformed configuration values pass silently instead of failing validation."
+    },
+    {
+      "file": "src/modules/auth/routes/auth.controller.ts",
+      "line": 127,
+      "claim": "Handlers using @Res({ passthrough: true }) with a Promise<void> return type (e.g. this one and oidc-auth.controller.ts:94) will have NestJS auto-send undefined under Fastify, so it should be confirmed during smoke testing that endpoints like POST /v1/auth/verify still return 200 with an empty body rather than a 204."
+    }
+  ]
+}

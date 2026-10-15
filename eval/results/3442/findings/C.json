@@ -1,0 +1,40 @@
+{
+  "usd": 0.047273600000000006,
+  "findings": [
+    {
+      "file": "src/datasources/circuit-breaker/circuit-breaker.service.ts",
+      "line": 228,
+      "claim": "Every rejected HALF_OPEN request is logged at warn level, and during an outage with a hanging upstream and many concurrent callers this can generate a large volume of warn logs across pods, potentially dominating logs during an incident alongside the existing OPEN-state rejection warn logs."
+    },
+    {
+      "file": "src/datasources/circuit-breaker/circuit-breaker.service.ts",
+      "line": null,
+      "claim": "A recordSuccess call that returns late from a probe issued in a previous HALF_OPEN window can still pass the state === HALF_OPEN check and release a probe slot belonging to a new window, allowing an extra admission beyond the intended cap since the counter is only clamped at zero rather than tied to a specific probe."
+    },
+    {
+      "file": "src/datasources/circuit-breaker/circuit-breaker.service.ts",
+      "line": null,
+      "claim": "Using a coarse shared counter instead of a per-probe token returned from canProceed/canProceedOrFail and consumed by recordSuccess/recordFailure means slot release cannot be tied to the specific probe that acquired it, which is the root cause of the late-release issue; this tradeoff is undocumented in code."
+    },
+    {
+      "file": "src/datasources/circuit-breaker/circuit-breaker.service.ts",
+      "line": null,
+      "claim": "With default configuration (threshold=10, halfOpenFailureRateThreshold=30 giving a probe cap of 3), the circuit needs about four sequential rounds of admitted probes to accumulate enough successes to close, so lowering halfOpenFailureRateThreshold to make reopening more aggressive also shrinks the probe cap and lengthens the time to close, which is not obvious from the configuration alone."
+    },
+    {
+      "file": "configuration.ts",
+      "line": null,
+      "claim": "The configuration.ts comment documents that the probe cap is coupled to the reopen threshold but omits the resulting close-time consequence, so a user tuning halfOpenFailureRateThreshold down would be surprised by the slower close."
+    },
+    {
+      "file": "src/datasources/circuit-breaker/circuit-breaker.service.ts",
+      "line": 220,
+      "claim": "getEffectiveFailureThreshold is used with two different meanings — as maxInFlight here and as the reopen threshold in recordFailure — and the code does not document that these are intentionally the same value, requiring the reader to infer the coupling."
+    },
+    {
+      "file": "circuit-breaker.service.spec.ts",
+      "line": 15,
+      "claim": "circuitName is declared with faker.string.alphanumeric() at module scope, which defaults to a 1-character name shared across every test; this is fragile because a future test adding an explicit single-character circuit name like 'a' or 'b' could collide with it."
+    }
+  ]
+}

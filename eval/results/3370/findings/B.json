@@ -1,0 +1,40 @@
+{
+  "usd": 0.0702876,
+  "findings": [
+    {
+      "file": "src/modules/csv-export/v1/datasources/export-api.service.ts",
+      "line": 64,
+      "claim": "No test covers the 451 banned-Safe path for ExportApi, SafeBalancesApi.getBalance, or getCollectibles; the ExportApi spec only excludes 451 and the integration test covers getBalances only, so removing one of these error-mapping wrappers would silently regress those endpoints to returning a generic error with nothing catching it."
+    },
+    {
+      "file": "src/modules/csv-export/v1/datasources/export-api.service.spec.ts",
+      "line": 143,
+      "claim": "A 'should forward a banned-Safe error' test case should be added to export-api.service.spec.ts, plus a collectibles 451 integration case, to cover the paths currently untested."
+    },
+    {
+      "file": "banned-safe.helper.spec.ts",
+      "line": 22,
+      "claim": "The upstream reason is hardcoded as the literal string 'Safe is unavailable for legal reasons' in five places even though no assertion depends on the exact text, which conflicts with the project rule that test data should come from faker; it should be replaced with something like { detail: faker.word.words() }."
+    },
+    {
+      "file": "banned-safe.helper.spec.ts",
+      "line": 36,
+      "claim": "The 'random error status except 451' do/while loop is duplicated across three spec files even though the commit message implies a single shared helper, and the helper is actually only local to the TransactionApi spec; it should be moved into a shared test utility and imported by all three specs instead of being copy-pasted."
+    },
+    {
+      "file": "src/modules/balances/routes/balances.controller.integration.spec.ts",
+      "line": 872,
+      "claim": "The new test asserts networkService.get.mock.calls.length instead of using a proper matcher; although this matches the file's existing local style, it violates the repo-wide convention that calls should be asserted with expect(networkService.get).toHaveBeenCalledTimes(2)."
+    },
+    {
+      "file": "transaction-api.service.spec.ts",
+      "line": 70,
+      "claim": "The new helper function is placed between the const baseUrl declaration and the let declarations, which doesn't match how other specs lay out their local helpers; moving it above the describe block would be more consistent."
+    },
+    {
+      "file": "transaction-api.service.ts",
+      "line": 1193,
+      "claim": "If the upstream service sends a 451 response with a nonFieldErrors field instead of detail, TransactionApi.mapError would forward that nonFieldErrors message to the client because its first branch matches before mapBannedSafeError runs, meaning the banned-Safe handling would not apply in that case."
+    }
+  ]
+}

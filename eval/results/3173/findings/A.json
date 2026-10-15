@@ -1,0 +1,75 @@
+{
+  "usd": 0.069296,
+  "findings": [
+    {
+      "file": "src/config/entities/schemas/configuration.schema.ts",
+      "line": 63,
+      "claim": "The new AUTH_CLOCK_SKEW_SECONDS environment variable is read and parsed in configuration.ts but has no corresponding entry in the configuration schema, unlike every other nearby AUTH_* numeric setting, so an invalid value is never rejected at startup."
+    },
+    {
+      "file": "src/modules/siwe/domain/entities/siwe-message.entity.ts",
+      "line": 59,
+      "claim": "Because the value isn't validated, a non-numeric AUTH_CLOCK_SKEW_SECONDS becomes NaN, and the truthiness check silently treats that as a skew of zero instead of surfacing an error."
+    },
+    {
+      "file": "src/config/entities/configuration.ts",
+      "line": 52,
+      "claim": "A negative AUTH_CLOCK_SKEW_SECONDS value produces a negative skewMs, which makes the issuedAt check reject every freshly signed message and breaks SiWe login."
+    },
+    {
+      "file": "src/config/entities/configuration.ts",
+      "line": 52,
+      "claim": "An unbounded, very large AUTH_CLOCK_SKEW_SECONDS value effectively disables the expirationTime and notBefore checks entirely."
+    },
+    {
+      "file": "src/config/entities/schemas/configuration.schema.ts",
+      "line": 63,
+      "claim": "No test case was added to configuration.validator.spec.ts covering validation of the new AUTH_CLOCK_SKEW_SECONDS value."
+    },
+    {
+      "file": "src/modules/auth/routes/auth.controller.integration.spec.ts",
+      "line": 407,
+      "claim": "The only integration test change covers the rejection case; no test exercises a SiWe message that is accepted because it falls within the clock-skew allowance, all the way through AuthService."
+    },
+    {
+      "file": "src/modules/auth/routes/auth.service.ts",
+      "line": 92,
+      "claim": "AuthService copies the SiWe message's expirationTime directly into the JWT exp claim, so a message that expired up to the skew allowance ago is now accepted but produces a token that is already expired."
+    },
+    {
+      "file": "src/modules/auth/routes/auth.service.ts",
+      "line": 92,
+      "claim": "Similarly, an issuedAt or notBefore value up to the skew allowance in the future is copied directly into the token's iat/nbf claims, producing tokens with future issued/not-before times."
+    },
+    {
+      "file": "src/datasources/jwt/jwt.module.ts",
+      "line": null,
+      "claim": "JWT verification has no clockTolerance configured, so tokens with exp/iat/nbf skewed by the new allowance end up being rejected when they are actually used, defeating the purpose of the allowance."
+    },
+    {
+      "file": "AUTH.md",
+      "line": 235,
+      "claim": "The documentation states the clock-skew allowance avoids rejecting valid messages, but because issued tokens can end up unusable, that claim does not hold for the accepted-within-skew case."
+    },
+    {
+      "file": "src/modules/siwe/domain/entities/siwe-message.entity.ts",
+      "line": 30,
+      "claim": "clockSkewSeconds is declared as an optional parameter even though the only caller always passes a number from getOrThrow, making the associated no-skew branch dead code."
+    },
+    {
+      "file": "src/modules/siwe/domain/entities/siwe-message.entity.ts",
+      "line": 59,
+      "claim": "The optional parameter's truthiness check (clockSkewSeconds ? … : 0) also masks the NaN handling problem, since a NaN value is falsy and silently resolves to zero skew instead of an error."
+    },
+    {
+      "file": "src/modules/siwe/domain/siwe.repository.ts",
+      "line": 45,
+      "claim": "buildSiweMessageSchema(this.clockSkewSeconds) is called on every getValidatedSiweMessage invocation even though the skew value is fixed once in the constructor, so the schema is rebuilt unnecessarily on each call instead of being built once and cached."
+    },
+    {
+      "file": "src/modules/auth/AUTH.md",
+      "line": 257,
+      "claim": "The newly added table row is wider than its column, breaking the Markdown table's alignment, and running yarn format (Biome) will not fix this since Biome does not reformat Markdown tables."
+    }
+  ]
+}

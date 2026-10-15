@@ -1,0 +1,111 @@
+{
+  "usage": {
+    "usd": 0.3163954,
+    "turns": 5,
+    "wallSeconds": 38
+  },
+  "issues": [
+    {
+      "findings": [
+        "F10",
+        "F14"
+      ],
+      "summary": "Public response type of txData.chainId changes from number to string; client readiness unconfirmed",
+      "label": "low",
+      "evidence": "src/modules/fees/routes/entities/fee-preview-response.entity.ts:12 does change the public type from number to string. The PR description says this change is intended, to match how CGW handles chainId elsewhere. Whether web and mobile clients are ready can't be checked from this repo, so it stays a minor coordination risk.",
+      "category": "product"
+    },
+    {
+      "findings": [
+        "F3",
+        "F5"
+      ],
+      "summary": "Inline regex duplicates the existing NumericStringSchema/ChainIdSchema chainId validation (and skips the max-length bound)",
+      "label": "low",
+      "evidence": "tx-fees-response.schema.ts:8 uses z.coerce.string().regex(/^\\d+$/), while src/modules/chains/domain/entities/schemas/chain-id.schema.ts:5 already builds ChainIdSchema on NumericStringSchema with CHAIN_ID_MAXLENGTH=78. Having two rules can let them drift apart, and the inline one has no length limit. The cost is small maintenance and consistency work.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F1"
+      ],
+      "summary": "Integration test does not assert txData.chainId is a string in the HTTP response",
+      "label": "low",
+      "evidence": "fee-preview.fees.controller.integration.spec.ts:120 only checks `expect(body.txData).toBeDefined()`. The schema unit tests do cover the coercion, so a regression would probably still be caught. The gap is minor.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F2",
+        "F11"
+      ],
+      "summary": "Schema tests lack cases for null/undefined, 0, floats, leading zeros, booleans",
+      "label": "low",
+      "evidence": "The invalid cases in tx-fees-response.schema.spec.ts:55 are only 'abc', '', '-1' and -1. null and undefined currently fail only because String() turns them into 'null' and 'undefined', which the regex rejects. Adding cases would pin that behaviour down, but the risk is small.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F12"
+      ],
+      "summary": "Regex accepts chainId '0'",
+      "label": "low",
+      "evidence": "/^\\d+$/ matches '0'. The value comes from the internal fee service, which is answering a request CGW already validated for a specific chainId, so a 0 reply is unlikely. Other chainId schemas in the codebase accept 0 too.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F13"
+      ],
+      "summary": "Regex accepts leading-zero strings like '01'",
+      "label": "low",
+      "evidence": "/^\\d+$/ matches '01', and the value is passed through unchanged. Only a misbehaving upstream fee service would send this, so it is an unlikely edge case.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F9"
+      ],
+      "summary": "z.coerce.string() coerces any type before the regex check",
+      "label": "nit",
+      "evidence": "String(true)='true' and String(null)='null' both fail the regex, and objects become '[object Object]', which also fails. Only a numeric BigInt would pass, which is harmless. No case produces a wrong result, so this is a preference.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F6"
+      ],
+      "summary": "Float 1.0 coerces to '1' and passes",
+      "label": "wrong",
+      "evidence": "In JS and JSON, 1.0 and 1 are the same value (JSON.parse('1.0') === 1), so there is no separate float to reject. A real fraction like 1.5 becomes '1.5' and fails the /^\\d+$/ regex.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F8"
+      ],
+      "summary": "Spec duplicates txData literals instead of using the builder",
+      "label": "nit",
+      "evidence": "tx-fees-response.schema.spec.ts repeats literal txData objects while the builder module is imported (line 5), matching the existing tests' style. This is style duplication with no functional cost.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F7"
+      ],
+      "summary": "success-check plus if(result.success) guard assertion style",
+      "label": "nit",
+      "evidence": "tx-fees-response.schema.spec.ts:27 uses the safeParse guard pattern, which is common and needed for type narrowing. It is a style preference.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F4"
+      ],
+      "summary": "Builder chainId range capped at 99999",
+      "label": "nit",
+      "evidence": "tx-fees-response.builder.ts:16 generates values from 1 to 99999 for test data. The schema has no upper bound, so the range doesn't affect correctness. It is only about how realistic the test data is.",
+      "category": "tests"
+    }
+  ]
+}

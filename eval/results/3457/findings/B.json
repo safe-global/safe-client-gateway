@@ -1,0 +1,15 @@
+{
+  "usd": 0.06138160000000001,
+  "findings": [
+    {
+      "file": "space-safes.repository.ts",
+      "line": 238,
+      "claim": "The commit message describes the change as a rename, but countSeatsBySpaceId counts distinct addresses (COUNT(DISTINCT SEAT_KEY)) rather than one per row like the old countBySpaceId, so the billing seat-capacity check is now looser for Safes deployed on multiple chains; the squash subject should be reworded to reflect this behavior change rather than calling it a rename."
+    },
+    {
+      "file": "billing.service.spec.ts",
+      "line": null,
+      "claim": "There is no billing test covering the scenario where a single Safe deployed on multiple chains should still count as one seat against a plan with a small quota (e.g. a Safe on 3 chains fitting a 1-seat plan)."
+    }
+  ]
+}

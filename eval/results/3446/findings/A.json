@@ -1,0 +1,45 @@
+{
+  "usd": 0.0649736,
+  "findings": [
+    {
+      "file": "src/modules/spaces/routes/entities/get-space.dto.entity.ts",
+      "line": 69,
+      "claim": "The safeCount field description still says 'Total count of Safes in the space', but the underlying service now returns the number of distinct Safe addresses (seats) rather than the number of rows, so a Safe present on three chains now returns 1 instead of 3. This changes the meaning of the field for existing API clients without any note in Swagger or the PR description, so the description should be updated and the web and mobile teams should confirm a Safe-seat number is what they intend to display."
+    },
+    {
+      "file": "src/modules/spaces/routes/spaces.service.ts",
+      "line": 153,
+      "claim": "This is the service method whose return value no longer matches the safeCount field's documented meaning, since it now counts distinct Safe addresses instead of total Safe rows across chains."
+    },
+    {
+      "file": "src/modules/spaces/routes/safes/space-safes.enforcement.integration.spec.ts",
+      "line": 241,
+      "claim": "New end-to-end HTTP test cases duplicate coverage already provided by lower-layer tests (repository, service, and rules specs), so the branch-level negative cases should be pushed down and only one representative end-to-end case kept."
+    },
+    {
+      "file": "src/modules/spaces/routes/safes/space-safes.enforcement.integration.spec.ts",
+      "line": 261,
+      "claim": "This test case (another chain admitted at the limit) duplicates lower-layer coverage and could serve as the single representative end-to-end case to keep while the others are removed."
+    },
+    {
+      "file": "src/modules/spaces/routes/safes/space-safes.enforcement.integration.spec.ts",
+      "line": 277,
+      "claim": "This mixed-batch end-to-end test case duplicates coverage already present in the repository, service, and rules-level specs and should be reconsidered per the one-check-per-route testing convention."
+    },
+    {
+      "file": "src/modules/spaces/routes/safes/space-safes.enforcement.integration.spec.ts",
+      "line": 250,
+      "claim": "New test data hard-codes literal chain IDs (['1', '137', '8453']) instead of generating them, which conflicts with local precedent in the same diff where the repository spec generates chain IDs via faker."
+    },
+    {
+      "file": "src/modules/spaces/routes/safes/space-safes.enforcement.integration.spec.ts",
+      "line": 271,
+      "claim": "This test hard-codes the literal chain ID '137' instead of generating it, similar to the other new test data that should use faker-generated values unless the route specifically needs real chain IDs."
+    },
+    {
+      "file": "src/modules/spaces/routes/safes/space-safes.enforcement.integration.spec.ts",
+      "line": 290,
+      "claim": "This test also hard-codes the literal chain ID '137' rather than generating it, repeating the same pattern flagged elsewhere in the new test data."
+    }
+  ]
+}

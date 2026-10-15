@@ -1,0 +1,30 @@
+{
+  "usd": 0.057347600000000006,
+  "findings": [
+    {
+      "file": "feature-flag.service.integration.spec.ts",
+      "line": 23,
+      "claim": "The `if (app)` guard combined with `await app?.close()` is redundant since the if already narrows app to be defined, and it is inconsistent with the pattern used everywhere else in the PR, which just calls `await app?.close();` without the if."
+    },
+    {
+      "file": "bridge-name.entity.spec.ts",
+      "line": 21,
+      "claim": "The resample loop that keeps drawing a new name while it matches an existing bridge name has no upper bound, so with a seeded faker there is no guarantee it terminates, even though in practice this is very unlikely given the large vocabulary versus only 20 bridge names."
+    },
+    {
+      "file": "name.builder.ts",
+      "line": 28,
+      "claim": "After slicing and re-sanitizing the name, trimming trailing whitespace could theoretically bring the result below NAME_MIN_LENGTH, meaning the builder no longer strictly guarantees a minimum length in a pathological case, though this is not reachable given current SAMPLE_NAMES and faker.person.fullName() outputs."
+    },
+    {
+      "file": null,
+      "line": null,
+      "claim": "No new tests were added specifically for the name.builder and bridge-name fixes."
+    },
+    {
+      "file": "messages.controller.integration.spec.ts",
+      "line": 49,
+      "claim": "This file still contains one `if (app)` guard around `await app?.close()`, which has the same redundancy issue noted for feature-flag.service.integration.spec.ts."
+    }
+  ]
+}

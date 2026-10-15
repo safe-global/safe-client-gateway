@@ -1,0 +1,78 @@
+{
+  "usd": 0.3161438,
+  "head": "9a85d312594e622b89b5ce6f250f5699a67e5454",
+  "verdicts": [
+    {
+      "issue": 1,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "At a43549a08, isTrialLink checks `link.trialPeriodDays != null` (payment-link-offer.rules.ts:38). In the thread on rules.ts:61 moisses89 replied \"Stripe config issue, reading it as paid is correct. No code change.\""
+    },
+    {
+      "issue": 3,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "moisses89 replied on rules.ts:65 that this is intended: \"Repurchase is handled in the frontend; it reappears in payment-links only if the trial ends unpaid.\" The code was not changed."
+    },
+    {
+      "issue": 4,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "moisses89 declined on subscriptions.repository.ts:59: \"No change needed, free plan needs no payment; unpaid ones auto-cancel in Stripe\". The summary still counts every status."
+    },
+    {
+      "issue": 6,
+      "verdict": "rejected",
+      "present": false,
+      "evidence": "At a43549a08 the log was a `warn` that fired once per link id, deduped through the warnedUnclassifiedLinkIds memo (billing.service.ts:42-43,193). Commit 09f065474 removed the memo and made it an error on every request, and moisses89 then declined the fix: \"Correct, staying at error\"."
+    },
+    {
+      "issue": 7,
+      "verdict": "accepted",
+      "present": false,
+      "evidence": "The fix is already in the reviewed commit a43549a08 (\"One aggregate rather than two reads\"), which uses a single getSubscriptionSummary (billing.service.ts:203-205). The author replied \"Done: folded both into a single getSubscriptionSummary aggregate.\""
+    },
+    {
+      "issue": 9,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "The author declined in the reply to the bot: \"Keeping the throw: matches main's behavior; empty means misconfiguration.\""
+    },
+    {
+      "issue": 14,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "The author declined in the reply to the bot: \"Acknowledged: keeping it: billing service exposes no fetch-one.\" Checkout still calls listOfferedPaymentLinks."
+    },
+    {
+      "issue": 17,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "moisses89 replied \"Done 9a85d31\" on billing.service.ts:181, and commit 9a85d3125 simplifies the payment-link merge."
+    },
+    {
+      "issue": 18,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "moisses89 replied \"Done 9a85d31\". The diff from a43549a08 to HEAD removes 2 lines from billing.controller.e2e-spec.ts."
+    },
+    {
+      "issue": 19,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "`switch (true)` is still at payment-link-offer.rules.ts:53. The author replied: \"Keeping it: the switch shape was explicitly requested in review.\""
+    },
+    {
+      "issue": 20,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "moisses89 declined on rules.ts:30: \"Nested ternary violates our biome lint rule\"."
+    },
+    {
+      "issue": 21,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "moisses89 replied \"Done 9a85d31\". That commit reworks subscriptions.repository.integration.spec.ts (26 lines changed) into the parameterized test."
+    }
+  ]
+}

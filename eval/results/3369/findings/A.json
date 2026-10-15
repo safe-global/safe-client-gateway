@@ -1,0 +1,35 @@
+{
+  "usd": 0.274802,
+  "findings": [
+    {
+      "file": "docs/agents/module-structure.md",
+      "line": 133,
+      "claim": "The text states that a module may skip registration in app.module.ts when it 'only serves that one' consuming module, then cites backbone, email, siwe and queues as examples wired the same way, but siwe is consumed by both auth.module.ts and users.module.ts, queues is consumed by two different sub-modules in health.module.ts and hooks.module.ts, and email is not a single module at all but two separate providers (pushwoosh and ses) used by different modules. Only backbone and EntitlementsModule actually match the stated rule, so the examples would teach a wrong precedent about when registration can be skipped."
+    },
+    {
+      "file": "docs/agents/module-structure.md",
+      "line": 133,
+      "claim": "The new registration rule does not address feature-flag inheritance: EntitlementsModule is only loaded because its parent BillingModule is gated behind a feature flag in app.module.ts, so if a second module later imports EntitlementsModule directly, it would load even when the billing flag is off, bypassing the existing gating."
+    },
+    {
+      "file": "docs/agents/module-structure.md",
+      "line": 133,
+      "claim": "The rule that 'a module with its own HTTP surface registers directly' is ambiguous for EntitlementsModule, whose routes/ directory contains services but no controller yet; combined with the separate rule allowing routes/ to land before its controller, it is unclear whether such a module must move to app.module.ts once the controller is added."
+    },
+    {
+      "file": "docs/agents/module-structure.md",
+      "line": 33,
+      "claim": "This guide requires a PR description to link the follow-up PR that adds the controller for a staged module, while docs/agents/reviewing.md:48 only requires stating which follow-up consumes it; the differing evidence bars mean reviewers applying the two guides could judge the same PR inconsistently."
+    },
+    {
+      "file": "docs/agents/api-dtos-and-validation.md",
+      "line": 113,
+      "claim": "The exception allowing in-place removal or renaming of a field when its endpoint has sat behind a disabled feature flag does not specify which environment's flag state counts; since flags can differ per environment, a flag disabled in production could still be enabled in staging or dev where real clients have already parsed the field."
+    },
+    {
+      "file": null,
+      "line": null,
+      "claim": "The commit dd402c04a is titled 'codify staged delivery and transitive module registration' but also adds an unrelated API-versioning exception in api-dtos-and-validation.md; since the branch is squash-merged, the PR title becomes the only historical record and should mention all changes or the unrelated change should be split into its own PR."
+    }
+  ]
+}

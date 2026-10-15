@@ -1,0 +1,131 @@
+{
+  "usage": {
+    "usd": 0.3339368,
+    "turns": 5,
+    "wallSeconds": 38
+  },
+  "issues": [
+    {
+      "findings": [
+        "F7",
+        "F9"
+      ],
+      "summary": "countPending and create are separate queries, so concurrent requests can exceed maxPending",
+      "label": "low",
+      "evidence": "address-book-requests.service.ts:83-96 runs countPending and then create, with no transaction or lock between them, so parallel POSTs can go past the cap. The cap is only a soft anti-abuse bound and the POST is rate-limited, so the impact is small.",
+      "summary_short": "",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F3"
+      ],
+      "summary": "New rate-limit guard on request creation has no test",
+      "label": "medium",
+      "evidence": "address-book-requests.controller.e2e-spec.ts has no rateLimit override and no 429 assertion (grep finds none). The sibling address-books e2e spec does test its guard this way, so a miswired guard on this new route would go unnoticed.",
+      "summary_short": "",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F14"
+      ],
+      "summary": "down() migration fails if duplicate (space, requester, address) rows exist after re-requests",
+      "label": "low",
+      "evidence": "migrations/1781300000000-address-book-requests-pending-unique.ts down() re-adds a full UNIQUE constraint. The rejected-then-re-requested rows that this PR allows would make ADD CONSTRAINT fail. This only matters on a rollback in a pre-prod environment.",
+      "summary_short": "",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F13"
+      ],
+      "summary": "Partial unique index allows re-proposing an already approved address, and approval overwrites the contact",
+      "label": "low",
+      "evidence": "The old constraint covered every status, so a requester could not re-propose an address that had been approved. Now only PENDING blocks it (migration up). Approval still needs an explicit admin action, and other members could already propose the same address before this PR, so the impact is minor.",
+      "summary_short": "",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F10"
+      ],
+      "summary": "countPending has no repository integration test for status and scope filtering",
+      "label": "low",
+      "evidence": "address-book-requests.repository.ts:80 countPending is exercised only by the e2e pending-cap test. Other limits have repository integration specs, but the query is a simple count with a filter, so the gap is minor.",
+      "summary_short": "",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F5"
+      ],
+      "summary": "AddressBookRequestsService has no unit spec",
+      "label": "low",
+      "evidence": "No address-book-requests.service.spec.ts exists, while the sibling services have one. The e2e spec does cover the service's behaviour, so this is a consistency gap, not missing coverage.",
+      "summary_short": "",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F1"
+      ],
+      "summary": "Swagger for chainIds lacks minItems: 1",
+      "label": "low",
+      "evidence": "address-book-request.dto.entity.ts:100 @ApiProperty gives only a text description, while the Zod schema at line 81 enforces .min(1). The name field sets maxLength, so the published OpenAPI schema is inconsistent with validation.",
+      "summary_short": "",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F6"
+      ],
+      "summary": "Pending-limit check lives in the service instead of the repository, unlike other limits",
+      "label": "nit",
+      "evidence": "The other limits sit in repositories (address-book-items.repository.ts:227-234, space-safes.repository.ts:68). Placing this one in the service is a style inconsistency with no functional cost.",
+      "summary_short": "",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F4"
+      ],
+      "summary": "Limit message wording differs from the module's other limit messages",
+      "label": "nit",
+      "evidence": "service.ts:88 says 'You can have at most N pending requests in this workspace.', while the other limit messages say 'This Workspace only allows a maximum of…'. This is cosmetic only.",
+      "summary_short": "",
+      "category": "style"
+    },
+    {
+      "findings": [
+        "F2"
+      ],
+      "summary": "e2e 422 tests duplicate the DTO schema spec",
+      "label": "nit",
+      "evidence": "e2e-spec.ts:107-132 checks two 422 cases that the new schema spec also covers. Redundant tests are a matter of preference.",
+      "summary_short": "",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F11"
+      ],
+      "summary": "Could use Zod overwrite() instead of transform for the chainIds dedupe",
+      "label": "nit",
+      "evidence": "The transform at dto.entity.ts:81-84 keeps the output type string[], so switching to overwrite() would be a style preference with no behaviour change.",
+      "summary_short": "",
+      "category": "style"
+    },
+    {
+      "findings": [
+        "F8",
+        "F12"
+      ],
+      "summary": "Working docs still reference UserAddressBookItem and private address books",
+      "label": "wrong",
+      "evidence": "docs/engineering/sources/working does not exist in this checkout: grep reports 'docs: No such file or directory', and the PR diff touches no docs files. The stale references the findings describe are not in the repo.",
+      "summary_short": "",
+      "category": "docs"
+    }
+  ]
+}

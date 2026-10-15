@@ -1,0 +1,65 @@
+{
+  "usage": {
+    "usd": 0.39428720000000006,
+    "turns": 7,
+    "wallSeconds": 52
+  },
+  "issues": [
+    {
+      "findings": [
+        "F1",
+        "F3"
+      ],
+      "summary": "The minimatch commit title says 3.1.4 / 9.0.8, but the lockfile resolves 3.1.5 / 9.0.9.",
+      "label": "low",
+      "evidence": "yarn.lock:5674 has minimatch 3.1.5 and yarn.lock:5683 has 9.0.9, but the title of commit 525215300 says (3.1.4 / 9.0.8). The versions in the body (3.1.4 and 9.0.7) are the advisories' fixed-in thresholds, so only the title is wrong. This is a documentation mismatch with no runtime effect.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F4",
+        "F8"
+      ],
+      "summary": "The vite bump undid the postcss dedupe: the lockfile now has two postcss copies (8.5.15 and 8.5.19), which contradicts the PR description and the postcss commit.",
+      "label": "low",
+      "evidence": "Commit 3ab20db90 split the shared entry `postcss@npm:^8.3.11, postcss@npm:^8.5.15` into ^8.3.11 → 8.5.15 (yarn.lock:6215) and ^8.5.16 → 8.5.19 (yarn.lock:6226). The ^8.3.11 range could also resolve to 8.5.19, so the claim that postcss shares one 8.5.15 resolution is no longer true. Both copies are past the advisory fix (8.5.10), so the cost is duplication plus inaccurate documentation.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F5"
+      ],
+      "summary": "tinyglobby resolves to two copies (0.2.17 and 0.2.16) that could be deduplicated into one.",
+      "label": "nit",
+      "evidence": "yarn.lock:7179 resolves `^0.2.12, ^0.2.17` to 0.2.17 and yarn.lock:7189 resolves `^0.2.15` to 0.2.16, a split the vite bump introduced. 0.2.17 satisfies both ranges, so this is lockfile bloat with no functional or security impact.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F7"
+      ],
+      "summary": "One commit says brace-expansion 2.x is intentionally left for a separate typeorm PR, but later commits in this PR bump it to 2.1.2 anyway.",
+      "label": "low",
+      "evidence": "The body of commit db3b10fc7 says the 2.x range is 'handled in a separate typeorm PR and is intentionally left untouched here'. Commits 525215300 and 07d04cb15 then change brace-expansion 2.0.1 → 2.1.2 (yarn.lock:3349-3351). The PR contradicts itself and will probably conflict with the typeorm PR's lockfile changes, but the change itself is harmless.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F2"
+      ],
+      "summary": "node-gyp jumps several major versions (10.2.0 → 13.0.1) and pulls in new majors of nopt, which and undici, without a native build being verified.",
+      "label": "low",
+      "evidence": "yarn.lock:5848-5862 resolves `node-gyp@npm:latest` to 13.0.1 with nopt ^10, which ^7 and undici ^8. Its parents declare it as 'latest', and it only runs when the optional native addons (msgpackr-extract, fsevents) have to build from source, so the risk is real but limited to installs that fall back to compiling. Node 24.11 (.nvmrc) is recent, so it is unlikely to be incompatible, but nothing in the PR tests that.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F6"
+      ],
+      "summary": "The reviewer notes that `yarn install --immutable` was not run to check the lockfile's consistency.",
+      "label": "unverifiable",
+      "evidence": "This describes the reviewer's own limits, not a defect in the diff. Whether the lockfile is consistent can only be settled by running an install, which this read-only review cannot do.",
+      "category": "tests"
+    }
+  ]
+}

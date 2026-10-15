@@ -1,0 +1,50 @@
+{
+  "usd": 0.05656,
+  "findings": [
+    {
+      "file": "src/domain/interfaces/billing-api.interface.ts",
+      "line": 78,
+      "claim": "The domain interface IBillingApi includes a clearSubscriptions method that exists only to let SubscriptionSyncService invalidate a cache, which leaks a caching concern into the domain layer and violates the expectation that the domain contract should only describe upstream shape rather than know about the cache implementation."
+    },
+    {
+      "file": "billing.service.ts",
+      "line": 186,
+      "claim": "previewSubscriptionUpdate skips link resolution for ambiguous prices while updateSubscription rejects the same multi-link case with a 409 requiring a paymentLinkId, so a client can get a preview quote that later fails on PATCH without having been told upfront that it needs to specify a payment link."
+    },
+    {
+      "file": "billing.service.ts",
+      "line": 343,
+      "claim": "findOwnedSubscription fetches all subscriptions for a customer across every status and then searches the list for one id, which scales linearly with historical canceled or expired subscriptions instead of querying a single subscription scoped by id and customer if such an endpoint exists upstream."
+    },
+    {
+      "file": "cache.router.ts",
+      "line": 1229,
+      "claim": "clearSubscriptions relies on deleteByKey removing the entire cache hash so that a subscription cached under any filter is cleared, but this behavior is only implicit in the current ICacheService.deleteByKey implementation and isn't documented as a contract, risking silent staleness if the cache implementation changes."
+    },
+    {
+      "file": "billing-api.service.ts",
+      "line": 301,
+      "claim": "The comment stating a subscription may be listed under any cached filter depends on deleteByKey deleting a whole hash rather than a single field, and this dependency is not made explicit anywhere near getBillingSubscriptionsCacheKey."
+    },
+    {
+      "file": "billing.service.spec.ts",
+      "line": 52,
+      "claim": "The billingApiMock object used in tests does not declare a clearSubscriptions method, and casting it with 'as MockedObject<IBillingApi>' hides the omission; if BillingService is later changed to call this method, the mock would silently resolve to undefined on a promise-returning call instead of failing clearly."
+    },
+    {
+      "file": "billing.controller.ts",
+      "line": 229,
+      "claim": "Test/authorization elevation coverage for the preview-update endpoint is absent, and there is no TODO or comment near the AuthGuard usage referencing the follow-up ticket, making this gap discoverable only from the PR description rather than from the code itself."
+    },
+    {
+      "file": "billing-api.service.ts",
+      "line": 266,
+      "claim": "The chained '.then(async ...).then(parse)' construct is dense and harder to read than an equivalent using straightforward await statements, even though it preserves the same behavior of clearing cache before parsing."
+    },
+    {
+      "file": "security.md",
+      "line": null,
+      "claim": "The doc's patch example does not reflect that FetchNetworkService.patch allows a body-less variant (data optional, calling JSON.stringify(undefined)), so the documentation implies a shape that doesn't match a possible actual call."
+    }
+  ]
+}

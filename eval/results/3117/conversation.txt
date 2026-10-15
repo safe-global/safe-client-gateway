@@ -1,0 +1,269 @@
+THREAD src/modules/spaces/domain/entities/space.entity.ts:20 resolved=true
+[PooyaRaki 2026-06-03T15:02:08Z] ```suggestion
+import { UUID } from 'crypto';
+
+uuid: UUID;
+```
+[vmosharova 2026-06-04T12:07:48Z] Updated
+
+THREAD src/modules/spaces/domain/spaces.repository.ts:218 resolved=true
+[PooyaRaki 2026-06-03T15:30:32Z] ```suggestion
+  const row = result.generatedMaps[0] as Pick<Space, 'id' | 'uuid'> | undefined;
+```
+[vmosharova 2026-06-04T12:07:39Z] Done
+[vmosharova 2026-06-04T16:12:51Z] Update: I changed it back to `result.row[0]` [here](https://github.com/safe-global/safe-client-gateway/pull/3117/changes/d87b369653c98a185a86f409d956baeac36af17a). The reason is that there is an `UPDATE` in spaces repository, and TypeOrm doesn't fill `result.generatedMaps[0]` for an `UPDATE` - it was always undefined (hence failing tests).
+
+For the context, the builder:
+```
+    const result = await spaceRepository
+      .createQueryBuilder()
+      .update(Space)
+      .set(args.updatePayload)
+      .where({ id: args.id })
+      .returning(['id', 'uuid'])
+      .execute();
+      ```
+
+THREAD src/modules/spaces/routes/spaces.service.ts:134 resolved=true
+[PooyaRaki 2026-06-05T13:31:55Z] ```suggestion
+    return await this.spacesRepository.update(args);
+```
+
+THREAD src/modules/spaces/routes/spaces.service.ts:44 resolved=true
+[PooyaRaki 2026-06-05T13:35:29Z] ```suggestion
+    return await this.spacesRepository.create({ userId, ...args });
+```
+
+THREAD src/modules/spaces/routes/spaces.service.spec.ts:142 resolved=true
+[PooyaRaki 2026-06-05T13:36:32Z] ```suggestion
+      ['SIWE', siweAuthPayloadDtoBuilder],
+      ['OIDC', oidcAuthPayloadDtoBuilder],
+```
+
+THREAD src/modules/spaces/domain/spaces.repository.ts:31 resolved=true
+[PooyaRaki 2026-06-05T13:42:10Z] The same regex is repeated in the pipe, let's extract it and reuse it.
+
+THREAD src/modules/spaces/domain/spaces.repository.ts:240 resolved=true
+[PooyaRaki 2026-06-05T13:43:19Z] This is ok since the method is temp but in future we should keep such validations in the controller.
+
+THREAD src/modules/spaces/domain/spaces.repository.integration.spec.ts:467 resolved=true
+[LucieFaire 2026-06-09T12:59:58Z] how come these got included?
+[vmosharova 2026-06-09T14:09:31Z] You are right, these additions were redundant and will be removed.
+
+THREAD src/modules/spaces/domain/spaces.repository.ts:255 resolved=true
+[LucieFaire 2026-06-09T13:02:02Z] wonder if we can use UuidSchema instead? Not critical, just wonder if we can avoid having this regex
+[vmosharova 2026-06-09T14:23:04Z] I don't think this update is needed at all - we'll remove this chunk of code in the follow-up cleanup PR, there is also a reminder comment about that.
+
+THREAD src/modules/spaces/domain/spaces.repository.ts:248 resolved=true
+[LucieFaire 2026-06-09T13:08:22Z] nit: `NUMERIC_REGEX` ?
+[vmosharova 2026-06-09T14:38:26Z] Done
+
+THREAD src/modules/spaces/routes/members.service.spec.ts:256 resolved=true
+[LucieFaire 2026-06-09T13:16:05Z] nit: maybe its easier to create a const fakeUuid() as we have for fakeEmailAddress so you dont have to cast each time
+[vmosharova 2026-06-09T14:38:19Z] Done :)
+
+THREAD src/modules/spaces/routes/spaces.service.spec.ts:151 resolved=true
+[LucieFaire 2026-06-09T13:19:57Z] could we add a comment what exactly is happening here? the test name is very smart, im not sure whats happening :)
+[vmosharova 2026-06-09T14:38:03Z] Done
+
+REVIEW COMMENTED
+[LucieFaire 2026-06-09T13:22:30Z] small remarks, otherwise looks good. My only concern is additional fields in the tests
+
+COMMENT
+[vmosharova 2026-06-02T16:25:43Z] @claude review
+
+COMMENT
+[claude 2026-06-02T16:26:00Z] **Claude finished @vmosharova's task in 3m 6s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/26833330779)
+
+---
+### Claude PR Review
+
+- [x] Read CLAUDE.md and gather context
+- [x] Review new pipes (`SpaceIdPipe`, `LegacySpaceIdPipe`)
+- [x] Review repository changes (`findIdByUuid`, `findIdByIdOrUuid`)
+- [x] Review migration & entity changes
+- [x] Review controllers and services
+- [x] Review test coverage
+- [x] Post final review
+
+---
+
+Overall the migration is clean and additive, the pipe split is the right shape, and the legacy fallback is well-isolated and TODO-marked. A few things worth tightening before merge.
+
+### Findings
+
+#### 1. `GET /spaces/:id` does two extra round-trips it doesn't need
+
+`SpacesController.getOne` (`spaces.controller.ts:169-175`) is the only legacy-accepting read endpoint that does **not** use `LegacySpaceIdPipe`. Instead it calls `spacesService.resolveUuid(idOrUuid)` (`spaces.service.ts:125-132`), which:
+
+1. queries `findIdByIdOrUuid` → returns `id`
+2. queries `findOneOrFail` → returns `uuid`
+3. then `findSpaces(uuid)` runs the members query + spaces query keyed on `space.uuid`
+
+That's **4 DB queries** per `GET /spaces/:id` where the other legacy endpoints do 1+N. Either:
+- use `LegacySpaceIdPipe` here too and have `findSpaces` accept `spaceId: number` (keyed on `space.id`), or
+- have `findIdByIdOrUuid` return `Pick<Space, 'id' | 'uuid'>` in a single query so the second `findOneOrFail` goes away.
+
+Same code path is the hottest single-space read on the FE, so this is worth fixing.
+
+#### 2. Inconsistent 400 error bodies between the two pipes
+
+- `SpaceIdPipe` → `Validation failed (uuid is expected)` (NestJS `ParseUUIDPipe` default)
+- `LegacySpaceIdPipe` → `Invalid space identifier` (custom, thrown from the repository in `findIdByIdOrUuid`)
+
+The PR description says "client error contracts stay stable", but the two pipes return different shapes for the same class of error. Pick one message and use it from both pipes (and ideally throw from the pipe, not the repository — `findIdByIdOrUuid` currently couples the repo to `BadRequestException` / `@nestjs/common`).
+
+#### 3. No tests for the new repository methods or pipes
+
+I couldn't find unit or integration coverage for `findIdByUuid`, `findIdByIdOrUuid`, `SpaceIdPipe`, or `LegacySpaceIdPipe`:
+
+```bash
+grep -rn "findIdByUuid\|findIdByIdOrUuid\|LegacySpaceIdPipe" src/ --include="*.spec.ts"
+# (no results)
+```
+
+At minimum please add cases for:
+- valid UUID → resolves to id
+- valid numeric → resolves to id (legacy only)
+- numeric > `DB_MAX_SAFE_INTEGER` → 400
+- malformed string → 400
+- valid UUID syntactically but no row → 404
+- numeric on `SpaceIdPipe` (write endpoint) → 400 (this guarantee is called out in the PR description but I don't see the e2e test for it on `PATCH /spaces/:id`).
+
+#### 4. Redundant validation in `findIdByIdOrUuid` (`spaces.repository.ts:232-252`)
+
+```ts
+if (/^\d+$/.test(value)) { ... }
+if (/^[0-9a-f]{8}-[0-9a-f]{4}-...$/i.test(value)) { ... }
+```
+
+The UUID regex here doesn't enforce version/variant bits (unlike `ParseUUIDPipe`), so `SpaceIdPipe` and `LegacySpaceIdPipe` accept slightly different UUID sets. Either reuse `ParseUUIDPipe` here too, or pull the predicate into a shared helper so both code paths agree.
+
+#### 5. `acceptInvite` / `declineInvite` are UUID-only
+
+`members.controller.ts:141-153,180-189` apply `SpaceIdPipe` to invite-accept/decline. The PR description does call this out, but: if a previously emailed invite link uses a numeric space id, the user clicking it will hit a 400. If invite emails are already in the wild with numeric IDs, consider keeping these two routes on `LegacySpaceIdPipe` for the deprecation window — the write/read split argument is weaker here since the user is acting on a link, not entering data.
+
+#### 6. Migration `down` is not idempotent
+
+`migrations/1779200000000-add-space-uuid.ts:15-18` uses bare `DROP INDEX` / `DROP COLUMN`. If `up` partially fails (e.g. column added, index creation fails), `down` will then fail on the missing index. `DROP INDEX IF EXISTS` / `DROP COLUMN IF EXISTS` makes the rollback safer. Also worth confirming `gen_random_uuid()` is available without `pgcrypto` (PG ≥ 13 ships it in `pg_catalog`; earlier versions need the extension).
+
+#### 7. Minor
+
+- `spaces.repository.ts:32` carries a pre-existing `// TODO: Add tests` — the new methods extended this gap rather than closing it.
+- `Invitation` (`users/domain/entities/invitation.entity.ts`) now types `spaceId: Space['uuid']` (string) but `Invitation` in `routes/entities/invitation.entity.ts` still has `@ApiProperty({ type: Number })` for `userId` — unrelated to this PR but worth a glance while you're in there.
+ · `feat/uuid-as-space-id`
+
+COMMENT
+[vmosharova 2026-06-03T11:23:04Z] > acceptInvite / declineInvite are UUID-only ...  if a previously emailed invite link uses a numeric space id, the user clicking it will hit a 400
+
+There is no real invitations, so this review comment is redundant. 
+
+> DROP INDEX IF EXISTS / DROP COLUMN IF EXISTS makes the rollback safer
+
+This will go against the consistent repo convention - the UUID will be the only migration doing such approach.
+
+
+The rest is addressed in [457a7bb](https://github.com/safe-global/safe-client-gateway/pull/3117/commits/457a7bb17fb38ae92a90f469a3ae6eeb63061a0c), [654830a](https://github.com/safe-global/safe-client-gateway/pull/3117/commits/654830aa6c066d368053f6aad4ad7b24ddf1b712) and [a123c74](https://github.com/safe-global/safe-client-gateway/pull/3117/commits/a123c74ce9b28d34520d90318f04d34bc81a467f).
+
+COMMENT
+[vmosharova 2026-06-03T11:26:19Z] @claude review new changes
+
+COMMENT
+[claude 2026-06-03T11:26:39Z] **Claude finished @vmosharova's task in 2m 7s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/26881670818)
+
+---
+### Claude PR Review (re-review)
+
+- [x] Read recent commits addressing previous review
+- [x] Re-check pipes & repository changes
+- [x] Re-check controllers (`spaces.controller`, `members.controller`)
+- [x] Check new test coverage
+- [x] Post final review
+
+---
+
+Re-reviewed the three follow-up commits. Previous findings are addressed; below is the residual feedback.
+
+### Addressed since the last review
+
+- **#1 — Redundant queries on `GET /spaces/:id`** ✅ `resolveUuid` is gone, `getOne` now uses `LegacySpaceIdPipe` directly, and `findSpaces` accepts the numeric id. Back to 1 + N queries like the other read endpoints (`spaces.controller.ts:172-177`, `spaces.service.ts:53-62, 64-122`).
+- **#2 — Unified 400 body** ✅ Both pipes throw `'Invalid space identifier'` from a shared constant; the repo no longer throws `BadRequestException` (`space-id.pipe.ts:16,37,62,65`, `spaces.repository.ts:229-241`).
+- **#3 — Test coverage for pipes / repo methods** ✅ `space-id.pipe.spec.ts` covers both pipes (valid UUID, uppercase, numeric on legacy, `DB_MAX_SAFE_INTEGER` boundary, oversize, malformed, empty, propagation of `NotFoundException`), `spaces.repository.integration.spec.ts` covers `findIdByUuid` / `findIdByIdOrUuid`, and `spaces.controller.e2e-spec.ts:720-757` asserts `PATCH /v1/spaces/:id` returns 400 for numeric or garbage input.
+- **#4 — Validation in repository** ✅ Format checks now live in the pipes; `findIdByIdOrUuid` only branches numeric-vs-UUID for the lookup, with a comment noting the upstream guarantee (`spaces.repository.ts:229-241`).
+- **#5, #6** — declined for stated reasons (no live invites yet; repo migration convention).
+
+### Residual / new
+
+#### 1. `LegacySpaceIdPipe` still accepts numeric edge cases that bypass the format intent
+
+`NUMERIC_REGEX = /^\d+$/` (`space-id.pipe.ts:20`) accepts `0`, leading-zero strings like `0123`, etc. Not a bug — the lookup just returns 404 — but the pipe's own contract is "valid id." A `min:1` and no-leading-zero check would make the pipe reject these at the edge instead of paying for a round-trip to the DB. Low priority; happy to leave as-is.
+
+#### 2. `Number.isSafeInteger(numericId)` check is dead
+
+`DB_MAX_SAFE_INTEGER = 2 ** 31 - 1`, well below `Number.MAX_SAFE_INTEGER`. Any value that fails `isSafeInteger` necessarily fails `> DB_MAX_SAFE_INTEGER` first (since `Number('999...big...')` overflows to a value `> 2^31`). The check can be dropped to just `numericId > DB_MAX_SAFE_INTEGER` (`space-id.pipe.ts:61`). Cosmetic.
+
+#### 3. Pre-existing `// TODO: Add tests` at `spaces.repository.ts:30`
+
+The new `findIdByUuid` / `findIdByIdOrUuid` integration coverage is great, but the marker still implies the rest of the repository is uncovered. Either remove it (if the integration spec now covers what's needed) or scope it to the specific methods that are still untested.
+
+#### 4. `Invitation` (route entity) Swagger types still inconsistent (pre-existing)
+
+`routes/entities/invitation.entity.ts:13,20,28` annotates `userId` and `invitedBy` as `Number` while `spaceId` is `String`. Domain types are correct; only the OpenAPI annotations are off. Unrelated to this PR — flagging again only because the file is touched here.
+
+Overall: the refactor is in good shape and the previous review's substantive concerns are resolved.
+ · `feat/uuid-as-space-id`
+
+COMMENT
+[vmosharova 2026-06-04T16:13:41Z] @claude review
+
+COMMENT
+[claude 2026-06-04T16:14:00Z] **Claude finished @vmosharova's task in 2m 7s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/26964335084)
+
+---
+### Claude PR Review (3rd pass)
+
+- [x] Diff vs `origin/main` for the new commits (`dc2c56c`, `379a8e8`, `d87b369`)
+- [x] Re-check pipes, repository, controllers
+- [x] Check `result.raw[0]` revert in `SpacesRepository.update`
+- [x] Check `UUID` type adoption in domain entity
+- [x] Post final review
+
+---
+
+Re-reviewed the last three commits (UUID typing, error-message rename, `result.raw[0]` revert). The PR is in good shape; only minor residual notes.
+
+### Addressed since the previous review
+
+- **`UUID` nominal type adoption** ✅ `space.entity.ts:22`, `space.entity.db.ts:31`, and the pipe all use `UUID` from `node:crypto` now, so `Space['uuid']` is a distinct type and `findIdByUuid(uuid: Space['uuid'])` is type-checked end-to-end.
+- **`Workspace not found.` consistency** ✅ `SpacesRepository.update` now matches the rest of the repository (`spaces.repository.ts:218`).
+- **`result.raw[0]` revert** ✅ Correct call — `generatedMaps` is not populated for `UPDATE` in TypeORM with `.returning()`; only `raw` is. Integration tests cover the path.
+
+### Residual
+
+#### 1. `findIdByIdOrUuid` casts to UUID without runtime validation (`spaces.repository.ts:243`)
+
+```ts
+return await this.findIdByUuid(value as Space['uuid']);
+```
+
+If anything ever calls this repository method without going through `LegacySpaceIdPipe` (other service code, a script, a test), a malformed string reaches Postgres as a UUID and raises a raw `invalid input syntax for type uuid` (500) instead of a clean 404/400. The pipe doc-comment says "input format is validated upstream" — fine as a contract, but consider one of:
+- guarding inside `findIdByIdOrUuid` with the same UUID regex (defence in depth, low cost), or
+- narrowing the parameter type to `Space['uuid'] | \`\${number}\`` so the type system catches misuse.
+
+#### 2. `SpaceIdPipe` is wired but not used on any route
+
+Module exports it (`spaces.module.ts:94,103`), but every controller route uses `LegacySpaceIdPipe`. That's intentional per the PR description, but it does mean `SpaceIdPipe` ships unexercised in production until the follow-up PR. Worth either attaching it to at least one truly UUID-only route now (e.g. invitations, since the author noted there are no live invites), or adding a brief comment in the module noting the deliberate dead-wiring so it's not removed by an over-eager cleanup.
+
+#### 3. `Number.isSafeInteger(numericId)` is unreachable (`space-id.pipe.ts:62`)
+
+Carried over from the previous pass — `DB_MAX_SAFE_INTEGER = 2 ** 31 - 1 < Number.MAX_SAFE_INTEGER`, so the `> DB_MAX_SAFE_INTEGER` branch always fires first. Cosmetic, but cleaning it up makes the predicate easier to read.
+
+#### 4. Minor — Swagger `userId` annotation in `Invitation` (pre-existing)
+
+`routes/entities/invitation.entity.ts` still annotates `userId` / `invitedBy` as `Number` while `spaceId` is `String`. Not introduced by this PR but the file is touched here.
+
+Overall: ready to merge from my side once the cast at `spaces.repository.ts:243` is either commented or guarded.
+ · `feat/uuid-as-space-id`
+
+COMMENT
+[vmosharova 2026-06-05T10:30:51Z] Addressed Claude review comments here: [a598e5d](https://github.com/safe-global/safe-client-gateway/pull/3117/commits/a598e5d1bc4f1a46e5de5155b6a1c556f7c8c291)

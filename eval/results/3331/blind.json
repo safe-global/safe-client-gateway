@@ -1,0 +1,6 @@
+{
+  "pr": 3331,
+  "title": "ci: move the arch-review concurrency group to the job level",
+  "description": "## Summary\r\nEvery successful Architecture Check run ends marked \"cancelled\" (e.g. run 31180955615). The review agent posts its verdict comment with the Claude GitHub App token, so the comment fires a new `issue_comment` run of the same workflow. A workflow-level concurrency group is entered before the job-level `if` guard is evaluated, so that bot-triggered run cancels the in-progress review that spawned it and is then skipped by the guard. A job skipped by its `if` guard never enters a job-level concurrency group, so the group moves into the job — the placement claude-code-review.yml already uses. Behavior on a genuine re-trigger is unchanged: a new `@claude arch-review` comment still cancels the stale in progress run.\r\n\r\n## Changes\r\n- `.github/workflows/architecture-check.yml` — move the `concurrency` block from the workflow level into the `architecture-check` job",
+  "findings": []
+}

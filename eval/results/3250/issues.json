@@ -1,0 +1,125 @@
+{
+  "usage": {
+    "usd": 0.4631726,
+    "turns": 9,
+    "wallSeconds": 57
+  },
+  "issues": [
+    {
+      "findings": [
+        "F5"
+      ],
+      "summary": "Atomic 409 rejects the whole batch when any Safe is deployed",
+      "label": "wrong",
+      "evidence": "The PR description says the atomic rejection is intended and matches the endpoint's existing 409 on param collisions. The claimed comparison is also false: the space endpoint (space-counterfactual-safes.controller.ts:55) only has @Get, and filterUndeployed filters reads, not writes.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F6",
+        "F11",
+        "F19"
+      ],
+      "summary": "E2E POST tests pass only via the fail-open path; the deployed→409 and confirmed-undeployed paths are never exercised end to end",
+      "label": "low",
+      "evidence": "createTestModule swaps in TestNetworkModule, where networkService.get is a bare vi.fn() (test.network.module.ts). The e2e spec never stubs it, so isSafe/getApi throws and assertNoneDeployed (counterfactual-safes.service.ts:90) returns false. The service unit tests do cover the 409 logic, so the gap is mostly in wiring coverage.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F2",
+        "F10",
+        "F20"
+      ],
+      "summary": "The fail-open catch swallows errors without logging",
+      "label": "low",
+      "evidence": "counterfactual-safes.service.ts:90 has a bare `catch { return false; }`, so the guard can be silently disabled, for example on an unsupported chain or a zod parse failure. Other fail-open paths in the repo log with loggingService.warn (safe.repository.ts:395). This is an observability gap, not a functional defect.",
+      "category": "security"
+    },
+    {
+      "findings": [
+        "F3",
+        "F7",
+        "F12"
+      ],
+      "summary": "assertNoneDeployed duplicates filterUndeployed's isSafe/fail-open loop",
+      "label": "low",
+      "evidence": "counterfactual-safes.service.ts:83-92 is nearly identical to space-counterfactual-safes.service.ts:63-74. Any policy change (logging, allSettled) would have to be made in two places or GET and POST could drift apart.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F8",
+        "F16"
+      ],
+      "summary": "The new 409 response is not documented in Swagger",
+      "label": "low",
+      "evidence": "counterfactual-safes.controller.ts:57-62 documents only 201 and 401, while members.controller.ts and address-book-requests.controller.ts use @ApiConflictResponse. The existing collision 409 was also undocumented, but the PR adds a new 409 case without documenting it.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F4"
+      ],
+      "summary": "Up to 100 concurrent isSafe lookups per POST with no concurrency limit",
+      "label": "low",
+      "evidence": "The schema caps the batch at .max(100) (counterfactual-safe.dto.entity.ts:29), and Promise.all fires all lookups at once. They go through the cached transaction API, and 100 is bounded, so the impact is modest.",
+      "category": "performance"
+    },
+    {
+      "findings": [
+        "F14"
+      ],
+      "summary": "The unit test mock ignores chainId, so passing the wrong chainId would go undetected",
+      "label": "low",
+      "evidence": "counterfactual-safes.service.spec.ts uses `mockImplementation(async ({ address }) => address === deployed.address)`, and no test asserts isSafe was called with the correct chainId. That is a small, real hole in the test.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F1",
+        "F15"
+      ],
+      "summary": "The test builds the DTO by hand instead of using a shared builder",
+      "label": "nit",
+      "evidence": "createDto in counterfactual-safes.service.spec.ts:22-44 maps 14 fields by hand. It is a style and maintainability preference with no current defect.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F13"
+      ],
+      "summary": "Duplicate (chainId, address) entries in a batch trigger redundant isSafe calls",
+      "label": "nit",
+      "evidence": "Duplicates in one batch are unlikely, and isSafe goes through a cache-first datasource, so the extra cost is negligible.",
+      "category": "performance"
+    },
+    {
+      "findings": [
+        "F9"
+      ],
+      "summary": "isSafe calls cannot be aborted once one Safe is found deployed",
+      "label": "nit",
+      "evidence": "This is a micro-optimization. Promise.all waiting for the remaining cached lookups has no meaningful cost.",
+      "category": "performance"
+    },
+    {
+      "findings": [
+        "F17"
+      ],
+      "summary": "The comment describes what the code does rather than why",
+      "label": "nit",
+      "evidence": "The comment at counterfactual-safes.service.ts:78-79 is two short lines and already states the fail-open policy. This is purely stylistic.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F18"
+      ],
+      "summary": "The space GET response may omit chains whose Safes were all filtered out",
+      "label": "unverifiable",
+      "evidence": "This concerns space-counterfactual-safes.service.ts from the earlier PR (#3247), not lines changed here. Whether clients rely on empty per-chain arrays can't be settled from this codebase.",
+      "category": "performance"
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "usd": 0.0700916,
+  "findings": [
+    {
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts",
+      "line": 1747,
+      "claim": "The test title implies the absence of INCOMPATIBLE_SAFE, but the test only positively asserts that MISSING_OWNERSHIP appears on BRIDGE[0]; if a regression caused both errors to coexist, the assertion would still pass and the intended check would silently stop working. A negative assertion checking that INCOMPATIBLE_SAFE is not present in the full BRIDGE array would more faithfully test the stated intent."
+    },
+    {
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts",
+      "line": 1803,
+      "claim": "The test title implies the absence of INCOMPATIBLE_SAFE, but the test only positively asserts that MISSING_OWNERSHIP appears on BRIDGE[0]; if a regression caused both errors to coexist, the assertion would still pass and the intended check would silently stop working. A negative assertion checking that INCOMPATIBLE_SAFE is not present in the full BRIDGE array would more faithfully test the stated intent."
+    },
+    {
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts",
+      "line": 1771,
+      "claim": "Deployment addresses for the extensible, compat, singleton, and factory contracts are hardcoded as literals in the spec instead of being pulled from @safe-global/safe-deployments via the existing helpers in src/domain/common/utils/deployments.ts, so if the package later bumps a canonical address the tests will silently keep pinning to the stale value rather than tracking the real deployment."
+    },
+    {
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts",
+      "line": 1772,
+      "claim": "Deployment addresses for the extensible, compat, singleton, and factory contracts are hardcoded as literals in the spec instead of being pulled from @safe-global/safe-deployments via the existing helpers in src/domain/common/utils/deployments.ts, so if the package later bumps a canonical address the tests will silently keep pinning to the stale value rather than tracking the real deployment."
+    },
+    {
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts",
+      "line": 1780,
+      "claim": "Deployment addresses for the extensible, compat, singleton, and factory contracts are hardcoded as literals in the spec instead of being pulled from @safe-global/safe-deployments via the existing helpers in src/domain/common/utils/deployments.ts, so if the package later bumps a canonical address the tests will silently keep pinning to the stale value rather than tracking the real deployment."
+    },
+    {
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts",
+      "line": 1848,
+      "claim": "Deployment addresses for the extensible, compat, singleton, and factory contracts are hardcoded as literals in the spec instead of being pulled from @safe-global/safe-deployments via the existing helpers in src/domain/common/utils/deployments.ts, so if the package later bumps a canonical address the tests will silently keep pinning to the stale value rather than tracking the real deployment."
+    },
+    {
+      "file": "src/modules/safe-shield/contract-analysis/contract-analysis.service.spec.ts",
+      "line": 1281,
+      "claim": "Deployment addresses are hardcoded as literals in this spec instead of being pulled from @safe-global/safe-deployments via the existing helpers in src/domain/common/utils/deployments.ts, so if the package later bumps a canonical address the test will silently keep pinning to the stale value rather than tracking the real deployment."
+    },
+    {
+      "file": "src/modules/safe-shield/contract-analysis/contract-analysis.service.spec.ts",
+      "line": 1282,
+      "claim": "The test title says it should omit FALLBACK_HANDLER, but the assertion actually checks for the presence of CONTRACT_VERIFICATION: VERIFIED, so the title does not describe the observable behaviour being tested and should be reworded to match what is actually asserted."
+    },
+    {
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.ts",
+      "line": 678,
+      "claim": "The two is*Deployed calls in fallbackHandlerExists pass an identical {version, chainId, address} object; extracting this into a shared args variable (or mirroring the some(version => ...) shape already used in contract-analysis.service.ts) would remove the repeated field list."
+    }
+  ]
+}

@@ -1,0 +1,151 @@
+{
+  "pr": 3334,
+  "title": "feat: recognise the 1.5.0 ExtensibleFallbackHandler as official",
+  "description": "## Summary\r\n\r\nWA-2921 / WA-2862\r\n\r\nSafe 1.5.0 ships **two** official fallback handlers, but our trust checks only consulted the `CompatibilityFallbackHandler` deployment tables — so the official `ExtensibleFallbackHandler` (canonical `0x85a8ca358D388530ad0fB95D0cb89Dd44Fc242c3` on 120 chains, v1.5.0) was treated as untrusted everywhere:\r\n\r\n- **Safe Shield contract analysis**: a `setFallbackHandler(0x85a8…42c3)` transaction produced an `UNOFFICIAL_FALLBACK_HANDLER` WARN on every chain. Reproducible on staging today against any Sepolia Safe — the same result that flags the handler as unofficial also names it via the Decoder Service:\r\n\r\n  ```json\r\n  {\r\n    \"severity\": \"WARN\",\r\n    \"type\": \"UNOFFICIAL_FALLBACK_HANDLER\",\r\n    \"title\": \"Unofficial fallback handler\",\r\n    \"fallbackHandler\": {\r\n      \"address\": \"0x85a8ca358D388530ad0fB95D0cb89Dd44Fc242c3\",\r\n      \"name\": \"Safe: ExtensibleFallbackHandler 1.5.0\"\r\n    }\r\n  }\r\n  ```\r\n\r\n- **Safe Shield recipient analysis**: a Safe *created* with the extensible handler failed the `fallbackHandlerExists` leg of `checkVersionCompatibility`, so bridge analysis reported `INCOMPATIBLE_SAFE` on every target chain.\r\n- Same code path: the `SafeToL2Setup` existence check was pinned to `'1.4.1'`, so chains that only register the 1.5.0 setup contract would also be reported incompatible.\r\n\r\nThe fix derives everything from `@safe-global/safe-deployments` (no hardcoded addresses): new `ExtensibleFallbackHandler` wrappers in the deployments util, OR'd into both checks, and the `SafeToL2Setup` versions derived from the package instead of pinned.\r\n\r\nProduct context: creation/upgrade keeps setting the `CompatibilityFallbackHandler` (WA-2928 decides any change to that) — this PR is recognition-only, so users whose handler is the extensible one (CoW composable orders, module/policy setups) stop getting false warnings.\r\n\r\n## Changes\r\n\r\n- `src/domain/common/utils/deployments.ts` — add `getExtensibleFallbackHandlerDeployments` / `getExtensibleFallbackHandlerVersions` / `isExtensibleFallbackHandlerDeployed` (mirroring the existing compat wrappers) and `getSafeToL2SetupVersions`\r\n- `src/modules/safe-shield/contract-analysis/contract-analysis.service.ts` — `isOfficialFallbackHandler` now also matches extensible deployments\r\n- `src/modules/safe-shield/recipient-analysis/recipient-analysis.service.ts` — `fallbackHandlerExists` also matches extensible deployments; `SafeToL2Setup` check iterates the package's versions (1.4.1 + 1.5.0) instead of pinning `'1.4.1'`\r\n- `src/domain/common/utils/__tests__/deployments.spec.ts` — new spec for the added wrappers, incl. the negative case (compat tables do **not** match the extensible address)\r\n- `contract-analysis.service.spec.ts` / `recipient-analysis.service.spec.ts` — cases for `setFallbackHandler(extensible)` producing no warning, and an extensible-created 1.5.0 Safe no longer reported `INCOMPATIBLE_SAFE`",
+  "findings": [
+    {
+      "id": "F1",
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts",
+      "line": 1804,
+      "claim": "The test title states it should not return INCOMPATIBLE_SAFE, but the assertion in the test body checks for MISSING_OWNERSHIP, making the test's intent confusing and mismatched between title and implementation."
+    },
+    {
+      "id": "F2",
+      "file": "src/domain/common/utils/deployments.ts",
+      "line": 220,
+      "claim": "The JSDoc for the two new version-list functions states the results come back 'in descending order', but the implementation is a plain .map over the package's internal arrays, so the actual order depends on how the package stores the data and is unverified; this claim duplicates an existing unverified claim at line 207, and could not be confirmed because node_modules was not installed and no test checks the ordering."
+    },
+    {
+      "id": "F3",
+      "file": "src/modules/safe-shield/contract-analysis/contract-analysis.service.spec.ts",
+      "line": 1281,
+      "claim": "Deployment addresses are hardcoded as literals in this spec instead of being pulled from @safe-global/safe-deployments via the existing helpers in src/domain/common/utils/deployments.ts, so if the package later bumps a canonical address the test will silently keep pinning to the stale value rather than tracking the real deployment."
+    },
+    {
+      "id": "F4",
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts",
+      "line": 1771,
+      "claim": "Deployment addresses for the extensible, compat, singleton, and factory contracts are hardcoded as literals in the spec instead of being pulled from @safe-global/safe-deployments via the existing helpers in src/domain/common/utils/deployments.ts, so if the package later bumps a canonical address the tests will silently keep pinning to the stale value rather than tracking the real deployment."
+    },
+    {
+      "id": "F5",
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.ts",
+      "line": 693,
+      "claim": "The change from a pinned '1.4.1' version check to getSafeToL2SetupVersions().some(...) has no service-level test exercising the new branch, since every 1.5.0 bridge test sets `to` to zeroAddress, making includesSetupToL2 always false. The commit message's claim that chains with only the 1.5.0 setup contract are no longer reported incompatible is therefore untested, and deployments.spec.ts only checks that the version list contains '1.4.1' and '1.5.0' rather than testing this behavior."
+    },
+    {
+      "id": "F6",
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts",
+      "line": 1772,
+      "claim": "Deployment addresses for the extensible, compat, singleton, and factory contracts are hardcoded as literals in the spec instead of being pulled from @safe-global/safe-deployments via the existing helpers in src/domain/common/utils/deployments.ts, so if the package later bumps a canonical address the tests will silently keep pinning to the stale value rather than tracking the real deployment."
+    },
+    {
+      "id": "F7",
+      "file": "src/domain/common/utils/__tests__/deployments.spec.ts",
+      "line": 13,
+      "claim": "The ExtensibleFallbackHandler address '0x85a8ca35…' is hardcoded in three places (deployments.spec.ts, contract-analysis.service.spec.ts, and recipient-analysis.service.spec.ts) instead of being derived from safe-deployments, e.g. via getExtensibleFallbackHandlerDeployments({ chainId, version: '1.5.0' })[0], even though the same spec file already derives values from the package elsewhere."
+    },
+    {
+      "id": "F8",
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.ts",
+      "line": 695,
+      "claim": "The new check passes if any SafeToL2Setup version has a canonical deployment on the target chain, without checking the actual safeAccountConfig.to address used or the version being tested. This means a Safe set up through SafeToL2Setup 1.4.1 could be marked compatible on a chain that only has the 1.5.0 setup contract (a different address), making the check looser and less accurate than the previous pinned-version check; matching `to` against the setup deployments, similar to how isFallbackHandlerDeployed matches the handler address, would be more correct."
+    },
+    {
+      "id": "F9",
+      "file": "src/modules/safe-shield/contract-analysis/contract-analysis.service.spec.ts",
+      "line": 1282,
+      "claim": "The test title is unclear or inaccurate and should be rewritten to specify that it verifies VERIFIED is returned when the handler is the official ExtensibleFallbackHandler."
+    },
+    {
+      "id": "F10",
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts",
+      "line": 1803,
+      "claim": "The test title implies the absence of INCOMPATIBLE_SAFE, but the test only positively asserts that MISSING_OWNERSHIP appears on BRIDGE[0]; if a regression caused both errors to coexist, the assertion would still pass and the intended check would silently stop working. A negative assertion checking that INCOMPATIBLE_SAFE is not present in the full BRIDGE array would more faithfully test the stated intent."
+    },
+    {
+      "id": "F11",
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts",
+      "line": 1780,
+      "claim": "Deployment addresses for the extensible, compat, singleton, and factory contracts are hardcoded as literals in the spec instead of being pulled from @safe-global/safe-deployments via the existing helpers in src/domain/common/utils/deployments.ts, so if the package later bumps a canonical address the tests will silently keep pinning to the stale value rather than tracking the real deployment."
+    },
+    {
+      "id": "F12",
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts",
+      "line": 1772,
+      "claim": "These values should be read from the deployments library instead of being duplicated or hardcoded in the test."
+    },
+    {
+      "id": "F13",
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts",
+      "line": 1848,
+      "claim": "Deployment addresses for the extensible, compat, singleton, and factory contracts are hardcoded as literals in the spec instead of being pulled from @safe-global/safe-deployments via the existing helpers in src/domain/common/utils/deployments.ts, so if the package later bumps a canonical address the tests will silently keep pinning to the stale value rather than tracking the real deployment."
+    },
+    {
+      "id": "F14",
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts",
+      "line": 1752,
+      "claim": "The new test at lines 1752-1806 is a near-verbatim copy of the earlier test at lines 1696-1750, differing only in the fallbackHandler value and its comment, resulting in about 55 duplicated lines; using it.each over [CompatibilityFallbackHandler, ExtensibleFallbackHandler] would cover both cases without duplicating the test body."
+    },
+    {
+      "id": "F15",
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts",
+      "line": 1713,
+      "claim": "No service test exercises the SafeToL2Setup change: the new test sets `to` to zeroAddress, so the setup branch never actually runs, and the only new coverage is a deployments-level test that getSafeToL2SetupVersions returns ['1.4.1','1.5.0']. This means the fix claimed in the commit message is untested and the regression described (a 1.4.1 Safe incorrectly reported compatible on chain 7979) would pass CI; tests are needed for a 1.5.0 Safe bridged to a chain with only the 1.5.0 setup (should be compatible) and a 1.4.1 Safe bridged to chain 7979 (should be INCOMPATIBLE_SAFE)."
+    },
+    {
+      "id": "F16",
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts",
+      "line": 1753,
+      "claim": "The value used here should instead be read from deployments rather than hardcoded."
+    },
+    {
+      "id": "F17",
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts",
+      "line": 1752,
+      "claim": "The test is named 'should not return INCOMPATIBLE_SAFE…' but its assertions actually check that BRIDGE[0].type === 'MISSING_OWNERSHIP' at lines 1803-1805, so the test name does not describe what it verifies, unlike its sibling test at line 1696 whose name matches its assertion."
+    },
+    {
+      "id": "F18",
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.ts",
+      "line": 693,
+      "claim": "areSetupToL2ConditionsMet now passes as long as any SafeToL2Setup version has a canonical deployment on the target chain, without checking that the Safe's own safeAccountConfig.to matches that contract or that the setup version matches the version being tested. Since SafeToL2Setup 1.4.1 and 1.5.0 live at different addresses and several chains only have the 1.5.0 deployment, a 1.4.1 Safe bridged to one of those chains (for example chain 7979) would now be reported compatible even though its setup delegatecall targets a nonexistent contract, silently failing to switch the proxy to the L2 singleton and suppressing a warning that used to fire correctly."
+    },
+    {
+      "id": "F19",
+      "file": "src/modules/safe-shield/contract-analysis/contract-analysis.service.spec.ts",
+      "line": 1282,
+      "claim": "The test title says it should omit FALLBACK_HANDLER, but the assertion actually checks for the presence of CONTRACT_VERIFICATION: VERIFIED, so the title does not describe the observable behaviour being tested and should be reworded to match what is actually asserted."
+    },
+    {
+      "id": "F20",
+      "file": "src/domain/common/utils/deployments.ts",
+      "line": 138,
+      "claim": "The exported function getExtensibleFallbackHandlerDeployments has no importers; its only caller is isExtensibleFallbackHandlerDeployed within the same file, so exporting it is a speculative abstraction that should be removed or made non-exported."
+    },
+    {
+      "id": "F21",
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.ts",
+      "line": 678,
+      "claim": "The \"CompatibilityFallbackHandler OR ExtensibleFallbackHandler\" check is now duplicated by hand in both recipient-analysis.service.ts and contract-analysis.service.ts:453, with the recipient-analysis version also passing the same three arguments twice, so any future official handler type would need to be added in multiple places, the same kind of omission that caused this change to be needed; a shared isOfficialFallbackHandlerDeployed(args) helper in src/domain/common/utils/deployments.ts, alongside isFallbackHandlerDeployed, would remove the duplication."
+    },
+    {
+      "id": "F22",
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts",
+      "line": 1747,
+      "claim": "The test title implies the absence of INCOMPATIBLE_SAFE, but the test only positively asserts that MISSING_OWNERSHIP appears on BRIDGE[0]; if a regression caused both errors to coexist, the assertion would still pass and the intended check would silently stop working. A negative assertion checking that INCOMPATIBLE_SAFE is not present in the full BRIDGE array would more faithfully test the stated intent."
+    },
+    {
+      "id": "F23",
+      "file": "src/domain/common/utils/deployments.ts",
+      "line": 138,
+      "claim": "getExtensibleFallbackHandlerDeployments is exported but has no callers or importers outside the module, including specs; its only caller is isExtensibleFallbackHandlerDeployed within the same file, so it should be kept module-local per the applicable rule, though the existing getFallbackHandlerDeployments follows the same pattern."
+    },
+    {
+      "id": "F24",
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.ts",
+      "line": 678,
+      "claim": "The two is*Deployed calls in fallbackHandlerExists pass an identical {version, chainId, address} object; extracting this into a shared args variable (or mirroring the some(version => ...) shape already used in contract-analysis.service.ts) would remove the repeated field list."
+    }
+  ]
+}

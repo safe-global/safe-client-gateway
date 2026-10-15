@@ -1,0 +1,15 @@
+{
+  "usd": 0.0525016,
+  "findings": [
+    {
+      "file": "docs/agents/api-dtos-and-validation.md",
+      "line": 121,
+      "claim": "The canonical example for the one-error-funnel-per-layer guide still shows the old pattern `catch (error) { throw this.httpErrorFactory.from(error); }` for SafeBalancesApi's getBalances/getCollectibles, but the diff changed these to use `from(mapBannedSafeError(error))`, so the documentation is now stale relative to src/modules/balances/datasources/safe-balances-api.service.ts:109 and :181."
+    },
+    {
+      "file": "src/datasources/errors/helpers/banned-safe.helper.spec.ts",
+      "line": 22,
+      "claim": "The test hard-codes the upstream payload text `{ detail: 'Safe is unavailable for legal reasons' }` even though no assertion depends on that exact string since the mapper discards it, and a sibling test case instead uses faker.word.words(); this same hard-coded text also appears at line 69 and in both new integration specs."
+    }
+  ]
+}

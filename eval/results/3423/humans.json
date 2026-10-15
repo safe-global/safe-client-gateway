@@ -1,0 +1,24 @@
+{
+  "usd": 0.36461420000000005,
+  "head": "141d738739edc44bdd05444b1d09836be28e3d48",
+  "verdicts": [
+    {
+      "issue": 11,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "At 485ccdbd the repository method was `getNetworksByChainId` (zerion.repository.ts:12). Commit 5d380be08 renamed it to `getNetworkNamesByChainId` \"after the map it returns\", and 6142e1246 renamed it again to `getChainIdToNetworkMapping` to match the datasource. The author confirmed this in the 2026-09-15 comment (\"repository method aligned with the datasource name\")."
+    },
+    {
+      "issue": 12,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "The `new Map<boolean, Record<string,string>>()` was at safes.v2.service.ts:214 in 485ccdbd. Commit 5d380be08 swapped it for destructured `[mainnet, testnet]` locals and a `getZerionNetworkNames` helper; its message says \"instead of a boolean-keyed map\"."
+    },
+    {
+      "issue": 13,
+      "verdict": "open",
+      "present": true,
+      "evidence": "Nobody replied to review item 6, and none of the commit messages mention docstrings. Only the `resolveZerionChainNames` docstring was shortened, as part of the 5d380be08 refactor. The other flagged WHAT-style docstrings (e.g. \"Fetches one portfolio per unique wallet-identity\") are unchanged at HEAD."
+    }
+  ]
+}

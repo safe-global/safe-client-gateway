@@ -1,0 +1,35 @@
+{
+  "usd": 0.0616376,
+  "findings": [
+    {
+      "file": "src/domain/common/utils/enum.ts",
+      "line": 36,
+      "claim": "The from transformer now returns keyof T | null, but getEnumKey still throws an Invalid enum value error for non-null unknown values, so the new return type is misleading and callers that only check for null will not catch corrupt or legacy rows because those trigger an exception instead. Either the type should be narrowed with documentation that non-null invalid values still throw, or unknown values should also return null to match typical ORM transformer behavior, but the current mixed behavior needs an explicit choice and a brief comment."
+    },
+    {
+      "file": "counterfactual-safes.repository.integration.spec.ts",
+      "line": 157,
+      "claim": "The explanatory comment about why '.where(1=1)' is rejected by TypeORM exists only in this one spec file, while the same cleanup pattern is repeated without explanation across five other spec files (space-audit, space-safes, spaces, members, users, wallets, notifications), risking that a future contributor editing one of those files will reflexively reintroduce '.where(1=1)'. The comment should be moved to a shared truncate helper or a pointer comment should be added to each of the other specs."
+    },
+    {
+      "file": "counterfactual-safes.repository.ts",
+      "line": 229,
+      "claim": "The delete logic was changed from manager.delete(entity, ids) to a createQueryBuilder().delete().from(...).whereInIds(...).execute() form, but there is no comment explaining why this query-builder style is needed, which risks a future regression back to the simpler form if the original motivation (e.g., an API-shape issue with array deletes in TypeORM 1.x) is not documented. Additionally, whereInIds is marked legacy in recent TypeORM releases, so using '.where({ id: In(ids) })' would be more idiomatic."
+    },
+    {
+      "file": "users.repository.ts",
+      "line": 294,
+      "claim": "This file still uses manager.delete(DbUser, userId) while counterfactual-safes.repository.ts switched to a different delete pattern, creating an inconsistency in delete style across the codebase, though this instance is unaffected since it deletes a single id rather than an array."
+    },
+    {
+      "file": null,
+      "line": null,
+      "claim": "The PR description itself flags that integration and e2e tests were not verified locally, which is worth confirming is green in CI before merging, particularly because the new '.delete().execute()' truncate pattern and the new eager-loading behavior only get exercised against a real database."
+    },
+    {
+      "file": "notifications.repository.integration.spec.ts",
+      "line": 503,
+      "claim": "The two-relation object in this test could be aligned with the surrounding style, which previously used a single-line array format."
+    }
+  ]
+}

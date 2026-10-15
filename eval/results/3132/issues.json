@@ -1,0 +1,119 @@
+{
+  "usage": {
+    "usd": 0.5897318,
+    "turns": 13,
+    "wallSeconds": 92
+  },
+  "issues": [
+    {
+      "findings": [
+        "F4",
+        "F5",
+        "F8",
+        "F9",
+        "F13",
+        "F17",
+        "F18",
+        "F19",
+        "F22",
+        "F2"
+      ],
+      "summary": "createSpaceForSigner registers a new wallet user but creates the space with the caller's token, whose `sub` is a random 1–9. The space admin is therefore some pre-existing user, not the one just registered. Assertions built on Number(authPayloadDto.sub) and the helper comments hide this, and the result depends on shared state and test order.",
+      "label": "medium",
+      "evidence": "The builder uses `faker.string.numeric({exclude:['0']})`, which gives one digit (auth-payload-dto.entity.builder.ts:16). spaces.service.ts:39-43 takes userId from the token's `sub`, calls findOneOrFail on it and then activateIfPending, so the helper at members.controller.e2e-spec.ts:87-100 makes user `sub` the admin rather than the wallet user it registered. The PR swapped `createUserResponse.body.id` for `Number(authPayloadDto.sub)` (lines 124, 1046, 1580), which bakes the collision into the assertions: on a DB with fewer than 9 users the create call can 404, user rows get mutated across tests, and email/extUserId values depend on which user owns that id. Only the admin-of-another-space test at line 345 re-signs the token with the real id, and the comments at 72-74 and 87-88 contradict the helper's behaviour.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F15"
+      ],
+      "summary": "The same few users (ids 1–9) own every space created through the helper, so on a DB that is never wiped they can hit maxSpaceCreationsPerUser and space creation returns 409.",
+      "label": "low",
+      "evidence": "The test config sets maxSpaceCreationsPerUser to 100–200 (config/entities/__tests__/configuration.ts:433), and spaces.repository.ts:235 enforces it per user. The helper runs 39 times per suite with a 1–9 sub, so repeated local runs against a persistent DB would eventually hit the limit. This only affects local, non-reset environments.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F6"
+      ],
+      "summary": "The DELETE suite lost its 'signer has no user' test and gained no non-member (nonMemberToken) test in its place.",
+      "label": "low",
+      "evidence": "The diff removes `should throw a 404 if the signer_address does not have a user` from DELETE. The remaining DELETE tests (lines 1634-1790) cover a missing space, a non-ACTIVE member and a non-ADMIN member, but not an outsider. The same assertAdmin path is exercised by the other 403 tests, so the regression risk is modest.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F14"
+      ],
+      "summary": "Several negative-path e2e tests were removed (member does not exist, signer has no user, not an active member) without confirming that unit tests cover the new mappings.",
+      "label": "low",
+      "evidence": "The diff shows these `it(` blocks deleted. Most scenarios were replaced by 403/404 tests (e.g. lines 1310, 1330, 744, 948), so the loss is partial. What remains is a small coverage gap, not a defect.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F1",
+        "F16"
+      ],
+      "summary": "The test renamed to '403 if the signer is not an active admin of the space' uses a random space id that doesn't exist, and its name hides that it proves a missing space returns 403.",
+      "label": "nit",
+      "evidence": "At lines 243-282 spaceId is a random int in 69420..DB_MAX_SAFE_INTEGER. The name is technically true, since the signer is not an admin of a space that doesn't exist, but it is ambiguous next to the test at line 285. This is naming only.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F20"
+      ],
+      "summary": "'403 if the user is not a member of the space' also runs against a space that doesn't exist.",
+      "label": "nit",
+      "evidence": "Lines 1330-1350 have an explicit comment `// Space does not even exist`, so the behaviour is documented. This is naming only.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F7",
+        "F12"
+      ],
+      "summary": "Variables named nonUserAccessToken now hold a nonMemberToken(), so the name no longer matches what they are.",
+      "label": "nit",
+      "evidence": "Lines 1313 and 1447 assign `nonUserAccessToken = nonMemberToken()`, while line 1930 uses `nonMemberAccessToken`. This is a naming inconsistency with no behavioural impact.",
+      "category": "style"
+    },
+    {
+      "findings": [
+        "F3"
+      ],
+      "summary": "Line 1794 uses authPayloadDto.sub as a string, while similar sites wrap it in Number().",
+      "label": "nit",
+      "evidence": "At line 1794 `userId = authPayloadDto.sub` is only put into a URL path, where a string and a number produce the same URL. This is a style inconsistency only.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F10"
+      ],
+      "summary": "The accept and decline 'no pending invite' tests build the outsider token by hand instead of using nonMemberToken().",
+      "label": "nit",
+      "evidence": "Lines 744-760 and 948-965 use `jwtService.sign(siweAuthPayloadDtoBuilder().build())`. The token can collide with the admin's sub, but a collision would still return 404 because the admin has no pending invite. This is an inconsistency without a concrete failure.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F21"
+      ],
+      "summary": "The accept-422 test still signs the invitee token with the builder's default sub instead of accessTokenForUserId.",
+      "label": "nit",
+      "evidence": "Lines 841-870 build inviteeAccessToken with `jwtService.sign(inviteeAuthPayloadDto)`. Body validation returns 422 before any auth or user lookup, so the result does not change.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F11"
+      ],
+      "summary": "The fix commit also extracts the createSpaceForSigner helper across many tests, which is a refactor beyond what the fix needs.",
+      "label": "nit",
+      "evidence": "The diff is +303/-734 in a single test file, and the helper is used 39 times. This is a scope preference with no defect.",
+      "category": "design"
+    }
+  ]
+}

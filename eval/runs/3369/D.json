@@ -1,0 +1,10 @@
+{
+  "pr": 3369,
+  "reviewSha": "343526055284e3a23dfed0757c8e641c176561ee",
+  "baseSha": "c66f89e20b23990129bfe5ac22525555c7c4a5d2",
+  "system": "D",
+  "version": "github",
+  "runner": "collect",
+  "model": "claude-code-action",
+  "output": "## Architecture check\n\nApplicable guides: `docs/agents/commits-and-prs.md` (PR title/body row), `docs/agents/reviewing.md` + `docs/agents/remarks.md` (review standard); no code-rule guide applies — the diff is confined to three `docs/agents/*.md` files.\n\ndocs/agents/module-structure.md:133 — Implementation matches the approved spec/plan: the new transitive-registration allowance is conditioned on a module that \"only serves that one\", yet cites `siwe` as an example of the same wiring yet `SiweModule` is imported by both `UsersModule` (`src/modules/users/users.module.ts:26`) and `AuthModule` (`src/modules/auth/auth.module.ts:10`), so the example contradicts the condition the same sentence states.\ndocs/agents/commits-and-prs.md:91 — No stale guides: that PR body rule still asserts \"One `reviewing.md` requirement still lands here\" (ratchet-baseline growth), but this diff adds three more description-content requirements (declared multi-PR series, linked follow-up PR, never-shipped-field justification) and does not update the enumeration.\ndocs/agents/ARCHITECTURE.md:86 — No stale guides: the Module anatomy skeleton still states `routes/` exists \"only if HTTP endpoints exist\", which the new staged-rollout paragraph in `module-structure.md` qualifies; the duplicated convention was updated in only one of the two guides.\n\n**Verdict:** ❌ 3 finding(s)"
+}

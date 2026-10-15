@@ -1,0 +1,25 @@
+{
+  "usd": 0.269436,
+  "findings": [
+    {
+      "file": "docs/agents/module-structure.md",
+      "line": 133,
+      "claim": "The rule states a module can skip its own app.module.ts entry when the new module only serves one module, but two of the four cited examples (SiweModule and QueuesApiModule) are actually imported by more than one module, so the condition and the examples give opposite answers for a module serving two consumers."
+    },
+    {
+      "file": "docs/agents/api-dtos-and-validation.md",
+      "line": 113,
+      "claim": "The doc cites 'a field the upstream never actually populated' as an example of a field no client could have parsed, but if the field was declared nullable and sent as null, released clients have already been receiving and decoding that key, and strict decoders (e.g. kotlinx.serialization or generated OpenAPI clients) fail when the key disappears, so the example does not support the claim; the existing validUntil field is an instance of this ambiguous case."
+    },
+    {
+      "file": "docs/agents/module-structure.md",
+      "line": 12,
+      "claim": "The Rule line, the skeleton comment, and the skill description still state that routes/ is used only when the module exposes HTTP endpoints, without qualification, even though a new exception elsewhere in the same document overrides this rule; the unqualified Rule line should point to the exception."
+    },
+    {
+      "file": "docs/agents/module-structure.md",
+      "line": 33,
+      "claim": "The staged-delivery requirement here (linking the follow-up PR) conflicts with the requirement in docs/agents/reviewing.md:48 (stating which follow-up consumes it), and linking the follow-up PR may be impossible when that PR does not yet exist; the two documents should agree on one requirement and cross-reference it."
+    }
+  ]
+}

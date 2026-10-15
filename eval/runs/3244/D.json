@@ -1,0 +1,10 @@
+{
+  "pr": 3244,
+  "reviewSha": "9a6867a379897571f3459a3c7e8ea042dac2e885",
+  "baseSha": "9ecb1eeba6c7264d2a4c74d7e314e72903b3037a",
+  "system": "D",
+  "version": "github",
+  "runner": "collect",
+  "model": "claude-code-action",
+  "output": "## Architecture check\n\nApplicable guides: ARCHITECTURE.md, best-practices.md, nestjs-patterns.md, api-dtos-and-validation.md, security.md, module-structure.md, caching-and-performance.md, testing.md, configuration-and-flags.md, commits-and-prs.md, reviewing.md + remarks.md.\n\n- `src/modules/relay/datasources/rhinestone-api.service.ts:117` — **`Raw<T>` at the boundary**: `getTaskStatus` returns a bare `RelayTaskStatus` assembled inside the datasource instead of `Raw<RelayTaskStatus>`, and `RelayRepository.getTaskStatus` never calls `RelayTaskStatusSchema.parse()`, so the upstream shape is never validated against the domain schema (same for `relay` at :84, which `DailyLimitRelayer`/`NoFeeCampaignRelayer` return unparsed).\n- `src/modules/relay/domain/entities/relay-task-status.entity.ts:16` — **No speculative abstractions**: `createdAt` (and `blockHash`/`blockNumber`/`gasUsed` at :7-9) were relaxed to `.optional()` rather than removed, but after this migration `RelayTaskStatusSchema` is parsed nowhere and no code path can populate those four fields.\n- `src/modules/relay/datasources/rhinestone-api.service.ts:68` — **Structured logging only**: `formatError` logs the entire upstream error payload via `JSON.stringify(error.data)` rather than an explicit whitelisted field set.\n- PR title — **PR title**: `feat: Rhinestone Relay Provider` is a capitalized noun phrase, not an imperative lowercase-initial description, and squash-merge makes it the permanent `main` subject.\n- PR description — **PR body**: the required `## Changes` section is absent; the per-area bullets sit under bold labels inside `## Summary`.\n- `src/modules/relay/datasources/rhinestone-api.service.spec.ts:72` — **R-006** (asserting that *an* error was thrown, not *which*): bare `.toThrow()` with no argument, also at :88.\n\n**Verdict:** ❌ 6 finding(s)"
+}

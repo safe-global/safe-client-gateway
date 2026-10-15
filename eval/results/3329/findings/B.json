@@ -1,0 +1,50 @@
+{
+  "usd": 0.0707796,
+  "findings": [
+    {
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.ts",
+      "line": 689,
+      "claim": "The PR adds '1.5.0' to MULTICHAIN_SUPPORTED_VERSIONS, but checkVersionCompatibility still passes a literal version '1.4.1' to hasCanonicalDeploymentSafeToL2Setup and hasCanonicalDeploymentSafeToL2Migration, ignoring its own version argument; in safe-deployments, 1.5.0 has its own distinct SafeToL2Setup address and no SafeToL2Migration at all."
+    },
+    {
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.ts",
+      "line": 698,
+      "claim": "Because the version check is hardcoded to 1.4.1, on 7 chains that have the 1.5.0 singleton and 1.5.0 SafeToL2Setup but not the 1.4.1 SafeToL2Setup (chain IDs 5424, 7979, 9302, 38833, 613419, 843843, 37714555429), a 1.5.0 Safe created with setupToL2 that bridges to one of these chains incorrectly gets flagged as INCOMPATIBLE_SAFE."
+    },
+    {
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.ts",
+      "line": 689,
+      "claim": "The fix should look up the SafeToL2Setup deployment for the version actually being checked, or verify that safeAccountConfig.to is truly a SafeToL2Setup deployment for that version on the target chain, and separately decide what the migration check should do for 1.5.0 since that version has no SafeToL2Migration."
+    },
+    {
+      "file": ".yarnrc.yml",
+      "line": 18,
+      "claim": "npmPreapprovedPackages: ['@safe-global/*'] exempts the entire @safe-global scope from the 7-day npmMinimalAgeGate, even though only safe-deployments needed the exemption; this also covers the untouched safe-modules-deployments package and any future @safe-global package, leaving risk of malicious code executing on import (install-time scripts are still blocked by enableScripts: false). The wildcard should be narrowed to @safe-global/safe-deployments specifically, or removed once the 1.37.62 version is 7 days old."
+    },
+    {
+      "file": ".yarnrc.yml",
+      "line": 18,
+      "claim": "The commit message claims the wildcard matches a safe-wallet-monorepo convention, but this could not be verified."
+    },
+    {
+      "file": "recipient-analysis.service.spec.ts",
+      "line": 1726,
+      "claim": "Both new 1.5.0 tests force `to = zeroAddress`, so the setupToL2 branch affected by the version-compatibility bug is never actually exercised by tests; a 1.5.0 plus SafeToL2Setup 1.5.0 test case targeting one of the 7 affected chains should be added."
+    },
+    {
+      "file": "recipient-analysis.service.spec.ts",
+      "line": 1782,
+      "claim": "Both new 1.5.0 tests force `to = zeroAddress`, so the setupToL2 branch affected by the version-compatibility bug is never actually exercised by tests; a 1.5.0 plus SafeToL2Setup 1.5.0 test case targeting one of the 7 affected chains should be added."
+    },
+    {
+      "file": "settings-change.mapper.ts",
+      "line": 47,
+      "claim": "No test checks that a setModuleGuard self-call is now classified as SettingsChange instead of Custom; the existing toContain test on the list is only a stand-in for this behavior, referencing related code at transaction-info.mapper.ts:582."
+    },
+    {
+      "file": "recipient-analysis.service.spec.ts",
+      "line": 1695,
+      "claim": "The two new tests repeat about 45 lines of setup (the 1.5.0 creation transaction and the getApi mock) and differ only in chain ID and expected status; this duplicated setup should be pulled into a local helper function."
+    }
+  ]
+}

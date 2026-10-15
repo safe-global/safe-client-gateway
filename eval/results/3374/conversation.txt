@@ -1,0 +1,144 @@
+COMMENT
+[PooyaRaki 2026-08-24T15:25:00Z] @claude review
+
+COMMENT
+[claude 2026-08-24T15:25:16Z] **Claude finished @PooyaRaki's task in 1m 54s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/32744719623)
+
+---
+### Claude Code Review
+
+- [x] Read PR metadata & summary
+- [x] Read changed files
+- [x] Analyze correctness, security, tests
+- [x] Post review
+
+The fix is well-scoped and cleanly implemented — the "absolute-timeout" argument is right, the tests cover the carry-over, the bound, the two rejection paths, and the plain-login regression. A few suggestions:
+
+### 1. `assertExpirationTime` still bounds Auth0's `exp` on the elevate path (`src/modules/auth/oidc/routes/oidc-auth.service.ts:134-140`)
+
+The bound now runs *before* the elevate branch decides to ignore `expirationTime`:
+
+```ts
+if (expirationTime) {
+  assertExpirationTime(expirationTime, maxExpirationTime, this.maxValidityPeriodInSeconds);
+}
+```
+
+On elevation we deliberately discard Auth0's `exp` in favor of `priorExpiration`, so this pre-check can throw a `ForbiddenException` (403) for a claim we're not going to use. If a tenant's ID token happens to carry a long-lived `exp`, elevation would break for reasons unrelated to the elevated session's lifetime. Consider gating the assertion on `!elevate`, or moving it into the non-elevate branch. Existing behavior isn't a regression, but the fix opens a new asymmetry between the two paths that's worth tightening.
+
+Also worth noting: on the elevate branch, an over-max `expirationTime` surfaces as `ForbiddenException`, but "no prior session" surfaces as `UnauthorizedException`. Both are step-up failures — one funnel would be nicer.
+
+### 2. Debug log of decode failures (`oidc-auth.service.ts:211-215`)
+
+```ts
+this.loggingService.debug(asError(err).message);
+```
+
+The `jsonwebtoken` messages themselves ("jwt expired", "invalid signature", "jwt malformed") don't include token bytes, so the "never the token" invariant holds. Consider prefixing with context (e.g. `Auth callback: prior session undecodable: ${asError(err).message}`) so a debug-level line is actually recognizable in a shared log.
+
+### 3. Minor: `Math.min` semantics on Date (`oidc-auth.service.ts:157-160`)
+
+```ts
+exp = priorExpiration < maxExpirationTime ? priorExpiration : maxExpirationTime;
+```
+
+Correct — but `new Date(Math.min(priorExpiration.getTime(), maxExpirationTime.getTime()))` reads a little more directly for a "clamp to bound" step. Style call, not a bug.
+
+### 4. Tests — good coverage; two small gaps
+
+- The suite doesn't exercise the interaction between an over-max Auth0 `exp` and a valid prior session on the elevate path (which is exactly the case flagged in point 1). A single spec pinning today's behavior would make future intent clear.
+- `oidc-auth.service.spec.ts:606-608` throws a generic `Error('jwt expired')` for the undecodable case. If `decodeToken` is expected to surface `TokenExpiredError` / `JsonWebTokenError`, mirroring the real error type would exercise the exact catch path.
+
+### Summary
+Correctness of the core change: solid. The invariant (session lifetime is absolute; step-up proves the second factor only) is now enforced end-to-end with both unit and integration coverage. Points 1 and 2 above are the ones worth acting on before merge; 3 and 4 are optional polish.
+ · `fix/session-duration-step-up`
+
+COMMENT
+[PooyaRaki 2026-08-25T09:43:32Z] @claude arch-review
+
+COMMENT
+[PooyaRaki 2026-08-25T09:43:37Z] @claude review
+
+COMMENT
+[claude 2026-08-25T09:43:50Z] **Claude finished @PooyaRaki's task in 2m 8s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/32833491764)
+
+---
+### Claude Code Review
+
+- [x] Read changed files
+- [x] Analyze correctness, security, tests
+- [x] Post review
+
+The fix is well-argued and cleanly implemented — the absolute-timeout invariant is now enforced end-to-end, `decodeToken` verifies signature+expiration under the hood (so a tampered or expired prior cookie falls into the catch and is rejected — security is sound), and coverage of the carry-over, bound, and rejection paths is solid. A few things worth tightening before merge:
+
+### 1. `assertExpirationTime` still bounds Auth0's `exp` on the elevate path
+[`src/modules/auth/oidc/routes/oidc-auth.service.ts:134-140`](https://github.com/safe-global/safe-client-gateway/blob/fix/session-duration-step-up/src/modules/auth/oidc/routes/oidc-auth.service.ts#L134-L140)
+
+```ts
+if (expirationTime) {
+  assertExpirationTime(
+    expirationTime,
+    maxExpirationTime,
+    this.maxValidityPeriodInSeconds,
+  );
+}
+```
+
+On elevation `getSessionExpiration` deliberately ignores `expirationTime` in favor of the prior session's `exp`, but this pre-check runs first — so a tenant whose ID token happens to carry a long-lived `exp` breaks elevation with a `ForbiddenException` for a claim the elevate branch would have discarded. Gate the assertion on `!elevate`, or move it inside the plain-login branch of `getSessionExpiration`. Also worth noting the resulting funnel asymmetry: over-max exp → 403, no prior session → 401, both are step-up failures.
+
+[Fix this →](https://claude.ai/code?q=In%20src%2Fmodules%2Fauth%2Foidc%2Froutes%2Foidc-auth.service.ts%20on%20branch%20fix%2Fsession-duration-step-up%2C%20gate%20the%20assertExpirationTime%20call%20around%20lines%20134-140%20on%20%60!elevate%60%20so%20it%20does%20not%20bound%20Auth0%27s%20exp%20on%20the%20elevate%20path%20%28where%20we%20discard%20it%29.%20Add%20a%20unit%20test%20in%20oidc-auth.service.spec.ts%20covering%20the%20interaction%20of%20an%20over-max%20Auth0%20exp%20with%20a%20valid%20prior%20session%20on%20the%20elevate%20path.&repo=safe-global/safe-client-gateway)
+
+### 2. Debug log of decode failures is unattributed
+[`oidc-auth.service.ts:238-242`](https://github.com/safe-global/safe-client-gateway/blob/fix/session-duration-step-up/src/modules/auth/oidc/routes/oidc-auth.service.ts#L238-L242)
+
+```ts
+this.loggingService.debug(asError(err).message);
+```
+
+The `jsonwebtoken` messages themselves don't leak token bytes, so the "never the token" invariant holds. But a bare `"jwt expired"` in a shared log is hard to attribute. Prefix with context, e.g. `Auth callback: prior session undecodable: ${asError(err).message}`. Matches the `warn`-level style used a few lines up in the controller.
+
+### 3. Test — one missing case tied to point 1
+[`oidc-auth.service.spec.ts:513-647`](https://github.com/safe-global/safe-client-gateway/blob/fix/session-duration-step-up/src/modules/auth/oidc/routes/oidc-auth.service.spec.ts#L513-L647)
+
+No spec pins what happens when Auth0 returns an over-max `exp` **and** a valid prior session is present on an elevate. Today that throws `ForbiddenException` from the pre-check (see point 1); after the fix it would carry the prior expiry over. Either way — a spec would make the intended behavior explicit.
+
+### 4. Minor: the undecodable case uses a generic `Error`
+[`oidc-auth.service.spec.ts:606-608`](https://github.com/safe-global/safe-client-gateway/blob/fix/session-duration-step-up/src/modules/auth/oidc/routes/oidc-auth.service.spec.ts#L606-L608)
+
+```ts
+authRepositoryMock.decodeToken.mockImplementation(() => {
+  throw new Error('jwt expired');
+});
+```
+
+`AuthRepository.decodeToken` routes through `jwt.verify`, which throws `TokenExpiredError` / `JsonWebTokenError`. Mirroring the real class exercises the actual catch path. Not a bug — the current test passes because the catch is untyped — just tighter.
+
+### Summary
+Correctness of the core change: solid. Point 1 is the one to act on (the assertion firing on a value the elevate branch throws away is a real regression opportunity for tenants with longer-lived ID tokens); 2–4 are polish.
+ · `fix/session-duration-step-up`
+
+COMMENT
+[claude 2026-08-25T09:48:42Z] ## Architecture check
+
+Guides applied: [ARCHITECTURE.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/ARCHITECTURE.md), [best-practices.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/best-practices.md), [nestjs-patterns.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/nestjs-patterns.md), [api-dtos-and-validation.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/api-dtos-and-validation.md), [security.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/security.md), [testing.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/testing.md), [commits-and-prs.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/commits-and-prs.md), [reviewing.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/reviewing.md), [remarks.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/remarks.md).
+
+1. **[Builders and faker only](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/testing.md#L68)** — [src/modules/auth/oidc/routes/oidc-auth.controller.integration.spec.ts:737](https://github.com/safe-global/safe-client-gateway/blob/0acc2918e5bdfb78f412a7840ab9b95a80d0debd/src/modules/auth/oidc/routes/oidc-auth.controller.integration.spec.ts#L737) — the prior session cookie is minted from a hand-written literal payload that re-types what `oidcAuthPayloadDtoBuilder()` already produces (same `auth_method`, same `faker.string.numeric({ exclude: ['0'] })` for `sub`), which `non-negotiable 6` and R-004 forbid; the sibling unit spec in this same PR uses the builder. **Fix:** add `import { oidcAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';` and replace the literal with `const priorToken = jwtService.sign({ ...oidcAuthPayloadDtoBuilder().build(), exp: priorSessionExp });`.
+2. **[PR title](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/commits-and-prs.md#L66)** — PR title — `fix: Session duration step up` has a capitalised, non-imperative noun-phrase description, and squash-merge makes it the permanent commit subject on `main`. **Fix:** retitle to `fix(auth): keep the prior session expiry on step-up`.
+
+**Verdict:** ❌ 2 finding(s)
+
+<sub>Automated check of this repo's [agent guidelines](https://github.com/safe-global/safe-client-gateway/blob/main/AGENTS.md) — Claude applying the committed guides in `docs/agents/`, not its own opinion. Run by [architecture-check.yml](https://github.com/safe-global/safe-client-gateway/blob/main/.github/workflows/architecture-check.yml) on `@claude arch-review`; background in [the CI gate](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/agent-tooling.md#the-ci-gate). Advisory — reply to a finding by its number to discuss it.</sub>
+
+COMMENT
+[TimDaub 2026-08-25T13:07:32Z] > 2\. **[PR title](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/commits-and-prs.md#L66)** — PR title — `fix: Session duration step up` has a capitalised, non-imperative noun-phrase description, and squash-merge makes it the permanent commit subject on `main`. **Fix:** retitle to `fix(auth): keep the prior session expiry on step-up`.
+
+done
+
+> 1. assertExpirationTime still bounds Auth0's exp on the elevate path
+
+done
+
+COMMENT
+[TimDaub 2026-08-25T13:22:20Z] > 1. **[Builders and faker only](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/testing.md#L68)** — [src/modules/auth/oidc/routes/oidc-auth.controller.integration.spec.ts:737](https://github.com/safe-global/safe-client-gateway/blob/0acc2918e5bdfb78f412a7840ab9b95a80d0debd/src/modules/auth/oidc/routes/oidc-auth.controller.integration.spec.ts#L737) — the prior session cookie is minted from a hand-written literal payload that re-types what `oidcAuthPayloadDtoBuilder()` already produces (same `auth_method`, same `faker.string.numeric({ exclude: ['0'] })` for `sub`), which `non-negotiable 6` and R-004 forbid; the sibling unit spec in this same PR uses the builder. **Fix:** add `import { oidcAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';` and replace the literal with `const priorToken = jwtService.sign({ ...oidcAuthPayloadDtoBuilder().build(), exp: priorSessionExp });`.
+
+done

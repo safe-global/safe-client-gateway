@@ -1,0 +1,55 @@
+{
+  "usd": 0.053481600000000004,
+  "findings": [
+    {
+      "file": "src/domain/common/schemas/name.schema.ts",
+      "line": 9,
+      "claim": "Stripping all Unicode Cf codepoints removes ZWJ (U+200D) and ZWNJ (U+200C), which are required for correct rendering of many Indic and Arabic/Persian-script names, not just emoji joiners. As a result, users typing such names will have their characters silently altered, and the PR description only mentions the emoji use case, not this collateral impact."
+    },
+    {
+      "file": "src/domain/common/schemas/name.schema.ts",
+      "line": 9,
+      "claim": "A narrower stripping policy that removes only the dangerous Cf subset (bidi controls such as U+202A-U+202E and U+2066-U+2069, plus invisible separators) while keeping ZWJ/ZWNJ would avoid breaking legitimate names, since bidi overrides are the actual Trojan-Source vector and ZWJ/ZWNJ are visually neutral."
+    },
+    {
+      "file": "src/modules/csv-export/v1/entities/csv-export.options.ts",
+      "line": 34,
+      "claim": "escapeCsvFormula relies on csv-stringify's cast.string, which only runs when the cell value is already a string; if any column's type changes to number or boolean in a future refactor, the formula-injection escaping would silently stop being applied to that column."
+    },
+    {
+      "file": "src/domain/common/entities/name.builder.ts",
+      "line": 24,
+      "claim": "The test assertion that sanitizeName(name) === name depends on faker.person.fullName() never producing a name needing NFC normalization or with trailing whitespace, which is an unenforced property of Faker rather than something guaranteed by the code, making the assertion fragile."
+    },
+    {
+      "file": "src/domain/common/entities/name.builder.ts",
+      "line": 24,
+      "claim": "Padding a generated name and then slicing it can cut a multi-codepoint grapheme cluster (e.g. an 'é' represented as 'e' + combining accent) at a code-point boundary in the middle of the cluster, producing malformed output."
+    },
+    {
+      "file": "src/modules/csv-export/csv-utils/escape-csv-formula.ts",
+      "line": 5,
+      "claim": "The comment stating that full-width characters (＝ ＋ － ＠) 'normalize to the ASCII forms' is inaccurate, since that only holds under NFKC normalization, while sanitizeName uses NFC, under which these full-width characters are not converted."
+    },
+    {
+      "file": "src/domain/common/schemas/name.schema.ts",
+      "line": 14,
+      "claim": "ALLOWED_PUNCTUATION includes the straight apostrophe (U+0027) but not the curly apostrophe (U+2019) that many macOS/iOS keyboards insert automatically, so a name like O'Brien typed with a curly apostrophe would be rejected, since U+2019 is classified as final punctuation rather than letter/mark/number."
+    },
+    {
+      "file": "src/domain/common/schemas/name.schema.ts",
+      "line": 14,
+      "claim": "The same allowlist gap applies to the en-dash (–) versus the ASCII hyphen (-), which is not accounted for in the current punctuation set or by any pre-validation normalization of these variants."
+    },
+    {
+      "file": "src/domain/common/schemas/name.schema.ts",
+      "line": 17,
+      "claim": "Using \\p{N} in the character class admits more than plain digits, including \\p{No} characters such as vulgar fractions (½, ¼), Roman numerals (Ⅷ), and circled digits (①); if the intent is digits only, \\p{Nd} should be used instead."
+    },
+    {
+      "file": "src/domain/common/schemas/name.schema.spec.ts",
+      "line": 154,
+      "claim": "With the default minimum length of 3, a name consisting only of invisible characters that get stripped to empty will fail with a length-based error message rather than a disallowed-character message, which is misleading since the user's input didn't violate a length constraint but was entirely composed of disallowed invisible characters."
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "usd": 0.209939,
+  "head": "2de5086c7250b0e9dfa3ef6acf6ddf8894d8cd14",
+  "verdicts": [
+    {
+      "issue": 10,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "At 52a760e7 the chainIds dedupe in address-book-request.dto.entity.ts:81 used `.transform(...)`. LucieFaire suggested `overwrite`, compojoom replied \"switched to `.overwrite(...)` in 2de5086c\", and commit 2de5086c7 makes exactly that one-line change."
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "usd": 0.0581256,
+  "findings": [
+    {
+      "file": "src/modules/relay/datasources/rhinestone-api.service.ts",
+      "line": 117,
+      "claim": "getTaskStatus returns a bare RelayTaskStatus assembled inside the datasource instead of Raw<RelayTaskStatus>, and RelayRepository.getTaskStatus never calls RelayTaskStatusSchema.parse(), so the upstream shape is never validated against the domain schema."
+    },
+    {
+      "file": "src/modules/relay/datasources/rhinestone-api.service.ts",
+      "line": 84,
+      "claim": "The relay method has the same issue: DailyLimitRelayer and NoFeeCampaignRelayer return the value unparsed against the domain schema."
+    },
+    {
+      "file": "src/modules/relay/domain/entities/relay-task-status.entity.ts",
+      "line": 16,
+      "claim": "createdAt (and blockHash/blockNumber/gasUsed) were relaxed to .optional() rather than removed, but after this migration RelayTaskStatusSchema is parsed nowhere and no code path can populate those four fields, making the optionality speculative rather than necessary."
+    },
+    {
+      "file": "src/modules/relay/datasources/rhinestone-api.service.ts",
+      "line": 68,
+      "claim": "formatError logs the entire upstream error payload via JSON.stringify(error.data) rather than using an explicit whitelisted set of fields, risking logging of unintended or sensitive data."
+    },
+    {
+      "file": null,
+      "line": null,
+      "claim": "The PR title 'feat: Rhinestone Relay Provider' is a capitalized noun phrase rather than an imperative, lowercase-initial description, and since squash-merge is used it becomes the permanent commit subject on main."
+    },
+    {
+      "file": null,
+      "line": null,
+      "claim": "The PR description is missing the required '## Changes' section; the per-area bullets are instead placed under bold labels inside the '## Summary' section."
+    },
+    {
+      "file": "src/modules/relay/datasources/rhinestone-api.service.spec.ts",
+      "line": 72,
+      "claim": "The test uses a bare .toThrow() with no argument, which only asserts that some error was thrown rather than which specific error, reducing the test's ability to catch regressions; the same issue occurs at line 88."
+    }
+  ]
+}

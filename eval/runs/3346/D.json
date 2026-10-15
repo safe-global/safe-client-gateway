@@ -1,0 +1,10 @@
+{
+  "pr": 3346,
+  "reviewSha": "e3a1ca7b228def1a78d1297e3438ff13f93f15f6",
+  "baseSha": "482232a40249c7bee55a23a97031c50c3842ed33",
+  "system": "D",
+  "version": "github",
+  "runner": "collect",
+  "model": "claude-code-action",
+  "output": "## Architecture check\n\nGuides applied: `module-structure.md`, `api-dtos-and-validation.md`, `security.md`, `nestjs-patterns.md`, `database-and-migrations.md`, `caching-and-performance.md`, `testing.md`, `configuration-and-flags.md`, `best-practices.md`, `commits-and-prs.md`, `ARCHITECTURE.md` (+ `remarks.md`).\n\n`src/modules/entitlements/routes/entitlements.controller.ts:18` — Cross-module imports via domain only: imports `@/modules/spaces/routes/pipes/space-id.pipe`, the exact import the guide names as its anti-example (\"Neither is precedent — do not imitate\").\n`src/modules/entitlements/routes/entitlements.service.ts:37` — Cross-module imports via domain only: imports `assertMember` from `@/modules/spaces/routes/utils/space-assert.utils`, reaching into another module past its `domain/` while the service already injects `IMembersRepository`.\n`src/modules/entitlements/entitlements-routes.module.ts:26` — No new deviations from the canonical module structure: a second Nest module at the module root; the skeleton puts the HTTP surface under `routes/` (repo precedent: `src/modules/delegate/routes/delegates.module.ts`), as this module already does for `domain/entitlements-repository.module.ts`.\n`src/modules/entitlements/routes/entitlements.service.integration.spec.ts:292` — No scope creep: `createSpace()` swaps `nameBuilder()` for `faker.company.name()`, an unexplained drive-by change away from the shared builder unrelated to the entitlements work.\n\n**Verdict:** ❌ 4 finding(s)"
+}

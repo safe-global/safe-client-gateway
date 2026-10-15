@@ -1,0 +1,30 @@
+{
+  "usd": 0.23898,
+  "head": "23b9cdc66bfd33bd704320e0ea1c13116cf79987",
+  "verdicts": [
+    {
+      "issue": 8,
+      "verdict": "open",
+      "present": true,
+      "evidence": "The spec at src/modules/auth/utils/auth-redirect.helper.spec.ts:246 still tests only `ftp://localhost:3000`; there are no file:, javascript: or data: cases. `git log 23b9cdc66..HEAD` is empty and nobody replied."
+    },
+    {
+      "issue": 11,
+      "verdict": "open",
+      "present": true,
+      "evidence": "src/modules/auth/utils/auth-redirect.helper.ts:138-141 still defines `const isHttps = target.protocol === 'https:'` and uses it in the loopback branch. There are no later commits and no human reply."
+    },
+    {
+      "issue": 15,
+      "verdict": "open",
+      "present": true,
+      "evidence": "LOOPBACK_HOSTNAMES at auth-redirect.helper.ts:6 has no comment, and the JSDoc only says 'matched exactly'. Nothing mentions that the rest of 127.0.0.0/8 is deliberately excluded. There are no later commits or replies."
+    },
+    {
+      "issue": 16,
+      "verdict": "open",
+      "present": true,
+      "evidence": "auth-redirect.helper.ts:139 still uses `LOOPBACK_HOSTNAMES.has(target.hostname)` with no toLowerCase and no comment about WHATWG normalization. There are no later commits or replies."
+    }
+  ]
+}

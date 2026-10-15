@@ -1,0 +1,10 @@
+{
+  "usd": 0.0495156,
+  "findings": [
+    {
+      "file": "src/domain/common/utils/deployments.ts",
+      "line": 138,
+      "claim": "The exported function getExtensibleFallbackHandlerDeployments has no importers; its only caller is isExtensibleFallbackHandlerDeployed within the same file, so exporting it is a speculative abstraction that should be removed or made non-exported."
+    }
+  ]
+}

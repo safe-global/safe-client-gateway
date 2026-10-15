@@ -1,0 +1,94 @@
+{
+  "usage": {
+    "usd": 0.39888419999999997,
+    "turns": 7,
+    "wallSeconds": 45
+  },
+  "issues": [
+    {
+      "findings": [
+        "F8",
+        "F13"
+      ],
+      "summary": "isSafe failures are swallowed by a bare catch with no logging",
+      "label": "low",
+      "evidence": "space-counterfactual-safes.service.ts:70-72 returns false with no log, and the service injects no LoggingService. Failing open is intended per the PR description, but an outage or a Zod/chain error leaves no trace. That is an observability gap, not a behaviour defect.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F4",
+        "F6"
+      ],
+      "summary": "The e2e tests never exercise the deployed-Safe filter; they pass through the fail-open catch",
+      "label": "low",
+      "evidence": "The e2e spec uses createTestModule with TestNetworkModule (testing-module.ts:83-84), a bare mock, so getApi/isSafe throws and the catch at service.ts:70 keeps every row. No e2e case filters out a deployed Safe, but the new unit spec covers the filtering logic, so a regression would still be caught.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F2"
+      ],
+      "summary": "The user-scoped endpoint is not filtered, and nothing deletes CF rows on deployment",
+      "label": "low",
+      "evidence": "counterfactual-safes.service.ts:46-58 returns findByUserId results unfiltered. That code is outside this PR's diff, and the PR description explicitly defers write-side hardening and stale-row cleanup to a follow-up.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F1",
+        "F9"
+      ],
+      "summary": "spaceId is a UUID string, but Space['id'] is a number; `as never` casts hide the mismatch",
+      "label": "low",
+      "evidence": "space.entity.db.ts declares `id!: number`, while the spec at line 44 uses faker.string.uuid() and casts `spaceId as never` at lines 75, 97, 113, 123, 133 and 165. The tests still run because the mocks ignore the value, but the casts defeat type checking.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F5",
+        "F12"
+      ],
+      "summary": "Member fixtures are plain `{ id } as never` objects instead of memberBuilder",
+      "label": "nit",
+      "evidence": "Spec lines 60-62, 88-90, 106, 120, 150 and 131 cast plain objects to never, although src/modules/users/datasources/entities/__tests__/member.entity.db.builder.ts exists. This is a test-style issue with no functional impact.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F3"
+      ],
+      "summary": "`as unknown as MockedObject` cast on repository mocks",
+      "label": "nit",
+      "evidence": "Spec line 17 uses `as unknown as MockedObject<...>`, the same pattern found in about 15 other files in src. It is established repo convention and has no cost.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F7"
+      ],
+      "summary": "The 'returns undeployed counterfactual safes' test is redundant",
+      "label": "nit",
+      "evidence": "Spec lines 82-100 only check length, and the tests at lines 49 and 137 already cover undeployed pass-through with stronger assertions. The redundancy has no concrete cost.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F10"
+      ],
+      "summary": "The non-member test uses rejects.toThrow() with no expected error",
+      "label": "low",
+      "evidence": "Spec line 133 accepts any error. assertMember throws ForbiddenException('User is not a member of this workspace') (space-assert.utils.ts:58), and asserting that would prove the membership check fired. The not-called assertion on findBySpaceId only partly compensates.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F11"
+      ],
+      "summary": "No test asserts the chainId passed to isSafe",
+      "label": "low",
+      "evidence": "The mocks at spec lines 71-73 and 161-163 match on address only, and no assertion checks the isSafe call arguments. A regression that passed the wrong chainId at service.ts:67 would go undetected by these tests.",
+      "category": "tests"
+    }
+  ]
+}

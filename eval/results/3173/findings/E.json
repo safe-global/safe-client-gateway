@@ -1,0 +1,25 @@
+{
+  "usd": 0.0567956,
+  "findings": [
+    {
+      "file": "src/modules/auth/AUTH.md",
+      "line": 257,
+      "claim": "The table in this section should be reformatted, as its current formatting is not ideal."
+    },
+    {
+      "file": "src/modules/siwe/domain/entities/siwe-message.entity.ts",
+      "line": 81,
+      "claim": "The message text on this line should be changed to 'Message not yet valid'."
+    },
+    {
+      "file": "src/modules/siwe/domain/entities/siwe-message.entity.ts",
+      "line": 64,
+      "claim": "The wording of this message may be incorrect and should instead read 'message not issued yet', since the current text does not accurately describe the condition being reported."
+    },
+    {
+      "file": "src/modules/siwe/domain/siwe.repository.ts",
+      "line": 45,
+      "claim": "buildSiweMessageSchema appears to run on every login even though clockSkewSeconds never changes, so the resulting siweMessageSchema is always identical; it should be moved to the constructor to avoid rebuilding it unnecessarily on each call."
+    }
+  ]
+}

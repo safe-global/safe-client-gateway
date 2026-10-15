@@ -1,0 +1,10 @@
+{
+  "pr": 3330,
+  "reviewSha": "6ab1d8fd37dda363c433dd31778109bf22b8f15b",
+  "baseSha": "f60dc9a3e09edc5e6bfbf450978dbbd289913404",
+  "system": "D",
+  "version": "github",
+  "runner": "collect",
+  "model": "claude-code-action",
+  "output": "## Architecture check\nApplicable guides: docs/agents/commits-and-prs.md, docs/agents/agent-tooling.md\n\nno findings\n\n**Verdict:** ✅ compliant"
+}

@@ -1,0 +1,303 @@
+THREAD src/datasources/config-api/config-api.service.spec.ts:122 resolved=true
+[PooyaRaki 2026-09-15T07:42:46Z] Nit: instead of repeating the string we could just randomly pick a number between 1 and the biggest possible chain id.
+[vseehausen 2026-09-15T10:24:41Z] Not sure if this applies, as a valid chain id would be accepted, and this test would fail.
+
+THREAD src/datasources/config-api/config-api.service.ts:76 resolved=true
+[PooyaRaki 2026-09-15T07:45:26Z] Instead of validating it in the service layer, why don’t we validate the `chainId` at the controller level?
+[vseehausen 2026-09-15T10:45:39Z] Good question. We should do it. I created a follow up ticket, as there are other services that don't validate the chain id, neither. Ideally this can be done together. https://linear.app/safe-global/issue/WA-3543/add-chainid-validation-to-controller-level-and-add-type-check-to
+[vseehausen 2026-09-16T08:50:48Z] Agreed. The datasource guard is removed; validation stays at the controller only, and lower layers trust their callers. The other bare `@Param('chainId')` routes are tracked in WA-3543.
+
+THREAD src/datasources/config-api/config-api.service.ts:217 resolved=true
+[PooyaRaki 2026-09-15T07:45:49Z] Should have proper TsDoc comments or no comments.
+[vseehausen 2026-09-15T10:46:55Z] fixed in 089c4dbe
+
+THREAD src/modules/spaces/routes/safes/space-safes.controller.e2e-spec.ts:574 resolved=true
+[PooyaRaki 2026-09-15T07:46:39Z] Instead of repeating 78 multiple times we should create a maxLength const here in the test file and fetch the number from that.
+[vseehausen 2026-09-15T10:46:57Z] fixed in 089c4dbe
+
+COMMENT
+[vseehausen 2026-08-27T17:14:34Z] @claude review
+
+
+COMMENT
+[claude 2026-08-27T17:14:51Z] **Claude finished @vseehausen's task in 1m 33s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/33097396220)
+
+---
+### Claude PR Review
+
+- [x] Read PR context
+- [x] Review changed files
+- [x] Assess code quality, bugs, tests, security
+- [x] Post feedback
+
+Nice, targeted fix. Good root-cause write-up, and the placement of the `DataSourceError` *outside* the `try` in `ConfigApi.getChain` is deliberately correct — inside, `HttpErrorFactory` would flatten it to a 503. Both non-negotiable #1 (every `@Param` through `ValidationPipe(Schema)`) and #10 (one error funnel per layer) are respected.
+
+A few things worth considering — none are blockers:
+
+#### 1. The other 41 bare `@Param('chainId')` sites are the real fix
+
+`src/modules/{balances,safe-apps,data-decoder,owners,estimations,safe,chains,recovery,positions,collectibles,delegate,transactions,notifications/v1}/routes/*.controller.ts` still accept `@Param('chainId') chainId: string` with no `ValidationPipe`. Any of them can still poison `_chain` for its own routes (empty chainId → 502 → cached 502 until TTL), just via a different URL. The `getChain` guard blocks the *symptom* on this specific route pattern; the other controllers still violate non-negotiable #1 and can still 502 in different ways (bad hex, an all-letters string that hits a different upstream, etc.).
+
+Worth filing a follow-up to fan `NumericStringSchema` out across those controllers — the fix here should be pattern #1, not `getChain`. The defensive check is fine as belt-and-suspenders for now, but the PR body's "covering 41 other sites" claim is only true for *this exact bug*, not for input-validation gaps generally.
+
+#### 2. Semantic drift: 422 here vs. 404 elsewhere for the same input
+
+After this PR:
+- `GET /v1/chains//messages/…` → **422** (via `ValidationPipe`)
+- `GET /v1/chains//balances/…` (or any other bare-`@Param` route) → **404** (via `getChain` guard, "Chain not found")
+
+Same client mistake, two different status codes depending on which route it hits. If clients or dashboards treat 404 vs 422 differently, this will read as inconsistent. Fixing (1) makes this go away — everything becomes 422.
+
+#### 3. Comment in `getChain` could be trimmed
+
+`src/datasources/config-api/config-api.service.ts:75-77` — the three-line rationale is fine, but the *why* is really "empty string would hit the collection endpoint and cache-poison". A single-line `// Empty chainId would hit the chain collection endpoint and cache-poison '_chain'.` conveys the same and matches the terser house style in this file.
+
+#### 4. Tests
+
+- Unit test at `config-api.service.spec.ts:120-127`: uses `.rejects.toThrow(new DataSourceError(...))` — `toThrow` matches on `message`, but `DataSourceError`'s constructor calls bare `super()` so the thrown error's `.message` is empty; the assertion is passing on message-equality of two empty strings, not on `code: 404`. Consider `.rejects.toMatchObject({ message: 'Chain not found', code: 404 })` (or a custom matcher) to actually pin the 404. Same pattern is worth applying to any future DataSourceError assertions.
+- Integration tests at `messages.controller.integration.spec.ts:485-515`: solid — they assert `networkService.get` was never called, which is exactly the right invariant for "no upstream span, no cache write". Nice.
+- Missing: no integration case for the **other three** routes (`safes/:safeAddress/messages`, `POST .../messages`, `POST .../messages/:messageHash/signatures`). The controller change touches all four; only `GET .../messages/:messageHash` is exercised. Even one parametrized case per route would prevent a future revert on those three from going unnoticed.
+
+#### 5. Minor: `HttpStatus.NOT_FOUND` vs. numeric `404`
+
+The guard uses `HttpStatus.NOT_FOUND` (good), but the spec at `config-api.service.spec.ts:122` asserts against the numeric `404`. Not wrong, just inconsistent — either is fine, but pick one.
+
+---
+
+Overall: correct fix for the immediate 502, well-scoped, honest about the follow-up. The main ask is filing (or noting in the PR body) that the same `ValidationPipe` needs to land on the other bare-`@Param('chainId')` controllers so the semantics converge on 422 everywhere.
+ · Branch: `fix/messages-empty-chainid-502`
+
+COMMENT
+[PooyaRaki 2026-08-28T09:01:18Z] @vseehausen The remarks from Claude are worth reviewing.
+
+COMMENT
+[PooyaRaki 2026-08-28T09:01:25Z] @claude arch-review
+
+COMMENT
+[claude 2026-08-28T09:05:17Z] ## Architecture check
+
+Applicable guides: [api-dtos-and-validation.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/api-dtos-and-validation.md), [security.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/security.md), [nestjs-patterns.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/nestjs-patterns.md), [best-practices.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/best-practices.md), [module-structure.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/module-structure.md), [caching-and-performance.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/caching-and-performance.md), [testing.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/testing.md), [commits-and-prs.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/commits-and-prs.md), [remarks.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/remarks.md).
+
+1. **[ValidationPipe everywhere](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/api-dtos-and-validation.md#L11)** — [src/modules/messages/routes/messages.controller.ts:66](https://github.com/safe-global/safe-client-gateway/blob/6fadd78f1482f5c31dd38499eed962686b10d2dc/src/modules/messages/routes/messages.controller.ts#L66) — the four new `chainId` pipes (lines 66, 103, 147, 192) use bare `NumericStringSchema`, which the rule marks as pre-`ChainIdSchema` drift and 'not precedent to extend'. **Fix:** add `import { ChainIdSchema } from '@/modules/chains/domain/entities/schemas/chain-id.schema';`, drop the `NumericStringSchema` import, and write each param as `@Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,`.
+2. **[PR body](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/commits-and-prs.md#L84)** — PR description — the body carries `## Problem`, `## Cause`, `## Impact`, `## Verification` and `## Follow-up` and has no `## Summary`, where the rule allows exactly the template's two sections. **Fix:** keep only `## Summary` (folding the Problem/Cause/Impact/Verification/Follow-up prose into it) and `## Changes`.
+3. **[Scopes](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/commits-and-prs.md#L49)** — PR title — the title scopes the change to `(messages)` while it also changes shared infrastructure, [src/datasources/config-api/config-api.service.ts:79](https://github.com/safe-global/safe-client-gateway/blob/6fadd78f1482f5c31dd38499eed962686b10d2dc/src/datasources/config-api/config-api.service.ts#L79), which the rule says omits the scope. **Fix:** retitle to `fix: reject an empty chainId instead of returning 502`.
+
+**Verdict:** ❌ 3 finding(s)
+
+<sub>Automated check of this repo's [agent guidelines](https://github.com/safe-global/safe-client-gateway/blob/main/AGENTS.md) — Claude applying the committed guides in `docs/agents/`, not its own opinion. Run by [architecture-check.yml](https://github.com/safe-global/safe-client-gateway/blob/main/.github/workflows/architecture-check.yml) on `@claude arch-review`; background in [the CI gate](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/agent-tooling.md#the-ci-gate). Advisory — reply to a finding by its number to discuss it.</sub>
+
+COMMENT
+[vseehausen 2026-08-28T09:57:49Z] Thanks both — pushed `4424a1bc`. Taking each point:
+
+**arch-review 1 — `ChainIdSchema`.** Fixed. All four params now use `ChainIdSchema`. The guide is explicit that bare `NumericStringSchema` on route params "are also not precedent to extend", so this was the right call.
+
+**arch-review 2 — PR body.** Rewritten to `## Summary` + `## Changes` only.
+
+**arch-review 3 — scope.** Retitled to `fix: reject an empty chainId instead of returning 502`. The change does touch `src/datasources/config-api/`, so the scope shouldn't have been there.
+
+**Review 3 — comment.** Trimmed to two lines naming the cache-poisoning, matching the file's style.
+
+**Review 5 — `HttpStatus.NOT_FOUND`.** The spec now asserts `HttpStatus.NOT_FOUND` instead of the literal.
+
+**Review 1 and 2 — the other 41 sites, and 422-vs-404 drift.** Both fair, and the body overclaimed. Reworded: the guard stops *this* cache-poisoning bug for every caller, but it is not a substitute for piping the remaining `@Param('chainId')` sites, and until those land an empty chainId answers 422 here and 404 elsewhere. Happy to file the fan-out as a follow-up.
+
+**Review 4 — tests.** Half accepted, half not.
+
+*Accepted:* only one of the four routes was exercised. There is now a parametrized case across all four. Worth flagging what that turned up — the naive version was **vacuous on the two POST routes**: with an empty body the `@Body` pipe fails first, so they returned 422 regardless of the chainId pipe and would have passed with the change reverted. The POST cases now send valid bodies from the existing builders, so `chainId` is genuinely the failing pipe.
+
+*Not accepted — the `toThrow` claim.* The premise is that `DataSourceError`'s `super()` leaves `.message` empty. It doesn't: `readonly message: string` is a TypeScript parameter property, so the constructor assigns `this.message = message` after `super()`. And vitest's `toThrow(errorInstance)` compares more than the message here. Measured, all three against the real class:
+
+| assertion vs thrown `('Chain not found', 404)` | result |
+|---|---|
+| `toThrow(new DataSourceError('Chain not found', 404))` | passes |
+| `toThrow(new DataSourceError('Chain not found', 999))` | **fails** |
+| `toThrow(new DataSourceError('Something else', 404))` | **fails** |
+
+The failure reads `expected a thrown error to be Error: Chain not found { code: 999 }` — `code` is part of the comparison. So the existing assertion does pin the 404, and swapping to `toMatchObject` would not add coverage. Left as-is; happy to change it if you'd still prefer the more explicit form.
+
+`yarn test` green (359 files / 6,350). Messages integration spec green (44).
+
+
+COMMENT
+[PooyaRaki 2026-08-28T13:10:59Z] @claude arch-review
+
+COMMENT
+[claude 2026-08-28T13:15:00Z] ## Architecture check
+
+Guides applied: [ARCHITECTURE.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/ARCHITECTURE.md), [best-practices.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/best-practices.md), [nestjs-patterns.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/nestjs-patterns.md), [api-dtos-and-validation.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/api-dtos-and-validation.md), [security.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/security.md), [caching-and-performance.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/caching-and-performance.md), [testing.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/testing.md), [commits-and-prs.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/commits-and-prs.md), [reviewing.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/reviewing.md), [remarks.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/remarks.md).
+
+1. **[Swagger completeness](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/api-dtos-and-validation.md#L95)** — [src/modules/messages/routes/messages.controller.ts:64](https://github.com/safe-global/safe-client-gateway/blob/4424a1bc55248beeba00cd07c091a47260009654/src/modules/messages/routes/messages.controller.ts#L64) — piping both params makes 422 a new outcome of `getMessageByHash`, but the endpoint declares only `@ApiOkResponse`/`@ApiNotFoundResponse`. **Fix:** add `@ApiUnprocessableEntityResponse({ description: 'Invalid chainId or messageHash' })` to the decorator block and import `ApiUnprocessableEntityResponse` from `@nestjs/swagger`.
+
+**Verdict:** ❌ 1 finding
+
+<sub>Automated check of this repo's [agent guidelines](https://github.com/safe-global/safe-client-gateway/blob/main/AGENTS.md) — Claude applying the committed guides in `docs/agents/`, not its own opinion. Run by [architecture-check.yml](https://github.com/safe-global/safe-client-gateway/blob/main/.github/workflows/architecture-check.yml) on `@claude arch-review`; background in [the CI gate](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/agent-tooling.md#the-ci-gate). Advisory — reply to a finding by its number to discuss it.</sub>
+
+COMMENT
+[vseehausen 2026-08-28T13:36:37Z] Fixed in `c9e92558`.
+
+The finding was right, and it applied more widely than the one line it flagged: **none** of the four routes declared 422, and all four now carry param pipes. Added `@ApiUnprocessableEntityResponse` to each, with a description naming that route's own validated params:
+
+| Route | Description |
+|---|---|
+| `GET chains/:chainId/messages/:messageHash` | Invalid chainId or messageHash |
+| `GET chains/:chainId/safes/:safeAddress/messages` | Invalid chainId or safeAddress |
+| `POST chains/:chainId/safes/:safeAddress/messages` | Invalid chainId, safeAddress or request body |
+| `POST chains/:chainId/messages/:messageHash/signatures` | Invalid chainId, messageHash or request body |
+
+Worth noting the two POST routes could already return 422 before this PR — they've had `@Body(new ValidationPipe(...))` all along and declared only `@ApiBadRequestResponse`. So this closes a pre-existing gap as well as the one I introduced.
+
+`yarn test` green (359 files / 6,350).
+
+
+COMMENT
+[vseehausen 2026-09-09T09:48:25Z] @claude review (final)
+
+COMMENT
+[claude 2026-09-09T09:48:41Z] **Claude finished @vseehausen's task in 1m 42s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/34336774751)
+
+---
+### Claude PR Review
+
+- [x] Read changed files (`config-api.service.ts`, `messages.controller.ts`, tests)
+- [x] Check schemas, callers, and controller conventions
+- [x] Analyze against repo guidelines (non-negotiable #1, error funnels, testing rules)
+- [x] Post review
+
+---
+
+Solid fix. The controller now conforms to non-negotiable #1 (every `@Param` piped through a Zod schema), and the datasource guard throws `DataSourceError` **before** the `try` so `HttpErrorFactory.from` doesn't flatten it back to a 503 — which is easy to get wrong and the PR gets right.
+
+A few things worth improving:
+
+**1. Redundant standalone test — `messages.controller.integration.spec.ts:484`**
+The single `it('Returns 422 without any upstream call if chainId is empty', …)` case is fully subsumed by the `it.each([...])` block right below it (row `'GET messages by hash'` runs the same URL and the same assertion). Dropping the standalone version keeps one source of truth for the empty-`chainId` matrix.
+
+[Fix this →](https://claude.ai/code?q=In%20src%2Fmodules%2Fmessages%2Froutes%2Fmessages.controller.integration.spec.ts%20on%20branch%20fix%2Fmessages-empty-chainid-502%2C%20delete%20the%20standalone%20test%20%22Returns%20422%20without%20any%20upstream%20call%20if%20chainId%20is%20empty%22%20for%20GET%20by%20hash%20because%20it%20is%20fully%20covered%20by%20the%20%27GET%20messages%20by%20hash%27%20row%20of%20the%20it.each%20block%20right%20below%20it.&repo=safe-global/safe-client-gateway)
+
+**2. Swagger decorator placement — `messages.controller.ts:151-154` and `:199-202`**
+`@ApiUnprocessableEntityResponse` is placed *after* `@HttpCode(...)` on both POST routes, while the other `@Api*Response` decorators sit above it. Grouping all `@Api*Response` decorators together (and putting `@HttpCode` last, adjacent to the HTTP verb) matches the rest of the controller and keeps the metadata block readable.
+
+**3. Comment leads with mechanism — `config-api.service.ts:75-76`**
+Per the repo's comment guidance, a `Why:` note about the cache-poisoning incident that motivated the guard is the useful bit; the "would hit the collection endpoint" sentence is easy to derive by reading the two lines below. Consider tightening to something like `// Guard against the empty-chainId cache poisoning of the '_chain' key (see PR #3397).` — same information, half the length, points at the incident.
+
+**4. Follow-up scope (as flagged in the PR body)**
+The PR body already notes 41 other bare `@Param('chainId')` sites and that `getChainV2` has the same shape without the guard. Worth turning that into a tracked issue so the "422 here, 404 elsewhere" divergence doesn't linger.
+
+Nothing blocking — nice targeted fix backed by a real error-rate number.
+ • `fix/messages-empty-chainid-502`
+
+COMMENT
+[vseehausen 2026-09-09T10:12:27Z] @claude review again
+
+COMMENT
+[claude 2026-09-09T10:12:41Z] **Claude finished @vseehausen's task in 1m 40s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/34338971012)
+
+---
+### Review
+
+Solid, well-scoped fix. Root cause (`ChainSchema.parse` failing on the collection payload cached under `_chain`) is correctly addressed at both layers: the boundary (`ValidationPipe(ChainIdSchema)` on the four routes) and the datasource guard (`getChain` short-circuit). The 404 escape is deliberately placed outside `try` so `HttpErrorFactory` cannot flatten it to 503 — good.
+
+**Nits / small suggestions**
+
+1. **Cross-route tests live under the wrong describe block.** `messages.controller.integration.spec.ts:487` (the four-route `it.each`) is inside `describe('GET messages by hash')` (line 90) but iterates over all four routes. The non-hex `messageHash` test at line 532 belongs here, but the empty-`chainId` block would read better as its own `describe('Parameter validation', ...)` at the controller level. Purely cosmetic.
+
+2. **Consider mirroring the guard in `getChainV2`.** `config-api.service.ts:153` (`getChainV2`) has the same shape (chainId concatenated into the URL) and the same theoretical cache-poisoning surface (`_chain_${serviceKey}` style). The messages routes don't hit it today, so this is not blocking, but adding a symmetric guard there — or better, hoisting the check into a tiny helper `assertChainId(chainId)` reused by both — would prevent the exact same regression from appearing via another endpoint. Fine as a follow-up.
+
+3. **Guard predicate could be tighter.** `!chainId` catches the observed `''` case but not `'   '` (whitespace-only). URL routing normally strips this, but if you want a defense-in-depth guard consistent with `ChainIdSchema` (numeric-only), `if (!/^\d+$/.test(chainId))` would fully align the two layers. Not a defect — noted for consistency only.
+
+4. **Pre-existing typo (not this PR's).** `chain-id.schema.ts:8` — `"euqal"` → `"equal"`. Worth a one-line follow-up commit while `ChainIdSchema` is on your mind.
+
+**Things that look right**
+
+- Non-negotiable #1 (every `@Param` behind a `ValidationPipe`) is now honoured on all four routes.
+- Non-negotiable #10 (one error funnel per layer): datasource throws `DataSourceError` — correct.
+- Test data comes from builders + faker; no literal fixtures.
+- Assertions on `networkService.get/post` `.not.toHaveBeenCalled()` prove the fix actually short-circuits before the upstream span, matching the trace evidence in the PR body.
+- Swagger `@ApiUnprocessableEntityResponse` added on every route the pipes now enforce — the OpenAPI surface stays truthful.
+- Scope discipline: the PR resists the temptation to pipe the other 41 bare `@Param('chainId')` sites in the same change, and calls it out as follow-up.
+ • Branch: `fix/messages-empty-chainid-502`
+
+COMMENT
+[vseehausen 2026-09-09T12:18:45Z] @claude review
+
+COMMENT
+[claude 2026-09-09T12:19:00Z] **Claude finished @vseehausen's task in 1m 29s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/34350291489)
+
+---
+### Claude PR Review
+
+- [x] Read the PR diff
+- [x] Review controller & pipe changes
+- [x] Review `ConfigApi.getChain` guard
+- [x] Review `ChainIdSchema` change
+- [x] Review test coverage
+- [x] Post final review
+
+---
+
+Overall this is a tight, well-scoped fix. The bug analysis in the description is precise, the controller-level pipes are the correct primary fix, and the datasource-level guard is a reasonable belt-and-braces addition. A few small improvement suggestions:
+
+### Suggestions
+
+**1. `ConfigApi.assertChainId` – comment is a little vague** (`src/datasources/config-api/config-api.service.ts:75`)
+
+The comment says *"An invalid chainId would address another endpoint and cache-poison the chain key."* but the *specific* failure mode is empty (or otherwise non-numeric) → hits the chain **collection** endpoint (`/api/v1/chains/` or `/api/v2/chains/{serviceKey}/`), which returns 200 with a page and then poisons the `_chain` cache key. Making the comment explicit about *why the collection endpoint is the concern* will help the next reader decide whether the same guard is needed on new methods (it wouldn't be for `getGasTokens`, which appends `/gas-tokens/`).
+
+**2. Test coverage for the length branch of `ChainIdSchema`** (`src/datasources/config-api/config-api.service.spec.ts:121`, `:316`)
+
+`it.each(['', faker.string.alpha()])` exercises only the `NumericStringSchema` refinement ("Invalid base-10 numeric string"). Adding a third case — an oversized numeric string (e.g. `'1'.repeat(CHAIN_ID_MAXLENGTH + 1)`) — would cover the `.refine(len <= CHAIN_ID_MAXLENGTH)` branch too and lock in that the guard rejects both failure modes. Minor.
+
+**3. Placement of the private helper** (`src/datasources/config-api/config-api.service.ts:75-80`)
+
+`assertChainId` is defined between `getChains` and `getChain`, which puts a private helper in the middle of the public API surface. Moving it to the bottom of the class (or immediately after the constructor) keeps the file scannable as "constructor → public API → helpers." Style only.
+
+**4. Follow-up already acknowledged, worth surfacing again**
+
+The PR description already flags that ~41 other bare `@Param('chainId')` sites remain, and until they're piped an empty `chainId` will 422 on this controller and 404 elsewhere. Since the datasource guard now hides the underlying 502 for *all* callers, it would be easy to forget to actually pipe those routes. Consider filing a tracking issue (or linking one from Linear) so the inconsistency doesn't stall.
+
+### Nice touches
+
+- Typo fix `euqal` → `equal` in `ChainIdSchema` plus the two callsite test updates — clean and self-contained.
+- Parametrised integration test covering all four routes with valid bodies so the failing pipe is unambiguously `chainId`.
+- Explicit `expect(networkService.get/post).not.toHaveBeenCalled()` — proves the fix at the boundary that mattered in the incident (no upstream call, no cache write).
+- `HexSchema` on `messageHash` catches the analogous silent-503-on-garbage-hash case as a bonus.
+ • Branch: `fix/messages-empty-chainid-502`
+
+COMMENT
+[vseehausen 2026-09-15T10:46:59Z] @claude review again
+
+Fixes applied in 089c4dbe:
+
+- `config-api.service.ts`: `assertChainId` now has a TSDoc comment instead of a `//` block.
+- `space-safes.controller.e2e-spec.ts`: the two `Value must be less than or equal to 78` assertions read the bound from `CHAIN_ID_MAXLENGTH`, and the duplicated `chainIdMinLength = 79` is a single top-level `CHAIN_ID_MAXLENGTH + 1`.
+
+COMMENT
+[claude 2026-09-15T10:47:15Z] **Claude finished @vseehausen's task in 50s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/34959789116)
+
+---
+### Claude PR Re-review
+
+- [x] Read the latest commit (089c4dbe)
+- [x] Verify `config-api.service.ts` TSDoc fix
+- [x] Verify `space-safes.controller.e2e-spec.ts` constant fix
+- [x] Post final review
+
+---
+
+Both fixes look good and land cleanly. Nothing further to flag.
+
+### Verified
+
+- **`config-api.service.ts:217-225`** — `assertChainId` now carries a proper TSDoc block (`/** ... */`) explaining *why* the guard exists (empty/non-numeric chainId hits the collection endpoint and poisons the chain cache key), replacing the earlier `//` comment. Reads as intended.
+- **`space-safes.controller.e2e-spec.ts:24-27`** — `CHAIN_ID_MAXLENGTH` is now imported from `@/routes/common/constants`, the duplicated `chainIdMinLength = 79` literal is replaced by a single top-level `CHAIN_ID_MAXLENGTH + 1`, and both `Value must be less than or equal to 78` assertions are template-literals against `CHAIN_ID_MAXLENGTH`. If the bound ever changes, all three sites move together.
+
+### One tiny nit (optional)
+
+The comment `// Shortest chainId the schema rejects.` on line 26 is accurate but very close to a comment restating the next line — the variable name already conveys intent. Not worth a follow-up.
+
+### Not addressed (by design)
+
+- Piping `chainId` at the controller layer everywhere (WA-3543) — deliberately out of scope; tracked separately per the PR discussion.
+
+LGTM.
+ • Branch: `fix/messages-empty-chainid-502`

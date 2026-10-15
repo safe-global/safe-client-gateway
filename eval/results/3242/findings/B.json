@@ -1,0 +1,20 @@
+{
+  "usd": 0.059073600000000004,
+  "findings": [
+    {
+      "file": "src/domain/common/entities/name.builder.ts",
+      "line": 28,
+      "claim": "The fix that reruns sanitizeName after the 30-character cut is only exercised by the existing random 50-run idempotence test, which is the same test that was flaking, so there is no test that reliably fails if this fix is reverted; the bug only triggers in roughly 1 in 1,400 runs, and a simulated revert only failed the suite about 0.05% of the time, meaning a regression could go unnoticed until CI flakes again."
+    },
+    {
+      "file": "src/modules/chains/feature-flags/feature-flag.service.integration.spec.ts",
+      "line": 23,
+      "claim": "The bulk swap produced `if (app) await app?.close();`, where the optional-chaining `?.` is redundant because the preceding `if (app)` check already guards the call and nothing can change `app` in between."
+    },
+    {
+      "file": "src/modules/messages/routes/messages.controller.integration.spec.ts",
+      "line": 49,
+      "claim": "The bulk swap produced `if (app) { await app?.close(); }`, where the `?.` is redundant given the surrounding `if (app)` check, the same issue as in the feature-flag integration spec."
+    }
+  ]
+}

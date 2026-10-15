@@ -1,0 +1,11 @@
+{
+  "pr": 3420,
+  "reviewSha": "21153d5b21f32a3be4789c989b10ee107deb05f3",
+  "baseSha": "8be0434d001cce9319aa180de606b96be6a81dee",
+  "system": "E",
+  "version": "github",
+  "runner": "collect",
+  "model": "human",
+  "commentSha": "c010c8797764041bfb25767e4ffce596447bf0f8",
+  "output": "src/datasources/billing-api/entities/subscription-update.entity.ts:27\nHaving only 1 prop with comments is strange unless super useful. I would remove it\n\n---\n\nsrc/datasources/billing-api/entities/subscription-update.entity.ts:15\nHaving only 1 prop with comments is strange unless super useful. I would remove it"
+}

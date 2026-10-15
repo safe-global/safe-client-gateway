@@ -1,0 +1,95 @@
+{
+  "usd": 0.0650136,
+  "findings": [
+    {
+      "file": "src/modules/billing/routes/billing.service.ts",
+      "line": 98,
+      "claim": "The GET /v1/billing/sessions/:sessionId route (handler at billing.controller.ts:177) is protected only by AuthGuard, and getCheckoutSession never calls assertSpaceMember the way the other four space methods do, and the route has no spaceId to check against. Any logged-in user who obtains another space's Stripe sessionId can read that session's customer, metadata and amounts, and session ids can end up exposed in browser history, Referer headers and screenshots; the route should move to /spaces/:spaceId/sessions/:sessionId, call assertSpaceMember, and verify that withDashes(session.customer) equals spaceUuid before returning the session."
+    },
+    {
+      "file": "src/modules/billing/routes/billing.controller.ts",
+      "line": 65,
+      "claim": "None of the six new routes (billing.controller.ts:65-182) has an HTTP-level test exercising AuthGuard, the SpaceIdPipe 400 response, the non-member 403, or the returnUrl 400 through a real request; billing.service.spec.ts only calls the service directly, so deleting @UseGuards(AuthGuard) from any route would leave every test green. A billing.controller.e2e-spec.ts modelled on space-safes.controller.e2e-spec.ts should be added, including checkGuardIsApplied for every handler plus 400, 403 and unauthenticated cases."
+    },
+    {
+      "file": "src/datasources/billing-api/billing-api.service.ts",
+      "line": 190,
+      "claim": "paymentLinkId, planId (line 90) and sessionId (line 210) are passed unvalidated into the upstream URL; with the pinned find-my-way@9.6.0, a value like ..%2F..%2F in a path param decodes to ../../ and new URL() then collapses the path onto a different upstream endpoint. These requests carry CGW's own bearer token, and getPlan needs only a login rather than space membership, so these three params should be restricted to ^[A-Za-z0-9_]+$ via ValidationPipe, with the final pathname prefix asserted as a second layer before sending."
+    },
+    {
+      "file": "src/modules/billing/routes/billing.service.spec.ts",
+      "line": 272,
+      "claim": "The assertion expect(result).toEqual(toCheckoutSessionDto(checkoutSession)) builds its expected value using the function under test itself, so a swapped field such as amountTotal versus amountSubtotal would still pass; the test should instead compare against a hand-written literal."
+    },
+    {
+      "file": "src/datasources/billing-api/entities/plan.entity.ts",
+      "line": 24,
+      "claim": "Metadata values are typed as z.string() in plan.entity.ts and subscription.entity.ts (line 43), while PaymentLinkMetadataSchema in the same diff allows null; a null metadata value would turn plan and subscription responses into a 502."
+    },
+    {
+      "file": "src/modules/billing/routes/billing.controller.ts",
+      "line": 69,
+      "claim": "spaceUuid is used as-is without normalization (also at lines 106, 132, 160); an upper-case UUID would pass SpaceIdPipe but create a separate cache key and a separate upstream customer id from the lower-case form. Applying .toLowerCase() would fix this."
+    },
+    {
+      "file": "src/modules/billing/routes/billing.controller.ts",
+      "line": 157,
+      "claim": "This GET endpoint creates a Stripe checkout session on every call and has no RateLimitGuard; since auth relies on a SameSite=Lax cookie, a cross-site link click can trigger session creation."
+    },
+    {
+      "file": "docker-compose.yml",
+      "line": 62,
+      "claim": "env_file: .env is marked required, so without a .env file, docker compose up for web, nginx, or config fails, whereas these worked on the base branch; setting required: false would fix this, though the README does direct users to create a .env file first."
+    },
+    {
+      "file": "src/datasources/billing-api/billing-api.service.spec.ts",
+      "line": 297,
+      "claim": "The objectContaining({headers}) assertion would not detect if the AbortSignal.timeout on the raw fetch call were dropped, weakening the test's ability to catch that regression."
+    },
+    {
+      "file": "src/modules/billing/routes/billing.controller.ts",
+      "line": 158,
+      "claim": "getCheckoutUrl is implemented on a @Get route but actually creates a resource (a Stripe session); it should be renamed to createCheckoutUrl and implemented as @Post to match its side effect."
+    },
+    {
+      "file": "src/modules/billing/routes/billing.controller.ts",
+      "line": 57,
+      "claim": "The same 6-line @ApiParam('spaceId') block is duplicated four times (also at lines 94, 121, 143), which is repeated boilerplate that could be factored out."
+    },
+    {
+      "file": "src/modules/billing/routes/billing.service.ts",
+      "line": 22,
+      "claim": "BillingService injects the IBillingApi datasource directly, but AGENTS.md:17 states that services should call repositories, never datasources, so this violates the project's stated layering convention."
+    },
+    {
+      "file": "src/datasources/billing-api/billing-api.service.ts",
+      "line": 111,
+      "claim": "This code uses a raw fetch call that skips NetworkService's logging, request dedupe and dependency-injection test seam."
+    },
+    {
+      "file": "src/modules/billing/routes/billing.controller.ts",
+      "line": 37,
+      "claim": "The returnUrl parameter is validated with z.url(), which accepts any host and even a javascript: scheme; this could be an open redirect if the upstream service does not allowlist the value."
+    },
+    {
+      "file": "src/modules/billing/routes/billing.service.ts",
+      "line": 73,
+      "claim": "The full general payment-link catalog is merged into every response without paging."
+    },
+    {
+      "file": "src/modules/billing/routes/billing.controller.ts",
+      "line": 68,
+      "claim": "spaceId is bound twice in the same handler, once as a numeric id and once as a UUID, which raises a question of whether both bindings are actually necessary."
+    },
+    {
+      "file": "src/modules/billing/billing.module.ts",
+      "line": 17,
+      "claim": "Three forwardRef wrappers are used (lines 17-19) but they do not appear to break any actual circular dependency."
+    },
+    {
+      "file": "src/modules/billing/routes/billing.controller.ts",
+      "line": 85,
+      "claim": "planId and sessionId parameters (also at line 174) have no @ApiParam decorator, so while Swagger still lists them from @Param(), their description and example are missing."
+    }
+  ]
+}

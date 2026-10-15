@@ -1,0 +1,99 @@
+THREAD src/datasources/billing-api/entities/plan.entity.ts:24 resolved=true
+[tmjssz 2026-07-16T14:48:02Z] Might make sense to re-use `PaymentLinkMetadataSchema` (with a more generic name) here and other places? 
+[falvaradorodriguez 2026-07-17T08:31:33Z] Yep, totally agree, fixed https://github.com/safe-global/safe-client-gateway/pull/3269/changes/4498ea4b161425c980291e01ac0b4c10806187f2
+
+THREAD src/modules/billing/routes/billing.service.ts:110 resolved=true
+[tmjssz 2026-07-16T15:08:32Z] Shouldn't this function also have a `assertSpaceMember` assertion, like the other functions in this file?
+[falvaradorodriguez 2026-07-17T07:22:51Z] Good catch! This was intentional, as explained in the PR description.
+
+This endpoint only receives a sessionId, but assertSpaceMember requires a spaceId. The Checkout Session does not always provide a reliable way to identify the related space. client_reference_id is only set when a new Stripe customer is created. In the usual case, the session only contains Stripe’s customer ID, and billing-system does not provide a way to map it back to our upstreamCustomerId.
+
+Adding a spaceId to the URL would not fully solve the problem either, because a caller could provide any valid spaceId they belong to, even if it is unrelated to the requested session.
+
+THREAD src/datasources/billing-api/billing-api.service.ts:111 resolved=true
+[tmjssz 2026-07-16T15:16:41Z] If we bypass NetworkService I think we also skip things like logging and circuit breaker. Maybe consider extending NetworkService by an option to avoid response.json()
+[falvaradorodriguez 2026-07-17T08:31:53Z] Done here https://github.com/safe-global/safe-client-gateway/pull/3269/changes/1ff34495ebe277858085e6696e87e7fff8da32cd
+
+
+COMMENT
+[yagopv 2026-07-16T07:46:27Z] I believe PR Description is outdated. Space.id should be workspace uuid right?
+
+
+COMMENT
+[falvaradorodriguez 2026-07-16T08:07:42Z] > I believe PR Description is outdated. Space.id should be workspace uuid right?
+
+That's not entirely true. This service doesn't use the concept of a “workspace,” but it does use “space.” The IDs are UUIDs, in fact, it already has a format validator.
+
+I've updated the Swagger, which had an error related to this.
+
+COMMENT
+[yagopv 2026-07-16T09:58:36Z] @claude review
+
+
+COMMENT
+[claude 2026-07-16T09:58:53Z] **Claude finished @yagopv's task in 3m 53s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/29489136221)
+
+---
+### Claude PR Review
+
+- [x] Read PR diff
+- [x] Review billing service & controller
+- [x] Review datasource changes
+- [x] Review entities & tests
+- [x] Post final review
+
+---
+
+Focused review of what could be improved. Nice work on the util, the wire-format transforms, and the unit coverage for `BillingService`.
+
+#### Security
+
+1. **`GET /v1/billing/sessions/:sessionId` has no ownership check** — [`billing.controller.ts:177-182`](src/modules/billing/routes/billing.controller.ts#L177) and [`billing.service.ts:98-102`](src/modules/billing/routes/billing.service.ts#L98). The route is protected by `AuthGuard`, but any authenticated user can fetch any session by ID and receive `amountTotal`, `customer`, `subscription`, `invoice`, and `metadata`. Session IDs are opaque but effectively guessable across users. Consider requiring the caller to be a member of the space referenced by `client_reference_id`/`customer`, or resolving the session through a space-scoped route like `GET /v1/billing/spaces/:spaceId/sessions/:sessionId`.
+
+2. **Open-redirect surface via `returnUrl`** — [`billing.controller.ts:37`](src/modules/billing/routes/billing.controller.ts#L37). `ReturnUrlSchema = z.url()` accepts any well-formed absolute URL, including attacker-controlled origins. Since the value is embedded in Stripe hosted flows and served back to users, it's a classic open-redirect vector. Restrict to an allowlist of trusted origins (e.g. the wallet-web hosts) rather than any URL.
+
+#### Correctness
+
+3. **De-dup precedence in `getSpacePaymentLinks` is inverted** — [`billing.service.ts:69-80`](src/modules/billing/routes/billing.service.ts#L69). `new Map([...spaceLinks, ...generalLinks].map((l) => [l.id, l]))` lets later entries overwrite earlier ones, so a duplicate ID keeps the **general** link and discards the **space-specific** one. If a payment link ever differs (metadata/pricing overrides for the space), the space version is silently dropped. Either put `generalLinks` first, or explicitly prefer the space entry. The existing test only asserts count (identical objects), so it doesn't catch this.
+
+#### Code quality
+
+4. **Double `@Param('spaceId', ...)` is repeated 4×** — [`billing.controller.ts:68-69,105-106,131-132,159-160`](src/modules/billing/routes/billing.controller.ts#L68). Reading the same route param twice — once with `SpaceIdPipe` for the numeric id, once raw for the UUID — is subtle and easy to break on a future rename. A small custom decorator/pipe that returns `{ id, uuid }` (or the whole `Space`) would remove the duplication and shave one DB round-trip. Right now every space-scoped billing call runs `findIdByUuid` (pipe) + `membersRepository.findOne` (assertSpaceMember) before touching the billing API.
+
+5. **No format validation on `planId` / `paymentLinkId` / `sessionId`** — [`billing.controller.ts:89,161,179`](src/modules/billing/routes/billing.controller.ts#L89). These are interpolated verbatim into `${baseUri}/api/v1/…/${id}` in `billing-api.service.ts`. Unvalidated user input in path segments is a mild footgun (encoded slashes, weird chars). Wrapping with a small `ValidationPipe(z.string().regex(...))` would harden the client.
+
+#### Tests
+
+6. **No controller/e2e coverage for the new endpoints** — only `billing.service.spec.ts` was added. Guard application (`AuthGuard` on each new route), 400 on invalid UUID via `SpaceIdPipe`, 401/403 paths, and `returnUrl` validation aren't exercised at HTTP level. The pattern from `billing-webhook-auth.guard.integration.spec.ts` would fit. Adding at least one integration test per new route would catch decorator/guard regressions the unit tests can't.
+
+7. **De-dup test doesn't verify precedence** — [`billing.service.spec.ts:184-199`](src/modules/billing/routes/billing.service.spec.ts#L184). Uses the same object in both lists; would still pass under either precedence. Use two objects with the same `id` and different `active`/`metadata` to lock behavior.
+
+---
+ • Branch: `felipe/pla-1755-cgw-implement-billing-stripe-endpoints-in-client-gateway-cgw`
+
+COMMENT
+[falvaradorodriguez 2026-07-16T13:54:05Z] > 6\. **No controller/e2e coverage for the new endpoints** — only `billing.service.spec.ts` was added. Guard application (`AuthGuard` on each new route), 400 on invalid UUID via `SpaceIdPipe`, 401/403 paths, and `returnUrl` validation aren't exercised at HTTP level. The pattern from `billing-webhook-auth.guard.integration.spec.ts` would fit. Adding at least one integration test per new route would catch decorator/guard regressions the unit tests can't.
+
+Done [here](https://github.com/safe-global/safe-client-gateway/pull/3269/commits/f4a251a8d6f024d167324fd1e4851963682515e3) 
+
+## Changed
+
+**Security: open redirect via `returnUrl`**
+Reused the existing OIDC redirect-validation helper (`resolveAndValidateRedirectUrl`) instead of introducing new billing-specific config, so `returnUrl` on `session-url` and `checkout-url` is now restricted to the same allowed origin as the post-login redirect.
+
+**Correctness: de-dup precedence in `getSpacePaymentLinks`**
+The merge order was inverted. A duplicate id kept the general link and discarded the space-specific one. Swapped the order so the space-specific link wins.
+
+**Code quality: no format validation on `planId`/`paymentLinkId`/`sessionId`**
+Added a regex-based `ValidationPipe` (alphanumeric + `_`/`-`) on all three.
+
+**Tests**
+- Added `billing.controller.e2e-spec.ts`: guard checks on every endpoint, 401/403/400/422 paths, returnUrl allow/deny, and the de-dup fix, all exercised end-to-end over real HTTP.
+- De-dup unit test now uses two distinct objects (same id, different `active`) instead of the same object twice, so it actually locks the precedence behavior in.
+
+           
+## Not changed                                                                                                                                                                                                                                     
+- **Security: session ownership check on `GET /sessions/:sessionId`**                                                                                                                                                                               Investigated in depth, including reading billing-system's source. There's no reliable way to map a session `client_reference_id` is only set by billing-system when the Stripe customer is *newly created*, once a space has an existing customer (the common case), the session carries `customer` (Stripe's own id) instead, and billing-system exposes no reverse lookup from that id to our `upstreamCustomerId`. Left the endpoint as-is (any authenticated caller can fetch it). Same accepted gap as elsewhere in the auth service.                                                                                                                                                                                                                                     
+
+- **Code quality — double `@Param('spaceId', ...)` per endpoint**
+Intentional, not redundant: one resolves the numeric id via `SpaceIdPipe` for the membership check, the other reads the raw UUID for the upstream API call. The pipe only runs once (only one of the two `@Param`s references it), so there's no extra DB round-trip. Matches the existing `space-safes.controller.ts` pattern.

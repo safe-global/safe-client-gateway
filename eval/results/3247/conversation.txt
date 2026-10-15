@@ -1,0 +1,34 @@
+THREAD src/modules/counterfactual-safes/routes/space-counterfactual-safes.service.spec.ts:17 resolved=true
+[LucieFaire 2026-07-13T13:11:10Z] nit: please ask your Claude to memo that there is no need to cast to unknown :)
+[vmosharova 2026-07-13T13:34:45Z] Thanks for pointing it out! Dropped mock casts here: [3f9d775](https://github.com/safe-global/safe-client-gateway/pull/3247/commits/3f9d775f7fc97f17157d7f440481a1a558195984)
+
+THREAD src/modules/counterfactual-safes/routes/space-counterfactual-safes.service.spec.ts:62 resolved=true
+[LucieFaire 2026-07-13T13:11:54Z] a bit weird - why do we cast to `never` ?
+
+THREAD src/modules/counterfactual-safes/routes/space-counterfactual-safes.service.spec.ts:97 resolved=true
+[LucieFaire 2026-07-13T13:12:23Z] looks like there are a bunch of places where it uses `never`, maybe we can avoid it
+
+REVIEW COMMENTED
+[LucieFaire 2026-07-13T13:16:52Z] looks good, just small remarks in tests
+
+COMMENT
+[datadog-official 2026-07-13T12:14:37Z] <a target='_blank' href='https://app.datadoghq.eu/ci/pipeline-executions?query=ci_level%3Ajob+%40ci.status%3Aerror+%40git.commit.sha%3A3b2f51c1d40f70af071a3858bb3e2818f5ec292b&referrer=pr-comment&start=1783942723000'><picture><source media="(prefers-color-scheme: dark)" srcset="https://static.datadoghq.com/static/images/pr_comments/software_delivery/badges_header/pipelines-warning.svg"/><img src="https://static.datadoghq.com/static/images/pr_comments/software_delivery/badges_header/pipelines-warning-light.svg" alt="Pipelines" align="center" /></picture></a>
+
+## ⚠️ Warnings
+
+🚦 **1 Pipeline job failed**
+
+<blockquote>
+<div>
+
+<code> CI | biome </code> &nbsp;&nbsp;<a href="https://app.datadoghq.eu/ci/pipeline-executions?query=ci_level%3Ajob&#43;ci.job_correlation_id%3A524ac2a69a257208&amp;referrer=pr-comment&amp;start=1783942723000" title="View in Datadog"><img src="https://static.datadoghq.com/static/images/pr_comments/software_delivery/datadog_icon.svg" alt="View in Datadog" align="center" /></a> &nbsp; <a href="https://github.com/safe-global/safe-client-gateway/actions/runs/29249077247/job/86812935612" title="View in GitHub Actions"><picture><source media="(prefers-color-scheme: dark)" srcset="https://static.datadoghq.com/static/images/pr_comments/software_delivery/logos/github-logo-dark.svg"/><img src="https://static.datadoghq.com/static/images/pr_comments/software_delivery/logos/github-logo-light.svg" alt="GitHub Actions" align="center" /></picture></a>
+
+</div>
+</blockquote>
+
+Useful? React with 👍 / 👎
+
+<sub>
+This comment will be updated automatically if new data arrives. <br />
+🔗 Commit SHA: 3b2f51c | <a href="https://docs.datadoghq.com/integrations/guide/source-code-integration/#pr-comments">Docs</a> | Give us <a href="https://forms.gle/ys6MDmdQEeC5pkzWA">feedback</a>!
+</sub>

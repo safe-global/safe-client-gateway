@@ -1,0 +1,11 @@
+{
+  "pr": 3269,
+  "reviewSha": "64c48dcb44aea703ebee084b3a116491e6da6cfa",
+  "baseSha": "e5839b43654f7ce55c962cde9d80114bb0608ea6",
+  "system": "E",
+  "version": "github",
+  "runner": "collect",
+  "model": "human",
+  "commentSha": "f4a251a8d6f024d167324fd1e4851963682515e3",
+  "output": "src/datasources/billing-api/entities/plan.entity.ts:24\nMight make sense to re-use `PaymentLinkMetadataSchema` (with a more generic name) here and other places? \n\n---\n\nsrc/modules/billing/routes/billing.service.ts:110\nShouldn't this function also have a `assertSpaceMember` assertion, like the other functions in this file?\n\n---\n\nsrc/datasources/billing-api/billing-api.service.ts:111\nIf we bypass NetworkService I think we also skip things like logging and circuit breaker. Maybe consider extending NetworkService by an option to avoid response.json()\n\n---\n\nI believe PR Description is outdated. Space.id should be workspace uuid right?\r\n"
+}

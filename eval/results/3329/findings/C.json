@@ -1,0 +1,25 @@
+{
+  "usd": 0.060467599999999996,
+  "findings": [
+    {
+      "file": "src/modules/transactions/routes/mappers/common/settings-change.mapper.ts",
+      "line": 187,
+      "claim": "handleSetModuleGuard duplicates handleSetGuard almost verbatim, differing only in class names, param index, and the NULL_ADDRESS branch; extracting a shared helper that takes the Set/Delete entity constructors would remove the duplication and the risk of the two implementations drifting apart in future changes."
+    },
+    {
+      "file": "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts",
+      "line": 1695,
+      "claim": "The new test only covers a 1.5.0 Safe on a chain with 1.5.0 deployments returning MISSING_OWNERSHIP, but there is no test for a 1.5.0 Safe on a chain without 1.5.0 deployments still returning INCOMPATIBLE_SAFE; without that negative-path test, a future regression in checkVersionCompatibility (e.g. short-circuiting to true) could silently mark 1.5.0 as compatible on all chains without being caught."
+    },
+    {
+      "file": ".yarnrc.yml",
+      "line": null,
+      "claim": "Setting npmPreapprovedPackages to a wildcard '@safe-global/*' bypasses the 7-day cooling-off age gate for any package published under that scope, so a compromised @safe-global npm publish token could get a malicious version into CI/prod immediately instead of after a week; narrowing the list to the specific packages actually consumed, or documenting the threat model, would reduce this exposure."
+    },
+    {
+      "file": "src/modules/transactions/routes/mappers/common/settings-change.mapper.ts",
+      "line": null,
+      "claim": "handleSetModuleGuard compares a decoded address string to the all-lowercase NULL_ADDRESS constant using strict inequality, inheriting the same fragility as handleSetGuard: this works only because the zero address has no checksum bits, and the pattern is now duplicated in a second place."
+    }
+  ]
+}

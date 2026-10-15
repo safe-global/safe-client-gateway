@@ -1,0 +1,125 @@
+{
+  "usage": {
+    "usd": 0.49815380000000004,
+    "turns": 7,
+    "wallSeconds": 60
+  },
+  "issues": [
+    {
+      "findings": [
+        "F2",
+        "F7",
+        "F13",
+        "F14"
+      ],
+      "summary": "safeCount Swagger description still says 'Total count of Safes' but now returns distinct-address seat count",
+      "label": "low",
+      "evidence": "src/modules/spaces/routes/entities/get-space.dto.entity.ts:69 still reads 'Total count of Safes in the space', while spaces.service.ts:153 now uses seatsBySpace. The PR description does flag that safeCount changes meaning, but the API docs weren't updated, so this is a documentation mismatch with a real cost for clients.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F1",
+        "F11"
+      ],
+      "summary": "Unbounded payload array; without the guard, over-limit batches pay KMS encryption before the 402",
+      "label": "low",
+      "evidence": "space-safe.dto.entity.ts:14 is `z.array(...).nonempty()` with no max. space-safes.service.ts:52-56 runs encryptRows before the in-transaction check. The early 402 the guard used to give at the limit is gone, but only admins get this far (assertAdmin comes first), and the missing max predates the PR.",
+      "category": "performance"
+    },
+    {
+      "findings": [
+        "F9"
+      ],
+      "summary": "Docstrings say only insertRows reads PreparedSpaceSafe fields; countNewSeats now reads them too",
+      "label": "low",
+      "evidence": "space-safes.repository.interface.ts:14-17 ('nothing else reads its fields') and :29-31 ('Only insertRows reads inside it') are now stale, because countNewSeats (line ~101) reads address/addressIndex.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F4"
+      ],
+      "summary": "countNewSeats accepts any Pick shape; a caller skipping encryptRows could miscount",
+      "label": "nit",
+      "evidence": "The only caller passes encryptRows output (space-safes.service.ts:69). The Pick type carries the same field types either way, so the failure depends on a hypothetical future misuse.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F10"
+      ],
+      "summary": "SEAT_KEY hard-codes the `safe` alias",
+      "label": "nit",
+      "evidence": "space-safes.repository.ts:33. Both queries that use it define the `safe` alias right next to it, and the integration tests would catch a rename. It is a coupling preference with no current defect.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F3"
+      ],
+      "summary": "Set dedup in countNewSeats is unnecessary",
+      "label": "wrong",
+      "evidence": "space-safes.repository.ts countNewSeats does COUNT(*) over unnest($2), and NOT EXISTS only checks against stored rows, not duplicates inside the requested array. Without the Set, a new address sent on two chains in one batch would count as 2 seats, so the Set is required.",
+      "category": "style"
+    },
+    {
+      "findings": [
+        "F6"
+      ],
+      "summary": "Over-quota space rejected for delta:0 add",
+      "label": "wrong",
+      "evidence": "The PR description says explicitly that a Workspace over its quota still gets a 402 for a zero-cost add, that this is unchanged, and that it is out of scope. fitsWithinQuota (`used + delta <= quota`) behaves exactly as documented.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F16"
+      ],
+      "summary": "nestjs-patterns.md guard count should be sixteen",
+      "label": "wrong",
+      "evidence": "The diff changes 'eighteen' to 'seventeen', and `find src -name '*.guard.ts'` returns 17 files, so the new count is right. The claim about guards outside routes/guards/ is about text that predates the PR.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F5",
+        "F17",
+        "F19"
+      ],
+      "summary": "New end-to-end enforcement tests duplicate lower-layer coverage",
+      "label": "nit",
+      "evidence": "The spec header (enforcement.integration.spec.ts:31-37) says this is the only place that tests the real plan together with the real seat rule. The three cases map directly to the ticket's requirements, so the overlap is a matter of preference.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F12",
+        "F15",
+        "F20"
+      ],
+      "summary": "Literal chain IDs in new integration tests",
+      "label": "nit",
+      "evidence": "Lines 250/271/284/290 use '1', '137' and '8453', matching the file's existing safePayload, which already hard-codes '1' (line 166). The tests only need distinct chains, and fixed literals avoid faker collisions, so this is style.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F18"
+      ],
+      "summary": "addSafeUnderQuota helper re-implements service sequence",
+      "label": "nit",
+      "evidence": "The helper predates the PR (the diff only renames countBySpaceId to countSeatsBySpaceId inside it, repository.integration.spec.ts:482). It is a repository-level concurrency test of lockSeats, so reproducing the sequence is deliberate.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F8"
+      ],
+      "summary": "No-index measurement rationale should be preserved in commit/doc",
+      "label": "nit",
+      "evidence": "The reasoning is written out in the PR description, which stays attached to the merged change. The commit body is empty, but keeping the rationale there as well is a preference with little concrete cost.",
+      "category": "docs"
+    }
+  ]
+}

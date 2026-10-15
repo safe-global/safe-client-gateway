@@ -1,0 +1,229 @@
+{
+  "pr": 3437,
+  "title": "feat: sponsor relays against a workspace's plan allowance",
+  "description": "- Closes [PLA-1829](https://linear.app/safe-global/issue/PLA-1829/backend-make-gas-sponsoring-plan-aware)\r\n\r\n## Summary\r\n\r\nMake gas sponsoring plan-aware: a workspace can relay transactions against the sponsored-transaction allowance its plan grants, instead of against the per-Safe daily throttle the chain's own relayer applies. \r\n\r\nThe new route is `POST /v1/spaces/:spaceId/chains/:chainId/relay`, authenticated and scoped to a workspace, and the existing `POST /v1/chains/:chainId/relay` is untouched: the two coexist, and a client that relays without a workspace keeps today's behaviour. The workspace is a path parameter verified against the caller's membership — it cannot be a JWT claim, since a user belongs to several workspaces and a claim would freeze an authorization decision for the token's lifetime.\r\n\r\nIt ships inert. `sponsored_transactions` is seeded with `free_enabled = false` and `free_quota = 0`, so until a plan carries `FEATURE_SPONSORED_TRANSACTIONS` in its upstream metadata every workspace resolves to an allowance of none and the route answers 402. The feature deliberately ignores `ENTITLEMENTS_ENFORCEMENT_STARTS_AT` in both directions: that date exists to grandfather behaviour predating enforcement, and relaying at a workspace's expense has none, so the plan alone decides from day one.\r\n\r\n~~Usage is admitted before the relay and recorded after it, which is the ordering `DailyLimitRelayer` already uses in production: a submission that never happened costs the workspace nothing, at the cost of concurrent callers being admitted against the same count and together overshooting the allowance. One relay spends one unit, a batch included — what the allowance buys is the submission.~~ Admitting and spending are one transaction: consumeQuota increments the counter and admits against what the row then holds, so two relays cannot pass the same count and overshoot the allowance together, and a refusal rolls its own reservation back. Because the spend is committed before the call, the allowance is given back when the provider comes home without a taskId, since nothing then says the transaction was submitted. A read-only check runs earlier, so an exhausted workspace is refused before anything expensive happens. One relay spends one unit, a batch included: what the allowance buys is the submission.\r\n\r\n`SpaceIdPipe`, `@Auth()` and `assertMember` move out of the `routes/` trees they lived in, so reaching them from another module no longer breaks \"Cross-module imports via domain only\". The pipe and the decorator go to `src/routes/common/`, the guide's home for a cross-cutting HTTP-layer artifact — not to `domain/`, since a `PipeTransform` is HTTP-layer by construction for the same reason a guard is; the assertion helpers, which are plain functions over a repository, go to `spaces/domain/`. Twenty-six import lines change and no logic does.\r\n\r\nThree deliberate deviations, none of which this PR is the right place to resolve:\r\n\r\n- `SpaceRelayService` injects `WorkspaceRelayer` rather than a repository. `RelayRepository` exists to choose between relayer strategies; this route has one, so a repository would be a single pass-through method. The relayer sits in the same layer as its three siblings.\r\n- `SpaceRelayModule` lives under `src/modules/relay/` instead of its own top-level module, because the controller reuses `Relay`, `RelayDto` and `RelayDtoSchema` from `relay/routes/entities/` — moving it out would create the cross-module `routes/` imports the first bullet is about.\r\n- `WorkspaceRelayer` does not implement `IRelayer`: that contract is what `RelayManager` dispatches over for a chain-configured relayer, this one is chosen by the route, it needs a workspace, and neither of the contract's other two questions has a caller here.\r\n\r\nTwo behaviours differ from the public route on purpose. A `createSigner` call is relayed there on any chain, because `RelayManager` short-circuits it past the chain's relayer type; here a chain with no relayer configured is refused before the allowance is touched. And `safeTxHash` is forwarded to the provider but not verified against the calldata — only the relay-fee relayer does that, and it is not on this path.\r\n\r\n## Changes\r\n\r\n- `modules/entitlements/domain`: `incrementUsage` on `ISpaceFeatureUsageRepository`, an atomic `INSERT … ON CONFLICT DO UPDATE` keyed on `UQ_SFU_space_feature_period`; `counter` on `FeatureGrant`, naming the row a quota is measured against; `isEventMeteredFeature` and `hasClosedWindow` rules; `recordUsage` on `IEntitlementEnforcement`.\r\n- `modules/entitlements/routes`: `countFeatureUsage` reads `space_feature_usage` for event-metered features and refuses what it cannot count; a grant whose window has closed is recomputed rather than served from cache; a feature with no static limit skips the enforcement-date grace.\r\n- `modules/relay/domain`: `WorkspaceRelayer`; `RelaySimulationService` extracted out of `RelayFeeRelayer` unchanged, split into the call and the verdict so the fee relayer keeps running it in parallel with the fee service; `resolveTarget` on `LimitAddressesMapper`, which keeps what each branch already knew about the Safe instead of discarding it — `getLimitAddresses` is now a thin wrapper and the three existing relayers are untouched.\r\n- `modules/relay/routes`: the space-scoped controller and service, and a DTO derived from `RelayDtoSchema` without `gasLimit`, which only the no-fee campaign's declared ceiling ever reads.\r\n- `modules/spaces/domain`: `existsInSpace`, and the blind-index match it shares with `delete` extracted so the two cannot drift.\r\n- `routes/common`: `SpaceIdPipe` and the `@Auth()` decorator moved here from their modules' `routes/` trees, with `space-assert.utils` moved to `spaces/domain/`; every importer updated.\r\n- `migrations`: seed `sponsored_transactions`, inert.\r\n\r\n",
+  "findings": [
+    {
+      "id": "F1",
+      "file": "src/modules/space-safes/space-safes.repository.ts",
+      "line": 184,
+      "claim": "existsInSpace is only tested with encryption disabled; the encrypted blind-index branch of safeMatch is exercised indirectly through the delete test, but the repository.exists() call itself is untested under encryption, which also happens to be off by default."
+    },
+    {
+      "id": "F2",
+      "file": "src/modules/entitlements/domain/entities/feature-grant.entity.ts",
+      "line": 15,
+      "claim": "FeatureGrantSchema adds a required counter field but the cache key used by getSpaceEntitlementsCacheDir was not changed to reflect the new shape. Grants cached under the old code lack counter, so CachedGrantsSchema.parse throws a ZodError when reading them, causing assertWithinQuota and resolveEntitlements to fail for every workspace with a warm cache for up to one TTL (default 300s) after deploy, including the Safe-seat check on adding Safes."
+    },
+    {
+      "id": "F3",
+      "file": "src/modules/relay/domain/relayers/__tests__/workspace.relayer.spec.ts",
+      "line": 148,
+      "claim": "The test name describes spending a unit based on how much the transaction carries, but the test uses random calldata from relayArgs() rather than a batch or large transfer, so it duplicates the assertion of the preceding test instead of exercising the described behavior."
+    },
+    {
+      "id": "F4",
+      "file": "src/modules/entitlements/routes/entitlements.service.integration.spec.ts",
+      "line": 1183,
+      "claim": "The sponsoredSubscription and sponsoredPlan test helpers are near-identical and could be merged to reduce duplication."
+    },
+    {
+      "id": "F5",
+      "file": "src/modules/entitlements/routes/entitlements.service.ts",
+      "line": 196,
+      "claim": "The recordUsage failure warnings are plain string logs rather than structured logs following the { type: LogType.QuotaExceeded, ... } pattern used elsewhere in the same file, which makes a lost usage unit harder to alert on."
+    },
+    {
+      "id": "F6",
+      "file": "src/modules/relay/space-relay.module.ts",
+      "line": 31,
+      "claim": "AuthModule, SpacesModule, and UsersModule are wrapped in forwardRef even though none of them imports SpaceRelayModule back, so the forwardRef appears unnecessary since forwardRef is only needed for circular module imports. Plain imports would likely work and be clearer, and the module's docstring justifying its separateness does not explain the forwardRef usage."
+    },
+    {
+      "id": "F7",
+      "file": "src/modules/relay/domain/relay-simulation.service.ts",
+      "line": 1,
+      "claim": "Three behaviour-preserving refactors (extracting RelaySimulationService from RelayFeeRelayer, extracting resolveTarget from getLimitAddresses, and extracting safeMatch from addSafes) are bundled into the same large diff as the new route and the entitlements event-metering change, mixing unrelated concerns in one PR and making it harder to review; the refactors should be split into their own preceding commit/PR before the feature changes land."
+    },
+    {
+      "id": "F8",
+      "file": "src/modules/entitlements/domain/entitlements.constants.ts",
+      "line": 42,
+      "claim": "This function returns a plain boolean instead of a type predicate like the similar isStockMeteredFeature above; it should be made a real type predicate for consistency even though it causes no bug today since eventPeriodStart accepts a plain Feature."
+    },
+    {
+      "id": "F9",
+      "file": "src/modules/space-safes/space-safes.repository.interface.ts",
+      "line": 70,
+      "claim": "The new doc comment uses a two-line format that no other block in the same file uses, though some older files in the codebase do use that format and no rule or tool enforces a single convention."
+    },
+    {
+      "id": "F10",
+      "file": "src/modules/relay/routes/space-relay.controller.ts",
+      "line": 98,
+      "claim": "The repeated set of exception filters applied here could be extracted into a shared decorator/common location instead of being duplicated."
+    },
+    {
+      "id": "F11",
+      "file": "src/modules/entitlements/domain/space-feature-usage.repository.ts",
+      "line": 83,
+      "claim": "Concurrent callers can be admitted against the same usage count and together overshoot the allowance, as documented in the PR description, but the post-increment 'used' value returned by incrementUsage is never consumed to detect this. Nothing compares this value against the grant quota to log an overshoot, leaving the team blind to how often this race condition occurs in production."
+    },
+    {
+      "id": "F12",
+      "file": "src/modules/entitlements/routes/workspace.relayer.ts",
+      "line": 114,
+      "claim": "A failed usage write is only logged, so that relay is never counted against the quota, though this matches the behavior of DailyLimitRelayer and is already covered by a test."
+    },
+    {
+      "id": "F13",
+      "file": "src/modules/entitlements/routes/entitlements.service.ts",
+      "line": 189,
+      "claim": "The quota check and the usage record each resolve the grant separately, so a relay that spans the moment a billing period rolls over is admitted against the old period but recorded into the new one, an off-by-at-most-one-unit discrepancy that makes the new period stricter rather than looser."
+    },
+    {
+      "id": "F14",
+      "file": "src/modules/entitlements/routes/entitlements.service.ts",
+      "line": 291,
+      "claim": "countFeatureUsage constructs a synthetic object (const feature = { key: args.featureKey }) purely to satisfy a type guard, when the guard could instead accept a plain key such as isStockMeteredFeatureKey and avoid the extra object."
+    },
+    {
+      "id": "F15",
+      "file": "src/modules/space-relay/routes/space-relay.controller.ts",
+      "line": 25,
+      "claim": "The controller and service import auth.decorator, space-id.pipe, and space-assert.utils from other modules' routes/ folders, which is a documented anti-example of cross-module imports; two of the three imports have existing domain-level alternatives (ISpacesRepository.findIdByUuid and IMembersRepository.findOne) that could be used instead."
+    },
+    {
+      "id": "F16",
+      "file": "src/modules/relay/routes/space-relay.controller.ts",
+      "line": 76,
+      "claim": "The Swagger documentation for the endpoint does not describe the 501 response that RelayerTypeNotImplementedError produces when a chain's relayer type is GTF, even though this is a deliberate thrown error covered by a unit test."
+    },
+    {
+      "id": "F17",
+      "file": "src/modules/entitlements/routes/entitlements.service.ts",
+      "line": 194,
+      "claim": "recordUsage silently warns and returns when the cached grant has counter: null for a feature key that the type excludes from being null, meaning a stale or broken cache entry disables usage recording without failing loudly. It should throw instead of returning quietly, since the caller in WorkspaceRelayer already wraps the call in error handling so surfacing the failure would not break the relay."
+    },
+    {
+      "id": "F18",
+      "file": null,
+      "line": null,
+      "claim": "The PR bundles three separable pieces of work together: event-metered usage counting in entitlements, behaviour-preserving refactors (extracting RelaySimulationService and adding resolveTarget to LimitAddressesMapper), and the new endpoint; splitting the refactor and entitlements changes into their own PR ahead of the new endpoint would make review easier."
+    },
+    {
+      "id": "F19",
+      "file": "src/modules/relay/domain/relayers/workspace.relayer.ts",
+      "line": 98,
+      "claim": "The current approach risks a race condition and could allow extra sponsored transactions; incrementing the counter first and discounting it if the relay fails would be a safer alternative."
+    },
+    {
+      "id": "F20",
+      "file": "src/modules/relay/routes/space-relay.controller.ts",
+      "line": 88,
+      "claim": "The handler can return a 501 response (RelayerTypeNotImplementedError on a GTF chain, mapped by RelayerNotAvailableExceptionFilter) but no Swagger response decorator documents this outcome, leaving the API documentation incomplete."
+    },
+    {
+      "id": "F21",
+      "file": "src/modules/entitlements/domain/entities/feature-grant.entity.ts",
+      "line": 15,
+      "claim": "The new counter field is defined as nullable but not optional, so entitlement entries already cached from before this change have no counter key at all, which causes CachedGrantsSchema.parse to throw with no catch, and the global Zod filter turns that into a 502 response for any workspace hitting a quota-gated action while the stale cache entry is still present. Because the cache key is unchanged, old entries also lack a sponsored_transactions entry, which would fail closed to a quota of 0 even if counter were made optional, so the cache key needs to be versioned rather than just loosening the schema."
+    },
+    {
+      "id": "F22",
+      "file": "src/modules/entitlements/routes/workspace.relayer.ts",
+      "line": 83,
+      "claim": "The ownership check and the quota check run sequentially rather than in parallel; running them in parallel would break an existing test that asserts no quota check happens for a Safe the workspace doesn't hold."
+    },
+    {
+      "id": "F23",
+      "file": "src/modules/relay/routes/space-relay.controller.integration.spec.ts",
+      "line": 303,
+      "claim": "Test data uses literal hardcoded values such as version: '1.3.0' and gasLimit: '100000' instead of generated values like faker.system.semver() and faker.string.numeric(), reducing test data variability without justification (also at line 394)."
+    },
+    {
+      "id": "F24",
+      "file": "src/modules/relay/domain/relayers/workspace.relayer.ts",
+      "line": 113,
+      "claim": "Errors from recordUsage are caught and only logged at warn level, so a persistent DB fault would let every workspace relay make unlimited transactions at the company's expense with only warn-level log noise as a signal. The log should use error level or a dedicated LogType (e.g. LogType.QuotaRecordFailed), consistent with how LogType.QuotaExceeded is used elsewhere, or should emit a metric counter so the failure is alertable and graphable rather than just log-searchable."
+    },
+    {
+      "id": "F25",
+      "file": "src/modules/entitlements/routes/workspace.relayer.ts",
+      "line": 75,
+      "claim": "This code restates RelayManager's logic for which relayer types are supported, but the fallback differs: RelayManager blocks any relayer type it doesn't recognize, while this code allows it, and only a change to the RelayerType enum could exploit that gap."
+    },
+    {
+      "id": "F26",
+      "file": "src/modules/relay/domain/relayers/__tests__/workspace.relayer.spec.ts",
+      "line": 350,
+      "claim": "The test uses a bare rejects.toThrow() which passes for any rejection, including an unrelated TypeError thrown from the line under test, so it doesn't actually verify that the expected error occurred; it should assert against a specific error instance instead, consistent with sibling test cases in the same file."
+    },
+    {
+      "id": "F27",
+      "file": "src/modules/relay/routes/space-relay.service.ts",
+      "line": 9,
+      "claim": "assertMember is imported from spaces/routes/utils rather than from spaces/domain, which is the intended module boundary; the same pattern already exists in counterfactual-safes, entitlements, and billing, indicating pre-existing drift that could spread further if not addressed."
+    },
+    {
+      "id": "F28",
+      "file": "src/modules/relay/domain/relayers/workspace.relayer.ts",
+      "line": 148,
+      "claim": "The relayer name is passed to assertRelayable as the hardcoded string literal 'workspace' rather than a symbol-level constant colocated with SIMULATED_RELAYERS in relay-simulation.service.ts, so a typo would still compile because 'workspace' happens to be a valid member of the SimulatedRelayer type."
+    },
+    {
+      "id": "F29",
+      "file": "src/modules/relay/domain/relayers/workspace.relayer.ts",
+      "line": 121,
+      "claim": "The warning logged when recording usage fails is an unstructured plain string, unlike the structured LogType.TxRelayEligibility logging used elsewhere for this relayer's decisions, making it harder to search for cases where a sponsored transaction went unrecorded and billing was lost."
+    },
+    {
+      "id": "F30",
+      "file": "src/modules/entitlements/routes/entitlements.service.ts",
+      "line": 338,
+      "claim": "No test covers the new hasClosedWindow check that skips the cache once a grant's window has closed: no spec imports it, no test pre-seeds a cached grant with a past resetsAt, and no test uses fake timers, so deleting that branch would not fail the existing suite."
+    },
+    {
+      "id": "F31",
+      "file": "src/modules/relay/routes/space-relay.service.ts",
+      "line": 9,
+      "claim": "assertMember is imported directly from another module's routes tree instead of through its domain layer, violating the cross-module import rule; it should live under the spaces module's domain directory."
+    },
+    {
+      "id": "F32",
+      "file": "src/modules/relay/routes/space-relay.controller.ts",
+      "line": 44,
+      "claim": "The new code imports SpaceIdPipe, the Auth decorator, and assertMember directly from other modules' routes/ trees rather than through their domain layers, but the module-structure rule's only exception for such cross-module reach is for guards, so a pipe, a decorator, and a route utility are being imported in violation of that rule."
+    },
+    {
+      "id": "F33",
+      "file": "src/modules/entitlements/routes/workspace.relayer.ts",
+      "line": 86,
+      "claim": "The allowance is checked, then the paid relay is executed, then usage is recorded, with no lock across the three steps, so a member issuing concurrent requests can exceed the quota; the overshoot only affects the relay budget of that member's own workspace."
+    },
+    {
+      "id": "F34",
+      "file": "src/modules/entitlements/routes/entitlements.service.ts",
+      "line": 338,
+      "claim": "For a paid plan, resetsAt equals currentPeriodEnd, which only moves via a webhook; while a renewal webhook lags, every quota check misses the cache, causing three Postgres reads and a rewrite of the same stale blob each time, and one stale grant discards the cache for the entire space, including safe_seats."
+    },
+    {
+      "id": "F35",
+      "file": "src/modules/relay/routes/space-relay.controller.ts",
+      "line": 25,
+      "claim": "The Auth decorator is imported directly from another module's routes tree instead of from a shared, cross-cutting location, violating the cross-module import rule."
+    },
+    {
+      "id": "F36",
+      "file": "src/modules/relay/domain/relayers/__tests__/workspace.relayer.spec.ts",
+      "line": 350,
+      "claim": "rejects.toThrow() is called with no argument, so the test passes regardless of which error is thrown instead of asserting the specific rejection the test sets up."
+    },
+    {
+      "id": "F37",
+      "file": "src/modules/relay/domain/relayers/workspace.relayer.ts",
+      "line": 102,
+      "claim": "The last three awaited calls appear to have no dependencies between them and could be run concurrently with Promise.all instead of sequentially."
+    }
+  ]
+}

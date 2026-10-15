@@ -1,0 +1,10 @@
+{
+  "usd": 0.0481976,
+  "findings": [
+    {
+      "file": ".github/workflows/linear-release.yml",
+      "line": 24,
+      "claim": "The necessity of this line or configuration is unclear and should be justified or explained."
+    }
+  ]
+}

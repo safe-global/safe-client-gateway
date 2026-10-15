@@ -1,0 +1,20 @@
+{
+  "usd": 0.041836,
+  "findings": [
+    {
+      "file": "src/modules/counterfactual-safes/routes/space-counterfactual-safes.service.spec.ts",
+      "line": 17,
+      "claim": "A value is cast to unknown unnecessarily, and this cast should be removed."
+    },
+    {
+      "file": "src/modules/counterfactual-safes/routes/space-counterfactual-safes.service.spec.ts",
+      "line": 62,
+      "claim": "A value is cast to never for an unclear reason, which is confusing and should be justified or removed."
+    },
+    {
+      "file": "src/modules/counterfactual-safes/routes/space-counterfactual-safes.service.spec.ts",
+      "line": 97,
+      "claim": "The never cast is used in multiple places throughout the test file, and this repeated pattern should be avoided."
+    }
+  ]
+}

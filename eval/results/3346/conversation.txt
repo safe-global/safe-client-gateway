@@ -1,0 +1,434 @@
+THREAD migrations/1787213793533-add-space-safes-space-id-index.ts:18 resolved=true
+[moisses89 2026-08-20T08:39:58Z] WITHOUT an index on space_id:
+```
+  Buffers: shared hit=267
+  ->  Seq Scan on space_safes  (cost=0.00..517.00 rows=10 width=0) (actual time=0.002..0.703 rows=10 loops=1)
+        Buffers: shared hit=267
+  Buffers: shared hit=4
+```
+
+WITH an index on space_id:
+```
+  Buffers: shared hit=10 read=2
+  ->  Bitmap Heap Scan on space_safes  (cost=4.37..38.68 rows=10 width=0) (actual time=0.051..0.061 rows=10 loops=1)
+        Buffers: shared hit=10 read=2
+        ->  Bitmap Index Scan on bench_idx_ss_space_id  (cost=0.00..4.36 rows=10 width=0) (actual time=0.046..0.047 rows=10 loops=1)
+```
+
+THREAD src/modules/entitlements/domain/space-feature-usage.repository.interface.ts:10 resolved=true
+[LucieFaire 2026-08-21T10:18:14Z] why do you need spaceId if you omit it everywhere anyway?
+
+
+THREAD src/modules/entitlements/routes/entitlements.controller.integration.spec.ts:223 resolved=true
+[LucieFaire 2026-08-21T10:23:36Z] nit: can also add a test for unauth case
+```
+    it('returns 403 without an access token', async () => {
+      const { spaceId } = await createSpaceForSigner();
+
+      await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}/entitlements`)
+        .expect(403);
+    });
+```
+
+THREAD src/modules/entitlements/routes/entitlements.controller.integration.spec.ts:67 resolved=true
+[LucieFaire 2026-08-21T10:28:46Z] instead of creating it manually, you can use a test helper:
+```
+  let testDatabase: postgres.Sql;
+  const testDbFactory = new TestDbFactory();
+```
+
+Then line:
+```
+await adminQuery(`CREATE DATABASE ${testDatabaseName}`);
+```
+becomes
+```
+testDatabase = await testDbFactory.createTestDatabase(testDatabaseName);
+```
+
+and
+```
+await adminQuery(
+      `DROP DATABASE IF EXISTS ${testDatabaseName} WITH (FORCE)`,
+    );
+```
+becomes
+```
+await testDbFactory.destroyTestDatabase(testDatabase);
+```
+
+
+THREAD src/modules/entitlements/routes/subscription-sync.service.integration.spec.ts:81 resolved=true
+[LucieFaire 2026-08-21T10:29:19Z] same here, please use `TestDbFactory()`
+
+THREAD src/modules/entitlements/routes/entitlements.service.ts:382 resolved=true
+[LucieFaire 2026-08-21T11:28:14Z] nit: think the switch/case could also work here, and it would give a compile-time check, unless u want a diff type to silently fail through
+[LucieFaire 2026-08-21T11:51:40Z] as i see it was already addressed :)
+[moisses89 2026-08-21T12:01:43Z] yeah, it came from the Claude review triggered by Pooya 
+
+THREAD src/modules/entitlements/routes/entitlements.service.integration.spec.ts:369 resolved=true
+[LucieFaire 2026-08-21T11:41:44Z] why do we need this function if there is already a `materializedSubscriptionBuilder` ?
+
+THREAD src/modules/entitlements/routes/entitlements.service.integration.spec.ts:231 resolved=true
+[LucieFaire 2026-08-21T11:48:50Z] instead of this chain you could create a helper:
+```
+async function deleteAll<T extends ObjectLiteral>(entity: {
+    new (): T;
+  }): Promise<void> {
+    await dataSource
+      .getRepository(entity)
+      .createQueryBuilder()
+      .delete()
+      .execute();
+  }
+
+```
+
+and then you afterAll will be much leaner:
+```
+afterEach(async () => {
+    // Delete in dependency order; `features` last, as the usage and
+    // entitlement rows reference it with ON DELETE RESTRICT.
+    await deleteAll(SpaceFeatureUsage);
+    await deleteAll(SubscriptionEntitlement);
+    await deleteAll(SpaceSubscription);
+    await deleteAll(Member);
+    await deleteAll(SpaceSafe);
+    await deleteAll(Space);
+    await deleteAll(Wallet);
+    await deleteAll(User);
+    await deleteAll(Feature);
+  });
+```
+
+and L208 then can be just
+```
+await deleteAll(Feature);
+```
+
+THREAD src/modules/entitlements/routes/entitlements.service.integration.spec.ts:352 resolved=true
+[LucieFaire 2026-08-21T11:49:46Z] so far you only use it to create an active member, unless there is a plan to extend this test suite in the near future, we can simplify:
+```
+async function addActiveMember(spaceId: number): Promise<number> {
+    const user = await dataSource.getRepository(User).insert({
+      status: 'ACTIVE',
+    });
+    const userId = user.generatedMaps[0].id as number;
+    await dataSource.getRepository(Member).insert({
+      user: { id: userId },
+      space: { id: spaceId },
+      name: faker.person.firstName(),
+      role: 'MEMBER',
+      status: 'ACTIVE',
+      inviteExpiresAt: null,
+    });
+    return userId;
+  }
+```
+
+REVIEW DISMISSED
+[falvaradorodriguez 2026-08-20T15:18:39Z] LGTM!
+
+COMMENT
+[moisses89 2026-08-20T12:19:34Z] @claude arch-review
+
+COMMENT
+[claude 2026-08-20T12:25:47Z] ## Architecture check
+
+Guides applied: `module-structure.md`, `api-dtos-and-validation.md`, `security.md`, `nestjs-patterns.md`, `database-and-migrations.md`, `caching-and-performance.md`, `testing.md`, `configuration-and-flags.md`, `best-practices.md`, `commits-and-prs.md`, `ARCHITECTURE.md` (+ `remarks.md`).
+
+`src/modules/entitlements/routes/entitlements.controller.ts:18` — Cross-module imports via domain only: imports `@/modules/spaces/routes/pipes/space-id.pipe`, the exact import the guide names as its anti-example ("Neither is precedent — do not imitate").
+`src/modules/entitlements/routes/entitlements.service.ts:37` — Cross-module imports via domain only: imports `assertMember` from `@/modules/spaces/routes/utils/space-assert.utils`, reaching into another module past its `domain/` while the service already injects `IMembersRepository`.
+`src/modules/entitlements/entitlements-routes.module.ts:26` — No new deviations from the canonical module structure: a second Nest module at the module root; the skeleton puts the HTTP surface under `routes/` (repo precedent: `src/modules/delegate/routes/delegates.module.ts`), as this module already does for `domain/entitlements-repository.module.ts`.
+`src/modules/entitlements/routes/entitlements.service.integration.spec.ts:292` — No scope creep: `createSpace()` swaps `nameBuilder()` for `faker.company.name()`, an unexplained drive-by change away from the shared builder unrelated to the entitlements work.
+
+**Verdict:** ❌ 4 finding(s)
+
+COMMENT
+[moisses89 2026-08-20T13:50:06Z] > ## Architecture check
+> Guides applied: `module-structure.md`, `api-dtos-and-validation.md`, `security.md`, `nestjs-patterns.md`, `database-and-migrations.md`, `caching-and-performance.md`, `testing.md`, `configuration-and-flags.md`, `best-practices.md`, `commits-and-prs.md`, `ARCHITECTURE.md` (+ `remarks.md`).
+> 
+> `src/modules/entitlements/routes/entitlements.controller.ts:18` — Cross-module imports via domain only: imports `@/modules/spaces/routes/pipes/space-id.pipe`, the exact import the guide names as its anti-example ("Neither is precedent — do not imitate"). `src/modules/entitlements/routes/entitlements.service.ts:37` — Cross-module imports via domain only: imports `assertMember` from `@/modules/spaces/routes/utils/space-assert.utils`, reaching into another module past its `domain/` while the service already injects `IMembersRepository`. `src/modules/entitlements/entitlements-routes.module.ts:26` — No new deviations from the canonical module structure: a second Nest module at the module root; the skeleton puts the HTTP surface under `routes/` (repo precedent: `src/modules/delegate/routes/delegates.module.ts`), as this module already does for `domain/entitlements-repository.module.ts`. `src/modules/entitlements/routes/entitlements.service.integration.spec.ts:292` — No scope creep: `createSpace()` swaps `nameBuilder()` for `faker.company.name()`, an unexplained drive-by change away from the shared builder unrelated to the entitlements work.
+> 
+> **Verdict:** ❌ 4 finding(s)
+
+**entitlements.controller.ts:18**
+Pipes live in routes/ by definition. Ten controllers import this pipe, sixteen import AuthGuard, the guide needs the exception.
+
+**entitlements.service.ts:37**
+Eight files across four modules import it. It's a domain rule; moving it to spaces/domain fixes all four, would need a dedicated PR.
+
+**entitlements-routes.module.ts:26**
+Right, moved to routes/entitlements-routes.module.ts 
+
+**entitlements.service.integration.spec.ts:292**
+Worse than drive-by: 7.7% of faker company names exceed the VARCHAR(30) column, so it flaked by seed. Reverted to nameBuilder().
+
+COMMENT
+[PooyaRaki 2026-08-20T15:57:31Z] @claude review
+
+COMMENT
+[claude 2026-08-20T15:57:47Z] **Claude finished @PooyaRaki's task in 2m 43s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/32389223516)
+
+---
+### Code Review
+
+Overall: solid work — the type-discriminated response, the three-migration split, the flag-gated route module and the exhaustive `Record<StockMeteredFeature, …>` are all careful design. A few things worth tightening:
+
+#### `FeatureKey` doesn't narrow to the published keys
+`src/modules/entitlements/domain/entities/feature.entity.ts:12`
+
+```typescript
+export const FEATURE_KEYS = ['safe_seats'] as const;
+export type FeatureKey = string;
+```
+
+`FeatureKey = string` accepts anything, so `DTO.feature: FeatureKey` no longer enforces membership in `FEATURE_KEYS` — the OpenAPI `enum: FEATURE_KEYS` becomes a docs-only contract, drift only surfaces at the runtime integration test. Consider `export type FeatureKey = (typeof FEATURE_KEYS)[number];` so the compiler pins it too.
+
+#### `resolveFeature` silently falls through to `Metered`
+`src/modules/entitlements/routes/entitlements.service.ts:366`
+
+```typescript
+if (feature.type === FeatureType.Binary) { … }
+if (feature.type === FeatureType.Value) { … }
+return { …, type: FeatureType.Metered, … };
+```
+
+If a fourth `FeatureType` is ever added, an unknown type gets served as `Metered` with `resetsAt`/`quota`/`used` — no compile error. An exhaustive `switch` with a `never` assertion in the default would catch it at build time, matching the discipline used for `stockCounters`.
+
+#### `resolveEntitlements` fans out three reads before the existence check settles
+`src/modules/entitlements/routes/entitlements.service.ts:77`
+
+```typescript
+const [spaceCreatedAt, features, activeSubscription] = await Promise.all([
+  this.getSpaceCreatedAtOrFail(spaceId),
+  this.featuresRepository.getFeatures(),
+  this.subscriptionsRepository.getActiveSubscriptionBySpaceId(spaceId),
+]);
+```
+
+For a non-existent space (or the arch-review's noted case where `assertMember` throws first via the HTTP path but this method is also reachable directly), the other two queries still complete before the rejection surfaces. Not a hot-path concern with the new index, just wasted work — worth a quick order-of-ops pass if you touch the method again.
+
+#### Migration is idempotent on `up` but not `down`
+`migrations/1787148838500-seed-features.ts:12`
+
+The `up` uses `ON CONFLICT ("key") DO NOTHING` which is nice for re-runs, but `down` deletes rows and their dependents even if the feature was inserted by something else in the meantime. Low practical risk given `ON DELETE RESTRICT`, but it's worth noting the `down()` is destructive rather than a strict inverse.
+
+#### Minor: `FEATURE_METADATA_PREFIX` doc says `SECURITY_HUB` / `SPONSORED_TRANSACTIONS` / `SWAP_FEE_TIER`
+`src/modules/entitlements/domain/entitlements.constants.ts:70`
+
+Comment references keys that aren't in `FEATURE_KEYS` yet (`safe_seats` only). Either the doc is aspirational (fine) or catalog keys are lagging the design — worth a short note in the comment if the former.
+
+---
+
+Nothing blocking. Points 1 and 2 are the ones I'd address before merge; the rest are nits.
+ · Branch: `feat-add-entitlements-endpoint`
+
+COMMENT
+[moisses89 2026-08-21T11:40:41Z] > **Claude finished Pooya Raki (@PooyaRaki)'s task in 2m 43s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/32389223516)
+> 
+> ### Code Review
+> Overall: solid work — the type-discriminated response, the three-migration split, the flag-gated route module and the exhaustive `Record<StockMeteredFeature, …>` are all careful design. A few things worth tightening:
+> 
+> #### `FeatureKey` doesn't narrow to the published keys
+> `src/modules/entitlements/domain/entities/feature.entity.ts:12`
+> 
+> ```ts
+> export const FEATURE_KEYS = ['safe_seats'] as const;
+> export type FeatureKey = string;
+> ```
+> 
+> `FeatureKey = string` accepts anything, so `DTO.feature: FeatureKey` no longer enforces membership in `FEATURE_KEYS` — the OpenAPI `enum: FEATURE_KEYS` becomes a docs-only contract, drift only surfaces at the runtime integration test. Consider `export type FeatureKey = (typeof FEATURE_KEYS)[number];` so the compiler pins it too.
+> 
+> #### `resolveFeature` silently falls through to `Metered`
+> `src/modules/entitlements/routes/entitlements.service.ts:366`
+> 
+> ```ts
+> if (feature.type === FeatureType.Binary) { … }
+> if (feature.type === FeatureType.Value) { … }
+> return { …, type: FeatureType.Metered, … };
+> ```
+> 
+> If a fourth `FeatureType` is ever added, an unknown type gets served as `Metered` with `resetsAt`/`quota`/`used` — no compile error. An exhaustive `switch` with a `never` assertion in the default would catch it at build time, matching the discipline used for `stockCounters`.
+> 
+> #### `resolveEntitlements` fans out three reads before the existence check settles
+> `src/modules/entitlements/routes/entitlements.service.ts:77`
+> 
+> ```ts
+> const [spaceCreatedAt, features, activeSubscription] = await Promise.all([
+>   this.getSpaceCreatedAtOrFail(spaceId),
+>   this.featuresRepository.getFeatures(),
+>   this.subscriptionsRepository.getActiveSubscriptionBySpaceId(spaceId),
+> ]);
+> ```
+> 
+> For a non-existent space (or the arch-review's noted case where `assertMember` throws first via the HTTP path but this method is also reachable directly), the other two queries still complete before the rejection surfaces. Not a hot-path concern with the new index, just wasted work — worth a quick order-of-ops pass if you touch the method again.
+> 
+> #### Migration is idempotent on `up` but not `down`
+> `migrations/1787148838500-seed-features.ts:12`
+> 
+> The `up` uses `ON CONFLICT ("key") DO NOTHING` which is nice for re-runs, but `down` deletes rows and their dependents even if the feature was inserted by something else in the meantime. Low practical risk given `ON DELETE RESTRICT`, but it's worth noting the `down()` is destructive rather than a strict inverse.
+> 
+> #### Minor: `FEATURE_METADATA_PREFIX` doc says `SECURITY_HUB` / `SPONSORED_TRANSACTIONS` / `SWAP_FEE_TIER`
+> `src/modules/entitlements/domain/entitlements.constants.ts:70`
+> 
+> Comment references keys that aren't in `FEATURE_KEYS` yet (`safe_seats` only). Either the doc is aspirational (fine) or catalog keys are lagging the design — worth a short note in the comment if the former.
+> 
+> Nothing blocking. Points 1 and 2 are the ones I'd address before merge; the rest are nits. · Branch: `feat-add-entitlements-endpoint`
+
+#### ✅ `FeatureKey` doesn't narrow to the published keys
+Closed. `FeatureKey` is the union now; the data side (`features.key`, metadata maps) stays `string`, narrowed in the response mapper.
+
+#### ✅ `resolveFeature` silently falls through to Metered
+Fixed: exhaustive `switch` with a `never` default. Verified — adding a fourth `FeatureType` now fails the build.
+
+#### ✅ Minor: `FEATURE_METADATA_PREFIX` doc
+Fixed, and it was wrong not aspirational: the plan sends `MEMBERS`, `SHARED_ADDRESS_BOOK` and `COPILOT_SCANS`, not `SPONSORED_TRANSACTIONS` or `SWAP_FEE_TIER`.
+
+#### ❌ `resolveEntitlements` fans out three reads
+Left as is: checking existence first adds a round trip to the happy path, which is the common one.
+
+#### ❌ Migration is idempotent on up but not down
+Intentional: a feature that no longer exists has no entitlements. Documented in `down()`; verified it clears dependents first.
+
+
+COMMENT
+[moisses89 2026-08-21T11:42:46Z] @claude review
+
+COMMENT
+[claude 2026-08-21T11:43:00Z] **Claude finished @moisses89's task in 2m 19s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/32478461442)
+
+---
+### Code Review
+
+Overall the second pass looks tighter — the `FeatureKey` narrowing, the exhaustive `switch`, the doc-comment fix and the `nameBuilder()` revert all landed cleanly. A few smaller things worth considering:
+
+#### Redundant null-check after filtering
+`src/modules/entitlements/routes/entitlements.service.ts:302`
+
+```typescript
+const withPackage = args.subscriptions.filter(
+  (subscription) => subscription.entitlements !== null,
+);
+// …
+if (activeSubscriptionId !== null && packaged?.entitlements != null) {
+```
+
+`packaged` was pulled from `withPackage`, which already filtered `entitlements !== null`. The second `!= null` guard is dead — `packaged.entitlements` is guaranteed non-null when `packaged` is defined. Not a bug, just noise you could drop for clarity.
+
+#### O(features × purchased) lookup in the resolver
+`src/modules/entitlements/routes/entitlements.service.ts:367`
+
+```typescript
+purchased: activeSubscription?.entitlements?.find(
+  (entitlement) => entitlement.feature.id === feature.id,
+),
+```
+
+Called inside a `features.map(...)`, so each feature scans the full purchased list — `O(N·M)`. With today's tiny catalog it's noise, but building `new Map(activeSubscription?.entitlements?.map(e => [e.feature.id, e]))` once outside the loop makes it `O(N + M)` and reads as clearly as the current code.
+
+#### `getSpaceCreatedAtOrFail` is unreachable via HTTP
+`src/modules/entitlements/routes/entitlements.service.ts:526`
+
+Through `getEntitlements`, `assertMember` runs first — a deleted or non-existent space cannot have members, so it returns 403 before `resolveEntitlements` is called. The `NotFoundException` inside `getSpaceCreatedAtOrFail` only fires on races (space deleted between `assertMember` and here) or direct callers of `resolveEntitlements`. Fine to keep, but worth a short note in the comment so a future reader doesn't wonder why HTTP tests never exercise it.
+
+#### `toEntitlementsResponse` uses `safeParse` per entitlement in a loop
+`src/modules/entitlements/routes/entitlements.service.ts:494`
+
+```typescript
+const feature = FeatureKeySchema.safeParse(entitlement.feature);
+```
+
+For each entitlement it constructs a zod result to test membership in a `readonly` array. A hoisted `new Set(FEATURE_KEYS)` and a `.has()` check would be a couple of lines shorter and avoid the per-iteration parse. Nit-level.
+
+#### Micro: unnecessary `Number()` cast
+`src/modules/entitlements/domain/space-feature-usage.repository.ts:46`
+
+```typescript
+row.feature ? [[Number(row.feature), row.used] as const] : [],
+```
+
+`loadRelationIds` populates the relation with the raw FK column (`integer` in `feature.entity.db.ts`), which TypeORM returns as a number for `PrimaryGeneratedColumn`. The `Number()` wrap is a no-op — either drop it, or type `row.feature` as `number` at the call site if you want compile-time clarity.
+
+---
+
+Nothing here is blocking. Points 1 and 2 are the ones I'd take before merge; the rest are nits.
+ · Branch: `feat-add-entitlements-endpoint`
+
+COMMENT
+[moisses89 2026-08-21T12:24:37Z] @LucieFaire all your comments applied https://github.com/safe-global/safe-client-gateway/pull/3346/changes/1f4c4b0a3380884cf6d3f83df5b151c5824e780c
+
+COMMENT
+[moisses89 2026-08-21T12:25:21Z] > **Claude finished Moisés (@moisses89)'s task in 2m 19s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/32478461442)
+> 
+> ### Code Review
+> Overall the second pass looks tighter — the `FeatureKey` narrowing, the exhaustive `switch`, the doc-comment fix and the `nameBuilder()` revert all landed cleanly. A few smaller things worth considering:
+> 
+> #### Redundant null-check after filtering
+> `src/modules/entitlements/routes/entitlements.service.ts:302`
+> 
+> ```ts
+> const withPackage = args.subscriptions.filter(
+>   (subscription) => subscription.entitlements !== null,
+> );
+> // …
+> if (activeSubscriptionId !== null && packaged?.entitlements != null) {
+> ```
+> 
+> `packaged` was pulled from `withPackage`, which already filtered `entitlements !== null`. The second `!= null` guard is dead — `packaged.entitlements` is guaranteed non-null when `packaged` is defined. Not a bug, just noise you could drop for clarity.
+> 
+> #### O(features × purchased) lookup in the resolver
+> `src/modules/entitlements/routes/entitlements.service.ts:367`
+> 
+> ```ts
+> purchased: activeSubscription?.entitlements?.find(
+>   (entitlement) => entitlement.feature.id === feature.id,
+> ),
+> ```
+> 
+> Called inside a `features.map(...)`, so each feature scans the full purchased list — `O(N·M)`. With today's tiny catalog it's noise, but building `new Map(activeSubscription?.entitlements?.map(e => [e.feature.id, e]))` once outside the loop makes it `O(N + M)` and reads as clearly as the current code.
+> 
+> #### `getSpaceCreatedAtOrFail` is unreachable via HTTP
+> `src/modules/entitlements/routes/entitlements.service.ts:526`
+> 
+> Through `getEntitlements`, `assertMember` runs first — a deleted or non-existent space cannot have members, so it returns 403 before `resolveEntitlements` is called. The `NotFoundException` inside `getSpaceCreatedAtOrFail` only fires on races (space deleted between `assertMember` and here) or direct callers of `resolveEntitlements`. Fine to keep, but worth a short note in the comment so a future reader doesn't wonder why HTTP tests never exercise it.
+> 
+> #### `toEntitlementsResponse` uses `safeParse` per entitlement in a loop
+> `src/modules/entitlements/routes/entitlements.service.ts:494`
+> 
+> ```ts
+> const feature = FeatureKeySchema.safeParse(entitlement.feature);
+> ```
+> 
+> For each entitlement it constructs a zod result to test membership in a `readonly` array. A hoisted `new Set(FEATURE_KEYS)` and a `.has()` check would be a couple of lines shorter and avoid the per-iteration parse. Nit-level.
+> 
+> #### Micro: unnecessary `Number()` cast
+> `src/modules/entitlements/domain/space-feature-usage.repository.ts:46`
+> 
+> ```ts
+> row.feature ? [[Number(row.feature), row.used] as const] : [],
+> ```
+> 
+> `loadRelationIds` populates the relation with the raw FK column (`integer` in `feature.entity.db.ts`), which TypeORM returns as a number for `PrimaryGeneratedColumn`. The `Number()` wrap is a no-op — either drop it, or type `row.feature` as `number` at the call site if you want compile-time clarity.
+> 
+> Nothing here is blocking. Points 1 and 2 are the ones I'd take before merge; the rest are nits. · Branch: `feat-add-entitlements-endpoint`
+
+#### ✅ Redundant null-check after filtering
+Right, but deleting it fails to compile: a plain `.filter()` predicate doesn't narrow. Fixed with a type-guard predicate instead.
+
+#### ✅ O(features × purchased) lookup
+Fixed: the package is indexed once and `resolveFeature` receives its `purchased` row.
+
+#### ✅ getSpaceCreatedAtOrFail is unreachable via HTTP
+Noted in one line, since this is the second round it has come up.
+
+#### ✅ safeParse per entitlement in a loop
+Swapped for an `isFeatureKey` type guard, matching `isStockMeteredFeature`. `FeatureKeySchema` dropped with it.
+
+#### ❌ Micro: unnecessary Number() cast
+Runtime no-op, compile-time necessary: without it `Map<Feature, number>`. Typing it `number` is the `as unknown as` we removed earlier.
+
+
+COMMENT
+[moisses89 2026-08-21T12:26:10Z] @claude  arch-review

@@ -1,0 +1,10 @@
+{
+  "usd": 0.0498296,
+  "findings": [
+    {
+      "file": ".yarnrc.yml",
+      "line": 20,
+      "claim": "The pre-approval added for @safe-global/safe-modules-deployments has no reader in this diff, since its pin remains at 3.0.8, so no age-gate exemption is needed for it here, and adding it now widens the bypass ahead of an anticipated future version bump rather than when it's actually needed."
+    }
+  ]
+}

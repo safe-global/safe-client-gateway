@@ -1,0 +1,229 @@
+{
+  "pr": 3315,
+  "title": "feat: add step-up authentication for sensitive workspace actions",
+  "description": "Merging: Do not turn on feature flag before changes have landed in wallet-monorepo\r\n\r\n## Summary\r\n\r\nMilestone 2 of [Workspace 2FA](https://app.notion.com/p/safe-global/Workspace-2FA-3978180fe5738087a0c8ffedbd17e925) (WA-2725): sensitive Workspace actions now require a second factor presented within a short elevation window, enforced server-side.\r\n\r\nA session carries a single new claim, `mfa_verified_at`, stamped from the gateway's own clock at the OIDC callback whenever the Auth0 ID token's `amr` proves a challenge was passed. Auth0 injects `amr` **only for the transaction in which the user actually presented a factor** — it is absent when an existing session is reused — which makes it the freshness proof step-up needs. Because MFA is mandatory on every login, a plain login stamps the claim too, so the minutes right after signing in are already elevated and users are not challenged twice.\r\n\r\nAuth0's `auth_time` is deliberately **not** used: it records when the SSO session was established, and a step-up inside that session does not advance it, so it cannot express step-up freshness. The tech spike carried `amr`, `acr`, `auth_time` and `mfa_verified_at`; only the last is persisted, and `amr` is consumed transiently at the callback.\r\n\r\n## Changes\r\n\r\n- `mfa_verified_at` on the OIDC auth payload, plus `AuthPayload.hasFreshMfa()` (fails closed on an absent claim, an expired window, and future stamps from clock skew)\r\n- `ElevationGuard`, returning `403 elevation_required` so clients can distinguish \"redo MFA\" from a plain authorization failure\r\n- `?elevate=true` on `GET /v1/auth/oidc/authorize` requests the multi-factor `acr_values`; the callback independently rejects any elevation whose token lacks `amr: [\"mfa\"]`\r\n- `AUTH_ELEVATION_WINDOW_SECONDS` (default 30 min)\r\n- `elevation.e2e-spec.ts` pins the gated **and** ungated lists below, so changing either is always a deliberate edit rather than a side effect of touching a controller\r\n\r\n### Routes now requiring a fresh second factor\r\n\r\n| Method | Route | Action |\r\n| --- | --- | --- |\r\n| `PATCH` | `/v1/spaces/:id` | Rename space |\r\n| `DELETE` | `/v1/spaces/:id` | Delete space |\r\n| `POST` | `/v1/spaces/:spaceId/members/invite` | Invite member |\r\n| `PATCH` | `/v1/spaces/:spaceId/members/:userId/role` | Change member role |\r\n| `DELETE` | `/v1/spaces/:spaceId/members/:userId` | Remove member |\r\n| `POST` | `/v1/spaces/:spaceId/safes` | Add Safe to space |\r\n| `DELETE` | `/v1/spaces/:spaceId/safes` | Remove Safe from space |\r\n| `PUT` | `/v1/spaces/:spaceId/address-book` | Add/edit shared contact |\r\n| `DELETE` | `/v1/spaces/:spaceId/address-book/:address` | Remove shared contact |\r\n| `PUT` | `/v1/spaces/:spaceId/address-book/requests/:requestId/approve` | Approve contact request |\r\n\r\n### Mutating routes deliberately left ungated\r\n\r\n| Method | Route | Why not |\r\n| --- | --- | --- |\r\n| `POST` | `/v1/spaces` | Creating a space has no existing state to tamper with; gating it would put a challenge in the middle of onboarding |\r\n| `POST` | `/v1/spaces/:spaceId/address-book/requests` | A proposal only — the admin approval that acts on it is gated |\r\n| `PUT` | `/v1/spaces/:spaceId/address-book/requests/:requestId/reject` | Denial-only; an attacker gains nothing but griefing |\r\n| `POST` | `/v1/spaces/:spaceId/members/:userId/invite/renew` | Re-sends an invite that a gated call already created |\r\n| `PATCH` | `/v1/spaces/:spaceId/members/alias` | The caller's own display name |\r\n| `DELETE` | `/v1/spaces/:spaceId/members` | Self-removal; recoverable by re-invite |\r\n| POST | /v1/spaces/:spaceId/members/accept | Responding to an invite only moves the caller in; the invite itself is gated |\r\n| POST | /v1/spaces/:spaceId/members/decline | Declining only affects the caller's own pending invite |\r\n\r\nAll `GET` routes are unaffected.\r\n\r\n`ElevationGuard` always runs after `AuthGuard` (which attaches the session payload) and before the per-route rate-limit guards.\r\n\r\nSign-In-with-Ethereum sessions are exempt — they never pass through the OIDC provider and carry no MFA proof, so gating them would lock SIWE admins out of Workspace administration. Extending step-up to them is Milestone 3 (WA-2852).\r\n\r\n## Verified against a real Auth0 tenant\r\n\r\nThe design rests on one vendor claim — that `amr` is transaction-scoped rather than session-scoped. That was verified empirically rather than taken from the docs, by probing the raw claim on a dev tenant with `mfa_policy = \"all-applications\"`:\r\n\r\n| Scenario | Challenge shown | `amr` observed | `mfa_verified_at` |\r\n| --- | --- | --- | --- |\r\n| Login, OTP entered | yes | `[\"mfa\"]` | stamped |\r\n| Remembered device, plain `/authorize` | **none** | **`undefined`** | absent |\r\n| Remembered device, `?elevate=true`, no challenge | none | `undefined` | **rejected** (`authentication_failed`) |\r\n| Remembered device, `?elevate=true`, challenge forced | OTP | — | stamped |\r\n| `?elevate=true` → recovery code | recovery code | — | stamped |\r\n\r\nRow 2 is the dangerous case: a remembered browser skipping the challenge seconds after a successful MFA. Auth0 did **not** carry `amr` forward, so no session is elevated without a code. Row 3 is the attack — a client that requests elevation but arranges for no challenge to happen — and it fails closed. Row 5 confirms recovery-code users can elevate, so a lost authenticator is not a lockout.\r\n\r\nAlso verified: exactly one challenge per round-trip (no double prompt), and the `403 elevation_required` → step-up → retry cycle end to end.\r\n\r\n## Note on the Auth0 side\r\n\r\n`acr_values` is accompanied by a post-login action in [terraform-auth0-module#24](https://github.com/safe-global/terraform-auth0-module/pull/24). That action is **defence in depth, not a prerequisite** for this PR: while `mfa_policy = \"all-applications\"` is in force, Auth0 was measured honouring the multi-factor `acr_values` on its own, overriding a remembered browser, with no action deployed. The action keeps step-up working if that policy is ever relaxed t",
+  "findings": [
+    {
+      "id": "F1",
+      "file": "src/config/entities/configuration.ts",
+      "line": 481,
+      "claim": "The new mfaStepUp flag lacks a comment naming an owner and a removal condition, which the configuration-and-flags documentation requires, and since this is the first such flag to land it sets the precedent example for future flags."
+    },
+    {
+      "id": "F2",
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.spec.ts",
+      "line": 415,
+      "claim": "buildAuth0Token(amr) as never uses a type cast to satisfy a mock signature, hiding type drift, whereas the other cases in the same file (lines 93, 140, 182) pass a typed object directly into mockResolvedValue without a cast; giving buildAuth0Token the repository's actual return type (Auth0Token) instead of Record<string, unknown> would remove the need for the cast."
+    },
+    {
+      "id": "F3",
+      "file": "src/modules/auth/routes/guards/elevation.guard.ts",
+      "line": 75,
+      "claim": "The elevation_required condition is signalled only via the message string in a ForbiddenException, so clients must substring-match on message to distinguish it from other 403 responses, and any future exception filter that reshapes the error body would silently break that client contract; a dedicated code field should be used instead."
+    },
+    {
+      "id": "F4",
+      "file": "src/modules/auth/domain/entities/auth-payload.entity.ts",
+      "line": 102,
+      "claim": "Both this file and oidc-auth.service.ts compute Math.floor(Date.now() / 1_000) inline instead of using the existing toSecondsTimestamp helper from the shared time utility module, which oidc-auth.service.ts already imports another helper from."
+    },
+    {
+      "id": "F5",
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.spec.ts",
+      "line": 415,
+      "claim": "The test uses 'as never' to force a mock return value (mockResolvedValue(buildAuth0Token(amr) as never)) to satisfy a mock's type signature, bypassing type safety in the test."
+    },
+    {
+      "id": "F6",
+      "file": "src/modules/auth/routes/guards/elevation.guard.ts",
+      "line": 75,
+      "claim": "The guard throws a plain ForbiddenException rather than HttpExceptionNoLog for an expected rejection, which the auth module's own documentation asks for, even though this may reflect a stale doc since no other code in the module currently uses HttpExceptionNoLog either."
+    },
+    {
+      "id": "F7",
+      "file": "elevation.guard.spec.ts",
+      "line": 18,
+      "claim": "The constant ELEVATION_WINDOW_SECONDS = 5 * 60 is duplicated in this file and in elevation.integration.spec.ts:28, each with near-identical comments explaining the mismatch from the production default; extracting a shared test constant or builder would prevent the two from drifting apart."
+    },
+    {
+      "id": "F8",
+      "file": "src/config/entities/configuration.ts",
+      "line": 62,
+      "claim": "AUTH_ELEVATION_WINDOW_SECONDS is read in configuration.ts but is not declared in RootConfigurationSchema or validated in its superRefine, so a non-numeric value silently becomes NaN at request time instead of failing at boot."
+    },
+    {
+      "id": "F9",
+      "file": "src/config/entities/configuration.ts",
+      "line": 481,
+      "claim": "The new mfaStepUp flag mapping lacks a comment naming who owns the flag and under what condition it should be removed, which the feature-flag documentation requires."
+    },
+    {
+      "id": "F10",
+      "file": "src/modules/auth/routes/guards/elevation.guard.spec.ts",
+      "line": 34,
+      "claim": "oidcPayload and siwePayload are constructed as hand-written object literals instead of using the existing oidcAuthPayloadDtoBuilder() and siweAuthPayloadDtoBuilder() builders already used elsewhere in this PR (auth-payload.entity.spec.ts and elevation.integration.spec.ts), which is inconsistent with the established test convention."
+    },
+    {
+      "id": "F11",
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.spec.ts",
+      "line": 426,
+      "claim": "The test asserts behavior by directly indexing into signToken.mock.calls[0][0] rather than using toHaveBeenCalledWith, which is a less readable and less robust assertion pattern."
+    },
+    {
+      "id": "F12",
+      "file": "src/config/entities/configuration.ts",
+      "line": 61,
+      "claim": "AUTH_ELEVATION_WINDOW_SECONDS is parsed with Number.parseInt but is never added to RootConfigurationSchema, unlike its neighbour AUTH_STATE_TTL_MILLISECONDS which is validated with z.coerce.number().int().min(1_000).optional(). A bad value like \"30m\" becomes NaN, and since ageSeconds <= NaN is always false, every OIDC admin gets 403 elevation_required on every gated route when the flag is on, while the app still boots normally; zero or negative values are also accepted without error."
+    },
+    {
+      "id": "F13",
+      "file": "src/modules/auth/routes/guards/elevation.guard.spec.ts",
+      "line": 98,
+      "claim": "The \"very edge of the window\" test has the same intermittent failure risk as the auth-payload.entity.spec.ts edge case, since it relies on two separate Date.now() calls instead of a frozen clock; other specs in the codebase (oidc-auth.service.spec.ts:48) already use vi.useFakeTimers() and vi.setSystemTime() to avoid this."
+    },
+    {
+      "id": "F14",
+      "file": "oidc-auth.service.ts",
+      "line": 143,
+      "claim": "The expression hasFreshMfa ? Math.floor(Date.now() / 1_000) : undefined is duplicated here and in auth-payload.entity.ts:102; extracting a small nowSeconds() helper would prevent the two implementations from drifting apart."
+    },
+    {
+      "id": "F15",
+      "file": "src/__tests__/util/check-guard.ts",
+      "line": 8,
+      "claim": "This test utility calls expect() inside a .some() callback, and combined with Object.values(prototype) returning an empty array under the project's es2024 target, the 'should require authentication for every endpoint' assertion checks nothing across 10 spec files; iterating Object.getOwnPropertyNames(prototype) with a plain boolean predicate would make these tests actually verify behavior, and some routes guarded only at class level would likely fail once the check is real."
+    },
+    {
+      "id": "F16",
+      "file": "src/modules/auth/AUTH.md",
+      "line": 252,
+      "claim": "The \"Other Auth Config\" table is missing the new AUTH_ELEVATION_WINDOW_SECONDS variable, and the ?elevate=true query parameter on authorize plus the amr check in the callback are not documented anywhere."
+    },
+    {
+      "id": "F17",
+      "file": "src/modules/auth/routes/guards/elevation.guard.spec.ts",
+      "line": 34,
+      "claim": "The oidcPayload() and siwePayload() test helpers are hand-written object literals that duplicate the oidcAuthPayloadDtoBuilder and siweAuthPayloadDtoBuilder already used elsewhere in the PR, violating the project's builders-only rule for tests."
+    },
+    {
+      "id": "F18",
+      "file": "src/modules/spaces/routes/elevation.integration.spec.ts",
+      "line": 272,
+      "claim": "The describe.each(GATED_ROUTES) block (lines 272–309) repeats five cases per gated route (never-MFA, expired, fresh, SIWE-exempt, unauthenticated), but the expired, fresh, and SIWE cases duplicate coverage already present in elevation.guard.spec.ts; per route it would suffice to keep one rejection test and one allow test, leaving the window and SIWE branches to the unit tests."
+    },
+    {
+      "id": "F19",
+      "file": "src/modules/spaces/routes/members/members.controller.ts",
+      "line": 88,
+      "claim": "The existing @ApiForbiddenResponse descriptions on this and all 12 gated routes do not mention the new 403 elevation_required cause, even though clients are expected to match on it, and the repo convention is for these descriptions to list every cause of a 403 response."
+    },
+    {
+      "id": "F20",
+      "file": "src/config/entities/schemas/configuration.schema.ts",
+      "line": null,
+      "claim": "AUTH_ELEVATION_WINDOW_SECONDS (introduced in src/config/entities/configuration.ts:61-64) and FF_MFA_STEP_UP (introduced at :481) are not declared in the schema, unlike the sibling AUTH_STATE_TTL_MILLISECONDS which is validated with min(1000); every env var should appear in both files."
+    },
+    {
+      "id": "F21",
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.spec.ts",
+      "line": 415,
+      "claim": "Two newly added lines repeat previously flagged review issues: casting a value with 'as never' to satisfy the type checker instead of using a properly typed mock value, and asserting via signToken.mock.calls[0][0] instead of toHaveBeenCalledWith(expect.objectContaining(...))."
+    },
+    {
+      "id": "F22",
+      "file": "src/config/entities/configuration.ts",
+      "line": 481,
+      "claim": "FF_MFA_STEP_UP is likewise read but not declared in the schema or validated, allowing the same silent NaN/invalid-value failure mode instead of a boot-time error."
+    },
+    {
+      "id": "F23",
+      "file": "src/modules/auth/oidc/auth0/datasources/auth0-api.service.ts",
+      "line": 40,
+      "claim": "A hardcoded value should potentially be moved into configuration (environment variables) with a default, since it is unclear whether this value will always remain the same."
+    },
+    {
+      "id": "F24",
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.ts",
+      "line": 87,
+      "claim": "A parameter or value here is hard to read and should either have its type extracted into a proper named type or be simplified, for example to a boolean parameter with a default value of false."
+    },
+    {
+      "id": "F25",
+      "file": null,
+      "line": null,
+      "claim": "The PR description contains five additional ## sections beyond the template's Summary and Changes sections (Verified against a real Auth0 tenant, Note on the Auth0 side, How to test it, Visual summary, Feature flag), deviating from the PR template which specifies only those two sections."
+    },
+    {
+      "id": "F26",
+      "file": "src/config/entities/configuration.ts",
+      "line": 481,
+      "claim": "The new mfaStepUp feature flag mapping has no comment identifying an owner or the condition under which the flag should be removed."
+    },
+    {
+      "id": "F27",
+      "file": null,
+      "line": null,
+      "claim": "The PR title 'Add step-up authentication (elevation) for sensitive workspace actions' does not follow Conventional Commits format and is capitalized, so a squash merge would land a commit subject on main that no type-based filter (e.g. feat(auth): ...) would match."
+    },
+    {
+      "id": "F28",
+      "file": "src/modules/auth/domain/entities/auth-payload.entity.ts",
+      "line": 106,
+      "claim": "hasFreshMfa rejects any mfa_verified_at timestamp that appears to be in the future with zero tolerance, but the stamp is written on one gateway instance's clock and checked on another, so even a one second clock drift between instances causes a user to receive a 403 elevation_required immediately after a successful step-up. The codebase already has a clockSkewSeconds mechanism for this kind of drift elsewhere that could be reused, and the fix should allow ageSeconds >= -clockSkewSeconds along with a test covering a 1-5 second skew rather than only the current 10,000 second case."
+    },
+    {
+      "id": "F29",
+      "file": "src/modules/auth/routes/guards/elevation.guard.ts",
+      "line": 64,
+      "claim": "The comment describing the 'OIDC or wallet, never both' invariant is load-bearing but lacks a link to an issue, RFC, or commit, making the invariant hard to verify independently."
+    },
+    {
+      "id": "F30",
+      "file": "src/modules/spaces/routes/address-books/address-books.controller.ts",
+      "line": 115,
+      "claim": "The address-book PUT route splits guards across two separate @UseGuards decorators (SpacesAddressBookRateLimitGuard, then AuthGuard/ElevationGuard); this relies on Nest's undocumented-to-the-reader behavior of merging decorator arrays in order, is the only route in the changed set structured this way, and makes guard execution order unclear compared to the rest of the diff which uses a single combined @UseGuards call."
+    },
+    {
+      "id": "F31",
+      "file": "src/config/entities/configuration.ts",
+      "line": 61,
+      "claim": "AUTH_ELEVATION_WINDOW_SECONDS is missing from RootConfigurationSchema unlike its sibling AUTH_STATE_TTL_MILLISECONDS, so a bad or missing value silently becomes NaN and every gated route then returns 403 instead of the application failing at boot; adding a coerced, validated schema entry would prevent this."
+    },
+    {
+      "id": "F32",
+      "file": "src/modules/auth/routes/guards/elevation.guard.ts",
+      "line": null,
+      "claim": "The e2e test (elevation.integration.spec.ts) currently asserts on body.message rather than a dedicated error code, which should be pinned to the corrected shape if a code field is introduced."
+    },
+    {
+      "id": "F33",
+      "file": "src/config/entities/configuration.ts",
+      "line": 61,
+      "claim": "Because AUTH_ELEVATION_WINDOW_SECONDS is unvalidated, setting it to a non-numeric value causes Number.parseInt to yield NaN, making the age comparison always false, which permanently forces 403 elevation_required for every OIDC user; this fails closed but silently, in a way that looks like Auth0 is broken."
+    },
+    {
+      "id": "F34",
+      "file": "src/modules/auth/domain/entities/__tests__/auth-payload.entity.spec.ts",
+      "line": 405,
+      "claim": "The test for the exact window edge (300 seconds) builds its timestamp with Date.now(), and since hasFreshMfa calls Date.now() again separately, a clock crossing a second boundary between the two calls can push the age to 301, causing the \"fresh\" assertion to fail intermittently."
+    },
+    {
+      "id": "F35",
+      "file": "src/modules/auth/AUTH.md",
+      "line": 171,
+      "claim": "The \"Guards and Decorators\" section lists AuthGuard, OptionalAuthGuard and OidcAuthRateLimitGuard but omits the new ElevationGuard, its SIWE exemption, and the elevation_required contract that clients rely on."
+    },
+    {
+      "id": "F36",
+      "file": "src/modules/spaces/routes/spaces.controller.ts",
+      "line": 32,
+      "claim": "The spaces controller (and five others in members/address-books/space-safes) imports @/modules/auth/routes/guards/elevation.guard directly across module boundaries, extending a cross-module import anti-pattern the project guidance specifically calls out for auth.decorator."
+    },
+    {
+      "id": "F37",
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.spec.ts",
+      "line": 426,
+      "claim": "signedPayload() reads authRepositoryMock.signToken.mock.calls[0][0] as Record<string, unknown> and indexes into mock.calls directly (used by assertions from lines 428–469), instead of using expect(...).toHaveBeenCalledWith(expect.objectContaining(...)) style assertions, including expect.not.objectContaining for cases where the stamp should be absent."
+    }
+  ]
+}

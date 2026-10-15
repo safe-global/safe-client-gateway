@@ -1,0 +1,42 @@
+{
+  "usd": 0.3033266,
+  "head": "7a7c9f2e1a94769ee4bb1c7964ea043f850aaab5",
+  "verdicts": [
+    {
+      "issue": 0,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "At 9222722, integration-tests ran only `yarn generate-abis` (ci.yml:239), so dist/migrations was never built. LucieFaire flagged the missing migrations, and commit 7a7c9f2 restored `yarn run build` in that job, with a comment pointing to postgres.config.ts."
+    },
+    {
+      "issue": 6,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "`cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}` was at ci.yml:22 in 9222722. The author replied \"Release concurrency — no change\": the group is keyed on github.ref, so different tags cannot cancel each other. The line is unchanged."
+    },
+    {
+      "issue": 7,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "The node_modules cache at 9222722 had no restore-keys (ci.yml:85-90 etc.). The author called the suggestion \"moot\" and never added restore-keys. cda62e3 removed the cache entirely, but for supply-chain reasons, not to adopt this suggestion."
+    },
+    {
+      "issue": 8,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "The author said they were \"keeping it intentionally\" so the job stays self-guarding. In 7a7c9f2/cda62e3 the `github.ref == 'refs/heads/main'` check stays, with only an explanatory comment added."
+    },
+    {
+      "issue": 9,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "clovisdasilvaneto asked how the cache is invalidated. PooyaRaki replied on 2026-06-15 that the `hashFiles('yarn.lock')` part of the key invalidates it whenever dependencies change, i.e. the behaviour was intended and explained."
+    },
+    {
+      "issue": 10,
+      "verdict": "rejected",
+      "present": true,
+      "evidence": "The warm-cache install skip existed at 9222722. The author checked and replied that biome and env:validate never resolve `@/abis`, and that postinstall never runs anyway because of `enableScripts: false`. No change was made for this concern."
+    }
+  ]
+}

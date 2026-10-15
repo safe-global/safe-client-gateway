@@ -1,0 +1,219 @@
+{
+  "usage": {
+    "usd": 0.6459313999999999,
+    "turns": 9,
+    "wallSeconds": 84
+  },
+  "issues": [
+    {
+      "findings": [
+        "F7",
+        "F21",
+        "F40",
+        "F5",
+        "F28"
+      ],
+      "summary": "taskId route param is unvalidated and now interpolated into the credentialed Rhinestone URL path",
+      "label": "medium",
+      "evidence": "relay.controller.ts:175 takes a bare @Param('taskId') (and chainId) with no ValidationPipe, which breaks non-negotiable #1, and rhinestone-api.service.ts:119 puts it straight into `${baseUri}/safe-transactions/${taskId}/status` with the project-wide x-api-key. Gelato sent the id in a JSON body, so this path injection is new. A decoded `../`, `?` or `#` can point the GET at other Rhinestone paths, and HttpErrorFactory (http-error-factory.ts:19) sends data.message back to the caller.",
+      "category": "security"
+    },
+    {
+      "findings": [
+        "F18",
+        "F38"
+      ],
+      "summary": "DailyLimit and NoFeeCampaign relayers forward the client's safeTxHash without checking it against the calldata or dropping it for multiSend/deployments",
+      "label": "medium",
+      "evidence": "daily-limit.relayer.ts:74 and no-fee-campaign.relayer.ts:111 pass args.safeTxHash straight through. The datasource doc (rhinestone-api.service.ts:75-77) says it is required for execTransaction and omitted otherwise. Only RelayFeeRelayer checks that the hash matches the decoded payload (validateExecTransaction/SafeTxHashMismatchError).",
+      "category": "security"
+    },
+    {
+      "findings": [
+        "F1",
+        "F36",
+        "F33",
+        "F41"
+      ],
+      "summary": "No tests cover safeTxHash forwarding through the daily-limit/no-fee relayers or the POST /relay integration path",
+      "label": "medium",
+      "evidence": "relayers/__tests__ holds only relay-fee.relayer.spec.ts. relay.controller.integration.spec.ts mentions safeTxHash only 3 times, all in the GET relays-remaining test (~line 2938). None of these tests checks that the posted body contains safeTxHash, which is new behaviour in this PR.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F4",
+        "F9",
+        "F8",
+        "F22"
+      ],
+      "summary": "Rhinestone status is passed through as a bare number while the DTO documents Gelato's status codes",
+      "label": "unverifiable",
+      "evidence": "RhinestoneTaskStatusResponseSchema.status is z.number() (relay-task-status.entity.ts:26), passed through unchanged at rhinestone-api.service.ts:132. The DTO still lists enum [100,110,200,400,500] (routes/entities/relay-task-status.entity.ts:17). Whether Rhinestone uses the same codes depends on its external API and can't be settled from the repo.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F2",
+        "F11",
+        "F16",
+        "F39"
+      ],
+      "summary": "blockHash/blockNumber/gasUsed/createdAt made optional but never populated, and RelayTaskStatusSchema is parsed nowhere",
+      "label": "nit",
+      "evidence": "grep finds no use of RelayTaskStatusSchema outside its entity file, and the mapper at rhinestone-api.service.ts:129-136 never sets these fields. They are dead but harmless, since the public DTO only exposes status/receipt.transactionHash.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F14"
+      ],
+      "summary": "Constructed task status lacks createdAt",
+      "label": "wrong",
+      "evidence": "createdAt is z.number().optional() in relay-task-status.entity.ts:16, so leaving it out matches the entity type, and the public DTO doesn't expose it.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F32",
+        "F42"
+      ],
+      "summary": "Datasource returns domain types rather than Raw<T>, and the repository / some relayers do not parse with the domain schema",
+      "label": "low",
+      "evidence": "getTaskStatus returns RelayTaskStatus built in the datasource (rhinestone-api.service.ts:117-136), and relay.repository.ts:42 returns it without parsing. The Gelato implementation followed the same pattern, so this departure from non-negotiable #3 was carried over rather than introduced here. The datasource does parse the provider schema.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F17",
+        "F20",
+        "F23",
+        "F31"
+      ],
+      "summary": "formatError logs the full unbounded upstream error body",
+      "label": "low",
+      "evidence": "rhinestone-api.service.ts:64-68 runs JSON.stringify(error.data) on the whole body and logs it at error level. The body comes from the provider and isn't bounded or whitelisted, but it's unlikely to hold secrets (the API key goes in request headers and isn't logged), so the cost is minor.",
+      "category": "security"
+    },
+    {
+      "findings": [
+        "F37"
+      ],
+      "summary": "Error contains info to reconstruct a curl command",
+      "label": "wrong",
+      "evidence": "formatError (rhinestone-api.service.ts:62-71) produces only `status=... body=...` or the error message. There's no URL, headers or other request detail that would let someone rebuild a curl command.",
+      "category": "security"
+    },
+    {
+      "findings": [
+        "F15"
+      ],
+      "summary": "chainId is no longer implicitly validated in getTaskStatus after removing per-chain key lookup",
+      "label": "low",
+      "evidence": "Gelato's getOrThrow(`relay.apiKey.${chainId}`) used to reject unknown chains. Now chainId goes unchecked and is only echoed into the unexposed domain chainId field. The task lookup is global, so the practical impact is small.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F19",
+        "F24",
+        "F27"
+      ],
+      "summary": "Rollout risk: new required RELAY_PROVIDER_API_KEY and stale Gelato RELAY_PROVIDER_API_BASE_URI overrides",
+      "label": "low",
+      "evidence": "configuration.schema.ts:186 makes RELAY_PROVIDER_API_KEY required, and configuration.ts:709 only defaults the base URI when it is unset. An environment that still sets it to Gelato would boot and then fail at request time. The config change is intended, so this is an operational note, not a code defect.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F34"
+      ],
+      "summary": "docker-compose.yml not updated for new env var",
+      "label": "wrong",
+      "evidence": "docker-compose.yml:76 already sets RELAY_PROVIDER_API_KEY, and the diff also updates .devcontainer/docker-compose.yml.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F13"
+      ],
+      "summary": "No test for malformed provider response mapping to DataSourceError",
+      "label": "low",
+      "evidence": "rhinestone-api.service.spec.ts covers only success cases and NetworkResponseError cases. No test feeds a schema-invalid body to check that the ZodError goes through httpErrorFactory (it would come back as a 503 DataSourceError).",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F30"
+      ],
+      "summary": "Error tests don't assert formatError output; non-NetworkResponseError fallback untested",
+      "label": "low",
+      "evidence": "Lines 139/197 use `{ status: 400 } as Response` with no body and only check toHaveBeenCalledTimes(1). The NetworkResponseError branch runs but its output isn't asserted, and the asError fallback branch never runs, so the claim that neither branch is exercised overstates it slightly.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F35"
+      ],
+      "summary": "Constructor tests use bare .toThrow()",
+      "label": "nit",
+      "evidence": "rhinestone-api.service.spec.ts:72 and :88 use `.toThrow()` without a matcher. These are simple getOrThrow config tests, so the looser assertion costs little.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F3",
+        "F6"
+      ],
+      "summary": "RELAY_SUPPORTED_CHAIN_IDS naming/placement suggests it is the runtime source of truth",
+      "label": "nit",
+      "evidence": "deployments.helper.ts:148 already has a doc comment explaining it is test-only and not the runtime gate. Renaming or moving it is a preference.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F12"
+      ],
+      "summary": "Domain receipt.transactionHash uses z.string() while provider schema uses HexSchema",
+      "label": "nit",
+      "evidence": "relay-task-status.entity.ts:10 vs :27. The value is already Hex-validated at the provider boundary, so this is only about consistency.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F25"
+      ],
+      "summary": "headers() rebuilds a constant object each call",
+      "label": "nit",
+      "evidence": "rhinestone-api.service.ts:52-54 builds a trivial one-key object per call, which has negligible cost.",
+      "category": "performance"
+    },
+    {
+      "findings": [
+        "F29"
+      ],
+      "summary": "Leftover Gelato references in code",
+      "label": "wrong",
+      "evidence": "rhinestone-api.service.ts:127 has no Gelato reference, and a case-insensitive grep for 'gelato' under src/ returns nothing.",
+      "category": "style"
+    },
+    {
+      "findings": [
+        "F10"
+      ],
+      "summary": "PR description missing '## Changes' section",
+      "label": "wrong",
+      "evidence": "The PR description has a '## Changes' heading with the bolded sub-areas under it.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F26"
+      ],
+      "summary": "PR title is a capitalized noun phrase",
+      "label": "wrong",
+      "evidence": "The actual PR title is 'feat: replace Gelato with Rhinestone as the relay provider', which is imperative and lowercase.",
+      "category": "style"
+    }
+  ]
+}

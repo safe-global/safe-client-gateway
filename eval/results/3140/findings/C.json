@@ -1,0 +1,55 @@
+{
+  "usd": 0.0461816,
+  "findings": [
+    {
+      "file": "ci.yml",
+      "line": 168,
+      "claim": "The build step was changed from 'generate-abis && nest build' to just 'generate-abis', removing the TypeScript compilation step. Since Jest with ts-jest only type-checks files that are transitively imported by tests, type errors in code paths not covered by any spec (for example a new controller wired into a module without a corresponding test) will no longer be caught on PRs and will only surface during the staging Docker build, which runs only on main."
+    },
+    {
+      "file": "ci.yml",
+      "line": 239,
+      "claim": "The same loss of PR-level type-checking coverage applies here as well, since this is the other location referencing the build step that dropped 'nest build'."
+    },
+    {
+      "file": "ci.yml",
+      "line": 276,
+      "claim": "The condition 'github.event_name == \\'push\\' && github.ref == \\'refs/heads/main\\'' on docker-publish-staging is redundant because the push trigger is already scoped to branches: [main], making the github.ref check unnecessary."
+    },
+    {
+      "file": "ci.yml",
+      "line": 85,
+      "claim": "The cache key configuration has no restore-keys fallback, so any change to yarn.lock causes a complete cache miss and a full reinstall instead of a partial restore that only installs what changed."
+    },
+    {
+      "file": "ci.yml",
+      "line": 101,
+      "claim": "This caching job has the same missing restore-keys issue, causing a full reinstall on any yarn.lock change instead of a partial cache restore."
+    },
+    {
+      "file": "ci.yml",
+      "line": 157,
+      "claim": "This caching job has the same missing restore-keys issue, causing a full reinstall on any yarn.lock change instead of a partial cache restore."
+    },
+    {
+      "file": "ci.yml",
+      "line": 230,
+      "claim": "This caching job has the same missing restore-keys issue, causing a full reinstall on any yarn.lock change instead of a partial cache restore."
+    },
+    {
+      "file": "ci.yml",
+      "line": 91,
+      "claim": "The postinstall hook 'yarn generate-abis' writes to the abis/ directory, which lives outside the cached node_modules. On a warm cache, yarn install is skipped, which also skips the postinstall hook, so jobs that rely on generated abis but don't explicitly regenerate them could silently break if they start importing from @/abis."
+    },
+    {
+      "file": "ci.yml",
+      "line": 109,
+      "claim": "It should be confirmed that the env-validation and biome jobs never touch @/abis, since on a warm-cache run the postinstall step that generates abis is skipped, and a future import from those jobs could silently fail without an explicit generate-abis step."
+    },
+    {
+      "file": "ci.yml",
+      "line": 22,
+      "claim": "The concurrency setting 'cancel-in-progress: ${{ github.ref != \\'refs/heads/main\\' }}' evaluates to true for tag refs (since a tag ref is not refs/heads/main), meaning two overlapping release runs could cancel each other mid Docker push."
+    }
+  ]
+}

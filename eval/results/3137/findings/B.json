@@ -1,0 +1,25 @@
+{
+  "usd": 0.0598356,
+  "findings": [
+    {
+      "file": "src/modules/fees/routes/entities/fee-preview-response.entity.ts",
+      "line": 12,
+      "claim": "The public API's response type for txData.chainId changes from number to string; a client that compares chainId to a number or uses it as a number (for example in an EIP-712 domain) will behave differently or fail with no compile-time error, and it is unconfirmed whether safe-wallet web and mobile clients have been updated or are ready to handle the string."
+    },
+    {
+      "file": "src/modules/fees/routes/__tests__/fee-preview.fees.controller.integration.spec.ts",
+      "line": 120,
+      "claim": "No endpoint-level integration test checks that body.txData.chainId is actually a string; the test only checks that txData is defined, so the new contract on the HTTP response is not locked in."
+    },
+    {
+      "file": "src/modules/fees/domain/entities/schemas/__tests__/tx-fees-response.schema.spec.ts",
+      "line": 55,
+      "claim": "The invalid-input test cases do not include a missing (undefined) or null chainId, so there is no test guarding against a future loosening of the regex that would let a missing chainId pass (since coercion currently only fails these because \"undefined\"/\"null\" don't match the regex)."
+    },
+    {
+      "file": "src/modules/fees/domain/entities/schemas/tx-fees-response.schema.ts",
+      "line": 8,
+      "claim": "The regex used to validate chainId accepts strings with leading zeros, such as \"01\", which would then be passed through to clients unchanged."
+    }
+  ]
+}

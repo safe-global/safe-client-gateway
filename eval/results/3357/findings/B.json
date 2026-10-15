@@ -1,0 +1,20 @@
+{
+  "usd": 0.05841560000000001,
+  "findings": [
+    {
+      "file": ".github/workflows/linear-release.yml",
+      "line": null,
+      "claim": "The input names passed to linear/linear-release-action (access_key, command, version, links, dry_run) were not verified against the action's action.yml because network access was blocked, so a misspelled input name could be silently ignored."
+    },
+    {
+      "file": ".github/workflows/linear-release.yml",
+      "line": 39,
+      "claim": "The workflow-level concurrency.group is built from the raw trigger values before the Resolve release step normalizes the version, so a published release, a manual run with an unprefixed version, and a manual run with no version produce different group names for what is effectively the same release, allowing two sync calls for the same release to run concurrently instead of queuing behind each other."
+    },
+    {
+      "file": null,
+      "line": null,
+      "claim": "The commit message in 5506983 explains why unversioned manual runs share a concurrency group but does not mention or document the separate v-prefix mismatch that also causes releases to land in different concurrency groups."
+    }
+  ]
+}

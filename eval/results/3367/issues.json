@@ -1,0 +1,55 @@
+{
+  "usage": {
+    "usd": 0.2837116,
+    "turns": 4,
+    "wallSeconds": 27
+  },
+  "issues": [
+    {
+      "findings": [
+        "F1"
+      ],
+      "summary": "js-yaml@5.2.1 still in lockfile via exact pin from @nestjs/swagger@11.4.6",
+      "label": "wrong",
+      "evidence": "yarn.lock:4888 does still resolve js-yaml@5.2.1, but the PR description and commit body say outright that this alert is left open for now: @nestjs/swagger 11.4.7 is younger than the 7-day npmMinimalAgeGate, and a resolutions override is being avoided. The finding's own suggested fix (bump swagger) is the PR's stated plan, so it flags intended behaviour.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F2"
+      ],
+      "summary": "Commit body wording 'lift the transitive resolutions' could be read as adding Yarn resolutions entries",
+      "label": "nit",
+      "evidence": "The commit message says 'lift the transitive resolutions'. package.json has no resolutions change in the diff, and the PR body already says it used lockfile re-resolution via `yarn up -R`. This is a wording preference with no concrete cost.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F3"
+      ],
+      "summary": "@nestjs/serve-static 5.0.5 peer range excludes installed @fastify/static 10.1.3",
+      "label": "low",
+      "evidence": "yarn.lock:1699 declares the peer as `^8.0.4 || ^9.0.0`, but package.json:53 installs ^10.1.3, and ServeStaticModule is used in src/app.module.ts:149. The mismatch is real, but it predates this PR and sits outside the lines it changes.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F4"
+      ],
+      "summary": "find-my-way 9.6.0→9.7.0 routing changes not verified by the reviewer",
+      "label": "unverifiable",
+      "evidence": "The claim is only that the reviewer could not run tests. It names no concrete routing regression tied to the settings in src/app.provider.ts. The PR reports passing yarn build/test (6169 tests), and a behavioural regression can't be confirmed or ruled out from reading the code.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F5",
+        "F6"
+      ],
+      "summary": "@fastify/cookie and @fastify/static use caret ranges rather than exact pins",
+      "label": "nit",
+      "evidence": "package.json:52-53 do use caret ranges, but neither line is touched by the diff. No exact-pin convention is documented in AGENTS.md or docs/agents, and other runtime deps also use carets (e.g. @blockaid/client, @nestjs/bullmq, bullmq), so this is style preference only.",
+      "category": "convention"
+    }
+  ]
+}

@@ -1,0 +1,149 @@
+THREAD src/modules/entitlements/domain/feature-package.mapper.ts:64 resolved=true
+[LucieFaire 2026-09-21T09:51:14Z] `parseSafeSeatQuota` only reads uppercase `FEATURE_SAFE_SEATS`, while `mapFeaturePackage` normalizes the suffix to lowercase. For valid metadata `{ FEATURE_safe_seats: '2' }`, this check returns `null` and lets a workspace with three Safes purchase the plan, but the webhook materializes a two-seat quota. 
+
+Use the same key normalization and duplicate-key handling as `mapFeaturePackage`, and add a regression test.
+[moisses89 2026-09-21T10:54:13Z] Good catch, fixed. https://github.com/safe-global/safe-client-gateway/pull/3445/changes/a28de0d3cdd3cd9001bfa3a06b01949e7a4a55ce
+
+
+THREAD src/modules/billing/routes/billing.service.ts:108 resolved=true
+[LucieFaire 2026-09-21T09:53:06Z] nit: i think we can remove this comment
+[moisses89 2026-09-21T10:54:21Z] removed https://github.com/safe-global/safe-client-gateway/pull/3445/changes/a28de0d3cdd3cd9001bfa3a06b01949e7a4a55ce
+
+THREAD src/modules/billing/routes/billing.service.ts:138 resolved=true
+[LucieFaire 2026-09-21T09:54:21Z] I did not understand the part about second factor and an int test
+[moisses89 2026-09-21T10:56:32Z] I updated the comment just mentioning the elevation guard. 
+https://github.com/safe-global/safe-client-gateway/pull/3445/changes/919cdb06ec66229a90e298ac212aa129cb3d04ce
+The previous comment was added to mention that a second factor is necessary too, because the Auth guard, isAdmin assert and Elevation guard are separated, so I could require that is Admin but not the second factor.
+
+REVIEW COMMENTED
+[yagopv 2026-09-21T08:58:32Z] Hey @moisses89, I’m missing the same admin protection for the session URL that creates a URL to manage the subscription. A member shouldn’t be able to use it
+
+COMMENT
+[moisses89 2026-09-18T15:45:36Z] @claude review
+
+COMMENT
+[claude 2026-09-18T15:45:53Z] **Claude finished @moisses89's task in 3m 24s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/35364377062)
+
+---
+### Claude Code Review
+
+- [x] Read changed files
+- [x] Analyze correctness, security, and test coverage
+- [x] Post review feedback
+
+Overall the PR is solid: comparing by `activePlanId` (not `activePlanName`) is the right fix for PLA-2003, the elevation-gated checkout is properly pinned in `elevation.integration.spec.ts`, and the seat‑capacity path is well tested. A few things to consider improving:
+
+---
+
+#### 1. `previewSubscriptionUpdate` skips the seat‑capacity check — inconsistent with its doc
+
+`billing.service.ts:190-223`. The doc says:
+
+> Rejects for the same reasons as the PATCH, bar one: it does not require an updatable subscription.
+
+But `updateSubscription` calls `assertSafeSeatCapacity`, and `previewSubscriptionUpdate` does not. So a downgrade preview succeeds and returns a price, then the follow‑up PATCH 409s. The client sees a quotable number but can never commit it. Either add the same check (probably the right choice — it lets the UI disable/annotate the CTA before the user clicks), or update the doc to state seat capacity is intentionally NOT checked on preview and explain why.
+
+[Fix this →](https://claude.ai/code?q=In%20src%2Fmodules%2Fbilling%2Froutes%2Fbilling.service.ts%2C%20add%20an%20assertSafeSeatCapacity%20call%20to%20previewSubscriptionUpdate%20so%20a%20downgrade%20whose%20target%20plan%20cannot%20fit%20the%20workspace%27s%20current%20Safes%20is%20rejected%20at%20preview%20time%20too%20-%20matching%20the%20behavior%20its%20docstring%20claims.%20Add%20a%20matching%20spec%20under%20describe%28%27previewSubscriptionUpdate%27%29.%20Branch%3A%20moisesf%2Fpla-2003-cgw-payment-link-offer-filter-excludes-sibling-plans-sharing&repo=safe-global/safe-client-gateway)
+
+---
+
+#### 2. `assertSafeSeatCapacity` parses the quota twice
+
+`billing.service.ts:428-447`. `parseSafeSeatQuota(...)` runs in the guard clause, then `hasSeatCapacity(link, used)` inside its body parses the same metadata again. Not a bug — just wasted work and slightly awkward. Cleaner:
+
+```ts
+const quota = parseSafeSeatQuota(
+  args.paymentLink.metadata,
+  (m) => this.loggingService.warn(m),
+);
+if (quota === null) return;
+const used = await this.spaceSafesRepository.countBySpaceId(args.spaceId);
+if (used > quota) {
+  throw new ConflictException(
+    "This plan doesn't offer enough Safe seats for the workspace's current Safes",
+  );
+}
+```
+
+`hasSeatCapacity` currently has exactly one caller (this method); if you go this route it can be removed from `payment-link-offer.rules.ts` and its unit tests folded away, keeping the rule module focused on offer selection.
+
+[Fix this →](https://claude.ai/code?q=In%20src%2Fmodules%2Fbilling%2Froutes%2Fbilling.service.ts%2C%20refactor%20assertSafeSeatCapacity%20to%20call%20parseSafeSeatQuota%20exactly%20once%20-%20store%20the%20result%2C%20guard%20on%20null%2C%20then%20compare%20used%20%3E%20quota%20directly%20-%20and%20remove%20hasSeatCapacity%20from%20src%2Fmodules%2Fbilling%2Fdomain%2Fpayment-link-offer.rules.ts%20and%20its%20tests%20in%20payment-link-offer.rules.spec.ts%20since%20it%20would%20be%20unused.%20Branch%3A%20moisesf%2Fpla-2003-cgw-payment-link-offer-filter-excludes-sibling-plans-sharing&repo=safe-global/safe-client-gateway)
+
+---
+
+#### 3. Nit: `ApiConflictResponse` on `PATCH .../subscriptions/:subscriptionId` merges four unrelated 409 causes into one prose sentence
+
+`billing.controller.ts:274-277`. Fine as documentation, but it forces the client to string‑match the message to distinguish them. If you already return distinct message strings server‑side, consider a short bullet list in the description or dedicated error codes to make the outcomes machine‑distinguishable.
+
+---
+
+#### 4. Nit: consider narrowing the OpenAPI 403 wording on `updateSubscription`
+
+`billing.controller.ts:270-272` says `"Not an admin, or a plan this workspace is not offered"` but the service also throws 403 for a `paymentLinkId` that is not in the offered set (`paymentLinkForPlanOrFail` → `ForbiddenException`). Small clarity gain to mention that third case.
+
+---
+
+Nothing above blocks merging. The correctness fix and the security tightening (admin + elevation) are good.
+ — branch `moisesf/pla-2003-cgw-payment-link-offer-filter-excludes-sibling-plans-sharing`
+
+COMMENT
+[moisses89 2026-09-18T15:52:18Z] @claude arch-review
+
+COMMENT
+[claude 2026-09-18T15:59:36Z] ## Architecture check
+
+Guides applied: [ARCHITECTURE.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/ARCHITECTURE.md), [best-practices.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/best-practices.md), [nestjs-patterns.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/nestjs-patterns.md), [api-dtos-and-validation.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/api-dtos-and-validation.md), [security.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/security.md), [module-structure.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/module-structure.md), [caching-and-performance.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/caching-and-performance.md), [database-and-migrations.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/database-and-migrations.md), [testing.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/testing.md), [commits-and-prs.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/commits-and-prs.md), [reviewing.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/reviewing.md), [remarks.md](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/remarks.md)
+
+1. **[Splitting a change](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/commits-and-prs.md#L128)** — PR description — Three independent concerns ship in one diff across three modules: the price-id offer-filter correction, a brand-new seat-capacity 409 on two endpoints, and narrowing `createCheckoutUrl`/`updateSubscription` from member to admin plus a new `ElevationGuard`. **Fix:** split along the seam and land them in order — (1) `fix: match the active plan price, not its display name` (`activePlanName` → `activePlanId`, `offersPlan()`, specs), (2) `feat: reject a plan with fewer Safe seats than the workspace uses`, (3) `fix!: require workspace admin to start or change a subscription` (`assertSpaceAdmin`, `ElevationGuard`, gated table). Same seam as [R-029](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/remarks.md#L435).
+2. **[Commit subject format](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/commits-and-prs.md#L11)** — PR title — Two already-shipped endpoints stop serving non-admin members (200 becomes 403), but the title that becomes the permanent squash subject carries no `!` breaking-change marker. **Fix:** mark the authorization change breaking — `fix!: require workspace admin to start or change a subscription` — keeping the member-to-admin break explained in `## Summary`.
+3. **[R-026: Redundant conditions and needless intermediates](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/remarks.md#L402)** — [src/modules/billing/routes/billing.service.ts:442](https://github.com/safe-global/safe-client-gateway/blob/ccc4841c0cef460308b92ad01570fc6b61db5444/src/modules/billing/routes/billing.service.ts#L442) — `assertSafeSeatCapacity` parses the quota at line 434 only to test it for `null`, discards it, then `hasSeatCapacity` parses the same `metadata` a second time. **Fix:** keep the value it already has — `const quota = parseSafeSeatQuota(args.paymentLink.metadata, (message) => this.loggingService.warn(message)); if (quota === null) return; const used = await this.spaceSafesRepository.countBySpaceId(args.spaceId); if (used > quota) { throw new ConflictException(...); }` — and drop the then-unused `hasSeatCapacity` export and its spec block from `payment-link-offer.rules.ts`.
+
+**Verdict:** ❌ 3 finding(s)
+
+<sub>Automated check of this repo's [agent guidelines](https://github.com/safe-global/safe-client-gateway/blob/main/AGENTS.md) — Claude applying the committed guides in `docs/agents/`, not its own opinion. Run by [architecture-check.yml](https://github.com/safe-global/safe-client-gateway/blob/main/.github/workflows/architecture-check.yml) on `@claude arch-review`; background in [the CI gate](https://github.com/safe-global/safe-client-gateway/blob/main/docs/agents/agent-tooling.md#the-ci-gate). Advisory — reply to a finding by its number to discuss it.</sub>
+
+COMMENT
+[moisses89 2026-09-21T08:41:22Z] > #### 1. `previewSubscriptionUpdate` skips the seat‑capacity check — inconsistent with its doc
+> `billing.service.ts:190-223`. The doc says:
+> 
+> > Rejects for the same reasons as the PATCH, bar one: it does not require an updatable subscription.
+> 
+> But `updateSubscription` calls `assertSafeSeatCapacity`, and `previewSubscriptionUpdate` does not. So a downgrade preview succeeds and returns a price, then the follow‑up PATCH 409s. The client sees a quotable number but can never commit it. Either add the same check (probably the right choice — it lets the UI disable/annotate the CTA before the user clicks), or update the doc to state seat capacity is intentionally NOT checked on preview and explain why.
+> 
+> [Fix this →](https://claude.ai/code?q=In%20src%2Fmodules%2Fbilling%2Froutes%2Fbilling.service.ts%2C%20add%20an%20assertSafeSeatCapacity%20call%20to%20previewSubscriptionUpdate%20so%20a%20downgrade%20whose%20target%20plan%20cannot%20fit%20the%20workspace%27s%20current%20Safes%20is%20rejected%20at%20preview%20time%20too%20-%20matching%20the%20behavior%20its%20docstring%20claims.%20Add%20a%20matching%20spec%20under%20describe%28%27previewSubscriptionUpdate%27%29.%20Branch%3A%20moisesf%2Fpla-2003-cgw-payment-link-offer-filter-excludes-sibling-plans-sharing&repo=safe-global/safe-client-gateway)
+> 
+> #### 2. `assertSafeSeatCapacity` parses the quota twice
+> `billing.service.ts:428-447`. `parseSafeSeatQuota(...)` runs in the guard clause, then `hasSeatCapacity(link, used)` inside its body parses the same metadata again. Not a bug — just wasted work and slightly awkward. Cleaner:
+> 
+> ```ts
+> const quota = parseSafeSeatQuota(
+>   args.paymentLink.metadata,
+>   (m) => this.loggingService.warn(m),
+> );
+> if (quota === null) return;
+> const used = await this.spaceSafesRepository.countBySpaceId(args.spaceId);
+> if (used > quota) {
+>   throw new ConflictException(
+>     "This plan doesn't offer enough Safe seats for the workspace's current Safes",
+>   );
+> }
+> ```
+> 
+> `hasSeatCapacity` currently has exactly one caller (this method); if you go this route it can be removed from `payment-link-offer.rules.ts` and its unit tests folded away, keeping the rule module focused on offer selection.
+> 
+> [Fix this →](https://claude.ai/code?q=In%20src%2Fmodules%2Fbilling%2Froutes%2Fbilling.service.ts%2C%20refactor%20assertSafeSeatCapacity%20to%20call%20parseSafeSeatQuota%20exactly%20once%20-%20store%20the%20result%2C%20guard%20on%20null%2C%20then%20compare%20used%20%3E%20quota%20directly%20-%20and%20remove%20hasSeatCapacity%20from%20src%2Fmodules%2Fbilling%2Fdomain%2Fpayment-link-offer.rules.ts%20and%20its%20tests%20in%20payment-link-offer.rules.spec.ts%20since%20it%20would%20be%20unused.%20Branch%3A%20moisesf%2Fpla-2003-cgw-payment-link-offer-filter-excludes-sibling-plans-sharing&repo=safe-global/safe-client-gateway)
+> 
+> #### 3. Nit: `ApiConflictResponse` on `PATCH .../subscriptions/:subscriptionId` merges four unrelated 409 causes into one prose sentence
+> `billing.controller.ts:274-277`. Fine as documentation, but it forces the client to string‑match the message to distinguish them. If you already return distinct message strings server‑side, consider a short bullet list in the description or dedicated error codes to make the outcomes machine‑distinguishable.
+> 
+> #### 4. Nit: consider narrowing the OpenAPI 403 wording on `updateSubscription`
+> `billing.controller.ts:270-272` says `"Not an admin, or a plan this workspace is not offered"` but the service also throws 403 for a `paymentLinkId` that is not in the offered set (`paymentLinkForPlanOrFail` → `ForbiddenException`). Small clarity gain to mention that third case.
+
+1. No split, all three belong to the same Linear ticket.
+2. It is not a breaking changes, the endpoints are disabled in production.  
+3. Already fixed, quota parsed once.
+
+COMMENT
+[moisses89 2026-09-21T09:03:20Z] > Hey Moisés (@moisses89), I’m missing the same admin protection for the session URL that creates a URL to manage the subscription. A member shouldn’t be able to use it
+
+pushed last changes. 

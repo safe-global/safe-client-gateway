@@ -1,0 +1,191 @@
+{
+  "usage": {
+    "usd": 0.6827744000000001,
+    "turns": 11,
+    "wallSeconds": 94
+  },
+  "issues": [
+    {
+      "findings": [
+        "F15",
+        "F22",
+        "F24",
+        "F30"
+      ],
+      "summary": "checkVersionCompatibility hardcodes '1.4.1' for the SafeToL2Setup/SafeToL2Migration checks, so 1.5.0 Safes are gated against the wrong helper deployments",
+      "label": "medium",
+      "evidence": "recipient-analysis.service.ts:684-698 passes version '1.4.1' no matter what the Safe's version is. In safe-deployments 1.37.62, v1.5.0 has a separate safe_to_l2_setup and no safe_to_l2_migration. Seven chains (5424, 7979, 9302, 38833, 613419, 843843, 37714555429) have the 1.5.0 singleton and 1.5.0 SafeToL2Setup but no 1.4.1 SafeToL2Setup, so a 1.5.0 setupToL2 Safe bridging there gets a spurious INCOMPATIBLE_SAFE. That is exactly the false positive this PR says it removes.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F2",
+        "F16",
+        "F21"
+      ],
+      "summary": "New 1.5.0 tests force to=zeroAddress, so the setupToL2 path is never exercised",
+      "label": "medium",
+      "evidence": "Both new specs (recipient-analysis.service.spec.ts ~1726 and ~1782) set the 'to' parameter to zeroAddress, which makes includesSetupToL2 false and skips the hardcoded-1.4.1 branch. That is why the confirmed version bug above goes uncaught.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F9",
+        "F13",
+        "F18",
+        "F26"
+      ],
+      "summary": "Wildcard npmPreapprovedPackages '@safe-global/*' permanently exempts the whole scope from the 7-day age gate",
+      "label": "medium",
+      "evidence": ".yarnrc.yml:16-18 adds a scope-wide exemption, even though only the safe-deployments bump needed it. This is a standing weakening of the supply-chain policy, bundled into a feature PR whose description says the bump ships separately.",
+      "category": "security"
+    },
+    {
+      "findings": [
+        "F17"
+      ],
+      "summary": "PR bundles the dependency bump and age-gate policy change with feature work, contradicting its description",
+      "label": "low",
+      "evidence": "The diff includes the package.json bump to 1.37.62, the .yarnrc.yml change and yarn.lock, from commit 2d7f839fd. The PR body says the bump 'ships separately in tongyao/wa-2936-bump-safe-deployments'. This is a real scope and description mismatch, but it is a process issue.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F11"
+      ],
+      "summary": "Commit message claims the wildcard matches a safe-wallet-monorepo convention",
+      "label": "unverifiable",
+      "evidence": "Commit 2d7f839fd asserts this convention, but checking it would need another repository, which is not available here.",
+      "category": "docs"
+    },
+    {
+      "findings": [
+        "F4"
+      ],
+      "summary": "Claim that there is no negative-path test for a 1.5.0 Safe on a chain without 1.5.0 deployments",
+      "label": "wrong",
+      "evidence": "recipient-analysis.service.spec.ts:1751 adds 'should return INCOMPATIBLE_SAFE for a 1.5.0 Safe when the target chain only has 1.4.1 deployments', using chain 1101. Chain 1101 has no v1.5.0 safe.json entry, so the test does cover this path.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F5",
+        "F10",
+        "F27"
+      ],
+      "summary": "The SETTINGS_CHANGE_METHODS toContain test is tautological; nothing tests that setModuleGuard is classified as SettingsChange through transaction-info.mapper",
+      "label": "low",
+      "evidence": "settings-change.mapper.spec.ts:308-312 only restates the array contents. The classification that actually matters happens at transaction-info.mapper.ts:582, and no test drives a setModuleGuard self-call through it. The risk is small because the check is a plain includes() on that array.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F6"
+      ],
+      "summary": "handleSetModuleGuard duplicates handleSetGuard",
+      "label": "wrong",
+      "evidence": "settings-change.mapper.ts:187-237 already factors both handlers into a shared handleGuardLike helper (commit e8c671496). Each wrapper only passes its constructors.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F7"
+      ],
+      "summary": "handleGuardLike name is vague",
+      "label": "nit",
+      "evidence": "This is a naming preference. The helper has a JSDoc comment at settings-change.mapper.ts:187-190 that explains its purpose.",
+      "category": "style"
+    },
+    {
+      "findings": [
+        "F14"
+      ],
+      "summary": "Strict comparison against lowercase NULL_ADDRESS is fragile",
+      "label": "nit",
+      "evidence": "settings-change.mapper.ts:204 compares against NULL_ADDRESS. The zero address has no hex letters, so its checksummed and lowercase forms are identical and the comparison cannot fail on casing. The pattern predates the PR in setGuard.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F1"
+      ],
+      "summary": "Previously cached analysis results for 1.5.0 Safes stay stale until TTL expiry",
+      "label": "low",
+      "evidence": "recipient-analysis.service.ts:163-167 caches with defaultExpirationTimeInSeconds, so old verdicts expire on their own. The staleness is transient and minor.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F3"
+      ],
+      "summary": "PR title carries an issue reference that becomes the squash commit subject",
+      "label": "wrong",
+      "evidence": "The PR title is 'feat: recognise Safe 1.5.0 as a known, trusted version' and has no WA-2921. Only the intermediate commit 9e8e65ce1 has it, and a squash merge takes the PR title.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F8"
+      ],
+      "summary": "Tests hardcode 1.5.0 singleton, factory and fallback-handler addresses instead of reading them from safe-deployments",
+      "label": "low",
+      "evidence": "recipient-analysis.service.spec.ts:1714-1722 and the duplicate block use literal addresses with 'as Address' casts. Canonical addresses are stable, so the cost is low, but the literals go against the repo's no-literal-fixture guidance.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F12",
+        "F29"
+      ],
+      "summary": "The two new 1.5.0 tests duplicate about 45 lines of setup",
+      "label": "nit",
+      "evidence": "The specs at recipient-analysis.service.spec.ts:1695-1805 differ only in chainId and expected type. They could use it.each or a helper, but this is style only.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F19"
+      ],
+      "summary": "The DeleteModuleGuard test uses a literal zero address instead of viem's zeroAddress",
+      "label": "nit",
+      "evidence": "settings-change.mapper.spec.ts:292 uses the literal, which mirrors the existing DeleteGuard test at line 255. This is purely stylistic.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F20"
+      ],
+      "summary": "The DeleteModuleGuard test should use faker instead of a hardcoded value",
+      "label": "wrong",
+      "evidence": "The test exercises the zero-address delete branch, so the value has to be the zero address. A random value would test a different branch.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F23"
+      ],
+      "summary": "The INCOMPATIBLE_SAFE test depends on chain 1101 lacking 1.5.0 in real deployment data",
+      "label": "low",
+      "evidence": "recipient-analysis.service.spec.ts:1752 depends on the real safe-deployments data, where 1101 currently has no v1.5.0 safe entry. A future pin bump could break the test for reasons unrelated to the code under test.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F25"
+      ],
+      "summary": "chainId in the INCOMPATIBLE_SAFE test should be random",
+      "label": "wrong",
+      "evidence": "The deployment lookups are not mocked. The outcome depends on real safe-deployments data for that specific chain, so a random chainId would make the test nondeterministic.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F28"
+      ],
+      "summary": "Moving setModuleGuard from Custom to SettingsChange with new enum values is an unannounced API change",
+      "label": "wrong",
+      "evidence": "The PR description explicitly says 'setModuleGuard transactions move from txInfo.type: \"Custom\" to \"SettingsChange\" with two new settingsInfo.type values', so the change is intended and documented.",
+      "category": "product"
+    }
+  ]
+}

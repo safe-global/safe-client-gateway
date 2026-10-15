@@ -1,0 +1,25 @@
+{
+  "usd": 0.0532876,
+  "findings": [
+    {
+      "file": "src/modules/relay/domain/relayers/workspace.relayer.ts",
+      "line": 98,
+      "claim": "The current approach risks a race condition and could allow extra sponsored transactions; incrementing the counter first and discounting it if the relay fails would be a safer alternative."
+    },
+    {
+      "file": "src/modules/entitlements/domain/entitlements.constants.ts",
+      "line": 42,
+      "claim": "This function returns a plain boolean instead of a type predicate like the similar isStockMeteredFeature above; it should be made a real type predicate for consistency even though it causes no bug today since eventPeriodStart accepts a plain Feature."
+    },
+    {
+      "file": "src/modules/relay/routes/space-relay.controller.ts",
+      "line": 98,
+      "claim": "The repeated set of exception filters applied here could be extracted into a shared decorator/common location instead of being duplicated."
+    },
+    {
+      "file": "src/modules/relay/domain/relayers/workspace.relayer.ts",
+      "line": 102,
+      "claim": "The last three awaited calls appear to have no dependencies between them and could be run concurrently with Promise.all instead of sequentially."
+    }
+  ]
+}

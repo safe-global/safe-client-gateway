@@ -1,0 +1,45 @@
+{
+  "usd": 0.0716716,
+  "findings": [
+    {
+      "file": "src/modules/auth/AUTH.md",
+      "line": 246,
+      "claim": "The documentation states that non-HTTPS URLs, URLs with credentials, and URLs with explicit ports are always rejected, but the code now accepts loopback URLs over http with any port, so the documented behavior no longer matches the implementation."
+    },
+    {
+      "file": ".env.sample.json",
+      "line": 118,
+      "claim": "The description of AUTH_ALLOWED_REDIRECT_DOMAIN states that setting it means any subdomain is accepted, but omits that setting it also enables the loopback exception."
+    },
+    {
+      "file": "auth-redirect.helper.spec.ts",
+      "line": 212,
+      "claim": "The test uses faker.internet.port(), which can generate 80 or 443; since new URL() drops default ports from its serialized string, the test's toBe(url) comparison can fail intermittently when one of those values is drawn."
+    },
+    {
+      "file": "auth-redirect.helper.ts",
+      "line": 130,
+      "claim": "There is no test covering the non-production case without allowedRedirectDomain set; if the loopback check were moved above this line's check, loopback URLs would be incorrectly accepted in every non-production configuration and the existing test suite would not catch it."
+    },
+    {
+      "file": "auth.service.ts",
+      "line": 147,
+      "claim": "For OIDC users, getLogoutRedirectUrl sends the loopback URL to Auth0 as the returnTo parameter, which Auth0 will reject unless the tenant's Allowed Logout URLs list includes those localhost origins."
+    },
+    {
+      "file": null,
+      "line": null,
+      "claim": "RFC 8252 section 8.3 marks the use of the hostname 'localhost' (as opposed to an IP literal) as not recommended, which makes the related documentation comment less accurate even though browsers still treat localhost as loopback."
+    },
+    {
+      "file": "oidc-auth.service.ts",
+      "line": 113,
+      "claim": "The JSDoc states that redirectUrl 'Must be same-origin', which was already inaccurate before this change because subdomains were allowed, and is now further from correct given the added loopback exception."
+    },
+    {
+      "file": "auth-redirect.helper.spec.ts",
+      "line": 193,
+      "claim": "The existing test that checks rejection of a URL with an explicit port has the same faker-generated-port issue: it can draw 443, producing a URL that is actually valid and causing the rejection test to fail."
+    }
+  ]
+}

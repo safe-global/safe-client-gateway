@@ -1,0 +1,10 @@
+{
+  "usd": 0.0380856,
+  "findings": [
+    {
+      "file": "docs/agents/nestjs-patterns.md",
+      "line": 55,
+      "claim": "The guide states there are seventeen guards, but this diff removes two guards (entitlements/routes/guards/entitlement.guard.ts and safe-seats.guard.ts), so the count is now stale and should read sixteen. The sentence also inaccurately implies all guards live under a routes/guards/ directory, when one guard (portfolio/v1/guards/portfolio-route.guard.ts) sits outside that pattern, so the text should be corrected to state sixteen guards exist, all under a routes/guards/ directory (or routes/common/ for the cross-cutting ones)."
+    }
+  ]
+}

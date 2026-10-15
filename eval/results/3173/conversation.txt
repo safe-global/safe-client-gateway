@@ -1,0 +1,40 @@
+THREAD src/modules/auth/AUTH.md:257 resolved=true
+[nlordell 2026-06-19T11:28:10Z] nit: table should probably be re-formatted.
+[PooyaRaki 2026-06-19T12:03:29Z] Done
+https://github.com/safe-global/safe-client-gateway/pull/3173/commits/2c7a44508723ff3a62fe683355953e2ca20a38d9
+
+THREAD src/modules/siwe/domain/entities/siwe-message.entity.ts:81 resolved=true
+[nlordell 2026-06-19T11:29:28Z] ```suggestion
+          message: 'Message not yet valid',
+```
+[PooyaRaki 2026-06-19T12:00:56Z] https://github.com/safe-global/safe-client-gateway/pull/3173/commits/6dcb6b6be764f85c36b83e4a8eb39ea07d8100a1
+
+THREAD src/modules/siwe/domain/entities/siwe-message.entity.ts:64 resolved=true
+[compojoom 2026-06-19T11:39:57Z] Shouldn't that be "message not issued yet"?
+[PooyaRaki 2026-06-19T12:00:50Z] https://github.com/safe-global/safe-client-gateway/pull/3173/commits/6dcb6b6be764f85c36b83e4a8eb39ea07d8100a1
+
+THREAD src/modules/siwe/domain/siwe.repository.ts:45 resolved=true
+[tongyaosafe 2026-06-19T11:47:37Z] A small suggestion / discussion:
+Seems `buildSiweMessageSchema` will run for every login? but `this.clockSkewSeconds` never change, so `siweMessageSchema` will always be the same? Maybe it is worth to move it to constructor?
+[PooyaRaki 2026-06-19T12:00:47Z] Done
+https://github.com/safe-global/safe-client-gateway/pull/3173/commits/6dcb6b6be764f85c36b83e4a8eb39ea07d8100a1
+
+COMMENT
+[datadog-official 2026-06-19T11:30:48Z] <a target='_blank' href='https://app.datadoghq.eu/ci/pipeline-executions?query=ci_level%3Ajob+%40ci.status%3Aerror+%40git.commit.sha%3A8e3da11c62df95f2f94ef3fb2a63b83f116bf7ab&referrer=pr-comment'><picture><source media="(prefers-color-scheme: dark)" srcset="https://static.datadoghq.com/static/images/pr_comments/software_delivery/badges_header/pipelines-warning.svg"/><img src="https://static.datadoghq.com/static/images/pr_comments/software_delivery/badges_header/pipelines-warning-light.svg" alt="Pipelines" align="center" /></picture></a>
+
+## ⚠️ Warnings
+
+🚦 **1 Pipeline job failed**
+
+<blockquote>
+<div>
+
+<code> CI | integration-tests </code> &nbsp;&nbsp;<a href="https://app.datadoghq.eu/ci/pipeline-executions?query=ci_level%3Ajob&#43;ci.job_correlation_id%3A3d95dfb0be3d6f50&amp;referrer=pr-comment" title="View in Datadog"><img src="https://static.datadoghq.com/static/images/pr_comments/software_delivery/datadog_icon.svg" alt="View in Datadog" align="center" /></a> &nbsp; <a href="https://github.com/safe-global/safe-client-gateway/actions/runs/27822840177/job/82339845873" title="View in GitHub Actions"><picture><source media="(prefers-color-scheme: dark)" srcset="https://static.datadoghq.com/static/images/pr_comments/software_delivery/logos/github-logo-dark.svg"/><img src="https://static.datadoghq.com/static/images/pr_comments/software_delivery/logos/github-logo-light.svg" alt="GitHub Actions" align="center" /></picture></a>
+
+</div>
+</blockquote>
+
+<sub>
+This comment will be updated automatically if new data arrives. <br />
+🔗 Commit SHA: 8e3da11 | <a href="https://docs.datadoghq.com/integrations/guide/source-code-integration/#pr-comments">Docs</a> | Give us <a href="https://forms.gle/ys6MDmdQEeC5pkzWA">feedback</a>!
+</sub>

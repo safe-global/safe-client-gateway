@@ -1,0 +1,40 @@
+{
+  "usd": 0.0646176,
+  "findings": [
+    {
+      "file": "src/modules/spaces/domain/safes/space-safes.repository.ts",
+      "line": 33,
+      "claim": "The SEAT_KEY constant hard-codes a SQL fragment that assumes a join alias of `safe`, but there is no compile-time check tying them together, so a future rename of that alias would silently break the query without being caught."
+    },
+    {
+      "file": "src/modules/spaces/domain/safes/space-safes.repository.ts",
+      "line": 256,
+      "claim": "countNewSeats builds a Set of seat keys and then converts it back into an array to unnest into the query, but since the SQL uses NOT EXISTS semantics that already dedupe, the intermediate Set allocation is unnecessary."
+    },
+    {
+      "file": "space-safes.repository.interface.ts",
+      "line": 19,
+      "claim": "The docstring for PreparedSpaceSafe.plaintextAddress states that only insertRows reads inside it, but countNewSeats now also reads from a Pick of PreparedSpaceSafe, making the surrounding wording about the type's consumers stale."
+    },
+    {
+      "file": "entitlements.rules.ts",
+      "line": null,
+      "claim": "fitsWithinQuota rejects a delta: 0 add for a space that is already over its quota (e.g. after a downgrade), meaning such a space cannot add a new chain to a Safe it already holds until it removes something; this behavior should be confirmed with product since the PLA-1975 spec wording ('at its seat limit') is ambiguous as to whether it also covers being over the limit."
+    },
+    {
+      "file": "space-safes.repository.interface.ts",
+      "line": 101,
+      "claim": "Broadening the parameter type in countNewSeats to Pick<PreparedSpaceSafe, 'address' | 'addressIndex'> lets any caller pass an object with that shape rather than requiring the exact prepared/encrypted values; if a future caller forgets to run encryptRows first, addressIndex will be null and the dedup key will fall back to plaintext, which won't match already-encrypted rows in the table, causing a silent overcount of seats."
+    },
+    {
+      "file": "space-safes.repository.integration.spec.ts",
+      "line": 448,
+      "claim": "The ad-hoc addSafeUnderQuota helper defined inline in the concurrency test duplicates the SpaceSafesService.create sequence, so the test partly asserts behavior against a re-implementation of the service logic rather than the shared code itself."
+    },
+    {
+      "file": "database-and-migrations.md",
+      "line": null,
+      "claim": "The PR justifies skipping a new index for the seat-key filter based on a measurement on 1M rows, but that measurement reasoning should be kept in the commit body or a follow-up doc so future reviewers can see why the usual indexing rule was deliberately skipped here."
+    }
+  ]
+}

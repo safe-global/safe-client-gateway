@@ -1,0 +1,20 @@
+{
+  "usd": 0.0577496,
+  "findings": [
+    {
+      "file": "src/modules/safe-queue/entities/__tests__/multisig-transaction.entity.spec.ts",
+      "line": 31,
+      "claim": "The test casts a value with `as `0x${string}`` while no other spec in the repo uses that form, whereas `toLowerCase() as Address` appears 52 times elsewhere, so the cast style is inconsistent with existing convention; using `import type { Address } from 'viem'` and `as Address` would match it."
+    },
+    {
+      "file": "src/modules/safe-queue/entities/multisig-transaction.entity.ts",
+      "line": 46,
+      "claim": "The schema silently maps an upstream `null` `to` value to the zero address without any comment explaining why, and the commit message has no body either, even though every other nullable address field in this schema uses `NullableAddressSchema` instead, making this deliberate difference unexplained; a one-line comment noting that the Queue Service returns null where the Transaction Service returns the zero address would clarify the intent."
+    },
+    {
+      "file": "src/modules/safe-queue/entities/multisig-transaction.entity.ts",
+      "line": 46,
+      "claim": "It is unclear whether the zero address is actually the correct semantic meaning of a null `to` value, since the mapper passes `tx.to` straight through to clients, so if null could mean something other than 'sent to the zero address' this mapping would hide that distinction from callers; this should be confirmed against the Queue Service contract and stated in the explanatory comment."
+    }
+  ]
+}

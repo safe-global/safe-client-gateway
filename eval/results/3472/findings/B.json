@@ -1,0 +1,55 @@
+{
+  "usd": 0.06495000000000001,
+  "findings": [
+    {
+      "file": "docs/agents/testing.md",
+      "line": 36,
+      "claim": "This file states that _ci-node.yml is called by pull-request.yml, staging.yml and production.yml, but staging.yml and production.yml do not exist in the repository, so the documentation points to files that aren't there."
+    },
+    {
+      "file": "docs/agents/commits-and-prs.md",
+      "line": 166,
+      "claim": "This file states that the build and deploy jobs live in staging.yml and production.yml, but those files don't exist; build and deploy logic is still in ci.yml, making the documentation stale."
+    },
+    {
+      "file": ".github/workflows/ci.yml",
+      "line": 44,
+      "claim": "The needs condition changed from [biome, tests-finish] to [ci], which now waits on the entire reusable workflow; this means a failure in license-headers or env-validation on a push to main would now block docker-publish-staging, whereas before staging still deployed in that case."
+    },
+    {
+      "file": ".github/workflows/ci.yml",
+      "line": 81,
+      "claim": "The needs condition for autodeploy changed from [biome, tests-finish] to [ci], so on a push to main a failure in license-headers or env-validation now blocks autodeploy, contradicting the commit message's claim that nothing about building or deploying changes."
+    },
+    {
+      "file": null,
+      "line": null,
+      "claim": "On a release event, env-validation becomes a newly blocking dependency for deploy jobs because license-headers is skipped on release events and a skipped job doesn't fail the caller workflow, meaning the effective deploy gate differs from before in a way not mentioned in the commit message."
+    },
+    {
+      "file": ".github/workflows/_ci-node.yml",
+      "line": 277,
+      "claim": "Moving the job body split a two-line comment about production running on arm64 in half, leaving a dangling fragment in the reusable workflow while the corresponding explanation above docker-publish-staging in ci.yml:39 was lost entirely."
+    },
+    {
+      "file": ".github/workflows/_ci-node.yml",
+      "line": 17,
+      "claim": "None of the callers (ci.yml:35-37, pull-request.yml:27-30) set the node_version, python_version, or ref inputs defined on the reusable workflow, so these inputs currently have no effect from any caller."
+    },
+    {
+      "file": ".github/workflows/_ci-node.yml",
+      "line": 17,
+      "claim": "The ref input, if ever set by a caller, would reach the license-headers diff logic, which assumes HEAD is the triggering commit; introducing an unused ref input without addressing this assumption could cause incorrect diff behavior once a caller starts passing it."
+    },
+    {
+      "file": ".github/workflows/_ci-node.yml",
+      "line": 82,
+      "claim": "The '# Krypton' comments at lines 82, 100, 164 and 234 are now misleading because the workflow's version references are parameterized via unused inputs rather than hardcoded as the comments imply."
+    },
+    {
+      "file": null,
+      "line": null,
+      "claim": "After this change, the required check names reported to branch protection will be 'ci / ...' instead of the previous names ('tests (test:cov)', 'tests-finish', 'biome'), so branch protection settings must be updated at merge time or every open PR in the repository will be blocked; this should be called out prominently in the PR body rather than only in the commit message."
+    }
+  ]
+}

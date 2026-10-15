@@ -1,0 +1,11 @@
+{
+  "pr": 3244,
+  "reviewSha": "9a6867a379897571f3459a3c7e8ea042dac2e885",
+  "baseSha": "9ecb1eeba6c7264d2a4c74d7e314e72903b3037a",
+  "system": "E",
+  "version": "github",
+  "runner": "collect",
+  "model": "human",
+  "commentSha": "6daaba197083ac1a8daa20f1214c8b8bdbf7b009",
+  "output": "src/modules/relay/datasources/rhinestone-api.service.ts:61\nwhy do we need this in error? Developer can build curl command by looking at the error.\n\n---\n\nsrc/modules/relay/datasources/rhinestone-api.service.ts:141\nno `createdAt`? \n\nhttps://github.com/safe-global/safe-client-gateway/blob/b915eb7e1b5a98560ab770ff72f4446daa5329f8/src/modules/relay/domain/entities/relay-task-status.entity.ts#L15\n\n---\n\nsrc/modules/relay/datasources/rhinestone-api.service.ts:127\nWe shouldn’t mention Gelato here; after this PR, there won’t be anything related to it. Can you check elsewhere?\n\n---\n\nsrc/config/entities/schemas/configuration.schema.ts:186\nWe should update this in `docker-compose.yml`"
+}

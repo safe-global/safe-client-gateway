@@ -1,0 +1,36 @@
+{
+  "usd": 0.3116504,
+  "head": "2901c841c3fb8060c76974f944b80d846cb4de61",
+  "verdicts": [
+    {
+      "issue": 0,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "Commit 546953794 added the test '404 error response for a counterfactual (undeployed) Safe' at balances.controller.integration.spec.ts:795. The author confirmed the fix in their 2026-07-09 comment (point 4)."
+    },
+    {
+      "issue": 1,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "At 7d6bca5 the flag still existed (configuration.ts:430, __tests__/configuration.ts:218). Commits 546953794 and a4d69c34c removed it everywhere, and grep at HEAD finds no references. The author confirmed this in point 2."
+    },
+    {
+      "issue": 2,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "At HEAD, getApi takes only chainId (balances-api.manager.interface.ts:17, balances-api.manager.ts:42). This came in commit 546953794, and the author confirmed it in point 1."
+    },
+    {
+      "issue": 3,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "getFiatCodes now returns this.coingeckoApi.getFiatCodes() directly (balances-api.manager.ts:46-47). This came in commit 546953794, and the author confirmed it in point 3."
+    },
+    {
+      "issue": 4,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "The describe block was renamed to 'SafeBalancesApi routing' (balances-api.manager.spec.ts:66) in commit 546953794. The author said the nits were done."
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "pr": 3357,
+  "reviewSha": "5506983c5262d24e78e579af705a88d71f4afc7e",
+  "baseSha": "253dd40e6a99c26bf436226526ff3e071ab73974",
+  "system": "E",
+  "version": "github",
+  "runner": "collect",
+  "model": "human",
+  "commentSha": "058f9db4667d4b4c9ae8cbad5775f5a67b7374f8",
+  "output": ".github/workflows/linear-release.yml:24\nWhy do we need it?"
+}

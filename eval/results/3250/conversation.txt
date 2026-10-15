@@ -1,0 +1,44 @@
+THREAD src/modules/counterfactual-safes/routes/counterfactual-safes.service.ts:90 resolved=true
+[TimDaub 2026-07-30T09:12:38Z] One nice optimization that is sadly not possible (unless we even change `isSafe`) is if `isSafe` would accept an `signal: AbortSignal` then as soon as we would have found one Promise returning that a Safe is deployed, we could have aborted all other, already launched Promises launched in the map iteration. 
+
+In fact, what would be nice is if there was a `Promise.some` we could just use here. But from what I know TS/JS doesn't have this :/
+[vmosharova 2026-07-31T07:25:43Z] Thanks for the review and an optimization offer! 🙏🏻 
+
+REVIEW APPROVED
+[TimDaub 2026-07-30T14:12:11Z] Looks good to me!
+
+Just left an optional comment for further improving, maybe even in a follow up ticket
+
+COMMENT
+[PooyaRaki 2026-07-14T16:27:23Z] @claude review
+
+COMMENT
+[claude 2026-07-14T16:27:42Z] **Claude finished @PooyaRaki's task in 1m 10s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/29349722137)
+
+---
+### Claude Code Review
+
+- [x] Read changed files
+- [x] Analyze changes for issues
+- [x] Post review
+
+---
+
+### Review
+
+Solid, well-scoped change. The fail-open semantics match the existing read-side filter, tests cover the three interesting branches (persists / rejects / fail-open), and the DI wiring is clean. A few small suggestions:
+
+**1. Duplicate logic across the two services** — `assertNoneDeployed` in `counterfactual-safes.service.ts:80-101` and `filterUndeployed` in `space-counterfactual-safes.service.ts:60-77` implement essentially the same primitive: "map over Safes → parallel `isSafe` → fail open on error". Consider extracting a shared helper (e.g. `checkDeployment(safes, safeRepository): Promise<Array<boolean>>`) so future changes to the fail-open policy or error logging live in one place.
+
+**2. Silent fail-open swallows all errors** — `counterfactual-safes.service.ts:90-92` and `space-counterfactual-safes.service.ts:70-72` both `catch {}` without any logging. If the transaction service is down or returning malformed data, this endpoint will silently continue and you lose observability into a state where the guard is effectively disabled. Recommend injecting `LoggingService` and logging at `warn` level (chainId + address + error) so ops has a signal when the check is degraded.
+
+**3. Duplicate `isSafe` calls for repeated addresses** — If a batched POST includes the same `(chainId, address)` twice (e.g. accidental client dupe), `isSafe` is invoked once per occurrence. Minor, but a `new Map()` dedupe by `${chainId}:${address}` in `assertNoneDeployed` would avoid redundant tx-service requests. Same applies to `filterUndeployed` if the underlying repository can return duplicates.
+
+**4. Response-type invariant in `space-counterfactual-safes.service.ts`** — After filtering, a chain whose Safes were all deployed will be missing from the response `safes` object. The tests only assert on non-empty chains — worth double-checking clients don't rely on an empty array being present per chain. If they might, `transformCounterfactualSafesResponse` may need to preserve empty buckets.
+
+**5. Test — DTO builder duplicates the mapping in the service** — `counterfactual-safes.service.spec.ts:22-40` re-implements the field-mapping already done in `CounterfactualSafesService.create` (`to → setupTo`, `data → setupData`, etc.). Consider a small `createCounterfactualSafeDtoBuilder()` in the domain builders so the DTO shape is asserted in one place and tests don't drift when the DTO changes.
+
+**6. Small nit — comment style** — `counterfactual-safes.service.ts:78-79` and `space-counterfactual-safes.service.ts:51-52` explain the *what* rather than a non-obvious *why*. The "fail open" reasoning is the interesting part; the "reject if any deployed" part is obvious from the code. Consider trimming to just the fail-open rationale.
+
+No blocking issues. Test coverage is proportional to the change.
+ · Branch: `fix/cf-reject-deployed-safes-on-post`

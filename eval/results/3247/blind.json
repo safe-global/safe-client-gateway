@@ -1,0 +1,85 @@
+{
+  "pr": 3247,
+  "title": "fix: CF safes: filter deployed Safes from counterfactual space endpoint",
+  "description": "## Summary\r\n\r\nResolves: [WA-2847](https://linear.app/safe-global/issue/WA-2847/cgw-fix-stop-returning-depolyed-safes-as-cf)\r\nFirst-aid fix for `GET /v1/spaces/:spaceId/counterfactual-safes` returning already-deployed Safes as counterfactual.\r\n\r\nA `counterfactual_safes` row records a *predicted* Safe but is never cleared when that Safe is later deployed on-chain, so a stale row makes a deployed Safe surface on this endpoint as counterfactual. The read path never checked deployment status.\r\n\r\nThis patch cross-checks each candidate against the transaction service (`isSafe`) and drops the ones that are actually deployed. Fail-open: if the check errors, the row is kept so a transaction-service outage can't hide a genuinely counterfactual Safe.\r\n\r\nThis is a read-side fix only — it hides deployed Safes from the response but does not stop the bad rows from being written. **Write-side hardening (reject deployed addresses on `POST /counterfactual-safes`, FE guard) and cleanup of existing stale rows will follow in a child PR.**\r\n\r\n## Changes\r\n\r\n- Filter deployed Safes out of the space counterfactual-safes response (`SpaceCounterfactualSafesService`), via `ISafeRepository.isSafe`, run in parallel, fail-open on error.\r\n- Inject `SafeRepositoryModule` into `CounterfactualSafesModule`.\r\n- Add unit tests for `SpaceCounterfactualSafesService` (first unit spec for this service): deployed filtering, undeployed pass-through, fail-open, empty space, non-member, and multi-chain per-chain filtering.\r\n",
+  "findings": [
+    {
+      "id": "F1",
+      "file": "src/modules/counterfactual-safes/routes/space-counterfactual-safes.service.spec.ts",
+      "line": 44,
+      "claim": "spaceId is generated with faker.string.uuid() even though Space['id'] is a number (see space.entity.db.ts:22), and 'as never' casts are used to hide this type mismatch at lines 44, 75, 97, 113, 123, 133 and 165. faker.number.int() should be used instead and the casts removed."
+    },
+    {
+      "id": "F2",
+      "file": "src/modules/counterfactual-safes/routes/counterfactual-safes.service.ts",
+      "line": 46,
+      "claim": "The user-scoped GET endpoint reads the same rows as the space endpoint but does not apply the new deployed-Safe filtering, so for a deployed Safe the space endpoint and the user endpoint will now return inconsistent results; additionally nothing removes counterfactual rows when a Safe is created (the SAFE_CREATED handler in event-cache.helper.ts:653 only clears the cache), leaving the underlying stale data in place."
+    },
+    {
+      "id": "F3",
+      "file": "src/modules/counterfactual-safes/routes/space-counterfactual-safes.service.spec.ts",
+      "line": 17,
+      "claim": "A value is cast to unknown unnecessarily, and this cast should be removed."
+    },
+    {
+      "id": "F4",
+      "file": "src/modules/counterfactual-safes/routes/__tests__/space-counterfactual-safes.controller.e2e-spec.ts",
+      "line": 102,
+      "claim": "The service now makes a tx-service isSafe call, but this e2e test file was not updated and does not mock the chain or tx-service responses, so the existing 'Should return counterfactual safes' case likely only passes because the call fails and the Safe is kept by default, meaning the new filter is never exercised end to end and the test depends on an unstated failure path. The chain config and the /api/v1/safes/{address} responses should be mocked (a 200 for a deployed Safe, a 404 for an undeployed one), with a case added where a deployed Safe is filtered out."
+    },
+    {
+      "id": "F5",
+      "file": "space-counterfactual-safes.service.spec.ts",
+      "line": 60,
+      "claim": "Member fixtures are created as a plain object like { id: userId } as never (also at lines 88-90, 106, 120, 150, plus 'null as never' at line 131) instead of a real Member. The existing memberBuilder in src/modules/users/datasources/entities/__tests__/member.entity.db.builder.ts should be used to build them, and the null case should be typed properly instead of cast."
+    },
+    {
+      "id": "F6",
+      "file": "src/modules/counterfactual-safes/routes/__tests__/space-counterfactual-safes.controller.e2e-spec.ts",
+      "line": 209,
+      "claim": "There is no end-to-end test verifying that a deployed Safe is actually removed from the list; the existing e2e tests use a bare vi.fn() network mock that causes isSafe to throw, so they pass because errors are swallowed by the catch, not because the filtering logic works."
+    },
+    {
+      "id": "F7",
+      "file": "space-counterfactual-safes.service.spec.ts",
+      "line": 82,
+      "claim": "The test 'returns undeployed counterfactual safes' is fully covered by the tests at lines 49 and 137 and its assertion is weaker, checking only length. It should be dropped or given a distinct behavior to verify."
+    },
+    {
+      "id": "F8",
+      "file": "src/modules/counterfactual-safes/routes/space-counterfactual-safes.service.ts",
+      "line": 70,
+      "claim": "A bare catch block swallows every isSafe failure, including a tx-service outage, an unknown chain, or a Zod parse error on the response, without logging it. As a result, when the tx service is down, deployed Safes quietly come back as counterfactual with nothing appearing in logs or metrics. LoggingService should be injected and a warn logged with asError(error), chainId and address, while still failing open."
+    },
+    {
+      "id": "F9",
+      "file": "src/modules/counterfactual-safes/routes/space-counterfactual-safes.service.spec.ts",
+      "line": 97,
+      "claim": "The never cast is used in multiple places throughout the test file, and this repeated pattern should be avoided."
+    },
+    {
+      "id": "F10",
+      "file": "space-counterfactual-safes.service.spec.ts",
+      "line": 133,
+      "claim": "The non-member test uses rejects.toThrow() with no argument, which passes for any thrown error, including a crash from a broken mock, so it does not actually prove the membership check fires. It should assert rejects.toThrow(ForbiddenException) or match the 'User is not a member of this workspace' message."
+    },
+    {
+      "id": "F11",
+      "file": "src/modules/counterfactual-safes/routes/space-counterfactual-safes.service.spec.ts",
+      "line": 71,
+      "claim": "The isSafe mocks match only on address, and no test asserts what arguments isSafe was called with, so a bug that passed the wrong chainId would not be caught by these tests."
+    },
+    {
+      "id": "F12",
+      "file": "src/modules/counterfactual-safes/routes/space-counterfactual-safes.service.spec.ts",
+      "line": 62,
+      "claim": "A value is cast to never for an unclear reason, which is confusing and should be justified or removed."
+    },
+    {
+      "id": "F13",
+      "file": "src/modules/counterfactual-safes/routes/space-counterfactual-safes.service.ts",
+      "line": 70,
+      "claim": "The catch block returns false without logging the error, so a Transaction Service outage, an unsupported chain, or a response that fails Zod parsing is silently treated as \"not deployed\", causing deployed Safes to still be shown as counterfactual with no log trail to diagnose it."
+    }
+  ]
+}

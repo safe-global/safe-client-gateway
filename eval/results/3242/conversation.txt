@@ -1,0 +1,108 @@
+COMMENT
+[vseehausen 2026-07-09T10:37:05Z] @claude review
+
+COMMENT
+[claude 2026-07-09T10:37:19Z] **Claude finished @vseehausen's task in 1m 24s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/29012192356)
+
+---
+### Claude PR Review
+
+- [x] Read changed files (name.builder, bridge-name.entity.spec, integration specs)
+- [x] Verify correctness of the three fixes
+- [x] Assess consistency across the 61 integration specs
+- [x] Post final review
+
+---
+
+Overall the three fixes are well-scoped and correctly address the flakiness root causes. A couple of small nits below.
+
+### Suggestions
+
+**1. `feature-flag.service.integration.spec.ts:23` — redundant optional chaining**
+
+```ts
+afterEach(async () => {
+  if (app) await app?.close();  // `if (app)` already guards; the `?.` is dead
+});
+```
+
+The `if (app)` check already narrows `app` to be defined, so the `?.` is redundant. Either drop the `if` (relying only on `?.` like every other spec in this PR) or drop the `?.`. Preferring the former keeps the codebase consistent with the pattern applied everywhere else:
+
+```ts
+afterEach(async () => {
+  await app?.close();
+});
+```
+
+[Fix this →](https://claude.ai/code?q=In%20src%2Fmodules%2Fchains%2Ffeature-flags%2Ffeature-flag.service.integration.spec.ts%20on%20branch%20fix%2Fwa-1753-remaining-flaky-tests%2C%20simplify%20line%2023%20from%20%60if%20(app)%20await%20app%3F.close()%3B%60%20to%20%60await%20app%3F.close()%3B%60%20to%20match%20the%20pattern%20used%20across%20the%20rest%20of%20the%20PR.&repo=safe-global/safe-client-gateway)
+
+**2. `bridge-name.entity.spec.ts:21-24` — unbounded resample loop**
+
+```ts
+let name = faker.word.noun();
+while (isBridgeName(name)) {
+  name = faker.word.noun();
+}
+```
+
+In practice safe (`faker.word.noun()` draws from a very large vocab vs. only 20 bridge names), but with a seeded faker there's no guarantee of termination. A bounded loop with a hard-coded fallback would be strictly safer, e.g.:
+
+```ts
+let name = faker.word.noun();
+for (let i = 0; i < 10 && isBridgeName(name); i++) {
+  name = faker.word.noun();
+}
+if (isBridgeName(name)) name = 'definitely-not-a-bridge';
+```
+
+Not a blocker — flag it if you want belt-and-braces.
+
+**3. `name.builder.ts:28` — worth noting (no change needed)**
+
+The re-`sanitizeName()` after the slice is the right call, but after trimming trailing whitespace the result could theoretically drop below `NAME_MIN_LENGTH`. Given `SAMPLE_NAMES` and `faker.person.fullName()` outputs, this is not reachable in practice, so no change is needed — just worth being aware that the builder no longer strictly guarantees `length ≥ NAME_MIN_LENGTH` in the pathological case.
+
+### Nits
+- No new tests added specifically for the `name.builder` and `bridge-name` fixes — reasonable given both fixes are effectively defensive against pre-existing tests that themselves are the coverage.
+- The `+2/-2` on `messages.controller.integration.spec.ts` still contains one `if (app)` guard around `await app?.close()` (line 49) — same redundancy note as #1.
+
+COMMENT
+[vseehausen 2026-07-09T12:04:52Z] Thanks for the review! Addressed #1 and the matching nit on `messages.controller.integration.spec.ts` in ce81716b2 — dropped the redundant `if (app)` guards so both match the `await app?.close()` pattern used everywhere else.
+
+On #2 (bridge-name resample loop): keeping the unbounded `while` as-is. With a bounded loop + hard-coded fallback we'd risk handing the test a deterministic, attacker-chosen-looking name in the pathological case, which defeats the point of drawing a random non-bridge noun. Given `faker.word.noun()` draws from a very large vocab vs. only ~20 bridge names, we'd rather accept the astronomically-unlikely non-termination than a potentially deterministic name.
+
+Leaving #3 (name.builder note) as-is — agreed it's not reachable in practice.
+
+COMMENT
+[vseehausen 2026-07-09T12:46:24Z] @claude review again
+
+COMMENT
+[PooyaRaki 2026-07-09T15:31:40Z] @claude review
+
+COMMENT
+[claude 2026-07-09T15:31:56Z] **Claude finished @PooyaRaki's task in 1m 33s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/29029867469)
+
+---
+### Claude PR Review (re-review)
+
+- [x] Check follow-up commit `ce81716` (dropped `if (app)` guards)
+- [x] Verify `name.builder.ts` fix
+- [x] Verify `bridge-name.entity.spec.ts` fix
+- [x] Sample integration specs for consistency
+- [x] Post final review
+
+---
+
+Follow-up looks good — LGTM. No further blockers from me.
+
+### Verified
+
+- **`ce81716` (`if (app)` guards dropped)** — `grep` for `if (app)` across `**/*.integration.spec.ts` returns zero matches; the two touched files (`feature-flag.service.integration.spec.ts:23`, `messages.controller.integration.spec.ts:49`) now use the plain `await app?.close()` pattern used everywhere else in the PR. Consistent across all 63 files.
+- **`name.builder.ts`** — re-`sanitizeName()` after codepoint-aware truncation is correct; `[...padded].slice(0, NAME_MAX_LENGTH).join('')` handles surrogate pairs safely, and the second sanitize normalizes any whitespace re-introduced at the cut boundary.
+- **`bridge-name.entity.spec.ts`** — noted your reasoning for keeping the unbounded `while` loop (avoiding a deterministic fallback that undermines the "random non-bridge noun" intent). Fair trade-off given `faker.word.noun()` draws from a very large vocab vs. ~20 bridge names — non-termination is astronomically unlikely with a seeded faker.
+
+### Nits (non-blocking, informational)
+
+None new. Previously-raised #3 (theoretical `NAME_MIN_LENGTH` violation after trailing-whitespace trim) remains not reachable in practice with the current `SAMPLE_NAMES` + `faker.person.fullName()` inputs.
+
+Ship it.
+ • branch [`fix/wa-1753-remaining-flaky-tests`](https://github.com/safe-global/safe-client-gateway/tree/fix/wa-1753-remaining-flaky-tests)

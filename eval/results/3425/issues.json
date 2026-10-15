@@ -1,0 +1,118 @@
+{
+  "usage": {
+    "usd": 0.5274824,
+    "turns": 8,
+    "wallSeconds": 58
+  },
+  "issues": [
+    {
+      "findings": [
+        "F17",
+        "F11"
+      ],
+      "summary": "reject() now does a space lookup, joins requestedBy and runs a KMS decrypt inside the transaction before the conditional UPDATE, even when the audit flag is off or the request isn't pending",
+      "label": "low",
+      "evidence": "address-book-requests.repository.ts:198-222 calls findOneOrFail (relations + decryptAddressBookRequests) before transitionFromPending, while SpaceAuditRepository.record returns early when features.spaceAuditLog is off (space-audit.repository.ts:41-44). So a KMS failure now fails reject and the DB connection stays open during the KMS call. The extra work is real, but it is bounded and read paths already depend on KMS.",
+      "category": "performance"
+    },
+    {
+      "findings": [
+        "F20"
+      ],
+      "summary": "findSpaceForAuditOrFail is the third identical private copy of the same helper",
+      "label": "low",
+      "evidence": "Identical helpers already exist at space-safes.repository.ts:37-49 and members.repository.ts:78-90, and the PR adds another at address-book-requests.repository.ts:230-242. That is duplication with a real maintenance cost.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F1"
+      ],
+      "summary": "Rejecting a nonexistent request now returns 404 instead of 400, with no e2e coverage",
+      "label": "low",
+      "evidence": "Before, reject called transitionFromPending directly, so a missing row gave affected=0 and a 400. Now findOneOrFail throws NotFoundException first (repository.ts:202). This matches @ApiNotFoundResponse (controller.ts:173), and a unit test covers it, but the e2e spec has no 404 case.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F12"
+      ],
+      "summary": "No e2e test checks that audit rows are written for request create/reject, or that they are atomic",
+      "label": "low",
+      "evidence": "The unit tests assert spaceAuditRepository.record is called with the transaction entityManager, which covers the wiring. address-book-requests.controller.e2e-spec.ts has no audit assertions, so a real DB/flag regression could go unnoticed, but the unit coverage lowers the risk.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F2",
+        "F3"
+      ],
+      "summary": "The unique-constraint mapping inside the new transaction has no unit test",
+      "label": "low",
+      "evidence": "No unit test covers the catch at repository.ts:151-157. The e2e test at controller.e2e-spec.ts:161-179 does check the 409, and the throw happens before record(), so the transaction rolls back. The coverage gap is minor.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F15"
+      ],
+      "summary": "approve owns its transaction in the service, reject owns its transaction in the repository",
+      "label": "low",
+      "evidence": "address-book-requests.service.ts:115-139 opens postgresDatabaseService.transaction for approve, while reject delegates to repository.reject, which opens its own (repository.ts:198). The inconsistency is real but causes no bug.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F5",
+        "F8",
+        "F6",
+        "F19"
+      ],
+      "summary": "New tests use literal values ('Alice', 'kms:v1:a'/'kms:v1:n') instead of faker/builders",
+      "label": "low",
+      "evidence": "address-book-requests.repository.spec.ts adds name = 'Alice' and ciphertext literals in the new create/reject tests. That goes against non-negotiable #6 (builders + faker), even though the file already had such literals.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F4",
+        "F10",
+        "F14"
+      ],
+      "summary": "reject mixes the DB-returned spaceId and args.spaceId, and writes 'spaceId: spaceId' instead of the shorthand",
+      "label": "nit",
+      "evidence": "At repository.ts:200-212 both values are always equal (the DB row is looked up by args.spaceId), so this is only readability.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F13"
+      ],
+      "summary": "create adds an extra space lookup before insert",
+      "label": "nit",
+      "evidence": "The lookup at repository.ts:139-140 is needed to get spaceUuid for the audit record and to 404 on a missing Workspace. It is a cheap indexed select.",
+      "category": "performance"
+    },
+    {
+      "findings": [
+        "F18",
+        "F21"
+      ],
+      "summary": "AddressBookDeletedEventSchema was rewritten to reuse AddressBookEntrySchema, which is outside the PR's scope",
+      "label": "nit",
+      "evidence": "AddressBookEntrySchema (space-audit-event.entity.ts:53-56) is exactly {address: AddressSchema, name: z.string()}, so the rewrite is equivalent. It is a harmless consolidation.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F7",
+        "F9",
+        "F16"
+      ],
+      "summary": "address-book-items.repository.spec.ts has an unrelated cosmetic change",
+      "label": "nit",
+      "evidence": "The diff only adds a blank line and extracts a 'decrypted' const (spec.ts:226-235). It changes no behaviour, so this is just scope noise.",
+      "category": "style"
+    }
+  ]
+}

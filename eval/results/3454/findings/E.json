@@ -1,0 +1,15 @@
+{
+  "usd": 0.0523196,
+  "findings": [
+    {
+      "file": "src/modules/entitlements/domain/entitlement-enforcement.interface.ts",
+      "line": 40,
+      "claim": "The interface accepts any FeatureKey but only checks grant.enabled, so a future caller passing a metered feature like sponsored_transactions would be admitted even when its quota is exhausted, silently bypassing the metered allowance. The parameter type should be narrowed to BinaryFeature to prevent this."
+    },
+    {
+      "file": "src/modules/safe-shield/routes/space-safe-shield.controller.ts",
+      "line": 47,
+      "claim": "This controller and its associated service should live in the Safe Shield module rather than in Spaces, consistent with how other Space-scoped routes (space-relay.controller.ts, space-counterfactual-safes.controller.ts, entitlements.controller.ts) each declare their spaces/:spaceId/... routes from their own owning module while importing SpacesModule, and each performs the same assertMember gating from outside Spaces, meaning the membership check is not a valid reason for this controller to reside in Spaces."
+    }
+  ]
+}

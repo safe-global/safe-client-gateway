@@ -1,0 +1,346 @@
+{
+  "usage": {
+    "usd": 0.7126408000000001,
+    "turns": 10,
+    "wallSeconds": 100
+  },
+  "issues": [
+    {
+      "findings": [
+        "F5",
+        "F45",
+        "F10"
+      ],
+      "summary": "Documented production mint path (node dist/scripts/generate-token.js or yarn generate-token inside the CGW image) cannot work: scripts/generate-token.ts is not copied into the image, and ts-node is a devDependency that gets stripped.",
+      "label": "medium",
+      "evidence": "Dockerfile:9 copies only scripts/generate-abis.js, and the build runs `yarn workspaces focus --production`, so dist/scripts/generate-token.js never exists and ts-node (a devDependency, package.json:110) is removed. README:129-160 tells operators to run the compiled script in the image, so the first production KMS mint fails with 'Cannot find module'. This is an ops/docs break, not a runtime security issue.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F3",
+        "F44"
+      ],
+      "summary": "A token signed by the key but without an exp claim is accepted forever, because exp is optional and no maxAge is set.",
+      "label": "low",
+      "evidence": "JwtClaimsSchema has `exp: z.number().optional()`, and billing-auth.service.ts:76-81 passes no maxAge, so jsonwebtoken only checks exp when it is present. Only a holder of the CGW private key/KMS key can produce such a token, and both mint paths always set exp, so this is defence-in-depth.",
+      "category": "security"
+    },
+    {
+      "findings": [
+        "F19"
+      ],
+      "summary": "No test covers a token that has no exp claim.",
+      "label": "low",
+      "evidence": "The integration spec has an expired-token test (line 155) but no missing-exp case. Given the permissive behaviour above, a test would document the choice.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F8",
+        "F15",
+        "F22"
+      ],
+      "summary": "If BILLING_WEBHOOK_JWT_ISSUER is set to an empty string, the `??` fallbacks keep it, and jsonwebtoken skips the iss/aud checks when those options are falsy.",
+      "label": "low",
+      "evidence": "configuration.ts:546 and jwt.service.ts verify both use `??`, and the schema entry is a plain `z.string().optional()` (configuration.schema.ts:55), so '' passes getOrThrow and turns off the issuer/audience checks. Signature and service-marker checks still apply, so only tokens signed by the CGW key get through; the trigger is a misconfiguration.",
+      "category": "security"
+    },
+    {
+      "findings": [
+        "F24",
+        "F40"
+      ],
+      "summary": "The public-key PEM is only checked for presence at boot. A malformed or truncated PEM passes startup and every webhook then gets 401.",
+      "label": "low",
+      "evidence": "billing-auth.service.ts:59-61 only calls getOrThrow; nothing parses the key (e.g. createPublicKey) until verify runs. The README's fail-fast claim covers a missing key only. The impact is a misconfiguration that is visible in the warn logs.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F11",
+        "F18"
+      ],
+      "summary": "A missing public key with the flag on is not caught by the config schema's superRefine, only at DI construction.",
+      "label": "low",
+      "evidence": "BillingAuthService's constructor getOrThrow runs when the module is instantiated at boot, so the app does fail fast with a clear key name. F11's claim that it doesn't fail fast is wrong. The only real point is the inconsistency with the FF_SES_EMAIL superRefine pattern (configuration.schema.ts:190).",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F31"
+      ],
+      "summary": "The CLI's production guard against local-PEM signing depends on CGW_ENV=production being set in the operator's shell.",
+      "label": "low",
+      "evidence": "generate-token.ts:116 checks config.application.isProduction, which is `process.env.CGW_ENV === 'production'` (configuration.ts:34). An operator with the private key and no CGW_ENV can still mint locally. This is a guardrail, not an enforcement boundary.",
+      "category": "security"
+    },
+    {
+      "findings": [
+        "F23"
+      ],
+      "summary": "parseInt silently accepts invalid --expires-in values such as '30d' or '1.5'.",
+      "label": "low",
+      "evidence": "generate-token.ts:81 uses Number.parseInt(expiresIn, 10): '30d' becomes 30 and '1.5' becomes 1, and both pass the >0 check. The README (Troubleshooting) says the value must be a positive whole number.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F25"
+      ],
+      "summary": "--expires-in has no upper bound.",
+      "label": "low",
+      "evidence": "generate-token.ts:81-89 only rejects values ≤0 or non-finite, so a typo can mint a decades-long token. Long-lived tokens are the design, so this is minor hardening.",
+      "category": "security"
+    },
+    {
+      "findings": [
+        "F4"
+      ],
+      "summary": "BILLING_WEBHOOK_JWT_PRIVATE_KEY is missing from .env.sample.json, while the other CLI-only variable (KMS_KEY_ID) is listed.",
+      "label": "low",
+      "evidence": "Grep of .env.sample.json finds PUBLIC_KEY, ISSUER and KMS_KEY_ID (lines 141-153) but not PRIVATE_KEY, which generate-token.ts:121 reads. This is a documentation/consistency gap.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F17"
+      ],
+      "summary": "The CLI's argument/subject/expiry validation has no tests.",
+      "label": "low",
+      "evidence": "No spec exists for scripts/generate-token.ts. The validation logic (SUBJECT_PATTERN, expires-in parsing, production gate) is untested, and the parseInt issue shows a real gap.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F35"
+      ],
+      "summary": "The webIdentityTokenFile (IRSA) branch of resolveCredentials is untested.",
+      "label": "low",
+      "evidence": "aws-kms-signer.service.spec.ts only constructs with `{ keyId }` and never passes webIdentityTokenFile, so the fromTokenFile branch is never exercised.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F1"
+      ],
+      "summary": "No test covers aud given as an array that contains the issuer plus other values.",
+      "label": "low",
+      "evidence": "Minted tokens already use `aud: [issuer]` (billing-auth.service.ts buildClaims), so array handling is partly covered by the success test. A multi-value audience case is untested but has little risk.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F12"
+      ],
+      "summary": "Claim: no test for an empty token after the 'Bearer ' prefix.",
+      "label": "wrong",
+      "evidence": "billing-webhook-auth.guard.integration.spec.ts:111 has 'rejects a Bearer header with an empty token'.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F47"
+      ],
+      "summary": "Claim: the Authorization header may be an array and header.startsWith would throw.",
+      "label": "wrong",
+      "evidence": "In Node's IncomingHttpHeaders, `authorization` is typed `string | undefined`, and Node keeps only the first duplicate Authorization header, so it is never an array and the code type-checks as is.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F6"
+      ],
+      "summary": "Claim: Buffer.from(response.Signature) is an unnecessary no-op.",
+      "label": "wrong",
+      "evidence": "The KMS SDK returns Signature/PublicKey as Uint8Array, not Buffer, and the methods are declared to return Buffer (aws-kms-signer.service.ts:51,61). Buffer.from is needed for the declared type; SignCommand accepting a Uint8Array is irrelevant to the return.",
+      "category": "style"
+    },
+    {
+      "findings": [
+        "F21"
+      ],
+      "summary": "Claim: `path: ''` with a full route path departs from codebase conventions.",
+      "label": "wrong",
+      "evidence": "17 controllers in src already use `path: ''` with full route strings (e.g. spaces members controller `@Post('/:spaceId/members/invite')`), so billing.controller.ts:6 follows the existing convention.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F9",
+        "F20",
+        "F49"
+      ],
+      "summary": "BillingAuthService mixes CLI-only static minting (mint/mintViaSigner) with runtime verify, so signing code ships in the runtime module.",
+      "label": "low",
+      "evidence": "billing-auth.service.ts:146-196 holds the static mint methods next to the injected verify. The app never calls them, but the 'app never signs' boundary rests on convention and the CLI depends on a DI-decorated class.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F28",
+        "F43"
+      ],
+      "summary": "The static mint methods call the newly exported jwtClientFactory directly instead of going through IJwtService.",
+      "label": "low",
+      "evidence": "jwt.module.ts:10 was changed to export jwtClientFactory, and billing-auth.service.ts:147,193 call it. That is needed because the methods are static and run without DI, so this is a design consequence rather than a bug.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F33"
+      ],
+      "summary": "The class lives in domain/ and wraps a datasource, so by the layering convention it should be a repository, not a service.",
+      "label": "nit",
+      "evidence": "This is a naming/layering preference. The class is a thin verifier over IJwtService, and the behaviour is unaffected.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F2",
+        "F46"
+      ],
+      "summary": "The KMS datasource does not follow the AGENTS.md convention (interface in src/domain/interfaces, Symbol DI token, own module), and KmsSignerConfig is exported but only used locally.",
+      "label": "nit",
+      "evidence": "aws-kms-signer.service.ts:25-29 documents that it is CLI-only and deliberately a plain class with no NestJS DI, so skipping the DI module/Symbol is intentional. The deviation has little practical cost.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F41"
+      ],
+      "summary": "IKmsSigner has one implementation and no consumers.",
+      "label": "nit",
+      "evidence": "AwsKmsSignerService implements it, but mintViaSigner takes a callback and the CLI uses the concrete class. The interface is unused abstraction but harmless.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F48"
+      ],
+      "summary": "KmsSignerConfig/resolveCredentials should move into a separate types file.",
+      "label": "nit",
+      "evidence": "This is file-organisation preference with no concrete cost.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F29"
+      ],
+      "summary": "resolveCredentials duplicates the SES IRSA pattern.",
+      "label": "nit",
+      "evidence": "aws-ses-email.service.ts:41 uses the same `webIdentityTokenFile ? fromTokenFile() : ...` pattern. The duplication is a few lines, and the SES version falls back to explicit keys, so the two differ.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F7"
+      ],
+      "summary": "Rejection cases are duplicated across the unit and integration specs.",
+      "label": "nit",
+      "evidence": "Wrong-key, not-a-service-token and malformed/tampered cases appear in both specs. This is test-organisation preference with no defect.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F32"
+      ],
+      "summary": "The HS256, wrong-iss, wrong-aud and expired cases are only in the integration spec, not the unit spec.",
+      "label": "nit",
+      "evidence": "They are covered at integration level (guard spec lines 125-162), so the behaviour is tested. Moving them is a preference.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F36"
+      ],
+      "summary": "The entity spec uses literal strings instead of the exported constants.",
+      "label": "nit",
+      "evidence": "billing-service-token.entity.spec.ts:15,26-27 use literals. Arguably intentional, since it pins the wire values the billing service must send.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F16"
+      ],
+      "summary": "The error message is built by hand instead of with the asError helper.",
+      "label": "nit",
+      "evidence": "billing-auth.service.ts:92 uses `error instanceof Error ? error.message : ...` although asError exists in src/logging/utils.ts:63. Consistency only.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F30"
+      ],
+      "summary": "The warn logs are plain strings rather than structured entries with a LogType.",
+      "label": "nit",
+      "evidence": "blocklist.guard.ts:55 uses a structured LogType, while billing-auth.service.ts:87-96 logs strings. This is a consistency point with a small observability cost.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F14",
+        "F38"
+      ],
+      "summary": "AUTH_HEADER_NAME is a function-local constant.",
+      "label": "nit",
+      "evidence": "billing-webhook-auth.guard.ts:39 is style only.",
+      "category": "style"
+    },
+    {
+      "findings": [
+        "F13",
+        "F42"
+      ],
+      "summary": "The new BILLING_* entries split the AUTH0_CLIENT_ID/AUTH0_CLIENT_SECRET group in .env.sample.json and in the schema.",
+      "label": "nit",
+      "evidence": ".env.sample.json:135-159 and configuration.schema.ts:53-57 put the BILLING entries between the Auth0 ID and secret. Ordering only.",
+      "category": "style"
+    },
+    {
+      "findings": [
+        "F26"
+      ],
+      "summary": "The guard depends on a concrete class rather than an interface.",
+      "label": "nit",
+      "evidence": "billing-webhook-auth.guard.ts:21 is an architectural preference with no functional cost.",
+      "category": "convention"
+    },
+    {
+      "findings": [
+        "F39"
+      ],
+      "summary": "The field name tokenService does not match its type, BillingAuthService.",
+      "label": "nit",
+      "evidence": "billing-webhook-auth.guard.ts:21 is naming only.",
+      "category": "style"
+    },
+    {
+      "findings": [
+        "F27"
+      ],
+      "summary": "Constants and BillingTokenClaimsArgs should live next to the entity.",
+      "label": "nit",
+      "evidence": "billing-auth.service.ts:23-31 is placement preference.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F34"
+      ],
+      "summary": "main() should be split into mintViaKms and mintLocally.",
+      "label": "nit",
+      "evidence": "Refactor preference; generate-token.ts main is readable at about 60 lines.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F37"
+      ],
+      "summary": "verify() should say explicitly that iss==aud gives no protection against crossover with other self-issued tokens and that the service markers do.",
+      "label": "nit",
+      "evidence": "billing-auth.service.ts:66-71 already documents the two layers. Adding the comment is a documentation preference.",
+      "category": "docs"
+    }
+  ]
+}

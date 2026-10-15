@@ -1,0 +1,169 @@
+{
+  "pr": 3140,
+  "title": "ci: reduce pipeline runtime",
+  "description": "## Summary\r\n  \r\nReduce CI pipeline runtime by eliminating redundant work across all jobs.\r\n\r\n## Changes\r\n\r\n  - Scope push trigger to main only — PRs were firing both push and pull_request events on every commit, running the full pipeline twice. CI still runs on every PR commit via\r\n  pull_request: synchronize\r\n  - Add concurrency group to cancel superseded runs on rapid PR pushes (main is exempt so in-flight staging deploys are never killed)\r\n  - Replace nest build with yarn generate-abis in unit-tests and integration-tests — tests transform src/ directly via the test runner and never use dist/, so the full TypeScript\r\n  compile was wasted work\r\n  - Cache node_modules in all four Node jobs, keyed on yarn.lock + Node major version — skips the link step entirely on a warm cache (the existing setup-node yarn cache only\r\n  covered downloads)\r\n  - Drop QEMU-emulated arm64 Docker build — production runs on amd64; both publish jobs now build linux/amd64 natively on ubuntu-latest",
+  "findings": [
+    {
+      "id": "F1",
+      "file": "ci.yml",
+      "line": 109,
+      "claim": "It should be confirmed that the env-validation and biome jobs never touch @/abis, since on a warm-cache run the postinstall step that generates abis is skipped, and a future import from those jobs could silently fail without an explicit generate-abis step."
+    },
+    {
+      "id": "F2",
+      "file": ".github/workflows/ci.yml",
+      "line": 317,
+      "claim": "The justification given ('Production runs on amd64 only') only covers Safe's own deployment and does not justify dropping arm64 from the publicly published release image; this change is also only loosely related to the PR's stated goal of speeding up CI."
+    },
+    {
+      "id": "F3",
+      "file": "ci.yml",
+      "line": 85,
+      "claim": "The cache key configuration has no restore-keys fallback, so any change to yarn.lock causes a complete cache miss and a full reinstall instead of a partial restore that only installs what changed."
+    },
+    {
+      "id": "F4",
+      "file": null,
+      "line": null,
+      "claim": "The PR caches node_modules but does not explain how the cache will be invalidated when dependencies are updated or added, and it is unclear what invalidation strategy is used."
+    },
+    {
+      "id": "F5",
+      "file": "ci.yml",
+      "line": 101,
+      "claim": "This caching job has the same missing restore-keys issue, causing a full reinstall on any yarn.lock change instead of a partial cache restore."
+    },
+    {
+      "id": "F6",
+      "file": null,
+      "line": null,
+      "claim": "Tests appear to be failing, possibly because of the caching changes, and the database seems to be missing the latest migrations."
+    },
+    {
+      "id": "F7",
+      "file": "ci.yml",
+      "line": 91,
+      "claim": "The postinstall hook 'yarn generate-abis' writes to the abis/ directory, which lives outside the cached node_modules. On a warm cache, yarn install is skipped, which also skips the postinstall hook, so jobs that rely on generated abis but don't explicitly regenerate them could silently break if they start importing from @/abis."
+    },
+    {
+      "id": "F8",
+      "file": ".github/workflows/ci.yml",
+      "line": 291,
+      "claim": "QEMU was removed and the build platforms were narrowed to `linux/amd64` only for both the `:staging` and the public `:latest`/`:<tag>` release images, so consumers pulling the public image on arm64 (e.g. Apple Silicon developers, Graviton hosts, self-hosters) would get a 'no matching manifest' error."
+    },
+    {
+      "id": "F9",
+      "file": "ci.yml",
+      "line": 276,
+      "claim": "The condition 'github.event_name == \\'push\\' && github.ref == \\'refs/heads/main\\'' on docker-publish-staging is redundant because the push trigger is already scoped to branches: [main], making the github.ref check unnecessary."
+    },
+    {
+      "id": "F10",
+      "file": ".github/workflows/ci.yml",
+      "line": 88,
+      "claim": "The cache keys hardcode the Node major version (e.g. 'node24' or 'node22') as a separately hand-typed string next to the node-version input (e.g. '24.11.0' or '22.11.0'), so the two values can drift out of sync."
+    },
+    {
+      "id": "F11",
+      "file": "ci.yml",
+      "line": 230,
+      "claim": "This caching job has the same missing restore-keys issue, causing a full reinstall on any yarn.lock change instead of a partial cache restore."
+    },
+    {
+      "id": "F12",
+      "file": ".github/workflows/ci.yml",
+      "line": 165,
+      "claim": "The only remaining full build is in the Dockerfile's 'yarn run build' step, which runs only in docker-publish-staging and docker-publish-release, meaning a type error in a file no test imports can pass PR CI and then break the staging image build and autodeploy after merge."
+    },
+    {
+      "id": "F13",
+      "file": ".github/workflows/ci.yml",
+      "line": 317,
+      "claim": "arm64 support should be kept in the release job and dropped only for staging, or the change should be called out explicitly in release notes or the PR description, ideally split into a separate PR."
+    },
+    {
+      "id": "F14",
+      "file": ".github/workflows/ci.yml",
+      "line": 238,
+      "claim": "Because jest's `roots` is scoped to `./src` and migration files are loaded by glob at runtime rather than imported by any spec, a type error in files such as `migrations/*.ts` (or any other untested `src` file) will pass PR CI and only be caught later by the `yarn run build` step in the Dockerfile during `docker-publish-staging`, after the change has already merged, leaving `main` broken and blocking the staging deploy."
+    },
+    {
+      "id": "F15",
+      "file": ".github/workflows/ci.yml",
+      "line": 317,
+      "claim": "docker-publish-release pushes the safeglobal/safe-client-gateway-nest tag and latest images as amd64-only now instead of multi-arch (linux/amd64,linux/arm64), which can silently break or slow down (via emulation) self-hosters running on ARM platforms such as Apple Silicon or ARM servers, since the repo is open source and the published image is a public contract, not just Safe's own deployment."
+    },
+    {
+      "id": "F16",
+      "file": ".github/workflows/ci.yml",
+      "line": 17,
+      "claim": "The comment stating that `main` runs are 'never cancelled' is misleading: GitHub only keeps one queued run per concurrency group, so if three or more quick merges land, the middle commit's run can be cancelled before it starts, leaving that commit without a CI result or staging deploy, and `main` runs are now effectively serialized."
+    },
+    {
+      "id": "F17",
+      "file": "ci.yml",
+      "line": 168,
+      "claim": "The build step was changed from 'generate-abis && nest build' to just 'generate-abis', removing the TypeScript compilation step. Since Jest with ts-jest only type-checks files that are transitively imported by tests, type errors in code paths not covered by any spec (for example a new controller wired into a module without a corresponding test) will no longer be caught on PRs and will only surface during the staging Docker build, which runs only on main."
+    },
+    {
+      "id": "F18",
+      "file": "ci.yml",
+      "line": 157,
+      "claim": "This caching job has the same missing restore-keys issue, causing a full reinstall on any yarn.lock change instead of a partial cache restore."
+    },
+    {
+      "id": "F19",
+      "file": "ci.yml",
+      "line": 22,
+      "claim": "The concurrency setting 'cancel-in-progress: ${{ github.ref != \\'refs/heads/main\\' }}' evaluates to true for tag refs (since a tag ref is not refs/heads/main), meaning two overlapping release runs could cancel each other mid Docker push."
+    },
+    {
+      "id": "F20",
+      "file": ".github/workflows/ci.yml",
+      "line": 165,
+      "claim": "The removed 'yarn run build' step used to type-check every file listed in tsconfig.build.json, but the replacement relies on ts-jest, which only type-checks files that a test imports, so files like main.ts, migrations, and modules with no spec are no longer type-checked, and biome does not type-check either."
+    },
+    {
+      "id": "F21",
+      "file": ".github/workflows/ci.yml",
+      "line": 79,
+      "claim": "Using `setup-node` with `cache: 'yarn'` causes `.yarn/cache` to be restored in every job even when the `node_modules` cache already hits and the install step is skipped, wasting that restore work on every warm run."
+    },
+    {
+      "id": "F22",
+      "file": "ci.yml",
+      "line": 239,
+      "claim": "The same loss of PR-level type-checking coverage applies here as well, since this is the other location referencing the build step that dropped 'nest build'."
+    },
+    {
+      "id": "F23",
+      "file": ".github/workflows/ci.yml",
+      "line": 83,
+      "claim": "The cache-plus-conditional-install block is duplicated four times across the workflow, and the cache key hard-codes `node24`/`node22` separately from the actual `node-version` value, so bumping the Node version in one place without updating the other leaves a stale cache key."
+    },
+    {
+      "id": "F24",
+      "file": ".github/workflows/ci.yml",
+      "line": 88,
+      "claim": "The cache key should be derived from the actual Node version instead of hand-typed, for example by giving setup-node an id and using its node-version output in the key, or by reading the version from .nvmrc, which already contains '24.11.0'."
+    },
+    {
+      "id": "F25",
+      "file": ".github/workflows/ci.yml",
+      "line": 88,
+      "claim": "If someone bumps node-version to a new major version without updating the hardcoded key, the job will restore a node_modules cache built for the old Node version and skip yarn install, causing native modules built for the old Node version to be loaded and fail."
+    },
+    {
+      "id": "F26",
+      "file": ".github/workflows/ci.yml",
+      "line": 165,
+      "claim": "A cheap 'yarn tsc --noEmit -p tsconfig.build.json' step should be added (for example in the biome job), or the PR description should state that dropping this type-check gate is intentional."
+    },
+    {
+      "id": "F27",
+      "file": ".github/workflows/ci.yml",
+      "line": 165,
+      "claim": "The build step in the PR test jobs was changed from `yarn run build` (which runs `nest build`, i.e. `tsc`) to plain `yarn generate-abis`, and nothing else in CI performs a full TypeScript compile since biome does not type-check and ts-jest only checks files that a spec actually imports."
+    }
+  ]
+}

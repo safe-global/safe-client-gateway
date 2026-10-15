@@ -1,0 +1,24 @@
+COMMENT
+[LucieFaire 2026-06-22T10:41:00Z] @claude review
+
+COMMENT
+[claude 2026-06-22T10:41:15Z] **Claude finished @LucieFaire's task in 43s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/27946907816)
+
+---
+### Claude PR Review
+
+- [x] Read PR context
+- [x] Inspect `.github/workflows/ci.yml` diff
+- [x] Provide review feedback
+
+The fix is correct and well-defended. `github.event.release.tag_name` is the authoritative source for the tag on `release` events, and the new validation step prevents publishing an empty-tagged image if the payload is ever missing. Limited, targeted change — nothing else in the file is impacted (`autodeploy` only depends on `docker-publish-staging`).
+
+### Minor suggestions (optional)
+
+- **Fail-fast ordering** — `.github/workflows/ci.yml:301-306`: the `Validate release tag` step runs after `actions/checkout`. Moving it before the checkout would let the job fail a few seconds sooner in the (very unlikely) empty-tag case. Cosmetic only.
+- **Stronger validation** — only emptiness is checked. If you want to guard against malformed tags (whitespace, characters Docker would reject), a quick regex like `[[ "$RELEASE_TAG" =~ ^[A-Za-z0-9._-]+$ ]]` would be more defensive. Probably overkill since GitHub already validates tag names, but worth a thought.
+- **`:latest` semantics** — unrelated to this PR, but a hotfix release on an older minor would move `:latest` backwards. Not introduced here; just flagging if you ever do patch releases off non-tip branches.
+
+### Verdict
+LGTM — safe to merge. The fix addresses the empty-tag bug at its root and adds a useful guardrail.
+ • [Branch `hotfix/release-tag`](https://github.com/safe-global/safe-client-gateway/tree/hotfix/release-tag)

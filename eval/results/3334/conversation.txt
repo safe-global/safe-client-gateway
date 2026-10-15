@@ -1,0 +1,126 @@
+THREAD src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts:1753 resolved=true
+[PooyaRaki 2026-08-12T10:40:58Z] Nit: We should read this from deployments.
+[tongyaosafe 2026-08-12T13:10:54Z] 19a166391098ea0fc8f73c922b1976dc0403cf71
+fixed. Thanks.
+
+THREAD src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts:1772 resolved=true
+[PooyaRaki 2026-08-12T10:41:44Z] Nit: Can we read them from the deployments library?
+[tongyaosafe 2026-08-12T13:10:58Z] 19a166391098ea0fc8f73c922b1976dc0403cf71
+fixed. Thanks.
+
+THREAD src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts:1804 resolved=true
+[PooyaRaki 2026-08-12T10:44:00Z] The test title expects it to not return `INCOMPATIBLE_SAFE` but we're checking `MISSING_OWNERSHIP` here. This is a bit confusing.
+[tongyaosafe 2026-08-12T13:13:31Z] fixed. And a comment to explain
+19a166391098ea0fc8f73c922b1976dc0403cf71
+
+THREAD src/modules/safe-shield/contract-analysis/contract-analysis.service.spec.ts:1282 resolved=true
+[PooyaRaki 2026-08-12T10:49:52Z] The title should be something like:
+```
+Should return `VERIFIED` when the handler is the official ExtensibleFallbackHandler.
+```
+[tongyaosafe 2026-08-12T13:13:51Z] fixed
+c028a3194104fdd7dfdbfab6436bf07cd9ff5cea
+Thanks
+
+REVIEW APPROVED
+[PooyaRaki 2026-08-12T13:22:07Z] LGTM 🚀 
+
+COMMENT
+[tongyaosafe 2026-08-10T15:14:57Z] @claude arch-review
+
+COMMENT
+[claude 2026-08-10T15:17:51Z] ## Architecture check
+
+Applicable guides: ARCHITECTURE.md, best-practices.md, module-structure.md, testing.md, commits-and-prs.md, reviewing.md + remarks.md.
+
+src/domain/common/utils/deployments.ts:138 — No speculative abstractions: `getExtensibleFallbackHandlerDeployments` is exported but nothing imports it — its only caller is `isExtensibleFallbackHandlerDeployed` in the same file (the identically-shaped `getFallbackHandlerDeployments` is existing drift, not precedent).
+
+**Verdict:** ❌ 1 finding
+
+COMMENT
+[tongyaosafe 2026-08-11T12:13:13Z] @claude arch-review
+
+COMMENT
+[claude 2026-08-11T12:17:52Z] ## Architecture check
+
+Applicable guides: `best-practices.md`, `module-structure.md`, `testing.md`, `commits-and-prs.md`, `remarks.md` (not applicable: `api-dtos-and-validation.md`, `security.md`, `nestjs-patterns.md`, `caching-and-performance.md`, `database-and-migrations.md`, `configuration-and-flags.md`, `agent-tooling.md`).
+
+no findings
+
+**Verdict:** ✅ compliant
+
+COMMENT
+[PooyaRaki 2026-08-12T10:51:54Z] @claude review
+
+COMMENT
+[claude 2026-08-12T10:52:09Z] **Claude finished @PooyaRaki's task in 1m 36s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/31589303212)
+
+---
+### Code Review
+
+- [x] Read changed files
+- [x] Assess code quality, bugs, performance, security, test coverage
+- [x] Post review feedback
+
+The reviewer has already flagged the main test-quality items. A few more worth calling out:
+
+**Test doesn't actually verify what its title claims**
+`src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts:1747` and `:1803` — Both tests are titled around *absence* of `INCOMPATIBLE_SAFE` but positively assert `MISSING_OWNERSHIP` on `BRIDGE[0]`. If a regression made both errors coexist (in either order), the assertion still passes while the intent silently degrades. A negative assertion over the full `BRIDGE` array is more faithful:
+
+```ts
+expect(
+  result[mockSafeAddress]?.BRIDGE?.map((b) => b.type) ?? [],
+).not.toContain('INCOMPATIBLE_SAFE');
+```
+
+Alternatively — since the setup is contrived to hit the ownership branch on purpose — split into two assertions: the negative one for the titled invariant, and a separate positive one documenting *why* the array is non-empty.
+
+**Literal deployment addresses in service specs (R-002)**
+The extensible + compat + singleton + factory addresses are hardcoded across `recipient-analysis.service.spec.ts:1771,1772,1780,1848` and `contract-analysis.service.spec.ts:1281`. As the reviewer noted, these should be pulled from `@safe-global/safe-deployments` (via the existing helpers in `src/domain/common/utils/deployments.ts`, e.g. `getExtensibleFallbackHandlerDeployments({ chainId, version: '1.5.0' })[0]`). Then when the package bumps a canonical address, the tests don't silently pin to a stale value.
+
+**Test title reflects internals, not behaviour**
+`contract-analysis.service.spec.ts:1282` — the title reads "should omit `FALLBACK_HANDLER`" but the assertion is on the presence of `CONTRACT_VERIFICATION: VERIFIED`. Aligning the title to the observable outcome (as the reviewer suggested) makes the intent obvious without reading the body.
+
+**Micro-duplication in `fallbackHandlerExists`**
+`src/modules/safe-shield/recipient-analysis/recipient-analysis.service.ts:678-687` — the two `is*Deployed` calls take an identical `{ version, chainId, address }` object. Extracting `const args = { version, chainId: chain.chainId, address: safeCreationData.safeAccountConfig.fallbackHandler }` and reusing it (or mirroring the `some(version => ...)` shape already used in `contract-analysis.service.ts`) removes the repeated field list. Purely cosmetic.
+
+**Nice touches**
+- Negative test in `deployments.spec.ts` asserting the compat table does NOT match the extensible address — good regression guard against the wrong wrapper being wired later.
+- Deriving `SafeToL2Setup` versions from the package (`getSafeToL2SetupVersions()`) rather than pinning `'1.4.1'` is exactly the right shape and generalises cleanly to future versions.
+- Private `getExtensibleFallbackHandlerDeployments` — good response to the earlier `arch-review` finding.
+ · branch `tongyao/wa-2921-whitelist-extensible-fallback-handler`
+
+COMMENT
+[tongyaosafe 2026-08-12T13:17:10Z] > **Claude finished @PooyaRaki's task in 1m 36s** —— [View job](https://github.com/safe-global/safe-client-gateway/actions/runs/31589303212)
+> 
+> ### Code Review
+> * [x]  Read changed files
+> * [x]  Assess code quality, bugs, performance, security, test coverage
+> * [x]  Post review feedback
+> 
+> The reviewer has already flagged the main test-quality items. A few more worth calling out:
+> 
+> **Test doesn't actually verify what its title claims** `src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts:1747` and `:1803` — Both tests are titled around _absence_ of `INCOMPATIBLE_SAFE` but positively assert `MISSING_OWNERSHIP` on `BRIDGE[0]`. If a regression made both errors coexist (in either order), the assertion still passes while the intent silently degrades. A negative assertion over the full `BRIDGE` array is more faithful:
+> 
+> ```ts
+> expect(
+>   result[mockSafeAddress]?.BRIDGE?.map((b) => b.type) ?? [],
+> ).not.toContain('INCOMPATIBLE_SAFE');
+> ```
+> 
+> Alternatively — since the setup is contrived to hit the ownership branch on purpose — split into two assertions: the negative one for the titled invariant, and a separate positive one documenting _why_ the array is non-empty.
+> 
+> **Literal deployment addresses in service specs (R-002)** The extensible + compat + singleton + factory addresses are hardcoded across `recipient-analysis.service.spec.ts:1771,1772,1780,1848` and `contract-analysis.service.spec.ts:1281`. As the reviewer noted, these should be pulled from `@safe-global/safe-deployments` (via the existing helpers in `src/domain/common/utils/deployments.ts`, e.g. `getExtensibleFallbackHandlerDeployments({ chainId, version: '1.5.0' })[0]`). Then when the package bumps a canonical address, the tests don't silently pin to a stale value.
+> 
+> **Test title reflects internals, not behaviour** `contract-analysis.service.spec.ts:1282` — the title reads "should omit `FALLBACK_HANDLER`" but the assertion is on the presence of `CONTRACT_VERIFICATION: VERIFIED`. Aligning the title to the observable outcome (as the reviewer suggested) makes the intent obvious without reading the body.
+> 
+> **Micro-duplication in `fallbackHandlerExists`** `src/modules/safe-shield/recipient-analysis/recipient-analysis.service.ts:678-687` — the two `is*Deployed` calls take an identical `{ version, chainId, address }` object. Extracting `const args = { version, chainId: chain.chainId, address: safeCreationData.safeAccountConfig.fallbackHandler }` and reusing it (or mirroring the `some(version => ...)` shape already used in `contract-analysis.service.ts`) removes the repeated field list. Purely cosmetic.
+> 
+> **Nice touches**
+> 
+> * Negative test in `deployments.spec.ts` asserting the compat table does NOT match the extensible address — good regression guard against the wrong wrapper being wired later.
+> * Deriving `SafeToL2Setup` versions from the package (`getSafeToL2SetupVersions()`) rather than pinning `'1.4.1'` is exactly the right shape and generalises cleanly to future versions.
+> * Private `getExtensibleFallbackHandlerDeployments` — good response to the earlier `arch-review` finding.
+>   · branch `tongyao/wa-2921-whitelist-extensible-fallback-handler`
+
+fixed.

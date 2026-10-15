@@ -1,0 +1,145 @@
+{
+  "pr": 3445,
+  "title": "fix: match the active plan's price, not its display name",
+  "description": "## Summary\r\nThe payment-link offer filter (PLA-2003) had three gaps, all fixed here:\r\n\r\n1. **Sibling plans hidden by name.** The filter compared plans by catalog `planName`, but several price tiers share the same name (e.g. \"Business\" at 5/10/20 seats), so a workspace on one tier had every sibling price hidden too. It now compares the exact Stripe price id via `offersPlan()`.\r\n2. **No seat-capacity check on downgrade.** A workspace could downgrade to a plan with fewer Safe seats than it currently uses. `createCheckoutUrl` and `updateSubscription` now reject that with 409.\r\n3. **Subscription changes open to any member.** `session-url`, `checkout-url`, `preview-update`, and the `PATCH` subscription-change route now require a workspace admin instead of any member; a non-admin caller that previously got a 200 now gets 403. `checkout-url` also requires a fresh second factor.\r\n\r\n## Changes\r\n- `src/modules/billing/domain/payment-link-offer.rules.ts` — `activePlanId` replaces `activePlanName`; matches via `offersPlan()` instead of removed `planNameOf()`\r\n- `src/modules/billing/routes/billing.service.ts` — `getOfferEligibility` passes `activePlanId`; `getSessionUrl`/`createCheckoutUrl`/`previewSubscriptionUpdate`/`updateSubscription` require `assertSpaceAdmin` (not `assertSpaceMember`); `createCheckoutUrl`/`updateSubscription` call `assertSafeSeatCapacity`, which logs a warning on a malformed quota\r\n- `src/modules/billing/routes/billing.controller.ts` — checkout-url gains `ElevationGuard`; Swagger 403/409 descriptions updated across all four routes for the admin-only and seat-capacity outcomes\r\n- `src/modules/entitlements/domain/subscriptions.repository.ts(.interface.ts)` — `getSubscriptionSummary` selects `plan_id` instead of `plan_name`\r\n- `src/modules/entitlements/domain/feature-package.mapper.ts` / `entitlements.constants.ts` / `entities/feature.entity.ts` — `parseSafeSeatQuota` (shared `parseQuotaValue` with `mapFeaturePackage`); `SAFE_SEATS_FEATURE_KEY`/`SAFE_SEATS_METADATA_KEY` named constants, no longer derived by array position\r\n- `src/modules/spaces/routes/elevation.integration.spec.ts` — checkout-url added to the gated table\r\n- Specs updated to price ids; regression case for two links sharing a `planName` but different prices; coverage for the seat-capacity and admin-restriction paths across all four routes",
+  "findings": [
+    {
+      "id": "F1",
+      "file": "src/modules/billing/routes/billing.controller.ts",
+      "line": 192,
+      "claim": "The checkout-url endpoint previously accepted any active member without a second factor, but now returns 403 for non-admin members and requires a fresh second factor, and the plan-change route similarly moves from member-only to admin-only access; this breaks an existing client contract without versioning, and although the Swagger docs were updated, it's unclear whether the web client is ready to handle the new 403 and elevation responses or whether the release is coordinated with it."
+    },
+    {
+      "id": "F2",
+      "file": "src/modules/billing/routes/billing.service.ts",
+      "line": 434,
+      "claim": "The seat quota metadata is parsed twice: assertSafeSeatCapacity calls parseSafeSeatQuota to decide whether to count Safes, and then hasSeatCapacity parses the same metadata again; hasSeatCapacity could instead accept the already-parsed quota, or the service could compare used against quota directly, removing the redundant parse and possibly the helper entirely."
+    },
+    {
+      "id": "F3",
+      "file": "src/modules/entitlements/domain/feature-package.mapper.ts",
+      "line": 58,
+      "claim": "The warning logged for a malformed FEATURE_SAFE_SEATS value includes only the raw value and no payment link id or space id, making it impossible to identify which Stripe link needs fixing; the billing caller should add the payment link id to the log, noting that this logging pattern was designed for webhook sync rather than a user-triggered request path."
+    },
+    {
+      "id": "F4",
+      "file": "src/modules/billing/routes/billing.service.ts",
+      "line": 185,
+      "claim": "The preview endpoint's comment claims it rejects for the same reasons as the PATCH except one, but this is no longer accurate: the PATCH now also rejects non-admins and plans with insufficient Safe seat capacity, while the preview still only checks membership and never checks seat capacity."
+    },
+    {
+      "id": "F5",
+      "file": "src/modules/billing/routes/billing.service.ts",
+      "line": 424,
+      "claim": "The JSDoc comment on assertSafeSeatCapacity is missing its closing period, unlike the other doc comments in the file which end with one."
+    },
+    {
+      "id": "F6",
+      "file": "src/modules/billing/routes/billing.service.spec.ts",
+      "line": 617,
+      "claim": "The unit tests for the 'not a space admin' case only make spacesRepositoryMock.findOne return null, so they never verify that the underlying lookup actually filters on role: 'ADMIN'."
+    },
+    {
+      "id": "F7",
+      "file": "billing.controller.ts",
+      "line": 274,
+      "claim": "The ApiConflictResponse documentation for the PATCH .../subscriptions/:subscriptionId endpoint merges four unrelated 409 causes into a single prose sentence, forcing clients to string-match the error message to tell the causes apart; if the server already returns distinct message strings, the OpenAPI description could instead use a bullet list or dedicated error codes to make the outcomes machine-distinguishable."
+    },
+    {
+      "id": "F8",
+      "file": "src/modules/billing/routes/billing.service.ts",
+      "line": 185,
+      "claim": "The preview should call assertSafeSeatCapacity (using any offered link for the given planId) and either be restricted to admins as well, or have its outdated comment updated to document membership as a second remaining difference from the PATCH."
+    },
+    {
+      "id": "F9",
+      "file": "src/modules/billing/routes/billing.service.ts",
+      "line": 148,
+      "claim": "The PR bundles three unrelated behavior changes into a single branch: an offer-filter fix that matches the active plan by price id instead of name, Safe-seat capacity enforcement, and a change restricting checkout and plan changes to admins behind an elevation guard. Splitting these into separate PRs would make each easier to review, revert, and release, and at minimum the PR title and body should name all three changes."
+    },
+    {
+      "id": "F10",
+      "file": "src/modules/billing/routes/billing.service.ts",
+      "line": 185,
+      "claim": "A workspace with more Safes than a plan allows can request a preview and receive a normal price quote, only to have the subsequent PATCH fail with a 409 due to insufficient seat capacity, creating a misleading user experience."
+    },
+    {
+      "id": "F11",
+      "file": "src/modules/billing/routes/billing.service.spec.ts",
+      "line": 617,
+      "claim": "Because the e2e test at billing.controller.e2e-spec.ts:744 only covers a user who isn't a member at all, no test would fail if assertSpaceAdmin dropped its role filter or reverted to a plain membership check, defeating the purpose of the admin-only restriction introduced in commit 3a3b770."
+    },
+    {
+      "id": "F12",
+      "file": "src/modules/billing/routes/billing.service.ts",
+      "line": 442,
+      "claim": "assertSafeSeatCapacity parses the seat quota from metadata only to check whether it is null and then discards the parsed value, after which hasSeatCapacity parses the same metadata a second time to get the value it needs. The already-parsed quota should be reused directly instead of re-parsing, and the now-unused hasSeatCapacity export and its associated spec block in payment-link-offer.rules.ts should be removed."
+    },
+    {
+      "id": "F13",
+      "file": "src/modules/billing/routes/billing.service.ts",
+      "line": 434,
+      "claim": "The seat quota is parsed twice for every checked request: once inside assertSafeSeatCapacity (which includes a warning) and again inside hasSeatCapacity (without the warning), which is redundant."
+    },
+    {
+      "id": "F14",
+      "file": "src/modules/billing/domain/payment-link-offer.rules.ts",
+      "line": 54,
+      "claim": "The quota parsing duplication should be resolved by parsing once and comparing used <= quota, or by having hasSeatCapacity accept the already-parsed quota as a parameter."
+    },
+    {
+      "id": "F15",
+      "file": null,
+      "line": null,
+      "claim": "The pull request bundles three independent concerns in a single diff across three modules: a fix to match the active plan by price id rather than display name, a new 409 response for seat capacity limits on two endpoints, and a change narrowing createCheckoutUrl and updateSubscription from member to admin access together with a new elevation guard. These should be split into separate commits/PRs in order: the price-id matching fix, the seat-capacity rejection feature, and the admin-only authorization change."
+    },
+    {
+      "id": "F16",
+      "file": null,
+      "line": null,
+      "claim": "The PR title, which becomes the permanent squash commit subject, does not carry a breaking-change marker even though two already-shipped endpoints will stop serving non-admin members, turning previously successful requests into 403 responses. The title should be marked as a breaking change, e.g. using a '!' marker, with the member-to-admin behavior change explained in the summary."
+    },
+    {
+      "id": "F17",
+      "file": "billing.controller.ts",
+      "line": 270,
+      "claim": "The OpenAPI 403 description for updateSubscription reads \"Not an admin, or a plan this workspace is not offered\" but omits a third case: the service also throws a ForbiddenException via paymentLinkForPlanOrFail when the given paymentLinkId is not in the offered set, so the documented wording is incomplete."
+    },
+    {
+      "id": "F18",
+      "file": "src/modules/billing/routes/billing.service.ts",
+      "line": 185,
+      "claim": "A non-admin member can likewise receive a valid preview quote and then get a 403 when actually attempting the plan change, since the preview does not enforce the admin check that the PATCH now enforces."
+    },
+    {
+      "id": "F19",
+      "file": "src/modules/billing/routes/billing.service.spec.ts",
+      "line": 617,
+      "claim": "An e2e test should be added covering an active member who is not an admin receiving 403 on both the checkout-url and PATCH .../subscriptions/:id endpoints, or the unit tests should assert that findOne is called with members.role filtering."
+    },
+    {
+      "id": "F20",
+      "file": null,
+      "line": null,
+      "claim": "The subscription management URL creation flow lacks the same admin-only protection applied elsewhere, allowing a non-admin member to use it to manage the subscription."
+    },
+    {
+      "id": "F21",
+      "file": "billing.service.ts",
+      "line": 190,
+      "claim": "previewSubscriptionUpdate does not call assertSafeSeatCapacity while updateSubscription does, contradicting the docstring which says the preview rejects for the same reasons as the PATCH except for requiring an updatable subscription. As a result, a downgrade preview can succeed and return a price even though the workspace has too many Safes for the target plan, and the subsequent PATCH call will then fail with a 409, so the client is shown a price it can never actually commit."
+    },
+    {
+      "id": "F22",
+      "file": "src/modules/billing/routes/billing.service.spec.ts",
+      "line": 966,
+      "claim": "The malformed-quota case, where the system warns but doesn't count Safes, is only tested for the checkout path, even though updateSubscription goes through the same helper and has no equivalent test for a malformed or missing quota."
+    },
+    {
+      "id": "F23",
+      "file": "billing.service.ts",
+      "line": 428,
+      "claim": "assertSafeSeatCapacity parses the seat quota twice: once via parseSafeSeatQuota in the guard clause, and again inside hasSeatCapacity when it re-parses the same metadata. This is redundant work and can be simplified by parsing the quota once, guarding on null, and comparing used and quota directly, after which hasSeatCapacity would have no remaining callers and could be removed from payment-link-offer.rules.ts along with its unit tests."
+    }
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "usd": 0.3535304,
+  "head": "c7aae6b13d68491d274d6508100ae53a2e3bf942",
+  "verdicts": [
+    {
+      "issue": 5,
+      "verdict": "accepted",
+      "present": false,
+      "evidence": "The author replied \"1, 2, 4 are fixed\". At 1dbe35df the spec already had the test 'should return INCOMPATIBLE_SAFE for a 1.5.0 Safe when the target chain only has 1.4.1 deployments' (recipient-analysis.service.spec.ts:1752), so the gap did not exist at the reviewed commit."
+    },
+    {
+      "issue": 7,
+      "verdict": "accepted",
+      "present": false,
+      "evidence": "The author replied \"1, 2, 4 are fixed\". At 1dbe35df, settings-change.mapper.ts:191 already had a shared handleGuardLike helper, and both handleSetGuard and handleSetModuleGuard call it."
+    },
+    {
+      "issue": 9,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "The author replied \"1, 2, 4 are fixed\", which counts as agreement. The code did not actually change, though: `guardValue !== NULL_ADDRESS` is still at settings-change.mapper.ts:204 at both 1dbe35df and HEAD."
+    },
+    {
+      "issue": 15,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "At 1dbe35df the DeleteModuleGuard test used a hardcoded '0x000…0' string. In the resolved thread the author said \"fixed\" and cited c7aae6b13, which replaces it with viem's `zeroAddress` in settings-change.mapper.spec.ts."
+    },
+    {
+      "issue": 17,
+      "verdict": "accepted",
+      "present": true,
+      "evidence": "At 1dbe35df the test hardcoded targetChainId '1101'. c7aae6b13 changed it to faker.helpers.arrayElement over chains that have 1.4.1 but not 1.5.0 deployments, and the author replied \"fixed\" in the resolved thread."
+    }
+  ]
+}

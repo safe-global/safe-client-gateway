@@ -1,0 +1,25 @@
+{
+  "usd": 0.5447719999999999,
+  "findings": [
+    {
+      "file": "package.json",
+      "line": 65,
+      "claim": "The PR combines a dependency bump, a supply-chain-gate policy change, and feature work across two unrelated modules (safe-shield recipient analysis and transactions settings mapper), which makes it too large since it mixes a dependency bump with feature work and touches more than one module for reasons that are not a single mechanical consequence."
+    },
+    {
+      "file": ".yarnrc.yml",
+      "line": 18,
+      "claim": "Adding npmPreapprovedPackages: ['@safe-global/*'] creates a standing, repo-wide exemption from the 7-day npmMinimalAgeGate for every in-house package, which is broader than what the single safe-deployments bump requires and is not a necessary consequence of recognising Safe 1.5.0."
+    },
+    {
+      "file": null,
+      "line": null,
+      "claim": "The PR title includes an issue reference (WA-2921), and because the merge strategy is squash-merge this becomes a permanent commit subject carrying an issue reference that should instead be reserved for the commit body; none of the last 400 subjects on main follow this pattern."
+    },
+    {
+      "file": "src/modules/transactions/routes/mappers/common/settings-change.mapper.spec.ts",
+      "line": 308,
+      "claim": "A test asserts that SETTINGS_CHANGE_METHODS contains the literal value the same diff just added to it, which merely restates the implementation rather than verifying behavior and is already implied by the two mapper tests preceding it."
+    }
+  ]
+}

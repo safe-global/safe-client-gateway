@@ -1,0 +1,70 @@
+{
+  "usd": 0.08907759999999999,
+  "findings": [
+    {
+      "file": "package.json",
+      "line": 49,
+      "claim": "The `@fastify/cookie` and `@fastify/static` dependencies use caret version ranges instead of being pinned to exact versions, while other packages bumped in the same change (such as `@nestjs/platform-fastify`) are pinned exactly; `@fastify/cookie` in particular handles the auth cookie, so an unpinned range there is riskier."
+    },
+    {
+      "file": "src/config/entities/configuration.ts",
+      "line": 383,
+      "claim": "The configuration comments and `.env.sample.json` description still describe the old Express body-limit behavior (parsed by the `bytes` library, defaulting to '100kb', linking to expressjs.com and supporting `tb`/`pb` units), but the limit is now parsed by a local `parseBodyLimit` function that only accepts `b/kb/mb/gb`, and Fastify's `bodyLimit` applies to all content types rather than just JSON as before; the documentation should be updated to match the new behavior even though the config key names can stay the same for compatibility."
+    },
+    {
+      "file": "src/routes/common/http/http-request.utils.ts",
+      "line": 8,
+      "claim": "The `RequestLike` type and its helper functions still contain fallback branches for Express-specific request shapes (`header()`, `get()`, `route.path`, `path`) that can never execute now that Express has been removed and only `FastifyRequest` objects are passed in; typing the helpers directly against `FastifyRequest` would eliminate this dead code."
+    },
+    {
+      "file": "src/logging/utils.ts",
+      "line": 43,
+      "claim": "The expression `request.method ?? 'UNKNOWN'` is dead code because Fastify always sets a `method` property on its request objects, so the fallback can never be reached."
+    },
+    {
+      "file": "src/app.provider.ts",
+      "line": 34,
+      "claim": "`parseTrustProxy` and `parseBodyLimit` are exported from the module but are only used within that same file, so they should not be exported."
+    },
+    {
+      "file": "src/app.provider.ts",
+      "line": 69,
+      "claim": "`createFastifyAdapter` is exported as if for production use but is actually only consumed by tests, while `main.ts` builds its own Fastify adapter directly from the raw `configuration()` output rather than through `IConfigurationService`; as a result production and tests configure the adapter through two different code paths, meaning the function that the spec exercises is not the one production actually runs."
+    },
+    {
+      "file": "src/app.provider.ts",
+      "line": 34,
+      "claim": "`parseBodyLimit` has several distinct branches (undefined input defaulting, a plain integer, decimal values with a unit like `1.5mb`, and invalid input that should throw) but its only test coverage is a single 413 case that boots the entire Nest application; these are pure functions and should have direct unit tests, particularly for the throw path since that determines whether a bad config fails fast at startup."
+    },
+    {
+      "file": "src/app.provider.ts",
+      "line": 34,
+      "claim": "`parseTrustProxy` has no direct test covering its numeric-vs-string input handling."
+    },
+    {
+      "file": "src/__tests__/test-app.provider.ts",
+      "line": 17,
+      "claim": "`createTestApplication` casts the result of `module.createNestApplication(new FastifyAdapter())` to `NestFastifyApplication` with `as`, even though `createNestApplication` accepts a generic type parameter that is already used elsewhere (e.g. in `provide()`), making the cast unnecessary."
+    },
+    {
+      "file": "src/__tests__/test-app.provider.ts",
+      "line": 17,
+      "claim": "The helper builds a bare Fastify adapter with no `trustProxy` or `bodyLimit` configuration, so it configures the adapter differently from `TestAppProvider`; 15 specs use this helper while 67 specs use `TestAppProvider`, leaving two inconsistent ways of constructing a test application."
+    },
+    {
+      "file": "src/modules/auth/utils/auth-cookie.utils.ts",
+      "line": 3,
+      "claim": "A local `CookieOptions` type was introduced to replace the old import from the `express` types, but `@fastify/cookie` (which the code now calls via `res.setCookie`) already exports an equivalent options type, `CookieSerializeOptions`; reusing that type would keep it in sync automatically if the library's options change."
+    },
+    {
+      "file": "src/app.provider.ts",
+      "line": 34,
+      "claim": "The removed `configureTrustProxy` function had JSDoc explaining the difference between hop-count and subnet-list trust-proxy values, including a reference link, but the new `parseTrustProxy` and `createFastifyAdapter` functions that replaced it have no documentation at all."
+    },
+    {
+      "file": "src/app.provider.spec.ts",
+      "line": 71,
+      "claim": "The spec lost its explanatory comments describing the right-to-left walk over the `X-Forwarded-For` header, even though that behavior is unchanged and is security-relevant."
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "usd": 0.049915600000000004,
+  "findings": [
+    {
+      "file": "src/modules/billing/routes/billing.service.ts",
+      "line": 185,
+      "claim": "The preview endpoint's comment claims it rejects for the same reasons as the PATCH except one, but this is no longer accurate: the PATCH now also rejects non-admins and plans with insufficient Safe seat capacity, while the preview still only checks membership and never checks seat capacity."
+    },
+    {
+      "file": "src/modules/billing/routes/billing.service.ts",
+      "line": 185,
+      "claim": "A workspace with more Safes than a plan allows can request a preview and receive a normal price quote, only to have the subsequent PATCH fail with a 409 due to insufficient seat capacity, creating a misleading user experience."
+    },
+    {
+      "file": "src/modules/billing/routes/billing.service.ts",
+      "line": 185,
+      "claim": "A non-admin member can likewise receive a valid preview quote and then get a 403 when actually attempting the plan change, since the preview does not enforce the admin check that the PATCH now enforces."
+    },
+    {
+      "file": "src/modules/billing/routes/billing.service.ts",
+      "line": 185,
+      "claim": "The preview should call assertSafeSeatCapacity (using any offered link for the given planId) and either be restricted to admins as well, or have its outdated comment updated to document membership as a second remaining difference from the PATCH."
+    },
+    {
+      "file": "src/modules/billing/routes/billing.service.spec.ts",
+      "line": 617,
+      "claim": "The unit tests for the 'not a space admin' case only make spacesRepositoryMock.findOne return null, so they never verify that the underlying lookup actually filters on role: 'ADMIN'."
+    },
+    {
+      "file": "src/modules/billing/routes/billing.service.spec.ts",
+      "line": 617,
+      "claim": "Because the e2e test at billing.controller.e2e-spec.ts:744 only covers a user who isn't a member at all, no test would fail if assertSpaceAdmin dropped its role filter or reverted to a plain membership check, defeating the purpose of the admin-only restriction introduced in commit 3a3b770."
+    },
+    {
+      "file": "src/modules/billing/routes/billing.service.spec.ts",
+      "line": 617,
+      "claim": "An e2e test should be added covering an active member who is not an admin receiving 403 on both the checkout-url and PATCH .../subscriptions/:id endpoints, or the unit tests should assert that findOne is called with members.role filtering."
+    },
+    {
+      "file": "src/modules/billing/routes/billing.service.ts",
+      "line": 434,
+      "claim": "The seat quota is parsed twice for every checked request: once inside assertSafeSeatCapacity (which includes a warning) and again inside hasSeatCapacity (without the warning), which is redundant."
+    },
+    {
+      "file": "src/modules/billing/domain/payment-link-offer.rules.ts",
+      "line": 54,
+      "claim": "The quota parsing duplication should be resolved by parsing once and comparing used <= quota, or by having hasSeatCapacity accept the already-parsed quota as a parameter."
+    },
+    {
+      "file": "src/modules/billing/routes/billing.service.spec.ts",
+      "line": 966,
+      "claim": "The malformed-quota case, where the system warns but doesn't count Safes, is only tested for the checkout path, even though updateSubscription goes through the same helper and has no equivalent test for a malformed or missing quota."
+    }
+  ]
+}

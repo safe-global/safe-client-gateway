@@ -1,0 +1,65 @@
+{
+  "usd": 0.078804,
+  "findings": [
+    {
+      "file": "src/modules/spaces/routes/address-books.service.ts",
+      "line": 75,
+      "claim": "This response still sets spaceId to the numeric primary key instead of the UUID, so a client that takes this spaceId and calls a write route like PUT .../address-book will be rejected with a 400 by SpaceIdPipe, and the numeric ID the UUID was meant to hide remains exposed."
+    },
+    {
+      "file": "src/modules/spaces/routes/address-book-requests.service.ts",
+      "line": 182,
+      "claim": "This response still sets spaceId to the numeric primary key instead of the UUID, so a client that takes this spaceId and calls a write route like POST .../requests will be rejected with a 400 by SpaceIdPipe, and the numeric ID the UUID was meant to hide remains exposed."
+    },
+    {
+      "file": "src/modules/surveys/routes/entities/submit-survey-response.dto.entity.ts",
+      "line": 31,
+      "claim": "This response still sets spaceId to the numeric primary key instead of the UUID, so a client that takes this spaceId and calls the survey submit write route will be rejected with a 400 by SpaceIdPipe, and the numeric ID the UUID was meant to hide remains exposed."
+    },
+    {
+      "file": "src/modules/spaces/domain/spaces.repository.ts",
+      "line": 200,
+      "claim": "The new update() behavior, which uses UPDATE ... RETURNING id, uuid and throws NotFoundException when no row is returned, is untested: the integration test ignores the return value and the service spec mocks the repository, so reverting to the old implementation would not fail any test."
+    },
+    {
+      "file": "src/modules/spaces/routes/pipes/space-id.pipe.ts",
+      "line": 16,
+      "claim": "No test proves that write routes reject numeric space IDs; the e2e specs were switched to generate UUIDs but the only invalid-ID test sends alphabetic junk, so swapping SpaceIdPipe for LegacySpaceIdPipe would still pass every test."
+    },
+    {
+      "file": "src/modules/spaces/domain/spaces.repository.ts",
+      "line": 232,
+      "claim": "The legacy numeric path looks up the space before checking membership, so a missing space now returns 404 while an existing space the caller isn't a member of returns 403, whereas previously assertMember returned 403 for both; since IDs are sequential, this lets any authenticated user enumerate how many spaces exist."
+    },
+    {
+      "file": "src/modules/spaces/spaces.service.ts",
+      "line": 125,
+      "claim": "resolveUuid performs two sequential queries (value to id, then id to uuid) before findSpaces, which are both wasted when the input is already a UUID; the route also doesn't follow the pipe pattern used by other routes."
+    },
+    {
+      "file": "migrations/1779200000000-add-space-uuid.ts",
+      "line": 8,
+      "claim": "The uuid column's default uses gen_random_uuid(), a volatile default that causes Postgres to rewrite the entire table, and the subsequent unique index is created without CONCURRENTLY, locking the spaces table for writes during both steps; this is only acceptable while the table stays small."
+    },
+    {
+      "file": "migrations/1779200000000-add-space-uuid.ts",
+      "line": 4,
+      "claim": "The migration timestamp 1779200000000 is already used by add-member-invite-expires-at.ts, leaving the relative execution order of the two migrations undefined."
+    },
+    {
+      "file": "space.entity.db.ts",
+      "line": 26,
+      "claim": "unique: true on this column makes TypeORM expect a constraint with an auto-generated hashed name, but the migration creates an index named UQ_spaces_uuid instead, which will cause migration:generate to report drift; the repo convention is a named @Unique('UQ_...') or @Index."
+    },
+    {
+      "file": "src/modules/spaces/domain/spaces.repository.ts",
+      "line": 245,
+      "claim": "There are two separate UUID validators, a hand-written regex here and ParseUUIDPipe elsewhere, that produce different 400 error messages (Invalid space identifier vs Validation failed (uuid is expected)); a single validator should be used instead."
+    },
+    {
+      "file": "src/modules/spaces/domain/spaces.repository.ts",
+      "line": 233,
+      "claim": "The DB_MAX_SAFE_INTEGER overflow guard and the \"0\" input on the legacy numeric ID path are not covered by any test; the only existing test of this path uses a small in-range ID."
+    }
+  ]
+}

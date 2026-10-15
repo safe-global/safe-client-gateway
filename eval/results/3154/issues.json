@@ -1,0 +1,76 @@
+{
+  "usage": {
+    "usd": 0.2804878,
+    "turns": 4,
+    "wallSeconds": 29
+  },
+  "issues": [
+    {
+      "findings": [
+        "F3",
+        "F8"
+      ],
+      "summary": "address-book-items.repository still builds an unguarded \"up to N more\" message (shows 0 or negative at/over the limit)",
+      "label": "low",
+      "evidence": "src/modules/spaces/domain/address-books/address-book-items.repository.ts:184 still interpolates `${this.maxItems - existingAddressBookItems}` with no guard, so users see the same \"up to 0 more\" wording this PR fixes for Safes. It is a real user-facing inconsistency, but the file is outside the PR's diff, so it is capped at low.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F5",
+        "F7"
+      ],
+      "summary": "user-address-book-items.repository still builds an unguarded \"up to N more\" message (shows 0 or negative at/over the limit)",
+      "label": "low",
+      "evidence": "src/modules/spaces/domain/address-books/user-address-book-items.repository.ts:158 uses `${this.maxItems - existingCount}` with no guard, so it can show \"up to 0 more\" or a negative count. This is real but lies entirely outside the PR's changes, so it is at most low.",
+      "category": "correctness"
+    },
+    {
+      "findings": [
+        "F6",
+        "F11"
+      ],
+      "summary": "The e2e test still asserts the old \"up to 0 more\" address-book text",
+      "label": "nit",
+      "evidence": "src/modules/spaces/routes/address-books.controller.e2e-spec.ts:522 correctly asserts what the unchanged address-book repository currently returns, so nothing is broken today. It only matters if the sibling fix is made later, which is a follow-up note rather than a defect.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F2"
+      ],
+      "summary": "The limit-message construction is duplicated across three repositories with no shared helper",
+      "label": "low",
+      "evidence": "The same template exists at space-safes.repository.ts:50-52, address-book-items.repository.ts:184 and user-address-book-items.repository.ts:158. This PR fixed only one copy, which shows the concrete cost: the fix was applied inconsistently.",
+      "category": "design"
+    },
+    {
+      "findings": [
+        "F4",
+        "F9"
+      ],
+      "summary": "No test covers the over-limit case (existing > max, where remaining is negative)",
+      "label": "nit",
+      "evidence": "At space-safes.repository.ts:48-52 the negative case takes the same `remaining > 0` false branch that the new test already exercises with remaining === 0. A separate test would add little regression protection.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F1"
+      ],
+      "summary": "The new test inserts a user, wallet and member that the code under test does not need",
+      "label": "nit",
+      "evidence": "SpaceSafesRepository.create (space-safes.repository.ts:30-66) uses only spaceId, so the setup at spec:436-455 is unnecessary. However, it copies the neighbouring tests' pattern and has no concrete cost.",
+      "category": "tests"
+    },
+    {
+      "findings": [
+        "F10"
+      ],
+      "summary": "The count check and the insert are not atomic, so concurrent requests could exceed the limit",
+      "label": "low",
+      "evidence": "space-safes.repository.ts:46-57 calls findBySpaceId and then insert without a transaction or lock, so two concurrent requests could both pass the check. This is real but predates the PR, whose change only touched the message text, and exceeding a soft Safe-count cap has low impact.",
+      "category": "correctness"
+    }
+  ]
+}

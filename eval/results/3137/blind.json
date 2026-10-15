@@ -1,0 +1,91 @@
+{
+  "pr": 3137,
+  "title": "Update chainId handling from number to string in fee service",
+  "description": "## Description\r\nThe fee service response was parsing chainId as number, inconsistent with the rest of the CGW codebase which treats chainId as string throughout (routing params, relay config, domain interfaces, etc.).\r\n\r\nUpdated the Zod schema to accept both string and number inputs (coercing numbers to strings) so the CGW won't break during the fee service API transition.",
+  "findings": [
+    {
+      "id": "F1",
+      "file": "src/modules/fees/routes/__tests__/fee-preview.fees.controller.integration.spec.ts",
+      "line": 120,
+      "claim": "No endpoint-level integration test checks that body.txData.chainId is actually a string; the test only checks that txData is defined, so the new contract on the HTTP response is not locked in."
+    },
+    {
+      "id": "F2",
+      "file": "src/modules/fees/domain/entities/schemas/__tests__/tx-fees-response.schema.spec.ts",
+      "line": 55,
+      "claim": "The invalid-input test cases do not include a missing (undefined) or null chainId, so there is no test guarding against a future loosening of the regex that would let a missing chainId pass (since coercion currently only fails these because \"undefined\"/\"null\" don't match the regex)."
+    },
+    {
+      "id": "F3",
+      "file": "src/validation/entities/schemas/numeric-string.schema.ts",
+      "line": 14,
+      "claim": "The route controller already validates chainId with the existing NumericStringSchema, so introducing a separate regex-based rule in the new schema creates two chainId validation rules that can drift independently over time; building on the existing schema after coercion would keep them aligned."
+    },
+    {
+      "id": "F4",
+      "file": "src/modules/fees/domain/entities/__tests__/tx-fees-response.builder.ts",
+      "line": 16,
+      "claim": "The builder generates chainId values only up to 99999, but real chain IDs can exceed this (e.g. Palm at 11297108109), so the generated range does not reflect the actual domain of possible values."
+    },
+    {
+      "id": "F5",
+      "file": "src/modules/fees/domain/entities/schemas/tx-fees-response.schema.ts",
+      "line": 8,
+      "claim": "Chain-ID validation is written inline as z.coerce.string().regex(/^\\d+$/) instead of reusing the shared ChainIdSchema that already exists and is used in 8 other files; the inline regex also lacks the CHAIN_ID_MAXLENGTH bound that ChainIdSchema enforces, so it accepts a numeric string of any length, and if the divergence is intentional it should be explained with a comment."
+    },
+    {
+      "id": "F6",
+      "file": "src/modules/fees/domain/entities/schemas/tx-fees-response.schema.ts",
+      "line": 8,
+      "claim": "Because String(1.0) === '1', a float value like 1.0 coerces to '1' and passes validation; restricting the numeric branch to an integer type would close this gap."
+    },
+    {
+      "id": "F7",
+      "file": "src/modules/fees/domain/entities/schemas/__tests__/tx-fees-response.schema.spec.ts",
+      "line": 27,
+      "claim": "Both new tests use the pattern expect(result.success).toBe(true) followed by an if (result.success) guard, which is a redundant assertion style; the test should assert directly on the parsed data instead, e.g. via TxDataResponseSchema.parse(txData).chainId or expect(result).toEqual({...})."
+    },
+    {
+      "id": "F8",
+      "file": "src/modules/fees/domain/entities/schemas/__tests__/tx-fees-response.schema.spec.ts",
+      "line": 14,
+      "claim": "The same 8-field txData object literal is duplicated three more times in the spec instead of reusing the existing txDataResponseBuilder() from tx-fees-response.builder.ts, which the spec file already imports; the builder should be used (e.g. txDataResponseBuilder().with('chainId', '1').build()) instead of copy-pasted literals."
+    },
+    {
+      "id": "F9",
+      "file": "src/modules/fees/domain/entities/schemas/tx-fees-response.schema.ts",
+      "line": 8,
+      "claim": "z.coerce.string() runs String() on any input type (booleans, null, undefined, objects, BigInt), which is a fuzzier contract than necessary for validating an upstream API response; a union of string/nonnegative-int with a transform and regex pipe would keep the same external behavior while preventing surprising coercions."
+    },
+    {
+      "id": "F10",
+      "file": "src/modules/fees/routes/entities/fee-preview-response.entity.ts",
+      "line": 12,
+      "claim": "The public API's response type for txData.chainId changes from number to string; a client that compares chainId to a number or uses it as a number (for example in an EIP-712 domain) will behave differently or fail with no compile-time error, and it is unconfirmed whether safe-wallet web and mobile clients have been updated or are ready to handle the string."
+    },
+    {
+      "id": "F11",
+      "file": "src/modules/fees/domain/entities/schemas/__tests__/tx-fees-response.schema.spec.ts",
+      "line": 55,
+      "claim": "Test coverage is missing cases for chainId 0/'0' (if zero should be rejected), float values like 1.5/'1.5', leading-zero strings like '01' (whose acceptance behavior is undocumented), and boolean/null inputs to document current coercion behavior."
+    },
+    {
+      "id": "F12",
+      "file": "src/modules/fees/domain/entities/schemas/tx-fees-response.schema.ts",
+      "line": 8,
+      "claim": "The regex ^\\d+$ accepts chainId '0', which is not a valid network id; the pattern should be tightened to /^[1-9]\\d*$/ to reject zero."
+    },
+    {
+      "id": "F13",
+      "file": "src/modules/fees/domain/entities/schemas/tx-fees-response.schema.ts",
+      "line": 8,
+      "claim": "The regex used to validate chainId accepts strings with leading zeros, such as \"01\", which would then be passed through to clients unchanged."
+    },
+    {
+      "id": "F14",
+      "file": "src/modules/fees/routes/entities/fee-preview-response.entity.ts",
+      "line": 12,
+      "claim": "FeePreviewTxData.chainId changes from number to string in the response of the already-released v1 route POST /v1/chains/:chainId/fees/:safeAddress/preview, without any versioning or explicit backward-compatibility handling. Clients doing numeric comparisons like chainId === 1 or relying on typed decoding will break silently, and the PR should at least confirm and state that web and mobile clients are ready for the change."
+    }
+  ]
+}

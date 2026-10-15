@@ -1,0 +1,20 @@
+{
+  "usd": 0.5868500000000001,
+  "findings": [
+    {
+      "file": "docs/agents/commits-and-prs.md",
+      "line": 91,
+      "claim": "The five description-text requirements are enumerated as one long prose paragraph, which is harder to scan than a bulleted list would be."
+    },
+    {
+      "file": "docs/agents/api-dtos-and-validation.md",
+      "line": 113,
+      "claim": "The never-shipped-field rule is packed into a single sentence; adding a clause break after \"in place:\" would improve readability without changing its meaning."
+    },
+    {
+      "file": "docs/agents/module-structure.md",
+      "line": 33,
+      "claim": "This passage runs three separate ideas together (why route services can't sit under domain/, the follow-up-identification bar, and parity with reviewing.md), and splitting it into separate sentences would ease first-read comprehension."
+    }
+  ]
+}

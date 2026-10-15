@@ -1,0 +1,75 @@
+{
+  "usd": 0.0809556,
+  "findings": [
+    {
+      "file": "src/modules/auth/oidc/auth0/datasources/entities/auth0-otp-association.entity.ts",
+      "line": 1,
+      "claim": "Three new entity files (auth0-otp-association.entity.ts, mfa-enrollment-session.entity.ts, otp-code.entity.ts) define schemas that are never referenced anywhere in src/, indicating they are dead code left over from a different design and should be removed or moved into the PR that actually uses them."
+    },
+    {
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.ts",
+      "line": 198,
+      "claim": "getExtUserId computes Number(authPayload.getUserId()) itself instead of calling the existing getAuthenticatedUserIdOrFail helper; since getUserId() can return undefined, this local computation can silently produce NaN where the shared helper would throw, and the same pattern is repeated in the spec file at lines 739, 757, and 781."
+    },
+    {
+      "file": "src/modules/auth/oidc/routes/oidc-auth.controller.ts",
+      "line": 99,
+      "claim": "Swagger documents the enroll query parameter as type Boolean, but the validator is z.literal('true').optional(), so a value of ?enroll=false is rejected even though it appears to be a valid documented boolean; the repo's own example for this pattern uses z.enum(['true','false']).optional().transform(...) instead."
+    },
+    {
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.ts",
+      "line": 35,
+      "claim": "The new endpoint's response type Authenticator is a plain type declared inside the service rather than an entity class with @ApiProperty decorators, and the corresponding @ApiOkResponse in the controller has no type specified, so the response shape is missing from the generated OpenAPI output; the vast majority of other @ApiOkResponse usages in the repo do set a type."
+    },
+    {
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.ts",
+      "line": 203,
+      "claim": "An authenticated wallet (SIWE) user with no linked OIDC identity receives a 401 UnauthorizedException from the code, but the Swagger documentation on the controller only documents a 403 labeled 'Not authenticated', which is a mismatch since the user is actually authenticated but simply cannot use this feature; the documented responses should match the actual returned status code, and this also affects wallet users being able to reach this route at all."
+    },
+    {
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.ts",
+      "line": 186,
+      "claim": "The expression a.created_at as string casts away an optional type after a separate .some() guard rather than narrowing it properly, for example by mapping to a normalized object after the guard or using a type predicate filter."
+    },
+    {
+      "file": "src/modules/auth/oidc/auth0/datasources/auth0-api.service.ts",
+      "line": 132,
+      "claim": "The existing Auth0 flow returns a Raw<> type from the API layer and parses it with Zod in the repository, but the new listUserAuthenticationMethods parses the response inside the API service instead, with the repository just passing it through, which is inconsistent with the module's own convention that repositories validate with Zod."
+    },
+    {
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.ts",
+      "line": 11,
+      "claim": "The route service imports TOTP_AUTHENTICATION_METHOD_TYPE directly from the datasource entities file, and the repository interface also exposes this datasource entity type, whereas domain-level types and constants should live under domain/entities/ so the route layer does not depend on datasource files."
+    },
+    {
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.spec.ts",
+      "line": 689,
+      "claim": "Tests construct the user object using inline casts like { extUserId } as Awaited<ReturnType<IUsersRepository['findOneOrFail']>> instead of using the existing userBuilder() helper, and authentication-method fixtures are also written as inline literals rather than through a builder."
+    },
+    {
+      "file": "src/modules/auth/oidc/auth0/datasources/auth0-api.service.spec.ts",
+      "line": null,
+      "claim": "The spec constructs new CacheDir('auth0_management_api_token', '') by hand four times in the Management API token caching tests instead of calling CacheRouter.getAuth0ManagementApiTokenCacheDir(), duplicating the key string so the tests would still pass even if the router's key changed."
+    },
+    {
+      "file": "src/modules/auth/oidc/routes/oidc-auth.controller.ts",
+      "line": 223,
+      "claim": "The integration spec has no coverage for the new GET oidc/mfa/authenticators route, including guard wiring and a representative 4xx response, and no coverage for the enroll callback branch where a cleanup failure is swallowed while login still succeeds; the service unit tests also don't cover route wiring or this error mapping."
+    },
+    {
+      "file": "src/modules/auth/oidc/routes/oidc-auth.service.ts",
+      "line": 189,
+      "claim": "Superseded TOTP methods are deleted one await at a time inside the callback request even though the deletes don't depend on each other, so using Promise.all or allSettled would both speed this up and prevent one failure from leaving the rest undeleted."
+    },
+    {
+      "file": "src/modules/auth/oidc/auth0/datasources/auth0-api.service.ts",
+      "line": 33,
+      "claim": "MANAGEMENT_API_TOKEN_TTL_BUFFER_IN_SECONDS is hardcoded to 60 rather than being configurable, though this is less significant since the main TTL is driven by the provider's expires_in value."
+    },
+    {
+      "file": "src/modules/auth/oidc/auth0/datasources/auth0-api.service.ts",
+      "line": 201,
+      "claim": "A Management API token with tenant-wide scope is stored in the shared Redis cache as plain text; it is worth confirming this storage approach is intentional, or alternatively keeping the token in memory only, since an in-flight request mechanism already exists for it."
+    }
+  ]
+}
