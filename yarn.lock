@@ -2714,6 +2714,22 @@ __metadata:
   languageName: node
   linkType: hard
 
+"corepack@npm:0.36.0":
+  version: 0.36.0
+  resolution: "corepack@npm:0.36.0"
+  dependenciesMeta:
+    esbuild:
+      built: true
+  bin:
+    corepack: ./dist/corepack.js
+    pnpm: ./dist/pnpm.js
+    pnpx: ./dist/pnpx.js
+    yarn: ./dist/yarn.js
+    yarnpkg: ./dist/yarnpkg.js
+  checksum: 10/aa0a6d1cd1010e1b77d01bd07ee40ac914fcdd3b7cc5ff471301b96dcb8c2e2c48a7ac3da3ca0372cd12760b98a1565306f772b617509536cadacdcaa351c5d1
+  languageName: node
+  linkType: hard
+
 "cron-parser@npm:5.10.1":
   version: 5.10.1
   resolution: "cron-parser@npm:5.10.1"
@@ -4877,6 +4893,7 @@ __metadata:
     bullmq: "npm:^6.3.11"
     cache-manager: "npm:7.2.9"
     concurrently: "npm:10.0.5"
+    corepack: "npm:0.36.0"
     csv-stringify: "npm:^6.9.0"
     dd-trace: "npm:6.20.0"
     ecdsa-sig-formatter: "npm:1.0.11"
