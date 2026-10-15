@@ -165,7 +165,7 @@ describe('Configuration validator', () => {
     expect(() =>
       configurationValidator(invalidConfiguration, RootConfigurationSchema),
     ).toThrow(
-      /LOG_LEVEL Invalid option: expected one of "error"\|"warn"\|"info"\|"http"\|"verbose"\|"debug"\|"silly"/,
+      /LOG_LEVEL Invalid option: expected one of "fatal"\|"error"\|"warn"\|"info"\|"debug"\|"trace"/,
     );
   });
 
