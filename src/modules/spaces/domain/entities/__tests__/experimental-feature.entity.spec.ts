@@ -17,7 +17,9 @@ describe('ExperimentalFeaturesSchema', () => {
   });
 
   it('rejects an unknown feature', () => {
-    const result = ExperimentalFeaturesSchema.safeParse(['notAFeature']);
+    const result = ExperimentalFeaturesSchema.safeParse([
+      faker.string.alpha({ length: 8, casing: 'lower' }),
+    ]);
 
     expect(result.success).toBe(false);
   });

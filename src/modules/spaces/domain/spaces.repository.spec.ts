@@ -8,6 +8,7 @@ import type { PostgresDatabaseService } from '#/datasources/db/v2/postgres-datab
 import { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
 import { createMockSpaceEncryptionService } from '#/modules/spaces/domain/__tests__/space-encryption.service.mock';
 import { createMockSpaceAuditRepository } from '#/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
+import { ExperimentalFeatures } from '#/modules/spaces/domain/entities/experimental-feature.entity';
 import { SpacesRepository } from '#/modules/spaces/domain/spaces.repository';
 import { Member } from '#/modules/users/datasources/entities/member.entity.db';
 import { createMockMemberEncryptionService } from '#/modules/users/domain/members/__tests__/member-encryption.service.mock';
@@ -268,6 +269,7 @@ describe('SpacesRepository', () => {
     });
 
     it('selects experimentalFeatures for the diff', async () => {
+      const features = [faker.helpers.arrayElement(ExperimentalFeatures)];
       entityManager.findOne.mockResolvedValue({
         id: spaceId,
         uuid: spaceUuid,
@@ -278,7 +280,7 @@ describe('SpacesRepository', () => {
 
       await target.update({
         id: spaceId,
-        updatePayload: { experimentalFeatures: ['RECIPIENT_ALLOWLIST'] },
+        updatePayload: { experimentalFeatures: features },
         actorUserId: userId,
       });
 
@@ -291,6 +293,7 @@ describe('SpacesRepository', () => {
     });
 
     it('writes and audits an experimentalFeatures change', async () => {
+      const features = [faker.helpers.arrayElement(ExperimentalFeatures)];
       entityManager.findOne.mockResolvedValue({
         id: spaceId,
         uuid: spaceUuid,
@@ -301,13 +304,13 @@ describe('SpacesRepository', () => {
 
       await target.update({
         id: spaceId,
-        updatePayload: { experimentalFeatures: ['RECIPIENT_ALLOWLIST'] },
+        updatePayload: { experimentalFeatures: features },
         actorUserId: userId,
       });
 
       expect(spaceEncryptionService.encryptSpaceName).not.toHaveBeenCalled();
       expect(queryBuilderSet).toHaveBeenCalledExactlyOnceWith({
-        experimentalFeatures: ['RECIPIENT_ALLOWLIST'],
+        experimentalFeatures: features,
       });
       expect(spaceAuditRepository.record).toHaveBeenCalledExactlyOnceWith(
         entityManager,
@@ -315,24 +318,25 @@ describe('SpacesRepository', () => {
           eventType: 'SPACE_UPDATED',
           payload: {
             old: { experimentalFeatures: [] },
-            new: { experimentalFeatures: ['RECIPIENT_ALLOWLIST'] },
+            new: { experimentalFeatures: features },
           },
         }),
       );
     });
 
     it('records no audit event when the same set is re-sent', async () => {
+      const features = [faker.helpers.arrayElement(ExperimentalFeatures)];
       entityManager.findOne.mockResolvedValue({
         id: spaceId,
         uuid: spaceUuid,
         name: `kms:v1:${faker.string.alphanumeric(16)}`,
         status: 'ACTIVE',
-        experimentalFeatures: ['RECIPIENT_ALLOWLIST'],
+        experimentalFeatures: features,
       });
 
       await target.update({
         id: spaceId,
-        updatePayload: { experimentalFeatures: ['RECIPIENT_ALLOWLIST'] },
+        updatePayload: { experimentalFeatures: features },
         actorUserId: userId,
       });
 
@@ -340,13 +344,14 @@ describe('SpacesRepository', () => {
     });
 
     it('leaves experimentalFeatures out of the UPDATE on a name-only change', async () => {
+      const features = [faker.helpers.arrayElement(ExperimentalFeatures)];
       const newCiphertext = `kms:v1:${faker.string.alphanumeric(16)}`;
       entityManager.findOne.mockResolvedValue({
         id: spaceId,
         uuid: spaceUuid,
         name: `kms:v1:${faker.string.alphanumeric(16)}`,
         status: 'ACTIVE',
-        experimentalFeatures: ['RECIPIENT_ALLOWLIST'],
+        experimentalFeatures: features,
       });
       spaceEncryptionService.decryptSpaceName.mockResolvedValue(
         faker.lorem.words(),

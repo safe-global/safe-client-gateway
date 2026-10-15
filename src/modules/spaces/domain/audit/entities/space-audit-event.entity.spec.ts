@@ -3,6 +3,7 @@
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import { SpaceAuditEventSchema } from '#/modules/spaces/domain/audit/entities/space-audit-event.entity';
+import { ExperimentalFeatures } from '#/modules/spaces/domain/entities/experimental-feature.entity';
 
 describe('SpaceAuditEventSchema — plaintext addresses', () => {
   const ciphertext = 'kms:v1:abcDEF012_-';
@@ -93,9 +94,10 @@ describe('SpaceAuditEventSchema — SPACE_UPDATED experimentalFeatures', () => {
   });
 
   it('round-trips an experimentalFeatures change', () => {
+    const features = [faker.helpers.arrayElement(ExperimentalFeatures)];
     const payload = {
       old: { experimentalFeatures: [] },
-      new: { experimentalFeatures: ['RECIPIENT_ALLOWLIST'] },
+      new: { experimentalFeatures: features },
     };
 
     const result = SpaceAuditEventSchema.parse({

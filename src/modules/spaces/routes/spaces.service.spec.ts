@@ -16,6 +16,7 @@ import {
 import { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
 import { createMockSpaceEncryptionService } from '#/modules/spaces/domain/__tests__/space-encryption.service.mock';
 import { spaceBuilder } from '#/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
+import { ExperimentalFeatures } from '#/modules/spaces/domain/entities/experimental-feature.entity';
 import type { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository.interface';
 import type { ISpacesRepository } from '#/modules/spaces/domain/spaces.repository.interface';
 import { SpacesService } from '#/modules/spaces/routes/spaces.service';
@@ -137,6 +138,7 @@ describe('SpacesService', () => {
     });
 
     it('should return the space experimental features', async () => {
+      const features = [faker.helpers.arrayElement(ExperimentalFeatures)];
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
       const user = userBuilder().with('id', Number(authPayload.sub)).build();
       const space = spaceBuilder().build();
@@ -151,7 +153,7 @@ describe('SpacesService', () => {
         .with('id', space.id)
         .with('name', space.name)
         .with('members', [member])
-        .with('experimentalFeatures', ['RECIPIENT_ALLOWLIST'])
+        .with('experimentalFeatures', features)
         .build();
 
       spacesRepositoryMock.find.mockResolvedValue([mockSpace]);
@@ -161,9 +163,7 @@ describe('SpacesService', () => {
 
       const result = await service.getActiveOrInvitedSpaces(authPayload);
 
-      expect(result[0].experimentalFeatures).toStrictEqual([
-        'RECIPIENT_ALLOWLIST',
-      ]);
+      expect(result[0].experimentalFeatures).toStrictEqual(features);
       expect(spacesRepositoryMock.find).toHaveBeenCalledWith(
         expect.objectContaining({
           select: expect.objectContaining({ experimentalFeatures: true }),

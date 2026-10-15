@@ -633,6 +633,7 @@ describe('SpacesController', () => {
     });
 
     it('Should read back [] for a space that never opted in, then set and return experimental features', async () => {
+      const features = [faker.helpers.arrayElement(ExperimentalFeatures)];
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const spaceName = nameBuilder();
@@ -658,7 +659,7 @@ describe('SpacesController', () => {
       await request(app.getHttpServer())
         .patch(`/v1/spaces/${spaceId}`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ experimentalFeatures: ['RECIPIENT_ALLOWLIST'] })
+        .send({ experimentalFeatures: features })
         .expect(200);
 
       await request(app.getHttpServer())
@@ -666,13 +667,12 @@ describe('SpacesController', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(200)
         .expect(({ body }) => {
-          expect(body.experimentalFeatures).toStrictEqual([
-            'RECIPIENT_ALLOWLIST',
-          ]);
+          expect(body.experimentalFeatures).toStrictEqual(features);
         });
     });
 
     it('Should opt out when sent an empty array', async () => {
+      const features = [faker.helpers.arrayElement(ExperimentalFeatures)];
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const spaceName = nameBuilder();
@@ -690,7 +690,7 @@ describe('SpacesController', () => {
       await request(app.getHttpServer())
         .patch(`/v1/spaces/${spaceId}`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ experimentalFeatures: ['RECIPIENT_ALLOWLIST'] })
+        .send({ experimentalFeatures: features })
         .expect(200);
 
       await request(app.getHttpServer())
@@ -709,6 +709,7 @@ describe('SpacesController', () => {
     });
 
     it('Should leave experimental features untouched when updating only the name', async () => {
+      const features = [faker.helpers.arrayElement(ExperimentalFeatures)];
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const spaceName = nameBuilder();
@@ -727,7 +728,7 @@ describe('SpacesController', () => {
       await request(app.getHttpServer())
         .patch(`/v1/spaces/${spaceId}`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ experimentalFeatures: ['RECIPIENT_ALLOWLIST'] })
+        .send({ experimentalFeatures: features })
         .expect(200);
 
       await request(app.getHttpServer())
@@ -742,13 +743,12 @@ describe('SpacesController', () => {
         .expect(200)
         .expect(({ body }) => {
           expect(body.name).toBe(newSpaceName);
-          expect(body.experimentalFeatures).toStrictEqual([
-            'RECIPIENT_ALLOWLIST',
-          ]);
+          expect(body.experimentalFeatures).toStrictEqual(features);
         });
     });
 
     it('Should leave the name untouched when updating only experimental features', async () => {
+      const features = [faker.helpers.arrayElement(ExperimentalFeatures)];
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
       const spaceName = nameBuilder();
@@ -766,7 +766,7 @@ describe('SpacesController', () => {
       await request(app.getHttpServer())
         .patch(`/v1/spaces/${spaceId}`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ experimentalFeatures: ['RECIPIENT_ALLOWLIST'] })
+        .send({ experimentalFeatures: features })
         .expect(200);
 
       await request(app.getHttpServer())
@@ -775,16 +775,20 @@ describe('SpacesController', () => {
         .expect(200)
         .expect(({ body }) => {
           expect(body.name).toBe(spaceName);
-          expect(body.experimentalFeatures).toStrictEqual([
-            'RECIPIENT_ALLOWLIST',
-          ]);
+          expect(body.experimentalFeatures).toStrictEqual(features);
         });
     });
 
     it.each([
-      ['an unknown feature', ['notAFeature']],
-      ['a bare string', 'RECIPIENT_ALLOWLIST'],
-      ['an object', { RECIPIENT_ALLOWLIST: true }],
+      [
+        'an unknown feature',
+        [faker.string.alpha({ length: 8, casing: 'lower' })],
+      ],
+      ['a bare string', faker.helpers.arrayElement(ExperimentalFeatures)],
+      [
+        'an object',
+        { [faker.helpers.arrayElement(ExperimentalFeatures)]: true },
+      ],
       ['a number element', [1]],
       [
         'more entries than there are features',
