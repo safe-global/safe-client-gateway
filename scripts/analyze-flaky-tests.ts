@@ -40,8 +40,8 @@ interface CiRun {
 interface FlakyTest {
 	file: string;
 	failure_count: number;
-	is_cascade: boolean;
-	status: "open" | "fixed";
+	last_failure: string;
+	status: "open" | "in_review" | "fixed";
 	fix_pr: { number: number; url: string } | null;
 }
 
@@ -57,6 +57,7 @@ interface FixPr {
 	title: string;
 	url: string;
 	merged_at: string | null;
+	state: "open" | "closed" | "merged";
 	tests_fixed: Array<string>;
 }
 
@@ -137,8 +138,6 @@ interface ExistingData {
 	periodFrom: string;
 	weeklyTrend: Array<WeeklyTrend>;
 	testCounts: Map<string, number>;
-	cascadeBaseline: number;
-	cascadeTestsCount: number;
 }
 
 function loadExistingData(): ExistingData | null {
@@ -169,8 +168,6 @@ function loadExistingData(): ExistingData | null {
 			periodFrom,
 			weeklyTrend,
 			testCounts,
-			cascadeBaseline: flakyData.cascade_baseline ?? 0,
-			cascadeTestsCount: flakyData.cascade_tests_count ?? 0,
 		};
 	} catch (err) {
 		console.warn("Could not load existing data, starting fresh:", err);
@@ -440,33 +437,12 @@ function identifyFlakyCommits(
 	return shaMap;
 }
 
-function detectCascadeBaseline(testFailureCounts: Map<string, number>): {
-	baseline: number;
-	cascadeTests: Array<string>;
-} {
-	const counts = Array.from(testFailureCounts.values());
-	if (counts.length === 0) return { baseline: 0, cascadeTests: [] };
-
-	// Find the most common failure count (mode)
-	const freq = new Map<number, number>();
-	for (const c of counts) {
-		freq.set(c, (freq.get(c) ?? 0) + 1);
-	}
-
-	let maxFreq = 0;
-	let baseline = 0;
-	for (const [count, frequency] of freq) {
-		if (frequency > maxFreq && frequency >= 3) {
-			maxFreq = frequency;
-			baseline = count;
-		}
-	}
-
-	const cascadeTests = Array.from(testFailureCounts.entries())
-		.filter(([, count]) => count === baseline)
-		.map(([file]) => file);
-
-	return { baseline, cascadeTests };
+function prState(pr: {
+	state: string;
+	merged_at: string | null;
+}): FixPr["state"] {
+	if (pr.merged_at) return "merged";
+	return pr.state === "open" ? "open" : "closed";
 }
 
 async function fetchTestFixPrs(): Promise<Array<FixPr>> {
@@ -530,6 +506,7 @@ async function fetchTestFixPrs(): Promise<Array<FixPr>> {
 						title: pr.title,
 						url: pr.html_url,
 						merged_at: pr.merged_at,
+						state: prState(pr),
 						tests_fixed: testFiles,
 					});
 				}
@@ -556,20 +533,10 @@ function generateReport(args: {
 	};
 	weeklyTrend: Array<WeeklyTrend>;
 	tests: Array<FlakyTest>;
-	cascadeBaseline: number;
-	cascadeTestsCount: number;
 	prs: Array<FixPr>;
 }): string {
 	const lines: Array<string> = [];
-	const {
-		period,
-		summary,
-		weeklyTrend,
-		tests,
-		cascadeBaseline,
-		cascadeTestsCount,
-		prs,
-	} = args;
+	const { period, summary, weeklyTrend, tests, prs } = args;
 
 	lines.push("# Flaky Test Baseline Report");
 	lines.push("");
@@ -588,9 +555,6 @@ function generateReport(args: {
 		`| Flaky commits (pass + fail on same SHA) | ${summary.flaky_commits} |`,
 	);
 	lines.push(`| Flakiness rate | ${summary.flakiness_rate}% |`);
-	lines.push(
-		`| Cascade baseline | ${cascadeBaseline} failures (${cascadeTestsCount} tests) |`,
-	);
 	lines.push("");
 	lines.push(
 		"Since 2026-06-04 a commit also counts as flaky when a failed attempt " +
@@ -663,45 +627,29 @@ function generateReport(args: {
 	}
 	lines.push("");
 
-	// Flaky test leaderboard (above cascade baseline)
-	const nonCascade = tests
-		.filter((t) => !t.is_cascade)
-		.sort((a, b) => b.failure_count - a.failure_count);
-	const cascadeTests = tests.filter((t) => t.is_cascade);
-
-	lines.push("## Flaky Test Leaderboard (Non-Cascade)");
+	// Flaky test leaderboard
+	const statusLabel = {
+		open: "Open",
+		in_review: "Fix in review",
+		fixed: "Fixed",
+	};
+	lines.push("## Flaky Test Leaderboard");
 	lines.push("");
-	if (nonCascade.length === 0) {
-		lines.push("No non-cascade flaky tests found.");
+	if (tests.length === 0) {
+		lines.push("No flaky tests found.");
 	} else {
-		lines.push("| File | Failures | Status | Fix PR |");
-		lines.push("|------|----------|--------|--------|");
-		for (const t of nonCascade) {
-			const status = t.status === "fixed" ? "Fixed" : "Open";
+		lines.push("| File | Failures | Last failure | Status | Fix PR |");
+		lines.push("|------|----------|--------------|--------|--------|");
+		for (const t of [...tests].sort(
+			(a, b) => b.failure_count - a.failure_count,
+		)) {
 			const pr = t.fix_pr ? `[#${t.fix_pr.number}](${t.fix_pr.url})` : "-";
-			lines.push(`| \`${t.file}\` | ${t.failure_count} | ${status} | ${pr} |`);
+			lines.push(
+				`| \`${t.file}\` | ${t.failure_count} | ${t.last_failure.slice(0, 10)} | ${statusLabel[t.status]} | ${pr} |`,
+			);
 		}
 	}
 	lines.push("");
-
-	// Cascade tests (collapsed)
-	if (cascadeTests.length > 0) {
-		lines.push("## Cascade Tests");
-		lines.push("");
-		lines.push(
-			`These ${cascadeTests.length} tests all failed exactly ${cascadeBaseline} times, suggesting they fail together as a cascade (e.g., shared infrastructure issue).`,
-		);
-		lines.push("");
-		lines.push("<details>");
-		lines.push("<summary>Click to expand cascade test list</summary>");
-		lines.push("");
-		for (const t of cascadeTests) {
-			lines.push(`- \`${t.file}\``);
-		}
-		lines.push("");
-		lines.push("</details>");
-		lines.push("");
-	}
 
 	// Fix PRs
 	lines.push("## Fix PRs");
@@ -710,19 +658,23 @@ function generateReport(args: {
 		lines.push("No test fix PRs found in this period.");
 	} else {
 		for (const pr of prs) {
-			const status = pr.merged_at ? "Merged" : "Open";
+			const status = { open: "Open", closed: "Closed", merged: "Merged" }[
+				pr.state
+			];
 			lines.push(`- [#${pr.number}](${pr.url}) - ${pr.title} (${status})`);
 		}
 		lines.push("");
 	}
 
 	// Still open flaky tests
-	const openTests = tests.filter((t) => t.status === "open" && !t.is_cascade);
+	const openTests = tests.filter((t) => t.status === "open");
 	if (openTests.length > 0) {
 		lines.push("## Still-Open Flaky Tests");
 		lines.push("");
 		for (const t of openTests) {
-			lines.push(`- \`${t.file}\` (${t.failure_count} failures)`);
+			lines.push(
+				`- \`${t.file}\` (${t.failure_count} failures, last ${t.last_failure.slice(0, 10)})`,
+			);
 		}
 		lines.push("");
 	}
@@ -883,10 +835,7 @@ async function main(): Promise<void> {
 		}
 	}
 
-	// 6. Detect cascade in new data
-	detectCascadeBaseline(newTestCounts);
-
-	// 7. Merge with existing data
+	// 6. Merge with existing data
 	// Merge flaky runs (append new, deduplicate by id)
 	const mergedRuns = [...(existing?.runs ?? [])];
 	const mergedRunIds = new Set(mergedRuns.map((r) => r.id));
@@ -961,13 +910,6 @@ async function main(): Promise<void> {
 		mergedTestCounts.set(file, (mergedTestCounts.get(file) ?? 0) + count);
 	}
 
-	// Re-detect cascade on merged counts
-	const { baseline: finalCascadeBaseline, cascadeTests: finalCascadeFiles } =
-		detectCascadeBaseline(mergedTestCounts);
-	console.log(
-		`Merged cascade baseline: ${finalCascadeBaseline} failures (${finalCascadeFiles.length} tests)`,
-	);
-
 	// Compute merged summary
 	const mergedTotalCommits = mergedWeeklyTrend.reduce(
 		(sum, w) => sum + w.commits,
@@ -990,33 +932,51 @@ async function main(): Promise<void> {
 	const previousPrs: Array<FixPr> = fs.existsSync(fixPrsPath)
 		? (JSON.parse(fs.readFileSync(fixPrsPath, "utf-8")).prs ?? [])
 		: [];
-	const fixPrs = [
-		...fetchedPrs,
-		...previousPrs.filter((pr) => !fetchedNumbers.has(pr.number)),
-	];
+	// Refresh unmerged ones: they may have been merged or closed since.
+	const keptPrs = previousPrs
+		.filter((pr) => !fetchedNumbers.has(pr.number))
+		.map((pr) => {
+			if (pr.merged_at) return { ...pr, state: "merged" as const };
+			const current = gh(`pulls/${pr.number}`) as {
+				state: string;
+				merged_at: string | null;
+			};
+			return {
+				...pr,
+				merged_at: current.merged_at,
+				state: prState(current),
+			};
+		});
+	const fixPrs = [...fetchedPrs, ...keptPrs];
 	console.log(`Found ${fixPrs.length} test-related PRs`);
 
-	// 9. Build flaky tests list with PR correlation
-	const prFileMap = new Map<string, FixPr>();
-	for (const pr of fixPrs) {
-		for (const file of pr.tests_fixed) {
-			prFileMap.set(file, pr);
+	// 9. Build flaky tests list. A test counts as fixed only once a PR covering
+	// it merged after its last failure; an open covering PR means in review.
+	const lastFailure = new Map<string, string>();
+	for (const run of mergedRuns) {
+		for (const t of run.failed_tests) {
+			if (run.created_at > (lastFailure.get(t.file) ?? "")) {
+				lastFailure.set(t.file, run.created_at);
+			}
 		}
 	}
 
 	const flakyTests: Array<FlakyTest> = Array.from(
 		mergedTestCounts.entries(),
 	).map(([file, count]) => {
-		const matchedPr = prFileMap.get(file) ?? null;
-		const isCascade = finalCascadeFiles.includes(file);
+		const last = lastFailure.get(file) ?? "";
+		const covering = fixPrs.filter((pr) => pr.tests_fixed.includes(file));
+		const fix = covering
+			.filter((pr) => (pr.merged_at ?? "") > last)
+			.sort((a, b) => (a.merged_at ?? "").localeCompare(b.merged_at ?? ""))[0];
+		const review = covering.find((pr) => pr.state === "open");
+		const pr = fix ?? review;
 		return {
 			file,
 			failure_count: count,
-			is_cascade: isCascade,
-			status: matchedPr?.merged_at ? "fixed" : "open",
-			fix_pr: matchedPr
-				? { number: matchedPr.number, url: matchedPr.url }
-				: null,
+			last_failure: last,
+			status: fix ? "fixed" : review ? "in_review" : "open",
+			fix_pr: pr ? { number: pr.number, url: pr.url } : null,
 		};
 	});
 
@@ -1043,8 +1003,6 @@ async function main(): Promise<void> {
 		},
 		weekly_trend: mergedWeeklyTrend,
 		tests: flakyTests.sort((a, b) => b.failure_count - a.failure_count),
-		cascade_baseline: finalCascadeBaseline,
-		cascade_tests_count: finalCascadeFiles.length,
 	};
 
 	const fixPrsData = {
@@ -1073,8 +1031,6 @@ async function main(): Promise<void> {
 		},
 		weeklyTrend: mergedWeeklyTrend,
 		tests: flakyTests,
-		cascadeBaseline: finalCascadeBaseline,
-		cascadeTestsCount: finalCascadeFiles.length,
 		prs: fixPrs,
 	});
 	fs.writeFileSync(path.join(OUTPUT_DIR, "REPORT.md"), report);
