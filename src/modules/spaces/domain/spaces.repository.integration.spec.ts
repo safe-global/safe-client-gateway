@@ -17,6 +17,7 @@ import { SpaceSafe } from '#/modules/spaces/datasources/safes/entities/space-saf
 import { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
 import { createMockSpaceEncryptionService } from '#/modules/spaces/domain/__tests__/space-encryption.service.mock';
 import { createMockSpaceAuditRepository } from '#/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
+import { ExperimentalFeatures } from '#/modules/spaces/domain/entities/experimental-feature.entity';
 import { SpaceStatus } from '#/modules/spaces/domain/entities/space.entity';
 import { SpacesRepository } from '#/modules/spaces/domain/spaces.repository';
 import { Member } from '#/modules/users/datasources/entities/member.entity.db';
@@ -485,6 +486,30 @@ describe('SpacesRepository', () => {
         createdAt: expect.any(Date),
         updatedAt: expect.any(Date),
       });
+    });
+
+    it('should drop stored experimental features that no longer exist', async () => {
+      const feature = faker.helpers.arrayElement(ExperimentalFeatures);
+      const stale = faker.string.alpha(8);
+      const user = await dbUserRepo.insert({
+        status: faker.helpers.arrayElement(UserStatusKeys),
+      });
+      const space = await spacesRepository.create({
+        userId: user.identifiers[0].id as User['id'],
+        name: faker.word.noun(),
+        status: faker.helpers.arrayElement(SpaceStatusKeys),
+      });
+      const spaceId = await spacesRepository.findIdByUuid(space.uuid);
+      await dataSource.query(
+        'UPDATE spaces SET experimental_features = $1 WHERE id = $2',
+        [JSON.stringify([stale, feature]), spaceId],
+      );
+
+      const found = await spacesRepository.findOneOrFail({
+        where: { id: spaceId },
+      });
+
+      expect(found.experimentalFeatures).toStrictEqual([feature]);
     });
 
     it('should throw an error if the space does not exist', async () => {

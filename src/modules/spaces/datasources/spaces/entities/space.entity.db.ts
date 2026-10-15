@@ -14,6 +14,7 @@ import {
   type Space as DomainSpace,
   SpaceStatus,
 } from '#/modules/spaces/domain/entities/space.entity';
+import { toKnownFeatures } from '#/modules/spaces/domain/experimental-features.utils';
 import { Member } from '#/modules/users/datasources/entities/member.entity.db';
 
 @Entity('spaces')
@@ -48,6 +49,10 @@ export class Space implements DomainSpace {
     name: 'experimental_features',
     type: 'jsonb',
     default: () => "'[]'",
+    transformer: {
+      from: (value: Array<string> | null) => value && toKnownFeatures(value),
+      to: (value: Array<ExperimentalFeature>) => value,
+    },
   })
   experimentalFeatures!: Array<ExperimentalFeature>;
 
