@@ -278,7 +278,7 @@ describe('SpacesRepository', () => {
 
       await target.update({
         id: spaceId,
-        updatePayload: { experimentalFeatures: ['recipientAllowlist'] },
+        updatePayload: { experimentalFeatures: ['RECIPIENT_ALLOWLIST'] },
         actorUserId: userId,
       });
 
@@ -301,13 +301,13 @@ describe('SpacesRepository', () => {
 
       await target.update({
         id: spaceId,
-        updatePayload: { experimentalFeatures: ['recipientAllowlist'] },
+        updatePayload: { experimentalFeatures: ['RECIPIENT_ALLOWLIST'] },
         actorUserId: userId,
       });
 
       expect(spaceEncryptionService.encryptSpaceName).not.toHaveBeenCalled();
       expect(queryBuilderSet).toHaveBeenCalledExactlyOnceWith({
-        experimentalFeatures: ['recipientAllowlist'],
+        experimentalFeatures: ['RECIPIENT_ALLOWLIST'],
       });
       expect(spaceAuditRepository.record).toHaveBeenCalledExactlyOnceWith(
         entityManager,
@@ -315,7 +315,7 @@ describe('SpacesRepository', () => {
           eventType: 'SPACE_UPDATED',
           payload: {
             old: { experimentalFeatures: [] },
-            new: { experimentalFeatures: ['recipientAllowlist'] },
+            new: { experimentalFeatures: ['RECIPIENT_ALLOWLIST'] },
           },
         }),
       );
@@ -327,12 +327,12 @@ describe('SpacesRepository', () => {
         uuid: spaceUuid,
         name: `kms:v1:${faker.string.alphanumeric(16)}`,
         status: 'ACTIVE',
-        experimentalFeatures: ['recipientAllowlist'],
+        experimentalFeatures: ['RECIPIENT_ALLOWLIST'],
       });
 
       await target.update({
         id: spaceId,
-        updatePayload: { experimentalFeatures: ['recipientAllowlist'] },
+        updatePayload: { experimentalFeatures: ['RECIPIENT_ALLOWLIST'] },
         actorUserId: userId,
       });
 
@@ -346,7 +346,7 @@ describe('SpacesRepository', () => {
         uuid: spaceUuid,
         name: `kms:v1:${faker.string.alphanumeric(16)}`,
         status: 'ACTIVE',
-        experimentalFeatures: ['recipientAllowlist'],
+        experimentalFeatures: ['RECIPIENT_ALLOWLIST'],
       });
       spaceEncryptionService.decryptSpaceName.mockResolvedValue(
         faker.lorem.words(),

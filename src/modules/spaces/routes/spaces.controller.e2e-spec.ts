@@ -657,7 +657,7 @@ describe('SpacesController', () => {
       await request(app.getHttpServer())
         .patch(`/v1/spaces/${spaceId}`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ experimentalFeatures: ['recipientAllowlist'] })
+        .send({ experimentalFeatures: ['RECIPIENT_ALLOWLIST'] })
         .expect(200);
 
       await request(app.getHttpServer())
@@ -666,7 +666,7 @@ describe('SpacesController', () => {
         .expect(200)
         .expect(({ body }) => {
           expect(body.experimentalFeatures).toStrictEqual([
-            'recipientAllowlist',
+            'RECIPIENT_ALLOWLIST',
           ]);
         });
     });
@@ -689,7 +689,7 @@ describe('SpacesController', () => {
       await request(app.getHttpServer())
         .patch(`/v1/spaces/${spaceId}`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ experimentalFeatures: ['recipientAllowlist'] })
+        .send({ experimentalFeatures: ['RECIPIENT_ALLOWLIST'] })
         .expect(200);
 
       await request(app.getHttpServer())
@@ -726,7 +726,7 @@ describe('SpacesController', () => {
         .patch(`/v1/spaces/${spaceId}`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({
-          experimentalFeatures: ['recipientAllowlist', 'recipientAllowlist'],
+          experimentalFeatures: ['RECIPIENT_ALLOWLIST', 'RECIPIENT_ALLOWLIST'],
         })
         .expect(200);
 
@@ -736,7 +736,7 @@ describe('SpacesController', () => {
         .expect(200)
         .expect(({ body }) => {
           expect(body.experimentalFeatures).toStrictEqual([
-            'recipientAllowlist',
+            'RECIPIENT_ALLOWLIST',
           ]);
         });
     });
@@ -760,7 +760,7 @@ describe('SpacesController', () => {
       await request(app.getHttpServer())
         .patch(`/v1/spaces/${spaceId}`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ experimentalFeatures: ['recipientAllowlist'] })
+        .send({ experimentalFeatures: ['RECIPIENT_ALLOWLIST'] })
         .expect(200);
 
       await request(app.getHttpServer())
@@ -776,7 +776,7 @@ describe('SpacesController', () => {
         .expect(({ body }) => {
           expect(body.name).toBe(newSpaceName);
           expect(body.experimentalFeatures).toStrictEqual([
-            'recipientAllowlist',
+            'RECIPIENT_ALLOWLIST',
           ]);
         });
     });
@@ -799,7 +799,7 @@ describe('SpacesController', () => {
       await request(app.getHttpServer())
         .patch(`/v1/spaces/${spaceId}`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .send({ experimentalFeatures: ['recipientAllowlist'] })
+        .send({ experimentalFeatures: ['RECIPIENT_ALLOWLIST'] })
         .expect(200);
 
       await request(app.getHttpServer())
@@ -809,15 +809,15 @@ describe('SpacesController', () => {
         .expect(({ body }) => {
           expect(body.name).toBe(spaceName);
           expect(body.experimentalFeatures).toStrictEqual([
-            'recipientAllowlist',
+            'RECIPIENT_ALLOWLIST',
           ]);
         });
     });
 
     it.each([
       ['an unknown feature', ['notAFeature']],
-      ['a bare string', 'recipientAllowlist'],
-      ['an object', { recipientAllowlist: true }],
+      ['a bare string', 'RECIPIENT_ALLOWLIST'],
+      ['an object', { RECIPIENT_ALLOWLIST: true }],
       ['a number element', [1]],
     ])('Should return a 422 for %s', async (_label, value) => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();

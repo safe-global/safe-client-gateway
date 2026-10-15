@@ -151,7 +151,7 @@ describe('SpacesService', () => {
         .with('id', space.id)
         .with('name', space.name)
         .with('members', [member])
-        .with('experimentalFeatures', ['recipientAllowlist'])
+        .with('experimentalFeatures', ['RECIPIENT_ALLOWLIST'])
         .build();
 
       spacesRepositoryMock.find.mockResolvedValue([mockSpace]);
@@ -162,7 +162,7 @@ describe('SpacesService', () => {
       const result = await service.getActiveOrInvitedSpaces(authPayload);
 
       expect(result[0].experimentalFeatures).toStrictEqual([
-        'recipientAllowlist',
+        'RECIPIENT_ALLOWLIST',
       ]);
       expect(spacesRepositoryMock.find).toHaveBeenCalledWith(
         expect.objectContaining({

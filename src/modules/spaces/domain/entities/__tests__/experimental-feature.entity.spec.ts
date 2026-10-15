@@ -4,12 +4,12 @@ import { ExperimentalFeaturesSchema } from '#/modules/spaces/domain/entities/exp
 describe('ExperimentalFeaturesSchema', () => {
   it('dedupes repeated values', () => {
     const result = ExperimentalFeaturesSchema.safeParse([
-      'recipientAllowlist',
-      'recipientAllowlist',
+      'RECIPIENT_ALLOWLIST',
+      'RECIPIENT_ALLOWLIST',
     ]);
 
     expect(result.success).toBe(true);
-    expect(result.data).toStrictEqual(['recipientAllowlist']);
+    expect(result.data).toStrictEqual(['RECIPIENT_ALLOWLIST']);
   });
 
   it('rejects an unknown feature', () => {

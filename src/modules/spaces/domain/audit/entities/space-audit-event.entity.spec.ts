@@ -95,7 +95,7 @@ describe('SpaceAuditEventSchema — SPACE_UPDATED experimentalFeatures', () => {
   it('round-trips an experimentalFeatures change', () => {
     const payload = {
       old: { experimentalFeatures: [] },
-      new: { experimentalFeatures: ['recipientAllowlist'] },
+      new: { experimentalFeatures: ['RECIPIENT_ALLOWLIST'] },
     };
 
     const result = SpaceAuditEventSchema.parse({
