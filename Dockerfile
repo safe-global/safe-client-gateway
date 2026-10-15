@@ -4,6 +4,8 @@
 #
 FROM node:26.10.0-alpine3.24 AS base
 ENV NODE_ENV=production
+RUN npm install --global corepack@0.36.0 \
+     && corepack enable
 WORKDIR /app
 COPY --chown=node:node .yarn/releases ./.yarn/releases
 COPY --chown=node:node package.json yarn.lock .yarnrc.yml tsconfig*.json ./
