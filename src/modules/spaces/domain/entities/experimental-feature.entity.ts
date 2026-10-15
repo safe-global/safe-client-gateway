@@ -2,7 +2,7 @@
 import { z } from 'zod';
 
 // Retiring a feature needs a migration that strips it from stored rows.
-export const ExperimentalFeatures = ['RECIPIENT_ALLOWLIST'] as const;
+export const ExperimentalFeatures = ['POLICY_RECIPIENT_ALLOWLIST'] as const;
 
 export const ExperimentalFeatureSchema = z.enum(ExperimentalFeatures);
 
