@@ -1,15 +1,19 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { ExperimentalFeaturesSchema } from '#/modules/spaces/domain/entities/experimental-feature.entity';
+import { faker } from '@faker-js/faker';
+import {
+  ExperimentalFeatures,
+  ExperimentalFeaturesSchema,
+} from '#/modules/spaces/domain/entities/experimental-feature.entity';
 
 describe('ExperimentalFeaturesSchema', () => {
-  it('dedupes repeated values', () => {
-    const result = ExperimentalFeaturesSchema.safeParse([
-      'RECIPIENT_ALLOWLIST',
-      'RECIPIENT_ALLOWLIST',
-    ]);
+  it('rejects more entries than there are features', () => {
+    const result = ExperimentalFeaturesSchema.safeParse(
+      Array.from({ length: ExperimentalFeatures.length + 1 }, () =>
+        faker.helpers.arrayElement(ExperimentalFeatures),
+      ),
+    );
 
-    expect(result.success).toBe(true);
-    expect(result.data).toStrictEqual(['RECIPIENT_ALLOWLIST']);
+    expect(result.success).toBe(false);
   });
 
   it('rejects an unknown feature', () => {

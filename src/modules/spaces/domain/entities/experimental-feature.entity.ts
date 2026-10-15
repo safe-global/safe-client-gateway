@@ -12,4 +12,5 @@ export type ExperimentalFeature = z.infer<typeof ExperimentalFeatureSchema>;
 // PATCH field would wipe the stored set.
 export const ExperimentalFeaturesSchema = z
   .array(ExperimentalFeatureSchema)
+  .max(ExperimentalFeatures.length)
   .transform((features): Array<ExperimentalFeature> => [...new Set(features)]);

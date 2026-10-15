@@ -19,6 +19,7 @@ import { siweAuthPayloadDtoBuilder } from '#/modules/auth/domain/entities/__test
 import { AuthGuard } from '#/modules/auth/routes/guards/auth.guard';
 import { NotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/notifications.repository.module';
 import { TestNotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/test.notification.repository.module';
+import { ExperimentalFeatures } from '#/modules/spaces/domain/entities/experimental-feature.entity';
 import { SpaceStatus } from '#/modules/spaces/domain/entities/space.entity';
 import { SpacesController } from '#/modules/spaces/routes/spaces.controller';
 import {
@@ -707,40 +708,6 @@ describe('SpacesController', () => {
         });
     });
 
-    it('Should store a repeated value once', async () => {
-      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-      const accessToken = jwtService.sign(authPayloadDto);
-      const spaceName = nameBuilder();
-
-      await request(app.getHttpServer())
-        .post('/v1/users/wallet')
-        .set('Cookie', [`access_token=${accessToken}`]);
-
-      const createSpaceResponse = await request(app.getHttpServer())
-        .post('/v1/spaces')
-        .set('Cookie', [`access_token=${accessToken}`])
-        .send({ name: spaceName });
-      const spaceId = createSpaceResponse.body.uuid;
-
-      await request(app.getHttpServer())
-        .patch(`/v1/spaces/${spaceId}`)
-        .set('Cookie', [`access_token=${accessToken}`])
-        .send({
-          experimentalFeatures: ['RECIPIENT_ALLOWLIST', 'RECIPIENT_ALLOWLIST'],
-        })
-        .expect(200);
-
-      await request(app.getHttpServer())
-        .get(`/v1/spaces/${spaceId}`)
-        .set('Cookie', [`access_token=${accessToken}`])
-        .expect(200)
-        .expect(({ body }) => {
-          expect(body.experimentalFeatures).toStrictEqual([
-            'RECIPIENT_ALLOWLIST',
-          ]);
-        });
-    });
-
     it('Should leave experimental features untouched when updating only the name', async () => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
@@ -819,6 +786,12 @@ describe('SpacesController', () => {
       ['a bare string', 'RECIPIENT_ALLOWLIST'],
       ['an object', { RECIPIENT_ALLOWLIST: true }],
       ['a number element', [1]],
+      [
+        'more entries than there are features',
+        Array.from({ length: ExperimentalFeatures.length + 1 }, () =>
+          faker.helpers.arrayElement(ExperimentalFeatures),
+        ),
+      ],
     ])('Should return a 422 for %s', async (_label, value) => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
