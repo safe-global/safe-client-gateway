@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
-import { hexToNumber, toHex } from 'viem';
+import { hexToNumber, TransactionReceiptNotFoundError, toHex } from 'viem';
 import type { MockedObject } from 'vitest';
 import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
 import { FakeCacheService } from '#/datasources/cache/__tests__/fake.cache.service';
@@ -123,7 +123,6 @@ describe('BlockchainApiManager', () => {
       });
       const body = {
         jsonrpc: '2.0',
-        id: 0,
         method: 'eth_chainId',
       };
       const cacheDir = new CacheDir(
@@ -139,7 +138,7 @@ describe('BlockchainApiManager', () => {
 
       expect(fetch).toHaveBeenCalledTimes(1);
       expect(fetch).toHaveBeenNthCalledWith(1, rpcUrl, {
-        body: JSON.stringify(body),
+        body: expect.any(String),
         headers: {
           'Content-Type': 'application/json',
         },
@@ -147,6 +146,9 @@ describe('BlockchainApiManager', () => {
         signal: expect.any(AbortSignal),
         url: rpcUrl,
       });
+      expect(
+        JSON.parse(fetchSpy.mock.calls[0][1]?.body as string),
+      ).toStrictEqual({ ...body, id: expect.any(Number) });
       expect(fakeCacheService.keyCount()).toBe(1);
       const cached = await fakeCacheService.hGet(cacheDir);
       expect(JSON.parse(cached as string)).toBe(chainId);
@@ -180,7 +182,6 @@ describe('BlockchainApiManager', () => {
       });
       const body = {
         jsonrpc: '2.0',
-        id: 1,
         method: 'eth_getBlockByNumber',
         params: ['latest', false],
       };
@@ -200,7 +201,7 @@ describe('BlockchainApiManager', () => {
 
       expect(fetch).toHaveBeenCalledTimes(1);
       expect(fetch).toHaveBeenNthCalledWith(1, rpcUrl, {
-        body: JSON.stringify(body),
+        body: expect.any(String),
         headers: {
           'Content-Type': 'application/json',
         },
@@ -208,9 +209,58 @@ describe('BlockchainApiManager', () => {
         signal: expect.any(AbortSignal),
         url: rpcUrl,
       });
+      expect(
+        JSON.parse(fetchSpy.mock.calls[0][1]?.body as string),
+      ).toStrictEqual({ ...body, id: expect.any(Number) });
       expect(fakeCacheService.keyCount()).toBe(1);
       const cached = await fakeCacheService.hGet(cacheDir);
       expect(JSON.parse(cached as string)).toStrictEqual(blockByNumber);
+
+      fetchSpy.mockRestore();
+    });
+  });
+
+  describe('getUncachedApi', () => {
+    it('queries the RPC on every call and never touches the RPC cache', async () => {
+      const rpcUriValue = `https://${faker.internet.domainWord()}.infura.io/v3/`;
+      const chain = chainBuilder()
+        .with(
+          'rpcUri',
+          rpcUriBuilder()
+            .with('value', rpcUriValue)
+            .with('authentication', RpcUriAuthentication.ApiKeyPath)
+            .build(),
+        )
+        .build();
+      configApiMock.getChain.mockResolvedValue(rawify(chain));
+      const hGetSpy = vi.spyOn(fakeCacheService, 'hGet');
+      const hSetSpy = vi.spyOn(fakeCacheService, 'hSet');
+      const fetchSpy = vi.spyOn(global, 'fetch').mockImplementation(() =>
+        Promise.resolve(
+          new Response(
+            JSON.stringify({ jsonrpc: '2.0', id: 0, result: null }),
+            {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' },
+            },
+          ),
+        ),
+      );
+      const hash = toHex(faker.number.bigInt(), { size: 32 });
+
+      const client = await target.getUncachedApi(chain.chainId);
+      await expect(
+        client.getTransactionReceipt({ hash }),
+      ).rejects.toBeInstanceOf(TransactionReceiptNotFoundError);
+      await expect(
+        client.getTransactionReceipt({ hash }),
+      ).rejects.toBeInstanceOf(TransactionReceiptNotFoundError);
+
+      expect(fetchSpy).toHaveBeenCalledTimes(2);
+      expect(fetchSpy.mock.calls[0][0]).toContain(infuraApiKey);
+      expect(hGetSpy).not.toHaveBeenCalled();
+      expect(hSetSpy).not.toHaveBeenCalled();
+      expect(fakeCacheService.keyCount()).toBe(0);
 
       fetchSpy.mockRestore();
     });

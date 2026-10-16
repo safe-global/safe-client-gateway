@@ -14,6 +14,7 @@ A KMS call is not retried by the SDK. It fails after `SAFENET_KMS_CONNECTION_TIM
 For local development, set `AWS_ENDPOINT_URL_KMS` to point the SDK at a KMS emulator. It also sends CGW's field-encryption KMS client to the emulator.
 
 The payer runs on Gnosis Chain (chain ID `100`) and needs a Safe `1.4.1` payer Safe with threshold 1 and the signer as an owner.
+The payer reads the chain through `IBlockchainApiManager.getUncachedApi`, so the shared RPC cache never serves it a stale nonce or a missing receipt.
 Before the first proposal, the payer reads `isOwner(signer)`. A false result throws `SafenetPayerError`, and nothing is relayed. The payer repeats the check until it passes once, then does not repeat it in this instance.
 The nonce counter (Redis key `safenet_payer_nonce_100_<lowercase payer address>`, 60 seconds) is written only after a confirmed `ExecutionSuccess`, and covers RPC lag behind that execution. A failed write is logged and does not fail the proposal, because the next job reads the on-chain nonce. The counter is not a distributed lock. Run one instance per payer Safe.
 The relay status is polled every `SAFENET_POLL_INTERVAL_MS` (default 1000) for up to `SAFENET_POLL_TIMEOUT_MS` (default 120000). After the relay reports the task as included, the receipt is polled the same way until it exists, and must show the payer Safe's `ExecutionSuccess`. A payer Safe with another version or threshold reverts before any fee moves.
