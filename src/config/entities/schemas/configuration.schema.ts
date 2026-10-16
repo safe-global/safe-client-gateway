@@ -169,7 +169,15 @@ export const RootConfigurationSchema = z
       .number()
       .int()
       .min(1)
-      .max(3)
+      .max(10)
+      .optional(),
+    SAFENET_CHECKS_QUEUE_BACKOFF_TYPE: z
+      .enum(['fixed', 'exponential'])
+      .optional(),
+    SAFENET_CHECKS_QUEUE_BACKOFF_DELAY: z.coerce
+      .number()
+      .int()
+      .min(0)
       .optional(),
     SAFENET_CHECKS_QUEUE_REMOVE_ON_COMPLETE_AGE: z.coerce
       .number()

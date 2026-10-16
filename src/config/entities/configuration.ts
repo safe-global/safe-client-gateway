@@ -872,7 +872,7 @@ export default () => ({
       process.env.SAFENET_POLL_TIMEOUT_MS ?? `${120_000}`,
       10,
     ),
-    // The schema bounds the attempts to 1-3 and the retention ages to 30 days or more.
+    // The schema bounds the attempts to 1-10 and the retention ages to 30 days or more.
     queue: {
       attempts: Number.parseInt(
         process.env.SAFENET_CHECKS_QUEUE_ATTEMPTS ?? `${3}`,
