@@ -102,6 +102,25 @@ const GATED_ROUTES: Array<Route> = [
     path: (id) =>
       `/v1/spaces/${id}/address-book/${getAddress(faker.finance.ethereumAddress())}`,
   },
+  // Tags are shared by the whole Workspace, so any member's tag edit is gated
+  // even though members (not only admins) may make it.
+  {
+    name: 'PUT /v1/spaces/:spaceId/address-book/tags',
+    method: 'put',
+    path: (id) => `/v1/spaces/${id}/address-book/tags`,
+    body: { items: [] },
+  },
+  {
+    name: 'PATCH /v1/spaces/:spaceId/address-book/tags/:tagId',
+    method: 'patch',
+    path: (id) => `/v1/spaces/${id}/address-book/tags/1`,
+    body: { name: faker.word.noun() },
+  },
+  {
+    name: 'DELETE /v1/spaces/:spaceId/address-book/tags/:tagId',
+    method: 'delete',
+    path: (id) => `/v1/spaces/${id}/address-book/tags/1`,
+  },
   {
     name: 'PUT /v1/spaces/:spaceId/address-book/requests/:requestId/approve',
     method: 'put',
