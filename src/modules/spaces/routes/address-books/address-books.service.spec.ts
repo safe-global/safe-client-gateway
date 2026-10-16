@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
-import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
+import { HttpStatus, UnauthorizedException } from '@nestjs/common';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
+import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
 import {
   oidcAuthPayloadDtoBuilder,
   siweAuthPayloadDtoBuilder,
@@ -117,7 +118,7 @@ describe('AddressBooksService', () => {
       });
     });
 
-    it('should throw ForbiddenException when the caller is not an active member', async () => {
+    it('should throw a 403 when the caller is not an active member', async () => {
       const spaceId = faker.number.int();
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
       membersRepositoryMock.findOne.mockResolvedValue(null);
@@ -125,7 +126,10 @@ describe('AddressBooksService', () => {
       await expect(
         service.findAllBySpaceId(authPayload, spaceId),
       ).rejects.toThrow(
-        new ForbiddenException('User is not a member of this workspace'),
+        new HttpExceptionNoLog(
+          'User is not a member of this workspace',
+          HttpStatus.FORBIDDEN,
+        ),
       );
       expect(repositoryMock.findAllBySpaceId).not.toHaveBeenCalled();
     });
@@ -179,7 +183,7 @@ describe('AddressBooksService', () => {
       });
     });
 
-    it('should throw ForbiddenException when the caller is not an admin', async () => {
+    it('should throw a 403 when the caller is not an admin', async () => {
       const spaceId = faker.number.int();
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
       membersRepositoryMock.findOne.mockResolvedValue(null);
@@ -187,7 +191,10 @@ describe('AddressBooksService', () => {
       await expect(
         service.upsertMany(authPayload, spaceId, { items: [] }),
       ).rejects.toThrow(
-        new ForbiddenException('User is not an admin of this workspace'),
+        new HttpExceptionNoLog(
+          'User is not an admin of this workspace',
+          HttpStatus.FORBIDDEN,
+        ),
       );
       expect(repositoryMock.upsertMany).not.toHaveBeenCalled();
     });
@@ -367,7 +374,7 @@ describe('AddressBooksService', () => {
       });
     });
 
-    it('should throw ForbiddenException when the caller is not an admin', async () => {
+    it('should throw a 403 when the caller is not an admin', async () => {
       const spaceId = faker.number.int();
       const address = getAddress(faker.finance.ethereumAddress());
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
@@ -376,7 +383,10 @@ describe('AddressBooksService', () => {
       await expect(
         service.deleteByAddress({ authPayload, spaceId, address }),
       ).rejects.toThrow(
-        new ForbiddenException('User is not an admin of this workspace'),
+        new HttpExceptionNoLog(
+          'User is not an admin of this workspace',
+          HttpStatus.FORBIDDEN,
+        ),
       );
       expect(repositoryMock.deleteByAddress).not.toHaveBeenCalled();
     });
