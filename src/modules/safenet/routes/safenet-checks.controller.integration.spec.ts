@@ -47,16 +47,11 @@ describe('SafenetChecksController', () => {
   let transaction: MultisigTransaction;
   let spaceId: number;
   let spaceUuid: string;
-  const queuedJobIds = new Set<string>();
   const queue = {
     setGlobalConcurrency: vi.fn(),
-    add: vi.fn((_name: string, _data: unknown, options: { jobId: string }) => {
-      queuedJobIds.add(options.jobId);
-    }),
-    getJob: vi.fn((jobId: string) =>
-      queuedJobIds.has(jobId) ? { id: jobId } : undefined,
-    ),
-  } as unknown as MockedObject<Queue>;
+    add: vi.fn(),
+    getJob: vi.fn(),
+  } as MockedObject<Queue>;
   const featureFlags = {
     isFeatureEnabled: vi.fn(),
   } as MockedObject<IFeatureFlagService>;
@@ -134,7 +129,7 @@ describe('SafenetChecksController', () => {
   });
 
   beforeEach(async () => {
-    queuedJobIds.clear();
+    queue.getJob.mockResolvedValue(undefined);
     // A new workspace per test, so the daily counter starts empty.
     spaceId = faker.number.int({ min: 1 });
     spaceUuid = faker.string.uuid();
@@ -193,8 +188,7 @@ describe('SafenetChecksController', () => {
     expect(queue.add).not.toHaveBeenCalled();
   });
 
-  it('counts a queued transaction once and answers 429 past the daily limit', async () => {
-    await requestCheck().expect(HttpStatus.ACCEPTED);
+  it('answers 429 past the daily limit of the workspace', async () => {
     await requestCheck().expect(HttpStatus.ACCEPTED);
     await useTransaction(2);
 

@@ -94,14 +94,18 @@ export class SafenetChecksService {
   /** The caller is a member of the workspace in the path, which holds the Safe on an eligible plan. */
   private async assertEligible(args: SpaceSafeUser): Promise<void> {
     await assertMember(this.members, args.space.id, args.userId);
-    this.assertAllowed(
-      await this.featureFlags.isFeatureEnabled(
-        args.chainId,
-        SAFENET_CHECKS_FEATURE,
-      ),
-      'Safenet checks are not available on this chain',
+    const isOfferedOnChain = await this.featureFlags.isFeatureEnabled(
+      args.chainId,
+      SAFENET_CHECKS_FEATURE,
     );
-    this.assertAllowed(
+    // A capability of the chain, not a permission of the caller: 501, not 403.
+    if (!isOfferedOnChain) {
+      throw new HttpExceptionNoLog(
+        'Safenet checks are not available on this chain',
+        HttpStatus.NOT_IMPLEMENTED,
+      );
+    }
+    assertAllowed(
       await this.spaceSafes.existsInSpace({
         spaceId: args.space.id,
         chainId: args.chainId,
@@ -109,7 +113,7 @@ export class SafenetChecksService {
       }),
       'The Safe is not in this workspace',
     );
-    this.assertAllowed(
+    assertAllowed(
       await this.hasEligiblePlan(args.space),
       'The workspace plan does not include Safenet checks',
     );
@@ -158,16 +162,17 @@ export class SafenetChecksService {
       }),
     ]);
     if (!semverSatisfies(safe.version ?? '', MIN_SAFE_VERSION)) {
-      throw this.reject('Safe version is older than 1.3.0');
+      throw unprocessable('Safe version is older than 1.3.0');
     }
     if (!isAddressEqual(transaction.safe, safeAddress)) {
-      throw this.reject('Transaction belongs to another Safe');
+      throw unprocessable('Transaction belongs to another Safe');
     }
     if (transaction.isExecuted || transaction.nonce < safe.nonce) {
-      throw this.reject('Transaction is no longer pending');
+      throw unprocessable('Transaction is no longer pending');
     }
-    if (!this.isSignedByOwner(transaction, safe)) {
-      throw this.reject('Transaction has no confirmation from a Safe owner');
+    // Trusts tx-service, which checks owners and signatures when a confirmation is submitted.
+    if (!isSignedByOwner(transaction, safe)) {
+      throw unprocessable('Transaction has no confirmation from a Safe owner');
     }
     return {
       chainId,
@@ -176,26 +181,23 @@ export class SafenetChecksService {
       transaction: getBaseMultisigTransaction(transaction),
     };
   }
+}
 
-  private isSignedByOwner(
-    transaction: MultisigTransaction,
-    safe: Safe,
-  ): boolean {
-    return (transaction.confirmations ?? []).some(({ owner }) =>
-      safe.owners.some((safeOwner) => isAddressEqual(safeOwner, owner)),
-    );
-  }
+function isSignedByOwner(
+  transaction: MultisigTransaction,
+  safe: Safe,
+): boolean {
+  return (transaction.confirmations ?? []).some(({ owner }) =>
+    safe.owners.some((safeOwner) => isAddressEqual(safeOwner, owner)),
+  );
+}
 
-  private assertAllowed(
-    condition: unknown,
-    message: string,
-  ): asserts condition {
-    if (!condition) {
-      throw new HttpExceptionNoLog(message, HttpStatus.FORBIDDEN);
-    }
+function assertAllowed(condition: unknown, message: string): asserts condition {
+  if (!condition) {
+    throw new HttpExceptionNoLog(message, HttpStatus.FORBIDDEN);
   }
+}
 
-  private reject(message: string): HttpExceptionNoLog {
-    return new HttpExceptionNoLog(message, HttpStatus.UNPROCESSABLE_ENTITY);
-  }
+function unprocessable(message: string): HttpExceptionNoLog {
+  return new HttpExceptionNoLog(message, HttpStatus.UNPROCESSABLE_ENTITY);
 }

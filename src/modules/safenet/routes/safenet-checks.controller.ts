@@ -16,6 +16,7 @@ import {
   ApiNotFoundResponse,
   ApiOperation,
   ApiParam,
+  ApiResponse,
   ApiTags,
   ApiTooManyRequestsResponse,
   ApiUnauthorizedResponse,
@@ -63,7 +64,7 @@ export class SafenetChecksController {
   @ApiBadRequestResponse({ description: 'Malformed workspace identifier' })
   @ApiForbiddenResponse({
     description:
-      'Not a member of the workspace, the workspace does not hold the Safe or its plan does not include checks, or checks are not available on this chain',
+      'Not a member of the workspace, or the workspace does not hold the Safe or its plan does not include checks',
   })
   @ApiNotFoundResponse({
     description: 'Workspace not found, or no such transaction for this Safe',
@@ -76,6 +77,10 @@ export class SafenetChecksController {
   @ApiUnprocessableEntityResponse({
     description:
       'The Safe is older than 1.3.0, or the transaction is executed or stale, unsigned by an owner, or of another Safe',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_IMPLEMENTED,
+    description: 'Safenet checks are not available on this chain',
   })
   @Post()
   @HttpCode(HttpStatus.ACCEPTED)

@@ -193,11 +193,15 @@ describe('SafenetChecksService', () => {
     expect(safeRepository.getMultiSigTransaction).not.toHaveBeenCalled();
   });
 
+  it('rejects a chain that does not offer checks with 501', async () => {
+    featureFlags.isFeatureEnabled.mockResolvedValue(false);
+
+    await expectRejection(HttpStatus.NOT_IMPLEMENTED);
+
+    expect(queue.enqueue).not.toHaveBeenCalled();
+  });
+
   it.each<[string, () => unknown]>([
-    [
-      'a chain with the SAFENET_CHECKS feature off',
-      () => featureFlags.isFeatureEnabled.mockResolvedValue(false),
-    ],
     [
       'a workspace that does not hold the Safe',
       () => spaceSafes.existsInSpace.mockResolvedValue(false),

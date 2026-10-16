@@ -30,7 +30,7 @@ The workspace in the path (`spaceId`, a UUID) is the one that pays; CGW never pi
 The route needs `FF_SAFENET`, `FF_USERS`, `FF_BILLING_SERVICE`, and a signed-in user. CGW accepts a request when all of these hold, in this order:
 
 - The user is an active member of the workspace.
-- The chain lists the `SAFENET_CHECKS` feature.
+- The chain lists the `SAFENET_CHECKS` feature. Otherwise the route answers 501: the chain does not offer checks, so this is no permission failure.
 - The workspace holds the Safe on that chain.
 - The workspace has an active or trialing subscription whose plan type is `premium` or `enterprise`.
 - The Safe is version 1.3.0 or newer, because Consensus hashes with that domain.
