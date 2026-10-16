@@ -58,7 +58,7 @@ export class SafenetPayer {
   private readonly pollIntervalMs: number;
   private readonly pollTimeoutMs: number;
   private readonly nonceTtlSeconds: number;
-  private ownerVerified = false;
+  private payerSafeVerified = false;
 
   constructor(
     @Inject(IConfigurationService) configuration: IConfigurationService,
@@ -105,7 +105,7 @@ export class SafenetPayer {
 
   private async prepare(proposal: SafenetProposal) {
     const client = await this.blockchain.getUncachedApi(SAFENET_CHAIN_ID);
-    await this.assertSignerIsOwner(client);
+    await this.assertPayerSafeAcceptsSigner(client);
     const key = CacheRouter.getSafenetPayerNonceCacheKey({
       chainId: SAFENET_CHAIN_ID,
       safeAddress: this.payerSafeAddress,
@@ -163,22 +163,36 @@ export class SafenetPayer {
       });
   }
 
-  /** The signer must own the payer Safe, or `execTransaction` rejects its signature. */
-  private async assertSignerIsOwner(client: PublicClient): Promise<void> {
-    if (this.ownerVerified) {
+  /** One signature must satisfy the payer Safe: the signer is an owner and the threshold is 1. */
+  private async assertPayerSafeAcceptsSigner(
+    client: PublicClient,
+  ): Promise<void> {
+    if (this.payerSafeVerified) {
       return;
     }
     const signer = await this.signer.getAddress();
-    const isOwner = await client.readContract({
-      address: this.payerSafeAddress,
-      abi: safeAbi,
-      functionName: 'isOwner',
-      args: [signer],
-    });
+    const [isOwner, threshold] = await Promise.all([
+      client.readContract({
+        address: this.payerSafeAddress,
+        abi: safeAbi,
+        functionName: 'isOwner',
+        args: [signer],
+      }),
+      client.readContract({
+        address: this.payerSafeAddress,
+        abi: safeAbi,
+        functionName: 'getThreshold',
+      }),
+    ]);
     if (!isOwner) {
       throw new SafenetPayerError(`Signer ${signer} is not a payer Safe owner`);
     }
-    this.ownerVerified = true;
+    if (threshold !== 1n) {
+      throw new SafenetPayerError(
+        `Payer Safe threshold is ${threshold}, expected 1`,
+      );
+    }
+    this.payerSafeVerified = true;
   }
 
   private async nextNonce(client: PublicClient, key: string): Promise<bigint> {

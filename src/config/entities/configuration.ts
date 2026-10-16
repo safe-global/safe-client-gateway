@@ -855,11 +855,11 @@ export default () => ({
         webIdentityTokenFile: process.env.AWS_WEB_IDENTITY_TOKEN_FILE,
         // A hung KMS call would hold the only safenet-checks queue slot, so every call is bounded.
         connectionTimeoutMs: Number.parseInt(
-          process.env.SAFENET_KMS_CONNECTION_TIMEOUT_MS ?? `${5_000}`,
+          process.env.SAFENET_PAYER_KMS_CONNECTION_TIMEOUT_MS ?? `${5_000}`,
           10,
         ),
         requestTimeoutMs: Number.parseInt(
-          process.env.SAFENET_KMS_REQUEST_TIMEOUT_MS ?? `${10_000}`,
+          process.env.SAFENET_PAYER_KMS_REQUEST_TIMEOUT_MS ?? `${10_000}`,
           10,
         ),
       },

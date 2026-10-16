@@ -81,6 +81,7 @@ class Harness {
   } as TransactionReceipt;
   readonly signerAddress = randomAddress();
   owner: Address = this.signerAddress;
+  threshold = 1n;
   readonly signer = {
     getAddress: vi.fn().mockResolvedValue(this.signerAddress),
     signHash: vi.fn((hash: Hex) => {
@@ -101,10 +102,14 @@ class Harness {
         }: {
           functionName: string;
           args?: Array<unknown>;
-        }) =>
-          Promise.resolve(
-            functionName === 'isOwner' ? args?.[0] === this.owner : 2n,
-          ),
+        }) => {
+          const results: Record<string, unknown> = {
+            isOwner: args?.[0] === this.owner,
+            getThreshold: this.threshold,
+            nonce: 2n,
+          };
+          return Promise.resolve(results[functionName]);
+        },
       ),
     call: vi.fn().mockResolvedValue({ data: this.userSafeTxHash }),
     getTransactionReceipt: vi.fn().mockResolvedValue(this.receipt),
@@ -345,6 +350,18 @@ describe('SafenetPayer', () => {
     await expectPayerError(
       h.propose(),
       `Signer ${h.signerAddress} is not a payer Safe owner`,
+    );
+    expect(h.client.call).not.toHaveBeenCalled();
+    expect(h.relay.relayWithoutLimits).not.toHaveBeenCalled();
+  });
+
+  it('rejects a payer Safe with a threshold other than 1 before the relay', async () => {
+    const h = new Harness();
+    h.threshold = 2n;
+
+    await expectPayerError(
+      h.propose(),
+      'Payer Safe threshold is 2, expected 1',
     );
     expect(h.client.call).not.toHaveBeenCalled();
     expect(h.relay.relayWithoutLimits).not.toHaveBeenCalled();
