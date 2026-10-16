@@ -117,6 +117,11 @@ const FEATURE_FIXTURES = [
     .with('freeEnabled', false)
     .build(),
   featureBuilder()
+    .with('key', 'safenet_checks')
+    .with('type', FeatureType.Binary)
+    .with('freeEnabled', false)
+    .build(),
+  featureBuilder()
     .with('key', 'swap_fee_tier')
     .with('type', FeatureType.Value)
     .with('freeEnabled', true)
