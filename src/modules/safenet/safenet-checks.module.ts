@@ -9,11 +9,19 @@ import {
   type ILoggingService,
   LoggingService,
 } from '#/logging/logging.interface';
+import { AuthModule } from '#/modules/auth/auth.module';
+import { FeatureFlagsModule } from '#/modules/chains/feature-flags/feature-flags.module';
+import { EntitlementsModule } from '#/modules/entitlements/entitlements.module';
+import { SafeModule } from '#/modules/safe/safe.module';
 import { SafenetChecksConsumer } from '#/modules/safenet/consumers/safenet-checks.consumer';
 import { SafenetChecksQueue } from '#/modules/safenet/domain/safenet-checks-queue.service';
+import { SafenetChecksController } from '#/modules/safenet/routes/safenet-checks.controller';
+import { SafenetChecksService } from '#/modules/safenet/routes/safenet-checks.service';
 import { SafenetModule } from '#/modules/safenet/safenet.module';
+import { SpacesModule } from '#/modules/spaces/spaces.module';
+import { UsersModule } from '#/modules/users/users.module';
 
-/** The queue of sponsored checks; its consumer proposes each job through the payer. */
+// Sponsored-check route and queue; loaded under FF_SAFENET, FF_USERS and FF_BILLING_SERVICE.
 @Module({
   imports: [
     BullModule.registerQueueAsync({
@@ -25,7 +33,14 @@ import { SafenetModule } from '#/modules/safenet/safenet.module';
       inject: [IConfigurationService],
     }),
     SafenetModule,
+    AuthModule,
+    EntitlementsModule,
+    FeatureFlagsModule,
+    SafeModule,
+    SpacesModule,
+    UsersModule,
   ],
+  controllers: [SafenetChecksController],
   providers: [
     {
       provide: JobQueueShutdownHook,
@@ -37,6 +52,7 @@ import { SafenetModule } from '#/modules/safenet/safenet.module';
     },
     SafenetChecksConsumer,
     SafenetChecksQueue,
+    SafenetChecksService,
   ],
 })
 export class SafenetChecksModule {}

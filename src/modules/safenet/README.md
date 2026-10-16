@@ -6,7 +6,7 @@
 
 ## Payer
 
-`FF_SAFENET` enables the Safenet module and defaults to false.
+`FF_SAFENET` enables the Safenet payer, its queue, and the sponsored check route, and defaults to false. The payer is built only with the route, which also needs `FF_USERS` and `FF_BILLING_SERVICE`.
 Set the Consensus, Oracle, and payer Safe variables listed in `.env.sample.json`, and `SAFENET_PAYER_KMS_KEY_ID`, the AWS KMS key that signs for the payer Safe.
 The KMS key must have key spec `ECC_SECG_P256K1` and key usage `SIGN_VERIFY`. The AWS SDK environment sets its region and credentials; `AWS_WEB_IDENTITY_TOKEN_FILE` selects IRSA credentials.
 The signer loads its public key on first use. CGW starts when KMS is down, and the first proposal fails.
@@ -23,8 +23,20 @@ The relay status is polled every `SAFENET_POLL_INTERVAL_MS` (default 1000) for u
 Any other error is not classified and may follow a paid fee: a relay timeout or revert, a missing or reverted receipt, a receipt without `ExecutionSuccess`, or a failed relay request. The relay can accept a transaction and lose the response. Errors after the relay call carry the relay `taskId` and the payer nonce in the message. Anyone can land a copy of the signed payload first, so a revert does not prove that nothing was paid.
 Check the payer Safe nonce and events on chain before any new proposal. The payer does not block later proposals after such an error. A repeated proposal can pay the fee again.
 
-## Sponsored check queue
+## Sponsored checks
 
-The BullMQ queue `safenet-checks` uses the lowercase job ID `<chainId>-<safe>-<safeTxHash>`. A repeated job for the same transaction is not added while that job exists. A global concurrency of 1, set at startup, serializes the payer Safe nonce across instances.
+`POST /v1/spaces/:spaceId/chains/:chainId/safes/:safeAddress/safenet/checks` with `{ "safeTxHash": "0x…" }` queues one payer proposal. It answers 202 with no body, whether the check was queued or already queued.
+The workspace in the path (`spaceId`, a UUID) is the one that pays; CGW never picks a workspace itself.
+The route needs `FF_SAFENET`, `FF_USERS`, `FF_BILLING_SERVICE`, and a signed-in user. CGW accepts a request when all of these hold, in this order:
+
+- The user is an active member of the workspace.
+- The chain lists the `SAFENET_CHECKS` feature. Otherwise the route answers 501: the chain does not offer checks, so this is no permission failure.
+- The workspace holds the Safe on that chain.
+- The workspace has the `safenet_checks` entitlement. CGW writes it from the `FEATURE_SAFENET_CHECKS` metadata of the workspace subscription when a billing webhook syncs it; the subscription gets that metadata from the payment link at checkout or at a plan change. Otherwise the route answers 402 `FEATURE_NOT_GRANTED`.
+- The Safe is version 1.3.0 or newer, because Consensus hashes with that domain.
+- The transaction is pending, belongs to this Safe, and has a confirmation from a current owner.
+- The workspace has made fewer than `SAFENET_CHECKS_PER_SPACE_PER_DAY` requests (default 100) on this UTC day that tried to add a job. A request for a transaction that already has a job does not count. A transaction whose job was removed after a payer failure counts again when it is requested again. Past the limit, the route answers 429.
+
+The BullMQ queue `safenet-checks` uses the lowercase job ID `<chainId>-<safe>-<safeTxHash>`. A repeated request for the same transaction adds no job while that job exists. A global concurrency of 1, set at startup, serializes the payer Safe nonce across instances.
 A job runs up to `SAFENET_CHECKS_QUEUE_ATTEMPTS` times (default 3, at most 10) with the backoff of `SAFENET_CHECKS_QUEUE_BACKOFF_TYPE` (default `exponential`) and `SAFENET_CHECKS_QUEUE_BACKOFF_DELAY` (default 5000 ms). It retries only after a `SafenetPayerError`. Any other error fails the job at once, because a retry could pay the fee again.
-Finished jobs stay for `SAFENET_CHECKS_QUEUE_REMOVE_ON_COMPLETE_AGE` seconds, and failed jobs for `SAFENET_CHECKS_QUEUE_REMOVE_ON_FAIL_AGE` seconds. Both default to 30 days (2592000) and cannot be lower, because the job ID blocks a repeated request while the job exists. A job that fails with a `SafenetPayerError` on its last attempt is removed, because it paid nothing, so the transaction can be queued again. Any other failed job stays and blocks a new job for the same transaction. Check the payer Safe on chain, then remove the job to allow a new check.
+Finished jobs stay for `SAFENET_CHECKS_QUEUE_REMOVE_ON_COMPLETE_AGE` seconds, and failed jobs for `SAFENET_CHECKS_QUEUE_REMOVE_ON_FAIL_AGE` seconds. Both default to 30 days (2592000) and cannot be lower, because the job ID blocks a repeated request while the job exists. A job that fails with a `SafenetPayerError` on its last attempt is removed, because it paid nothing, so the next signature queues the transaction again. Any other failed job stays and blocks a new request for the same transaction. Check the payer Safe on chain, then remove the job to allow a new check.

@@ -189,6 +189,7 @@ export const RootConfigurationSchema = z
       .int()
       .min(SAFENET_CHECKS_MIN_RETENTION_SECONDS)
       .optional(),
+    SAFENET_CHECKS_PER_SPACE_PER_DAY: z.coerce.number().int().min(1).optional(),
     FF_ZERION_TESTNETS_ENABLED: z.string().optional(),
     CGW_ENV: z.string().optional(),
     CIRCUIT_BREAKER_THRESHOLD: z.coerce.number().int().min(1).optional(),

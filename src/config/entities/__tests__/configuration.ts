@@ -202,6 +202,7 @@ export default (): ReturnType<typeof configuration> => ({
     default: faker.number.int(),
     rpc: faker.number.int(),
     safenetNonce: faker.number.int(),
+    safenetDailyCheckCounter: faker.number.int(),
     hoodi: faker.number.int(),
     indexing: faker.number.int(),
     policyIndexer: faker.number.int({ min: 1, max: 60 }),
@@ -476,6 +477,7 @@ export default (): ReturnType<typeof configuration> => ({
     },
     pollIntervalMs: faker.number.int({ min: 1, max: 1000 }),
     pollTimeoutMs: faker.number.int({ min: 1000, max: 120_000 }),
+    checksPerSpacePerDay: faker.number.int({ min: 1, max: 100 }),
     queue: {
       attempts: faker.number.int({ min: 1, max: 3 }),
       backoff: {
