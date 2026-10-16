@@ -10,8 +10,8 @@ import {
   LoggingService,
 } from '#/logging/logging.interface';
 import { AuthModule } from '#/modules/auth/auth.module';
+import { BillingRepositoryModule } from '#/modules/billing/domain/billing-repository.module';
 import { FeatureFlagsModule } from '#/modules/chains/feature-flags/feature-flags.module';
-import { EntitlementsModule } from '#/modules/entitlements/entitlements.module';
 import { SafeModule } from '#/modules/safe/safe.module';
 import { SafenetChecksConsumer } from '#/modules/safenet/consumers/safenet-checks.consumer';
 import { SafenetChecksQueue } from '#/modules/safenet/domain/safenet-checks-queue.service';
@@ -34,7 +34,7 @@ import { UsersModule } from '#/modules/users/users.module';
     }),
     SafenetModule,
     AuthModule,
-    EntitlementsModule,
+    BillingRepositoryModule,
     FeatureFlagsModule,
     SafeModule,
     SpacesModule,

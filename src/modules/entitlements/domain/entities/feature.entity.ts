@@ -15,7 +15,6 @@ export const FEATURE_KEYS = [
   'copilot_scans',
   'sponsored_transactions',
   'policies',
-  'safenet_checks',
 ] as const;
 
 export type FeatureKey = (typeof FEATURE_KEYS)[number];

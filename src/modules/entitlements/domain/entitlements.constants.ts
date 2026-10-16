@@ -35,7 +35,6 @@ export function isStockMeteredFeatureKey(
 export const BINARY_FEATURES = [
   'copilot_scans',
   'policies',
-  'safenet_checks',
 ] as const satisfies ReadonlyArray<(typeof FEATURE_KEYS)[number]>;
 
 export type BinaryFeature = (typeof BINARY_FEATURES)[number];
