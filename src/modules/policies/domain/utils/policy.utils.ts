@@ -24,6 +24,11 @@ const GUARD_POLICY_TYPE_BY_KIND = new Map<
  * The indexer kinds to request for {@link types}. Empty when none of them is a
  * guard-enforced type.
  */
+/** The policy types a `SafePolicyGuard` can enforce. */
+export const GUARD_POLICY_TYPES: ReadonlyArray<PolicyType> = [
+  ...GUARD_POLICY_TYPE_BY_KIND.values(),
+];
+
 export function guardPolicyKindsOf(
   types: ReadonlyArray<PolicyType>,
 ): Array<PolicyIndexerGuardPolicyKind> {

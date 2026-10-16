@@ -76,6 +76,7 @@ function requestWith(groups: Array<ReturnType<typeof pairGroup>>): object {
         delegates: groups,
         guardPolicyBindings: groups,
         guardPolicyKinds: [...guardPolicyKinds],
+        roots: groups,
       },
     }),
   });
