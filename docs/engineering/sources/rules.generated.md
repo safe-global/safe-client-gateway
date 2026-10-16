@@ -66,7 +66,7 @@
 <a id="change-01"></a>
 ### `CHANGE-01` Smallest correct change
 
-> **general** · scope · ↩ `RL-20260703-001` · `RL-20260714-002` · `RL-20260713-004` · `RL-20260810-001` · `RL-20260923-002`
+> **general** · scope · ↩ `RL-20260703-001` · `RL-20260714-002` · `RL-20260713-004` · `RL-20260810-001` · `RL-20260923-002` · `RL-20261008-006`
 
 **📜 Rule**\
 A PR should be the smallest correct change for the behavior; avoid surrounding cleanup, helpers, abstractions, or refactors that the change does not require. When retiring a deprecated surface, remove the entire family (all `/raw` endpoints) in one PR, not a single instance. Removing a provider sweeps every dependent surface (now-dead interface params, feature flags, `.env.sample.json`, devcontainer, launch.json, test overrides) and locks intentional behavior changes in with a test. Before refactoring a path, verify it is used — unused surfaces get removed, not improved.
@@ -79,10 +79,10 @@ A PR should be the smallest correct change for the behavior; avoid surrounding c
 <a id="change-02"></a>
 ### `CHANGE-02` No unrelated drive-by edits
 
-> **general** · scope · 1 example · ↩ `RL-20251211-001` · `RL-20260810-003` · `RL-20260821-001`
+> **general** · scope · 1 example · ↩ `RL-20251211-001` · `RL-20260810-003` · `RL-20260821-001` · `RL-20261002-008`
 
 **📜 Rule**\
-Keep unrelated docs, config, formatting, or generated changes out of feature PRs. Issue references go in the PR body, not the subject — squash-merge makes the subject a permanent commit subject. When a review reveals a pattern repeated repo-wide, fix the lines the PR already touches rather than expanding into a sweep.
+Keep unrelated docs, config, formatting, or generated changes out of feature PRs. Issue references go in the PR body, not the subject, and the subject stays within 72 characters — squash-merge makes it a permanent commit subject; the body holds the template's sections, not local verification logs. When a review reveals a pattern repeated repo-wide, fix the lines the PR already touches rather than expanding into a sweep.
 
 **✅ Check**\
 > Did I avoid unrelated docs/config/formatting/generated changes?
@@ -512,16 +512,16 @@ runs can stay fast and integration runs stay reproducible.
 <a id="reuse-01"></a>
 ### `REUSE-01` Reuse existing helpers
 
-> **general** · naming · 2 examples · ↩ `RL-20260506-003` · `RL-20251216-001` · `RL-20260615-004` · `RL-20251208-001` · `RL-20260921-004` · `RL-20260925-005`
+> **general** · naming · 3 examples · ↩ `RL-20260506-003` · `RL-20251216-001` · `RL-20260615-004` · `RL-20251208-001` · `RL-20260921-004` · `RL-20260925-005` · `RL-20261002-004`
 
 **📜 Rule**\
-Before adding a small util, search the repo and well-known libraries (`viem.isAddressEqual`, `@/logging/utils.asError`, shared schemas, `safe-deployments`); reuse `LoggingService`, `*Mapper` classes, and `HttpErrorFactory` instead of bare alternates. Cross a seam with the plain value (a timeout in ms, a plaintext address), not a caller-constructed object or caller-derived key (an `AbortSignal`, a blind-index seat key), so it is built in exactly one place.
+Before adding a small util, search the repo and well-known libraries (`viem.isAddressEqual`, `@/logging/utils.asError`, shared schemas, `safe-deployments`); reuse `LoggingService`, `*Mapper` classes, and `HttpErrorFactory` instead of bare alternates. Cross a seam with the plain value (a timeout in ms, a plaintext address), not a caller-constructed object or caller-derived key (an `AbortSignal`, a blind-index seat key), so it is built in exactly one place. A single-item read that gains a batch variant delegates to it (`(await findByIds([id])).get(id) ?? []`) instead of keeping its own query.
 
 **✅ Check**\
 > Did I reuse existing helpers, constants homes, and utilities?
 
 <details>
-<summary><strong>💡 Example 1 of 2</strong> — <code>examples/repositories-and-pagination.md</code> § <em>config-03-reuse-01-knobs-follow-the-existing-config-driven-precedent</em></summary>
+<summary><strong>💡 Example 1 of 3</strong> — <code>examples/repositories-and-pagination.md</code> § <em>config-03-reuse-01-knobs-follow-the-existing-config-driven-precedent</em></summary>
 
 <br>
 
@@ -578,7 +578,7 @@ real config entry now, while the surrounding code is fresh.
 </details>
 
 <details>
-<summary><strong>💡 Example 2 of 2</strong> — <code>examples/repositories-and-pagination.md</code> § <em>reuse-01-derive-version-lists-from-safe-deployments</em></summary>
+<summary><strong>💡 Example 2 of 3</strong> — <code>examples/repositories-and-pagination.md</code> § <em>reuse-01-derive-version-lists-from-safe-deployments</em></summary>
 
 <br>
 
@@ -628,15 +628,57 @@ someone remembered to add the string.
 
 </details>
 
+<details>
+<summary><strong>💡 Example 3 of 3</strong> — <code>examples/repositories-and-pagination.md</code> § <em>reuse-01-a-single-item-read-delegates-to-its-batch-variant</em></summary>
+
+<br>
+
+**REUSE-01 — A single-item read delegates to its batch variant**
+
+Source: PR #3533 (RL-20261002-004)
+
+### Avoid
+
+Two methods that each own the query, decryption and mapping:
+
+```ts
+public async findByParentId(id: Parent['id']): Promise<Array<Item>> {
+  const rows = await repository.find({ where: { parent: { id } } });
+  return await this.decrypt(id, rows);
+}
+
+public async findByParentIds(ids: Array<Parent['id']>): Promise<Map<Parent['id'], Array<Item>>> {
+  // same query and decryption, batched
+}
+```
+
+### Prefer
+
+```ts
+public async findByParentId(id: Parent['id']): Promise<Array<Item>> {
+  return (await this.findByParentIds([id])).get(id) ?? [];
+}
+```
+
+### Why
+
+The single-item path is the batch path with one key. Delegating keeps one
+query, one decryption path and one set of tests, so a fix to either cannot
+miss the other.
+
+<sub>Source: <a href="examples/repositories-and-pagination.md#reuse-01-a-single-item-read-delegates-to-its-batch-variant">examples/repositories-and-pagination.md#reuse-01-a-single-item-read-delegates-to-its-batch-variant</a></sub>
+
+</details>
+
 ---
 
 <a id="style-01"></a>
 ### `STYLE-01` Document non-trivial code
 
-> **general** · naming · 3 examples · ↩ `RL-20260506-005` · `RL-20260128-001` · `RL-20251222-001` · `RL-20260604-004` · `RL-20260609-001` · `RL-20260713-001` · `RL-20251208-002` · `RL-20251210-001` · `RL-20260821-002` · `RL-20261001-004` · `RL-20261001-005`
+> **general** · naming · 3 examples · ↩ `RL-20260506-005` · `RL-20260128-001` · `RL-20251222-001` · `RL-20260604-004` · `RL-20260609-001` · `RL-20260713-001` · `RL-20251208-002` · `RL-20251210-001` · `RL-20260821-002` · `RL-20261001-004` · `RL-20261001-005` · `RL-20261008-001` · `RL-20261008-004`
 
 **📜 Rule**\
-Public/non-trivial service and repository code is documented and free of dead branches, commented-out code, redundant comments, and `console.log`. Default flags safely (`isSafe = false` until proven), wrap event listeners with cleanup, and keep adapters' error contracts intact. Message/formatting logic beyond one branch gets a named helper in utils — no nested ternaries inside template literals. Destructuring return values is an accepted repo-wide pattern — do not demand named receivers; verify a claimed convention against the codebase before enforcing it. One exported class/type per file: errors under `domain/errors/` with their filters under `domain/exception-filters/`, guards under `routes/guards/` (never module-root `errors/` or `guards/`), entity types under `entities/`, helpers in a dedicated helpers file; a standalone function used by a single class becomes a private method. A comment that restates the line beneath it is deleted, and a comment offered to explain confusing code is a signal to restructure that code instead. When a key or signature drops a dimension, remove the now-unused parameter up the whole call chain. A function with no instance state does not stay a private method — that prices every test of it at the cost of testing its host. A comment describes the code as it now is — what it throws and returns — and carries no process narration (rollout plans, which ticket will do what); a flag's owning-ticket note (CONFIG-01) is the exception.
+Public/non-trivial service and repository code is documented and free of dead branches, commented-out code, redundant comments, and `console.log`. Default flags safely (`isSafe = false` until proven), wrap event listeners with cleanup, and keep adapters' error contracts intact. Message/formatting logic beyond one branch gets a named helper in utils — no nested ternaries inside template literals. A function running several sequential steps splits into one named helper per step, and a per-item mapper does not own request-wide side effects. Destructuring return values is an accepted repo-wide pattern — do not demand named receivers; verify a claimed convention against the codebase before enforcing it. One exported class/type per file: errors under `domain/errors/` with their filters under `domain/exception-filters/`, guards under `routes/guards/` (never module-root `errors/` or `guards/`), entity types under `entities/`, helpers in a dedicated helpers file; a standalone function used by a single class becomes a private method. A comment that restates the line beneath it is deleted, and a comment offered to explain confusing code is a signal to restructure that code instead. When a key or signature drops a dimension, remove the now-unused parameter up the whole call chain. A function with no instance state does not stay a private method — that prices every test of it at the cost of testing its host. A comment describes the code as it now is — what it throws and returns — and carries no process narration (rollout plans, which ticket will do what); a flag's owning-ticket note (CONFIG-01) is the exception.
 
 **✅ Check**\
 > Did I document public/non-trivial logic, remove dead code, and keep every comment true to the code and free of process narration?
@@ -1140,16 +1182,16 @@ Parse through the shared parser, once, and keep the value.
 <a id="type-04"></a>
 ### `TYPE-04` DTO matches wire shape
 
-> **general** · types · 4 examples · ↩ `RL-20260520-002` · `RL-20260108-002` · `RL-20251223-001` · `RL-20260602-003` · `RL-20260604-002` · `RL-20260612-006` · `RL-20260703-005` · `RL-20260911-001`
+> **general** · types · 5 examples · ↩ `RL-20260520-002` · `RL-20260108-002` · `RL-20251223-001` · `RL-20260602-003` · `RL-20260604-002` · `RL-20260612-006` · `RL-20260703-005` · `RL-20260911-001` · `RL-20261002-002` · `RL-20261002-010` · `RL-20261008-002`
 
 **📜 Rule**\
-DTO/`@ApiProperty` fields must match the actual wire shape: required vs optional vs nullable; matching enum source; do not hardcode literal-array enums in `@ApiProperty`. Model exact-one alternatives as unions when the wire contract is either/or. Defense-in-depth checks downstream of upstream filters. The DTO's Zod schema must enforce the same bounds the `@ApiProperty` documents (reuse the canonical schema, e.g. `makeNameSchema()`, rather than a looser `z.string().max(...)`), and the DTO class should `implements z.infer<typeof Schema>` so schema/Swagger drift fails at compile time. Schema-centralization refactors preserve requiredness and bounds exactly, sweep sibling entities that share the field, and call out intentional behavior changes in the PR description. `@ApiPropertyOptional` only when the key can be absent; an always-present nullable field is `@ApiProperty({ nullable: true })`. Outbound requests to internal services are parsed through the endpoint's schema in every flow (symmetric field stripping); pick fields explicitly instead of spreading a wider object into a constructor. `Raw<T>` is an unchecked assertion — verify `T` against the datasource spec's own mock, envelope included, because nothing compiles against it.
+DTO/`@ApiProperty` fields must match the actual wire shape: required vs optional vs nullable; matching enum source; do not hardcode literal-array enums in `@ApiProperty`. Model exact-one alternatives as unions when the wire contract is either/or. Defense-in-depth checks downstream of upstream filters. The DTO's Zod schema must enforce the same bounds the `@ApiProperty` documents (reuse the canonical schema, e.g. `makeNameSchema()`, rather than a looser `z.string().max(...)`), and the DTO class should `implements z.infer<typeof Schema>` so a schema field the DTO lacks fails at compile time (a DTO-only field still compiles, so a removed field leaves both). Branded strings (`Address`) declare `@ApiProperty({ type: String })`; reflection cannot see through the brand. A batch endpoint returns an array of DTO classes extending its single-resource sibling's response (`@ApiOkResponse({ type, isArray: true })`), not a `Record` keyed by runtime ids. Schema-centralization refactors preserve requiredness and bounds exactly, sweep sibling entities that share the field, and call out intentional behavior changes in the PR description. `@ApiPropertyOptional` only when the key can be absent; an always-present nullable field is `@ApiProperty({ nullable: true })`. Outbound requests to internal services are parsed through the endpoint's schema in every flow (symmetric field stripping); pick fields explicitly instead of spreading a wider object into a constructor. `Raw<T>` is an unchecked assertion — verify `T` against the datasource spec's own mock, envelope included, because nothing compiles against it.
 
 **✅ Check**\
 > Do DTO fields match the actual wire shape, with the Zod schema enforcing the documented @ApiProperty bounds and the class implementing z.infer of its schema?
 
 <details>
-<summary><strong>💡 Example 1 of 4</strong> — <code>examples/schemas-and-validation.md</code> § <em>type-04-reuse-the-canonical-enum-do-not-hardcode-literal-arrays</em></summary>
+<summary><strong>💡 Example 1 of 5</strong> — <code>examples/schemas-and-validation.md</code> § <em>type-04-reuse-the-canonical-enum-do-not-hardcode-literal-arrays</em></summary>
 
 <br>
 
@@ -1204,7 +1246,7 @@ shows up as a single fix, not three near-misses scattered across modules.
 </details>
 
 <details>
-<summary><strong>💡 Example 2 of 4</strong> — <code>examples/schemas-and-validation.md</code> § <em>type-04-use-unions-for-exact-one-dto-shapes</em></summary>
+<summary><strong>💡 Example 2 of 5</strong> — <code>examples/schemas-and-validation.md</code> § <em>type-04-use-unions-for-exact-one-dto-shapes</em></summary>
 
 <br>
 
@@ -1259,7 +1301,7 @@ pointing an email-only failure at `address`.
 </details>
 
 <details>
-<summary><strong>💡 Example 3 of 4</strong> — <code>examples/schemas-and-validation.md</code> § <em>type-04-strict-enum-schemas-for-internal-boolean-query-params</em></summary>
+<summary><strong>💡 Example 3 of 5</strong> — <code>examples/schemas-and-validation.md</code> § <em>type-04-strict-enum-schemas-for-internal-boolean-query-params</em></summary>
 
 <br>
 
@@ -1309,7 +1351,7 @@ and removes the `.pipe(z.boolean())` belt-and-braces step.
 </details>
 
 <details>
-<summary><strong>💡 Example 4 of 4</strong> — <code>examples/controllers-and-swagger.md</code> § <em>type-04-route-01-public-params-apply-on-every-code-path-or-are-removed</em></summary>
+<summary><strong>💡 Example 4 of 5</strong> — <code>examples/controllers-and-swagger.md</code> § <em>type-04-route-01-public-params-apply-on-every-code-path-or-are-removed</em></summary>
 
 <br>
 
@@ -1365,6 +1407,50 @@ gives no hint. Either honour the param everywhere or stop accepting it.
 
 </details>
 
+<details>
+<summary><strong>💡 Example 5 of 5</strong> — <code>examples/controllers-and-swagger.md</code> § <em>type-04-a-batch-endpoint-returns-an-array-of-its-siblings-dto</em></summary>
+
+<br>
+
+**TYPE-04 — A batch endpoint returns an array of its sibling's DTO**
+
+Source: PR #3533 (RL-20261002-002)
+
+### Avoid
+
+A record keyed by runtime ids, in a different shape from the per-resource
+endpoint, which Swagger cannot model as a class:
+
+```ts
+export type GetParentsItemsResponse = Record<
+  Parent['uuid'],
+  Array<{ chainId: string; address: Address }>
+>;
+```
+
+### Prefer
+
+```ts
+export class GetParentsItemsResponse extends GetParentItemsResponse {
+  @ApiProperty({ type: String, description: 'Parent UUID' })
+  public readonly parentUuid!: Parent['uuid'];
+}
+
+@ApiOkResponse({ type: GetParentsItemsResponse, isArray: true })
+@Get('items')
+public async getAll(): Promise<Array<GetParentsItemsResponse>> {}
+```
+
+### Why
+
+Clients that already read the per-resource endpoint reuse the same parser, and
+the response is a documented class instead of an inline schema. An array also
+leaves room for pagination later.
+
+<sub>Source: <a href="examples/controllers-and-swagger.md#type-04-a-batch-endpoint-returns-an-array-of-its-siblings-dto">examples/controllers-and-swagger.md#type-04-a-batch-endpoint-returns-an-array-of-its-siblings-dto</a></sub>
+
+</details>
+
 ---
 
 <a id="type-05"></a>
@@ -1383,7 +1469,7 @@ Parser/decode generics include every field the code reads downstream. Thread the
 <a id="type-06"></a>
 ### `TYPE-06` No unsafe casts
 
-> **general** · types · 3 examples · ↩ `RL-20260506-005` · `RL-20260612-004` · `RL-20251209-001` · `RL-20251209-002` · `RL-20260819-001` · `RL-20260821-001` · `RL-20260921-004` · `RL-20261001-007`
+> **general** · types · 3 examples · ↩ `RL-20260506-005` · `RL-20260612-004` · `RL-20251209-001` · `RL-20251209-002` · `RL-20260819-001` · `RL-20260821-001` · `RL-20260921-004` · `RL-20261001-007` · `RL-20261008-005`
 
 **📜 Rule**\
 Avoid `as Type` casts that lie to the type system; use `Pick`/`Partial` parameter types and `unknown` with type guards. ConfigurationService generics must match the stored type, including `null`. Implementations keep the interface's declared narrow parameter types (no widening to `QueryDeepPartialEntity`), and payload type aliases derive from schemas (`z.infer<typeof Schema>['payload']`) instead of restating shapes. Type a fold through the `reduce<T>` generic or its seed rather than casting the result `as T`. A value read from configuration and returned to callers repeatedly is copied at the boundary, not left shared because something downstream happens to re-parse it. Build the real platform object (`new Response(null, { status })`) instead of casting a literal to it. Type a parameter to exactly what the method handles (`BinaryFeature`, not the whole `FeatureKey` union) so a caller cannot route in a case the method silently mishandles.
@@ -1925,10 +2011,10 @@ value it re-derives is a value that can have changed since.
 <a id="db-03"></a>
 ### `DB-03` No redundant DB trips
 
-> **general** · database · ↩ `RL-20260529-003` · `RL-20260609-004` · `RL-20261001-002`
+> **general** · database · ↩ `RL-20260529-003` · `RL-20260609-004` · `RL-20261001-002` · `RL-20261002-006`
 
 **📜 Rule**\
-Avoid redundant reads/writes and no-op DB trips; prefer `SELECT <explicit columns>` over `SELECT *` and extract repeated column lists to a shared constant. Read generated/default columns from a write's RETURNING instead of issuing a follow-up `find` — `generatedMaps` on inserts, `raw` on updates (TypeORM leaves `generatedMaps` empty for UPDATE).
+Avoid redundant reads/writes and no-op DB trips; prefer `SELECT <explicit columns>` over `SELECT *` and extract repeated column lists to a shared constant — except a repository `find` with `loadRelationIds`, where a partial `select` drops the FK column. Read generated/default columns from a write's RETURNING instead of issuing a follow-up `find` — `generatedMaps` on inserts, `raw` on updates (TypeORM leaves `generatedMaps` empty for UPDATE).
 
 **✅ Check**\
 > Did I avoid redundant reads/writes and no-op DB trips, including a follow-up find for values the write already returns?
@@ -2554,16 +2640,16 @@ later. A one-line comment at the variable closes that gap.
 <a id="perf-01"></a>
 ### `PERF-01` Batch and parallelize I/O
 
-> **general** · performance · 2 examples · ↩ `RL-20260506-006` · `RL-20260603-001` · `RL-20260619-001` · `RL-20260626-001` · `RL-20260710-011` · `RL-20260723-005` · `RL-20260917-003` · `RL-20260925-001` · `RL-20261001-001`
+> **general** · performance · 3 examples · ↩ `RL-20260506-006` · `RL-20260603-001` · `RL-20260619-001` · `RL-20260626-001` · `RL-20260710-011` · `RL-20260723-005` · `RL-20260917-003` · `RL-20260925-001` · `RL-20261001-001` · `RL-20261002-007`
 
 **📜 Rule**\
-Batch repeated DB/API work, cap user limits, and keep independent I/O parallel. `Promise.all` over independent items must use `allSettled` if one failure should not sink the page. Remove event listeners (`res.once`, stream cleanup) to prevent leaks. Objects derived only from constructor-time config (Zod schemas, clients, compiled regexes) are built once in the constructor, not per request. Validate/filter request entries before spending shared external-API rate-limit budget on them. When an inner loop matches on a derived value, precompute it into a map keyed by that value instead of recomputing per candidate. Before parallelizing a chain of guards, check whether rejection order is load-bearing — it decides both what you pay for and which status the caller sees. To stay under an upstream rate limit, run independent calls in config-sized `Promise.all` batches (the shared `batched()` helper), not one at a time.
+Batch repeated DB/API work, cap user limits, and keep independent I/O parallel. `Promise.all` over independent items must use `allSettled` if one failure should not sink the page. Batched results are paired back to their inputs by id (a `Map`), never by array position. Remove event listeners (`res.once`, stream cleanup) to prevent leaks. Objects derived only from constructor-time config (Zod schemas, clients, compiled regexes) are built once in the constructor, not per request. Validate/filter request entries before spending shared external-API rate-limit budget on them. When an inner loop matches on a derived value, precompute it into a map keyed by that value instead of recomputing per candidate. Before parallelizing a chain of guards, check whether rejection order is load-bearing — it decides both what you pay for and which status the caller sees. To stay under an upstream rate limit, run independent calls in config-sized `Promise.all` batches (the shared `batched()` helper), not one at a time.
 
 **✅ Check**\
 > Did I batch repeated DB/API work, cap user limits, and keep independent I/O parallel (in config-sized batches where an upstream rate-limits)?
 
 <details>
-<summary><strong>💡 Example 1 of 2</strong> — <code>examples/repositories-and-pagination.md</code> § <em>perf-01-extract-the-field-you-actually-need-per-page</em></summary>
+<summary><strong>💡 Example 1 of 3</strong> — <code>examples/repositories-and-pagination.md</code> § <em>perf-01-extract-the-field-you-actually-need-per-page</em></summary>
 
 <br>
 
@@ -2618,7 +2704,7 @@ deep pagination depth.
 </details>
 
 <details>
-<summary><strong>💡 Example 2 of 2</strong> — <code>examples/repositories-and-pagination.md</code> § <em>perf-01-parallelize-independent-lookups-with-promiseall</em></summary>
+<summary><strong>💡 Example 2 of 3</strong> — <code>examples/repositories-and-pagination.md</code> § <em>perf-01-parallelize-independent-lookups-with-promiseall</em></summary>
 
 <br>
 
@@ -2672,6 +2758,49 @@ independent I/O concurrent and fails fast on the first rejection.
 
 </details>
 
+<details>
+<summary><strong>💡 Example 3 of 3</strong> — <code>examples/repositories-and-pagination.md</code> § <em>perf-01-pair-batched-results-by-id-not-by-position</em></summary>
+
+<br>
+
+**PERF-01 — Pair batched results by id, not by position**
+
+Source: PR #3534 (RL-20261002-007)
+
+### Avoid
+
+```ts
+const responses = await this.resolveAll(members.map(({ space }) => space));
+
+return Object.fromEntries(
+  members.map(({ space }, index) => [space.uuid, responses[index]]),
+);
+```
+
+### Prefer
+
+```ts
+// resolveAll returns Map<Space['id'], Resolved>
+const resolved = await this.resolveAll(members.map(({ space }) => space));
+
+return Object.fromEntries(
+  members.flatMap(({ space }) => {
+    const entry = resolved.get(space.id);
+    return entry ? [[space.uuid, this.toResponse(entry)] as const] : [];
+  }),
+);
+```
+
+### Why
+
+Index pairing is correct only while every step between the input and the
+result keeps order and length. A later sort, dedup or filter inside the batch
+silently gives one entity another's data. A key lookup cannot misalign.
+
+<sub>Source: <a href="examples/repositories-and-pagination.md#perf-01-pair-batched-results-by-id-not-by-position">examples/repositories-and-pagination.md#perf-01-pair-batched-results-by-id-not-by-position</a></sub>
+
+</details>
+
 ---
 
 ## 🌐 general › tests
@@ -2679,7 +2808,7 @@ independent I/O concurrent and fails fast on the first rejection.
 <a id="test-01"></a>
 ### `TEST-01` Use builders and fakes
 
-> **general** · tests · 2 examples · ↩ `RL-20260506-002` · `RL-20260521-001` · `RL-20260619-005` · `RL-20260624-003` · `RL-20260623-001` · `RL-20260710-003` · `RL-20260707-002` · `RL-20260710-009`
+> **general** · tests · 2 examples · ↩ `RL-20260506-002` · `RL-20260521-001` · `RL-20260619-005` · `RL-20260624-003` · `RL-20260623-001` · `RL-20260710-003` · `RL-20260707-002` · `RL-20260710-009` · `RL-20261002-001`
 
 **📜 Rule**\
 Tests use `Builder<T>` + `.with(field, value)`, `FakeCacheService`, and project test helpers; instantiate services directly (`new FooService(mockRepo)`) instead of `Test.createTestingModule` for service unit specs; avoid `jest.mock(...)` of unused modules. `Builder.with()` mutates and returns `this`, so build a fresh builder per case — never reuse one mutable builder across multiple cases/assertions, or state leaks and tests pass for the wrong reason. Builder defaults must not randomize across semantically different, behavior-routing values (`faker.helpers.arrayElement([...enum, null])`) — pick one stable valid default and override per test. Builders enforce their own invariants by construction (run the sanitizer inside the builder) — tests must not depend on incidental faker/locale properties. Vitest: `vi.mock` factories referencing outer consts use `vi.hoisted`; `vi.resetAllMocks()` restores spy originals (unlike Jest). Type mocks `as MockedObject<T>` directly — never `as unknown as MockedObject<T>`; assert calls via `toHaveBeenNthCalledWith`, not `.mock.calls` indexing; use `FakeConfigurationService` over ad-hoc config mocks; randomize free inputs with faker but assert contract constants via their exported symbol. Mocked `Raw<T>` network payloads use the `rawify()` helper instead of an `as never` cast. Do not mock internal query-builder chains or other implementation details.
@@ -2778,7 +2907,7 @@ wrapping and keeps the fixture type-checked against the real response type.
 <a id="test-02"></a>
 ### `TEST-02` Right test layer (pyramid)
 
-> **general** · tests · 1 example · ↩ `RL-20260506-001` · `RL-20260508-001` · `RL-20260529-004` · `RL-20260810-002` · `RL-20260922-005`
+> **general** · tests · 1 example · ↩ `RL-20260506-001` · `RL-20260508-001` · `RL-20260529-004` · `RL-20260810-002` · `RL-20260922-005` · `RL-20261002-003`
 
 **📜 Rule**\
 Test business logic with unit tests; test wiring and contracts with integration/e2e. Push negative paths and branch coverage to the lowest layer that can prove the property: schema/zod rules → schema unit (`*.dto.entity.spec.ts` or similar); service/repository branches (auth assertions, affected=0, error mapping) → service/repo unit; route wiring + global filter mappings (`NotFoundException → 404`, `ForbiddenException → 403`, validation → 422) → integration/e2e. End-to-end tests prove wiring once per route, not once per branch — one representative 4xx mapping smoke per route is enough; do not duplicate per-branch negatives at higher layers. Layout still applies: `*.spec.ts` for unit (no Postgres/Redis/RabbitMQ, no Nest bootstrap), `*.integration.spec.ts` for DB/Nest-bootstrapped, `*.e2e-spec.ts` for full HTTP flow. Tests in `src/__tests__/` are reserved for shared resources. Test private methods through public callers; extract a helper if direct testing is required. Decision rule: "Can I test this meaningfully without starting the app, database, network, or framework?" If yes, it is a unit test. A test that restates a constant the same diff introduced proves nothing beyond the tests that exercise it.
@@ -2836,13 +2965,13 @@ runs can stay fast and integration runs stay reproducible.
 <a id="test-04"></a>
 ### `TEST-04` Cover security paths
 
-> **general** · tests · 1 example · ↩ `RL-20260506-004` · `RL-20251223-002` · `RL-20251219-001` · `RL-20260615-001` · `RL-20260826-001`
+> **general** · tests · 1 example · ↩ `RL-20260506-004` · `RL-20251223-002` · `RL-20251219-001` · `RL-20260615-001` · `RL-20260826-001` · `RL-20261002-005`
 
 **📜 Rule**\
-Security-sensitive paths and error scenarios have explicit negative-path coverage. HTML/free-text user input has sanitizer tests with `<script>` and entity-encoded payloads. Negative authorization tests isolate exactly one denial factor — an ACTIVE non-admin for role checks, a pending member for status checks — so the rejection cannot come from an unrelated condition. When the argument for an abstraction is that it prevents a mistake, the enforcement is the test that catches the mistake — a required parameter only forces passing something, not the right thing.
+Security-sensitive paths and error scenarios have explicit negative-path coverage. HTML/free-text user input has sanitizer tests with `<script>` and entity-encoded payloads. Negative authorization tests isolate exactly one denial factor — an ACTIVE non-admin for role checks, a pending member for status checks — so the rejection cannot come from an unrelated condition. Positive authorization tests include the least-privileged role that should pass (an ACTIVE `MEMBER`), not only the admin the fixture creates. When the argument for an abstraction is that it prevents a mistake, the enforcement is the test that catches the mistake — a required parameter only forces passing something, not the right thing.
 
 **✅ Check**\
-> Are security and negative paths covered?
+> Are security and negative paths covered, and is the least-privileged allowed role tested?
 
 <details>
 <summary><strong>💡 Example</strong> — <code>examples/testing.md</code> § <em>test-04-when-a-required-field-is-added-to-config-update-every-fixture</em></summary>
@@ -2984,10 +3113,10 @@ Implementation-selection changes (provider, mapper, datasource) need full-pipeli
 <a id="test-08"></a>
 ### `TEST-08` Test names match assertions
 
-> **general** · tests · 2 examples · ↩ `RL-20260602-005` · `RL-20260615-002` · `RL-20260702-001` · `RL-20260729-001` · `RL-20260812-001` · `RL-20260907-001` · `RL-20260923-001` · `RL-20260928-003`
+> **general** · tests · 2 examples · ↩ `RL-20260602-005` · `RL-20260615-002` · `RL-20260702-001` · `RL-20260729-001` · `RL-20260812-001` · `RL-20260907-001` · `RL-20260923-001` · `RL-20260928-003` · `RL-20261002-009`
 
 **📜 Rule**\
-Test descriptions and generated data reflect the actual assertion: `it('should return false when there is no source swap')` not `'when bridging to a different chain'`. Avoid redundant `expect(success).toBe(true); if (success) { ... }`. Fixture values reflect domain semantics even when unasserted — an admin's `invitedBy` is `null`, not a random int. Test helpers are named after the state they produce (`createActiveMember` vs `createPendingMember`), with the same terminology used across specs. Invalid-input fixtures are invalid by construction (a literal or constructive generator), never a random sample that is only usually invalid. Removing a key from a schema does not fail specs that still set it — a stripping parser silently drops it — so grep the old key across specs and fixtures as part of the removal. A negative invariant is asserted negatively and over the whole collection, never by positively asserting some other value at index 0. Test data derives from the source of truth, except when that constant is what the test pins — then the cases are written out literally, with a comment saying why. When an assertion is about a field, pin that field in the fixture (`.with('flag', true)`) instead of asserting back whatever faker generated.
+Test descriptions and generated data reflect the actual assertion: `it('should return false when there is no source swap')` not `'when bridging to a different chain'`. Avoid redundant `expect(success).toBe(true); if (success) { ... }`. Fixture values reflect domain semantics even when unasserted — an admin's `invitedBy` is `null`, not a random int. Test helpers are named after the state they produce (`createActiveMember` vs `createPendingMember`), with the same terminology used across specs. Invalid-input fixtures are invalid by construction (a literal or constructive generator), never a random sample that is only usually invalid. Removing a key from a schema does not fail specs that still set it — a stripping parser silently drops it — so grep the old key across specs and fixtures as part of the removal. A negative invariant is asserted negatively and over the whole collection, never by positively asserting some other value at index 0. Test data derives from the source of truth, except when that constant is what the test pins — then the cases are written out literally, with a comment saying why. A test named for a path (a cache hit, a flag-on branch) asserts the precondition that puts it there, with fake clocks set before fixtures that stamp time. When an assertion is about a field, pin that field in the fixture (`.with('flag', true)`) instead of asserting back whatever faker generated.
 
 **✅ Check**\
 > Do test names, fixtures, and generated data match the assertions and the domain semantics?
@@ -3142,7 +3271,7 @@ noise.
 <a id="log-01"></a>
 ### `LOG-01` Operational log levels
 
-> **general** · logging · 1 example · ↩ `RL-20260121-001` · `RL-20260114-002` · `RL-20260723-003` · `RL-20260710-001` · `RL-20261001-001`
+> **general** · logging · 1 example · ↩ `RL-20260121-001` · `RL-20260114-002` · `RL-20260723-003` · `RL-20260710-001` · `RL-20261001-001` · `RL-20261008-003`
 
 **📜 Rule**\
 Log levels reflect operational actionability. Expected business outcomes are not `error`. Default-fallback paths log a `warn` and return `undefined`/throw, not a plausible-looking wrong value. A catch that degrades to a default logs why, carrying identifiers but never the sensitive value it failed to decode. Volume decides level as much as actionability: hot worker events and expected success paths are not noisy logs, anything emitted once per queue/AMQP event is `debug`, and new telemetry must be worth its operational cost.

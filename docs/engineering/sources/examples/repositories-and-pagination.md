@@ -232,3 +232,70 @@ return {
 raw `?cursor=limit=500` against a 250-row set, only 100 rows are returned
 but `500 + 0 < 250` is false, so `next` is `null` and the client silently
 stops paging. Links must describe the page that was actually served.
+
+## PERF-01 — Pair batched results by id, not by position
+
+Source: PR #3534 (RL-20261002-007)
+
+### Avoid
+
+```ts
+const responses = await this.resolveAll(members.map(({ space }) => space));
+
+return Object.fromEntries(
+  members.map(({ space }, index) => [space.uuid, responses[index]]),
+);
+```
+
+### Prefer
+
+```ts
+// resolveAll returns Map<Space['id'], Resolved>
+const resolved = await this.resolveAll(members.map(({ space }) => space));
+
+return Object.fromEntries(
+  members.flatMap(({ space }) => {
+    const entry = resolved.get(space.id);
+    return entry ? [[space.uuid, this.toResponse(entry)] as const] : [];
+  }),
+);
+```
+
+### Why
+
+Index pairing is correct only while every step between the input and the
+result keeps order and length. A later sort, dedup or filter inside the batch
+silently gives one entity another's data. A key lookup cannot misalign.
+
+## REUSE-01 — A single-item read delegates to its batch variant
+
+Source: PR #3533 (RL-20261002-004)
+
+### Avoid
+
+Two methods that each own the query, decryption and mapping:
+
+```ts
+public async findByParentId(id: Parent['id']): Promise<Array<Item>> {
+  const rows = await repository.find({ where: { parent: { id } } });
+  return await this.decrypt(id, rows);
+}
+
+public async findByParentIds(ids: Array<Parent['id']>): Promise<Map<Parent['id'], Array<Item>>> {
+  // same query and decryption, batched
+}
+```
+
+### Prefer
+
+```ts
+public async findByParentId(id: Parent['id']): Promise<Array<Item>> {
+  return (await this.findByParentIds([id])).get(id) ?? [];
+}
+```
+
+### Why
+
+The single-item path is the batch path with one key. Delegating keeps one
+query, one decryption path and one set of tests, so a fix to either cannot
+miss the other.

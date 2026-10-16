@@ -4110,5 +4110,322 @@
       "TYPE-01",
       "TYPE-06"
     ]
+  },
+  {
+    "id": "RL-20261002-001",
+    "title": "Repository spec built rows with a local factory instead of a builder",
+    "sourceWindowId": "CLOSED-20261001-20261009",
+    "prNumbers": [
+      3533
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4158362922,
+      4164307524
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "A repository spec built its encrypted Safe rows with an inline faker factory; review asked for a builder, and the author added `spaceSafeBuilder()` beside the DB entity and moved both specs onto it. A row shape a spec builds more than once comes from a `Builder<T>`, not a local factory function.",
+    "ruleIds": [
+      "TEST-01"
+    ]
+  },
+  {
+    "id": "RL-20261002-002",
+    "title": "Batch endpoint typed as a Record alias in a different shape from its sibling",
+    "sourceWindowId": "CLOSED-20261001-20261009",
+    "prNumbers": [
+      3533
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4158418763,
+      4164307853
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [
+      5934701930
+    ],
+    "learning": "`GET /v1/spaces/safes` first returned `{ [spaceUuid]: [{ chainId, address }] }`, typed as a `Record<Space['uuid'], ...>` alias with an inline Swagger schema, while the per-workspace endpoint groups `safes` by chain. A bot review asked for the per-workspace shape (adopted in dcaf2532 via the existing `transformSpaceSafesResponse`) and review asked for an actual DTO. A map keyed by runtime ids cannot be a class, so the endpoint now returns `[{ spaceUuid, safes }]` with a DTO extending the per-workspace response, documented with `@ApiOkResponse({ type, isArray: true })`. A batch endpoint returns an array of DTO classes in its single-resource sibling's shape, not a dynamic-key record.",
+    "ruleIds": [
+      "TYPE-04"
+    ]
+  },
+  {
+    "id": "RL-20261002-003",
+    "title": "Same scenario asserted at e2e and integration level",
+    "sourceWindowId": "CLOSED-20261001-20261009",
+    "prNumbers": [
+      3533,
+      3539
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4158488793,
+      4164308029
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [
+      5955430156
+    ],
+    "learning": "In #3533 the e2e spec repeated the membership-scoping scenario the encryption integration spec already proved; review asked to trim it to one happy path plus the 403, and the author did. In #3539 the author kept a repository-level test that the schema strips an upstream field, although an e2e also asserts it, because the lower test fails at the layer that does the stripping. A scenario lives at the lowest layer that proves it; the e2e proves the route's wiring once.",
+    "ruleIds": [
+      "TEST-02"
+    ]
+  },
+  {
+    "id": "RL-20261002-004",
+    "title": "Single-item read kept its own query beside the new batch read",
+    "sourceWindowId": "CLOSED-20261001-20261009",
+    "prNumbers": [
+      3533
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4158503178,
+      4164308222
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "Adding `findBySpaceIds` beside `findBySpaceId` left two query-and-decrypt paths; review asked the single variant to become `(await this.findBySpaceIds([spaceId])).get(spaceId) ?? []`, and the author did, mirroring `countSeatsBySpaceId`. When a batch variant of a single-item read is added, the single-item method delegates to it so the query, decryption and mapping live once.",
+    "ruleIds": [
+      "REUSE-01"
+    ]
+  },
+  {
+    "id": "RL-20261002-005",
+    "title": "Membership-scoped read tested only with the admin who created the workspace",
+    "sourceWindowId": "CLOSED-20261001-20261009",
+    "prNumbers": [
+      3533
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [
+      5382958605
+    ],
+    "issueCommentIds": [
+      5948736274
+    ],
+    "learning": "The all-workspaces Safes endpoint was tested only with workspaces the caller had created. Review asked for a non-admin member test, and the author added a workspace where the caller is invited as `MEMBER` and accepts, next to one they are only invited to. A membership-scoped read is proven for the least-privileged role that should pass, not only for the admin the fixture makes by default.",
+    "ruleIds": [
+      "TEST-04"
+    ]
+  },
+  {
+    "id": "RL-20261002-006",
+    "title": "Partial select on a repository find dropped the FK the code groups by",
+    "sourceWindowId": "CLOSED-20261001-20261009",
+    "prNumbers": [
+      3533
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4158401809,
+      4164307709,
+      4164487848
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "Review asked a `find` with `loadRelationIds` to select only `chainId` and `address`. The author showed that any partial `select` on a repository `find` drops the `space_id` FK from the SQL (TypeORM selects it only when it joins), which breaks grouping by that FK, and review accepted the full row. Selecting explicit columns stops where it would drop a column the code reads, such as a FK loaded through `loadRelationIds`.",
+    "ruleIds": [
+      "DB-03"
+    ]
+  },
+  {
+    "id": "RL-20261002-007",
+    "title": "Batched results paired back to inputs by array position",
+    "sourceWindowId": "CLOSED-20261001-20261009",
+    "prNumbers": [
+      3534
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [],
+    "issueCommentIds": [
+      5948083024
+    ],
+    "learning": "`getAllEntitlements` paired each workspace UUID with `responses[index]`, relying on the batched resolver keeping input order. A bot review flagged it; the author keyed `resolvePlanContext`'s result by workspace id and looks each UUID up in the map (32aac11c). Batched results are paired back to their inputs by key, never by array position, so a later sort, dedup or filter cannot misalign them.",
+    "ruleIds": [
+      "PERF-01"
+    ]
+  },
+  {
+    "id": "RL-20261002-008",
+    "title": "PR title over the 72-character subject budget and extra body block",
+    "sourceWindowId": "CLOSED-20261001-20261009",
+    "prNumbers": [
+      3534
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [],
+    "issueCommentIds": [
+      5947849702
+    ],
+    "learning": "An arch review flagged a 77-character PR title over the 72-character subject budget and a trailing `Verification:` block outside the PR template; the author retitled to the suggested 71-character subject and removed the block. The squash-merge subject stays within 72 characters, and the body holds the template's sections only.",
+    "ruleIds": [
+      "CHANGE-02"
+    ]
+  },
+  {
+    "id": "RL-20261002-009",
+    "title": "Test named for a path never reached that path",
+    "sourceWindowId": "CLOSED-20261001-20261009",
+    "prNumbers": [
+      3536,
+      3491
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4165424706,
+      4104770204
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [
+      5952062301
+    ],
+    "learning": "In #3536 a test named for usage resuming 'even with cached limits' never hit a cached grant: the fixture stamped the invalidation time on the real clock and `setSystemTime` then moved before it, so every call recomputed; the author agreed it should be fixed. In #3491 an integration test meant for the queue-service path never mocked that service or flipped its flag, so it ran the tx-service path. A test named for a path asserts the precondition that puts it there (the key is cached, the flag is on), and fake clocks are set before fixtures that stamp time.",
+    "ruleIds": [
+      "TEST-08"
+    ]
+  },
+  {
+    "id": "RL-20261002-010",
+    "title": "`implements z.infer` catches a missing DTO field, not an extra one",
+    "sourceWindowId": "CLOSED-20261001-20261009",
+    "prNumbers": [
+      3539
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [],
+    "issueCommentIds": [
+      5955430156
+    ],
+    "learning": "Removing `url` from a payment-link schema raised whether `implements z.infer<typeof Schema>` guards the DTO. The author pointed out it fails only when the DTO lacks a schema field: a field re-added to the DTO alone still compiles, and Swagger documents a property the endpoint never returns. The check is one-directional, so a removed field leaves the schema, DTO, builder and Swagger together.",
+    "ruleIds": [
+      "TYPE-04"
+    ]
+  },
+  {
+    "id": "RL-20261008-001",
+    "title": "Comments restating a type or helper",
+    "sourceWindowId": "CLOSED-20261001-20261009",
+    "prNumbers": [
+      3526
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4141285519,
+      4141976141,
+      4144330752,
+      4144351846
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "Review asked to drop a doc comment on a spending-limit type, and the author removed it (be268b9d). The author's own review notes asked for another complex comment to be simplified or its helper removed, and a key-helper comment deleted; both landed. A comment that restates a type or helper is deleted, and a helper that needs a long comment is simplified or removed.",
+    "ruleIds": [
+      "STYLE-01"
+    ]
+  },
+  {
+    "id": "RL-20261008-002",
+    "title": "Branded Address fields documented without `type: String`",
+    "sourceWindowId": "CLOSED-20261001-20261009",
+    "prNumbers": [
+      3526
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [],
+    "issueCommentIds": [
+      5909536430,
+      5910748690
+    ],
+    "learning": "New pending-policy DTOs declared `Address` fields with `@ApiProperty` but no `type`. A bot review noted Swagger reflection cannot see through viem's branded template literal; the author confirmed and added `type: String` to each (8bb558a2), matching the sibling allowance DTO. Branded string fields declare `type: String` in `@ApiProperty`.",
+    "ruleIds": [
+      "TYPE-04"
+    ]
+  },
+  {
+    "id": "RL-20261008-003",
+    "title": "Debug logs for degraded per-item lookups are acceptable",
+    "sourceWindowId": "CLOSED-20261001-20261009",
+    "prNumbers": [
+      3526
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4141393853,
+      4142369283
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "Review asked whether new debug logs for failed per-chain token-metadata lookups would add Datadog cost; the thread concluded debug logs are not a problem. A per-item lookup that degrades to `null` logs why at `debug`: volume decides the level.",
+    "ruleIds": [
+      "LOG-01"
+    ]
+  },
+  {
+    "id": "RL-20261008-004",
+    "title": "One function ran several steps; a mapper owned a request-wide warning",
+    "sourceWindowId": "CLOSED-20261001-20261009",
+    "prNumbers": [
+      3526,
+      3534
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4141422188,
+      4142365692
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [
+      5948083024
+    ],
+    "learning": "`getTokenMetadata` collected chain ids, deduped ERC-20s, fetched both and joined them in one body; review suggested one function per step, and the author split it into `nativeCurrencyChainIds`, `erc20TokensToFetch`, `fetchNativeTokens` and `fetchErc20Tokens` (4e95eae2). In #3534 a per-workspace response mapper had also taken on the request-wide unpublished-feature warning; after a bot review the author moved that into `warnUnpublished` and restored the single-workspace mapper (32aac11c). A function running several sequential steps splits into one named helper per step, and a per-item mapper does not own request-wide side effects.",
+    "ruleIds": [
+      "STYLE-01"
+    ]
+  },
+  {
+    "id": "RL-20261008-005",
+    "title": "Closed value set typed as `string`",
+    "sourceWindowId": "CLOSED-20261001-20261009",
+    "prNumbers": [
+      3550
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4208891078,
+      4217827302
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "A new `ordering?: string` datasource parameter accepts only four values; review asked for the `'created' | '-created' | 'modified' | '-modified'` union, and the author agreed and deferred it to a ticketed follow-up because it touches many files. A parameter with a closed value set is typed as that literal union, not `string`.",
+    "ruleIds": [
+      "TYPE-06"
+    ]
+  },
+  {
+    "id": "RL-20261008-006",
+    "title": "Unrequired cache-invalidation change rode along in a queue-ordering PR",
+    "sourceWindowId": "CLOSED-20261001-20261009",
+    "prNumbers": [
+      3491
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4104155915,
+      4104770204,
+      4104868699
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "A PR ordering the queue by last modification also changed a propose test to expect eager clearing of the queue cache. Review asked whether that was a bug fix; the author found the eager clear redundant with event-driven invalidation and dropped it (bec13d9c). A behavior change the PR's purpose does not require leaves the PR, even when it looks like a fix.",
+    "ruleIds": [
+      "CHANGE-01"
+    ]
   }
 ]

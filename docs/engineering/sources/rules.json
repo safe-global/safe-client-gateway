@@ -12,7 +12,8 @@
       "RL-20260714-002",
       "RL-20260713-004",
       "RL-20260810-001",
-      "RL-20260923-002"
+      "RL-20260923-002",
+      "RL-20261008-006"
     ]
   },
   {
@@ -20,7 +21,7 @@
     "project": "general",
     "area": "scope",
     "title": "No unrelated drive-by edits",
-    "rule": "Keep unrelated docs, config, formatting, or generated changes out of feature PRs. Issue references go in the PR body, not the subject — squash-merge makes the subject a permanent commit subject. When a review reveals a pattern repeated repo-wide, fix the lines the PR already touches rather than expanding into a sweep.",
+    "rule": "Keep unrelated docs, config, formatting, or generated changes out of feature PRs. Issue references go in the PR body, not the subject, and the subject stays within 72 characters — squash-merge makes it a permanent commit subject; the body holds the template's sections, not local verification logs. When a review reveals a pattern repeated repo-wide, fix the lines the PR already touches rather than expanding into a sweep.",
     "check": "Did I avoid unrelated docs/config/formatting/generated changes?",
     "exampleRefs": [
       "examples/scope-and-pr-hygiene.md#change-02-do-not-bundle-unrelated-test-or-tooling-fixes-into-a-feature-pr"
@@ -28,7 +29,8 @@
     "reviewLearningIds": [
       "RL-20251211-001",
       "RL-20260810-003",
-      "RL-20260821-001"
+      "RL-20260821-001",
+      "RL-20261002-008"
     ]
   },
   {
@@ -186,11 +188,12 @@
     "project": "general",
     "area": "naming",
     "title": "Reuse existing helpers",
-    "rule": "Before adding a small util, search the repo and well-known libraries (`viem.isAddressEqual`, `@/logging/utils.asError`, shared schemas, `safe-deployments`); reuse `LoggingService`, `*Mapper` classes, and `HttpErrorFactory` instead of bare alternates. Cross a seam with the plain value (a timeout in ms, a plaintext address), not a caller-constructed object or caller-derived key (an `AbortSignal`, a blind-index seat key), so it is built in exactly one place.",
+    "rule": "Before adding a small util, search the repo and well-known libraries (`viem.isAddressEqual`, `@/logging/utils.asError`, shared schemas, `safe-deployments`); reuse `LoggingService`, `*Mapper` classes, and `HttpErrorFactory` instead of bare alternates. Cross a seam with the plain value (a timeout in ms, a plaintext address), not a caller-constructed object or caller-derived key (an `AbortSignal`, a blind-index seat key), so it is built in exactly one place. A single-item read that gains a batch variant delegates to it (`(await findByIds([id])).get(id) ?? []`) instead of keeping its own query.",
     "check": "Did I reuse existing helpers, constants homes, and utilities?",
     "exampleRefs": [
       "examples/repositories-and-pagination.md#config-03-reuse-01-knobs-follow-the-existing-config-driven-precedent",
-      "examples/repositories-and-pagination.md#reuse-01-derive-version-lists-from-safe-deployments"
+      "examples/repositories-and-pagination.md#reuse-01-derive-version-lists-from-safe-deployments",
+      "examples/repositories-and-pagination.md#reuse-01-a-single-item-read-delegates-to-its-batch-variant"
     ],
     "reviewLearningIds": [
       "RL-20260506-003",
@@ -198,7 +201,8 @@
       "RL-20260615-004",
       "RL-20251208-001",
       "RL-20260921-004",
-      "RL-20260925-005"
+      "RL-20260925-005",
+      "RL-20261002-004"
     ]
   },
   {
@@ -206,7 +210,7 @@
     "project": "general",
     "area": "naming",
     "title": "Document non-trivial code",
-    "rule": "Public/non-trivial service and repository code is documented and free of dead branches, commented-out code, redundant comments, and `console.log`. Default flags safely (`isSafe = false` until proven), wrap event listeners with cleanup, and keep adapters' error contracts intact. Message/formatting logic beyond one branch gets a named helper in utils — no nested ternaries inside template literals. Destructuring return values is an accepted repo-wide pattern — do not demand named receivers; verify a claimed convention against the codebase before enforcing it. One exported class/type per file: errors under `domain/errors/` with their filters under `domain/exception-filters/`, guards under `routes/guards/` (never module-root `errors/` or `guards/`), entity types under `entities/`, helpers in a dedicated helpers file; a standalone function used by a single class becomes a private method. A comment that restates the line beneath it is deleted, and a comment offered to explain confusing code is a signal to restructure that code instead. When a key or signature drops a dimension, remove the now-unused parameter up the whole call chain. A function with no instance state does not stay a private method — that prices every test of it at the cost of testing its host. A comment describes the code as it now is — what it throws and returns — and carries no process narration (rollout plans, which ticket will do what); a flag's owning-ticket note (CONFIG-01) is the exception.",
+    "rule": "Public/non-trivial service and repository code is documented and free of dead branches, commented-out code, redundant comments, and `console.log`. Default flags safely (`isSafe = false` until proven), wrap event listeners with cleanup, and keep adapters' error contracts intact. Message/formatting logic beyond one branch gets a named helper in utils — no nested ternaries inside template literals. A function running several sequential steps splits into one named helper per step, and a per-item mapper does not own request-wide side effects. Destructuring return values is an accepted repo-wide pattern — do not demand named receivers; verify a claimed convention against the codebase before enforcing it. One exported class/type per file: errors under `domain/errors/` with their filters under `domain/exception-filters/`, guards under `routes/guards/` (never module-root `errors/` or `guards/`), entity types under `entities/`, helpers in a dedicated helpers file; a standalone function used by a single class becomes a private method. A comment that restates the line beneath it is deleted, and a comment offered to explain confusing code is a signal to restructure that code instead. When a key or signature drops a dimension, remove the now-unused parameter up the whole call chain. A function with no instance state does not stay a private method — that prices every test of it at the cost of testing its host. A comment describes the code as it now is — what it throws and returns — and carries no process narration (rollout plans, which ticket will do what); a flag's owning-ticket note (CONFIG-01) is the exception.",
     "check": "Did I document public/non-trivial logic, remove dead code, and keep every comment true to the code and free of process narration?",
     "exampleRefs": [
       "examples/error-handling.md#style-01-log-04-internal-errors-do-not-leak-into-user-responses",
@@ -224,7 +228,9 @@
       "RL-20251210-001",
       "RL-20260821-002",
       "RL-20261001-004",
-      "RL-20261001-005"
+      "RL-20261001-005",
+      "RL-20261008-001",
+      "RL-20261008-004"
     ]
   },
   {
@@ -298,13 +304,14 @@
     "project": "general",
     "area": "types",
     "title": "DTO matches wire shape",
-    "rule": "DTO/`@ApiProperty` fields must match the actual wire shape: required vs optional vs nullable; matching enum source; do not hardcode literal-array enums in `@ApiProperty`. Model exact-one alternatives as unions when the wire contract is either/or. Defense-in-depth checks downstream of upstream filters. The DTO's Zod schema must enforce the same bounds the `@ApiProperty` documents (reuse the canonical schema, e.g. `makeNameSchema()`, rather than a looser `z.string().max(...)`), and the DTO class should `implements z.infer<typeof Schema>` so schema/Swagger drift fails at compile time. Schema-centralization refactors preserve requiredness and bounds exactly, sweep sibling entities that share the field, and call out intentional behavior changes in the PR description. `@ApiPropertyOptional` only when the key can be absent; an always-present nullable field is `@ApiProperty({ nullable: true })`. Outbound requests to internal services are parsed through the endpoint's schema in every flow (symmetric field stripping); pick fields explicitly instead of spreading a wider object into a constructor. `Raw<T>` is an unchecked assertion — verify `T` against the datasource spec's own mock, envelope included, because nothing compiles against it.",
+    "rule": "DTO/`@ApiProperty` fields must match the actual wire shape: required vs optional vs nullable; matching enum source; do not hardcode literal-array enums in `@ApiProperty`. Model exact-one alternatives as unions when the wire contract is either/or. Defense-in-depth checks downstream of upstream filters. The DTO's Zod schema must enforce the same bounds the `@ApiProperty` documents (reuse the canonical schema, e.g. `makeNameSchema()`, rather than a looser `z.string().max(...)`), and the DTO class should `implements z.infer<typeof Schema>` so a schema field the DTO lacks fails at compile time (a DTO-only field still compiles, so a removed field leaves both). Branded strings (`Address`) declare `@ApiProperty({ type: String })`; reflection cannot see through the brand. A batch endpoint returns an array of DTO classes extending its single-resource sibling's response (`@ApiOkResponse({ type, isArray: true })`), not a `Record` keyed by runtime ids. Schema-centralization refactors preserve requiredness and bounds exactly, sweep sibling entities that share the field, and call out intentional behavior changes in the PR description. `@ApiPropertyOptional` only when the key can be absent; an always-present nullable field is `@ApiProperty({ nullable: true })`. Outbound requests to internal services are parsed through the endpoint's schema in every flow (symmetric field stripping); pick fields explicitly instead of spreading a wider object into a constructor. `Raw<T>` is an unchecked assertion — verify `T` against the datasource spec's own mock, envelope included, because nothing compiles against it.",
     "check": "Do DTO fields match the actual wire shape, with the Zod schema enforcing the documented @ApiProperty bounds and the class implementing z.infer of its schema?",
     "exampleRefs": [
       "examples/schemas-and-validation.md#type-04-reuse-the-canonical-enum-do-not-hardcode-literal-arrays",
       "examples/schemas-and-validation.md#type-04-use-unions-for-exact-one-dto-shapes",
       "examples/schemas-and-validation.md#type-04-strict-enum-schemas-for-internal-boolean-query-params",
-      "examples/controllers-and-swagger.md#type-04-route-01-public-params-apply-on-every-code-path-or-are-removed"
+      "examples/controllers-and-swagger.md#type-04-route-01-public-params-apply-on-every-code-path-or-are-removed",
+      "examples/controllers-and-swagger.md#type-04-a-batch-endpoint-returns-an-array-of-its-siblings-dto"
     ],
     "reviewLearningIds": [
       "RL-20260520-002",
@@ -314,7 +321,10 @@
       "RL-20260604-002",
       "RL-20260612-006",
       "RL-20260703-005",
-      "RL-20260911-001"
+      "RL-20260911-001",
+      "RL-20261002-002",
+      "RL-20261002-010",
+      "RL-20261008-002"
     ]
   },
   {
@@ -349,7 +359,8 @@
       "RL-20260819-001",
       "RL-20260821-001",
       "RL-20260921-004",
-      "RL-20261001-007"
+      "RL-20261001-007",
+      "RL-20261008-005"
     ]
   },
   {
@@ -456,13 +467,14 @@
     "project": "general",
     "area": "database",
     "title": "No redundant DB trips",
-    "rule": "Avoid redundant reads/writes and no-op DB trips; prefer `SELECT <explicit columns>` over `SELECT *` and extract repeated column lists to a shared constant. Read generated/default columns from a write's RETURNING instead of issuing a follow-up `find` — `generatedMaps` on inserts, `raw` on updates (TypeORM leaves `generatedMaps` empty for UPDATE).",
+    "rule": "Avoid redundant reads/writes and no-op DB trips; prefer `SELECT <explicit columns>` over `SELECT *` and extract repeated column lists to a shared constant — except a repository `find` with `loadRelationIds`, where a partial `select` drops the FK column. Read generated/default columns from a write's RETURNING instead of issuing a follow-up `find` — `generatedMaps` on inserts, `raw` on updates (TypeORM leaves `generatedMaps` empty for UPDATE).",
     "check": "Did I avoid redundant reads/writes and no-op DB trips, including a follow-up find for values the write already returns?",
     "exampleRefs": [],
     "reviewLearningIds": [
       "RL-20260529-003",
       "RL-20260609-004",
-      "RL-20261001-002"
+      "RL-20261001-002",
+      "RL-20261002-006"
     ]
   },
   {
@@ -619,11 +631,12 @@
     "project": "general",
     "area": "performance",
     "title": "Batch and parallelize I/O",
-    "rule": "Batch repeated DB/API work, cap user limits, and keep independent I/O parallel. `Promise.all` over independent items must use `allSettled` if one failure should not sink the page. Remove event listeners (`res.once`, stream cleanup) to prevent leaks. Objects derived only from constructor-time config (Zod schemas, clients, compiled regexes) are built once in the constructor, not per request. Validate/filter request entries before spending shared external-API rate-limit budget on them. When an inner loop matches on a derived value, precompute it into a map keyed by that value instead of recomputing per candidate. Before parallelizing a chain of guards, check whether rejection order is load-bearing — it decides both what you pay for and which status the caller sees. To stay under an upstream rate limit, run independent calls in config-sized `Promise.all` batches (the shared `batched()` helper), not one at a time.",
+    "rule": "Batch repeated DB/API work, cap user limits, and keep independent I/O parallel. `Promise.all` over independent items must use `allSettled` if one failure should not sink the page. Batched results are paired back to their inputs by id (a `Map`), never by array position. Remove event listeners (`res.once`, stream cleanup) to prevent leaks. Objects derived only from constructor-time config (Zod schemas, clients, compiled regexes) are built once in the constructor, not per request. Validate/filter request entries before spending shared external-API rate-limit budget on them. When an inner loop matches on a derived value, precompute it into a map keyed by that value instead of recomputing per candidate. Before parallelizing a chain of guards, check whether rejection order is load-bearing — it decides both what you pay for and which status the caller sees. To stay under an upstream rate limit, run independent calls in config-sized `Promise.all` batches (the shared `batched()` helper), not one at a time.",
     "check": "Did I batch repeated DB/API work, cap user limits, and keep independent I/O parallel (in config-sized batches where an upstream rate-limits)?",
     "exampleRefs": [
       "examples/repositories-and-pagination.md#perf-01-extract-the-field-you-actually-need-per-page",
-      "examples/repositories-and-pagination.md#perf-01-parallelize-independent-lookups-with-promiseall"
+      "examples/repositories-and-pagination.md#perf-01-parallelize-independent-lookups-with-promiseall",
+      "examples/repositories-and-pagination.md#perf-01-pair-batched-results-by-id-not-by-position"
     ],
     "reviewLearningIds": [
       "RL-20260506-006",
@@ -634,7 +647,8 @@
       "RL-20260723-005",
       "RL-20260917-003",
       "RL-20260925-001",
-      "RL-20261001-001"
+      "RL-20261001-001",
+      "RL-20261002-007"
     ]
   },
   {
@@ -656,7 +670,8 @@
       "RL-20260623-001",
       "RL-20260710-003",
       "RL-20260707-002",
-      "RL-20260710-009"
+      "RL-20260710-009",
+      "RL-20261002-001"
     ]
   },
   {
@@ -674,7 +689,8 @@
       "RL-20260508-001",
       "RL-20260529-004",
       "RL-20260810-002",
-      "RL-20260922-005"
+      "RL-20260922-005",
+      "RL-20261002-003"
     ]
   },
   {
@@ -682,8 +698,8 @@
     "project": "general",
     "area": "tests",
     "title": "Cover security paths",
-    "rule": "Security-sensitive paths and error scenarios have explicit negative-path coverage. HTML/free-text user input has sanitizer tests with `<script>` and entity-encoded payloads. Negative authorization tests isolate exactly one denial factor — an ACTIVE non-admin for role checks, a pending member for status checks — so the rejection cannot come from an unrelated condition. When the argument for an abstraction is that it prevents a mistake, the enforcement is the test that catches the mistake — a required parameter only forces passing something, not the right thing.",
-    "check": "Are security and negative paths covered?",
+    "rule": "Security-sensitive paths and error scenarios have explicit negative-path coverage. HTML/free-text user input has sanitizer tests with `<script>` and entity-encoded payloads. Negative authorization tests isolate exactly one denial factor — an ACTIVE non-admin for role checks, a pending member for status checks — so the rejection cannot come from an unrelated condition. Positive authorization tests include the least-privileged role that should pass (an ACTIVE `MEMBER`), not only the admin the fixture creates. When the argument for an abstraction is that it prevents a mistake, the enforcement is the test that catches the mistake — a required parameter only forces passing something, not the right thing.",
+    "check": "Are security and negative paths covered, and is the least-privileged allowed role tested?",
     "exampleRefs": [
       "examples/testing.md#test-04-when-a-required-field-is-added-to-config-update-every-fixture"
     ],
@@ -692,7 +708,8 @@
       "RL-20251223-002",
       "RL-20251219-001",
       "RL-20260615-001",
-      "RL-20260826-001"
+      "RL-20260826-001",
+      "RL-20261002-005"
     ]
   },
   {
@@ -738,7 +755,7 @@
     "project": "general",
     "area": "tests",
     "title": "Test names match assertions",
-    "rule": "Test descriptions and generated data reflect the actual assertion: `it('should return false when there is no source swap')` not `'when bridging to a different chain'`. Avoid redundant `expect(success).toBe(true); if (success) { ... }`. Fixture values reflect domain semantics even when unasserted — an admin's `invitedBy` is `null`, not a random int. Test helpers are named after the state they produce (`createActiveMember` vs `createPendingMember`), with the same terminology used across specs. Invalid-input fixtures are invalid by construction (a literal or constructive generator), never a random sample that is only usually invalid. Removing a key from a schema does not fail specs that still set it — a stripping parser silently drops it — so grep the old key across specs and fixtures as part of the removal. A negative invariant is asserted negatively and over the whole collection, never by positively asserting some other value at index 0. Test data derives from the source of truth, except when that constant is what the test pins — then the cases are written out literally, with a comment saying why. When an assertion is about a field, pin that field in the fixture (`.with('flag', true)`) instead of asserting back whatever faker generated.",
+    "rule": "Test descriptions and generated data reflect the actual assertion: `it('should return false when there is no source swap')` not `'when bridging to a different chain'`. Avoid redundant `expect(success).toBe(true); if (success) { ... }`. Fixture values reflect domain semantics even when unasserted — an admin's `invitedBy` is `null`, not a random int. Test helpers are named after the state they produce (`createActiveMember` vs `createPendingMember`), with the same terminology used across specs. Invalid-input fixtures are invalid by construction (a literal or constructive generator), never a random sample that is only usually invalid. Removing a key from a schema does not fail specs that still set it — a stripping parser silently drops it — so grep the old key across specs and fixtures as part of the removal. A negative invariant is asserted negatively and over the whole collection, never by positively asserting some other value at index 0. Test data derives from the source of truth, except when that constant is what the test pins — then the cases are written out literally, with a comment saying why. A test named for a path (a cache hit, a flag-on branch) asserts the precondition that puts it there, with fake clocks set before fixtures that stamp time. When an assertion is about a field, pin that field in the fixture (`.with('flag', true)`) instead of asserting back whatever faker generated.",
     "check": "Do test names, fixtures, and generated data match the assertions and the domain semantics?",
     "exampleRefs": [
       "examples/testing.md#test-08-assert-a-negative-invariant-negatively-over-the-whole-collection",
@@ -752,7 +769,8 @@
       "RL-20260812-001",
       "RL-20260907-001",
       "RL-20260923-001",
-      "RL-20260928-003"
+      "RL-20260928-003",
+      "RL-20261002-009"
     ]
   },
   {
@@ -792,7 +810,8 @@
       "RL-20260114-002",
       "RL-20260723-003",
       "RL-20260710-001",
-      "RL-20261001-001"
+      "RL-20261001-001",
+      "RL-20261008-003"
     ]
   },
   {

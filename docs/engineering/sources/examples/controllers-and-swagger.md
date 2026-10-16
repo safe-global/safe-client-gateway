@@ -157,3 +157,38 @@ public analyzeRecipient(
 domain name says what the param is. When the chain-id schema is tightened,
 every route that uses it picks up the change. Routes on the generic schema
 silently stay loose.
+
+## TYPE-04 — A batch endpoint returns an array of its sibling's DTO
+
+Source: PR #3533 (RL-20261002-002)
+
+### Avoid
+
+A record keyed by runtime ids, in a different shape from the per-resource
+endpoint, which Swagger cannot model as a class:
+
+```ts
+export type GetParentsItemsResponse = Record<
+  Parent['uuid'],
+  Array<{ chainId: string; address: Address }>
+>;
+```
+
+### Prefer
+
+```ts
+export class GetParentsItemsResponse extends GetParentItemsResponse {
+  @ApiProperty({ type: String, description: 'Parent UUID' })
+  public readonly parentUuid!: Parent['uuid'];
+}
+
+@ApiOkResponse({ type: GetParentsItemsResponse, isArray: true })
+@Get('items')
+public async getAll(): Promise<Array<GetParentsItemsResponse>> {}
+```
+
+### Why
+
+Clients that already read the per-resource endpoint reuse the same parser, and
+the response is a documented class instead of an inline schema. An array also
+leaves room for pagination later.

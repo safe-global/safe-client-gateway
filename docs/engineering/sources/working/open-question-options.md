@@ -719,3 +719,192 @@ Trade-off: `PR-02` needs a carve-out naming which guides may hold counts, and
 every guard change edits the guide in the same PR.
 
 Open until the team picks one; whichever wins should be reflected in `PR-02`.
+
+## OQ-DB-03 Expensive I/O Inside A Lock When Atomicity Needs It
+
+Question: `DB-02` says expensive I/O (KMS, upstream calls) happens before the
+lock is taken. When a second write must commit with the first and its input
+can only be prepared by I/O, which wins: atomicity, or a lock free of I/O?
+
+PR #3532 (RL-20261001-006, review comment 4156816360) merged with the address
+book names encrypted through KMS inside the Safe seat lock, so the Safes and
+their names commit or roll back together. The PR body lists this as a
+trade-off: the lock is per space, so only concurrent adds to the same
+workspace wait longer. The Safe rows themselves are still encrypted before the
+transaction opens.
+
+### Option A: Atomicity Wins, I/O Stays Minimal Inside
+
+Existing example:
+
+- `src/modules/spaces/routes/safes/space-safes.service.ts` (`create`:
+  `encryptRows` before the transaction, `upsertMany` encrypting names after
+  `lockSeats`)
+
+Choose this when:
+
+- A partial write (Safes without names) is worse than a longer lock.
+- The lock is narrow (one row or one tenant), so only that tenant waits.
+
+Trade-off: `DB-02` needs a carve-out, and a slow KMS call now holds a
+transaction and a pooled connection.
+
+### Option B: Prepare Everything Before The Lock
+
+Encrypt the names before the transaction as the Safe rows already are, and
+pass ciphertext into the repository write:
+
+```ts
+const rows = await this.spaceSafesRepository.encryptRows(spaceId, payload);
+const names = await this.addressBookItemsRepository.encryptItems(spaceId, items);
+
+await this.postgresDatabaseService.transaction(async (entityManager) => {
+  await this.spaceSafesRepository.lockSeats(spaceId, entityManager);
+  // checks, insertRows, upsertEncrypted(names) — no KMS inside
+});
+```
+
+Choose this when:
+
+- The second write's preparation does not depend on state read under the lock.
+
+Trade-off: the address-book repository needs an encrypt-then-write split, a
+second API beside `upsertMany`.
+
+Open until the team decides whether `DB-02`'s "I/O before the lock" is a hard
+rule or yields to atomicity; whichever wins should be stated in `DB-02`.
+
+## OQ-STYLE-01 Where A Single-File Constant Lives
+
+Question: does a constant used by one file move to its module's
+`*.constants.ts` when one exists, or stay beside its only consumer?
+
+In PR #3536 (review comment 4165424732, author reply 5952062301, point 6)
+review suggested moving `LONGEST_MONTH_MS` next to `DAY_IN_MS` in
+`entitlements.constants.ts`, citing remark R-013 in `docs/agents/remarks.md`.
+The author kept it in `entitlements.rules.ts` because nothing else uses it, and
+the PR merged that way. `REUSE-01`'s check asks about "constants homes", and
+R-013 is written about service files, while `entitlements.rules.ts` is a module
+of pure functions.
+
+### Option A: Constants File When The Module Has One
+
+Existing example:
+
+- `src/modules/entitlements/domain/entitlements.constants.ts` (`DAY_IN_MS`)
+
+```ts
+// entitlements.constants.ts
+export const DAY_IN_MS = 24 * 60 * 60 * 1_000;
+export const LONGEST_MONTH_MS = 31 * DAY_IN_MS;
+```
+
+Choose this when:
+
+- Related units already live there, so a reader looks there first.
+- A second consumer is likely and should import rather than copy.
+
+### Option B: Beside The Only Consumer
+
+Existing example:
+
+- `src/modules/entitlements/domain/entitlements.rules.ts` (`LONGEST_MONTH_MS`)
+
+Choose this when:
+
+- The constant is private to one pure-function module and exporting it would
+  widen the module's surface for no consumer.
+
+Trade-off: a second consumer has to move it first.
+
+Open until the team states whether R-013 covers non-service files; whichever
+wins should be stated in `STYLE-01` or `REUSE-01`.
+
+## OQ-TEST-02 Boundary Tests For Guards Outside The Expected Input Domain
+
+Question: must a guard that no current input reaches (a clamp against clock
+skew, a threshold between real cycle lengths) be pinned by a boundary test, or
+is it enough that the real input set is covered?
+
+In PR #3536 review asked three times for tests that a mutation would otherwise
+survive: `now = start - 1ms` for a `Math.max` clamp (review comment
+4165424718), the exact Feb 28 / Mar 1 rollover for a plan starting on the 31st
+(4165424724), and a 32-day cycle around `LONGEST_MONTH_MS` (4165424730). The
+author declined all three (issue comment 5952062301): upstream only sends
+monthly, annual, 30-day and 60-day cycles. Review approved "as by discussion".
+`TEST-09` says edges need tests "when they are part of the behavior", which
+does not settle whether a defensive guard is.
+
+### Option A: Every Guard Gets A Boundary Row
+
+```ts
+it.each([
+  { now: new Date(start.getTime() - 1), expected: start },
+  { now: start, expected: start },
+])('clamps a now before the cycle start to month 0', ({ now, expected }) => {
+  expect(quotaWindow({ cycleStart: start, cycleEnd, now }).start).toStrictEqual(expected);
+});
+```
+
+Choose this when:
+
+- Removing the guard should fail a test, so the next refactor cannot drop it
+  silently.
+- The guard protects money or quota (a refill, a 12x grant).
+
+### Option B: Cover The Real Input Set Only
+
+Choose this when:
+
+- The inputs come from a closed upstream set, and tests for impossible inputs
+  would pin behavior nobody specified.
+
+Trade-off: a guard that no test fails without reads as dead code to the next
+editor.
+
+Open until the team decides; whichever wins should be stated in `TEST-09`.
+
+## OQ-CACHE-01 Event-Driven Invalidation Or Eager Clearing After Writes
+
+Question: after CGW forwards a write upstream (propose, confirm, delete), does
+it clear the affected caches itself, or rely on the upstream's AMQP event to do
+it?
+
+In PR #3491 (review comment 4104155915, author replies 4104770204 and
+4104868699) an eager queue-cache clear after propose was dropped as redundant,
+since the event handler clears both cache layers. The author noted the repo
+does both today and asked to settle it one way: if events are reliable the
+eager clears are dead weight, and if not, propose has the same gap that
+delete covers. It is also unconfirmed whether the queue service publishes
+those events to the exchange.
+
+### Option A: Events Only
+
+Existing example:
+
+- `src/modules/safe/domain/safe.repository.ts` (propose via the queue service:
+  no explicit clear)
+
+Choose this when:
+
+- Every upstream that accepts writes publishes the matching event, verified
+  per upstream (tx-service and queue service).
+
+Trade-off: delete and confirm's eager clears are removed, and a lost event
+leaves the cache stale for its TTL (60 s default).
+
+### Option B: Eager Clear On Every Write, Events As Backup
+
+Existing example:
+
+- `src/modules/safe/domain/safe.repository.ts` (`deleteTransaction`: "Ensure
+  transaction is removed from cache in case event is not received")
+
+Choose this when:
+
+- An upstream does not publish events, or its delivery is not guaranteed.
+
+Trade-off: every write path carries a clear, and propose needs one added.
+
+Open until someone confirms which upstreams publish write events; whichever
+wins should be stated in `CACHE-01`.
