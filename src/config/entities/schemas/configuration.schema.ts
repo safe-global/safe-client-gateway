@@ -155,12 +155,16 @@ export const RootConfigurationSchema = z
     SAFENET_POLL_INTERVAL_MS: z.coerce.number().int().min(1).optional(),
     SAFENET_POLL_TIMEOUT_MS: z.coerce.number().int().min(1).optional(),
     SAFENET_PAYER_KMS_KEY_ID: z.string().optional(),
-    SAFENET_KMS_CONNECTION_TIMEOUT_MS: z.coerce
+    SAFENET_PAYER_KMS_CONNECTION_TIMEOUT_MS: z.coerce
       .number()
       .int()
       .min(1)
       .optional(),
-    SAFENET_KMS_REQUEST_TIMEOUT_MS: z.coerce.number().int().min(1).optional(),
+    SAFENET_PAYER_KMS_REQUEST_TIMEOUT_MS: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .optional(),
     SAFENET_CHECKS_QUEUE_ATTEMPTS: z.coerce
       .number()
       .int()

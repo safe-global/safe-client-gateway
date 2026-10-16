@@ -13,8 +13,11 @@ export const RELAY_STATUS_INCLUDED = 200;
 export const RELAY_STATUS_REJECTED = 400;
 export const RELAY_STATUS_REVERTED = 500;
 
-// Zero gas fields: a failed inner call reverts execTransaction and consumes no nonce.
-export const NO_GAS = [
+/** Empty `extraData` for `proposeTransaction`: the oracle needs none. */
+export const NO_EXTRA_DATA = '0x';
+
+/** `execTransaction` arguments after `data`: CALL, no gas, no refund. */
+export const NO_REFUND_EXEC_ARGS = [
   Operation.CALL,
   0n,
   0n,
