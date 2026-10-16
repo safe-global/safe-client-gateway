@@ -1,10 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import {
-  MAX_CONTACTS_PER_TAG_UPDATE,
-  MAX_TAGS_PER_CONTACT,
-} from '#/modules/spaces/domain/address-books/entities/address-book-tag.entity';
+import { MAX_TAGS_PER_CONTACT } from '#/modules/spaces/domain/address-books/entities/address-book-tag.entity';
 import {
   RenameTagSchema,
   SetContactTagsSchema,
@@ -31,22 +28,6 @@ describe('SetContactTagsSchema', () => {
 
   it('should reject an empty items array', () => {
     expect(SetContactTagsSchema.safeParse({ items: [] }).success).toBe(false);
-  });
-
-  it('should reject more than the maximum number of items', () => {
-    const items = Array.from({ length: MAX_CONTACTS_PER_TAG_UPDATE + 1 }, () =>
-      item(),
-    );
-
-    expect(SetContactTagsSchema.safeParse({ items }).success).toBe(false);
-  });
-
-  it('should accept exactly the maximum number of items', () => {
-    const items = Array.from({ length: MAX_CONTACTS_PER_TAG_UPDATE }, () =>
-      item(),
-    );
-
-    expect(SetContactTagsSchema.safeParse({ items }).success).toBe(true);
   });
 
   it('should reject the same address twice, case-insensitively', () => {

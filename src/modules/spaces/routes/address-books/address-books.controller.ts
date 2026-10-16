@@ -161,7 +161,8 @@ export class AddressBooksController {
     type: SpaceAddressBookDto,
   })
   @ApiBadRequestResponse({
-    description: 'Invalid space identifier, or the space tag limit is reached',
+    description:
+      'Invalid space identifier, the space tag limit is reached, or more entries than the address book can hold',
   })
   @ApiUnauthorizedResponse({
     description: 'Authentication required - valid JWT token must be provided',
@@ -175,7 +176,7 @@ export class AddressBooksController {
   })
   @ApiUnprocessableEntityResponse({
     description:
-      'Invalid body - no entries or too many, an address listed twice, an invalid address or tag name, or more tags on an entry than allowed',
+      'Invalid body - no entries, an address listed twice, an invalid address or tag name, or more tags on an entry than allowed',
   })
   @ApiTooManyRequestsResponse({ description: 'Rate limit exceeded' })
   @Put('/:spaceId/address-book/tags')

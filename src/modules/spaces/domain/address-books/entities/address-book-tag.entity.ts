@@ -20,12 +20,6 @@ export const TagColorSchema = z.enum(TAG_COLORS);
 export const MAX_TAGS_PER_CONTACT = 3;
 export const MAX_TAGS_PER_WORKSPACE = TAG_COLORS.length;
 export const TAG_NAME_MAX_LENGTH = 32;
-/**
- * Most contacts one PUT .../address-book/tags request may change. A product
- * constant: it equals the default `spaces.addressBooks.maxItems` but does not
- * follow that (env-overridable) setting.
- */
-export const MAX_CONTACTS_PER_TAG_UPDATE = 500;
 
 export const WORKSPACE_TAG_LIMIT_MESSAGE = `Your workspace has ${MAX_TAGS_PER_WORKSPACE} tags. Rename or delete one to add another.`;
 

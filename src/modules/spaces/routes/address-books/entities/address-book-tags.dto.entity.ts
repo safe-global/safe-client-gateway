@@ -7,7 +7,6 @@ import type {
   TagColor,
 } from '#/modules/spaces/domain/address-books/entities/address-book-tag.entity';
 import {
-  MAX_CONTACTS_PER_TAG_UPDATE,
   MAX_TAGS_PER_CONTACT,
   TAG_COLORS,
   TAG_NAME_MAX_LENGTH,
@@ -21,11 +20,13 @@ const SetContactTagsItemSchema = z.object({
   tags: TagNamesSchema,
 });
 
+// The batch size is capped by `spaces.addressBooks.maxItems` in the route
+// service: every entry must be a distinct contact of the address book, so a
+// valid batch can never be larger than the book itself.
 export const SetContactTagsSchema = z.object({
   items: z
     .array(SetContactTagsItemSchema)
     .min(1)
-    .max(MAX_CONTACTS_PER_TAG_UPDATE)
     .refine(
       (items) =>
         new Set(items.map((item) => item.address.toLowerCase())).size ===
@@ -55,7 +56,8 @@ export class SetContactTagsDto implements z.infer<typeof SetContactTagsSchema> {
     items: { $ref: getSchemaPath(SetContactTagsItem) },
     type: 'array',
     minItems: 1,
-    maxItems: MAX_CONTACTS_PER_TAG_UPDATE,
+    description:
+      'At most as many entries as the address book can hold, each address at most once',
   })
   public readonly items!: Array<SetContactTagsItem>;
 }

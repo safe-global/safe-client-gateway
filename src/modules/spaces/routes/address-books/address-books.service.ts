@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { IConfigurationService } from '#/config/configuration.service.interface';
 import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
 import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
@@ -25,8 +25,6 @@ import { UserIdentityResolverService } from '#/modules/users/domain/user-identit
 
 @Injectable()
 export class AddressBooksService {
-  // TODO: Investigate and implement usage of this
-  // biome-ignore lint/correctness/noUnusedPrivateClassMembers: <>
   private readonly maxItems: number;
 
   constructor(
@@ -130,6 +128,13 @@ export class AddressBooksService {
     spaceId: Space['id'],
     dto: SetContactTagsDto,
   ): Promise<SpaceAddressBookDto> {
+    // Each entry is a distinct contact of the book, so a valid batch is never
+    // larger than the book's own limit.
+    if (dto.items.length > this.maxItems) {
+      throw new BadRequestException(
+        `A tag update can change at most ${this.maxItems} contacts.`,
+      );
+    }
     const userId = getAuthenticatedUserIdOrFail(authPayload);
     await assertMember(this.membersRepository, spaceId, userId);
 

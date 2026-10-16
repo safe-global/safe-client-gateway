@@ -1,9 +1,13 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
-import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import type { EntityManager } from 'typeorm';
-import { getAddress } from 'viem';
+import { type Address, getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
 import type { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
@@ -35,8 +39,11 @@ const repositoryMock = {
   deleteByAddress: vi.fn(),
 } as MockedObject<IAddressBookItemsRepository>;
 
+// Every config read in the service is `spaces.addressBooks.maxItems`.
+const MAX_ADDRESS_BOOK_ITEMS = 20;
+
 const configurationServiceMock = {
-  getOrThrow: vi.fn().mockReturnValue(20),
+  getOrThrow: vi.fn().mockReturnValue(MAX_ADDRESS_BOOK_ITEMS),
 } as MockedObject<IConfigurationService>;
 
 const usersRepositoryMock = {
@@ -74,7 +81,7 @@ describe('AddressBooksService', () => {
 
   beforeEach(() => {
     vi.resetAllMocks();
-    configurationServiceMock.getOrThrow.mockReturnValue(20);
+    configurationServiceMock.getOrThrow.mockReturnValue(MAX_ADDRESS_BOOK_ITEMS);
     usersRepositoryMock.find.mockResolvedValue([]);
     walletsRepositoryMock.find.mockResolvedValue([]);
     spacesRepositoryMock.findUuidById.mockResolvedValue(fakeUuid());
@@ -579,6 +586,51 @@ describe('AddressBooksService', () => {
         new ForbiddenException('User is not a member of this workspace'),
       );
       expect(tagsRepositoryMock.setTagsForItems).not.toHaveBeenCalled();
+    });
+
+    it('should reject a batch larger than the address book limit before any lookup', async () => {
+      const spaceId = faker.number.int();
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const items = faker.helpers.multiple(
+        (): { address: Address; tags: Array<string> } => ({
+          address: getAddress(faker.finance.ethereumAddress()),
+          tags: [faker.word.noun()],
+        }),
+        { count: MAX_ADDRESS_BOOK_ITEMS + 1 },
+      );
+
+      await expect(
+        service.setContactTags(authPayload, spaceId, { items }),
+      ).rejects.toThrow(
+        new BadRequestException(
+          `A tag update can change at most ${MAX_ADDRESS_BOOK_ITEMS} contacts.`,
+        ),
+      );
+      expect(membersRepositoryMock.findOne).not.toHaveBeenCalled();
+      expect(tagsRepositoryMock.setTagsForItems).not.toHaveBeenCalled();
+    });
+
+    it('should accept a batch of exactly the address book limit', async () => {
+      const spaceId = faker.number.int();
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const items = faker.helpers.multiple(
+        (): { address: Address; tags: Array<string> } => ({
+          address: getAddress(faker.finance.ethereumAddress()),
+          tags: [faker.word.noun()],
+        }),
+        { count: MAX_ADDRESS_BOOK_ITEMS },
+      );
+      repositoryMock.findAllBySpaceId.mockResolvedValue([]);
+
+      await service.setContactTags(authPayload, spaceId, { items });
+
+      expect(
+        tagsRepositoryMock.setTagsForItems,
+      ).toHaveBeenCalledExactlyOnceWith({
+        userId: Number(authPayload.sub),
+        spaceId,
+        items,
+      });
     });
 
     it('should throw UnauthorizedException for unauthenticated user', async () => {
