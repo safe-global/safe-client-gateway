@@ -1,45 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Global, Module } from '@nestjs/common';
-import winston from 'winston';
-import type Transport from 'winston-transport';
 import { IConfigurationService } from '#/config/configuration.service.interface';
 import { LoggingService } from '#/logging/logging.interface';
 import { RequestScopedLoggingService } from '#/logging/logging.service';
-
-/**
- * Provides a new instance of a Winston logger using the provided {@link transports}
- *
- * @param transports - the logger transports to be used in the winston instance
- * @param configurationService - the configuration service to retrieve service-level settings
- */
-export function winstonFactory(
-  transports: Array<Transport> | Transport,
-  configurationService: IConfigurationService,
-): winston.Logger {
-  return winston.createLogger({
-    transports: transports,
-    silent: configurationService.getOrThrow<boolean>('log.silent'),
-  });
-}
-
-const LoggerTransports = Symbol('LoggerTransports');
-
-/**
- * Factory which provides a collection of transports to be used by the
- * logger instance
- */
-export function winstonTransportsFactory(
-  configurationService: IConfigurationService,
-): Array<Transport> | Transport {
-  const prettyColorize =
-    configurationService.getOrThrow<boolean>('log.prettyColorize');
-  return new winston.transports.Console({
-    level: configurationService.getOrThrow<string>('log.level'),
-    format: prettyColorize
-      ? winston.format.prettyPrint({ colorize: true })
-      : winston.format.combine(winston.format.errors(), winston.format.json()),
-  });
-}
+import { PinoLogger, pinoLoggerFactory } from '#/logging/pino-logger.factory';
 
 /**
  * Module for logging messages throughout the application.
@@ -51,14 +15,9 @@ export function winstonTransportsFactory(
   providers: [
     { provide: LoggingService, useClass: RequestScopedLoggingService },
     {
-      provide: LoggerTransports,
-      useFactory: winstonTransportsFactory,
+      provide: PinoLogger,
+      useFactory: pinoLoggerFactory,
       inject: [IConfigurationService],
-    },
-    {
-      provide: 'Logger',
-      useFactory: winstonFactory,
-      inject: [LoggerTransports, IConfigurationService],
     },
   ],
   exports: [LoggingService],
