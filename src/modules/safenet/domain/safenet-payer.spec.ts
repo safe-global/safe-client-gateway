@@ -79,8 +79,11 @@ class Harness {
     status: 'success',
     logs: this.logs,
   } as TransactionReceipt;
+  readonly signerAddress = randomAddress();
+  owner: Address = this.signerAddress;
+  threshold = 1n;
   readonly signer = {
-    address: randomAddress(),
+    getAddress: vi.fn().mockResolvedValue(this.signerAddress),
     signHash: vi.fn((hash: Hex) => {
       const { topics } = this.executedLog;
       if (topics.length < 2) {
@@ -90,7 +93,24 @@ class Harness {
     }),
   };
   readonly client = {
-    readContract: vi.fn().mockResolvedValue(2n),
+    readContract: vi
+      .fn()
+      .mockImplementation(
+        ({
+          functionName,
+          args,
+        }: {
+          functionName: string;
+          args?: Array<unknown>;
+        }) => {
+          const results: Record<string, unknown> = {
+            isOwner: args?.[0] === this.owner,
+            getThreshold: this.threshold,
+            nonce: 2n,
+          };
+          return Promise.resolve(results[functionName]);
+        },
+      ),
     call: vi.fn().mockResolvedValue({ data: this.userSafeTxHash }),
     getTransactionReceipt: vi.fn().mockResolvedValue(this.receipt),
   } as MockedObject<PublicClient>;
@@ -320,6 +340,43 @@ describe('SafenetPayer', () => {
       chainId: '100',
       transactionHash: h.transactionHash,
       error: 'Error',
+    });
+  });
+
+  it('rejects a signer that does not own the payer Safe before the relay', async () => {
+    const h = new Harness();
+    h.owner = randomAddress();
+
+    await expectPayerError(
+      h.propose(),
+      `Signer ${h.signerAddress} is not a payer Safe owner`,
+    );
+    expect(h.client.call).not.toHaveBeenCalled();
+    expect(h.relay.relayWithoutLimits).not.toHaveBeenCalled();
+  });
+
+  it('rejects a payer Safe with a threshold other than 1 before the relay', async () => {
+    const h = new Harness();
+    h.threshold = 2n;
+
+    await expectPayerError(
+      h.propose(),
+      'Payer Safe threshold is 2, expected 1',
+    );
+    expect(h.client.call).not.toHaveBeenCalled();
+    expect(h.relay.relayWithoutLimits).not.toHaveBeenCalled();
+  });
+
+  it('checks ownership until it passes once, then not again', async () => {
+    const h = new Harness();
+    h.owner = randomAddress();
+    await expect(h.propose()).rejects.toBeInstanceOf(SafenetPayerError);
+    h.owner = h.signerAddress;
+    await h.propose();
+    h.owner = randomAddress();
+
+    await expect(h.propose()).resolves.toMatchObject({
+      transactionHash: h.transactionHash,
     });
   });
 

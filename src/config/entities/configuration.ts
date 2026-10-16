@@ -850,6 +850,19 @@ export default () => ({
     oracleAddress: process.env.SAFENET_ORACLE_ADDRESS,
     payer: {
       safeAddress: process.env.SAFENET_PAYER_SAFE_ADDRESS,
+      kms: {
+        keyId: process.env.SAFENET_PAYER_KMS_KEY_ID,
+        webIdentityTokenFile: process.env.AWS_WEB_IDENTITY_TOKEN_FILE,
+        // A hung KMS call would hold the only safenet-checks queue slot, so every call is bounded.
+        connectionTimeoutMs: Number.parseInt(
+          process.env.SAFENET_PAYER_KMS_CONNECTION_TIMEOUT_MS ?? `${5_000}`,
+          10,
+        ),
+        requestTimeoutMs: Number.parseInt(
+          process.env.SAFENET_PAYER_KMS_REQUEST_TIMEOUT_MS ?? `${10_000}`,
+          10,
+        ),
+      },
     },
     pollIntervalMs: Number.parseInt(
       process.env.SAFENET_POLL_INTERVAL_MS ?? `${1_000}`,
