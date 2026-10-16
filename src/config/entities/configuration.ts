@@ -1136,7 +1136,7 @@ const DEFAULT_GRACE_PERIOD_CLAIM_ENDS_AT = '2026-12-05T12:30:00Z';
 
 // Unset or invalid falls back to the default: an Invalid Date would close the window.
 const parseGracePeriodClaimEndsAt = (envValue: string | undefined): Date => {
-  const endsAt = new Date(envValue || DEFAULT_GRACE_PERIOD_CLAIM_ENDS_AT);
+  const endsAt = new Date(envValue ?? DEFAULT_GRACE_PERIOD_CLAIM_ENDS_AT);
   if (Number.isNaN(endsAt.getTime())) {
     return new Date(DEFAULT_GRACE_PERIOD_CLAIM_ENDS_AT);
   }
