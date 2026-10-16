@@ -1533,15 +1533,18 @@
     "title": "Config-derived Zod schema rebuilt on every login request",
     "sourceWindowId": "CLOSED-20260616-20260623",
     "prNumbers": [
-      3173
+      3173,
+      3454
     ],
     "prState": "merged",
     "reviewCommentIds": [
       3442261345
     ],
     "reviewIds": [],
-    "issueCommentIds": [],
-    "learning": "`buildSiweMessageSchema(this.clockSkewSeconds)` ran inside the verify method on every login although the config value never changes per instance; review moved the schema construction to the constructor. Objects derived only from constructor-time config (Zod schemas, clients, compiled regexes) are built once in the constructor, not per request.",
+    "issueCommentIds": [
+      5732524717
+    ],
+    "learning": "`buildSiweMessageSchema(this.clockSkewSeconds)` ran inside the verify method on every login although the config value never changes per instance; review moved the schema construction to the constructor. Objects derived only from constructor-time config (Zod schemas, clients, compiled regexes) are built once in the constructor, not per request. Recurred in #3454: a gating guard read `features.copilotCoreDisabled` from `IConfigurationService` on every `canActivate`; the follow-up commit resolved it once in the constructor, matching how sibling services cache config values.",
     "ruleIds": [
       "PERF-01"
     ]
@@ -2285,7 +2288,8 @@
     "sourceWindowId": "CLOSED-20260711-20260714",
     "prNumbers": [
       3078,
-      3284
+      3284,
+      3454
     ],
     "prState": "closed",
     "reviewCommentIds": [
@@ -2301,8 +2305,11 @@
       3654913703
     ],
     "reviewIds": [],
-    "issueCommentIds": [],
-    "learning": "A passkeys module declared its error class, error-id union, input/output interfaces, and parsing helpers inside the service files; review asked for one exported object per file — errors under `domain/errors/`, types under `domain/entities/`, helpers in a dedicated helpers file — and for standalone functions used by a single class to become private methods of that class. The author applied all of it. Keep one exported class/type per file and fold single-consumer functions into the class. Recurred in #3284, where an `Authenticator` type declared inline in the OIDC service file drew \"it's getting crowded, we can extract it to a types file\"; the author moved it.",
+    "issueCommentIds": [
+      5771773279,
+      5773979339
+    ],
+    "learning": "A passkeys module declared its error class, error-id union, input/output interfaces, and parsing helpers inside the service files; review asked for one exported object per file — errors under `domain/errors/`, types under `domain/entities/`, helpers in a dedicated helpers file — and for standalone functions used by a single class to become private methods of that class. The author applied all of it. Keep one exported class/type per file and fold single-consumer functions into the class. Recurred in #3284, where an `Authenticator` type declared inline in the OIDC service file drew \"it's getting crowded, we can extract it to a types file\"; the author moved it. Recurred in #3454 as a folder-placement variant: a new guard sat in a module-root `guards/` and a new error in a module-root `errors/`, while the same PR filed the equivalent entitlements error under `domain/errors/` and its filter under `domain/exception-filters/`. The author moved the guard to `routes/guards/` and the error/filter under `domain/`, matching the sibling module.",
     "ruleIds": [
       "STYLE-01"
     ]
@@ -2586,7 +2593,9 @@
       3250,
       3420,
       3397,
-      3437
+      3437,
+      3445,
+      3454
     ],
     "prState": "merged",
     "reviewCommentIds": [
@@ -2602,15 +2611,21 @@
       4013229994,
       4014723657,
       4035345441,
-      4036363451
+      4036363451,
+      4060989161,
+      4061449713,
+      4060997693,
+      4061464273
     ],
     "reviewIds": [
       4762810977
     ],
     "issueCommentIds": [
-      4971530091
+      4971530091,
+      5771722470,
+      5773927082
     ],
-    "learning": "Two separate PRs drew the same objection: in #2831 `// Use custom signal if present, otherwise use default timeout` restated the line directly beneath it, and in #2824 a reduce with conditional key names was called hard to follow — the author offered \"i will add a comment that explains it step by step\" and review answered with a concrete refactor (`reduce<ThreatIssues>`, `groups[severity] ??= []`) that removed the need for the comment. A comment that narrates the next line is deleted, and a comment proposed to explain confusing code is a signal to restructure the code instead. Recurred in #3290: a TypeORM upgrade replaced `.where('1=1')` truncates and explained the removal in a three-line comment repeated at each call site; the reviewer called it redundant three times over. The settled shape is one full rationale at a single site plus a one-line pointer at the others — repeating the explanation is as much a smell as narrating the line. Also in #3250, where a comment restated the obvious \"reject if any deployed\" half and buried the non-obvious fail-open rationale; the merged comment keeps only the why. A quieter form in #3420: a doc comment on exactly one field of a schema, twice, drew \"having only 1 prop with comments is strange unless super useful\" and both were removed. A note on one field among many reads as leftover unless it carries something the field name cannot. Two more: \"should have proper TsDoc comments or no comments\" on a bare `//` note in a datasource, and a comment on an elevation-test entry that a reviewer simply could not follow — the author agreed it \"was not saying much\" and removed it. A comment that needs its own explanation is not carrying its weight.",
+    "learning": "Two separate PRs drew the same objection: in #2831 `// Use custom signal if present, otherwise use default timeout` restated the line directly beneath it, and in #2824 a reduce with conditional key names was called hard to follow — the author offered \"i will add a comment that explains it step by step\" and review answered with a concrete refactor (`reduce<ThreatIssues>`, `groups[severity] ??= []`) that removed the need for the comment. A comment that narrates the next line is deleted, and a comment proposed to explain confusing code is a signal to restructure the code instead. Recurred in #3290: a TypeORM upgrade replaced `.where('1=1')` truncates and explained the removal in a three-line comment repeated at each call site; the reviewer called it redundant three times over. The settled shape is one full rationale at a single site plus a one-line pointer at the others — repeating the explanation is as much a smell as narrating the line. Also in #3250, where a comment restated the obvious \"reject if any deployed\" half and buried the non-obvious fail-open rationale; the merged comment keeps only the why. A quieter form in #3420: a doc comment on exactly one field of a schema, twice, drew \"having only 1 prop with comments is strange unless super useful\" and both were removed. A note on one field among many reads as leftover unless it carries something the field name cannot. Two more: \"should have proper TsDoc comments or no comments\" on a bare `//` note in a datasource, and a comment on an elevation-test entry that a reviewer simply could not follow — the author agreed it \"was not saying much\" and removed it. A comment that needs its own explanation is not carrying its weight. Recurred in #3445: a bare `/** Admin-only. */` on a service method was removed as noise, and a docstring tying the method to \"a fresh second factor\" and \"the gated table of `elevation.integration.spec.ts`\" drew \"I did not understand the part about second factor and an int test\"; the author rewrote it to name the guard. In #3454 a new JSDoc claimed its class \"lives in `routes/`\" when the file did not; the location claim was dropped. A comment that points at a test file or asserts a location is one more thing that goes false.",
     "ruleIds": [
       "STYLE-01"
     ],
@@ -2961,7 +2976,8 @@
       3368,
       3369,
       3374,
-      3371
+      3371,
+      3454
     ],
     "prState": "merged",
     "reviewCommentIds": [],
@@ -2975,9 +2991,11 @@
       5408604495,
       5410822900,
       5367597989,
-      5368084173
+      5368084173,
+      5771773279,
+      5773979339
     ],
-    "learning": "A PR title carried `(WA-2921)`; because the repo squash-merges, that becomes a permanent commit subject, and none of the last 400 subjects on `main` carry an issue reference. The author moved it. Issue references belong in the body — check the convention against the log rather than assuming, since the subject line is the part that outlives the PR. The same review pass surfaces the rest of the subject/body contract: a behaviour correction typed `chore` where the table reserves `chore` as a last resort and calls for `fix`; commit subjects over the 72-character budget; and a body that links no issue although the branch names one. Subject line, type, and body linking are all checked against the log, not assumed. Also: `fix: Session duration step up` was retitled for being a capitalised noun phrase rather than an imperative description. And the template sections are deliberately closed — a proposal to let authors add their own was rejected because unbounded sections turn a description into a book nobody reads and lose the consistency the fixed shape buys.",
+    "learning": "A PR title carried `(WA-2921)`; because the repo squash-merges, that becomes a permanent commit subject, and none of the last 400 subjects on `main` carry an issue reference. The author moved it. Issue references belong in the body — check the convention against the log rather than assuming, since the subject line is the part that outlives the PR. The same review pass surfaces the rest of the subject/body contract: a behaviour correction typed `chore` where the table reserves `chore` as a last resort and calls for `fix`; commit subjects over the 72-character budget; and a body that links no issue although the branch names one. Subject line, type, and body linking are all checked against the log, not assumed. Also: `fix: Session duration step up` was retitled for being a capitalised noun phrase rather than an imperative description. And the template sections are deliberately closed — a proposal to let authors add their own was rejected because unbounded sections turn a description into a book nobody reads and lose the consistency the fixed shape buys. Recurred in #3454: the PR shipped under GitHub's branch-derived default title (no type, capitalised), the body opened with bare prose instead of the template's `## Summary`, and two `## Changes` bullets described a guard a later commit had dropped. All three were fixed — the title retitled to a typed subject, the Summary heading added, and the stale bullets rewritten to the final diff.",
     "ruleIds": [
       "CHANGE-02"
     ],
@@ -2987,16 +3005,19 @@
     "id": "RL-20260807-002",
     "title": "Guide rule inverted against the code after a merge from main",
     "prNumbers": [
-      3328
+      3328,
+      3446
     ],
     "prState": "merged",
     "reviewCommentIds": [],
     "reviewIds": [],
     "issueCommentIds": [
       5217063856,
-      5217161301
+      5217161301,
+      5728882578,
+      5728917270
     ],
-    "learning": "A merge from main pulled in the field-encryption refactor, which deleted the per-field `EmailEncryptionService` and centralised the mechanics into a shared `KmsEncryptionService` with thin per-module wrappers. The security guide still cited the deleted files as canonical, still said the pattern was 'implemented once today', and still told authors to write a new per-field service 'rather than extending or parameterizing this one' — the exact shape the merged code had adopted. A stale doc path is a broken link; a stale doc rule actively pushes the next author the wrong way. A merge that changes a pattern the guides document updates those guides in the same PR, and the check is whether the rule still describes the code, not whether the paths resolve.",
+    "learning": "A merge from main pulled in the field-encryption refactor, which deleted the per-field `EmailEncryptionService` and centralised the mechanics into a shared `KmsEncryptionService` with thin per-module wrappers. The security guide still cited the deleted files as canonical, still said the pattern was 'implemented once today', and still told authors to write a new per-field service 'rather than extending or parameterizing this one' — the exact shape the merged code had adopted. A stale doc path is a broken link; a stale doc rule actively pushes the next author the wrong way. A merge that changes a pattern the guides document updates those guides in the same PR, and the check is whether the rule still describes the code, not whether the paths resolve. Recurred in #3446: the diff deleted two guards while `nestjs-patterns.md` still stated the old guard tally and claimed all of them sat under `routes/guards/`; the author corrected it in the same PR.",
     "ruleIds": [
       "PR-02"
     ],
@@ -3377,5 +3398,252 @@
       "TEST-09"
     ],
     "sourceWindowId": "CLOSED-20260911-20260918"
+  },
+  {
+    "id": "RL-20260921-001",
+    "title": "Narrowed one subscription route to admins but left its sibling session URL open to members",
+    "prNumbers": [
+      3445
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [
+      5264724944
+    ],
+    "issueCommentIds": [
+      5757979717
+    ],
+    "learning": "A PR narrowed checkout and subscription changes from any member to workspace admins; review pointed out the sibling route that mints a URL to manage the same subscription was still member-accessible (\"a member shouldn't be able to use it\"), and the follow-up narrowed it and the preview route too. Routes that act on one resource share one authorization level: when one is narrowed, every sibling that can start, change, or hand out a way to manage that resource is narrowed with it.",
+    "ruleIds": [
+      "AUTH-05"
+    ],
+    "sourceWindowId": "CLOSED-20260918-20260925"
+  },
+  {
+    "id": "RL-20260921-002",
+    "title": "Second hand-rolled reader of plan metadata drifted from the canonical key normalization",
+    "prNumbers": [
+      3445
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4060976657,
+      4061448803
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [
+      5732459447,
+      5732630558,
+      5757728753
+    ],
+    "learning": "`parseSafeSeatQuota` read only the uppercase `FEATURE_SAFE_SEATS` key while `mapFeaturePackage` normalized the suffix to lowercase, so valid metadata `{ FEATURE_safe_seats: '2' }` passed checkout as unbounded but materialized a two-seat quota; the fix unified the key parsing with a regression test. In the same PR a seat check parsed the quota once to test for `null`, discarded it, and had a helper parse it again; the accepted fix kept the value and dropped the helper. Two readers of the same external payload go through one parser, and a parsed value is kept rather than re-derived.",
+    "ruleIds": [
+      "TYPE-03"
+    ],
+    "sourceWindowId": "CLOSED-20260918-20260925"
+  },
+  {
+    "id": "RL-20260921-003",
+    "title": "Swagger error-response descriptions omitted a cause and ran four 409 causes into one sentence",
+    "prNumbers": [
+      3445
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [],
+    "issueCommentIds": [
+      5732459447
+    ],
+    "learning": "An `@ApiForbiddenResponse` description listed two of the three conditions the service maps to 403 (it missed a named `paymentLinkId` the workspace is not offered), and an `@ApiConflictResponse` folded four unrelated 409 causes into one prose sentence. The follow-up commit named the third 403 cause and listed the 409 causes one per line. A status's Swagger description is the client's only map of why it got that status: it names every condition the handler raises for it.",
+    "ruleIds": [
+      "PR-02"
+    ],
+    "sourceWindowId": "CLOSED-20260918-20260925"
+  },
+  {
+    "id": "RL-20260921-004",
+    "title": "Signatures admitted values the method mishandles: a wide feature-key union and a caller-derived seat key",
+    "prNumbers": [
+      3446,
+      3454
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4069179756,
+      4070985365
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [
+      5729177595,
+      5731554591
+    ],
+    "learning": "In #3454 `assertFeatureGranted` accepted any `FeatureKey` but only checked `grant.enabled`, so a future caller passing a metered feature (enabled, quota exhausted) would be admitted and bypass the allowance; the parameter was narrowed to `BinaryFeature` per method. In #3446 `countNewSeats` took caller-prepared `{ address, addressIndex }` rows, so a caller that skipped encryption would key dedup on plaintext and silently overcount; the fix made it take plaintext addresses and derive the seat key itself. Type a parameter to exactly what the method handles, and take the plain value rather than a caller-derived key, so a wrong call does not compile or cannot be expressed.",
+    "ruleIds": [
+      "TYPE-06",
+      "REUSE-01"
+    ],
+    "sourceWindowId": "CLOSED-20260918-20260925"
+  },
+  {
+    "id": "RL-20260922-001",
+    "title": "Space-scoped analysis routes placed in Spaces instead of the module that owns the capability",
+    "prNumbers": [
+      3454
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4069294881,
+      4070987423
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "A new `spaces/:spaceId/chains/:chainId/security/...` controller and service were added under the Spaces module. Review noted every other Space-scoped route (`space-relay`, `space-counterfactual-safes`, entitlements) is declared by the module that owns the capability, imports `SpacesModule`, and does its own membership assertion from outside Spaces — so needing a membership check is not a reason to live in Spaces. The author moved them into the Safe Shield module. A route belongs to the module that owns the capability it exposes; the `spaces/:spaceId` prefix scopes it, it does not relocate it.",
+    "ruleIds": [
+      "MOD-01"
+    ],
+    "sourceWindowId": "CLOSED-20260918-20260925"
+  },
+  {
+    "id": "RL-20260922-002",
+    "title": "chainId path params validated with the generic numeric-string schema instead of ChainIdSchema",
+    "prNumbers": [
+      3454
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4071248277,
+      4071257691,
+      4072481687
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "Two new routes validated `:chainId` with `new ValidationPipe(NumericStringSchema)`; review asked for `ChainIdSchema` from the chains domain, and the author switched both — noting that today `ChainIdSchema` is the same shape, so it still accepts `007` and `-1`. Use the domain-named schema for a domain param even when it is currently an alias: the name records intent, and tightening the domain schema later reaches every route that uses it.",
+    "ruleIds": [
+      "TYPE-01"
+    ],
+    "sourceWindowId": "CLOSED-20260918-20260925"
+  },
+  {
+    "id": "RL-20260922-003",
+    "title": "New flag and config named after the product (Copilot) while the module is Safe Shield",
+    "prNumbers": [
+      3454
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4072297412,
+      4072299589
+    ],
+    "reviewIds": [
+      5278892581
+    ],
+    "issueCommentIds": [],
+    "learning": "A PR added `FF_COPILOT_CORE_DISABLED` / `copilotCoreDisabled` and `Copilot*` guard and error names to the Safe Shield module; review asked to align on one name (\"I am concerned that we have 2 notions for safe shield\") and the author renamed the flag, config key, guard, and errors to Safe Shield. One concept keeps one name across code, config keys, flags, and errors; a product alias beside the module's name makes every reader and every grep ask whether they are two things.",
+    "ruleIds": [
+      "NAME-01"
+    ],
+    "sourceWindowId": "CLOSED-20260918-20260925"
+  },
+  {
+    "id": "RL-20260922-004",
+    "title": "New feature flag comment stated a removal condition but no owner",
+    "prNumbers": [
+      3454
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [],
+    "issueCommentIds": [
+      5771773279,
+      5773979339
+    ],
+    "learning": "A new kill-switch flag carried a comment describing when it could go but named no owning ticket; the accepted fix put the ticket (PLA-1964) in the comment and documented that its removal condition was not yet set. A flag outlives the PR that adds it, so its comment names the ticket that owns it and the condition for removing it — otherwise nobody can tell when it is safe to delete.",
+    "ruleIds": [
+      "CONFIG-01"
+    ],
+    "sourceWindowId": "CLOSED-20260918-20260925"
+  },
+  {
+    "id": "RL-20260922-005",
+    "title": "New gating guard covered only through controller and integration specs",
+    "prNumbers": [
+      3454
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [],
+    "issueCommentIds": [
+      5732524717
+    ],
+    "learning": "A new guard that throws a dedicated error when a flag is on was exercised only indirectly, through a controller-metadata test and two integration cases; review asked for a direct spec (flag on throws the specific error, flag off returns `true`) as sibling guards have, and the follow-up commit added it. A guard's branches are unit-provable without booting the app, so they are pinned in its own spec; integration then proves the wiring once.",
+    "ruleIds": [
+      "TEST-02"
+    ],
+    "sourceWindowId": "CLOSED-20260918-20260925"
+  },
+  {
+    "id": "RL-20260923-001",
+    "title": "E2E assertion echoed whatever boolean the builder randomized",
+    "prNumbers": [
+      3485
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [],
+    "issueCommentIds": [
+      5796706177,
+      5796901732
+    ],
+    "learning": "An e2e spec for a new `hasPaymentMethod` field asserted the response equaled the builder's random `faker.datatype.boolean()`, so the assertion passed for either value and said nothing about which case it covered. The author pinned the builder with `.with('hasPaymentMethod', true)` and asserted `true`. When an assertion is about a field, pin that field in the fixture; faker stays on the fields the test does not reason about.",
+    "ruleIds": [
+      "TEST-08"
+    ],
+    "sourceWindowId": "CLOSED-20260918-20260925"
+  },
+  {
+    "id": "RL-20260923-002",
+    "title": "Framework migration kept EXPRESS_* env names and then added a rename guard nobody asked for",
+    "prNumbers": [
+      3443
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4045829338,
+      4045838838,
+      4063611271,
+      4063677769,
+      4069927079,
+      4069930039,
+      4070742494,
+      4070742679,
+      4070742839
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "The Nest 12 / Fastify upgrade kept `EXPRESS_TRUST_PROXY`; review asked to rename it and to check the value deployed in Argo so it works with Fastify's `trustProxy`. The author renamed the vars to `HTTP_SERVER_*`, but also added a startup guard throwing on the old names, a test suite for it, and a rename of the default export. Review questioned each (\"i dont think we need this logic of renaming\", \"do we really need this test suite?\", \"why would you rename this one?\") and all three were removed. The rename shipped with no in-code fallback for the old names; the reviewer's ask was to check the deployed value instead. Env var names follow the runtime they configure, and a rename does not carry machinery or unrelated renames the review did not ask for.",
+    "ruleIds": [
+      "CONFIG-05",
+      "CHANGE-01"
+    ],
+    "sourceWindowId": "CLOSED-20260918-20260925"
+  },
+  {
+    "id": "RL-20260924-001",
+    "title": "Circuit recovery switched to the reduced half-open threshold, closing on far fewer successes",
+    "prNumbers": [
+      3484
+    ],
+    "prState": "closed",
+    "reviewCommentIds": [
+      4095487652,
+      4095749340
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "A PR made HALF_OPEN close after `effectiveThreshold` consecutive successes (the reduced reopen threshold) instead of `config.threshold`. Review: with threshold 20 and `halfOpenThresholdPercent` 50 the circuit would close after 10 requests, leaving the threshold meaningful only for the first trip. Rechecking devstaging, the author found the upstreams failing about 40% of requests — the open circuit was correct and the change would have closed it about three times as often — and closed the PR. Trip and recovery thresholds are asymmetric on purpose; before retuning either, check the failure rates the upstreams actually show.",
+    "ruleIds": [
+      "RESILIENCE-01"
+    ],
+    "sourceWindowId": "CLOSED-20260918-20260925"
   }
 ]

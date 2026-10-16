@@ -66,7 +66,7 @@
 <a id="change-01"></a>
 ### `CHANGE-01` Smallest correct change
 
-> **general** · scope · ↩ `RL-20260703-001` · `RL-20260714-002` · `RL-20260713-004` · `RL-20260810-001`
+> **general** · scope · ↩ `RL-20260703-001` · `RL-20260714-002` · `RL-20260713-004` · `RL-20260810-001` · `RL-20260923-002`
 
 **📜 Rule**\
 A PR should be the smallest correct change for the behavior; avoid surrounding cleanup, helpers, abstractions, or refactors that the change does not require. When retiring a deprecated surface, remove the entire family (all `/raw` endpoints) in one PR, not a single instance. Removing a provider sweeps every dependent surface (now-dead interface params, feature flags, `.env.sample.json`, devcontainer, launch.json, test overrides) and locks intentional behavior changes in with a test. Before refactoring a path, verify it is used — unused surfaces get removed, not improved.
@@ -285,7 +285,7 @@ catches the mistake and write that instead.
 <a id="pr-02"></a>
 ### `PR-02` Docs aligned with behavior
 
-> **general** · scope · ↩ `RL-20260128-002` · `RL-20260116-001` · `RL-20260108-002` · `RL-20260108-003` · `RL-20260623-001` · `RL-20251209-003` · `RL-20260723-006` · `RL-20260807-002` · `RL-20260820-001`
+> **general** · scope · ↩ `RL-20260128-002` · `RL-20260116-001` · `RL-20260108-002` · `RL-20260108-003` · `RL-20260623-001` · `RL-20251209-003` · `RL-20260723-006` · `RL-20260807-002` · `RL-20260820-001` · `RL-20260921-003`
 
 **📜 Rule**\
 Docs, samples, runbooks, and `.env.sample` must reflect the final behavior of the PR. Docs do not carry exact counts (test totals) that drift with every PR. Swagger descriptions do not restate enum members; let the schema or `enum` metadata carry the value list. Operator runbooks are part of the safety contract: a change that alters what is safe to do in which order rewrites them in the same PR, citing symbolic constants rather than repeating literals. A change that alters a pattern the guides document updates those guides in the same PR — including changes arriving via a merge — and the check is whether the rule still describes the code, not merely whether its paths resolve. A guide does not enumerate or restate what another guide owns — it points at the owner and declares open sets open.
@@ -300,10 +300,10 @@ Docs, samples, runbooks, and `.env.sample` must reflect the final behavior of th
 <a id="mod-01"></a>
 ### `MOD-01` Behavior in the right module
 
-> **general** · modules · ↩ `RL-20260128-002` · `RL-20260608-002` · `RL-20260608-003` · `RL-20260710-004` · `RL-20260707-003` · `RL-20260717-003`
+> **general** · modules · ↩ `RL-20260128-002` · `RL-20260608-002` · `RL-20260608-003` · `RL-20260710-004` · `RL-20260707-003` · `RL-20260717-003` · `RL-20260922-001`
 
 **📜 Rule**\
-New API/product behavior belongs in the matching module shape; do not bolt routes onto unrelated modules; do not bypass an existing feature flag by importing a gated module unconditionally. Default-off feature modules stay scoped: not `@Global()`, not registered in the shared test module — override only in the specs that exercise them. Domain services depend on a feature-scoped orchestration service, not on generic infrastructure services (email, queues) directly. One upstream service maps to one module, one config section (topic name, no `-service` suffix), and one namespace/cache prefix. Provider-specific calls live in that provider's API service — no parallel clients, and generic clients do not own business tunables. Never bypass `NetworkService` with a raw `fetch` — extend the shared client (e.g. plain-text response bodies) so logging and circuit breakers stay in the path.
+New API/product behavior belongs in the matching module shape; do not bolt routes onto unrelated modules; do not bypass an existing feature flag by importing a gated module unconditionally. Default-off feature modules stay scoped: not `@Global()`, not registered in the shared test module — override only in the specs that exercise them. Domain services depend on a feature-scoped orchestration service, not on generic infrastructure services (email, queues) directly. One upstream service maps to one module, one config section (topic name, no `-service` suffix), and one namespace/cache prefix. Provider-specific calls live in that provider's API service — no parallel clients, and generic clients do not own business tunables. Never bypass `NetworkService` with a raw `fetch` — extend the shared client (e.g. plain-text response bodies) so logging and circuit breakers stay in the path. A Space-scoped route (`spaces/:spaceId/...`) lives in the module that owns the capability and imports `SpacesModule` for the membership assertion; Spaces does not host other features' routes.
 
 **✅ Check**\
 > Does new API/product behavior live in the right module?
@@ -448,10 +448,10 @@ Avoid adding or expanding `forwardRef` cycles. Treat existing cycles as local de
 <a id="name-01"></a>
 ### `NAME-01` Names reveal behavior
 
-> **general** · naming · 1 example · ↩ `RL-20260506-001` · `RL-20260602-004`
+> **general** · naming · 1 example · ↩ `RL-20260506-001` · `RL-20260602-004` · `RL-20260922-003`
 
 **📜 Rule**\
-Names must describe behavior honestly: throwing helpers use `assert*`/`*OrFail`; predicates do not throw; algorithm-bound helpers (`hashSha1`) advertise the algorithm; type/aliased imports drop redundant `as` aliases; magic offsets become named constants. Find-or-create and similar helpers must not encode a status or postcondition the method does not guarantee on every path (`findOrCreateByEmail`, not `findOrCreatePendingByEmail` when existing ACTIVE users are returned as-is).
+Names must describe behavior honestly: throwing helpers use `assert*`/`*OrFail`; predicates do not throw; algorithm-bound helpers (`hashSha1`) advertise the algorithm; type/aliased imports drop redundant `as` aliases; magic offsets become named constants. Find-or-create and similar helpers must not encode a status or postcondition the method does not guarantee on every path (`findOrCreateByEmail`, not `findOrCreatePendingByEmail` when existing ACTIVE users are returned as-is). One concept keeps one name across code, config keys, flags, and errors — no product alias beside the module's name (`copilot*` next to `safeShield*`).
 
 **✅ Check**\
 > Do names describe behavior honestly and avoid redundant scope?
@@ -506,10 +506,10 @@ runs can stay fast and integration runs stay reproducible.
 <a id="reuse-01"></a>
 ### `REUSE-01` Reuse existing helpers
 
-> **general** · naming · 2 examples · ↩ `RL-20260506-003` · `RL-20251216-001` · `RL-20260615-004` · `RL-20251208-001`
+> **general** · naming · 2 examples · ↩ `RL-20260506-003` · `RL-20251216-001` · `RL-20260615-004` · `RL-20251208-001` · `RL-20260921-004`
 
 **📜 Rule**\
-Before adding a small util, search the repo and well-known libraries (`viem.isAddressEqual`, `@/logging/utils.asError`, shared schemas, `safe-deployments`); reuse `LoggingService`, `*Mapper` classes, and `HttpErrorFactory` instead of bare alternates. Cross a seam with the plain value (a timeout in ms), not a caller-constructed platform object (an `AbortSignal`), so the object is built in exactly one place.
+Before adding a small util, search the repo and well-known libraries (`viem.isAddressEqual`, `@/logging/utils.asError`, shared schemas, `safe-deployments`); reuse `LoggingService`, `*Mapper` classes, and `HttpErrorFactory` instead of bare alternates. Cross a seam with the plain value (a timeout in ms, a plaintext address), not a caller-constructed object or caller-derived key (an `AbortSignal`, a blind-index seat key), so it is built in exactly one place.
 
 **✅ Check**\
 > Did I reuse existing helpers, constants homes, and utilities?
@@ -630,7 +630,7 @@ someone remembered to add the string.
 > **general** · naming · 3 examples · ↩ `RL-20260506-005` · `RL-20260128-001` · `RL-20251222-001` · `RL-20260604-004` · `RL-20260609-001` · `RL-20260713-001` · `RL-20251208-002` · `RL-20251210-001` · `RL-20260821-002`
 
 **📜 Rule**\
-Public/non-trivial service and repository code is documented and free of dead branches, commented-out code, redundant comments, and `console.log`. Default flags safely (`isSafe = false` until proven), wrap event listeners with cleanup, and keep adapters' error contracts intact. Message/formatting logic beyond one branch gets a named helper in utils — no nested ternaries inside template literals. Destructuring return values is an accepted repo-wide pattern — do not demand named receivers; verify a claimed convention against the codebase before enforcing it. One exported class/type per file: errors under `domain/errors/`, entity types under `entities/`, helpers in a dedicated helpers file; a standalone function used by a single class becomes a private method. A comment that restates the line beneath it is deleted, and a comment offered to explain confusing code is a signal to restructure that code instead. When a key or signature drops a dimension, remove the now-unused parameter up the whole call chain. A function with no instance state does not stay a private method — that prices every test of it at the cost of testing its host.
+Public/non-trivial service and repository code is documented and free of dead branches, commented-out code, redundant comments, and `console.log`. Default flags safely (`isSafe = false` until proven), wrap event listeners with cleanup, and keep adapters' error contracts intact. Message/formatting logic beyond one branch gets a named helper in utils — no nested ternaries inside template literals. Destructuring return values is an accepted repo-wide pattern — do not demand named receivers; verify a claimed convention against the codebase before enforcing it. One exported class/type per file: errors under `domain/errors/` with their filters under `domain/exception-filters/`, guards under `routes/guards/` (never module-root `errors/` or `guards/`), entity types under `entities/`, helpers in a dedicated helpers file; a standalone function used by a single class becomes a private method. A comment that restates the line beneath it is deleted, and a comment offered to explain confusing code is a signal to restructure that code instead. When a key or signature drops a dimension, remove the now-unused parameter up the whole call chain. A function with no instance state does not stay a private method — that prices every test of it at the cost of testing its host.
 
 **✅ Check**\
 > Did I document public/non-trivial logic and remove dead code?
@@ -814,13 +814,51 @@ comment that merely restates the line beneath it is deleted outright.
 <a id="type-01"></a>
 ### `TYPE-01` Use project types
 
-> **general** · types · ↩ `RL-20260609-002` · `RL-20260612-003` · `RL-20260703-002`
+> **general** · types · 1 example · ↩ `RL-20260609-002` · `RL-20260612-003` · `RL-20260703-002` · `RL-20260922-002`
 
 **📜 Rule**\
-Use `Address`, `Hex`, project shared schemas (`@/validation/entities/schemas`), and `z.enum(getStringEnumKeys(Enum))` over `z.nativeEnum`. `Address` is reserved for 20-byte addresses; signatures, hashes, calldata are `Hex`. UUID-shaped fields use the nominal `UUID` type from `node:crypto`, not `string`. Do not re-normalize what the canonical schema already normalizes — `AddressSchema` returns the EIP-55 checksummed form; store that. When a shared schema is too loose for a new use, tighten the shared schema with tests (or build on it via `.pipe()`) instead of forking a local copy; defer wider consolidation to its own PR.
+Use `Address`, `Hex`, project shared schemas (`@/validation/entities/schemas`), and `z.enum(getStringEnumKeys(Enum))` over `z.nativeEnum`. A param with a domain meaning uses that domain's schema (`ChainIdSchema` for `chainId`), not a generic primitive one (`NumericStringSchema`), even while the two are the same shape. `Address` is reserved for 20-byte addresses; signatures, hashes, calldata are `Hex`. UUID-shaped fields use the nominal `UUID` type from `node:crypto`, not `string`. Do not re-normalize what the canonical schema already normalizes — `AddressSchema` returns the EIP-55 checksummed form; store that. When a shared schema is too loose for a new use, tighten the shared schema with tests (or build on it via `.pipe()`) instead of forking a local copy; defer wider consolidation to its own PR.
 
 **✅ Check**\
 > Did I use project types and shared schemas first?
+
+<details>
+<summary><strong>💡 Example</strong> — <code>examples/controllers-and-swagger.md</code> § <em>type-01-domain-params-use-the-domain-schema</em></summary>
+
+<br>
+
+**TYPE-01 — Domain params use the domain schema**
+
+Source: PR #3454 (RL-20260922-002)
+
+### Avoid
+
+```ts
+@Get('recipient/:recipientAddress')
+public analyzeRecipient(
+  @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
+) {}
+```
+
+### Prefer
+
+```ts
+@Get('recipient/:recipientAddress')
+public analyzeRecipient(
+  @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
+) {}
+```
+
+### Why
+
+`ChainIdSchema` currently has the same shape as `NumericStringSchema`, but the
+domain name says what the param is. When the chain-id schema is tightened,
+every route that uses it picks up the change. Routes on the generic schema
+silently stay loose.
+
+<sub>Source: <a href="examples/controllers-and-swagger.md#type-01-domain-params-use-the-domain-schema">examples/controllers-and-swagger.md#type-01-domain-params-use-the-domain-schema</a></sub>
+
+</details>
 
 ---
 
@@ -890,7 +928,7 @@ same notion of absence.
 <a id="type-03"></a>
 ### `TYPE-03` Validate external inputs
 
-> **general** · types · 2 examples · ↩ `RL-20260116-002` · `RL-20260526-001` · `RL-20260527-001` · `RL-20260605-003` · `RL-20260612-001` · `RL-20260624-002` · `RL-20251209-002` · `RL-20260723-004` · `RL-20260729-002`
+> **general** · types · 3 examples · ↩ `RL-20260116-002` · `RL-20260526-001` · `RL-20260527-001` · `RL-20260605-003` · `RL-20260612-001` · `RL-20260624-002` · `RL-20251209-002` · `RL-20260723-004` · `RL-20260729-002` · `RL-20260921-002`
 
 **📜 Rule**\
 Validate token claims, external responses, queued jobs, config strings, and `.every`-style predicate results before use. Predicate return values must be honored — no silent acceptance. Normalize at the validation boundary (e.g. a Zod `.toLowerCase()`/`.transform()`) so consumers receive ready-to-use values instead of repeating normalization per call site, and `.brand<'X'>()` validated value types so a same-shaped raw string cannot bypass the schema. Normalize case on both sides before strict equality of hex/address-like strings. Numeric-string ID schemas reject zero, leading zeros, signs, and floats (`/^[1-9]\d*$/`), and test-data generators must produce values that satisfy the same constraint (`faker.string.numeric()` allows leading zeros). Prefer Zod `.overwrite()` over `.transform()` for type-preserving normalization (dedup, casing) so the schema stays introspectable. Unicode sanitization weighs legitimate-script collateral: strip only the dangerous `Cf` subset (bidi controls), keep or document ZWJ/ZWNJ, fold smart punctuation to ASCII before validation, and give "empty after sanitization" its own message. Defensive fallbacks satisfy the same schema as real values — use the domain's canonical constant (`NULL_ADDRESS`) instead of a truncated literal cast with `as Address`. A transform applied across a batch must not throw on a degenerate-but-legal value (the empty string) and take every other row down with it. Do not weaken a consumer-boundary schema to keep malformed events flowing: a field the event's meaning depends on stays required.
@@ -899,7 +937,7 @@ Validate token claims, external responses, queued jobs, config strings, and `.ev
 > Are external responses, token claims, queued jobs, and config strings validated and normalized at the boundary (branded where it matters), and is case normalized before strict hex/address equality?
 
 <details>
-<summary><strong>💡 Example 1 of 2</strong> — <code>examples/error-handling.md</code> § <em>type-02-type-03-empty-external-error-strings-normalize-to-absence</em></summary>
+<summary><strong>💡 Example 1 of 3</strong> — <code>examples/error-handling.md</code> § <em>type-02-type-03-empty-external-error-strings-normalize-to-absence</em></summary>
 
 <br>
 
@@ -949,7 +987,7 @@ same notion of absence.
 </details>
 
 <details>
-<summary><strong>💡 Example 2 of 2</strong> — <code>examples/schemas-and-validation.md</code> § <em>type-03-fallback-values-satisfy-the-same-schema-as-real-values</em></summary>
+<summary><strong>💡 Example 2 of 3</strong> — <code>examples/schemas-and-validation.md</code> § <em>type-03-fallback-values-satisfy-the-same-schema-as-real-values</em></summary>
 
 <br>
 
@@ -987,6 +1025,55 @@ any `as Address` / `as Hex` on a hand-written literal as a sign the value never
 passed through a schema.
 
 <sub>Source: <a href="examples/schemas-and-validation.md#type-03-fallback-values-satisfy-the-same-schema-as-real-values">examples/schemas-and-validation.md#type-03-fallback-values-satisfy-the-same-schema-as-real-values</a></sub>
+
+</details>
+
+<details>
+<summary><strong>💡 Example 3 of 3</strong> — <code>examples/schemas-and-validation.md</code> § <em>type-03-one-parser-per-payload-parsed-once</em></summary>
+
+<br>
+
+**TYPE-03 — One parser per payload, parsed once**
+
+Source: PR #3445 (RL-20260921-002)
+
+### Avoid
+
+A second reader of the same metadata that parses it to test for `null`,
+discards the value, then lets a helper parse it again:
+
+```ts
+if (parseQuota(link.metadata, warn) === null) {
+  return;
+}
+const used = await repository.countBySpaceId(spaceId);
+if (!hasCapacity(link, used)) {
+  // hasCapacity() calls parseQuota(link.metadata) a second time
+  throw new ConflictException('Not enough seats');
+}
+```
+
+### Prefer
+
+```ts
+const quota = parseQuota(link.metadata, warn);
+if (quota === null) {
+  return;
+}
+const used = await repository.countBySpaceId(spaceId);
+if (used > quota) {
+  throw new ConflictException('Not enough seats');
+}
+```
+
+### Why
+
+`parseQuota` is the one place that normalizes the `FEATURE_*` keys, and that
+normalization has to match the mapper that reads the same metadata. A second
+hand-rolled reader drifted in exactly that way: it only read the uppercase key.
+Parse through the shared parser, once, and keep the value.
+
+<sub>Source: <a href="examples/schemas-and-validation.md#type-03-one-parser-per-payload-parsed-once">examples/schemas-and-validation.md#type-03-one-parser-per-payload-parsed-once</a></sub>
 
 </details>
 
@@ -1238,16 +1325,16 @@ Parser/decode generics include every field the code reads downstream. Thread the
 <a id="type-06"></a>
 ### `TYPE-06` No unsafe casts
 
-> **general** · types · 2 examples · ↩ `RL-20260506-005` · `RL-20260612-004` · `RL-20251209-001` · `RL-20251209-002` · `RL-20260819-001` · `RL-20260821-001`
+> **general** · types · 3 examples · ↩ `RL-20260506-005` · `RL-20260612-004` · `RL-20251209-001` · `RL-20251209-002` · `RL-20260819-001` · `RL-20260821-001` · `RL-20260921-004`
 
 **📜 Rule**\
-Avoid `as Type` casts that lie to the type system; use `Pick`/`Partial` parameter types and `unknown` with type guards. ConfigurationService generics must match the stored type, including `null`. Implementations keep the interface's declared narrow parameter types (no widening to `QueryDeepPartialEntity`), and payload type aliases derive from schemas (`z.infer<typeof Schema>['payload']`) instead of restating shapes. Type a fold through the `reduce<T>` generic or its seed rather than casting the result `as T`. A value read from configuration and returned to callers repeatedly is copied at the boundary, not left shared because something downstream happens to re-parse it. Build the real platform object (`new Response(null, { status })`) instead of casting a literal to it.
+Avoid `as Type` casts that lie to the type system; use `Pick`/`Partial` parameter types and `unknown` with type guards. ConfigurationService generics must match the stored type, including `null`. Implementations keep the interface's declared narrow parameter types (no widening to `QueryDeepPartialEntity`), and payload type aliases derive from schemas (`z.infer<typeof Schema>['payload']`) instead of restating shapes. Type a fold through the `reduce<T>` generic or its seed rather than casting the result `as T`. A value read from configuration and returned to callers repeatedly is copied at the boundary, not left shared because something downstream happens to re-parse it. Build the real platform object (`new Response(null, { status })`) instead of casting a literal to it. Type a parameter to exactly what the method handles (`BinaryFeature`, not the whole `FeatureKey` union) so a caller cannot route in a case the method silently mishandles.
 
 **✅ Check**\
 > Did I avoid unsafe casts, `any`, and silent type drift?
 
 <details>
-<summary><strong>💡 Example 1 of 2</strong> — <code>examples/style.md</code> § <em>style-01-type-06-destructuring-with-the-same-name-shadows-the-outer-binding</em></summary>
+<summary><strong>💡 Example 1 of 3</strong> — <code>examples/style.md</code> § <em>style-01-type-06-destructuring-with-the-same-name-shadows-the-outer-binding</em></summary>
 
 <br>
 
@@ -1303,7 +1390,7 @@ binding explicit and impossible to forget.
 </details>
 
 <details>
-<summary><strong>💡 Example 2 of 2</strong> — <code>examples/style.md</code> § <em>style-01-type-06-name-the-accumulator-instead-of-commenting-the-fold</em></summary>
+<summary><strong>💡 Example 2 of 3</strong> — <code>examples/style.md</code> § <em>style-01-type-06-name-the-accumulator-instead-of-commenting-the-fold</em></summary>
 
 <br>
 
@@ -1360,6 +1447,50 @@ comment that merely restates the line beneath it is deleted outright.
 
 </details>
 
+<details>
+<summary><strong>💡 Example 3 of 3</strong> — <code>examples/style.md</code> § <em>type-06-type-a-parameter-to-the-subset-the-method-handles</em></summary>
+
+<br>
+
+**TYPE-06 — Type a parameter to the subset the method handles**
+
+Source: PR #3454, #3446 (RL-20260921-004)
+
+### Avoid
+
+A method that only checks `enabled` but accepts every feature kind, metered
+ones included:
+
+```ts
+assertFeatureGranted(args: {
+  spaceId: Space['id'];
+  featureKey: FeatureKey; // binary and metered keys alike
+}): Promise<void>;
+```
+
+### Prefer
+
+Narrow the parameter to the kind the method can judge:
+
+```ts
+assertFeatureGranted(args: {
+  spaceId: Space['id'];
+  featureKey: BinaryFeature;
+}): Promise<void>;
+```
+
+### Why
+
+A metered feature can be enabled with its quota exhausted. With the wide union,
+a future caller passes it, `enabled` is true, and the allowance is silently
+bypassed. The narrow type turns that call into a compile error. The same idea
+applies to derived values: take the plain input and derive the key inside, so
+no caller can hand over a key built the wrong way.
+
+<sub>Source: <a href="examples/style.md#type-06-type-a-parameter-to-the-subset-the-method-handles">examples/style.md#type-06-type-a-parameter-to-the-subset-the-method-handles</a></sub>
+
+</details>
+
 ---
 
 ## 🌐 general › auth
@@ -1367,13 +1498,13 @@ comment that merely restates the line beneath it is deleted outright.
 <a id="auth-05"></a>
 ### `AUTH-05` Space routes enforce membership before data access
 
-> **general** · auth · 1 example · ↩ `RL-20260520-001` · `RL-20260602-001` · `RL-20260717-002`
+> **general** · auth · 1 example · ↩ `RL-20260520-001` · `RL-20260602-001` · `RL-20260717-002` · `RL-20260921-001`
 
 **📜 Rule**\
-Every space-scoped controller is guarded with `AuthGuard`, accepts the authenticated payload, and verifies space membership/admin authorization in the route service before querying or returning space-owned data. When the membership predicate is a TypeORM `where`, remember an array `where` is OR: every clause must carry the `user: { id }` ownership filter (a single unfiltered clause leaks other spaces, or matches all rows when its scope is undefined). Centralize the predicate in a shared helper and regression-test a non-member requesting a specific space id. A space-owned resource fetched by an opaque upstream id alone (no space in the route) structurally bypasses membership checks — design the upstream contract to map the resource back to the space, or explicitly document the accepted authorization gap in the PR.
+Every space-scoped controller is guarded with `AuthGuard`, accepts the authenticated payload, and verifies space membership/admin authorization in the route service before querying or returning space-owned data. When the membership predicate is a TypeORM `where`, remember an array `where` is OR: every clause must carry the `user: { id }` ownership filter (a single unfiltered clause leaks other spaces, or matches all rows when its scope is undefined). Centralize the predicate in a shared helper and regression-test a non-member requesting a specific space id. A space-owned resource fetched by an opaque upstream id alone (no space in the route) structurally bypasses membership checks — design the upstream contract to map the resource back to the space, or explicitly document the accepted authorization gap in the PR. Sibling routes on one resource share its authorization level: narrowing one (member → admin) narrows every sibling that can start, change, or hand out a way to manage that resource.
 
 **✅ Check**\
-> Did this add or change a space-scoped route or its membership `where`? If yes, is it auth-guarded, does the service assert membership/admin before data access, and does every OR clause of the `where` carry the user filter?
+> Did this add or change a space-scoped route or its membership `where`? If yes, is it auth-guarded, does the service assert membership/admin before data access, and does every OR clause of the `where` carry the user filter, and do sibling routes on the same resource require the same role?
 
 <details>
 <summary><strong>💡 Example</strong> — <code>examples/auth-and-secrets.md</code> § <em>auth-05-every-or-clause-of-a-membership-where-carries-the-user-filter</em></summary>
@@ -2062,10 +2193,10 @@ code path inside `request()`.
 <a id="config-01"></a>
 ### `CONFIG-01` Defaults safe and OSS-generic
 
-> **general** · config · ↩ `RL-20260710-007` · `RL-20260723-002`
+> **general** · config · ↩ `RL-20260710-007` · `RL-20260723-002` · `RL-20260922-004`
 
 **📜 Rule**\
-Defaults remain conservative and OSS-generic. Dev-only feature flags require both `flag === true` and `CGW_ENV === 'development'`. Never default a base URI to a staging host — deployed environments require it explicitly so a missing env var fails at boot instead of silently talking to staging. New boolean config keys follow the repo's `FF_*` feature-flag naming; existing keys that missed it are not precedent for skipping it.
+Defaults remain conservative and OSS-generic. Dev-only feature flags require both `flag === true` and `CGW_ENV === 'development'`. Never default a base URI to a staging host — deployed environments require it explicitly so a missing env var fails at boot instead of silently talking to staging. New boolean config keys follow the repo's `FF_*` feature-flag naming; existing keys that missed it are not precedent for skipping it. A new flag's comment names its owning ticket and the condition for removing it.
 
 **✅ Check**\
 > Are defaults safe, minimal, and OSS-generic?
@@ -2243,7 +2374,7 @@ Runtime dependency versions are pinned exactly; do not hardcode contract version
 <a id="config-05"></a>
 ### `CONFIG-05` Env metadata matches runtime
 
-> **general** · config · 2 examples · ↩ `RL-20260108-001` · `RL-20251215-003` · `RL-20260619-002` · `RL-20260710-010`
+> **general** · config · 2 examples · ↩ `RL-20260108-001` · `RL-20251215-003` · `RL-20260619-002` · `RL-20260710-010` · `RL-20260923-002`
 
 **📜 Rule**\
 Toolchain versions, Docker build args, pinned CI actions, and `.env.sample`/`.env.sample.json` required flags should not drift from runtime behavior. Add new env vars to `.env.sample` in the same PR. Removing env-driven behavior sweeps every env-metadata surface (`.env.sample`, `.env.sample.json`, `.devcontainer/docker-compose.yml`) in the same PR. Per-feature AWS credentials use prefixed env vars (`KMS_AWS_*`, `SES_AWS_*`, `CSV_AWS_*`), never the shared root `AWS_*` pair.
@@ -2583,7 +2714,7 @@ wrapping and keeps the fixture type-checked against the real response type.
 <a id="test-02"></a>
 ### `TEST-02` Right test layer (pyramid)
 
-> **general** · tests · 1 example · ↩ `RL-20260506-001` · `RL-20260508-001` · `RL-20260529-004` · `RL-20260810-002`
+> **general** · tests · 1 example · ↩ `RL-20260506-001` · `RL-20260508-001` · `RL-20260529-004` · `RL-20260810-002` · `RL-20260922-005`
 
 **📜 Rule**\
 Test business logic with unit tests; test wiring and contracts with integration/e2e. Push negative paths and branch coverage to the lowest layer that can prove the property: schema/zod rules → schema unit (`*.dto.entity.spec.ts` or similar); service/repository branches (auth assertions, affected=0, error mapping) → service/repo unit; route wiring + global filter mappings (`NotFoundException → 404`, `ForbiddenException → 403`, validation → 422) → integration/e2e. End-to-end tests prove wiring once per route, not once per branch — one representative 4xx mapping smoke per route is enough; do not duplicate per-branch negatives at higher layers. Layout still applies: `*.spec.ts` for unit (no Postgres/Redis/RabbitMQ, no Nest bootstrap), `*.integration.spec.ts` for DB/Nest-bootstrapped, `*.e2e-spec.ts` for full HTTP flow. Tests in `src/__tests__/` are reserved for shared resources. Test private methods through public callers; extract a helper if direct testing is required. Decision rule: "Can I test this meaningfully without starting the app, database, network, or framework?" If yes, it is a unit test. A test that restates a constant the same diff introduced proves nothing beyond the tests that exercise it.
@@ -2789,16 +2920,16 @@ Implementation-selection changes (provider, mapper, datasource) need full-pipeli
 <a id="test-08"></a>
 ### `TEST-08` Test names match assertions
 
-> **general** · tests · 1 example · ↩ `RL-20260602-005` · `RL-20260615-002` · `RL-20260702-001` · `RL-20260729-001` · `RL-20260812-001` · `RL-20260907-001`
+> **general** · tests · 2 examples · ↩ `RL-20260602-005` · `RL-20260615-002` · `RL-20260702-001` · `RL-20260729-001` · `RL-20260812-001` · `RL-20260907-001` · `RL-20260923-001`
 
 **📜 Rule**\
-Test descriptions and generated data reflect the actual assertion: `it('should return false when there is no source swap')` not `'when bridging to a different chain'`. Avoid redundant `expect(success).toBe(true); if (success) { ... }`. Fixture values reflect domain semantics even when unasserted — an admin's `invitedBy` is `null`, not a random int. Test helpers are named after the state they produce (`createActiveMember` vs `createPendingMember`), with the same terminology used across specs. Invalid-input fixtures are invalid by construction (a literal or constructive generator), never a random sample that is only usually invalid. Removing a key from a schema does not fail specs that still set it — a stripping parser silently drops it — so grep the old key across specs and fixtures as part of the removal. A negative invariant is asserted negatively and over the whole collection, never by positively asserting some other value at index 0. Test data derives from the source of truth, except when that constant is what the test pins — then the cases are written out literally, with a comment saying why.
+Test descriptions and generated data reflect the actual assertion: `it('should return false when there is no source swap')` not `'when bridging to a different chain'`. Avoid redundant `expect(success).toBe(true); if (success) { ... }`. Fixture values reflect domain semantics even when unasserted — an admin's `invitedBy` is `null`, not a random int. Test helpers are named after the state they produce (`createActiveMember` vs `createPendingMember`), with the same terminology used across specs. Invalid-input fixtures are invalid by construction (a literal or constructive generator), never a random sample that is only usually invalid. Removing a key from a schema does not fail specs that still set it — a stripping parser silently drops it — so grep the old key across specs and fixtures as part of the removal. A negative invariant is asserted negatively and over the whole collection, never by positively asserting some other value at index 0. Test data derives from the source of truth, except when that constant is what the test pins — then the cases are written out literally, with a comment saying why. When an assertion is about a field, pin that field in the fixture (`.with('flag', true)`) instead of asserting back whatever faker generated.
 
 **✅ Check**\
 > Do test names, fixtures, and generated data match the assertions and the domain semantics?
 
 <details>
-<summary><strong>💡 Example</strong> — <code>examples/testing.md</code> § <em>test-08-assert-a-negative-invariant-negatively-over-the-whole-collection</em></summary>
+<summary><strong>💡 Example 1 of 2</strong> — <code>examples/testing.md</code> § <em>test-08-assert-a-negative-invariant-negatively-over-the-whole-collection</em></summary>
 
 <br>
 
@@ -2839,6 +2970,47 @@ is contrived to also produce a positive outcome, assert that separately rather
 than letting it stand in for the negative.
 
 <sub>Source: <a href="examples/testing.md#test-08-assert-a-negative-invariant-negatively-over-the-whole-collection">examples/testing.md#test-08-assert-a-negative-invariant-negatively-over-the-whole-collection</a></sub>
+
+</details>
+
+<details>
+<summary><strong>💡 Example 2 of 2</strong> — <code>examples/testing.md</code> § <em>test-08-pin-the-field-the-assertion-is-about</em></summary>
+
+<br>
+
+**TEST-08 — Pin the field the assertion is about**
+
+Source: PR #3485 (RL-20260923-001)
+
+### Avoid
+
+```ts
+const subscription = subscriptionBuilder().build(); // hasPaymentMethod: faker boolean
+
+// ...request...
+
+expect(body[0].hasPaymentMethod).toBe(subscription.hasPaymentMethod);
+```
+
+### Prefer
+
+```ts
+const subscription = subscriptionBuilder()
+  .with('hasPaymentMethod', true)
+  .build();
+
+// ...request...
+
+expect(body[0].hasPaymentMethod).toBe(true);
+```
+
+### Why
+
+Echoing a random boolean passes for either value, so the test does not say which
+case it covers, and its meaning changes with the seed. Pin the field the
+assertion is about and leave faker on the fields the test does not reason about.
+
+<sub>Source: <a href="examples/testing.md#test-08-pin-the-field-the-assertion-is-about">examples/testing.md#test-08-pin-the-field-the-assertion-is-about</a></sub>
 
 </details>
 
@@ -3424,16 +3596,16 @@ stops paging. Links must describe the page that was actually served.
 <a id="resilience-01"></a>
 ### `RESILIENCE-01` Resilience policy semantics
 
-> resilience · 4 examples · ↩ `RL-20251215-002` · `RL-20260626-002` · `RL-20260818-001` · `RL-20260917-002`
+> resilience · 5 examples · ↩ `RL-20251215-002` · `RL-20260626-002` · `RL-20260818-001` · `RL-20260917-002` · `RL-20260924-001`
 
 **📜 Rule**\
-Circuit breakers, retries, and rate limiters classify failures intentionally (include network/timeout errors, not only HTTP 5xx); scope policy keys per-service (hostname or service base URL), not per full URL; do not record policy-blocked attempts as policy failures; distinguish absolute timestamps from durations in stale-cleanup math; and keep the error type observed by callers consistent regardless of whether the policy path is taken. When adding a throwing call inside an existing try/catch, extend the catch's rethrow list so intentional domain errors (e.g. `LimitReachedError` → 429) are not re-wrapped into 5xx. Fail-open plus a manual recovery path is two mechanisms for one job: a non-blocking automation fails loudly instead, and removing the recovery path means revisiting the fail-open. A caller that compensates needs "rejected" separated from "outcome unknown"; one error funnel per layer serves callers that only fail, not callers that undo.
+Circuit breakers, retries, and rate limiters classify failures intentionally (include network/timeout errors, not only HTTP 5xx); scope policy keys per-service (hostname or service base URL), not per full URL; do not record policy-blocked attempts as policy failures; distinguish absolute timestamps from durations in stale-cleanup math; and keep the error type observed by callers consistent regardless of whether the policy path is taken. When adding a throwing call inside an existing try/catch, extend the catch's rethrow list so intentional domain errors (e.g. `LimitReachedError` → 429) are not re-wrapped into 5xx. Fail-open plus a manual recovery path is two mechanisms for one job: a non-blocking automation fails loudly instead, and removing the recovery path means revisiting the fail-open. A caller that compensates needs "rejected" separated from "outcome unknown"; one error funnel per layer serves callers that only fail, not callers that undo. Trip and recovery thresholds are asymmetric on purpose: HALF_OPEN closes only after the full consecutive-success threshold, never the reduced reopen threshold — check the failure rates upstreams actually show before retuning either.
 
 **✅ Check**\
 > For new resilience code: did I list the failure types I count, scope the key per-service, leave blocked-by-policy out of the failure counter, and make sure the policy-on path throws the same error type as the policy-off path?
 
 <details>
-<summary><strong>💡 Example 1 of 4</strong> — <code>examples/resilience.md</code> § <em>resilience-01-classify-failures-and-scope-the-policy-key</em></summary>
+<summary><strong>💡 Example 1 of 5</strong> — <code>examples/resilience.md</code> § <em>resilience-01-classify-failures-and-scope-the-policy-key</em></summary>
 
 <br>
 
@@ -3494,7 +3666,7 @@ the breaker never opens against a fully unresponsive service.
 </details>
 
 <details>
-<summary><strong>💡 Example 2 of 4</strong> — <code>examples/resilience.md</code> § <em>resilience-01-do-not-count-policy-blocked-attempts-as-policy-failures</em></summary>
+<summary><strong>💡 Example 2 of 5</strong> — <code>examples/resilience.md</code> § <em>resilience-01-do-not-count-policy-blocked-attempts-as-policy-failures</em></summary>
 
 <br>
 
@@ -3556,7 +3728,7 @@ the upstream.
 </details>
 
 <details>
-<summary><strong>💡 Example 3 of 4</strong> — <code>examples/resilience.md</code> § <em>resilience-01-stale-cleanup-multiplies-durations-not-timestamps</em></summary>
+<summary><strong>💡 Example 3 of 5</strong> — <code>examples/resilience.md</code> § <em>resilience-01-stale-cleanup-multiplies-durations-not-timestamps</em></summary>
 
 <br>
 
@@ -3600,7 +3772,7 @@ is invisible in unit tests that mock `Date.now()` to a small value.
 </details>
 
 <details>
-<summary><strong>💡 Example 4 of 4</strong> — <code>examples/resilience.md</code> § <em>resilience-01-error-type-stays-consistent-across-the-policy-boundary</em></summary>
+<summary><strong>💡 Example 4 of 5</strong> — <code>examples/resilience.md</code> § <em>resilience-01-error-type-stays-consistent-across-the-policy-boundary</em></summary>
 
 <br>
 
@@ -3652,6 +3824,48 @@ handler that assumed `NetworkRequestError | NetworkResponseError`, and
 the breakage only shows up when a malformed URL slips in.
 
 <sub>Source: <a href="examples/resilience.md#resilience-01-error-type-stays-consistent-across-the-policy-boundary">examples/resilience.md#resilience-01-error-type-stays-consistent-across-the-policy-boundary</a></sub>
+
+</details>
+
+<details>
+<summary><strong>💡 Example 5 of 5</strong> — <code>examples/resilience.md</code> § <em>resilience-01-recovery-keeps-the-full-threshold</em></summary>
+
+<br>
+
+**RESILIENCE-01 — Recovery keeps the full threshold**
+
+Source: PR #3484 (RL-20260924-001)
+
+### Avoid
+
+Closing a HALF_OPEN circuit on the reduced threshold that is meant for
+reopening:
+
+```ts
+// effectiveThreshold: the reduced HALF_OPEN reopen threshold
+if (circuit.metrics.consecutiveSuccesses >= effectiveThreshold) {
+  // close the circuit
+}
+```
+
+### Prefer
+
+```ts
+if (circuit.metrics.consecutiveSuccesses >= this.config.threshold) {
+  // close the circuit
+}
+```
+
+### Why
+
+With `threshold` 20 and a 50% half-open percentage, the reduced threshold closes
+the circuit after 10 successes. The configured threshold then only matters for
+the first trip. The reduced value exists to reopen quickly. Recovery should stay
+strict. Before retuning either value, check the failure rates the upstreams
+actually show: here they were failing about 40% of requests, so staying open
+was correct.
+
+<sub>Source: <a href="examples/resilience.md#resilience-01-recovery-keeps-the-full-threshold">examples/resilience.md#resilience-01-recovery-keeps-the-full-threshold</a></sub>
 
 </details>
 

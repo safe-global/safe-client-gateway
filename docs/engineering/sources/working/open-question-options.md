@@ -595,3 +595,45 @@ on the wide form, or the `as unknown as` cast the narrow form requires. Note the
 repo-wide position on `as unknown as` (see `best-practices.md` baselines) likely
 settles this, and whichever wins should be stated in the testing guide so a
 review cannot ask for both in one PR.
+
+## OQ-CONFIG-01 Env-Var Renames: One-Release Fallback Or Coordinated Hard Rename
+
+Question: when an env var is renamed, should the loader read the old name as a
+fallback for one release, or should the rename land as a hard rename with the
+deployed values updated alongside it?
+
+`CHANGE-04` currently requires the fallback, from PR #2851 (RL-20260108-001).
+PR #3443 (RL-20260923-002) went the other way. The Fastify migration renamed
+`EXPRESS_TRUST_PROXY` / `EXPRESS_JSON_LIMIT` to `HTTP_SERVER_*` with no
+fallback. Review asked to check the deployed (Argo) value instead, and an
+added guard that threw on the old names was removed as unnecessary (review
+comment 4069930039).
+
+### Option A: Fallback For One Release
+
+Existing example: `docs/engineering/sources/examples/configuration.md`
+(`CHANGE-04 / CONFIG-05` block).
+
+Choose this when:
+
+- The variable is consumed by deployments the PR author does not control
+  (self-hosters, other teams' environments).
+- A missed rename would silently flip behavior instead of failing at boot.
+
+Trade-off: two names live in the loader until a follow-up PR deletes one.
+
+### Option B: Hard Rename, Deployed Values Updated With It
+
+Existing example: PR #3443 (`HTTP_SERVER_TRUST_PROXY`, `HTTP_SERVER_BODY_LIMIT`).
+
+Choose this when:
+
+- Every deployment that sets the variable is in the team's own infra config
+  and is updated in the same release.
+
+Trade-off: a deployment that still sets the old name silently falls back to the
+default. For `trustProxy` that changes `request.ip` and rate-limit keys.
+
+Open until the team states which case each option covers. Whichever wins should
+be reflected in `CHANGE-04`'s env-var clause, which today states Option A
+unconditionally.

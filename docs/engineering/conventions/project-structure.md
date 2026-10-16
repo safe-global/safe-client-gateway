@@ -19,16 +19,27 @@ src/modules/<feature>/
     <feature>.controller.ts
     <feature>.service.ts
     entities/
+    guards/
   domain/
     <feature>.repository.interface.ts
     <feature>.repository.ts
     entities/
+    errors/
+    exception-filters/
   datasources/
     entities/
 ```
 
 Use this shape when a feature has an HTTP surface, domain persistence or
-external data, and route DTOs.
+external data, and route DTOs. Guards go under `routes/guards/`; domain errors
+and the filters that map them go under `domain/errors/` and
+`domain/exception-filters/`. Do not add module-root `guards/` or `errors/`
+folders.
+
+A Space-scoped route (`spaces/:spaceId/...`) lives in the module that owns the
+capability. That module imports `SpacesModule` for the membership assertion.
+Copy `src/modules/counterfactual-safes/routes/space-counterfactual-safes.controller.ts`.
+Spaces hosts only its own features.
 
 Route-only modules can be thinner when they only expose a small HTTP surface.
 Infrastructure modules can omit `routes/` when they only provide shared

@@ -11,7 +11,8 @@
       "RL-20260703-001",
       "RL-20260714-002",
       "RL-20260713-004",
-      "RL-20260810-001"
+      "RL-20260810-001",
+      "RL-20260923-002"
     ]
   },
   {
@@ -95,7 +96,8 @@
       "RL-20251209-003",
       "RL-20260723-006",
       "RL-20260807-002",
-      "RL-20260820-001"
+      "RL-20260820-001",
+      "RL-20260921-003"
     ]
   },
   {
@@ -103,7 +105,7 @@
     "project": "general",
     "area": "modules",
     "title": "Behavior in the right module",
-    "rule": "New API/product behavior belongs in the matching module shape; do not bolt routes onto unrelated modules; do not bypass an existing feature flag by importing a gated module unconditionally. Default-off feature modules stay scoped: not `@Global()`, not registered in the shared test module — override only in the specs that exercise them. Domain services depend on a feature-scoped orchestration service, not on generic infrastructure services (email, queues) directly. One upstream service maps to one module, one config section (topic name, no `-service` suffix), and one namespace/cache prefix. Provider-specific calls live in that provider's API service — no parallel clients, and generic clients do not own business tunables. Never bypass `NetworkService` with a raw `fetch` — extend the shared client (e.g. plain-text response bodies) so logging and circuit breakers stay in the path.",
+    "rule": "New API/product behavior belongs in the matching module shape; do not bolt routes onto unrelated modules; do not bypass an existing feature flag by importing a gated module unconditionally. Default-off feature modules stay scoped: not `@Global()`, not registered in the shared test module — override only in the specs that exercise them. Domain services depend on a feature-scoped orchestration service, not on generic infrastructure services (email, queues) directly. One upstream service maps to one module, one config section (topic name, no `-service` suffix), and one namespace/cache prefix. Provider-specific calls live in that provider's API service — no parallel clients, and generic clients do not own business tunables. Never bypass `NetworkService` with a raw `fetch` — extend the shared client (e.g. plain-text response bodies) so logging and circuit breakers stay in the path. A Space-scoped route (`spaces/:spaceId/...`) lives in the module that owns the capability and imports `SpacesModule` for the membership assertion; Spaces does not host other features' routes.",
     "check": "Does new API/product behavior live in the right module?",
     "exampleRefs": [],
     "reviewLearningIds": [
@@ -112,7 +114,8 @@
       "RL-20260608-003",
       "RL-20260710-004",
       "RL-20260707-003",
-      "RL-20260717-003"
+      "RL-20260717-003",
+      "RL-20260922-001"
     ]
   },
   {
@@ -162,14 +165,15 @@
     "project": "general",
     "area": "naming",
     "title": "Names reveal behavior",
-    "rule": "Names must describe behavior honestly: throwing helpers use `assert*`/`*OrFail`; predicates do not throw; algorithm-bound helpers (`hashSha1`) advertise the algorithm; type/aliased imports drop redundant `as` aliases; magic offsets become named constants. Find-or-create and similar helpers must not encode a status or postcondition the method does not guarantee on every path (`findOrCreateByEmail`, not `findOrCreatePendingByEmail` when existing ACTIVE users are returned as-is).",
+    "rule": "Names must describe behavior honestly: throwing helpers use `assert*`/`*OrFail`; predicates do not throw; algorithm-bound helpers (`hashSha1`) advertise the algorithm; type/aliased imports drop redundant `as` aliases; magic offsets become named constants. Find-or-create and similar helpers must not encode a status or postcondition the method does not guarantee on every path (`findOrCreateByEmail`, not `findOrCreatePendingByEmail` when existing ACTIVE users are returned as-is). One concept keeps one name across code, config keys, flags, and errors — no product alias beside the module's name (`copilot*` next to `safeShield*`).",
     "check": "Do names describe behavior honestly and avoid redundant scope?",
     "exampleRefs": [
       "examples/testing.md#test-02-suffix-matches-the-test-layer"
     ],
     "reviewLearningIds": [
       "RL-20260506-001",
-      "RL-20260602-004"
+      "RL-20260602-004",
+      "RL-20260922-003"
     ]
   },
   {
@@ -177,7 +181,7 @@
     "project": "general",
     "area": "naming",
     "title": "Reuse existing helpers",
-    "rule": "Before adding a small util, search the repo and well-known libraries (`viem.isAddressEqual`, `@/logging/utils.asError`, shared schemas, `safe-deployments`); reuse `LoggingService`, `*Mapper` classes, and `HttpErrorFactory` instead of bare alternates. Cross a seam with the plain value (a timeout in ms), not a caller-constructed platform object (an `AbortSignal`), so the object is built in exactly one place.",
+    "rule": "Before adding a small util, search the repo and well-known libraries (`viem.isAddressEqual`, `@/logging/utils.asError`, shared schemas, `safe-deployments`); reuse `LoggingService`, `*Mapper` classes, and `HttpErrorFactory` instead of bare alternates. Cross a seam with the plain value (a timeout in ms, a plaintext address), not a caller-constructed object or caller-derived key (an `AbortSignal`, a blind-index seat key), so it is built in exactly one place.",
     "check": "Did I reuse existing helpers, constants homes, and utilities?",
     "exampleRefs": [
       "examples/repositories-and-pagination.md#config-03-reuse-01-knobs-follow-the-existing-config-driven-precedent",
@@ -187,7 +191,8 @@
       "RL-20260506-003",
       "RL-20251216-001",
       "RL-20260615-004",
-      "RL-20251208-001"
+      "RL-20251208-001",
+      "RL-20260921-004"
     ]
   },
   {
@@ -195,7 +200,7 @@
     "project": "general",
     "area": "naming",
     "title": "Document non-trivial code",
-    "rule": "Public/non-trivial service and repository code is documented and free of dead branches, commented-out code, redundant comments, and `console.log`. Default flags safely (`isSafe = false` until proven), wrap event listeners with cleanup, and keep adapters' error contracts intact. Message/formatting logic beyond one branch gets a named helper in utils — no nested ternaries inside template literals. Destructuring return values is an accepted repo-wide pattern — do not demand named receivers; verify a claimed convention against the codebase before enforcing it. One exported class/type per file: errors under `domain/errors/`, entity types under `entities/`, helpers in a dedicated helpers file; a standalone function used by a single class becomes a private method. A comment that restates the line beneath it is deleted, and a comment offered to explain confusing code is a signal to restructure that code instead. When a key or signature drops a dimension, remove the now-unused parameter up the whole call chain. A function with no instance state does not stay a private method — that prices every test of it at the cost of testing its host.",
+    "rule": "Public/non-trivial service and repository code is documented and free of dead branches, commented-out code, redundant comments, and `console.log`. Default flags safely (`isSafe = false` until proven), wrap event listeners with cleanup, and keep adapters' error contracts intact. Message/formatting logic beyond one branch gets a named helper in utils — no nested ternaries inside template literals. Destructuring return values is an accepted repo-wide pattern — do not demand named receivers; verify a claimed convention against the codebase before enforcing it. One exported class/type per file: errors under `domain/errors/` with their filters under `domain/exception-filters/`, guards under `routes/guards/` (never module-root `errors/` or `guards/`), entity types under `entities/`, helpers in a dedicated helpers file; a standalone function used by a single class becomes a private method. A comment that restates the line beneath it is deleted, and a comment offered to explain confusing code is a signal to restructure that code instead. When a key or signature drops a dimension, remove the now-unused parameter up the whole call chain. A function with no instance state does not stay a private method — that prices every test of it at the cost of testing its host.",
     "check": "Did I document public/non-trivial logic and remove dead code?",
     "exampleRefs": [
       "examples/error-handling.md#style-01-log-04-internal-errors-do-not-leak-into-user-responses",
@@ -219,13 +224,16 @@
     "project": "general",
     "area": "types",
     "title": "Use project types",
-    "rule": "Use `Address`, `Hex`, project shared schemas (`@/validation/entities/schemas`), and `z.enum(getStringEnumKeys(Enum))` over `z.nativeEnum`. `Address` is reserved for 20-byte addresses; signatures, hashes, calldata are `Hex`. UUID-shaped fields use the nominal `UUID` type from `node:crypto`, not `string`. Do not re-normalize what the canonical schema already normalizes — `AddressSchema` returns the EIP-55 checksummed form; store that. When a shared schema is too loose for a new use, tighten the shared schema with tests (or build on it via `.pipe()`) instead of forking a local copy; defer wider consolidation to its own PR.",
+    "rule": "Use `Address`, `Hex`, project shared schemas (`@/validation/entities/schemas`), and `z.enum(getStringEnumKeys(Enum))` over `z.nativeEnum`. A param with a domain meaning uses that domain's schema (`ChainIdSchema` for `chainId`), not a generic primitive one (`NumericStringSchema`), even while the two are the same shape. `Address` is reserved for 20-byte addresses; signatures, hashes, calldata are `Hex`. UUID-shaped fields use the nominal `UUID` type from `node:crypto`, not `string`. Do not re-normalize what the canonical schema already normalizes — `AddressSchema` returns the EIP-55 checksummed form; store that. When a shared schema is too loose for a new use, tighten the shared schema with tests (or build on it via `.pipe()`) instead of forking a local copy; defer wider consolidation to its own PR.",
     "check": "Did I use project types and shared schemas first?",
-    "exampleRefs": [],
+    "exampleRefs": [
+      "examples/controllers-and-swagger.md#type-01-domain-params-use-the-domain-schema"
+    ],
     "reviewLearningIds": [
       "RL-20260609-002",
       "RL-20260612-003",
-      "RL-20260703-002"
+      "RL-20260703-002",
+      "RL-20260922-002"
     ]
   },
   {
@@ -257,7 +265,8 @@
     "check": "Are external responses, token claims, queued jobs, and config strings validated and normalized at the boundary (branded where it matters), and is case normalized before strict hex/address equality?",
     "exampleRefs": [
       "examples/error-handling.md#type-02-type-03-empty-external-error-strings-normalize-to-absence",
-      "examples/schemas-and-validation.md#type-03-fallback-values-satisfy-the-same-schema-as-real-values"
+      "examples/schemas-and-validation.md#type-03-fallback-values-satisfy-the-same-schema-as-real-values",
+      "examples/schemas-and-validation.md#type-03-one-parser-per-payload-parsed-once"
     ],
     "reviewLearningIds": [
       "RL-20260116-002",
@@ -268,7 +277,8 @@
       "RL-20260624-002",
       "RL-20251209-002",
       "RL-20260723-004",
-      "RL-20260729-002"
+      "RL-20260729-002",
+      "RL-20260921-002"
     ]
   },
   {
@@ -312,11 +322,12 @@
     "project": "general",
     "area": "types",
     "title": "No unsafe casts",
-    "rule": "Avoid `as Type` casts that lie to the type system; use `Pick`/`Partial` parameter types and `unknown` with type guards. ConfigurationService generics must match the stored type, including `null`. Implementations keep the interface's declared narrow parameter types (no widening to `QueryDeepPartialEntity`), and payload type aliases derive from schemas (`z.infer<typeof Schema>['payload']`) instead of restating shapes. Type a fold through the `reduce<T>` generic or its seed rather than casting the result `as T`. A value read from configuration and returned to callers repeatedly is copied at the boundary, not left shared because something downstream happens to re-parse it. Build the real platform object (`new Response(null, { status })`) instead of casting a literal to it.",
+    "rule": "Avoid `as Type` casts that lie to the type system; use `Pick`/`Partial` parameter types and `unknown` with type guards. ConfigurationService generics must match the stored type, including `null`. Implementations keep the interface's declared narrow parameter types (no widening to `QueryDeepPartialEntity`), and payload type aliases derive from schemas (`z.infer<typeof Schema>['payload']`) instead of restating shapes. Type a fold through the `reduce<T>` generic or its seed rather than casting the result `as T`. A value read from configuration and returned to callers repeatedly is copied at the boundary, not left shared because something downstream happens to re-parse it. Build the real platform object (`new Response(null, { status })`) instead of casting a literal to it. Type a parameter to exactly what the method handles (`BinaryFeature`, not the whole `FeatureKey` union) so a caller cannot route in a case the method silently mishandles.",
     "check": "Did I avoid unsafe casts, `any`, and silent type drift?",
     "exampleRefs": [
       "examples/style.md#style-01-type-06-destructuring-with-the-same-name-shadows-the-outer-binding",
-      "examples/style.md#style-01-type-06-name-the-accumulator-instead-of-commenting-the-fold"
+      "examples/style.md#style-01-type-06-name-the-accumulator-instead-of-commenting-the-fold",
+      "examples/style.md#type-06-type-a-parameter-to-the-subset-the-method-handles"
     ],
     "reviewLearningIds": [
       "RL-20260506-005",
@@ -324,7 +335,8 @@
       "RL-20251209-001",
       "RL-20251209-002",
       "RL-20260819-001",
-      "RL-20260821-001"
+      "RL-20260821-001",
+      "RL-20260921-004"
     ]
   },
   {
@@ -332,15 +344,16 @@
     "project": "general",
     "area": "auth",
     "title": "Space routes enforce membership before data access",
-    "rule": "Every space-scoped controller is guarded with `AuthGuard`, accepts the authenticated payload, and verifies space membership/admin authorization in the route service before querying or returning space-owned data. When the membership predicate is a TypeORM `where`, remember an array `where` is OR: every clause must carry the `user: { id }` ownership filter (a single unfiltered clause leaks other spaces, or matches all rows when its scope is undefined). Centralize the predicate in a shared helper and regression-test a non-member requesting a specific space id. A space-owned resource fetched by an opaque upstream id alone (no space in the route) structurally bypasses membership checks — design the upstream contract to map the resource back to the space, or explicitly document the accepted authorization gap in the PR.",
-    "check": "Did this add or change a space-scoped route or its membership `where`? If yes, is it auth-guarded, does the service assert membership/admin before data access, and does every OR clause of the `where` carry the user filter?",
+    "rule": "Every space-scoped controller is guarded with `AuthGuard`, accepts the authenticated payload, and verifies space membership/admin authorization in the route service before querying or returning space-owned data. When the membership predicate is a TypeORM `where`, remember an array `where` is OR: every clause must carry the `user: { id }` ownership filter (a single unfiltered clause leaks other spaces, or matches all rows when its scope is undefined). Centralize the predicate in a shared helper and regression-test a non-member requesting a specific space id. A space-owned resource fetched by an opaque upstream id alone (no space in the route) structurally bypasses membership checks — design the upstream contract to map the resource back to the space, or explicitly document the accepted authorization gap in the PR. Sibling routes on one resource share its authorization level: narrowing one (member → admin) narrows every sibling that can start, change, or hand out a way to manage that resource.",
+    "check": "Did this add or change a space-scoped route or its membership `where`? If yes, is it auth-guarded, does the service assert membership/admin before data access, and does every OR clause of the `where` carry the user filter, and do sibling routes on the same resource require the same role?",
     "exampleRefs": [
       "examples/auth-and-secrets.md#auth-05-every-or-clause-of-a-membership-where-carries-the-user-filter"
     ],
     "reviewLearningIds": [
       "RL-20260520-001",
       "RL-20260602-001",
-      "RL-20260717-002"
+      "RL-20260717-002",
+      "RL-20260921-001"
     ]
   },
   {
@@ -505,12 +518,13 @@
     "project": "general",
     "area": "config",
     "title": "Defaults safe and OSS-generic",
-    "rule": "Defaults remain conservative and OSS-generic. Dev-only feature flags require both `flag === true` and `CGW_ENV === 'development'`. Never default a base URI to a staging host — deployed environments require it explicitly so a missing env var fails at boot instead of silently talking to staging. New boolean config keys follow the repo's `FF_*` feature-flag naming; existing keys that missed it are not precedent for skipping it.",
+    "rule": "Defaults remain conservative and OSS-generic. Dev-only feature flags require both `flag === true` and `CGW_ENV === 'development'`. Never default a base URI to a staging host — deployed environments require it explicitly so a missing env var fails at boot instead of silently talking to staging. New boolean config keys follow the repo's `FF_*` feature-flag naming; existing keys that missed it are not precedent for skipping it. A new flag's comment names its owning ticket and the condition for removing it.",
     "check": "Are defaults safe, minimal, and OSS-generic?",
     "exampleRefs": [],
     "reviewLearningIds": [
       "RL-20260710-007",
-      "RL-20260723-002"
+      "RL-20260723-002",
+      "RL-20260922-004"
     ]
   },
   {
@@ -576,7 +590,8 @@
       "RL-20260108-001",
       "RL-20251215-003",
       "RL-20260619-002",
-      "RL-20260710-010"
+      "RL-20260710-010",
+      "RL-20260923-002"
     ]
   },
   {
@@ -636,7 +651,8 @@
       "RL-20260506-001",
       "RL-20260508-001",
       "RL-20260529-004",
-      "RL-20260810-002"
+      "RL-20260810-002",
+      "RL-20260922-005"
     ]
   },
   {
@@ -700,10 +716,11 @@
     "project": "general",
     "area": "tests",
     "title": "Test names match assertions",
-    "rule": "Test descriptions and generated data reflect the actual assertion: `it('should return false when there is no source swap')` not `'when bridging to a different chain'`. Avoid redundant `expect(success).toBe(true); if (success) { ... }`. Fixture values reflect domain semantics even when unasserted — an admin's `invitedBy` is `null`, not a random int. Test helpers are named after the state they produce (`createActiveMember` vs `createPendingMember`), with the same terminology used across specs. Invalid-input fixtures are invalid by construction (a literal or constructive generator), never a random sample that is only usually invalid. Removing a key from a schema does not fail specs that still set it — a stripping parser silently drops it — so grep the old key across specs and fixtures as part of the removal. A negative invariant is asserted negatively and over the whole collection, never by positively asserting some other value at index 0. Test data derives from the source of truth, except when that constant is what the test pins — then the cases are written out literally, with a comment saying why.",
+    "rule": "Test descriptions and generated data reflect the actual assertion: `it('should return false when there is no source swap')` not `'when bridging to a different chain'`. Avoid redundant `expect(success).toBe(true); if (success) { ... }`. Fixture values reflect domain semantics even when unasserted — an admin's `invitedBy` is `null`, not a random int. Test helpers are named after the state they produce (`createActiveMember` vs `createPendingMember`), with the same terminology used across specs. Invalid-input fixtures are invalid by construction (a literal or constructive generator), never a random sample that is only usually invalid. Removing a key from a schema does not fail specs that still set it — a stripping parser silently drops it — so grep the old key across specs and fixtures as part of the removal. A negative invariant is asserted negatively and over the whole collection, never by positively asserting some other value at index 0. Test data derives from the source of truth, except when that constant is what the test pins — then the cases are written out literally, with a comment saying why. When an assertion is about a field, pin that field in the fixture (`.with('flag', true)`) instead of asserting back whatever faker generated.",
     "check": "Do test names, fixtures, and generated data match the assertions and the domain semantics?",
     "exampleRefs": [
-      "examples/testing.md#test-08-assert-a-negative-invariant-negatively-over-the-whole-collection"
+      "examples/testing.md#test-08-assert-a-negative-invariant-negatively-over-the-whole-collection",
+      "examples/testing.md#test-08-pin-the-field-the-assertion-is-about"
     ],
     "reviewLearningIds": [
       "RL-20260602-005",
@@ -711,7 +728,8 @@
       "RL-20260702-001",
       "RL-20260729-001",
       "RL-20260812-001",
-      "RL-20260907-001"
+      "RL-20260907-001",
+      "RL-20260923-001"
     ]
   },
   {
@@ -847,19 +865,21 @@
     "id": "RESILIENCE-01",
     "area": "resilience",
     "title": "Resilience policy semantics",
-    "rule": "Circuit breakers, retries, and rate limiters classify failures intentionally (include network/timeout errors, not only HTTP 5xx); scope policy keys per-service (hostname or service base URL), not per full URL; do not record policy-blocked attempts as policy failures; distinguish absolute timestamps from durations in stale-cleanup math; and keep the error type observed by callers consistent regardless of whether the policy path is taken. When adding a throwing call inside an existing try/catch, extend the catch's rethrow list so intentional domain errors (e.g. `LimitReachedError` → 429) are not re-wrapped into 5xx. Fail-open plus a manual recovery path is two mechanisms for one job: a non-blocking automation fails loudly instead, and removing the recovery path means revisiting the fail-open. A caller that compensates needs \"rejected\" separated from \"outcome unknown\"; one error funnel per layer serves callers that only fail, not callers that undo.",
+    "rule": "Circuit breakers, retries, and rate limiters classify failures intentionally (include network/timeout errors, not only HTTP 5xx); scope policy keys per-service (hostname or service base URL), not per full URL; do not record policy-blocked attempts as policy failures; distinguish absolute timestamps from durations in stale-cleanup math; and keep the error type observed by callers consistent regardless of whether the policy path is taken. When adding a throwing call inside an existing try/catch, extend the catch's rethrow list so intentional domain errors (e.g. `LimitReachedError` → 429) are not re-wrapped into 5xx. Fail-open plus a manual recovery path is two mechanisms for one job: a non-blocking automation fails loudly instead, and removing the recovery path means revisiting the fail-open. A caller that compensates needs \"rejected\" separated from \"outcome unknown\"; one error funnel per layer serves callers that only fail, not callers that undo. Trip and recovery thresholds are asymmetric on purpose: HALF_OPEN closes only after the full consecutive-success threshold, never the reduced reopen threshold — check the failure rates upstreams actually show before retuning either.",
     "check": "For new resilience code: did I list the failure types I count, scope the key per-service, leave blocked-by-policy out of the failure counter, and make sure the policy-on path throws the same error type as the policy-off path?",
     "exampleRefs": [
       "examples/resilience.md#resilience-01-classify-failures-and-scope-the-policy-key",
       "examples/resilience.md#resilience-01-do-not-count-policy-blocked-attempts-as-policy-failures",
       "examples/resilience.md#resilience-01-stale-cleanup-multiplies-durations-not-timestamps",
-      "examples/resilience.md#resilience-01-error-type-stays-consistent-across-the-policy-boundary"
+      "examples/resilience.md#resilience-01-error-type-stays-consistent-across-the-policy-boundary",
+      "examples/resilience.md#resilience-01-recovery-keeps-the-full-threshold"
     ],
     "reviewLearningIds": [
       "RL-20251215-002",
       "RL-20260626-002",
       "RL-20260818-001",
-      "RL-20260917-002"
+      "RL-20260917-002",
+      "RL-20260924-001"
     ]
   }
 ]

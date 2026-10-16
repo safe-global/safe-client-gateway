@@ -193,3 +193,36 @@ Callers'`catch` handlers branch on the framework's typed errors. A flag
 that flips a raw `TypeError` through to the caller breaks every error
 handler that assumed `NetworkRequestError | NetworkResponseError`, and
 the breakage only shows up when a malformed URL slips in.
+
+## RESILIENCE-01 — Recovery keeps the full threshold
+
+Source: PR #3484 (RL-20260924-001)
+
+### Avoid
+
+Closing a HALF_OPEN circuit on the reduced threshold that is meant for
+reopening:
+
+```ts
+// effectiveThreshold: the reduced HALF_OPEN reopen threshold
+if (circuit.metrics.consecutiveSuccesses >= effectiveThreshold) {
+  // close the circuit
+}
+```
+
+### Prefer
+
+```ts
+if (circuit.metrics.consecutiveSuccesses >= this.config.threshold) {
+  // close the circuit
+}
+```
+
+### Why
+
+With `threshold` 20 and a 50% half-open percentage, the reduced threshold closes
+the circuit after 10 successes. The configured threshold then only matters for
+the first trip. The reduced value exists to reopen quickly. Recovery should stay
+strict. Before retuning either value, check the failure rates the upstreams
+actually show: here they were failing about 40% of requests, so staying open
+was correct.

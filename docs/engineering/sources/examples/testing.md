@@ -261,3 +261,35 @@ them — the titled invariant rots while the suite stays green. Asserting the
 absence over the whole collection tests what the title claims. When the setup
 is contrived to also produce a positive outcome, assert that separately rather
 than letting it stand in for the negative.
+
+## TEST-08 — Pin the field the assertion is about
+
+Source: PR #3485 (RL-20260923-001)
+
+### Avoid
+
+```ts
+const subscription = subscriptionBuilder().build(); // hasPaymentMethod: faker boolean
+
+// ...request...
+
+expect(body[0].hasPaymentMethod).toBe(subscription.hasPaymentMethod);
+```
+
+### Prefer
+
+```ts
+const subscription = subscriptionBuilder()
+  .with('hasPaymentMethod', true)
+  .build();
+
+// ...request...
+
+expect(body[0].hasPaymentMethod).toBe(true);
+```
+
+### Why
+
+Echoing a random boolean passes for either value, so the test does not say which
+case it covers, and its meaning changes with the seed. Pin the field the
+assertion is about and leave faker on the fields the test does not reason about.

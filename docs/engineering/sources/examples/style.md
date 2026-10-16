@@ -102,3 +102,38 @@ the result type-check on their own, and `??=` states the create-if-absent step
 in one line. Both casts and the comment disappear together. An offer to
 "add a comment explaining it step by step" is a restructure request — and a
 comment that merely restates the line beneath it is deleted outright.
+
+## TYPE-06 — Type a parameter to the subset the method handles
+
+Source: PR #3454, #3446 (RL-20260921-004)
+
+### Avoid
+
+A method that only checks `enabled` but accepts every feature kind, metered
+ones included:
+
+```ts
+assertFeatureGranted(args: {
+  spaceId: Space['id'];
+  featureKey: FeatureKey; // binary and metered keys alike
+}): Promise<void>;
+```
+
+### Prefer
+
+Narrow the parameter to the kind the method can judge:
+
+```ts
+assertFeatureGranted(args: {
+  spaceId: Space['id'];
+  featureKey: BinaryFeature;
+}): Promise<void>;
+```
+
+### Why
+
+A metered feature can be enabled with its quota exhausted. With the wide union,
+a future caller passes it, `enabled` is true, and the allowance is silently
+bypassed. The narrow type turns that call into a compile error. The same idea
+applies to derived values: take the plain input and derive the key inside, so
+no caller can hand over a key built the wrong way.

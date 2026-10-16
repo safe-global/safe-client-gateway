@@ -248,3 +248,43 @@ only defers the failure to a consumer. A defensive default has to be a legal
 value of its own type; the domain's canonical constant already is one. Treat
 any `as Address` / `as Hex` on a hand-written literal as a sign the value never
 passed through a schema.
+
+## TYPE-03 — One parser per payload, parsed once
+
+Source: PR #3445 (RL-20260921-002)
+
+### Avoid
+
+A second reader of the same metadata that parses it to test for `null`,
+discards the value, then lets a helper parse it again:
+
+```ts
+if (parseQuota(link.metadata, warn) === null) {
+  return;
+}
+const used = await repository.countBySpaceId(spaceId);
+if (!hasCapacity(link, used)) {
+  // hasCapacity() calls parseQuota(link.metadata) a second time
+  throw new ConflictException('Not enough seats');
+}
+```
+
+### Prefer
+
+```ts
+const quota = parseQuota(link.metadata, warn);
+if (quota === null) {
+  return;
+}
+const used = await repository.countBySpaceId(spaceId);
+if (used > quota) {
+  throw new ConflictException('Not enough seats');
+}
+```
+
+### Why
+
+`parseQuota` is the one place that normalizes the `FEATURE_*` keys, and that
+normalization has to match the mapper that reads the same metadata. A second
+hand-rolled reader drifted in exactly that way: it only read the uppercase key.
+Parse through the shared parser, once, and keep the value.

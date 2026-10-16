@@ -128,3 +128,32 @@ Filters that work on some chains and not others are an undebuggable
 behaviour difference for the consumer — the same query produces different
 shapes depending on which chain is queried, and the API documentation
 gives no hint. Either honour the param everywhere or stop accepting it.
+
+## TYPE-01 — Domain params use the domain schema
+
+Source: PR #3454 (RL-20260922-002)
+
+### Avoid
+
+```ts
+@Get('recipient/:recipientAddress')
+public analyzeRecipient(
+  @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
+) {}
+```
+
+### Prefer
+
+```ts
+@Get('recipient/:recipientAddress')
+public analyzeRecipient(
+  @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
+) {}
+```
+
+### Why
+
+`ChainIdSchema` currently has the same shape as `NumericStringSchema`, but the
+domain name says what the param is. When the chain-id schema is tightened,
+every route that uses it picks up the change. Routes on the generic schema
+silently stay loose.
