@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import { type Address, getAddress, zeroAddress } from 'viem';
+import { type Address, getAddress, isAddressEqual, zeroAddress } from 'viem';
 import type { MockedObject } from 'vitest';
 import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
 import {
@@ -44,9 +44,9 @@ import type {
   PendingQueuedPolicy,
 } from '#/modules/policies/domain/entities/pending-policy.entity';
 import { PolicyType } from '#/modules/policies/domain/entities/policy-type.entity';
-import type { ISafePolicyGuardConfigurationRequestsRepository } from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository.interface';
 import type { IPolicyIndexerRepository } from '#/modules/policies/domain/policy-indexer.repository.interface';
 import type { ISafePolicyGuardRepository } from '#/modules/policies/domain/safe-policy-guard.repository.interface';
+import type { ISafePolicyGuardConfigurationRequestsRepository } from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository.interface';
 import { guardPolicyKindsOf } from '#/modules/policies/domain/utils/policy.utils';
 import type { GuardConfigurationMapper } from '#/modules/policies/routes/mappers/guard-configuration.mapper';
 import { GuardPolicyMapper } from '#/modules/policies/routes/mappers/guard-policy.mapper';
@@ -104,9 +104,10 @@ const mockSafeRepository: MockedObject<
 };
 
 const mockSpaceSafesRepository: MockedObject<
-  Pick<ISpaceSafesRepository, 'findBySpaceId'>
+  Pick<ISpaceSafesRepository, 'findBySpaceId' | 'existsInSpace'>
 > = {
   findBySpaceId: vi.fn(),
+  existsInSpace: vi.fn(),
 };
 
 const mockMembersRepository: MockedObject<Pick<IMembersRepository, 'findOne'>> =
@@ -181,6 +182,14 @@ describe('PoliciesService', () => {
     mockSpaceSafesRepository.findBySpaceId.mockResolvedValue([
       { chainId: SEPOLIA, address: safeAddress },
     ]);
+    // A narrowed read checks each Safe against the Space's own Safes.
+    mockSpaceSafesRepository.existsInSpace.mockImplementation(
+      async ({ spaceId, chainId, address }) =>
+        (await mockSpaceSafesRepository.findBySpaceId(spaceId)).some(
+          (safe) =>
+            safe.chainId === chainId && isAddressEqual(safe.address, address),
+        ),
+    );
     mockSafeRepository.getSafe.mockResolvedValue(
       safeBuilder().with('modules', [allowanceModule]).build(),
     );
@@ -635,6 +644,11 @@ describe('PoliciesService', () => {
         safes: [{ chainId: SEPOLIA, address: safeAddress }],
       });
 
+      expect(mockSpaceSafesRepository.existsInSpace).toHaveBeenCalledWith({
+        spaceId,
+        chainId: SEPOLIA,
+        address: safeAddress,
+      });
       expect(mockPolicyIndexerRepository.getState).toHaveBeenCalledWith({
         guardPolicyKinds: everyGuardKind,
         safes: [{ chainId: SEPOLIA, address: safeAddress }],

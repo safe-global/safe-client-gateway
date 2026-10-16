@@ -6,10 +6,8 @@ import { AddressSchema } from '#/validation/entities/schemas/address.schema';
 import { HexSchema } from '#/validation/entities/schemas/hex.schema';
 
 /**
- * The configurations CGW stored for one root of one Safe.
- *
- * Only a decoding aid: the on-chain `RootConfigured` and `RootInvalidated`
- * events decide where a root stands.
+ * The configurations CGW stored for one root of one Safe: what a root decodes
+ * to, and the only source of `draft` items and their `createdAt`.
  */
 export const StoredPolicyConfigurationSchema = z.object({
   chainId: ChainIdSchema,

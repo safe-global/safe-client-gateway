@@ -14,11 +14,11 @@ import { PolicyConfigurationRequest } from '#/modules/policies/datasources/entit
 import { SafePolicyGuardApi } from '#/modules/policies/datasources/safe-policy-guard-api.service';
 import { SafeGuardManagerDecoder } from '#/modules/policies/domain/contracts/decoders/safe-guard-manager-decoder.helper';
 import { SafePolicyGuardDecoder } from '#/modules/policies/domain/contracts/decoders/safe-policy-guard-decoder.helper';
-import { SafePolicyGuardConfigurationRequestsRepository } from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository';
-import { ISafePolicyGuardConfigurationRequestsRepository } from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository.interface';
 import { PolicyIndexerRepositoryModule } from '#/modules/policies/domain/policy-indexer-repository.module';
 import { SafePolicyGuardRepository } from '#/modules/policies/domain/safe-policy-guard.repository';
 import { ISafePolicyGuardRepository } from '#/modules/policies/domain/safe-policy-guard.repository.interface';
+import { SafePolicyGuardConfigurationRequestsRepository } from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository';
+import { ISafePolicyGuardConfigurationRequestsRepository } from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository.interface';
 import { GuardConfigurationMapper } from '#/modules/policies/routes/mappers/guard-configuration.mapper';
 import { GuardPolicyMapper } from '#/modules/policies/routes/mappers/guard-policy.mapper';
 import { GuardSetupMapper } from '#/modules/policies/routes/mappers/guard-setup.mapper';

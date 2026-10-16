@@ -9,6 +9,7 @@ import { rawify } from '#/validation/entities/raw.entity';
 
 const mockSafePolicyGuardApi = {
   getExpiry: vi.fn(),
+  getDelay: vi.fn(),
 } as MockedObject<SafePolicyGuardApi>;
 
 describe('SafePolicyGuardRepository', () => {
@@ -29,6 +30,15 @@ describe('SafePolicyGuardRepository', () => {
 
     await expect(target.getExpiry(args)).resolves.toBe(expiry);
     expect(mockSafePolicyGuardApi.getExpiry).toHaveBeenCalledWith(args);
+  });
+
+  it('should return DELAY in seconds', async () => {
+    const delay = faker.number.int({ min: 60, max: 86_400 });
+    mockSafePolicyGuardApi.getDelay.mockResolvedValue(rawify(String(delay)));
+
+    await expect(target.getDelay(args)).resolves.toBe(delay);
+    expect(mockSafePolicyGuardApi.getDelay).toHaveBeenCalledWith(args);
+    expect(mockSafePolicyGuardApi.getExpiry).not.toHaveBeenCalled();
   });
 
   it('should reject an EXPIRY beyond the safe integer range', async () => {

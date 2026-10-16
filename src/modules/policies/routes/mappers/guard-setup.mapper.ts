@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import { type Address, type Hex, isAddressEqual, zeroAddress } from 'viem';
-import { z } from 'zod';
 import {
   type ILoggingService,
   LoggingService,
@@ -17,8 +16,8 @@ import {
   PendingGuardSetupStatus,
 } from '#/modules/policies/domain/entities/pending-policy.entity';
 import {
+  OnChainPolicyConfigurationsSchema,
   type PolicyConfiguration,
-  PolicyConfigurationSchema,
 } from '#/modules/policies/domain/entities/policy-configuration.entity';
 import type { SafeRef } from '#/modules/policies/domain/entities/safe-ref.entity';
 import { getSafePolicyGuardDeployments } from '#/modules/policies/domain/policy-deployments.constants';
@@ -73,8 +72,8 @@ export class GuardSetupMapper {
         // Every transaction runs against the Safe's current slots: the queue
         // executes one transaction at a time, and an earlier one may never run.
         slots: {
-          guard: this.slotValue(args.guard),
-          moduleGuard: this.slotValue(args.moduleGuard),
+          guard: slotValue(args.guard),
+          moduleGuard: slotValue(args.moduleGuard),
         },
       });
 
@@ -162,13 +161,13 @@ export class GuardSetupMapper {
 
     const slot = isSetGuard ? 'guard' : 'moduleGuard';
     const from = args.slots[slot];
-    const to = this.slotValue(newValue);
+    const to = slotValue(newValue);
     args.slots[slot] = to;
 
     if (
       !(
-        this.isKnownGuard(from, args.knownGuards) ||
-        this.isKnownGuard(to, args.knownGuards)
+        isKnownGuard(from, args.knownGuards) ||
+        isKnownGuard(to, args.knownGuards)
       )
     ) {
       return null;
@@ -192,7 +191,7 @@ export class GuardSetupMapper {
   }): PendingGuardSetupChange | null {
     if (
       !(
-        this.isKnownGuard(args.call.to, args.knownGuards) &&
+        isKnownGuard(args.call.to, args.knownGuards) &&
         this.safePolicyGuardDecoder.helpers.isConfigureImmediately(
           args.call.data,
         )
@@ -213,8 +212,8 @@ export class GuardSetupMapper {
       guard,
       configurations,
       willRevert:
-        this.isSameAddress(args.slots.guard, guard) ||
-        this.isSameAddress(args.slots.moduleGuard, guard),
+        isSameAddress(args.slots.guard, guard) ||
+        isSameAddress(args.slots.moduleGuard, guard),
     };
   }
 
@@ -231,31 +230,14 @@ export class GuardSetupMapper {
       }
 
       const [configurations] = decoded.args;
-      const parsed = z
-        .array(PolicyConfigurationSchema)
-        .safeParse(configurations);
+      const parsed =
+        OnChainPolicyConfigurationsSchema.safeParse(configurations);
 
       return parsed.success ? parsed.data : null;
     } catch (error) {
       this.logUndecodable(error);
       return null;
     }
-  }
-
-  /** A guard slot's value, with the zero address read as an empty slot. */
-  private slotValue(address: Address | null): Address | null {
-    return address && !isAddressEqual(address, zeroAddress) ? address : null;
-  }
-
-  private isKnownGuard(
-    address: Address | null,
-    knownGuards: ReadonlyArray<Address>,
-  ): boolean {
-    return knownGuards.some((guard) => this.isSameAddress(address, guard));
-  }
-
-  private isSameAddress(a: Address | null, b: Address): boolean {
-    return a !== null && isAddressEqual(a, b);
   }
 
   /**
@@ -269,4 +251,20 @@ export class GuardSetupMapper {
       error: asError(error).message,
     });
   }
+}
+
+/** A guard slot's value, with the zero address read as an empty slot. */
+function slotValue(address: Address | null): Address | null {
+  return address && !isAddressEqual(address, zeroAddress) ? address : null;
+}
+
+function isKnownGuard(
+  address: Address | null,
+  knownGuards: ReadonlyArray<Address>,
+): boolean {
+  return knownGuards.some((guard) => isSameAddress(address, guard));
+}
+
+function isSameAddress(a: Address | null, b: Address): boolean {
+  return a !== null && isAddressEqual(a, b);
 }

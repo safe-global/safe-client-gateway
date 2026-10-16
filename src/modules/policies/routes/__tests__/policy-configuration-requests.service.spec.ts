@@ -11,12 +11,13 @@ import { policyConfigurationBuilder } from '#/modules/policies/domain/entities/_
 import { policyIndexerConfigurationRootBuilder } from '#/modules/policies/domain/entities/indexer/__tests__/configuration-root.builder';
 import { policyIndexerResponseBuilder } from '#/modules/policies/domain/entities/indexer/__tests__/policy-indexer-state.builder';
 import type { PolicyConfiguration } from '#/modules/policies/domain/entities/policy-configuration.entity';
+import { getSafePolicyGuardDeployments } from '#/modules/policies/domain/policy-deployments.constants';
+import type { IPolicyIndexerRepository } from '#/modules/policies/domain/policy-indexer.repository.interface';
+import type { ISafePolicyGuardRepository } from '#/modules/policies/domain/safe-policy-guard.repository.interface';
 import {
   EVERY_ROOT_ACTIVE,
   type ISafePolicyGuardConfigurationRequestsRepository,
 } from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository.interface';
-import type { IPolicyIndexerRepository } from '#/modules/policies/domain/policy-indexer.repository.interface';
-import type { ISafePolicyGuardRepository } from '#/modules/policies/domain/safe-policy-guard.repository.interface';
 import { configurationRoot } from '#/modules/policies/domain/utils/policy-configuration-root.utils';
 import { PolicyConfigurationRequestsService } from '#/modules/policies/routes/policy-configuration-requests.service';
 import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
@@ -159,32 +160,59 @@ describe('PolicyConfigurationRequestsService', () => {
 
       await target.create({ ...request, payload: validPayload() });
 
-      const [, rule] = configurationRequestsRepository.create.mock.calls[0];
-      expect(rule?.onChain).toStrictEqual(
-        new Map([
-          [live.root.toLowerCase(), true],
-          [expired.root.toLowerCase(), false],
-          [applied.root.toLowerCase(), false],
-          [invalidated.root.toLowerCase(), false],
-        ]),
+      expect(configurationRequestsRepository.create).toHaveBeenCalledWith(
+        expect.anything(),
+        {
+          onChain: new Map([
+            [live.root, true],
+            [expired.root, false],
+            [applied.root, false],
+            [invalidated.root, false],
+          ]),
+          draftsSince: null,
+        },
       );
+      // One read per guard of a pending root, none for settled roots.
+      expect(safePolicyGuardRepository.getExpiry).toHaveBeenCalledTimes(1);
     });
 
-    it("should only count drafts younger than the guard's delay and expiry", async () => {
+    it("should only count drafts younger than the known guard's delay and expiry", async () => {
+      // Either slot holds the guard; the module guard alone is enough.
+      const [deployment] = getSafePolicyGuardDeployments(safe.chainId);
+      safeRepository.getSafe.mockResolvedValue(
+        safeBuilder()
+          .with('guard', zeroAddress)
+          .with('moduleGuard', deployment)
+          .build(),
+      );
+
+      await target.create({ ...request, payload: validPayload() });
+
+      expect(configurationRequestsRepository.create).toHaveBeenCalledWith(
+        expect.anything(),
+        {
+          onChain: new Map(),
+          draftsSince: new Date((nowSeconds - delay - expiry) * 1_000),
+        },
+      );
+      expect(safePolicyGuardRepository.getDelay).toHaveBeenCalledWith({
+        chainId: safe.chainId,
+        guard: deployment,
+      });
+    });
+
+    it('should not age drafts by a guard that is not a known deployment', async () => {
       safeRepository.getSafe.mockResolvedValue(
         safeBuilder().with('guard', guard).build(),
       );
 
       await target.create({ ...request, payload: validPayload() });
 
-      const [, rule] = configurationRequestsRepository.create.mock.calls[0];
-      expect(rule?.draftsSince).toStrictEqual(
-        new Date((nowSeconds - delay - expiry) * 1_000),
+      expect(configurationRequestsRepository.create).toHaveBeenCalledWith(
+        expect.anything(),
+        { onChain: new Map(), draftsSince: null },
       );
-      expect(safePolicyGuardRepository.getDelay).toHaveBeenCalledWith({
-        chainId: safe.chainId,
-        guard,
-      });
+      expect(safePolicyGuardRepository.getDelay).not.toHaveBeenCalled();
     });
 
     it('should count every root when chain state cannot be read', async () => {
@@ -230,6 +258,7 @@ describe('PolicyConfigurationRequestsService', () => {
     ).resolves.toStrictEqual({ root: payload.root });
     expect(configurationRequestsRepository.create).toHaveBeenCalledWith(
       expect.objectContaining({ root: payload.root }),
+      expect.anything(),
     );
   });
 

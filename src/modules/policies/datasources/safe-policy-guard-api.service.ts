@@ -7,7 +7,6 @@ import {
   type ICacheService,
 } from '#/datasources/cache/cache.service.interface';
 import { MAX_TTL } from '#/datasources/cache/constants';
-import type { CacheDir } from '#/datasources/cache/entities/cache-dir.entity';
 import { DataSourceError } from '#/domain/errors/data-source.error';
 import { IBlockchainApiManager } from '#/domain/interfaces/blockchain-api.manager.interface';
 import { asError } from '#/logging/utils';
@@ -36,30 +35,23 @@ export class SafePolicyGuardApi {
     chainId: string;
     guard: Address;
   }): Promise<Raw<string>> {
-    return await this.readImmutable(
-      args,
-      'EXPIRY',
-      CacheRouter.getSafePolicyGuardExpiryCacheDir(args),
-    );
+    return await this.readImmutable({ ...args, name: 'EXPIRY' });
   }
 
   public async getDelay(args: {
     chainId: string;
     guard: Address;
   }): Promise<Raw<string>> {
-    return await this.readImmutable(
-      args,
-      'DELAY',
-      CacheRouter.getSafePolicyGuardDelayCacheDir(args),
-    );
+    return await this.readImmutable({ ...args, name: 'DELAY' });
   }
 
   /** Immutable per deployment, so cached with no TTL. */
-  private async readImmutable(
-    args: { chainId: string; guard: Address },
-    functionName: 'DELAY' | 'EXPIRY',
-    cacheDir: CacheDir,
-  ): Promise<Raw<string>> {
+  private async readImmutable(args: {
+    chainId: string;
+    guard: Address;
+    name: 'DELAY' | 'EXPIRY';
+  }): Promise<Raw<string>> {
+    const cacheDir = CacheRouter.getSafePolicyGuardCacheDir(args);
     const cached = await this.cacheService.hGet(cacheDir);
 
     if (cached !== null) {
@@ -72,12 +64,12 @@ export class SafePolicyGuardApi {
       const seconds = await client.readContract({
         address: args.guard,
         abi: SafePolicyGuardAbi,
-        functionName,
+        functionName: args.name,
       });
       value = seconds.toString();
     } catch (error) {
       throw new DataSourceError(
-        `Could not read the ${functionName} of a SafePolicyGuard: ${asError(error).message}`,
+        `Could not read the ${args.name} of a SafePolicyGuard: ${asError(error).message}`,
         HttpStatus.SERVICE_UNAVAILABLE,
       );
     }

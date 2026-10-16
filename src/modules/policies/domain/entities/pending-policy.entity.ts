@@ -86,11 +86,11 @@ export const PendingGuardConfigurationStatus = {
   Draft: 'draft',
   /** A queued transaction calls `requestConfiguration(root)`. */
   ConfigurationInSigning: 'configuration-in-signing',
-  /** Requested on-chain, inside its application window, nothing queued. */
+  /** Requested on-chain and not expired; in its delay or ready to apply. */
   PendingApplication: 'pending-application',
   /** A queued `applyConfiguration` with fewer confirmations than needed. */
   ApplicationInSigning: 'application-in-signing',
-  /** A queued `applyConfiguration` with every confirmation in. */
+  /** A queued `applyConfiguration` with every confirmation in, after `readyAt`. */
   ApplicationReady: 'application-ready',
   /** Requested on-chain, but the application window has closed. */
   Expired: 'expired',

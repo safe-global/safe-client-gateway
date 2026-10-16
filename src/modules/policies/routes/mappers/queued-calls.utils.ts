@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import type { Address, Hex } from 'viem';
+import { toSecondsTimestamp } from '#/domain/common/utils/time';
 import type { MultiSendDecoder } from '#/modules/contracts/domain/decoders/multi-send-decoder.helper';
 import type { PendingTransaction } from '#/modules/policies/domain/entities/pending-policy.entity';
 import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
@@ -49,6 +51,6 @@ export function pendingTransactionOf(
     nonce: transaction.nonce,
     confirmations: transaction.confirmations?.length ?? 0,
     confirmationsRequired: transaction.confirmationsRequired,
-    proposedAt: Math.floor(transaction.submissionDate.getTime() / 1000),
+    proposedAt: toSecondsTimestamp(transaction.submissionDate),
   };
 }
