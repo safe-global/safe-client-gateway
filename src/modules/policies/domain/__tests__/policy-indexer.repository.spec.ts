@@ -5,6 +5,7 @@ import type { MockedObject } from 'vitest';
 import { ZodError } from 'zod';
 import type { ILoggingService } from '#/logging/logging.interface';
 import type { PolicyIndexerApi } from '#/modules/policies/datasources/policy-indexer-api.service';
+import { rawIndexerConfigurationRootBuilder } from '#/modules/policies/domain/entities/indexer/__tests__/configuration-root.builder';
 import { rawIndexerGuardEnforcedPolicyBuilder } from '#/modules/policies/domain/entities/indexer/__tests__/guard-enforced-policy.builder';
 import {
   rawIndexerMetaBuilder,
@@ -101,6 +102,7 @@ describe('PolicyIndexerRepository', () => {
         allowances: [],
         delegates: [],
         guardPolicyBindings: [],
+        roots: [],
       });
       expect(mockPolicyIndexerApi.getState).not.toHaveBeenCalled();
     });
@@ -127,6 +129,73 @@ describe('PolicyIndexerRepository', () => {
         chainId: SEPOLIA,
         safeAddress: safe,
       });
+    });
+  });
+
+  describe('configuration roots', () => {
+    it('should parse the configuration roots', async () => {
+      const root = rawIndexerConfigurationRootBuilder()
+        .with('safe', safe)
+        .with('readyAt', '1787585100')
+        .with('status', 'APPLIED')
+        .build();
+      mockPolicyIndexerApi.getState.mockResolvedValue(
+        rawify(rawPolicyIndexerResponse({ ConfigurationRoot: [root] })),
+      );
+
+      const result = await target.getState({
+        safes: [{ chainId: SEPOLIA, address: safe }],
+        guardPolicyKinds,
+      });
+
+      expect(result.roots).toStrictEqual([
+        {
+          chainId: SEPOLIA,
+          safe,
+          guard: getAddress(root.guard),
+          root: root.root,
+          readyAt: 1787585100,
+          status: 'APPLIED',
+        },
+      ]);
+    });
+
+    it('should lower-case the root, as CGW stores it', async () => {
+      const root = rawIndexerConfigurationRootBuilder()
+        .with('safe', safe)
+        .build();
+      const upperCased = `0x${root.root.slice(2).toUpperCase()}`;
+      mockPolicyIndexerApi.getState.mockResolvedValue(
+        rawify(
+          rawPolicyIndexerResponse({
+            ConfigurationRoot: [{ ...root, root: upperCased }],
+          }),
+        ),
+      );
+
+      const result = await target.getState({
+        safes: [{ chainId: SEPOLIA, address: safe }],
+        guardPolicyKinds,
+      });
+
+      expect(result.roots[0].root).toBe(root.root.toLowerCase());
+    });
+
+    it('should drop a root with an unknown status', async () => {
+      const root = rawIndexerConfigurationRootBuilder()
+        .with('safe', safe)
+        .with('status', faker.string.alpha({ length: 8, casing: 'upper' }))
+        .build();
+      mockPolicyIndexerApi.getState.mockResolvedValue(
+        rawify(rawPolicyIndexerResponse({ ConfigurationRoot: [root] })),
+      );
+
+      const result = await target.getState({
+        safes: [{ chainId: SEPOLIA, address: safe }],
+        guardPolicyKinds,
+      });
+
+      expect(result.roots).toStrictEqual([]);
     });
   });
 

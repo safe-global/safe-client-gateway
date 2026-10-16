@@ -51,6 +51,7 @@ export class CacheRouter {
   private static readonly BILLING_SUBSCRIPTIONS_KEY = 'billing_subscriptions';
   private static readonly RATE_LIMIT_KEY = 'rate_limit';
   private static readonly POLICY_INDEXER_STATE_KEY = 'policy_indexer_state';
+  private static readonly SAFE_POLICY_GUARD_KEY = 'safe_policy_guard';
   private static readonly RELAY_KEY = 'relay';
   private static readonly RPC_REQUESTS_KEY = 'rpc_requests';
   private static readonly SAFE_APPS_KEY = 'safe_apps';
@@ -1387,5 +1388,17 @@ export class CacheRouter {
     safeAddress: Address;
   }): string {
     return `${args.chainId}_${CacheRouter.POLICY_INDEXER_STATE_KEY}_${args.safeAddress}`;
+  }
+
+  /** An immutable of a `SafePolicyGuard` deployment, one field per guard and value. */
+  static getSafePolicyGuardCacheDir(args: {
+    chainId: string;
+    guard: Address;
+    name: 'DELAY' | 'EXPIRY';
+  }): CacheDir {
+    return new CacheDir(
+      `${args.chainId}_${CacheRouter.SAFE_POLICY_GUARD_KEY}`,
+      `${args.guard}_${args.name}`,
+    );
   }
 }
