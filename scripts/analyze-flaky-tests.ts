@@ -236,7 +236,11 @@ async function fetchAllCiRuns(
 			}) as GhWorkflowRunsResponse;
 
 			const ciRuns = data.workflow_runs.filter(
-				(r) => CI_WORKFLOWS.has(r.path) && r.event !== "release",
+				// The report branch's own pushes run a stale ci.yml and always fail
+				(r) =>
+					CI_WORKFLOWS.has(r.path) &&
+					r.event !== "release" &&
+					r.head_branch !== "reports/flaky-tests-baseline",
 			);
 
 			// Deduplicate across chunk boundaries
