@@ -26,14 +26,18 @@ import type { IAddressBookItemsRepository } from '#/modules/spaces/domain/addres
 import { AddressBookTagsRepository } from '#/modules/spaces/domain/address-books/address-book-tags.repository';
 import type { IAddressBookTagsRepository } from '#/modules/spaces/domain/address-books/address-book-tags.repository.interface';
 import { addressBookItemBuilder } from '#/modules/spaces/domain/address-books/entities/__tests__/address-book-item.db.builder';
+import { addressBookItemTagDbBuilder } from '#/modules/spaces/domain/address-books/entities/__tests__/address-book-item-tag.db.builder';
+import { addressBookTagDbBuilder } from '#/modules/spaces/domain/address-books/entities/__tests__/address-book-tag.db.builder';
 import {
   type AddressBookTag as DomainAddressBookTag,
   TAG_COLORS,
+  type TagColor,
   WORKSPACE_TAG_LIMIT_MESSAGE,
 } from '#/modules/spaces/domain/address-books/entities/address-book-tag.entity';
 import { createMockSpaceAuditRepository } from '#/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
 import { SpaceAuditEventType } from '#/modules/spaces/domain/audit/entities/space-audit-event.entity';
 import type { SpaceAuditRecordArgs } from '#/modules/spaces/domain/audit/space-audit.repository.interface';
+import { spaceBuilder } from '#/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
 import { SpacesRepository } from '#/modules/spaces/domain/spaces.repository';
 import { Member } from '#/modules/users/datasources/entities/member.entity.db';
 import { User } from '#/modules/users/datasources/entities/users.entity.db';
@@ -935,6 +939,73 @@ describe('AddressBookTagsRepository', () => {
     );
   });
 
+  describe('findBySpaceId', () => {
+    it('lists the tags of the space with their contact counts and which contact has which, and nothing of another space', async () => {
+      const { spaceId, userId } = await createSpace();
+      const other = await createSpace();
+      const [alice, bob] = await createContacts({ spaceId, userId, count: 2 });
+      const [stranger] = await createContacts({
+        spaceId: other.spaceId,
+        userId: other.userId,
+        count: 1,
+      });
+      const [aliceId, bobId, strangerId] = await Promise.all([
+        findItemId(spaceId, alice),
+        findItemId(spaceId, bob),
+        findItemId(other.spaceId, stranger),
+      ]);
+      const [sharedName, soloName, foreignName] = tagNames(3);
+      const [sharedColor, soloColor] = faker.helpers.arrayElements(
+        TAG_COLORS,
+        2,
+      );
+      const shared = await insertTagRow({
+        spaceId,
+        name: sharedName,
+        color: sharedColor,
+      });
+      const solo = await insertTagRow({
+        spaceId,
+        name: soloName,
+        color: soloColor,
+      });
+      const foreign = await insertTagRow({
+        spaceId: other.spaceId,
+        name: foreignName,
+        color: faker.helpers.arrayElement(TAG_COLORS),
+      });
+      await dbItemTagsRepository.insert(
+        [
+          [aliceId, shared],
+          [bobId, shared],
+          [aliceId, solo],
+          [strangerId, foreign],
+        ].map(([itemId, tagId]) =>
+          addressBookItemTagDbBuilder()
+            .with('itemId', itemId)
+            .with('tagId', tagId)
+            .build(),
+        ),
+      );
+
+      const { tags, itemTagIds } =
+        await addressBookTagsRepository.findBySpaceId(spaceId);
+
+      expect(tags).toHaveLength(2);
+      expect(tags).toEqual(
+        expect.arrayContaining([
+          { id: shared, name: sharedName, color: sharedColor, contactCount: 2 },
+          { id: solo, name: soloName, color: soloColor, contactCount: 1 },
+        ]),
+      );
+      expect(new Set(itemTagIds.get(aliceId))).toStrictEqual(
+        new Set([shared, solo]),
+      );
+      expect(itemTagIds.get(bobId)).toStrictEqual([shared]);
+      expect(itemTagIds.has(strangerId)).toBe(false);
+    });
+  });
+
   describe('lockSpaceForTagWrites', () => {
     it('returns the id and uuid of the space', async () => {
       const { spaceId, spaceUuid } = await createSpace();
@@ -1305,6 +1376,22 @@ describe('AddressBookTagsRepository', () => {
       args.spaceId,
     );
     return findTagByName(tags, args.name);
+  };
+
+  /** Inserts a tag row straight into the table, bypassing the repository; returns its id. */
+  const insertTagRow = async (args: {
+    spaceId: number;
+    name: string;
+    color: TagColor;
+  }): Promise<number> => {
+    const tag = addressBookTagDbBuilder()
+      .with('space', spaceBuilder().with('id', args.spaceId).build())
+      .with('name', args.name)
+      .with('nameIndex', `${args.spaceId}:${args.name.toLowerCase()}`)
+      .with('color', args.color)
+      .build();
+    await dbTagsRepository.insert(tag);
+    return tag.id;
   };
 
   const findTagByName = (
