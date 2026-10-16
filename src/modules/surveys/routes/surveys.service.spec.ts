@@ -3,10 +3,11 @@
 import { faker } from '@faker-js/faker';
 import {
   BadRequestException,
-  ForbiddenException,
+  HttpStatus,
   NotFoundException,
 } from '@nestjs/common';
 import type { MockedObject } from 'vitest';
+import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
 import { oidcAuthPayloadDtoBuilder } from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
 import type { ISpacesRepository } from '#/modules/spaces/domain/spaces.repository.interface';
@@ -80,7 +81,7 @@ describe('SurveysService', () => {
   });
 
   describe('admin gate', () => {
-    it('throws ForbiddenException when caller is not an active admin', async () => {
+    it('throws a 403 when caller is not an active admin', async () => {
       membersRepositoryMock.findOne.mockResolvedValue(null);
 
       await expect(
@@ -90,7 +91,12 @@ describe('SurveysService', () => {
           slug: 'onboarding',
           body: { selections: { use_cases: ['hold_assets'] } },
         }),
-      ).rejects.toBeInstanceOf(ForbiddenException);
+      ).rejects.toThrow(
+        new HttpExceptionNoLog(
+          'User is not an admin of this workspace',
+          HttpStatus.FORBIDDEN,
+        ),
+      );
 
       expect(
         surveysRepositoryMock.findActiveBySlugOrFail,
