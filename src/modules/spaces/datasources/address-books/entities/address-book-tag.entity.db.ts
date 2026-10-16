@@ -9,8 +9,8 @@ import {
   Unique,
 } from 'typeorm';
 import { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
-import type { AddressBookTagDbItem as DomainAddressBookTag } from '#/modules/spaces/domain/address-books/entities/address-book-tag.db.entity';
 import type { TagColor } from '#/modules/spaces/domain/address-books/entities/address-book-tag.entity';
+import type { AddressBookTagDbItem as DomainAddressBookTag } from '#/modules/spaces/domain/address-books/entities/address-book-tag-db.entity';
 
 @Entity('space_address_book_tags')
 @Index('IDX_SABT_space_id', ['space'])
