@@ -19,8 +19,8 @@ import type {
 } from '#/modules/policies/domain/entities/token.entity';
 import type { TokenMetadataKey } from '#/modules/policies/domain/utils/token-metadata-key.utils';
 import { tokenMetadataKey } from '#/modules/policies/domain/utils/token-metadata-key.utils';
+import { queuedCalls } from '#/modules/policies/routes/mappers/queued-calls.utils';
 import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
-import { Operation } from '#/modules/safe/domain/entities/operation.entity';
 
 type ModuleChange = { module: Address; change: PendingSpendingLimitChange };
 
@@ -119,7 +119,10 @@ export class PendingSpendingLimitMapper {
     transaction: MultisigTransaction;
     knownModules: ReadonlyArray<Address>;
   }): Array<PendingQueuedPolicy> {
-    const matches = this.candidates(args.transaction).flatMap((candidate) =>
+    const matches = queuedCalls(
+      args.transaction,
+      this.multiSendDecoder,
+    ).flatMap((candidate) =>
       this.classify({
         candidate,
         safeAddress: args.safe.address,
@@ -141,39 +144,6 @@ export class PendingSpendingLimitMapper {
       data: { module, changes },
       safe: args.safe,
     }));
-  }
-
-  /**
-   * The transaction itself, plus - one level only, no recursion - every
-   * sub-transaction of a MultiSend batch.
-   *
-   * `Operation.DELEGATE` candidates are dropped: a delegatecall to an
-   * AllowanceModule selector runs against the Safe's own storage, not the
-   * module's, so it cannot be a real allowance change - treating it as one
-   * would be actively misleading (it is also a known way to disguise an
-   * unrelated malicious call as an innocuous module call).
-   */
-  private candidates(
-    transaction: MultisigTransaction,
-  ): Array<{ to: Address; data: Hex }> {
-    if (!transaction.data) {
-      return [];
-    }
-
-    const all = [
-      {
-        to: transaction.to,
-        data: transaction.data,
-        operation: transaction.operation,
-      },
-      ...(this.multiSendDecoder.helpers.isMultiSend(transaction.data)
-        ? this.multiSendDecoder.mapMultiSendTransactions(transaction.data)
-        : []),
-    ];
-
-    return all
-      .filter((candidate) => candidate.operation === Operation.CALL)
-      .map(({ to, data }) => ({ to, data }));
   }
 
   private classify(args: {
