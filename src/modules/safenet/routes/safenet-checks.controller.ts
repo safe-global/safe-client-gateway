@@ -51,7 +51,7 @@ export class SafenetChecksController {
       'Queues a Safenet check of a pending Safe transaction that an owner has signed. ' +
       'Safe Labs pays the fee and counts the check against the workspace in the path. ' +
       'The caller must be an active member of that workspace, the workspace must hold the ' +
-      'Safe and have a plan that includes Safenet checks, and the chain must list SAFENET_CHECKS.',
+      'Safe and its plan must grant safenet_checks, and the chain must list SAFENET_CHECKS.',
   })
   @ApiParam({
     name: 'spaceId',
@@ -75,7 +75,12 @@ export class SafenetChecksController {
   @ApiBadRequestResponse({ description: 'Malformed workspace identifier' })
   @ApiForbiddenResponse({
     description:
-      'Not a member of the workspace, or the workspace does not hold the Safe or its plan does not include checks',
+      'Not a member of the workspace, or the workspace does not hold the Safe',
+  })
+  @ApiResponse({
+    status: HttpStatus.PAYMENT_REQUIRED,
+    description:
+      'The workspace has no safenet_checks entitlement. The body carries `{ code: "FEATURE_NOT_GRANTED", feature }`',
   })
   @ApiNotFoundResponse({
     description: 'Workspace not found, or no such transaction for this Safe',
@@ -98,7 +103,6 @@ export class SafenetChecksController {
   @UseGuards(AuthGuard)
   public async requestCheck(
     @Param('spaceId', SpaceIdPipe) spaceId: Space['id'],
-    @Param('spaceId') spaceUuid: Space['uuid'],
     @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,
@@ -107,7 +111,7 @@ export class SafenetChecksController {
     @Auth() authPayload: AuthPayload,
   ): Promise<void> {
     await this.safenetChecksService.requestCheck({
-      space: { id: spaceId, uuid: spaceUuid },
+      spaceId,
       chainId,
       safeAddress,
       safeTxHash: body.safeTxHash,
