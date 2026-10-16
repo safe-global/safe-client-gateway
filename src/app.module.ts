@@ -131,12 +131,11 @@ export class AppModule implements NestModule {
             ]
           : []),
         ...(isBillingServiceFeatureEnabled && isUsersFeatureEnabled
-          ? [EntitlementsRoutesModule, SpaceRelayModule]
-          : []),
-        ...(isSafenetFeatureEnabled &&
-        isBillingServiceFeatureEnabled &&
-        isUsersFeatureEnabled
-          ? [SafenetChecksModule]
+          ? [
+              EntitlementsRoutesModule,
+              SpaceRelayModule,
+              ...(isSafenetFeatureEnabled ? [SafenetChecksModule] : []),
+            ]
           : []),
         OwnersModule,
         RelayModule,

@@ -3,6 +3,7 @@ import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import semverSatisfies from 'semver/functions/satisfies';
 import { type Address, type Hex, isAddressEqual } from 'viem';
 import { IConfigurationService } from '#/config/configuration.service.interface';
+import type { PlanTypes } from '#/datasources/billing-api/entities/plan.entity';
 import { CacheRouter } from '#/datasources/cache/cache.router';
 import {
   CacheService,
@@ -29,7 +30,11 @@ const SAFENET_CHECKS_FEATURE = 'SAFENET_CHECKS';
 // Consensus always hashes a Safe transaction with the 1.3.0+ domain.
 const MIN_SAFE_VERSION = '>=1.3.0';
 // Plan types whose active or trialing subscription includes sponsored checks.
-const ELIGIBLE_PLAN_TYPES: ReadonlyArray<string> = ['premium', 'enterprise'];
+const ELIGIBLE_PLAN_TYPES: ReadonlyArray<(typeof PlanTypes)[number]> = [
+  'premium',
+  'enterprise',
+];
+const UTC_DATE_LENGTH = 'YYYY-MM-DD'.length;
 
 type SafeRequest = { chainId: string; safeAddress: Address; safeTxHash: Hex };
 type SpaceRef = Pick<Space, 'id' | 'uuid'>;
@@ -122,7 +127,7 @@ export class SafenetChecksService {
   }
 
   private async assertWithinDailyLimit(space: SpaceRef): Promise<void> {
-    const day = new Date().toISOString().slice(0, 10);
+    const day = new Date().toISOString().slice(0, UTC_DATE_LENGTH);
     const count = await this.cache.increment(
       CacheRouter.getSafenetChecksRateLimitCacheKey({
         spaceId: space.id,
@@ -131,7 +136,8 @@ export class SafenetChecksService {
       this.dayTtlSeconds,
       0,
     );
-    if (count > this.checksPerSpacePerDay) {
+    // A non-numeric Redis reply must not open the spend cap.
+    if (!Number.isFinite(count) || count > this.checksPerSpacePerDay) {
       throw new HttpExceptionNoLog(
         'Daily Safenet check limit reached for this workspace',
         HttpStatus.TOO_MANY_REQUESTS,

@@ -17,14 +17,20 @@ import { IConfigurationService } from '#/config/configuration.service.interface'
 import { subscriptionPlanBuilder } from '#/datasources/billing-api/entities/__tests__/plan.builder';
 import { subscriptionBuilder } from '#/datasources/billing-api/entities/__tests__/subscription.builder';
 import type { PlanTypes } from '#/datasources/billing-api/entities/plan.entity';
-import type { SubscriptionStatus } from '#/datasources/billing-api/entities/subscription.entity';
+import {
+  type SubscriptionStatus,
+  SubscriptionStatuses,
+} from '#/datasources/billing-api/entities/subscription.entity';
 import { FakeCacheService } from '#/datasources/cache/__tests__/fake.cache.service';
 import { CacheService } from '#/datasources/cache/cache.service.interface';
+import { JobType } from '#/datasources/job-queue/types/job-types';
 import { SAFENET_CHECKS_QUEUE } from '#/domain/common/jobs.constants';
+import { getBaseMultisigTransaction } from '#/domain/common/utils/safe';
 import { siweAuthPayloadDtoBuilder } from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthGuard } from '#/modules/auth/routes/guards/auth.guard';
 import { IBillingRepository } from '#/modules/billing/domain/billing.repository.interface';
 import { IFeatureFlagService } from '#/modules/chains/feature-flags/feature-flag.service.interface';
+import { isActiveSubscriptionStatus } from '#/modules/entitlements/domain/entitlements.constants';
 import { multisigTransactionBuilder } from '#/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
 import { confirmationBuilder } from '#/modules/safe/domain/entities/__tests__/multisig-transaction-confirmation.builder';
 import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
@@ -47,6 +53,7 @@ describe('SafenetChecksController', () => {
   let transaction: MultisigTransaction;
   let spaceId: number;
   let spaceUuid: string;
+  const authPayload = siweAuthPayloadDtoBuilder().build();
   const queuedJobIds = new Set<string>();
   const queue = {
     setGlobalConcurrency: vi.fn(),
@@ -124,7 +131,7 @@ describe('SafenetChecksController', () => {
       .useValue({
         canActivate: (context: ExecutionContext): boolean => {
           context.switchToHttp().getRequest()[AUTH_PAYLOAD_REQUEST_PROPERTY] =
-            siweAuthPayloadDtoBuilder().build();
+            authPayload;
           return true;
         },
       })
@@ -158,24 +165,48 @@ describe('SafenetChecksController', () => {
     await app.close();
   });
 
-  it('counts a transaction once and answers 429 for a second one past the daily limit', async () => {
-    await requestCheck().expect(HttpStatus.ACCEPTED);
-    await requestCheck().expect(HttpStatus.ACCEPTED);
+  const replaceTransaction = async (nonce: number): Promise<void> => {
     transaction = await multisigTransactionBuilder()
       .with('safe', safe.address)
       .with('isExecuted', false)
-      .with('nonce', 2)
+      .with('nonce', nonce)
       .buildWithConfirmations({ chainId: CHAIN_ID, safe, signers: [owner] });
     safeRepository.getMultiSigTransaction.mockResolvedValue(transaction);
+  };
+
+  it('counts a transaction once and answers 429 for a second one past the daily limit', async () => {
+    await requestCheck().expect(HttpStatus.ACCEPTED);
+    await requestCheck().expect(HttpStatus.ACCEPTED);
+    await replaceTransaction(2);
 
     await requestCheck().expect(HttpStatus.TOO_MANY_REQUESTS);
 
     expect(queue.add).toHaveBeenCalledTimes(DAILY_LIMIT);
   });
 
+  it('starts a new daily count on the next UTC day', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(new Date('2026-10-20T23:59:00Z'));
+      await requestCheck().expect(HttpStatus.ACCEPTED);
+      await replaceTransaction(2);
+      await requestCheck().expect(HttpStatus.TOO_MANY_REQUESTS);
+
+      vi.setSystemTime(new Date('2026-10-21T00:01:00Z'));
+      await requestCheck().expect(HttpStatus.ACCEPTED);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('queues one check charged to the workspace in the path', async () => {
     await requestCheck().expect(HttpStatus.ACCEPTED);
 
+    expect(members.findOne).toHaveBeenCalledWith({
+      user: { id: Number(authPayload.sub) },
+      space: { id: spaceId },
+      status: 'ACTIVE',
+    });
     expect(spaceSafes.existsInSpace).toHaveBeenCalledWith({
       spaceId,
       chainId: CHAIN_ID,
@@ -185,13 +216,29 @@ describe('SafenetChecksController', () => {
       upstreamCustomerId: spaceUuid,
     });
     expect(queue.add).toHaveBeenCalledWith(
-      'safenet-check',
-      expect.objectContaining({ safeTxHash: transaction.safeTxHash }),
+      JobType.SAFENET_CHECK,
+      {
+        chainId: CHAIN_ID,
+        safe: safe.address,
+        safeTxHash: transaction.safeTxHash,
+        transaction: getBaseMultisigTransaction(transaction),
+      },
       {
         jobId:
           `${CHAIN_ID}-${safe.address}-${transaction.safeTxHash}`.toLowerCase(),
       },
     );
+  });
+
+  it('queues a check for the transaction at the Safe nonce', async () => {
+    safeRepository.getSafe.mockResolvedValue({
+      ...safe,
+      nonce: transaction.nonce,
+    });
+
+    await requestCheck().expect(HttpStatus.ACCEPTED);
+
+    expect(queue.add).toHaveBeenCalledTimes(1);
   });
 
   it('rejects a malformed workspace identifier', async () => {
@@ -200,7 +247,21 @@ describe('SafenetChecksController', () => {
     expect(queue.add).not.toHaveBeenCalled();
   });
 
-  it('rejects a workspace whose plan is not eligible', async () => {
+  it.each(
+    SubscriptionStatuses.filter(
+      (status) => !isActiveSubscriptionStatus(status),
+    ),
+  )('rejects a premium plan whose subscription is %s', async (status) => {
+    billing.getSubscriptionsByCustomerId.mockResolvedValue([
+      subscriptionOf('premium', status),
+    ]);
+
+    await requestCheck().expect(HttpStatus.FORBIDDEN);
+
+    expect(queue.add).not.toHaveBeenCalled();
+  });
+
+  it('rejects a workspace whose plan type is not eligible', async () => {
     billing.getSubscriptionsByCustomerId.mockResolvedValue([
       subscriptionOf('standard'),
     ]);
@@ -208,6 +269,20 @@ describe('SafenetChecksController', () => {
     await requestCheck().expect(HttpStatus.FORBIDDEN);
 
     expect(queue.add).not.toHaveBeenCalled();
+  });
+
+  it('checks eligibility before it reads the transaction', async () => {
+    members.findOne.mockResolvedValue(null);
+    safeRepository.getMultiSigTransaction.mockResolvedValue({
+      ...transaction,
+      isExecuted: true,
+    });
+
+    await requestCheck().expect(HttpStatus.FORBIDDEN);
+
+    expect(billing.getSubscriptionsByCustomerId).not.toHaveBeenCalled();
+    expect(safeRepository.getSafe).not.toHaveBeenCalled();
+    expect(safeRepository.getMultiSigTransaction).not.toHaveBeenCalled();
   });
 
   it.each<[string, () => unknown]>([
@@ -283,9 +358,12 @@ describe('SafenetChecksController', () => {
     expect(queue.add).not.toHaveBeenCalled();
   });
 
-  it('queues a check for a trialing subscription', async () => {
+  it.each<[(typeof PlanTypes)[number], SubscriptionStatus]>([
+    ['premium', 'trialing'],
+    ['enterprise', 'active'],
+  ])('queues a check for a %s plan that is %s', async (type, status) => {
     billing.getSubscriptionsByCustomerId.mockResolvedValue([
-      subscriptionOf('premium', 'trialing'),
+      subscriptionOf(type, status),
     ]);
 
     await requestCheck().expect(HttpStatus.ACCEPTED);

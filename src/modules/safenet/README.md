@@ -35,7 +35,7 @@ The route needs `FF_SAFENET`, `FF_USERS`, `FF_BILLING_SERVICE`, and a signed-in 
 - The workspace has an active or trialing subscription whose plan type is `premium` or `enterprise`.
 - The Safe is version 1.3.0 or newer, because Consensus hashes with that domain.
 - The transaction is pending, belongs to this Safe, and has a confirmation from a current owner.
-- The workspace has queued fewer than `SAFENET_CHECKS_PER_SPACE_PER_DAY` distinct transactions (default 100) on this UTC day. A request for a transaction that already has a job does not count. Past the limit, the route answers 429.
+- The workspace has made fewer than `SAFENET_CHECKS_PER_SPACE_PER_DAY` requests (default 100) on this UTC day that tried to add a job. A request for a transaction that already has a job does not count. A transaction whose job was removed after a payer failure counts again when it is requested again. Past the limit, the route answers 429.
 
 The BullMQ queue `safenet-checks` uses the lowercase job ID `<chainId>-<safe>-<safeTxHash>`. A repeated request for the same transaction adds no job while that job exists. A global concurrency of 1, set at startup, serializes the payer Safe nonce across instances.
 A job runs up to `SAFENET_CHECKS_QUEUE_ATTEMPTS` times (default 3, at most 10) with the backoff of `SAFENET_CHECKS_QUEUE_BACKOFF_TYPE` (default `exponential`) and `SAFENET_CHECKS_QUEUE_BACKOFF_DELAY` (default 5000 ms). It retries only after a `SafenetPayerError`. Any other error fails the job at once, because a retry could pay the fee again.
