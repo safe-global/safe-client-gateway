@@ -40,7 +40,8 @@
     "env:generate:update": "yarn build && node dist/scripts/generate-env.js --update",
     "generate-token": "yarn build && node dist/scripts/generate-token.js",
     "generate:field-encryption-key": "yarn build && node --env-file=.env dist/scripts/generate-field-encryption-index-key.js",
-    "backfill:field-encryption": "yarn build && node --env-file=.env dist/scripts/backfill-field-encryption.js"
+    "backfill:field-encryption": "yarn build && node --env-file=.env dist/scripts/backfill-field-encryption.js",
+    "mark:deployed-counterfactual-safes": "yarn build && node --env-file=.env dist/scripts/mark-deployed-counterfactual-safes.js"
   },
   "dependencies": {
     "@aws-sdk/client-kms": "3.1147.0",
