@@ -202,7 +202,7 @@ export default (): ReturnType<typeof configuration> => ({
     default: faker.number.int(),
     rpc: faker.number.int(),
     safenetNonce: faker.number.int(),
-    safenetChecksPerDay: faker.number.int(),
+    safenetDailyCheckCounter: faker.number.int(),
     hoodi: faker.number.int(),
     indexing: faker.number.int(),
     policyIndexer: faker.number.int({ min: 1, max: 60 }),

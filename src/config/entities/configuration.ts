@@ -379,7 +379,7 @@ export default () => ({
       10,
     ),
     safenetNonce: 60,
-    safenetChecksPerDay: 24 * 60 * 60,
+    safenetDailyCheckCounter: 24 * 60 * 60,
     hoodi: Number.parseInt(
       process.env.HOODI_EXPIRATION_TIME_SECONDS ?? `${60}`,
       10,

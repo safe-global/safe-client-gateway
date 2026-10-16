@@ -95,7 +95,7 @@ describe('SafenetChecksController', () => {
   beforeAll(async () => {
     const configuration = new FakeConfigurationService();
     configuration.set('safenet.checksPerSpacePerDay', DAILY_LIMIT);
-    configuration.set('expirationTimeInSeconds.safenetChecksPerDay', 60);
+    configuration.set('expirationTimeInSeconds.safenetDailyCheckCounter', 60);
     const moduleFixture = await Test.createTestingModule({
       controllers: [SafenetChecksController],
       providers: [

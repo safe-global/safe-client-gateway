@@ -57,7 +57,7 @@ export class SafenetChecksService {
       'safenet.checksPerSpacePerDay',
     );
     this.dayTtlSeconds = configuration.getOrThrow(
-      'expirationTimeInSeconds.safenetChecksPerDay',
+      'expirationTimeInSeconds.safenetDailyCheckCounter',
     );
   }
 
@@ -71,7 +71,7 @@ export class SafenetChecksService {
       safeAddress: request.safeAddress,
       userId: getAuthenticatedUserIdOrFail(authPayload),
     });
-    const jobData = await this.getJobData(request);
+    const jobData = await this.assertPayableTransaction(request);
     // A transaction that already has a job costs nothing; only a new job counts.
     if (await this.queue.has(jobData)) {
       return;
@@ -159,8 +159,10 @@ export class SafenetChecksService {
     }
   }
 
-  /** Pays only for a pending transaction of this Safe that a current owner signed. */
-  private async getJobData(args: SafeRequest): Promise<SafenetCheckJobData> {
+  /** Asserts a pending transaction of this Safe that a current owner signed; returns its job. */
+  private async assertPayableTransaction(
+    args: SafeRequest,
+  ): Promise<SafenetCheckJobData> {
     const { chainId, safeAddress, safeTxHash } = args;
     const [safe, transaction] = await Promise.all([
       this.safeRepository.getSafe({ chainId, address: safeAddress }),
