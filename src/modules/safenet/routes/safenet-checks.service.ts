@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import semverSatisfies from 'semver/functions/satisfies';
-import { Equal } from 'typeorm';
 import { type Address, type Hex, isAddressEqual } from 'viem';
 import { IConfigurationService } from '#/config/configuration.service.interface';
 import { CacheRouter } from '#/datasources/cache/cache.router';
@@ -23,6 +22,7 @@ import type { SafenetCheckJobData } from '#/modules/safenet/domain/entities/safe
 import { SafenetChecksQueue } from '#/modules/safenet/domain/safenet-checks-queue.service';
 import type { Space } from '#/modules/spaces/domain/entities/space.entity';
 import { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository.interface';
+import { assertMember } from '#/modules/spaces/domain/space-assert.utils';
 import { IMembersRepository } from '#/modules/users/domain/members/members.repository.interface';
 
 const SAFENET_CHECKS_FEATURE = 'SAFENET_CHECKS';
@@ -32,8 +32,13 @@ const MIN_SAFE_VERSION = '>=1.3.0';
 const ELIGIBLE_PLAN_TYPES: ReadonlyArray<string> = ['premium', 'enterprise'];
 
 type SafeRequest = { chainId: string; safeAddress: Address; safeTxHash: Hex };
-type SafeUser = { chainId: string; safeAddress: Address; userId: number };
 type SpaceRef = Pick<Space, 'id' | 'uuid'>;
+type SpaceSafeUser = {
+  space: SpaceRef;
+  chainId: string;
+  safeAddress: Address;
+  userId: number;
+};
 
 @Injectable()
 export class SafenetChecksService {
@@ -63,10 +68,11 @@ export class SafenetChecksService {
 
   /** Eligibility goes first, so an ineligible caller learns nothing about the transaction. */
   public async requestCheck(
-    args: SafeRequest & { authPayload: AuthPayload },
+    args: SafeRequest & { space: SpaceRef; authPayload: AuthPayload },
   ): Promise<void> {
-    const { authPayload, ...request } = args;
-    const space = await this.assertEligible({
+    const { authPayload, space, ...request } = args;
+    await this.assertEligible({
+      space,
       chainId: request.chainId,
       safeAddress: request.safeAddress,
       userId: getAuthenticatedUserIdOrFail(authPayload),
@@ -80,8 +86,9 @@ export class SafenetChecksService {
     await this.queue.enqueue(jobData);
   }
 
-  /** The chain offers checks, and a workspace of the user's holds the Safe on an eligible plan. */
-  private async assertEligible(args: SafeUser): Promise<SpaceRef> {
+  /** The caller is a member of the workspace in the path, which holds the Safe on an eligible plan. */
+  private async assertEligible(args: SpaceSafeUser): Promise<void> {
+    await assertMember(this.members, args.space.id, args.userId);
     this.assertAllowed(
       await this.featureFlags.isFeatureEnabled(
         args.chainId,
@@ -89,55 +96,28 @@ export class SafenetChecksService {
       ),
       'Safenet checks are not available on this chain',
     );
-    const spaces = await this.findSpacesHoldingSafe(args);
     this.assertAllowed(
-      spaces.length > 0,
-      'The Safe is not in a workspace you are a member of',
+      await this.spaceSafes.existsInSpace({
+        spaceId: args.space.id,
+        chainId: args.chainId,
+        address: args.safeAddress,
+      }),
+      'The Safe is not in this workspace',
     );
-    const space = await this.findSpaceWithEligiblePlan(spaces);
     this.assertAllowed(
-      space,
+      await this.hasEligiblePlan(args.space),
       'The workspace plan does not include Safenet checks',
     );
-    return space;
   }
 
-  private async findSpacesHoldingSafe(
-    args: SafeUser,
-  ): Promise<Array<SpaceRef>> {
-    const members = await this.members.find({
-      select: { id: true, space: { id: true, uuid: true } },
-      where: { user: Equal(args.userId), status: 'ACTIVE' },
-      relations: { space: true },
+  private async hasEligiblePlan(space: SpaceRef): Promise<boolean> {
+    const subscriptions = await this.billing.getSubscriptionsByCustomerId({
+      upstreamCustomerId: space.uuid,
     });
-    const holds = await Promise.all(
-      members.map(({ space }) =>
-        this.spaceSafes.existsInSpace({
-          spaceId: space.id,
-          chainId: args.chainId,
-          address: args.safeAddress,
-        }),
-      ),
-    );
-    return members.flatMap(({ space }, i) => (holds[i] ? [space] : []));
-  }
-
-  /** The lowest space ID wins, so a Safe in several eligible workspaces is always charged to the same one. */
-  private async findSpaceWithEligiblePlan(
-    spaces: Array<SpaceRef>,
-  ): Promise<SpaceRef | undefined> {
-    const sorted = [...spaces].sort((a, b) => a.id - b.id);
-    const subscriptions = await Promise.all(
-      sorted.map(({ uuid }) =>
-        this.billing.getSubscriptionsByCustomerId({ upstreamCustomerId: uuid }),
-      ),
-    );
-    return sorted.find((_, i) =>
-      subscriptions[i].some(
-        ({ status, plan }) =>
-          isActiveSubscriptionStatus(status) &&
-          ELIGIBLE_PLAN_TYPES.includes(plan.type),
-      ),
+    return subscriptions.some(
+      ({ status, plan }) =>
+        isActiveSubscriptionStatus(status) &&
+        ELIGIBLE_PLAN_TYPES.includes(plan.type),
     );
   }
 

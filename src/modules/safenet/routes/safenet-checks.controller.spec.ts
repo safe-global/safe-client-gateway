@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { faker } from '@faker-js/faker';
 import { getQueueToken } from '@nestjs/bullmq';
 import { type ExecutionContext, HttpStatus } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
@@ -32,8 +33,8 @@ import { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface
 import { SafenetChecksQueue } from '#/modules/safenet/domain/safenet-checks-queue.service';
 import { SafenetChecksController } from '#/modules/safenet/routes/safenet-checks.controller';
 import { SafenetChecksService } from '#/modules/safenet/routes/safenet-checks.service';
-import { spaceBuilder } from '#/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
 import { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository.interface';
+import { ISpacesRepository } from '#/modules/spaces/domain/spaces.repository.interface';
 import { memberBuilder } from '#/modules/users/datasources/entities/__tests__/member.entity.db.builder';
 import { IMembersRepository } from '#/modules/users/domain/members/members.repository.interface';
 import { AUTH_PAYLOAD_REQUEST_PROPERTY } from '#/routes/common/auth/auth-payload.request';
@@ -44,6 +45,8 @@ const DAILY_LIMIT = 1;
 describe('SafenetChecksController', () => {
   let app: TestApplication;
   let transaction: MultisigTransaction;
+  let spaceId: number;
+  let spaceUuid: string;
   const queuedJobIds = new Set<string>();
   const queue = {
     setGlobalConcurrency: vi.fn(),
@@ -58,8 +61,11 @@ describe('SafenetChecksController', () => {
     isFeatureEnabled: vi.fn(),
   } as MockedObject<IFeatureFlagService>;
   const members = {
-    find: vi.fn(),
+    findOne: vi.fn(),
   } as MockedObject<IMembersRepository>;
+  const spaces = {
+    findIdByUuid: vi.fn(),
+  } as MockedObject<ISpacesRepository>;
   const spaceSafes = {
     existsInSpace: vi.fn(),
   } as MockedObject<ISpaceSafesRepository>;
@@ -87,9 +93,11 @@ describe('SafenetChecksController', () => {
       .with('plan', subscriptionPlanBuilder().with('type', type).build())
       .build();
 
-  const requestCheck = () =>
+  const requestCheck = (spaceId: string = spaceUuid) =>
     request(app.getHttpServer())
-      .post(`/v1/chains/${CHAIN_ID}/safes/${safe.address}/safenet/checks`)
+      .post(
+        `/v1/spaces/${spaceId}/chains/${CHAIN_ID}/safes/${safe.address}/safenet/checks`,
+      )
       .send({ safeTxHash: transaction.safeTxHash });
 
   beforeAll(async () => {
@@ -105,6 +113,7 @@ describe('SafenetChecksController', () => {
         { provide: IConfigurationService, useValue: configuration },
         { provide: IFeatureFlagService, useValue: featureFlags },
         { provide: IMembersRepository, useValue: members },
+        { provide: ISpacesRepository, useValue: spaces },
         { provide: ISpaceSafesRepository, useValue: spaceSafes },
         { provide: IBillingRepository, useValue: billing },
         { provide: ISafeRepository, useValue: safeRepository },
@@ -127,9 +136,11 @@ describe('SafenetChecksController', () => {
   beforeEach(async () => {
     queuedJobIds.clear();
     featureFlags.isFeatureEnabled.mockResolvedValue(true);
-    members.find.mockResolvedValue([
-      memberBuilder().with('space', spaceBuilder().build()).build(),
-    ]);
+    // A new workspace per test, so the daily counter starts empty.
+    spaceId = faker.number.int({ min: 1 });
+    spaceUuid = faker.string.uuid();
+    spaces.findIdByUuid.mockResolvedValue(spaceId);
+    members.findOne.mockResolvedValue(memberBuilder().build());
     spaceSafes.existsInSpace.mockResolvedValue(true);
     billing.getSubscriptionsByCustomerId.mockResolvedValue([
       subscriptionOf('premium'),
@@ -162,9 +173,17 @@ describe('SafenetChecksController', () => {
     expect(queue.add).toHaveBeenCalledTimes(DAILY_LIMIT);
   });
 
-  it('queues one check for an eligible workspace', async () => {
+  it('queues one check charged to the workspace in the path', async () => {
     await requestCheck().expect(HttpStatus.ACCEPTED);
 
+    expect(spaceSafes.existsInSpace).toHaveBeenCalledWith({
+      spaceId,
+      chainId: CHAIN_ID,
+      address: safe.address,
+    });
+    expect(billing.getSubscriptionsByCustomerId).toHaveBeenCalledWith({
+      upstreamCustomerId: spaceUuid,
+    });
     expect(queue.add).toHaveBeenCalledWith(
       'safenet-check',
       expect.objectContaining({ safeTxHash: transaction.safeTxHash }),
@@ -173,6 +192,12 @@ describe('SafenetChecksController', () => {
           `${CHAIN_ID}-${safe.address}-${transaction.safeTxHash}`.toLowerCase(),
       },
     );
+  });
+
+  it('rejects a malformed workspace identifier', async () => {
+    await requestCheck(String(spaceId)).expect(HttpStatus.BAD_REQUEST);
+
+    expect(queue.add).not.toHaveBeenCalled();
   });
 
   it('rejects a workspace whose plan is not eligible', async () => {
@@ -186,9 +211,12 @@ describe('SafenetChecksController', () => {
   });
 
   it.each<[string, () => unknown]>([
-    ['has no active membership', () => members.find.mockResolvedValue([])],
     [
-      'is not in a workspace that holds the Safe',
+      'is not an active member of the workspace',
+      () => members.findOne.mockResolvedValue(null),
+    ],
+    [
+      'names a workspace that does not hold the Safe',
       () => spaceSafes.existsInSpace.mockResolvedValue(false),
     ],
   ])('rejects a caller who %s', async (_title, arrange) => {

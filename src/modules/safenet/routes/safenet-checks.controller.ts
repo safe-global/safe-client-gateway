@@ -10,10 +10,12 @@ import {
 } from '@nestjs/common';
 import {
   ApiAcceptedResponse,
+  ApiBadRequestResponse,
   ApiBody,
   ApiForbiddenResponse,
   ApiNotFoundResponse,
   ApiOperation,
+  ApiParam,
   ApiTags,
   ApiTooManyRequestsResponse,
   ApiUnauthorizedResponse,
@@ -28,32 +30,44 @@ import {
   CreateSafenetCheckDtoSchema,
 } from '#/modules/safenet/routes/entities/safenet-check.dto.entity';
 import { SafenetChecksService } from '#/modules/safenet/routes/safenet-checks.service';
+import type { Space } from '#/modules/spaces/domain/entities/space.entity';
 import { Auth } from '#/routes/common/auth/auth.decorator';
+import { SpaceIdPipe } from '#/routes/common/pipes/space-id.pipe';
 import { AddressSchema } from '#/validation/entities/schemas/address.schema';
 import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
 @ApiTags('safenet')
 @Controller({
   version: '1',
-  path: 'chains/:chainId/safes/:safeAddress/safenet/checks',
+  path: 'spaces/:spaceId/chains/:chainId/safes/:safeAddress/safenet/checks',
 })
 export class SafenetChecksController {
   constructor(private readonly safenetChecksService: SafenetChecksService) {}
 
   @ApiOperation({
-    summary: 'Request a sponsored Safenet check',
+    summary: 'Request a Safenet check at a workspace expense',
     description:
       'Queues a Safenet check of a pending Safe transaction that an owner has signed. ' +
-      'Safe Labs pays the fee. The chain must list SAFENET_CHECKS, and a workspace of the ' +
-      'caller that holds the Safe must have a plan that includes Safenet checks.',
+      'Safe Labs pays the fee and counts the check against the workspace in the path. ' +
+      'The caller must be an active member of that workspace, the workspace must hold the ' +
+      'Safe and have a plan that includes Safenet checks, and the chain must list SAFENET_CHECKS.',
+  })
+  @ApiParam({
+    name: 'spaceId',
+    type: 'string',
+    description: 'Space UUID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiBody({ type: CreateSafenetCheckDto })
   @ApiAcceptedResponse({ description: 'Queued, or already queued' })
+  @ApiBadRequestResponse({ description: 'Malformed workspace identifier' })
   @ApiForbiddenResponse({
     description:
-      'Checks are not available on this chain, or no workspace of the caller qualifies',
+      'Not a member of the workspace, the workspace does not hold the Safe or its plan does not include checks, or checks are not available on this chain',
   })
-  @ApiNotFoundResponse({ description: 'No such transaction for this Safe' })
+  @ApiNotFoundResponse({
+    description: 'Workspace not found, or no such transaction for this Safe',
+  })
   @ApiTooManyRequestsResponse({
     description:
       'The workspace has used its daily limit of sponsored Safenet checks',
@@ -67,6 +81,8 @@ export class SafenetChecksController {
   @HttpCode(HttpStatus.ACCEPTED)
   @UseGuards(AuthGuard)
   public async requestCheck(
+    @Param('spaceId', SpaceIdPipe) spaceId: Space['id'],
+    @Param('spaceId') spaceUuid: Space['uuid'],
     @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,
@@ -75,6 +91,7 @@ export class SafenetChecksController {
     @Auth() authPayload: AuthPayload,
   ): Promise<void> {
     await this.safenetChecksService.requestCheck({
+      space: { id: spaceId, uuid: spaceUuid },
       chainId,
       safeAddress,
       safeTxHash: body.safeTxHash,

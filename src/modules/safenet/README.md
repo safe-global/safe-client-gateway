@@ -25,15 +25,17 @@ Check the payer Safe nonce and events on chain before any new proposal. The paye
 
 ## Sponsored checks
 
-`POST /v1/chains/:chainId/safes/:safeAddress/safenet/checks` with `{ "safeTxHash": "0x…" }` queues one payer proposal. It answers 202 with no body, whether the check was queued or already queued.
-The route needs `FF_SAFENET`, `FF_USERS`, `FF_BILLING_SERVICE`, and a signed-in user. CGW accepts a request when all of these hold:
+`POST /v1/spaces/:spaceId/chains/:chainId/safes/:safeAddress/safenet/checks` with `{ "safeTxHash": "0x…" }` queues one payer proposal. It answers 202 with no body, whether the check was queued or already queued.
+The workspace in the path (`spaceId`, a UUID) is the one that pays; CGW never picks a workspace itself.
+The route needs `FF_SAFENET`, `FF_USERS`, `FF_BILLING_SERVICE`, and a signed-in user. CGW accepts a request when all of these hold, in this order:
 
+- The user is an active member of the workspace.
 - The chain lists the `SAFENET_CHECKS` feature.
-- The user is an active member of a workspace that holds the Safe on that chain.
-- That workspace has an active or trialing subscription whose plan type is `premium` or `enterprise`.
+- The workspace holds the Safe on that chain.
+- The workspace has an active or trialing subscription whose plan type is `premium` or `enterprise`.
 - The Safe is version 1.3.0 or newer, because Consensus hashes with that domain.
 - The transaction is pending, belongs to this Safe, and has a confirmation from a current owner.
-- The workspace that pays, the eligible one with the lowest ID, has queued fewer than `SAFENET_CHECKS_PER_SPACE_PER_DAY` distinct transactions (default 100) on this UTC day. A request for a transaction that already has a job does not count. Past the limit, the route answers 429.
+- The workspace has queued fewer than `SAFENET_CHECKS_PER_SPACE_PER_DAY` distinct transactions (default 100) on this UTC day. A request for a transaction that already has a job does not count. Past the limit, the route answers 429.
 
 The BullMQ queue `safenet-checks` uses the lowercase job ID `<chainId>-<safe>-<safeTxHash>`. A repeated request for the same transaction adds no job while that job exists. A global concurrency of 1, set at startup, serializes the payer Safe nonce across instances.
 A job runs up to `SAFENET_CHECKS_QUEUE_ATTEMPTS` times (default 3, at most 10) with the backoff of `SAFENET_CHECKS_QUEUE_BACKOFF_TYPE` (default `exponential`) and `SAFENET_CHECKS_QUEUE_BACKOFF_DELAY` (default 5000 ms). It retries only after a `SafenetPayerError`. Any other error fails the job at once, because a retry could pay the fee again.
