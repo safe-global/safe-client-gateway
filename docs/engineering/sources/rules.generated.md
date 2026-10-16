@@ -66,7 +66,7 @@
 <a id="change-01"></a>
 ### `CHANGE-01` Smallest correct change
 
-> **general** · scope · ↩ `RL-20260703-001` · `RL-20260714-002` · `RL-20260713-004` · `RL-20260810-001` · `RL-20260923-002` · `RL-20261008-006`
+> **general** · scope · ↩ `RL-20260703-001` · `RL-20260714-002` · `RL-20260713-004` · `RL-20260810-001` · `RL-20260923-002` · `RL-20261008-006` · `RL-20261009-006`
 
 **📜 Rule**\
 A PR should be the smallest correct change for the behavior; avoid surrounding cleanup, helpers, abstractions, or refactors that the change does not require. When retiring a deprecated surface, remove the entire family (all `/raw` endpoints) in one PR, not a single instance. Removing a provider sweeps every dependent surface (now-dead interface params, feature flags, `.env.sample.json`, devcontainer, launch.json, test overrides) and locks intentional behavior changes in with a test. Before refactoring a path, verify it is used — unused surfaces get removed, not improved.
@@ -79,7 +79,7 @@ A PR should be the smallest correct change for the behavior; avoid surrounding c
 <a id="change-02"></a>
 ### `CHANGE-02` No unrelated drive-by edits
 
-> **general** · scope · 1 example · ↩ `RL-20251211-001` · `RL-20260810-003` · `RL-20260821-001` · `RL-20261002-008`
+> **general** · scope · 1 example · ↩ `RL-20251211-001` · `RL-20260810-003` · `RL-20260821-001` · `RL-20261002-008` · `RL-20261014-011`
 
 **📜 Rule**\
 Keep unrelated docs, config, formatting, or generated changes out of feature PRs. Issue references go in the PR body, not the subject, and the subject stays within 72 characters — squash-merge makes it a permanent commit subject; the body holds the template's sections, not local verification logs. When a review reveals a pattern repeated repo-wide, fix the lines the PR already touches rather than expanding into a sweep.
@@ -142,13 +142,60 @@ focused review of why the test was flaky to begin with.
 <a id="change-03"></a>
 ### `CHANGE-03` Tooling parity preserved
 
-> **general** · scope · ↩ `RL-20260622-001` · `RL-20260622-002` · `RL-20260929-001`
+> **general** · scope · 1 example · ↩ `RL-20260622-001` · `RL-20260622-002` · `RL-20260929-001` · `RL-20261009-005`
 
 **📜 Rule**\
 Tooling work (lint, formatter, build, CI, test runner) must preserve previous behavior, rule parity, and docs. In CI, never cache linked `node_modules` — a cache hit skips `yarn install --immutable` and its hardened-mode supply-chain verification; cache the package-manager download cache and install unconditionally. PRs keep a whole-program type check (`tsc --noEmit -p tsconfig.build.json`; ts-jest only checks files tests import), and jobs that read `dist/` (migrations) need the full build. CI steps fail loudly: a script asserts the HTTP status it captures, a dispatched input is validated before the pipeline spends minutes on it, and a parser of tool output warns on format drift instead of skipping silently.
 
 **✅ Check**\
 > If this is tooling/CI work, did I preserve behavior, rule parity, and docs, and does every step fail loudly?
+
+<details>
+<summary><strong>💡 Example</strong> — <code>examples/configuration.md</code> § <em>change-03-subpath-imports-give-every-tool-a-types-target</em></summary>
+
+<br>
+
+**CHANGE-03 — Subpath imports give every tool a `types` target**
+
+Source: PR #3551 (RL-20261009-005)
+
+### Avoid
+
+A custom condition only some tools are told about. Biome does not know
+`source`, falls through to `default` (absent in the CI lint job), and its
+type-aware rules silently lose cross-module types:
+
+```json
+"imports": {
+  "#/*": {
+    "source": "./src/*.ts",
+    "default": "./dist/src/*.js"
+  }
+}
+```
+
+### Prefer
+
+```json
+"imports": {
+  "#/*": {
+    "types": "./src/*.ts",
+    "source": "./src/*.ts",
+    "default": "./dist/src/*.js"
+  }
+}
+```
+
+### Why
+
+`types` is a condition every TypeScript-aware tool understands, and Node
+ignores it at runtime. Without it, rules such as `noFloatingPromises` stop
+firing for new violations through `#/` while whole-tree lint counts stay the
+same, so nothing shows the loss.
+
+<sub>Source: <a href="examples/configuration.md#change-03-subpath-imports-give-every-tool-a-types-target">examples/configuration.md#change-03-subpath-imports-give-every-tool-a-types-target</a></sub>
+
+</details>
 
 ---
 
@@ -230,7 +277,7 @@ deleted with a clean PR that only touches the loader.
 <a id="pr-01"></a>
 ### `PR-01` New abstractions justified
 
-> **general** · scope · 1 example · ↩ `RL-20260626-003` · `RL-20260706-001` · `RL-20260818-001` · `RL-20260826-001` · `RL-20260707-001` · `RL-20261001-005`
+> **general** · scope · 1 example · ↩ `RL-20260626-003` · `RL-20260706-001` · `RL-20260818-001` · `RL-20260826-001` · `RL-20260707-001` · `RL-20261001-005` · `RL-20261009-010` · `RL-20261014-007`
 
 **📜 Rule**\
 New files, providers, interfaces, helpers, factories, injection tokens, or module exports must have a real reuse, boundary, or testability reason. Do not model states whose variants change no reader's behavior — a status union where 'degraded' and 'missing' lead to the same outcome should be a plain map with absent keys. Do not stack another feature gate onto an already multi-gated path — consolidate the existing gates, and verify a new branch is actually reachable. A concrete service injection is right while there is exactly one implementation (`CaptchaGuard` precedent); introduce the interface when a real second implementation exists (e.g. a disabled-mode no-op). Bind config in dynamic modules so one service can be reused. Do not merge superficially similar security guards — coupling two security paths is worse than duplication.
@@ -291,7 +338,7 @@ catches the mistake and write that instead.
 <a id="pr-02"></a>
 ### `PR-02` Docs aligned with behavior
 
-> **general** · scope · ↩ `RL-20260128-002` · `RL-20260116-001` · `RL-20260108-002` · `RL-20260108-003` · `RL-20260623-001` · `RL-20251209-003` · `RL-20260723-006` · `RL-20260807-002` · `RL-20260820-001` · `RL-20260921-003`
+> **general** · scope · ↩ `RL-20260128-002` · `RL-20260116-001` · `RL-20260108-002` · `RL-20260108-003` · `RL-20260623-001` · `RL-20251209-003` · `RL-20260723-006` · `RL-20260807-002` · `RL-20260820-001` · `RL-20260921-003` · `RL-20261009-008` · `RL-20261014-005`
 
 **📜 Rule**\
 Docs, samples, runbooks, and `.env.sample` must reflect the final behavior of the PR. Docs do not carry exact counts (test totals) that drift with every PR. Swagger descriptions do not restate enum members; let the schema or `enum` metadata carry the value list. Operator runbooks are part of the safety contract: a change that alters what is safe to do in which order rewrites them in the same PR, citing symbolic constants rather than repeating literals. A change that alters a pattern the guides document updates those guides in the same PR — including changes arriving via a merge — and the check is whether the rule still describes the code, not merely whether its paths resolve. A guide does not enumerate or restate what another guide owns — it points at the owner and declares open sets open.
@@ -454,13 +501,13 @@ Avoid adding or expanding `forwardRef` cycles. Treat existing cycles as local de
 <a id="name-01"></a>
 ### `NAME-01` Names reveal behavior
 
-> **general** · naming · 1 example · ↩ `RL-20260506-001` · `RL-20260602-004` · `RL-20260922-003`
+> **general** · naming · 1 example · ↩ `RL-20260506-001` · `RL-20260602-004` · `RL-20260922-003` · `RL-20261014-009`
 
 **📜 Rule**\
-Names must describe behavior honestly: throwing helpers use `assert*`/`*OrFail`; predicates do not throw; algorithm-bound helpers (`hashSha1`) advertise the algorithm; type/aliased imports drop redundant `as` aliases; magic offsets become named constants. Find-or-create and similar helpers must not encode a status or postcondition the method does not guarantee on every path (`findOrCreateByEmail`, not `findOrCreatePendingByEmail` when existing ACTIVE users are returned as-is). One concept keeps one name across code, config keys, flags, and errors — no product alias beside the module's name (`copilot*` next to `safeShield*`).
+Names must describe behavior honestly: throwing helpers use `assert*`/`*OrFail`; predicates do not throw; algorithm-bound helpers (`hashSha1`) advertise the algorithm; type/aliased imports drop redundant `as` aliases; magic offsets become named constants. Find-or-create and similar helpers must not encode a status or postcondition the method does not guarantee on every path (`findOrCreateByEmail`, not `findOrCreatePendingByEmail` when existing ACTIVE users are returned as-is). One concept keeps one name across code, config keys, flags, and errors — no product alias beside the module's name (`copilot*` next to `safeShield*`). API response fields are camelCase, never an upstream's snake_case.
 
 **✅ Check**\
-> Do names describe behavior honestly and avoid redundant scope?
+> Do names describe behavior honestly, avoid redundant scope, and keep response fields camelCase?
 
 <details>
 <summary><strong>💡 Example</strong> — <code>examples/testing.md</code> § <em>test-02-suffix-matches-the-test-layer</em></summary>
@@ -512,7 +559,7 @@ runs can stay fast and integration runs stay reproducible.
 <a id="reuse-01"></a>
 ### `REUSE-01` Reuse existing helpers
 
-> **general** · naming · 3 examples · ↩ `RL-20260506-003` · `RL-20251216-001` · `RL-20260615-004` · `RL-20251208-001` · `RL-20260921-004` · `RL-20260925-005` · `RL-20261002-004`
+> **general** · naming · 4 examples · ↩ `RL-20260506-003` · `RL-20251216-001` · `RL-20260615-004` · `RL-20251208-001` · `RL-20260921-004` · `RL-20260925-005` · `RL-20261002-004` · `RL-20261009-011` · `RL-20261014-004`
 
 **📜 Rule**\
 Before adding a small util, search the repo and well-known libraries (`viem.isAddressEqual`, `@/logging/utils.asError`, shared schemas, `safe-deployments`); reuse `LoggingService`, `*Mapper` classes, and `HttpErrorFactory` instead of bare alternates. Cross a seam with the plain value (a timeout in ms, a plaintext address), not a caller-constructed object or caller-derived key (an `AbortSignal`, a blind-index seat key), so it is built in exactly one place. A single-item read that gains a batch variant delegates to it (`(await findByIds([id])).get(id) ?? []`) instead of keeping its own query.
@@ -521,7 +568,7 @@ Before adding a small util, search the repo and well-known libraries (`viem.isAd
 > Did I reuse existing helpers, constants homes, and utilities?
 
 <details>
-<summary><strong>💡 Example 1 of 3</strong> — <code>examples/repositories-and-pagination.md</code> § <em>config-03-reuse-01-knobs-follow-the-existing-config-driven-precedent</em></summary>
+<summary><strong>💡 Example 1 of 4</strong> — <code>examples/repositories-and-pagination.md</code> § <em>config-03-reuse-01-knobs-follow-the-existing-config-driven-precedent</em></summary>
 
 <br>
 
@@ -578,7 +625,7 @@ real config entry now, while the surrounding code is fresh.
 </details>
 
 <details>
-<summary><strong>💡 Example 2 of 3</strong> — <code>examples/repositories-and-pagination.md</code> § <em>reuse-01-derive-version-lists-from-safe-deployments</em></summary>
+<summary><strong>💡 Example 2 of 4</strong> — <code>examples/repositories-and-pagination.md</code> § <em>reuse-01-derive-version-lists-from-safe-deployments</em></summary>
 
 <br>
 
@@ -629,7 +676,7 @@ someone remembered to add the string.
 </details>
 
 <details>
-<summary><strong>💡 Example 3 of 3</strong> — <code>examples/repositories-and-pagination.md</code> § <em>reuse-01-a-single-item-read-delegates-to-its-batch-variant</em></summary>
+<summary><strong>💡 Example 3 of 4</strong> — <code>examples/repositories-and-pagination.md</code> § <em>reuse-01-a-single-item-read-delegates-to-its-batch-variant</em></summary>
 
 <br>
 
@@ -670,12 +717,60 @@ miss the other.
 
 </details>
 
+<details>
+<summary><strong>💡 Example 4 of 4</strong> — <code>examples/repositories-and-pagination.md</code> § <em>reuse-01-rows-scoped-the-same-way-share-one-predicate</em></summary>
+
+<br>
+
+**REUSE-01 — Rows scoped the same way share one predicate**
+
+Source: PR #3449 (RL-20261014-004)
+
+### Avoid
+
+A second method that copies the first one's body for another row type:
+
+```ts
+private getItemsByOwner(items: ReadonlyArray<Item>, owner: OwnerRef): Array<Item> {
+  return items.filter(
+    (item) => item.chainId === owner.chainId && isAddressEqual(item.owner, owner.address),
+  );
+}
+
+private getBindingsByOwner(bindings: ReadonlyArray<Binding>, owner: OwnerRef): Array<Binding> {
+  return bindings.filter(
+    (binding) => binding.chainId === owner.chainId && isAddressEqual(binding.owner, owner.address),
+  );
+}
+```
+
+### Prefer
+
+```ts
+private isScopedToOwner(row: { chainId: string; owner: Address }, owner: OwnerRef): boolean {
+  return row.chainId === owner.chainId && isAddressEqual(row.owner, owner.address);
+}
+
+// items.filter((item) => this.isScopedToOwner(item, owner))
+// bindings.filter((binding) => this.isScopedToOwner(binding, owner))
+```
+
+### Why
+
+The scoping rule is what stops one owner's rows showing up on another. Kept
+in one predicate, a fix to the comparison (casing, chain id) reaches every row
+type, and one set of tests covers it.
+
+<sub>Source: <a href="examples/repositories-and-pagination.md#reuse-01-rows-scoped-the-same-way-share-one-predicate">examples/repositories-and-pagination.md#reuse-01-rows-scoped-the-same-way-share-one-predicate</a></sub>
+
+</details>
+
 ---
 
 <a id="style-01"></a>
 ### `STYLE-01` Document non-trivial code
 
-> **general** · naming · 3 examples · ↩ `RL-20260506-005` · `RL-20260128-001` · `RL-20251222-001` · `RL-20260604-004` · `RL-20260609-001` · `RL-20260713-001` · `RL-20251208-002` · `RL-20251210-001` · `RL-20260821-002` · `RL-20261001-004` · `RL-20261001-005` · `RL-20261008-001` · `RL-20261008-004`
+> **general** · naming · 3 examples · ↩ `RL-20260506-005` · `RL-20260128-001` · `RL-20251222-001` · `RL-20260604-004` · `RL-20260609-001` · `RL-20260713-001` · `RL-20251208-002` · `RL-20251210-001` · `RL-20260821-002` · `RL-20261001-004` · `RL-20261001-005` · `RL-20261008-001` · `RL-20261008-004` · `RL-20261009-007` · `RL-20261014-006` · `RL-20261014-010`
 
 **📜 Rule**\
 Public/non-trivial service and repository code is documented and free of dead branches, commented-out code, redundant comments, and `console.log`. Default flags safely (`isSafe = false` until proven), wrap event listeners with cleanup, and keep adapters' error contracts intact. Message/formatting logic beyond one branch gets a named helper in utils — no nested ternaries inside template literals. A function running several sequential steps splits into one named helper per step, and a per-item mapper does not own request-wide side effects. Destructuring return values is an accepted repo-wide pattern — do not demand named receivers; verify a claimed convention against the codebase before enforcing it. One exported class/type per file: errors under `domain/errors/` with their filters under `domain/exception-filters/`, guards under `routes/guards/` (never module-root `errors/` or `guards/`), entity types under `entities/`, helpers in a dedicated helpers file; a standalone function used by a single class becomes a private method. A comment that restates the line beneath it is deleted, and a comment offered to explain confusing code is a signal to restructure that code instead. When a key or signature drops a dimension, remove the now-unused parameter up the whole call chain. A function with no instance state does not stay a private method — that prices every test of it at the cost of testing its host. A comment describes the code as it now is — what it throws and returns — and carries no process narration (rollout plans, which ticket will do what); a flag's owning-ticket note (CONFIG-01) is the exception.
@@ -1952,13 +2047,13 @@ Unique constraints, status transitions, and races need lifecycle-aware handling:
 <a id="db-02"></a>
 ### `DB-02` Atomic state transitions
 
-> **general** · database · 1 example · ↩ `RL-20260602-002` · `RL-20260605-002` · `RL-20260819-002` · `RL-20260826-003` · `RL-20260917-001` · `RL-20261001-006`
+> **general** · database · 1 example · ↩ `RL-20260602-002` · `RL-20260605-002` · `RL-20260819-002` · `RL-20260826-003` · `RL-20260917-001` · `RL-20261001-006` · `RL-20261009-014`
 
 **📜 Rule**\
-Multi-step status transitions are atomic (single SQL/ORM bulk call or wrapped transaction); do not loop awaits to mutate N rows. Writes that must commit or roll back together must run on the same outer `EntityManager`/transaction — a find-or-create helper invoked inside a transaction must accept and thread the outer `EntityManager` rather than opening its own, or a later failure leaves orphan committed rows. Conversely, do not wrap a single-statement write in a transaction — one statement is already atomic. A staleness or ordering guard is re-checked inside the lock it protects; a value read before the lock is carried in and re-compared, never trusted. The transaction lives with the use case, expensive I/O (KMS, upstream calls) happens before the lock is taken, and any quantity being enforced on is read inside it. A compensating action reverses the exact record the original wrote, carried forward from the charge — never one resolved again at refund time.
+Multi-step status transitions are atomic (single SQL/ORM bulk call or wrapped transaction); do not loop awaits to mutate N rows. Writes that must commit or roll back together must run on the same outer `EntityManager`/transaction — a find-or-create helper invoked inside a transaction must accept and thread the outer `EntityManager` rather than opening its own, or a later failure leaves orphan committed rows. Conversely, do not wrap a single-statement write in a transaction — one statement is already atomic. A staleness or ordering guard is re-checked inside the lock it protects; a value read before the lock is carried in and re-compared, never trusted. The transaction lives with the use case, expensive I/O (KMS, upstream calls) happens before the lock is taken, and any quantity being enforced on — including the set of rows to lock — is read inside it. Paths that take several row locks follow one order, documented on the lock helpers. A compensating action reverses the exact record the original wrote, carried forward from the charge — never one resolved again at refund time.
 
 **✅ Check**\
-> Are multi-step state transitions atomic, and do helpers called inside a transaction share the outer EntityManager instead of opening their own?
+> Are multi-step state transitions atomic, do helpers called inside a transaction share the outer EntityManager instead of opening their own, and do multi-row locks follow the documented order?
 
 <details>
 <summary><strong>💡 Example</strong> — <code>examples/database-migrations.md</code> § <em>db-02-reverse-the-record-the-charge-wrote-not-a-freshly-resolved-one</em></summary>
@@ -2011,7 +2106,7 @@ value it re-derives is a value that can have changed since.
 <a id="db-03"></a>
 ### `DB-03` No redundant DB trips
 
-> **general** · database · ↩ `RL-20260529-003` · `RL-20260609-004` · `RL-20261001-002` · `RL-20261002-006`
+> **general** · database · ↩ `RL-20260529-003` · `RL-20260609-004` · `RL-20261001-002` · `RL-20261002-006` · `RL-20261009-009`
 
 **📜 Rule**\
 Avoid redundant reads/writes and no-op DB trips; prefer `SELECT <explicit columns>` over `SELECT *` and extract repeated column lists to a shared constant — except a repository `find` with `loadRelationIds`, where a partial `select` drops the FK column. Read generated/default columns from a write's RETURNING instead of issuing a follow-up `find` — `generatedMaps` on inserts, `raw` on updates (TypeORM leaves `generatedMaps` empty for UPDATE).
@@ -2164,7 +2259,7 @@ Redis pipelines and cache marker writes must validate every meaningful result. H
 <a id="cache-02"></a>
 ### `CACHE-02` Cache keys cover all inputs
 
-> **general** · cache · 3 examples · ↩ `RL-20260121-001` · `RL-20260114-001` · `RL-20251215-001` · `RL-20260703-004` · `RL-20260710-008` · `RL-20260715-001` · `RL-20251210-001`
+> **general** · cache · 3 examples · ↩ `RL-20260121-001` · `RL-20260114-001` · `RL-20251215-001` · `RL-20260703-004` · `RL-20260710-008` · `RL-20260715-001` · `RL-20251210-001` · `RL-20261009-003`
 
 **📜 Rule**\
 Cache keys must include every input that changes the cached value (filters, flags like `useCircuitBreaker`, chain id, env, fiat-code casing). Bounded in-memory caches and expiry refresh need collision/TTL tests. `JSON.stringify` is not stable for keys; sort or canonicalize. When the cached value's shape changes, bump the key, version the payload, or invalidate on deploy. Cache-key builders use the same enum constants/defaults as the datasource (`Origin.NATIVE`, not a bare string), and key composition gets tests that differing inputs yield differing keys. Keys share one scannable prefix per resource with the identifier in the `CacheDir` field, never interpolated into the prefix. In-memory get-or-create maps store the creation `Promise` so concurrent callers share in-flight work; failed creations self-evict behind an identity guard, synchronous factory throws become rejections, and the destroy-during-pending branch gets a test. Removing a dimension from a key is followed up the call chain so no caller still passes it.
@@ -2337,7 +2432,7 @@ code path inside `request()`.
 <a id="config-01"></a>
 ### `CONFIG-01` Defaults safe and OSS-generic
 
-> **general** · config · ↩ `RL-20260710-007` · `RL-20260723-002` · `RL-20260922-004` · `RL-20260928-005`
+> **general** · config · ↩ `RL-20260710-007` · `RL-20260723-002` · `RL-20260922-004` · `RL-20260928-005` · `RL-20261009-004`
 
 **📜 Rule**\
 Defaults remain conservative and OSS-generic. Dev-only feature flags require both `flag === true` and `CGW_ENV === 'development'`. Never default a base URI to a staging host — deployed environments require it explicitly so a missing env var fails at boot instead of silently talking to staging. New boolean config keys follow the repo's `FF_*` feature-flag naming; existing keys that missed it are not precedent for skipping it. A new flag's comment names its owning ticket and the condition for removing it.
@@ -2350,7 +2445,7 @@ Defaults remain conservative and OSS-generic. Dev-only feature flags require bot
 <a id="config-02"></a>
 ### `CONFIG-02` Config fails fast
 
-> **general** · config · 1 example · ↩ `RL-20260506-004` · `RL-20251219-002` · `RL-20260608-001` · `RL-20260713-002` · `RL-20260714-001` · `RL-20260826-002`
+> **general** · config · 1 example · ↩ `RL-20260506-004` · `RL-20251219-002` · `RL-20260608-001` · `RL-20260713-002` · `RL-20260714-001` · `RL-20260826-002` · `RL-20261009-004`
 
 **📜 Rule**\
 Config values and config tests belong in the canonical schema/test locations and fail fast on invalid production input. Validate range bounds (percentages, retries, page sizes); update every `invalidConfiguration` fixture when a new required field is added; reset `process.env.NODE_ENV` mutations in `afterEach`. Predicate-style validators must honor return values. Decorator-time constants need a top-level `process.env` read. Conditionally required env vars extend the shared deployed-env `superRefine` required-fields list with a `requiredWhen` condition — never standalone checks that also fire in local dev — and values a feature needs once enabled are read with `getOrThrow`. Boolean `FF_*` flags parse strictly (`?.toLowerCase() === 'true'`, never `!!`), with a regression test that legacy carried-over values do not enable the flag. Date-shaped config is parsed and validated at startup — a comparison against an `Invalid Date` is false, so a typo silently flips the gate instead of failing — and a gate gets a named domain predicate rather than an inline comparison.
@@ -2518,16 +2613,16 @@ Runtime dependency versions are pinned exactly; do not hardcode contract version
 <a id="config-05"></a>
 ### `CONFIG-05` Env metadata matches runtime
 
-> **general** · config · 2 examples · ↩ `RL-20260108-001` · `RL-20251215-003` · `RL-20260619-002` · `RL-20260710-010` · `RL-20260923-002`
+> **general** · config · 3 examples · ↩ `RL-20260108-001` · `RL-20251215-003` · `RL-20260619-002` · `RL-20260710-010` · `RL-20260923-002` · `RL-20261009-001`
 
 **📜 Rule**\
-Toolchain versions, Docker build args, pinned CI actions, and `.env.sample`/`.env.sample.json` required flags should not drift from runtime behavior. Add new env vars to `.env.sample` in the same PR. Removing env-driven behavior sweeps every env-metadata surface (`.env.sample`, `.env.sample.json`, `.devcontainer/docker-compose.yml`) in the same PR. Per-feature AWS credentials use prefixed env vars (`KMS_AWS_*`, `SES_AWS_*`, `CSV_AWS_*`), never the shared root `AWS_*` pair.
+Toolchain versions, Docker build args, pinned CI actions, and `.env.sample`/`.env.sample.json` required flags should not drift from runtime behavior. Services that must run the same version (the dev and test databases) share one definition — a compose anchor carrying the image — so a bump cannot reach only one. Add new env vars to `.env.sample` in the same PR. Removing env-driven behavior sweeps every env-metadata surface (`.env.sample`, `.env.sample.json`, `.devcontainer/docker-compose.yml`) in the same PR. Per-feature AWS credentials use prefixed env vars (`KMS_AWS_*`, `SES_AWS_*`, `CSV_AWS_*`), never the shared root `AWS_*` pair.
 
 **✅ Check**\
-> Do tool versions and env metadata match runtime behavior?
+> Do tool versions and env metadata match runtime behavior, and do services that must match share one definition?
 
 <details>
-<summary><strong>💡 Example 1 of 2</strong> — <code>examples/configuration.md</code> § <em>change-04-config-05-env-var-rename-keeps-the-old-name-as-a-fallback-for-one-release</em></summary>
+<summary><strong>💡 Example 1 of 3</strong> — <code>examples/configuration.md</code> § <em>change-04-config-05-env-var-rename-keeps-the-old-name-as-a-fallback-for-one-release</em></summary>
 
 <br>
 
@@ -2589,7 +2684,7 @@ deleted with a clean PR that only touches the loader.
 </details>
 
 <details>
-<summary><strong>💡 Example 2 of 2</strong> — <code>examples/configuration.md</code> § <em>config-05-envsample-comments-document-encoding-and-format-constraints</em></summary>
+<summary><strong>💡 Example 2 of 3</strong> — <code>examples/configuration.md</code> § <em>config-05-envsample-comments-document-encoding-and-format-constraints</em></summary>
 
 <br>
 
@@ -2633,6 +2728,59 @@ later. A one-line comment at the variable closes that gap.
 
 </details>
 
+<details>
+<summary><strong>💡 Example 3 of 3</strong> — <code>examples/configuration.md</code> § <em>config-05-services-that-must-match-share-one-compose-anchor</em></summary>
+
+<br>
+
+**CONFIG-05 — Services that must match share one compose anchor**
+
+Source: PR #3453 (RL-20261009-001)
+
+### Avoid
+
+Two database services that each carry their own image and startup block,
+so a version bump lands on one of them:
+
+```yaml
+services:
+  db:
+    image: postgres:18-alpine
+    entrypoint: [/bin/sh, -c, "<install TLS files; exec entrypoint>", sh]
+    command: [postgres, -c, ssl=on, -c, hba_file=/db_config/pg_hba.conf]
+  db-test:
+    image: postgres:14-alpine
+    entrypoint: [/bin/sh, -c, "<install TLS files; exec entrypoint>", sh]
+    command: [postgres, -c, ssl=on, -c, hba_file=/db_config/pg_hba.conf]
+```
+
+### Prefer
+
+```yaml
+x-postgres: &postgres
+  image: postgres:18-alpine
+  entrypoint: [/bin/sh, -c, "<install TLS files; exec entrypoint>", sh]
+  command: [postgres, -c, ssl=on, -c, hba_file=/db_config/pg_hba.conf]
+
+services:
+  db:
+    <<: *postgres
+    volumes: [db-data:/var/lib/postgresql, ./db_config/test:/db_config:ro]
+  db-test:
+    <<: *postgres
+    volumes: [./db_config/test:/db_config:ro]
+```
+
+### Why
+
+Tests that run on another major than local dev prove less than they appear
+to. One anchor makes the image and startup the same by construction. Keep
+`volumes` per service: a merge key replaces lists rather than merging them.
+
+<sub>Source: <a href="examples/configuration.md#config-05-services-that-must-match-share-one-compose-anchor">examples/configuration.md#config-05-services-that-must-match-share-one-compose-anchor</a></sub>
+
+</details>
+
 ---
 
 ## 🌐 general › performance
@@ -2640,13 +2788,13 @@ later. A one-line comment at the variable closes that gap.
 <a id="perf-01"></a>
 ### `PERF-01` Batch and parallelize I/O
 
-> **general** · performance · 3 examples · ↩ `RL-20260506-006` · `RL-20260603-001` · `RL-20260619-001` · `RL-20260626-001` · `RL-20260710-011` · `RL-20260723-005` · `RL-20260917-003` · `RL-20260925-001` · `RL-20261001-001` · `RL-20261002-007`
+> **general** · performance · 3 examples · ↩ `RL-20260506-006` · `RL-20260603-001` · `RL-20260619-001` · `RL-20260626-001` · `RL-20260710-011` · `RL-20260723-005` · `RL-20260917-003` · `RL-20260925-001` · `RL-20261001-001` · `RL-20261002-007` · `RL-20261014-002`
 
 **📜 Rule**\
-Batch repeated DB/API work, cap user limits, and keep independent I/O parallel. `Promise.all` over independent items must use `allSettled` if one failure should not sink the page. Batched results are paired back to their inputs by id (a `Map`), never by array position. Remove event listeners (`res.once`, stream cleanup) to prevent leaks. Objects derived only from constructor-time config (Zod schemas, clients, compiled regexes) are built once in the constructor, not per request. Validate/filter request entries before spending shared external-API rate-limit budget on them. When an inner loop matches on a derived value, precompute it into a map keyed by that value instead of recomputing per candidate. Before parallelizing a chain of guards, check whether rejection order is load-bearing — it decides both what you pay for and which status the caller sees. To stay under an upstream rate limit, run independent calls in config-sized `Promise.all` batches (the shared `batched()` helper), not one at a time.
+Batch repeated DB/API work, cap user limits, and keep independent I/O parallel. `Promise.all` over independent items must use `allSettled` if one failure should not sink the page; likewise a selection added to an existing upstream query is gated to the requests that need it (GraphQL `@include`), so its failure cannot fail reads that worked before. Batched results are paired back to their inputs by id (a `Map`), never by array position. Remove event listeners (`res.once`, stream cleanup) to prevent leaks. Objects derived only from constructor-time config (Zod schemas, clients, compiled regexes) are built once in the constructor, not per request. Validate/filter request entries before spending shared external-API rate-limit budget on them. When an inner loop matches on a derived value, precompute it into a map keyed by that value instead of recomputing per candidate. Before parallelizing a chain of guards, check whether rejection order is load-bearing — it decides both what you pay for and which status the caller sees. To stay under an upstream rate limit, run independent calls in config-sized `Promise.all` batches (the shared `batched()` helper), not one at a time.
 
 **✅ Check**\
-> Did I batch repeated DB/API work, cap user limits, and keep independent I/O parallel (in config-sized batches where an upstream rate-limits)?
+> Did I batch repeated DB/API work, cap user limits, and keep independent I/O parallel (in config-sized batches where an upstream rate-limits), without one part's failure sinking the rest?
 
 <details>
 <summary><strong>💡 Example 1 of 3</strong> — <code>examples/repositories-and-pagination.md</code> § <em>perf-01-extract-the-field-you-actually-need-per-page</em></summary>
@@ -2808,7 +2956,7 @@ silently gives one entity another's data. A key lookup cannot misalign.
 <a id="test-01"></a>
 ### `TEST-01` Use builders and fakes
 
-> **general** · tests · 2 examples · ↩ `RL-20260506-002` · `RL-20260521-001` · `RL-20260619-005` · `RL-20260624-003` · `RL-20260623-001` · `RL-20260710-003` · `RL-20260707-002` · `RL-20260710-009` · `RL-20261002-001`
+> **general** · tests · 2 examples · ↩ `RL-20260506-002` · `RL-20260521-001` · `RL-20260619-005` · `RL-20260624-003` · `RL-20260623-001` · `RL-20260710-003` · `RL-20260707-002` · `RL-20260710-009` · `RL-20261002-001` · `RL-20261009-012`
 
 **📜 Rule**\
 Tests use `Builder<T>` + `.with(field, value)`, `FakeCacheService`, and project test helpers; instantiate services directly (`new FooService(mockRepo)`) instead of `Test.createTestingModule` for service unit specs; avoid `jest.mock(...)` of unused modules. `Builder.with()` mutates and returns `this`, so build a fresh builder per case — never reuse one mutable builder across multiple cases/assertions, or state leaks and tests pass for the wrong reason. Builder defaults must not randomize across semantically different, behavior-routing values (`faker.helpers.arrayElement([...enum, null])`) — pick one stable valid default and override per test. Builders enforce their own invariants by construction (run the sanitizer inside the builder) — tests must not depend on incidental faker/locale properties. Vitest: `vi.mock` factories referencing outer consts use `vi.hoisted`; `vi.resetAllMocks()` restores spy originals (unlike Jest). Type mocks `as MockedObject<T>` directly — never `as unknown as MockedObject<T>`; assert calls via `toHaveBeenNthCalledWith`, not `.mock.calls` indexing; use `FakeConfigurationService` over ad-hoc config mocks; randomize free inputs with faker but assert contract constants via their exported symbol. Mocked `Raw<T>` network payloads use the `rawify()` helper instead of an `as never` cast. Do not mock internal query-builder chains or other implementation details.
@@ -3113,7 +3261,7 @@ Implementation-selection changes (provider, mapper, datasource) need full-pipeli
 <a id="test-08"></a>
 ### `TEST-08` Test names match assertions
 
-> **general** · tests · 2 examples · ↩ `RL-20260602-005` · `RL-20260615-002` · `RL-20260702-001` · `RL-20260729-001` · `RL-20260812-001` · `RL-20260907-001` · `RL-20260923-001` · `RL-20260928-003` · `RL-20261002-009`
+> **general** · tests · 2 examples · ↩ `RL-20260602-005` · `RL-20260615-002` · `RL-20260702-001` · `RL-20260729-001` · `RL-20260812-001` · `RL-20260907-001` · `RL-20260923-001` · `RL-20260928-003` · `RL-20261002-009` · `RL-20261014-003` · `RL-20261014-008`
 
 **📜 Rule**\
 Test descriptions and generated data reflect the actual assertion: `it('should return false when there is no source swap')` not `'when bridging to a different chain'`. Avoid redundant `expect(success).toBe(true); if (success) { ... }`. Fixture values reflect domain semantics even when unasserted — an admin's `invitedBy` is `null`, not a random int. Test helpers are named after the state they produce (`createActiveMember` vs `createPendingMember`), with the same terminology used across specs. Invalid-input fixtures are invalid by construction (a literal or constructive generator), never a random sample that is only usually invalid. Removing a key from a schema does not fail specs that still set it — a stripping parser silently drops it — so grep the old key across specs and fixtures as part of the removal. A negative invariant is asserted negatively and over the whole collection, never by positively asserting some other value at index 0. Test data derives from the source of truth, except when that constant is what the test pins — then the cases are written out literally, with a comment saying why. A test named for a path (a cache hit, a flag-on branch) asserts the precondition that puts it there, with fake clocks set before fixtures that stamp time. When an assertion is about a field, pin that field in the fixture (`.with('flag', true)`) instead of asserting back whatever faker generated.
@@ -3212,16 +3360,16 @@ assertion is about and leave faker on the fields the test does not reason about.
 <a id="test-09"></a>
 ### `TEST-09` Cover edges and determinism
 
-> **general** · tests · 1 example · ↩ `RL-20260123-001` · `RL-20260113-001` · `RL-20251223-002` · `RL-20260615-004` · `RL-20260717-004` · `RL-20251208-003` · `RL-20260810-002` · `RL-20260916-001` · `RL-20260928-004`
+> **general** · tests · 2 examples · ↩ `RL-20260123-001` · `RL-20260113-001` · `RL-20251223-002` · `RL-20260615-004` · `RL-20260717-004` · `RL-20251208-003` · `RL-20260810-002` · `RL-20260916-001` · `RL-20260928-004` · `RL-20261009-004` · `RL-20261009-013` · `RL-20261009-015` · `RL-20261014-001`
 
 **📜 Rule**\
-Edge cases, observability calls, cache invalidation branches, production/default config branches, and deterministic ordering need tests when they are part of the behavior. Cache-invalidation tests pair every cleared-cache assertion with a negative assertion that unrelated caches stay untouched. Merge/dedup precedence tests use distinct objects sharing the same key — identical objects pass under either precedence. Behavior added to one method of a sibling set (`get`/`post`/`delete`) is covered on every sibling, and specs written for an approach abandoned during review are deleted rather than left to pass vacuously. Widening a gated list (versions, chains, providers) is covered by the negative case proving the gate still rejects, not only the positive one. A claim about upstream behaviour is settled against the host the deployed service resolves (in-cluster), not a curl against the public edge.
+Edge cases, observability calls, cache invalidation branches, production/default config branches, and deterministic ordering need tests when they are part of the behavior. Cache-invalidation tests pair every cleared-cache assertion with a negative assertion that unrelated caches stay untouched. Merge/dedup precedence tests use distinct objects sharing the same key — identical objects pass under either precedence. Behavior added to one method of a sibling set (`get`/`post`/`delete`) is covered on every sibling, and specs written for an approach abandoned during review are deleted rather than left to pass vacuously. Every gate or scoping filter, including a widened gated list (versions, chains, providers), has a case that fails when it is removed — the negative case proving it still rejects, a second owner in a per-owner fixture — not only the positive one. A concurrency test proves a call is blocked by observing the lock wait (`pg_stat_activity`), not by a fixed sleep. A claim about upstream behaviour is settled against the host the deployed service resolves (in-cluster), not a curl against the public edge.
 
 **✅ Check**\
-> Do tests cover edge cases, side effects, and deterministic behavior?
+> Do tests cover edge cases, side effects, and deterministic behavior, and does every gate or filter have a case that fails without it?
 
 <details>
-<summary><strong>💡 Example</strong> — <code>examples/testing.md</code> § <em>test-09-cover-the-negative-paths-around-safety-critical-extraction</em></summary>
+<summary><strong>💡 Example 1 of 2</strong> — <code>examples/testing.md</code> § <em>test-09-cover-the-negative-paths-around-safety-critical-extraction</em></summary>
 
 <br>
 
@@ -3264,6 +3412,55 @@ noise.
 
 </details>
 
+<details>
+<summary><strong>💡 Example 2 of 2</strong> — <code>examples/testing.md</code> § <em>test-09-prove-a-lock-wait-by-observing-it-not-by-sleeping</em></summary>
+
+<br>
+
+**TEST-09 — Prove a lock wait by observing it, not by sleeping**
+
+Source: PR #3375 (RL-20261009-013)
+
+### Avoid
+
+Racing the call under test against a timer and reading "still pending" as
+"blocked":
+
+```ts
+const outcome = await Promise.race([
+  change.then(() => 'decided', () => 'decided'),
+  new Promise((resolve) => setTimeout(() => resolve('waiting'), 500)),
+]);
+expect(outcome).toBe('waiting');
+```
+
+### Prefer
+
+```ts
+const waitForBlockedQuery = async (): Promise<void> => {
+  const deadline = Date.now() + LOCK_WAIT_TIMEOUT_MS;
+  while (Date.now() < deadline) {
+    const [{ count }] = await dataSource.query(
+      `SELECT count(*)::int AS count FROM pg_stat_activity
+       WHERE datname = current_database() AND wait_event_type = 'Lock'`,
+    );
+    if (count > 0) return;
+    await new Promise((resolve) => setTimeout(resolve, LOCK_POLL_INTERVAL_MS));
+  }
+  throw new Error('No query blocked on a lock.');
+};
+```
+
+### Why
+
+The sleep costs its full length on every run and only shows the call had not
+finished yet, not why. Polling returns as soon as the block happens and
+asserts the lock wait itself.
+
+<sub>Source: <a href="examples/testing.md#test-09-prove-a-lock-wait-by-observing-it-not-by-sleeping">examples/testing.md#test-09-prove-a-lock-wait-by-observing-it-not-by-sleeping</a></sub>
+
+</details>
+
 ---
 
 ## 🌐 general › logging
@@ -3271,7 +3468,7 @@ noise.
 <a id="log-01"></a>
 ### `LOG-01` Operational log levels
 
-> **general** · logging · 1 example · ↩ `RL-20260121-001` · `RL-20260114-002` · `RL-20260723-003` · `RL-20260710-001` · `RL-20261001-001` · `RL-20261008-003`
+> **general** · logging · 1 example · ↩ `RL-20260121-001` · `RL-20260114-002` · `RL-20260723-003` · `RL-20260710-001` · `RL-20261001-001` · `RL-20261008-003` · `RL-20261009-002`
 
 **📜 Rule**\
 Log levels reflect operational actionability. Expected business outcomes are not `error`. Default-fallback paths log a `warn` and return `undefined`/throw, not a plausible-looking wrong value. A catch that degrades to a default logs why, carrying identifiers but never the sensitive value it failed to decode. Volume decides level as much as actionability: hot worker events and expected success paths are not noisy logs, anything emitted once per queue/AMQP event is `debug`, and new telemetry must be worth its operational cost.

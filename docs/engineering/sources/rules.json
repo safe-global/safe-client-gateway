@@ -13,7 +13,8 @@
       "RL-20260713-004",
       "RL-20260810-001",
       "RL-20260923-002",
-      "RL-20261008-006"
+      "RL-20261008-006",
+      "RL-20261009-006"
     ]
   },
   {
@@ -30,7 +31,8 @@
       "RL-20251211-001",
       "RL-20260810-003",
       "RL-20260821-001",
-      "RL-20261002-008"
+      "RL-20261002-008",
+      "RL-20261014-011"
     ]
   },
   {
@@ -40,11 +42,14 @@
     "title": "Tooling parity preserved",
     "rule": "Tooling work (lint, formatter, build, CI, test runner) must preserve previous behavior, rule parity, and docs. In CI, never cache linked `node_modules` — a cache hit skips `yarn install --immutable` and its hardened-mode supply-chain verification; cache the package-manager download cache and install unconditionally. PRs keep a whole-program type check (`tsc --noEmit -p tsconfig.build.json`; ts-jest only checks files tests import), and jobs that read `dist/` (migrations) need the full build. CI steps fail loudly: a script asserts the HTTP status it captures, a dispatched input is validated before the pipeline spends minutes on it, and a parser of tool output warns on format drift instead of skipping silently.",
     "check": "If this is tooling/CI work, did I preserve behavior, rule parity, and docs, and does every step fail loudly?",
-    "exampleRefs": [],
+    "exampleRefs": [
+      "examples/configuration.md#change-03-subpath-imports-give-every-tool-a-types-target"
+    ],
     "reviewLearningIds": [
       "RL-20260622-001",
       "RL-20260622-002",
-      "RL-20260929-001"
+      "RL-20260929-001",
+      "RL-20261009-005"
     ]
   },
   {
@@ -81,7 +86,9 @@
       "RL-20260818-001",
       "RL-20260826-001",
       "RL-20260707-001",
-      "RL-20261001-005"
+      "RL-20261001-005",
+      "RL-20261009-010",
+      "RL-20261014-007"
     ]
   },
   {
@@ -102,7 +109,9 @@
       "RL-20260723-006",
       "RL-20260807-002",
       "RL-20260820-001",
-      "RL-20260921-003"
+      "RL-20260921-003",
+      "RL-20261009-008",
+      "RL-20261014-005"
     ]
   },
   {
@@ -172,15 +181,16 @@
     "project": "general",
     "area": "naming",
     "title": "Names reveal behavior",
-    "rule": "Names must describe behavior honestly: throwing helpers use `assert*`/`*OrFail`; predicates do not throw; algorithm-bound helpers (`hashSha1`) advertise the algorithm; type/aliased imports drop redundant `as` aliases; magic offsets become named constants. Find-or-create and similar helpers must not encode a status or postcondition the method does not guarantee on every path (`findOrCreateByEmail`, not `findOrCreatePendingByEmail` when existing ACTIVE users are returned as-is). One concept keeps one name across code, config keys, flags, and errors — no product alias beside the module's name (`copilot*` next to `safeShield*`).",
-    "check": "Do names describe behavior honestly and avoid redundant scope?",
+    "rule": "Names must describe behavior honestly: throwing helpers use `assert*`/`*OrFail`; predicates do not throw; algorithm-bound helpers (`hashSha1`) advertise the algorithm; type/aliased imports drop redundant `as` aliases; magic offsets become named constants. Find-or-create and similar helpers must not encode a status or postcondition the method does not guarantee on every path (`findOrCreateByEmail`, not `findOrCreatePendingByEmail` when existing ACTIVE users are returned as-is). One concept keeps one name across code, config keys, flags, and errors — no product alias beside the module's name (`copilot*` next to `safeShield*`). API response fields are camelCase, never an upstream's snake_case.",
+    "check": "Do names describe behavior honestly, avoid redundant scope, and keep response fields camelCase?",
     "exampleRefs": [
       "examples/testing.md#test-02-suffix-matches-the-test-layer"
     ],
     "reviewLearningIds": [
       "RL-20260506-001",
       "RL-20260602-004",
-      "RL-20260922-003"
+      "RL-20260922-003",
+      "RL-20261014-009"
     ]
   },
   {
@@ -193,7 +203,8 @@
     "exampleRefs": [
       "examples/repositories-and-pagination.md#config-03-reuse-01-knobs-follow-the-existing-config-driven-precedent",
       "examples/repositories-and-pagination.md#reuse-01-derive-version-lists-from-safe-deployments",
-      "examples/repositories-and-pagination.md#reuse-01-a-single-item-read-delegates-to-its-batch-variant"
+      "examples/repositories-and-pagination.md#reuse-01-a-single-item-read-delegates-to-its-batch-variant",
+      "examples/repositories-and-pagination.md#reuse-01-rows-scoped-the-same-way-share-one-predicate"
     ],
     "reviewLearningIds": [
       "RL-20260506-003",
@@ -202,7 +213,9 @@
       "RL-20251208-001",
       "RL-20260921-004",
       "RL-20260925-005",
-      "RL-20261002-004"
+      "RL-20261002-004",
+      "RL-20261009-011",
+      "RL-20261014-004"
     ]
   },
   {
@@ -230,7 +243,10 @@
       "RL-20261001-004",
       "RL-20261001-005",
       "RL-20261008-001",
-      "RL-20261008-004"
+      "RL-20261008-004",
+      "RL-20261009-007",
+      "RL-20261014-006",
+      "RL-20261014-010"
     ]
   },
   {
@@ -448,8 +464,8 @@
     "project": "general",
     "area": "database",
     "title": "Atomic state transitions",
-    "rule": "Multi-step status transitions are atomic (single SQL/ORM bulk call or wrapped transaction); do not loop awaits to mutate N rows. Writes that must commit or roll back together must run on the same outer `EntityManager`/transaction — a find-or-create helper invoked inside a transaction must accept and thread the outer `EntityManager` rather than opening its own, or a later failure leaves orphan committed rows. Conversely, do not wrap a single-statement write in a transaction — one statement is already atomic. A staleness or ordering guard is re-checked inside the lock it protects; a value read before the lock is carried in and re-compared, never trusted. The transaction lives with the use case, expensive I/O (KMS, upstream calls) happens before the lock is taken, and any quantity being enforced on is read inside it. A compensating action reverses the exact record the original wrote, carried forward from the charge — never one resolved again at refund time.",
-    "check": "Are multi-step state transitions atomic, and do helpers called inside a transaction share the outer EntityManager instead of opening their own?",
+    "rule": "Multi-step status transitions are atomic (single SQL/ORM bulk call or wrapped transaction); do not loop awaits to mutate N rows. Writes that must commit or roll back together must run on the same outer `EntityManager`/transaction — a find-or-create helper invoked inside a transaction must accept and thread the outer `EntityManager` rather than opening its own, or a later failure leaves orphan committed rows. Conversely, do not wrap a single-statement write in a transaction — one statement is already atomic. A staleness or ordering guard is re-checked inside the lock it protects; a value read before the lock is carried in and re-compared, never trusted. The transaction lives with the use case, expensive I/O (KMS, upstream calls) happens before the lock is taken, and any quantity being enforced on — including the set of rows to lock — is read inside it. Paths that take several row locks follow one order, documented on the lock helpers. A compensating action reverses the exact record the original wrote, carried forward from the charge — never one resolved again at refund time.",
+    "check": "Are multi-step state transitions atomic, do helpers called inside a transaction share the outer EntityManager instead of opening their own, and do multi-row locks follow the documented order?",
     "exampleRefs": [
       "examples/database-migrations.md#db-02-reverse-the-record-the-charge-wrote-not-a-freshly-resolved-one"
     ],
@@ -459,7 +475,8 @@
       "RL-20260819-002",
       "RL-20260826-003",
       "RL-20260917-001",
-      "RL-20261001-006"
+      "RL-20261001-006",
+      "RL-20261009-014"
     ]
   },
   {
@@ -474,7 +491,8 @@
       "RL-20260529-003",
       "RL-20260609-004",
       "RL-20261001-002",
-      "RL-20261002-006"
+      "RL-20261002-006",
+      "RL-20261009-009"
     ]
   },
   {
@@ -539,7 +557,8 @@
       "RL-20260703-004",
       "RL-20260710-008",
       "RL-20260715-001",
-      "RL-20251210-001"
+      "RL-20251210-001",
+      "RL-20261009-003"
     ]
   },
   {
@@ -554,7 +573,8 @@
       "RL-20260710-007",
       "RL-20260723-002",
       "RL-20260922-004",
-      "RL-20260928-005"
+      "RL-20260928-005",
+      "RL-20261009-004"
     ]
   },
   {
@@ -573,7 +593,8 @@
       "RL-20260608-001",
       "RL-20260713-002",
       "RL-20260714-001",
-      "RL-20260826-002"
+      "RL-20260826-002",
+      "RL-20261009-004"
     ]
   },
   {
@@ -612,18 +633,20 @@
     "project": "general",
     "area": "config",
     "title": "Env metadata matches runtime",
-    "rule": "Toolchain versions, Docker build args, pinned CI actions, and `.env.sample`/`.env.sample.json` required flags should not drift from runtime behavior. Add new env vars to `.env.sample` in the same PR. Removing env-driven behavior sweeps every env-metadata surface (`.env.sample`, `.env.sample.json`, `.devcontainer/docker-compose.yml`) in the same PR. Per-feature AWS credentials use prefixed env vars (`KMS_AWS_*`, `SES_AWS_*`, `CSV_AWS_*`), never the shared root `AWS_*` pair.",
-    "check": "Do tool versions and env metadata match runtime behavior?",
+    "rule": "Toolchain versions, Docker build args, pinned CI actions, and `.env.sample`/`.env.sample.json` required flags should not drift from runtime behavior. Services that must run the same version (the dev and test databases) share one definition — a compose anchor carrying the image — so a bump cannot reach only one. Add new env vars to `.env.sample` in the same PR. Removing env-driven behavior sweeps every env-metadata surface (`.env.sample`, `.env.sample.json`, `.devcontainer/docker-compose.yml`) in the same PR. Per-feature AWS credentials use prefixed env vars (`KMS_AWS_*`, `SES_AWS_*`, `CSV_AWS_*`), never the shared root `AWS_*` pair.",
+    "check": "Do tool versions and env metadata match runtime behavior, and do services that must match share one definition?",
     "exampleRefs": [
       "examples/configuration.md#change-04-config-05-env-var-rename-keeps-the-old-name-as-a-fallback-for-one-release",
-      "examples/configuration.md#config-05-envsample-comments-document-encoding-and-format-constraints"
+      "examples/configuration.md#config-05-envsample-comments-document-encoding-and-format-constraints",
+      "examples/configuration.md#config-05-services-that-must-match-share-one-compose-anchor"
     ],
     "reviewLearningIds": [
       "RL-20260108-001",
       "RL-20251215-003",
       "RL-20260619-002",
       "RL-20260710-010",
-      "RL-20260923-002"
+      "RL-20260923-002",
+      "RL-20261009-001"
     ]
   },
   {
@@ -631,8 +654,8 @@
     "project": "general",
     "area": "performance",
     "title": "Batch and parallelize I/O",
-    "rule": "Batch repeated DB/API work, cap user limits, and keep independent I/O parallel. `Promise.all` over independent items must use `allSettled` if one failure should not sink the page. Batched results are paired back to their inputs by id (a `Map`), never by array position. Remove event listeners (`res.once`, stream cleanup) to prevent leaks. Objects derived only from constructor-time config (Zod schemas, clients, compiled regexes) are built once in the constructor, not per request. Validate/filter request entries before spending shared external-API rate-limit budget on them. When an inner loop matches on a derived value, precompute it into a map keyed by that value instead of recomputing per candidate. Before parallelizing a chain of guards, check whether rejection order is load-bearing — it decides both what you pay for and which status the caller sees. To stay under an upstream rate limit, run independent calls in config-sized `Promise.all` batches (the shared `batched()` helper), not one at a time.",
-    "check": "Did I batch repeated DB/API work, cap user limits, and keep independent I/O parallel (in config-sized batches where an upstream rate-limits)?",
+    "rule": "Batch repeated DB/API work, cap user limits, and keep independent I/O parallel. `Promise.all` over independent items must use `allSettled` if one failure should not sink the page; likewise a selection added to an existing upstream query is gated to the requests that need it (GraphQL `@include`), so its failure cannot fail reads that worked before. Batched results are paired back to their inputs by id (a `Map`), never by array position. Remove event listeners (`res.once`, stream cleanup) to prevent leaks. Objects derived only from constructor-time config (Zod schemas, clients, compiled regexes) are built once in the constructor, not per request. Validate/filter request entries before spending shared external-API rate-limit budget on them. When an inner loop matches on a derived value, precompute it into a map keyed by that value instead of recomputing per candidate. Before parallelizing a chain of guards, check whether rejection order is load-bearing — it decides both what you pay for and which status the caller sees. To stay under an upstream rate limit, run independent calls in config-sized `Promise.all` batches (the shared `batched()` helper), not one at a time.",
+    "check": "Did I batch repeated DB/API work, cap user limits, and keep independent I/O parallel (in config-sized batches where an upstream rate-limits), without one part's failure sinking the rest?",
     "exampleRefs": [
       "examples/repositories-and-pagination.md#perf-01-extract-the-field-you-actually-need-per-page",
       "examples/repositories-and-pagination.md#perf-01-parallelize-independent-lookups-with-promiseall",
@@ -648,7 +671,8 @@
       "RL-20260917-003",
       "RL-20260925-001",
       "RL-20261001-001",
-      "RL-20261002-007"
+      "RL-20261002-007",
+      "RL-20261014-002"
     ]
   },
   {
@@ -671,7 +695,8 @@
       "RL-20260710-003",
       "RL-20260707-002",
       "RL-20260710-009",
-      "RL-20261002-001"
+      "RL-20261002-001",
+      "RL-20261009-012"
     ]
   },
   {
@@ -770,7 +795,9 @@
       "RL-20260907-001",
       "RL-20260923-001",
       "RL-20260928-003",
-      "RL-20261002-009"
+      "RL-20261002-009",
+      "RL-20261014-003",
+      "RL-20261014-008"
     ]
   },
   {
@@ -778,10 +805,11 @@
     "project": "general",
     "area": "tests",
     "title": "Cover edges and determinism",
-    "rule": "Edge cases, observability calls, cache invalidation branches, production/default config branches, and deterministic ordering need tests when they are part of the behavior. Cache-invalidation tests pair every cleared-cache assertion with a negative assertion that unrelated caches stay untouched. Merge/dedup precedence tests use distinct objects sharing the same key — identical objects pass under either precedence. Behavior added to one method of a sibling set (`get`/`post`/`delete`) is covered on every sibling, and specs written for an approach abandoned during review are deleted rather than left to pass vacuously. Widening a gated list (versions, chains, providers) is covered by the negative case proving the gate still rejects, not only the positive one. A claim about upstream behaviour is settled against the host the deployed service resolves (in-cluster), not a curl against the public edge.",
-    "check": "Do tests cover edge cases, side effects, and deterministic behavior?",
+    "rule": "Edge cases, observability calls, cache invalidation branches, production/default config branches, and deterministic ordering need tests when they are part of the behavior. Cache-invalidation tests pair every cleared-cache assertion with a negative assertion that unrelated caches stay untouched. Merge/dedup precedence tests use distinct objects sharing the same key — identical objects pass under either precedence. Behavior added to one method of a sibling set (`get`/`post`/`delete`) is covered on every sibling, and specs written for an approach abandoned during review are deleted rather than left to pass vacuously. Every gate or scoping filter, including a widened gated list (versions, chains, providers), has a case that fails when it is removed — the negative case proving it still rejects, a second owner in a per-owner fixture — not only the positive one. A concurrency test proves a call is blocked by observing the lock wait (`pg_stat_activity`), not by a fixed sleep. A claim about upstream behaviour is settled against the host the deployed service resolves (in-cluster), not a curl against the public edge.",
+    "check": "Do tests cover edge cases, side effects, and deterministic behavior, and does every gate or filter have a case that fails without it?",
     "exampleRefs": [
-      "examples/testing.md#test-09-cover-the-negative-paths-around-safety-critical-extraction"
+      "examples/testing.md#test-09-cover-the-negative-paths-around-safety-critical-extraction",
+      "examples/testing.md#test-09-prove-a-lock-wait-by-observing-it-not-by-sleeping"
     ],
     "reviewLearningIds": [
       "RL-20260123-001",
@@ -792,7 +820,11 @@
       "RL-20251208-003",
       "RL-20260810-002",
       "RL-20260916-001",
-      "RL-20260928-004"
+      "RL-20260928-004",
+      "RL-20261009-004",
+      "RL-20261009-013",
+      "RL-20261009-015",
+      "RL-20261014-001"
     ]
   },
   {
@@ -811,7 +843,8 @@
       "RL-20260723-003",
       "RL-20260710-001",
       "RL-20261001-001",
-      "RL-20261008-003"
+      "RL-20261008-003",
+      "RL-20261009-002"
     ]
   },
   {
