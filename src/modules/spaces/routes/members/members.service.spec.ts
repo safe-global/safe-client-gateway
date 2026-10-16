@@ -3,12 +3,13 @@
 import { faker } from '@faker-js/faker';
 import {
   ConflictException,
-  ForbiddenException,
+  HttpStatus,
   NotFoundException,
 } from '@nestjs/common';
 import { type Address, getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
+import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
 import {
   oidcAuthPayloadDtoBuilder,
   siweAuthPayloadDtoBuilder,
@@ -402,7 +403,7 @@ describe('MembersService', () => {
       ['SIWE', siweAuthPayloadDtoBuilder],
       ['OIDC', oidcAuthPayloadDtoBuilder],
     ] as const)(
-      'should throw ForbiddenException when the %s caller is not an active admin',
+      'should throw a 403 when the %s caller is not an active admin',
       async (_label, builder) => {
         const authPayload = new AuthPayload(builder().build());
         const spaceId = faker.number.int({ min: 1 });
@@ -413,7 +414,10 @@ describe('MembersService', () => {
         await expect(
           service.inviteUser({ authPayload, spaceId, inviteUsersDto }),
         ).rejects.toThrow(
-          new ForbiddenException('User is not an admin of this workspace'),
+          new HttpExceptionNoLog(
+            'User is not an admin of this workspace',
+            HttpStatus.FORBIDDEN,
+          ),
         );
         expect(membersRepositoryMock.inviteUsers).not.toHaveBeenCalled();
       },
@@ -525,7 +529,7 @@ describe('MembersService', () => {
   });
 
   describe('renewInvite', () => {
-    it('should throw ForbiddenException when the caller is not an active admin', async () => {
+    it('should throw a 403 when the caller is not an active admin', async () => {
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
       const spaceId = faker.number.int({ min: 1 });
       const userId = faker.number.int({ min: 1 });
@@ -535,7 +539,10 @@ describe('MembersService', () => {
       await expect(
         service.renewInvite({ authPayload, spaceId, userId }),
       ).rejects.toThrow(
-        new ForbiddenException('User is not an admin of this workspace'),
+        new HttpExceptionNoLog(
+          'User is not an admin of this workspace',
+          HttpStatus.FORBIDDEN,
+        ),
       );
       expect(membersRepositoryMock.findOneOrFail).not.toHaveBeenCalled();
       expect(membersRepositoryMock.renewInvite).not.toHaveBeenCalled();
@@ -769,7 +776,7 @@ describe('MembersService', () => {
         membersRepositoryMock.removeUser,
     ],
   ] as const)('%s', (_name, call, repositoryMethod) => {
-    it('should throw ForbiddenException when the caller is not an active admin', async () => {
+    it('should throw a 403 when the caller is not an active admin', async () => {
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
       const spaceId = faker.number.int({ min: 1 });
       const userId = faker.number.int({ min: 1 });
@@ -777,7 +784,10 @@ describe('MembersService', () => {
       membersRepositoryMock.findOne.mockResolvedValue(null);
 
       await expect(call({ authPayload, spaceId, userId })).rejects.toThrow(
-        new ForbiddenException('User is not an admin of this workspace'),
+        new HttpExceptionNoLog(
+          'User is not an admin of this workspace',
+          HttpStatus.FORBIDDEN,
+        ),
       );
       expect(repositoryMethod()).not.toHaveBeenCalled();
     });
