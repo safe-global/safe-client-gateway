@@ -1,5 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Inject,
+  Injectable,
+} from '@nestjs/common';
 import type { Address } from 'viem';
 import {
   getAddress,
@@ -14,10 +19,16 @@ import {
   type ILoggingService,
   LoggingService,
 } from '#/logging/logging.interface';
+import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import { getAuthenticatedUserIdOrFail } from '#/modules/auth/utils/assert-authenticated.utils';
 import { IDataDecoderRepository } from '#/modules/data-decoder/domain/v2/data-decoder.repository.interface';
 import type { MultisigTransaction as DomainMultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
 import type { SafeRepository } from '#/modules/safe/domain/safe.repository';
 import { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
+import type { Space } from '#/modules/spaces/domain/entities/space.entity';
+import { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository.interface';
+import { assertMember } from '#/modules/spaces/domain/space-assert.utils';
+import { ISpacesRepository } from '#/modules/spaces/domain/spaces.repository.interface';
 import { ITokenRepository } from '#/modules/tokens/domain/token.repository.interface';
 import type { AddConfirmationDto } from '#/modules/transactions/domain/entities/add-confirmation.dto.entity';
 import type { ProposeTransactionDto } from '#/modules/transactions/domain/entities/propose-transaction.dto.entity';
@@ -47,6 +58,7 @@ import { TransactionPreviewMapper } from '#/modules/transactions/routes/mappers/
 import { TransactionsHistoryMapper } from '#/modules/transactions/routes/mappers/transactions-history.mapper';
 import { TransferMapper } from '#/modules/transactions/routes/mappers/transfers/transfer.mapper';
 import { TransferDetailsMapper } from '#/modules/transactions/routes/mappers/transfers/transfer-details.mapper';
+import { IMembersRepository } from '#/modules/users/domain/members/members.repository.interface';
 import type { Page } from '#/routes/common/entities/page.entity';
 import {
   buildNextPageURL,
@@ -78,6 +90,12 @@ export class TransactionsService {
     private readonly tokenRepository: ITokenRepository,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
+    @Inject(ISpacesRepository)
+    private readonly spacesRepository: ISpacesRepository,
+    @Inject(IMembersRepository)
+    private readonly membersRepository: IMembersRepository,
+    @Inject(ISpaceSafesRepository)
+    private readonly spaceSafesRepository: ISpaceSafesRepository,
   ) {
     this.isFilterValueParsingEnabled = this.configurationService.getOrThrow(
       'features.filterValueParsing',
@@ -87,6 +105,8 @@ export class TransactionsService {
   async getById(args: {
     chainId: string;
     txId: string;
+    spaceUuid?: Space['uuid'];
+    authPayload: AuthPayload;
   }): Promise<TransactionDetails> {
     const [txType, safeAddress, id] = args.txId.split(TRANSACTION_ID_SEPARATOR);
 
@@ -136,10 +156,18 @@ export class TransactionsService {
           throw new BadRequestException('Invalid transaction ID');
         }
 
+        const spaceId = await this.getSpaceIdOfMember({
+          spaceUuid: args.spaceUuid,
+          chainId: args.chainId,
+          safeAddress: getAddress(safeAddress),
+          authPayload: args.authPayload,
+        });
+
         const [tx, safe] = await Promise.all([
           this.safeRepository.getMultiSigTransaction({
             chainId: args.chainId,
             safeTransactionHash: id,
+            spaceId,
           }),
           this.safeRepository.getSafe({
             chainId: args.chainId,
@@ -423,7 +451,10 @@ export class TransactionsService {
     safeAddress: Address;
     paginationData: PaginationData;
     trusted?: boolean;
+    spaceUuid?: Space['uuid'];
+    authPayload: AuthPayload;
   }): Promise<Page<QueuedItem>> {
+    const spaceId = await this.getSpaceIdOfMember(args);
     const pagination = this.getAdjustedPaginationForQueue(args.paginationData);
     const safeInfo = await this.safeRepository.getSafe({
       chainId: args.chainId,
@@ -435,6 +466,7 @@ export class TransactionsService {
       limit: pagination.limit,
       offset: pagination.offset,
       trusted: args.trusted,
+      spaceId,
     });
 
     const nextURL = buildNextPageURL(args.routeUrl, transactions.count);
@@ -528,16 +560,20 @@ export class TransactionsService {
     chainId: string;
     safeAddress: Address;
     proposeTransactionDto: ProposeTransactionDto;
+    spaceUuid?: Space['uuid'];
+    authPayload: AuthPayload;
   }): Promise<TransactionDetails> {
+    const spaceId = await this.getSpaceIdOfMember(args);
     this.logProposeTx(args);
     args.proposeTransactionDto.origin = this.verifyOrigin(
       args.proposeTransactionDto,
     );
-    await this.safeRepository.proposeTransaction(args);
+    await this.safeRepository.proposeTransaction({ ...args, spaceId });
 
     const domainTransaction = await this.safeRepository.getMultiSigTransaction({
       chainId: args.chainId,
       safeTransactionHash: args.proposeTransactionDto.safeTxHash,
+      spaceId,
     });
     const [safe, dataDecoded] = await Promise.all([
       this.safeRepository.getSafe({
@@ -673,6 +709,35 @@ export class TransactionsService {
     }
 
     return null;
+  }
+
+  /**
+   * Returns the Space whose private transactions the user may read and
+   * write, after checking that the user is a member and the Safe is
+   * registered to it.
+   */
+  private async getSpaceIdOfMember(args: {
+    spaceUuid?: Space['uuid'];
+    chainId: string;
+    safeAddress: Address;
+    authPayload: AuthPayload;
+  }): Promise<Space['id'] | undefined> {
+    if (args.spaceUuid === undefined) {
+      return undefined;
+    }
+    const userId = getAuthenticatedUserIdOrFail(args.authPayload);
+    const spaceId = await this.spacesRepository.findIdByUuid(args.spaceUuid);
+    await assertMember(this.membersRepository, spaceId, userId);
+
+    const isSafeInSpace = await this.spaceSafesRepository.existsInSpace({
+      spaceId,
+      chainId: args.chainId,
+      address: args.safeAddress,
+    });
+    if (!isSafeInSpace) {
+      throw new ForbiddenException('Safe is not registered to this Workspace.');
+    }
+    return spaceId;
   }
 
   private logProposeTx(

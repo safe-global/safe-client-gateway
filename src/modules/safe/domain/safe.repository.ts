@@ -54,6 +54,7 @@ import {
 import { buildOrigin } from '#/modules/safe-queue/helpers/origin.helper';
 import { mapSafeQueueToMultisigTransaction } from '#/modules/safe-queue/mappers/transaction.mapper';
 import { ISafeQueueService } from '#/modules/safe-queue/safe-queue.interface';
+import type { Space } from '#/modules/spaces/domain/entities/space.entity';
 import { ProposeTransactionDto } from '#/modules/transactions/domain/entities/propose-transaction.dto.entity';
 import { TransactionVerifierHelper } from '#/modules/transactions/routes/helpers/transaction-verifier.helper';
 import { PaginationData } from '#/routes/common/pagination/pagination.data';
@@ -273,6 +274,7 @@ export class SafeRepository implements ISafeRepository {
     limit?: number;
     offset?: number;
     trusted?: boolean;
+    spaceId?: Space['id'];
   }): Promise<Page<MultisigTransaction>> {
     return this._getTransactionQueue({
       ...args,
@@ -312,6 +314,7 @@ export class SafeRepository implements ISafeRepository {
     ordering: string;
     limit?: number;
     offset?: number;
+    spaceId?: Space['id'];
   }): Promise<Page<MultisigTransaction>> {
     if (!this.safeQueueEnabled) {
       const transactionService = await this.transactionApiManager.getApi(
@@ -332,6 +335,7 @@ export class SafeRepository implements ISafeRepository {
       nonceOrder,
       limit: args.limit,
       offset: args.offset,
+      spaceId: args.spaceId,
     });
     const parsed = SafeQueueMultisigTransactionPageSchema.parse(page);
     return {
@@ -612,6 +616,7 @@ export class SafeRepository implements ISafeRepository {
   async getMultiSigTransaction(args: {
     chainId: string;
     safeTransactionHash: string;
+    spaceId?: Space['id'];
   }): Promise<MultisigTransaction> {
     return await this.resolveMultisigTransaction(args);
   }
@@ -632,6 +637,7 @@ export class SafeRepository implements ISafeRepository {
   private async resolveMultisigTransaction(args: {
     chainId: string;
     safeTransactionHash: string;
+    spaceId?: Space['id'];
   }): Promise<MultisigTransaction> {
     if (!this.safeQueueEnabled) {
       return this.fetchTxServiceMultisig(args);
@@ -642,6 +648,7 @@ export class SafeRepository implements ISafeRepository {
       const raw = await this.safeQueueService.getMultisigTransaction({
         chainId: args.chainId,
         safeTxHash: args.safeTransactionHash,
+        spaceId: args.spaceId,
       });
       queue = SafeQueueMultisigTransactionSchema.parse(raw);
     } catch (error) {
@@ -969,7 +976,15 @@ export class SafeRepository implements ISafeRepository {
     chainId: string;
     safeAddress: Address;
     proposeTransactionDto: ProposeTransactionDto;
+    spaceId?: Space['id'];
   }): Promise<unknown> {
+    // Only the queue service can keep a transaction private to a Space
+    if (args.spaceId !== undefined && !this.safeQueueEnabled) {
+      throw new HttpExceptionNoLog(
+        'Private transactions are not supported',
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
+    }
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
     );
@@ -987,7 +1002,10 @@ export class SafeRepository implements ISafeRepository {
             .catch(() => null),
       this.safeQueueEnabled
         ? this.safeQueueService
-            .getMultisigTransactionWithNoCache({ safeTxHash })
+            .getMultisigTransactionWithNoCache({
+              safeTxHash,
+              spaceId: args.spaceId,
+            })
             .then(SafeQueueMultisigTransactionSchema.parse)
             .catch(() => null)
         : null,
@@ -1003,11 +1021,31 @@ export class SafeRepository implements ISafeRepository {
     });
 
     if (this.safeQueueEnabled) {
-      return await this.safeQueueService.proposeTransaction({
+      const proposal = await this.safeQueueService.proposeTransaction({
         chainId: args.chainId,
         safeAddress: args.safeAddress,
         proposeTransactionDto: args.proposeTransactionDto,
+        spaceId: args.spaceId,
       });
+      // The queue service sends no event for a private transaction, so no
+      // event clears the cached queue
+      if (args.spaceId !== undefined) {
+        await Promise.all([
+          this.safeQueueService.clearAllTransactions({
+            chainId: args.chainId,
+            safeAddress: args.safeAddress,
+          }),
+          this.safeQueueService.clearMultisigTransaction({
+            chainId: args.chainId,
+            safeTxHash,
+          }),
+        ]).catch((error) => {
+          this.loggingService.warn(
+            `Failed to clear private transaction from cache. chainId=${args.chainId}, safeTxHash=${safeTxHash}, error=${error}`,
+          );
+        });
+      }
+      return proposal;
     }
     // The tx service has no notion of nested transactions: forwarding would
     // store the parent without its child, and the queue service's

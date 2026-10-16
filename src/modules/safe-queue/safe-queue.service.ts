@@ -32,6 +32,7 @@ import {
 } from '#/modules/safe-queue/entities/multisig-transaction.entity';
 import { parseOrigin } from '#/modules/safe-queue/helpers/origin.helper';
 import type { ISafeQueueService } from '#/modules/safe-queue/safe-queue.interface';
+import type { Space } from '#/modules/spaces/domain/entities/space.entity';
 import type { ProposeTransactionDto } from '#/modules/transactions/domain/entities/propose-transaction.dto.entity';
 import type { Raw } from '#/validation/entities/raw.entity';
 import { rawify } from '#/validation/entities/raw.entity';
@@ -45,6 +46,7 @@ export class SafeQueueService implements ISafeQueueService {
   private static readonly MAX_BATCH_HASHES_PER_CALL = 50;
 
   private readonly baseUri: string;
+  private readonly privateQueueApiKey: string | undefined;
   private readonly defaultExpirationTimeInSeconds: number;
   private readonly defaultNotFoundExpirationTimeSeconds: number;
 
@@ -63,6 +65,9 @@ export class SafeQueueService implements ISafeQueueService {
     this.baseUri = this.configurationService.getOrThrow<string>(
       'safeQueueService.baseUri',
     );
+    this.privateQueueApiKey = this.configurationService.get<string>(
+      'safeQueueService.privateQueueApiKey',
+    );
     this.defaultExpirationTimeInSeconds =
       this.configurationService.getOrThrow<number>(
         'expirationTimeInSeconds.default',
@@ -77,6 +82,7 @@ export class SafeQueueService implements ISafeQueueService {
     chainId: string;
     safeAddress: Address;
     proposeTransactionDto: ProposeTransactionDto;
+    spaceId?: Space['id'];
   }): Promise<Raw<SafeQueueMultisigTransactionEntity>> {
     try {
       const dto = args.proposeTransactionDto;
@@ -121,8 +127,10 @@ export class SafeQueueService implements ISafeQueueService {
                 notes: nested.notes,
               }
             : null,
+          spaceId: args.spaceId,
         },
         networkRequest: {
+          headers: this.getPrivateQueueHeaders(args.spaceId),
           circuitBreaker: {
             key: CircuitBreakerKeys.getSafeQueueServiceKey(),
           },
@@ -137,11 +145,13 @@ export class SafeQueueService implements ISafeQueueService {
   async getMultisigTransaction(args: {
     chainId: string;
     safeTxHash: string;
+    spaceId?: Space['id'];
   }): Promise<Raw<SafeQueueMultisigTransactionEntity>> {
     try {
       const cacheDir = CacheRouter.getSafeQueueMultisigTransactionCacheDir({
         chainId: args.chainId,
         safeTransactionHash: args.safeTxHash,
+        spaceId: args.spaceId,
       });
       const url = `${this.baseUri}/api/v1/multisig-transactions/${encodeURIComponent(args.safeTxHash)}`;
       // Left unvalidated (Raw) — the caller is the single parse point, per the
@@ -152,6 +162,8 @@ export class SafeQueueService implements ISafeQueueService {
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
         networkRequest: {
+          params: { spaceId: args.spaceId },
+          headers: this.getPrivateQueueHeaders(args.spaceId),
           circuitBreaker: {
             key: CircuitBreakerKeys.getSafeQueueServiceKey(),
           },
@@ -164,6 +176,7 @@ export class SafeQueueService implements ISafeQueueService {
 
   async getMultisigTransactionWithNoCache(args: {
     safeTxHash: string;
+    spaceId?: Space['id'];
   }): Promise<Raw<SafeQueueMultisigTransactionEntity>> {
     try {
       const url = `${this.baseUri}/api/v1/multisig-transactions/${encodeURIComponent(args.safeTxHash)}`;
@@ -172,6 +185,8 @@ export class SafeQueueService implements ISafeQueueService {
       >({
         url,
         networkRequest: {
+          params: { spaceId: args.spaceId },
+          headers: this.getPrivateQueueHeaders(args.spaceId),
           circuitBreaker: {
             key: CircuitBreakerKeys.getSafeQueueServiceKey(),
           },
@@ -267,6 +282,7 @@ export class SafeQueueService implements ISafeQueueService {
     nonceOrder?: 'asc' | 'desc';
     limit?: number;
     offset?: number;
+    spaceId?: Space['id'];
   }): Promise<Raw<Page<SafeQueueMultisigTransactionEntity>>> {
     try {
       // Normalize before building the cache key, so an omitted nonceOrder
@@ -290,7 +306,9 @@ export class SafeQueueService implements ISafeQueueService {
             nonceOrder,
             limit: this.capLimit(args.limit),
             offset: args.offset,
+            spaceId: args.spaceId,
           },
+          headers: this.getPrivateQueueHeaders(args.spaceId),
           circuitBreaker: {
             key: CircuitBreakerKeys.getSafeQueueServiceKey(),
           },
@@ -644,6 +662,18 @@ export class SafeQueueService implements ISafeQueueService {
       safeAddress: args.safeAddress,
     });
     await this.cacheService.deleteByKey(key);
+  }
+
+  private getPrivateQueueHeaders(
+    spaceId?: Space['id'],
+  ): Record<string, string> | undefined {
+    if (spaceId === undefined) {
+      return undefined;
+    }
+    if (!this.privateQueueApiKey) {
+      throw new Error('No key is configured for private Safe Queue access');
+    }
+    return { 'X-Private-Queue-Key': this.privateQueueApiKey };
   }
 
   private capLimit(limit?: number): number | undefined {

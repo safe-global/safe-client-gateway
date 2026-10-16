@@ -445,10 +445,12 @@ export class CacheRouter {
     nonceOrder?: 'asc' | 'desc';
     limit?: number;
     offset?: number;
+    spaceId?: number;
   }): CacheDir {
     return new CacheDir(
       CacheRouter.getSafeQueueMultisigTransactionsCacheKey(args),
-      `safe_queue_${args.nonceOrder}_${args.limit}_${args.offset}`,
+      `safe_queue_${args.nonceOrder}_${args.limit}_${args.offset}` +
+        (args.spaceId === undefined ? '' : `_space_${args.spaceId}`),
     );
   }
 
@@ -476,10 +478,11 @@ export class CacheRouter {
   static getSafeQueueMultisigTransactionCacheDir(args: {
     chainId: string;
     safeTransactionHash: string;
+    spaceId?: number;
   }): CacheDir {
     return new CacheDir(
       CacheRouter.getSafeQueueMultisigTransactionCacheKey(args),
-      '',
+      args.spaceId === undefined ? '' : `space_${args.spaceId}`,
     );
   }
 

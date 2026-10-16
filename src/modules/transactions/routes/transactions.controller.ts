@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import type { UUID } from 'node:crypto';
 import {
   Body,
   Controller,
@@ -11,6 +13,7 @@ import {
   ParseIntPipe,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
@@ -24,6 +27,8 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import type { Address } from 'viem';
+import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import { OptionalAuthGuard } from '#/modules/auth/routes/guards/optional-auth.guard';
 import { AddConfirmationDto } from '#/modules/transactions/routes/entities/add-confirmation.dto';
 import { CreationTransaction } from '#/modules/transactions/routes/entities/creation-transaction.entity';
 import { DeleteTransactionDto } from '#/modules/transactions/routes/entities/delete-transaction.dto.entity';
@@ -45,12 +50,14 @@ import { TransactionDetails } from '#/modules/transactions/routes/entities/trans
 import { TransactionItemPage } from '#/modules/transactions/routes/entities/transaction-item-page.entity';
 import { TransactionPreview } from '#/modules/transactions/routes/entities/transaction-preview.entity';
 import { TransactionsService } from '#/modules/transactions/routes/transactions.service';
+import { Auth } from '#/routes/common/auth/auth.decorator';
 import { PaginationDataDecorator } from '#/routes/common/decorators/pagination.data.decorator';
 import { RouteUrlDecorator } from '#/routes/common/decorators/route.url.decorator';
 import type { Page } from '#/routes/common/entities/page.entity';
 import type { PaginationData } from '#/routes/common/pagination/pagination.data';
 import { AddressSchema } from '#/validation/entities/schemas/address.schema';
 import { TimezoneSchema } from '#/validation/entities/schemas/timezone.schema';
+import { UuidSchema } from '#/validation/entities/schemas/uuid.schema';
 import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
 @ApiTags('transactions')
@@ -86,14 +93,27 @@ export class TransactionsController {
   @ApiNotFoundResponse({
     description: 'Transaction not found',
   })
+  @ApiQuery({
+    name: 'spaceId',
+    required: false,
+    type: String,
+    description:
+      'Space UUID. Also returns a multisig transaction only the Space can see, for a multisig transaction ID. Requires a session of a Space member, and the Safe registered to the Space',
+  })
+  @UseGuards(OptionalAuthGuard)
   @Get(`chains/:chainId/transactions/:id`)
   getTransactionById(
     @Param('chainId') chainId: string,
     @Param('id') id: string,
+    @Query('spaceId', new ValidationPipe(UuidSchema.optional()))
+    spaceUuid: UUID | undefined,
+    @Auth() authPayload: AuthPayload,
   ): Promise<TransactionDetails> {
     return this.transactionsService.getById({
       chainId,
       txId: id,
+      spaceUuid,
+      authPayload,
     });
   }
 
@@ -522,10 +542,18 @@ export class TransactionsController {
     description:
       'Filter by trust status (true for trusted transactions, false for untrusted)',
   })
+  @ApiQuery({
+    name: 'spaceId',
+    required: false,
+    type: String,
+    description:
+      'Space UUID. Also returns the transactions only the Space can see. Requires a session of a Space member, and the Safe registered to the Space',
+  })
   @ApiOkResponse({
     type: QueuedItemPage,
     description: 'Paginated list of queued transactions',
   })
+  @UseGuards(OptionalAuthGuard)
   @Get('chains/:chainId/safes/:safeAddress/transactions/queued')
   getTransactionQueue(
     @Param('chainId') chainId: string,
@@ -535,6 +563,9 @@ export class TransactionsController {
     @PaginationDataDecorator() paginationData: PaginationData,
     @Query('trusted', new DefaultValuePipe(true), ParseBoolPipe)
     trusted: boolean,
+    @Query('spaceId', new ValidationPipe(UuidSchema.optional()))
+    spaceUuid: UUID | undefined,
+    @Auth() authPayload: AuthPayload,
   ): Promise<Partial<Page<QueuedItem>>> {
     return this.transactionsService.getTransactionQueue({
       chainId,
@@ -542,6 +573,8 @@ export class TransactionsController {
       safeAddress,
       paginationData,
       trusted,
+      spaceUuid,
+      authPayload,
     });
   }
 
@@ -653,10 +686,18 @@ export class TransactionsController {
     type: TransactionDetails,
     description: 'Transaction proposed successfully',
   })
+  @ApiQuery({
+    name: 'spaceId',
+    required: false,
+    type: String,
+    description:
+      'Space UUID. Only the Space can then see the transaction. Requires a session of a Space member, and the Safe registered to the Space',
+  })
   @ApiBadRequestResponse({
     description: 'Invalid transaction data or signature',
   })
   @HttpCode(200)
+  @UseGuards(OptionalAuthGuard)
   @Post('chains/:chainId/transactions/:safeAddress/propose')
   proposeTransaction(
     @Param('chainId') chainId: string,
@@ -664,11 +705,16 @@ export class TransactionsController {
     safeAddress: Address,
     @Body(new ValidationPipe(ProposeTransactionDtoSchema))
     proposeTransactionDto: ProposeTransactionDto,
+    @Query('spaceId', new ValidationPipe(UuidSchema.optional()))
+    spaceUuid: UUID | undefined,
+    @Auth() authPayload: AuthPayload,
   ): Promise<TransactionDetails> {
     return this.transactionsService.proposeTransaction({
       chainId,
       safeAddress,
       proposeTransactionDto,
+      spaceUuid,
+      authPayload,
     });
   }
 

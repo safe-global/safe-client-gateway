@@ -17,6 +17,7 @@ import { Transaction } from '#/modules/safe/domain/entities/transaction.entity';
 import { Transfer } from '#/modules/safe/domain/entities/transfer.entity';
 import { SafeRepository } from '#/modules/safe/domain/safe.repository';
 import { SafeQueueModule } from '#/modules/safe-queue/safe-queue.module';
+import type { Space } from '#/modules/spaces/domain/entities/space.entity';
 import { AddConfirmationDto } from '#/modules/transactions/domain/entities/add-confirmation.dto.entity';
 import { ProposeTransactionDto } from '#/modules/transactions/domain/entities/propose-transaction.dto.entity';
 import { TransactionVerifierHelper } from '#/modules/transactions/routes/helpers/transaction-verifier.helper';
@@ -106,6 +107,7 @@ export interface ISafeRepository {
     safe: Safe;
     limit?: number;
     offset?: number;
+    spaceId?: Space['id'];
   }): Promise<Page<MultisigTransaction>>;
 
   /**
@@ -144,6 +146,7 @@ export interface ISafeRepository {
   getMultiSigTransaction(args: {
     chainId: string;
     safeTransactionHash: string;
+    spaceId?: Space['id'];
   }): Promise<MultisigTransaction>;
 
   clearAllExecutedTransactions(args: {
@@ -213,6 +216,7 @@ export interface ISafeRepository {
     chainId: string;
     safeAddress: Address;
     proposeTransactionDto: ProposeTransactionDto;
+    spaceId?: Space['id'];
   }): Promise<unknown>;
 
   /**

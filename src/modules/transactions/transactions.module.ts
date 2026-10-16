@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Module } from '@nestjs/common';
 import { TransactionApiManagerModule } from '#/domain/interfaces/transaction-api.manager.interface';
+import { AuthModule } from '#/modules/auth/auth.module';
+import { AuthGuard } from '#/modules/auth/routes/guards/auth.guard';
 import { BridgeModule } from '#/modules/bridge/bridge.module';
 import { LiFiDecoderModule } from '#/modules/bridge/domain/contracts/decoders/lifi-decoder.helper';
 import { ChainsModule } from '#/modules/chains/chains.module';
@@ -11,6 +13,7 @@ import { EarnModule } from '#/modules/earn/earn.module';
 import { HumanDescriptionModule } from '#/modules/human-description/human-description.module';
 import { SafeRepositoryModule } from '#/modules/safe/domain/safe.repository.interface';
 import { SafeAppsModule } from '#/modules/safe-apps/safe-apps.module';
+import { SpacesModule } from '#/modules/spaces/spaces.module';
 import { StakingModule } from '#/modules/staking/staking.module';
 import { GPv2DecoderModule } from '#/modules/swaps/domain/contracts/decoders/gp-v2-decoder.helper';
 import { SwapsModule } from '#/modules/swaps/swaps.module';
@@ -59,12 +62,16 @@ import { TransferImitationMapper } from '#/modules/transactions/routes/mappers/t
 import { TransferInfoMapper } from '#/modules/transactions/routes/mappers/transfers/transfer-info.mapper';
 import { TransactionsController } from '#/modules/transactions/routes/transactions.controller';
 import { TransactionsService } from '#/modules/transactions/routes/transactions.service';
+import { UsersModule } from '#/modules/users/users.module';
 import { AddressInfoModule } from '#/routes/common/address-info/address-info.module';
 
 @Module({
   controllers: [TransactionsController],
   imports: [
     AddressInfoModule,
+    AuthModule,
+    SpacesModule,
+    UsersModule,
     BridgeModule,
     ChainsModule,
     ContractsModule,
@@ -90,6 +97,7 @@ import { AddressInfoModule } from '#/routes/common/address-info/address-info.mod
     TwapOrderMapperModule,
   ],
   providers: [
+    AuthGuard,
     BridgeTransactionMapper,
     CreationTransactionMapper,
     CustomTransactionMapper,

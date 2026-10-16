@@ -32,6 +32,7 @@ const cacheService = {
 const mockCacheService = vi.mocked(cacheService);
 
 const configurationService = {
+  get: vi.fn(),
   getOrThrow: vi.fn(),
 } as MockedObject<IConfigurationService>;
 const mockConfigurationService = vi.mocked(configurationService);
@@ -232,6 +233,7 @@ describe('SafeQueueService', () => {
       expect(networkService.get).toHaveBeenCalledWith({
         url: `${baseUri}/api/v1/multisig-transactions/${safeTxHash}`,
         networkRequest: {
+          params: { spaceId: undefined },
           circuitBreaker: {
             key: CircuitBreakerKeys.getSafeQueueServiceKey(),
           },

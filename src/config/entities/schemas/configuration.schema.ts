@@ -211,6 +211,11 @@ export const RootConfigurationSchema = z
     RELAY_PROVIDER_API_KEY: z.string(),
     SAFE_QUEUE_SERVICE_BASE_URI: z.url().optional(),
     SAFE_QUEUE_SERVICE_API_KEY: z.string().trim().min(1).optional(),
+    SAFE_QUEUE_SERVICE_PRIVATE_QUEUE_API_KEY: z
+      .string()
+      .trim()
+      .min(1)
+      .optional(),
     USE_SAFE_QUEUE_SERVICE_VPC_URL: z.coerce.boolean().optional(),
     // Relay-fee configuration
     FEE_SERVICE_BASE_URI: z.url().optional(),
