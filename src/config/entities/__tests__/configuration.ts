@@ -196,6 +196,7 @@ export default (): ReturnType<typeof configuration> => ({
   },
   entitlements: {
     enforcementStartsAt: faker.date.future(),
+    gracePeriodClaimEndsAt: faker.date.future(),
   },
   expirationTimeInSeconds: {
     deviatePercent: faker.number.int({ min: 10, max: 20 }),
