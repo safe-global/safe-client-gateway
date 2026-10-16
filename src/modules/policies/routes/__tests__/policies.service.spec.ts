@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import { NotFoundException } from '@nestjs/common';
-import { type Address, getAddress, type Hex, zeroAddress } from 'viem';
+import { type Address, getAddress, zeroAddress } from 'viem';
 import type { MockedObject } from 'vitest';
 import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
 import {
@@ -26,7 +25,6 @@ import { SafeDecoder } from '#/modules/contracts/domain/decoders/safe-decoder.he
 import { delegateBuilder } from '#/modules/delegate/domain/entities/__tests__/delegate.builder';
 import type { Delegate } from '#/modules/delegate/domain/entities/delegate.entity';
 import type { IDelegatesV3Repository } from '#/modules/delegate/domain/v3/delegates.v3.repository.interface';
-import { policyConfigurationBuilder } from '#/modules/policies/domain/entities/__tests__/policy-configuration.builder';
 import type {
   ActivePolicy,
   SpendingLimitAllowance,
@@ -39,12 +37,9 @@ import type {
   PolicyIndexerGuardEnforcedPolicy,
   PolicyIndexerSafeAllowance,
 } from '#/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
-import type { PolicyConfiguration } from '#/modules/policies/domain/entities/policy-configuration.entity';
 import { PolicyType } from '#/modules/policies/domain/entities/policy-type.entity';
-import type { IPolicyConfigurationRequestsRepository } from '#/modules/policies/domain/policy-configuration-requests.repository.interface';
 import type { IPolicyIndexerRepository } from '#/modules/policies/domain/policy-indexer.repository.interface';
 import { guardPolicyKindsOf } from '#/modules/policies/domain/utils/policy.utils';
-import { configurationRoot } from '#/modules/policies/domain/utils/policy-configuration-root.utils';
 import { GuardPolicyMapper } from '#/modules/policies/routes/mappers/guard-policy.mapper';
 import { PendingSpendingLimitMapper } from '#/modules/policies/routes/mappers/pending-spending-limit.mapper';
 import { ProposerMapper } from '#/modules/policies/routes/mappers/proposer.mapper';
@@ -69,23 +64,27 @@ const mockPolicyIndexerRepository = {
   clearState: vi.fn(),
 } as MockedObject<IPolicyIndexerRepository>;
 
-const mockConfigurationRequestsRepository = {
-  create: vi.fn(),
-} as unknown as MockedObject<IPolicyConfigurationRequestsRepository>;
-
-const mockSafeRepository = {
+const mockSafeRepository: MockedObject<
+  Pick<
+    ISafeRepository,
+    'getSafe' | 'getTransactionQueue' | 'getTransactionQueueMaxPageSize'
+  >
+> = {
   getSafe: vi.fn(),
   getTransactionQueue: vi.fn(),
   getTransactionQueueMaxPageSize: vi.fn(),
-} as unknown as MockedObject<ISafeRepository>;
+};
 
-const mockSpaceSafesRepository = {
+const mockSpaceSafesRepository: MockedObject<
+  Pick<ISpaceSafesRepository, 'findBySpaceId'>
+> = {
   findBySpaceId: vi.fn(),
-} as unknown as MockedObject<ISpaceSafesRepository>;
+};
 
-const mockMembersRepository = {
-  findOne: vi.fn(),
-} as unknown as MockedObject<IMembersRepository>;
+const mockMembersRepository: MockedObject<Pick<IMembersRepository, 'findOne'>> =
+  {
+    findOne: vi.fn(),
+  };
 
 const mockDelegatesV3Repository = {
   getDelegates: vi.fn(),
@@ -96,9 +95,10 @@ const mockTokenRepository = {
   getTokens: vi.fn(),
 } as MockedObject<ITokenRepository>;
 
-const mockChainsRepository = {
-  getChain: vi.fn(),
-} as unknown as MockedObject<IChainsRepository>;
+const mockChainsRepository: MockedObject<Pick<IChainsRepository, 'getChain'>> =
+  {
+    getChain: vi.fn(),
+  };
 
 const mockLoggingService = {
   info: vi.fn(),
@@ -154,7 +154,6 @@ describe('PoliciesService', () => {
     mockChainsRepository.getChain.mockResolvedValue(chainBuilder().build());
     // No proposers unless a case registers some.
     withDelegates([]);
-    mockConfigurationRequestsRepository.create.mockResolvedValue();
   });
 
   /**
@@ -175,13 +174,12 @@ describe('PoliciesService', () => {
 
     return new PoliciesService(
       mockPolicyIndexerRepository,
-      mockConfigurationRequestsRepository,
-      mockSafeRepository,
-      mockSpaceSafesRepository,
-      mockMembersRepository,
+      mockSafeRepository as MockedObject<ISafeRepository>,
+      mockSpaceSafesRepository as MockedObject<ISpaceSafesRepository>,
+      mockMembersRepository as MockedObject<IMembersRepository>,
       mockDelegatesV3Repository,
       mockTokenRepository,
-      mockChainsRepository,
+      mockChainsRepository as MockedObject<IChainsRepository>,
       fakeConfigurationService,
       mockLoggingService,
       new SpendingLimitMapper(),
@@ -1382,93 +1380,6 @@ describe('PoliciesService', () => {
         expect(mockTokenRepository.getToken).not.toHaveBeenCalled();
         expect(mockChainsRepository.getChain).not.toHaveBeenCalled();
       });
-    });
-  });
-
-  describe('storing a configuration request', () => {
-    const request = {
-      spaceId,
-      safeId: { chainId: SEPOLIA, address: safeAddress },
-      authPayload,
-    };
-
-    /** A payload whose root is the hash of its configurations. */
-    function validPayload(): {
-      root: Hex;
-      configurations: [PolicyConfiguration, ...Array<PolicyConfiguration>];
-    } {
-      const configurations: [PolicyConfiguration] = [
-        policyConfigurationBuilder().build(),
-      ];
-      return { root: configurationRoot(configurations), configurations };
-    }
-
-    it('should store the configurations of a root', async () => {
-      const payload = validPayload();
-
-      await expect(
-        target.createConfigurationRequest({ ...request, payload }),
-      ).resolves.toStrictEqual({ configureRoot: payload.root });
-      expect(mockConfigurationRequestsRepository.create).toHaveBeenCalledWith({
-        chainId: SEPOLIA,
-        safeAddress,
-        root: payload.root,
-        configurations: payload.configurations,
-        spaceId,
-        createdBy: userId,
-      });
-    });
-
-    it('should reject configurations that do not hash to the root', async () => {
-      // A client encoding bug; storing it would explain nothing.
-      const payload = validPayload();
-
-      await expect(
-        target.createConfigurationRequest({
-          ...request,
-          payload: { ...payload, root: `0x${'11'.repeat(32)}` as Hex },
-        }),
-      ).rejects.toThrow('The configurations do not hash to the given root');
-      expect(mockConfigurationRequestsRepository.create).not.toHaveBeenCalled();
-    });
-
-    it('should store an upper-cased root under its canonical casing', async () => {
-      // Otherwise a retry in another casing is a second row for one request.
-      const payload = validPayload();
-      const upperCased = payload.root.toUpperCase().replace('0X', '0x');
-
-      await expect(
-        target.createConfigurationRequest({
-          ...request,
-          payload: { ...payload, root: upperCased as `0x${string}` },
-        }),
-      ).resolves.toStrictEqual({ configureRoot: payload.root });
-      expect(mockConfigurationRequestsRepository.create).toHaveBeenCalledWith(
-        expect.objectContaining({ root: payload.root }),
-      );
-    });
-
-    it('should reject a caller who is not a member of the space', async () => {
-      mockMembersRepository.findOne.mockResolvedValue(null as never);
-
-      await expect(
-        target.createConfigurationRequest({
-          ...request,
-          payload: validPayload(),
-        }),
-      ).rejects.toThrow('User is not a member of this workspace');
-      expect(mockConfigurationRequestsRepository.create).not.toHaveBeenCalled();
-    });
-
-    it('should reject a safe that is not in the space', async () => {
-      mockSpaceSafesRepository.findBySpaceId.mockResolvedValue([] as never);
-
-      await expect(
-        target.createConfigurationRequest({
-          ...request,
-          payload: validPayload(),
-        }),
-      ).rejects.toThrow(new NotFoundException('Safe not found in this space'));
     });
   });
 });

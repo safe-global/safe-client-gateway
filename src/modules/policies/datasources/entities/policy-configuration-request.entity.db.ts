@@ -1,31 +1,40 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Column, Entity, Index, PrimaryGeneratedColumn, Unique } from 'typeorm';
+import type { UUID } from 'node:crypto';
+import { Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
 import type { Address, Hex } from 'viem';
 import { databaseAddressTransformer } from '#/domain/common/transformers/database-address.transformer';
+import type { PolicyConfiguration } from '#/modules/policies/domain/entities/policy-configuration.entity';
+import type { PolicyConfigurationRequest as DomainPolicyConfigurationRequest } from '#/modules/policies/domain/entities/policy-configuration-request.entity';
 import { CHAIN_ID_MAXLENGTH } from '#/routes/common/constants';
 
 /**
- * The `Configuration[]` behind a delayed configuration request, kept off-chain
+ * The `Configuration[]` behind a delayed configuration root, kept off-chain
  * because `requestConfiguration(bytes32 root)` publishes only its hash.
  *
- * Its `Configuration[]` is stored in `policy_configurations`, one
- * {@link PolicyConfigurationRecord} per entry.
- *
- * Rows are immutable - a different configuration hashes to a different root, so
- * it is a different row - and a database trigger rejects every `UPDATE`. The table is a decoding aid, never a source of truth -
- * the `RootConfigured`/`RootInvalidated` events remain authoritative for whether
- * a request exists, is ready or was cancelled.
+ * Uniqueness is split by encryption mode, as in `space_safes`. Rows are
+ * immutable; a database trigger rejects every `UPDATE`.
  */
 @Entity('policy_configuration_requests')
-@Unique('UQ_PCR_chain_safe_root', ['chainId', 'safeAddress', 'root'])
-@Index('IDX_PCR_chain_safe', ['chainId', 'safeAddress'])
-export class PolicyConfigurationRequest {
-  @PrimaryGeneratedColumn('identity', {
-    type: 'bigint',
-    generatedIdentity: 'ALWAYS',
-    primaryKeyConstraintName: 'PK_PCR_id',
-  })
-  public readonly id!: string;
+@Index(
+  'UQ_PCR_space_chain_safe_root_plain',
+  ['spaceId', 'chainId', 'safeAddress', 'root'],
+  { unique: true, where: 'safe_address_index IS NULL' },
+)
+@Index(
+  'UQ_PCR_space_chain_safeIndex_root',
+  ['spaceId', 'chainId', 'safeAddressIndex', 'root'],
+  { unique: true, where: 'safe_address_index IS NOT NULL' },
+)
+@Index('IDX_PCR_space_id', ['spaceId'])
+export class PolicyConfigurationRequest
+  implements DomainPolicyConfigurationRequest
+{
+  @PrimaryGeneratedColumn('uuid', { primaryKeyConstraintName: 'PK_PCR_id' })
+  public readonly id!: UUID;
+
+  /** FK to `spaces`, cascading, declared in the migration. */
+  @Column({ name: 'space_id', type: 'integer', update: false })
+  public readonly spaceId!: number;
 
   @Column({
     name: 'chain_id',
@@ -35,29 +44,34 @@ export class PolicyConfigurationRequest {
   })
   public readonly chainId!: string;
 
+  /** KMS ciphertext when encryption is enabled, else the plaintext address. */
   @Column({
     name: 'safe_address',
-    type: 'varchar',
-    length: 42,
+    type: 'text',
     transformer: databaseAddressTransformer,
     update: false,
   })
   public readonly safeAddress!: Address;
 
-  /**
-   * `keccak256(abi.encode(Configuration[]))`, recomputed from `configurations`
-   * before the row is written - never trusted as submitted.
-   */
+  /** Blind index of the address; NULL when encryption is disabled. */
+  @Column({
+    name: 'safe_address_index',
+    type: 'text',
+    nullable: true,
+    update: false,
+  })
+  public readonly safeAddressIndex!: string | null;
+
+  /** `keccak256(abi.encode(configurations))`, recomputed before writing. */
   @Column({ type: 'varchar', length: 66, update: false })
   public readonly root!: Hex;
 
-  /**
-   * Space the request came through. A foreign key to `spaces` that cascades on
-   * delete, declared in the migration rather than as a relation here, so this
-   * module does not import the spaces module's datasource entity.
-   */
-  @Column({ name: 'space_id', type: 'integer', update: false })
-  public readonly spaceId!: number;
+  /** The `Configuration[]` in the order the root hashes it. */
+  @Column({ type: 'jsonb', update: false })
+  public readonly configurations!: [
+    PolicyConfiguration,
+    ...Array<PolicyConfiguration>,
+  ];
 
   /** Submitting user. No FK: the row outlives user deletion. */
   @Column({ name: 'created_by', type: 'integer', update: false })

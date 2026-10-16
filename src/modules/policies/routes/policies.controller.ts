@@ -12,7 +12,6 @@ import {
   ApiBody,
   ApiCreatedResponse,
   ApiForbiddenResponse,
-  ApiNotFoundResponse,
   ApiOperation,
   ApiParam,
   ApiTags,
@@ -27,7 +26,7 @@ import {
   CreatePolicyConfigurationRequestResponse,
   CreatePolicyConfigurationRequestSchema,
 } from '#/modules/policies/routes/entities/create-policy-configuration-request.dto.entity';
-import { PoliciesService } from '#/modules/policies/routes/policies.service';
+import { PolicyConfigurationRequestsService } from '#/modules/policies/routes/policy-configuration-requests.service';
 import { Auth } from '#/routes/common/auth/auth.decorator';
 import { SpaceIdPipe } from '#/routes/common/pipes/space-id.pipe';
 import {
@@ -44,8 +43,8 @@ import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 @UseGuards(AuthGuard)
 export class PoliciesController {
   public constructor(
-    @Inject(PoliciesService)
-    private readonly policiesService: PoliciesService,
+    @Inject(PolicyConfigurationRequestsService)
+    private readonly configurationRequestsService: PolicyConfigurationRequestsService,
   ) {}
 
   @ApiOperation({
@@ -69,7 +68,7 @@ export class PoliciesController {
   @ApiCreatedResponse({ type: CreatePolicyConfigurationRequestResponse })
   @ApiBadRequestResponse({
     description:
-      'Invalid space identifier, or the Safe holds the maximum number of stored requests',
+      'Invalid space identifier, or the Safe holds the maximum number of stored requests in this space',
   })
   @ApiUnprocessableEntityResponse({
     description:
@@ -77,9 +76,9 @@ export class PoliciesController {
   })
   @ApiUnauthorizedResponse({ description: 'Authentication required' })
   @ApiForbiddenResponse({
-    description: 'Access forbidden - user is not a member of this space',
+    description:
+      'Access forbidden - user is not a member of this space, or the Safe is not in it',
   })
-  @ApiNotFoundResponse({ description: 'Safe not found in this space' })
   @Post('requests')
   public async createConfigurationRequest(
     @Param('spaceId', SpaceIdPipe) spaceId: number,
@@ -89,7 +88,7 @@ export class PoliciesController {
     payload: CreatePolicyConfigurationRequestPayload,
     @Auth() authPayload: AuthPayload,
   ): Promise<CreatePolicyConfigurationRequestResponse> {
-    return await this.policiesService.createConfigurationRequest({
+    return await this.configurationRequestsService.create({
       spaceId,
       safeId,
       authPayload,

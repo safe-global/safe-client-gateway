@@ -302,7 +302,7 @@ describe('Space Policies Controller', () => {
         ...defaultConfiguration.policies,
         // Pinned: the faker mirror randomises it, and this file stores several
         // requests for one Safe - the cap is per Safe, not per space.
-        maxConfigurationRequestsPerSafe: 20,
+        maxConfigurationRequestsPerSpaceSafe: 20,
       },
     });
 
@@ -1204,11 +1204,11 @@ describe('Space Policies Controller', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .send(body)
         .expect(201)
-        .expect({ configureRoot: body.root });
+        .expect({ root: body.root });
     });
 
     it('should accept the same root twice', async () => {
-      // Idempotent per (chainId, safeAddress, root), so a client retry is free.
+      // Idempotent per Space, Safe and root, so a client retry is free.
       mockUpstream();
       const { accessToken, spaceId } = await createSpaceWithSafe({
         withSafe: true,
@@ -1258,7 +1258,7 @@ describe('Space Policies Controller', () => {
         .expect(422);
     });
 
-    it('should return 404 for a safe that is not in the space', async () => {
+    it('should return 403 for a safe that is not in the space', async () => {
       mockUpstream();
       const { accessToken, spaceId } = await createSpaceWithSafe({
         withSafe: false,
@@ -1270,7 +1270,7 @@ describe('Space Policies Controller', () => {
         )
         .set('Cookie', [`access_token=${accessToken}`])
         .send(payload())
-        .expect(404);
+        .expect(403);
     });
 
     it('should return 403 without authentication', async () => {

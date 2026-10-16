@@ -1,64 +1,50 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { size } from 'viem';
 import { z } from 'zod';
-import {
-  operationValue,
-  PolicyOperation,
-} from '#/modules/policies/domain/entities/policy-operation.entity';
+import { Operation } from '#/modules/safe/domain/entities/operation.entity';
 import { AddressSchema } from '#/validation/entities/schemas/address.schema';
-import { HexSchema } from '#/validation/entities/schemas/hex.schema';
+import { HexBytesSchema } from '#/validation/entities/schemas/hexbytes.schema';
 
 /** Bytes of a function selector. */
 const SELECTOR_SIZE = 4;
 
-/**
- * Largest `data` of one configuration CGW stores: 64 KiB of bytes. Also the
- * `CHK_PC_data_size` check constraint of `policy_configurations`, which counts
- * the same bytes as 0x-prefixed hex.
- */
+/** Largest `data` of one configuration CGW stores, in bytes. */
 export const MAX_POLICY_CONFIGURATION_DATA_BYTES = 65_536;
 
 /**
- * One entry of the `Configuration[]` a delayed configuration request hashes.
- *
- * ```solidity
- * struct Configuration { address target; bytes4 selector; Operation operation; address policy; bytes data; }
- * ```
- *
- * Stored exactly as it was hashed - `data` raw, never decoded - because the
- * stored form has to reproduce the on-chain root.
+ * Most configurations one request may carry. The guard sets no limit; this
+ * keeps `applyConfiguration` well within one transaction and bounds DB writes.
+ * A constant, not config: it is part of the API wallets build against.
+ */
+export const MAX_POLICY_CONFIGURATIONS_PER_REQUEST = 100;
+
+/**
+ * One `Configuration` of `SafePolicyGuard`, stored exactly as hashed so it
+ * reproduces the root. Hex must be whole bytes: ABI encoding pads odd lengths.
  */
 export const PolicyConfigurationSchema = z.object({
   target: AddressSchema,
-  selector: HexSchema.refine((value) => size(value) === SELECTOR_SIZE, {
-    error: 'Invalid selector, expected 4 bytes',
+  selector: HexBytesSchema.refine((value) => size(value) === SELECTOR_SIZE, {
+    error: `Invalid selector, expected ${SELECTOR_SIZE} bytes`,
   }),
-  /**
-   * Serialized as the on-chain numeric value, matching how the Transaction
-   * Service serializes `PolicyConfirmed.operation`.
-   */
-  operation: z
-    .union([
-      z.literal(operationValue(PolicyOperation.Call)),
-      z.literal(operationValue(PolicyOperation.DelegateCall)),
-    ])
-    .describe('0 = CALL, 1 = DELEGATECALL'),
+  operation: z.enum(Operation),
   /** `NULL_ADDRESS` removes the policy of this access. */
   policy: AddressSchema,
   /** The policy payload, abi-encoded as passed to the guard. */
-  data: HexSchema.refine(
+  data: HexBytesSchema.refine(
     (value) => size(value) <= MAX_POLICY_CONFIGURATION_DATA_BYTES,
-    { error: 'Invalid data, exceeds the maximum of 64 KiB' },
+    {
+      error: `Invalid data, exceeds the maximum of ${MAX_POLICY_CONFIGURATION_DATA_BYTES} bytes`,
+    },
   ),
 });
 
 export type PolicyConfiguration = z.infer<typeof PolicyConfigurationSchema>;
 
-/**
- * The `Configuration[]` of one request. Empty arrays are rejected: a request
- * that configures nothing has no meaning, and would hash to a root no wallet
- * flow can produce.
- */
+/** The `Configuration[]` of one request; never empty. */
 export const PolicyConfigurationsSchema = z
   .array(PolicyConfigurationSchema)
-  .nonempty();
+  .nonempty()
+  .max(MAX_POLICY_CONFIGURATIONS_PER_REQUEST, {
+    error: `Invalid configurations, exceeds the maximum of ${MAX_POLICY_CONFIGURATIONS_PER_REQUEST}`,
+  });

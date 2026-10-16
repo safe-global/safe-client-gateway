@@ -2,13 +2,13 @@
 import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PostgresDatabaseModuleV2 } from '#/datasources/db/v2/postgres-database.module';
+import { KmsEncryptionModule } from '#/datasources/kms/kms-encryption.module';
 import { AuthModule } from '#/modules/auth/auth.module';
 import { ChainsModule } from '#/modules/chains/chains.module';
 import { AllowanceModuleDecoder } from '#/modules/contracts/domain/decoders/allowance-module-decoder.helper';
 import { MultiSendDecoder } from '#/modules/contracts/domain/decoders/multi-send-decoder.helper';
 import { SafeDecoder } from '#/modules/contracts/domain/decoders/safe-decoder.helper';
 import { DelegatesV3RepositoryModule } from '#/modules/delegate/domain/v3/delegates.v3.repository.interface';
-import { PolicyConfigurationRecord } from '#/modules/policies/datasources/entities/policy-configuration.entity.db';
 import { PolicyConfigurationRequest } from '#/modules/policies/datasources/entities/policy-configuration-request.entity.db';
 import { PolicyConfigurationRequestsRepository } from '#/modules/policies/domain/policy-configuration-requests.repository';
 import { IPolicyConfigurationRequestsRepository } from '#/modules/policies/domain/policy-configuration-requests.repository.interface';
@@ -19,8 +19,10 @@ import { ProposerMapper } from '#/modules/policies/routes/mappers/proposer.mappe
 import { SpendingLimitMapper } from '#/modules/policies/routes/mappers/spending-limit.mapper';
 import { PoliciesController } from '#/modules/policies/routes/policies.controller';
 import { PoliciesService } from '#/modules/policies/routes/policies.service';
+import { PolicyConfigurationRequestsService } from '#/modules/policies/routes/policy-configuration-requests.service';
 import { SpacePoliciesController } from '#/modules/policies/routes/space-policies.controller';
 import { SafeRepositoryModule } from '#/modules/safe/domain/safe.repository.interface';
+import { SpaceEncryptionService } from '#/modules/spaces/domain/space-encryption.service';
 import { SpacesModule } from '#/modules/spaces/spaces.module';
 import { TokensModule } from '#/modules/tokens/tokens.module';
 import { UsersModule } from '#/modules/users/users.module';
@@ -33,10 +35,8 @@ import { UsersModule } from '#/modules/users/users.module';
   imports: [
     PolicyIndexerRepositoryModule,
     PostgresDatabaseModuleV2,
-    TypeOrmModule.forFeature([
-      PolicyConfigurationRequest,
-      PolicyConfigurationRecord,
-    ]),
+    TypeOrmModule.forFeature([PolicyConfigurationRequest]),
+    KmsEncryptionModule,
     SafeRepositoryModule,
     DelegatesV3RepositoryModule,
     TokensModule,
@@ -49,6 +49,8 @@ import { UsersModule } from '#/modules/users/users.module';
   controllers: [PoliciesController, SpacePoliciesController],
   providers: [
     PoliciesService,
+    PolicyConfigurationRequestsService,
+    SpaceEncryptionService,
     SpendingLimitMapper,
     ProposerMapper,
     PendingSpendingLimitMapper,

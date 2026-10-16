@@ -229,7 +229,7 @@ export const RootConfigurationSchema = z
     FEE_SERVICE_BASE_URI: z.url().optional(),
     RELAY_FEE_PREVIEW_TTL_SECONDS: z.coerce.number().int().min(0).optional(),
     // Policy configuration
-    POLICIES_MAX_CONFIGURATION_REQUESTS_PER_SAFE: z.coerce
+    POLICIES_MAX_CONFIGURATION_REQUESTS_PER_SPACE_SAFE: z.coerce
       .number()
       .int()
       .min(1)

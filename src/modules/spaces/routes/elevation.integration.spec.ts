@@ -237,11 +237,10 @@ const UNGATED_ROUTES: Array<Route> = [
     method: 'post',
     path: (id) => `/v1/spaces/${id}/members/1/invite/renew`,
   },
-  // Storing the configurations behind a policy configuration root writes no
-  // Workspace state and grants nothing: a row is only accepted when the
-  // configurations hash to the root it is stored under, and the root itself is
-  // only ever applied by a Safe transaction the owners sign. An attacker with a
-  // stolen session can store a payload no Safe will request, and nothing more.
+  // Storing the configurations behind a policy configuration root grants
+  // nothing: a row is only accepted when the configurations hash to its root,
+  // and a root is only applied by a Safe transaction the owners sign. A stolen
+  // session can fill this Space's request cap for the Safe, and nothing more.
   {
     name: 'POST /v1/spaces/:spaceId/safes/:safeId/policies/requests',
     method: 'post',

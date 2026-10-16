@@ -3,9 +3,11 @@ import { ApiProperty } from '@nestjs/swagger';
 import type { Address, Hex } from 'viem';
 import { z } from 'zod';
 import {
+  MAX_POLICY_CONFIGURATIONS_PER_REQUEST,
   type PolicyConfiguration,
   PolicyConfigurationsSchema,
 } from '#/modules/policies/domain/entities/policy-configuration.entity';
+import { Operation } from '#/modules/safe/domain/entities/operation.entity';
 import { HexSchema } from '#/validation/entities/schemas/hex.schema';
 
 export const CreatePolicyConfigurationRequestSchema = z.object({
@@ -30,8 +32,8 @@ export class PolicyConfigurationDto implements PolicyConfiguration {
     example: '0xa9059cbb',
   })
   public readonly selector!: Hex;
-  @ApiProperty({ enum: [0, 1], description: '0 = CALL, 1 = DELEGATECALL' })
-  public readonly operation!: 0 | 1;
+  @ApiProperty({ enum: Operation, description: '0 = CALL, 1 = DELEGATECALL' })
+  public readonly operation!: Operation;
   @ApiProperty({
     description:
       'Policy contract to bind. The zero address removes the policy of this access.',
@@ -52,7 +54,12 @@ export class CreatePolicyConfigurationRequestDto
       'keccak256(abi.encode(Configuration[])), as requested on-chain',
   })
   public readonly root!: Hex;
-  @ApiProperty({ type: PolicyConfigurationDto, isArray: true })
+  @ApiProperty({
+    type: PolicyConfigurationDto,
+    isArray: true,
+    minItems: 1,
+    maxItems: MAX_POLICY_CONFIGURATIONS_PER_REQUEST,
+  })
   public readonly configurations!: [
     PolicyConfiguration,
     ...Array<PolicyConfiguration>,
@@ -61,5 +68,5 @@ export class CreatePolicyConfigurationRequestDto
 
 export class CreatePolicyConfigurationRequestResponse {
   @ApiProperty({ description: 'The stored configuration root' })
-  public readonly configureRoot!: Hex;
+  public readonly root!: Hex;
 }

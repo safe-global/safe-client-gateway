@@ -1,124 +1,92 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
-import type { Address, Hex } from 'viem';
-import { z } from 'zod';
+import { type FindOptionsWhere, IsNull } from 'typeorm';
+import type { Address } from 'viem';
 import { IConfigurationService } from '#/config/configuration.service.interface';
 import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
-import { PolicyConfigurationRecord } from '#/modules/policies/datasources/entities/policy-configuration.entity.db';
 import { PolicyConfigurationRequest } from '#/modules/policies/datasources/entities/policy-configuration-request.entity.db';
-import type { PolicyConfiguration } from '#/modules/policies/domain/entities/policy-configuration.entity';
+import type { PolicyConfigurationRequest as DomainPolicyConfigurationRequest } from '#/modules/policies/domain/entities/policy-configuration-request.entity';
 import type { IPolicyConfigurationRequestsRepository } from '#/modules/policies/domain/policy-configuration-requests.repository.interface';
-
-/**
- * The `RETURNING "id"` of the request insert: one row when it was inserted, none
- * when `ON CONFLICT DO NOTHING` skipped it. `bigint` arrives as a string.
- */
-const InsertedRequestSchema = z.array(z.object({ id: z.string() })).max(1);
+import { SpaceEncryptionService } from '#/modules/spaces/domain/space-encryption.service';
 
 @Injectable()
 export class PolicyConfigurationRequestsRepository
   implements IPolicyConfigurationRequestsRepository
 {
-  private readonly maxPerSafe: number;
+  private readonly maxPerSpaceSafe: number;
 
   public constructor(
     @Inject(PostgresDatabaseService)
     private readonly db: PostgresDatabaseService,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
+    @Inject(SpaceEncryptionService)
+    private readonly spaceEncryptionService: SpaceEncryptionService,
   ) {
-    this.maxPerSafe = this.configurationService.getOrThrow<number>(
-      'policies.maxConfigurationRequestsPerSafe',
+    this.maxPerSpaceSafe = this.configurationService.getOrThrow<number>(
+      'policies.maxConfigurationRequestsPerSpaceSafe',
     );
   }
 
-  public async create(args: {
-    chainId: string;
-    safeAddress: Address;
-    root: Hex;
-    configurations: ReadonlyArray<PolicyConfiguration>;
-    spaceId: number;
-    createdBy: number;
-  }): Promise<void> {
-    await this.assertBelowMaxPerSafe(args);
+  public async create(
+    args: Omit<DomainPolicyConfigurationRequest, 'id' | 'createdAt'>,
+  ): Promise<void> {
+    const safeAddressIndex = this.spaceEncryptionService.safeAddressIndex(
+      args.safeAddress,
+    );
+    const safeAddress = await this.spaceEncryptionService.encryptSafeAddress(
+      args.spaceId,
+      args.safeAddress,
+    );
 
-    // The request and its configurations land together or not at all.
     await this.db.transaction(async (manager) => {
-      // `ON CONFLICT DO NOTHING` on (chain_id, safe_address, root): re-submitting
-      // a stored root is a no-op rather than an error, so a client retry is safe.
-      const { raw } = await manager
-        .createQueryBuilder()
-        .insert()
-        .into(PolicyConfigurationRequest)
-        .values({
-          chainId: args.chainId,
-          safeAddress: args.safeAddress,
-          root: args.root,
-          spaceId: args.spaceId,
-          createdBy: args.createdBy,
-        })
-        .orIgnore()
-        .returning(['id'])
-        .execute();
+      // Serialises writes per Space and Safe, so concurrent requests cannot
+      // pass the cap together.
+      await manager.query('SELECT pg_advisory_xact_lock(hashtext($1))', [
+        `${args.spaceId}:${args.chainId}:${args.safeAddress}`,
+      ]);
+      const repository = manager.getRepository(PolicyConfigurationRequest);
+      const safe = this.safeMatch({ ...args, safeAddressIndex });
 
-      const [inserted] = InsertedRequestSchema.parse(raw);
-
-      // A re-submission inserted no request, and its configurations are the
-      // ones already stored: the same root hashes the same configurations.
-      if (!inserted) {
+      // Re-submitting a stored root is a no-op, even at the cap.
+      if (await repository.existsBy({ ...safe, root: args.root })) {
         return;
       }
-
-      await manager
-        .createQueryBuilder()
-        .insert()
-        .into(PolicyConfigurationRecord)
-        .values(
-          args.configurations.map((configuration, position) => ({
-            requestId: inserted.id,
-            position,
-            target: configuration.target,
-            selector: configuration.selector,
-            operation: configuration.operation,
-            policy: configuration.policy,
-            data: configuration.data,
-          })),
-        )
-        .execute();
+      if ((await repository.countBy(safe)) >= this.maxPerSpaceSafe) {
+        throw new BadRequestException(
+          `This Safe only allows a maximum of ${this.maxPerSpaceSafe} stored policy configuration requests in this space.`,
+        );
+      }
+      await repository.insert({
+        ...args,
+        safeAddress: safeAddress as Address,
+        safeAddressIndex,
+      });
     });
   }
 
   /**
-   * Bounds how many requests a Safe can store, so a client cannot fill the table
-   * by submitting configurations for roots it keeps requesting.
-   *
-   * A stored root that is already applied or invalidated is pruned elsewhere, so
-   * hitting the cap means an unusual number of *open* requests.
+   * Matches the rows of one Safe in one Space. Encryption disabled: the
+   * address is plaintext and the index NULL. Otherwise only the blind index
+   * can be compared.
    */
-  private async assertBelowMaxPerSafe(args: {
+  private safeMatch(args: {
+    spaceId: number;
     chainId: string;
     safeAddress: Address;
-    root: Hex;
-  }): Promise<void> {
-    const repository = await this.db.getRepository(PolicyConfigurationRequest);
-
-    const [stored, isKnownRoot] = await Promise.all([
-      repository.countBy({
-        chainId: args.chainId,
-        safeAddress: args.safeAddress,
-      }),
-      repository.existsBy({
-        chainId: args.chainId,
-        safeAddress: args.safeAddress,
-        root: args.root,
-      }),
-    ]);
-
-    // An idempotent re-submission adds no row, so it must not be rejected.
-    if (!isKnownRoot && stored >= this.maxPerSafe) {
-      throw new BadRequestException(
-        `This Safe only allows a maximum of ${this.maxPerSafe} stored policy configuration requests.`,
-      );
-    }
+    safeAddressIndex: string | null;
+  }): FindOptionsWhere<PolicyConfigurationRequest> {
+    return args.safeAddressIndex === null
+      ? {
+          spaceId: args.spaceId,
+          chainId: args.chainId,
+          safeAddressIndex: IsNull(),
+          safeAddress: args.safeAddress,
+        }
+      : {
+          spaceId: args.spaceId,
+          chainId: args.chainId,
+          safeAddressIndex: args.safeAddressIndex,
+        };
   }
 }
