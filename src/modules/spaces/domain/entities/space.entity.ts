@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { RowSchema } from '#/datasources/db/v2/entities/row.entity';
 import { NameSchema } from '#/domain/common/schemas/name.schema';
 import { getStringEnumKeys } from '#/domain/common/utils/enum';
+import { ExperimentalFeaturesSchema } from '#/modules/spaces/domain/entities/experimental-feature.entity';
 import type { SpaceSafe } from '#/modules/spaces/domain/safes/entities/space-safe.entity';
 import { SpaceSafeSchema } from '#/modules/spaces/domain/safes/entities/space-safe.entity';
 import type { Member } from '#/modules/users/domain/entities/member.entity';
@@ -21,6 +22,7 @@ export const SpaceSchema = RowSchema.extend({
   uuid: UuidSchema,
   name: NameSchema,
   status: z.enum(getStringEnumKeys(SpaceStatus)),
+  experimentalFeatures: ExperimentalFeaturesSchema,
   members: z.array(z.lazy((): z.ZodType<Member> => MemberSchema)),
   safes: z
     .array(z.lazy((): z.ZodType<SpaceSafe> => SpaceSafeSchema))
