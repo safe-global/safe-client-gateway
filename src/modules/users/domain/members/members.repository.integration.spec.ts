@@ -1034,7 +1034,7 @@ describe('MembersRepository', () => {
   });
 
   describe('renewInvite', () => {
-    it("should refresh the member's inviteExpiresAt, leaving the rest untouched", async () => {
+    it('should refresh the invite expiry once and refuse a second renewal within the cooldown', async () => {
       const invitedBy = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
       const inviteeName = nameBuilder();
       const expiredAt = faker.date.past();
@@ -1062,12 +1062,13 @@ describe('MembersRepository', () => {
         membersRepository.renewInvite({
           memberId,
           inviteExpiresAt: renewedInviteExpiresAt,
+          notRenewedSince: faker.date.soon(),
           spaceId,
           spaceUuid,
           targetUserId: inviteeId,
           actorUserId: invitedBy,
         }),
-      ).resolves.toBeUndefined();
+      ).resolves.toBe(true);
 
       // Only the expiry changes; status/name/role/invitedBy are untouched.
       await expect(
@@ -1081,6 +1082,25 @@ describe('MembersRepository', () => {
           invitedBy,
           inviteExpiresAt: renewedInviteExpiresAt,
         }),
+      );
+
+      await expect(
+        membersRepository.renewInvite({
+          memberId,
+          inviteExpiresAt: faker.date.future({
+            refDate: renewedInviteExpiresAt,
+          }),
+          notRenewedSince: faker.date.past({ refDate: renewedInviteExpiresAt }),
+          spaceId,
+          spaceUuid,
+          targetUserId: inviteeId,
+          actorUserId: invitedBy,
+        }),
+      ).resolves.toBe(false);
+      await expect(
+        dbMembersRepository.findOneOrFail({ where: { id: memberId } }),
+      ).resolves.toEqual(
+        expect.objectContaining({ inviteExpiresAt: renewedInviteExpiresAt }),
       );
     });
   });
