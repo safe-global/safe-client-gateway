@@ -872,6 +872,34 @@ export default () => ({
       process.env.SAFENET_POLL_TIMEOUT_MS ?? `${120_000}`,
       10,
     ),
+    // The schema bounds the attempts to 1-10 and the retention ages to 30 days or more.
+    queue: {
+      attempts: Number.parseInt(
+        process.env.SAFENET_CHECKS_QUEUE_ATTEMPTS ?? `${3}`,
+        10,
+      ),
+      backoff: {
+        type: process.env.SAFENET_CHECKS_QUEUE_BACKOFF_TYPE || 'exponential',
+        delay: Number.parseInt(
+          process.env.SAFENET_CHECKS_QUEUE_BACKOFF_DELAY ?? `${5_000}`,
+          10,
+        ),
+      },
+      removeOnComplete: {
+        age: Number.parseInt(
+          process.env.SAFENET_CHECKS_QUEUE_REMOVE_ON_COMPLETE_AGE ??
+            `${30 * 24 * 60 * 60}`,
+          10,
+        ), // 30 days
+      },
+      removeOnFail: {
+        age: Number.parseInt(
+          process.env.SAFENET_CHECKS_QUEUE_REMOVE_ON_FAIL_AGE ??
+            `${30 * 24 * 60 * 60}`,
+          10,
+        ), // 30 days
+      },
+    },
   },
   transactions: {
     statusIndexingGracePeriodMs: Number.parseInt(

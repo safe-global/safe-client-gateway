@@ -2,6 +2,9 @@
 import { z } from 'zod';
 import { AddressSchema } from '#/validation/entities/schemas/address.schema';
 
+// A finished check job stays at least 30 days: its ID blocks a repeated request.
+const SAFENET_CHECKS_MIN_RETENTION_SECONDS = 30 * 24 * 60 * 60;
+
 const relayRulesValidator = z
   .string()
   .refine(
@@ -161,6 +164,30 @@ export const RootConfigurationSchema = z
       .number()
       .int()
       .min(1)
+      .optional(),
+    SAFENET_CHECKS_QUEUE_ATTEMPTS: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(10)
+      .optional(),
+    SAFENET_CHECKS_QUEUE_BACKOFF_TYPE: z
+      .enum(['fixed', 'exponential'])
+      .optional(),
+    SAFENET_CHECKS_QUEUE_BACKOFF_DELAY: z.coerce
+      .number()
+      .int()
+      .min(0)
+      .optional(),
+    SAFENET_CHECKS_QUEUE_REMOVE_ON_COMPLETE_AGE: z.coerce
+      .number()
+      .int()
+      .min(SAFENET_CHECKS_MIN_RETENTION_SECONDS)
+      .optional(),
+    SAFENET_CHECKS_QUEUE_REMOVE_ON_FAIL_AGE: z.coerce
+      .number()
+      .int()
+      .min(SAFENET_CHECKS_MIN_RETENTION_SECONDS)
       .optional(),
     FF_ZERION_TESTNETS_ENABLED: z.string().optional(),
     CGW_ENV: z.string().optional(),

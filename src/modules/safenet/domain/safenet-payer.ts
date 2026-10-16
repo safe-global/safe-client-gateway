@@ -103,26 +103,48 @@ export class SafenetPayer {
     return { userSafeTxHash, transactionHash, payerNonce };
   }
 
+  /** Nothing is relayed yet, so every failure here is a `SafenetPayerError`. */
   private async prepare(proposal: SafenetProposal) {
-    const client = await this.blockchain.getUncachedApi(SAFENET_CHAIN_ID);
-    await this.assertPayerSafeAcceptsSigner(client);
-    const key = CacheRouter.getSafenetPayerNonceCacheKey({
-      chainId: SAFENET_CHAIN_ID,
-      safeAddress: this.payerSafeAddress,
-    });
-    const payerNonce = await this.nextNonce(client, key);
-    const inner = encodeFunctionData({
-      abi: safenetConsensusAbi,
-      functionName: 'proposeTransaction',
-      args: [
-        this.oracleAddress,
-        NO_EXTRA_DATA,
-        toSafenetConsensusTransaction(proposal),
-      ],
-    });
-    const userSafeTxHash = await this.simulate(client, inner);
-    const { payerSafeTxHash, data } = await this.signPayload(inner, payerNonce);
-    return { client, key, payerNonce, userSafeTxHash, payerSafeTxHash, data };
+    try {
+      const client = await this.blockchain.getUncachedApi(SAFENET_CHAIN_ID);
+      await this.assertPayerSafeAcceptsSigner(client);
+      const key = CacheRouter.getSafenetPayerNonceCacheKey({
+        chainId: SAFENET_CHAIN_ID,
+        safeAddress: this.payerSafeAddress,
+      });
+      const payerNonce = await this.nextNonce(client, key);
+      const inner = encodeFunctionData({
+        abi: safenetConsensusAbi,
+        functionName: 'proposeTransaction',
+        args: [
+          this.oracleAddress,
+          NO_EXTRA_DATA,
+          toSafenetConsensusTransaction(proposal),
+        ],
+      });
+      const userSafeTxHash = await this.simulate(client, inner);
+      const { payerSafeTxHash, data } = await this.signPayload(
+        inner,
+        payerNonce,
+      );
+      return {
+        client,
+        key,
+        payerNonce,
+        userSafeTxHash,
+        payerSafeTxHash,
+        data,
+      };
+    } catch (error) {
+      if (error instanceof SafenetPayerError) {
+        throw error;
+      }
+      // viem errors embed the call arguments, so the message keeps only the name.
+      throw new SafenetPayerError(
+        `Safenet payer failed before relay: ${asError(error).name}`,
+        { cause: error },
+      );
+    }
   }
 
   private async relayPayload(
