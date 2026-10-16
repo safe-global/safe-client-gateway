@@ -9,6 +9,7 @@ import {
   type Hex,
   isAddressEqual,
   type PublicClient,
+  TransactionReceiptNotFoundError,
   zeroAddress,
 } from 'viem';
 import safeAbi from '#/abis/safe/v1.4.1/Safe.abi';
@@ -37,7 +38,8 @@ import { SafenetPayerMaybePaidError } from '#/modules/safenet/domain/errors/safe
 import * as Signer from '#/modules/safenet/domain/interfaces/safenet-payer-signer.interface';
 import {
   EXECUTION_SUCCESS_TOPIC,
-  NO_GAS,
+  NO_EXTRA_DATA,
+  NO_REFUND_EXEC_ARGS,
   RELAY_STATUS_INCLUDED,
   RELAY_STATUS_REJECTED,
   RELAY_STATUS_REVERTED,
@@ -56,7 +58,7 @@ export class SafenetPayer {
   private readonly pollIntervalMs: number;
   private readonly pollTimeoutMs: number;
   private readonly nonceTtlSeconds: number;
-  private ownerVerified = false;
+  private payerSafeVerified = false;
 
   constructor(
     @Inject(IConfigurationService) configuration: IConfigurationService,
@@ -104,8 +106,8 @@ export class SafenetPayer {
   /** Nothing is relayed yet, so every failure here is a `SafenetPayerError`. */
   private async prepare(proposal: SafenetProposal) {
     try {
-      const client = await this.blockchain.getApi(SAFENET_CHAIN_ID);
-      await this.assertSignerIsOwner(client);
+      const client = await this.blockchain.getUncachedApi(SAFENET_CHAIN_ID);
+      await this.assertPayerSafeAcceptsSigner(client);
       const key = CacheRouter.getSafenetPayerNonceCacheKey({
         chainId: SAFENET_CHAIN_ID,
         safeAddress: this.payerSafeAddress,
@@ -116,7 +118,7 @@ export class SafenetPayer {
         functionName: 'proposeTransaction',
         args: [
           this.oracleAddress,
-          '0x',
+          NO_EXTRA_DATA,
           toSafenetConsensusTransaction(proposal),
         ],
       });
@@ -183,22 +185,36 @@ export class SafenetPayer {
       });
   }
 
-  /** The signer must own the payer Safe, or `execTransaction` rejects its signature. */
-  private async assertSignerIsOwner(client: PublicClient): Promise<void> {
-    if (this.ownerVerified) {
+  /** One signature must satisfy the payer Safe: the signer is an owner and the threshold is 1. */
+  private async assertPayerSafeAcceptsSigner(
+    client: PublicClient,
+  ): Promise<void> {
+    if (this.payerSafeVerified) {
       return;
     }
     const signer = await this.signer.getAddress();
-    const isOwner = await client.readContract({
-      address: this.payerSafeAddress,
-      abi: safeAbi,
-      functionName: 'isOwner',
-      args: [signer],
-    });
+    const [isOwner, threshold] = await Promise.all([
+      client.readContract({
+        address: this.payerSafeAddress,
+        abi: safeAbi,
+        functionName: 'isOwner',
+        args: [signer],
+      }),
+      client.readContract({
+        address: this.payerSafeAddress,
+        abi: safeAbi,
+        functionName: 'getThreshold',
+      }),
+    ]);
     if (!isOwner) {
       throw new SafenetPayerError(`Signer ${signer} is not a payer Safe owner`);
     }
-    this.ownerVerified = true;
+    if (threshold !== 1n) {
+      throw new SafenetPayerError(
+        `Payer Safe threshold is ${threshold}, expected 1`,
+      );
+    }
+    this.payerSafeVerified = true;
   }
 
   private async nextNonce(client: PublicClient, key: string): Promise<bigint> {
@@ -246,7 +262,13 @@ export class SafenetPayer {
     const data = encodeFunctionData({
       abi: safeAbi,
       functionName: 'execTransaction',
-      args: [this.consensusAddress, 0n, inner, ...NO_GAS, signature],
+      args: [
+        this.consensusAddress,
+        0n,
+        inner,
+        ...NO_REFUND_EXEC_ARGS,
+        signature,
+      ],
     });
     return { payerSafeTxHash, data };
   }
@@ -321,16 +343,18 @@ export class SafenetPayer {
     task: SafenetRelayedTask,
     included: { transactionHash: Hex; payerSafeTxHash: Hex },
   ): Promise<void> {
-    // A receipt that is not found yet, or an RPC error, counts as pending.
+    // A receipt that is not found yet counts as pending; so does an RPC error, but it is logged.
     const receipt = await this.poll(() =>
       client
         .getTransactionReceipt({ hash: included.transactionHash })
         .catch((error: unknown) => {
-          this.logging.warn({
-            chainId: SAFENET_CHAIN_ID,
-            transactionHash: included.transactionHash,
-            error: asError(error).name,
-          });
+          if (!(error instanceof TransactionReceiptNotFoundError)) {
+            this.logging.warn({
+              chainId: SAFENET_CHAIN_ID,
+              transactionHash: included.transactionHash,
+              error: asError(error).name,
+            });
+          }
           return undefined;
         }),
     );

@@ -8,6 +8,7 @@ import {
   type Log,
   type PublicClient,
   type TransactionReceipt,
+  TransactionReceiptNotFoundError,
   toEventSelector,
   toHex,
   zeroAddress,
@@ -29,6 +30,7 @@ import type { SafenetProposal } from '#/modules/safenet/domain/entities/safenet-
 import { SafenetPayerError } from '#/modules/safenet/domain/errors/safenet-payer.error';
 import { SafenetPayerMaybePaidError } from '#/modules/safenet/domain/errors/safenet-payer-maybe-paid.error';
 import {
+  NO_EXTRA_DATA,
   RELAY_STATUS_INCLUDED,
   RELAY_STATUS_PENDING,
   RELAY_STATUS_REJECTED,
@@ -79,6 +81,7 @@ class Harness {
   } as TransactionReceipt;
   readonly signerAddress = randomAddress();
   owner: Address = this.signerAddress;
+  threshold = 1n;
   readonly signer = {
     getAddress: vi.fn().mockResolvedValue(this.signerAddress),
     signHash: vi.fn((hash: Hex) => {
@@ -99,16 +102,20 @@ class Harness {
         }: {
           functionName: string;
           args?: Array<unknown>;
-        }) =>
-          Promise.resolve(
-            functionName === 'isOwner' ? args?.[0] === this.owner : 2n,
-          ),
+        }) => {
+          const results: Record<string, unknown> = {
+            isOwner: args?.[0] === this.owner,
+            getThreshold: this.threshold,
+            nonce: 2n,
+          };
+          return Promise.resolve(results[functionName]);
+        },
       ),
     call: vi.fn().mockResolvedValue({ data: this.userSafeTxHash }),
     getTransactionReceipt: vi.fn().mockResolvedValue(this.receipt),
   } as MockedObject<PublicClient>;
   readonly blockchain = {
-    getApi: vi.fn().mockResolvedValue(this.client),
+    getUncachedApi: vi.fn().mockResolvedValue(this.client),
   } as MockedObject<IBlockchainApiManager>;
   readonly cache = {
     getCounter: vi.fn().mockResolvedValue(null),
@@ -208,7 +215,7 @@ describe('SafenetPayer', () => {
       payerNonce: 2n,
     });
 
-    expect(h.blockchain.getApi).toHaveBeenCalledWith('100');
+    expect(h.blockchain.getUncachedApi).toHaveBeenCalledWith('100');
     expect(h.relay.relayWithoutLimits).toHaveBeenCalledWith(
       expect.objectContaining({ chainId: '100', to: h.safeAddress }),
     );
@@ -249,7 +256,11 @@ describe('SafenetPayer', () => {
       decodeFunctionData({ abi: safenetConsensusAbi, data: innerData }),
     ).toEqual({
       functionName: 'proposeTransaction',
-      args: [h.oracleAddress, '0x', toSafenetConsensusTransaction(h.proposal)],
+      args: [
+        h.oracleAddress,
+        NO_EXTRA_DATA,
+        toSafenetConsensusTransaction(h.proposal),
+      ],
     });
     expect(safeTxHash).toBe(
       getSafeTxHash({
@@ -308,11 +319,22 @@ describe('SafenetPayer', () => {
     expect(h.relay.getTaskStatus).toHaveBeenCalledTimes(2);
   });
 
-  it('keeps polling until the receipt is found', async () => {
+  it('keeps polling until the receipt is found without logging a warning', async () => {
     const h = new Harness();
     h.client.getTransactionReceipt.mockRejectedValueOnce(
-      new Error('Transaction receipt not found'),
+      new TransactionReceiptNotFoundError({ hash: h.transactionHash }),
     );
+
+    await expect(h.propose()).resolves.toMatchObject({
+      transactionHash: h.transactionHash,
+    });
+    expect(h.client.getTransactionReceipt).toHaveBeenCalledTimes(2);
+    expect(h.logging.warn).not.toHaveBeenCalled();
+  });
+
+  it('logs a warning and keeps polling when the receipt read fails', async () => {
+    const h = new Harness();
+    h.client.getTransactionReceipt.mockRejectedValueOnce(new Error('rpc down'));
 
     await expect(h.propose()).resolves.toMatchObject({
       transactionHash: h.transactionHash,
@@ -332,6 +354,18 @@ describe('SafenetPayer', () => {
     await expectPayerError(
       h.propose(),
       `Signer ${h.signerAddress} is not a payer Safe owner`,
+    );
+    expect(h.client.call).not.toHaveBeenCalled();
+    expect(h.relay.relayWithoutLimits).not.toHaveBeenCalled();
+  });
+
+  it('rejects a payer Safe with a threshold other than 1 before the relay', async () => {
+    const h = new Harness();
+    h.threshold = 2n;
+
+    await expectPayerError(
+      h.propose(),
+      'Payer Safe threshold is 2, expected 1',
     );
     expect(h.client.call).not.toHaveBeenCalled();
     expect(h.relay.relayWithoutLimits).not.toHaveBeenCalled();

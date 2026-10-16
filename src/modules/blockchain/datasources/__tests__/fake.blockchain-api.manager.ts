@@ -6,5 +6,7 @@ import type { IBlockchainApiManager } from '#/domain/interfaces/blockchain-api.m
 export class FakeBlockchainApiManager implements IBlockchainApiManager {
   getApi = vi.fn();
 
+  getUncachedApi = vi.fn();
+
   destroyApi = vi.fn();
 }
