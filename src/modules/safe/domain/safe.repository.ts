@@ -793,7 +793,13 @@ export class SafeRepository implements ISafeRepository {
   async getTransfers(args: {
     chainId: string;
     safeAddress: Address;
-    limit?: number | undefined;
+    limit?: number;
+    offset?: number;
+    to?: Address;
+    from?: Address;
+    tokenAddress?: Address;
+    executionDateGte?: string;
+    executionDateLte?: string;
   }): Promise<Page<Transfer>> {
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,

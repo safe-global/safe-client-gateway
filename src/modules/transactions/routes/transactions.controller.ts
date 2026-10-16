@@ -22,8 +22,10 @@ import {
   ApiParam,
   ApiQuery,
   ApiTags,
+  ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
 import type { Address } from 'viem';
+import { ChainIdSchema } from '#/modules/chains/domain/entities/schemas/chain-id.schema';
 import { AddConfirmationDto } from '#/modules/transactions/routes/entities/add-confirmation.dto';
 import { CreationTransaction } from '#/modules/transactions/routes/entities/creation-transaction.entity';
 import { DeleteTransactionDto } from '#/modules/transactions/routes/entities/delete-transaction.dto.entity';
@@ -42,14 +44,18 @@ import { DeleteTransactionDtoSchema } from '#/modules/transactions/routes/entiti
 import { PreviewTransactionDtoSchema } from '#/modules/transactions/routes/entities/schemas/preview-transaction.dto.schema';
 import { ProposeTransactionDtoSchema } from '#/modules/transactions/routes/entities/schemas/propose-transaction.dto.schema';
 import { TransactionDetails } from '#/modules/transactions/routes/entities/transaction-details/transaction-details.entity';
+import type { TransactionItem } from '#/modules/transactions/routes/entities/transaction-item.entity';
 import { TransactionItemPage } from '#/modules/transactions/routes/entities/transaction-item-page.entity';
 import { TransactionPreview } from '#/modules/transactions/routes/entities/transaction-preview.entity';
+import { TransferTransactionItemPage } from '#/modules/transactions/routes/entities/transfer-transaction-item-page.entity';
 import { TransactionsService } from '#/modules/transactions/routes/transactions.service';
 import { PaginationDataDecorator } from '#/routes/common/decorators/pagination.data.decorator';
 import { RouteUrlDecorator } from '#/routes/common/decorators/route.url.decorator';
 import type { Page } from '#/routes/common/entities/page.entity';
 import type { PaginationData } from '#/routes/common/pagination/pagination.data';
 import { AddressSchema } from '#/validation/entities/schemas/address.schema';
+import { BooleanStringSchema } from '#/validation/entities/schemas/boolean-string.schema';
+import { DateStringSchema } from '#/validation/entities/schemas/date-string.schema';
 import { TimezoneSchema } from '#/validation/entities/schemas/timezone.schema';
 import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
@@ -439,6 +445,118 @@ export class TransactionsController {
       executionDateLte,
       to,
       value,
+      tokenAddress,
+      paginationData,
+      onlyTrusted: trusted,
+    });
+  }
+
+  @ApiOperation({
+    summary: 'Get transfers',
+    description:
+      'Retrieves native, ERC-20 and ERC-721 transfers sent or received by a Safe. Unlike multisig-transactions, `to` matches the recipient of each transfer rather than the target of the Safe transaction. Token transfers made inside batches are included; native transfers made inside batches are not available on chains indexed from events (most L2s). Only the newest 1000 transfers per direction and transfer type can be reached, so narrow with filters for older history. A page can hold fewer items than requested, or none, once untrusted transfers are dropped: keep following `next` until it is null.',
+  })
+  @ApiParam({
+    name: 'chainId',
+    type: 'string',
+    description: 'Chain ID where the Safe is deployed',
+    example: '1',
+  })
+  @ApiParam({
+    name: 'safeAddress',
+    type: 'string',
+    description: 'Safe contract address (0x prefixed hex string)',
+  })
+  @ApiQuery({
+    name: 'execution_date__gte',
+    required: false,
+    type: String,
+    description:
+      'Filter by execution date greater than or equal to (ISO 8601 UTC, e.g. 2024-01-01T00:00:00Z)',
+  })
+  @ApiQuery({
+    name: 'execution_date__lte',
+    required: false,
+    type: String,
+    description:
+      'Filter by execution date less than or equal to (ISO 8601 UTC, e.g. 2024-01-01T00:00:00Z)',
+  })
+  @ApiQuery({
+    name: 'to',
+    required: false,
+    type: String,
+    description:
+      'Filter by transfer recipient address (0x prefixed hex string)',
+  })
+  @ApiQuery({
+    name: 'from',
+    required: false,
+    type: String,
+    description: 'Filter by transfer sender address (0x prefixed hex string)',
+  })
+  @ApiQuery({
+    name: 'token_address',
+    required: false,
+    type: String,
+    description: 'Filter by token contract address (0x prefixed hex string)',
+  })
+  @ApiQuery({
+    name: 'cursor',
+    required: false,
+    type: String,
+    description: 'Pagination cursor for retrieving the next set of results',
+  })
+  @ApiQuery({
+    name: 'trusted',
+    required: false,
+    type: Boolean,
+    description:
+      'When true (default), ERC-20 transfers of untrusted tokens and ERC-20 transfers without value are omitted, since any token contract can emit a transfer the Safe never made. ERC-721 and native transfers are not filtered.',
+  })
+  @ApiOkResponse({
+    type: TransferTransactionItemPage,
+    description: 'Paginated list of transfers',
+  })
+  @ApiUnprocessableEntityResponse({
+    description: 'Invalid chain ID, address, date or trusted flag',
+  })
+  @ApiNotFoundResponse({
+    description: 'Safe or chain not found',
+  })
+  @Get('chains/:chainId/safes/:safeAddress/transfers')
+  getTransfers(
+    @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
+    @RouteUrlDecorator() routeUrl: URL,
+    @Param('safeAddress', new ValidationPipe(AddressSchema))
+    safeAddress: Address,
+    @PaginationDataDecorator() paginationData: PaginationData,
+    @Query('trusted', new ValidationPipe(BooleanStringSchema.default(true)))
+    trusted: boolean,
+    @Query(
+      'execution_date__gte',
+      new ValidationPipe(DateStringSchema.optional()),
+    )
+    executionDateGte?: string,
+    @Query(
+      'execution_date__lte',
+      new ValidationPipe(DateStringSchema.optional()),
+    )
+    executionDateLte?: string,
+    @Query('to', new ValidationPipe(AddressSchema.optional()))
+    to?: Address,
+    @Query('from', new ValidationPipe(AddressSchema.optional()))
+    from?: Address,
+    @Query('token_address', new ValidationPipe(AddressSchema.optional()))
+    tokenAddress?: Address,
+  ): Promise<Partial<Page<TransactionItem>>> {
+    return this.transactionsService.getTransfers({
+      chainId,
+      routeUrl,
+      safeAddress,
+      executionDateGte,
+      executionDateLte,
+      to,
+      from,
       tokenAddress,
       paginationData,
       onlyTrusted: trusted,
