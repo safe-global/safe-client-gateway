@@ -237,15 +237,15 @@ const UNGATED_ROUTES: Array<Route> = [
     method: 'post',
     path: (id) => `/v1/spaces/${id}/members/1/invite/renew`,
   },
-  // Storing the configurations behind a policy configuration root grants
-  // nothing: a row is only accepted when the configurations hash to its root,
-  // and a root is only applied by a Safe transaction the owners sign. A stolen
-  // session can fill this Space's request cap for the Safe, and nothing more.
+  // Like proposing a contact, storing a policy configuration request only
+  // stores a proposal: nothing takes effect until the Safe owners sign it
+  // on-chain. A row must hash to its root, and the per-Space cap bounds how
+  // many a stolen session can store.
   {
-    name: 'POST /v1/spaces/:spaceId/safes/:safeId/policies/requests',
+    name: 'POST /v1/spaces/:spaceId/chains/:chainId/safes/:safeAddress/policies/requests',
     method: 'post',
     path: (id) =>
-      `/v1/spaces/${id}/safes/11155111:${getAddress(faker.finance.ethereumAddress())}/policies/requests`,
+      `/v1/spaces/${id}/chains/11155111/safes/${getAddress(faker.finance.ethereumAddress())}/policies/requests`,
     body: {},
   },
   {

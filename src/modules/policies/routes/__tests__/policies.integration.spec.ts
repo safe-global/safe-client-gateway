@@ -1189,7 +1189,7 @@ describe('Space Policies Controller', () => {
     });
   });
 
-  describe('POST /v1/spaces/:spaceId/safes/:safeId/policies/requests', () => {
+  describe('POST /v1/spaces/:spaceId/chains/:chainId/safes/:safeAddress/policies/requests', () => {
     it('should store the configurations of a root', async () => {
       mockUpstream();
       const { accessToken, spaceId } = await createSpaceWithSafe({
@@ -1199,7 +1199,7 @@ describe('Space Policies Controller', () => {
 
       await request(app.getHttpServer())
         .post(
-          `/v1/spaces/${spaceId}/safes/${SEPOLIA_CHAIN_ID}:${safeAddress}/policies/requests`,
+          `/v1/spaces/${spaceId}/chains/${SEPOLIA_CHAIN_ID}/safes/${safeAddress}/policies/requests`,
         )
         .set('Cookie', [`access_token=${accessToken}`])
         .send(body)
@@ -1214,7 +1214,7 @@ describe('Space Policies Controller', () => {
         withSafe: true,
       });
       const body = payload();
-      const url = `/v1/spaces/${spaceId}/safes/${SEPOLIA_CHAIN_ID}:${safeAddress}/policies/requests`;
+      const url = `/v1/spaces/${spaceId}/chains/${SEPOLIA_CHAIN_ID}/safes/${safeAddress}/policies/requests`;
 
       await request(app.getHttpServer())
         .post(url)
@@ -1236,7 +1236,7 @@ describe('Space Policies Controller', () => {
 
       await request(app.getHttpServer())
         .post(
-          `/v1/spaces/${spaceId}/safes/${SEPOLIA_CHAIN_ID}:${safeAddress}/policies/requests`,
+          `/v1/spaces/${spaceId}/chains/${SEPOLIA_CHAIN_ID}/safes/${safeAddress}/policies/requests`,
         )
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ ...payload(), root: `0x${'11'.repeat(32)}` })
@@ -1251,7 +1251,7 @@ describe('Space Policies Controller', () => {
 
       await request(app.getHttpServer())
         .post(
-          `/v1/spaces/${spaceId}/safes/${SEPOLIA_CHAIN_ID}:${safeAddress}/policies/requests`,
+          `/v1/spaces/${spaceId}/chains/${SEPOLIA_CHAIN_ID}/safes/${safeAddress}/policies/requests`,
         )
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ root: `0x${'11'.repeat(32)}`, configurations: [] })
@@ -1266,7 +1266,7 @@ describe('Space Policies Controller', () => {
 
       await request(app.getHttpServer())
         .post(
-          `/v1/spaces/${spaceId}/safes/${SEPOLIA_CHAIN_ID}:${safeAddress}/policies/requests`,
+          `/v1/spaces/${spaceId}/chains/${SEPOLIA_CHAIN_ID}/safes/${safeAddress}/policies/requests`,
         )
         .set('Cookie', [`access_token=${accessToken}`])
         .send(payload())
@@ -1279,7 +1279,7 @@ describe('Space Policies Controller', () => {
 
       await request(app.getHttpServer())
         .post(
-          `/v1/spaces/${spaceId}/safes/${SEPOLIA_CHAIN_ID}:${safeAddress}/policies/requests`,
+          `/v1/spaces/${spaceId}/chains/${SEPOLIA_CHAIN_ID}/safes/${safeAddress}/policies/requests`,
         )
         .send(payload())
         .expect(403);

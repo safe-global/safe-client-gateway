@@ -8,7 +8,12 @@ import { HexBytesSchema } from '#/validation/entities/schemas/hexbytes.schema';
 /** Bytes of a function selector. */
 const SELECTOR_SIZE = 4;
 
-/** Largest `data` of one configuration CGW stores, in bytes. */
+/**
+ * Largest `data` of one configuration CGW stores, in bytes. Deliberately above
+ * what a transaction can apply: 64 KiB holds ~1,023 ERC20TransferPolicy
+ * recipients, whose new storage slots alone cost ~22.6M gas, more than
+ * Ethereum's EIP-7825 per-transaction cap of 2^24 (~16.8M) gas.
+ */
 export const MAX_POLICY_CONFIGURATION_DATA_BYTES = 65_536;
 
 /**

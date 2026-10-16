@@ -18,8 +18,10 @@ import {
   ApiUnauthorizedResponse,
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
+import type { Address } from 'viem';
 import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
 import { AuthGuard } from '#/modules/auth/routes/guards/auth.guard';
+import { ChainIdSchema } from '#/modules/chains/domain/entities/schemas/chain-id.schema';
 import {
   CreatePolicyConfigurationRequestDto,
   type CreatePolicyConfigurationRequestPayload,
@@ -29,15 +31,12 @@ import {
 import { PolicyConfigurationRequestsService } from '#/modules/policies/routes/policy-configuration-requests.service';
 import { Auth } from '#/routes/common/auth/auth.decorator';
 import { SpaceIdPipe } from '#/routes/common/pipes/space-id.pipe';
-import {
-  type Caip10Address,
-  Caip10AddressSchema,
-} from '#/validation/entities/schemas/caip-10-addresses.schema';
+import { AddressSchema } from '#/validation/entities/schemas/address.schema';
 import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
 @ApiTags('spaces')
 @Controller({
-  path: 'spaces/:spaceId/safes/:safeId/policies',
+  path: 'spaces/:spaceId/chains/:chainId/safes/:safeAddress/policies',
   version: '1',
 })
 @UseGuards(AuthGuard)
@@ -59,10 +58,15 @@ export class PoliciesController {
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @ApiParam({
-    name: 'safeId',
+    name: 'chainId',
     type: 'string',
-    description: 'Safe identifier, `{chainId}:{safeAddress}`',
-    example: '11155111:0x0000000000000000000000000000000000000000',
+    description: 'Chain ID where the Safe is deployed',
+    example: '11155111',
+  })
+  @ApiParam({
+    name: 'safeAddress',
+    type: 'string',
+    description: 'Safe contract address, must be registered to the Space',
   })
   @ApiBody({ type: CreatePolicyConfigurationRequestDto })
   @ApiCreatedResponse({ type: CreatePolicyConfigurationRequestResponse })
@@ -72,7 +76,7 @@ export class PoliciesController {
   })
   @ApiUnprocessableEntityResponse({
     description:
-      'Invalid Safe identifier or body, or the configurations do not hash to the given root',
+      'Invalid chain ID, Safe address or body, or the configurations do not hash to the given root',
   })
   @ApiUnauthorizedResponse({ description: 'Authentication required' })
   @ApiForbiddenResponse({
@@ -82,15 +86,16 @@ export class PoliciesController {
   @Post('requests')
   public async createConfigurationRequest(
     @Param('spaceId', SpaceIdPipe) spaceId: number,
-    @Param('safeId', new ValidationPipe(Caip10AddressSchema))
-    safeId: Caip10Address,
+    @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
+    @Param('safeAddress', new ValidationPipe(AddressSchema))
+    safeAddress: Address,
     @Body(new ValidationPipe(CreatePolicyConfigurationRequestSchema))
     payload: CreatePolicyConfigurationRequestPayload,
     @Auth() authPayload: AuthPayload,
   ): Promise<CreatePolicyConfigurationRequestResponse> {
     return await this.configurationRequestsService.create({
       spaceId,
-      safeId,
+      safe: { chainId, address: safeAddress },
       authPayload,
       payload,
     });

@@ -8,6 +8,7 @@ import {
 import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
 import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '#/modules/auth/utils/assert-authenticated.utils';
+import type { SafeRef } from '#/modules/policies/domain/entities/safe-ref.entity';
 import { IPolicyConfigurationRequestsRepository } from '#/modules/policies/domain/policy-configuration-requests.repository.interface';
 import { configurationRoot } from '#/modules/policies/domain/utils/policy-configuration-root.utils';
 import type {
@@ -18,7 +19,6 @@ import type { Space } from '#/modules/spaces/domain/entities/space.entity';
 import { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository.interface';
 import { assertMember } from '#/modules/spaces/domain/space-assert.utils';
 import { IMembersRepository } from '#/modules/users/domain/members/members.repository.interface';
-import type { Caip10Address } from '#/validation/entities/schemas/caip-10-addresses.schema';
 
 @Injectable()
 export class PolicyConfigurationRequestsService {
@@ -42,7 +42,7 @@ export class PolicyConfigurationRequestsService {
    */
   public async create(args: {
     spaceId: Space['id'];
-    safeId: Caip10Address;
+    safe: SafeRef;
     authPayload: AuthPayload;
     payload: CreatePolicyConfigurationRequestPayload;
   }): Promise<CreatePolicyConfigurationRequestResponse> {
@@ -60,8 +60,8 @@ export class PolicyConfigurationRequestsService {
 
     await this.configurationRequestsRepository.create({
       spaceId: args.spaceId,
-      chainId: args.safeId.chainId,
-      safeAddress: args.safeId.address,
+      chainId: args.safe.chainId,
+      safeAddress: args.safe.address,
       root,
       configurations: args.payload.configurations,
       createdBy: userId,
@@ -72,15 +72,15 @@ export class PolicyConfigurationRequestsService {
 
   private async assertSafeInSpace(args: {
     spaceId: Space['id'];
-    safeId: Caip10Address;
+    safe: SafeRef;
     userId: number;
   }): Promise<void> {
     await assertMember(this.membersRepository, args.spaceId, args.userId);
 
     const isInSpace = await this.spaceSafesRepository.existsInSpace({
       spaceId: args.spaceId,
-      chainId: args.safeId.chainId,
-      address: args.safeId.address,
+      chainId: args.safe.chainId,
+      address: args.safe.address,
     });
     if (!isInSpace) {
       throw new ForbiddenException('Safe is not registered to this Workspace.');

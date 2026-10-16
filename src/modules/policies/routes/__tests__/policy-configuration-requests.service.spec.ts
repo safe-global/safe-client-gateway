@@ -33,13 +33,13 @@ describe('PolicyConfigurationRequestsService', () => {
 
   const spaceId = faker.number.int({ min: 1, max: 100 });
   const userId = faker.number.int({ min: 1, max: 100 });
-  const safeId = {
+  const safe = {
     chainId: faker.string.numeric(),
     address: getAddress(faker.finance.ethereumAddress()),
   };
   const request = {
     spaceId,
-    safeId,
+    safe,
     authPayload: new AuthPayload(
       siweAuthPayloadDtoBuilder().with('sub', userId.toString()).build(),
     ),
@@ -70,13 +70,13 @@ describe('PolicyConfigurationRequestsService', () => {
     );
     expect(spaceSafesRepository.existsInSpace).toHaveBeenCalledWith({
       spaceId,
-      chainId: safeId.chainId,
-      address: safeId.address,
+      chainId: safe.chainId,
+      address: safe.address,
     });
     expect(configurationRequestsRepository.create).toHaveBeenCalledWith({
       spaceId,
-      chainId: safeId.chainId,
-      safeAddress: safeId.address,
+      chainId: safe.chainId,
+      safeAddress: safe.address,
       root: payload.root,
       configurations: payload.configurations,
       createdBy: userId,
