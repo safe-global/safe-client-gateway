@@ -1,13 +1,21 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { zeroAddress } from 'viem';
+import { type ContractFunctionArgs, zeroAddress } from 'viem';
 import type { SafenetProposal } from '#/modules/safenet/domain/entities/safenet-payer.entity';
+import type { safenetConsensusAbi } from '#/modules/safenet/domain/safenet-consensus.abi';
+
+/** The `SafeTransaction` struct, derived from the ABI so it cannot drift. */
+type SafenetConsensusTransaction = ContractFunctionArgs<
+  typeof safenetConsensusAbi,
+  'nonpayable',
+  'proposeTransaction'
+>[2];
 
 /** Maps a proposal to the `SafeTransaction` struct that Consensus hashes and stores. */
 export function toSafenetConsensusTransaction({
   chainId,
   safe,
   transaction,
-}: SafenetProposal) {
+}: SafenetProposal): SafenetConsensusTransaction {
   return {
     chainId: BigInt(chainId),
     safe,

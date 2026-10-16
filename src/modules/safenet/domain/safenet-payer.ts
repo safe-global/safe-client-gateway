@@ -9,6 +9,7 @@ import {
   type Hex,
   isAddressEqual,
   type PublicClient,
+  TransactionReceiptNotFoundError,
   zeroAddress,
 } from 'viem';
 import safeAbi from '#/abis/safe/v1.4.1/Safe.abi';
@@ -37,7 +38,8 @@ import { SafenetPayerMaybePaidError } from '#/modules/safenet/domain/errors/safe
 import * as Signer from '#/modules/safenet/domain/interfaces/safenet-payer-signer.interface';
 import {
   EXECUTION_SUCCESS_TOPIC,
-  NO_GAS,
+  NO_EXTRA_DATA,
+  NO_REFUND_EXEC_ARGS,
   RELAY_STATUS_INCLUDED,
   RELAY_STATUS_REJECTED,
   RELAY_STATUS_REVERTED,
@@ -101,7 +103,7 @@ export class SafenetPayer {
   }
 
   private async prepare(proposal: SafenetProposal) {
-    const client = await this.blockchain.getApi(SAFENET_CHAIN_ID);
+    const client = await this.blockchain.getUncachedApi(SAFENET_CHAIN_ID);
     const key = CacheRouter.getSafenetPayerNonceCacheKey({
       chainId: SAFENET_CHAIN_ID,
       safeAddress: this.payerSafeAddress,
@@ -110,7 +112,11 @@ export class SafenetPayer {
     const inner = encodeFunctionData({
       abi: safenetConsensusAbi,
       functionName: 'proposeTransaction',
-      args: [this.oracleAddress, '0x', toSafenetConsensusTransaction(proposal)],
+      args: [
+        this.oracleAddress,
+        NO_EXTRA_DATA,
+        toSafenetConsensusTransaction(proposal),
+      ],
     });
     const userSafeTxHash = await this.simulate(client, inner);
     const { payerSafeTxHash, data } = await this.signPayload(inner, payerNonce);
@@ -200,7 +206,13 @@ export class SafenetPayer {
     const data = encodeFunctionData({
       abi: safeAbi,
       functionName: 'execTransaction',
-      args: [this.consensusAddress, 0n, inner, ...NO_GAS, signature],
+      args: [
+        this.consensusAddress,
+        0n,
+        inner,
+        ...NO_REFUND_EXEC_ARGS,
+        signature,
+      ],
     });
     return { payerSafeTxHash, data };
   }
@@ -275,16 +287,18 @@ export class SafenetPayer {
     task: SafenetRelayedTask,
     included: { transactionHash: Hex; payerSafeTxHash: Hex },
   ): Promise<void> {
-    // A receipt that is not found yet, or an RPC error, counts as pending.
+    // A receipt that is not found yet counts as pending; so does an RPC error, but it is logged.
     const receipt = await this.poll(() =>
       client
         .getTransactionReceipt({ hash: included.transactionHash })
         .catch((error: unknown) => {
-          this.logging.warn({
-            chainId: SAFENET_CHAIN_ID,
-            transactionHash: included.transactionHash,
-            error: asError(error).name,
-          });
+          if (!(error instanceof TransactionReceiptNotFoundError)) {
+            this.logging.warn({
+              chainId: SAFENET_CHAIN_ID,
+              transactionHash: included.transactionHash,
+              error: asError(error).name,
+            });
+          }
           return undefined;
         }),
     );
