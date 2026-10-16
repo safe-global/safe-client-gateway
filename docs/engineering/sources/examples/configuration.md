@@ -74,10 +74,16 @@ in `.env.sample`; remove the legacy fallback only in a follow-up PR:
 // configuration.ts
 features: {
   zerionBalancesEnabled:
-    !!process.env.FF_ZERION_ENABLED ||
-    !!process.env.FF_ZERION_BALANCES_CHAIN_IDS, // legacy, remove next release
+    process.env.FF_ZERION_ENABLED !== undefined
+      ? process.env.FF_ZERION_ENABLED.toLowerCase() === 'true'
+      : // legacy, remove next release: a non-empty chain list enabled it
+        (process.env.FF_ZERION_BALANCES_CHAIN_IDS ?? '').trim() !== '',
 },
 ```
+
+The new flag parses strictly per CONFIG-02 and wins whenever it is set; the
+legacy variable keeps the meaning it had (a chain list, not a boolean) only
+until the follow-up PR deletes it.
 
 `.env.sample` lists the new var with the canonical default; the old
 name is mentioned in a comment so operators know what to migrate from.

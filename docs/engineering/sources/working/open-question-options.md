@@ -637,3 +637,85 @@ default. For `trustProxy` that changes `request.ip` and rate-limit keys.
 Open until the team states which case each option covers. Whichever wins should
 be reflected in `CHANGE-04`'s env-var clause, which today states Option A
 unconditionally.
+
+## OQ-TYPE-03 `ChainIdSchema` Accepts Non-Canonical Numeric Strings
+
+Question: should `ChainIdSchema` be tightened to the canonical numeric-ID
+shape, or is chain id a documented exception to `TYPE-03`'s numeric-ID clause?
+
+`TYPE-03` says numeric-string ID schemas reject zero, leading zeros, signs and
+floats (`/^[1-9]\d*$/`). `ChainIdSchema`
+(`src/modules/chains/domain/entities/schemas/chain-id.schema.ts`) is
+`NumericStringSchema` plus a length cap, so it still accepts `007` and `-1`.
+PR #3454 (RL-20260922-002, review comments 4071248277 and 4072481687) moved two
+routes from `NumericStringSchema` to `ChainIdSchema` and noted it is the same
+shape today. PR #3200 (RL-20260703-002) tightened
+`NonNegativeNumericStringSchema` instead and deferred the `ChainIdSchema`
+consolidation to its own PR, which has not landed.
+
+### Option A: Tighten `ChainIdSchema`
+
+Build it on the canonical shape, with tests for `007`, `-1`, `1.5` and `0`:
+
+```ts
+export const ChainIdSchema = NonNegativeNumericStringSchema.refine(
+  (value) => value !== '0' && value.length <= CHAIN_ID_MAXLENGTH,
+);
+```
+
+Choose this when:
+
+- Every route and upstream payload parsed with it already carries canonical
+  chain ids, so the change is a 422 for malformed input only.
+
+Trade-off: it reaches every route and datasource that parses a chain id in one
+PR, so it needs a check of which upstream responses it parses.
+
+### Option B: Keep It Loose And Document The Exception
+
+Choose this when:
+
+- Some upstream (Config Service, indexers) sends chain ids the strict shape
+  would reject, and failing those payloads is worse than accepting `007`.
+
+Trade-off: `TYPE-03` then needs an explicit carve-out, and cache keys or
+lookups can see `137` and `0137` as different chains.
+
+Open until the team picks one; whichever wins should be stated in `TYPE-01` or
+`TYPE-03`, which today point routes at `ChainIdSchema` and require the strict
+shape at the same time.
+
+## OQ-PR-01 Exact Counts In The Agent Guides
+
+Question: may `docs/agents/*.md` state exact tallies (for example the number of
+guards in `nestjs-patterns.md`), or must they describe the set without a count?
+
+`PR-02` says docs do not carry exact counts that drift with every PR. In
+PR #3446 (RL-20260807-002, issue comments 5728882578 and 5728917270) the diff
+deleted two guards and `nestjs-patterns.md` still stated the old tally; the
+author updated the number instead of removing it, and review accepted that.
+
+### Option A: Drop The Count
+
+Describe the set and point at where it lives:
+
+```md
+Guards live under `routes/guards/` in the module that owns them.
+```
+
+Choose this when:
+
+- The number tells a reader nothing they act on, and every add or remove
+  would otherwise have to edit the guide.
+
+### Option B: Allow Counts In That Guide
+
+Choose this when:
+
+- The count is a deliberate inventory check, so a stale number is meant to
+  draw a reviewer's eye to an unlisted guard.
+
+Trade-off: `PR-02` needs a carve-out naming which guides may hold counts, and
+every guard change edits the guide in the same PR.
+
+Open until the team picks one; whichever wins should be reflected in `PR-02`.

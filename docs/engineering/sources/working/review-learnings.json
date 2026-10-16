@@ -558,15 +558,19 @@
     "title": "Drive-by test seed/race fixes split into their own PR",
     "sourceWindowId": "CLOSED-20251211-20251218",
     "prNumbers": [
-      2845
+      2845,
+      3451
     ],
     "prState": "merged",
     "reviewCommentIds": [
-      2610764523
+      2610764523,
+      4093726923,
+      4094180585,
+      4094644246
     ],
     "reviewIds": [],
     "issueCommentIds": [],
-    "learning": "When a feature PR also includes an unrelated test infrastructure fix (faker seed reset, race-condition shim, lint-only edits), split that fix into its own PR. The mixed scope hides whichever of the two the review actually verified, and bisecting later treats the feature commit as the cause of any regression in the unrelated cleanup.",
+    "learning": "When a feature PR also includes an unrelated test infrastructure fix (faker seed reset, race-condition shim, lint-only edits), split that fix into its own PR. The mixed scope hides whichever of the two the review actually verified, and bisecting later treats the feature commit as the cause of any regression in the unrelated cleanup. A cousin in #3451: a local setup script with plain-text default credentials was committed with a feature PR by accident; review asked whether it belonged in the repo and the author removed it. Check the file list for files the change does not need before opening the PR.",
     "ruleIds": [
       "CHANGE-02"
     ]
@@ -669,7 +673,8 @@
       2850,
       3334,
       3373,
-      3420
+      3420,
+      3393
     ],
     "prState": "closed",
     "reviewCommentIds": [
@@ -682,9 +687,11 @@
     "issueCommentIds": [
       5242243692,
       5370151787,
-      5370217749
+      5370217749,
+      5715183373,
+      5716482690
     ],
-    "learning": "Module-local constants, schemas, or helpers that no other module imports should not be `export`ed. Exporting them expands the public surface and invites accidental coupling; promote to an export only when a real consumer or test exists. Recurred in #3334: `getExtensibleFallbackHandlerDeployments` was exported with its only caller in the same file; the identically-shaped existing export was explicitly called drift rather than precedent, and the author made it private. Third occurrence, in #3373: `RhinestoneErrorResponse` was exported from a new schema file while its only consumer imported the schema alone. Fourth occurrence, in #3420: asked whether `listPlans` and `getCustomer` were dead or merely unwired, the author deleted both — \"if they are needed, we can always add them back\".",
+    "learning": "Module-local constants, schemas, or helpers that no other module imports should not be `export`ed. Exporting them expands the public surface and invites accidental coupling; promote to an export only when a real consumer or test exists. Recurred in #3334: `getExtensibleFallbackHandlerDeployments` was exported with its only caller in the same file; the identically-shaped existing export was explicitly called drift rather than precedent, and the author made it private. Third occurrence, in #3373: `RhinestoneErrorResponse` was exported from a new schema file while its only consumer imported the schema alone. Fourth occurrence, in #3420: asked whether `listPlans` and `getCustomer` were dead or merely unwired, the author deleted both — \"if they are needed, we can always add them back\". Fifth occurrence, in #3393: an exported test builder nothing imported was deleted.",
     "ruleIds": [
       "MOD-04"
     ]
@@ -806,7 +813,8 @@
     "sourceWindowId": "CLOSED-20260520-20260602",
     "prNumbers": [
       3096,
-      3101
+      3101,
+      3530
     ],
     "prState": "merged",
     "reviewCommentIds": [
@@ -814,9 +822,11 @@
     ],
     "reviewIds": [],
     "issueCommentIds": [
-      4490386430
+      4490386430,
+      5912437452,
+      5912853752
     ],
-    "learning": "Email normalization (`.trim().toLowerCase()`) was repeated at every repository call site, and the new `EmailAddress` type was a bare `z.infer` alias (plain `string`) so any unnormalized string could be assigned without going through the schema. Normalize once at the validation boundary via a Zod `.toLowerCase()`/`.transform()` so consumers receive ready-to-use values, and `.brand<'X'>()` validated value types so the type system enforces that a value actually passed through the schema rather than being a same-shaped raw string.",
+    "learning": "Email normalization (`.trim().toLowerCase()`) was repeated at every repository call site, and the new `EmailAddress` type was a bare `z.infer` alias (plain `string`) so any unnormalized string could be assigned without going through the schema. Normalize once at the validation boundary via a Zod `.toLowerCase()`/`.transform()` so consumers receive ready-to-use values, and `.brand<'X'>()` validated value types so the type system enforces that a value actually passed through the schema rather than being a same-shaped raw string. A consumer-side form in #3530: `relayer.enableTenderlySimulationBeforeRelay ?? false` re-defaulted a field the schema already `.catch(false)`s; the `?? false` was dropped as dead.",
     "ruleIds": [
       "TYPE-03"
     ]
@@ -881,15 +891,18 @@
     "title": "Controller coverage written as e2e, which does not run in CI",
     "sourceWindowId": "CLOSED-20260520-20260602",
     "prNumbers": [
-      3107
+      3107,
+      3393
     ],
     "prState": "merged",
     "reviewCommentIds": [
-      3318804344
+      3318804344,
+      4046247648,
+      4061696161
     ],
     "reviewIds": [],
     "issueCommentIds": [],
-    "learning": "New controller coverage was added as an e2e spec, which only runs on demand and not as part of CI, so the behavior was effectively unverified on every PR. Put coverage that must run on every CI run in an integration spec; reserve e2e specs for the on-demand suite. Match the test layer (and filename suffix) to where it should execute.",
+    "learning": "New controller coverage was added as an e2e spec, which only runs on demand and not as part of CI, so the behavior was effectively unverified on every PR. Put coverage that must run on every CI run in an integration spec; reserve e2e specs for the on-demand suite. Match the test layer (and filename suffix) to where it should execute. Recurred in #3393: a new `policies.e2e-spec.ts` mocked every network call, so it was an integration test that CI never ran; it was renamed to `policies.integration.spec.ts`.",
     "ruleIds": [
       "TEST-02"
     ]
@@ -2018,7 +2031,11 @@
       3214,
       3247,
       2831,
-      3420
+      3420,
+      3392,
+      3451,
+      3530,
+      3393
     ],
     "prState": "merged",
     "reviewCommentIds": [
@@ -2034,11 +2051,23 @@
       2596323738,
       3978886193,
       3978942901,
-      3979731594
+      3979731594,
+      4155759114,
+      4093780525,
+      4096038859,
+      4094054932,
+      4094055507,
+      4094130636,
+      4095669984,
+      4095670425,
+      4095674345
     ],
     "reviewIds": [],
-    "issueCommentIds": [],
-    "learning": "Three PRs in one week typed test mocks as `{...} as unknown as MockedObject<T>` and reached into `.mock.calls[i][j]` for assertions; review asked each time for a direct `as MockedObject<T>` cast (the `unknown` hop is redundant and hides missing method fakes) and `toHaveBeenNthCalledWith(...)` over `.mock.calls` indexing. Type mocks as `MockedObject<T>` directly and assert calls with the matcher API. Recurred again in #3247 (plus `as never` casts on arguments — same fix: type the mock/argument properly). The same `as never` escape appeared earlier in #2831 on mocked network payloads (`data: {} as never`); the repo's answer for a `Raw<T>` payload is the `rawify()` helper, not a cast. #3420 shows the tension has not settled: the author added `MockedObject<Pick<IBillingApi, ...>>` on one review comment, reverted it on another (\"it did not add anything\", and it forced `as unknown as IBillingApi`), then restored it for a third. See OQ-TEST-01.",
+    "issueCommentIds": [
+      5715183373,
+      5716482690
+    ],
+    "learning": "Three PRs in one week typed test mocks as `{...} as unknown as MockedObject<T>` and reached into `.mock.calls[i][j]` for assertions; review asked each time for a direct `as MockedObject<T>` cast (the `unknown` hop is redundant and hides missing method fakes) and `toHaveBeenNthCalledWith(...)` over `.mock.calls` indexing. Type mocks as `MockedObject<T>` directly and assert calls with the matcher API. Recurred again in #3247 (plus `as never` casts on arguments — same fix: type the mock/argument properly). The same `as never` escape appeared earlier in #2831 on mocked network payloads (`data: {} as never`); the repo's answer for a `Raw<T>` payload is the `rawify()` helper, not a cast. #3420 shows the tension has not settled: the author added `MockedObject<Pick<IBillingApi, ...>>` on one review comment, reverted it on another (\"it did not add anything\", and it forced `as unknown as IBillingApi`), then restored it for a third. See OQ-TEST-01. Recurred again in #3392, #3451 and #3530: six more `as unknown as MockedObject<T>` mocks, each reduced to a direct `as MockedObject<T>` on request (one reviewer: the `unknown` \"is not needed\"). In #3393 five `mockResolvedValue(... as never)` doubles were replaced with `memberBuilder().build()` and the real return shape.",
     "ruleIds": [
       "TEST-01"
     ]
@@ -2289,7 +2318,8 @@
     "prNumbers": [
       3078,
       3284,
-      3454
+      3454,
+      3530
     ],
     "prState": "closed",
     "reviewCommentIds": [
@@ -2302,14 +2332,18 @@
       3310410509,
       3310414423,
       3646208991,
-      3654913703
+      3654913703,
+      4155618283,
+      4155705823,
+      4156258986,
+      4156260416
     ],
     "reviewIds": [],
     "issueCommentIds": [
       5771773279,
       5773979339
     ],
-    "learning": "A passkeys module declared its error class, error-id union, input/output interfaces, and parsing helpers inside the service files; review asked for one exported object per file — errors under `domain/errors/`, types under `domain/entities/`, helpers in a dedicated helpers file — and for standalone functions used by a single class to become private methods of that class. The author applied all of it. Keep one exported class/type per file and fold single-consumer functions into the class. Recurred in #3284, where an `Authenticator` type declared inline in the OIDC service file drew \"it's getting crowded, we can extract it to a types file\"; the author moved it. Recurred in #3454 as a folder-placement variant: a new guard sat in a module-root `guards/` and a new error in a module-root `errors/`, while the same PR filed the equivalent entitlements error under `domain/errors/` and its filter under `domain/exception-filters/`. The author moved the guard to `routes/guards/` and the error/filter under `domain/`, matching the sibling module.",
+    "learning": "A passkeys module declared its error class, error-id union, input/output interfaces, and parsing helpers inside the service files; review asked for one exported object per file — errors under `domain/errors/`, types under `domain/entities/`, helpers in a dedicated helpers file — and for standalone functions used by a single class to become private methods of that class. The author applied all of it. Keep one exported class/type per file and fold single-consumer functions into the class. Recurred in #3284, where an `Authenticator` type declared inline in the OIDC service file drew \"it's getting crowded, we can extract it to a types file\"; the author moved it. Recurred in #3454 as a folder-placement variant: a new guard sat in a module-root `guards/` and a new error in a module-root `errors/`, while the same PR filed the equivalent entitlements error under `domain/errors/` and its filter under `domain/exception-filters/`. The author moved the guard to `routes/guards/` and the error/filter under `domain/`, matching the sibling module. Recurred in #3530: an error file also exported the error code and reason constants, and a manager file declared a local type alias; review asked to keep only the error in its file, and the author moved the constants and types to entity files.",
     "ruleIds": [
       "STYLE-01"
     ]
@@ -2595,7 +2629,8 @@
       3397,
       3437,
       3445,
-      3454
+      3454,
+      3530
     ],
     "prState": "merged",
     "reviewCommentIds": [
@@ -2615,7 +2650,11 @@
       4060989161,
       4061449713,
       4060997693,
-      4061464273
+      4061464273,
+      4144340693,
+      4144743113,
+      4145120033,
+      4145629674
     ],
     "reviewIds": [
       4762810977
@@ -2625,7 +2664,7 @@
       5771722470,
       5773927082
     ],
-    "learning": "Two separate PRs drew the same objection: in #2831 `// Use custom signal if present, otherwise use default timeout` restated the line directly beneath it, and in #2824 a reduce with conditional key names was called hard to follow — the author offered \"i will add a comment that explains it step by step\" and review answered with a concrete refactor (`reduce<ThreatIssues>`, `groups[severity] ??= []`) that removed the need for the comment. A comment that narrates the next line is deleted, and a comment proposed to explain confusing code is a signal to restructure the code instead. Recurred in #3290: a TypeORM upgrade replaced `.where('1=1')` truncates and explained the removal in a three-line comment repeated at each call site; the reviewer called it redundant three times over. The settled shape is one full rationale at a single site plus a one-line pointer at the others — repeating the explanation is as much a smell as narrating the line. Also in #3250, where a comment restated the obvious \"reject if any deployed\" half and buried the non-obvious fail-open rationale; the merged comment keeps only the why. A quieter form in #3420: a doc comment on exactly one field of a schema, twice, drew \"having only 1 prop with comments is strange unless super useful\" and both were removed. A note on one field among many reads as leftover unless it carries something the field name cannot. Two more: \"should have proper TsDoc comments or no comments\" on a bare `//` note in a datasource, and a comment on an elevation-test entry that a reviewer simply could not follow — the author agreed it \"was not saying much\" and removed it. A comment that needs its own explanation is not carrying its weight. Recurred in #3445: a bare `/** Admin-only. */` on a service method was removed as noise, and a docstring tying the method to \"a fresh second factor\" and \"the gated table of `elevation.integration.spec.ts`\" drew \"I did not understand the part about second factor and an int test\"; the author rewrote it to name the guard. In #3454 a new JSDoc claimed its class \"lives in `routes/`\" when the file did not; the location claim was dropped. A comment that points at a test file or asserts a location is one more thing that goes false.",
+    "learning": "Two separate PRs drew the same objection: in #2831 `// Use custom signal if present, otherwise use default timeout` restated the line directly beneath it, and in #2824 a reduce with conditional key names was called hard to follow — the author offered \"i will add a comment that explains it step by step\" and review answered with a concrete refactor (`reduce<ThreatIssues>`, `groups[severity] ??= []`) that removed the need for the comment. A comment that narrates the next line is deleted, and a comment proposed to explain confusing code is a signal to restructure the code instead. Recurred in #3290: a TypeORM upgrade replaced `.where('1=1')` truncates and explained the removal in a three-line comment repeated at each call site; the reviewer called it redundant three times over. The settled shape is one full rationale at a single site plus a one-line pointer at the others — repeating the explanation is as much a smell as narrating the line. Also in #3250, where a comment restated the obvious \"reject if any deployed\" half and buried the non-obvious fail-open rationale; the merged comment keeps only the why. A quieter form in #3420: a doc comment on exactly one field of a schema, twice, drew \"having only 1 prop with comments is strange unless super useful\" and both were removed. A note on one field among many reads as leftover unless it carries something the field name cannot. Two more: \"should have proper TsDoc comments or no comments\" on a bare `//` note in a datasource, and a comment on an elevation-test entry that a reviewer simply could not follow — the author agreed it \"was not saying much\" and removed it. A comment that needs its own explanation is not carrying its weight. Recurred in #3445: a bare `/** Admin-only. */` on a service method was removed as noise, and a docstring tying the method to \"a fresh second factor\" and \"the gated table of `elevation.integration.spec.ts`\" drew \"I did not understand the part about second factor and an int test\"; the author rewrote it to name the guard. In #3454 a new JSDoc claimed its class \"lives in `routes/`\" when the file did not; the location claim was dropped. A comment that points at a test file or asserts a location is one more thing that goes false. Recurred in #3530 both ways: a reviewer first asked for a comment per `switch` case, then suggested private methods with clear names instead, and the author extracted them (\"it's very clear now\"); and a rewritten comment above an `if` was called hard to understand and removed because the condition now reads directly.",
     "ruleIds": [
       "STYLE-01"
     ],
@@ -3446,15 +3485,22 @@
     "id": "RL-20260921-003",
     "title": "Swagger error-response descriptions omitted a cause and ran four 409 causes into one sentence",
     "prNumbers": [
-      3445
+      3445,
+      3393,
+      3475
     ],
     "prState": "merged",
     "reviewCommentIds": [],
     "reviewIds": [],
     "issueCommentIds": [
-      5732459447
+      5732459447,
+      5715150585,
+      5715183373,
+      5716482690,
+      5791828649,
+      5793950895
     ],
-    "learning": "An `@ApiForbiddenResponse` description listed two of the three conditions the service maps to 403 (it missed a named `paymentLinkId` the workspace is not offered), and an `@ApiConflictResponse` folded four unrelated 409 causes into one prose sentence. The follow-up commit named the third 403 cause and listed the 409 causes one per line. A status's Swagger description is the client's only map of why it got that status: it names every condition the handler raises for it.",
+    "learning": "An `@ApiForbiddenResponse` description listed two of the three conditions the service maps to 403 (it missed a named `paymentLinkId` the workspace is not offered), and an `@ApiConflictResponse` folded four unrelated 409 causes into one prose sentence. The follow-up commit named the third 403 cause and listed the 409 causes one per line. A status's Swagger description is the client's only map of why it got that status: it names every condition the handler raises for it. Recurred in #3393, where an endpoint documented a 401 the guard never produces (it throws 403) and omitted the 503 its own spec asserts, and in #3475, where 403-for-non-members replaced 404 but three `@ApiNotFoundResponse` texts still said \"User or space not found\". Both were fixed in follow-up commits. When a change moves a status, sweep the Swagger response decorators with it.",
     "ruleIds": [
       "PR-02"
     ],
@@ -3507,7 +3553,8 @@
     "id": "RL-20260922-002",
     "title": "chainId path params validated with the generic numeric-string schema instead of ChainIdSchema",
     "prNumbers": [
-      3454
+      3454,
+      3393
     ],
     "prState": "merged",
     "reviewCommentIds": [
@@ -3516,8 +3563,12 @@
       4072481687
     ],
     "reviewIds": [],
-    "issueCommentIds": [],
-    "learning": "Two new routes validated `:chainId` with `new ValidationPipe(NumericStringSchema)`; review asked for `ChainIdSchema` from the chains domain, and the author switched both — noting that today `ChainIdSchema` is the same shape, so it still accepts `007` and `-1`. Use the domain-named schema for a domain param even when it is currently an alias: the name records intent, and tightening the domain schema later reaches every route that uses it.",
+    "issueCommentIds": [
+      5715150585,
+      5715183373,
+      5716482690
+    ],
+    "learning": "Two new routes validated `:chainId` with `new ValidationPipe(NumericStringSchema)`; review asked for `ChainIdSchema` from the chains domain, and the author switched both — noting that today `ChainIdSchema` is the same shape, so it still accepts `007` and `-1`. Use the domain-named schema for a domain param even when it is currently an alias: the name records intent, and tightening the domain schema later reaches every route that uses it. Recurred in #3393: a shared CAIP-10 schema re-implemented the chain-id bound as `NumericStringSchema.max(CHAIN_ID_MAXLENGTH)`; it was switched to `ChainIdSchema`.",
     "ruleIds": [
       "TYPE-01"
     ],
@@ -3645,5 +3696,419 @@
       "RESILIENCE-01"
     ],
     "sourceWindowId": "CLOSED-20260918-20260925"
+  },
+  {
+    "id": "RL-20260925-001",
+    "title": "Upstream reads serialized one at a time to avoid 429s instead of batched",
+    "sourceWindowId": "CLOSED-20260924-20261002",
+    "prNumbers": [
+      3451
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4071034205,
+      4071332692,
+      4071892636,
+      4074064536,
+      4093908409,
+      4094398776,
+      4095547578
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "To stay clear of Transaction Service 429s, a policies endpoint read each Safe's delegates one request at a time, and awaited `enabledModules()` inside the same per-Safe loop. Review asked for fixed-size batches, each run with `Promise.all`, with the size configurable; the author added `POLICY_BATCH_SIZE` and a shared `batched(items, size, fn)` helper used by every fan-out in the service. When an upstream rate-limits, bound the concurrency with config-sized batches; one-at-a-time pays every round-trip in series.",
+    "ruleIds": [
+      "PERF-01",
+      "CONFIG-03"
+    ]
+  },
+  {
+    "id": "RL-20260925-002",
+    "title": "Fetched slice cached unconditionally, undoing an invalidation that ran mid-fetch",
+    "sourceWindowId": "CLOSED-20260924-20261002",
+    "prNumbers": [
+      3392
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4046338619,
+      4070282813
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "A datasource that batches several Safes into one GraphQL request wrote each Safe's slice to the cache with an unconditional `hSet`. Review: if a transaction hook clears a Safe while the request is in flight, the write repopulates the pre-transaction state for a full TTL. The fix records the fetch start time and skips the write when the key's invalidation time is at or after it, as `CacheFirstDataSource` does. Any hand-written cache-after-fetch path needs the same invalidation check.",
+    "ruleIds": [
+      "CACHE-01"
+    ]
+  },
+  {
+    "id": "RL-20260925-003",
+    "title": "Transform parsed its parts with safeParse and re-raised the issues by hand",
+    "sourceWindowId": "CLOSED-20260924-20261002",
+    "prNumbers": [
+      3393
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4046352563
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "A CAIP-10 schema split `chainId:address` inside a `.transform`, then ran `safeParse` on the parts schema and copied each issue back through `ctx.addIssue`. Review showed the transform can return the parts and `.pipe()` into the parts schema; the merged code does that, and each part's issue and path still reach the 422 body. A transform that only reshapes input hands validation to the owning schema through `.pipe()`.",
+    "ruleIds": [
+      "TYPE-02"
+    ]
+  },
+  {
+    "id": "RL-20260925-004",
+    "title": "Always-imported module registered a feature-flagged controller",
+    "sourceWindowId": "CLOSED-20260924-20261002",
+    "prNumbers": [
+      3393
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4093999700,
+      4096062684
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "A new Space-scoped controller was registered in `PoliciesModule`, which `HooksModule` imports unconditionally for its repository, so the endpoint existed even with `FF_USERS=false` and the module also pulled in the Workspace controllers. Review asked to split the repository providers into their own module for hooks to import and keep the route module behind the flag; the author did. A module imported by always-on code cannot also host a gated route.",
+    "ruleIds": [
+      "MOD-01"
+    ]
+  },
+  {
+    "id": "RL-20260925-005",
+    "title": "Operation values hard-coded instead of read from the existing Operation entity",
+    "sourceWindowId": "CLOSED-20260924-20261002",
+    "prNumbers": [
+      3391
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      3987948299,
+      3987973956,
+      4005047022,
+      4005057680,
+      4005058324
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "A new policy entity mapped `CALL`/`DELEGATECALL` to `0 | 1` with literal comparisons. Review pointed at `src/modules/safe/domain/entities/operation.entity.ts`, which already holds the values; the author typed both helpers with `Operation` and compared against `Operation.CALL` / `Operation.DELEGATE`. Encode against the repo's existing value set rather than repeating its literals.",
+    "ruleIds": [
+      "REUSE-01"
+    ]
+  },
+  {
+    "id": "RL-20260925-006",
+    "title": "GraphQL envelope schema declared inline in the datasource, in a file named .slice.ts",
+    "sourceWindowId": "CLOSED-20260924-20261002",
+    "prNumbers": [
+      3392
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4017735420,
+      4024906028,
+      4025111579,
+      4025463935
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "A datasource declared its response-envelope Zod schema at the top of the service file, and another schema lived in a `*.slice.ts` file. Review asked for the schema to move to its own schema file and for the other file to be named as a schema; the author did both. Schemas live in `*.schema.ts`/entity files whose names say so, even transport-level ones used by a single datasource.",
+    "ruleIds": [
+      "TYPE-02"
+    ]
+  },
+  {
+    "id": "RL-20260928-001",
+    "title": "Loop safety cap kept a constant after an env-var suggestion",
+    "sourceWindowId": "CLOSED-20260924-20261002",
+    "prNumbers": [
+      3495
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4123308960,
+      4123855659,
+      4124241952,
+      4124314999
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "Review asked whether `MAX_TRANSACTION_QUEUE_PAGES_TO_SCAN = 10`, a guard against an unbounded pagination loop, should be an env var. The author answered that staging and production use the same value and it already covers 1,000 to 2,000 transactions; the reviewer agreed an env var would be over-engineered. Config is for values that differ per environment or must be tuned without a deploy; a safety cap with one value everywhere stays a named constant.",
+    "ruleIds": [
+      "CONFIG-03"
+    ]
+  },
+  {
+    "id": "RL-20260928-002",
+    "title": "Admin authorization resolved inside the repository instead of the route service",
+    "sourceWindowId": "CLOSED-20260924-20261002",
+    "prNumbers": [
+      3475
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4080486888,
+      4081718214
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [
+      5791828649,
+      5793950895
+    ],
+    "learning": "A refactor consolidating workspace admin checks into `assertAdmin` left two member write paths throwing their own legacy 403 from a private repository check. Asked whether that could join the refactor, the author moved the admin check to the service so the repository no longer deals with auth, and every admin-gated endpoint now answers with the same message. Authorization runs in the route service through the shared assertion; repositories receive the resolved user id and do data access.",
+    "ruleIds": [
+      "AUTH-05",
+      "MOD-02"
+    ]
+  },
+  {
+    "id": "RL-20260928-003",
+    "title": "Test repeated a literal in fixture and assertion instead of naming it",
+    "sourceWindowId": "CLOSED-20260924-20261002",
+    "prNumbers": [
+      3492
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4104493810,
+      4105014920
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "An integration spec seeded `planCode: 'BUS-20-A'` and asserted the same literal back; review asked to use named variables for the values under test, and the author did. A value the test is about is declared once and reused in setup and assertion, so the two cannot drift apart unnoticed.",
+    "ruleIds": [
+      "TEST-08"
+    ]
+  },
+  {
+    "id": "RL-20260928-004",
+    "title": "Graceful-degradation path asserted on the mapper output but not on the stored row",
+    "sourceWindowId": "CLOSED-20260924-20261002",
+    "prNumbers": [
+      3492
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [],
+    "issueCommentIds": [
+      5830996419,
+      5831182161
+    ],
+    "learning": "A webhook without `planCode` was supposed to store the subscription with `plan_code` null and log an error. Only the mapper output was unit-tested; review asked for an integration case, and the author added one that posts the webhook and asserts the persisted row is null and the entitlement still written. A promised degradation path is tested where its effect lands, not only at the function that computes it.",
+    "ruleIds": [
+      "TEST-09"
+    ]
+  },
+  {
+    "id": "RL-20260928-005",
+    "title": "Reusable workflow defaulted an auto-merge-to-production input to true",
+    "sourceWindowId": "CLOSED-20260924-20261002",
+    "prNumbers": [
+      3490
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [],
+    "issueCommentIds": [
+      5867853856,
+      5870591339
+    ],
+    "learning": "A reusable release workflow declared `auto_merge_release` with `default: true`. The caller passed `false`, but any future caller that omitted the input would silently auto-merge into production. The author flipped the default to `false`, noting no caller relied on it. Inputs of shared workflows default to the safe value; the risky behaviour is an explicit opt-in.",
+    "ruleIds": [
+      "CONFIG-01"
+    ]
+  },
+  {
+    "id": "RL-20260929-001",
+    "title": "CI steps failed silently: an unchecked curl status, a title parser that skipped on drift, an unvalidated dispatch tag",
+    "sourceWindowId": "CLOSED-20260924-20261002",
+    "prNumbers": [
+      3474,
+      3490,
+      3493
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [],
+    "issueCommentIds": [
+      5792178636,
+      5810426490,
+      5867853856,
+      5870591339,
+      5868023928,
+      5870752359
+    ],
+    "learning": "Three CI PRs fixed silent failure modes. In #3474 a revived deploy-notify script captured the HTTP status from `curl -s` but never checked it; it now fails on non-2xx. In #3490 a heal step parsed a version out of a PR title with `${title##*release }`, so a format change made it skip quietly; it now warns and continues when the result is not a version. In #3493 a dispatched release tag went unchecked until the build's checkout failed minutes later; it is now resolved first. A CI step either succeeds or says why it did not.",
+    "ruleIds": [
+      "CHANGE-03"
+    ]
+  },
+  {
+    "id": "RL-20261001-001",
+    "title": "One failed address decryption failed the whole members response",
+    "sourceWindowId": "CLOSED-20260924-20261002",
+    "prNumbers": [
+      3531
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4154124637,
+      4154450675
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "A members endpoint decrypted each member's wallet address inside one `Promise.all`, so a single KMS failure failed the request. Review asked whether that was intended or whether the failing addresses could be skipped; the author returned the others and logged the failure. Per-item enrichment that one row can fail does not take the response down: settle per item and log the skipped row by its identifiers.",
+    "ruleIds": [
+      "PERF-01",
+      "LOG-01"
+    ]
+  },
+  {
+    "id": "RL-20261001-002",
+    "title": "Address lookup wired into a shared authorization probe whose result is discarded",
+    "sourceWindowId": "CLOSED-20260924-20261002",
+    "prNumbers": [
+      3531
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [],
+    "issueCommentIds": [
+      5915217515,
+      5926692854
+    ],
+    "learning": "To return member addresses, a PR attached them inside the shared private `findActiveOrInvitedMemberOrFail`, so the roster path ran an extra `wallets` query and a KMS decrypt for an authorization probe that only reads `.status` before reloading the roster. The author moved the attach to the two callers that use the address. Put the extra read where its result is consumed, not in a helper every path runs.",
+    "ruleIds": [
+      "DB-03"
+    ]
+  },
+  {
+    "id": "RL-20261001-003",
+    "title": "Replaced DTO field left undeprecated in Swagger",
+    "sourceWindowId": "CLOSED-20260924-20261002",
+    "prNumbers": [
+      3530
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4153424221,
+      4154576355
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "A PR added `gasPaymentOptions` to the relayer DTO to replace `safeTransactionSponsored`, but left the old field documented as current. Review asked to mark it deprecated in Swagger, and the author did. When a field is superseded, mark it `deprecated: true` in its `@ApiProperty`, naming the replacement, in the same PR, so clients learn of the migration from the spec rather than from its removal.",
+    "ruleIds": [
+      "CHANGE-04"
+    ]
+  },
+  {
+    "id": "RL-20261001-004",
+    "title": "Comments carried process narration or described behaviour the code no longer had",
+    "sourceWindowId": "CLOSED-20260924-20261002",
+    "prNumbers": [
+      3488,
+      3495,
+      3530
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4102428031,
+      4102470154
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [
+      5869527063,
+      5869759697,
+      5912437452,
+      5912853752
+    ],
+    "learning": "In #3488 a workflow comment explained which ticket would switch a gate on and why it was off for now; review asked to remove the process and conversational context and keep it short and about the code, and the author did. In #3495 a catch comment named a case that actually exits through a switch fall-through, and in #3530 a docstring said a method always throws for one relayer type when one branch deliberately does not; both were corrected. A comment describes the code as it is; plans, tickets, and review history belong in the PR or the tracker.",
+    "ruleIds": [
+      "STYLE-01"
+    ]
+  },
+  {
+    "id": "RL-20261001-005",
+    "title": "Guards, fields, locals, and wrappers kept for cases no caller produces",
+    "sourceWindowId": "CLOSED-20260924-20261002",
+    "prNumbers": [
+      3393,
+      3451,
+      3523,
+      3531
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4093821468,
+      4095565077
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [
+      5715183373,
+      5716482690,
+      5887977255,
+      5888186946,
+      5915217515,
+      5926692854
+    ],
+    "learning": "Four PRs removed code with no live case. In #3531 `member.user ?` guards and a documented \"loaded without the relation\" branch covered a state both callers load away. In #3393 a context field was filtered and passed to an assembler that never read it. In #3523 a filter kept a status local after narrowing to one error type. In #3451 a spec wrapped builders in local helper functions that saved nothing. All were deleted. Code for a case no caller can produce is not defensive; it is a second reading of the code that is never exercised.",
+    "ruleIds": [
+      "PR-01",
+      "STYLE-01"
+    ]
+  },
+  {
+    "id": "RL-20261001-006",
+    "title": "Second write after a committed first one answered with a partial-success 502",
+    "sourceWindowId": "CLOSED-20260924-20261002",
+    "prNumbers": [
+      3532
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4156816360
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "Adding Safes to a workspace with address-book names wrote the Safes, then the names; if the second write failed the endpoint returned 502 \"Safes added, names not saved\", and the author asked review for a better error. The merged change runs both writes in the Safe insert's transaction, so a failed name write rolls the Safes back and there is no partial state to report. When two writes must hold together, share the transaction rather than inventing a status for half of them.",
+    "ruleIds": [
+      "DB-02"
+    ]
+  },
+  {
+    "id": "RL-20261001-007",
+    "title": "Types restated as string instead of the project types and schemas",
+    "sourceWindowId": "CLOSED-20260924-20261002",
+    "prNumbers": [
+      3391,
+      3392,
+      3531
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4153062908,
+      4153076918,
+      4153086958,
+      4154444168,
+      4154445923,
+      4154447379,
+      3987921351,
+      3987924261,
+      4004957192,
+      4004957911,
+      4025700914,
+      4034709112
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "In #3531 a DTO field and test types used `string` for wallet addresses; review asked for viem's `Address`, and the author changed it everywhere. In #3391 a `SafeRef` type declared `chainId: string` beside an `Address`; review asked to derive both from `ChainIdSchema` and `AddressSchema`, and the author did. In #3392 a raw builder type was written out by hand; it is now read from the schemas. Take a field's type from the project type or schema that already defines it.",
+    "ruleIds": [
+      "TYPE-01",
+      "TYPE-06"
+    ]
   }
 ]

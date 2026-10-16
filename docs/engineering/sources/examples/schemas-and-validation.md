@@ -288,3 +288,46 @@ if (used > quota) {
 normalization has to match the mapper that reads the same metadata. A second
 hand-rolled reader drifted in exactly that way: it only read the uppercase key.
 Parse through the shared parser, once, and keep the value.
+
+## TYPE-02 — Split-then-validate pipes into the parts schema
+
+Source: PR #3393 (RL-20260925-003)
+
+### Avoid
+
+```ts
+export const CompoundIdSchema = z.string().transform((value, ctx) => {
+  const [prefix, id] = value.split(':');
+  const parsed = PartsSchema.safeParse({ prefix, id });
+  if (!parsed.success) {
+    for (const issue of parsed.error.issues) {
+      ctx.addIssue({ code: 'custom', path: issue.path, message: issue.message });
+    }
+    return z.NEVER;
+  }
+  return parsed.data;
+});
+```
+
+### Prefer
+
+```ts
+export const CompoundIdSchema = z
+  .string()
+  .transform((value, ctx) => {
+    const parts = value.split(':');
+    if (parts.length !== 2) {
+      ctx.addIssue({ code: 'custom', message: 'Expected {prefix}:{id}' });
+      return z.NEVER;
+    }
+    const [prefix, id] = parts;
+    return { prefix, id };
+  })
+  .pipe(PartsSchema);
+```
+
+### Why
+
+The transform only splits; `.pipe()` hands the parts to the schema that owns
+their rules, so each part's own issue and path reach the 422 body unchanged
+without a hand-written re-raise loop.

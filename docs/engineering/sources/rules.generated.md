@@ -142,26 +142,26 @@ focused review of why the test was flaky to begin with.
 <a id="change-03"></a>
 ### `CHANGE-03` Tooling parity preserved
 
-> **general** · scope · ↩ `RL-20260622-001` · `RL-20260622-002`
+> **general** · scope · ↩ `RL-20260622-001` · `RL-20260622-002` · `RL-20260929-001`
 
 **📜 Rule**\
-Tooling work (lint, formatter, build, CI, test runner) must preserve previous behavior, rule parity, and docs. In CI, never cache linked `node_modules` — a cache hit skips `yarn install --immutable` and its hardened-mode supply-chain verification; cache the package-manager download cache and install unconditionally. PRs keep a whole-program type check (`tsc --noEmit -p tsconfig.build.json`; ts-jest only checks files tests import), and jobs that read `dist/` (migrations) need the full build.
+Tooling work (lint, formatter, build, CI, test runner) must preserve previous behavior, rule parity, and docs. In CI, never cache linked `node_modules` — a cache hit skips `yarn install --immutable` and its hardened-mode supply-chain verification; cache the package-manager download cache and install unconditionally. PRs keep a whole-program type check (`tsc --noEmit -p tsconfig.build.json`; ts-jest only checks files tests import), and jobs that read `dist/` (migrations) need the full build. CI steps fail loudly: a script asserts the HTTP status it captures, a dispatched input is validated before the pipeline spends minutes on it, and a parser of tool output warns on format drift instead of skipping silently.
 
 **✅ Check**\
-> If this is tooling work, did I preserve behavior, rule parity, and docs?
+> If this is tooling/CI work, did I preserve behavior, rule parity, and docs, and does every step fail loudly?
 
 ---
 
 <a id="change-04"></a>
 ### `CHANGE-04` External contracts versioned
 
-> **general** · scope · 1 example · ↩ `RL-20260108-001` · `RL-20251204-001` · `RL-20260729-003` · `RL-20260827-001`
+> **general** · scope · 1 example · ↩ `RL-20260108-001` · `RL-20251204-001` · `RL-20260729-003` · `RL-20260827-001` · `RL-20261001-003`
 
 **📜 Rule**\
-Changes to released external API contracts must be versioned or explicitly backward-compatible; renames of env vars must keep the old name as a fallback for one release. A response-shape change identifies its consuming client and lands only once that client's compatibility change is merged or confirmed on the PR. A compatibility alias has a defined life — on the next touch of that schema, check the replacement's deploy date and delete the alias rather than carrying it forward. An observability problem is not a reason to change a published contract: filter where the noise is measured.
+Changes to released external API contracts must be versioned or explicitly backward-compatible; renames of env vars must keep the old name as a fallback for one release. A response-shape change identifies its consuming client and lands only once that client's compatibility change is merged or confirmed on the PR. A compatibility alias has a defined life — on the next touch of that schema, check the replacement's deploy date and delete the alias rather than carrying it forward. An observability problem is not a reason to change a published contract: filter where the noise is measured. A field superseded by a new one is marked `deprecated: true` in its `@ApiProperty`, naming the replacement, in the PR that adds the replacement.
 
 **✅ Check**\
-> If this changes an external contract, is it versioned or explicitly backward-compatible?
+> If this changes an external contract, is it versioned or explicitly backward-compatible, and is any superseded field marked deprecated?
 
 <details>
 <summary><strong>💡 Example</strong> — <code>examples/configuration.md</code> § <em>change-04-config-05-env-var-rename-keeps-the-old-name-as-a-fallback-for-one-release</em></summary>
@@ -199,10 +199,16 @@ in `.env.sample`; remove the legacy fallback only in a follow-up PR:
 // configuration.ts
 features: {
   zerionBalancesEnabled:
-    !!process.env.FF_ZERION_ENABLED ||
-    !!process.env.FF_ZERION_BALANCES_CHAIN_IDS, // legacy, remove next release
+    process.env.FF_ZERION_ENABLED !== undefined
+      ? process.env.FF_ZERION_ENABLED.toLowerCase() === 'true'
+      : // legacy, remove next release: a non-empty chain list enabled it
+        (process.env.FF_ZERION_BALANCES_CHAIN_IDS ?? '').trim() !== '',
 },
 ```
+
+The new flag parses strictly per CONFIG-02 and wins whenever it is set; the
+legacy variable keeps the meaning it had (a chain list, not a boolean) only
+until the follow-up PR deletes it.
 
 `.env.sample` lists the new var with the canonical default; the old
 name is mentioned in a comment so operators know what to migrate from.
@@ -224,7 +230,7 @@ deleted with a clean PR that only touches the loader.
 <a id="pr-01"></a>
 ### `PR-01` New abstractions justified
 
-> **general** · scope · 1 example · ↩ `RL-20260626-003` · `RL-20260706-001` · `RL-20260818-001` · `RL-20260826-001` · `RL-20260707-001`
+> **general** · scope · 1 example · ↩ `RL-20260626-003` · `RL-20260706-001` · `RL-20260818-001` · `RL-20260826-001` · `RL-20260707-001` · `RL-20261001-005`
 
 **📜 Rule**\
 New files, providers, interfaces, helpers, factories, injection tokens, or module exports must have a real reuse, boundary, or testability reason. Do not model states whose variants change no reader's behavior — a status union where 'degraded' and 'missing' lead to the same outcome should be a plain map with absent keys. Do not stack another feature gate onto an already multi-gated path — consolidate the existing gates, and verify a new branch is actually reachable. A concrete service injection is right while there is exactly one implementation (`CaptchaGuard` precedent); introduce the interface when a real second implementation exists (e.g. a disabled-mode no-op). Bind config in dynamic modules so one service can be reused. Do not merge superficially similar security guards — coupling two security paths is worse than duplication.
@@ -300,7 +306,7 @@ Docs, samples, runbooks, and `.env.sample` must reflect the final behavior of th
 <a id="mod-01"></a>
 ### `MOD-01` Behavior in the right module
 
-> **general** · modules · ↩ `RL-20260128-002` · `RL-20260608-002` · `RL-20260608-003` · `RL-20260710-004` · `RL-20260707-003` · `RL-20260717-003` · `RL-20260922-001`
+> **general** · modules · ↩ `RL-20260128-002` · `RL-20260608-002` · `RL-20260608-003` · `RL-20260710-004` · `RL-20260707-003` · `RL-20260717-003` · `RL-20260922-001` · `RL-20260925-004`
 
 **📜 Rule**\
 New API/product behavior belongs in the matching module shape; do not bolt routes onto unrelated modules; do not bypass an existing feature flag by importing a gated module unconditionally. Default-off feature modules stay scoped: not `@Global()`, not registered in the shared test module — override only in the specs that exercise them. Domain services depend on a feature-scoped orchestration service, not on generic infrastructure services (email, queues) directly. One upstream service maps to one module, one config section (topic name, no `-service` suffix), and one namespace/cache prefix. Provider-specific calls live in that provider's API service — no parallel clients, and generic clients do not own business tunables. Never bypass `NetworkService` with a raw `fetch` — extend the shared client (e.g. plain-text response bodies) so logging and circuit breakers stay in the path. A Space-scoped route (`spaces/:spaceId/...`) lives in the module that owns the capability and imports `SpacesModule` for the membership assertion; Spaces does not host other features' routes.
@@ -313,7 +319,7 @@ New API/product behavior belongs in the matching module shape; do not bolt route
 <a id="mod-02"></a>
 ### `MOD-02` Persistence behind repositories
 
-> **general** · modules · ↩ `RL-20260529-001` · `RL-20260605-001` · `RL-20260911-002`
+> **general** · modules · ↩ `RL-20260529-001` · `RL-20260605-001` · `RL-20260911-002` · `RL-20260928-002`
 
 **📜 Rule**\
 Services do not know persistence/email uniqueness internals; repositories own DB and external-data adapters. The boundary cuts both ways: repositories do not own business-rule gating — lifecycle checks such as "only INVITED can be renewed" live in the service layer. "Pre-existing" covers a mechanical pattern you merely touch, not an architectural boundary your change adds new cases to — adding through a known gap deepens it. Route services orchestrate use cases; they do not call external API datasources directly or own external-data validation and fallbacks.
@@ -506,7 +512,7 @@ runs can stay fast and integration runs stay reproducible.
 <a id="reuse-01"></a>
 ### `REUSE-01` Reuse existing helpers
 
-> **general** · naming · 2 examples · ↩ `RL-20260506-003` · `RL-20251216-001` · `RL-20260615-004` · `RL-20251208-001` · `RL-20260921-004`
+> **general** · naming · 2 examples · ↩ `RL-20260506-003` · `RL-20251216-001` · `RL-20260615-004` · `RL-20251208-001` · `RL-20260921-004` · `RL-20260925-005`
 
 **📜 Rule**\
 Before adding a small util, search the repo and well-known libraries (`viem.isAddressEqual`, `@/logging/utils.asError`, shared schemas, `safe-deployments`); reuse `LoggingService`, `*Mapper` classes, and `HttpErrorFactory` instead of bare alternates. Cross a seam with the plain value (a timeout in ms, a plaintext address), not a caller-constructed object or caller-derived key (an `AbortSignal`, a blind-index seat key), so it is built in exactly one place.
@@ -627,13 +633,13 @@ someone remembered to add the string.
 <a id="style-01"></a>
 ### `STYLE-01` Document non-trivial code
 
-> **general** · naming · 3 examples · ↩ `RL-20260506-005` · `RL-20260128-001` · `RL-20251222-001` · `RL-20260604-004` · `RL-20260609-001` · `RL-20260713-001` · `RL-20251208-002` · `RL-20251210-001` · `RL-20260821-002`
+> **general** · naming · 3 examples · ↩ `RL-20260506-005` · `RL-20260128-001` · `RL-20251222-001` · `RL-20260604-004` · `RL-20260609-001` · `RL-20260713-001` · `RL-20251208-002` · `RL-20251210-001` · `RL-20260821-002` · `RL-20261001-004` · `RL-20261001-005`
 
 **📜 Rule**\
-Public/non-trivial service and repository code is documented and free of dead branches, commented-out code, redundant comments, and `console.log`. Default flags safely (`isSafe = false` until proven), wrap event listeners with cleanup, and keep adapters' error contracts intact. Message/formatting logic beyond one branch gets a named helper in utils — no nested ternaries inside template literals. Destructuring return values is an accepted repo-wide pattern — do not demand named receivers; verify a claimed convention against the codebase before enforcing it. One exported class/type per file: errors under `domain/errors/` with their filters under `domain/exception-filters/`, guards under `routes/guards/` (never module-root `errors/` or `guards/`), entity types under `entities/`, helpers in a dedicated helpers file; a standalone function used by a single class becomes a private method. A comment that restates the line beneath it is deleted, and a comment offered to explain confusing code is a signal to restructure that code instead. When a key or signature drops a dimension, remove the now-unused parameter up the whole call chain. A function with no instance state does not stay a private method — that prices every test of it at the cost of testing its host.
+Public/non-trivial service and repository code is documented and free of dead branches, commented-out code, redundant comments, and `console.log`. Default flags safely (`isSafe = false` until proven), wrap event listeners with cleanup, and keep adapters' error contracts intact. Message/formatting logic beyond one branch gets a named helper in utils — no nested ternaries inside template literals. Destructuring return values is an accepted repo-wide pattern — do not demand named receivers; verify a claimed convention against the codebase before enforcing it. One exported class/type per file: errors under `domain/errors/` with their filters under `domain/exception-filters/`, guards under `routes/guards/` (never module-root `errors/` or `guards/`), entity types under `entities/`, helpers in a dedicated helpers file; a standalone function used by a single class becomes a private method. A comment that restates the line beneath it is deleted, and a comment offered to explain confusing code is a signal to restructure that code instead. When a key or signature drops a dimension, remove the now-unused parameter up the whole call chain. A function with no instance state does not stay a private method — that prices every test of it at the cost of testing its host. A comment describes the code as it now is — what it throws and returns — and carries no process narration (rollout plans, which ticket will do what); a flag's owning-ticket note (CONFIG-01) is the exception.
 
 **✅ Check**\
-> Did I document public/non-trivial logic and remove dead code?
+> Did I document public/non-trivial logic, remove dead code, and keep every comment true to the code and free of process narration?
 
 <details>
 <summary><strong>💡 Example 1 of 3</strong> — <code>examples/error-handling.md</code> § <em>style-01-log-04-internal-errors-do-not-leak-into-user-responses</em></summary>
@@ -814,7 +820,7 @@ comment that merely restates the line beneath it is deleted outright.
 <a id="type-01"></a>
 ### `TYPE-01` Use project types
 
-> **general** · types · 1 example · ↩ `RL-20260609-002` · `RL-20260612-003` · `RL-20260703-002` · `RL-20260922-002`
+> **general** · types · 1 example · ↩ `RL-20260609-002` · `RL-20260612-003` · `RL-20260703-002` · `RL-20260922-002` · `RL-20261001-007`
 
 **📜 Rule**\
 Use `Address`, `Hex`, project shared schemas (`@/validation/entities/schemas`), and `z.enum(getStringEnumKeys(Enum))` over `z.nativeEnum`. A param with a domain meaning uses that domain's schema (`ChainIdSchema` for `chainId`), not a generic primitive one (`NumericStringSchema`), even while the two are the same shape. `Address` is reserved for 20-byte addresses; signatures, hashes, calldata are `Hex`. UUID-shaped fields use the nominal `UUID` type from `node:crypto`, not `string`. Do not re-normalize what the canonical schema already normalizes — `AddressSchema` returns the EIP-55 checksummed form; store that. When a shared schema is too loose for a new use, tighten the shared schema with tests (or build on it via `.pipe()`) instead of forking a local copy; defer wider consolidation to its own PR.
@@ -865,16 +871,16 @@ silently stay loose.
 <a id="type-02"></a>
 ### `TYPE-02` Schemas in entity files
 
-> **general** · types · 1 example · ↩ `RL-20260123-002` · `RL-20260116-002` · `RL-20260619-003` · `RL-20260624-001` · `RL-20260703-003` · `RL-20260710-005` · `RL-20260717-005`
+> **general** · types · 2 examples · ↩ `RL-20260123-002` · `RL-20260116-002` · `RL-20260619-003` · `RL-20260624-001` · `RL-20260703-003` · `RL-20260710-005` · `RL-20260717-005` · `RL-20260925-003` · `RL-20260925-006`
 
 **📜 Rule**\
-Reusable Zod schemas live in entity/schema files, not inline in services/controllers. Apply normalization (`.transform`, defaults) at the schema layer; prefer `.nullish()` over `.nullable().optional()`. Do not stack `.default(x)` after `.catch(x)` — `.catch` already handles undefined/invalid — and extract repeated fallback fragments to a shared const. Multi-condition validation uses one `superRefine` (single pass, shared computed values, all issues collected), not a chain of `.refine`s. The `z.infer` type lives next to its schema in the same `*.entity.ts` file. Enum value sets are exported `as const` arrays consumed by `z.enum([...X])` and reused by faker builders. When a sibling entity already defines the same record/metadata shape, generalize and reuse that schema instead of re-declaring it.
+Reusable Zod schemas live in entity/schema files, not inline in services/controllers. Apply normalization (`.transform`, defaults) at the schema layer; prefer `.nullish()` over `.nullable().optional()`. Do not stack `.default(x)` after `.catch(x)` — `.catch` already handles undefined/invalid — and extract repeated fallback fragments to a shared const. Multi-condition validation uses one `superRefine` (single pass, shared computed values, all issues collected), not a chain of `.refine`s. The `z.infer` type lives next to its schema in the same `*.entity.ts` file. Enum value sets are exported `as const` arrays consumed by `z.enum([...X])` and reused by faker builders. When a sibling entity already defines the same record/metadata shape, generalize and reuse that schema instead of re-declaring it. A transform that only reshapes input `.pipe()`s into the schema that validates the result, rather than `safeParse`-ing inside the transform and re-raising its issues.
 
 **✅ Check**\
 > Are reusable schemas in entity/schema files?
 
 <details>
-<summary><strong>💡 Example</strong> — <code>examples/error-handling.md</code> § <em>type-02-type-03-empty-external-error-strings-normalize-to-absence</em></summary>
+<summary><strong>💡 Example 1 of 2</strong> — <code>examples/error-handling.md</code> § <em>type-02-type-03-empty-external-error-strings-normalize-to-absence</em></summary>
 
 <br>
 
@@ -920,6 +926,58 @@ either gets a non-empty string or `undefined`, never both shapes for the
 same notion of absence.
 
 <sub>Source: <a href="examples/error-handling.md#type-02-type-03-empty-external-error-strings-normalize-to-absence">examples/error-handling.md#type-02-type-03-empty-external-error-strings-normalize-to-absence</a></sub>
+
+</details>
+
+<details>
+<summary><strong>💡 Example 2 of 2</strong> — <code>examples/schemas-and-validation.md</code> § <em>type-02-split-then-validate-pipes-into-the-parts-schema</em></summary>
+
+<br>
+
+**TYPE-02 — Split-then-validate pipes into the parts schema**
+
+Source: PR #3393 (RL-20260925-003)
+
+### Avoid
+
+```ts
+export const CompoundIdSchema = z.string().transform((value, ctx) => {
+  const [prefix, id] = value.split(':');
+  const parsed = PartsSchema.safeParse({ prefix, id });
+  if (!parsed.success) {
+    for (const issue of parsed.error.issues) {
+      ctx.addIssue({ code: 'custom', path: issue.path, message: issue.message });
+    }
+    return z.NEVER;
+  }
+  return parsed.data;
+});
+```
+
+### Prefer
+
+```ts
+export const CompoundIdSchema = z
+  .string()
+  .transform((value, ctx) => {
+    const parts = value.split(':');
+    if (parts.length !== 2) {
+      ctx.addIssue({ code: 'custom', message: 'Expected {prefix}:{id}' });
+      return z.NEVER;
+    }
+    const [prefix, id] = parts;
+    return { prefix, id };
+  })
+  .pipe(PartsSchema);
+```
+
+### Why
+
+The transform only splits; `.pipe()` hands the parts to the schema that owns
+their rules, so each part's own issue and path reach the 422 body unchanged
+without a hand-written re-raise loop.
+
+<sub>Source: <a href="examples/schemas-and-validation.md#type-02-split-then-validate-pipes-into-the-parts-schema">examples/schemas-and-validation.md#type-02-split-then-validate-pipes-into-the-parts-schema</a></sub>
 
 </details>
 
@@ -1325,7 +1383,7 @@ Parser/decode generics include every field the code reads downstream. Thread the
 <a id="type-06"></a>
 ### `TYPE-06` No unsafe casts
 
-> **general** · types · 3 examples · ↩ `RL-20260506-005` · `RL-20260612-004` · `RL-20251209-001` · `RL-20251209-002` · `RL-20260819-001` · `RL-20260821-001` · `RL-20260921-004`
+> **general** · types · 3 examples · ↩ `RL-20260506-005` · `RL-20260612-004` · `RL-20251209-001` · `RL-20251209-002` · `RL-20260819-001` · `RL-20260821-001` · `RL-20260921-004` · `RL-20261001-007`
 
 **📜 Rule**\
 Avoid `as Type` casts that lie to the type system; use `Pick`/`Partial` parameter types and `unknown` with type guards. ConfigurationService generics must match the stored type, including `null`. Implementations keep the interface's declared narrow parameter types (no widening to `QueryDeepPartialEntity`), and payload type aliases derive from schemas (`z.infer<typeof Schema>['payload']`) instead of restating shapes. Type a fold through the `reduce<T>` generic or its seed rather than casting the result `as T`. A value read from configuration and returned to callers repeatedly is copied at the boundary, not left shared because something downstream happens to re-parse it. Build the real platform object (`new Response(null, { status })`) instead of casting a literal to it. Type a parameter to exactly what the method handles (`BinaryFeature`, not the whole `FeatureKey` union) so a caller cannot route in a case the method silently mishandles.
@@ -1498,7 +1556,7 @@ no caller can hand over a key built the wrong way.
 <a id="auth-05"></a>
 ### `AUTH-05` Space routes enforce membership before data access
 
-> **general** · auth · 1 example · ↩ `RL-20260520-001` · `RL-20260602-001` · `RL-20260717-002` · `RL-20260921-001`
+> **general** · auth · 1 example · ↩ `RL-20260520-001` · `RL-20260602-001` · `RL-20260717-002` · `RL-20260921-001` · `RL-20260928-002`
 
 **📜 Rule**\
 Every space-scoped controller is guarded with `AuthGuard`, accepts the authenticated payload, and verifies space membership/admin authorization in the route service before querying or returning space-owned data. When the membership predicate is a TypeORM `where`, remember an array `where` is OR: every clause must carry the `user: { id }` ownership filter (a single unfiltered clause leaks other spaces, or matches all rows when its scope is undefined). Centralize the predicate in a shared helper and regression-test a non-member requesting a specific space id. A space-owned resource fetched by an opaque upstream id alone (no space in the route) structurally bypasses membership checks — design the upstream contract to map the resource back to the space, or explicitly document the accepted authorization gap in the PR. Sibling routes on one resource share its authorization level: narrowing one (member → admin) narrows every sibling that can start, change, or hand out a way to manage that resource.
@@ -1808,7 +1866,7 @@ Unique constraints, status transitions, and races need lifecycle-aware handling:
 <a id="db-02"></a>
 ### `DB-02` Atomic state transitions
 
-> **general** · database · 1 example · ↩ `RL-20260602-002` · `RL-20260605-002` · `RL-20260819-002` · `RL-20260826-003` · `RL-20260917-001`
+> **general** · database · 1 example · ↩ `RL-20260602-002` · `RL-20260605-002` · `RL-20260819-002` · `RL-20260826-003` · `RL-20260917-001` · `RL-20261001-006`
 
 **📜 Rule**\
 Multi-step status transitions are atomic (single SQL/ORM bulk call or wrapped transaction); do not loop awaits to mutate N rows. Writes that must commit or roll back together must run on the same outer `EntityManager`/transaction — a find-or-create helper invoked inside a transaction must accept and thread the outer `EntityManager` rather than opening its own, or a later failure leaves orphan committed rows. Conversely, do not wrap a single-statement write in a transaction — one statement is already atomic. A staleness or ordering guard is re-checked inside the lock it protects; a value read before the lock is carried in and re-compared, never trusted. The transaction lives with the use case, expensive I/O (KMS, upstream calls) happens before the lock is taken, and any quantity being enforced on is read inside it. A compensating action reverses the exact record the original wrote, carried forward from the charge — never one resolved again at refund time.
@@ -1867,7 +1925,7 @@ value it re-derives is a value that can have changed since.
 <a id="db-03"></a>
 ### `DB-03` No redundant DB trips
 
-> **general** · database · ↩ `RL-20260529-003` · `RL-20260609-004`
+> **general** · database · ↩ `RL-20260529-003` · `RL-20260609-004` · `RL-20261001-002`
 
 **📜 Rule**\
 Avoid redundant reads/writes and no-op DB trips; prefer `SELECT <explicit columns>` over `SELECT *` and extract repeated column lists to a shared constant. Read generated/default columns from a write's RETURNING instead of issuing a follow-up `find` — `generatedMaps` on inserts, `raw` on updates (TypeORM leaves `generatedMaps` empty for UPDATE).
@@ -2007,13 +2065,13 @@ the previous run is cheap; recovering attribution after a release is not.
 <a id="cache-01"></a>
 ### `CACHE-01` Multi-step cache writes checked
 
-> **general** · cache · ↩ `RL-20260710-002`
+> **general** · cache · ↩ `RL-20260710-002` · `RL-20260925-002`
 
 **📜 Rule**\
-Redis pipelines and cache marker writes must validate every meaningful result. HTTP cache TTLs derived from multiple Redis caches must use the shortest TTL or no-cache. Invalidation fan-out over independent keys uses `Promise.allSettled` with a per-key warn and does not throw when callers cannot act on the failure; sibling clear methods with identical shape receive the same hardening; tests parameterize over every invalidating event type.
+Redis pipelines and cache marker writes must validate every meaningful result. HTTP cache TTLs derived from multiple Redis caches must use the shortest TTL or no-cache. Invalidation fan-out over independent keys uses `Promise.allSettled` with a per-key warn and does not throw when callers cannot act on the failure; sibling clear methods with identical shape receive the same hardening; tests parameterize over every invalidating event type. A hand-written cache-after-fetch path skips the write when the key was invalidated at or after the fetch started (as `CacheFirstDataSource` does), or an in-flight response re-caches pre-invalidation state.
 
 **✅ Check**\
-> Are multi-step cache/Redis operations fully checked?
+> Are multi-step cache/Redis operations fully checked, and does a write after a fetch skip keys invalidated since the fetch started?
 
 ---
 
@@ -2193,7 +2251,7 @@ code path inside `request()`.
 <a id="config-01"></a>
 ### `CONFIG-01` Defaults safe and OSS-generic
 
-> **general** · config · ↩ `RL-20260710-007` · `RL-20260723-002` · `RL-20260922-004`
+> **general** · config · ↩ `RL-20260710-007` · `RL-20260723-002` · `RL-20260922-004` · `RL-20260928-005`
 
 **📜 Rule**\
 Defaults remain conservative and OSS-generic. Dev-only feature flags require both `flag === true` and `CGW_ENV === 'development'`. Never default a base URI to a staging host — deployed environments require it explicitly so a missing env var fails at boot instead of silently talking to staging. New boolean config keys follow the repo's `FF_*` feature-flag naming; existing keys that missed it are not precedent for skipping it. A new flag's comment names its owning ticket and the condition for removing it.
@@ -2291,13 +2349,13 @@ with per-field conditions and messages.
 <a id="config-03"></a>
 ### `CONFIG-03` TTLs are config
 
-> **general** · config · 1 example · ↩ `RL-20260506-003` · `RL-20260608-004` · `RL-20260707-003` · `RL-20260911-004`
+> **general** · config · 1 example · ↩ `RL-20260506-003` · `RL-20260608-004` · `RL-20260707-003` · `RL-20260911-004` · `RL-20260925-001` · `RL-20260928-001`
 
 **📜 Rule**\
-TTLs/timeouts/cache settings and environment-specific URLs are configured, not hardcoded (a TODO does not ship). Follow precedents in similar repositories before introducing new hardcoded knobs. A bound that appears in the published contract (Swagger text, generated clients) stays a constant; put the tunability on something the contract does not name.
+TTLs/timeouts/cache settings and environment-specific URLs are configured, not hardcoded (a TODO does not ship). Follow precedents in similar repositories before introducing new hardcoded knobs. A bound that appears in the published contract (Swagger text, generated clients) stays a constant; put the tunability on something the contract does not name. A safety cap with the same value in every environment (a max-pages guard on a loop) stays a named constant.
 
 **✅ Check**\
-> Are TTLs/timeouts/tunables configured?
+> Are TTLs/timeouts/tunables configured (safety caps identical in every environment may stay constants)?
 
 <details>
 <summary><strong>💡 Example</strong> — <code>examples/repositories-and-pagination.md</code> § <em>config-03-reuse-01-knobs-follow-the-existing-config-driven-precedent</em></summary>
@@ -2418,10 +2476,16 @@ in `.env.sample`; remove the legacy fallback only in a follow-up PR:
 // configuration.ts
 features: {
   zerionBalancesEnabled:
-    !!process.env.FF_ZERION_ENABLED ||
-    !!process.env.FF_ZERION_BALANCES_CHAIN_IDS, // legacy, remove next release
+    process.env.FF_ZERION_ENABLED !== undefined
+      ? process.env.FF_ZERION_ENABLED.toLowerCase() === 'true'
+      : // legacy, remove next release: a non-empty chain list enabled it
+        (process.env.FF_ZERION_BALANCES_CHAIN_IDS ?? '').trim() !== '',
 },
 ```
+
+The new flag parses strictly per CONFIG-02 and wins whenever it is set; the
+legacy variable keeps the meaning it had (a chain list, not a boolean) only
+until the follow-up PR deletes it.
 
 `.env.sample` lists the new var with the canonical default; the old
 name is mentioned in a comment so operators know what to migrate from.
@@ -2490,13 +2554,13 @@ later. A one-line comment at the variable closes that gap.
 <a id="perf-01"></a>
 ### `PERF-01` Batch and parallelize I/O
 
-> **general** · performance · 2 examples · ↩ `RL-20260506-006` · `RL-20260603-001` · `RL-20260619-001` · `RL-20260626-001` · `RL-20260710-011` · `RL-20260723-005` · `RL-20260917-003`
+> **general** · performance · 2 examples · ↩ `RL-20260506-006` · `RL-20260603-001` · `RL-20260619-001` · `RL-20260626-001` · `RL-20260710-011` · `RL-20260723-005` · `RL-20260917-003` · `RL-20260925-001` · `RL-20261001-001`
 
 **📜 Rule**\
-Batch repeated DB/API work, cap user limits, and keep independent I/O parallel. `Promise.all` over independent items must use `allSettled` if one failure should not sink the page. Remove event listeners (`res.once`, stream cleanup) to prevent leaks. Objects derived only from constructor-time config (Zod schemas, clients, compiled regexes) are built once in the constructor, not per request. Validate/filter request entries before spending shared external-API rate-limit budget on them. When an inner loop matches on a derived value, precompute it into a map keyed by that value instead of recomputing per candidate. Before parallelizing a chain of guards, check whether rejection order is load-bearing — it decides both what you pay for and which status the caller sees.
+Batch repeated DB/API work, cap user limits, and keep independent I/O parallel. `Promise.all` over independent items must use `allSettled` if one failure should not sink the page. Remove event listeners (`res.once`, stream cleanup) to prevent leaks. Objects derived only from constructor-time config (Zod schemas, clients, compiled regexes) are built once in the constructor, not per request. Validate/filter request entries before spending shared external-API rate-limit budget on them. When an inner loop matches on a derived value, precompute it into a map keyed by that value instead of recomputing per candidate. Before parallelizing a chain of guards, check whether rejection order is load-bearing — it decides both what you pay for and which status the caller sees. To stay under an upstream rate limit, run independent calls in config-sized `Promise.all` batches (the shared `batched()` helper), not one at a time.
 
 **✅ Check**\
-> Did I batch repeated DB/API work, cap user limits, and keep independent I/O parallel?
+> Did I batch repeated DB/API work, cap user limits, and keep independent I/O parallel (in config-sized batches where an upstream rate-limits)?
 
 <details>
 <summary><strong>💡 Example 1 of 2</strong> — <code>examples/repositories-and-pagination.md</code> § <em>perf-01-extract-the-field-you-actually-need-per-page</em></summary>
@@ -2920,7 +2984,7 @@ Implementation-selection changes (provider, mapper, datasource) need full-pipeli
 <a id="test-08"></a>
 ### `TEST-08` Test names match assertions
 
-> **general** · tests · 2 examples · ↩ `RL-20260602-005` · `RL-20260615-002` · `RL-20260702-001` · `RL-20260729-001` · `RL-20260812-001` · `RL-20260907-001` · `RL-20260923-001`
+> **general** · tests · 2 examples · ↩ `RL-20260602-005` · `RL-20260615-002` · `RL-20260702-001` · `RL-20260729-001` · `RL-20260812-001` · `RL-20260907-001` · `RL-20260923-001` · `RL-20260928-003`
 
 **📜 Rule**\
 Test descriptions and generated data reflect the actual assertion: `it('should return false when there is no source swap')` not `'when bridging to a different chain'`. Avoid redundant `expect(success).toBe(true); if (success) { ... }`. Fixture values reflect domain semantics even when unasserted — an admin's `invitedBy` is `null`, not a random int. Test helpers are named after the state they produce (`createActiveMember` vs `createPendingMember`), with the same terminology used across specs. Invalid-input fixtures are invalid by construction (a literal or constructive generator), never a random sample that is only usually invalid. Removing a key from a schema does not fail specs that still set it — a stripping parser silently drops it — so grep the old key across specs and fixtures as part of the removal. A negative invariant is asserted negatively and over the whole collection, never by positively asserting some other value at index 0. Test data derives from the source of truth, except when that constant is what the test pins — then the cases are written out literally, with a comment saying why. When an assertion is about a field, pin that field in the fixture (`.with('flag', true)`) instead of asserting back whatever faker generated.
@@ -3019,7 +3083,7 @@ assertion is about and leave faker on the fields the test does not reason about.
 <a id="test-09"></a>
 ### `TEST-09` Cover edges and determinism
 
-> **general** · tests · 1 example · ↩ `RL-20260123-001` · `RL-20260113-001` · `RL-20251223-002` · `RL-20260615-004` · `RL-20260717-004` · `RL-20251208-003` · `RL-20260810-002` · `RL-20260916-001`
+> **general** · tests · 1 example · ↩ `RL-20260123-001` · `RL-20260113-001` · `RL-20251223-002` · `RL-20260615-004` · `RL-20260717-004` · `RL-20251208-003` · `RL-20260810-002` · `RL-20260916-001` · `RL-20260928-004`
 
 **📜 Rule**\
 Edge cases, observability calls, cache invalidation branches, production/default config branches, and deterministic ordering need tests when they are part of the behavior. Cache-invalidation tests pair every cleared-cache assertion with a negative assertion that unrelated caches stay untouched. Merge/dedup precedence tests use distinct objects sharing the same key — identical objects pass under either precedence. Behavior added to one method of a sibling set (`get`/`post`/`delete`) is covered on every sibling, and specs written for an approach abandoned during review are deleted rather than left to pass vacuously. Widening a gated list (versions, chains, providers) is covered by the negative case proving the gate still rejects, not only the positive one. A claim about upstream behaviour is settled against the host the deployed service resolves (in-cluster), not a curl against the public edge.
@@ -3078,7 +3142,7 @@ noise.
 <a id="log-01"></a>
 ### `LOG-01` Operational log levels
 
-> **general** · logging · 1 example · ↩ `RL-20260121-001` · `RL-20260114-002` · `RL-20260723-003` · `RL-20260710-001`
+> **general** · logging · 1 example · ↩ `RL-20260121-001` · `RL-20260114-002` · `RL-20260723-003` · `RL-20260710-001` · `RL-20261001-001`
 
 **📜 Rule**\
 Log levels reflect operational actionability. Expected business outcomes are not `error`. Default-fallback paths log a `warn` and return `undefined`/throw, not a plausible-looking wrong value. A catch that degrades to a default logs why, carrying identifiers but never the sensitive value it failed to decode. Volume decides level as much as actionability: hot worker events and expected success paths are not noisy logs, anything emitted once per queue/AMQP event is `debug`, and new telemetry must be worth its operational cost.
