@@ -201,6 +201,7 @@ export default (): ReturnType<typeof configuration> => ({
     deviatePercent: faker.number.int({ min: 10, max: 20 }),
     default: faker.number.int(),
     rpc: faker.number.int(),
+    safenetNonce: faker.number.int(),
     hoodi: faker.number.int(),
     indexing: faker.number.int(),
     policyIndexer: faker.number.int({ min: 1, max: 60 }),
@@ -465,6 +466,8 @@ export default (): ReturnType<typeof configuration> => ({
     consensusAddress: faker.finance.ethereumAddress(),
     oracleAddress: faker.finance.ethereumAddress(),
     payer: { safeAddress: faker.finance.ethereumAddress() },
+    pollIntervalMs: faker.number.int({ min: 1, max: 1000 }),
+    pollTimeoutMs: faker.number.int({ min: 1000, max: 120_000 }),
   },
   transactions: {
     statusIndexingGracePeriodMs: faker.number.int({

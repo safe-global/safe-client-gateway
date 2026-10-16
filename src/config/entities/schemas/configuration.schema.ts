@@ -149,6 +149,8 @@ export const RootConfigurationSchema = z
     SAFENET_CONSENSUS_ADDRESS: AddressSchema.optional(),
     SAFENET_ORACLE_ADDRESS: AddressSchema.optional(),
     SAFENET_PAYER_SAFE_ADDRESS: AddressSchema.optional(),
+    SAFENET_POLL_INTERVAL_MS: z.coerce.number().int().min(1).optional(),
+    SAFENET_POLL_TIMEOUT_MS: z.coerce.number().int().min(1).optional(),
     FF_ZERION_TESTNETS_ENABLED: z.string().optional(),
     CGW_ENV: z.string().optional(),
     CIRCUIT_BREAKER_THRESHOLD: z.coerce.number().int().min(1).optional(),

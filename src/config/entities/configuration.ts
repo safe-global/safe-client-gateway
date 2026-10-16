@@ -378,6 +378,7 @@ export default () => ({
       process.env.EXPIRATION_TIME_RPC_SECONDS ?? `${15}`,
       10,
     ),
+    safenetNonce: 60,
     hoodi: Number.parseInt(
       process.env.HOODI_EXPIRATION_TIME_SECONDS ?? `${60}`,
       10,
@@ -850,6 +851,14 @@ export default () => ({
     payer: {
       safeAddress: process.env.SAFENET_PAYER_SAFE_ADDRESS,
     },
+    pollIntervalMs: Number.parseInt(
+      process.env.SAFENET_POLL_INTERVAL_MS ?? `${1_000}`,
+      10,
+    ),
+    pollTimeoutMs: Number.parseInt(
+      process.env.SAFENET_POLL_TIMEOUT_MS ?? `${120_000}`,
+      10,
+    ),
   },
   transactions: {
     statusIndexingGracePeriodMs: Number.parseInt(
