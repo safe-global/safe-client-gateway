@@ -59,6 +59,17 @@ export class SafenetChecksController {
     description: 'Space UUID',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
+  @ApiParam({
+    name: 'chainId',
+    type: 'string',
+    description: 'Chain ID where the Safe is deployed',
+    example: '1',
+  })
+  @ApiParam({
+    name: 'safeAddress',
+    type: 'string',
+    description: 'Safe contract address (0x prefixed hex string)',
+  })
   @ApiBody({ type: CreateSafenetCheckDto })
   @ApiAcceptedResponse({ description: 'Queued, or already queued' })
   @ApiBadRequestResponse({ description: 'Malformed workspace identifier' })
