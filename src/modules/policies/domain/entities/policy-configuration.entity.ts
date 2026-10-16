@@ -46,10 +46,16 @@ export const PolicyConfigurationSchema = z.object({
 
 export type PolicyConfiguration = z.infer<typeof PolicyConfigurationSchema>;
 
+/** A `Configuration[]` as a guard call carries it. */
+export const OnChainPolicyConfigurationsSchema = z.array(
+  PolicyConfigurationSchema,
+);
+
 /** The `Configuration[]` of one request; never empty. */
-export const PolicyConfigurationsSchema = z
-  .array(PolicyConfigurationSchema)
-  .nonempty()
-  .max(MAX_POLICY_CONFIGURATIONS_PER_REQUEST, {
-    error: `Invalid configurations, exceeds the maximum of ${MAX_POLICY_CONFIGURATIONS_PER_REQUEST}`,
-  });
+export const PolicyConfigurationsSchema =
+  OnChainPolicyConfigurationsSchema.nonempty().max(
+    MAX_POLICY_CONFIGURATIONS_PER_REQUEST,
+    {
+      error: `Invalid configurations, exceeds the maximum of ${MAX_POLICY_CONFIGURATIONS_PER_REQUEST}`,
+    },
+  );

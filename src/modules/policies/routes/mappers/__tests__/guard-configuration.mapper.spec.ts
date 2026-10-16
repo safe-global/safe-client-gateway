@@ -279,6 +279,87 @@ describe('GuardConfigurationMapper', () => {
       expect(item.status).toBe('application-ready');
     });
 
+    it('should keep a fully signed apply pending until its delay has passed', () => {
+      // The guard reverts an apply before `readyAt`, however signed.
+      const config = configurations();
+      const transaction = apply(config, 2);
+
+      const [item] = map({
+        roots: [onChain({ configurations: config, readyAt: now + 60 })],
+        transactions: [transaction],
+      });
+
+      expect(item).toStrictEqual(
+        expect.objectContaining({
+          status: 'pending-application',
+          transaction: expect.objectContaining({
+            safeTxHash: transaction.safeTxHash,
+          }),
+        }),
+      );
+    });
+
+    it('should report the first queued apply of a root', () => {
+      const config = configurations();
+      const first = apply(config, 1);
+
+      const [item] = map({
+        roots: [onChain({ configurations: config, readyAt: now - 60 })],
+        transactions: [first, apply(config, 2)],
+      });
+
+      expect(item).toStrictEqual(
+        expect.objectContaining({
+          status: 'application-in-signing',
+          transaction: expect.objectContaining({
+            safeTxHash: first.safeTxHash,
+          }),
+        }),
+      );
+    });
+
+    it('should date a root CGW did not store by its queued transaction', () => {
+      const config = configurations();
+      const transaction = apply(config, 1);
+
+      const [item] = map({
+        roots: [onChain({ configurations: config, readyAt: now - 60 })],
+        transactions: [transaction],
+      });
+
+      expect(item.createdAt).toBe(unixSeconds(transaction.submissionDate));
+    });
+
+    it('should not report a stored root as a draft while an apply is queued', () => {
+      const config = configurations();
+
+      expect(
+        map({ stored: [stored(config)], transactions: [apply(config)] }),
+      ).toStrictEqual([]);
+    });
+
+    it('should skip and log a guard call whose arguments do not decode', () => {
+      const valid = applyConfigurationEncoder()
+        .with('configurations', configurations())
+        .encode();
+      // The selector matches, the arguments are cut short.
+      const truncated: Hex = `0x${valid.slice(2, 74)}`;
+
+      expect(
+        map({
+          transactions: [
+            queued({ to: guard, data: truncated, confirmations: 1 }),
+          ],
+        }),
+      ).toStrictEqual([]);
+      expect(mockLoggingService.debug).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message:
+            'Could not decode a queued SafePolicyGuard configuration call',
+        }),
+      );
+    });
+
     it('should report a root past its application window as expired', () => {
       const root = onChain({
         configurations: configurations(),
@@ -429,6 +510,46 @@ describe('GuardConfigurationMapper', () => {
           stored: [removal],
           bindings: [binding],
           types: [PolicyType.Erc20Transfer],
+        }),
+      ).toStrictEqual([]);
+    });
+
+    it('should type a removal by the binding of its exact access', () => {
+      const binding = policyIndexerGuardEnforcedPolicyBuilder()
+        .with('chainId', safe.chainId)
+        .with('safe', safe.address)
+        .with('kind', 'COSIGNER')
+        .build();
+      // Same target and selector, bound for DELEGATECALL instead.
+      const delegateBinding = policyIndexerGuardEnforcedPolicyBuilder()
+        .with('chainId', safe.chainId)
+        .with('safe', safe.address)
+        .with('target', binding.target)
+        .with('selector', binding.selector)
+        .with('operation', 'DELEGATECALL')
+        .with('kind', 'ERC20_TRANSFER')
+        .build();
+      const removal = stored([
+        policyConfigurationBuilder()
+          .with('target', binding.target)
+          .with('selector', binding.selector)
+          .with('operation', Operation.DELEGATE)
+          .with('policy', zeroAddress)
+          .build(),
+      ]);
+
+      expect(
+        map({
+          stored: [removal],
+          bindings: [binding, delegateBinding],
+          types: [PolicyType.Erc20Transfer],
+        }),
+      ).toHaveLength(1);
+      expect(
+        map({
+          stored: [removal],
+          bindings: [binding, delegateBinding],
+          types: [PolicyType.Cosigner],
         }),
       ).toStrictEqual([]);
     });

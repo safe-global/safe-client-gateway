@@ -11,7 +11,7 @@ import { SafePolicyGuardAbi } from '#/modules/policies/domain/contracts/decoders
 
 const mockPublicClient = {
   readContract: vi.fn(),
-} as MockedObject<Pick<PublicClient, 'readContract'>>;
+} as MockedObject<PublicClient>;
 
 const mockBlockchainApiManager = {
   getApi: vi.fn(),
@@ -27,9 +27,7 @@ describe('SafePolicyGuardApi', () => {
   beforeEach(() => {
     vi.resetAllMocks();
     cacheService = new FakeCacheService();
-    mockBlockchainApiManager.getApi.mockResolvedValue(
-      mockPublicClient as unknown as PublicClient,
-    );
+    mockBlockchainApiManager.getApi.mockResolvedValue(mockPublicClient);
     target = new SafePolicyGuardApi(mockBlockchainApiManager, cacheService);
   });
 
@@ -60,9 +58,38 @@ describe('SafePolicyGuardApi', () => {
     expect(mockPublicClient.readContract).toHaveBeenCalledTimes(1);
     await expect(
       cacheService.hGet(
-        CacheRouter.getSafePolicyGuardExpiryCacheDir({ chainId, guard }),
+        CacheRouter.getSafePolicyGuardCacheDir({
+          chainId,
+          guard,
+          name: 'EXPIRY',
+        }),
       ),
     ).resolves.toBe(expiry.toString());
+  });
+
+  it('should read DELAY from the guard and cache it apart from EXPIRY', async () => {
+    const delay = faker.number.bigInt({ min: 60n, max: 86_400n });
+    const expiry = delay + faker.number.bigInt({ min: 1n, max: 86_400n });
+    mockPublicClient.readContract.mockImplementation(({ functionName }) =>
+      Promise.resolve(functionName === 'DELAY' ? delay : expiry),
+    );
+
+    await expect(target.getDelay({ chainId, guard })).resolves.toBe(
+      delay.toString(),
+    );
+    await expect(target.getExpiry({ chainId, guard })).resolves.toBe(
+      expiry.toString(),
+    );
+    await expect(target.getDelay({ chainId, guard })).resolves.toBe(
+      delay.toString(),
+    );
+
+    expect(mockPublicClient.readContract).toHaveBeenCalledTimes(2);
+    expect(mockPublicClient.readContract).toHaveBeenCalledWith({
+      address: guard,
+      abi: SafePolicyGuardAbi,
+      functionName: 'DELAY',
+    });
   });
 
   it('should not cache a failed read', async () => {

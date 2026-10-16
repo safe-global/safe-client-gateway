@@ -26,8 +26,8 @@ import { PolicyType } from '#/modules/policies/domain/entities/policy-type.entit
 import {
   PendingGuardConfigurationDto,
   PendingGuardSetupDto,
+  PendingPolicyDto,
   PendingPolicySchema,
-  PendingQueuedPolicyDto,
 } from '#/modules/policies/routes/entities/pending-policy.dto.entity';
 import { ActivePolicyDto } from '#/modules/policies/routes/entities/policy.dto.entity';
 import {
@@ -147,7 +147,7 @@ export class SpacePoliciesController {
     example: 'spending-limit',
   })
   @ApiExtraModels(
-    PendingQueuedPolicyDto,
+    PendingPolicyDto,
     PendingGuardSetupDto,
     PendingGuardConfigurationDto,
   )

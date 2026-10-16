@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import type { Hex } from 'viem';
 import { z } from 'zod';
 import { ChainIdSchema } from '#/modules/chains/domain/entities/schemas/chain-id.schema';
 import { Erc20TransferRecipientSchema } from '#/modules/policies/domain/entities/active-policy.entity';
@@ -230,7 +231,8 @@ export const PolicyIndexerConfigurationRootSchema = z.object({
   chainId: PolicyIndexerChainIdSchema,
   safe: AddressSchema,
   guard: AddressSchema,
-  root: HexSchema,
+  /** Lower-cased, as CGW computes and stores roots. */
+  root: HexSchema.transform((root): Hex => `0x${root.slice(2).toLowerCase()}`),
   /**
    * Unix seconds `applyConfiguration` is valid from. It is the `timestamp` of
    * `RootConfigured`, which is already `block.timestamp + DELAY`.

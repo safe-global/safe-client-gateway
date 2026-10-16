@@ -1581,6 +1581,38 @@ describe('Space Policies Controller', () => {
         .expect(422);
     });
 
+    it.each([
+      ['a missing', {}],
+      ['an unknown', { types: 'not-a-policy-type' }],
+    ])(
+      'should return 422 on the per-Safe route for %s policy type',
+      async (_, query) => {
+        mockUpstream();
+        const { accessToken, spaceId } = await createSpaceWithSafe({
+          withSafe: true,
+        });
+
+        await request(app.getHttpServer())
+          .get(
+            `/v1/spaces/${spaceId}/chains/${SEPOLIA_CHAIN_ID}/safes/${safeAddress}/policies/pending`,
+          )
+          .query(query)
+          .set('Cookie', [`access_token=${accessToken}`])
+          .expect(422);
+      },
+    );
+
+    it('should return 403 on the per-Safe route without authentication', async () => {
+      const { spaceId } = await createSpaceWithSafe({ withSafe: true });
+
+      await request(app.getHttpServer())
+        .get(
+          `/v1/spaces/${spaceId}/chains/${SEPOLIA_CHAIN_ID}/safes/${safeAddress}/policies/pending`,
+        )
+        .query({ types: PolicyType.Cosigner })
+        .expect(403);
+    });
+
     it('should report no guard items when only spending-limit is requested', async () => {
       mockUpstream({
         guard: zeroAddress,

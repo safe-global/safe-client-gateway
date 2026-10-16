@@ -160,6 +160,27 @@ describe('PolicyIndexerRepository', () => {
       ]);
     });
 
+    it('should lower-case the root, as CGW stores it', async () => {
+      const root = rawIndexerConfigurationRootBuilder()
+        .with('safe', safe)
+        .build();
+      const upperCased = `0x${root.root.slice(2).toUpperCase()}`;
+      mockPolicyIndexerApi.getState.mockResolvedValue(
+        rawify(
+          rawPolicyIndexerResponse({
+            ConfigurationRoot: [{ ...root, root: upperCased }],
+          }),
+        ),
+      );
+
+      const result = await target.getState({
+        safes: [{ chainId: SEPOLIA, address: safe }],
+        guardPolicyKinds,
+      });
+
+      expect(result.roots[0].root).toBe(root.root.toLowerCase());
+    });
+
     it('should drop a root with an unknown status', async () => {
       const root = rawIndexerConfigurationRootBuilder()
         .with('safe', safe)

@@ -15,6 +15,10 @@ import { PolicyConfigurationRequest } from '#/modules/policies/datasources/entit
 import { policyConfigurationBuilder } from '#/modules/policies/domain/entities/__tests__/policy-configuration.builder';
 import type { PolicyConfiguration } from '#/modules/policies/domain/entities/policy-configuration.entity';
 import { PolicyConfigurationRequestsRepository } from '#/modules/policies/domain/policy-configuration-requests.repository';
+import {
+  type ActiveRootsRule,
+  EVERY_ROOT_ACTIVE,
+} from '#/modules/policies/domain/policy-configuration-requests.repository.interface';
 import { configurationRoot } from '#/modules/policies/domain/utils/policy-configuration-root.utils';
 import { createMockSpaceEncryptionService } from '#/modules/spaces/domain/__tests__/space-encryption.service.mock';
 
@@ -74,6 +78,14 @@ describe('PolicyConfigurationRequestsRepository', () => {
     };
   }
 
+  /** Stores a request, counting every stored root unless a rule is given. */
+  function create(
+    request: StorableRequest,
+    activeRoots: ActiveRootsRule = EVERY_ROOT_ACTIVE,
+  ): Promise<void> {
+    return repository.create(request, activeRoots);
+  }
+
   /** Stores {@link maxPerSafe} requests for one Safe in the current Space. */
   async function fillCap(
     safeAddress: Address,
@@ -82,7 +94,7 @@ describe('PolicyConfigurationRequestsRepository', () => {
       storableRequest({ safeAddress }),
     );
     for (const request of requests) {
-      await repository.create(request);
+      await create(request);
     }
     return requests;
   }
@@ -196,7 +208,7 @@ describe('PolicyConfigurationRequestsRepository', () => {
       ];
       const request = storableRequest({ configurations });
 
-      await repository.create(request);
+      await create(request);
 
       const [stored] = await dbRepository.find();
       expect(stored).toMatchObject({
@@ -219,7 +231,7 @@ describe('PolicyConfigurationRequestsRepository', () => {
       encryptionService.encryptSafeAddress.mockResolvedValue(ciphertext);
       encryptionService.safeAddressIndex.mockReturnValue(addressIndex);
 
-      await repository.create(request);
+      await create(request);
 
       const [stored] = await dbRepository.find();
       expect(stored.safeAddress).toBe(ciphertext);
@@ -233,8 +245,8 @@ describe('PolicyConfigurationRequestsRepository', () => {
     it('should not store a re-submission again', async () => {
       const request = storableRequest();
 
-      await repository.create(request);
-      await repository.create({ ...request, createdBy: request.createdBy + 1 });
+      await create(request);
+      await create({ ...request, createdBy: request.createdBy + 1 });
 
       const stored = await dbRepository.find();
       expect(stored).toHaveLength(1);
@@ -246,8 +258,8 @@ describe('PolicyConfigurationRequestsRepository', () => {
       const request = storableRequest();
       const otherSpaceId = await insertSpace();
 
-      await repository.create(request);
-      await repository.create({ ...request, spaceId: otherSpaceId });
+      await create(request);
+      await create({ ...request, spaceId: otherSpaceId });
 
       await expect(dbRepository.count()).resolves.toBe(2);
     });
@@ -255,8 +267,8 @@ describe('PolicyConfigurationRequestsRepository', () => {
     it('should keep the same root of two Safes apart', async () => {
       const request = storableRequest();
 
-      await repository.create(request);
-      await repository.create({
+      await create(request);
+      await create({
         ...request,
         safeAddress: getAddress(faker.finance.ethereumAddress()),
       });
@@ -267,8 +279,8 @@ describe('PolicyConfigurationRequestsRepository', () => {
     it('should keep the same root on two chains apart', async () => {
       const request = storableRequest();
 
-      await repository.create(request);
-      await repository.create({ ...request, chainId: '1' });
+      await create(request);
+      await create({ ...request, chainId: '1' });
 
       await expect(dbRepository.count()).resolves.toBe(2);
     });
@@ -279,9 +291,9 @@ describe('PolicyConfigurationRequestsRepository', () => {
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       await fillCap(safeAddress);
 
-      await expect(
-        repository.create(storableRequest({ safeAddress })),
-      ).rejects.toThrow(BadRequestException);
+      await expect(create(storableRequest({ safeAddress }))).rejects.toThrow(
+        BadRequestException,
+      );
       await expect(dbRepository.count()).resolves.toBe(maxPerSafe);
     });
 
@@ -291,30 +303,28 @@ describe('PolicyConfigurationRequestsRepository', () => {
         storableRequest({ safeAddress }),
       );
       for (const request of requests) {
-        await repository.create(request);
+        await create(request);
       }
 
-      await expect(repository.create(requests[0])).resolves.toBeUndefined();
+      await expect(create(requests[0])).resolves.toBeUndefined();
       await expect(dbRepository.count()).resolves.toBe(maxPerSafe);
     });
 
     it("should reject another Safe's stored root at the cap", async () => {
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       const otherSafeRequest = storableRequest();
-      await repository.create(otherSafeRequest);
+      await create(otherSafeRequest);
       await fillCap(safeAddress);
 
       await expect(
-        repository.create({ ...otherSafeRequest, safeAddress }),
+        create({ ...otherSafeRequest, safeAddress }),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('should not count another Safe towards the cap', async () => {
       await fillCap(getAddress(faker.finance.ethereumAddress()));
 
-      await expect(
-        repository.create(storableRequest()),
-      ).resolves.toBeUndefined();
+      await expect(create(storableRequest())).resolves.toBeUndefined();
     });
 
     it('should not count the same Safe on another chain towards the cap', async () => {
@@ -322,7 +332,7 @@ describe('PolicyConfigurationRequestsRepository', () => {
       await fillCap(safeAddress);
 
       await expect(
-        repository.create(storableRequest({ safeAddress, chainId: '1' })),
+        create(storableRequest({ safeAddress, chainId: '1' })),
       ).resolves.toBeUndefined();
     });
 
@@ -331,9 +341,7 @@ describe('PolicyConfigurationRequestsRepository', () => {
       await fillCap(safeAddress);
 
       await expect(
-        repository.create(
-          storableRequest({ safeAddress, spaceId: await insertSpace() }),
-        ),
+        create(storableRequest({ safeAddress, spaceId: await insertSpace() })),
       ).resolves.toBeUndefined();
     });
 
@@ -348,9 +356,9 @@ describe('PolicyConfigurationRequestsRepository', () => {
       );
       await fillCap(safeAddress);
 
-      await expect(
-        repository.create(storableRequest({ safeAddress })),
-      ).rejects.toThrow(BadRequestException);
+      await expect(create(storableRequest({ safeAddress }))).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should not count a root that can no longer be applied', async () => {
@@ -358,7 +366,7 @@ describe('PolicyConfigurationRequestsRepository', () => {
       const [closed] = await fillCap(safeAddress);
 
       await expect(
-        repository.create(storableRequest({ safeAddress }), {
+        create(storableRequest({ safeAddress }), {
           onChain: new Map([[closed.root, false]]),
           draftsSince: null,
         }),
@@ -370,7 +378,7 @@ describe('PolicyConfigurationRequestsRepository', () => {
       await fillCap(safeAddress);
 
       await expect(
-        repository.create(storableRequest({ safeAddress }), {
+        create(storableRequest({ safeAddress }), {
           onChain: new Map(),
           draftsSince: faker.date.soon(),
         }),
@@ -382,7 +390,7 @@ describe('PolicyConfigurationRequestsRepository', () => {
       const requests = await fillCap(safeAddress);
 
       await expect(
-        repository.create(storableRequest({ safeAddress }), {
+        create(storableRequest({ safeAddress }), {
           onChain: new Map(requests.map(({ root }) => [root, true])),
           draftsSince: faker.date.soon(),
         }),
@@ -392,12 +400,12 @@ describe('PolicyConfigurationRequestsRepository', () => {
     it('should not exceed the cap under concurrent requests', async () => {
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       for (let index = 0; index < maxPerSafe - 1; index++) {
-        await repository.create(storableRequest({ safeAddress }));
+        await create(storableRequest({ safeAddress }));
       }
 
       const results = await Promise.allSettled(
         Array.from({ length: 3 }, () =>
-          repository.create(storableRequest({ safeAddress })),
+          create(storableRequest({ safeAddress })),
         ),
       );
 
@@ -410,8 +418,8 @@ describe('PolicyConfigurationRequestsRepository', () => {
     it('should delete the stored requests of a deleted space', async () => {
       const request = storableRequest();
       const otherSpaceId = await insertSpace();
-      await repository.create(request);
-      await repository.create({ ...request, spaceId: otherSpaceId });
+      await create(request);
+      await create({ ...request, spaceId: otherSpaceId });
 
       await postgresDatabaseService
         .getDataSource()
@@ -425,7 +433,7 @@ describe('PolicyConfigurationRequestsRepository', () => {
 
     it('should reject an update of a stored request', async () => {
       const request = storableRequest();
-      await repository.create(request);
+      await create(request);
 
       await expect(
         postgresDatabaseService
@@ -439,12 +447,13 @@ describe('PolicyConfigurationRequestsRepository', () => {
   });
 
   describe('findBySafes', () => {
-    it('should return the stored configurations of the given Safes only', async () => {
+    it('should return the stored configurations of the given Safes only, oldest first', async () => {
       const first = storableRequest();
       const second = storableRequest();
-      await repository.create(first);
-      await repository.create(second);
-      await repository.create(storableRequest());
+      const third = storableRequest({ safeAddress: first.safeAddress });
+      for (const request of [first, second, third, storableRequest()]) {
+        await create(request);
+      }
 
       const stored = await repository.findBySafes({
         spaceId,
@@ -454,23 +463,20 @@ describe('PolicyConfigurationRequestsRepository', () => {
         ],
       });
 
-      expect(stored).toHaveLength(2);
       expect(stored).toStrictEqual(
-        expect.arrayContaining(
-          [first, second].map((request) => ({
-            chainId: request.chainId,
-            safeAddress: request.safeAddress,
-            root: request.root,
-            configurations: request.configurations,
-            createdAt: expect.any(Date),
-          })),
-        ),
+        [first, second, third].map((request) => ({
+          chainId: request.chainId,
+          safeAddress: request.safeAddress,
+          root: request.root,
+          configurations: request.configurations,
+          createdAt: expect.any(Date),
+        })),
       );
     });
 
     it('should not return the requests of another Space', async () => {
       const request = storableRequest({ spaceId: await insertSpace() });
-      await repository.create(request);
+      await create(request);
 
       await expect(
         repository.findBySafes({
@@ -482,7 +488,7 @@ describe('PolicyConfigurationRequestsRepository', () => {
 
     it('should not return a Safe of the same address on another chain', async () => {
       const request = storableRequest();
-      await repository.create(request);
+      await create(request);
 
       await expect(
         repository.findBySafes({
@@ -500,7 +506,7 @@ describe('PolicyConfigurationRequestsRepository', () => {
       encryptionService.encryptSafeAddress.mockResolvedValue(
         `kms:v1:${faker.string.alphanumeric(32)}`,
       );
-      await repository.create(request);
+      await create(request);
 
       const [stored] = await repository.findBySafes({
         spaceId,
@@ -511,7 +517,7 @@ describe('PolicyConfigurationRequestsRepository', () => {
     });
 
     it('should return nothing for no Safes', async () => {
-      await repository.create(storableRequest());
+      await create(storableRequest());
 
       await expect(
         repository.findBySafes({ spaceId, safes: [] }),

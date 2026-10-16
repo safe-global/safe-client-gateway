@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import {
   ForbiddenException,
   HttpStatus,
   Inject,
   Injectable,
 } from '@nestjs/common';
-import { type Hex, isAddressEqual, zeroAddress } from 'viem';
+import { type Address, isAddressEqual } from 'viem';
 import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
+import { toSecondsTimestamp } from '#/domain/common/utils/time';
 import {
   type ILoggingService,
   LoggingService,
@@ -20,8 +22,13 @@ import {
   EVERY_ROOT_ACTIVE,
   IPolicyConfigurationRequestsRepository,
 } from '#/modules/policies/domain/policy-configuration-requests.repository.interface';
+import { getSafePolicyGuardDeployments } from '#/modules/policies/domain/policy-deployments.constants';
 import { IPolicyIndexerRepository } from '#/modules/policies/domain/policy-indexer.repository.interface';
 import { ISafePolicyGuardRepository } from '#/modules/policies/domain/safe-policy-guard.repository.interface';
+import {
+  isRootApplicable,
+  pendingRootGuards,
+} from '#/modules/policies/domain/utils/policy.utils';
 import { configurationRoot } from '#/modules/policies/domain/utils/policy-configuration-root.utils';
 import type {
   CreatePolicyConfigurationRequestPayload,
@@ -96,48 +103,63 @@ export class PolicyConfigurationRequestsService {
 
   /**
    * Which stored roots still count toward the cap: on-chain roots until they
-   * are applied, invalidated or expired, and drafts younger than the guard's
-   * `DELAY + EXPIRY`. Every root counts when chain state cannot be read.
+   * are applied, invalidated or expired, and drafts younger than the Safe's
+   * `SafePolicyGuard` `DELAY + EXPIRY`. Every root counts when chain state
+   * cannot be read.
    */
   private async activeRootsOf(safe: SafeRef): Promise<ActiveRootsRule> {
     try {
-      const [{ roots }, { guard }] = await Promise.all([
+      const [{ roots }, { guard, moduleGuard }] = await Promise.all([
         this.policyIndexerRepository.getState({
           safes: [safe],
           guardPolicyKinds: [],
         }),
         this.safeRepository.getSafe(safe),
       ]);
-      const now = Math.floor(Date.now() / 1_000);
-
-      const onChain = new Map<Hex, boolean>();
-      for (const root of roots) {
-        const expiry = await this.safePolicyGuardRepository.getExpiry({
-          chainId: safe.chainId,
-          guard: root.guard,
-        });
-        onChain.set(
-          `0x${root.root.slice(2).toLowerCase()}`,
-          root.status === 'PENDING' && now < root.readyAt + expiry,
-        );
-      }
-
-      if (!guard || isAddressEqual(guard, zeroAddress)) {
-        return { onChain, draftsSince: null };
-      }
-      const [delay, expiry] = await Promise.all([
-        this.safePolicyGuardRepository.getDelay({
-          chainId: safe.chainId,
-          guard,
-        }),
-        this.safePolicyGuardRepository.getExpiry({
-          chainId: safe.chainId,
-          guard,
-        }),
+      // Only a known deployment's DELAY and EXPIRY are trusted.
+      const deployments = getSafePolicyGuardDeployments(safe.chainId);
+      const policyGuard = [guard, moduleGuard].find(
+        (slot): slot is Address =>
+          !!slot && deployments.some((d) => isAddressEqual(d, slot)),
+      );
+      const guards = [
+        ...new Set([
+          ...pendingRootGuards(roots),
+          ...(policyGuard ? [policyGuard] : []),
+        ]),
+      ];
+      const [expiries, delay] = await Promise.all([
+        Promise.all(
+          guards.map(async (g) => {
+            const expiry = await this.safePolicyGuardRepository.getExpiry({
+              chainId: safe.chainId,
+              guard: g,
+            });
+            return [g, expiry] as const;
+          }),
+        ).then((entries) => new Map(entries)),
+        policyGuard
+          ? this.safePolicyGuardRepository.getDelay({
+              chainId: safe.chainId,
+              guard: policyGuard,
+            })
+          : null,
       ]);
+      const now = toSecondsTimestamp(new Date());
+
+      const onChain = new Map(
+        roots.map((root) => [
+          root.root,
+          isRootApplicable(root, expiries.get(root.guard), now),
+        ]),
+      );
+      const expiry = policyGuard ? expiries.get(policyGuard) : undefined;
       return {
         onChain,
-        draftsSince: new Date((now - delay - expiry) * 1_000),
+        draftsSince:
+          delay === null || expiry === undefined
+            ? null
+            : new Date((now - delay - expiry) * 1_000),
       };
     } catch (error) {
       this.loggingService.warn({

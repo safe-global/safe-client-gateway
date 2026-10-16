@@ -285,6 +285,21 @@ describe('GuardSetupMapper', () => {
     expect(map({ transactions: [transaction] })).toStrictEqual([]);
   });
 
+  it('should skip and log a configureImmediately whose arguments do not decode', () => {
+    const valid = configureImmediatelyEncoder().encode();
+    // The selector matches, the arguments are cut short.
+    const truncated: Hex = `0x${valid.slice(2, 74)}`;
+
+    expect(
+      map({ transactions: [queued({ to: guard, data: truncated })] }),
+    ).toStrictEqual([]);
+    expect(mockLoggingService.debug).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: 'Could not decode a queued SafePolicyGuard setup call',
+      }),
+    );
+  });
+
   it('should judge each queued transaction against the current guards', () => {
     // An earlier queued transaction may never execute, so it does not change
     // what a later one runs against.

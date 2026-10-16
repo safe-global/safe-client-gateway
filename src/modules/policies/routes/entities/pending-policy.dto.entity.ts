@@ -167,8 +167,9 @@ export class PendingSpendingLimitDataDto implements PendingSpendingLimitData {
   public readonly changes!: Array<PendingSpendingLimitChange>;
 }
 
+/** The `queued-transaction` item; keeps the schema name clients generate. */
 @ApiExtraModels(ModuleEnforcementDto, PendingSpendingLimitDataDto)
-export class PendingQueuedPolicyDto implements PendingQueuedPolicy {
+export class PendingPolicyDto implements PendingQueuedPolicy {
   @ApiProperty({ enum: ['queued-transaction'] })
   public readonly kind!: 'queued-transaction';
   @ApiProperty({ enum: [PolicyType.SpendingLimit] })
@@ -215,7 +216,10 @@ export class ConfigureImmediatelyChangeDto {
     enum: [PendingGuardSetupChangeKind.ConfigureImmediately],
   })
   public readonly kind!: typeof PendingGuardSetupChangeKind.ConfigureImmediately;
-  @ApiProperty({ description: 'The SafePolicyGuard being configured' })
+  @ApiProperty({
+    type: String,
+    description: 'The SafePolicyGuard being configured',
+  })
   public readonly guard!: Address;
   @ApiProperty({ type: PolicyConfigurationDto, isArray: true })
   public readonly configurations!: Array<PolicyConfiguration>;
@@ -367,14 +371,14 @@ export class PendingGuardConfigurationDto implements PendingGuardConfiguration {
  */
 export const PendingPolicySchema = {
   oneOf: [
-    { $ref: getSchemaPath(PendingQueuedPolicyDto) },
+    { $ref: getSchemaPath(PendingPolicyDto) },
     { $ref: getSchemaPath(PendingGuardSetupDto) },
     { $ref: getSchemaPath(PendingGuardConfigurationDto) },
   ],
   discriminator: {
     propertyName: 'kind',
     mapping: {
-      'queued-transaction': getSchemaPath(PendingQueuedPolicyDto),
+      'queued-transaction': getSchemaPath(PendingPolicyDto),
       'guard-setup': getSchemaPath(PendingGuardSetupDto),
       'guard-configuration': getSchemaPath(PendingGuardConfigurationDto),
     },

@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import { Inject, Injectable } from '@nestjs/common';
 import { type Address, type Hex, isAddressEqual, zeroAddress } from 'viem';
-import { z } from 'zod';
+import { toSecondsTimestamp } from '#/domain/common/utils/time';
 import {
   type ILoggingService,
   LoggingService,
@@ -19,8 +20,8 @@ import {
   type PendingTransaction,
 } from '#/modules/policies/domain/entities/pending-policy.entity';
 import {
+  OnChainPolicyConfigurationsSchema,
   type PolicyConfiguration,
-  PolicyConfigurationSchema,
 } from '#/modules/policies/domain/entities/policy-configuration.entity';
 import type { PolicyType } from '#/modules/policies/domain/entities/policy-type.entity';
 import type { SafeRef } from '#/modules/policies/domain/entities/safe-ref.entity';
@@ -29,7 +30,10 @@ import {
   getPolicyTypeOfContract,
   getSafePolicyGuardDeployments,
 } from '#/modules/policies/domain/policy-deployments.constants';
-import { guardPolicyTypeOfKind } from '#/modules/policies/domain/utils/policy.utils';
+import {
+  guardPolicyTypeOfKind,
+  isRootApplicable,
+} from '#/modules/policies/domain/utils/policy.utils';
 import { configurationRoot } from '#/modules/policies/domain/utils/policy-configuration-root.utils';
 import {
   pendingTransactionOf,
@@ -66,8 +70,8 @@ type RootFacts = {
  * The first matching rule decides its status:
  *
  * 1. A queued `applyConfiguration`, and the root is pending on-chain and not
- *    expired: `application-ready` with every confirmation in, else
- *    `application-in-signing`.
+ *    expired: `application-in-signing` until every confirmation is in, then
+ *    `pending-application` until `readyAt`, then `application-ready`.
  * 2. The root is pending on-chain and not expired - still in its delay, or
  *    ready to apply: `pending-application`.
  * 3. A queued `requestConfiguration`: `configuration-in-signing`. This also
@@ -134,10 +138,10 @@ export class GuardConfigurationMapper {
     stored: ReadonlyArray<StoredPolicyConfiguration>;
     knownGuards: ReadonlyArray<Address>;
   }): Array<RootFacts> {
-    const facts = new Map<string, RootFacts>();
+    // Roots are lower-cased by every source: the indexer schema, viem and CGW.
+    const facts = new Map<Hex, RootFacts>();
     const factOf = (root: Hex): RootFacts => {
-      const key = root.toLowerCase();
-      let fact = facts.get(key);
+      let fact = facts.get(root);
       if (!fact) {
         fact = {
           root,
@@ -146,7 +150,7 @@ export class GuardConfigurationMapper {
           request: null,
           apply: null,
         };
-        facts.set(key, fact);
+        facts.set(root, fact);
       }
       return fact;
     };
@@ -202,12 +206,18 @@ export class GuardConfigurationMapper {
     now: number;
   }): PendingGuardConfiguration | null {
     const { fact } = args;
-    const window = this.applicationWindow(fact.onChain, args.expiries);
-    const isApplicable = window !== null && args.now < window.expiresAt;
+    const window = applicationWindow(fact.onChain, args.expiries);
+    const isApplicable =
+      fact.onChain !== null &&
+      isRootApplicable(
+        fact.onChain,
+        args.expiries.get(fact.onChain.guard),
+        args.now,
+      );
     const configurations =
       fact.apply?.configurations ?? fact.stored?.configurations ?? null;
     const createdAt =
-      this.unixSeconds(fact.stored?.createdAt) ??
+      (fact.stored && toSecondsTimestamp(fact.stored.createdAt)) ??
       fact.request?.transaction.proposedAt ??
       fact.apply?.transaction.proposedAt ??
       null;
@@ -230,10 +240,19 @@ export class GuardConfigurationMapper {
 
     if (window && isApplicable && fact.apply) {
       const { transaction } = fact.apply;
+      const isSigned =
+        transaction.confirmations >= transaction.confirmationsRequired;
+      if (!isSigned) {
+        return item(PendingGuardConfigurationStatus.ApplicationInSigning, {
+          ...window,
+          transaction,
+        });
+      }
+      // The guard rejects an apply until `readyAt`, however signed.
       return item(
-        transaction.confirmations >= transaction.confirmationsRequired
+        args.now >= window.readyAt
           ? PendingGuardConfigurationStatus.ApplicationReady
-          : PendingGuardConfigurationStatus.ApplicationInSigning,
+          : PendingGuardConfigurationStatus.PendingApplication,
         { ...window, transaction },
       );
     }
@@ -271,30 +290,6 @@ export class GuardConfigurationMapper {
     }
 
     return null;
-  }
-
-  /**
-   * When a pending root becomes and stops being applicable, or `null` when it
-   * is not pending.
-   */
-  private applicationWindow(
-    onChain: PolicyIndexerConfigurationRoot | null,
-    expiries: ReadonlyMap<Address, number>,
-  ): { guard: Address; readyAt: number; expiresAt: number } | null {
-    if (onChain?.status !== 'PENDING') {
-      return null;
-    }
-
-    const expiry = expiries.get(onChain.guard);
-    if (expiry === undefined) {
-      return null;
-    }
-
-    return {
-      guard: onChain.guard,
-      readyAt: onChain.readyAt,
-      expiresAt: onChain.readyAt + expiry,
-    };
   }
 
   /**
@@ -379,19 +374,14 @@ export class GuardConfigurationMapper {
         return null;
       }
 
-      const parsed = z
-        .array(PolicyConfigurationSchema)
-        .nonempty()
-        .safeParse(decoded.args[0]);
+      const parsed = OnChainPolicyConfigurationsSchema.safeParse(
+        decoded.args[0],
+      );
       return parsed.success ? parsed.data : null;
     } catch (error) {
       this.logUndecodable(error);
       return null;
     }
-  }
-
-  private unixSeconds(date: Date | undefined): number | null {
-    return date ? Math.floor(date.getTime() / 1000) : null;
   }
 
   /**
@@ -405,4 +395,28 @@ export class GuardConfigurationMapper {
       error: asError(error).message,
     });
   }
+}
+
+/**
+ * When a pending root becomes and stops being applicable, or `null` when it
+ * is not pending.
+ */
+function applicationWindow(
+  onChain: PolicyIndexerConfigurationRoot | null,
+  expiries: ReadonlyMap<Address, number>,
+): { guard: Address; readyAt: number; expiresAt: number } | null {
+  if (onChain?.status !== 'PENDING') {
+    return null;
+  }
+
+  const expiry = expiries.get(onChain.guard);
+  if (expiry === undefined) {
+    return null;
+  }
+
+  return {
+    guard: onChain.guard,
+    readyAt: onChain.readyAt,
+    expiresAt: onChain.readyAt + expiry,
+  };
 }

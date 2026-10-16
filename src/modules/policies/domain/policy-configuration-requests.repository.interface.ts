@@ -33,7 +33,7 @@ export interface IPolicyConfigurationRequestsRepository {
    */
   create(
     args: Omit<PolicyConfigurationRequest, 'id' | 'createdAt'>,
-    activeRoots?: ActiveRootsRule,
+    activeRoots: ActiveRootsRule,
   ): Promise<void>;
 
   /** The configurations stored for {@link args.safes} in one Space, oldest first. */

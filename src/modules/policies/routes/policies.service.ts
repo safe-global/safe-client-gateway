@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import {
   Inject,
   Injectable,
@@ -7,6 +8,7 @@ import {
 import { type Address, isAddressEqual, zeroAddress } from 'viem';
 import { IConfigurationService } from '#/config/configuration.service.interface';
 import { batched } from '#/domain/common/utils/batch';
+import { toSecondsTimestamp } from '#/domain/common/utils/time';
 import {
   type ILoggingService,
   LoggingService,
@@ -40,6 +42,7 @@ import { ISafePolicyGuardRepository } from '#/modules/policies/domain/safe-polic
 import {
   GUARD_POLICY_TYPES,
   guardPolicyKindsOf,
+  pendingRootGuards,
 } from '#/modules/policies/domain/utils/policy.utils';
 import {
   type TokenMetadataKey,
@@ -188,37 +191,35 @@ export class PoliciesService {
     const userId = getAuthenticatedUserIdOrFail(request.authPayload);
     await assertMember(this.membersRepository, request.spaceId, userId);
 
-    const safesInSpace = (
-      await this.spaceSafesRepository.findBySpaceId(request.spaceId)
-    ).map((safe) => ({
-      chainId: safe.chainId,
-      address: safe.address,
-    }));
-
-    const requested = request.safes;
-
-    // If no specific Safes requested in Space, return all.
-    if (!requested) {
-      return safesInSpace;
+    if (!request.safes) {
+      return (
+        await this.spaceSafesRepository.findBySpaceId(request.spaceId)
+      ).map((safe) => ({ chainId: safe.chainId, address: safe.address }));
     }
 
-    const safeNotInSpace = requested.find(
-      (requestedSafe) =>
-        !safesInSpace.some((safe) => this.compareSafes(safe, requestedSafe)),
+    // A Safe asked for twice is read once. Each is checked by its blind index,
+    // so a narrowed read decrypts nothing.
+    const requested = request.safes.filter(
+      (safe, index, all) =>
+        all.findIndex((other) => this.compareSafes(other, safe)) === index,
     );
-
+    const inSpace = await Promise.all(
+      requested.map((safe) =>
+        this.spaceSafesRepository.existsInSpace({
+          spaceId: request.spaceId,
+          chainId: safe.chainId,
+          address: safe.address,
+        }),
+      ),
+    );
+    const safeNotInSpace = requested.find((_, index) => !inSpace[index]);
     if (safeNotInSpace) {
       throw new UnprocessableEntityException(
         `Safe ${safeNotInSpace.chainId}:${safeNotInSpace.address} is not in this space`,
       );
     }
 
-    // Narrowing filters the Space's own Safes rather than mapping the request,
-    // so a Safe asked for twice - repeated outright, or in another casing - is
-    // still read once and its policies reported once.
-    return safesInSpace.filter((safe) =>
-      requested.some((wanted) => this.compareSafes(safe, wanted)),
-    );
+    return requested.map(({ chainId, address }) => ({ chainId, address }));
   }
 
   private compareSafes(a: SafeRef, b: SafeRef): boolean {
@@ -470,7 +471,7 @@ export class PoliciesService {
       guardState: guardPoliciesRequested
         ? await this.guardStateOf(spaceId, safes)
         : null,
-      now: Math.floor(Date.now() / 1_000),
+      now: toSecondsTimestamp(new Date()),
     };
 
     const settled = await batched(safes, this.batchSize, (safe) =>
@@ -494,8 +495,8 @@ export class PoliciesService {
       });
     }
 
-    // Token metadata belongs to the queued spending-limit changes only; guard
-    // items carry no token and pass through unchanged, in their place.
+    // Only queued spending-limit changes carry tokens; guard items pass through
+    // unchanged and keep their position.
     const queued = policies.filter(
       (policy): policy is PendingQueuedPolicy =>
         policy.kind === 'queued-transaction',
@@ -696,13 +697,7 @@ export class PoliciesService {
     chainId: string,
     roots: ReadonlyArray<PolicyIndexerConfigurationRoot>,
   ): Promise<Map<Address, number>> {
-    const guards = [
-      ...new Set(
-        roots
-          .filter((root) => root.status === 'PENDING')
-          .map((root) => root.guard),
-      ),
-    ];
+    const guards = pendingRootGuards(roots);
 
     const expiries = await Promise.all(
       guards.map((guard) =>

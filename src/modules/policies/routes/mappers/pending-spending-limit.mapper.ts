@@ -19,7 +19,10 @@ import type {
 } from '#/modules/policies/domain/entities/token.entity';
 import type { TokenMetadataKey } from '#/modules/policies/domain/utils/token-metadata-key.utils';
 import { tokenMetadataKey } from '#/modules/policies/domain/utils/token-metadata-key.utils';
-import { queuedCalls } from '#/modules/policies/routes/mappers/queued-calls.utils';
+import {
+  pendingTransactionOf,
+  queuedCalls,
+} from '#/modules/policies/routes/mappers/queued-calls.utils';
 import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
 
 type ModuleChange = { module: Address; change: PendingSpendingLimitChange };
@@ -136,11 +139,7 @@ export class PendingSpendingLimitMapper {
       kind: 'queued-transaction',
       type: PolicyType.SpendingLimit,
       enforcement: moduleEnforcement(module),
-      safeTxHash: args.transaction.safeTxHash,
-      nonce: args.transaction.nonce,
-      confirmations: args.transaction.confirmations?.length ?? 0,
-      confirmationsRequired: args.transaction.confirmationsRequired,
-      proposedAt: Math.floor(args.transaction.submissionDate.getTime() / 1000),
+      ...pendingTransactionOf(args.transaction),
       data: { module, changes },
       safe: args.safe,
     }));

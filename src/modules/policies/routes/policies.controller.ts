@@ -38,8 +38,8 @@ import {
 import {
   PendingGuardConfigurationDto,
   PendingGuardSetupDto,
+  PendingPolicyDto,
   PendingPolicySchema,
-  PendingQueuedPolicyDto,
 } from '#/modules/policies/routes/entities/pending-policy.dto.entity';
 import {
   type PolicyTypes,
@@ -147,7 +147,7 @@ export class PoliciesController {
     example: PolicyType.Erc20Transfer,
   })
   @ApiExtraModels(
-    PendingQueuedPolicyDto,
+    PendingPolicyDto,
     PendingGuardSetupDto,
     PendingGuardConfigurationDto,
   )
