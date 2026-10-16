@@ -118,7 +118,8 @@ describe('configuration - entitlements.gracePeriodClaimEndsAt', () => {
     }
   });
 
-  // An invalid value should fall back to the default grace period claim end.
+  // Unlike enforcementStartsAt, this is rarely overridden, so a bad value
+  // falls back instead of failing boot.
   it.each(['the fifth of december', '2026-13-45T00:00:00Z', ''])(
     'falls back to the default when set to %s',
     (value) => {
