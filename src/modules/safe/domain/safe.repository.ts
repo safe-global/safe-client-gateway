@@ -300,6 +300,49 @@ export class SafeRepository implements ISafeRepository {
     return this.getSafeQueueSortedByLastModified(args);
   }
 
+  async getTransactionQueueForSafes(args: {
+    safes: ReadonlyArray<{ chainId: string; safe: Safe }>;
+    limit?: number;
+    offset?: number;
+  }): Promise<Page<{ chainId: string; transaction: MultisigTransaction }>> {
+    const safesByKey = new Map(
+      args.safes.map(({ chainId, safe }) => [
+        this.getChainSafeKey(chainId, safe.address),
+        safe,
+      ]),
+    );
+    const page = await this.safeQueueService.getTransactionQueueForSafes({
+      safes: args.safes.map(({ chainId, safe }) => ({
+        chainId,
+        safeAddress: safe.address,
+      })),
+      nonceOrder: 'asc',
+      limit: args.limit,
+      offset: args.offset,
+    });
+    const parsed = SafeQueueMultisigTransactionPageSchema.parse(page);
+    return {
+      count: parsed.count,
+      next: parsed.next,
+      previous: parsed.previous,
+      results: parsed.results.flatMap((tx) => {
+        const safe = safesByKey.get(this.getChainSafeKey(tx.chainId, tx.safe));
+        return safe
+          ? [
+              {
+                chainId: tx.chainId,
+                transaction: mapSafeQueueToMultisigTransaction(tx, safe),
+              },
+            ]
+          : [];
+      }),
+    };
+  }
+
+  private getChainSafeKey(chainId: string, safeAddress: Address): string {
+    return `${chainId}:${safeAddress.toLowerCase()}`;
+  }
+
   getTransactionQueueMaxPageSize(): number {
     return this.safeQueueEnabled
       ? SAFE_QUEUE_SERVICE_MAX_LIMIT
