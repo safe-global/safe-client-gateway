@@ -12,11 +12,11 @@ export default () => ({
   amqp: {
     url: process.env.AMQP_URL || 'amqp://localhost:5672',
     exchange: {
-      name: process.env.AMQP_EXCHANGE_NAME || 'safe-transaction-service-events',
-      // The Safe Transaction Service AMQP Exchange mode defaults to 'fanout'.
-      // https://www.rabbitmq.com/tutorials/amqp-concepts#exchange-fanout
-      // A fanout exchange routes messages to all of the queues that are bound to it and the routing key is ignored.
-      mode: process.env.AMQP_EXCHANGE_MODE || 'fanout',
+      // Topic exchange of the Safe Transaction Service.
+      // https://www.rabbitmq.com/tutorials/amqp-concepts#exchange-topic
+      name:
+        process.env.AMQP_EXCHANGE_NAME ||
+        'safe-transaction-service-events-with-topics',
     },
     queue: process.env.AMQP_QUEUE || 'safe-client-gateway',
     // The AMQP Prefetch value defaults to 0.
