@@ -1,12 +1,12 @@
 # Flaky Test Baseline Report
 
-Generated: 2026-10-15T16:36:22.641Z | Period: 2026-01-16 to 2026-10-15
+Generated: 2026-10-16T09:00:11.126Z | Period: 2026-01-16 to 2026-10-16
 
 ## Summary
 
 | Metric | Value |
 |--------|-------|
-| Total unique commits | 3012 |
+| Total unique commits | 3017 |
 | Flaky commits (pass + fail on same SHA) | 145 |
 | Flakiness rate | 4.8% |
 
@@ -64,7 +64,7 @@ Since 2026-06-04 a commit also counts as flaky when a failed attempt was recover
 | 2026-09-21 | 182 | 3 | 1.6% |
 | 2026-09-28 | 109 | 0 | 0% |
 | 2026-10-05 | 152 | 1 | 0.7% |
-| 2026-10-12 | 128 | 0 | 0% |
+| 2026-10-12 | 133 | 0 | 0% |
 
 ```text
 Weekly CI flakiness rate %  ·  n = unique commits  ·  weeks with n<10 omitted
@@ -107,12 +107,12 @@ Weekly CI flakiness rate %  ·  n = unique commits  ·  weeks with n<10 omitted
 09-21   1.6%  n=182  ███
 09-28   0.0%  n=109  ▏
 10-05   0.7%  n=152  █
-10-12   0.0%  n=128  ▏
+10-12   0.0%  n=133  ▏
 ```
 
 ## Clean Streak
 
-128 commits without a flake since the last flaky week — rate is below 2.3% at 95% confidence. Target <1% at 95% needs a **300-commit** streak (172 to go).
+133 commits without a flake since the last flaky week — rate is below 2.3% at 95% confidence. Target <1% at 95% needs a **300-commit** streak (167 to go).
 
 ## Flaky Test Leaderboard
 
@@ -146,10 +146,11 @@ Weekly CI flakiness rate %  ·  n = unique commits  ·  weeks with n<10 omitted
 | `src/modules/safe-apps/routes/safe-apps.controller.integration.spec.ts` | 1 | 2026-02-11 | Fixed | [#3242](https://github.com/safe-global/safe-client-gateway/pull/3242) |
 | `src/modules/auth/routes/auth.controller.integration.spec.ts` | 1 | 2026-04-15 | Fixed | [#3136](https://github.com/safe-global/safe-client-gateway/pull/3136) |
 | `src/domain/common/entities/name.builder.spec.ts` | 1 | 2026-07-03 | Open | - |
-| `src/modules/notifications/routes/v1/notifications.controller.integration.spec.ts` | 1 | 2026-09-21 | Open | - |
+| `src/modules/notifications/routes/v1/notifications.controller.integration.spec.ts` | 1 | 2026-09-21 | Fix in review | [#3617](https://github.com/safe-global/safe-client-gateway/pull/3617) |
 
 ## Fix PRs
 
+- [#3617](https://github.com/safe-global/safe-client-gateway/pull/3617) - fix(tests): expect one upsert per registration with safes in v1 notifications spec (Open)
 - [#3572](https://github.com/safe-global/safe-client-gateway/pull/3572) - fix(tests): stop signature, chain ID and JWT test flakes (Merged)
 - [#3594](https://github.com/safe-global/safe-client-gateway/pull/3594) - fix(db): make the v2 migrator lock acquisition atomic (Open)
 - [#3560](https://github.com/safe-global/safe-client-gateway/pull/3560) - build: migrate runtime, tooling and tests from node to bun (Open)
@@ -188,7 +189,6 @@ Weekly CI flakiness rate %  ·  n = unique commits  ·  weeks with n<10 omitted
 - `src/modules/transactions/routes/__tests__/controllers/preview-transaction-cow-swap.transactions.controller.spec.ts` (1 failures, last 2026-01-29)
 - `src/modules/transactions/routes/__tests__/controllers/preview-transaction-kiln.transactions.controller.spec.ts` (1 failures, last 2026-01-19)
 - `src/domain/common/entities/name.builder.spec.ts` (1 failures, last 2026-07-03)
-- `src/modules/notifications/routes/v1/notifications.controller.integration.spec.ts` (1 failures, last 2026-09-21)
 
 ---
 

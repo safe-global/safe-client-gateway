@@ -1,6 +1,16 @@
 {
-  "generated_at": "2026-10-15T16:36:22.638Z",
+  "generated_at": "2026-10-16T09:00:11.116Z",
   "prs": [
+    {
+      "number": 3617,
+      "title": "fix(tests): expect one upsert per registration with safes in v1 notifications spec",
+      "url": "https://github.com/safe-global/safe-client-gateway/pull/3617",
+      "merged_at": null,
+      "state": "open",
+      "tests_fixed": [
+        "src/modules/notifications/routes/v1/notifications.controller.integration.spec.ts"
+      ]
+    },
     {
       "number": 3572,
       "title": "fix(tests): stop signature, chain ID and JWT test flakes",

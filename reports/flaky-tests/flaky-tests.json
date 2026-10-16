@@ -1,12 +1,12 @@
 {
-  "generated_at": "2026-10-15T16:36:22.638Z",
+  "generated_at": "2026-10-16T09:00:11.116Z",
   "summary": {
-    "total_commits": 3012,
+    "total_commits": 3017,
     "flaky_commits": 145,
     "flakiness_rate": 4.8,
     "period": {
       "from": "2026-01-16",
-      "to": "2026-10-15"
+      "to": "2026-10-16"
     }
   },
   "weekly_trend": [
@@ -300,7 +300,7 @@
     },
     {
       "week": "2026-10-12",
-      "commits": 128,
+      "commits": 133,
       "flaky": 0,
       "rate": 0
     }
@@ -575,8 +575,11 @@
       "file": "src/modules/notifications/routes/v1/notifications.controller.integration.spec.ts",
       "failure_count": 1,
       "last_failure": "2026-09-21T12:10:08Z",
-      "status": "open",
-      "fix_pr": null
+      "status": "in_review",
+      "fix_pr": {
+        "number": 3617,
+        "url": "https://github.com/safe-global/safe-client-gateway/pull/3617"
+      }
     }
   ]
 }
