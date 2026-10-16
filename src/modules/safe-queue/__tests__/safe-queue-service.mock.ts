@@ -9,6 +9,7 @@ export function createMockSafeQueueService(): MockedObject<ISafeQueueService> {
     getMultisigTransactionWithNoCache: vi.fn(),
     getMultisigTransactionsBatch: vi.fn(),
     getTransactionQueue: vi.fn(),
+    getTransactionQueueForSafes: vi.fn(),
     proposeTransaction: vi.fn(),
     postConfirmation: vi.fn(),
     deleteTransaction: vi.fn(),

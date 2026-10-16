@@ -8,8 +8,10 @@ import type { ICacheService } from '#/datasources/cache/cache.service.interface'
 import { CacheDir } from '#/datasources/cache/entities/cache-dir.entity';
 import { CircuitBreakerKeys } from '#/datasources/circuit-breaker/circuit-breaker.keys';
 import { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
+import { NetworkResponseError } from '#/datasources/network/entities/network.error.entity';
 import type { INetworkService } from '#/datasources/network/network.service.interface';
 import { SAFE_QUEUE_SERVICE_MAX_LIMIT } from '#/domain/common/constants';
+import { DataSourceError } from '#/domain/errors/data-source.error';
 import type { ILoggingService } from '#/logging/logging.interface';
 import { delegateBuilder } from '#/modules/delegate/domain/entities/__tests__/delegate.builder';
 import { messageBuilder } from '#/modules/messages/domain/entities/__tests__/message.builder';
@@ -238,6 +240,97 @@ describe('SafeQueueService', () => {
         },
       });
       expect(mockDataSource.get).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('getTransactionQueueForSafes', () => {
+    it('Should request every Safe once, with its chains, without the cache', async () => {
+      const otherChainId = faker.string.numeric({ length: 6 });
+      const otherSafeAddress = getAddress(faker.finance.ethereumAddress());
+      const page = {
+        count: 1,
+        next: null,
+        previous: null,
+        results: [safeQueueMultisigTransactionBuilder().build()],
+      };
+      const limit = faker.number.int({
+        min: 1,
+        max: SAFE_QUEUE_SERVICE_MAX_LIMIT,
+      });
+      const offset = faker.number.int({ min: 0, max: 100 });
+      networkService.get.mockResolvedValueOnce({
+        status: 200,
+        data: rawify(page),
+      });
+
+      const actual = await service.getTransactionQueueForSafes({
+        safes: [
+          { chainId, safeAddress },
+          { chainId: otherChainId, safeAddress },
+          { chainId, safeAddress },
+          { chainId, safeAddress: otherSafeAddress },
+        ],
+        limit,
+        offset,
+      });
+
+      expect(actual).toBe(page);
+      const query = new URLSearchParams();
+      query.append('safes', `${safeAddress}:${chainId}:${otherChainId}`);
+      query.append('safes', `${otherSafeAddress}:${chainId}`);
+      query.set('nonceOrder', 'asc');
+      query.set('limit', limit.toString());
+      query.set('offset', offset.toString());
+      expect(networkService.get).toHaveBeenCalledWith({
+        url: `${baseUri}/api/v1/multisig-transactions/queue?${query.toString()}`,
+        networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getSafeQueueServiceKey(),
+          },
+        },
+      });
+      expect(mockDataSource.get).not.toHaveBeenCalled();
+    });
+
+    it('Should cap the limit at the queue service maximum', async () => {
+      networkService.get.mockResolvedValueOnce({
+        status: 200,
+        data: rawify({ results: [] }),
+      });
+
+      await service.getTransactionQueueForSafes({
+        safes: [{ chainId, safeAddress }],
+        limit: faker.number.int({
+          min: SAFE_QUEUE_SERVICE_MAX_LIMIT + 1,
+          max: SAFE_QUEUE_SERVICE_MAX_LIMIT * 3,
+        }),
+      });
+
+      expect(networkService.get).toHaveBeenCalledWith(
+        expect.objectContaining({
+          url: expect.stringMatching(
+            new RegExp(`[?&]limit=${SAFE_QUEUE_SERVICE_MAX_LIMIT}(&|$)`),
+          ),
+        }),
+      );
+    });
+
+    it('Should map a network failure through the HTTP error factory', async () => {
+      const status = faker.internet.httpStatusCode({ types: ['serverError'] });
+      const message = faker.lorem.sentence();
+      networkService.get.mockRejectedValueOnce(
+        new NetworkResponseError(
+          new URL(`${baseUri}/api/v1/multisig-transactions/queue`),
+          { status } as Response,
+          { message },
+        ),
+      );
+
+      await expect(
+        service.getTransactionQueueForSafes({
+          safes: [{ chainId, safeAddress }],
+        }),
+      ).rejects.toThrow(new DataSourceError(message, status));
     });
   });
 

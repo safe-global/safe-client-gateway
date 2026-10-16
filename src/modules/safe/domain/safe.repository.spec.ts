@@ -1690,6 +1690,101 @@ describe('SafeRepository', () => {
     });
   });
 
+  describe('getTransactionQueueForSafes', () => {
+    it('should list the queue of every Safe in nonce order, pairing each transaction with its chain', async () => {
+      const chainId = faker.string.numeric({ length: 3 });
+      const otherChainId = faker.string.numeric({ length: 4 });
+      const safe = safeBuilder().build();
+      const otherSafe = safeBuilder().build();
+      const limit = faker.number.int({ min: 1, max: 50 });
+      const offset = faker.number.int({ min: 0, max: 50 });
+      const tx = safeQueueMultisigTransactionBuilder()
+        .with('chainId', chainId)
+        .with('safe', safe.address)
+        .with('txHash', null)
+        .build();
+      const otherTx = safeQueueMultisigTransactionBuilder()
+        .with('chainId', otherChainId)
+        .with('safe', otherSafe.address)
+        .with('txHash', null)
+        .build();
+      mockSafeQueueService.getTransactionQueueForSafes.mockResolvedValue(
+        rawify(
+          pageBuilder()
+            .with('count', 2)
+            .with('next', null)
+            .with('previous', null)
+            .with('results', [tx, otherTx])
+            .build(),
+        ),
+      );
+
+      const actual = await repository.getTransactionQueueForSafes({
+        safes: [
+          { chainId, safe },
+          { chainId: otherChainId, safe: otherSafe },
+        ],
+        limit,
+        offset,
+      });
+
+      expect(
+        mockSafeQueueService.getTransactionQueueForSafes,
+      ).toHaveBeenCalledWith({
+        safes: [
+          { chainId, safeAddress: safe.address },
+          { chainId: otherChainId, safeAddress: otherSafe.address },
+        ],
+        nonceOrder: 'asc',
+        limit,
+        offset,
+      });
+      expect(actual.count).toBe(2);
+      expect(actual.results).toEqual([
+        {
+          chainId,
+          transaction: expect.objectContaining({
+            safeTxHash: tx.safeTxHash,
+            safe: safe.address,
+          }),
+        },
+        {
+          chainId: otherChainId,
+          transaction: expect.objectContaining({
+            safeTxHash: otherTx.safeTxHash,
+            safe: otherSafe.address,
+          }),
+        },
+      ]);
+    });
+
+    it('should drop a transaction whose Safe and chain were not requested', async () => {
+      const chainId = faker.string.numeric({ length: 3 });
+      const safe = safeBuilder().build();
+      const unrequested = safeQueueMultisigTransactionBuilder()
+        .with('chainId', faker.string.numeric({ length: 4 }))
+        .with('safe', safe.address)
+        .with('txHash', null)
+        .build();
+      mockSafeQueueService.getTransactionQueueForSafes.mockResolvedValue(
+        rawify(
+          pageBuilder()
+            .with('count', 1)
+            .with('next', null)
+            .with('previous', null)
+            .with('results', [unrequested])
+            .build(),
+        ),
+      );
+
+      const actual = await repository.getTransactionQueueForSafes({
+        safes: [{ chainId, safe }],
+      });
+
+      expect(actual.results).toEqual([]);
+    });
+  });
+
   describe('getTransactionQueueByModified', () => {
     const chainId = faker.string.numeric();
     const safe = safeBuilder().build();

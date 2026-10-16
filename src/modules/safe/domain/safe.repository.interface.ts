@@ -109,6 +109,17 @@ export interface ISafeRepository {
   }): Promise<Page<MultisigTransaction>>;
 
   /**
+   * Returns the merged queue of several Safes, ordered by nonce, each
+   * transaction paired with its chain. Served by the Queue Service only: the
+   * Transaction Service cannot list many Safes in one request.
+   */
+  getTransactionQueueForSafes(args: {
+    safes: ReadonlyArray<{ chainId: string; safe: Safe }>;
+    limit?: number;
+    offset?: number;
+  }): Promise<Page<{ chainId: string; transaction: MultisigTransaction }>>;
+
+  /**
    * Returns the Safe Transaction Queue sorted by modified status.
    * (from most recently modified to last)
    */

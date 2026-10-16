@@ -301,6 +301,51 @@ export class SafeQueueService implements ISafeQueueService {
     }
   }
 
+  async getTransactionQueueForSafes(args: {
+    safes: ReadonlyArray<{ chainId: string; safeAddress: Address }>;
+    nonceOrder?: 'asc' | 'desc';
+    limit?: number;
+    offset?: number;
+  }): Promise<Raw<Page<SafeQueueMultisigTransactionEntity>>> {
+    try {
+      // One `safes` value per address: the service counts values, not addresses, against its maximum.
+      const chainIdsBySafe = new Map<string, Array<string>>();
+      for (const { chainId, safeAddress } of args.safes) {
+        const chainIds = chainIdsBySafe.get(safeAddress) ?? [];
+        if (!chainIds.includes(chainId)) {
+          chainIds.push(chainId);
+        }
+        chainIdsBySafe.set(safeAddress, chainIds);
+      }
+      const query = new URLSearchParams();
+      for (const [safeAddress, chainIds] of chainIdsBySafe) {
+        query.append('safes', [safeAddress, ...chainIds].join(':'));
+      }
+      query.set('nonceOrder', args.nonceOrder ?? 'asc');
+      const limit = this.capLimit(args.limit);
+      if (limit !== undefined) {
+        query.set('limit', limit.toString());
+      }
+      if (args.offset !== undefined) {
+        query.set('offset', args.offset.toString());
+      }
+      const url = `${this.baseUri}/api/v1/multisig-transactions/queue?${query.toString()}`;
+      const { data } = await this.networkService.get<
+        Raw<Page<SafeQueueMultisigTransactionEntity>>
+      >({
+        url,
+        networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getSafeQueueServiceKey(),
+          },
+        },
+      });
+      return data;
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
   async postConfirmation(args: {
     chainId: string;
     safeTxHash: string;

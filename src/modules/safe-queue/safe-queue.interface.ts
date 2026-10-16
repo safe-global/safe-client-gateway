@@ -42,6 +42,14 @@ export interface ISafeQueueService {
     offset?: number;
   }): Promise<Raw<Page<SafeQueueMultisigTransactionEntity>>>;
 
+  // Not cached: no per-Safe invalidation can reach an entry keyed on a set of Safes.
+  getTransactionQueueForSafes(args: {
+    safes: ReadonlyArray<{ chainId: string; safeAddress: Address }>;
+    nonceOrder?: 'asc' | 'desc';
+    limit?: number;
+    offset?: number;
+  }): Promise<Raw<Page<SafeQueueMultisigTransactionEntity>>>;
+
   postConfirmation(args: {
     chainId: string;
     safeTxHash: string;
