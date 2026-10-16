@@ -19,6 +19,7 @@ import { siweAuthPayloadDtoBuilder } from '#/modules/auth/domain/entities/__test
 import { AuthGuard } from '#/modules/auth/routes/guards/auth.guard';
 import { NotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/notifications.repository.module';
 import { TestNotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/test.notification.repository.module';
+import { ExperimentalFeatures } from '#/modules/spaces/domain/entities/experimental-feature.entity';
 import { SpaceStatus } from '#/modules/spaces/domain/entities/space.entity';
 import { SpacesController } from '#/modules/spaces/routes/spaces.controller';
 import {
@@ -629,6 +630,192 @@ describe('SpacesController', () => {
             uuid: spaceId,
           }),
         );
+    });
+
+    it('Should read back [] for a space that never opted in, then set and return experimental features', async () => {
+      const features = [faker.helpers.arrayElement(ExperimentalFeatures)];
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const spaceName = nameBuilder();
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`]);
+
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: spaceName });
+      const spaceId = createSpaceResponse.body.uuid;
+
+      await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200)
+        .expect(({ body }) => {
+          expect(body.experimentalFeatures).toStrictEqual([]);
+        });
+
+      await request(app.getHttpServer())
+        .patch(`/v1/spaces/${spaceId}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ experimentalFeatures: features })
+        .expect(200);
+
+      await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200)
+        .expect(({ body }) => {
+          expect(body.experimentalFeatures).toStrictEqual(features);
+        });
+    });
+
+    it('Should opt out when sent an empty array', async () => {
+      const features = [faker.helpers.arrayElement(ExperimentalFeatures)];
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const spaceName = nameBuilder();
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`]);
+
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: spaceName });
+      const spaceId = createSpaceResponse.body.uuid;
+
+      await request(app.getHttpServer())
+        .patch(`/v1/spaces/${spaceId}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ experimentalFeatures: features })
+        .expect(200);
+
+      await request(app.getHttpServer())
+        .patch(`/v1/spaces/${spaceId}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ experimentalFeatures: [] })
+        .expect(200);
+
+      await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200)
+        .expect(({ body }) => {
+          expect(body.experimentalFeatures).toStrictEqual([]);
+        });
+    });
+
+    it('Should leave experimental features untouched when updating only the name', async () => {
+      const features = [faker.helpers.arrayElement(ExperimentalFeatures)];
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const spaceName = nameBuilder();
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`]);
+
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: spaceName });
+      const spaceId = createSpaceResponse.body.uuid;
+      const newSpaceName = nameBuilder();
+
+      await request(app.getHttpServer())
+        .patch(`/v1/spaces/${spaceId}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ experimentalFeatures: features })
+        .expect(200);
+
+      await request(app.getHttpServer())
+        .patch(`/v1/spaces/${spaceId}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: newSpaceName })
+        .expect(200);
+
+      await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200)
+        .expect(({ body }) => {
+          expect(body.name).toBe(newSpaceName);
+          expect(body.experimentalFeatures).toStrictEqual(features);
+        });
+    });
+
+    it('Should leave the name untouched when updating only experimental features', async () => {
+      const features = [faker.helpers.arrayElement(ExperimentalFeatures)];
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const spaceName = nameBuilder();
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`]);
+
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: spaceName });
+      const spaceId = createSpaceResponse.body.uuid;
+
+      await request(app.getHttpServer())
+        .patch(`/v1/spaces/${spaceId}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ experimentalFeatures: features })
+        .expect(200);
+
+      await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200)
+        .expect(({ body }) => {
+          expect(body.name).toBe(spaceName);
+          expect(body.experimentalFeatures).toStrictEqual(features);
+        });
+    });
+
+    it.each([
+      [
+        'an unknown feature',
+        [faker.string.alpha({ length: 8, casing: 'lower' })],
+      ],
+      ['a bare string', faker.helpers.arrayElement(ExperimentalFeatures)],
+      [
+        'an object',
+        { [faker.helpers.arrayElement(ExperimentalFeatures)]: true },
+      ],
+      ['a number element', [1]],
+      [
+        'more entries than there are features',
+        Array.from({ length: ExperimentalFeatures.length + 1 }, () =>
+          faker.helpers.arrayElement(ExperimentalFeatures),
+        ),
+      ],
+    ])('Should return a 422 for %s', async (_label, value) => {
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const spaceName = nameBuilder();
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`]);
+
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: spaceName });
+      const spaceId = createSpaceResponse.body.uuid;
+
+      await request(app.getHttpServer())
+        .patch(`/v1/spaces/${spaceId}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ experimentalFeatures: value })
+        .expect(422);
     });
 
     it('Should return a 400 if the space id is numeric (UUID required on writes)', async () => {

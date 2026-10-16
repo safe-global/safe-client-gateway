@@ -1,9 +1,18 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import { ClsService } from 'nestjs-cls';
-import type winston from 'winston';
+import type { Logger } from 'pino';
 import { IConfigurationService } from '#/config/configuration.service.interface';
 import type { ILoggingService } from '#/logging/logging.interface';
+import { PinoLogger } from '#/logging/pino-logger.factory';
+
+type LogEntry = {
+  message: unknown;
+  build_number: string | undefined;
+  request_id: string;
+  timestamp: string;
+  version: string | undefined;
+};
 
 /**
  * Implementation of ILoggingService which prepends the current time and a unique request ID to every logged message.
@@ -18,7 +27,7 @@ export class RequestScopedLoggingService implements ILoggingService {
   constructor(
     @Inject(IConfigurationService)
     readonly configurationService: IConfigurationService,
-    @Inject('Logger') private readonly logger: winston.Logger,
+    @Inject(PinoLogger) private readonly logger: Logger,
     private readonly cls: ClsService,
   ) {
     this.version = configurationService.get('about.version');
@@ -26,38 +35,44 @@ export class RequestScopedLoggingService implements ILoggingService {
   }
 
   info(message: unknown): void {
-    this.logger.log('info', this.formatMessage(message));
+    this.logger.info(this.formatMessage(message));
   }
 
   error(message: unknown): void {
-    this.logger.log('error', this.formatMessage(message));
+    this.logger.error(this.formatMessage(message));
   }
 
   warn(message: unknown): void {
-    this.logger.log('warn', this.formatMessage(message));
+    this.logger.warn(this.formatMessage(message));
   }
 
   debug(message: unknown): void {
-    this.logger.log('debug', this.formatMessage(message));
+    this.logger.debug(this.formatMessage(message));
   }
 
-  private formatMessage(message: unknown): {
-    message: unknown;
-    build_number: string | undefined;
-    request_id: string;
-    timestamp: string;
-    version: string | undefined;
-  } {
+  private formatMessage(message: unknown): LogEntry {
     const requestId = this.cls.getId();
     const timestamp = Date.now();
     const dateAsString = new Date(timestamp).toISOString();
 
-    return {
+    return flattenError({
       message,
       build_number: this.buildNumber,
       request_id: requestId,
       timestamp: dateAsString,
       version: this.version,
-    };
+    });
   }
+}
+
+/**
+ * Replaces an {@link Error} message with its message string and lifts the
+ * error's own enumerable properties onto the entry.
+ */
+function flattenError(entry: LogEntry): LogEntry {
+  const { message } = entry;
+  if (!(message instanceof Error)) {
+    return entry;
+  }
+  return { ...entry, ...message, message: message.message };
 }
