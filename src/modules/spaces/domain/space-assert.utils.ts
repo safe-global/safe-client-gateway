@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
-import { ForbiddenException, HttpStatus } from '@nestjs/common';
+import { HttpStatus } from '@nestjs/common';
 import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
 import type { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
 import type { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository.interface';
@@ -26,7 +26,10 @@ export async function assertAdmin(
   });
 
   if (!admin) {
-    throw new ForbiddenException('User is not an admin of this workspace');
+    throw new HttpExceptionNoLog(
+      'User is not an admin of this workspace',
+      HttpStatus.FORBIDDEN,
+    );
   }
 
   return admin;
@@ -51,7 +54,10 @@ export async function assertMember(
   });
 
   if (!member) {
-    throw new ForbiddenException('User is not a member of this workspace');
+    throw new HttpExceptionNoLog(
+      'User is not a member of this workspace',
+      HttpStatus.FORBIDDEN,
+    );
   }
 
   return member;
