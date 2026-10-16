@@ -179,7 +179,7 @@ export const RootConfigurationSchema = z
     TOKENS_RATE_LIMIT_WINDOW_SECONDS: z.coerce.number().int().min(1).optional(),
     SAFE_CONFIG_CGW_KEY: z.string().min(1).optional(),
     LOG_LEVEL: z
-      .enum(['error', 'warn', 'info', 'http', 'verbose', 'debug', 'silly'])
+      .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace'])
       .optional(),
     UNDICI_CONNECTIONS: z.coerce.number().int().min(1).optional(),
     UNDICI_PIPELINING: z.coerce.number().int().min(0).optional(),

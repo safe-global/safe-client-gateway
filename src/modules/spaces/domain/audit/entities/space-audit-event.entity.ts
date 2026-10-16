@@ -43,6 +43,7 @@ const UserIdSchema = z.number().int().positive();
 const SpaceFieldsSchema = z.object({
   name: z.string().optional(),
   status: z.enum(getStringEnumKeys(SpaceStatus)).optional(),
+  experimentalFeatures: z.array(z.string()).optional(),
 });
 
 const SpaceSafeSchema = z.object({
