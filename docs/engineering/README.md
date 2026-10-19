@@ -12,9 +12,8 @@ the source of truth.
 
 - `conventions/` — the canonical, ordered docs. Read these when writing code.
 - `sources/` — what conventions are built from: the durable rule index
-  (`rules.json`), the PR-sourced receipts (`examples/`), the generated rule
-  view (`rules.generated.md`), and `working/` (maintenance-only inputs).
-- `pr-self-review-checklist.generated.md` — a per-session checklist (gitignored).
+  (`rules.json`), the PR-sourced receipts (`examples/`), and `working/`
+  (maintenance-only inputs).
 
 ## Read Before You Change
 
@@ -28,15 +27,10 @@ index:
 
 - Testing — [conventions/testing.md](conventions/testing.md)
 
-Before opening or finishing a PR, generate the temporary checklist from
-[sources/rules.json](sources/rules.json), review every rule, and mark every
-generated item checked:
-
-```bash
-node ${CLAUDE_PLUGIN_ROOT}/skills/code-conventions/scripts/generate-checklist.js
-```
-
-The generated checklist is ignored by Git and must not be committed.
+Before opening or finishing a PR, run `/safe-code-review` from the
+[safe-engineering-plugin](https://github.com/safe-global/safe-plugins-marketplace/tree/main/plugins/engineering/safe-engineering-plugin).
+Its team-rules pass checks the change against every rule in
+[sources/rules.json](sources/rules.json).
 
 ## Task Routing
 
@@ -81,8 +75,8 @@ Writing or refactoring tests at any layer:
 - [conventions/project-structure.md](conventions/project-structure.md)
 - [conventions/testing.md](conventions/testing.md)
 - [sources/rules.json](sources/rules.json)
-- [sources/rules.generated.md](sources/rules.generated.md)
 
 Maintenance inputs (review learnings, ledger, open-question options) live under
-`sources/working/` and are updated by the convention-maintenance workflow, not
-by normal coding agents.
+`sources/working/` and are updated by `/safe-repo-rules` from the
+safe-engineering-plugin (`--compound` weekly, `--prune` every few weeks), not by
+normal coding agents.
