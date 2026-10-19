@@ -833,7 +833,8 @@ export default () => ({
   policies: {
     /** How many delayed configuration requests CGW stores per Safe and Space. */
     maxConfigurationRequestsPerSpaceSafe: Number.parseInt(
-      process.env.POLICIES_MAX_CONFIGURATION_REQUESTS_PER_SPACE_SAFE ?? `${20}`,
+      process.env.POLICIES_MAX_CONFIGURATION_REQUESTS_PER_SPACE_SAFE ??
+        `${100}`,
       10,
     ),
     indexer: {
