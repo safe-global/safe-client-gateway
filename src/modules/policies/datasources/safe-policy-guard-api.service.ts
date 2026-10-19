@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { HttpStatus, Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import type { Address } from 'viem';
 import { CacheRouter } from '#/datasources/cache/cache.router';
 import {
@@ -7,8 +7,12 @@ import {
   type ICacheService,
 } from '#/datasources/cache/cache.service.interface';
 import { MAX_TTL } from '#/datasources/cache/constants';
-import { DataSourceError } from '#/domain/errors/data-source.error';
+import { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
 import { IBlockchainApiManager } from '#/domain/interfaces/blockchain-api.manager.interface';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '#/logging/logging.interface';
 import { asError } from '#/logging/utils';
 import { SafePolicyGuardAbi } from '#/modules/policies/domain/contracts/decoders/safe-policy-guard-decoder.helper';
 import { type Raw, rawify } from '#/validation/entities/raw.entity';
@@ -23,6 +27,9 @@ export class SafePolicyGuardApi {
     private readonly blockchainApiManager: IBlockchainApiManager,
     @Inject(CacheService)
     private readonly cacheService: ICacheService,
+    @Inject(LoggingService)
+    private readonly loggingService: ILoggingService,
+    private readonly httpErrorFactory: HttpErrorFactory,
   ) {}
 
   /**
@@ -68,10 +75,13 @@ export class SafePolicyGuardApi {
       });
       value = seconds.toString();
     } catch (error) {
-      throw new DataSourceError(
-        `Could not read the ${args.name} of a SafePolicyGuard: ${asError(error).message}`,
-        HttpStatus.SERVICE_UNAVAILABLE,
-      );
+      this.loggingService.warn({
+        message: `Could not read the ${args.name} of a SafePolicyGuard`,
+        chainId: args.chainId,
+        guard: args.guard,
+        error: asError(error).message,
+      });
+      throw this.httpErrorFactory.from(error);
     }
 
     await this.cacheService.hSet(cacheDir, value, MAX_TTL);

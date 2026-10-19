@@ -84,15 +84,21 @@ export type PendingGuardSetup = {
 export const PendingGuardConfigurationStatus = {
   /** Stored in CGW; `requestConfiguration` is not queued or executed. */
   Draft: 'draft',
-  /** A queued transaction calls `requestConfiguration(root)`. */
+  /**
+   * A queued transaction calls `requestConfiguration(root)`, with any number of
+   * confirmations and whatever the on-chain state.
+   */
   ConfigurationInSigning: 'configuration-in-signing',
-  /** Requested on-chain and not expired; in its delay or ready to apply. */
+  /**
+   * Requested on-chain and not expired (`EXPIRY` unknown counts as not
+   * expired), with no queued apply or a fully signed one before `readyAt`.
+   */
   PendingApplication: 'pending-application',
-  /** A queued `applyConfiguration` with fewer confirmations than needed. */
+  /** A queued `applyConfiguration` with fewer confirmations than required. */
   ApplicationInSigning: 'application-in-signing',
-  /** A queued `applyConfiguration` with every confirmation in, after `readyAt`. */
+  /** A queued `applyConfiguration` with every confirmation in, from `readyAt`. */
   ApplicationReady: 'application-ready',
-  /** Requested on-chain, but the application window has closed. */
+  /** Requested on-chain and `now >= readyAt + EXPIRY`. */
   Expired: 'expired',
 } as const;
 
@@ -114,7 +120,10 @@ export type PendingGuardConfiguration = {
   configurations: Array<PolicyConfiguration> | null;
   /** Unix seconds `applyConfiguration` is valid from; `null` until requested. */
   readyAt: number | null;
-  /** Unix seconds the application window closes; `readyAt + EXPIRY`. */
+  /**
+   * Unix seconds the application window closes, `readyAt + EXPIRY`; `null`
+   * when either is unknown.
+   */
   expiresAt: number | null;
   /** The queued request or apply transaction, if one is queued. */
   transaction: PendingTransaction | null;

@@ -13,12 +13,12 @@ import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.s
 import type { ILoggingService } from '#/logging/logging.interface';
 import { PolicyConfigurationRequest } from '#/modules/policies/datasources/entities/policy-configuration-request.entity.db';
 import { policyConfigurationBuilder } from '#/modules/policies/domain/entities/__tests__/policy-configuration.builder';
-import type { PolicyConfiguration } from '#/modules/policies/domain/entities/policy-configuration.entity';
-import { SafePolicyGuardConfigurationRequestsRepository } from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository';
 import {
   type ActiveRootsRule,
   EVERY_ROOT_ACTIVE,
-} from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository.interface';
+} from '#/modules/policies/domain/entities/active-roots-rule.entity';
+import type { PolicyConfiguration } from '#/modules/policies/domain/entities/policy-configuration.entity';
+import { SafePolicyGuardConfigurationRequestsRepository } from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository';
 import { configurationRoot } from '#/modules/policies/domain/utils/policy-configuration-root.utils';
 import { createMockSpaceEncryptionService } from '#/modules/spaces/domain/__tests__/space-encryption.service.mock';
 
@@ -387,6 +387,18 @@ describe('SafePolicyGuardConfigurationRequestsRepository', () => {
           draftsSince: faker.date.soon(),
         }),
       ).resolves.toBeUndefined();
+    });
+
+    it('should count drafts created since the draft window at the cap', async () => {
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      await fillCap(safeAddress);
+
+      await expect(
+        create(storableRequest({ safeAddress }), {
+          onChain: new Map(),
+          draftsSince: faker.date.past(),
+        }),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should count a live on-chain root however old', async () => {

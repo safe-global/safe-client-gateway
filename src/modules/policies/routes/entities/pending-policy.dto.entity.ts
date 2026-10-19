@@ -314,7 +314,11 @@ export class PendingGuardSetupDto implements PendingGuardSetup {
 export class PendingGuardConfigurationDto implements PendingGuardConfiguration {
   @ApiProperty({ enum: ['guard-configuration'] })
   public readonly kind!: 'guard-configuration';
-  @ApiProperty({ enum: Object.values(PendingGuardConfigurationStatus) })
+  @ApiProperty({
+    enum: Object.values(PendingGuardConfigurationStatus),
+    description:
+      'draft: stored in CGW, not requested. configuration-in-signing: requestConfiguration is queued. pending-application: requested, waiting for or past readyAt. application-in-signing: applyConfiguration is queued and collecting confirmations. application-ready: applyConfiguration is signed and can execute. expired: the application window has closed.',
+  })
   public readonly status!: PendingGuardConfiguration['status'];
   @ApiProperty({
     type: SafeRefDto,
@@ -348,7 +352,7 @@ export class PendingGuardConfigurationDto implements PendingGuardConfiguration {
     type: Number,
     nullable: true,
     description:
-      'Unix seconds the application window closes (readyAt + EXPIRY); null until the root is requested on-chain',
+      "Unix seconds the application window closes (readyAt + EXPIRY); null until the root is requested on-chain, or while the guard's EXPIRY is unknown",
   })
   public readonly expiresAt!: number | null;
   @ApiProperty({

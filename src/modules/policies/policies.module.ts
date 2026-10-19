@@ -2,6 +2,7 @@
 import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PostgresDatabaseModuleV2 } from '#/datasources/db/v2/postgres-database.module';
+import { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
 import { KmsEncryptionModule } from '#/datasources/kms/kms-encryption.module';
 import { AuthModule } from '#/modules/auth/auth.module';
 import { BlockchainModule } from '#/modules/blockchain/blockchain.module';
@@ -75,6 +76,7 @@ import { UsersModule } from '#/modules/users/users.module';
       provide: ISafePolicyGuardConfigurationRequestsRepository,
       useClass: SafePolicyGuardConfigurationRequestsRepository,
     },
+    HttpErrorFactory,
     SafePolicyGuardApi,
     {
       provide: ISafePolicyGuardRepository,

@@ -10,5 +10,11 @@ export interface ISafePolicyGuardRepository {
    */
   getExpiry(args: { chainId: string; guard: Address }): Promise<number>;
 
+  /** {@link getExpiry} of each of {@link args.guards}, keyed by guard. */
+  getExpiries(args: {
+    chainId: string;
+    guards: ReadonlyArray<Address>;
+  }): Promise<Map<Address, number>>;
+
   getDelay(args: { chainId: string; guard: Address }): Promise<number>;
 }

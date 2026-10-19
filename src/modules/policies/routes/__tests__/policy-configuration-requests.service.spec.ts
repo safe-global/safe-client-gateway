@@ -8,16 +8,14 @@ import type { ILoggingService } from '#/logging/logging.interface';
 import { siweAuthPayloadDtoBuilder } from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
 import { policyConfigurationBuilder } from '#/modules/policies/domain/entities/__tests__/policy-configuration.builder';
+import { EVERY_ROOT_ACTIVE } from '#/modules/policies/domain/entities/active-roots-rule.entity';
 import { policyIndexerConfigurationRootBuilder } from '#/modules/policies/domain/entities/indexer/__tests__/configuration-root.builder';
 import { policyIndexerResponseBuilder } from '#/modules/policies/domain/entities/indexer/__tests__/policy-indexer-state.builder';
 import type { PolicyConfiguration } from '#/modules/policies/domain/entities/policy-configuration.entity';
 import { getSafePolicyGuardDeployments } from '#/modules/policies/domain/policy-deployments.constants';
 import type { IPolicyIndexerRepository } from '#/modules/policies/domain/policy-indexer.repository.interface';
 import type { ISafePolicyGuardRepository } from '#/modules/policies/domain/safe-policy-guard.repository.interface';
-import {
-  EVERY_ROOT_ACTIVE,
-  type ISafePolicyGuardConfigurationRequestsRepository,
-} from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository.interface';
+import type { ISafePolicyGuardConfigurationRequestsRepository } from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository.interface';
 import { configurationRoot } from '#/modules/policies/domain/utils/policy-configuration-root.utils';
 import { PolicyConfigurationRequestsService } from '#/modules/policies/routes/policy-configuration-requests.service';
 import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
@@ -41,6 +39,7 @@ describe('PolicyConfigurationRequestsService', () => {
   > = { getState: vi.fn() };
   const safePolicyGuardRepository: MockedObject<ISafePolicyGuardRepository> = {
     getExpiry: vi.fn(),
+    getExpiries: vi.fn(),
     getDelay: vi.fn(),
   };
   const safeRepository: MockedObject<Pick<ISafeRepository, 'getSafe'>> = {
@@ -62,8 +61,9 @@ describe('PolicyConfigurationRequestsService', () => {
 
   const spaceId = faker.number.int({ min: 1, max: 100 });
   const userId = faker.number.int({ min: 1, max: 100 });
+  // A chain with known SafePolicyGuard deployments.
   const safe = {
-    chainId: faker.string.numeric(),
+    chainId: '11155111',
     address: getAddress(faker.finance.ethereumAddress()),
   };
   const request = {
@@ -126,7 +126,7 @@ describe('PolicyConfigurationRequestsService', () => {
   });
 
   describe('active roots', () => {
-    const guard = getAddress(faker.finance.ethereumAddress());
+    const [guard] = getSafePolicyGuardDeployments(safe.chainId);
     const now = faker.date.recent();
     const nowSeconds = Math.floor(now.getTime() / 1_000);
     const delay = faker.number.int({ min: 60, max: 3_600 });
@@ -135,7 +135,9 @@ describe('PolicyConfigurationRequestsService', () => {
     beforeEach(() => {
       vi.useFakeTimers({ now });
       safePolicyGuardRepository.getDelay.mockResolvedValue(delay);
-      safePolicyGuardRepository.getExpiry.mockResolvedValue(expiry);
+      safePolicyGuardRepository.getExpiries.mockImplementation(({ guards }) =>
+        Promise.resolve(new Map(guards.map((known) => [known, expiry]))),
+      );
     });
 
     it('should count on-chain roots only while they can still be applied', async () => {
@@ -173,16 +175,40 @@ describe('PolicyConfigurationRequestsService', () => {
         },
       );
       // One read per guard of a pending root, none for settled roots.
-      expect(safePolicyGuardRepository.getExpiry).toHaveBeenCalledTimes(1);
+      expect(safePolicyGuardRepository.getExpiries).toHaveBeenCalledWith({
+        chainId: safe.chainId,
+        guards: [guard],
+      });
+    });
+
+    it('should count a pending root of an unknown guard without reading its EXPIRY', async () => {
+      const unknown = policyIndexerConfigurationRootBuilder()
+        .with('guard', getAddress(faker.finance.ethereumAddress()))
+        .with('status', 'PENDING')
+        .with('readyAt', nowSeconds - expiry)
+        .build();
+      policyIndexerRepository.getState.mockResolvedValue(
+        policyIndexerResponseBuilder().with('roots', [unknown]).build(),
+      );
+
+      await target.create({ ...request, payload: validPayload() });
+
+      expect(configurationRequestsRepository.create).toHaveBeenCalledWith(
+        expect.anything(),
+        { onChain: new Map([[unknown.root, true]]), draftsSince: null },
+      );
+      expect(safePolicyGuardRepository.getExpiries).toHaveBeenCalledWith({
+        chainId: safe.chainId,
+        guards: [],
+      });
     });
 
     it("should only count drafts younger than the known guard's delay and expiry", async () => {
       // Either slot holds the guard; the module guard alone is enough.
-      const [deployment] = getSafePolicyGuardDeployments(safe.chainId);
       safeRepository.getSafe.mockResolvedValue(
         safeBuilder()
           .with('guard', zeroAddress)
-          .with('moduleGuard', deployment)
+          .with('moduleGuard', guard)
           .build(),
       );
 
@@ -197,13 +223,15 @@ describe('PolicyConfigurationRequestsService', () => {
       );
       expect(safePolicyGuardRepository.getDelay).toHaveBeenCalledWith({
         chainId: safe.chainId,
-        guard: deployment,
+        guard,
       });
     });
 
     it('should not age drafts by a guard that is not a known deployment', async () => {
       safeRepository.getSafe.mockResolvedValue(
-        safeBuilder().with('guard', guard).build(),
+        safeBuilder()
+          .with('guard', getAddress(faker.finance.ethereumAddress()))
+          .build(),
       );
 
       await target.create({ ...request, payload: validPayload() });

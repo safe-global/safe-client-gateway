@@ -41,10 +41,13 @@ const mockLoggingService = {
 const SEPOLIA_CHAIN_ID = '11155111';
 // Policy contracts of the policy-engine deployment CGW recognises.
 const COSIGNER_POLICY = getAddress(
-  '0xC49f4786aF99b7c3Edf0A3F71E6B969B76302ca5',
+  '0xd9f2A31C5C68422a466754cd4F4965Be2b6024FB',
 );
 const ERC20_TRANSFER_POLICY = getAddress(
-  '0x37AB4Fd7eFaDfC6cc35e09196f74c19F163EdA43',
+  '0x25DDa3b8974a10E93ca188F9C149A42F938Bd187',
+);
+const MULTISEND_POLICY = getAddress(
+  '0xF933Ec646F9cd6Dd27Ae2f808D133D3f5847210c',
 );
 
 describe('GuardConfigurationMapper', () => {
@@ -148,6 +151,7 @@ describe('GuardConfigurationMapper', () => {
     transactions?: Array<MultisigTransaction>;
     bindings?: Array<PolicyIndexerGuardEnforcedPolicy>;
     types?: ReadonlyArray<PolicyType>;
+    expiries?: ReadonlyMap<Address, number>;
   }): ReturnType<GuardConfigurationMapper['map']> {
     return target.map({
       safe,
@@ -155,7 +159,7 @@ describe('GuardConfigurationMapper', () => {
       roots: args.roots ?? [],
       stored: args.stored ?? [],
       bindings: args.bindings ?? [],
-      expiries: new Map([[guard, expiry]]),
+      expiries: args.expiries ?? new Map([[guard, expiry]]),
       types: args.types ?? GUARD_POLICY_TYPES,
       now,
     });
@@ -344,20 +348,133 @@ describe('GuardConfigurationMapper', () => {
         .encode();
       // The selector matches, the arguments are cut short.
       const truncated: Hex = `0x${valid.slice(2, 74)}`;
+      const transaction = queued({
+        to: guard,
+        data: truncated,
+        confirmations: 1,
+      });
 
-      expect(
-        map({
-          transactions: [
-            queued({ to: guard, data: truncated, confirmations: 1 }),
-          ],
-        }),
-      ).toStrictEqual([]);
+      expect(map({ transactions: [transaction] })).toStrictEqual([]);
       expect(mockLoggingService.debug).toHaveBeenCalledWith(
         expect.objectContaining({
           message:
             'Could not decode a queued SafePolicyGuard configuration call',
+          chainId: safe.chainId,
+          safeTxHash: transaction.safeTxHash,
         }),
       );
+    });
+
+    it('should report a fully signed apply as ready from readyAt itself', () => {
+      const config = configurations();
+
+      const [item] = map({
+        roots: [onChain({ configurations: config, readyAt: now })],
+        transactions: [apply(config, 2)],
+      });
+
+      expect(item.status).toBe('application-ready');
+    });
+
+    it('should report an apply signed beyond its threshold as ready', () => {
+      const config = configurations();
+
+      const [item] = map({
+        roots: [onChain({ configurations: config, readyAt: now - 60 })],
+        transactions: [apply(config, 3)],
+      });
+
+      expect(item.status).toBe('application-ready');
+    });
+
+    it('should report a pending root with a queued request as pending application', () => {
+      const config = configurations();
+
+      const [item] = map({
+        roots: [onChain({ configurations: config, readyAt: now - 60 })],
+        transactions: [request(config)],
+      });
+
+      expect(item).toStrictEqual(
+        expect.objectContaining({
+          status: 'pending-application',
+          transaction: null,
+        }),
+      );
+    });
+
+    it('should report the apply of a pending root queued after a request', () => {
+      const config = configurations();
+      const queuedApply = apply(config, 1);
+
+      const [item] = map({
+        roots: [onChain({ configurations: config, readyAt: now - 60 })],
+        transactions: [request(config), queuedApply],
+      });
+
+      expect(item).toStrictEqual(
+        expect.objectContaining({
+          status: 'application-in-signing',
+          transaction: expect.objectContaining({
+            safeTxHash: queuedApply.safeTxHash,
+          }),
+        }),
+      );
+    });
+
+    it('should report the first of two queued requests of a root', () => {
+      const config = configurations();
+      const first = request(config, 1);
+
+      const [item] = map({
+        stored: [stored(config)],
+        transactions: [first, request(config, 2)],
+      });
+
+      expect(item).toStrictEqual(
+        expect.objectContaining({
+          status: 'configuration-in-signing',
+          transaction: expect.objectContaining({
+            safeTxHash: first.safeTxHash,
+          }),
+        }),
+      );
+    });
+
+    describe('with an unknown EXPIRY', () => {
+      const unknownExpiry = new Map<Address, number>();
+
+      it('should report a pending root as not expired, without expiresAt', () => {
+        const root = onChain({
+          configurations: configurations(),
+          readyAt: now - expiry,
+        });
+
+        expect(map({ roots: [root], expiries: unknownExpiry })).toStrictEqual([
+          expect.objectContaining({
+            status: 'pending-application',
+            readyAt: root.readyAt,
+            expiresAt: null,
+          }),
+        ]);
+      });
+
+      it('should report a fully signed apply as ready', () => {
+        const config = configurations();
+
+        const [item] = map({
+          roots: [onChain({ configurations: config, readyAt: now - expiry })],
+          transactions: [apply(config, 2)],
+          expiries: unknownExpiry,
+        });
+
+        expect(item).toStrictEqual(
+          expect.objectContaining({
+            status: 'application-ready',
+            expiresAt: null,
+          }),
+        );
+      });
     });
 
     it('should report a root past its application window as expired', () => {
@@ -481,6 +598,20 @@ describe('GuardConfigurationMapper', () => {
       });
 
       expect(items.map((item) => item.root)).toStrictEqual([cosigner.root]);
+    });
+
+    it('should keep a root of mixed types if any of them is requested', () => {
+      const mixed = stored([
+        ...configurationOf(COSIGNER_POLICY),
+        ...configurationOf(MULTISEND_POLICY),
+      ]);
+
+      expect(
+        map({ stored: [mixed], types: [PolicyType.MultiSend] }),
+      ).toHaveLength(1);
+      expect(map({ stored: [mixed], types: [PolicyType.Allow] })).toStrictEqual(
+        [],
+      );
     });
 
     it('should type a removal by the binding it removes', () => {

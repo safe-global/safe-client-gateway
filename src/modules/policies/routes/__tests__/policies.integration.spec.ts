@@ -41,7 +41,6 @@ import { TestNotificationsRepositoryV2Module } from '#/modules/notifications/dom
 import {
   applyConfigurationEncoder,
   configureImmediatelyEncoder,
-  requestConfigurationEncoder,
   setModuleGuardEncoder,
 } from '#/modules/policies/domain/contracts/__tests__/encoders/safe-policy-guard-encoder.builder';
 import { policyConfigurationBuilder } from '#/modules/policies/domain/entities/__tests__/policy-configuration.builder';
@@ -1450,13 +1449,9 @@ describe('Space Policies Controller', () => {
       ]);
     });
 
-    it('should report the status of each configuration root', async () => {
+    it('should report the status of on-chain and stored roots', async () => {
       const now = nowInSeconds();
-      const inDelay = [policyConfigurationBuilder().build()];
       const toApply = [policyConfigurationBuilder().build()];
-      const expired = [policyConfigurationBuilder().build()];
-      const applied = [policyConfigurationBuilder().build()];
-      const toRequest = [policyConfigurationBuilder().build()];
       mockUpstream({
         guard,
         queuedTransactions: [
@@ -1467,26 +1462,12 @@ describe('Space Policies Controller', () => {
               .encode(),
             confirmations: 2,
           }),
-          queued({
-            to: guard,
-            data: requestConfigurationEncoder()
-              .with('configureRoot', configurationRoot(toRequest))
-              .encode(),
-            confirmations: 1,
-          }),
         ],
       });
       mockIndexer(
         rawPolicyIndexerResponse({
           ConfigurationRoot: [
-            aRoot({ configurations: inDelay, readyAt: now + 3_600 }),
             aRoot({ configurations: toApply, readyAt: now - 60 }),
-            aRoot({ configurations: expired, readyAt: now - expiry - 60 }),
-            aRoot({
-              configurations: applied,
-              readyAt: now - 60,
-              status: 'APPLIED',
-            }),
           ],
         }),
       );
@@ -1515,25 +1496,16 @@ describe('Space Policies Controller', () => {
           root: item.root,
           status: item.status,
         }));
-      expect(statuses).toHaveLength(5);
       expect(statuses).toEqual(
         expect.arrayContaining([
-          {
-            root: configurationRoot(inDelay),
-            status: 'pending-application',
-          },
           {
             root: configurationRoot(toApply),
             status: 'application-ready',
           },
-          { root: configurationRoot(expired), status: 'expired' },
-          {
-            root: configurationRoot(toRequest),
-            status: 'configuration-in-signing',
-          },
           { root: draft.root, status: 'draft' },
         ]),
       );
+      expect(statuses).toHaveLength(2);
     });
 
     it('should report the items of one Safe on the per-Safe route', async () => {
@@ -1566,42 +1538,6 @@ describe('Space Policies Controller', () => {
       expect(body).toEqual(await getPending({ accessToken, spaceId, types }));
     });
 
-    it('should return 422 on the per-Safe route for a Safe outside the space', async () => {
-      mockUpstream();
-      const { accessToken, spaceId } = await createSpaceWithSafe({
-        withSafe: false,
-      });
-
-      await request(app.getHttpServer())
-        .get(
-          `/v1/spaces/${spaceId}/chains/${SEPOLIA_CHAIN_ID}/safes/${safeAddress}/policies/pending`,
-        )
-        .query({ types: PolicyType.Cosigner })
-        .set('Cookie', [`access_token=${accessToken}`])
-        .expect(422);
-    });
-
-    it.each([
-      ['a missing', {}],
-      ['an unknown', { types: 'not-a-policy-type' }],
-    ])(
-      'should return 422 on the per-Safe route for %s policy type',
-      async (_, query) => {
-        mockUpstream();
-        const { accessToken, spaceId } = await createSpaceWithSafe({
-          withSafe: true,
-        });
-
-        await request(app.getHttpServer())
-          .get(
-            `/v1/spaces/${spaceId}/chains/${SEPOLIA_CHAIN_ID}/safes/${safeAddress}/policies/pending`,
-          )
-          .query(query)
-          .set('Cookie', [`access_token=${accessToken}`])
-          .expect(422);
-      },
-    );
-
     it('should return 403 on the per-Safe route without authentication', async () => {
       const { spaceId } = await createSpaceWithSafe({ withSafe: true });
 
@@ -1611,62 +1547,6 @@ describe('Space Policies Controller', () => {
         )
         .query({ types: PolicyType.Cosigner })
         .expect(403);
-    });
-
-    it('should report no guard items when only spending-limit is requested', async () => {
-      mockUpstream({
-        guard: zeroAddress,
-        queuedTransactions: [
-          queued({
-            to: safeAddress,
-            data: setGuardEncoder().with('guard', guard).encode(),
-            confirmations: 1,
-          }),
-        ],
-      });
-      const { accessToken, spaceId } = await createSpaceWithSafe({
-        withSafe: true,
-      });
-
-      await expect(
-        getPending({ accessToken, spaceId, types: PolicyType.SpendingLimit }),
-      ).resolves.toStrictEqual([]);
-    });
-
-    it('should keep the setup items when EXPIRY cannot be read', async () => {
-      const now = nowInSeconds();
-      mockUpstream({
-        guard: zeroAddress,
-        queuedTransactions: [
-          queued({
-            to: safeAddress,
-            data: setGuardEncoder().with('guard', guard).encode(),
-            confirmations: 1,
-          }),
-        ],
-      });
-      mockIndexer(
-        rawPolicyIndexerResponse({
-          ConfigurationRoot: [
-            aRoot({
-              configurations: [policyConfigurationBuilder().build()],
-              readyAt: now + 3_600,
-            }),
-          ],
-        }),
-      );
-      mockExpiry({ unavailable: true });
-      const { accessToken, spaceId } = await createSpaceWithSafe({
-        withSafe: true,
-      });
-
-      const body = await getPending({
-        accessToken,
-        spaceId,
-        types: PolicyType.Cosigner,
-      });
-
-      expect(body.map((item) => item.kind)).toStrictEqual(['guard-setup']);
     });
   });
 });

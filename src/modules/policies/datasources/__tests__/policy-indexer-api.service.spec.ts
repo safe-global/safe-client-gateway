@@ -173,6 +173,7 @@ describe('PolicyIndexerApi', () => {
         'SafeAllowance',
         'SafeDelegate',
         'GuardPolicyBinding',
+        'ConfigurationRoot(',
       ]) {
         expect(mockNetworkService.post).toHaveBeenCalledWith(
           expect.objectContaining({

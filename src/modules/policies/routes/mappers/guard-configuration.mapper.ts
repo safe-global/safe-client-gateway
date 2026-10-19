@@ -19,10 +19,8 @@ import {
   PendingGuardConfigurationStatus,
   type PendingTransaction,
 } from '#/modules/policies/domain/entities/pending-policy.entity';
-import {
-  OnChainPolicyConfigurationsSchema,
-  type PolicyConfiguration,
-} from '#/modules/policies/domain/entities/policy-configuration.entity';
+import type { PolicyConfiguration } from '#/modules/policies/domain/entities/policy-configuration.entity';
+import { policyOperationFromValue } from '#/modules/policies/domain/entities/policy-operation.entity';
 import type { PolicyType } from '#/modules/policies/domain/entities/policy-type.entity';
 import type { SafeRef } from '#/modules/policies/domain/entities/safe-ref.entity';
 import type { StoredPolicyConfiguration } from '#/modules/policies/domain/entities/stored-policy-configuration.entity';
@@ -31,16 +29,18 @@ import {
   getSafePolicyGuardDeployments,
 } from '#/modules/policies/domain/policy-deployments.constants';
 import {
+  applicationWindowOf,
   guardPolicyTypeOfKind,
   isRootApplicable,
 } from '#/modules/policies/domain/utils/policy.utils';
 import { configurationRoot } from '#/modules/policies/domain/utils/policy-configuration-root.utils';
 import {
+  decodeConfigurations,
   pendingTransactionOf,
+  type QueuedCallContext,
   queuedCalls,
 } from '#/modules/policies/routes/mappers/queued-calls.utils';
 import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
-import { Operation } from '#/modules/safe/domain/entities/operation.entity';
 
 /** A `requestConfiguration` call in the queue. */
 type QueuedRequest = { guard: Address; transaction: PendingTransaction };
@@ -67,19 +67,22 @@ type RootFacts = {
  *
  * A root's facts come from three places: the guard's on-chain state (the
  * indexer), the configurations CGW stored, and the Safe's transaction queue.
- * The first matching rule decides its status:
+ * The first matching rule decides its status, where "not expired" means
+ * `now < readyAt + EXPIRY` or `EXPIRY` unknown:
  *
- * 1. A queued `applyConfiguration`, and the root is pending on-chain and not
- *    expired: `application-in-signing` until every confirmation is in, then
- *    `pending-application` until `readyAt`, then `application-ready`.
- * 2. The root is pending on-chain and not expired - still in its delay, or
- *    ready to apply: `pending-application`.
- * 3. A queued `requestConfiguration`: `configuration-in-signing`. This also
- *    covers requesting an expired, applied or invalidated root again.
- * 4. The root is pending on-chain, but its window has closed: `expired`.
- * 5. Stored in CGW, and nothing on-chain or queued: `draft`.
+ * 1. A queued `applyConfiguration`, the root pending and not expired, fewer
+ *    confirmations than required: `application-in-signing`.
+ * 2. The same, fully signed, before `readyAt`: `pending-application`.
+ * 3. The same, fully signed, from `readyAt`: `application-ready`.
+ * 4. The root pending and not expired, no queued apply: `pending-application`.
+ * 5. A queued `requestConfiguration`, whatever the on-chain state and however
+ *    many confirmations: `configuration-in-signing`.
+ * 6. The root pending and `now >= readyAt + EXPIRY`: `expired`.
+ * 7. Stored in CGW, no on-chain root and nothing queued: `draft`.
  *
  * Anything else - an applied or invalidated root, say - is not pending.
+ * `EXPIRY` is unknown when it cannot be read or the guard is not a known
+ * deployment; the root is then reported with `expiresAt: null`.
  */
 @Injectable()
 export class GuardConfigurationMapper {
@@ -94,7 +97,8 @@ export class GuardConfigurationMapper {
    * @param args.roots The Safe's configuration roots, from the indexer.
    * @param args.stored The configurations CGW stored for the Safe.
    * @param args.bindings The Safe's current guard policy bindings.
-   * @param args.expiries `EXPIRY` in seconds, per guard address.
+   * @param args.expiries `EXPIRY` in seconds, per guard address. A guard
+   * missing from it has an unknown `EXPIRY`.
    * @param args.types The requested policy types.
    * @param args.now Unix seconds.
    */
@@ -133,6 +137,7 @@ export class GuardConfigurationMapper {
    * Gathers, per root, what the indexer, the store and the queue say about it.
    */
   private rootFacts(args: {
+    safe: SafeRef;
     transactions: ReadonlyArray<MultisigTransaction>;
     roots: ReadonlyArray<PolicyIndexerConfigurationRoot>;
     stored: ReadonlyArray<StoredPolicyConfiguration>;
@@ -166,12 +171,16 @@ export class GuardConfigurationMapper {
     // The queue is in nonce order, so the first call for a root is the one
     // that executes first.
     for (const transaction of args.transactions) {
+      const context = {
+        chainId: args.safe.chainId,
+        safeTxHash: transaction.safeTxHash,
+      };
       for (const call of queuedCalls(transaction, this.multiSendDecoder)) {
         if (!args.knownGuards.some((guard) => isAddressEqual(guard, call.to))) {
           continue;
         }
 
-        const request = this.decodeRequest(call.data);
+        const request = this.decodeRequest(call.data, context);
         if (request) {
           const fact = factOf(request);
           fact.request ??= {
@@ -181,7 +190,7 @@ export class GuardConfigurationMapper {
           continue;
         }
 
-        const configurations = this.decodeApply(call.data);
+        const configurations = this.decodeApply(call.data, context);
         if (configurations) {
           const fact = factOf(configurationRoot(configurations));
           fact.apply ??= {
@@ -206,14 +215,17 @@ export class GuardConfigurationMapper {
     now: number;
   }): PendingGuardConfiguration | null {
     const { fact } = args;
-    const window = applicationWindow(fact.onChain, args.expiries);
-    const isApplicable =
-      fact.onChain !== null &&
-      isRootApplicable(
-        fact.onChain,
-        args.expiries.get(fact.onChain.guard),
-        args.now,
-      );
+    const expiry = fact.onChain
+      ? args.expiries.get(fact.onChain.guard)
+      : undefined;
+    const window = fact.onChain
+      ? applicationWindowOf(fact.onChain, expiry)
+      : null;
+    // The window while the root can still be applied.
+    const applicable =
+      fact.onChain && isRootApplicable(fact.onChain, expiry, args.now)
+        ? window
+        : null;
     const configurations =
       fact.apply?.configurations ?? fact.stored?.configurations ?? null;
     const createdAt =
@@ -238,28 +250,28 @@ export class GuardConfigurationMapper {
       ...details,
     });
 
-    if (window && isApplicable && fact.apply) {
+    if (applicable && fact.apply) {
       const { transaction } = fact.apply;
       const isSigned =
         transaction.confirmations >= transaction.confirmationsRequired;
       if (!isSigned) {
         return item(PendingGuardConfigurationStatus.ApplicationInSigning, {
-          ...window,
+          ...applicable,
           transaction,
         });
       }
       // The guard rejects an apply until `readyAt`, however signed.
       return item(
-        args.now >= window.readyAt
+        args.now >= applicable.readyAt
           ? PendingGuardConfigurationStatus.ApplicationReady
           : PendingGuardConfigurationStatus.PendingApplication,
-        { ...window, transaction },
+        { ...applicable, transaction },
       );
     }
 
-    if (window && isApplicable) {
+    if (applicable) {
       return item(PendingGuardConfigurationStatus.PendingApplication, {
-        ...window,
+        ...applicable,
         transaction: null,
       });
     }
@@ -332,8 +344,7 @@ export class GuardConfigurationMapper {
       return getPolicyTypeOfContract(args.safe.chainId, configuration.policy);
     }
 
-    const operation =
-      configuration.operation === Operation.CALL ? 'CALL' : 'DELEGATECALL';
+    const operation = policyOperationFromValue(configuration.operation);
     const binding = args.bindings.find(
       (binding) =>
         isAddressEqual(binding.target, configuration.target) &&
@@ -346,7 +357,7 @@ export class GuardConfigurationMapper {
   }
 
   /** The root of a `requestConfiguration` call, or `null` for other data. */
-  private decodeRequest(data: Hex): Hex | null {
+  private decodeRequest(data: Hex, context: QueuedCallContext): Hex | null {
     if (!this.safePolicyGuardDecoder.helpers.isRequestConfiguration(data)) {
       return null;
     }
@@ -357,29 +368,28 @@ export class GuardConfigurationMapper {
         ? decoded.args[0]
         : null;
     } catch (error) {
-      this.logUndecodable(error);
+      this.logUndecodable(error, context);
       return null;
     }
   }
 
   /** The configurations of an `applyConfiguration` call, or `null`. */
-  private decodeApply(data: Hex): Array<PolicyConfiguration> | null {
+  private decodeApply(
+    data: Hex,
+    context: QueuedCallContext,
+  ): Array<PolicyConfiguration> | null {
     if (!this.safePolicyGuardDecoder.helpers.isApplyConfiguration(data)) {
       return null;
     }
 
     try {
-      const decoded = this.safePolicyGuardDecoder.decodeFunctionData({ data });
-      if (decoded.functionName !== 'applyConfiguration') {
-        return null;
-      }
-
-      const parsed = OnChainPolicyConfigurationsSchema.safeParse(
-        decoded.args[0],
-      );
-      return parsed.success ? parsed.data : null;
+      return decodeConfigurations({
+        decoder: this.safePolicyGuardDecoder,
+        data,
+        functionName: 'applyConfiguration',
+      });
     } catch (error) {
-      this.logUndecodable(error);
+      this.logUndecodable(error, context);
       return null;
     }
   }
@@ -389,34 +399,11 @@ export class GuardConfigurationMapper {
    * reported, so it is skipped - and logged, since it means a malformed queued
    * transaction.
    */
-  private logUndecodable(error: unknown): void {
+  private logUndecodable(error: unknown, context: QueuedCallContext): void {
     this.loggingService.debug({
       message: 'Could not decode a queued SafePolicyGuard configuration call',
+      ...context,
       error: asError(error).message,
     });
   }
-}
-
-/**
- * When a pending root becomes and stops being applicable, or `null` when it
- * is not pending.
- */
-function applicationWindow(
-  onChain: PolicyIndexerConfigurationRoot | null,
-  expiries: ReadonlyMap<Address, number>,
-): { guard: Address; readyAt: number; expiresAt: number } | null {
-  if (onChain?.status !== 'PENDING') {
-    return null;
-  }
-
-  const expiry = expiries.get(onChain.guard);
-  if (expiry === undefined) {
-    return null;
-  }
-
-  return {
-    guard: onChain.guard,
-    readyAt: onChain.readyAt,
-    expiresAt: onChain.readyAt + expiry,
-  };
 }

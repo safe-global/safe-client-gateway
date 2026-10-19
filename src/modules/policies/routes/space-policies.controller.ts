@@ -93,7 +93,7 @@ export class SpacePoliciesController {
   @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @ApiUnprocessableEntityResponse({
     description:
-      'Invalid CAIP-10 address, a Safe outside this space, or a missing or unknown policy type',
+      'Invalid CAIP-10 address, too many Safes or one outside this space, or a missing or unknown policy type',
   })
   @ApiForbiddenResponse({
     description:
@@ -122,7 +122,7 @@ export class SpacePoliciesController {
   @ApiOperation({
     summary: 'Get the pending policy changes on Safes in a Space',
     description:
-      'Returns the pending policy changes of every Safe in the Space, as three kinds of item. `queued-transaction`: a spending-limit change in the transaction queue. `guard-setup`: a queued transaction that calls configureImmediately on a SafePolicyGuard, or sets or removes the guard with setGuard or setModuleGuard. `guard-configuration`: a delayed SafePolicyGuard configuration, one per root, from draft to expired. Queued calls are detected only when made directly or one level inside a MultiSend batch, and only against known AllowanceModule and SafePolicyGuard deployments - a change made through a nested MultiSend, a custom batching contract, or a Safe module bypassing the owner queue is not detected.',
+      'Returns the pending policy changes of every Safe in the Space. Queued calls are detected only when made directly or one level inside a MultiSend batch, and only against known AllowanceModule and SafePolicyGuard deployments - a change made through a nested MultiSend, a custom batching contract, or a Safe module bypassing the owner queue is not detected.',
   })
   @ApiParam({
     name: 'spaceId',
@@ -143,7 +143,7 @@ export class SpacePoliciesController {
     isArray: true,
     enum: Object.values(PolicyType),
     description:
-      'The policy types to report, comma-separated. `spending-limit` reports queued spending-limit changes; the guard policy types report guard setup and guard configuration items. `proposer` is accepted and returns none, as a proposer change needs no Safe transaction.',
+      'The policy types to report, comma-separated. `proposer` returns none, as a proposer change needs no Safe transaction.',
     example: 'spending-limit',
   })
   @ApiExtraModels(
@@ -155,7 +155,7 @@ export class SpacePoliciesController {
   @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @ApiUnprocessableEntityResponse({
     description:
-      'Invalid CAIP-10 address, a Safe outside this space, or a missing or unknown policy type',
+      'Invalid CAIP-10 address, too many Safes or one outside this space, or a missing or unknown policy type',
   })
   @ApiForbiddenResponse({
     description:

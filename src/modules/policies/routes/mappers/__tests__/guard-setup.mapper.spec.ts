@@ -179,18 +179,21 @@ describe('GuardSetupMapper', () => {
     );
   });
 
-  it('should flag configureImmediately as reverting when the guard is already the module guard', () => {
-    const transaction = queued({
-      to: guard,
-      data: configureImmediatelyEncoder().encode(),
-    });
+  it.each(['guard', 'moduleGuard'] as const)(
+    'should flag configureImmediately as reverting when the guard is already the %s',
+    (slot) => {
+      const transaction = queued({
+        to: guard,
+        data: configureImmediatelyEncoder().encode(),
+      });
 
-    const [item] = map({ transactions: [transaction], moduleGuard: guard });
+      const [item] = map({ transactions: [transaction], [slot]: guard });
 
-    expect(item.changes).toStrictEqual([
-      expect.objectContaining({ willRevert: true }),
-    ]);
-  });
+      expect(item.changes).toStrictEqual([
+        expect.objectContaining({ willRevert: true }),
+      ]);
+    },
+  );
 
   it('should report removing the guard', () => {
     const transaction = queued({
@@ -290,12 +293,14 @@ describe('GuardSetupMapper', () => {
     // The selector matches, the arguments are cut short.
     const truncated: Hex = `0x${valid.slice(2, 74)}`;
 
-    expect(
-      map({ transactions: [queued({ to: guard, data: truncated })] }),
-    ).toStrictEqual([]);
+    const transaction = queued({ to: guard, data: truncated });
+
+    expect(map({ transactions: [transaction] })).toStrictEqual([]);
     expect(mockLoggingService.debug).toHaveBeenCalledWith(
       expect.objectContaining({
         message: 'Could not decode a queued SafePolicyGuard setup call',
+        chainId: safe.chainId,
+        safeTxHash: transaction.safeTxHash,
       }),
     );
   });

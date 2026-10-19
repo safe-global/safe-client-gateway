@@ -15,14 +15,13 @@ import {
   PendingGuardSetupChangeKind,
   PendingGuardSetupStatus,
 } from '#/modules/policies/domain/entities/pending-policy.entity';
-import {
-  OnChainPolicyConfigurationsSchema,
-  type PolicyConfiguration,
-} from '#/modules/policies/domain/entities/policy-configuration.entity';
+import type { PolicyConfiguration } from '#/modules/policies/domain/entities/policy-configuration.entity';
 import type { SafeRef } from '#/modules/policies/domain/entities/safe-ref.entity';
 import { getSafePolicyGuardDeployments } from '#/modules/policies/domain/policy-deployments.constants';
 import {
+  decodeConfigurations,
   pendingTransactionOf,
+  type QueuedCallContext,
   queuedCalls,
 } from '#/modules/policies/routes/mappers/queued-calls.utils';
 import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
@@ -88,6 +87,10 @@ export class GuardSetupMapper {
     slots: GuardSlots;
   }): PendingGuardSetup | null {
     const changes: Array<PendingGuardSetupChange> = [];
+    const context = {
+      chainId: args.safe.chainId,
+      safeTxHash: args.transaction.safeTxHash,
+    };
 
     // Calls run in calldata order, so the slots are carried forward: a
     // `setGuard` early in a batch decides whether a later
@@ -98,11 +101,13 @@ export class GuardSetupMapper {
             data: call.data,
             knownGuards: args.knownGuards,
             slots: args.slots,
+            context,
           })
         : this.configureImmediatelyChange({
             call,
             knownGuards: args.knownGuards,
             slots: args.slots,
+            context,
           });
 
       if (change) {
@@ -137,6 +142,7 @@ export class GuardSetupMapper {
     data: Hex;
     knownGuards: ReadonlyArray<Address>;
     slots: GuardSlots;
+    context: QueuedCallContext;
   }): PendingGuardSetupChange | null {
     const isSetGuard = this.safeGuardManagerDecoder.helpers.isSetGuard(
       args.data,
@@ -155,7 +161,7 @@ export class GuardSetupMapper {
       });
       [newValue] = decoded.args;
     } catch (error) {
-      this.logUndecodable(error);
+      this.logUndecodable(error, args.context);
       return null;
     }
 
@@ -188,6 +194,7 @@ export class GuardSetupMapper {
     call: { to: Address; data: Hex };
     knownGuards: ReadonlyArray<Address>;
     slots: GuardSlots;
+    context: QueuedCallContext;
   }): PendingGuardSetupChange | null {
     if (
       !(
@@ -200,7 +207,10 @@ export class GuardSetupMapper {
       return null;
     }
 
-    const configurations = this.decodeConfigurations(args.call.data);
+    const configurations = this.decodeConfigurations(
+      args.call.data,
+      args.context,
+    );
     if (!configurations) {
       return null;
     }
@@ -222,20 +232,18 @@ export class GuardSetupMapper {
    * they do not decode - an `operation` outside CALL/DELEGATECALL, say, which
    * the guard would reject anyway.
    */
-  private decodeConfigurations(data: Hex): Array<PolicyConfiguration> | null {
+  private decodeConfigurations(
+    data: Hex,
+    context: QueuedCallContext,
+  ): Array<PolicyConfiguration> | null {
     try {
-      const decoded = this.safePolicyGuardDecoder.decodeFunctionData({ data });
-      if (decoded.functionName !== 'configureImmediately') {
-        return null;
-      }
-
-      const [configurations] = decoded.args;
-      const parsed =
-        OnChainPolicyConfigurationsSchema.safeParse(configurations);
-
-      return parsed.success ? parsed.data : null;
+      return decodeConfigurations({
+        decoder: this.safePolicyGuardDecoder,
+        data,
+        functionName: 'configureImmediately',
+      });
     } catch (error) {
-      this.logUndecodable(error);
+      this.logUndecodable(error, context);
       return null;
     }
   }
@@ -245,9 +253,10 @@ export class GuardSetupMapper {
    * reported, so it is skipped - and logged, since it means a malformed queued
    * transaction.
    */
-  private logUndecodable(error: unknown): void {
+  private logUndecodable(error: unknown, context: QueuedCallContext): void {
     this.loggingService.debug({
       message: 'Could not decode a queued SafePolicyGuard setup call',
+      ...context,
       error: asError(error).message,
     });
   }

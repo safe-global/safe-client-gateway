@@ -21,6 +21,19 @@ export class SafePolicyGuardRepository implements ISafePolicyGuardRepository {
     return PolicyIndexerIntegerSchema.parse(expiry);
   }
 
+  public async getExpiries(args: {
+    chainId: string;
+    guards: ReadonlyArray<Address>;
+  }): Promise<Map<Address, number>> {
+    const expiries = await Promise.all(
+      args.guards.map((guard) =>
+        this.getExpiry({ chainId: args.chainId, guard }),
+      ),
+    );
+
+    return new Map(args.guards.map((guard, index) => [guard, expiries[index]]));
+  }
+
   public async getDelay(args: {
     chainId: string;
     guard: Address;

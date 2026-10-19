@@ -3,61 +3,78 @@ import { type Address, getAddress, isAddressEqual } from 'viem';
 import { PolicyType } from '#/modules/policies/domain/entities/policy-type.entity';
 
 /**
- * The policy-engine contracts CGW recognises.
- *
- * The addresses are deterministic (CREATE2), so the same set is used for every
- * chain. A chain without the contracts simply never matches them.
- *
- * TODO: replace with @safe-global/safe-modules-deployments once the
- * policy-engine publishes its deployments there.
+ * The policy-engine contracts CGW recognises, as the policy indexer tracks
+ * them. The guards differ only in their `DELAY`.
  */
-const POLICY_ENGINE_DEPLOYMENT: {
-  safePolicyGuard: Address;
-  policyContracts: ReadonlyArray<{ type: PolicyType; address: Address }>;
-} = {
-  safePolicyGuard: getAddress('0xde4c448904537EBBA654Ac3803E7D74A77C7a1a8'),
-  policyContracts: [
-    {
-      type: PolicyType.Erc20Transfer,
-      address: getAddress('0x37AB4Fd7eFaDfC6cc35e09196f74c19F163EdA43'),
-    },
-    {
-      type: PolicyType.Cosigner,
-      address: getAddress('0xC49f4786aF99b7c3Edf0A3F71E6B969B76302ca5'),
-    },
+const SAFE_POLICY_GUARDS: ReadonlyArray<Address> = [
+  '0x2d4527fD0E79ca1e533E3C7BBEF7e0668b700aED',
+  '0xd2fB492adADBa5BcFb7FeBE25746fd5FdE090b20',
+  '0x5202B1ebE100812437d47eae769e155945fbba6a',
+  '0x55c241591E12CE3c58491D02b737F12D3199ae95',
+].map((address) => getAddress(address));
+
+const POLICY_CONTRACTS: ReadonlyArray<{ type: PolicyType; address: Address }> =
+  [
     {
       type: PolicyType.Allow,
-      address: getAddress('0x3e40e32CE2BC4aFF4D1A9BE293C119ce4Fb52eAc'),
-    },
-    {
-      type: PolicyType.NativeTransfer,
-      address: getAddress('0x77d29DEaE811D5E42fbe292d3f2729403e11cA3A'),
+      address: '0x92e94Af03982C2486dffa8DcBc5d069D33996eF2',
     },
     {
       type: PolicyType.Deny,
-      address: getAddress('0xA78478404a909d9Fc4A693ed6c91508d0E6a071a'),
+      address: '0x348d9F0B2fECb0bF88655C74Ed3eFD5052A9E436',
     },
-  ],
-};
+    {
+      type: PolicyType.Cosigner,
+      address: '0xd9f2A31C5C68422a466754cd4F4965Be2b6024FB',
+    },
+    {
+      type: PolicyType.Erc20Transfer,
+      address: '0x25DDa3b8974a10E93ca188F9C149A42F938Bd187',
+    },
+    {
+      type: PolicyType.MultiSend,
+      address: '0xF933Ec646F9cd6Dd27Ae2f808D133D3f5847210c',
+    },
+    {
+      type: PolicyType.NativeTransfer,
+      address: '0x01b792988be451C5F6327b6e2D215Ff1d4cc7246',
+    },
+  ].map(({ type, address }) => ({ type, address: getAddress(address) }));
 
-/**
- * The `SafePolicyGuard` deployments on {@link chainId}.
- */
-export function getSafePolicyGuardDeployments(
-  _chainId: string,
-): Array<Address> {
-  return [POLICY_ENGINE_DEPLOYMENT.safePolicyGuard];
+/** The chains the policy indexer tracks `SafePolicyGuard` on: Polygon and Sepolia. */
+const POLICY_ENGINE_CHAIN_IDS: ReadonlySet<string> = new Set([
+  '137',
+  '11155111',
+]);
+
+/** The `SafePolicyGuard` deployments on the chain; none off the policy-engine chains. */
+export function getSafePolicyGuardDeployments(chainId: string): Array<Address> {
+  return POLICY_ENGINE_CHAIN_IDS.has(chainId) ? [...SAFE_POLICY_GUARDS] : [];
+}
+
+/** Whether {@link address} is a `SafePolicyGuard` deployment on the chain. */
+export function isSafePolicyGuardDeployment(
+  chainId: string,
+  address: Address,
+): boolean {
+  return getSafePolicyGuardDeployments(chainId).some((guard) =>
+    isAddressEqual(guard, address),
+  );
 }
 
 /**
- * The policy type a policy contract on {@link chainId} enforces, or `null` for a
+ * The policy type a policy contract on the chain enforces, or `null` for a
  * contract CGW does not know.
  */
 export function getPolicyTypeOfContract(
-  _chainId: string,
+  chainId: string,
   policyContract: Address,
 ): PolicyType | null {
-  const match = POLICY_ENGINE_DEPLOYMENT.policyContracts.find((contract) =>
+  if (!POLICY_ENGINE_CHAIN_IDS.has(chainId)) {
+    return null;
+  }
+
+  const match = POLICY_CONTRACTS.find((contract) =>
     isAddressEqual(contract.address, policyContract),
   );
 

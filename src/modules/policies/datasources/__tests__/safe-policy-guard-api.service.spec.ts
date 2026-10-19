@@ -4,8 +4,10 @@ import { getAddress, type PublicClient } from 'viem';
 import type { MockedObject } from 'vitest';
 import { FakeCacheService } from '#/datasources/cache/__tests__/fake.cache.service';
 import { CacheRouter } from '#/datasources/cache/cache.router';
+import { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
 import { DataSourceError } from '#/domain/errors/data-source.error';
 import type { IBlockchainApiManager } from '#/domain/interfaces/blockchain-api.manager.interface';
+import type { ILoggingService } from '#/logging/logging.interface';
 import { SafePolicyGuardApi } from '#/modules/policies/datasources/safe-policy-guard-api.service';
 import { SafePolicyGuardAbi } from '#/modules/policies/domain/contracts/decoders/safe-policy-guard-decoder.helper';
 
@@ -18,6 +20,10 @@ const mockBlockchainApiManager = {
   destroyApi: vi.fn(),
 } as MockedObject<IBlockchainApiManager>;
 
+const mockLoggingService = {
+  warn: vi.fn(),
+} as MockedObject<ILoggingService>;
+
 describe('SafePolicyGuardApi', () => {
   let target: SafePolicyGuardApi;
   let cacheService: FakeCacheService;
@@ -28,7 +34,12 @@ describe('SafePolicyGuardApi', () => {
     vi.resetAllMocks();
     cacheService = new FakeCacheService();
     mockBlockchainApiManager.getApi.mockResolvedValue(mockPublicClient);
-    target = new SafePolicyGuardApi(mockBlockchainApiManager, cacheService);
+    target = new SafePolicyGuardApi(
+      mockBlockchainApiManager,
+      cacheService,
+      mockLoggingService,
+      new HttpErrorFactory(),
+    );
   });
 
   it('should read EXPIRY from the guard on its chain', async () => {
@@ -92,17 +103,39 @@ describe('SafePolicyGuardApi', () => {
     });
   });
 
-  it('should not cache a failed read', async () => {
-    mockPublicClient.readContract.mockRejectedValue(
-      new Error('RPC unavailable'),
+  it('should cache the immutables of two guards apart', async () => {
+    const other = getAddress(faker.finance.ethereumAddress());
+    const expiry = faker.number.bigInt({ min: 60n, max: 86_400n });
+    const otherExpiry = expiry + faker.number.bigInt({ min: 1n, max: 86_400n });
+    mockPublicClient.readContract.mockImplementation(({ address }) =>
+      Promise.resolve(address === guard ? expiry : otherExpiry),
     );
 
-    await expect(target.getExpiry({ chainId, guard })).rejects.toThrow(
-      new DataSourceError(
-        'Could not read the EXPIRY of a SafePolicyGuard: RPC unavailable',
-        503,
-      ),
+    await target.getExpiry({ chainId, guard });
+    await target.getExpiry({ chainId, guard: other });
+
+    await expect(target.getExpiry({ chainId, guard })).resolves.toBe(
+      expiry.toString(),
     );
+    await expect(target.getExpiry({ chainId, guard: other })).resolves.toBe(
+      otherExpiry.toString(),
+    );
+    expect(mockPublicClient.readContract).toHaveBeenCalledTimes(2);
+  });
+
+  it('should log a failed read and not cache it', async () => {
+    const error = new Error(faker.lorem.sentence());
+    mockPublicClient.readContract.mockRejectedValue(error);
+
+    await expect(target.getExpiry({ chainId, guard })).rejects.toThrow(
+      new DataSourceError('Service unavailable', 503),
+    );
+    expect(mockLoggingService.warn).toHaveBeenCalledWith({
+      message: 'Could not read the EXPIRY of a SafePolicyGuard',
+      chainId,
+      guard,
+      error: error.message,
+    });
     expect(cacheService.keyCount()).toBe(0);
   });
 });

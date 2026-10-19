@@ -36,6 +36,7 @@ import type {
   Token,
   TokenReference,
 } from '#/modules/policies/domain/entities/token.entity';
+import { isSafePolicyGuardDeployment } from '#/modules/policies/domain/policy-deployments.constants';
 import { IPolicyIndexerRepository } from '#/modules/policies/domain/policy-indexer.repository.interface';
 import { ISafePolicyGuardRepository } from '#/modules/policies/domain/safe-policy-guard.repository.interface';
 import { ISafePolicyGuardConfigurationRequestsRepository } from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository.interface';
@@ -113,6 +114,7 @@ export class PoliciesService {
 
   private readonly batchSize: number;
   private readonly maxPageSize: number;
+  private readonly maxSafesPerSpace: number;
 
   constructor(
     @Inject(IPolicyIndexerRepository)
@@ -148,6 +150,9 @@ export class PoliciesService {
       this.configurationService.getOrThrow<number>('policies.batchSize');
 
     this.maxPageSize = this.safeRepository.getTransactionQueueMaxPageSize();
+    this.maxSafesPerSpace = this.configurationService.getOrThrow<number>(
+      'spaces.maxSafesPerSpace',
+    );
   }
 
   /**
@@ -181,9 +186,10 @@ export class PoliciesService {
   /**
    * The Safes of the Space, or the requested subset of them.
    *
-   * @throws {UnprocessableEntityException} when a requested Safe is not in the
-   * Space - silently narrowing to nothing would look like a Space whose Safes
-   * hold no policies.
+   * @throws {UnprocessableEntityException} when more than
+   * `spaces.maxSafesPerSpace` Safes are requested, or a requested Safe is not
+   * in the Space - silently narrowing to nothing would look like a Space whose
+   * Safes hold no policies.
    */
   private async spaceSafes(
     request: SpacePolicyRequest,
@@ -203,6 +209,11 @@ export class PoliciesService {
       (safe, index, all) =>
         all.findIndex((other) => this.compareSafes(other, safe)) === index,
     );
+    if (requested.length > this.maxSafesPerSpace) {
+      throw new UnprocessableEntityException(
+        `At most ${this.maxSafesPerSpace} Safes can be requested`,
+      );
+    }
     const inSpace = await Promise.all(
       requested.map((safe) =>
         this.spaceSafesRepository.existsInSpace({
@@ -453,9 +464,7 @@ export class PoliciesService {
     types: ReadonlyArray<PolicyType>,
   ): Promise<Array<PendingPolicy>> {
     const spendingLimitsRequested = types.includes(PolicyType.SpendingLimit);
-    const guardPoliciesRequested = GUARD_POLICY_TYPES.some((type) =>
-      types.includes(type),
-    );
+    const guardPoliciesRequested = guardPolicyKindsOf(types).length > 0;
 
     if (
       safes.length === 0 ||
@@ -546,6 +555,7 @@ export class PoliciesService {
     } catch (error) {
       this.loggingService.warn({
         message: 'Could not read the guard configurations of the Safes',
+        spaceId,
         error: asError(error).message,
       });
       return null;
@@ -636,9 +646,8 @@ export class PoliciesService {
   /**
    * The delayed guard configurations of one Safe.
    *
-   * Needs the `EXPIRY` of every guard that holds a pending root of the Safe. If
-   * one cannot be read, the Safe's configuration items are left out rather than
-   * reported with the wrong status.
+   * Needs the `EXPIRY` of every known guard that holds a pending root of the
+   * Safe. One that cannot be read leaves the root not known to be expired.
    */
   private async guardConfigurationsForSafe(args: {
     safe: SafeRef;
@@ -648,14 +657,10 @@ export class PoliciesService {
     now: number;
   }): Promise<Array<PendingGuardConfiguration>> {
     const roots = args.guardState.roots.filter((root) =>
-      this.compareSafes(
-        { chainId: root.chainId, address: root.safe },
-        args.safe,
-      ),
+      this.isScopedToSafe(root, args.safe),
     );
 
-    let expiries: Map<Address, number>;
-
+    let expiries = new Map<Address, number>();
     try {
       expiries = await this.expiriesOf(args.safe.chainId, roots);
     } catch (error) {
@@ -665,7 +670,6 @@ export class PoliciesService {
         safeAddress: args.safe.address,
         error: asError(error).message,
       });
-      return [];
     }
 
     return this.guardConfigurationMapper.map({
@@ -679,10 +683,7 @@ export class PoliciesService {
         ),
       ),
       bindings: args.guardState.bindings.filter((binding) =>
-        this.compareSafes(
-          { chainId: binding.chainId, address: binding.safe },
-          args.safe,
-        ),
+        this.isScopedToSafe(binding, args.safe),
       ),
       expiries,
       types: args.types,
@@ -691,21 +692,19 @@ export class PoliciesService {
   }
 
   /**
-   * The `EXPIRY` of every guard holding a pending root among {@link roots}.
+   * The `EXPIRY` of every known guard holding a pending root among
+   * {@link roots}. An unknown guard's is not trusted, so not read.
    */
   private async expiriesOf(
     chainId: string,
     roots: ReadonlyArray<PolicyIndexerConfigurationRoot>,
   ): Promise<Map<Address, number>> {
-    const guards = pendingRootGuards(roots);
-
-    const expiries = await Promise.all(
-      guards.map((guard) =>
-        this.safePolicyGuardRepository.getExpiry({ chainId, guard }),
+    return await this.safePolicyGuardRepository.getExpiries({
+      chainId,
+      guards: pendingRootGuards(roots).filter((guard) =>
+        isSafePolicyGuardDeployment(chainId, guard),
       ),
-    );
-
-    return new Map(guards.map((guard, index) => [guard, expiries[index]]));
+    });
   }
 
   /**

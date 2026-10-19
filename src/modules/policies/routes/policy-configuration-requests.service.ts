@@ -6,7 +6,7 @@ import {
   Inject,
   Injectable,
 } from '@nestjs/common';
-import { type Address, isAddressEqual } from 'viem';
+import type { Address } from 'viem';
 import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
 import { toSecondsTimestamp } from '#/domain/common/utils/time';
 import {
@@ -16,17 +16,17 @@ import {
 import { asError } from '#/logging/utils';
 import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '#/modules/auth/utils/assert-authenticated.utils';
-import type { SafeRef } from '#/modules/policies/domain/entities/safe-ref.entity';
-import { getSafePolicyGuardDeployments } from '#/modules/policies/domain/policy-deployments.constants';
-import { IPolicyIndexerRepository } from '#/modules/policies/domain/policy-indexer.repository.interface';
-import { ISafePolicyGuardRepository } from '#/modules/policies/domain/safe-policy-guard.repository.interface';
 import {
   type ActiveRootsRule,
   EVERY_ROOT_ACTIVE,
-  ISafePolicyGuardConfigurationRequestsRepository,
-} from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository.interface';
+} from '#/modules/policies/domain/entities/active-roots-rule.entity';
+import type { SafeRef } from '#/modules/policies/domain/entities/safe-ref.entity';
+import { isSafePolicyGuardDeployment } from '#/modules/policies/domain/policy-deployments.constants';
+import { IPolicyIndexerRepository } from '#/modules/policies/domain/policy-indexer.repository.interface';
+import { ISafePolicyGuardRepository } from '#/modules/policies/domain/safe-policy-guard.repository.interface';
+import { ISafePolicyGuardConfigurationRequestsRepository } from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository.interface';
 import {
-  isRootApplicable,
+  activeRootsRuleOf,
   pendingRootGuards,
 } from '#/modules/policies/domain/utils/policy.utils';
 import { configurationRoot } from '#/modules/policies/domain/utils/policy-configuration-root.utils';
@@ -112,27 +112,20 @@ export class PolicyConfigurationRequestsService {
         this.safeRepository.getSafe(safe),
       ]);
       // Only a known deployment's DELAY and EXPIRY are trusted.
-      const deployments = getSafePolicyGuardDeployments(safe.chainId);
-      const policyGuard = [guard, moduleGuard].find(
-        (slot): slot is Address =>
-          !!slot && deployments.some((d) => isAddressEqual(d, slot)),
-      );
+      const isKnown = (address: Address | null): address is Address =>
+        !!address && isSafePolicyGuardDeployment(safe.chainId, address);
+      const policyGuard = [guard, moduleGuard].find(isKnown);
       const guards = [
         ...new Set([
-          ...pendingRootGuards(roots),
+          ...pendingRootGuards(roots).filter(isKnown),
           ...(policyGuard ? [policyGuard] : []),
         ]),
       ];
       const [expiries, delay] = await Promise.all([
-        Promise.all(
-          guards.map(async (g) => {
-            const expiry = await this.safePolicyGuardRepository.getExpiry({
-              chainId: safe.chainId,
-              guard: g,
-            });
-            return [g, expiry] as const;
-          }),
-        ).then((entries) => new Map(entries)),
+        this.safePolicyGuardRepository.getExpiries({
+          chainId: safe.chainId,
+          guards,
+        }),
         policyGuard
           ? this.safePolicyGuardRepository.getDelay({
               chainId: safe.chainId,
@@ -140,22 +133,15 @@ export class PolicyConfigurationRequestsService {
             })
           : null,
       ]);
-      const now = toSecondsTimestamp(new Date());
-
-      const onChain = new Map(
-        roots.map((root) => [
-          root.root,
-          isRootApplicable(root, expiries.get(root.guard), now),
-        ]),
-      );
       const expiry = policyGuard ? expiries.get(policyGuard) : undefined;
-      return {
-        onChain,
-        draftsSince:
-          delay === null || expiry === undefined
-            ? null
-            : new Date((now - delay - expiry) * 1_000),
-      };
+
+      return activeRootsRuleOf({
+        roots,
+        expiries,
+        draftLifetime:
+          delay === null || expiry === undefined ? null : delay + expiry,
+        now: toSecondsTimestamp(new Date()),
+      });
     } catch (error) {
       this.loggingService.warn({
         message: 'Could not read the active configuration roots of a Safe',
