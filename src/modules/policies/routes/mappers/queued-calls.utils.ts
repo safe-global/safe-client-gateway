@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-
 import type { Address, Hex } from 'viem';
 import { toSecondsTimestamp } from '#/domain/common/utils/time';
 import type { MultiSendDecoder } from '#/modules/contracts/domain/decoders/multi-send-decoder.helper';
 import type { SafePolicyGuardDecoder } from '#/modules/policies/domain/contracts/decoders/safe-policy-guard-decoder.helper';
 import type { PendingTransaction } from '#/modules/policies/domain/entities/pending-policy.entity';
 import {
-  OnChainPolicyConfigurationsSchema,
   type PolicyConfiguration,
+  PolicyConfigurationSchema,
 } from '#/modules/policies/domain/entities/policy-configuration.entity';
 import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
 import { Operation } from '#/modules/safe/domain/entities/operation.entity';
@@ -82,6 +81,6 @@ export function decodeConfigurations(args: {
     return null;
   }
 
-  const parsed = OnChainPolicyConfigurationsSchema.safeParse(decoded.args[0]);
+  const parsed = PolicyConfigurationSchema.array().safeParse(decoded.args[0]);
   return parsed.success ? parsed.data : null;
 }

@@ -21,11 +21,12 @@ export interface ISafePolicyGuardConfigurationRequestsRepository {
    * verified that `root` is the hash of `configurations`.
    *
    * @throws {BadRequestException} if the Safe already holds the maximum number
-   * of active requests in the Space, per {@link activeRoots}.
+   * of active requests in the Space, per {@link activeRoots} (every stored
+   * root by default).
    */
   create(
     args: Omit<PolicyConfigurationRequest, 'id' | 'createdAt'>,
-    activeRoots: ActiveRootsRule,
+    activeRoots?: ActiveRootsRule,
   ): Promise<void>;
 
   /** The configurations stored for {@link args.safes} in one Space, oldest first. */

@@ -17,10 +17,7 @@ const SafeBaseSchema = z.object({
 
 export const SafeSchema = SafeBaseSchema.extend({
   modules: z.array(AddressSchema).nullish().default(null),
-  /**
-   * The Safe's module guard (Safe 1.5.0 and later). The zero address when none
-   * is set; `null` when the Transaction Service does not report it.
-   */
+  /** Served since Safe v1.5.0 added the slot; absent from older responses. */
   moduleGuard: AddressSchema.nullish().default(null),
   version: NullableStringSchema,
 });

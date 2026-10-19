@@ -93,7 +93,7 @@ export class SpacePoliciesController {
   @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @ApiUnprocessableEntityResponse({
     description:
-      'Invalid CAIP-10 address, too many Safes or one outside this space, or a missing or unknown policy type',
+      'Invalid CAIP-10 address, a Safe outside this space, or a missing or unknown policy type',
   })
   @ApiForbiddenResponse({
     description:
@@ -155,7 +155,7 @@ export class SpacePoliciesController {
   @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @ApiUnprocessableEntityResponse({
     description:
-      'Invalid CAIP-10 address, too many Safes or one outside this space, or a missing or unknown policy type',
+      'Invalid CAIP-10 address, a Safe outside this space, or a missing or unknown policy type',
   })
   @ApiForbiddenResponse({
     description:

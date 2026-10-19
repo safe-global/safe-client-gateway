@@ -12,9 +12,10 @@ import {
   type StoredPolicyConfiguration,
   StoredPolicyConfigurationSchema,
 } from '#/modules/policies/domain/entities/stored-policy-configuration.entity';
-import type {
-  ActiveRootsRule,
-  ISafePolicyGuardConfigurationRequestsRepository,
+import {
+  type ActiveRootsRule,
+  EVERY_ROOT_ACTIVE,
+  type ISafePolicyGuardConfigurationRequestsRepository,
 } from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository.interface';
 import { SpaceEncryptionService } from '#/modules/spaces/domain/space-encryption.service';
 
@@ -43,7 +44,7 @@ export class SafePolicyGuardConfigurationRequestsRepository
 
   public async create(
     args: Omit<DomainPolicyConfigurationRequest, 'id' | 'createdAt'>,
-    activeRoots: ActiveRootsRule,
+    activeRoots: ActiveRootsRule = EVERY_ROOT_ACTIVE,
   ): Promise<void> {
     const safeAddressIndex = this.spaceEncryptionService.safeAddressIndex(
       args.safeAddress,
