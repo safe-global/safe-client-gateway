@@ -467,6 +467,7 @@ export default (): ReturnType<typeof configuration> => ({
   safenet: {
     consensusAddress: faker.finance.ethereumAddress(),
     oracleAddress: faker.finance.ethereumAddress(),
+    rpcUri: faker.internet.url(),
     payer: {
       safeAddress: faker.finance.ethereumAddress(),
       kms: {

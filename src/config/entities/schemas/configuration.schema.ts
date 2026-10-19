@@ -151,6 +151,7 @@ export const RootConfigurationSchema = z
     FF_SAFENET: z.string().optional(),
     SAFENET_CONSENSUS_ADDRESS: AddressSchema.optional(),
     SAFENET_ORACLE_ADDRESS: AddressSchema.optional(),
+    SAFENET_RPC_URI: z.url().optional(),
     SAFENET_PAYER_SAFE_ADDRESS: AddressSchema.optional(),
     SAFENET_POLL_INTERVAL_MS: z.coerce.number().int().min(1).optional(),
     SAFENET_POLL_TIMEOUT_MS: z.coerce.number().int().min(1).optional(),
