@@ -196,11 +196,14 @@ export default (): ReturnType<typeof configuration> => ({
   },
   entitlements: {
     enforcementStartsAt: faker.date.future(),
+    gracePeriodClaimEndsAt: faker.date.future(),
   },
   expirationTimeInSeconds: {
     deviatePercent: faker.number.int({ min: 10, max: 20 }),
     default: faker.number.int(),
     rpc: faker.number.int(),
+    safenetNonce: faker.number.int(),
+    safenetDailyCheckCounter: faker.number.int(),
     hoodi: faker.number.int(),
     indexing: faker.number.int(),
     policyIndexer: faker.number.int({ min: 1, max: 60 }),
@@ -250,6 +253,7 @@ export default (): ReturnType<typeof configuration> => ({
     mfaStepUp: true,
     safeShieldCoreDisabled: false,
     safeQueueService: false,
+    safenet: false,
   },
   httpClient: {
     requestTimeout: faker.number.int(),
@@ -459,6 +463,35 @@ export default (): ReturnType<typeof configuration> => ({
   safeTransaction: {
     useVpcUrl: false,
     apiKey: faker.string.hexadecimal({ length: 32 }),
+  },
+  safenet: {
+    consensusAddress: faker.finance.ethereumAddress(),
+    oracleAddress: faker.finance.ethereumAddress(),
+    payer: {
+      safeAddress: faker.finance.ethereumAddress(),
+      kms: {
+        keyId: faker.string.uuid(),
+        webIdentityTokenFile: faker.system.filePath(),
+        connectionTimeoutMs: faker.number.int({ min: 1, max: 5_000 }),
+        requestTimeoutMs: faker.number.int({ min: 1, max: 10_000 }),
+      },
+    },
+    pollIntervalMs: faker.number.int({ min: 1, max: 1000 }),
+    pollTimeoutMs: faker.number.int({ min: 1000, max: 120_000 }),
+    checksPerSpacePerDay: faker.number.int({ min: 1, max: 100 }),
+    queue: {
+      attempts: faker.number.int({ min: 1, max: 3 }),
+      backoff: {
+        type: 'exponential',
+        delay: faker.number.int({ min: 0, max: 5000 }),
+      },
+      removeOnComplete: {
+        age: faker.number.int({ min: 2_592_000, max: 5_184_000 }),
+      },
+      removeOnFail: {
+        age: faker.number.int({ min: 2_592_000, max: 5_184_000 }),
+      },
+    },
   },
   transactions: {
     statusIndexingGracePeriodMs: faker.number.int({

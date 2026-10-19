@@ -42,7 +42,9 @@ describe('AddressBookItemsRepository', () => {
       get: vi.fn(),
     } as MockedObject<IConfigurationService>;
     configurationService.getOrThrow.mockImplementation((key: string) => {
-      if (key === 'spaces.addressBooks.maxItems') return 100;
+      if (key === 'spaces.addressBooks.maxItems') {
+        return 100;
+      }
       throw new Error(`Unexpected config key: ${key}`);
     });
 

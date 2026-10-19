@@ -236,7 +236,9 @@ export class ContractAnalysisService {
     }
 
     const contract = fetchResult.contract;
-    if (!contract) return {};
+    if (!contract) {
+      return {};
+    }
 
     const name = this.extractContractName(contract);
 
@@ -363,7 +365,9 @@ export class ContractAnalysisService {
       });
 
       const interactions = MultisigTransactionPageSchema.parse(page).count ?? 0;
-      if (interactions === 0) return {};
+      if (interactions === 0) {
+        return {};
+      }
 
       return {
         [ContractStatusGroup.CONTRACT_INTERACTION]: [

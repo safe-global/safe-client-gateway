@@ -41,7 +41,9 @@ describe('PostgresDatabaseMigrationHook tests', () => {
 
   it('should not run migrations', async () => {
     configurationService.getOrThrow.mockImplementation((key) => {
-      if (key === 'application.runMigrations') return false;
+      if (key === 'application.runMigrations') {
+        return false;
+      }
     });
     target = new PostgresDatabaseMigrationHook(
       sql,
@@ -59,7 +61,9 @@ describe('PostgresDatabaseMigrationHook tests', () => {
 
   it('should run migrations', async () => {
     configurationService.getOrThrow.mockImplementation((key) => {
-      if (key === 'application.runMigrations') return true;
+      if (key === 'application.runMigrations') {
+        return true;
+      }
     });
     const executed = [
       {

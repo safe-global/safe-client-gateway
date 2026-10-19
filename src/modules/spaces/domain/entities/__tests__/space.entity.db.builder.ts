@@ -6,6 +6,7 @@ import { Builder } from '#/__tests__/builder';
 import { DB_MAX_SAFE_INTEGER } from '#/domain/common/constants';
 import { nameBuilder } from '#/domain/common/entities/name.builder';
 import type { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
+import { ExperimentalFeatures } from '#/modules/spaces/domain/entities/experimental-feature.entity';
 import { fakeUuid } from '#/validation/entities/schemas/__tests__/uuid.builder';
 
 export function spaceBuilder(): IBuilder<Space> {
@@ -13,5 +14,9 @@ export function spaceBuilder(): IBuilder<Space> {
     .with('id', faker.number.int({ min: 1, max: DB_MAX_SAFE_INTEGER }))
     .with('uuid', fakeUuid())
     .with('name', nameBuilder())
-    .with('status', 'ACTIVE');
+    .with('status', 'ACTIVE')
+    .with(
+      'experimentalFeatures',
+      faker.helpers.arrayElements(ExperimentalFeatures),
+    );
 }

@@ -49,7 +49,9 @@ export class HumanDescriptionMapper {
   ): Promise<string | null> {
     const richDecodedInfo = await this.mapRichDecodedInfo(transaction, chainId);
 
-    if (!richDecodedInfo?.fragments) return null;
+    if (!richDecodedInfo?.fragments) {
+      return null;
+    }
 
     return richDecodedInfo.fragments
       .map((fragment) => {
@@ -82,7 +84,9 @@ export class HumanDescriptionMapper {
 
     const sigHash = this.getSigHash(transaction.data);
 
-    if (!sigHash) return null;
+    if (!sigHash) {
+      return null;
+    }
 
     try {
       const humanDescriptionFragments =

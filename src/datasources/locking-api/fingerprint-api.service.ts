@@ -62,7 +62,9 @@ export class FingerprintApiService implements IIdentityApi {
   private isAllowed(unsealedData: FingerprintUnsealedData): boolean {
     const isSpoofedLocation =
       unsealedData.products.locationSpoofing?.data?.result === true;
-    if (isSpoofedLocation) return false; // Early return if the location is spoofed.
+    if (isSpoofedLocation) {
+      return false; // Early return if the location is spoofed.
+    }
     const ipCountryCodes = [
       unsealedData.products.ipInfo?.data?.v4?.geolocation.country?.code ?? null,
       unsealedData.products.ipInfo?.data?.v6?.geolocation.country?.code ?? null,

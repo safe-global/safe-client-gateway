@@ -51,7 +51,9 @@ describe('TargetedMessagingDataSource tests', () => {
     migrator = new PostgresDatabaseMigrator(sql);
     await migrator.migrate();
     mockConfigurationService.getOrThrow.mockImplementation((key) => {
-      if (key === 'expirationTimeInSeconds.default') return faker.number.int();
+      if (key === 'expirationTimeInSeconds.default') {
+        return faker.number.int();
+      }
     });
 
     target = new TargetedMessagingDatasource(

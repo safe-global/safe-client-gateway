@@ -202,7 +202,7 @@ Running migrations on startup is retried (`db.migrator.numberOfRetries`, default
 
 ## Async work
 
-Background work runs on BullMQ queues backed by Redis, each declared with config-driven retry `attempts` and `backoff` (never hard-coded): csv-export (`src/modules/csv-export/v1/`), push notifications (`src/modules/notifications/domain/push/`), and SES email (`src/modules/email/ses/`).
+Background work runs on BullMQ queues backed by Redis, each declared with config-driven retry `attempts` and `backoff` (never hard-coded): csv-export (`src/modules/csv-export/v1/`), push notifications (`src/modules/notifications/domain/push/`), SES email (`src/modules/email/ses/`), and Safenet checks (`src/modules/safenet/`).
 Each queue has its own `@Processor`/`WorkerHost` consumer (e.g. `CsvExportConsumer` in `src/modules/csv-export/v1/consumers/csv-export.consumer.ts`) and its own `removeOnComplete`/`removeOnFail` retention config.
 The BullMQ connection itself is registered once, globally, in `src/app.module.ts` (`BullModule.forRootAsync`, pointed at `redis.host`/`redis.port`) — individual queue modules register a named queue against that shared connection rather than opening their own.
 

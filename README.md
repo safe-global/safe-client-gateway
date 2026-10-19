@@ -17,10 +17,11 @@ It provides UI-oriented mappings and data structures for easier integration with
 - [Client Gateway OpenAPI specification](https://safe-client.safe.global/api)
 - [Deploying the service](https://github.com/safe-global/safe-infrastructure)
 - [Billing webhook authentication & token generation](./src/modules/billing/README.md)
+- [Safenet payer and sponsored checks](./src/modules/safenet/README.md)
 
 ## Requirements
 
-- Node.js v24.21.0 'Krypton' LTS (>= 24.14 is required for the `#/` imports) ([Node.js Release Schedule](https://nodejs.org/en/about/previous-releases)) – https://nodejs.org/en/
+- Node.js v26.10.0 (>= 26.10.0 is required) ([Node.js Release Schedule](https://nodejs.org/en/about/previous-releases)) – https://nodejs.org/en/
 - Docker Compose – https://docs.docker.com/compose/
 
 ## Installation

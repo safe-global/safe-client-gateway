@@ -4,6 +4,7 @@ import {
   type Chain,
   createPublicClient,
   custom,
+  http,
   type PublicClient,
   RpcRequestError,
 } from 'viem';
@@ -50,12 +51,21 @@ export class BlockchainApiManager
     return this.getOrCreateApi(chainId);
   }
 
-  protected async createApi(chainId: string): Promise<PublicClient> {
-    const chain = await this.configApi
-      .getChain(chainId)
-      .then(ChainSchema.parse);
+  async getUncachedApi(chainId: string): Promise<PublicClient> {
+    const chain = await this.getDomainChain(chainId);
 
-    return this._createCachedRpcClient(chain);
+    return createPublicClient({
+      chain: this.formatChain(chain),
+      transport: http(),
+    });
+  }
+
+  protected async createApi(chainId: string): Promise<PublicClient> {
+    return this._createCachedRpcClient(await this.getDomainChain(chainId));
+  }
+
+  private getDomainChain(chainId: string): Promise<DomainChain> {
+    return this.configApi.getChain(chainId).then(ChainSchema.parse);
   }
 
   override destroyApi(chainId: string): void {

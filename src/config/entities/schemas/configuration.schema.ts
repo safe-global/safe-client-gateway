@@ -1,15 +1,23 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
+import { AddressSchema } from '#/validation/entities/schemas/address.schema';
+
+// A finished check job stays at least 30 days: its ID blocks a repeated request.
+const SAFENET_CHECKS_MIN_RETENTION_SECONDS = 30 * 24 * 60 * 60;
 
 const relayRulesValidator = z
   .string()
   .refine(
     (value) => {
-      if (value === undefined || value === null || value === '') return false;
+      if (value === undefined || value === null || value === '') {
+        return false;
+      }
       try {
         const parsed = JSON.parse(value);
 
-        if (!Array.isArray(parsed)) return false;
+        if (!Array.isArray(parsed)) {
+          return false;
+        }
         return parsed.every(
           (rule: Record<string, unknown>) =>
             typeof rule === 'object' &&
@@ -140,6 +148,48 @@ export const RootConfigurationSchema = z
     FF_BILLING_SERVICE: z.string().optional(),
     FF_MFA_STEP_UP: z.string().optional(),
     FF_SAFE_SHIELD_CORE_DISABLED: z.string().optional(),
+    FF_SAFENET: z.string().optional(),
+    SAFENET_CONSENSUS_ADDRESS: AddressSchema.optional(),
+    SAFENET_ORACLE_ADDRESS: AddressSchema.optional(),
+    SAFENET_PAYER_SAFE_ADDRESS: AddressSchema.optional(),
+    SAFENET_POLL_INTERVAL_MS: z.coerce.number().int().min(1).optional(),
+    SAFENET_POLL_TIMEOUT_MS: z.coerce.number().int().min(1).optional(),
+    SAFENET_PAYER_KMS_KEY_ID: z.string().optional(),
+    SAFENET_PAYER_KMS_CONNECTION_TIMEOUT_MS: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .optional(),
+    SAFENET_PAYER_KMS_REQUEST_TIMEOUT_MS: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .optional(),
+    SAFENET_CHECKS_QUEUE_ATTEMPTS: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(10)
+      .optional(),
+    SAFENET_CHECKS_QUEUE_BACKOFF_TYPE: z
+      .enum(['fixed', 'exponential'])
+      .optional(),
+    SAFENET_CHECKS_QUEUE_BACKOFF_DELAY: z.coerce
+      .number()
+      .int()
+      .min(0)
+      .optional(),
+    SAFENET_CHECKS_QUEUE_REMOVE_ON_COMPLETE_AGE: z.coerce
+      .number()
+      .int()
+      .min(SAFENET_CHECKS_MIN_RETENTION_SECONDS)
+      .optional(),
+    SAFENET_CHECKS_QUEUE_REMOVE_ON_FAIL_AGE: z.coerce
+      .number()
+      .int()
+      .min(SAFENET_CHECKS_MIN_RETENTION_SECONDS)
+      .optional(),
+    SAFENET_CHECKS_PER_SPACE_PER_DAY: z.coerce.number().int().min(1).optional(),
     FF_ZERION_TESTNETS_ENABLED: z.string().optional(),
     CGW_ENV: z.string().optional(),
     CIRCUIT_BREAKER_THRESHOLD: z.coerce.number().int().min(1).optional(),
@@ -157,7 +207,7 @@ export const RootConfigurationSchema = z
     TOKENS_RATE_LIMIT_WINDOW_SECONDS: z.coerce.number().int().min(1).optional(),
     SAFE_CONFIG_CGW_KEY: z.string().min(1).optional(),
     LOG_LEVEL: z
-      .enum(['error', 'warn', 'info', 'http', 'verbose', 'debug', 'silly'])
+      .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace'])
       .optional(),
     UNDICI_CONNECTIONS: z.coerce.number().int().min(1).optional(),
     UNDICI_PIPELINING: z.coerce.number().int().min(0).optional(),
@@ -181,6 +231,7 @@ export const RootConfigurationSchema = z
     EMAIL_API_FROM_EMAIL: z.email(),
     EMAIL_API_KEY: z.string(),
     ENTITLEMENTS_ENFORCEMENT_STARTS_AT: z.iso.datetime().optional(),
+    ENTITLEMENTS_GRACE_PERIOD_CLAIM_ENDS_AT: z.iso.datetime().optional(),
     EXPIRATION_DEVIATE_PERCENT: z.coerce.number().min(0).max(100).optional(),
     EXPIRATION_TIME_ENTITLEMENTS_SECONDS: z.coerce
       .number()

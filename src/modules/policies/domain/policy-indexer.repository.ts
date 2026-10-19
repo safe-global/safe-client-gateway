@@ -8,6 +8,8 @@ import {
 } from '#/logging/logging.interface';
 import { PolicyIndexerApi } from '#/modules/policies/datasources/policy-indexer-api.service';
 import {
+  PolicyIndexerGuardEnforcedPolicySchema,
+  type PolicyIndexerGuardPolicyKind,
   PolicyIndexerMetaSchema,
   PolicyIndexerRowsSchema,
   type PolicyIndexerSafeAllowance,
@@ -30,14 +32,23 @@ export class PolicyIndexerRepository implements IPolicyIndexerRepository {
 
   public async getState(args: {
     safes: ReadonlyArray<SafeRef>;
+    guardPolicyKinds: ReadonlyArray<PolicyIndexerGuardPolicyKind>;
   }): Promise<PolicyIndexerState> {
     const safes = this.checksum(args.safes);
 
     if (safes.length === 0) {
-      return { meta: [], allowances: [], delegates: [] };
+      return {
+        meta: [],
+        allowances: [],
+        delegates: [],
+        guardPolicyBindings: [],
+      };
     }
 
-    const raw = await this.policyIndexerApi.getState({ safes });
+    const raw = await this.policyIndexerApi.getState({
+      safes,
+      guardPolicyKinds: args.guardPolicyKinds,
+    });
     const response = PolicyIndexerRowsSchema.parse(raw);
 
     const delegates = this.parseRows(
@@ -56,6 +67,11 @@ export class PolicyIndexerRepository implements IPolicyIndexerRepository {
         this.withAllowanceDelegateStatus(allowance, delegates),
       ),
       delegates,
+      guardPolicyBindings: this.parseRows(
+        PolicyIndexerGuardEnforcedPolicySchema,
+        response.GuardPolicyBinding,
+        'GuardPolicyBinding',
+      ),
     };
   }
 

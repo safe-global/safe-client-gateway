@@ -6,7 +6,9 @@ export const ChainIdsSchema = z
   .string()
   .optional()
   .transform((val) => {
-    if (!val) return undefined;
+    if (!val) {
+      return undefined;
+    }
     const ids = val
       .split(',')
       .map((id) => id.trim())

@@ -1,0 +1,101 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { Injectable } from '@nestjs/common';
+import { type Address, isAddressEqual } from 'viem';
+import type {
+  ActivePolicy,
+  ActivePolicyData,
+} from '#/modules/policies/domain/entities/active-policy.entity';
+import type { PolicyIndexerGuardEnforcedPolicy } from '#/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
+import {
+  type GuardSlots,
+  guardEnforcement,
+} from '#/modules/policies/domain/entities/policy-enforcement.entity';
+import type { SafeRef } from '#/modules/policies/domain/entities/safe-ref.entity';
+import { guardPolicyTypeOfKind } from '#/modules/policies/domain/utils/policy.utils';
+
+@Injectable()
+export class GuardPolicyMapper {
+  public map(args: {
+    safe: SafeRef;
+    bindings: ReadonlyArray<PolicyIndexerGuardEnforcedPolicy>;
+    transactionGuard: Address | null;
+    moduleGuard: Address | null;
+  }): Array<ActivePolicy> {
+    const guardPolicies: Array<ActivePolicy> = [];
+
+    for (const binding of args.bindings) {
+      const type = guardPolicyTypeOfKind(binding.kind);
+
+      // Only rendered kinds are requested, so this is a kind asked for by
+      // mistake rather than one the indexer volunteered.
+      if (!type) {
+        continue;
+      }
+
+      const guards = this.toGuardSlots(binding, args);
+
+      guardPolicies.push({
+        type,
+        enforcement: guardEnforcement({
+          guards,
+          access: {
+            target: binding.target,
+            selector: binding.selector,
+            operation: binding.operation,
+          },
+        }),
+        // Configured on the guard, but only enforced while the Safe has that
+        // guard set - a policy configured before setGuard is reported, with no
+        // slot, rather than hidden.
+        enabled: Object.keys(guards).length > 0,
+        data: this.toData(binding),
+        safe: args.safe,
+      });
+    }
+
+    return guardPolicies;
+  }
+
+  /**
+   * The payload of a policy.
+   */
+  private toData(binding: PolicyIndexerGuardEnforcedPolicy): ActivePolicyData {
+    switch (binding.kind) {
+      case 'ERC20_TRANSFER':
+        // The policy keys its recipients by token, and the access target is
+        // the token.
+        return {
+          tokenAddress: binding.target,
+          recipients: binding.state.recipients,
+        };
+      case 'COSIGNER':
+        return { cosignerAddress: binding.state.cosigner };
+      default:
+        // Allow, deny, native transfer and multisend carry no configuration.
+        return {};
+    }
+  }
+
+  /**
+   * The Safe's guard slots that hold the binding's guard. The transaction
+   * guard checks owner transactions, the module guard module transactions.
+   */
+  private toGuardSlots(
+    binding: PolicyIndexerGuardEnforcedPolicy,
+    slots: { transactionGuard: Address | null; moduleGuard: Address | null },
+  ): GuardSlots {
+    const contracts = {
+      policyContract: binding.policy,
+      safePolicyGuard: binding.guard,
+    };
+    const holdsGuard = (slot: Address | null): boolean =>
+      slot !== null && isAddressEqual(slot, binding.guard);
+
+    return {
+      ...(holdsGuard(slots.transactionGuard) && {
+        transactionGuard: contracts,
+      }),
+      ...(holdsGuard(slots.moduleGuard) && { moduleGuard: contracts }),
+    };
+  }
+}

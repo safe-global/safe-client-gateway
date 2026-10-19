@@ -378,6 +378,8 @@ export default () => ({
       process.env.EXPIRATION_TIME_RPC_SECONDS ?? `${15}`,
       10,
     ),
+    safenetNonce: 60,
+    safenetDailyCheckCounter: 24 * 60 * 60,
     hoodi: Number.parseInt(
       process.env.HOODI_EXPIRATION_TIME_SECONDS ?? `${60}`,
       10,
@@ -488,6 +490,8 @@ export default () => ({
       process.env.FF_SAFE_SHIELD_CORE_DISABLED?.toLowerCase() === 'true',
     safeQueueService:
       process.env.FF_SAFE_QUEUE_SERVICE?.toLowerCase() === 'true',
+    // Safe Labs: remove after the KMS-backed payer rollout is complete.
+    safenet: process.env.FF_SAFENET?.toLowerCase() === 'true',
   },
   httpClient: {
     // Timeout in milliseconds to be used for the HTTP client.
@@ -574,6 +578,10 @@ export default () => ({
     // When enforcement goes live; workspaces created before it predate it.
     enforcementStartsAt: parseEnforcementStartsAt(
       process.env.ENTITLEMENTS_ENFORCEMENT_STARTS_AT,
+    ),
+    // When pre-enforcement workspaces stop being offered the legacy grace.
+    gracePeriodClaimEndsAt: parseGracePeriodClaimEndsAt(
+      process.env.ENTITLEMENTS_GRACE_PERIOD_CLAIM_ENDS_AT,
     ),
   },
   billing: {
@@ -841,6 +849,66 @@ export default () => ({
   safeTransaction: {
     useVpcUrl: process.env.USE_TX_SERVICE_VPC_URL?.toLowerCase() === 'true',
     apiKey: process.env.TX_SERVICE_API_KEY,
+  },
+  safenet: {
+    consensusAddress: process.env.SAFENET_CONSENSUS_ADDRESS,
+    oracleAddress: process.env.SAFENET_ORACLE_ADDRESS,
+    payer: {
+      safeAddress: process.env.SAFENET_PAYER_SAFE_ADDRESS,
+      kms: {
+        keyId: process.env.SAFENET_PAYER_KMS_KEY_ID,
+        webIdentityTokenFile: process.env.AWS_WEB_IDENTITY_TOKEN_FILE,
+        // A hung KMS call would hold the only safenet-checks queue slot, so every call is bounded.
+        connectionTimeoutMs: Number.parseInt(
+          process.env.SAFENET_PAYER_KMS_CONNECTION_TIMEOUT_MS ?? `${5_000}`,
+          10,
+        ),
+        requestTimeoutMs: Number.parseInt(
+          process.env.SAFENET_PAYER_KMS_REQUEST_TIMEOUT_MS ?? `${10_000}`,
+          10,
+        ),
+      },
+    },
+    pollIntervalMs: Number.parseInt(
+      process.env.SAFENET_POLL_INTERVAL_MS ?? `${1_000}`,
+      10,
+    ),
+    pollTimeoutMs: Number.parseInt(
+      process.env.SAFENET_POLL_TIMEOUT_MS ?? `${120_000}`,
+      10,
+    ),
+    checksPerSpacePerDay: Number.parseInt(
+      process.env.SAFENET_CHECKS_PER_SPACE_PER_DAY ?? '100',
+      10,
+    ),
+    // The schema bounds the attempts to 1-10 and the retention ages to 30 days or more.
+    queue: {
+      attempts: Number.parseInt(
+        process.env.SAFENET_CHECKS_QUEUE_ATTEMPTS ?? `${3}`,
+        10,
+      ),
+      backoff: {
+        type: process.env.SAFENET_CHECKS_QUEUE_BACKOFF_TYPE || 'exponential',
+        delay: Number.parseInt(
+          process.env.SAFENET_CHECKS_QUEUE_BACKOFF_DELAY ?? `${5_000}`,
+          10,
+        ),
+      },
+      removeOnComplete: {
+        age: Number.parseInt(
+          process.env.SAFENET_CHECKS_QUEUE_REMOVE_ON_COMPLETE_AGE ??
+            `${30 * 24 * 60 * 60}`,
+          10,
+        ), // 30 days
+      },
+      removeOnFail: {
+        age: Number.parseInt(
+          process.env.SAFENET_CHECKS_QUEUE_REMOVE_ON_FAIL_AGE ??
+            `${30 * 24 * 60 * 60}`,
+          10,
+        ), // 30 days
+      },
+    },
   },
   transactions: {
     statusIndexingGracePeriodMs: Number.parseInt(
@@ -1116,6 +1184,18 @@ const parseEnforcementStartsAt = (envValue: string | undefined): Date => {
     throw Error('ENTITLEMENTS_ENFORCEMENT_STARTS_AT is not a valid date');
   }
   return startsAt;
+};
+
+// 60 days after enforcement started in production (2026-10-06T12:30:00Z).
+const DEFAULT_GRACE_PERIOD_CLAIM_ENDS_AT = '2026-12-05T12:30:00Z';
+
+// Unset or invalid falls back to the default: an Invalid Date would close the window.
+const parseGracePeriodClaimEndsAt = (envValue: string | undefined): Date => {
+  const endsAt = new Date(envValue ?? DEFAULT_GRACE_PERIOD_CLAIM_ENDS_AT);
+  if (Number.isNaN(endsAt.getTime())) {
+    return new Date(DEFAULT_GRACE_PERIOD_CLAIM_ENDS_AT);
+  }
+  return endsAt;
 };
 
 // Helper function to parse relay rules from environment variable

@@ -146,7 +146,9 @@ export class MultisigTransactionInfoMapper {
       transaction,
     );
     // If the transaction is a swap order, we return it immediately
-    if (swapOrder) return swapOrder;
+    if (swapOrder) {
+      return swapOrder;
+    }
 
     // If the transaction is a TWAP order, we return it immediately
     const twapOrder = await this.mapTwapOrder(chainId, transaction);
@@ -619,7 +621,9 @@ export class MultisigTransactionInfoMapper {
     safeAddress: Address,
     dataDecoded: BaseDataDecoded | null,
   ): boolean {
-    if (!dataDecoded) return false;
+    if (!dataDecoded) {
+      return false;
+    }
     return (
       this.TRANSFER_METHOD === dataDecoded.method ||
       this.dataDecodedParamHelper.getFromParam(dataDecoded, '') ===

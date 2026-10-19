@@ -61,10 +61,16 @@ const fiatCodes = Array.from(
 beforeEach(() => {
   vi.resetAllMocks();
   configurationServiceMock.getOrThrow.mockImplementation((key) => {
-    if (key === 'safeTransaction.useVpcUrl') return false;
-    if (key === 'balances.providers.zerion.currencies') return fiatCodes;
+    if (key === 'safeTransaction.useVpcUrl') {
+      return false;
+    }
+    if (key === 'balances.providers.zerion.currencies') {
+      return fiatCodes;
+    }
     // TODO: Remove after Vault decoding has been released
-    if (key === 'application.isProduction') return true;
+    if (key === 'application.isProduction') {
+      return true;
+    }
   });
 });
 
@@ -121,14 +127,22 @@ describe('Balances API Manager Tests', () => {
       const expirationTimeInSeconds = faker.number.int();
       const notFoundExpireTimeSeconds = faker.number.int();
       configurationServiceMock.getOrThrow.mockImplementation((key) => {
-        if (key === 'safeTransaction.useVpcUrl') return useVpcUrl;
-        if (key === 'balances.providers.zerion.currencies') return fiatCodes;
-        if (key === 'expirationTimeInSeconds.default')
+        if (key === 'safeTransaction.useVpcUrl') {
+          return useVpcUrl;
+        }
+        if (key === 'balances.providers.zerion.currencies') {
+          return fiatCodes;
+        }
+        if (key === 'expirationTimeInSeconds.default') {
           return expirationTimeInSeconds;
-        if (key === 'expirationTimeInSeconds.notFound.default')
+        }
+        if (key === 'expirationTimeInSeconds.notFound.default') {
           return notFoundExpireTimeSeconds;
+        }
         // TODO: Remove after Vault decoding has been released
-        if (key === 'application.isProduction') return true;
+        if (key === 'application.isProduction') {
+          return true;
+        }
         throw new Error(`Unexpected key: ${key}`);
       });
       configApiMock.getChain.mockResolvedValue(rawify(chain));
