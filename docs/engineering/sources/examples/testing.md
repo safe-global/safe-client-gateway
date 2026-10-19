@@ -293,3 +293,43 @@ expect(body[0].hasPaymentMethod).toBe(true);
 Echoing a random boolean passes for either value, so the test does not say which
 case it covers, and its meaning changes with the seed. Pin the field the
 assertion is about and leave faker on the fields the test does not reason about.
+
+## TEST-09 — Prove a lock wait by observing it, not by sleeping
+
+Source: PR #3375 (RL-20261009-013)
+
+### Avoid
+
+Racing the call under test against a timer and reading "still pending" as
+"blocked":
+
+```ts
+const outcome = await Promise.race([
+  change.then(() => 'decided', () => 'decided'),
+  new Promise((resolve) => setTimeout(() => resolve('waiting'), 500)),
+]);
+expect(outcome).toBe('waiting');
+```
+
+### Prefer
+
+```ts
+const waitForBlockedQuery = async (): Promise<void> => {
+  const deadline = Date.now() + LOCK_WAIT_TIMEOUT_MS;
+  while (Date.now() < deadline) {
+    const [{ count }] = await dataSource.query(
+      `SELECT count(*)::int AS count FROM pg_stat_activity
+       WHERE datname = current_database() AND wait_event_type = 'Lock'`,
+    );
+    if (count > 0) return;
+    await new Promise((resolve) => setTimeout(resolve, LOCK_POLL_INTERVAL_MS));
+  }
+  throw new Error('No query blocked on a lock.');
+};
+```
+
+### Why
+
+The sleep costs its full length on every run and only shows the call had not
+finished yet, not why. Polling returns as soon as the block happens and
+asserts the lock wait itself.

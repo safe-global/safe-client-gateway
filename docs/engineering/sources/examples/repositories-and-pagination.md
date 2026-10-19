@@ -299,3 +299,42 @@ public async findByParentId(id: Parent['id']): Promise<Array<Item>> {
 The single-item path is the batch path with one key. Delegating keeps one
 query, one decryption path and one set of tests, so a fix to either cannot
 miss the other.
+
+## REUSE-01 — Rows scoped the same way share one predicate
+
+Source: PR #3449 (RL-20261014-004)
+
+### Avoid
+
+A second method that copies the first one's body for another row type:
+
+```ts
+private getItemsByOwner(items: ReadonlyArray<Item>, owner: OwnerRef): Array<Item> {
+  return items.filter(
+    (item) => item.chainId === owner.chainId && isAddressEqual(item.owner, owner.address),
+  );
+}
+
+private getBindingsByOwner(bindings: ReadonlyArray<Binding>, owner: OwnerRef): Array<Binding> {
+  return bindings.filter(
+    (binding) => binding.chainId === owner.chainId && isAddressEqual(binding.owner, owner.address),
+  );
+}
+```
+
+### Prefer
+
+```ts
+private isScopedToOwner(row: { chainId: string; owner: Address }, owner: OwnerRef): boolean {
+  return row.chainId === owner.chainId && isAddressEqual(row.owner, owner.address);
+}
+
+// items.filter((item) => this.isScopedToOwner(item, owner))
+// bindings.filter((binding) => this.isScopedToOwner(binding, owner))
+```
+
+### Why
+
+The scoping rule is what stops one owner's rows showing up on another. Kept
+in one predicate, a fix to the comparison (casing, chain id) reaches every row
+type, and one set of tests covers it.

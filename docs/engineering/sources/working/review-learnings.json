@@ -4427,5 +4427,529 @@
     "ruleIds": [
       "CHANGE-01"
     ]
+  },
+  {
+    "id": "RL-20261009-001",
+    "title": "Test database lagged the dev database's Postgres major; both repeated the same service config",
+    "sourceWindowId": "CLOSED-20261008-20261016",
+    "prNumbers": [
+      3453
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4134043636,
+      4134087821,
+      4218416786,
+      4218417100
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "Upgrading the local `db` service to Postgres 18 left `db-test` on `postgres:14.8-alpine`, so tests ran against 14 while dev ran 18, and the new SSL entrypoint/command block was copied into both services. Review asked to bump the test image and extract the block into an anchor; the author added an `x-postgres-ssl` anchor merged into both services and moved `image` into it (e101fd4d), keeping `volumes` per service because a merge key replaces lists. Services that must run the same version share one definition, so a bump cannot reach only one of them.",
+    "ruleIds": [
+      "CONFIG-05"
+    ]
+  },
+  {
+    "id": "RL-20261009-002",
+    "title": "Chain listed by the provider but not indexed read as a real zero balance",
+    "sourceWindowId": "CLOSED-20261008-20261016",
+    "prNumbers": [
+      3447
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4155003451,
+      4164875358,
+      4220907689
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [
+      5930648182,
+      6063271562
+    ],
+    "learning": "Deriving Zerion support from its chain list put every listed chain on the Zerion path, including chains with `flags.supports_positions: false` (opBNB today). The portfolio had no entry for such a chain, `extractChainFiatBalance` turned the missing key into `0`, and the tx-service fallback never ran, so those Safes showed zero. The author parsed the flag and skipped those chains (e5a460998). A provider listing an id is not support: honor its capability flag, and treat a missing entry as absence so the fallback runs instead of a plausible zero.",
+    "ruleIds": [
+      "LOG-01"
+    ]
+  },
+  {
+    "id": "RL-20261009-003",
+    "title": "Cached chain list kept its key after its meaning changed",
+    "sourceWindowId": "CLOSED-20261008-20261016",
+    "prNumbers": [
+      3447
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4155003451
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [
+      5930648182,
+      6063271562
+    ],
+    "learning": "The Zerion chain list is cached for 24h under the fixed field `zerion_chains`. Once the mapping skips unindexed chains, entries written before the deploy would keep routing those chains to Zerion for up to a day; review asked to change the cache field, and the author did (e5a460998). When what a cached entry means changes, not only its shape, the key changes with it.",
+    "ruleIds": [
+      "CACHE-02"
+    ]
+  },
+  {
+    "id": "RL-20261009-004",
+    "title": "New feature flag shipped without owner note, schema entry, or flag-on test",
+    "sourceWindowId": "CLOSED-20261008-20261016",
+    "prNumbers": [
+      3447
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [],
+    "issueCommentIds": [
+      5930648182,
+      6063271562
+    ],
+    "learning": "`FF_ZERION_TESTNETS_ENABLED` arrived with a comment naming no owner or removal condition, no entry in `RootConfigurationSchema`, and no test of the testnet gate with the flag on. Review listed all three as small fixes and the author made them (e5a460998). A new flag lands with its owning-ticket and removal note, its schema entry, and a test of the flag-on branch.",
+    "ruleIds": [
+      "CONFIG-01",
+      "CONFIG-02",
+      "TEST-09"
+    ]
+  },
+  {
+    "id": "RL-20261009-005",
+    "title": "Subpath imports hid cross-module types from Biome's type-aware rules",
+    "sourceWindowId": "CLOSED-20261008-20261016",
+    "prNumbers": [
+      3551
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4228368344,
+      4231089034
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "Moving `@/` imports to package.json `imports` (`#/*`) gave each entry a custom `source` condition that only tsc (`customConditions`) and Vitest were told about. Biome fell through to `default`, `./dist/src/*.js`, which does not exist in the CI lint job, so `noMisusedPromises`, `noDeprecatedImports` and `noFloatingPromises` stopped firing for new violations through `#/` while whole-tree counts stayed the same. The author added a `types` condition ahead of `default` on all three entries (89acfbb9), and the reviewer's repro fired again. A module-resolution change is checked against every tool that resolves imports, linters' type-aware rules included.",
+    "ruleIds": [
+      "CHANGE-03"
+    ]
+  },
+  {
+    "id": "RL-20261009-006",
+    "title": "Test config restated the runner's default conditions and added a dependency for it",
+    "sourceWindowId": "CLOSED-20261008-20261016",
+    "prNumbers": [
+      3551
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4228368349,
+      4231089541
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "`vitest.config.ts` built `['source', 'node', 'development|production']` from Vite's `defaultServerConditions`, although Vitest already merges its defaults into `resolve.conditions`, so the defaults appeared twice and a direct `vite` devDependency existed only for that import. Review showed `['source']` resolves the same; the author reduced it and removed the dependency (89acfbb9). Tool config states only what differs from the tool's defaults, and a dependency added only to restate them goes.",
+    "ruleIds": [
+      "CHANGE-01"
+    ]
+  },
+  {
+    "id": "RL-20261009-007",
+    "title": "CI comment overstated what its job uniquely covered",
+    "sourceWindowId": "CLOSED-20261008-20261016",
+    "prNumbers": [
+      3551
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4228368356,
+      4231089815
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "A new comment on the typecheck job called it the only whole-program type-check on PRs, although `env-validation` and `integration-tests` already run `tsc -p tsconfig.build.json`, which also compiles `scripts/*.ts`. Review supplied accurate wording (the job adds spec files, `__tests__` helpers and `test/`) and the author used it (89acfbb9). A comment in CI config describes what is true now, like any code comment.",
+    "ruleIds": [
+      "STYLE-01"
+    ]
+  },
+  {
+    "id": "RL-20261009-008",
+    "title": "Guides restating the pre-commit checklist missed the new command",
+    "sourceWindowId": "CLOSED-20261008-20261016",
+    "prNumbers": [
+      3551
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [
+      5467904070
+    ],
+    "issueCommentIds": [
+      6082740954
+    ],
+    "learning": "The PR added `yarn typecheck` to the AGENTS.md pre-commit checklist, but `docs/agents/reviewing.md` (twice, including \"the three commands\"), two Claude skills and `agent-tooling.md` restate that checklist and still listed three commands. Review asked to update them in the PR, and the author did (89acfbb9). Every guide that restates a list has to change with it, which is why a guide points at the owner instead of restating it.",
+    "ruleIds": [
+      "PR-02"
+    ]
+  },
+  {
+    "id": "RL-20261009-009",
+    "title": "Admin-rule reads loaded whole member and user rows",
+    "sourceWindowId": "CLOSED-20261008-20261016",
+    "prNumbers": [
+      3375
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4219707147,
+      4219711788,
+      4229606658,
+      4229613852
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "The locked admin reads in `MembersRepository` and the co-admin read on account deletion loaded full `DbMember` rows with the `user` relation, though the admin rules read only role, status and user id. Review asked to return only the needed columns; the author selected the member's id, role and status and the user's id (7b97de939, bab3cac26, 36db5adf8). A read selects the columns its caller uses, not the whole entity.",
+    "ruleIds": [
+      "DB-03"
+    ]
+  },
+  {
+    "id": "RL-20261009-010",
+    "title": "Repository wrapper forwarded to a helper of a different name",
+    "sourceWindowId": "CLOSED-20261008-20261016",
+    "prNumbers": [
+      3375
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4219798708,
+      4229635256
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "`assertIsNotLastAdmin` in the repository only called the `isLastActiveAdminOfSpace` helper, and review found itself jumping between the two. The author removed the middle wrapper and routed `removeSelf` through `assertTargetIsNotLastAdmin` as well, leaving one place to read (918451a00). A wrapper that only forwards to a helper is removed.",
+    "ruleIds": [
+      "PR-01"
+    ]
+  },
+  {
+    "id": "RL-20261009-011",
+    "title": "Hand-rolled Map grouping where lodash groupBy exists",
+    "sourceWindowId": "CLOSED-20261008-20261016",
+    "prNumbers": [
+      3375
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4219866536,
+      4229638180
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "Account deletion grouped the co-admins by space with a hand-written `Map` loop; review suggested `groupBy` from lodash, already a dependency, and the author switched (f0b130ae9). Grouping, keying and similar collection helpers come from the libraries the repo already uses.",
+    "ruleIds": [
+      "REUSE-01"
+    ]
+  },
+  {
+    "id": "RL-20261009-012",
+    "title": "Specs built users with casts and hand-rolled a configuration double",
+    "sourceWindowId": "CLOSED-20261008-20261016",
+    "prNumbers": [
+      3375
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4219890454,
+      4219934831,
+      4229641589,
+      4229644923
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [
+      5407265344,
+      5423616162
+    ],
+    "learning": "A utils spec built members with `.with('user', { id } as User)`; review asked for the user builder and the author switched (1053d9f7f). An architecture-check bot found the new concurrency spec passing `{ getOrThrow: vi.fn().mockReturnValue(10) }` as `IConfigurationService`; the author replied with the fix (00e14e6), which uses `FakeConfigurationService` set from `configuration()` and throws on unset keys like the real service. Specs take entities from builders and configuration from the fake, not from casts or hand-rolled doubles.",
+    "ruleIds": [
+      "TEST-01"
+    ]
+  },
+  {
+    "id": "RL-20261009-013",
+    "title": "Concurrency spec inferred a lock wait from a fixed sleep",
+    "sourceWindowId": "CLOSED-20261008-20261016",
+    "prNumbers": [
+      3375
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4219949112,
+      4229656613
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "Each concurrency case raced the call under test against a 500ms timer and read 'still pending' as 'blocked on the lock', about 2.3s per run; review asked whether it slowed the tests. The author replaced the race with polling `pg_stat_activity` until a connection waits on a lock (510b1fa66), which returns in under 100ms and asserts the block itself. A test proves a call is blocked by observing the wait, not by sleeping.",
+    "ruleIds": [
+      "TEST-09"
+    ]
+  },
+  {
+    "id": "RL-20261009-014",
+    "title": "Lock set read before the lock that serializes it; lock order undocumented",
+    "sourceWindowId": "CLOSED-20261008-20261016",
+    "prNumbers": [
+      3375
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [],
+    "issueCommentIds": [
+      5397492625
+    ],
+    "learning": "Account deletion read the user's memberships, then locked each administered space, so a space created or a promotion committed between that read and the locks was never locked or checked, and the cascade could leave the space without an admin. A bot review raised the race and asked to state the scope of the ascending-id lock order. Follow-up commits locked the user's row before reading memberships (a4223f14d2), locked the promoted member's row in `updateRole` (d318ccc293), and documented one order on the lock helpers: user rows first, then space rows by ascending id. The set of rows to lock is read under the lock that serializes changes to it, and paths that take several locks follow one documented order.",
+    "ruleIds": [
+      "DB-02"
+    ]
+  },
+  {
+    "id": "RL-20261009-015",
+    "title": "Guards and filters that no test failed without",
+    "sourceWindowId": "CLOSED-20261008-20261016",
+    "prNumbers": [
+      3375,
+      3449
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4269287801,
+      4271073964,
+      4269287809,
+      4270825466
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [
+      5397492625
+    ],
+    "learning": "In #3375 a bot review noted the last-admin rejection cases did not assert that no `MEMBER_LEFT` audit row was recorded; a follow-up commit held the audit mock and asserted `not.toHaveBeenCalled()` on both rejection paths, checked by moving the guard below the audit loop (9809d693a2). In #3449 the `&& spendingLimitsRequested` gate that keeps spending limits out of a guard-only response, and the per-Safe filter on guard bindings, could both be dropped with CI green: no spec requested a guard-only set and every guard test used one Safe. The author added guard-only and multi-Safe cases (1138ce2d, 2686553d). Each gate or filter has a case that fails when it is removed.",
+    "ruleIds": [
+      "TEST-09"
+    ]
+  },
+  {
+    "id": "RL-20261014-001",
+    "title": "Backward-compatible schema default had no absent-field case",
+    "sourceWindowId": "CLOSED-20261008-20261016",
+    "prNumbers": [
+      3449
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4269287771,
+      4271178606
+    ],
+    "reviewIds": [
+      5516115432
+    ],
+    "issueCommentIds": [],
+    "learning": "`moduleGuard` was added as `AddressSchema.nullish().default(null)` because Safes before v1.5.0 do not serve it, but `safeBuilder()` always sets it and the optional-defaults table in `safe.schema.spec.ts` covered only `modules` and `version`. Tightening it to `.nullable()` would break `getSafe` for every older Safe with CI green. The author added `moduleGuard` to the table (c7134aed). A field that older upstream versions omit keeps a case where it is absent; a builder that always sets it hides that case.",
+    "ruleIds": [
+      "TEST-09"
+    ]
+  },
+  {
+    "id": "RL-20261014-002",
+    "title": "New sub-query could fail reads that worked before",
+    "sourceWindowId": "CLOSED-20261008-20261016",
+    "prNumbers": [
+      3449
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4269287785,
+      4270956795
+    ],
+    "reviewIds": [
+      5516115432
+    ],
+    "issueCommentIds": [],
+    "learning": "The guard-binding selection was added to the one indexer query on every read, including spending-limit-only requests, so any guard-side GraphQL error would turn spending limits into a 503 as well. Review asked to include it only when guard kinds are requested (`@include(if: $withGuardPolicies)`); the author deferred it by agreement to the ticket that narrows the query (WA-3852). A selection added to an existing upstream query is gated to the requests that need it, so its failure stays out of reads that worked before.",
+    "ruleIds": [
+      "PERF-01"
+    ]
+  },
+  {
+    "id": "RL-20261014-003",
+    "title": "Expected value computed with the function under test",
+    "sourceWindowId": "CLOSED-20261008-20261016",
+    "prNumbers": [
+      3449
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4269287792,
+      4271146715
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "The only test touching `guardPolicyKindsOf` built its expectation with the same function (`guardPolicyKindsOf(Object.values(PolicyType))`), and the integration indexer mock ignored the query variables, so `.filter(() => false)` would pass while every guard policy vanished. The author added `policy.utils.spec.ts` with literal cases (42d041e0). A test of a mapping writes its expected values out literally.",
+    "ruleIds": [
+      "TEST-08"
+    ]
+  },
+  {
+    "id": "RL-20261014-004",
+    "title": "Second Safe-scoping filter copied the first's body",
+    "sourceWindowId": "CLOSED-20261008-20261016",
+    "prNumbers": [
+      3449
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4269287809,
+      4270825466
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "`getGuardPolicyBindingsBySafe` repeated `getAllowancesBySafe` for another row type. Review proposed one predicate over `{ chainId, safe }`; the author replaced both methods with `isScopedToSafe(row, safe)` used by two `filter` calls (2686553d). When a second row type needs the same scoping, the predicate is shared rather than the method copied.",
+    "ruleIds": [
+      "REUSE-01"
+    ]
+  },
+  {
+    "id": "RL-20261014-005",
+    "title": "Log and Swagger text kept describing the narrower or copied behavior",
+    "sourceWindowId": "CLOSED-20261008-20261016",
+    "prNumbers": [
+      3449
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4269287824,
+      4270895538,
+      4269287850,
+      4271021021
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "After `enabledModulesPerSafe` became `enforcersPerSafe` and also read both guard slots, its warn still said 'Could not read enabled modules of a Safe' and the `@ApiOperation` description still said only spending-limit or proposer data is omitted (fixed in d0e69f09). The new ERC-20 allowlist DTO copied the spending-limit description 'zero address for native', though native transfers are their own kind (fixed in a5c86ed1). Log messages and Swagger descriptions are rewritten when the behavior they describe widens, and a copied description is checked against the new field.",
+    "ruleIds": [
+      "PR-02"
+    ]
+  },
+  {
+    "id": "RL-20261014-006",
+    "title": "Mapper exported request-planning helpers to the service",
+    "sourceWindowId": "CLOSED-20261008-20261016",
+    "prNumbers": [
+      3449
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4269287835,
+      4270644654
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "`guard-policy.mapper.ts` exported `POLICY_TYPE_BY_KIND`, `guardPolicyKindsOf` and a `GUARD_POLICY_TYPES` list the service used only for `.some(...)`, which `guardPolicyKindsOf(types).length > 0` already answers. Review cited R-013 and noted the other mappers export only their class; the author moved the helpers to `domain/utils/policy.utils.ts` and dropped the redundant export (42d041e0). A mapper file exports its mapper class; helpers other layers call live in a utils file.",
+    "ruleIds": [
+      "STYLE-01"
+    ]
+  },
+  {
+    "id": "RL-20261014-007",
+    "title": "Response field modeled as an array the mapper always filled with one item",
+    "sourceWindowId": "CLOSED-20261008-20261016",
+    "prNumbers": [
+      3449
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4269287844,
+      4270931613
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "`Erc20TransferPolicyData.allowlist` was an array, but the mapper always built `[{ tokenAddress: binding.target, recipients }]`, one item per binding, so clients would only ever read `allowlist[0]`. Review asked whether the array was agreed with the web side and noted that flattening is cheaper before clients ship; the author flattened it to `{ tokenAddress, recipients }` (c367750a). A response shape does not model a cardinality its producer never generates.",
+    "ruleIds": [
+      "PR-01"
+    ]
+  },
+  {
+    "id": "RL-20261014-008",
+    "title": "Test named 'guard not set' ran with another guard set",
+    "sourceWindowId": "CLOSED-20261008-20261016",
+    "prNumbers": [
+      3449
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4269287879,
+      4270976050
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "`mockUpstream()` defaults the Safe's guard to the policy guard while the binding names a random one, so the case titled 'unenforced when the guard is not set' exercised 'another guard is set'. The author renamed it to match the mapper spec's naming (5e02278e). A test title names the state its fixture actually builds.",
+    "ruleIds": [
+      "TEST-08"
+    ]
+  },
+  {
+    "id": "RL-20261014-009",
+    "title": "New response payload used snake_case keys",
+    "sourceWindowId": "CLOSED-20261008-20261016",
+    "prNumbers": [
+      3449
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [],
+    "issueCommentIds": [
+      6127427815,
+      6141051650
+    ],
+    "learning": "The guard-policy payloads introduced `token_address` and `cosigner_address` while CGW's other response fields (`tokenAddress`, `moduleAddress`, `chainId`) are camelCase. A bot review flagged it; the author replied with the fix (44391e5c), which renames the entity, DTO, mapper and spec fields. API response fields are camelCase.",
+    "ruleIds": [
+      "NAME-01"
+    ]
+  },
+  {
+    "id": "RL-20261014-010",
+    "title": "Schema parsed a field the query already pinned",
+    "sourceWindowId": "CLOSED-20261008-20261016",
+    "prNumbers": [
+      3449
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [],
+    "issueCommentIds": [
+      6127427815,
+      6141051650
+    ],
+    "learning": "`PolicyIndexerGuardPolicyBindingBaseSchema` parsed `active: z.boolean()` although the query filters `active: { _eq: true }` and the mapper never read it. A bot review flagged it; the author replied with the fix (b0e1aa3b), which removes it from the query selection, the schema and the builder. A field no code reads is neither selected nor parsed.",
+    "ruleIds": [
+      "STYLE-01"
+    ]
+  },
+  {
+    "id": "RL-20261014-011",
+    "title": "Redis behavior fix rode along in a feature PR",
+    "sourceWindowId": "CLOSED-20261008-20261016",
+    "prNumbers": [
+      3563
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4268827300,
+      4268847813,
+      4268897391,
+      4268897640
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "A Safenet payer-configuration PR also prefixed `setCounter`'s key and dropped `NX`, which changes `RedisCacheService` behavior, together with a new integration test. Review asked to extract a bug fix into its own PR; the author moved the fix and its regression test, which fails on main, to #3610 at the bottom of the stack. A fix found while building a feature ships as its own PR with its regression test.",
+    "ruleIds": [
+      "CHANGE-02"
+    ]
   }
 ]
