@@ -1,24 +1,16 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { UUID } from 'node:crypto';
 import { faker } from '@faker-js/faker';
 import { HttpException, HttpStatus } from '@nestjs/common';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import type { MockedObject } from 'vitest';
 import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
-import { subscriptionPlanBuilder } from '#/datasources/billing-api/entities/__tests__/plan.builder';
-import { subscriptionBuilder } from '#/datasources/billing-api/entities/__tests__/subscription.builder';
-import type { PlanTypes } from '#/datasources/billing-api/entities/plan.entity';
-import {
-  type SubscriptionStatus,
-  SubscriptionStatuses,
-} from '#/datasources/billing-api/entities/subscription.entity';
 import { FakeCacheService } from '#/datasources/cache/__tests__/fake.cache.service';
 import { getBaseMultisigTransaction } from '#/domain/common/utils/safe';
 import { siweAuthPayloadDtoBuilder } from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
-import type { IBillingRepository } from '#/modules/billing/domain/billing.repository.interface';
 import type { IFeatureFlagService } from '#/modules/chains/feature-flags/feature-flag.service.interface';
-import { isActiveSubscriptionStatus } from '#/modules/entitlements/domain/entitlements.constants';
+import type { IEntitlementEnforcement } from '#/modules/entitlements/domain/entitlement-enforcement.interface';
+import { FeatureNotGrantedError } from '#/modules/entitlements/domain/errors/feature-not-granted.error';
 import { multisigTransactionBuilder } from '#/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
 import { confirmationBuilder } from '#/modules/safe/domain/entities/__tests__/multisig-transaction-confirmation.builder';
 import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
@@ -45,29 +37,20 @@ describe('SafenetChecksService', () => {
     .with('version', '1.4.1')
     .build();
 
-  let space: { id: number; uuid: UUID };
+  let spaceId: number;
   let transaction: MultisigTransaction;
   let cache: FakeCacheService;
   let featureFlags: MockedObject<IFeatureFlagService>;
   let members: MockedObject<Pick<IMembersRepository, 'findOne'>>;
   let spaceSafes: MockedObject<Pick<ISpaceSafesRepository, 'existsInSpace'>>;
-  let billing: MockedObject<
-    Pick<IBillingRepository, 'getSubscriptionsByCustomerId'>
+  let entitlements: MockedObject<
+    Pick<IEntitlementEnforcement, 'assertFeatureGranted'>
   >;
   let safeRepository: MockedObject<
     Pick<ISafeRepository, 'getSafe' | 'getMultiSigTransaction'>
   >;
   let queue: MockedObject<Pick<SafenetChecksQueue, 'has' | 'enqueue'>>;
   let target: SafenetChecksService;
-
-  const subscriptionOf = (
-    type: (typeof PlanTypes)[number],
-    status: SubscriptionStatus = 'active',
-  ) =>
-    subscriptionBuilder()
-      .with('status', status)
-      .with('plan', subscriptionPlanBuilder().with('type', type).build())
-      .build();
 
   const buildTransaction = (nonce: number): Promise<MultisigTransaction> =>
     multisigTransactionBuilder()
@@ -78,7 +61,7 @@ describe('SafenetChecksService', () => {
 
   const requestCheck = (): Promise<void> =>
     target.requestCheck({
-      space,
+      spaceId,
       chainId: CHAIN_ID,
       safeAddress: safe.address,
       safeTxHash: transaction.safeTxHash,
@@ -93,19 +76,14 @@ describe('SafenetChecksService', () => {
   };
 
   beforeEach(async () => {
-    space = {
-      id: faker.number.int({ min: 1 }),
-      uuid: faker.string.uuid() as UUID,
-    };
+    spaceId = faker.number.int({ min: 1 });
     transaction = await buildTransaction(1);
     cache = new FakeCacheService();
     featureFlags = { isFeatureEnabled: vi.fn().mockResolvedValue(true) };
     members = { findOne: vi.fn().mockResolvedValue(memberBuilder().build()) };
     spaceSafes = { existsInSpace: vi.fn().mockResolvedValue(true) };
-    billing = {
-      getSubscriptionsByCustomerId: vi
-        .fn()
-        .mockResolvedValue([subscriptionOf('premium')]),
+    entitlements = {
+      assertFeatureGranted: vi.fn().mockResolvedValue(undefined),
     };
     safeRepository = {
       getSafe: vi.fn().mockResolvedValue(safe),
@@ -123,7 +101,7 @@ describe('SafenetChecksService', () => {
       featureFlags,
       members as MockedObject<IMembersRepository>,
       spaceSafes as MockedObject<ISpaceSafesRepository>,
-      billing as MockedObject<IBillingRepository>,
+      entitlements as MockedObject<IEntitlementEnforcement>,
       safeRepository as MockedObject<ISafeRepository>,
       queue as MockedObject<SafenetChecksQueue>,
       cache,
@@ -135,16 +113,17 @@ describe('SafenetChecksService', () => {
 
     expect(members.findOne).toHaveBeenCalledWith({
       user: { id: userId },
-      space: { id: space.id },
+      space: { id: spaceId },
       status: 'ACTIVE',
     });
     expect(spaceSafes.existsInSpace).toHaveBeenCalledWith({
-      spaceId: space.id,
+      spaceId,
       chainId: CHAIN_ID,
       address: safe.address,
     });
-    expect(billing.getSubscriptionsByCustomerId).toHaveBeenCalledWith({
-      upstreamCustomerId: space.uuid,
+    expect(entitlements.assertFeatureGranted).toHaveBeenCalledWith({
+      spaceId,
+      featureKey: 'policies',
     });
     expect(queue.enqueue).toHaveBeenCalledWith({
       chainId: CHAIN_ID,
@@ -165,19 +144,6 @@ describe('SafenetChecksService', () => {
     expect(queue.enqueue).toHaveBeenCalledTimes(1);
   });
 
-  it.each<[(typeof PlanTypes)[number], SubscriptionStatus]>([
-    ['premium', 'trialing'],
-    ['enterprise', 'active'],
-  ])('queues a check for a %s plan that is %s', async (type, status) => {
-    billing.getSubscriptionsByCustomerId.mockResolvedValue([
-      subscriptionOf(type, status),
-    ]);
-
-    await requestCheck();
-
-    expect(queue.enqueue).toHaveBeenCalledTimes(1);
-  });
-
   it('checks eligibility before it reads the transaction', async () => {
     members.findOne.mockResolvedValue(null);
     safeRepository.getMultiSigTransaction.mockResolvedValue({
@@ -188,7 +154,7 @@ describe('SafenetChecksService', () => {
     await expectRejection(HttpStatus.FORBIDDEN);
 
     expect(featureFlags.isFeatureEnabled).not.toHaveBeenCalled();
-    expect(billing.getSubscriptionsByCustomerId).not.toHaveBeenCalled();
+    expect(entitlements.assertFeatureGranted).not.toHaveBeenCalled();
     expect(safeRepository.getSafe).not.toHaveBeenCalled();
     expect(safeRepository.getMultiSigTransaction).not.toHaveBeenCalled();
   });
@@ -201,37 +167,23 @@ describe('SafenetChecksService', () => {
     expect(queue.enqueue).not.toHaveBeenCalled();
   });
 
-  it.each<[string, () => unknown]>([
-    [
-      'a workspace that does not hold the Safe',
-      () => spaceSafes.existsInSpace.mockResolvedValue(false),
-    ],
-    [
-      'a plan type that is not eligible',
-      () =>
-        billing.getSubscriptionsByCustomerId.mockResolvedValue([
-          subscriptionOf('standard'),
-        ]),
-    ],
-  ])('rejects %s with 403', async (_title, arrange) => {
-    arrange();
+  it('rejects a workspace that does not hold the Safe with 403', async () => {
+    spaceSafes.existsInSpace.mockResolvedValue(false);
 
     await expectRejection(HttpStatus.FORBIDDEN);
 
+    expect(entitlements.assertFeatureGranted).not.toHaveBeenCalled();
     expect(queue.enqueue).not.toHaveBeenCalled();
   });
 
-  it.each(
-    SubscriptionStatuses.filter(
-      (status) => !isActiveSubscriptionStatus(status),
-    ),
-  )('rejects a premium plan whose subscription is %s', async (status) => {
-    billing.getSubscriptionsByCustomerId.mockResolvedValue([
-      subscriptionOf('premium', status),
-    ]);
+  it('rejects a workspace without the entitlement with 402 before it reads the transaction', async () => {
+    entitlements.assertFeatureGranted.mockRejectedValue(
+      new FeatureNotGrantedError('policies'),
+    );
 
-    await expectRejection(HttpStatus.FORBIDDEN);
+    await expectRejection(HttpStatus.PAYMENT_REQUIRED);
 
+    expect(safeRepository.getMultiSigTransaction).not.toHaveBeenCalled();
     expect(queue.enqueue).not.toHaveBeenCalled();
   });
 

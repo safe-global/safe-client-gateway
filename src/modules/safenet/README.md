@@ -32,7 +32,7 @@ The route needs `FF_SAFENET`, `FF_USERS`, `FF_BILLING_SERVICE`, and a signed-in 
 - The user is an active member of the workspace.
 - The chain lists the `SAFENET_CHECKS` feature. Otherwise the route answers 501: the chain does not offer checks, so this is no permission failure.
 - The workspace holds the Safe on that chain.
-- The workspace has an active or trialing subscription whose plan type is `premium` or `enterprise`.
+- The workspace has the `policies` entitlement, which comes with Business and Enterprise like Safenet checks. CGW writes it from the `FEATURE_POLICIES` metadata of the workspace subscription, which every Safe Pro payment link sets. The `safenet_checks` entitlement is seeded but not read yet: no subscription carries `FEATURE_SAFENET_CHECKS`. Otherwise the route answers 402 `FEATURE_NOT_GRANTED`.
 - The Safe is version 1.3.0 or newer, because Consensus hashes with that domain.
 - The transaction is pending, belongs to this Safe, and has a confirmation from a current owner.
 - The workspace has made fewer than `SAFENET_CHECKS_PER_SPACE_PER_DAY` requests (default 100) on this UTC day that tried to add a job. A request for a transaction that already has a job does not count. A transaction whose job was removed after a payer failure counts again when it is requested again. Past the limit, the route answers 429.
