@@ -3,6 +3,7 @@ import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import semverSatisfies from 'semver/functions/satisfies';
 import { type Address, type Hex, isAddressEqual } from 'viem';
 import { IConfigurationService } from '#/config/configuration.service.interface';
+import type { PlanTypes } from '#/datasources/billing-api/entities/plan.entity';
 import { CacheRouter } from '#/datasources/cache/cache.router';
 import {
   CacheService,
@@ -12,8 +13,9 @@ import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log
 import { getBaseMultisigTransaction } from '#/domain/common/utils/safe';
 import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '#/modules/auth/utils/assert-authenticated.utils';
+import { IBillingRepository } from '#/modules/billing/domain/billing.repository.interface';
 import { IFeatureFlagService } from '#/modules/chains/feature-flags/feature-flag.service.interface';
-import { IEntitlementEnforcement } from '#/modules/entitlements/domain/entitlement-enforcement.interface';
+import { isActiveSubscriptionStatus } from '#/modules/entitlements/domain/entitlements.constants';
 import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
 import type { Safe } from '#/modules/safe/domain/entities/safe.entity';
 import { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
@@ -27,11 +29,17 @@ import { IMembersRepository } from '#/modules/users/domain/members/members.repos
 const SAFENET_CHECKS_FEATURE = 'SAFENET_CHECKS';
 // Consensus always hashes a Safe transaction with the 1.3.0+ domain.
 const MIN_SAFE_VERSION = '>=1.3.0';
+// Plan types whose active or trialing subscription includes sponsored checks.
+const ELIGIBLE_PLAN_TYPES: ReadonlyArray<(typeof PlanTypes)[number]> = [
+  'premium',
+  'enterprise',
+];
 const UTC_DATE_LENGTH = 'YYYY-MM-DD'.length;
 
 type SafeRequest = { chainId: string; safeAddress: Address; safeTxHash: Hex };
+type SpaceRef = Pick<Space, 'id' | 'uuid'>;
 type SpaceSafeUser = {
-  spaceId: Space['id'];
+  space: SpaceRef;
   chainId: string;
   safeAddress: Address;
   userId: number;
@@ -50,8 +58,7 @@ export class SafenetChecksService {
     private readonly members: IMembersRepository,
     @Inject(ISpaceSafesRepository)
     private readonly spaceSafes: ISpaceSafesRepository,
-    @Inject(IEntitlementEnforcement)
-    private readonly entitlements: IEntitlementEnforcement,
+    @Inject(IBillingRepository) private readonly billing: IBillingRepository,
     @Inject(ISafeRepository) private readonly safeRepository: ISafeRepository,
     private readonly queue: SafenetChecksQueue,
     @Inject(CacheService) private readonly cache: ICacheService,
@@ -66,11 +73,11 @@ export class SafenetChecksService {
 
   /** Eligibility goes first, so an ineligible caller learns nothing about the transaction. */
   public async requestCheck(
-    args: SafeRequest & { spaceId: Space['id']; authPayload: AuthPayload },
+    args: SafeRequest & { space: SpaceRef; authPayload: AuthPayload },
   ): Promise<void> {
-    const { authPayload, spaceId, ...request } = args;
+    const { authPayload, space, ...request } = args;
     await this.assertEligible({
-      spaceId,
+      space,
       chainId: request.chainId,
       safeAddress: request.safeAddress,
       userId: getAuthenticatedUserIdOrFail(authPayload),
@@ -80,13 +87,13 @@ export class SafenetChecksService {
     if (await this.queue.has(jobData)) {
       return;
     }
-    await this.assertWithinDailyLimit(spaceId);
+    await this.assertWithinDailyLimit(space);
     await this.queue.enqueue(jobData);
   }
 
-  /** The caller is a member of the workspace in the path, which holds the Safe and the feature. */
+  /** The caller is a member of the workspace in the path, which holds the Safe on an eligible plan. */
   private async assertEligible(args: SpaceSafeUser): Promise<void> {
-    await assertMember(this.members, args.spaceId, args.userId);
+    await assertMember(this.members, args.space.id, args.userId);
     const isOfferedOnChain = await this.featureFlags.isFeatureEnabled(
       args.chainId,
       SAFENET_CHECKS_FEATURE,
@@ -100,24 +107,34 @@ export class SafenetChecksService {
     }
     assertAllowed(
       await this.spaceSafes.existsInSpace({
-        spaceId: args.spaceId,
+        spaceId: args.space.id,
         chainId: args.chainId,
         address: args.safeAddress,
       }),
       'The Safe is not in this workspace',
     );
-    // 402 FEATURE_NOT_GRANTED unless the workspace plan grants the feature.
-    await this.entitlements.assertFeatureGranted({
-      spaceId: args.spaceId,
-      featureKey: 'safenet_checks',
-    });
+    assertAllowed(
+      await this.hasEligiblePlan(args.space),
+      'The workspace plan does not include Safenet checks',
+    );
   }
 
-  private async assertWithinDailyLimit(spaceId: Space['id']): Promise<void> {
+  private async hasEligiblePlan(space: SpaceRef): Promise<boolean> {
+    const subscriptions = await this.billing.getSubscriptionsByCustomerId({
+      upstreamCustomerId: space.uuid,
+    });
+    return subscriptions.some(
+      ({ status, plan }) =>
+        isActiveSubscriptionStatus(status) &&
+        ELIGIBLE_PLAN_TYPES.includes(plan.type),
+    );
+  }
+
+  private async assertWithinDailyLimit(space: SpaceRef): Promise<void> {
     const day = new Date().toISOString().slice(0, UTC_DATE_LENGTH);
     const count = await this.cache.increment(
       CacheRouter.getSafenetChecksRateLimitCacheKey({
-        spaceId,
+        spaceId: space.id,
         day,
       }),
       this.dayTtlSeconds,
