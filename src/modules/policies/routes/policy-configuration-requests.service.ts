@@ -32,13 +32,8 @@ export class PolicyConfigurationRequestsService {
   ) {}
 
   /**
-   * Stores the `Configuration[]` behind a delayed configuration request, so any
-   * client of the Safe can apply it once `requestConfiguration(bytes32 root)`
-   * has published only the hash.
-   *
-   * The wallet stores it before requesting on-chain, so the root is not checked
-   * against chain state. It is recomputed from the configurations and has to
-   * match, so a row always describes the configurations its root hashes.
+   * Stores the configurations of a request. The root is recomputed from them
+   * and has to match; it is not checked on-chain, as the wallet stores first.
    */
   public async create(args: {
     spaceId: Space['id'];

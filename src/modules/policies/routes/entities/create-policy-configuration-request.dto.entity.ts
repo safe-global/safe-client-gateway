@@ -11,11 +11,6 @@ import { Operation } from '#/modules/safe/domain/entities/operation.entity';
 import { HexSchema } from '#/validation/entities/schemas/hex.schema';
 
 export const CreatePolicyConfigurationRequestSchema = z.object({
-  /**
-   * The root as submitted on-chain. Recomputed from `configurations` and
-   * rejected on mismatch, so a client encoding bug fails loudly instead of
-   * storing a configuration that explains nothing.
-   */
   root: HexSchema,
   configurations: PolicyConfigurationsSchema,
 });

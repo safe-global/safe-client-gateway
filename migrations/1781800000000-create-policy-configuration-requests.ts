@@ -2,12 +2,10 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
- * Stores the `Configuration[]` of a delayed policy configuration request, which
- * `requestConfiguration(bytes32 root)` does not publish on-chain.
+ * Stores the `Configuration[]` behind a policy configuration root.
  *
- * - One row per Space, Safe and root. `configurations` is the array exactly as
- *   the root hashes it; the application recomputes the root before writing.
- *   Whether the Safe requested the root on-chain is not checked.
+ * - One row per Space, Safe and root. `configurations` is the array in the
+ *   order the root hashes it.
  * - `safe_address` is KMS ciphertext and `safe_address_index` its blind index
  *   when encryption is enabled; otherwise the plaintext address and NULL.
  *   Uniqueness is split by mode, as in `space_safes`.

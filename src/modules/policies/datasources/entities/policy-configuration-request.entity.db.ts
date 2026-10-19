@@ -8,8 +8,7 @@ import type { PolicyConfigurationRequest as DomainPolicyConfigurationRequest } f
 import { CHAIN_ID_MAXLENGTH } from '#/routes/common/constants';
 
 /**
- * The `Configuration[]` behind a delayed configuration root, kept off-chain
- * because `requestConfiguration(bytes32 root)` publishes only its hash.
+ * A stored `Configuration[]`, one row per Space, Safe and root.
  *
  * Uniqueness is split by encryption mode, as in `space_safes`. Rows are
  * immutable; a database trigger rejects every `UPDATE`.
@@ -62,7 +61,7 @@ export class PolicyConfigurationRequest
   })
   public readonly safeAddressIndex!: string | null;
 
-  /** `keccak256(abi.encode(configurations))`, recomputed before writing. */
+  /** `keccak256(abi.encode(configurations))`. */
   @Column({ type: 'varchar', length: 66, update: false })
   public readonly root!: Hex;
 
