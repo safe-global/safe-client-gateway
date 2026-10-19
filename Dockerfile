@@ -2,7 +2,7 @@
 #
 # BUILD CONTAINER
 #
-FROM node:26.10.0-alpine3.24 AS base
+FROM node:26.11.1-alpine3.24 AS base
 ENV NODE_ENV=production
 WORKDIR /app
 COPY --chown=node:node .yarn/releases ./.yarn/releases
@@ -26,7 +26,7 @@ RUN yarn install --immutable \
 #
 # PRODUCTION CONTAINER
 #
-FROM node:26.10.0-alpine3.24 AS production
+FROM node:26.11.1-alpine3.24 AS production
 USER node
 WORKDIR /app
 
