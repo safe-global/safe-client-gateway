@@ -33,6 +33,7 @@ describe('PolicyConfigurationRequestsRepository', () => {
   let dbRepository: Repository<PolicyConfigurationRequest>;
 
   const maxPerSafe = 3;
+  const retentionDays = 60;
   /** A real Space per test: `space_id` is a foreign key to `spaces`. */
   let spaceId: number;
   const testDatabaseName = faker.string.alpha({ length: 10, casing: 'lower' });
@@ -126,6 +127,9 @@ describe('PolicyConfigurationRequestsRepository', () => {
         }
         if (key === 'policies.maxConfigurationRequestsPerSpaceSafe') {
           return maxPerSafe;
+        }
+        if (key === 'policies.configurationRequestRetentionDays') {
+          return retentionDays;
         }
       }),
     } as MockedObject<ConfigService>;
@@ -361,6 +365,35 @@ describe('PolicyConfigurationRequestsRepository', () => {
 
       expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
       await expect(dbRepository.count()).resolves.toBe(maxPerSafe);
+    });
+  });
+
+  describe('prune', () => {
+    it('should delete only the requests older than the retention', async () => {
+      const expired = storableRequest();
+      // `created_at` is not insertable through the entity.
+      await postgresDatabaseService
+        .getDataSource()
+        .query(
+          `INSERT INTO "policy_configuration_requests" ("space_id", "chain_id", "safe_address", "root", "configurations", "created_by", "created_at") VALUES ($1, $2, $3, $4, $5, $6, NOW() - make_interval(days => $7))`,
+          [
+            expired.spaceId,
+            expired.chainId,
+            expired.safeAddress,
+            expired.root,
+            JSON.stringify(expired.configurations),
+            expired.createdBy,
+            retentionDays + 1,
+          ],
+        );
+      const recent = storableRequest();
+      await repository.create(recent);
+
+      await repository.prune();
+
+      await expect(dbRepository.find()).resolves.toEqual([
+        expect.objectContaining({ root: recent.root }),
+      ]);
     });
   });
 

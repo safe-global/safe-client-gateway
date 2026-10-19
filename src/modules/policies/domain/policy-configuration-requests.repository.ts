@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
-import { type FindOptionsWhere, IsNull } from 'typeorm';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { type FindOptionsWhere, IsNull, LessThan } from 'typeorm';
 import type { Address } from 'viem';
 import { IConfigurationService } from '#/config/configuration.service.interface';
 import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
@@ -14,6 +15,7 @@ export class PolicyConfigurationRequestsRepository
   implements IPolicyConfigurationRequestsRepository
 {
   private readonly maxPerSpaceSafe: number;
+  private readonly retentionDays: number;
 
   public constructor(
     @Inject(PostgresDatabaseService)
@@ -25,6 +27,9 @@ export class PolicyConfigurationRequestsRepository
   ) {
     this.maxPerSpaceSafe = this.configurationService.getOrThrow<number>(
       'policies.maxConfigurationRequestsPerSpaceSafe',
+    );
+    this.retentionDays = this.configurationService.getOrThrow<number>(
+      'policies.configurationRequestRetentionDays',
     );
   }
 
@@ -63,6 +68,18 @@ export class PolicyConfigurationRequestsRepository
         safeAddressIndex,
       });
     });
+  }
+
+  /** Deletes the requests stored longer than the retention period. */
+  @Cron(CronExpression.EVERY_DAY_AT_3AM, {
+    disabled: process.env.NODE_ENV === 'test',
+  })
+  public async prune(): Promise<void> {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - this.retentionDays);
+
+    const repository = await this.db.getRepository(PolicyConfigurationRequest);
+    await repository.delete({ createdAt: LessThan(cutoff) });
   }
 
   /**

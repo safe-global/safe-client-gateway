@@ -837,6 +837,11 @@ export default () => ({
         `${100}`,
       10,
     ),
+    /** How long a stored configuration request is kept before it is pruned. */
+    configurationRequestRetentionDays: Number.parseInt(
+      process.env.POLICIES_CONFIGURATION_REQUEST_RETENTION_DAYS ?? `${60}`,
+      10,
+    ),
     indexer: {
       baseUri: process.env.POLICY_INDEXER_BASE_URI || 'POLICY_INDEXER_BASE_URI',
     },

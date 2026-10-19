@@ -234,6 +234,11 @@ export const RootConfigurationSchema = z
       .int()
       .min(1)
       .optional(),
+    POLICIES_CONFIGURATION_REQUEST_RETENTION_DAYS: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .optional(),
     // Policy indexer configuration
     POLICY_INDEXER_BASE_URI: z.url().optional(),
     POLICY_INDEXER_EXPIRE_TIME_SECONDS: z.coerce

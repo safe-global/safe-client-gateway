@@ -6,6 +6,7 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
  *
  * - One row per Space, Safe and root. `configurations` is the array in the
  *   order the root hashes it.
+ * - `created_at` is indexed for the retention prune.
  * - `safe_address` is KMS ciphertext and `safe_address_index` its blind index
  *   when encryption is enabled; otherwise the plaintext address and NULL.
  *   Uniqueness is split by mode, as in `space_safes`.
@@ -44,6 +45,9 @@ export class CreatePolicyConfigurationRequests1781800000000
     // The partial unique indexes cannot serve the space_id cascade.
     await queryRunner.query(
       `CREATE INDEX "IDX_PCR_space_id" ON "policy_configuration_requests" ("space_id")`,
+    );
+    await queryRunner.query(
+      `CREATE INDEX "IDX_PCR_created_at" ON "policy_configuration_requests" ("created_at")`,
     );
 
     await queryRunner.query(`

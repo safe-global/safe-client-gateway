@@ -25,6 +25,7 @@ import { CHAIN_ID_MAXLENGTH } from '#/routes/common/constants';
   { unique: true, where: 'safe_address_index IS NOT NULL' },
 )
 @Index('IDX_PCR_space_id', ['spaceId'])
+@Index('IDX_PCR_created_at', ['createdAt'])
 export class PolicyConfigurationRequest
   implements DomainPolicyConfigurationRequest
 {
