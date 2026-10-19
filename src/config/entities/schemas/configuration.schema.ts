@@ -231,6 +231,7 @@ export const RootConfigurationSchema = z
     EMAIL_API_FROM_EMAIL: z.email(),
     EMAIL_API_KEY: z.string(),
     ENTITLEMENTS_ENFORCEMENT_STARTS_AT: z.iso.datetime().optional(),
+    ENTITLEMENTS_GRACE_PERIOD_CLAIM_ENDS_AT: z.iso.datetime().optional(),
     EXPIRATION_DEVIATE_PERCENT: z.coerce.number().min(0).max(100).optional(),
     EXPIRATION_TIME_ENTITLEMENTS_SECONDS: z.coerce
       .number()

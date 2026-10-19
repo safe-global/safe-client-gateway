@@ -579,6 +579,10 @@ export default () => ({
     enforcementStartsAt: parseEnforcementStartsAt(
       process.env.ENTITLEMENTS_ENFORCEMENT_STARTS_AT,
     ),
+    // When pre-enforcement workspaces stop being offered the legacy grace.
+    gracePeriodClaimEndsAt: parseGracePeriodClaimEndsAt(
+      process.env.ENTITLEMENTS_GRACE_PERIOD_CLAIM_ENDS_AT,
+    ),
   },
   billing: {
     baseUri:
@@ -1180,6 +1184,18 @@ const parseEnforcementStartsAt = (envValue: string | undefined): Date => {
     throw Error('ENTITLEMENTS_ENFORCEMENT_STARTS_AT is not a valid date');
   }
   return startsAt;
+};
+
+// 60 days after enforcement started in production (2026-10-06T12:30:00Z).
+const DEFAULT_GRACE_PERIOD_CLAIM_ENDS_AT = '2026-12-05T12:30:00Z';
+
+// Unset or invalid falls back to the default: an Invalid Date would close the window.
+const parseGracePeriodClaimEndsAt = (envValue: string | undefined): Date => {
+  const endsAt = new Date(envValue ?? DEFAULT_GRACE_PERIOD_CLAIM_ENDS_AT);
+  if (Number.isNaN(endsAt.getTime())) {
+    return new Date(DEFAULT_GRACE_PERIOD_CLAIM_ENDS_AT);
+  }
+  return endsAt;
 };
 
 // Helper function to parse relay rules from environment variable
