@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { PolicyConfigurationRequest } from '#/modules/policies/domain/entities/policy-configuration-request.entity';
 
-export const IPolicyConfigurationRequestsRepository = Symbol(
-  'IPolicyConfigurationRequestsRepository',
+export const ISafePolicyGuardConfigurationRequestsRepository = Symbol(
+  'ISafePolicyGuardConfigurationRequestsRepository',
 );
 
-export interface IPolicyConfigurationRequestsRepository {
+export interface ISafePolicyGuardConfigurationRequestsRepository {
   /**
    * Stores the configurations of a request for a Safe in a Space, keyed by
    * root. Storing a stored root again is a no-op. The caller must have

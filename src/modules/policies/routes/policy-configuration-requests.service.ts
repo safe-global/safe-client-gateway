@@ -9,7 +9,7 @@ import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log
 import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '#/modules/auth/utils/assert-authenticated.utils';
 import type { SafeRef } from '#/modules/policies/domain/entities/safe-ref.entity';
-import { IPolicyConfigurationRequestsRepository } from '#/modules/policies/domain/policy-configuration-requests.repository.interface';
+import { ISafePolicyGuardConfigurationRequestsRepository } from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository.interface';
 import { configurationRoot } from '#/modules/policies/domain/utils/policy-configuration-root.utils';
 import type {
   CreatePolicyConfigurationRequestPayload,
@@ -23,8 +23,8 @@ import { IMembersRepository } from '#/modules/users/domain/members/members.repos
 @Injectable()
 export class PolicyConfigurationRequestsService {
   public constructor(
-    @Inject(IPolicyConfigurationRequestsRepository)
-    private readonly configurationRequestsRepository: IPolicyConfigurationRequestsRepository,
+    @Inject(ISafePolicyGuardConfigurationRequestsRepository)
+    private readonly configurationRequestsRepository: ISafePolicyGuardConfigurationRequestsRepository,
     @Inject(IMembersRepository)
     private readonly membersRepository: IMembersRepository,
     @Inject(ISpaceSafesRepository)

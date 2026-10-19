@@ -7,12 +7,12 @@ import { IConfigurationService } from '#/config/configuration.service.interface'
 import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
 import { PolicyConfigurationRequest } from '#/modules/policies/datasources/entities/policy-configuration-request.entity.db';
 import type { PolicyConfigurationRequest as DomainPolicyConfigurationRequest } from '#/modules/policies/domain/entities/policy-configuration-request.entity';
-import type { IPolicyConfigurationRequestsRepository } from '#/modules/policies/domain/policy-configuration-requests.repository.interface';
+import type { ISafePolicyGuardConfigurationRequestsRepository } from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository.interface';
 import { SpaceEncryptionService } from '#/modules/spaces/domain/space-encryption.service';
 
 @Injectable()
-export class PolicyConfigurationRequestsRepository
-  implements IPolicyConfigurationRequestsRepository
+export class SafePolicyGuardConfigurationRequestsRepository
+  implements ISafePolicyGuardConfigurationRequestsRepository
 {
   private readonly maxPerSpaceSafe: number;
   private readonly retentionDays: number;

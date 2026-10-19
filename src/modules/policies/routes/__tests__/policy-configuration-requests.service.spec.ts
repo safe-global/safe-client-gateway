@@ -8,7 +8,7 @@ import { siweAuthPayloadDtoBuilder } from '#/modules/auth/domain/entities/__test
 import { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
 import { policyConfigurationBuilder } from '#/modules/policies/domain/entities/__tests__/policy-configuration.builder';
 import type { PolicyConfiguration } from '#/modules/policies/domain/entities/policy-configuration.entity';
-import type { IPolicyConfigurationRequestsRepository } from '#/modules/policies/domain/policy-configuration-requests.repository.interface';
+import type { ISafePolicyGuardConfigurationRequestsRepository } from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository.interface';
 import { configurationRoot } from '#/modules/policies/domain/utils/policy-configuration-root.utils';
 import { PolicyConfigurationRequestsService } from '#/modules/policies/routes/policy-configuration-requests.service';
 import type { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository.interface';
@@ -16,7 +16,7 @@ import { memberBuilder } from '#/modules/users/datasources/entities/__tests__/me
 import type { IMembersRepository } from '#/modules/users/domain/members/members.repository.interface';
 
 describe('PolicyConfigurationRequestsService', () => {
-  const configurationRequestsRepository: MockedObject<IPolicyConfigurationRequestsRepository> =
+  const configurationRequestsRepository: MockedObject<ISafePolicyGuardConfigurationRequestsRepository> =
     { create: vi.fn() };
   const membersRepository: MockedObject<Pick<IMembersRepository, 'findOne'>> = {
     findOne: vi.fn(),

@@ -10,9 +10,9 @@ import { MultiSendDecoder } from '#/modules/contracts/domain/decoders/multi-send
 import { SafeDecoder } from '#/modules/contracts/domain/decoders/safe-decoder.helper';
 import { DelegatesV3RepositoryModule } from '#/modules/delegate/domain/v3/delegates.v3.repository.interface';
 import { PolicyConfigurationRequest } from '#/modules/policies/datasources/entities/policy-configuration-request.entity.db';
-import { PolicyConfigurationRequestsRepository } from '#/modules/policies/domain/policy-configuration-requests.repository';
-import { IPolicyConfigurationRequestsRepository } from '#/modules/policies/domain/policy-configuration-requests.repository.interface';
 import { PolicyIndexerRepositoryModule } from '#/modules/policies/domain/policy-indexer-repository.module';
+import { SafePolicyGuardConfigurationRequestsRepository } from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository';
+import { ISafePolicyGuardConfigurationRequestsRepository } from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository.interface';
 import { GuardPolicyMapper } from '#/modules/policies/routes/mappers/guard-policy.mapper';
 import { PendingSpendingLimitMapper } from '#/modules/policies/routes/mappers/pending-spending-limit.mapper';
 import { ProposerMapper } from '#/modules/policies/routes/mappers/proposer.mapper';
@@ -59,8 +59,8 @@ import { UsersModule } from '#/modules/users/users.module';
     SafeDecoder,
     MultiSendDecoder,
     {
-      provide: IPolicyConfigurationRequestsRepository,
-      useClass: PolicyConfigurationRequestsRepository,
+      provide: ISafePolicyGuardConfigurationRequestsRepository,
+      useClass: SafePolicyGuardConfigurationRequestsRepository,
     },
   ],
 })

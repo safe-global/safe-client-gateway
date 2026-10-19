@@ -14,7 +14,7 @@ import type { ILoggingService } from '#/logging/logging.interface';
 import { PolicyConfigurationRequest } from '#/modules/policies/datasources/entities/policy-configuration-request.entity.db';
 import { policyConfigurationBuilder } from '#/modules/policies/domain/entities/__tests__/policy-configuration.builder';
 import type { PolicyConfiguration } from '#/modules/policies/domain/entities/policy-configuration.entity';
-import { PolicyConfigurationRequestsRepository } from '#/modules/policies/domain/policy-configuration-requests.repository';
+import { SafePolicyGuardConfigurationRequestsRepository } from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository';
 import { configurationRoot } from '#/modules/policies/domain/utils/policy-configuration-root.utils';
 import { createMockSpaceEncryptionService } from '#/modules/spaces/domain/__tests__/space-encryption.service.mock';
 
@@ -25,11 +25,11 @@ const mockLoggingService = {
   warn: vi.fn(),
 } as MockedObject<ILoggingService>;
 
-describe('PolicyConfigurationRequestsRepository', () => {
+describe('SafePolicyGuardConfigurationRequestsRepository', () => {
   let postgresDatabaseService: PostgresDatabaseService;
   let mockConfigService: MockedObject<ConfigService>;
   let encryptionService: ReturnType<typeof createMockSpaceEncryptionService>;
-  let repository: PolicyConfigurationRequestsRepository;
+  let repository: SafePolicyGuardConfigurationRequestsRepository;
   let dbRepository: Repository<PolicyConfigurationRequest>;
 
   const maxPerSafe = 3;
@@ -50,7 +50,7 @@ describe('PolicyConfigurationRequestsRepository', () => {
   });
 
   type StorableRequest = Parameters<
-    PolicyConfigurationRequestsRepository['create']
+    SafePolicyGuardConfigurationRequestsRepository['create']
   >[0];
 
   /** A request whose root is the hash of its configurations. */
@@ -147,7 +147,7 @@ describe('PolicyConfigurationRequestsRepository', () => {
 
   beforeEach(async () => {
     encryptionService = createMockSpaceEncryptionService();
-    repository = new PolicyConfigurationRequestsRepository(
+    repository = new SafePolicyGuardConfigurationRequestsRepository(
       postgresDatabaseService,
       mockConfigService,
       encryptionService,
