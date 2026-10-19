@@ -64,6 +64,7 @@ import { SafeModule } from '#/modules/safe/safe.module';
 import { SafeAppsModule } from '#/modules/safe-apps/safe-apps.module';
 import { SafeShieldModule } from '#/modules/safe-shield/safe-shield.module';
 import { SpaceSafeShieldModule } from '#/modules/safe-shield/space-safe-shield.module';
+import { SafenetChecksModule } from '#/modules/safenet/safenet-checks.module';
 import { SpacesModule } from '#/modules/spaces/spaces.module';
 import { SurveysModule } from '#/modules/surveys/surveys.module';
 import { TargetedMessagingModule } from '#/modules/targeted-messaging/targeted-messaging.module';
@@ -87,6 +88,7 @@ export class AppModule implements NestModule {
       email: isEmailFeatureEnabled,
       zerionPositions: isZerionPositionsFeatureEnabled,
       billingService: isBillingServiceFeatureEnabled,
+      safenet: isSafenetFeatureEnabled,
       sesEmail: isSesEmailFeatureEnabled,
       safeQueueService: isSafeQueueServiceFeatureEnabled,
     } = configFactory().features;
@@ -134,7 +136,11 @@ export class AppModule implements NestModule {
             ]
           : []),
         ...(isBillingServiceFeatureEnabled && isUsersFeatureEnabled
-          ? [EntitlementsRoutesModule, SpaceRelayModule]
+          ? [
+              EntitlementsRoutesModule,
+              SpaceRelayModule,
+              ...(isSafenetFeatureEnabled ? [SafenetChecksModule] : []),
+            ]
           : []),
         OwnersModule,
         RelayModule,
