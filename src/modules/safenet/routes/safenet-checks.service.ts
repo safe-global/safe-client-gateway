@@ -28,6 +28,8 @@ const SAFENET_CHECKS_FEATURE = 'SAFENET_CHECKS';
 // Consensus always hashes a Safe transaction with the 1.3.0+ domain.
 const MIN_SAFE_VERSION = '>=1.3.0';
 const UTC_DATE_LENGTH = 'YYYY-MM-DD'.length;
+// The claim only bridges `has()` and `add()`: once the job exists, `has()` answers for it.
+const CLAIM_TTL_SECONDS = 60;
 
 type SafeRequest = { chainId: string; safeAddress: Address; safeTxHash: Hex };
 type SpaceSafeUser = {
@@ -80,8 +82,38 @@ export class SafenetChecksService {
     if (await this.queue.has(jobData)) {
       return;
     }
-    await this.assertWithinDailyLimit(spaceId);
-    await this.queue.enqueue(jobData);
+    await this.enqueueCounted(spaceId, jobData);
+  }
+
+  /** Counts and queues a new job once, also when requests for the same transaction race. */
+  private async enqueueCounted(
+    spaceId: Space['id'],
+    jobData: SafenetCheckJobData,
+  ): Promise<void> {
+    const claimKey = CacheRouter.getSafenetCheckClaimCacheKey(
+      this.queue.jobIdOf(jobData),
+    );
+    // Only the first of concurrent requests claims the transaction; the others have nothing to do.
+    if ((await this.cache.increment(claimKey, CLAIM_TTL_SECONDS, 0)) !== 1) {
+      return;
+    }
+    const counterKey = this.dailyCounterKey(spaceId);
+    try {
+      await this.assertWithinDailyLimit(counterKey);
+    } catch (error) {
+      await this.cache.deleteByKey(claimKey);
+      throw error;
+    }
+    try {
+      await this.queue.enqueue(jobData);
+    } catch (error) {
+      // No job was added: return the slot and let a later request try again.
+      await Promise.allSettled([
+        this.cache.decrement(counterKey),
+        this.cache.deleteByKey(claimKey),
+      ]);
+      throw error;
+    }
   }
 
   /** The caller is a member of the workspace in the path, which holds the Safe and the feature. */
@@ -113,16 +145,13 @@ export class SafenetChecksService {
     });
   }
 
-  private async assertWithinDailyLimit(spaceId: Space['id']): Promise<void> {
+  private dailyCounterKey(spaceId: Space['id']): string {
     const day = new Date().toISOString().slice(0, UTC_DATE_LENGTH);
-    const count = await this.cache.increment(
-      CacheRouter.getSafenetChecksRateLimitCacheKey({
-        spaceId,
-        day,
-      }),
-      this.dayTtlSeconds,
-      0,
-    );
+    return CacheRouter.getSafenetChecksRateLimitCacheKey({ spaceId, day });
+  }
+
+  private async assertWithinDailyLimit(counterKey: string): Promise<void> {
+    const count = await this.cache.increment(counterKey, this.dayTtlSeconds, 0);
     // A non-numeric Redis reply must not open the spend cap.
     if (!Number.isFinite(count) || count > this.checksPerSpacePerDay) {
       throw new HttpExceptionNoLog(

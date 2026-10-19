@@ -25,6 +25,8 @@ export interface ICacheService {
     expireDeviatePercent?: number,
   ): Promise<number>;
 
+  decrement(cacheKey: string): Promise<number>;
+
   setCounter(
     key: string,
     value: number,

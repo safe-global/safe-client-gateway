@@ -143,6 +143,10 @@ export class RedisCacheService
     return Number(incrRes);
   }
 
+  async decrement(cacheKey: string): Promise<number> {
+    return await this.client.decr(this._prefixKey(cacheKey));
+  }
+
   async setCounter(
     key: string,
     value: number,

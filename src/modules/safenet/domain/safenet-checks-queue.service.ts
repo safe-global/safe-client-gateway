@@ -20,18 +20,18 @@ export class SafenetChecksQueue implements OnModuleInit {
 
   /** True while a job exists for this transaction, so a repeat request adds nothing. */
   public async has(data: SafenetCheckJobData): Promise<boolean> {
-    return (await this.queue.getJob(this.getJobId(data))) !== undefined;
+    return (await this.queue.getJob(this.jobIdOf(data))) !== undefined;
   }
 
   /** The job ID makes a repeated transaction a no-op, so the fee is paid once. */
   public async enqueue(data: SafenetCheckJobData): Promise<void> {
     await this.queue.add(JobType.SAFENET_CHECK, data, {
-      jobId: this.getJobId(data),
+      jobId: this.jobIdOf(data),
     });
   }
 
-  /** The documented job ID, with the chain ID in canonical form: `has` and `enqueue` must agree on it. */
-  private getJobId(data: SafenetCheckJobData): string {
+  /** The documented job ID, with the chain ID in canonical form: every caller must agree on it. */
+  public jobIdOf(data: SafenetCheckJobData): string {
     return `${BigInt(data.chainId)}-${data.safe}-${data.safeTxHash}`.toLowerCase();
   }
 }

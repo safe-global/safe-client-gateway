@@ -96,6 +96,12 @@ export class FakeCacheService implements ICacheService, ICacheReadiness {
     return Promise.resolve(currentValue);
   }
 
+  decrement(cacheKey: string): Promise<number> {
+    const currentValue = ((this.cache[cacheKey] as number) ?? 0) - 1;
+    this.cache[cacheKey] = currentValue;
+    return Promise.resolve(currentValue);
+  }
+
   setCounter(
     key: string,
     value: number,

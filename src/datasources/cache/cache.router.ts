@@ -128,6 +128,10 @@ export class CacheRouter {
     );
   }
 
+  static getSafenetCheckClaimCacheKey(jobId: string): string {
+    return `${CacheRouter.SAFENET_CHECKS_KEY}_claim_${jobId}`;
+  }
+
   static getAuthNonceCacheKey(nonce: string): string {
     return `${CacheRouter.AUTH_NONCE_KEY}_${nonce}`;
   }

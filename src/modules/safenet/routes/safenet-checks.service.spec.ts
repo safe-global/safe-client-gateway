@@ -16,6 +16,7 @@ import { confirmationBuilder } from '#/modules/safe/domain/entities/__tests__/mu
 import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
 import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
 import type { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
+import type { SafenetCheckJobData } from '#/modules/safenet/domain/entities/safenet-check-job-data.entity';
 import type { SafenetChecksQueue } from '#/modules/safenet/domain/safenet-checks-queue.service';
 import { SafenetChecksService } from '#/modules/safenet/routes/safenet-checks.service';
 import type { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository.interface';
@@ -49,7 +50,9 @@ describe('SafenetChecksService', () => {
   let safeRepository: MockedObject<
     Pick<ISafeRepository, 'getSafe' | 'getMultiSigTransaction'>
   >;
-  let queue: MockedObject<Pick<SafenetChecksQueue, 'has' | 'enqueue'>>;
+  let queue: MockedObject<
+    Pick<SafenetChecksQueue, 'has' | 'enqueue' | 'jobIdOf'>
+  >;
   let target: SafenetChecksService;
 
   const buildTransaction = (nonce: number): Promise<MultisigTransaction> =>
@@ -92,6 +95,7 @@ describe('SafenetChecksService', () => {
     queue = {
       has: vi.fn().mockResolvedValue(false),
       enqueue: vi.fn().mockResolvedValue(undefined),
+      jobIdOf: vi.fn((data: SafenetCheckJobData) => data.safeTxHash),
     };
     const configuration = new FakeConfigurationService();
     configuration.set('safenet.checksPerSpacePerDay', DAILY_LIMIT);
@@ -251,6 +255,21 @@ describe('SafenetChecksService', () => {
       await expectRejection(HttpStatus.TOO_MANY_REQUESTS);
     });
 
+    it('counts and queues a transaction once when two requests race', async () => {
+      await Promise.all([requestCheck(), requestCheck()]);
+
+      expect(queue.enqueue).toHaveBeenCalledTimes(1);
+    });
+
+    it('gives the slot back when the job cannot be added', async () => {
+      queue.enqueue.mockRejectedValueOnce(new Error('queue unavailable'));
+
+      await expect(requestCheck()).rejects.toThrow('queue unavailable');
+      await requestCheck();
+
+      expect(queue.enqueue).toHaveBeenCalledTimes(2);
+    });
+
     it('starts a new count on the next UTC day', async () => {
       vi.useFakeTimers({ toFake: ['Date'] });
       try {
@@ -269,7 +288,10 @@ describe('SafenetChecksService', () => {
     });
 
     it('fails closed when the counter is not a number', async () => {
-      vi.spyOn(cache, 'increment').mockResolvedValue(Number.NaN);
+      // The transaction claim, then the daily counter.
+      vi.spyOn(cache, 'increment')
+        .mockResolvedValueOnce(1)
+        .mockResolvedValueOnce(Number.NaN);
 
       await expectRejection(HttpStatus.TOO_MANY_REQUESTS);
 
