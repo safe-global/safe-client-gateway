@@ -105,11 +105,10 @@ describe('List transfers by Safe - Transactions Controller', () => {
     });
   }
 
-  it('should forward the recipient, sender, token and date filters to the Transaction Service', async () => {
+  it('should forward the recipient, token and date filters to the Transaction Service, with the Safe as sender', async () => {
     const chain = chainBuilder().build();
     const safe = safeBuilder().build();
     const to = getAddress(faker.finance.ethereumAddress());
-    const from = getAddress(faker.finance.ethereumAddress());
     const token = erc20TokenBuilder().with('trusted', true).build();
     const executionDateGte = faker.date.past().toISOString();
     const executionDateLte = faker.date.recent().toISOString();
@@ -119,7 +118,6 @@ describe('List transfers by Safe - Transactions Controller', () => {
       .get(`/v1/chains/${chain.chainId}/safes/${safe.address}/transfers/`)
       .query({
         to,
-        from,
         token_address: token.address,
         execution_date__gte: executionDateGte,
         execution_date__lte: executionDateLte,
@@ -131,11 +129,31 @@ describe('List transfers by Safe - Transactions Controller', () => {
       networkRequest: expect.objectContaining({
         params: expect.objectContaining({
           to,
-          _from: from,
+          _from: safe.address,
           token_address: token.address,
           execution_date__gte: executionDateGte,
           execution_date__lte: executionDateLte,
         }),
+      }),
+    });
+  });
+
+  it('should ignore a from query param and always send the Safe as sender', async () => {
+    const chain = chainBuilder().build();
+    const safe = safeBuilder().build();
+    const from = getAddress(faker.finance.ethereumAddress());
+    const token = erc20TokenBuilder().with('trusted', true).build();
+    mockNetwork({ chain, safe, transfers: [], token });
+
+    await request(app.getHttpServer())
+      .get(`/v1/chains/${chain.chainId}/safes/${safe.address}/transfers/`)
+      .query({ from })
+      .expect(200);
+
+    expect(networkService.get).toHaveBeenCalledWith({
+      url: `${chain.transactionService}/api/v1/safes/${safe.address}/transfers/`,
+      networkRequest: expect.objectContaining({
+        params: expect.objectContaining({ _from: safe.address }),
       }),
     });
   });
@@ -331,7 +349,6 @@ describe('List transfers by Safe - Transactions Controller', () => {
 
   it.each([
     ['to', faker.string.alpha(10)],
-    ['from', faker.string.alpha(10)],
     ['token_address', faker.string.alpha(10)],
     ['execution_date__gte', faker.string.alpha(10)],
     ['execution_date__lte', faker.string.alpha(10)],

@@ -452,9 +452,9 @@ export class TransactionsController {
   }
 
   @ApiOperation({
-    summary: 'Get transfers',
+    summary: 'Get outgoing transfers',
     description:
-      'Retrieves native, ERC-20 and ERC-721 transfers sent or received by a Safe. Unlike multisig-transactions, `to` matches the recipient of each transfer rather than the target of the Safe transaction. Token transfers made inside batches are included; native transfers made inside batches are not available on chains indexed from events (most L2s). Only the newest 1000 transfers per direction and transfer type can be reached, so narrow with filters for older history. A page can hold fewer items than requested, or none, once untrusted transfers are dropped: keep following `next` until it is null.',
+      'Retrieves native, ERC-20 and ERC-721 transfers sent by a Safe. Unlike multisig-transactions, `to` matches the recipient of each transfer rather than the target of the Safe transaction. Token transfers made inside batches are included; native transfers made inside batches are not available on chains indexed from events (most L2s). Only the newest 1000 transfers per direction and transfer type can be reached, so narrow with filters for older history. A page can hold fewer items than requested, or none, once untrusted transfers are dropped: keep following `next` until it is null.',
   })
   @ApiParam({
     name: 'chainId',
@@ -489,12 +489,6 @@ export class TransactionsController {
       'Filter by transfer recipient address (0x prefixed hex string)',
   })
   @ApiQuery({
-    name: 'from',
-    required: false,
-    type: String,
-    description: 'Filter by transfer sender address (0x prefixed hex string)',
-  })
-  @ApiQuery({
     name: 'token_address',
     required: false,
     type: String,
@@ -511,11 +505,11 @@ export class TransactionsController {
     required: false,
     type: Boolean,
     description:
-      'When true (default), ERC-20 transfers of untrusted tokens and ERC-20 transfers without value are omitted, since any token contract can emit a transfer the Safe never made. ERC-721 and native transfers are not filtered.',
+      'When true (default), ERC-20 transfers of untrusted tokens are omitted, since any token contract can emit a transfer the Safe never made. ERC-721 and native transfers are not filtered. ERC-20 transfers without value are always omitted.',
   })
   @ApiOkResponse({
     type: TransferTransactionItemPage,
-    description: 'Paginated list of transfers',
+    description: 'Paginated list of outgoing transfers',
   })
   @ApiUnprocessableEntityResponse({
     description: 'Invalid chain ID, address, date or trusted flag',
@@ -544,8 +538,6 @@ export class TransactionsController {
     executionDateLte?: string,
     @Query('to', new ValidationPipe(AddressSchema.optional()))
     to?: Address,
-    @Query('from', new ValidationPipe(AddressSchema.optional()))
-    from?: Address,
     @Query('token_address', new ValidationPipe(AddressSchema.optional()))
     tokenAddress?: Address,
   ): Promise<Partial<Page<TransactionItem>>> {
@@ -556,7 +548,6 @@ export class TransactionsController {
       executionDateGte,
       executionDateLte,
       to,
-      from,
       tokenAddress,
       paginationData,
       onlyTrusted: trusted,

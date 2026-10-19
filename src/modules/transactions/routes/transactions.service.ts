@@ -409,7 +409,6 @@ export class TransactionsService {
     executionDateGte?: string;
     executionDateLte?: string;
     to?: Address;
-    from?: Address;
     tokenAddress?: Address;
     paginationData?: PaginationData;
     onlyTrusted: boolean;
@@ -421,7 +420,8 @@ export class TransactionsService {
         executionDateGte: args.executionDateGte,
         executionDateLte: args.executionDateLte,
         to: args.to,
-        from: args.from,
+        // Only transfers sent by the Safe
+        from: args.safeAddress,
         tokenAddress: args.tokenAddress,
         limit: args.paginationData?.limit,
         offset: args.paginationData?.offset,
