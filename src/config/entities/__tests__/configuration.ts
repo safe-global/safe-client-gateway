@@ -452,6 +452,11 @@ export default (): ReturnType<typeof configuration> => ({
     cgwServiceKey: 'CGW',
   },
   policies: {
+    maxConfigurationRequestsPerSpaceSafe: faker.number.int({
+      min: 1,
+      max: 100,
+    }),
+    configurationRequestRetentionDays: faker.number.int({ min: 1, max: 60 }),
     indexer: {
       baseUri: faker.internet.url({ appendSlash: false }),
     },

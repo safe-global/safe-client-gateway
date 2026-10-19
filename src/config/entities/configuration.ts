@@ -836,6 +836,17 @@ export default () => ({
     cgwServiceKey: process.env.SAFE_CONFIG_CGW_KEY || 'CGW',
   },
   policies: {
+    /** How many delayed configuration requests CGW stores per Safe and Space. */
+    maxConfigurationRequestsPerSpaceSafe: Number.parseInt(
+      process.env.POLICIES_MAX_CONFIGURATION_REQUESTS_PER_SPACE_SAFE ??
+        `${100}`,
+      10,
+    ),
+    /** How long a stored configuration request is kept before it is pruned. */
+    configurationRequestRetentionDays: Number.parseInt(
+      process.env.POLICIES_CONFIGURATION_REQUEST_RETENTION_DAYS ?? `${60}`,
+      10,
+    ),
     indexer: {
       baseUri: process.env.POLICY_INDEXER_BASE_URI || 'POLICY_INDEXER_BASE_URI',
     },
