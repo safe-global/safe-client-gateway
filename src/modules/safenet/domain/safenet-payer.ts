@@ -55,6 +55,7 @@ export class SafenetPayer {
   private readonly consensusAddress: Address;
   private readonly oracleAddress: Address;
   private readonly payerSafeAddress: Address;
+  private readonly rpcUri: string | undefined;
   private readonly pollIntervalMs: number;
   private readonly pollTimeoutMs: number;
   private readonly nonceTtlSeconds: number;
@@ -77,6 +78,8 @@ export class SafenetPayer {
     this.payerSafeAddress = configuration.getOrThrow(
       'safenet.payer.safeAddress',
     );
+    // Optional: without it, the payer falls back to the chain's config service RPC.
+    this.rpcUri = configuration.get('safenet.rpcUri');
     this.pollIntervalMs = configuration.getOrThrow('safenet.pollIntervalMs');
     this.pollTimeoutMs = configuration.getOrThrow('safenet.pollTimeoutMs');
     this.nonceTtlSeconds = configuration.getOrThrow(
@@ -106,7 +109,10 @@ export class SafenetPayer {
   /** Nothing is relayed yet, so every failure here is a `SafenetPayerError`. */
   private async prepare(proposal: SafenetProposal) {
     try {
-      const client = await this.blockchain.getUncachedApi(SAFENET_CHAIN_ID);
+      const client = await this.blockchain.getUncachedApi({
+        chainId: SAFENET_CHAIN_ID,
+        rpcUri: this.rpcUri,
+      });
       await this.assertPayerSafeAcceptsSigner(client);
       const key = CacheRouter.getSafenetPayerNonceCacheKey({
         chainId: SAFENET_CHAIN_ID,

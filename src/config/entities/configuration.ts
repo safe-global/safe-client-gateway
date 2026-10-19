@@ -853,6 +853,7 @@ export default () => ({
   safenet: {
     consensusAddress: process.env.SAFENET_CONSENSUS_ADDRESS,
     oracleAddress: process.env.SAFENET_ORACLE_ADDRESS,
+    rpcUri: process.env.SAFENET_RPC_URI,
     payer: {
       safeAddress: process.env.SAFENET_PAYER_SAFE_ADDRESS,
       kms: {

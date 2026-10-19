@@ -51,12 +51,16 @@ export class BlockchainApiManager
     return this.getOrCreateApi(chainId);
   }
 
-  async getUncachedApi(chainId: string): Promise<PublicClient> {
-    const chain = await this.getDomainChain(chainId);
+  async getUncachedApi(args: {
+    chainId: string;
+    rpcUri?: string;
+  }): Promise<PublicClient> {
+    const chain = await this.getDomainChain(args.chainId);
 
     return createPublicClient({
       chain: this.formatChain(chain),
-      transport: http(),
+      // Without a URL, viem uses the chain's configured RPC.
+      transport: http(args.rpcUri),
     });
   }
 
