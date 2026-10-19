@@ -379,6 +379,7 @@ export default () => ({
       10,
     ),
     safenetNonce: 60,
+    safenetDailyCheckCounter: 24 * 60 * 60,
     hoodi: Number.parseInt(
       process.env.HOODI_EXPIRATION_TIME_SECONDS ?? `${60}`,
       10,
@@ -577,6 +578,10 @@ export default () => ({
     // When enforcement goes live; workspaces created before it predate it.
     enforcementStartsAt: parseEnforcementStartsAt(
       process.env.ENTITLEMENTS_ENFORCEMENT_STARTS_AT,
+    ),
+    // When pre-enforcement workspaces stop being offered the legacy grace.
+    gracePeriodClaimEndsAt: parseGracePeriodClaimEndsAt(
+      process.env.ENTITLEMENTS_GRACE_PERIOD_CLAIM_ENDS_AT,
     ),
   },
   billing: {
@@ -859,6 +864,7 @@ export default () => ({
   safenet: {
     consensusAddress: process.env.SAFENET_CONSENSUS_ADDRESS,
     oracleAddress: process.env.SAFENET_ORACLE_ADDRESS,
+    rpcUri: process.env.SAFENET_RPC_URI,
     payer: {
       safeAddress: process.env.SAFENET_PAYER_SAFE_ADDRESS,
       kms: {
@@ -883,6 +889,38 @@ export default () => ({
       process.env.SAFENET_POLL_TIMEOUT_MS ?? `${120_000}`,
       10,
     ),
+    checksPerSpacePerDay: Number.parseInt(
+      process.env.SAFENET_CHECKS_PER_SPACE_PER_DAY ?? '100',
+      10,
+    ),
+    // The schema bounds the attempts to 1-10 and the retention ages to 30 days or more.
+    queue: {
+      attempts: Number.parseInt(
+        process.env.SAFENET_CHECKS_QUEUE_ATTEMPTS ?? `${3}`,
+        10,
+      ),
+      backoff: {
+        type: process.env.SAFENET_CHECKS_QUEUE_BACKOFF_TYPE || 'exponential',
+        delay: Number.parseInt(
+          process.env.SAFENET_CHECKS_QUEUE_BACKOFF_DELAY ?? `${5_000}`,
+          10,
+        ),
+      },
+      removeOnComplete: {
+        age: Number.parseInt(
+          process.env.SAFENET_CHECKS_QUEUE_REMOVE_ON_COMPLETE_AGE ??
+            `${30 * 24 * 60 * 60}`,
+          10,
+        ), // 30 days
+      },
+      removeOnFail: {
+        age: Number.parseInt(
+          process.env.SAFENET_CHECKS_QUEUE_REMOVE_ON_FAIL_AGE ??
+            `${30 * 24 * 60 * 60}`,
+          10,
+        ), // 30 days
+      },
+    },
   },
   transactions: {
     statusIndexingGracePeriodMs: Number.parseInt(
@@ -1158,6 +1196,18 @@ const parseEnforcementStartsAt = (envValue: string | undefined): Date => {
     throw Error('ENTITLEMENTS_ENFORCEMENT_STARTS_AT is not a valid date');
   }
   return startsAt;
+};
+
+// 60 days after enforcement started in production (2026-10-06T12:30:00Z).
+const DEFAULT_GRACE_PERIOD_CLAIM_ENDS_AT = '2026-12-05T12:30:00Z';
+
+// Unset or invalid falls back to the default: an Invalid Date would close the window.
+const parseGracePeriodClaimEndsAt = (envValue: string | undefined): Date => {
+  const endsAt = new Date(envValue ?? DEFAULT_GRACE_PERIOD_CLAIM_ENDS_AT);
+  if (Number.isNaN(endsAt.getTime())) {
+    return new Date(DEFAULT_GRACE_PERIOD_CLAIM_ENDS_AT);
+  }
+  return endsAt;
 };
 
 // Helper function to parse relay rules from environment variable

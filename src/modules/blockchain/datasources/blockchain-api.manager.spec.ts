@@ -221,17 +221,9 @@ describe('BlockchainApiManager', () => {
   });
 
   describe('getUncachedApi', () => {
-    it('queries the RPC on every call and never touches the RPC cache', async () => {
-      const rpcUriValue = `https://${faker.internet.domainWord()}.infura.io/v3/`;
-      const chain = chainBuilder()
-        .with(
-          'rpcUri',
-          rpcUriBuilder()
-            .with('value', rpcUriValue)
-            .with('authentication', RpcUriAuthentication.ApiKeyPath)
-            .build(),
-        )
-        .build();
+    it('queries the given RPC on every call and never touches the RPC cache', async () => {
+      const rpcUri = faker.internet.url();
+      const chain = chainBuilder().build();
       configApiMock.getChain.mockResolvedValue(rawify(chain));
       const hGetSpy = vi.spyOn(fakeCacheService, 'hGet');
       const hSetSpy = vi.spyOn(fakeCacheService, 'hSet');
@@ -248,7 +240,10 @@ describe('BlockchainApiManager', () => {
       );
       const hash = toHex(faker.number.bigInt(), { size: 32 });
 
-      const client = await target.getUncachedApi(chain.chainId);
+      const client = await target.getUncachedApi({
+        chainId: chain.chainId,
+        rpcUri,
+      });
       await expect(
         client.getTransactionReceipt({ hash }),
       ).rejects.toBeInstanceOf(TransactionReceiptNotFoundError);
@@ -256,11 +251,53 @@ describe('BlockchainApiManager', () => {
         client.getTransactionReceipt({ hash }),
       ).rejects.toBeInstanceOf(TransactionReceiptNotFoundError);
 
+      expect(configApiMock.getChain).toHaveBeenCalledWith(chain.chainId);
       expect(fetchSpy).toHaveBeenCalledTimes(2);
-      expect(fetchSpy.mock.calls[0][0]).toContain(infuraApiKey);
+      // viem normalizes the URL before fetching it.
+      const { href } = new URL(rpcUri);
+      expect(fetchSpy).toHaveBeenNthCalledWith(1, href, expect.anything());
+      expect(fetchSpy).toHaveBeenNthCalledWith(2, href, expect.anything());
       expect(hGetSpy).not.toHaveBeenCalled();
       expect(hSetSpy).not.toHaveBeenCalled();
       expect(fakeCacheService.keyCount()).toBe(0);
+
+      fetchSpy.mockRestore();
+    });
+
+    it('falls back to the chain RPC without a given RPC', async () => {
+      const rpcUriValue = `https://${faker.internet.domainWord()}.infura.io/v3/`;
+      const chain = chainBuilder()
+        .with(
+          'rpcUri',
+          rpcUriBuilder()
+            .with('value', rpcUriValue)
+            .with('authentication', RpcUriAuthentication.ApiKeyPath)
+            .build(),
+        )
+        .build();
+      configApiMock.getChain.mockResolvedValue(rawify(chain));
+      const fetchSpy = vi.spyOn(global, 'fetch').mockImplementation(() =>
+        Promise.resolve(
+          new Response(
+            JSON.stringify({ jsonrpc: '2.0', id: 0, result: null }),
+            {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' },
+            },
+          ),
+        ),
+      );
+      const hash = toHex(faker.number.bigInt(), { size: 32 });
+
+      const client = await target.getUncachedApi({ chainId: chain.chainId });
+      await expect(
+        client.getTransactionReceipt({ hash }),
+      ).rejects.toBeInstanceOf(TransactionReceiptNotFoundError);
+
+      expect(fetchSpy).toHaveBeenCalledExactlyOnceWith(
+        `${rpcUriValue}${infuraApiKey}`,
+        expect.anything(),
+      );
 
       fetchSpy.mockRestore();
     });

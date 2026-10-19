@@ -66,6 +66,7 @@ class Harness {
   readonly safeAddress = randomAddress();
   readonly consensusAddress = randomAddress();
   readonly oracleAddress = randomAddress();
+  readonly rpcUri = faker.internet.url();
   readonly userSafeTxHash = randomHash();
   readonly transactionHash = randomHash();
   readonly taskId = faker.string.uuid();
@@ -142,10 +143,15 @@ class Harness {
     this.logging,
   );
 
-  private configuration(): FakeConfigurationService {
+  configuration(
+    options: { rpcUri?: string } = { rpcUri: this.rpcUri },
+  ): FakeConfigurationService {
     const configuration = new FakeConfigurationService();
     configuration.set('safenet.consensusAddress', this.consensusAddress);
     configuration.set('safenet.oracleAddress', this.oracleAddress);
+    if (options.rpcUri !== undefined) {
+      configuration.set('safenet.rpcUri', options.rpcUri);
+    }
     configuration.set('safenet.payer.safeAddress', this.safeAddress);
     configuration.set('safenet.pollIntervalMs', 1);
     configuration.set('safenet.pollTimeoutMs', 100);
@@ -179,6 +185,10 @@ class Harness {
   }
 }
 
+const upstream = Object.assign(new Error('upstream body'), {
+  name: 'TimeoutError',
+});
+
 type Arrange = (h: Harness) => unknown;
 
 async function expectPayerError(outcome: Promise<unknown>, message: string) {
@@ -211,13 +221,37 @@ describe('SafenetPayer', () => {
       payerNonce: 2n,
     });
 
-    expect(h.blockchain.getUncachedApi).toHaveBeenCalledWith('100');
+    expect(h.blockchain.getUncachedApi).toHaveBeenCalledWith({
+      chainId: '100',
+      rpcUri: h.rpcUri,
+    });
     expect(h.relay.relayWithoutLimits).toHaveBeenCalledWith(
       expect.objectContaining({ chainId: '100', to: h.safeAddress }),
     );
     expect(h.relay.getTaskStatus).toHaveBeenCalledWith({
       chainId: '100',
       taskId: h.taskId,
+    });
+  });
+
+  it('falls back to the chain RPC from the config service without an RPC URL', async () => {
+    const h = new Harness();
+    const payer = new SafenetPayer(
+      h.configuration({}),
+      h.blockchain,
+      h.cache,
+      h.relay,
+      h.signer,
+      h.logging,
+    );
+
+    await expect(payer.propose(h.proposal)).resolves.toMatchObject({
+      transactionHash: h.transactionHash,
+    });
+
+    expect(h.blockchain.getUncachedApi).toHaveBeenCalledWith({
+      chainId: '100',
+      rpcUri: undefined,
     });
   });
 
@@ -394,6 +428,22 @@ describe('SafenetPayer', () => {
     );
 
     expect(error.cause).toBeUndefined();
+    expect(h.relay.relayWithoutLimits).not.toHaveBeenCalled();
+  });
+
+  it.each<[string, Arrange]>([
+    ['an RPC error', (h) => h.client.readContract.mockRejectedValue(upstream)],
+    ['a KMS error', (h) => h.signer.signHash.mockRejectedValue(upstream)],
+  ])('retries %s before the relay', async (_name, arrange) => {
+    const h = new Harness();
+    arrange(h);
+
+    const error = await expectPayerError(
+      h.propose(),
+      'Safenet payer failed before relay: TimeoutError',
+    );
+
+    expect(error.cause).toBe(upstream);
     expect(h.relay.relayWithoutLimits).not.toHaveBeenCalled();
   });
 
