@@ -101,10 +101,9 @@ const mockSafeRepository: MockedObject<
 };
 
 const mockSpaceSafesRepository: MockedObject<
-  Pick<ISpaceSafesRepository, 'findBySpaceId' | 'existsInSpace'>
+  Pick<ISpaceSafesRepository, 'findBySpaceId'>
 > = {
   findBySpaceId: vi.fn(),
-  existsInSpace: vi.fn(),
 };
 
 const mockMembersRepository: MockedObject<Pick<IMembersRepository, 'findOne'>> =
@@ -142,7 +141,6 @@ function pendingSpendingLimitMapper(): PendingSpendingLimitMapper {
 }
 
 const SEPOLIA = '11155111';
-const MAX_SAFES_PER_SPACE = faker.number.int({ min: 3, max: 10 });
 
 /** The queued spending-limit items of a pending read, narrowed by `kind`. */
 function queuedOnly(
@@ -180,7 +178,6 @@ describe('PoliciesService', () => {
     mockSpaceSafesRepository.findBySpaceId.mockResolvedValue([
       { chainId: SEPOLIA, address: safeAddress },
     ]);
-    mockSpaceSafesRepository.existsInSpace.mockResolvedValue(true);
     mockSafeRepository.getSafe.mockResolvedValue(
       safeBuilder().with('modules', [allowanceModule]).build(),
     );
@@ -207,10 +204,6 @@ describe('PoliciesService', () => {
   ): PoliciesService {
     const fakeConfigurationService = new FakeConfigurationService();
     fakeConfigurationService.set('policies.batchSize', size);
-    fakeConfigurationService.set(
-      'spaces.maxSafesPerSpace',
-      MAX_SAFES_PER_SPACE,
-    );
     mockSafeRepository.getTransactionQueueMaxPageSize.mockReturnValue(
       args?.safeQueueServiceEnabled
         ? SAFE_QUEUE_SERVICE_MAX_LIMIT
@@ -311,6 +304,21 @@ describe('PoliciesService', () => {
         }),
       ).rejects.toThrow('Not authenticated');
       expect(mockPolicyIndexerRepository.getState).not.toHaveBeenCalled();
+    });
+
+    it('should match a requested safe recorded in the space in another casing', async () => {
+      // The Space stores what the client sent; a casing difference must not read
+      // as a Safe outside the Space.
+      mockSpaceSafesRepository.findBySpaceId.mockResolvedValue([
+        { chainId: SEPOLIA, address: safeAddress.toLowerCase() as Address },
+      ]);
+
+      await expect(
+        target.getSpaceActivePolicies({
+          ...policyRequest,
+          safes: [{ chainId: SEPOLIA, address: safeAddress }],
+        }),
+      ).resolves.toStrictEqual([]);
     });
   });
 
@@ -623,11 +631,6 @@ describe('PoliciesService', () => {
         safes: [{ chainId: SEPOLIA, address: safeAddress }],
       });
 
-      expect(mockSpaceSafesRepository.existsInSpace).toHaveBeenCalledWith({
-        spaceId,
-        chainId: SEPOLIA,
-        address: safeAddress,
-      });
       expect(mockPolicyIndexerRepository.getState).toHaveBeenCalledWith({
         guardPolicyKinds: everyGuardKind,
         safes: [{ chainId: SEPOLIA, address: safeAddress }],
@@ -664,7 +667,6 @@ describe('PoliciesService', () => {
       // Narrowing to nothing would look like a Space whose Safes hold no
       // policies, rather than a request for a Safe the caller cannot read.
       const outsider = getAddress(faker.finance.ethereumAddress());
-      mockSpaceSafesRepository.existsInSpace.mockResolvedValue(false);
 
       await expect(
         target.getSpaceActivePolicies({
@@ -673,20 +675,6 @@ describe('PoliciesService', () => {
         }),
       ).rejects.toThrow(`Safe ${SEPOLIA}:${outsider} is not in this space`);
       expect(mockPolicyIndexerRepository.getState).not.toHaveBeenCalled();
-    });
-
-    it('should reject more requested safes than a space may hold before checking them', async () => {
-      const safes = Array.from({ length: MAX_SAFES_PER_SPACE + 1 }, () => ({
-        chainId: SEPOLIA,
-        address: getAddress(faker.finance.ethereumAddress()),
-      }));
-
-      await expect(
-        target.getSpaceActivePolicies({ ...policyRequest, safes }),
-      ).rejects.toThrow(
-        `At most ${MAX_SAFES_PER_SPACE} Safes can be requested`,
-      );
-      expect(mockSpaceSafesRepository.existsInSpace).not.toHaveBeenCalled();
     });
 
     it('should reject a caller who is not a member of the space', async () => {

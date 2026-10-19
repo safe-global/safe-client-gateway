@@ -111,7 +111,6 @@ export class PoliciesService {
 
   private readonly batchSize: number;
   private readonly maxPageSize: number;
-  private readonly maxSafesPerSpace: number;
 
   constructor(
     @Inject(IPolicyIndexerRepository)
@@ -145,9 +144,6 @@ export class PoliciesService {
       this.configurationService.getOrThrow<number>('policies.batchSize');
 
     this.maxPageSize = this.safeRepository.getTransactionQueueMaxPageSize();
-    this.maxSafesPerSpace = this.configurationService.getOrThrow<number>(
-      'spaces.maxSafesPerSpace',
-    );
   }
 
   /**
@@ -181,10 +177,9 @@ export class PoliciesService {
   /**
    * The Safes of the Space, or the requested subset of them.
    *
-   * @throws {UnprocessableEntityException} when more than
-   * `spaces.maxSafesPerSpace` Safes are requested, or a requested Safe is not
-   * in the Space - silently narrowing to nothing would look like a Space whose
-   * Safes hold no policies.
+   * @throws {UnprocessableEntityException} when a requested Safe is not in the
+   * Space - silently narrowing to nothing would look like a Space whose Safes
+   * hold no policies.
    */
   private async spaceSafes(
     request: SpacePolicyRequest,
@@ -192,40 +187,37 @@ export class PoliciesService {
     const userId = getAuthenticatedUserIdOrFail(request.authPayload);
     await assertMember(this.membersRepository, request.spaceId, userId);
 
-    if (!request.safes) {
-      return (
-        await this.spaceSafesRepository.findBySpaceId(request.spaceId)
-      ).map((safe) => ({ chainId: safe.chainId, address: safe.address }));
+    const safesInSpace = (
+      await this.spaceSafesRepository.findBySpaceId(request.spaceId)
+    ).map((safe) => ({
+      chainId: safe.chainId,
+      address: safe.address,
+    }));
+
+    const requested = request.safes;
+
+    // If no specific Safes requested in Space, return all.
+    if (!requested) {
+      return safesInSpace;
     }
 
-    // A Safe asked for twice is read once. Each is checked by its blind index,
-    // so a narrowed read decrypts nothing.
-    const requested = request.safes.filter(
-      (safe, index, all) =>
-        all.findIndex((other) => this.compareSafes(other, safe)) === index,
+    const safeNotInSpace = requested.find(
+      (requestedSafe) =>
+        !safesInSpace.some((safe) => this.compareSafes(safe, requestedSafe)),
     );
-    if (requested.length > this.maxSafesPerSpace) {
-      throw new UnprocessableEntityException(
-        `At most ${this.maxSafesPerSpace} Safes can be requested`,
-      );
-    }
-    const inSpace = await Promise.all(
-      requested.map((safe) =>
-        this.spaceSafesRepository.existsInSpace({
-          spaceId: request.spaceId,
-          chainId: safe.chainId,
-          address: safe.address,
-        }),
-      ),
-    );
-    const safeNotInSpace = requested.find((_, index) => !inSpace[index]);
+
     if (safeNotInSpace) {
       throw new UnprocessableEntityException(
         `Safe ${safeNotInSpace.chainId}:${safeNotInSpace.address} is not in this space`,
       );
     }
 
-    return requested.map(({ chainId, address }) => ({ chainId, address }));
+    // Narrowing filters the Space's own Safes rather than mapping the request,
+    // so a Safe asked for twice - repeated outright, or in another casing - is
+    // still read once and its policies reported once.
+    return safesInSpace.filter((safe) =>
+      requested.some((wanted) => this.compareSafes(safe, wanted)),
+    );
   }
 
   private compareSafes(a: SafeRef, b: SafeRef): boolean {
