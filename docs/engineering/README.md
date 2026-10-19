@@ -12,8 +12,9 @@ the source of truth.
 
 - `conventions/` — the canonical, ordered docs. Read these when writing code.
 - `sources/` — what conventions are built from: the durable rule index
-  (`rules.json`), the PR-sourced receipts (`examples/`), and `working/`
-  (maintenance-only inputs).
+  (`rules.json`), the PR-sourced receipts (`examples/`), the readable rule view
+  with examples inlined (`rules.generated.md`, regenerated with every rules
+  change), and `working/` (maintenance-only inputs).
 
 ## Read Before You Change
 
@@ -75,6 +76,7 @@ Writing or refactoring tests at any layer:
 - [conventions/project-structure.md](conventions/project-structure.md)
 - [conventions/testing.md](conventions/testing.md)
 - [sources/rules.json](sources/rules.json)
+- [sources/rules.generated.md](sources/rules.generated.md)
 
 Maintenance inputs (review learnings, ledger, open-question options) live under
 `sources/working/` and are updated by `/safe-repo-rules` from the
