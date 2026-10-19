@@ -238,6 +238,8 @@ export const PolicyIndexerConfigurationRootSchema = z.object({
    * `RootConfigured`, which is already `block.timestamp + DELAY`.
    */
   readyAt: PolicyIndexerIntegerSchema,
+  /** Unix seconds `applyConfiguration` is valid until: `readyAt + EXPIRY`. */
+  expiresAt: PolicyIndexerIntegerSchema,
   status: PolicyIndexerRootStatusSchema,
 });
 

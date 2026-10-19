@@ -19,11 +19,7 @@ import type { INetworkService } from '#/datasources/network/network.service.inte
 import { NetworkService } from '#/datasources/network/network.service.interface';
 import { nameBuilder } from '#/domain/common/entities/name.builder';
 import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
-import { IBlockchainApiManager } from '#/domain/interfaces/blockchain-api.manager.interface';
 import { siweAuthPayloadDtoBuilder } from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import { BlockchainModule } from '#/modules/blockchain/blockchain.module';
-import type { FakeBlockchainApiManager } from '#/modules/blockchain/datasources/__tests__/fake.blockchain-api.manager';
-import { TestBlockchainApiManagerModule } from '#/modules/blockchain/datasources/__tests__/test.blockchain-api.manager';
 import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
 import {
   addDelegateEncoder,
@@ -83,7 +79,6 @@ describe('Space Policies Controller', () => {
   let networkService: MockedObject<INetworkService>;
   let safeConfigUrl: string;
   let indexerBaseUri: string;
-  let blockchainApiManager: FakeBlockchainApiManager;
 
   const chain = chainBuilder().with('chainId', SEPOLIA_CHAIN_ID).build();
   const polygonChain = chainBuilder().with('chainId', POLYGON_CHAIN_ID).build();
@@ -340,16 +335,11 @@ describe('Space Policies Controller', () => {
           originalModule: NotificationsRepositoryV2Module,
           testModule: TestNotificationsRepositoryV2Module,
         },
-        {
-          originalModule: BlockchainModule,
-          testModule: TestBlockchainApiManagerModule,
-        },
       ],
     });
 
     jwtService = moduleFixture.get<IJwtService>(IJwtService);
     networkService = moduleFixture.get(NetworkService);
-    blockchainApiManager = moduleFixture.get(IBlockchainApiManager);
     const configurationService = moduleFixture.get<IConfigurationService>(
       IConfigurationService,
     );
@@ -1315,15 +1305,6 @@ describe('Space Policies Controller', () => {
     const [guard] = getSafePolicyGuardDeployments(SEPOLIA_CHAIN_ID);
     const expiry = faker.number.int({ min: 3_600, max: 86_400 });
 
-    /** Answers `EXPIRY()` on every guard, or fails every read. */
-    function mockExpiry(args: { unavailable?: boolean } = {}): void {
-      blockchainApiManager.getApi.mockResolvedValue({
-        readContract: args.unavailable
-          ? vi.fn().mockRejectedValue(new Error('RPC unavailable'))
-          : vi.fn().mockResolvedValue(BigInt(expiry)),
-      });
-    }
-
     /** A queued transaction with `confirmations` of 2 signatures. */
     function queued(args: {
       to: Address;
@@ -1358,6 +1339,7 @@ describe('Space Policies Controller', () => {
         .with('guard', guard)
         .with('root', configurationRoot(args.configurations))
         .with('readyAt', String(args.readyAt))
+        .with('expiresAt', String(args.readyAt + expiry))
         .with('status', args.status ?? 'PENDING')
         .build();
     }
@@ -1414,7 +1396,6 @@ describe('Space Policies Controller', () => {
       });
       mockUpstream({ guard: zeroAddress, queuedTransactions: [transaction] });
       mockIndexer(rawPolicyIndexerResponse());
-      mockExpiry();
       const { accessToken, spaceId } = await createSpaceWithSafe({
         withSafe: true,
       });
@@ -1471,7 +1452,6 @@ describe('Space Policies Controller', () => {
           ],
         }),
       );
-      mockExpiry();
       const { accessToken, spaceId } = await createSpaceWithSafe({
         withSafe: true,
       });
@@ -1520,7 +1500,6 @@ describe('Space Policies Controller', () => {
         ],
       });
       mockIndexer(rawPolicyIndexerResponse());
-      mockExpiry();
       const { accessToken, spaceId } = await createSpaceWithSafe({
         withSafe: true,
       });

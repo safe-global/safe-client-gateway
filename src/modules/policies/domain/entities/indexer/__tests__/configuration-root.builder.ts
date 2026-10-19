@@ -11,6 +11,7 @@ export type RawIndexerConfigurationRoot = {
   root: string;
   /** `numeric` columns serialise as decimal strings. */
   readyAt: string;
+  expiresAt: string;
   status: string;
 };
 
@@ -18,12 +19,17 @@ export type RawIndexerConfigurationRoot = {
  * A configuration root as the indexer serves it. Pending by default.
  */
 export function rawIndexerConfigurationRootBuilder(): IBuilder<RawIndexerConfigurationRoot> {
+  const readyAt = Math.floor(faker.date.future().getTime() / 1_000);
   return new Builder<RawIndexerConfigurationRoot>()
     .with('chainId', 11155111)
     .with('safe', getAddress(faker.finance.ethereumAddress()))
     .with('guard', getAddress(faker.finance.ethereumAddress()))
     .with('root', keccak256(toHex(faker.string.alphanumeric(32))))
-    .with('readyAt', String(Math.floor(faker.date.future().getTime() / 1_000)))
+    .with('readyAt', String(readyAt))
+    .with(
+      'expiresAt',
+      String(readyAt + faker.number.int({ min: 1, max: 1_000_000 })),
+    )
     .with('status', 'PENDING');
 }
 
@@ -31,11 +37,13 @@ export function rawIndexerConfigurationRootBuilder(): IBuilder<RawIndexerConfigu
  * A parsed configuration root, as a repository returns it. Pending by default.
  */
 export function policyIndexerConfigurationRootBuilder(): IBuilder<PolicyIndexerConfigurationRoot> {
+  const readyAt = Math.floor(faker.date.future().getTime() / 1_000);
   return new Builder<PolicyIndexerConfigurationRoot>()
     .with('chainId', faker.string.numeric({ length: { min: 1, max: 6 } }))
     .with('safe', getAddress(faker.finance.ethereumAddress()))
     .with('guard', getAddress(faker.finance.ethereumAddress()))
     .with('root', keccak256(toHex(faker.string.alphanumeric(32))))
-    .with('readyAt', Math.floor(faker.date.future().getTime() / 1_000))
+    .with('readyAt', readyAt)
+    .with('expiresAt', readyAt + faker.number.int({ min: 1, max: 1_000_000 }))
     .with('status', 'PENDING');
 }

@@ -41,7 +41,7 @@ const mockLoggingService = {
 const SEPOLIA_CHAIN_ID = '11155111';
 // Policy contracts of the policy-engine deployment CGW recognises.
 const COSIGNER_POLICY = getAddress(
-  '0xd9f2A31C5C68422a466754cd4F4965Be2b6024FB',
+  '0x65Bc0DADF4173C6d7125300cad9360339B3Ee478',
 );
 const ERC20_TRANSFER_POLICY = getAddress(
   '0x25DDa3b8974a10E93ca188F9C149A42F938Bd187',
@@ -78,13 +78,15 @@ describe('GuardConfigurationMapper', () => {
     status?: PolicyIndexerConfigurationRoot['status'];
     readyAt?: number;
   }): PolicyIndexerConfigurationRoot {
+    const readyAt = args.readyAt ?? now + 60;
     return policyIndexerConfigurationRootBuilder()
       .with('chainId', safe.chainId)
       .with('safe', safe.address)
       .with('guard', guard)
       .with('root', configurationRoot(args.configurations))
       .with('status', args.status ?? 'PENDING')
-      .with('readyAt', args.readyAt ?? now + 60)
+      .with('readyAt', readyAt)
+      .with('expiresAt', readyAt + expiry)
       .build();
   }
 
@@ -151,7 +153,6 @@ describe('GuardConfigurationMapper', () => {
     transactions?: Array<MultisigTransaction>;
     bindings?: Array<PolicyIndexerGuardEnforcedPolicy>;
     types?: ReadonlyArray<PolicyType>;
-    expiries?: ReadonlyMap<Address, number>;
   }): ReturnType<GuardConfigurationMapper['map']> {
     return target.map({
       safe,
@@ -159,7 +160,6 @@ describe('GuardConfigurationMapper', () => {
       roots: args.roots ?? [],
       stored: args.stored ?? [],
       bindings: args.bindings ?? [],
-      expiries: args.expiries ?? new Map([[guard, expiry]]),
       types: args.types ?? GUARD_POLICY_TYPES,
       now,
     });
@@ -441,40 +441,19 @@ describe('GuardConfigurationMapper', () => {
       );
     });
 
-    describe('with an unknown EXPIRY', () => {
-      const unknownExpiry = new Map<Address, number>();
+    it('should take expiresAt from the root', () => {
+      const root = {
+        ...onChain({ configurations: configurations(), readyAt: now - 60 }),
+        expiresAt: now + faker.number.int({ min: 1, max: 86_400 }),
+      };
 
-      it('should report a pending root as not expired, without expiresAt', () => {
-        const root = onChain({
-          configurations: configurations(),
-          readyAt: now - expiry,
-        });
-
-        expect(map({ roots: [root], expiries: unknownExpiry })).toStrictEqual([
-          expect.objectContaining({
-            status: 'pending-application',
-            readyAt: root.readyAt,
-            expiresAt: null,
-          }),
-        ]);
-      });
-
-      it('should report a fully signed apply as ready', () => {
-        const config = configurations();
-
-        const [item] = map({
-          roots: [onChain({ configurations: config, readyAt: now - expiry })],
-          transactions: [apply(config, 2)],
-          expiries: unknownExpiry,
-        });
-
-        expect(item).toStrictEqual(
-          expect.objectContaining({
-            status: 'application-ready',
-            expiresAt: null,
-          }),
-        );
-      });
+      expect(map({ roots: [root] })).toStrictEqual([
+        expect.objectContaining({
+          status: 'pending-application',
+          readyAt: root.readyAt,
+          expiresAt: root.expiresAt,
+        }),
+      ]);
     });
 
     it('should report a root past its application window as expired', () => {

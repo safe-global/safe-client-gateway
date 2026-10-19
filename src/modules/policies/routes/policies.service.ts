@@ -36,14 +36,11 @@ import type {
   Token,
   TokenReference,
 } from '#/modules/policies/domain/entities/token.entity';
-import { isSafePolicyGuardDeployment } from '#/modules/policies/domain/policy-deployments.constants';
 import { IPolicyIndexerRepository } from '#/modules/policies/domain/policy-indexer.repository.interface';
-import { ISafePolicyGuardRepository } from '#/modules/policies/domain/safe-policy-guard.repository.interface';
 import { ISafePolicyGuardConfigurationRequestsRepository } from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository.interface';
 import {
   GUARD_POLICY_TYPES,
   guardPolicyKindsOf,
-  pendingRootGuards,
 } from '#/modules/policies/domain/utils/policy.utils';
 import {
   type TokenMetadataKey,
@@ -121,8 +118,6 @@ export class PoliciesService {
     private readonly policyIndexerRepository: IPolicyIndexerRepository,
     @Inject(ISafePolicyGuardConfigurationRequestsRepository)
     private readonly configurationRequestsRepository: ISafePolicyGuardConfigurationRequestsRepository,
-    @Inject(ISafePolicyGuardRepository)
-    private readonly safePolicyGuardRepository: ISafePolicyGuardRepository,
     @Inject(ISafeRepository)
     private readonly safeRepository: ISafeRepository,
     @Inject(ISpaceSafesRepository)
@@ -630,47 +625,30 @@ export class PoliciesService {
 
     if (read.guardState) {
       policies.push(
-        ...(await this.guardConfigurationsForSafe({
+        ...this.guardConfigurationsForSafe({
           safe,
           transactions,
           guardState: read.guardState,
           types: read.types,
           now: read.now,
-        })),
+        }),
       );
     }
 
     return policies;
   }
 
-  /**
-   * The delayed guard configurations of one Safe.
-   *
-   * Needs the `EXPIRY` of every known guard that holds a pending root of the
-   * Safe. One that cannot be read leaves the root not known to be expired.
-   */
-  private async guardConfigurationsForSafe(args: {
+  /** The delayed guard configurations of one Safe. */
+  private guardConfigurationsForSafe(args: {
     safe: SafeRef;
     transactions: ReadonlyArray<MultisigTransaction>;
     guardState: GuardState;
     types: ReadonlyArray<PolicyType>;
     now: number;
-  }): Promise<Array<PendingGuardConfiguration>> {
+  }): Array<PendingGuardConfiguration> {
     const roots = args.guardState.roots.filter((root) =>
       this.isScopedToSafe(root, args.safe),
     );
-
-    let expiries = new Map<Address, number>();
-    try {
-      expiries = await this.expiriesOf(args.safe.chainId, roots);
-    } catch (error) {
-      this.loggingService.warn({
-        message: 'Could not read the expiry of a SafePolicyGuard',
-        chainId: args.safe.chainId,
-        safeAddress: args.safe.address,
-        error: asError(error).message,
-      });
-    }
 
     return this.guardConfigurationMapper.map({
       safe: args.safe,
@@ -685,25 +663,8 @@ export class PoliciesService {
       bindings: args.guardState.bindings.filter((binding) =>
         this.isScopedToSafe(binding, args.safe),
       ),
-      expiries,
       types: args.types,
       now: args.now,
-    });
-  }
-
-  /**
-   * The `EXPIRY` of every known guard holding a pending root among
-   * {@link roots}. An unknown guard's is not trusted, so not read.
-   */
-  private async expiriesOf(
-    chainId: string,
-    roots: ReadonlyArray<PolicyIndexerConfigurationRoot>,
-  ): Promise<Map<Address, number>> {
-    return await this.safePolicyGuardRepository.getExpiries({
-      chainId,
-      guards: pendingRootGuards(roots).filter((guard) =>
-        isSafePolicyGuardDeployment(chainId, guard),
-      ),
     });
   }
 

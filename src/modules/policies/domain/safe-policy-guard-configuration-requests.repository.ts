@@ -6,14 +6,16 @@ import type { Address } from 'viem';
 import { IConfigurationService } from '#/config/configuration.service.interface';
 import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
 import { PolicyConfigurationRequest } from '#/modules/policies/datasources/entities/policy-configuration-request.entity.db';
-import type { ActiveRootsRule } from '#/modules/policies/domain/entities/active-roots-rule.entity';
 import type { PolicyConfigurationRequest as DomainPolicyConfigurationRequest } from '#/modules/policies/domain/entities/policy-configuration-request.entity';
 import type { SafeRef } from '#/modules/policies/domain/entities/safe-ref.entity';
 import {
   type StoredPolicyConfiguration,
   StoredPolicyConfigurationSchema,
 } from '#/modules/policies/domain/entities/stored-policy-configuration.entity';
-import type { ISafePolicyGuardConfigurationRequestsRepository } from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository.interface';
+import type {
+  ActiveRootsRule,
+  ISafePolicyGuardConfigurationRequestsRepository,
+} from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository.interface';
 import { SpaceEncryptionService } from '#/modules/spaces/domain/space-encryption.service';
 
 @Injectable()
@@ -61,19 +63,14 @@ export class SafePolicyGuardConfigurationRequestsRepository
       const safe = this.safeMatch({ ...args, safeAddressIndex });
 
       const stored = await repository.find({
-        select: { root: true, createdAt: true },
+        select: { root: true },
         where: safe,
       });
       // Re-submitting a stored root is a no-op, even at the cap.
       if (stored.some(({ root }) => root === args.root)) {
         return;
       }
-      const active = stored.filter(
-        ({ root, createdAt }) =>
-          activeRoots.onChain.get(root) ??
-          (activeRoots.draftsSince === null ||
-            createdAt >= activeRoots.draftsSince),
-      );
+      const active = stored.filter(({ root }) => activeRoots.get(root) ?? true);
       if (active.length >= this.maxPerSpaceSafe) {
         throw new BadRequestException(
           `This Safe only allows a maximum of ${this.maxPerSpaceSafe} active policy configuration requests in this space.`,

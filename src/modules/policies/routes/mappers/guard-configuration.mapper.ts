@@ -29,7 +29,6 @@ import {
   getSafePolicyGuardDeployments,
 } from '#/modules/policies/domain/policy-deployments.constants';
 import {
-  applicationWindowOf,
   guardPolicyTypeOfKind,
   isRootApplicable,
 } from '#/modules/policies/domain/utils/policy.utils';
@@ -68,7 +67,7 @@ type RootFacts = {
  * A root's facts come from three places: the guard's on-chain state (the
  * indexer), the configurations CGW stored, and the Safe's transaction queue.
  * The first matching rule decides its status, where "not expired" means
- * `now < readyAt + EXPIRY` or `EXPIRY` unknown:
+ * `now < expiresAt`:
  *
  * 1. A queued `applyConfiguration`, the root pending and not expired, fewer
  *    confirmations than required: `application-in-signing`.
@@ -77,12 +76,10 @@ type RootFacts = {
  * 4. The root pending and not expired, no queued apply: `pending-application`.
  * 5. A queued `requestConfiguration`, whatever the on-chain state and however
  *    many confirmations: `configuration-in-signing`.
- * 6. The root pending and `now >= readyAt + EXPIRY`: `expired`.
+ * 6. The root pending and `now >= expiresAt`: `expired`.
  * 7. Stored in CGW, no on-chain root and nothing queued: `draft`.
  *
  * Anything else - an applied or invalidated root, say - is not pending.
- * `EXPIRY` is unknown when it cannot be read or the guard is not a known
- * deployment; the root is then reported with `expiresAt: null`.
  */
 @Injectable()
 export class GuardConfigurationMapper {
@@ -97,8 +94,6 @@ export class GuardConfigurationMapper {
    * @param args.roots The Safe's configuration roots, from the indexer.
    * @param args.stored The configurations CGW stored for the Safe.
    * @param args.bindings The Safe's current guard policy bindings.
-   * @param args.expiries `EXPIRY` in seconds, per guard address. A guard
-   * missing from it has an unknown `EXPIRY`.
    * @param args.types The requested policy types.
    * @param args.now Unix seconds.
    */
@@ -108,7 +103,6 @@ export class GuardConfigurationMapper {
     roots: ReadonlyArray<PolicyIndexerConfigurationRoot>;
     stored: ReadonlyArray<StoredPolicyConfiguration>;
     bindings: ReadonlyArray<PolicyIndexerGuardEnforcedPolicy>;
-    expiries: ReadonlyMap<Address, number>;
     types: ReadonlyArray<PolicyType>;
     now: number;
   }): Array<PendingGuardConfiguration> {
@@ -125,7 +119,6 @@ export class GuardConfigurationMapper {
       const item = this.mapRoot({
         safe: args.safe,
         fact,
-        expiries: args.expiries,
         now: args.now,
       });
 
@@ -211,21 +204,20 @@ export class GuardConfigurationMapper {
   private mapRoot(args: {
     safe: SafeRef;
     fact: RootFacts;
-    expiries: ReadonlyMap<Address, number>;
     now: number;
   }): PendingGuardConfiguration | null {
     const { fact } = args;
-    const expiry = fact.onChain
-      ? args.expiries.get(fact.onChain.guard)
-      : undefined;
-    const window = fact.onChain
-      ? applicationWindowOf(fact.onChain, expiry)
-      : null;
+    const window =
+      fact.onChain?.status === 'PENDING'
+        ? {
+            guard: fact.onChain.guard,
+            readyAt: fact.onChain.readyAt,
+            expiresAt: fact.onChain.expiresAt,
+          }
+        : null;
     // The window while the root can still be applied.
     const applicable =
-      fact.onChain && isRootApplicable(fact.onChain, expiry, args.now)
-        ? window
-        : null;
+      fact.onChain && isRootApplicable(fact.onChain, args.now) ? window : null;
     const configurations =
       fact.apply?.configurations ?? fact.stored?.configurations ?? null;
     const createdAt =

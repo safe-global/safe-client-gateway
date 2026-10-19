@@ -2,22 +2,17 @@
 import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PostgresDatabaseModuleV2 } from '#/datasources/db/v2/postgres-database.module';
-import { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
 import { KmsEncryptionModule } from '#/datasources/kms/kms-encryption.module';
 import { AuthModule } from '#/modules/auth/auth.module';
-import { BlockchainModule } from '#/modules/blockchain/blockchain.module';
 import { ChainsModule } from '#/modules/chains/chains.module';
 import { AllowanceModuleDecoder } from '#/modules/contracts/domain/decoders/allowance-module-decoder.helper';
 import { MultiSendDecoder } from '#/modules/contracts/domain/decoders/multi-send-decoder.helper';
 import { SafeDecoder } from '#/modules/contracts/domain/decoders/safe-decoder.helper';
 import { DelegatesV3RepositoryModule } from '#/modules/delegate/domain/v3/delegates.v3.repository.interface';
 import { PolicyConfigurationRequest } from '#/modules/policies/datasources/entities/policy-configuration-request.entity.db';
-import { SafePolicyGuardApi } from '#/modules/policies/datasources/safe-policy-guard-api.service';
 import { SafeGuardManagerDecoder } from '#/modules/policies/domain/contracts/decoders/safe-guard-manager-decoder.helper';
 import { SafePolicyGuardDecoder } from '#/modules/policies/domain/contracts/decoders/safe-policy-guard-decoder.helper';
 import { PolicyIndexerRepositoryModule } from '#/modules/policies/domain/policy-indexer-repository.module';
-import { SafePolicyGuardRepository } from '#/modules/policies/domain/safe-policy-guard.repository';
-import { ISafePolicyGuardRepository } from '#/modules/policies/domain/safe-policy-guard.repository.interface';
 import { SafePolicyGuardConfigurationRequestsRepository } from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository';
 import { ISafePolicyGuardConfigurationRequestsRepository } from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository.interface';
 import { GuardConfigurationMapper } from '#/modules/policies/routes/mappers/guard-configuration.mapper';
@@ -43,7 +38,6 @@ import { UsersModule } from '#/modules/users/users.module';
 @Module({
   imports: [
     PolicyIndexerRepositoryModule,
-    BlockchainModule,
     PostgresDatabaseModuleV2,
     TypeOrmModule.forFeature([PolicyConfigurationRequest]),
     KmsEncryptionModule,
@@ -75,12 +69,6 @@ import { UsersModule } from '#/modules/users/users.module';
     {
       provide: ISafePolicyGuardConfigurationRequestsRepository,
       useClass: SafePolicyGuardConfigurationRequestsRepository,
-    },
-    HttpErrorFactory,
-    SafePolicyGuardApi,
-    {
-      provide: ISafePolicyGuardRepository,
-      useClass: SafePolicyGuardRepository,
     },
   ],
 })

@@ -59,7 +59,7 @@ export const POLICY_INDEXER_STATE_QUERY = `query PolicyIndexerState(
     where: { _or: $roots }
     order_by: [{ chainId: asc }, { safe: asc }, { readyAt: asc }]
   ) {
-    chainId safe guard root readyAt status
+    chainId safe guard root readyAt expiresAt status
   }
 }`;
 

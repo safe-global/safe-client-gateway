@@ -46,9 +46,7 @@ import type {
 } from '#/modules/policies/domain/entities/pending-policy.entity';
 import { PolicyType } from '#/modules/policies/domain/entities/policy-type.entity';
 import type { SafeRef } from '#/modules/policies/domain/entities/safe-ref.entity';
-import { getSafePolicyGuardDeployments } from '#/modules/policies/domain/policy-deployments.constants';
 import type { IPolicyIndexerRepository } from '#/modules/policies/domain/policy-indexer.repository.interface';
-import type { ISafePolicyGuardRepository } from '#/modules/policies/domain/safe-policy-guard.repository.interface';
 import type { ISafePolicyGuardConfigurationRequestsRepository } from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository.interface';
 import { guardPolicyKindsOf } from '#/modules/policies/domain/utils/policy.utils';
 import type { GuardConfigurationMapper } from '#/modules/policies/routes/mappers/guard-configuration.mapper';
@@ -82,10 +80,6 @@ const mockConfigurationRequestsRepository: MockedObject<
 > = {
   findBySafes: vi.fn(),
 };
-
-const mockSafePolicyGuardRepository = {
-  getExpiries: vi.fn(),
-} as MockedObject<ISafePolicyGuardRepository>;
 
 const mockGuardSetupMapper = {
   map: vi.fn(),
@@ -226,7 +220,6 @@ describe('PoliciesService', () => {
     return new PoliciesService(
       mockPolicyIndexerRepository,
       mockConfigurationRequestsRepository as MockedObject<ISafePolicyGuardConfigurationRequestsRepository>,
-      mockSafePolicyGuardRepository,
       mockSafeRepository as MockedObject<ISafeRepository>,
       mockSpaceSafesRepository as MockedObject<ISpaceSafesRepository>,
       mockMembersRepository as MockedObject<IMembersRepository>,
@@ -1458,24 +1451,17 @@ describe('PoliciesService', () => {
       chainId: SEPOLIA,
       address: getAddress(faker.finance.ethereumAddress()),
     };
-    const [knownGuard] = getSafePolicyGuardDeployments(SEPOLIA);
-    const expiry = faker.number.int({ min: 60, max: 86_400 });
 
-    /** A pending root of {@link of} on the known guard. */
+    /** A pending root of {@link of}. */
     function pendingRoot(of: SafeRef): PolicyIndexerConfigurationRoot {
       return policyIndexerConfigurationRootBuilder()
         .with('chainId', of.chainId)
         .with('safe', of.address)
-        .with('guard', knownGuard)
         .with('status', 'PENDING')
         .build();
     }
 
     beforeEach(() => {
-      mockSafePolicyGuardRepository.getExpiries.mockImplementation(
-        ({ guards }) =>
-          Promise.resolve(new Map(guards.map((guard) => [guard, expiry]))),
-      );
       mockSafeRepository.getTransactionQueue.mockResolvedValue(
         pageBuilder<MultisigTransaction>()
           .with('results', [])
@@ -1586,34 +1572,8 @@ describe('PoliciesService', () => {
         roots: [root],
         stored: [stored],
         bindings: [binding],
-        expiries: new Map([[root.guard, expiry]]),
         types: guardRequest.types,
         now: Math.floor(now.getTime() / 1_000),
-      });
-    });
-
-    it('should read the expiry only of known guards that hold a pending root', async () => {
-      const pending = pendingRoot(safe);
-      const applied = { ...pendingRoot(safe), status: 'APPLIED' as const };
-      const unknown = policyIndexerConfigurationRootBuilder()
-        .with('chainId', SEPOLIA)
-        .with('safe', safeAddress)
-        .with('status', 'PENDING')
-        .build();
-      mockPolicyIndexerRepository.getState.mockResolvedValue(
-        policyIndexerResponseBuilder()
-          .with('roots', [pending, applied, unknown])
-          .build(),
-      );
-
-      await target.getSpacePendingPolicies(guardRequest);
-
-      expect(mockSafePolicyGuardRepository.getExpiries).toHaveBeenCalledTimes(
-        1,
-      );
-      expect(mockSafePolicyGuardRepository.getExpiries).toHaveBeenCalledWith({
-        chainId: SEPOLIA,
-        guards: [knownGuard],
       });
     });
 
@@ -1647,10 +1607,6 @@ describe('PoliciesService', () => {
       expect(mockGuardConfigurationMapper.map).toHaveBeenCalledWith(
         expect.objectContaining({ safe: polygonSafe, roots: [polygonRoot] }),
       );
-      expect(mockSafePolicyGuardRepository.getExpiries).toHaveBeenCalledWith({
-        chainId: '137',
-        guards: [knownGuard],
-      });
     });
 
     it('should report no queued spending-limit change when only guard types are requested', async () => {
@@ -1689,49 +1645,6 @@ describe('PoliciesService', () => {
         expect.objectContaining({
           message: 'Could not read the guard configurations of the Safes',
           spaceId,
-        }),
-      );
-    });
-
-    it("should map a safe's roots with an unknown expiry when it cannot be read, and the other safes as usual", async () => {
-      const polygonSafe = {
-        chainId: '137',
-        address: getAddress(faker.finance.ethereumAddress()),
-      };
-      mockSpaceSafesRepository.findBySpaceId.mockResolvedValue([
-        safe,
-        polygonSafe,
-      ]);
-      const root = pendingRoot(safe);
-      const polygonRoot = pendingRoot(polygonSafe);
-      mockPolicyIndexerRepository.getState.mockResolvedValue(
-        policyIndexerResponseBuilder()
-          .with('roots', [root, polygonRoot])
-          .build(),
-      );
-      mockSafePolicyGuardRepository.getExpiries.mockImplementation(
-        ({ chainId, guards }) =>
-          chainId === SEPOLIA
-            ? Promise.reject(new Error('RPC unavailable'))
-            : Promise.resolve(new Map(guards.map((guard) => [guard, expiry]))),
-      );
-
-      await target.getSpacePendingPolicies(guardRequest);
-
-      expect(mockGuardConfigurationMapper.map).toHaveBeenCalledWith(
-        expect.objectContaining({ safe, roots: [root], expiries: new Map() }),
-      );
-      expect(mockGuardConfigurationMapper.map).toHaveBeenCalledWith(
-        expect.objectContaining({
-          safe: polygonSafe,
-          expiries: new Map([[knownGuard, expiry]]),
-        }),
-      );
-      expect(mockLoggingService.warn).toHaveBeenCalledWith(
-        expect.objectContaining({
-          message: 'Could not read the expiry of a SafePolicyGuard',
-          chainId: SEPOLIA,
-          safeAddress,
         }),
       );
     });

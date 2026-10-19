@@ -1,11 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { faker } from '@faker-js/faker';
 import { policyIndexerConfigurationRootBuilder } from '#/modules/policies/domain/entities/indexer/__tests__/configuration-root.builder';
 import type { PolicyIndexerGuardPolicyKind } from '#/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 import { PolicyType } from '#/modules/policies/domain/entities/policy-type.entity';
 import {
-  activeRootsRuleOf,
-  applicationWindowOf,
   guardPolicyKindsOf,
   guardPolicyTypeOfKind,
   isRootApplicable,
@@ -47,67 +44,20 @@ describe('guardPolicyTypeOfKind', () => {
   });
 });
 
-describe('applicationWindowOf', () => {
+describe('isRootApplicable', () => {
   const root = policyIndexerConfigurationRootBuilder()
     .with('status', 'PENDING')
     .build();
-  const expiry = faker.number.int({ min: 60, max: 86_400 });
 
-  it('should close the window at readyAt + EXPIRY', () => {
-    expect(applicationWindowOf(root, expiry)).toStrictEqual({
-      guard: root.guard,
-      readyAt: root.readyAt,
-      expiresAt: root.readyAt + expiry,
-    });
-  });
-
-  it('should leave the window open-ended while EXPIRY is unknown', () => {
-    expect(applicationWindowOf(root, undefined)?.expiresAt).toBeNull();
-    expect(isRootApplicable(root, undefined, root.readyAt + expiry)).toBe(true);
+  it('should be applicable until expiresAt', () => {
+    expect(isRootApplicable(root, root.expiresAt - 1)).toBe(true);
+    expect(isRootApplicable(root, root.expiresAt)).toBe(false);
   });
 
   it.each(['APPLIED', 'INVALIDATED'] as const)(
-    'should have no window for a %s root',
+    'should not be applicable when %s',
     (status) => {
-      const settled = { ...root, status };
-
-      expect(applicationWindowOf(settled, expiry)).toBeNull();
-      expect(isRootApplicable(settled, undefined, root.readyAt)).toBe(false);
+      expect(isRootApplicable({ ...root, status }, root.readyAt)).toBe(false);
     },
   );
-
-  it('should not be applicable from readyAt + EXPIRY on', () => {
-    expect(isRootApplicable(root, expiry, root.readyAt + expiry - 1)).toBe(
-      true,
-    );
-    expect(isRootApplicable(root, expiry, root.readyAt + expiry)).toBe(false);
-  });
-});
-
-describe('activeRootsRuleOf', () => {
-  const now = faker.number.int({ min: 1_000_000, max: 2_000_000_000 });
-
-  it('should count drafts younger than the draft lifetime', () => {
-    const draftLifetime = faker.number.int({ min: 60, max: 86_400 });
-
-    expect(
-      activeRootsRuleOf({
-        roots: [],
-        expiries: new Map(),
-        draftLifetime,
-        now,
-      }).draftsSince,
-    ).toStrictEqual(new Date((now - draftLifetime) * 1_000));
-  });
-
-  it('should count every draft without a draft lifetime', () => {
-    expect(
-      activeRootsRuleOf({
-        roots: [],
-        expiries: new Map(),
-        draftLifetime: null,
-        now,
-      }).draftsSince,
-    ).toBeNull();
-  });
 });

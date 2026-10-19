@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { ActiveRootsRule } from '#/modules/policies/domain/entities/active-roots-rule.entity';
+import type { Hex } from 'viem';
 import type { PolicyConfigurationRequest } from '#/modules/policies/domain/entities/policy-configuration-request.entity';
 import type { SafeRef } from '#/modules/policies/domain/entities/safe-ref.entity';
 import type { StoredPolicyConfiguration } from '#/modules/policies/domain/entities/stored-policy-configuration.entity';
@@ -7,6 +7,12 @@ import type { StoredPolicyConfiguration } from '#/modules/policies/domain/entiti
 export const ISafePolicyGuardConfigurationRequestsRepository = Symbol(
   'ISafePolicyGuardConfigurationRequestsRepository',
 );
+
+/** On-chain roots mapped to whether they still count; any other stored root counts. */
+export type ActiveRootsRule = ReadonlyMap<Hex, boolean>;
+
+/** Counts every stored root. */
+export const EVERY_ROOT_ACTIVE: ActiveRootsRule = new Map();
 
 export interface ISafePolicyGuardConfigurationRequestsRepository {
   /**

@@ -137,6 +137,7 @@ describe('PolicyIndexerRepository', () => {
       const root = rawIndexerConfigurationRootBuilder()
         .with('safe', safe)
         .with('readyAt', '1787585100')
+        .with('expiresAt', '1788189900')
         .with('status', 'APPLIED')
         .build();
       mockPolicyIndexerApi.getState.mockResolvedValue(
@@ -155,6 +156,7 @@ describe('PolicyIndexerRepository', () => {
           guard: getAddress(root.guard),
           root: root.root,
           readyAt: 1787585100,
+          expiresAt: 1788189900,
           status: 'APPLIED',
         },
       ]);

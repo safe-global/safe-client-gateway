@@ -1,7 +1,4 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { Address } from 'viem';
-import { fromSecondsTimestamp } from '#/domain/common/utils/time';
-import type { ActiveRootsRule } from '#/modules/policies/domain/entities/active-roots-rule.entity';
 import type {
   PolicyIndexerConfigurationRoot,
   PolicyIndexerGuardPolicyKind,
@@ -50,77 +47,10 @@ export function guardPolicyTypeOfKind(
   return GUARD_POLICY_TYPE_BY_KIND.get(kind) ?? null;
 }
 
-/** The distinct guards holding a pending root of {@link roots}. */
-export function pendingRootGuards(
-  roots: ReadonlyArray<
-    Pick<PolicyIndexerConfigurationRoot, 'guard' | 'status'>
-  >,
-): Array<Address> {
-  return [
-    ...new Set(
-      roots
-        .filter((root) => root.status === 'PENDING')
-        .map((root) => root.guard),
-    ),
-  ];
-}
-
-/**
- * When a pending root can be applied, from `readyAt` until `readyAt + EXPIRY`.
- * `expiresAt` is `null` while `EXPIRY` is unknown; `null` for a root that is
- * not pending.
- */
-export function applicationWindowOf(
-  root: Pick<PolicyIndexerConfigurationRoot, 'guard' | 'status' | 'readyAt'>,
-  expiry: number | undefined,
-): { guard: Address; readyAt: number; expiresAt: number | null } | null {
-  if (root.status !== 'PENDING') {
-    return null;
-  }
-
-  return {
-    guard: root.guard,
-    readyAt: root.readyAt,
-    expiresAt: expiry === undefined ? null : root.readyAt + expiry,
-  };
-}
-
-/**
- * Whether {@link root} can still be applied: pending and not known to be past
- * `readyAt + EXPIRY`, as `SafePolicyGuard` checks it.
- */
+/** Whether {@link root} can still be applied: pending and before `expiresAt`. */
 export function isRootApplicable(
-  root: Pick<PolicyIndexerConfigurationRoot, 'guard' | 'status' | 'readyAt'>,
-  expiry: number | undefined,
+  root: Pick<PolicyIndexerConfigurationRoot, 'status' | 'expiresAt'>,
   now: number,
 ): boolean {
-  const window = applicationWindowOf(root, expiry);
-  return (
-    window !== null && (window.expiresAt === null || now < window.expiresAt)
-  );
-}
-
-/**
- * Which stored roots count toward the cap: on-chain roots while applicable,
- * and drafts younger than {@link args.draftLifetime} (`DELAY + EXPIRY` of the
- * Safe's guard; `null` counts every draft).
- */
-export function activeRootsRuleOf(args: {
-  roots: ReadonlyArray<PolicyIndexerConfigurationRoot>;
-  expiries: ReadonlyMap<Address, number>;
-  draftLifetime: number | null;
-  now: number;
-}): ActiveRootsRule {
-  return {
-    onChain: new Map(
-      args.roots.map((root) => [
-        root.root,
-        isRootApplicable(root, args.expiries.get(root.guard), args.now),
-      ]),
-    ),
-    draftsSince:
-      args.draftLifetime === null
-        ? null
-        : fromSecondsTimestamp(args.now - args.draftLifetime),
-  };
+  return root.status === 'PENDING' && now < root.expiresAt;
 }

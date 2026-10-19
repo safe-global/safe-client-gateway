@@ -352,7 +352,7 @@ export class PendingGuardConfigurationDto implements PendingGuardConfiguration {
     type: Number,
     nullable: true,
     description:
-      "Unix seconds the application window closes (readyAt + EXPIRY); null until the root is requested on-chain, or while the guard's EXPIRY is unknown",
+      'Unix seconds the application window closes; null until the root is requested on-chain',
   })
   public readonly expiresAt!: number | null;
   @ApiProperty({

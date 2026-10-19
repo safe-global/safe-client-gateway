@@ -456,19 +456,4 @@ describe('CacheRouter', () => {
       expect(queueKey).toBe(`${chainId}_safe_queue_delegates_${safeAddress}`);
     });
   });
-  describe('getSafePolicyGuardCacheDir', () => {
-    const chainId = faker.string.numeric();
-    const guard = getAddress(faker.finance.ethereumAddress());
-
-    it('Should key every guard of a chain under one key', () => {
-      const dir = CacheRouter.getSafePolicyGuardCacheDir({
-        chainId,
-        guard,
-        name: 'EXPIRY',
-      });
-
-      expect(dir.key).toBe(`${chainId}_safe_policy_guard`);
-      expect(dir.field).toBe(`${guard}_EXPIRY`);
-    });
-  });
 });

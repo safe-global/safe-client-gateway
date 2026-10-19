@@ -7,10 +7,11 @@ import { PolicyType } from '#/modules/policies/domain/entities/policy-type.entit
  * them. The guards differ only in their `DELAY`.
  */
 const SAFE_POLICY_GUARDS: ReadonlyArray<Address> = [
-  '0x2d4527fD0E79ca1e533E3C7BBEF7e0668b700aED',
-  '0xd2fB492adADBa5BcFb7FeBE25746fd5FdE090b20',
-  '0x5202B1ebE100812437d47eae769e155945fbba6a',
   '0x55c241591E12CE3c58491D02b737F12D3199ae95',
+  '0xC83bC185770ac0Da8A970f35695064eEe62e236c',
+  '0x46d22E0B3DC367b48bc2d64B789ae154b3177a57',
+  '0xd2fB492adADBa5BcFb7FeBE25746fd5FdE090b20',
+  '0x2d4527fD0E79ca1e533E3C7BBEF7e0668b700aED',
 ].map((address) => getAddress(address));
 
 const POLICY_CONTRACTS: ReadonlyArray<{ type: PolicyType; address: Address }> =
@@ -25,7 +26,7 @@ const POLICY_CONTRACTS: ReadonlyArray<{ type: PolicyType; address: Address }> =
     },
     {
       type: PolicyType.Cosigner,
-      address: '0xd9f2A31C5C68422a466754cd4F4965Be2b6024FB',
+      address: '0x65Bc0DADF4173C6d7125300cad9360339B3Ee478',
     },
     {
       type: PolicyType.Erc20Transfer,
@@ -37,12 +38,13 @@ const POLICY_CONTRACTS: ReadonlyArray<{ type: PolicyType; address: Address }> =
     },
     {
       type: PolicyType.NativeTransfer,
-      address: '0x01b792988be451C5F6327b6e2D215Ff1d4cc7246',
+      address: '0x2868C263EBF3672211E4C32e0B21689FF0584ca3',
     },
   ].map(({ type, address }) => ({ type, address: getAddress(address) }));
 
-/** The chains the policy indexer tracks `SafePolicyGuard` on: Polygon and Sepolia. */
+/** The chains the policy indexer tracks `SafePolicyGuard` on. */
 const POLICY_ENGINE_CHAIN_IDS: ReadonlySet<string> = new Set([
+  '1',
   '137',
   '11155111',
 ]);
@@ -50,16 +52,6 @@ const POLICY_ENGINE_CHAIN_IDS: ReadonlySet<string> = new Set([
 /** The `SafePolicyGuard` deployments on the chain; none off the policy-engine chains. */
 export function getSafePolicyGuardDeployments(chainId: string): Array<Address> {
   return POLICY_ENGINE_CHAIN_IDS.has(chainId) ? [...SAFE_POLICY_GUARDS] : [];
-}
-
-/** Whether {@link address} is a `SafePolicyGuard` deployment on the chain. */
-export function isSafePolicyGuardDeployment(
-  chainId: string,
-  address: Address,
-): boolean {
-  return getSafePolicyGuardDeployments(chainId).some((guard) =>
-    isAddressEqual(guard, address),
-  );
 }
 
 /**
