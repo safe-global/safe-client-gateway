@@ -78,7 +78,7 @@ export class PolicyConfigurationRequestsService {
       address: args.safe.address,
     });
     if (!isInSpace) {
-      throw new ForbiddenException('Safe is not registered to this Workspace.');
+      throw new ForbiddenException();
     }
   }
 }

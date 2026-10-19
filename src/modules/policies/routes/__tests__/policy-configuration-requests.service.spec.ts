@@ -126,9 +126,7 @@ describe('PolicyConfigurationRequestsService', () => {
 
     await expect(
       target.create({ ...request, payload: validPayload() }),
-    ).rejects.toThrow(
-      new ForbiddenException('Safe is not registered to this Workspace.'),
-    );
+    ).rejects.toThrow(new ForbiddenException());
     expect(configurationRequestsRepository.create).not.toHaveBeenCalled();
   });
 });
