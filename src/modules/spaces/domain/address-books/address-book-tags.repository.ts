@@ -24,6 +24,7 @@ import {
   InsertedIdSchema,
   type LockedSpace,
   LockedSpaceRowsSchema,
+  type ResolvedContact,
   type SpaceTags,
 } from '#/modules/spaces/domain/address-books/entities/address-book-tag-write.entity';
 import {
@@ -120,7 +121,7 @@ export class AddressBookTagsRepository implements IAddressBookTagsRepository {
         entityManager,
         args.spaceId,
       );
-      const items = await this.findItemsOrFail(
+      const contacts = await this.resolveContactsOrFail(
         entityManager,
         space.id,
         args.items,
@@ -130,16 +131,16 @@ export class AddressBookTagsRepository implements IAddressBookTagsRepository {
         entityManager,
         space.id,
         args.userId,
-        args.items.flatMap((item) => item.tags),
+        args.items.flatMap((entry) => entry.tags),
         spaceTags,
       );
       const currentTagIds = await this.findTagIdsByItemIds(
         entityManager,
-        items.map((item) => item.itemId),
+        contacts.map((contact) => contact.itemId),
       );
       const changes = this.findTagChanges({
         spaceId: space.id,
-        items,
+        contacts,
         tagIdByIndex,
         currentTagIds,
       });
@@ -212,23 +213,23 @@ export class AddressBookTagsRepository implements IAddressBookTagsRepository {
     });
   }
 
-  /** Pairs each item with its id; NotFoundException if one is not in the book. */
-  private async findItemsOrFail(
+  /** Matches each requested entry to its contact; NotFoundException if one is not in the book. */
+  private async resolveContactsOrFail(
     entityManager: EntityManager,
     spaceId: number,
-    items: Array<{ address: Address; tags: TagNames }>,
-  ): Promise<Array<{ itemId: number; address: Address; tags: TagNames }>> {
+    entries: Array<{ address: Address; tags: TagNames }>,
+  ): Promise<Array<ResolvedContact>> {
     const itemIds = await this.itemsRepository.findItemIdsByAddresses({
       spaceId,
-      addresses: items.map((item) => item.address),
+      addresses: entries.map((entry) => entry.address),
       entityManager,
     });
-    return items.map((item) => {
-      const itemId = itemIds.get(item.address.toLowerCase());
+    return entries.map((entry) => {
+      const itemId = itemIds.get(entry.address.toLowerCase());
       if (itemId === undefined) {
         throw new NotFoundException('Address book item not found.');
       }
-      return { itemId, address: item.address, tags: item.tags };
+      return { itemId, address: entry.address, tags: entry.tags };
     });
   }
 
@@ -334,35 +335,32 @@ export class AddressBookTagsRepository implements IAddressBookTagsRepository {
 
   /**
    * The contacts whose tag set changes, once each. A repeated address keeps
-   * the tags of its last item, compared against the stored set; an unchanged
+   * the tags of its last entry, compared against the stored set; an unchanged
    * set is no change (no write, no audit event).
    */
   private findTagChanges(args: {
     spaceId: number;
-    items: Array<{ itemId: number; address: Address; tags: TagNames }>;
+    contacts: Array<ResolvedContact>;
     tagIdByIndex: Map<string, number>;
     currentTagIds: Map<number, Array<number>>;
   }): Array<ContactTagChange> {
-    const lastItemById = new Map<
-      number,
-      { itemId: number; address: Address; tags: TagNames }
-    >();
-    for (const item of args.items) {
-      lastItemById.set(item.itemId, item);
+    const lastContactById = new Map<number, ResolvedContact>();
+    for (const contact of args.contacts) {
+      lastContactById.set(contact.itemId, contact);
     }
-    return Array.from(lastItemById.values()).flatMap((item) => {
-      const oldTagIds = args.currentTagIds.get(item.itemId) ?? [];
+    return Array.from(lastContactById.values()).flatMap((contact) => {
+      const oldTagIds = args.currentTagIds.get(contact.itemId) ?? [];
       const newTagIds = this.toTagIds(
         args.tagIdByIndex,
         args.spaceId,
-        item.tags,
+        contact.tags,
       );
       return isSameSet(oldTagIds, newTagIds)
         ? []
         : [
             {
-              itemId: item.itemId,
-              address: item.address,
+              itemId: contact.itemId,
+              address: contact.address,
               oldTagIds,
               newTagIds,
             },

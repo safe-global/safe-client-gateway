@@ -2,7 +2,10 @@
 import type { Address } from 'viem';
 import { z } from 'zod';
 import { RowSchema } from '#/datasources/db/v2/entities/row.entity';
-import type { TagColor } from '#/modules/spaces/domain/address-books/entities/address-book-tag.entity';
+import type {
+  TagColor,
+  TagNames,
+} from '#/modules/spaces/domain/address-books/entities/address-book-tag.entity';
 import { UuidSchema } from '#/validation/entities/schemas/uuid.schema';
 
 /** The driver hands raw rows back untyped, so the lock read parses. */
@@ -21,6 +24,13 @@ export type SpaceTags = {
   idByIndex: Map<string, number>;
   nameById: Map<number, string>;
   usedColors: Set<TagColor>;
+};
+
+/** A requested entry matched to its contact in the address book. */
+export type ResolvedContact = {
+  itemId: number;
+  address: Address;
+  tags: TagNames;
 };
 
 /** A contact whose tag set a write changes. */
