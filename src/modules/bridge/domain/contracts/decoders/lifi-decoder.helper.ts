@@ -62,7 +62,7 @@ export class LiFiDecoder {
   private static readonly FeeAbi = [
     ...LiFiDecoder.FeeCollectorAbi,
     ...LiFiDecoder.FeeForwarderAbi,
-  ] as const;
+  ];
 
   private static readonly FeeFunctionSelectors = LiFiDecoder.FeeAbi.map(
     (item) => toFunctionSelector(item),
