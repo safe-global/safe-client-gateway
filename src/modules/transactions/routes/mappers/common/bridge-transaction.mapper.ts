@@ -180,16 +180,18 @@ export class BridgeTransactionMapper {
     toToken: TokenInfo | null;
     explorerUrl: string | null;
   }> {
+    const fees = args.decoded.fees
+      ? {
+          tokenAddress: args.decoded.fees.tokenAddress,
+          integratorFee: args.decoded.fees.integratorFee.toString(),
+          lifiFee: args.decoded.fees.lifiFee.toString(),
+        }
+      : null;
+
     if (!args.executionDate) {
       return Promise.resolve({
         toAmount: null,
-        fees: args.decoded.fees
-          ? {
-              tokenAddress: args.decoded.fees.tokenAddress,
-              integratorFee: args.decoded.fees.integratorFee.toString(),
-              lifiFee: args.decoded.fees.lifiFee.toString(),
-            }
-          : null,
+        fees,
         explorerUrl: null,
         toToken: null,
         status: 'AWAITING_EXECUTION',
@@ -206,13 +208,7 @@ export class BridgeTransactionMapper {
       case 'DONE':
         return {
           toAmount: status.receiving.amount ?? '0',
-          fees: args.decoded.fees
-            ? {
-                integratorFee: args.decoded.fees.integratorFee.toString(),
-                lifiFee: args.decoded.fees.lifiFee.toString(),
-                tokenAddress: args.decoded.fees.tokenAddress,
-              }
-            : null,
+          fees,
           status: status.status,
           toToken: status.receiving.token
             ? new TokenInfo({
@@ -233,13 +229,7 @@ export class BridgeTransactionMapper {
         return {
           toAmount: null,
           toToken: null,
-          fees: args.decoded.fees
-            ? {
-                integratorFee: args.decoded.fees.integratorFee.toString(),
-                lifiFee: args.decoded.fees.lifiFee.toString(),
-                tokenAddress: args.decoded.fees.tokenAddress,
-              }
-            : null,
+          fees,
           explorerUrl: null,
           status: status.status,
           substatus: status.substatus,
@@ -248,7 +238,7 @@ export class BridgeTransactionMapper {
         return {
           toAmount: null,
           toToken: null,
-          fees: null,
+          fees,
           explorerUrl: null,
           status: status.status,
           substatus: status.substatus,
