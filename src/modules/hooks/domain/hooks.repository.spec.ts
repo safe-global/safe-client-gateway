@@ -120,7 +120,7 @@ const mockPushNotificationService = vi.mocked({
 
 const mockCounterfactualSafesRepository = vi.mocked({
   markAsDeployed: vi.fn(),
-} as unknown as MockedObject<ICounterfactualSafesRepository>);
+} as MockedObject<ICounterfactualSafesRepository>);
 
 describe('HooksRepository (Unit)', () => {
   let hooksRepository: HooksRepository;
