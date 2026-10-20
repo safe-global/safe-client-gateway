@@ -117,6 +117,11 @@ const FEATURE_FIXTURES = [
     .with('freeEnabled', false)
     .build(),
   featureBuilder()
+    .with('key', 'safenet_checks')
+    .with('type', FeatureType.Binary)
+    .with('freeEnabled', false)
+    .build(),
+  featureBuilder()
     .with('key', 'swap_fee_tier')
     .with('type', FeatureType.Value)
     .with('freeEnabled', true)
@@ -181,14 +186,18 @@ describe('EntitlementsService', () => {
       const space = await dataSource
         .getRepository(Space)
         .findOne({ where: { id }, select: { uuid: true } });
-      if (!space) throw new NotFoundException('Workspace not found.');
+      if (!space) {
+        throw new NotFoundException('Workspace not found.');
+      }
       return space.uuid;
     },
     findCreatedAtById: async (id: Space['id']): Promise<Space['createdAt']> => {
       const space = await dataSource
         .getRepository(Space)
         .findOne({ where: { id }, select: { createdAt: true } });
-      if (!space) throw new NotFoundException('Workspace not found.');
+      if (!space) {
+        throw new NotFoundException('Workspace not found.');
+      }
       return space.createdAt;
     },
   } as unknown as ISpacesRepository;

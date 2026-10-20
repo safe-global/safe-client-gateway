@@ -30,11 +30,17 @@ import type {
   SpendingLimitAllowance,
   SpendingLimitPolicyData,
 } from '#/modules/policies/domain/entities/active-policy.entity';
+import { policyIndexerGuardEnforcedPolicyBuilder } from '#/modules/policies/domain/entities/indexer/__tests__/guard-enforced-policy.builder';
 import { policyIndexerResponseBuilder } from '#/modules/policies/domain/entities/indexer/__tests__/policy-indexer-state.builder';
 import { policyIndexerSafeAllowanceBuilder } from '#/modules/policies/domain/entities/indexer/__tests__/safe-allowance.builder';
-import type { PolicyIndexerSafeAllowance } from '#/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
+import type {
+  PolicyIndexerGuardEnforcedPolicy,
+  PolicyIndexerSafeAllowance,
+} from '#/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 import { PolicyType } from '#/modules/policies/domain/entities/policy-type.entity';
 import type { IPolicyIndexerRepository } from '#/modules/policies/domain/policy-indexer.repository.interface';
+import { guardPolicyKindsOf } from '#/modules/policies/domain/utils/policy.utils';
+import { GuardPolicyMapper } from '#/modules/policies/routes/mappers/guard-policy.mapper';
 import { PendingSpendingLimitMapper } from '#/modules/policies/routes/mappers/pending-spending-limit.mapper';
 import { ProposerMapper } from '#/modules/policies/routes/mappers/proposer.mapper';
 import { SpendingLimitMapper } from '#/modules/policies/routes/mappers/spending-limit.mapper';
@@ -58,19 +64,27 @@ const mockPolicyIndexerRepository = {
   clearState: vi.fn(),
 } as MockedObject<IPolicyIndexerRepository>;
 
-const mockSafeRepository = {
+const mockSafeRepository: MockedObject<
+  Pick<
+    ISafeRepository,
+    'getSafe' | 'getTransactionQueue' | 'getTransactionQueueMaxPageSize'
+  >
+> = {
   getSafe: vi.fn(),
   getTransactionQueue: vi.fn(),
   getTransactionQueueMaxPageSize: vi.fn(),
-} as unknown as MockedObject<ISafeRepository>;
+};
 
-const mockSpaceSafesRepository = {
+const mockSpaceSafesRepository: MockedObject<
+  Pick<ISpaceSafesRepository, 'findBySpaceId'>
+> = {
   findBySpaceId: vi.fn(),
-} as unknown as MockedObject<ISpaceSafesRepository>;
+};
 
-const mockMembersRepository = {
-  findOne: vi.fn(),
-} as unknown as MockedObject<IMembersRepository>;
+const mockMembersRepository: MockedObject<Pick<IMembersRepository, 'findOne'>> =
+  {
+    findOne: vi.fn(),
+  };
 
 const mockDelegatesV3Repository = {
   getDelegates: vi.fn(),
@@ -81,9 +95,10 @@ const mockTokenRepository = {
   getTokens: vi.fn(),
 } as MockedObject<ITokenRepository>;
 
-const mockChainsRepository = {
-  getChain: vi.fn(),
-} as unknown as MockedObject<IChainsRepository>;
+const mockChainsRepository: MockedObject<Pick<IChainsRepository, 'getChain'>> =
+  {
+    getChain: vi.fn(),
+  };
 
 const mockLoggingService = {
   info: vi.fn(),
@@ -112,6 +127,8 @@ describe('PoliciesService', () => {
   const authPayload = new AuthPayload(
     siweAuthPayloadDtoBuilder().with('sub', userId.toString()).build(),
   );
+  /** The guard kinds behind the types {@link policyRequest} asks for. */
+  const everyGuardKind = guardPolicyKindsOf(Object.values(PolicyType));
   const policyRequest = {
     spaceId,
     authPayload,
@@ -157,17 +174,18 @@ describe('PoliciesService', () => {
 
     return new PoliciesService(
       mockPolicyIndexerRepository,
-      mockSafeRepository,
-      mockSpaceSafesRepository,
-      mockMembersRepository,
+      mockSafeRepository as MockedObject<ISafeRepository>,
+      mockSpaceSafesRepository as MockedObject<ISpaceSafesRepository>,
+      mockMembersRepository as MockedObject<IMembersRepository>,
       mockDelegatesV3Repository,
       mockTokenRepository,
-      mockChainsRepository,
+      mockChainsRepository as MockedObject<IChainsRepository>,
       fakeConfigurationService,
       mockLoggingService,
       new SpendingLimitMapper(),
       new ProposerMapper(),
       pendingSpendingLimitMapper(),
+      new GuardPolicyMapper(),
     );
   }
 
@@ -268,6 +286,7 @@ describe('PoliciesService', () => {
       await target.getSpaceActivePolicies(policyRequest);
 
       expect(mockPolicyIndexerRepository.getState).toHaveBeenCalledWith({
+        guardPolicyKinds: everyGuardKind,
         safes: [{ chainId: SEPOLIA, address: safeAddress }],
       });
     });
@@ -340,6 +359,82 @@ describe('PoliciesService', () => {
           safeAddress,
         }),
       );
+    });
+  });
+
+  describe('policies enforced by the guard', () => {
+    /** An ALLOW policy enforced by the guard on `safe`, on `chainId`. */
+    function guardEnforcedPolicyOf(
+      safe: Address,
+      chainId = SEPOLIA,
+    ): PolicyIndexerGuardEnforcedPolicy {
+      return policyIndexerGuardEnforcedPolicyBuilder()
+        .with('chainId', chainId)
+        .with('safe', safe)
+        .with('kind', 'ALLOW')
+        .with('state', null)
+        .build();
+    }
+
+    /** The guard-enforced policies of the Space, over the given indexer rows. */
+    async function guardEnforcedPolicies(
+      policies: Array<PolicyIndexerGuardEnforcedPolicy>,
+    ): Promise<Array<ActivePolicy>> {
+      mockPolicyIndexerRepository.getState.mockResolvedValue(
+        policyIndexerResponseBuilder()
+          .with('guardPolicyBindings', policies)
+          .build(),
+      );
+
+      return await target.getSpaceActivePolicies({
+        ...policyRequest,
+        types: [PolicyType.Allow],
+      });
+    }
+
+    it('should report the policies of the safe it is building', async () => {
+      const result = await guardEnforcedPolicies([
+        guardEnforcedPolicyOf(safeAddress),
+      ]);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].safe).toStrictEqual({
+        chainId: SEPOLIA,
+        address: safeAddress,
+      });
+    });
+
+    it('should use only the policies the guard enforces on the safe it is building', async () => {
+      // The indexer answers for every Safe of a request, so an unscoped read
+      // would report the policies the guard enforces on another Safe on this one.
+      const result = await guardEnforcedPolicies([
+        guardEnforcedPolicyOf(getAddress(faker.finance.ethereumAddress())),
+      ]);
+
+      expect(result).toStrictEqual([]);
+    });
+
+    it('should not report a policy the guard enforces on the same address on another chain', async () => {
+      // A Safe address can be deployed on several chains, each with its own
+      // guard configuration.
+      const otherChain = faker.string.numeric({
+        length: 3,
+        exclude: [SEPOLIA],
+      });
+
+      const result = await guardEnforcedPolicies([
+        guardEnforcedPolicyOf(safeAddress, otherChain),
+      ]);
+
+      expect(result).toStrictEqual([]);
+    });
+
+    it('should match the safe of a policy enforced by the guard regardless of casing', async () => {
+      const result = await guardEnforcedPolicies([
+        guardEnforcedPolicyOf(safeAddress.toLowerCase() as Address),
+      ]);
+
+      expect(result).toHaveLength(1);
     });
   });
 
@@ -463,6 +558,7 @@ describe('PoliciesService', () => {
 
       expect(mockPolicyIndexerRepository.getState).toHaveBeenCalledTimes(1);
       expect(mockPolicyIndexerRepository.getState).toHaveBeenCalledWith({
+        guardPolicyKinds: everyGuardKind,
         safes: [
           { chainId: SEPOLIA, address: safeAddress },
           { chainId: '137', address: otherSafe },
@@ -495,6 +591,7 @@ describe('PoliciesService', () => {
       });
 
       expect(mockPolicyIndexerRepository.getState).toHaveBeenCalledWith({
+        guardPolicyKinds: everyGuardKind,
         safes: [{ chainId: SEPOLIA, address: safeAddress }],
       });
     });
@@ -519,6 +616,7 @@ describe('PoliciesService', () => {
 
       expect(policies).toHaveLength(1);
       expect(mockPolicyIndexerRepository.getState).toHaveBeenCalledWith({
+        guardPolicyKinds: everyGuardKind,
         safes: [{ chainId: SEPOLIA, address: safeAddress }],
       });
       expect(mockSafeRepository.getSafe).toHaveBeenCalledTimes(1);
@@ -837,6 +935,57 @@ describe('PoliciesService', () => {
       expect(policies.map((policy) => policy.type)).toStrictEqual([
         PolicyType.SpendingLimit,
         PolicyType.Proposer,
+      ]);
+    });
+
+    it('should report no spending limits when only a guard-enforced policy type is asked for', async () => {
+      mockPolicyIndexerRepository.getState.mockResolvedValue(
+        policyIndexerResponseBuilder()
+          .with('allowances', [allowanceOf(safeAddress)])
+          .with('guardPolicyBindings', [
+            policyIndexerGuardEnforcedPolicyBuilder()
+              .with('chainId', SEPOLIA)
+              .with('safe', safeAddress)
+              .build(),
+          ])
+          .build(),
+      );
+
+      const policies = await target.getSpaceActivePolicies({
+        ...policyRequest,
+        types: [PolicyType.Erc20Transfer],
+      });
+
+      expect(policies.map((policy) => policy.type)).toStrictEqual([
+        PolicyType.Erc20Transfer,
+      ]);
+      // Token metadata is fetched for spending limits only.
+      expect(mockTokenRepository.getToken).not.toHaveBeenCalled();
+      expect(mockChainsRepository.getChain).not.toHaveBeenCalled();
+    });
+
+    it('should report no guard-enforced policies when only spending limits are requested for', async () => {
+      mockPolicyIndexerRepository.getState.mockResolvedValue(
+        policyIndexerResponseBuilder()
+          .with('allowances', [allowanceOf(safeAddress)])
+          .with('guardPolicyBindings', [
+            policyIndexerGuardEnforcedPolicyBuilder()
+              .with('chainId', SEPOLIA)
+              .with('safe', safeAddress)
+              .with('kind', 'ALLOW')
+              .with('state', null)
+              .build(),
+          ])
+          .build(),
+      );
+
+      const policies = await target.getSpaceActivePolicies({
+        ...policyRequest,
+        types: [PolicyType.SpendingLimit],
+      });
+
+      expect(policies.map((policy) => policy.type)).toStrictEqual([
+        PolicyType.SpendingLimit,
       ]);
     });
 

@@ -29,6 +29,8 @@ import { delegateBuilder } from '#/modules/delegate/domain/entities/__tests__/de
 import type { Delegate } from '#/modules/delegate/domain/entities/delegate.entity';
 import { NotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/notifications.repository.module';
 import { TestNotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/test.notification.repository.module';
+import { policyConfigurationBuilder } from '#/modules/policies/domain/entities/__tests__/policy-configuration.builder';
+import { rawIndexerGuardEnforcedPolicyBuilder } from '#/modules/policies/domain/entities/indexer/__tests__/guard-enforced-policy.builder';
 import {
   rawIndexerMetaBuilder,
   rawPolicyIndexerResponse,
@@ -41,7 +43,9 @@ import {
   rawIndexerSafeAllowanceBuilder,
   rawIndexerSafeDelegateBuilder,
 } from '#/modules/policies/domain/entities/indexer/__tests__/safe-allowance.builder';
+import type { PolicyConfiguration } from '#/modules/policies/domain/entities/policy-configuration.entity';
 import { PolicyType } from '#/modules/policies/domain/entities/policy-type.entity';
+import { configurationRoot } from '#/modules/policies/domain/utils/policy-configuration-root.utils';
 import { multisigTransactionBuilder } from '#/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
 import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
 import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
@@ -68,6 +72,7 @@ describe('Space Policies Controller', () => {
   const safeAddress = getAddress(faker.finance.ethereumAddress());
   const polygonSafeAddress = getAddress(faker.finance.ethereumAddress());
   const allowanceModule = getAddress(faker.finance.ethereumAddress());
+  const safePolicyGuard = getAddress(faker.finance.ethereumAddress());
   const txServiceUrl = chain.transactionService;
 
   /**
@@ -124,13 +129,18 @@ describe('Space Policies Controller', () => {
     args: {
       modules?: Array<`0x${string}`>;
       delegates?: Array<Delegate>;
+      /** Makes the delegates endpoint fail, leaving every other stub intact. */
       delegatesUnavailable?: boolean;
       queuedTransactions?: Array<MultisigTransaction>;
       tokens?: Array<Token>;
       tokenNotFoundAddresses?: Array<string>;
+      guard?: `0x${string}`;
+      moduleGuard?: `0x${string}`;
     } = {},
   ): void {
     const modules = args.modules ?? [allowanceModule];
+    const guard = args.guard ?? safePolicyGuard;
+    const moduleGuard = args.moduleGuard ?? zeroAddress;
     const delegates = args.delegates ?? [];
     const queuedTransactions = args.queuedTransactions ?? [];
     const tokens = args.tokens ?? [];
@@ -138,10 +148,14 @@ describe('Space Policies Controller', () => {
     const safe = safeBuilder()
       .with('address', safeAddress)
       .with('modules', modules)
+      .with('guard', guard)
+      .with('moduleGuard', moduleGuard)
       .build();
     const polygonSafe = safeBuilder()
       .with('address', polygonSafeAddress)
       .with('modules', modules)
+      .with('guard', guard)
+      .with('moduleGuard', moduleGuard)
       .build();
 
     networkService.get.mockImplementation(({ url }) => {
@@ -231,6 +245,17 @@ describe('Space Policies Controller', () => {
     return Math.floor(Date.now() / MILLISECONDS_IN_MINUTE) - 1;
   }
 
+  /** A store payload whose root is the hash of its configurations. */
+  function payload(): {
+    root: `0x${string}`;
+    configurations: Array<PolicyConfiguration>;
+  } {
+    const configurations: [PolicyConfiguration] = [
+      policyConfigurationBuilder().build(),
+    ];
+    return { root: configurationRoot(configurations), configurations };
+  }
+
   function anAllowance(): ReturnType<typeof rawIndexerSafeAllowanceBuilder> {
     return rawIndexerSafeAllowanceBuilder()
       .with('chainId', Number(SEPOLIA_CHAIN_ID))
@@ -272,6 +297,12 @@ describe('Space Policies Controller', () => {
         ...defaultConfiguration.features,
         auth: true,
         users: true,
+      },
+      policies: {
+        ...defaultConfiguration.policies,
+        // Pinned: the faker mirror randomises it, and this file stores several
+        // requests for one Safe - the cap is per Safe, not per space.
+        maxConfigurationRequestsPerSpaceSafe: 20,
       },
     });
 
@@ -562,6 +593,193 @@ describe('Space Policies Controller', () => {
       expect(body[0].data.spenders[0].allowances[0].resetsAtMinute).toBe(
         windowStart + DAY_IN_MINUTES,
       );
+    });
+
+    it('should return a guard-enforced token allowlist', async () => {
+      const token = getAddress(faker.finance.ethereumAddress());
+      const recipient = getAddress(faker.finance.ethereumAddress());
+      const binding = rawIndexerGuardEnforcedPolicyBuilder()
+        .with('chainId', Number(SEPOLIA_CHAIN_ID))
+        .with('safe', safeAddress)
+        .with('guard', safePolicyGuard)
+        .with('target', token)
+        .with('selector', '0xa9059cbb')
+        .with('kind', 'ERC20_TRANSFER')
+        .with('state', {
+          recipients: [{ account: recipient, permission: 'ALWAYS' }],
+        })
+        .build();
+      mockUpstream();
+      mockIndexer(rawPolicyIndexerResponse({ GuardPolicyBinding: [binding] }));
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+
+      const { body } = await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}/policies/active`)
+        .query({ types: policyTypes })
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200);
+
+      expect(body).toMatchObject([
+        {
+          type: PolicyType.Erc20Transfer,
+          enforcement: {
+            via: 'guard',
+            guards: {
+              transactionGuard: {
+                policyContract: getAddress(binding.policy),
+                safePolicyGuard,
+              },
+            },
+          },
+          enabled: true,
+          safe: { chainId: SEPOLIA_CHAIN_ID, address: safeAddress },
+          data: {
+            tokenAddress: token,
+            recipients: [{ account: recipient, permission: 'ALWAYS' }],
+          },
+        },
+      ]);
+    });
+
+    it('should report a guard policy enforced by the module guard slot alone', async () => {
+      const binding = rawIndexerGuardEnforcedPolicyBuilder()
+        .with('chainId', Number(SEPOLIA_CHAIN_ID))
+        .with('safe', safeAddress)
+        .with('guard', safePolicyGuard)
+        .with('kind', 'ALLOW')
+        .with('state', null)
+        .build();
+      mockUpstream({ guard: zeroAddress, moduleGuard: safePolicyGuard });
+      mockIndexer(rawPolicyIndexerResponse({ GuardPolicyBinding: [binding] }));
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+
+      const { body } = await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}/policies/active`)
+        .query({ types: policyTypes })
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200);
+
+      expect(body).toStrictEqual([
+        expect.objectContaining({
+          type: PolicyType.Allow,
+          enforcement: {
+            via: 'guard',
+            guards: {
+              moduleGuard: {
+                policyContract: getAddress(binding.policy),
+                safePolicyGuard,
+              },
+            },
+            access: {
+              target: getAddress(binding.target),
+              selector: binding.selector,
+              operation: binding.operation,
+            },
+          },
+          enabled: true,
+        }),
+      ]);
+    });
+
+    it('should report a guard policy as unenforced when another guard is set', async () => {
+      const binding = rawIndexerGuardEnforcedPolicyBuilder()
+        .with('chainId', Number(SEPOLIA_CHAIN_ID))
+        .with('safe', safeAddress)
+        .with('guard', getAddress(faker.finance.ethereumAddress()))
+        .with('kind', 'ALLOW')
+        .with('state', null)
+        .build();
+      mockUpstream();
+      mockIndexer(rawPolicyIndexerResponse({ GuardPolicyBinding: [binding] }));
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+
+      const { body } = await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}/policies/active`)
+        .query({ types: policyTypes })
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200);
+
+      expect(body).toMatchObject([
+        { type: PolicyType.Allow, enabled: false, data: {} },
+      ]);
+    });
+
+    it('should report module and guard policies in one list', async () => {
+      mockUpstream();
+      mockIndexer(
+        rawPolicyIndexerResponse({
+          SafeAllowance: [anAllowance().build()],
+          GuardPolicyBinding: [
+            rawIndexerGuardEnforcedPolicyBuilder()
+              .with('chainId', Number(SEPOLIA_CHAIN_ID))
+              .with('safe', safeAddress)
+              .with('guard', safePolicyGuard)
+              .with('kind', 'ALLOW')
+              .with('state', null)
+              .build(),
+          ],
+        }),
+      );
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+
+      const { body } = await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}/policies/active`)
+        .query({ types: policyTypes })
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200);
+
+      const policies = body as Array<{ type: string }>;
+      expect(policies.map((item) => item.type)).toStrictEqual([
+        PolicyType.SpendingLimit,
+        PolicyType.Allow,
+      ]);
+    });
+
+    it('should report the access of a guard policy only', async () => {
+      const binding = rawIndexerGuardEnforcedPolicyBuilder()
+        .with('chainId', Number(SEPOLIA_CHAIN_ID))
+        .with('safe', safeAddress)
+        .with('guard', safePolicyGuard)
+        .with('kind', 'ALLOW')
+        .with('state', null)
+        .build();
+      mockUpstream();
+      mockIndexer(
+        rawPolicyIndexerResponse({
+          SafeAllowance: [anAllowance().build()],
+          GuardPolicyBinding: [binding],
+        }),
+      );
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+
+      const { body } = await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}/policies/active`)
+        .query({ types: policyTypes })
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200);
+
+      const [spendingLimit, allow] = body as Array<{
+        enforcement: Record<string, unknown>;
+      }>;
+      expect(spendingLimit.enforcement).toStrictEqual({
+        via: 'module',
+        moduleAddress: allowanceModule,
+      });
+      expect(allow.enforcement.access).toStrictEqual({
+        target: getAddress(binding.target),
+        selector: binding.selector,
+        operation: binding.operation,
+      });
     });
 
     it('should report a limit as unenforced when the module is not enabled', async () => {
@@ -967,6 +1185,103 @@ describe('Space Policies Controller', () => {
       await request(app.getHttpServer())
         .get(`/v1/spaces/${spaceId}/policies/pending`)
         .query({ types: PolicyType.SpendingLimit })
+        .expect(403);
+    });
+  });
+
+  describe('POST /v1/spaces/:spaceId/chains/:chainId/safes/:safeAddress/policies/requests', () => {
+    it('should store the configurations of a root', async () => {
+      mockUpstream();
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+      const body = payload();
+
+      await request(app.getHttpServer())
+        .post(
+          `/v1/spaces/${spaceId}/chains/${SEPOLIA_CHAIN_ID}/safes/${safeAddress}/policies/requests`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send(body)
+        .expect(201)
+        .expect({ root: body.root });
+    });
+
+    it('should accept the same root twice', async () => {
+      // Idempotent per Space, Safe and root, so a client retry is free.
+      mockUpstream();
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+      const body = payload();
+      const url = `/v1/spaces/${spaceId}/chains/${SEPOLIA_CHAIN_ID}/safes/${safeAddress}/policies/requests`;
+
+      await request(app.getHttpServer())
+        .post(url)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send(body)
+        .expect(201);
+      await request(app.getHttpServer())
+        .post(url)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send(body)
+        .expect(201);
+    });
+
+    it('should reject configurations that do not hash to the root', async () => {
+      mockUpstream();
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+
+      await request(app.getHttpServer())
+        .post(
+          `/v1/spaces/${spaceId}/chains/${SEPOLIA_CHAIN_ID}/safes/${safeAddress}/policies/requests`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ ...payload(), root: `0x${'11'.repeat(32)}` })
+        .expect(422);
+    });
+
+    it('should reject an empty configuration list', async () => {
+      mockUpstream();
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+
+      await request(app.getHttpServer())
+        .post(
+          `/v1/spaces/${spaceId}/chains/${SEPOLIA_CHAIN_ID}/safes/${safeAddress}/policies/requests`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ root: `0x${'11'.repeat(32)}`, configurations: [] })
+        .expect(422);
+    });
+
+    it('should return 403 for a safe that is not in the space', async () => {
+      mockUpstream();
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: false,
+      });
+
+      await request(app.getHttpServer())
+        .post(
+          `/v1/spaces/${spaceId}/chains/${SEPOLIA_CHAIN_ID}/safes/${safeAddress}/policies/requests`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send(payload())
+        .expect(403);
+    });
+
+    it('should return 403 without authentication', async () => {
+      mockUpstream();
+      const { spaceId } = await createSpaceWithSafe({ withSafe: true });
+
+      await request(app.getHttpServer())
+        .post(
+          `/v1/spaces/${spaceId}/chains/${SEPOLIA_CHAIN_ID}/safes/${safeAddress}/policies/requests`,
+        )
+        .send(payload())
         .expect(403);
     });
   });

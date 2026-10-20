@@ -237,6 +237,17 @@ const UNGATED_ROUTES: Array<Route> = [
     method: 'post',
     path: (id) => `/v1/spaces/${id}/members/1/invite/renew`,
   },
+  // Like proposing a contact, storing a policy configuration request only
+  // stores a proposal: nothing takes effect until the Safe owners sign it
+  // on-chain. A row must hash to its root, and the per-Space cap bounds how
+  // many a stolen session can store.
+  {
+    name: 'POST /v1/spaces/:spaceId/chains/:chainId/safes/:safeAddress/policies/requests',
+    method: 'post',
+    path: (id) =>
+      `/v1/spaces/${id}/chains/11155111/safes/${getAddress(faker.finance.ethereumAddress())}/policies/requests`,
+    body: {},
+  },
   {
     name: 'POST /v1/spaces/:spaceId/address-book/requests (propose contact)',
     method: 'post',

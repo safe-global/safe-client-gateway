@@ -105,7 +105,9 @@ export class BalancesService {
       tokenAddress,
     });
 
-    if (!balance) return null;
+    if (!balance) {
+      return null;
+    }
     return this._mapBalance(balance, chain.nativeCurrency);
   }
 

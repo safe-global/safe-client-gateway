@@ -1,20 +1,29 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
-import type { Address } from 'viem';
-import type {
-  ActivePolicy,
-  ActivePolicyData,
-  ProposerPolicyData,
-  SpendingLimitAllowance,
-  SpendingLimitPolicyData,
+import type { Address, Hex } from 'viem';
+import {
+  type ActivePolicy,
+  type ActivePolicyData,
+  type CosignerPolicyData,
+  type Erc20TransferPolicyData,
+  type Erc20TransferRecipient,
+  type PolicyPermission,
+  PolicyPermissionSchema,
+  type ProposerPolicyData,
+  type SpendingLimitAllowance,
+  type SpendingLimitPolicyData,
+  type StatelessPolicyData,
 } from '#/modules/policies/domain/entities/active-policy.entity';
 import type {
+  GuardEnforcement,
   GuardSlots,
   ModuleEnforcement,
   OffChainEnforcement,
+  PolicyAccess,
   PolicyContracts,
   PolicyEnforcement,
 } from '#/modules/policies/domain/entities/policy-enforcement.entity';
+import { PolicyOperation } from '#/modules/policies/domain/entities/policy-operation.entity';
 import {
   PolicyEnforcementKind,
   PolicyType,
@@ -67,11 +76,31 @@ export class ModuleEnforcementDto implements ModuleEnforcement {
   public readonly moduleAddress!: Address;
 }
 
-export class GuardEnforcementDto {
+export class PolicyAccessDto implements PolicyAccess {
+  @ApiProperty({
+    type: String,
+    description: 'The contract the governed calls target',
+  })
+  public readonly target!: Address;
+  @ApiProperty({
+    type: String,
+    description: 'The 4-byte function selector of the governed calls',
+  })
+  public readonly selector!: Hex;
+  @ApiProperty({ enum: Object.values(PolicyOperation) })
+  public readonly operation!: PolicyOperation;
+}
+
+export class GuardEnforcementDto implements GuardEnforcement {
   @ApiProperty({ enum: [PolicyEnforcementKind.Guard] })
   public readonly via!: typeof PolicyEnforcementKind.Guard;
   @ApiProperty({ type: GuardSlotsDto })
   public readonly guards!: GuardSlots;
+  @ApiProperty({
+    type: PolicyAccessDto,
+    description: 'The calls the guard applies the policy to',
+  })
+  public readonly access!: PolicyAccess;
 }
 
 export class OffChainEnforcementDto implements OffChainEnforcement {
@@ -261,10 +290,54 @@ export class ProposerPolicyDataDto implements ProposerPolicyData {
   public readonly proposers!: ProposerPolicyData['proposers'];
 }
 
+export class Erc20TransferRecipientDto implements Erc20TransferRecipient {
+  @ApiProperty({
+    type: String,
+    description: 'An address the Safe can send this token to',
+  })
+  public readonly account!: Address;
+  @ApiProperty({
+    enum: PolicyPermissionSchema.options,
+  })
+  public readonly permission!: PolicyPermission;
+}
+
+export class Erc20TransferPolicyDataDto implements Erc20TransferPolicyData {
+  @ApiProperty({
+    type: String,
+    description: 'The ERC20 token the allowlist applies to',
+  })
+  public readonly tokenAddress!: Address;
+  @ApiProperty({
+    type: Erc20TransferRecipientDto,
+    isArray: true,
+    description: 'The recipients of the token transfers the policy permits',
+  })
+  public readonly recipients!: Array<Erc20TransferRecipient>;
+}
+
+export class CosignerPolicyDataDto implements CosignerPolicyData {
+  @ApiProperty({
+    type: String,
+    description: 'The cosigner the policy enforces.',
+  })
+  public readonly cosignerAddress!: Address;
+}
+
+/**
+ * Allow, deny, native transfer and multisend carry no configuration.
+ */
+export class StatelessPolicyDataDto implements StatelessPolicyData {
+  [key: string]: never;
+}
+
 const PolicyDataSchema = {
   oneOf: [
     { $ref: getSchemaPath(SpendingLimitPolicyDataDto) },
     { $ref: getSchemaPath(ProposerPolicyDataDto) },
+    { $ref: getSchemaPath(Erc20TransferPolicyDataDto) },
+    { $ref: getSchemaPath(CosignerPolicyDataDto) },
+    { $ref: getSchemaPath(StatelessPolicyDataDto) },
   ],
 };
 
@@ -274,6 +347,10 @@ const PolicyDataSchema = {
   OffChainEnforcementDto,
   SpendingLimitPolicyDataDto,
   ProposerPolicyDataDto,
+  Erc20TransferRecipientDto,
+  Erc20TransferPolicyDataDto,
+  CosignerPolicyDataDto,
+  StatelessPolicyDataDto,
 )
 export class ActivePolicyDto implements ActivePolicy {
   @ApiProperty({ enum: Object.values(PolicyType) })

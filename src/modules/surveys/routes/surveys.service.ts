@@ -116,7 +116,9 @@ export class SurveysService {
     for (const [pageId, submittedKeys] of Object.entries(args.submitted)) {
       const page = pagesById.get(pageId);
       // Unreachable: assertPageIdSetMatches already verified the set equality.
-      if (!page) continue;
+      if (!page) {
+        continue;
+      }
       result[pageId] = this.validatePageSelections(page, submittedKeys);
     }
     return result;

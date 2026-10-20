@@ -2,11 +2,13 @@
 #
 # BUILD CONTAINER
 #
-FROM node:24.21.0-alpine3.24 AS base
+FROM node:26.10.0-alpine3.24 AS base
 ENV NODE_ENV=production
 WORKDIR /app
 COPY --chown=node:node .yarn/releases ./.yarn/releases
 COPY --chown=node:node package.json yarn.lock .yarnrc.yml tsconfig*.json ./
+RUN npm install --global "corepack@$(node -p 'require("./package.json").devDependencies.corepack')" \
+     && corepack enable
 COPY --chown=node:node scripts/generate-abis.js ./scripts/generate-abis.js
 # Compiled by `yarn build` into dist/scripts/ so the image can mint billing
 # webhook tokens as a one-off workload (see src/modules/billing/README.md).
@@ -24,7 +26,7 @@ RUN yarn install --immutable \
 #
 # PRODUCTION CONTAINER
 #
-FROM node:24.21.0-alpine3.24 AS production
+FROM node:26.10.0-alpine3.24 AS production
 USER node
 WORKDIR /app
 

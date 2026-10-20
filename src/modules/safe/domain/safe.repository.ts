@@ -449,7 +449,9 @@ export class SafeRepository implements ISafeRepository {
     safeTxHashes: Array<string>,
   ): Promise<Map<string, SafeQueueMultisigTransactionEntity>> {
     const byHash = new Map<string, SafeQueueMultisigTransactionEntity>();
-    if (safeTxHashes.length === 0) return byHash;
+    if (safeTxHashes.length === 0) {
+      return byHash;
+    }
     try {
       // Already validated by getMultisigTransactionsBatch (per-chunk
       // safeParse) — not Raw<T>, re-parsing here would be redundant.
@@ -458,7 +460,9 @@ export class SafeRepository implements ISafeRepository {
           chainId,
           safeTxHashes,
         });
-      for (const queue of transactions) byHash.set(queue.safeTxHash, queue);
+      for (const queue of transactions) {
+        byHash.set(queue.safeTxHash, queue);
+      }
       const missing = safeTxHashes.filter((hash) => !byHash.has(hash));
       if (missing.length > 0) {
         this.loggingService.warn(
@@ -506,7 +510,9 @@ export class SafeRepository implements ISafeRepository {
       notes: string | null;
     },
   ): void {
-    if (!(queue.originName || queue.originUrl)) return;
+    if (!(queue.originName || queue.originUrl)) {
+      return;
+    }
     tx.origin = buildOrigin(queue.originName, queue.originUrl, queue.notes);
   }
 
@@ -514,16 +520,22 @@ export class SafeRepository implements ISafeRepository {
     txs: ReadonlyArray<Transaction>,
     chainId: string,
   ): Promise<void> {
-    if (!this.safeQueueEnabled) return;
+    if (!this.safeQueueEnabled) {
+      return;
+    }
     const multisigs = txs.filter(isMultisigTransaction);
-    if (multisigs.length === 0) return;
+    if (multisigs.length === 0) {
+      return;
+    }
     const byHash = await this.fetchQueueMultisigByHash(
       chainId,
       multisigs.map((tx) => tx.safeTxHash),
     );
     for (const tx of multisigs) {
       const queue = byHash.get(tx.safeTxHash);
-      if (queue === undefined) continue;
+      if (queue === undefined) {
+        continue;
+      }
       if (!this.isQueueOriginAuthoritative(queue, { chainId, safe: tx.safe })) {
         continue;
       }

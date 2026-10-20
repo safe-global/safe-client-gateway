@@ -61,7 +61,9 @@ const CONTEXT = {
 
 function stubGetOrThrow(enabled: boolean): void {
   configurationService.getOrThrow.mockImplementation((key: string) => {
-    if (key === 'encryption.enabled') return enabled;
+    if (key === 'encryption.enabled') {
+      return enabled;
+    }
     throw new Error(`Unexpected config key: ${key}`);
   });
 }
@@ -89,7 +91,9 @@ describe('KmsEncryptionService', () => {
 
     stubGetOrThrow(args?.enabled ?? true);
     configurationService.get.mockImplementation((key: string) => {
-      if (key === 'encryption.indexKey') return wrappedIndexKey;
+      if (key === 'encryption.indexKey') {
+        return wrappedIndexKey;
+      }
       return undefined;
     });
     kmsService.decrypt.mockResolvedValue(args?.unwrapsTo ?? INDEX_KEY);

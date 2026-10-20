@@ -15,6 +15,7 @@ export const PolicyType = {
   Allow: 'allow',
   NativeTransfer: 'native-transfer',
   Deny: 'deny',
+  MultiSend: 'multisend',
 };
 
 export type PolicyType = (typeof PolicyType)[keyof typeof PolicyType];

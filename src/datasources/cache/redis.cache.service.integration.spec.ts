@@ -232,6 +232,35 @@ describe('RedisCacheService', () => {
     expect(result).toEqual(value);
   });
 
+  it('a second setCounter overwrites the first', async () => {
+    const key = faker.string.alphanumeric();
+    const value = faker.number.int({ min: 100 });
+    await redisCacheService.setCounter(key, value, maxTtlDeviated);
+    await redisCacheService.setCounter(key, value + 1, maxTtlDeviated);
+
+    const result = await redisCacheService.getCounter(key);
+    expect(result).toEqual(value + 1);
+  });
+
+  it('setCounter, increment and getCounter use the same prefixed key', async () => {
+    const prefix = faker.string.alpha(8);
+    const prefixedService = new RedisCacheService(
+      redisClient,
+      mockLoggingService,
+      mockConfigurationService,
+      prefix,
+    );
+    const key = faker.string.alphanumeric();
+    const value = faker.number.int({ min: 100 });
+
+    await prefixedService.setCounter(key, value, maxTtlDeviated);
+    await prefixedService.increment(key, maxTtlDeviated);
+
+    expect(await prefixedService.getCounter(key)).toEqual(value + 1);
+    expect(await redisClient.get(`${prefix}-${key}`)).toEqual(`${value + 1}`);
+    expect(await redisClient.exists(key)).toEqual(0);
+  });
+
   it('sets and gets the value of a zero-value counter', async () => {
     const key = faker.string.alphanumeric();
     await redisCacheService.setCounter(key, 0, maxTtlDeviated);

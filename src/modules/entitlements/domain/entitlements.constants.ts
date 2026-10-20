@@ -35,6 +35,7 @@ export function isStockMeteredFeatureKey(
 export const BINARY_FEATURES = [
   'copilot_scans',
   'policies',
+  'safenet_checks',
 ] as const satisfies ReadonlyArray<(typeof FEATURE_KEYS)[number]>;
 
 export type BinaryFeature = (typeof BINARY_FEATURES)[number];
@@ -86,7 +87,9 @@ export function isActiveSubscriptionStatus(
  * at all.
  */
 export function ordersAfter(stamp: Date | null, mark: Date | null): boolean {
-  if (stamp === null) return false;
+  if (stamp === null) {
+    return false;
+  }
   return mark === null || stamp > mark;
 }
 

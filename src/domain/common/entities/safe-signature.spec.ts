@@ -20,6 +20,13 @@ vi.mock('viem', async (importOriginal) => {
 });
 
 describe('SafeSignature', () => {
+  // A v of 00 would make it a contract signature, which needs a dynamic part
+  function getNonContractSignature(): Hex {
+    const rs = faker.string.hexadecimal({ length: 128 });
+    const v = faker.number.int({ min: 1, max: 255 }).toString(16);
+    return `${rs}${v.padStart(2, '0')}` as Hex;
+  }
+
   it('should create an instance', () => {
     const baseSignature = faker.string.hexadecimal({
       length: 128,
@@ -140,9 +147,7 @@ describe('SafeSignature', () => {
   });
 
   it('should return the r value', () => {
-    const signature = faker.string.hexadecimal({
-      length: 130,
-    }) as Hex;
+    const signature = getNonContractSignature();
     const hash = faker.string.hexadecimal({ length: 66 }) as Hash;
 
     const safeSignature = new SafeSignature({
@@ -154,9 +159,7 @@ describe('SafeSignature', () => {
   });
 
   it('should return the s value', () => {
-    const signature = faker.string.hexadecimal({
-      length: 130,
-    }) as Hex;
+    const signature = getNonContractSignature();
     const hash = faker.string.hexadecimal({ length: 66 }) as Hash;
 
     const safeSignature = new SafeSignature({
@@ -168,9 +171,7 @@ describe('SafeSignature', () => {
   });
 
   it('should return the v value', () => {
-    const signature = faker.string.hexadecimal({
-      length: 130,
-    }) as Hex;
+    const signature = getNonContractSignature();
     const hash = faker.string.hexadecimal({ length: 66 }) as Hash;
 
     const safeSignature = new SafeSignature({

@@ -58,7 +58,7 @@ export class SpacePoliciesController {
   @ApiOperation({
     summary: 'Get the active policies on Safes in a Space',
     description:
-      'Returns the policies of every Safe in the Space. A Safe whose spending-limit or proposer data could not be read is omitted from the corresponding policies.',
+      'Returns the policies of every Safe in the Space. A Safe whose enabled modules and guards could not be read is omitted from the spending-limit and guard-enforced policies; a Safe whose delegates could not be read is omitted from the proposer policies.',
   })
   @ApiParam({
     name: 'spaceId',

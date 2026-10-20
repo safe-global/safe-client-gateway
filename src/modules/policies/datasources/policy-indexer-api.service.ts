@@ -26,6 +26,7 @@ import {
   ROW_FIELDS,
   RowLocationSchema,
 } from '#/modules/policies/datasources/policy-indexer-response.schema';
+import type { PolicyIndexerGuardPolicyKind } from '#/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 import {
   type PolicyIndexerRows,
   PolicyIndexerRowsSchema,
@@ -75,9 +76,10 @@ export class PolicyIndexerApi {
    */
   public async getState(args: {
     safes: ReadonlyArray<SafeRef>;
+    guardPolicyKinds: ReadonlyArray<PolicyIndexerGuardPolicyKind>;
   }): Promise<Raw<unknown>> {
     const cacheHits = await Promise.all(
-      args.safes.map((safe) => this.cachedSlice(safe)),
+      args.safes.map((safe) => this.cachedSlice(safe, args.guardPolicyKinds)),
     );
     const misses = args.safes.filter((_, index) => cacheHits[index] === null);
 
@@ -90,7 +92,7 @@ export class PolicyIndexerApi {
     }
 
     const fetchStartTimeMs = Date.now();
-    const fetched = await this.fetch(misses);
+    const fetched = await this.fetch(misses, args.guardPolicyKinds);
     const policiesStates = await Promise.all(
       args.safes.map(async (safe, index) => {
         const hit = cacheHits[index];
@@ -99,7 +101,12 @@ export class PolicyIndexerApi {
         }
 
         const policiesState = this.filterPolicyIndexerRowsBySafe(fetched, safe);
-        await this.cache(safe, policiesState, fetchStartTimeMs);
+        await this.cache(
+          safe,
+          args.guardPolicyKinds,
+          policiesState,
+          fetchStartTimeMs,
+        );
         return policiesState;
       }),
     );
@@ -128,13 +135,14 @@ export class PolicyIndexerApi {
    */
   private async fetch(
     safes: ReadonlyArray<SafeRef>,
+    guardPolicyKinds: ReadonlyArray<PolicyIndexerGuardPolicyKind>,
   ): Promise<PolicyIndexerRows> {
     try {
       const { data } = await this.networkService.post<unknown>({
         url: `${this.baseUri}/v1/graphql`,
         data: {
           query: POLICY_INDEXER_STATE_QUERY,
-          variables: toPolicyIndexerVariables(safes),
+          variables: toPolicyIndexerVariables(safes, guardPolicyKinds),
         },
         networkRequest: {
           circuitBreaker: { key: CircuitBreakerKeys.getPolicyIndexerKey() },
@@ -175,8 +183,13 @@ export class PolicyIndexerApi {
     return response.data;
   }
 
-  private async cachedSlice(safe: SafeRef): Promise<PolicyIndexerRows | null> {
-    const cached = await this.cacheService.hGet(this.cacheDir(safe));
+  private async cachedSlice(
+    safe: SafeRef,
+    guardPolicyKinds: ReadonlyArray<PolicyIndexerGuardPolicyKind>,
+  ): Promise<PolicyIndexerRows | null> {
+    const cached = await this.cacheService.hGet(
+      this.cacheDir(safe, guardPolicyKinds),
+    );
 
     if (!cached) {
       return null;
@@ -209,6 +222,7 @@ export class PolicyIndexerApi {
    */
   private async cache(
     safe: SafeRef,
+    guardPolicyKinds: ReadonlyArray<PolicyIndexerGuardPolicyKind>,
     slice: PolicyIndexerRows,
     fetchStartTimeMs: number,
   ): Promise<void> {
@@ -226,7 +240,7 @@ export class PolicyIndexerApi {
     }
 
     await this.cacheService.hSet(
-      this.cacheDir(safe),
+      this.cacheDir(safe, guardPolicyKinds),
       JSON.stringify(slice),
       this.expirationTimeSeconds,
     );
@@ -234,10 +248,12 @@ export class PolicyIndexerApi {
 
   private cacheDir(
     safe: SafeRef,
+    guardPolicyKinds: ReadonlyArray<PolicyIndexerGuardPolicyKind>,
   ): ReturnType<typeof CacheRouter.getPolicyIndexerStateCacheDir> {
     return CacheRouter.getPolicyIndexerStateCacheDir({
       chainId: safe.chainId,
       safeAddress: safe.address,
+      guardPolicyKinds,
     });
   }
 
@@ -268,6 +284,7 @@ export class PolicyIndexerApi {
       _meta: [],
       SafeAllowance: [],
       SafeDelegate: [],
+      GuardPolicyBinding: [],
     };
     const chains = new Set<number>();
 
@@ -311,6 +328,7 @@ export class PolicyIndexerApi {
       _meta: response._meta.filter(belongsToChain),
       SafeAllowance: [],
       SafeDelegate: [],
+      GuardPolicyBinding: [],
     };
 
     for (const field of ROW_FIELDS) {
