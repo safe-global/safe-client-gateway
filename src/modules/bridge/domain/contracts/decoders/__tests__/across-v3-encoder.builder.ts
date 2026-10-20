@@ -86,6 +86,20 @@ export function swapDataStructBuilder<
     .with('requiresDeposit', faker.datatype.boolean());
 }
 
+// @see https://github.com/lifinance/contracts/blob/main/src/Periphery/FeeForwarder.sol
+type FeeDistributionStructArgs = {
+  recipient: Address;
+  amount: bigint;
+};
+
+export function feeDistributionStructBuilder<
+  T extends FeeDistributionStructArgs,
+>(): IBuilder<T> {
+  return new Builder<T>()
+    .with('recipient', getAddress(faker.finance.ethereumAddress()))
+    .with('amount', faker.number.bigInt());
+}
+
 // Bridge
 
 // @see https://github.com/lifinance/contracts/blob/ff6db3da31586336512ef517315238052e8e4b86/src/Facets/AcrossFacetV3.sol#L67-L70

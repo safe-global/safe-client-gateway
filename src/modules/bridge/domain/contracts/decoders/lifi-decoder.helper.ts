@@ -52,6 +52,22 @@ export class LiFiDecoder {
     'function collectTokenFees(address tokenAddress,uint256 integratorFee,uint256 lifiFee,address integratorAddress) external',
   ]);
 
+  // @see https://github.com/lifinance/contracts/blob/main/src/Periphery/FeeForwarder.sol
+  public static readonly FeeForwarderAbi = parseAbi([
+    'function forwardERC20Fees(address _token, FeeDistribution[] _distributions) external',
+    'function forwardNativeFees(FeeDistribution[] _distributions) external payable',
+    'struct FeeDistribution { address recipient; uint256 amount; }',
+  ]);
+
+  private static readonly FeeAbi = [
+    ...LiFiDecoder.FeeCollectorAbi,
+    ...LiFiDecoder.FeeForwarderAbi,
+  ] as const;
+
+  private static readonly FeeFunctionSelectors = LiFiDecoder.FeeAbi.map(
+    (item) => toFunctionSelector(item),
+  );
+
   // Initial arguments of all swap* functions
   private static readonly GenericSwapParameters = parseAbiParameters(
     'bytes32 _transactionId, string _integrator, string _referrer, address _receiver, uint256 _minAmountOut',
@@ -137,9 +153,8 @@ export class LiFiDecoder {
    * @returns {boolean} True if the calldata is a fee collection call, false otherwise.
    */
   private isFeeCollection(data: Hex): boolean {
-    return (
-      data.startsWith(toFunctionSelector(LiFiDecoder.FeeCollectorAbi[0])) ||
-      data.startsWith(toFunctionSelector(LiFiDecoder.FeeCollectorAbi[1]))
+    return LiFiDecoder.FeeFunctionSelectors.some((selector) =>
+      data.startsWith(selector),
     );
   }
 
@@ -157,7 +172,7 @@ export class LiFiDecoder {
   } | null {
     try {
       const { functionName, args } = decodeFunctionData({
-        abi: LiFiDecoder.FeeCollectorAbi,
+        abi: LiFiDecoder.FeeAbi,
         data,
       });
 
@@ -178,11 +193,49 @@ export class LiFiDecoder {
           integratorAddress: args[3],
         };
       }
+
+      if (functionName === 'forwardNativeFees') {
+        return this.mapFeeDistributions(zeroAddress, args[0]);
+      }
+
+      if (functionName === 'forwardERC20Fees') {
+        return this.mapFeeDistributions(args[0], args[1]);
+      }
     } catch {
       // Fee collection may not be present
     }
 
     return null;
+  }
+
+  /**
+   * Maps FeeForwarder distributions to fee data.
+   *
+   * The LiFi fee is distributed first, followed by the integrator fee(s).
+   *
+   * @param {Address} tokenAddress - The address of the fee token.
+   * @param {ReadonlyArray<{ recipient: Address; amount: bigint }>} distributions - The fee distributions.
+   * @returns {FeeData | null} The fee data, or null if there are no distributions.
+   */
+  private mapFeeDistributions(
+    tokenAddress: Address,
+    distributions: ReadonlyArray<{ recipient: Address; amount: bigint }>,
+  ): FeeData | null {
+    const [lifiDistribution, ...integratorDistributions] = distributions;
+
+    if (!lifiDistribution) {
+      return null;
+    }
+
+    return {
+      tokenAddress,
+      integratorFee: integratorDistributions.reduce(
+        (total, { amount }) => total + amount,
+        0n,
+      ),
+      lifiFee: lifiDistribution.amount,
+      integratorAddress: integratorDistributions[0]?.recipient ?? zeroAddress,
+    };
   }
 
   /**
