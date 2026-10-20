@@ -7,11 +7,6 @@ import type {
   Product,
   SubscriptionPlan,
 } from '#/datasources/billing-api/entities/plan.entity';
-import {
-  PlanBillingCycles,
-  PlanCurrencies,
-  PlanTypes,
-} from '#/datasources/billing-api/entities/plan.entity';
 
 export function productBuilder(): IBuilder<Product> {
   return new Builder<Product>()
@@ -33,13 +28,19 @@ function withBasePlanFields<T extends Plan | SubscriptionPlan>(
     .with('currentPrice', faker.number.float({ min: 0, max: 100 }))
     .with('originalPrice', faker.number.float({ min: 0, max: 100 }))
     .with('paymentMethod', 'fiat')
-    .with('currency', faker.helpers.arrayElement(PlanCurrencies))
+    .with('currency', faker.finance.currencyCode().toLowerCase())
     .with(
       'features',
       faker.helpers.multiple(() => faker.commerce.productAdjective()),
     )
-    .with('billingCycle', faker.helpers.arrayElement(PlanBillingCycles))
-    .with('type', faker.helpers.arrayElement(PlanTypes));
+    .with(
+      'billingCycle',
+      faker.helpers.arrayElement(['day', 'week', 'month', 'year']),
+    )
+    .with(
+      'type',
+      faker.helpers.arrayElement(['standard', 'premium', 'enterprise']),
+    );
 }
 
 export function planBuilder(): IBuilder<Plan> {
