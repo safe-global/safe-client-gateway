@@ -52,7 +52,7 @@ export class LiFiDecoder {
     'function collectTokenFees(address tokenAddress,uint256 integratorFee,uint256 lifiFee,address integratorAddress) external',
   ]);
 
-  // @see https://github.com/lifinance/contracts/blob/main/src/Periphery/FeeForwarder.sol
+  // @see https://github.com/lifinance/contracts/blob/4405fe864a8b0978348bbd92c8b8ce9bd218b6aa/src/Periphery/FeeForwarder.sol
   public static readonly FeeForwarderAbi = parseAbi([
     'function forwardERC20Fees(address _token, FeeDistribution[] _distributions) external',
     'function forwardNativeFees(FeeDistribution[] _distributions) external payable',
