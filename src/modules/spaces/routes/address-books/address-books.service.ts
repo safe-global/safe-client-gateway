@@ -77,6 +77,7 @@ export class AddressBooksService {
         : [{ address: item.address, tags: item.tags }],
     );
     if (taggedItems.length === 0) {
+      // Saving contacts without tags: their tags stay the same
       const updated = await this.repository.upsertMany({
         userId,
         spaceId,
@@ -84,10 +85,10 @@ export class AddressBooksService {
       });
       return this.mapAddressBookItems(spaceId, updated);
     }
+    // Saving contacts with tags: contacts and tags are saved together
     const updated = await this.postgresDatabaseService.transaction(
       async (entityManager) => {
-        // Lock before writing contacts, so two admin saves never each hold
-        // contact rows while waiting for the other's tag-write lock.
+        // Lock before writing contacts, so two admins saving at once cannot deadlock
         await this.tagsRepository.lockSpaceForTagWrites(entityManager, spaceId);
         const items = await this.repository.upsertMany({
           userId,
