@@ -21,7 +21,10 @@ import type { SafenetCheckJobData } from '#/modules/safenet/domain/entities/safe
 import { SafenetChecksQueue } from '#/modules/safenet/domain/safenet-checks-queue.service';
 import type { Space } from '#/modules/spaces/domain/entities/space.entity';
 import { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository.interface';
-import { assertMember } from '#/modules/spaces/domain/space-assert.utils';
+import {
+  assertMember,
+  assertSafeInSpace,
+} from '#/modules/spaces/domain/space-assert.utils';
 import { IMembersRepository } from '#/modules/users/domain/members/members.repository.interface';
 
 const SAFENET_CHECKS_FEATURE = 'SAFENET_CHECKS';
@@ -98,14 +101,11 @@ export class SafenetChecksService {
         HttpStatus.NOT_IMPLEMENTED,
       );
     }
-    assertAllowed(
-      await this.spaceSafes.existsInSpace({
-        spaceId: args.spaceId,
-        chainId: args.chainId,
-        address: args.safeAddress,
-      }),
-      'The Safe is not in this workspace',
-    );
+    await assertSafeInSpace(this.spaceSafes, {
+      spaceId: args.spaceId,
+      chainId: args.chainId,
+      address: args.safeAddress,
+    });
     // Checks ride on `policies`: both come with Business and Enterprise, and every
     // subscription carries it, unlike the newer `safenet_checks`. 402 otherwise.
     await this.entitlements.assertFeatureGranted({
@@ -174,12 +174,6 @@ function isSignedByOwner(
   return (transaction.confirmations ?? []).some(({ owner }) =>
     safe.owners.some((safeOwner) => isAddressEqual(safeOwner, owner)),
   );
-}
-
-function assertAllowed(condition: unknown, message: string): asserts condition {
-  if (!condition) {
-    throw new HttpExceptionNoLog(message, HttpStatus.FORBIDDEN);
-  }
 }
 
 function unprocessable(message: string): HttpExceptionNoLog {
