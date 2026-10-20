@@ -19,7 +19,7 @@ export const ProductSchema = z.object({
   name: z.string(),
 });
 
-// Strings, not enums: billing adds payment methods, currencies, cycles and tiers without a gateway release.
+// Forwarded to clients unchanged: the gateway does not interpret these values, so no closed set is enforced here.
 const BasePlanSchema = z.object({
   id: z.string(),
   name: z.string().nullish(),
