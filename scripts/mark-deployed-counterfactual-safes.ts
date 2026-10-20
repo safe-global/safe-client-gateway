@@ -22,6 +22,7 @@ import { postgresConfig } from '#/config/entities/postgres.config';
 const BATCH_SIZE = 500;
 // Kept low: the public CGW rate-limits bursts with 429.
 const CHECK_CONCURRENCY = 5;
+const REQUEST_TIMEOUT_MS = 10_000;
 
 interface CounterfactualSafeRow {
   id: number;
@@ -56,6 +57,7 @@ async function getDeploymentStatus(
   try {
     const response = await fetch(
       `${cgwUrl}/v1/chains/${row.chain_id}/safes/${row.address}`,
+      { signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) },
     );
     if (response.ok) {
       return 'deployed';
