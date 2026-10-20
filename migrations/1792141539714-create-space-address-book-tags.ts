@@ -21,7 +21,7 @@ export class CreateSpaceAddressBookTags1792141539714
         CONSTRAINT "FK_SABT_space_id" FOREIGN KEY ("space_id") REFERENCES "spaces"("id") ON DELETE CASCADE,
         CONSTRAINT "UQ_SABT_space_id_name_index" UNIQUE ("space_id", "name_index"),
         CONSTRAINT "UQ_SABT_space_id_color" UNIQUE ("space_id", "color"),
-        CONSTRAINT "CHK_SABT_color" CHECK ("color" IN ('green', 'blue', 'orange', 'red', 'teal', 'gold', 'violet', 'graphite'))
+        CONSTRAINT "CHK_SABT_color" CHECK ("color" IN ('slate', 'clay', 'rose', 'lilac', 'iris', 'cobalt', 'sky', 'lagoon'))
       )
     `);
     await queryRunner.query(

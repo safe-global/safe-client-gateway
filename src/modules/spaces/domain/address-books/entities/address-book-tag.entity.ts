@@ -3,14 +3,14 @@ import { z } from 'zod';
 import { sanitizeName } from '#/domain/common/schemas/name.schema';
 
 export const TAG_COLORS = [
-  'green',
-  'blue',
-  'orange',
-  'red',
-  'teal',
-  'gold',
-  'violet',
-  'graphite',
+  'slate',
+  'clay',
+  'rose',
+  'lilac',
+  'iris',
+  'cobalt',
+  'sky',
+  'lagoon',
 ] as const;
 
 export type TagColor = (typeof TAG_COLORS)[number];
