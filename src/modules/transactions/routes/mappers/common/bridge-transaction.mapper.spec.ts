@@ -2,6 +2,7 @@
 
 import { faker } from '@faker-js/faker';
 import type { Address, Hash, Hex } from 'viem';
+import { getAddress } from 'viem';
 import type { Mocked } from 'vitest';
 import type { IBridgeRepository } from '#/modules/bridge/domain/bridge.repository.interface';
 import type { LiFiDecoder } from '#/modules/bridge/domain/contracts/decoders/lifi-decoder.helper';
@@ -393,7 +394,12 @@ describe('BridgeTransactionMapper (Unit)', () => {
         fromAmount: BigInt(1000000),
         toToken: faker.string.hexadecimal({ length: 40 }) as Address,
         minAmount: BigInt(1000000),
-        fees: null,
+        fees: {
+          tokenAddress: getAddress(faker.finance.ethereumAddress()),
+          integratorFee: faker.number.bigInt(),
+          lifiFee: faker.number.bigInt(),
+          integratorAddress: getAddress(faker.finance.ethereumAddress()),
+        },
         bridge: 'lifi',
       };
       liFiDecoder.decodeBridgeAndMaybeSwap.mockReturnValue(decoded);
@@ -440,7 +446,11 @@ describe('BridgeTransactionMapper (Unit)', () => {
         toAmount: null,
         toToken: null,
         explorerUrl: null,
-        fees: null,
+        fees: {
+          integratorFee: decoded.fees.integratorFee.toString(),
+          lifiFee: decoded.fees.lifiFee.toString(),
+          tokenAddress: decoded.fees.tokenAddress,
+        },
         humanDescription: null,
         type: 'SwapAndBridge',
       });
