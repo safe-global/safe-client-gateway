@@ -160,8 +160,22 @@ export class GuardConfigurationMapper {
       factOf(stored.root).stored = stored;
     }
 
-    // The queue is in nonce order, so the first call for a root is the one
-    // that executes first.
+    this.addQueuedCalls({ ...args, factOf });
+
+    return Array.from(facts.values());
+  }
+
+  /**
+   * Records the queued `requestConfiguration` and `applyConfiguration` calls
+   * on known guards. The queue is in nonce order, so the first call for a root
+   * is the one that executes first.
+   */
+  private addQueuedCalls(args: {
+    safe: SafeRef;
+    transactions: ReadonlyArray<MultisigTransaction>;
+    knownGuards: ReadonlyArray<Address>;
+    factOf: (root: Hex) => RootFacts;
+  }): void {
     for (const transaction of args.transactions) {
       const context = {
         chainId: args.safe.chainId,
@@ -174,7 +188,7 @@ export class GuardConfigurationMapper {
 
         const request = this.decodeRequest(call.data, context);
         if (request) {
-          const fact = factOf(request);
+          const fact = args.factOf(request);
           fact.request ??= {
             guard: call.to,
             transaction: pendingTransactionOf(transaction),
@@ -184,7 +198,7 @@ export class GuardConfigurationMapper {
 
         const configurations = this.decodeApply(call.data, context);
         if (configurations) {
-          const fact = factOf(configurationRoot(configurations));
+          const fact = args.factOf(configurationRoot(configurations));
           fact.apply ??= {
             guard: call.to,
             configurations,
@@ -193,8 +207,6 @@ export class GuardConfigurationMapper {
         }
       }
     }
-
-    return Array.from(facts.values());
   }
 
   /**
