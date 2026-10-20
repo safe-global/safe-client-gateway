@@ -279,7 +279,7 @@ describe('AddressBookTagsRepository', () => {
       await addressBookTagsRepository.setTagsForItems({
         userId,
         spaceId,
-        items: [{ address, tags: names }],
+        entries: [{ address, tags: names }],
       });
 
       const { tags, itemTagIds } =
@@ -310,12 +310,12 @@ describe('AddressBookTagsRepository', () => {
       await addressBookTagsRepository.setTagsForItems({
         userId,
         spaceId,
-        items: [{ address: first, tags: [capitalised] }],
+        entries: [{ address: first, tags: [capitalised] }],
       });
       await addressBookTagsRepository.setTagsForItems({
         userId,
         spaceId,
-        items: [{ address: second, tags: [lower.toUpperCase()] }],
+        entries: [{ address: second, tags: [lower.toUpperCase()] }],
       });
 
       const { tags } = await addressBookTagsRepository.findBySpaceId(spaceId);
@@ -341,7 +341,7 @@ describe('AddressBookTagsRepository', () => {
       await addressBookTagsRepository.setTagsForItems({
         userId,
         spaceId,
-        items: [
+        entries: [
           { address: first, tags: names.slice(0, 3) },
           { address: second, tags: names.slice(3, 6) },
           { address: third, tags: names.slice(6, 8) },
@@ -352,7 +352,7 @@ describe('AddressBookTagsRepository', () => {
         addressBookTagsRepository.setTagsForItems({
           userId,
           spaceId,
-          items: [{ address: first, tags: [names[8]] }],
+          entries: [{ address: first, tags: [names[8]] }],
         }),
       ).rejects.toThrow(new BadRequestException(WORKSPACE_TAG_LIMIT_MESSAGE));
 
@@ -378,7 +378,7 @@ describe('AddressBookTagsRepository', () => {
           addressBookTagsRepository.setTagsForItems({
             userId,
             spaceId,
-            items: [{ address, tags: [name] }],
+            entries: [{ address, tags: [name] }],
             entityManager,
           }),
       );
@@ -412,7 +412,7 @@ describe('AddressBookTagsRepository', () => {
           addressBookTagsRepository.setTagsForItems({
             userId,
             spaceId,
-            items: [{ address, tags: [name] }],
+            entries: [{ address, tags: [name] }],
             entityManager,
           }),
       );
@@ -438,7 +438,7 @@ describe('AddressBookTagsRepository', () => {
       await addressBookTagsRepository.setTagsForItems({
         userId,
         spaceId,
-        items: [
+        entries: [
           { address: first, tags: existing.slice(0, 3) },
           { address: second, tags: existing.slice(3, 6) },
           { address: third, tags: existing.slice(6, 7) },
@@ -454,7 +454,7 @@ describe('AddressBookTagsRepository', () => {
           addressBookTagsRepository.setTagsForItems({
             userId,
             spaceId,
-            items: [{ address, tags: [name] }],
+            entries: [{ address, tags: [name] }],
             entityManager,
           }),
       );
@@ -488,7 +488,7 @@ describe('AddressBookTagsRepository', () => {
       await addressBookTagsRepository.setTagsForItems({
         userId,
         spaceId,
-        items: [
+        entries: [
           { address: a, tags: [capitalised] },
           { address: b, tags: [` ${lower}`] },
           { address: c, tags: [lower.toUpperCase()] },
@@ -513,13 +513,13 @@ describe('AddressBookTagsRepository', () => {
       await addressBookTagsRepository.setTagsForItems({
         userId,
         spaceId,
-        items: [{ address, tags: names }],
+        entries: [{ address, tags: names }],
       });
 
       await addressBookTagsRepository.setTagsForItems({
         userId,
         spaceId,
-        items: [{ address, tags: [] }],
+        entries: [{ address, tags: [] }],
       });
 
       await expect(tagNamesOf(spaceId, address)).resolves.toStrictEqual(
@@ -537,7 +537,7 @@ describe('AddressBookTagsRepository', () => {
       await addressBookTagsRepository.setTagsForItems({
         userId,
         spaceId,
-        items: addresses.map((address, index) => ({
+        entries: addresses.map((address, index) => ({
           address,
           tags: [names[index]],
         })),
@@ -548,7 +548,7 @@ describe('AddressBookTagsRepository', () => {
       await addressBookTagsRepository.setTagsForItems({
         userId,
         spaceId,
-        items: addresses.map((address) => ({ address, tags: [names[3]] })),
+        entries: addresses.map((address) => ({ address, tags: [names[3]] })),
       });
 
       expect(tagsEncryptionService.decryptTagNames).toHaveBeenCalledTimes(1);
@@ -577,7 +577,7 @@ describe('AddressBookTagsRepository', () => {
         await addressBookTagsRepository.setTagsForItems({
           userId,
           spaceId,
-          items: [{ address, tags: names }],
+          entries: [{ address, tags: names }],
         });
       }
 
@@ -604,7 +604,7 @@ describe('AddressBookTagsRepository', () => {
       await addressBookTagsRepository.setTagsForItems({
         userId,
         spaceId,
-        items: [
+        entries: [
           { address: unchanged, tags: [kept] },
           { address: retagged, tags: [before] },
           { address: cleared, tags: [kept, before] },
@@ -615,7 +615,7 @@ describe('AddressBookTagsRepository', () => {
       await addressBookTagsRepository.setTagsForItems({
         userId,
         spaceId,
-        items: [
+        entries: [
           { address: unchanged, tags: [kept] },
           { address: retagged, tags: [after] },
           { address: cleared, tags: [] },
@@ -660,14 +660,14 @@ describe('AddressBookTagsRepository', () => {
       await addressBookTagsRepository.setTagsForItems({
         userId,
         spaceId,
-        items: [{ address, tags: [stored] }],
+        entries: [{ address, tags: [stored] }],
       });
       tagsAuditRepository.record.mockClear();
 
       await addressBookTagsRepository.setTagsForItems({
         userId,
         spaceId,
-        items: [
+        entries: [
           { address, tags: [first] },
           { address, tags: [last] },
         ],
@@ -705,7 +705,7 @@ describe('AddressBookTagsRepository', () => {
         .setTagsForItems({
           userId,
           spaceId,
-          items: [
+          entries: [
             { address: first, tags: tagNames(1) },
             { address: second, tags: tagNames(1) },
           ],
@@ -745,7 +745,7 @@ describe('AddressBookTagsRepository', () => {
         addressBookTagsRepository.setTagsForItems({
           userId,
           spaceId,
-          items: [
+          entries: [
             {
               address: getAddress(faker.finance.ethereumAddress()),
               tags: tagNames(1),
@@ -763,7 +763,7 @@ describe('AddressBookTagsRepository', () => {
         addressBookTagsRepository.setTagsForItems({
           userId,
           spaceId,
-          items: [
+          entries: [
             { address, tags: tagNames(1) },
             {
               address: getAddress(faker.finance.ethereumAddress()),
@@ -792,7 +792,7 @@ describe('AddressBookTagsRepository', () => {
       await addressBookTagsRepository.setTagsForItems({
         userId,
         spaceId,
-        items: [
+        entries: [
           { address: first, tags: existing.slice(0, 3) },
           { address: second, tags: existing.slice(3, 6) },
           { address: third, tags: existing.slice(6, 7) },
@@ -806,7 +806,7 @@ describe('AddressBookTagsRepository', () => {
         addressBookTagsRepository.setTagsForItems({
           userId,
           spaceId,
-          items: [
+          entries: [
             { address: a, tags: [x] },
             { address: b, tags: [y, z] },
           ],
@@ -852,7 +852,7 @@ describe('AddressBookTagsRepository', () => {
               await addressBookTagsRepository.setTagsForItems({
                 userId,
                 spaceId,
-                items: [{ address: contact.address, tags: namesOf[index] }],
+                entries: [{ address: contact.address, tags: namesOf[index] }],
                 entityManager,
               });
             }),
@@ -900,7 +900,7 @@ describe('AddressBookTagsRepository', () => {
           await tagsRepository.setTagsForItems({
             userId,
             spaceId,
-            items: [{ address: contact.address, tags }],
+            entries: [{ address: contact.address, tags }],
             entityManager,
           });
         };
@@ -1116,7 +1116,7 @@ describe('AddressBookTagsRepository', () => {
       await addressBookTagsRepository.setTagsForItems({
         userId,
         spaceId,
-        items: [
+        entries: [
           { address: a, tags: [x, y] },
           { address: b, tags: [x] },
         ],
@@ -1199,7 +1199,7 @@ describe('AddressBookTagsRepository', () => {
       await addressBookTagsRepository.setTagsForItems({
         userId,
         spaceId,
-        items: [
+        entries: [
           { address: a, tags: [name, kept] },
           { address: b, tags: [name] },
         ],
@@ -1370,7 +1370,7 @@ describe('AddressBookTagsRepository', () => {
     await addressBookTagsRepository.setTagsForItems({
       userId: args.userId,
       spaceId: args.spaceId,
-      items: [{ address: args.address, tags: [args.name] }],
+      entries: [{ address: args.address, tags: [args.name] }],
     });
     const { tags } = await addressBookTagsRepository.findBySpaceId(
       args.spaceId,

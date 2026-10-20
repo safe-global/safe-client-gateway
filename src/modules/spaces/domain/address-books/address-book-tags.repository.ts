@@ -113,7 +113,7 @@ export class AddressBookTagsRepository implements IAddressBookTagsRepository {
   public async setTagsForItems(args: {
     userId: number;
     spaceId: number;
-    items: Array<{ address: Address; tags: TagNames }>;
+    entries: Array<{ address: Address; tags: TagNames }>;
     entityManager?: EntityManager;
   }): Promise<void> {
     const run = async (entityManager: EntityManager): Promise<void> => {
@@ -124,14 +124,14 @@ export class AddressBookTagsRepository implements IAddressBookTagsRepository {
       const contacts = await this.resolveContactsOrFail(
         entityManager,
         space.id,
-        args.items,
+        args.entries,
       );
       const spaceTags = await this.loadSpaceTags(entityManager, space.id);
       const tagIdByIndex = await this.resolveOrCreateTags(
         entityManager,
         space.id,
         args.userId,
-        args.items.flatMap((entry) => entry.tags),
+        args.entries.flatMap((entry) => entry.tags),
         spaceTags,
       );
       const currentTagIds = await this.findTagIdsByItemIds(

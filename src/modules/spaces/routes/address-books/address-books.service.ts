@@ -71,12 +71,12 @@ export class AddressBooksService {
     const userId = getAuthenticatedUserIdOrFail(authPayload);
     await assertAdmin(this.membersRepository, spaceId, userId);
 
-    const taggedItems = addressBookItems.items.flatMap((item) =>
-      item.tags === undefined
+    const tagEntries = addressBookItems.items.flatMap((entry) =>
+      entry.tags === undefined
         ? []
-        : [{ address: item.address, tags: item.tags }],
+        : [{ address: entry.address, tags: entry.tags }],
     );
-    if (taggedItems.length === 0) {
+    if (tagEntries.length === 0) {
       // Saving contacts without tags: their tags stay the same
       const updated = await this.repository.upsertMany({
         userId,
@@ -90,7 +90,7 @@ export class AddressBooksService {
       async (entityManager) => {
         // Lock before writing contacts, so two admins saving at once cannot deadlock
         await this.tagsRepository.lockSpaceForTagWrites(entityManager, spaceId);
-        const items = await this.repository.upsertMany({
+        const contacts = await this.repository.upsertMany({
           userId,
           spaceId,
           addressBookItems: addressBookItems.items,
@@ -99,10 +99,10 @@ export class AddressBooksService {
         await this.tagsRepository.setTagsForItems({
           userId,
           spaceId,
-          items: taggedItems,
+          entries: tagEntries,
           entityManager,
         });
-        return items;
+        return contacts;
       },
     );
     return this.mapAddressBookItems(spaceId, updated);
@@ -142,7 +142,7 @@ export class AddressBooksService {
     await this.tagsRepository.setTagsForItems({
       userId,
       spaceId,
-      items: dto.items,
+      entries: dto.items,
     });
     return await this.getAddressBook(spaceId);
   }

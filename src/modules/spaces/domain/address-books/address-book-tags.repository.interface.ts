@@ -33,7 +33,7 @@ export interface IAddressBookTagsRepository {
   ): Promise<{ id: number; uuid: UUID }>;
 
   /**
-   * Replaces the tags of the given contacts, atomically: if any item fails
+   * Replaces the tags of the given contacts, atomically: if any entry fails
    * (unknown address, 9th tag in the space) nothing is written. Creates missing
    * tags. Records one ADDRESS_BOOK_TAGS_UPDATED per contact whose tags actually
    * changed. Throws NotFoundException if an address is not in the book.
@@ -41,7 +41,7 @@ export interface IAddressBookTagsRepository {
   setTagsForItems(args: {
     userId: number;
     spaceId: number;
-    items: Array<{ address: Address; tags: TagNames }>;
+    entries: Array<{ address: Address; tags: TagNames }>;
     entityManager?: EntityManager;
   }): Promise<void>;
 

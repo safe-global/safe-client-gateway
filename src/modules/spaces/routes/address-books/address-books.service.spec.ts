@@ -294,7 +294,7 @@ describe('AddressBooksService', () => {
       ).toHaveBeenCalledExactlyOnceWith({
         userId: Number(authPayload.sub),
         spaceId,
-        items: [{ address: tagged.address, tags }],
+        entries: [{ address: tagged.address, tags }],
         entityManager,
       });
       expect(tagsRepositoryMock.lockSpaceForTagWrites).toHaveBeenCalledBefore(
@@ -557,7 +557,7 @@ describe('AddressBooksService', () => {
       ).toHaveBeenCalledExactlyOnceWith({
         userId: Number(authPayload.sub),
         spaceId,
-        items,
+        entries: items,
       });
       expect(result.tags).toEqual(tags);
       expect(result.data).toEqual([
@@ -629,7 +629,7 @@ describe('AddressBooksService', () => {
       ).toHaveBeenCalledExactlyOnceWith({
         userId: Number(authPayload.sub),
         spaceId,
-        items,
+        entries: items,
       });
     });
 

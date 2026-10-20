@@ -298,7 +298,7 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
       address: AddressBookItem['address'];
       audit: { address: AddressBookItem['address']; name: string };
     }> = [];
-    for (const { row: item, input: patch } of matches) {
+    for (const { row, input: patch } of matches) {
       // Encrypt-on-write: rewrite the (unchanged) address and the new name
       // under the space-scoped context.
       const encrypted =
@@ -306,7 +306,7 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
           args.space.id,
           { address: patch.address, name: patch.name },
         );
-      await repository.update(item.id, {
+      await repository.update(row.id, {
         address: encrypted.address as AddressBookItem['address'],
         addressIndex: encrypted.addressIndex,
         name: encrypted.name,
