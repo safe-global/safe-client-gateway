@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { PolicyConfigurationRequest } from '#/modules/policies/domain/entities/policy-configuration-request.entity';
+import type { SafePolicyGuardConfiguration } from '#/modules/policies/domain/entities/safe-policy-guard-configuration.entity';
 import type { SafeRef } from '#/modules/policies/domain/entities/safe-ref.entity';
-import type { StoredPolicyConfiguration } from '#/modules/policies/domain/entities/stored-policy-configuration.entity';
 
 export const ISafePolicyGuardConfigurationRequestsRepository = Symbol(
   'ISafePolicyGuardConfigurationRequestsRepository',
@@ -24,5 +24,5 @@ export interface ISafePolicyGuardConfigurationRequestsRepository {
   findBySafes(args: {
     spaceId: number;
     safes: ReadonlyArray<SafeRef>;
-  }): Promise<Array<StoredPolicyConfiguration>>;
+  }): Promise<Array<SafePolicyGuardConfiguration>>;
 }

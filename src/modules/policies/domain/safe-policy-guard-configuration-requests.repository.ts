@@ -7,11 +7,11 @@ import { IConfigurationService } from '#/config/configuration.service.interface'
 import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
 import { PolicyConfigurationRequest } from '#/modules/policies/datasources/entities/policy-configuration-request.entity.db';
 import type { PolicyConfigurationRequest as DomainPolicyConfigurationRequest } from '#/modules/policies/domain/entities/policy-configuration-request.entity';
-import type { SafeRef } from '#/modules/policies/domain/entities/safe-ref.entity';
 import {
-  type StoredPolicyConfiguration,
-  StoredPolicyConfigurationSchema,
-} from '#/modules/policies/domain/entities/stored-policy-configuration.entity';
+  type SafePolicyGuardConfiguration,
+  SafePolicyGuardConfigurationSchema,
+} from '#/modules/policies/domain/entities/safe-policy-guard-configuration.entity';
+import type { SafeRef } from '#/modules/policies/domain/entities/safe-ref.entity';
 import type { ISafePolicyGuardConfigurationRequestsRepository } from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository.interface';
 import { SpaceEncryptionService } from '#/modules/spaces/domain/space-encryption.service';
 
@@ -94,7 +94,7 @@ export class SafePolicyGuardConfigurationRequestsRepository
   public async findBySafes(args: {
     spaceId: number;
     safes: ReadonlyArray<SafeRef>;
-  }): Promise<Array<StoredPolicyConfiguration>> {
+  }): Promise<Array<SafePolicyGuardConfiguration>> {
     if (args.safes.length === 0) {
       return [];
     }
@@ -128,7 +128,7 @@ export class SafePolicyGuardConfigurationRequestsRepository
       );
       return match
         ? [
-            StoredPolicyConfigurationSchema.parse({
+            SafePolicyGuardConfigurationSchema.parse({
               chainId: row.chainId,
               safeAddress: match.safe.address,
               root: row.root,

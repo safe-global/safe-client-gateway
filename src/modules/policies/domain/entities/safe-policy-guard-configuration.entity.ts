@@ -16,5 +16,5 @@ export const SafePolicyGuardConfigurationSchema =
   });
 
 export type SafePolicyGuardConfiguration = z.infer<
-  typeof StoredPolicyConfigurationSchema
+  typeof SafePolicyGuardConfigurationSchema
 >;
