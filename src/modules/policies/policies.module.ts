@@ -18,6 +18,7 @@ import { ISafePolicyGuardConfigurationRequestsRepository } from '#/modules/polic
 import { DelayedGuardPoliciesMapper } from '#/modules/policies/routes/mappers/delayed-guard-policies.mapper';
 import { GuardInstallationMapper } from '#/modules/policies/routes/mappers/guard-installation.mapper';
 import { GuardPolicyMapper } from '#/modules/policies/routes/mappers/guard-policy.mapper';
+import { ImmediateGuardPoliciesMapper } from '#/modules/policies/routes/mappers/immediate-guard-policies.mapper';
 import { PendingSpendingLimitMapper } from '#/modules/policies/routes/mappers/pending-spending-limit.mapper';
 import { ProposerMapper } from '#/modules/policies/routes/mappers/proposer.mapper';
 import { SpendingLimitMapper } from '#/modules/policies/routes/mappers/spending-limit.mapper';
@@ -60,6 +61,7 @@ import { UsersModule } from '#/modules/users/users.module';
     PendingSpendingLimitMapper,
     GuardPolicyMapper,
     GuardInstallationMapper,
+    ImmediateGuardPoliciesMapper,
     DelayedGuardPoliciesMapper,
     AllowanceModuleDecoder,
     SafeDecoder,

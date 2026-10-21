@@ -23,6 +23,7 @@ export type SafePolicyGuardConfigurationContext = {
 export type PendingRead = {
   types: ReadonlyArray<PolicyType>;
   spendingLimitsRequested: boolean;
+  guardPoliciesRequested: boolean;
   guardInstallationRequested: boolean;
   /** `null` when guard policies are not requested, or could not be read. */
   guardConfigurations: SafePolicyGuardConfigurationContext | null;
