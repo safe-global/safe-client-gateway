@@ -16,6 +16,8 @@ import type { IAddressBookTagsRepository } from '#/modules/spaces/domain/address
 import {
   type AddressBookTag,
   TAG_COLORS,
+  type TagColor,
+  type TagColorChoices,
   type TagNames,
   WORKSPACE_TAG_LIMIT_MESSAGE,
 } from '#/modules/spaces/domain/address-books/entities/address-book-tag.entity';
@@ -114,6 +116,7 @@ export class AddressBookTagsRepository implements IAddressBookTagsRepository {
     userId: number;
     spaceId: number;
     entries: Array<{ address: Address; tags: TagNames }>;
+    tagColors?: TagColorChoices;
     entityManager?: EntityManager;
   }): Promise<void> {
     const run = async (entityManager: EntityManager): Promise<void> => {
@@ -127,12 +130,19 @@ export class AddressBookTagsRepository implements IAddressBookTagsRepository {
         args.entries,
       );
       const spaceTags = await this.loadSpaceTags(entityManager, space.id);
+      const colorByIndex = new Map(
+        (args.tagColors ?? []).map(({ name, color }) => [
+          this.spaceEncryptionService.tagNameIndex(space.id, name),
+          color,
+        ]),
+      );
       const tagIdByIndex = await this.resolveOrCreateTags(
         entityManager,
         space.id,
         args.userId,
         args.entries.flatMap((entry) => entry.tags),
         spaceTags,
+        colorByIndex,
       );
       const currentTagIds = await this.findTagIdsByItemIds(
         entityManager,
@@ -263,6 +273,7 @@ export class AddressBookTagsRepository implements IAddressBookTagsRepository {
     userId: number,
     names: Array<string>,
     spaceTags: SpaceTags,
+    colorByIndex: Map<string, TagColor>,
   ): Promise<Map<string, number>> {
     const tagIdByIndex = new Map<string, number>();
     for (const name of names) {
@@ -278,13 +289,17 @@ export class AddressBookTagsRepository implements IAddressBookTagsRepository {
           name,
           nameIndex,
           spaceTags,
+          pickedColor: colorByIndex.get(nameIndex),
         }));
       tagIdByIndex.set(nameIndex, tagId);
     }
     return tagIdByIndex;
   }
 
-  /** Takes a random colour no tag of the space has; none left = 8 tags. */
+  /**
+   * Takes the picked colour when no tag of the space has it, else a random
+   * colour no tag of the space has; none left = 8 tags.
+   */
   private async createTag(
     entityManager: EntityManager,
     args: {
@@ -293,14 +308,18 @@ export class AddressBookTagsRepository implements IAddressBookTagsRepository {
       name: string;
       nameIndex: string;
       spaceTags: SpaceTags;
+      pickedColor?: TagColor;
     },
   ): Promise<number> {
-    const { spaceTags } = args;
+    const { spaceTags, pickedColor } = args;
     const free = TAG_COLORS.filter((color) => !spaceTags.usedColors.has(color));
     if (free.length === 0) {
       throw new BadRequestException(WORKSPACE_TAG_LIMIT_MESSAGE);
     }
-    const color = free[randomInt(free.length)];
+    const color =
+      pickedColor && free.includes(pickedColor)
+        ? pickedColor
+        : free[randomInt(free.length)];
     const result = await entityManager.insert(DbAddressBookTag, {
       space: { id: args.spaceId },
       name: await this.spaceEncryptionService.encryptTagName(

@@ -1,7 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import { MAX_TAGS_PER_CONTACT } from '#/modules/spaces/domain/address-books/entities/address-book-tag.entity';
+import {
+  MAX_TAGS_PER_CONTACT,
+  MAX_TAGS_PER_WORKSPACE,
+  TAG_COLORS,
+} from '#/modules/spaces/domain/address-books/entities/address-book-tag.entity';
 import {
   RenameTagSchema,
   SetContactTagsSchema,
@@ -50,6 +54,60 @@ describe('SetContactTagsSchema', () => {
   it('should reject an invalid address', () => {
     const result = SetContactTagsSchema.safeParse({
       items: [{ ...item(), address: 'not-an-address' }],
+    });
+
+    expect(result.success).toBe(false);
+  });
+});
+
+describe('SetContactTagsSchema tagColors', () => {
+  const colorChoice = (): { name: string; color: string } => ({
+    name: faker.string.alpha({ length: 8 }),
+    color: faker.helpers.arrayElement(TAG_COLORS),
+  });
+
+  it('should leave tagColors undefined when omitted', () => {
+    const result = SetContactTagsSchema.safeParse({ items: [item()] });
+
+    expect(result.success && result.data.tagColors).toBeUndefined();
+  });
+
+  it('should accept colours for the tags a request creates', () => {
+    const tagColors = [colorChoice(), colorChoice()];
+
+    const result = SetContactTagsSchema.safeParse({
+      items: [item()],
+      tagColors,
+    });
+
+    expect(result.success && result.data.tagColors).toStrictEqual(tagColors);
+  });
+
+  it('should reject a colour that is not a tag colour', () => {
+    const result = SetContactTagsSchema.safeParse({
+      items: [item()],
+      tagColors: [{ ...colorChoice(), color: 'orchid' }],
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it('should reject more colours than a space can have tags', () => {
+    const result = SetContactTagsSchema.safeParse({
+      items: [item()],
+      tagColors: Array.from(
+        { length: MAX_TAGS_PER_WORKSPACE + 1 },
+        colorChoice,
+      ),
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it('should reject an invalid tag name', () => {
+    const result = SetContactTagsSchema.safeParse({
+      items: [item()],
+      tagColors: [{ ...colorChoice(), name: '=bad' }],
     });
 
     expect(result.success).toBe(false);

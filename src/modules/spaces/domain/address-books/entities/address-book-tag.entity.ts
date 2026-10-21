@@ -90,6 +90,18 @@ export const TagNamesSchema = z
 
 export type TagNames = z.infer<typeof TagNamesSchema>;
 
+export const TagColorChoiceSchema = z.object({
+  name: TagNameSchema,
+  color: TagColorSchema,
+});
+
+/** The colours a client picked for tags a request creates; a space has at most that many tags. */
+export const TagColorChoicesSchema = z
+  .array(TagColorChoiceSchema)
+  .max(MAX_TAGS_PER_WORKSPACE);
+
+export type TagColorChoices = z.infer<typeof TagColorChoicesSchema>;
+
 export const AddressBookTagSchema = z.object({
   id: z.number().int().positive(),
   name: z.string(),

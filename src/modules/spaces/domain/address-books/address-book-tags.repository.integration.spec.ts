@@ -297,6 +297,84 @@ describe('AddressBookTagsRepository', () => {
       );
     });
 
+    it('gives a created tag the colour the client picked', async () => {
+      const { spaceId, userId } = await createSpace();
+      const [address] = await createContacts({ spaceId, userId, count: 1 });
+      const [name] = tagNames(1);
+      const color = faker.helpers.arrayElement(TAG_COLORS);
+
+      await addressBookTagsRepository.setTagsForItems({
+        userId,
+        spaceId,
+        entries: [{ address, tags: [name] }],
+        tagColors: [{ name: name.toUpperCase(), color }],
+      });
+
+      const { tags } = await addressBookTagsRepository.findBySpaceId(spaceId);
+      expect(tags).toStrictEqual([expect.objectContaining({ name, color })]);
+    });
+
+    it('gives a created tag a free colour when another tag has the picked one', async () => {
+      const { spaceId, userId } = await createSpace();
+      const [first, second] = await createContacts({
+        spaceId,
+        userId,
+        count: 2,
+      });
+      const [existing, created] = tagNames(2);
+      const color = faker.helpers.arrayElement(TAG_COLORS);
+      await addressBookTagsRepository.setTagsForItems({
+        userId,
+        spaceId,
+        entries: [{ address: first, tags: [existing] }],
+        tagColors: [{ name: existing, color }],
+      });
+
+      await addressBookTagsRepository.setTagsForItems({
+        userId,
+        spaceId,
+        entries: [{ address: second, tags: [created] }],
+        tagColors: [{ name: created, color }],
+      });
+
+      const { tags } = await addressBookTagsRepository.findBySpaceId(spaceId);
+      const createdTag = tags.find((tag) => tag.name === created);
+      expect(createdTag?.color).not.toBe(color);
+      expect(TAG_COLORS).toContain(createdTag?.color);
+    });
+
+    it('keeps the colour of an existing tag whatever the client picked', async () => {
+      const { spaceId, userId } = await createSpace();
+      const [first, second] = await createContacts({
+        spaceId,
+        userId,
+        count: 2,
+      });
+      const [name] = tagNames(1);
+      await addressBookTagsRepository.setTagsForItems({
+        userId,
+        spaceId,
+        entries: [{ address: first, tags: [name] }],
+      });
+      const [before] = (await addressBookTagsRepository.findBySpaceId(spaceId))
+        .tags;
+      const other = faker.helpers.arrayElement(
+        TAG_COLORS.filter((color) => color !== before.color),
+      );
+
+      await addressBookTagsRepository.setTagsForItems({
+        userId,
+        spaceId,
+        entries: [{ address: second, tags: [name] }],
+        tagColors: [{ name, color: other }],
+      });
+
+      const { tags } = await addressBookTagsRepository.findBySpaceId(spaceId);
+      expect(tags).toStrictEqual([
+        expect.objectContaining({ name, color: before.color }),
+      ]);
+    });
+
     it('reuses an existing tag regardless of case and keeps its first spelling', async () => {
       const { spaceId, userId } = await createSpace();
       const [first, second] = await createContacts({

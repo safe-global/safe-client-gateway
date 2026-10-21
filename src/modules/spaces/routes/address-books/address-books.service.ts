@@ -100,6 +100,7 @@ export class AddressBooksService {
           userId,
           spaceId,
           entries: tagEntries,
+          tagColors: addressBookItems.tagColors,
           entityManager,
         });
         return contacts;
@@ -143,6 +144,7 @@ export class AddressBooksService {
       userId,
       spaceId,
       entries: dto.items,
+      tagColors: dto.tagColors,
     });
     return await this.getAddressBook(spaceId);
   }

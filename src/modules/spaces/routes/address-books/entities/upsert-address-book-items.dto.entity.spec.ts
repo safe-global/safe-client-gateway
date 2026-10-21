@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { addressBookItemBuilder } from '#/modules/spaces/domain/address-books/entities/__tests__/address-book-item.db.builder';
-import { MAX_TAGS_PER_CONTACT } from '#/modules/spaces/domain/address-books/entities/address-book-tag.entity';
+import {
+  MAX_TAGS_PER_CONTACT,
+  TAG_COLORS,
+} from '#/modules/spaces/domain/address-books/entities/address-book-tag.entity';
 import { UpsertAddressBookItemsSchema } from '#/modules/spaces/routes/address-books/entities/upsert-address-book-items.dto.entity';
 
 const validItem = (): {
@@ -90,6 +93,29 @@ describe('UpsertAddressBookItemsSchema tags', () => {
   it('should reject an invalid tag name', () => {
     const result = UpsertAddressBookItemsSchema.safeParse({
       items: [{ ...validItem(), tags: ['=bad'] }],
+    });
+
+    expect(result.success).toBe(false);
+  });
+});
+
+describe('UpsertAddressBookItemsSchema tagColors', () => {
+  it('should accept colours for the tags a request creates', () => {
+    const name = faker.string.alpha({ length: 8 });
+    const tagColors = [{ name, color: faker.helpers.arrayElement(TAG_COLORS) }];
+
+    const result = UpsertAddressBookItemsSchema.safeParse({
+      items: [{ ...validItem(), tags: [name] }],
+      tagColors,
+    });
+
+    expect(result.success && result.data.tagColors).toStrictEqual(tagColors);
+  });
+
+  it('should reject a colour that is not a tag colour', () => {
+    const result = UpsertAddressBookItemsSchema.safeParse({
+      items: [validItem()],
+      tagColors: [{ name: faker.string.alpha({ length: 8 }), color: 'orchid' }],
     });
 
     expect(result.success).toBe(false);

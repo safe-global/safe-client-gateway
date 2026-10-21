@@ -20,6 +20,7 @@ import type { IAddressBookItemsRepository } from '#/modules/spaces/domain/addres
 import type { IAddressBookTagsRepository } from '#/modules/spaces/domain/address-books/address-book-tags.repository.interface';
 import { addressBookItemBuilder } from '#/modules/spaces/domain/address-books/entities/__tests__/address-book-item.db.builder';
 import { addressBookTagBuilder } from '#/modules/spaces/domain/address-books/entities/__tests__/address-book-tag.builder';
+import { TAG_COLORS } from '#/modules/spaces/domain/address-books/entities/address-book-tag.entity';
 import type { ISpacesRepository } from '#/modules/spaces/domain/spaces.repository.interface';
 import { AddressBooksService } from '#/modules/spaces/routes/address-books/address-books.service';
 import { memberBuilder } from '#/modules/users/datasources/entities/__tests__/member.entity.db.builder';
@@ -275,9 +276,16 @@ describe('AddressBooksService', () => {
           chainIds: untagged.chainIds,
         },
       ];
+      const tagColors = tags.map((name) => ({
+        name,
+        color: faker.helpers.arrayElement(TAG_COLORS),
+      }));
       repositoryMock.upsertMany.mockResolvedValue([tagged, untagged]);
 
-      await service.upsertMany(authPayload, spaceId, { items: payload });
+      await service.upsertMany(authPayload, spaceId, {
+        items: payload,
+        tagColors,
+      });
 
       expect(postgresDatabaseServiceMock.transaction).toHaveBeenCalledOnce();
       expect(
@@ -295,6 +303,7 @@ describe('AddressBooksService', () => {
         userId: Number(authPayload.sub),
         spaceId,
         entries: [{ address: tagged.address, tags }],
+        tagColors,
         entityManager,
       });
       expect(tagsRepositoryMock.lockSpaceForTagWrites).toHaveBeenCalledBefore(
@@ -543,8 +552,16 @@ describe('AddressBooksService', () => {
         itemTagIds: new Map([[item.id, tags.map((tag) => tag.id)]]),
       });
 
+      const tagColors = [
+        {
+          name: faker.word.noun(),
+          color: faker.helpers.arrayElement(TAG_COLORS),
+        },
+      ];
+
       const result = await service.setContactTags(authPayload, spaceId, {
         items,
+        tagColors,
       });
 
       expect(membersRepositoryMock.findOne).toHaveBeenCalledWith({
@@ -558,6 +575,7 @@ describe('AddressBooksService', () => {
         userId: Number(authPayload.sub),
         spaceId,
         entries: items,
+        tagColors,
       });
       expect(result.tags).toEqual(tags);
       expect(result.data).toEqual([
