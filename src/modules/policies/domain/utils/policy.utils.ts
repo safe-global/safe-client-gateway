@@ -23,6 +23,11 @@ const GUARD_POLICY_TYPE_BY_KIND = new Map<
   ['MULTISEND', PolicyType.MultiSend],
 ]);
 
+/** The policy types a `SafePolicyGuard` can enforce. */
+export const GUARD_POLICY_TYPES: ReadonlyArray<PolicyType> = [
+  ...GUARD_POLICY_TYPE_BY_KIND.values(),
+];
+
 /**
  * The indexer kinds to request for {@link types}. Empty when none of them is a
  * guard-enforced type.

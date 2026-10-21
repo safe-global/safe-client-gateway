@@ -3,7 +3,12 @@ import { type Address, type Hex, isAddressEqual } from 'viem';
 import { getAllMultiSendDeployments } from '#/domain/common/utils/deployments';
 import { toSecondsTimestamp } from '#/domain/common/utils/time';
 import type { MultiSendDecoder } from '#/modules/contracts/domain/decoders/multi-send-decoder.helper';
+import type { SafePolicyGuardDecoder } from '#/modules/policies/domain/contracts/decoders/safe-policy-guard-decoder.helper';
 import type { PendingTransaction } from '#/modules/policies/domain/entities/pending-policy.entity';
+import {
+  type PolicyConfiguration,
+  PolicyConfigurationSchema,
+} from '#/modules/policies/domain/entities/policy-configuration.entity';
 import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
 import { Operation } from '#/modules/safe/domain/entities/operation.entity';
 
@@ -73,4 +78,27 @@ export function pendingTransactionOf(
     proposedAt: toSecondsTimestamp(transaction.submissionDate),
     proposer: transaction.proposer,
   };
+}
+
+/**
+ * The configurations a `configureImmediately` or `applyConfiguration` call
+ * passes, or `null` for another call or ones the guard would reject. Throws
+ * when the arguments do not decode.
+ */
+export function decodeConfigurations(args: {
+  decoder: SafePolicyGuardDecoder;
+  data: Hex;
+  functionName: 'applyConfiguration' | 'configureImmediately';
+}): Array<PolicyConfiguration> | null {
+  const decoded = args.decoder.decodeFunctionData({ data: args.data });
+  if (
+    decoded.functionName !== args.functionName ||
+    (decoded.functionName !== 'applyConfiguration' &&
+      decoded.functionName !== 'configureImmediately')
+  ) {
+    return null;
+  }
+
+  const parsed = PolicyConfigurationSchema.array().safeParse(decoded.args[0]);
+  return parsed.success ? parsed.data : null;
 }
