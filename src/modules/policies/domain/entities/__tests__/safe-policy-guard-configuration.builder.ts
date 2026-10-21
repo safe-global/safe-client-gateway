@@ -3,18 +3,18 @@ import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import { Builder, type IBuilder } from '#/__tests__/builder';
 import { policyConfigurationBuilder } from '#/modules/policies/domain/entities/__tests__/policy-configuration.builder';
-import type { StoredPolicyConfiguration } from '#/modules/policies/domain/entities/stored-policy-configuration.entity';
+import type { SafePolicyGuardConfiguration } from '#/modules/policies/domain/entities/safe-policy-guard-configuration.entity';
 import { configurationRoot } from '#/modules/policies/domain/utils/policy-configuration-root.utils';
 
 /**
  * Configurations stored in CGW, with a root that is their hash.
  */
-export function storedPolicyConfigurationBuilder(): IBuilder<StoredPolicyConfiguration> {
-  const configurations: StoredPolicyConfiguration['configurations'] = [
+export function safePolicyGuardConfigurationBuilder(): IBuilder<SafePolicyGuardConfiguration> {
+  const configurations: SafePolicyGuardConfiguration['configurations'] = [
     policyConfigurationBuilder().build(),
   ];
 
-  return new Builder<StoredPolicyConfiguration>()
+  return new Builder<SafePolicyGuardConfiguration>()
     .with('chainId', faker.string.numeric({ length: { min: 1, max: 6 } }))
     .with('safeAddress', getAddress(faker.finance.ethereumAddress()))
     .with('root', configurationRoot(configurations))
