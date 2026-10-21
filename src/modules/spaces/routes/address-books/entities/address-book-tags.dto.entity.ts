@@ -45,7 +45,8 @@ export class SetContactTagsItem
     type: String,
     isArray: true,
     maxItems: MAX_TAGS_PER_CONTACT,
-    description: 'The full set of tag names for the contact',
+    description:
+      "The full set of tag names for the contact. 'Workspace Safe' and 'Signer' aren't allowed, in any case",
   })
   public readonly tags!: Array<string>;
 }
@@ -67,7 +68,11 @@ export const RenameTagSchema = z.object({
 });
 
 export class RenameTagDto implements z.infer<typeof RenameTagSchema> {
-  @ApiProperty({ type: String, maxLength: TAG_NAME_MAX_LENGTH })
+  @ApiProperty({
+    type: String,
+    maxLength: TAG_NAME_MAX_LENGTH,
+    description: "'Workspace Safe' and 'Signer' aren't allowed, in any case",
+  })
   public readonly name!: string;
 }
 

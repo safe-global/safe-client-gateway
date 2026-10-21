@@ -1026,6 +1026,66 @@ describe('AddressBooksController', () => {
       expect(after).toEqual(before);
     });
 
+    it('rejects a disallowed tag name with 422 and keeps the stored tags', async () => {
+      const { spaceId, accessToken } = await createSpace();
+      const { mockAddress } = await createAddressBookItem({
+        spaceId,
+        adminAccessToken: accessToken,
+      });
+      const { body: before } = await request(app.getHttpServer())
+        .put(`/v1/spaces/${spaceId}/address-book/tags`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ items: [{ address: mockAddress, tags: fakeTagNames(1) }] })
+        .expect(200);
+
+      await request(app.getHttpServer())
+        .put(`/v1/spaces/${spaceId}/address-book/tags`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ items: [{ address: mockAddress, tags: ['Signer'] }] })
+        .expect(422)
+        .expect(({ body }) =>
+          expect(body).toMatchObject({
+            statusCode: 422,
+            message:
+              "'Signer' is added automatically and can't be used as a tag name",
+          }),
+        );
+
+      const { body: after } = await getAddressBook({ spaceId, accessToken });
+      expect(after).toEqual(before);
+    });
+
+    it('rejects renaming a tag to a disallowed name with 422 and keeps its name', async () => {
+      const { spaceId, accessToken } = await createSpace();
+      const { mockAddress } = await createAddressBookItem({
+        spaceId,
+        adminAccessToken: accessToken,
+      });
+      const [tagName] = fakeTagNames(1);
+      const { body: before } = await request(app.getHttpServer())
+        .put(`/v1/spaces/${spaceId}/address-book/tags`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ items: [{ address: mockAddress, tags: [tagName] }] })
+        .expect(200);
+      const tag = tagNamed(before.tags, tagName);
+
+      await request(app.getHttpServer())
+        .patch(`/v1/spaces/${spaceId}/address-book/tags/${tag.id}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: 'workspace safe' })
+        .expect(422)
+        .expect(({ body }) =>
+          expect(body).toMatchObject({
+            statusCode: 422,
+            message:
+              "'workspace safe' is added automatically and can't be used as a tag name",
+          }),
+        );
+
+      const { body: after } = await getAddressBook({ spaceId, accessToken });
+      expect(after).toEqual(before);
+    });
+
     it('rejects the same address twice in one request with 422', async () => {
       const { spaceId, accessToken } = await createSpace();
       const { mockAddress } = await createAddressBookItem({

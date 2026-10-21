@@ -21,6 +21,9 @@ export const MAX_TAGS_PER_CONTACT = 3;
 export const MAX_TAGS_PER_WORKSPACE = TAG_COLORS.length;
 export const TAG_NAME_MAX_LENGTH = 32;
 
+// Compared ignoring case
+const DISALLOWED_TAG_NAMES = new Set(['workspace safe', 'signer']);
+
 export const WORKSPACE_TAG_LIMIT_MESSAGE = `Your workspace has ${MAX_TAGS_PER_WORKSPACE} tags. Rename or delete one to add another.`;
 
 const ALLOWED_TAG_NAME = /^[\p{L}\p{M}\p{N} \-_&/]+$/u;
@@ -35,6 +38,13 @@ export const TagNameSchema = z
     const length = [...name].length;
     if (length === 0) {
       ctx.addIssue({ code: 'custom', message: 'Tags cannot be empty' });
+      return;
+    }
+    if (DISALLOWED_TAG_NAMES.has(name.toLowerCase())) {
+      ctx.addIssue({
+        code: 'custom',
+        message: `'${name}' is added automatically and can't be used as a tag name`,
+      });
       return;
     }
     if (length > TAG_NAME_MAX_LENGTH) {

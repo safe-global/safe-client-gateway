@@ -18,6 +18,35 @@ describe('TagNameSchema', () => {
     expect(TagNameSchema.parse(' Vendor \u200b  Ops ')).toBe('Vendor Ops');
   });
 
+  it.each([
+    ['Signer', 'Signer'],
+    ['signer', 'signer'],
+    [' SIGNER ', 'SIGNER'],
+    ['Workspace Safe', 'Workspace Safe'],
+    ['workspace   safe', 'workspace safe'],
+    ['  WORKSPACE SAFE ', 'WORKSPACE SAFE'],
+  ])('rejects %j (not allowed)', (name, normalised) => {
+    const result = TagNameSchema.safeParse(name);
+
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0].message).toBe(
+      `'${normalised}' is added automatically and can't be used as a tag name`,
+    );
+  });
+
+  it.each(['Signer team', 'Signers', 'Workspace Safes', 'Safe'])(
+    'accepts %s, which only contains a disallowed name',
+    (name) => {
+      expect(TagNameSchema.parse(name)).toBe(name);
+    },
+  );
+
+  it('rejects a disallowed name inside a list of tags', () => {
+    expect(
+      TagNamesSchema.safeParse([faker.word.noun(), 'signer']).success,
+    ).toBe(false);
+  });
+
   it.each(['=SUM(1)', '+1', '-x', '@alice'])(
     'rejects %s (formula prefix)',
     (name) => {
