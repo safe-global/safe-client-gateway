@@ -17,7 +17,7 @@ import type { IMembersRepository } from '#/modules/users/domain/members/members.
 
 describe('PolicyConfigurationRequestsService', () => {
   const configurationRequestsRepository: MockedObject<ISafePolicyGuardConfigurationRequestsRepository> =
-    { create: vi.fn() };
+    { create: vi.fn(), findBySafes: vi.fn() };
   const membersRepository: MockedObject<Pick<IMembersRepository, 'findOne'>> = {
     findOne: vi.fn(),
   };
