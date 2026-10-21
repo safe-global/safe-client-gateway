@@ -8,7 +8,7 @@ import type { Token } from '#/modules/policies/domain/entities/token.entity';
 export type PendingPolicy = PendingQueuedPolicy;
 
 /**
- * The queued Safe transaction a pending item was found in.
+ * The queued Safe transaction a pending policy change was found in.
  */
 export type PendingTransaction = {
   safeTxHash: Hex;
@@ -17,6 +17,8 @@ export type PendingTransaction = {
   confirmationsRequired: number;
   /** Unix seconds; the transaction's `submissionDate`. */
   proposedAt: number;
+  /** The owner or delegate who proposed the transaction, if known. */
+  proposer: Address | null;
 };
 
 /**
@@ -32,6 +34,8 @@ export type PendingQueuedPolicy = {
   confirmationsRequired: number;
   /** Unix seconds; the transaction's `submissionDate`. */
   proposedAt: number;
+  /** The owner or delegate who proposed the transaction, if known. */
+  proposer: Address | null;
   data: PendingSpendingLimitData;
   safe: SafeRef;
 };

@@ -91,6 +91,7 @@ describe('pendingTransactionOf', () => {
       confirmations: confirmations.length,
       confirmationsRequired: transaction.confirmationsRequired,
       proposedAt: Math.floor(transaction.submissionDate.getTime() / 1000),
+      proposer: transaction.proposer,
     });
   });
 });

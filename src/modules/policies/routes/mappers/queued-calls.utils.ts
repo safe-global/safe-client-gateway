@@ -40,7 +40,8 @@ export function queuedCalls(
 }
 
 /**
- * The signing state of a queued transaction, as a pending item reports it.
+ * The signing state of a queued transaction, as a pending policy change
+ * reports it.
  */
 export function pendingTransactionOf(
   transaction: MultisigTransaction,
@@ -51,5 +52,6 @@ export function pendingTransactionOf(
     confirmations: transaction.confirmations?.length ?? 0,
     confirmationsRequired: transaction.confirmationsRequired,
     proposedAt: toSecondsTimestamp(transaction.submissionDate),
+    proposer: transaction.proposer,
   };
 }

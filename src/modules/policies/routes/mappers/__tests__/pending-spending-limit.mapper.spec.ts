@@ -84,6 +84,7 @@ describe('PendingSpendingLimitMapper', () => {
         confirmations: transaction.confirmations?.length ?? 0,
         confirmationsRequired: transaction.confirmationsRequired,
         proposedAt: Math.floor(transaction.submissionDate.getTime() / 1000),
+        proposer: transaction.proposer,
         data: {
           module: SEPOLIA_ALLOWANCE_MODULE,
           changes: [

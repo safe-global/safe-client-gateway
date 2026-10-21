@@ -180,6 +180,12 @@ export class PendingQueuedPolicyDto implements PendingQueuedPolicy {
   public readonly confirmationsRequired!: number;
   @ApiProperty({ description: 'Unix seconds the transaction was proposed at' })
   public readonly proposedAt!: number;
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description: 'The owner or delegate who proposed the transaction, if known',
+  })
+  public readonly proposer!: Address | null;
   @ApiProperty({ type: PendingSpendingLimitDataDto })
   public readonly data!: PendingSpendingLimitData;
   @ApiProperty({
