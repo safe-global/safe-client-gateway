@@ -34,7 +34,7 @@ export type PendingGuardInstallationStatus =
 export const PendingGuardInstallationChangeKind = {
   SetGuard: 'set-guard',
   SetModuleGuard: 'set-module-guard',
-} as const;
+};
 
 /**
  * One guard setter call found in a queued transaction. `null` stands for the
