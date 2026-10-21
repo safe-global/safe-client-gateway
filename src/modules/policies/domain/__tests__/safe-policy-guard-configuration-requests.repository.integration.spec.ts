@@ -458,4 +458,83 @@ describe('SafePolicyGuardConfigurationRequestsRepository', () => {
       ).rejects.toThrow('policy_configuration_requests rows are immutable');
     });
   });
+
+  describe('findBySafes', () => {
+    it('should return the stored configurations of the given Safes only, oldest first', async () => {
+      const first = storableRequest();
+      const second = storableRequest();
+      const third = storableRequest({ safeAddress: first.safeAddress });
+      for (const request of [first, second, third, storableRequest()]) {
+        await repository.create(request);
+      }
+
+      const stored = await repository.findBySafes({
+        spaceId,
+        safes: [
+          { chainId: first.chainId, address: first.safeAddress },
+          { chainId: second.chainId, address: second.safeAddress },
+        ],
+      });
+
+      expect(stored).toStrictEqual(
+        [first, second, third].map((request) => ({
+          chainId: request.chainId,
+          safeAddress: request.safeAddress,
+          root: request.root,
+          configurations: request.configurations,
+          createdAt: expect.any(Date),
+        })),
+      );
+    });
+
+    it('should not return the requests of another Space', async () => {
+      const request = storableRequest({ spaceId: await insertSpace() });
+      await repository.create(request);
+
+      await expect(
+        repository.findBySafes({
+          spaceId,
+          safes: [{ chainId: request.chainId, address: request.safeAddress }],
+        }),
+      ).resolves.toStrictEqual([]);
+    });
+
+    it('should not return a Safe of the same address on another chain', async () => {
+      const request = storableRequest();
+      await repository.create(request);
+
+      await expect(
+        repository.findBySafes({
+          spaceId,
+          safes: [{ chainId: '1', address: request.safeAddress }],
+        }),
+      ).resolves.toStrictEqual([]);
+    });
+
+    it('should report the plaintext address when encryption is enabled', async () => {
+      const request = storableRequest();
+      encryptionService.safeAddressIndex.mockReturnValue(
+        faker.string.hexadecimal({ length: 64 }),
+      );
+      encryptionService.encryptSafeAddress.mockResolvedValue(
+        `kms:v1:${faker.string.alphanumeric(32)}`,
+      );
+      await repository.create(request);
+
+      const [stored] = await repository.findBySafes({
+        spaceId,
+        safes: [{ chainId: request.chainId, address: request.safeAddress }],
+      });
+
+      expect(stored.safeAddress).toBe(request.safeAddress);
+    });
+
+    it('should return nothing for no Safes', async () => {
+      await repository.create(storableRequest());
+
+      await expect(
+        repository.findBySafes({ spaceId, safes: [] }),
+      ).resolves.toStrictEqual([]);
+    });
+  });
 });
