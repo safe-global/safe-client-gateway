@@ -11,9 +11,11 @@ import { SafeDecoder } from '#/modules/contracts/domain/decoders/safe-decoder.he
 import { DelegatesV3RepositoryModule } from '#/modules/delegate/domain/v3/delegates.v3.repository.interface';
 import { PolicyConfigurationRequest } from '#/modules/policies/datasources/entities/policy-configuration-request.entity.db';
 import { SafeGuardManagerDecoder } from '#/modules/policies/domain/contracts/decoders/safe-guard-manager-decoder.helper';
+import { SafePolicyGuardDecoder } from '#/modules/policies/domain/contracts/decoders/safe-policy-guard-decoder.helper';
 import { PolicyIndexerRepositoryModule } from '#/modules/policies/domain/policy-indexer-repository.module';
 import { SafePolicyGuardConfigurationRequestsRepository } from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository';
 import { ISafePolicyGuardConfigurationRequestsRepository } from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository.interface';
+import { DelayedGuardPoliciesMapper } from '#/modules/policies/routes/mappers/delayed-guard-policies.mapper';
 import { GuardInstallationMapper } from '#/modules/policies/routes/mappers/guard-installation.mapper';
 import { GuardPolicyMapper } from '#/modules/policies/routes/mappers/guard-policy.mapper';
 import { PendingSpendingLimitMapper } from '#/modules/policies/routes/mappers/pending-spending-limit.mapper';
@@ -58,9 +60,11 @@ import { UsersModule } from '#/modules/users/users.module';
     PendingSpendingLimitMapper,
     GuardPolicyMapper,
     GuardInstallationMapper,
+    DelayedGuardPoliciesMapper,
     AllowanceModuleDecoder,
     SafeDecoder,
     MultiSendDecoder,
+    SafePolicyGuardDecoder,
     SafeGuardManagerDecoder,
     {
       provide: ISafePolicyGuardConfigurationRequestsRepository,
