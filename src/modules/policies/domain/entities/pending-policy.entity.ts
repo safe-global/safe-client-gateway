@@ -5,7 +5,7 @@ import type { PolicyType } from '#/modules/policies/domain/entities/policy-type.
 import type { SafeRef } from '#/modules/policies/domain/entities/safe-ref.entity';
 import type { Token } from '#/modules/policies/domain/entities/token.entity';
 
-export type PendingPolicy = PendingQueuedPolicy;
+export type PendingPolicy = PendingQueuedPolicy | PendingGuardInstallation;
 
 /**
  * The queued Safe transaction a pending policy change was found in.

@@ -37,9 +37,14 @@ import type {
   PolicyIndexerGuardEnforcedPolicy,
   PolicyIndexerSafeAllowance,
 } from '#/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
+import type {
+  PendingPolicy,
+  PendingQueuedPolicy,
+} from '#/modules/policies/domain/entities/pending-policy.entity';
 import { PolicyType } from '#/modules/policies/domain/entities/policy-type.entity';
 import type { IPolicyIndexerRepository } from '#/modules/policies/domain/policy-indexer.repository.interface';
 import { guardPolicyKindsOf } from '#/modules/policies/domain/utils/policy.utils';
+import type { GuardInstallationMapper } from '#/modules/policies/routes/mappers/guard-installation.mapper';
 import { GuardPolicyMapper } from '#/modules/policies/routes/mappers/guard-policy.mapper';
 import { PendingSpendingLimitMapper } from '#/modules/policies/routes/mappers/pending-spending-limit.mapper';
 import { ProposerMapper } from '#/modules/policies/routes/mappers/proposer.mapper';
@@ -63,6 +68,10 @@ const mockPolicyIndexerRepository = {
   getState: vi.fn(),
   clearState: vi.fn(),
 } as MockedObject<IPolicyIndexerRepository>;
+
+const mockGuardInstallationMapper = {
+  map: vi.fn(),
+} as MockedObject<GuardInstallationMapper>;
 
 const mockSafeRepository: MockedObject<
   Pick<
@@ -117,6 +126,16 @@ function pendingSpendingLimitMapper(): PendingSpendingLimitMapper {
 
 const SEPOLIA = '11155111';
 
+/** The queued spending-limit items of a pending read, narrowed by `kind`. */
+function queuedOnly(
+  policies: ReadonlyArray<PendingPolicy>,
+): Array<PendingQueuedPolicy> {
+  return policies.filter(
+    (policy): policy is PendingQueuedPolicy =>
+      policy.kind === 'queued-transaction',
+  );
+}
+
 describe('PoliciesService', () => {
   let target: PoliciesService;
   const spaceId = faker.number.int({ min: 1, max: 100 });
@@ -154,6 +173,7 @@ describe('PoliciesService', () => {
     mockChainsRepository.getChain.mockResolvedValue(chainBuilder().build());
     // No proposers unless a case registers some.
     withDelegates([]);
+    mockGuardInstallationMapper.map.mockReturnValue([]);
   });
 
   /**
@@ -186,6 +206,7 @@ describe('PoliciesService', () => {
       new ProposerMapper(),
       pendingSpendingLimitMapper(),
       new GuardPolicyMapper(),
+      mockGuardInstallationMapper,
     );
   }
 
@@ -1045,7 +1066,7 @@ describe('PoliciesService', () => {
       ).resolves.toStrictEqual([]);
     });
 
-    it('should read nothing when spending-limit is not requested', async () => {
+    it('should read nothing when only proposer is requested', async () => {
       const policies = await target.getSpacePendingPolicies({
         ...policyRequest,
         types: [PolicyType.Proposer],
@@ -1273,7 +1294,9 @@ describe('PoliciesService', () => {
             .build(),
         ]);
 
-        const [policy] = await target.getSpacePendingPolicies(pendingRequest);
+        const [policy] = queuedOnly(
+          await target.getSpacePendingPolicies(pendingRequest),
+        );
 
         expect(policy.data.changes).toStrictEqual([
           expect.objectContaining({
@@ -1324,7 +1347,9 @@ describe('PoliciesService', () => {
             .build(),
         ]);
 
-        const [policy] = await target.getSpacePendingPolicies(pendingRequest);
+        const [policy] = queuedOnly(
+          await target.getSpacePendingPolicies(pendingRequest),
+        );
 
         expect(policy.data.changes).toStrictEqual([
           expect.objectContaining({
@@ -1354,7 +1379,9 @@ describe('PoliciesService', () => {
             .build(),
         ]);
 
-        const [policy] = await target.getSpacePendingPolicies(pendingRequest);
+        const [policy] = queuedOnly(
+          await target.getSpacePendingPolicies(pendingRequest),
+        );
 
         expect(policy.data.changes).toStrictEqual([
           expect.objectContaining({
@@ -1374,12 +1401,83 @@ describe('PoliciesService', () => {
             .build(),
         ]);
 
-        const [policy] = await target.getSpacePendingPolicies(pendingRequest);
+        const [policy] = queuedOnly(
+          await target.getSpacePendingPolicies(pendingRequest),
+        );
 
         expect(policy.data.changes[0]).not.toHaveProperty('tokenMetadata');
         expect(mockTokenRepository.getToken).not.toHaveBeenCalled();
         expect(mockChainsRepository.getChain).not.toHaveBeenCalled();
       });
+    });
+  });
+
+  describe('pending guard policies', () => {
+    const guardRequest = { ...policyRequest, types: [PolicyType.Cosigner] };
+    const safe = { chainId: SEPOLIA, address: safeAddress };
+
+    beforeEach(() => {
+      mockSafeRepository.getTransactionQueue.mockResolvedValue(
+        pageBuilder<MultisigTransaction>()
+          .with('results', [])
+          .with('next', null)
+          .build(),
+      );
+    });
+
+    it('should read nothing for guard items when no guard type is requested', async () => {
+      await target.getSpacePendingPolicies({
+        ...policyRequest,
+        types: [PolicyType.SpendingLimit],
+      });
+
+      expect(mockGuardInstallationMapper.map).not.toHaveBeenCalled();
+    });
+
+    it('should give the setup mapper the queue and the current guards', async () => {
+      const safeInfo = safeBuilder()
+        .with('moduleGuard', getAddress(faker.finance.ethereumAddress()))
+        .build();
+      const transaction = multisigTransactionBuilder().build();
+      mockSafeRepository.getSafe.mockResolvedValue(safeInfo);
+      mockSafeRepository.getTransactionQueue.mockResolvedValue(
+        pageBuilder<MultisigTransaction>()
+          .with('results', [transaction])
+          .with('next', null)
+          .build(),
+      );
+
+      await target.getSpacePendingPolicies(guardRequest);
+
+      expect(mockGuardInstallationMapper.map).toHaveBeenCalledWith({
+        safe,
+        guard: safeInfo.guard,
+        moduleGuard: safeInfo.moduleGuard,
+        transactions: [transaction],
+      });
+    });
+
+    it('should report no queued spending-limit change when only guard types are requested', async () => {
+      // Sepolia's AllowanceModule deployment.
+      const allowanceModule = getAddress(
+        '0xCFbFaC74C26F8647cBDb8c5caf80BB5b32E43134',
+      );
+      mockSafeRepository.getTransactionQueue.mockResolvedValue(
+        pageBuilder<MultisigTransaction>()
+          .with('results', [
+            multisigTransactionBuilder()
+              .with('to', allowanceModule)
+              .with('operation', Operation.CALL)
+              .with('data', addDelegateEncoder().encode())
+              .build(),
+          ])
+          .with('next', null)
+          .build(),
+      );
+
+      const policies = await target.getSpacePendingPolicies(guardRequest);
+
+      expect(queuedOnly(policies)).toStrictEqual([]);
     });
   });
 });

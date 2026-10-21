@@ -4,7 +4,7 @@ import type { Server } from 'node:http';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { getAddress, zeroAddress } from 'viem';
+import { type Address, getAddress, zeroAddress } from 'viem';
 import type { MockedObject } from 'vitest';
 import {
   initTestApplication,
@@ -25,10 +25,16 @@ import {
   addDelegateEncoder,
   setAllowanceEncoder,
 } from '#/modules/contracts/domain/__tests__/encoders/allowance-module-encoder.builder';
+import {
+  multiSendEncoder,
+  multiSendTransactionsEncoder,
+} from '#/modules/contracts/domain/__tests__/encoders/multi-send-encoder.builder';
+import { setGuardEncoder } from '#/modules/contracts/domain/__tests__/encoders/safe-encoder.builder';
 import { delegateBuilder } from '#/modules/delegate/domain/entities/__tests__/delegate.builder';
 import type { Delegate } from '#/modules/delegate/domain/entities/delegate.entity';
 import { NotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/notifications.repository.module';
 import { TestNotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/test.notification.repository.module';
+import { setModuleGuardEncoder } from '#/modules/policies/domain/contracts/__tests__/encoders/safe-policy-guard-encoder.builder';
 import { policyConfigurationBuilder } from '#/modules/policies/domain/entities/__tests__/policy-configuration.builder';
 import { rawIndexerGuardEnforcedPolicyBuilder } from '#/modules/policies/domain/entities/indexer/__tests__/guard-enforced-policy.builder';
 import {
@@ -45,8 +51,10 @@ import {
 } from '#/modules/policies/domain/entities/indexer/__tests__/safe-allowance.builder';
 import type { PolicyConfiguration } from '#/modules/policies/domain/entities/policy-configuration.entity';
 import { PolicyType } from '#/modules/policies/domain/entities/policy-type.entity';
+import { getSafePolicyGuardDeployments } from '#/modules/policies/domain/policy-deployments.constants';
 import { configurationRoot } from '#/modules/policies/domain/utils/policy-configuration-root.utils';
 import { multisigTransactionBuilder } from '#/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
+import { confirmationBuilder } from '#/modules/safe/domain/entities/__tests__/multisig-transaction-confirmation.builder';
 import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
 import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
 import { Operation } from '#/modules/safe/domain/entities/operation.entity';
@@ -134,7 +142,9 @@ describe('Space Policies Controller', () => {
       queuedTransactions?: Array<MultisigTransaction>;
       tokens?: Array<Token>;
       tokenNotFoundAddresses?: Array<string>;
+      /** The transaction-guard slot; the guard under test unless given. */
       guard?: `0x${string}`;
+      /** The module-guard slot; empty (the zero address) unless given. */
       moduleGuard?: `0x${string}`;
     } = {},
   ): void {
@@ -1283,6 +1293,99 @@ describe('Space Policies Controller', () => {
         )
         .send(payload())
         .expect(403);
+    });
+  });
+
+  describe('GET /v1/spaces/:spaceId/policies/pending - guard policies', () => {
+    const [guard] = getSafePolicyGuardDeployments(SEPOLIA_CHAIN_ID);
+
+    /** A queued transaction with `confirmations` of 2 signatures. */
+    function queued(args: {
+      to: Address;
+      data: `0x${string}`;
+      confirmations: number;
+    }): MultisigTransaction {
+      return multisigTransactionBuilder()
+        .with('to', args.to)
+        .with('operation', Operation.CALL)
+        .with('data', args.data)
+        .with('confirmationsRequired', 2)
+        .with(
+          'confirmations',
+          Array.from({ length: args.confirmations }, () =>
+            confirmationBuilder().build(),
+          ),
+        )
+        .build();
+    }
+
+    async function getPending(args: {
+      accessToken: string;
+      spaceId: string;
+      types: string;
+    }): Promise<Array<Record<string, unknown>>> {
+      const { body } = await request(app.getHttpServer())
+        .get(`/v1/spaces/${args.spaceId}/policies/pending`)
+        .query({ types: args.types })
+        .set('Cookie', [`access_token=${args.accessToken}`])
+        .expect(200);
+
+      return body;
+    }
+
+    it('should report a queued guard installation batch', async () => {
+      const batch = multiSendEncoder()
+        .with(
+          'transactions',
+          multiSendTransactionsEncoder([
+            {
+              operation: Operation.CALL,
+              to: safeAddress,
+              value: BigInt(0),
+              data: setGuardEncoder().with('guard', guard).encode(),
+            },
+            {
+              operation: Operation.CALL,
+              to: safeAddress,
+              value: BigInt(0),
+              data: setModuleGuardEncoder().with('moduleGuard', guard).encode(),
+            },
+          ]),
+        )
+        .encode();
+      const transaction = queued({
+        to: getAddress(faker.finance.ethereumAddress()),
+        data: batch,
+        confirmations: 1,
+      });
+      mockUpstream({ guard: zeroAddress, queuedTransactions: [transaction] });
+      mockIndexer(rawPolicyIndexerResponse());
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+
+      const body = await getPending({
+        accessToken,
+        spaceId,
+        types: PolicyType.Cosigner,
+      });
+
+      expect(body).toEqual([
+        {
+          kind: 'guard-installation',
+          status: 'in-signing',
+          safe: { chainId: SEPOLIA_CHAIN_ID, address: safeAddress },
+          changes: [
+            { kind: 'set-guard', from: null, to: guard },
+            { kind: 'set-module-guard', from: null, to: guard },
+          ],
+          transaction: expect.objectContaining({
+            safeTxHash: transaction.safeTxHash,
+            confirmations: 1,
+            confirmationsRequired: 2,
+          }),
+        },
+      ]);
     });
   });
 });
