@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { PolicyIndexerGuardPolicyKind } from '#/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
+import type {
+  PolicyIndexerConfigurationRoot,
+  PolicyIndexerGuardPolicyKind,
+} from '#/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 import { PolicyType } from '#/modules/policies/domain/entities/policy-type.entity';
 
 /**
@@ -37,4 +40,12 @@ export function guardPolicyTypeOfKind(
   kind: PolicyIndexerGuardPolicyKind,
 ): PolicyType | null {
   return GUARD_POLICY_TYPE_BY_KIND.get(kind) ?? null;
+}
+
+/** Whether {@link root} can still be applied: pending and before `expiresAt`. */
+export function isRootApplicable(
+  root: Pick<PolicyIndexerConfigurationRoot, 'status' | 'expiresAt'>,
+  now: number,
+): boolean {
+  return root.status === 'PENDING' && now < root.expiresAt;
 }
