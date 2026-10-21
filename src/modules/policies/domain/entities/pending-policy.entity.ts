@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { Address, Hex } from 'viem';
+import type { PolicyConfiguration } from '#/modules/policies/domain/entities/policy-configuration.entity';
 import type { ModuleEnforcement } from '#/modules/policies/domain/entities/policy-enforcement.entity';
 import type { PolicyType } from '#/modules/policies/domain/entities/policy-type.entity';
 import type { SafeRef } from '#/modules/policies/domain/entities/safe-ref.entity';
@@ -17,6 +18,64 @@ export type PendingTransaction = {
   confirmationsRequired: number;
   /** Unix seconds; the transaction's `submissionDate`. */
   proposedAt: number;
+};
+
+export const PendingGuardSetupStatus = {
+  /** Fewer confirmations than the threshold. */
+  InSigning: 'setup-in-signing',
+  /** Every confirmation is in; the transaction is not executed yet. */
+  Ready: 'setup-ready',
+} as const;
+
+export type PendingGuardSetupStatus =
+  (typeof PendingGuardSetupStatus)[keyof typeof PendingGuardSetupStatus];
+
+export const PendingGuardSetupChangeKind = {
+  ConfigureImmediately: 'configure-immediately',
+  SetGuard: 'set-guard',
+  SetModuleGuard: 'set-module-guard',
+} as const;
+
+/**
+ * One guard setup call found in a queued transaction.
+ *
+ * For `set-guard` and `set-module-guard`, `null` stands for the zero address -
+ * no guard in that slot.
+ */
+export type PendingGuardSetupChange =
+  | {
+      kind: typeof PendingGuardSetupChangeKind.ConfigureImmediately;
+      guard: Address;
+      configurations: Array<PolicyConfiguration>;
+      /**
+       * `true` when the guard already sits in the Safe's guard or module guard
+       * slot by the time this call runs - `configureImmediately` then reverts
+       * with `GuardAlreadyEnabled`.
+       */
+      willRevert: boolean;
+    }
+  | {
+      kind: typeof PendingGuardSetupChangeKind.SetGuard;
+      from: Address | null;
+      to: Address | null;
+    }
+  | {
+      kind: typeof PendingGuardSetupChangeKind.SetModuleGuard;
+      from: Address | null;
+      to: Address | null;
+    };
+
+/**
+ * A queued transaction that sets up the `SafePolicyGuard`: binds policies with
+ * `configureImmediately`, or installs or removes the guard.
+ */
+export type PendingGuardSetup = {
+  kind: 'guard-setup';
+  status: PendingGuardSetupStatus;
+  safe: SafeRef;
+  /** The setup calls of the transaction, in calldata order. */
+  changes: Array<PendingGuardSetupChange>;
+  transaction: PendingTransaction;
 };
 
 /**
