@@ -76,6 +76,7 @@ function requestWith(groups: Array<ReturnType<typeof pairGroup>>): object {
         delegates: groups,
         guardPolicyBindings: groups,
         guardPolicyKinds: [...guardPolicyKinds],
+        roots: groups,
       },
     }),
   });
@@ -172,6 +173,7 @@ describe('PolicyIndexerApi', () => {
         'SafeAllowance',
         'SafeDelegate',
         'GuardPolicyBinding',
+        'ConfigurationRoot(',
       ]) {
         expect(mockNetworkService.post).toHaveBeenCalledWith(
           expect.objectContaining({
