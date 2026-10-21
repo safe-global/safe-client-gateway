@@ -308,17 +308,10 @@ export class SafeQueueService implements ISafeQueueService {
     offset?: number;
   }): Promise<Raw<Page<SafeQueueMultisigTransactionEntity>>> {
     try {
-      // One `safes` value per address: the service counts values, not addresses, against its maximum.
-      const chainIdsBySafe = new Map<string, Array<string>>();
-      for (const { chainId, safeAddress } of args.safes) {
-        const chainIds = chainIdsBySafe.get(safeAddress) ?? [];
-        if (!chainIds.includes(chainId)) {
-          chainIds.push(chainId);
-        }
-        chainIdsBySafe.set(safeAddress, chainIds);
-      }
       const query = new URLSearchParams();
-      for (const [safeAddress, chainIds] of chainIdsBySafe) {
+      for (const [safeAddress, chainIds] of this.getChainIdsBySafe(
+        args.safes,
+      )) {
         query.append('safes', [safeAddress, ...chainIds].join(':'));
       }
       query.set('nonceOrder', args.nonceOrder ?? 'asc');
@@ -344,6 +337,24 @@ export class SafeQueueService implements ISafeQueueService {
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
+  }
+
+  /**
+   * The chains of each Safe address, for one `safes` value per address: the
+   * service counts values, not addresses, against its maximum.
+   */
+  private getChainIdsBySafe(
+    safes: ReadonlyArray<{ chainId: string; safeAddress: Address }>,
+  ): Map<Address, Array<string>> {
+    const chainIdsBySafe = new Map<Address, Array<string>>();
+    for (const { chainId, safeAddress } of safes) {
+      const chainIds = chainIdsBySafe.get(safeAddress) ?? [];
+      if (!chainIds.includes(chainId)) {
+        chainIds.push(chainId);
+      }
+      chainIdsBySafe.set(safeAddress, chainIds);
+    }
+    return chainIdsBySafe;
   }
 
   async postConfirmation(args: {

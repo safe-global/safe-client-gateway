@@ -30,6 +30,7 @@ import { asError } from '#/logging/utils';
 import { IDataDecoderRepository } from '#/modules/data-decoder/domain/v2/data-decoder.repository.interface';
 import type { MultisigTransaction as DomainMultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
 import type { Safe } from '#/modules/safe/domain/entities/safe.entity';
+import { getChainSafeKey } from '#/modules/safe/domain/helpers/chain-safe-key.helper';
 import type { SafeRepository } from '#/modules/safe/domain/safe.repository';
 import { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
 import { ITokenRepository } from '#/modules/tokens/domain/token.repository.interface';
@@ -500,27 +501,32 @@ export class TransactionsService {
       1,
       Math.min(args.paginationData.limit, SAFE_QUEUE_SERVICE_MAX_LIMIT - 1),
     );
-    // One transaction more than the page, to tell whether its last nonce continues.
-    const page = await this.safeRepository.getTransactionQueueForSafes({
-      safes,
-      limit: limit + 1,
-      offset,
-    });
-    const transactions = page.results.slice(0, limit);
-    const lookahead = page.results.at(limit);
-    const lastNonce = transactions.at(-1)?.transaction.nonce;
-    if (lookahead && lookahead.transaction.nonce === lastNonce) {
-      const rest = await this.safeRepository.getTransactionQueueForSafes({
-        safes,
-        limit: SAFE_QUEUE_SERVICE_MAX_LIMIT,
-        offset: offset + transactions.length,
-      });
-      const sameNonce = takeWhile(
-        rest.results,
-        (item) => item.transaction.nonce === lastNonce,
+    const page = await this.getQueuePageOfSafes({ safes, limit, offset }).catch(
+      (error: unknown) => {
+        this.loggingService.warn({
+          message: 'Failed to load the queue of the Space Safes',
+          error: asError(error).message,
+        });
+        return null;
+      },
+    );
+    // The Space stays readable: its Safes are reported as unavailable instead.
+    if (!page) {
+      unavailableSafes.push(
+        ...safes.map(({ chainId, safe }) => ({
+          chainId,
+          safeAddress: safe.address,
+        })),
       );
-      transactions.push(...sameNonce);
+      return {
+        count: 0,
+        next: null,
+        previous: null,
+        results: [],
+        unavailableSafes,
+      };
     }
+    const { transactions } = page;
 
     const nextOffset = offset + transactions.length;
     const next =
@@ -529,7 +535,7 @@ export class TransactionsService {
         : null;
     const safesByKey = new Map(
       safes.map(({ chainId, safe }) => [
-        this.getQueueSafeKey(chainId, safe.address),
+        getChainSafeKey(chainId, safe.address),
         safe,
       ]),
     );
@@ -541,6 +547,45 @@ export class TransactionsService {
       results: await this.mapQueueRuns(transactions, safesByKey),
       unavailableSafes,
     };
+  }
+
+  /**
+   * One page of the merged queue, extended past `limit` to the end of its
+   * last nonce.
+   */
+  private async getQueuePageOfSafes(args: {
+    safes: Array<{ chainId: string; safe: Safe }>;
+    limit: number;
+    offset: number;
+  }): Promise<{
+    count: number | null;
+    transactions: Array<{
+      chainId: string;
+      transaction: DomainMultisigTransaction;
+    }>;
+  }> {
+    // One transaction more than the page, to tell whether its last nonce continues.
+    const page = await this.safeRepository.getTransactionQueueForSafes({
+      safes: args.safes,
+      limit: args.limit + 1,
+      offset: args.offset,
+    });
+    const transactions = page.results.slice(0, args.limit);
+    const lookahead = page.results.at(args.limit);
+    const lastNonce = transactions.at(-1)?.transaction.nonce;
+    if (lookahead && lookahead.transaction.nonce === lastNonce) {
+      const rest = await this.safeRepository.getTransactionQueueForSafes({
+        safes: args.safes,
+        limit: SAFE_QUEUE_SERVICE_MAX_LIMIT,
+        offset: args.offset + transactions.length,
+      });
+      const sameNonce = takeWhile(
+        rest.results,
+        (item) => item.transaction.nonce === lastNonce,
+      );
+      transactions.push(...sameNonce);
+    }
+    return { count: page.count, transactions };
   }
 
   private partitionQueueSafes(
@@ -555,7 +600,7 @@ export class TransactionsService {
     const seen = new Set<string>();
     const addresses = new Set<string>();
     for (const { chainId, address } of safes) {
-      const key = this.getQueueSafeKey(chainId, address);
+      const key = getChainSafeKey(chainId, address);
       if (seen.has(key)) {
         continue;
       }
@@ -634,7 +679,7 @@ export class TransactionsService {
     }> = [];
     const lastNonceBySafe = new Map<string, number>();
     for (const { chainId, transaction } of sorted) {
-      const key = this.getQueueSafeKey(chainId, transaction.safe);
+      const key = getChainSafeKey(chainId, transaction.safe);
       const safe = safesByKey.get(key);
       if (!safe) {
         continue;
@@ -677,10 +722,6 @@ export class TransactionsService {
     return (
       error instanceof DataSourceError && error.code === HttpStatus.NOT_FOUND
     );
-  }
-
-  private getQueueSafeKey(chainId: string, safeAddress: Address): string {
-    return `${chainId}:${safeAddress.toLowerCase()}`;
   }
 
   private getAdjustedPaginationForHistory(

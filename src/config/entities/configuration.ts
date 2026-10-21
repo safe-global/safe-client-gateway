@@ -489,6 +489,12 @@ export default () => ({
       process.env.FF_SAFE_SHIELD_CORE_DISABLED?.toLowerCase() === 'true',
     safeQueueService:
       process.env.FF_SAFE_QUEUE_SERVICE?.toLowerCase() === 'true',
+    // Owner: Space transaction queue (safe-client-gateway PR 3621). Keeps the
+    // uncached `GET /v1/spaces/:spaceId/transactions/queued` off in production;
+    // remove the flag, and its condition in `AppModule`, once the Space queue
+    // cache and its invalidation have shipped.
+    spaceTransactions:
+      process.env.FF_SPACE_TRANSACTIONS?.toLowerCase() === 'true',
     // Safe Labs: remove after the KMS-backed payer rollout is complete.
     safenet: process.env.FF_SAFENET?.toLowerCase() === 'true',
   },

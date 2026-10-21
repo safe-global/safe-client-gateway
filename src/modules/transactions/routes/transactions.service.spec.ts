@@ -294,6 +294,82 @@ describe('TransactionsService', () => {
       ).not.toHaveBeenCalled();
     });
 
+    it('reports every loaded Safe as unavailable and logs when the queue cannot be loaded', async () => {
+      const chainId = faker.string.numeric({ length: 3 });
+      const safe = safeBuilder().build();
+      const undeployed = getAddress(faker.finance.ethereumAddress());
+      mockSafeRepository.getSafe.mockImplementation(({ address }) =>
+        address === undeployed
+          ? Promise.reject(
+              new DataSourceError(faker.lorem.sentence(), HttpStatus.NOT_FOUND),
+            )
+          : Promise.resolve(safe),
+      );
+      const error = new DataSourceError(
+        faker.lorem.sentence(),
+        HttpStatus.SERVICE_UNAVAILABLE,
+      );
+      mockSafeRepository.getTransactionQueueForSafes.mockRejectedValue(error);
+
+      const actual = await target.getTransactionQueueForSafes({
+        safes: [
+          { chainId, address: safe.address },
+          { chainId, address: undeployed },
+        ],
+        routeUrl,
+        paginationData: new PaginationData(20, 0),
+      });
+
+      expect(actual).toEqual({
+        count: 0,
+        next: null,
+        previous: null,
+        results: [],
+        unavailableSafes: [
+          { chainId, safeAddress: undeployed },
+          { chainId, safeAddress: safe.address },
+        ],
+      });
+      expect(mockLoggingService.warn).toHaveBeenCalledTimes(1);
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+        expect.objectContaining({ error: error.message }),
+      );
+    });
+
+    it('reports the Safes as unavailable when completing the last nonce fails', async () => {
+      const chainId = faker.string.numeric({ length: 3 });
+      const safe = safeBuilder().with('nonce', 1).build();
+      mockSafeRepository.getSafe.mockResolvedValue(safe);
+      mockSafeRepository.getTransactionQueueForSafes
+        .mockResolvedValueOnce(
+          queuePage(
+            [
+              queuedTransaction(chainId, safe, 1),
+              queuedTransaction(chainId, safe, 1),
+            ],
+            2,
+          ),
+        )
+        .mockRejectedValueOnce(
+          new DataSourceError(
+            faker.lorem.sentence(),
+            HttpStatus.SERVICE_UNAVAILABLE,
+          ),
+        );
+
+      const actual = await target.getTransactionQueueForSafes({
+        safes: [{ chainId, address: safe.address }],
+        routeUrl,
+        paginationData: new PaginationData(1, 0),
+      });
+
+      expect(actual.results).toEqual([]);
+      expect(actual.unavailableSafes).toEqual([
+        { chainId, safeAddress: safe.address },
+      ]);
+      expect(mockQueuedItemsMapper.getQueuedItems).not.toHaveBeenCalled();
+    });
+
     it('requests each Safe once and reports addresses beyond the queue service maximum as unavailable', async () => {
       const chainId = faker.string.numeric({ length: 3 });
       const otherChainId = faker.string.numeric({ length: 4 });

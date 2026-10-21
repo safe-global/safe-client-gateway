@@ -44,6 +44,7 @@ import {
   TransferPageSchema,
   TransferSchema,
 } from '#/modules/safe/domain/entities/transfer.entity';
+import { getChainSafeKey } from '#/modules/safe/domain/helpers/chain-safe-key.helper';
 import { getLastModified } from '#/modules/safe/domain/helpers/last-modified.helper';
 import { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
 import {
@@ -307,7 +308,7 @@ export class SafeRepository implements ISafeRepository {
   }): Promise<Page<{ chainId: string; transaction: MultisigTransaction }>> {
     const safesByKey = new Map(
       args.safes.map(({ chainId, safe }) => [
-        this.getChainSafeKey(chainId, safe.address),
+        getChainSafeKey(chainId, safe.address),
         safe,
       ]),
     );
@@ -326,7 +327,7 @@ export class SafeRepository implements ISafeRepository {
       next: parsed.next,
       previous: parsed.previous,
       results: parsed.results.flatMap((tx) => {
-        const safe = safesByKey.get(this.getChainSafeKey(tx.chainId, tx.safe));
+        const safe = safesByKey.get(getChainSafeKey(tx.chainId, tx.safe));
         return safe
           ? [
               {
@@ -337,10 +338,6 @@ export class SafeRepository implements ISafeRepository {
           : [];
       }),
     };
-  }
-
-  private getChainSafeKey(chainId: string, safeAddress: Address): string {
-    return `${chainId}:${safeAddress.toLowerCase()}`;
   }
 
   getTransactionQueueMaxPageSize(): number {

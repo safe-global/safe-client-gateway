@@ -146,6 +146,7 @@ export const RootConfigurationSchema = z
     FF_MFA_STEP_UP: z.string().optional(),
     FF_SAFE_SHIELD_CORE_DISABLED: z.string().optional(),
     FF_SAFENET: z.string().optional(),
+    FF_SPACE_TRANSACTIONS: z.string().optional(),
     SAFENET_CONSENSUS_ADDRESS: AddressSchema.optional(),
     SAFENET_ORACLE_ADDRESS: AddressSchema.optional(),
     SAFENET_PAYER_SAFE_ADDRESS: AddressSchema.optional(),
