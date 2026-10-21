@@ -2,6 +2,8 @@
 import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 import type { Address, Hex } from 'viem';
 import {
+  type PendingDelayedGuardPolicies,
+  PendingDelayedGuardPoliciesStatus,
   type PendingGuardInstallation,
   type PendingGuardInstallationChange,
   PendingGuardInstallationChangeKind,
@@ -11,9 +13,11 @@ import {
   PendingSpendingLimitChangeKind,
   type PendingSpendingLimitData,
 } from '#/modules/policies/domain/entities/pending-policy.entity';
+import type { PolicyConfiguration } from '#/modules/policies/domain/entities/policy-configuration.entity';
 import type { ModuleEnforcement } from '#/modules/policies/domain/entities/policy-enforcement.entity';
 import { PolicyType } from '#/modules/policies/domain/entities/policy-type.entity';
 import type { Token } from '#/modules/policies/domain/entities/token.entity';
+import { PolicyConfigurationDto } from '#/modules/policies/routes/entities/create-policy-configuration-request.dto.entity';
 import {
   Erc20TokenMetadataDto,
   ModuleEnforcementDto,
@@ -295,19 +299,83 @@ export class PendingGuardInstallationDto implements PendingGuardInstallation {
   public readonly transaction!: PendingTransactionDto;
 }
 
+@ApiExtraModels(PolicyConfigurationDto, PendingTransactionDto)
+export class PendingDelayedGuardPoliciesDto
+  implements PendingDelayedGuardPolicies
+{
+  @ApiProperty({ enum: ['delayed-guard-policies'] })
+  public readonly kind!: 'delayed-guard-policies';
+  @ApiProperty({
+    enum: Object.values(PendingDelayedGuardPoliciesStatus),
+    description:
+      'draft: stored in CGW, not requested. configuration-in-signing: requestConfiguration is queued. pending-application: requested, waiting for or past readyAt. application-in-signing: applyConfiguration is queued and collecting confirmations. application-ready: applyConfiguration is signed and can execute. expired: the application window has closed.',
+  })
+  public readonly status!: PendingDelayedGuardPolicies['status'];
+  @ApiProperty({
+    type: SafeRefDto,
+    description: 'The Safe the configuration belongs to',
+  })
+  public readonly safe!: SafeRefResponse;
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description: 'The SafePolicyGuard of the root; null for a draft',
+  })
+  public readonly guard!: Address | null;
+  @ApiProperty({ description: 'keccak256(abi.encode(Configuration[]))' })
+  public readonly root!: Hex;
+  @ApiProperty({
+    type: PolicyConfigurationDto,
+    isArray: true,
+    nullable: true,
+    description:
+      'The configurations behind the root; null when CGW does not know them',
+  })
+  public readonly configurations!: Array<PolicyConfiguration> | null;
+  @ApiProperty({
+    type: Number,
+    nullable: true,
+    description:
+      'Unix seconds applyConfiguration is valid from; null until the root is requested on-chain',
+  })
+  public readonly readyAt!: number | null;
+  @ApiProperty({
+    type: Number,
+    nullable: true,
+    description:
+      'Unix seconds the application window closes; null until the root is requested on-chain',
+  })
+  public readonly expiresAt!: number | null;
+  @ApiProperty({
+    type: PendingTransactionDto,
+    nullable: true,
+    description: 'The queued request or apply transaction, if any',
+  })
+  public readonly transaction!: PendingTransactionDto | null;
+  @ApiProperty({
+    type: Number,
+    nullable: true,
+    description:
+      'Unix seconds the change was first seen: when CGW stored its configurations, else when its queued transaction was proposed. Null for a root requested outside the wallet.',
+  })
+  public readonly createdAt!: number | null;
+}
+
 /**
- * A pending item is one of two kinds, told apart by `kind`.
+ * A pending item is one of three kinds, told apart by `kind`.
  */
 export const PendingPolicySchema = {
   oneOf: [
     { $ref: getSchemaPath(PendingPolicyDto) },
     { $ref: getSchemaPath(PendingGuardInstallationDto) },
+    { $ref: getSchemaPath(PendingDelayedGuardPoliciesDto) },
   ],
   discriminator: {
     propertyName: 'kind',
     mapping: {
       'queued-transaction': getSchemaPath(PendingPolicyDto),
       'guard-installation': getSchemaPath(PendingGuardInstallationDto),
+      'delayed-guard-policies': getSchemaPath(PendingDelayedGuardPoliciesDto),
     },
   },
 };

@@ -24,6 +24,7 @@ import { AuthGuard } from '#/modules/auth/routes/guards/auth.guard';
 import type { PendingPolicy } from '#/modules/policies/domain/entities/pending-policy.entity';
 import { PolicyType } from '#/modules/policies/domain/entities/policy-type.entity';
 import {
+  PendingDelayedGuardPoliciesDto,
   PendingGuardInstallationDto,
   PendingPolicyDto,
   PendingPolicySchema,
@@ -143,7 +144,7 @@ export class SpacePoliciesController {
     isArray: true,
     enum: Object.values(PolicyType),
     description:
-      'The policy types to report, comma-separated. `spending-limit` returns queued AllowanceModule changes; every other type returns none.',
+      'The policy types to report, comma-separated. `spending-limit` returns queued AllowanceModule changes. A guard type (`allow`, `deny`, `cosigner`, `erc20-transfer`, `multisend`, `native-transfer`) returns the delayed `SafePolicyGuard` configurations that may set a policy of that type. `proposer` and `recovery` return none.',
     example: 'spending-limit',
   })
   @ApiQuery({
@@ -155,7 +156,11 @@ export class SpacePoliciesController {
       'Also report the queued `setGuard` and `setModuleGuard` calls that install, replace or remove a `SafePolicyGuard` on each Safe, as `guard-installation` items.',
     example: true,
   })
-  @ApiExtraModels(PendingPolicyDto, PendingGuardInstallationDto)
+  @ApiExtraModels(
+    PendingPolicyDto,
+    PendingGuardInstallationDto,
+    PendingDelayedGuardPoliciesDto,
+  )
   @ApiOkResponse({ schema: { type: 'array', items: PendingPolicySchema } })
   @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @ApiUnprocessableEntityResponse({
