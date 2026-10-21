@@ -8,6 +8,18 @@ import type { Token } from '#/modules/policies/domain/entities/token.entity';
 export type PendingPolicy = PendingQueuedPolicy;
 
 /**
+ * The queued Safe transaction a pending item was found in.
+ */
+export type PendingTransaction = {
+  safeTxHash: Hex;
+  nonce: number;
+  confirmations: number;
+  confirmationsRequired: number;
+  /** Unix seconds; the transaction's `submissionDate`. */
+  proposedAt: number;
+};
+
+/**
  * A spending-limit change in the transaction queue.
  */
 export type PendingQueuedPolicy = {
