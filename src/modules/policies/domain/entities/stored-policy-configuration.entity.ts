@@ -6,7 +6,7 @@ import { PolicyConfigurationRequestSchema } from '#/modules/policies/domain/enti
  * The configurations CGW stored for one root of one Safe: what a root decodes
  * to, and the only source of `draft` items and their `createdAt`.
  */
-export const StoredPolicyConfigurationSchema =
+export const SafePolicyGuardConfigurationSchema =
   PolicyConfigurationRequestSchema.pick({
     chainId: true,
     safeAddress: true,
