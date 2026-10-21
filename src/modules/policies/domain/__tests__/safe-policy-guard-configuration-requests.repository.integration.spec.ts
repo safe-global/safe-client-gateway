@@ -76,10 +76,16 @@ describe('SafePolicyGuardConfigurationRequestsRepository', () => {
   }
 
   /** Stores {@link maxPerSafe} requests for one Safe in the current Space. */
-  async function fillCap(safeAddress: Address): Promise<void> {
-    for (let index = 0; index < maxPerSafe; index++) {
-      await repository.create(storableRequest({ safeAddress }));
+  async function fillCap(
+    safeAddress: Address,
+  ): Promise<Array<StorableRequest>> {
+    const requests = Array.from({ length: maxPerSafe }, () =>
+      storableRequest({ safeAddress }),
+    );
+    for (const request of requests) {
+      await repository.create(request);
     }
+    return requests;
   }
 
   /** Inserts an active Space and returns its id. */
@@ -348,6 +354,30 @@ describe('SafePolicyGuardConfigurationRequestsRepository', () => {
 
       await expect(
         repository.create(storableRequest({ safeAddress })),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should not count a root that can no longer be applied', async () => {
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const [closed] = await fillCap(safeAddress);
+
+      await expect(
+        repository.create(
+          storableRequest({ safeAddress }),
+          new Map([[closed.root, false]]),
+        ),
+      ).resolves.toBeUndefined();
+    });
+
+    it('should count a stored root with no on-chain root', async () => {
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const [onChain] = await fillCap(safeAddress);
+
+      await expect(
+        repository.create(
+          storableRequest({ safeAddress }),
+          new Map([[onChain.root, true]]),
+        ),
       ).rejects.toThrow(BadRequestException);
     });
 

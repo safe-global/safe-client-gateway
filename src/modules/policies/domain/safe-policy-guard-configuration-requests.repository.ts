@@ -7,7 +7,11 @@ import { IConfigurationService } from '#/config/configuration.service.interface'
 import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
 import { PolicyConfigurationRequest } from '#/modules/policies/datasources/entities/policy-configuration-request.entity.db';
 import type { PolicyConfigurationRequest as DomainPolicyConfigurationRequest } from '#/modules/policies/domain/entities/policy-configuration-request.entity';
-import type { ISafePolicyGuardConfigurationRequestsRepository } from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository.interface';
+import {
+  type ActiveRootsRule,
+  EVERY_ROOT_ACTIVE,
+  type ISafePolicyGuardConfigurationRequestsRepository,
+} from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository.interface';
 import { SpaceEncryptionService } from '#/modules/spaces/domain/space-encryption.service';
 
 @Injectable()
@@ -35,6 +39,7 @@ export class SafePolicyGuardConfigurationRequestsRepository
 
   public async create(
     args: Omit<DomainPolicyConfigurationRequest, 'id' | 'createdAt'>,
+    activeRoots: ActiveRootsRule = EVERY_ROOT_ACTIVE,
   ): Promise<void> {
     const safeAddressIndex = this.spaceEncryptionService.safeAddressIndex(
       args.safeAddress,
@@ -53,13 +58,18 @@ export class SafePolicyGuardConfigurationRequestsRepository
       const repository = manager.getRepository(PolicyConfigurationRequest);
       const safe = this.safeMatch({ ...args, safeAddressIndex });
 
+      const stored = await repository.find({
+        select: { root: true },
+        where: safe,
+      });
       // Re-submitting a stored root is a no-op, even at the cap.
-      if (await repository.existsBy({ ...safe, root: args.root })) {
+      if (stored.some(({ root }) => root === args.root)) {
         return;
       }
-      if ((await repository.countBy(safe)) >= this.maxPerSpaceSafe) {
+      const active = stored.filter(({ root }) => activeRoots.get(root) ?? true);
+      if (active.length >= this.maxPerSpaceSafe) {
         throw new BadRequestException(
-          `This Safe only allows a maximum of ${this.maxPerSpaceSafe} stored policy configuration requests in this space.`,
+          `This Safe only allows a maximum of ${this.maxPerSpaceSafe} active policy configuration requests in this space.`,
         );
       }
       await repository.insert({
