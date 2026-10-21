@@ -2,15 +2,20 @@
 import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 import type { Address, Hex } from 'viem';
 import {
-  type PendingPolicy,
+  type PendingGuardSetup,
+  type PendingGuardSetupChange,
+  PendingGuardSetupChangeKind,
+  PendingGuardSetupStatus,
   type PendingQueuedPolicy,
   type PendingSpendingLimitChange,
   PendingSpendingLimitChangeKind,
   type PendingSpendingLimitData,
 } from '#/modules/policies/domain/entities/pending-policy.entity';
+import type { PolicyConfiguration } from '#/modules/policies/domain/entities/policy-configuration.entity';
 import type { ModuleEnforcement } from '#/modules/policies/domain/entities/policy-enforcement.entity';
 import { PolicyType } from '#/modules/policies/domain/entities/policy-type.entity';
 import type { Token } from '#/modules/policies/domain/entities/token.entity';
+import { PolicyConfigurationDto } from '#/modules/policies/routes/entities/create-policy-configuration-request.dto.entity';
 import {
   Erc20TokenMetadataDto,
   ModuleEnforcementDto,
@@ -160,8 +165,9 @@ export class PendingSpendingLimitDataDto implements PendingSpendingLimitData {
   public readonly changes!: Array<PendingSpendingLimitChange>;
 }
 
+/** The `queued-transaction` item; keeps the schema name clients generate. */
 @ApiExtraModels(ModuleEnforcementDto, PendingSpendingLimitDataDto)
-export class PendingQueuedPolicyDto implements PendingQueuedPolicy {
+export class PendingPolicyDto implements PendingQueuedPolicy {
   @ApiProperty({ enum: ['queued-transaction'] })
   public readonly kind!: 'queued-transaction';
   @ApiProperty({ enum: [PolicyType.SpendingLimit] })
@@ -189,6 +195,132 @@ export class PendingQueuedPolicyDto implements PendingQueuedPolicy {
   public readonly safe!: SafeRefResponse;
 }
 
-export class PendingPolicyDto
-  extends PendingQueuedPolicyDto
-  implements PendingPolicy {}
+export class PendingTransactionDto {
+  @ApiProperty()
+  public readonly safeTxHash!: Hex;
+  @ApiProperty()
+  public readonly nonce!: number;
+  @ApiProperty()
+  public readonly confirmations!: number;
+  @ApiProperty()
+  public readonly confirmationsRequired!: number;
+  @ApiProperty({ description: 'Unix seconds the transaction was proposed at' })
+  public readonly proposedAt!: number;
+}
+
+@ApiExtraModels(PolicyConfigurationDto)
+export class ConfigureImmediatelyChangeDto {
+  @ApiProperty({
+    enum: [PendingGuardSetupChangeKind.ConfigureImmediately],
+  })
+  public readonly kind!: typeof PendingGuardSetupChangeKind.ConfigureImmediately;
+  @ApiProperty({
+    type: String,
+    description: 'The SafePolicyGuard being configured',
+  })
+  public readonly guard!: Address;
+  @ApiProperty({ type: PolicyConfigurationDto, isArray: true })
+  public readonly configurations!: Array<PolicyConfiguration>;
+  @ApiProperty({
+    description:
+      'True when the guard is already set on the Safe by the time this call runs, so configureImmediately reverts with GuardAlreadyEnabled',
+  })
+  public readonly willRevert!: boolean;
+}
+
+export class SetGuardChangeDto {
+  @ApiProperty({ enum: [PendingGuardSetupChangeKind.SetGuard] })
+  public readonly kind!: typeof PendingGuardSetupChangeKind.SetGuard;
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description: 'The transaction guard before this call; null for none',
+  })
+  public readonly from!: Address | null;
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description: 'The transaction guard after this call; null removes it',
+  })
+  public readonly to!: Address | null;
+}
+
+export class SetModuleGuardChangeDto {
+  @ApiProperty({ enum: [PendingGuardSetupChangeKind.SetModuleGuard] })
+  public readonly kind!: typeof PendingGuardSetupChangeKind.SetModuleGuard;
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description: 'The module guard before this call; null for none',
+  })
+  public readonly from!: Address | null;
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description: 'The module guard after this call; null removes it',
+  })
+  public readonly to!: Address | null;
+}
+
+const PendingGuardSetupChangeSchema = {
+  oneOf: [
+    { $ref: getSchemaPath(ConfigureImmediatelyChangeDto) },
+    { $ref: getSchemaPath(SetGuardChangeDto) },
+    { $ref: getSchemaPath(SetModuleGuardChangeDto) },
+  ],
+  discriminator: {
+    propertyName: 'kind',
+    mapping: {
+      [PendingGuardSetupChangeKind.ConfigureImmediately]: getSchemaPath(
+        ConfigureImmediatelyChangeDto,
+      ),
+      [PendingGuardSetupChangeKind.SetGuard]: getSchemaPath(SetGuardChangeDto),
+      [PendingGuardSetupChangeKind.SetModuleGuard]: getSchemaPath(
+        SetModuleGuardChangeDto,
+      ),
+    },
+  },
+};
+
+@ApiExtraModels(
+  ConfigureImmediatelyChangeDto,
+  SetGuardChangeDto,
+  SetModuleGuardChangeDto,
+  PendingTransactionDto,
+)
+export class PendingGuardSetupDto implements PendingGuardSetup {
+  @ApiProperty({ enum: ['guard-setup'] })
+  public readonly kind!: 'guard-setup';
+  @ApiProperty({ enum: Object.values(PendingGuardSetupStatus) })
+  public readonly status!: PendingGuardSetup['status'];
+  @ApiProperty({
+    type: SafeRefDto,
+    description: 'The Safe the transaction is queued on',
+  })
+  public readonly safe!: SafeRefResponse;
+  @ApiProperty({
+    type: 'array',
+    items: PendingGuardSetupChangeSchema,
+    description: 'The guard setup calls of the transaction, in calldata order',
+  })
+  public readonly changes!: Array<PendingGuardSetupChange>;
+  @ApiProperty({ type: PendingTransactionDto })
+  public readonly transaction!: PendingTransactionDto;
+}
+
+/**
+ * A pending item is one of two kinds, told apart by `kind`.
+ */
+export const PendingPolicySchema = {
+  oneOf: [
+    { $ref: getSchemaPath(PendingPolicyDto) },
+    { $ref: getSchemaPath(PendingGuardSetupDto) },
+  ],
+  discriminator: {
+    propertyName: 'kind',
+    mapping: {
+      'queued-transaction': getSchemaPath(PendingPolicyDto),
+      'guard-setup': getSchemaPath(PendingGuardSetupDto),
+    },
+  },
+};
