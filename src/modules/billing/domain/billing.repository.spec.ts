@@ -111,41 +111,41 @@ describe('BillingRepository', () => {
       ).resolves.toEqual([{ ...subscription, plan }]);
     });
 
-    it('should forward a gbp subscription plan of an unlisted type, billing cycle and payment method unchanged', async () => {
-      const subscriptionOnGbpFoundersPlan = subscriptionBuilder()
+    it('should forward a gbp subscription plan of an unlisted tier type, billing cycle and payment method unchanged', async () => {
+      const subscriptionOnGbpWeeklyPlan = subscriptionBuilder()
         .with(
           'plan',
           subscriptionPlanBuilder()
             .with('currency', 'gbp')
             .with('billingCycle', 'week')
-            .with('type', 'founders')
+            .with('type', 'legacy')
             .with('paymentMethod', 'crypto')
             .build(),
         )
         .build();
       billingApiMock.getSubscriptionsByCustomerId.mockResolvedValue(
-        rawify({ subscriptions: [subscriptionOnGbpFoundersPlan] }),
+        rawify({ subscriptions: [subscriptionOnGbpWeeklyPlan] }),
       );
 
       await expect(
         target.getSubscriptionsByCustomerId({
           upstreamCustomerId: faker.string.uuid(),
         }),
-      ).resolves.toEqual([subscriptionOnGbpFoundersPlan]);
+      ).resolves.toEqual([subscriptionOnGbpWeeklyPlan]);
     });
 
-    it('should forward a gbp plan of an unlisted type, billing cycle and payment method unchanged', async () => {
-      const gbpFoundersPlan = planBuilder()
+    it('should forward a gbp plan of an unlisted tier type, billing cycle and payment method unchanged', async () => {
+      const gbpWeeklyPlan = planBuilder()
         .with('currency', 'gbp')
         .with('billingCycle', 'week')
-        .with('type', 'founders')
+        .with('type', 'legacy')
         .with('paymentMethod', 'crypto')
         .build();
-      billingApiMock.getPlan.mockResolvedValue(rawify(gbpFoundersPlan));
+      billingApiMock.getPlan.mockResolvedValue(rawify(gbpWeeklyPlan));
 
       await expect(
-        target.getPlan({ planId: gbpFoundersPlan.id }),
-      ).resolves.toEqual(gbpFoundersPlan);
+        target.getPlan({ planId: gbpWeeklyPlan.id }),
+      ).resolves.toEqual(gbpWeeklyPlan);
     });
 
     it.each([true, false])(
