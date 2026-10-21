@@ -2,6 +2,9 @@
 import { z } from 'zod';
 import { AddressSchema } from '#/validation/entities/schemas/address.schema';
 
+// A finished check job stays at least 30 days: its ID blocks a repeated request.
+const SAFENET_CHECKS_MIN_RETENTION_SECONDS = 30 * 24 * 60 * 60;
+
 const relayRulesValidator = z
   .string()
   .refine(
@@ -149,9 +152,46 @@ export const RootConfigurationSchema = z
     FF_SPACE_TRANSACTIONS: z.string().optional(),
     SAFENET_CONSENSUS_ADDRESS: AddressSchema.optional(),
     SAFENET_ORACLE_ADDRESS: AddressSchema.optional(),
+    SAFENET_RPC_URI: z.url().optional(),
     SAFENET_PAYER_SAFE_ADDRESS: AddressSchema.optional(),
     SAFENET_POLL_INTERVAL_MS: z.coerce.number().int().min(1).optional(),
     SAFENET_POLL_TIMEOUT_MS: z.coerce.number().int().min(1).optional(),
+    SAFENET_PAYER_KMS_KEY_ID: z.string().optional(),
+    SAFENET_PAYER_KMS_CONNECTION_TIMEOUT_MS: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .optional(),
+    SAFENET_PAYER_KMS_REQUEST_TIMEOUT_MS: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .optional(),
+    SAFENET_CHECKS_QUEUE_ATTEMPTS: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(10)
+      .optional(),
+    SAFENET_CHECKS_QUEUE_BACKOFF_TYPE: z
+      .enum(['fixed', 'exponential'])
+      .optional(),
+    SAFENET_CHECKS_QUEUE_BACKOFF_DELAY: z.coerce
+      .number()
+      .int()
+      .min(0)
+      .optional(),
+    SAFENET_CHECKS_QUEUE_REMOVE_ON_COMPLETE_AGE: z.coerce
+      .number()
+      .int()
+      .min(SAFENET_CHECKS_MIN_RETENTION_SECONDS)
+      .optional(),
+    SAFENET_CHECKS_QUEUE_REMOVE_ON_FAIL_AGE: z.coerce
+      .number()
+      .int()
+      .min(SAFENET_CHECKS_MIN_RETENTION_SECONDS)
+      .optional(),
+    SAFENET_CHECKS_PER_SPACE_PER_DAY: z.coerce.number().int().min(1).optional(),
     FF_ZERION_TESTNETS_ENABLED: z.string().optional(),
     CGW_ENV: z.string().optional(),
     CIRCUIT_BREAKER_THRESHOLD: z.coerce.number().int().min(1).optional(),
@@ -193,6 +233,7 @@ export const RootConfigurationSchema = z
     EMAIL_API_FROM_EMAIL: z.email(),
     EMAIL_API_KEY: z.string(),
     ENTITLEMENTS_ENFORCEMENT_STARTS_AT: z.iso.datetime().optional(),
+    ENTITLEMENTS_GRACE_PERIOD_CLAIM_ENDS_AT: z.iso.datetime().optional(),
     EXPIRATION_DEVIATE_PERCENT: z.coerce.number().min(0).max(100).optional(),
     EXPIRATION_TIME_ENTITLEMENTS_SECONDS: z.coerce
       .number()

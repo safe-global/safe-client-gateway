@@ -55,9 +55,11 @@ export class SafenetPayer {
   private readonly consensusAddress: Address;
   private readonly oracleAddress: Address;
   private readonly payerSafeAddress: Address;
+  private readonly rpcUri: string | undefined;
   private readonly pollIntervalMs: number;
   private readonly pollTimeoutMs: number;
   private readonly nonceTtlSeconds: number;
+  private payerSafeVerified = false;
 
   constructor(
     @Inject(IConfigurationService) configuration: IConfigurationService,
@@ -76,6 +78,8 @@ export class SafenetPayer {
     this.payerSafeAddress = configuration.getOrThrow(
       'safenet.payer.safeAddress',
     );
+    // Optional: without it, the payer falls back to the chain's config service RPC.
+    this.rpcUri = configuration.get('safenet.rpcUri');
     this.pollIntervalMs = configuration.getOrThrow('safenet.pollIntervalMs');
     this.pollTimeoutMs = configuration.getOrThrow('safenet.pollTimeoutMs');
     this.nonceTtlSeconds = configuration.getOrThrow(
@@ -102,25 +106,51 @@ export class SafenetPayer {
     return { userSafeTxHash, transactionHash, payerNonce };
   }
 
+  /** Nothing is relayed yet, so every failure here is a `SafenetPayerError`. */
   private async prepare(proposal: SafenetProposal) {
-    const client = await this.blockchain.getUncachedApi(SAFENET_CHAIN_ID);
-    const key = CacheRouter.getSafenetPayerNonceCacheKey({
-      chainId: SAFENET_CHAIN_ID,
-      safeAddress: this.payerSafeAddress,
-    });
-    const payerNonce = await this.nextNonce(client, key);
-    const inner = encodeFunctionData({
-      abi: safenetConsensusAbi,
-      functionName: 'proposeTransaction',
-      args: [
-        this.oracleAddress,
-        NO_EXTRA_DATA,
-        toSafenetConsensusTransaction(proposal),
-      ],
-    });
-    const userSafeTxHash = await this.simulate(client, inner);
-    const { payerSafeTxHash, data } = await this.signPayload(inner, payerNonce);
-    return { client, key, payerNonce, userSafeTxHash, payerSafeTxHash, data };
+    try {
+      const client = await this.blockchain.getUncachedApi({
+        chainId: SAFENET_CHAIN_ID,
+        rpcUri: this.rpcUri,
+      });
+      await this.assertPayerSafeAcceptsSigner(client);
+      const key = CacheRouter.getSafenetPayerNonceCacheKey({
+        chainId: SAFENET_CHAIN_ID,
+        safeAddress: this.payerSafeAddress,
+      });
+      const payerNonce = await this.nextNonce(client, key);
+      const inner = encodeFunctionData({
+        abi: safenetConsensusAbi,
+        functionName: 'proposeTransaction',
+        args: [
+          this.oracleAddress,
+          NO_EXTRA_DATA,
+          toSafenetConsensusTransaction(proposal),
+        ],
+      });
+      const userSafeTxHash = await this.simulate(client, inner);
+      const { payerSafeTxHash, data } = await this.signPayload(
+        inner,
+        payerNonce,
+      );
+      return {
+        client,
+        key,
+        payerNonce,
+        userSafeTxHash,
+        payerSafeTxHash,
+        data,
+      };
+    } catch (error) {
+      if (error instanceof SafenetPayerError) {
+        throw error;
+      }
+      // viem errors embed the call arguments, so the message keeps only the name.
+      throw new SafenetPayerError(
+        `Safenet payer failed before relay: ${asError(error).name}`,
+        { cause: error },
+      );
+    }
   }
 
   private async relayPayload(
@@ -161,6 +191,38 @@ export class SafenetPayer {
       });
   }
 
+  /** One signature must satisfy the payer Safe: the signer is an owner and the threshold is 1. */
+  private async assertPayerSafeAcceptsSigner(
+    client: PublicClient,
+  ): Promise<void> {
+    if (this.payerSafeVerified) {
+      return;
+    }
+    const signer = await this.signer.getAddress();
+    const [isOwner, threshold] = await Promise.all([
+      client.readContract({
+        address: this.payerSafeAddress,
+        abi: safeAbi,
+        functionName: 'isOwner',
+        args: [signer],
+      }),
+      client.readContract({
+        address: this.payerSafeAddress,
+        abi: safeAbi,
+        functionName: 'getThreshold',
+      }),
+    ]);
+    if (!isOwner) {
+      throw new SafenetPayerError(`Signer ${signer} is not a payer Safe owner`);
+    }
+    if (threshold !== 1n) {
+      throw new SafenetPayerError(
+        `Payer Safe threshold is ${threshold}, expected 1`,
+      );
+    }
+    this.payerSafeVerified = true;
+  }
+
   private async nextNonce(client: PublicClient, key: string): Promise<bigint> {
     const [onchainNonce, counter] = await Promise.all([
       client.readContract({
@@ -182,7 +244,7 @@ export class SafenetPayer {
         version: SUPPORTED_SAFE_VERSION,
         nonce: Number(payerNonce),
         threshold: 1,
-        owners: [this.signer.address],
+        owners: [await this.signer.getAddress()],
         masterCopy: zeroAddress,
         fallbackHandler: zeroAddress,
         guard: zeroAddress,

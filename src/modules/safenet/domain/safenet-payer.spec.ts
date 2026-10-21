@@ -66,6 +66,7 @@ class Harness {
   readonly safeAddress = randomAddress();
   readonly consensusAddress = randomAddress();
   readonly oracleAddress = randomAddress();
+  readonly rpcUri = faker.internet.url();
   readonly userSafeTxHash = randomHash();
   readonly transactionHash = randomHash();
   readonly taskId = faker.string.uuid();
@@ -79,8 +80,11 @@ class Harness {
     status: 'success',
     logs: this.logs,
   } as TransactionReceipt;
+  readonly signerAddress = randomAddress();
+  owner: Address = this.signerAddress;
+  threshold = 1n;
   readonly signer = {
-    address: randomAddress(),
+    getAddress: vi.fn().mockResolvedValue(this.signerAddress),
     signHash: vi.fn((hash: Hex) => {
       const { topics } = this.executedLog;
       if (topics.length < 2) {
@@ -90,7 +94,24 @@ class Harness {
     }),
   };
   readonly client = {
-    readContract: vi.fn().mockResolvedValue(2n),
+    readContract: vi
+      .fn()
+      .mockImplementation(
+        ({
+          functionName,
+          args,
+        }: {
+          functionName: string;
+          args?: Array<unknown>;
+        }) => {
+          const results: Record<string, unknown> = {
+            isOwner: args?.[0] === this.owner,
+            getThreshold: this.threshold,
+            nonce: 2n,
+          };
+          return Promise.resolve(results[functionName]);
+        },
+      ),
     call: vi.fn().mockResolvedValue({ data: this.userSafeTxHash }),
     getTransactionReceipt: vi.fn().mockResolvedValue(this.receipt),
   } as MockedObject<PublicClient>;
@@ -122,10 +143,15 @@ class Harness {
     this.logging,
   );
 
-  private configuration(): FakeConfigurationService {
+  configuration(
+    options: { rpcUri?: string } = { rpcUri: this.rpcUri },
+  ): FakeConfigurationService {
     const configuration = new FakeConfigurationService();
     configuration.set('safenet.consensusAddress', this.consensusAddress);
     configuration.set('safenet.oracleAddress', this.oracleAddress);
+    if (options.rpcUri !== undefined) {
+      configuration.set('safenet.rpcUri', options.rpcUri);
+    }
     configuration.set('safenet.payer.safeAddress', this.safeAddress);
     configuration.set('safenet.pollIntervalMs', 1);
     configuration.set('safenet.pollTimeoutMs', 100);
@@ -159,6 +185,10 @@ class Harness {
   }
 }
 
+const upstream = Object.assign(new Error('upstream body'), {
+  name: 'TimeoutError',
+});
+
 type Arrange = (h: Harness) => unknown;
 
 async function expectPayerError(outcome: Promise<unknown>, message: string) {
@@ -191,13 +221,37 @@ describe('SafenetPayer', () => {
       payerNonce: 2n,
     });
 
-    expect(h.blockchain.getUncachedApi).toHaveBeenCalledWith('100');
+    expect(h.blockchain.getUncachedApi).toHaveBeenCalledWith({
+      chainId: '100',
+      rpcUri: h.rpcUri,
+    });
     expect(h.relay.relayWithoutLimits).toHaveBeenCalledWith(
       expect.objectContaining({ chainId: '100', to: h.safeAddress }),
     );
     expect(h.relay.getTaskStatus).toHaveBeenCalledWith({
       chainId: '100',
       taskId: h.taskId,
+    });
+  });
+
+  it('falls back to the chain RPC from the config service without an RPC URL', async () => {
+    const h = new Harness();
+    const payer = new SafenetPayer(
+      h.configuration({}),
+      h.blockchain,
+      h.cache,
+      h.relay,
+      h.signer,
+      h.logging,
+    );
+
+    await expect(payer.propose(h.proposal)).resolves.toMatchObject({
+      transactionHash: h.transactionHash,
+    });
+
+    expect(h.blockchain.getUncachedApi).toHaveBeenCalledWith({
+      chainId: '100',
+      rpcUri: undefined,
     });
   });
 
@@ -323,6 +377,43 @@ describe('SafenetPayer', () => {
     });
   });
 
+  it('rejects a signer that does not own the payer Safe before the relay', async () => {
+    const h = new Harness();
+    h.owner = randomAddress();
+
+    await expectPayerError(
+      h.propose(),
+      `Signer ${h.signerAddress} is not a payer Safe owner`,
+    );
+    expect(h.client.call).not.toHaveBeenCalled();
+    expect(h.relay.relayWithoutLimits).not.toHaveBeenCalled();
+  });
+
+  it('rejects a payer Safe with a threshold other than 1 before the relay', async () => {
+    const h = new Harness();
+    h.threshold = 2n;
+
+    await expectPayerError(
+      h.propose(),
+      'Payer Safe threshold is 2, expected 1',
+    );
+    expect(h.client.call).not.toHaveBeenCalled();
+    expect(h.relay.relayWithoutLimits).not.toHaveBeenCalled();
+  });
+
+  it('checks ownership until it passes once, then not again', async () => {
+    const h = new Harness();
+    h.owner = randomAddress();
+    await expect(h.propose()).rejects.toBeInstanceOf(SafenetPayerError);
+    h.owner = h.signerAddress;
+    await h.propose();
+    h.owner = randomAddress();
+
+    await expect(h.propose()).resolves.toMatchObject({
+      transactionHash: h.transactionHash,
+    });
+  });
+
   it('rejects a simulation revert without the raw error or relay', async () => {
     const h = new Harness();
     h.client.call.mockRejectedValue(
@@ -337,6 +428,22 @@ describe('SafenetPayer', () => {
     );
 
     expect(error.cause).toBeUndefined();
+    expect(h.relay.relayWithoutLimits).not.toHaveBeenCalled();
+  });
+
+  it.each<[string, Arrange]>([
+    ['an RPC error', (h) => h.client.readContract.mockRejectedValue(upstream)],
+    ['a KMS error', (h) => h.signer.signHash.mockRejectedValue(upstream)],
+  ])('retries %s before the relay', async (_name, arrange) => {
+    const h = new Harness();
+    arrange(h);
+
+    const error = await expectPayerError(
+      h.propose(),
+      'Safenet payer failed before relay: TimeoutError',
+    );
+
+    expect(error.cause).toBe(upstream);
     expect(h.relay.relayWithoutLimits).not.toHaveBeenCalled();
   });
 
