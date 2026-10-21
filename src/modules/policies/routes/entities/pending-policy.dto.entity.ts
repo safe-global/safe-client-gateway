@@ -8,6 +8,8 @@ import {
   type PendingGuardInstallationChange,
   PendingGuardInstallationChangeKind,
   PendingGuardInstallationStatus,
+  type PendingImmediateGuardPolicies,
+  PendingImmediateGuardPoliciesStatus,
   type PendingQueuedPolicy,
   type PendingSpendingLimitChange,
   PendingSpendingLimitChangeKind,
@@ -300,6 +302,34 @@ export class PendingGuardInstallationDto implements PendingGuardInstallation {
 }
 
 @ApiExtraModels(PolicyConfigurationDto, PendingTransactionDto)
+export class PendingImmediateGuardPoliciesDto
+  implements PendingImmediateGuardPolicies
+{
+  @ApiProperty({ enum: ['immediate-guard-policies'] })
+  public readonly kind!: 'immediate-guard-policies';
+  @ApiProperty({ enum: Object.values(PendingImmediateGuardPoliciesStatus) })
+  public readonly status!: PendingImmediateGuardPolicies['status'];
+  @ApiProperty({
+    type: SafeRefDto,
+    description: 'The Safe the transaction is queued on',
+  })
+  public readonly safe!: SafeRefResponse;
+  @ApiProperty({
+    type: String,
+    description: 'The SafePolicyGuard the policies are bound on',
+  })
+  public readonly guard!: Address;
+  @ApiProperty({
+    type: PolicyConfigurationDto,
+    isArray: true,
+    description: 'The configurations configureImmediately binds',
+  })
+  public readonly configurations!: Array<PolicyConfiguration>;
+  @ApiProperty({ type: PendingTransactionDto })
+  public readonly transaction!: PendingTransactionDto;
+}
+
+@ApiExtraModels(PolicyConfigurationDto, PendingTransactionDto)
 export class PendingDelayedGuardPoliciesDto
   implements PendingDelayedGuardPolicies
 {
@@ -362,12 +392,13 @@ export class PendingDelayedGuardPoliciesDto
 }
 
 /**
- * A pending item is one of three kinds, told apart by `kind`.
+ * A pending item is one of four kinds, told apart by `kind`.
  */
 export const PendingPolicySchema = {
   oneOf: [
     { $ref: getSchemaPath(PendingPolicyDto) },
     { $ref: getSchemaPath(PendingGuardInstallationDto) },
+    { $ref: getSchemaPath(PendingImmediateGuardPoliciesDto) },
     { $ref: getSchemaPath(PendingDelayedGuardPoliciesDto) },
   ],
   discriminator: {
@@ -375,6 +406,9 @@ export const PendingPolicySchema = {
     mapping: {
       'queued-transaction': getSchemaPath(PendingPolicyDto),
       'guard-installation': getSchemaPath(PendingGuardInstallationDto),
+      'immediate-guard-policies': getSchemaPath(
+        PendingImmediateGuardPoliciesDto,
+      ),
       'delayed-guard-policies': getSchemaPath(PendingDelayedGuardPoliciesDto),
     },
   },

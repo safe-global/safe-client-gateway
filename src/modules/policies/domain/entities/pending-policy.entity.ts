@@ -9,6 +9,7 @@ import type { Token } from '#/modules/policies/domain/entities/token.entity';
 export type PendingPolicy =
   | PendingQueuedPolicy
   | PendingGuardInstallation
+  | PendingImmediateGuardPolicies
   | PendingDelayedGuardPolicies;
 
 /**
@@ -66,6 +67,29 @@ export type PendingGuardInstallation = {
   safe: SafeRef;
   /** The guard setter calls of the transaction, in calldata order. */
   changes: Array<PendingGuardInstallationChange>;
+  transaction: PendingTransaction;
+};
+
+export const PendingImmediateGuardPoliciesStatus = {
+  /** Fewer confirmations than the threshold. */
+  InSigning: 'in-signing',
+  /** Every confirmation is in; the transaction is not executed yet. */
+  Ready: 'ready',
+};
+
+export type PendingImmediateGuardPoliciesStatus =
+  (typeof PendingImmediateGuardPoliciesStatus)[keyof typeof PendingImmediateGuardPoliciesStatus];
+
+/**
+ * A queued `configureImmediately` call: policies bound on a `SafePolicyGuard`
+ * without a delay, before the guard is enabled on the Safe.
+ */
+export type PendingImmediateGuardPolicies = {
+  kind: 'immediate-guard-policies';
+  status: PendingImmediateGuardPoliciesStatus;
+  safe: SafeRef;
+  guard: Address;
+  configurations: Array<PolicyConfiguration>;
   transaction: PendingTransaction;
 };
 

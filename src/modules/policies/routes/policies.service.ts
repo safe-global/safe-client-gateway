@@ -51,6 +51,7 @@ import type {
 import { DelayedGuardPoliciesMapper } from '#/modules/policies/routes/mappers/delayed-guard-policies.mapper';
 import { GuardInstallationMapper } from '#/modules/policies/routes/mappers/guard-installation.mapper';
 import { GuardPolicyMapper } from '#/modules/policies/routes/mappers/guard-policy.mapper';
+import { ImmediateGuardPoliciesMapper } from '#/modules/policies/routes/mappers/immediate-guard-policies.mapper';
 import { PendingSpendingLimitMapper } from '#/modules/policies/routes/mappers/pending-spending-limit.mapper';
 import { ProposerMapper } from '#/modules/policies/routes/mappers/proposer.mapper';
 import { SpendingLimitMapper } from '#/modules/policies/routes/mappers/spending-limit.mapper';
@@ -100,6 +101,7 @@ export class PoliciesService {
     private readonly pendingSpendingLimitMapper: PendingSpendingLimitMapper,
     private readonly guardPolicyMapper: GuardPolicyMapper,
     private readonly guardInstallationMapper: GuardInstallationMapper,
+    private readonly immediateGuardPoliciesMapper: ImmediateGuardPoliciesMapper,
     private readonly delayedGuardPoliciesMapper: DelayedGuardPoliciesMapper,
   ) {
     this.batchSize =
@@ -433,6 +435,7 @@ export class PoliciesService {
     const read: PendingRead = {
       types,
       spendingLimitsRequested,
+      guardPoliciesRequested,
       guardInstallationRequested: request.includeGuardInstallation,
       guardConfigurations: guardPoliciesRequested
         ? await this.getSafePolicyGuardConfigurationsOf(spaceId, safes)
@@ -582,6 +585,12 @@ export class PoliciesService {
           moduleGuard: safeInfo.moduleGuard,
           transactions,
         }),
+      );
+    }
+
+    if (read.guardPoliciesRequested) {
+      policies.push(
+        ...this.immediateGuardPoliciesMapper.map({ safe, transactions }),
       );
     }
 

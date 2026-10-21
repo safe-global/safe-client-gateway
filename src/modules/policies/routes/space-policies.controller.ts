@@ -26,6 +26,7 @@ import { PolicyType } from '#/modules/policies/domain/entities/policy-type.entit
 import {
   PendingDelayedGuardPoliciesDto,
   PendingGuardInstallationDto,
+  PendingImmediateGuardPoliciesDto,
   PendingPolicyDto,
   PendingPolicySchema,
 } from '#/modules/policies/routes/entities/pending-policy.dto.entity';
@@ -159,6 +160,7 @@ export class SpacePoliciesController {
   @ApiExtraModels(
     PendingPolicyDto,
     PendingGuardInstallationDto,
+    PendingImmediateGuardPoliciesDto,
     PendingDelayedGuardPoliciesDto,
   )
   @ApiOkResponse({ schema: { type: 'array', items: PendingPolicySchema } })
