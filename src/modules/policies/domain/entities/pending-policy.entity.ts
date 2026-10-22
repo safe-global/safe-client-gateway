@@ -26,7 +26,7 @@ export const PendingGuardInstallationStatus = {
   InSigning: 'in-signing',
   /** Every confirmation is in; the transaction is not executed yet. */
   Ready: 'ready',
-} as const;
+};
 
 export type PendingGuardInstallationStatus =
   (typeof PendingGuardInstallationStatus)[keyof typeof PendingGuardInstallationStatus];
