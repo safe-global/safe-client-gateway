@@ -27,6 +27,7 @@ export const CounterfactualSafeSchema: z.ZodType<
     paymentToken: DbCounterfactualSafe['paymentToken'];
     payment: DbCounterfactualSafe['payment'];
     paymentReceiver: DbCounterfactualSafe['paymentReceiver'];
+    deployedAt: DbCounterfactualSafe['deployedAt'];
     creator?: DbCounterfactualSafe['creator'];
   }
 > = RowSchema.extend({
@@ -44,6 +45,7 @@ export const CounterfactualSafeSchema: z.ZodType<
   paymentToken: (AddressSchema as z.ZodType<Address>).nullable(),
   payment: z.string().nullable(),
   paymentReceiver: (AddressSchema as z.ZodType<Address>).nullable(),
+  deployedAt: z.date().nullable(),
   creator: z
     .lazy(() => UserSchema)
     .nullable()

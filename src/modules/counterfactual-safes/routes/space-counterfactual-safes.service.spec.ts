@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
+import { IsNull } from 'typeorm';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
 import type { ILoggingService } from '#/logging/logging.interface';
@@ -86,6 +87,24 @@ describe('SpaceCounterfactualSafesService', () => {
     const returned = result.safes[chainId] ?? [];
     expect(returned).toHaveLength(1);
     expect(returned[0].address).toBe(undeployed.address);
+  });
+
+  it('queries only counterfactual safes that are not marked as deployed', async () => {
+    const safe = counterfactualSafeBuilder().build();
+
+    mockMembersRepository.findOne.mockResolvedValue(member);
+    mockSpaceSafesRepository.findBySpaceId.mockResolvedValue([
+      { chainId: safe.chainId, address: safe.address },
+    ]);
+    mockCounterfactualSafesRepository.find.mockResolvedValue([]);
+
+    await target.get(spaceId, authPayload);
+
+    expect(mockCounterfactualSafesRepository.find).toHaveBeenCalledWith({
+      where: [
+        { chainId: safe.chainId, address: safe.address, deployedAt: IsNull() },
+      ],
+    });
   });
 
   it('returns undeployed counterfactual safes', async () => {
