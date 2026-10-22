@@ -20,6 +20,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import type { Address } from 'viem';
+import { ChainIdSchema } from '#/modules/chains/domain/entities/schemas/chain-id.schema';
 import { DelegatesService } from '#/modules/delegate/routes/delegates.service';
 import { CreateDelegateDto } from '#/modules/delegate/routes/entities/create-delegate.dto.entity';
 import type { Delegate } from '#/modules/delegate/routes/entities/delegate.entity';
@@ -93,7 +94,7 @@ export class DelegatesController {
   })
   @Get('chains/:chainId/delegates')
   getDelegates(
-    @Param('chainId') chainId: string,
+    @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
     @RouteUrlDecorator() routeUrl: URL,
     @Query(new ValidationPipe(GetDelegateDtoSchema))
     getDelegateDto: GetDelegateDto,
@@ -133,7 +134,7 @@ export class DelegatesController {
   @HttpCode(200)
   @Post('chains/:chainId/delegates')
   async postDelegate(
-    @Param('chainId') chainId: string,
+    @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
     @Body(new ValidationPipe(CreateDelegateDtoSchema))
     createDelegateDto: CreateDelegateDto,
   ): Promise<void> {
@@ -169,7 +170,7 @@ export class DelegatesController {
   })
   @Delete('chains/:chainId/delegates/:delegateAddress')
   deleteDelegate(
-    @Param('chainId') chainId: string,
+    @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
     @Param('delegateAddress', new ValidationPipe(AddressSchema))
     delegateAddress: Address,
     @Body(new ValidationPipe(DeleteDelegateDtoSchema))
@@ -216,7 +217,7 @@ export class DelegatesController {
   })
   @Delete('chains/:chainId/safes/:safeAddress/delegates/:delegateAddress')
   deleteSafeDelegate(
-    @Param('chainId') chainId: string,
+    @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
     @Body(new ValidationPipe(DeleteSafeDelegateDtoSchema))
     deleteSafeDelegateRequest: DeleteSafeDelegateDto,
   ): Promise<unknown> {

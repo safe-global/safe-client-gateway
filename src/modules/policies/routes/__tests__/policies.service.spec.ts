@@ -64,19 +64,27 @@ const mockPolicyIndexerRepository = {
   clearState: vi.fn(),
 } as MockedObject<IPolicyIndexerRepository>;
 
-const mockSafeRepository = {
+const mockSafeRepository: MockedObject<
+  Pick<
+    ISafeRepository,
+    'getSafe' | 'getTransactionQueue' | 'getTransactionQueueMaxPageSize'
+  >
+> = {
   getSafe: vi.fn(),
   getTransactionQueue: vi.fn(),
   getTransactionQueueMaxPageSize: vi.fn(),
-} as unknown as MockedObject<ISafeRepository>;
+};
 
-const mockSpaceSafesRepository = {
+const mockSpaceSafesRepository: MockedObject<
+  Pick<ISpaceSafesRepository, 'findBySpaceId'>
+> = {
   findBySpaceId: vi.fn(),
-} as unknown as MockedObject<ISpaceSafesRepository>;
+};
 
-const mockMembersRepository = {
-  findOne: vi.fn(),
-} as unknown as MockedObject<IMembersRepository>;
+const mockMembersRepository: MockedObject<Pick<IMembersRepository, 'findOne'>> =
+  {
+    findOne: vi.fn(),
+  };
 
 const mockDelegatesV3Repository = {
   getDelegates: vi.fn(),
@@ -87,9 +95,10 @@ const mockTokenRepository = {
   getTokens: vi.fn(),
 } as MockedObject<ITokenRepository>;
 
-const mockChainsRepository = {
-  getChain: vi.fn(),
-} as unknown as MockedObject<IChainsRepository>;
+const mockChainsRepository: MockedObject<Pick<IChainsRepository, 'getChain'>> =
+  {
+    getChain: vi.fn(),
+  };
 
 const mockLoggingService = {
   info: vi.fn(),
@@ -165,12 +174,12 @@ describe('PoliciesService', () => {
 
     return new PoliciesService(
       mockPolicyIndexerRepository,
-      mockSafeRepository,
-      mockSpaceSafesRepository,
-      mockMembersRepository,
+      mockSafeRepository as MockedObject<ISafeRepository>,
+      mockSpaceSafesRepository as MockedObject<ISpaceSafesRepository>,
+      mockMembersRepository as MockedObject<IMembersRepository>,
       mockDelegatesV3Repository,
       mockTokenRepository,
-      mockChainsRepository,
+      mockChainsRepository as MockedObject<IChainsRepository>,
       fakeConfigurationService,
       mockLoggingService,
       new SpendingLimitMapper(),

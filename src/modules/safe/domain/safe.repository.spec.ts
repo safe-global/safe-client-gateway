@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
+import { HttpStatus } from '@nestjs/common';
 import type { Address, Hex } from 'viem';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
@@ -9,6 +10,7 @@ import {
   SAFE_QUEUE_SERVICE_MAX_LIMIT,
   SAFE_TRANSACTION_SERVICE_MAX_LIMIT,
 } from '#/domain/common/constants';
+import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
 import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
 import type { ITransactionApi } from '#/domain/interfaces/transaction-api.interface';
 import type { ITransactionApiManager } from '#/domain/interfaces/transaction-api.manager.interface';
@@ -1104,6 +1106,29 @@ describe('SafeRepository', () => {
       expect(result.origin).toBe(buildOrigin('App', 'https://app.example'));
       expect(result.confirmationsRequired).toBe(safe.threshold);
       expect(mockTransactionApi.getMultisigTransaction).not.toHaveBeenCalled();
+    });
+
+    it('should throw a 404 when the not-executed queue record is on a different chain', async () => {
+      const queueTx = safeQueueMultisigTransactionBuilder()
+        .with('chainId', `${Number(chainId) + 1}`)
+        .with('safe', safeAddress)
+        .with('txHash', null)
+        .build();
+      mockSafeQueueService.getMultisigTransaction.mockResolvedValue(
+        rawify(queueTx),
+      );
+
+      await expect(
+        repository.getMultiSigTransaction({
+          chainId,
+          safeTransactionHash: queueTx.safeTxHash,
+        }),
+      ).rejects.toThrow(
+        new HttpExceptionNoLog('Transaction not found', HttpStatus.NOT_FOUND),
+      );
+
+      expect(mockTransactionApi.getMultisigTransaction).not.toHaveBeenCalled();
+      expect(mockTransactionApi.getSafe).not.toHaveBeenCalled();
     });
   });
 

@@ -7,6 +7,7 @@ import {
   ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
+import { ChainIdSchema } from '#/modules/chains/domain/entities/schemas/chain-id.schema';
 import { Chain } from '#/modules/chains/routes/entities/chain.entity';
 import { ChainPage } from '#/modules/chains/routes/entities/chain-page.entity';
 import { ServiceKeyQuerySchema } from '#/modules/chains/routes/v2/entities/schemas/service-key.schema';
@@ -84,7 +85,7 @@ export class ChainsV2Controller {
   })
   @Get(':chainId')
   getChain(
-    @Param('chainId') chainId: string,
+    @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
     @Query('serviceKey', new ValidationPipe(ServiceKeyQuerySchema))
     serviceKey: string,
   ): Promise<Chain> {

@@ -28,6 +28,7 @@ import {
   toBytes,
 } from 'viem';
 import { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import { ChainIdSchema } from '#/modules/chains/domain/entities/schemas/chain-id.schema';
 import { DeviceType } from '#/modules/notifications/domain/v1/entities/device.entity';
 import { NotificationType } from '#/modules/notifications/domain/v2/entities/notification.entity';
 import { RegisterDeviceDto } from '#/modules/notifications/routes/v1/entities/register-device.dto.entity';
@@ -266,7 +267,7 @@ export class NotificationsController {
   })
   @Delete('chains/:chainId/notifications/devices/:uuid/safes/:safeAddress')
   async unregisterSafe(
-    @Param('chainId') chainId: string,
+    @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
     @Param('uuid', new ValidationPipe(UuidSchema)) uuid: UUID,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,
