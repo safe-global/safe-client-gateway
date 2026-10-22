@@ -261,6 +261,8 @@ describe('DelegatesV3Repository', () => {
             delegate: delegate.delegate,
             delegator: delegate.delegator,
             label: delegate.label,
+            created: delegate.created,
+            modified: delegate.modified,
           })),
         );
       });

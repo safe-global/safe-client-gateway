@@ -786,7 +786,7 @@ describe('PoliciesService', () => {
           data: {
             proposers: [
               {
-                delegatedBy: [{ created, modified }],
+                delegatedBy: [{ createdAt: created, lastUpdatedAt: modified }],
               },
             ],
           },

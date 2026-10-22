@@ -274,14 +274,14 @@ export class ProposerGrantDto {
     description:
       'When the grant was created; null when served from the Transaction Service, which does not report it',
   })
-  public readonly created!: Date | null;
+  public readonly createdAt!: Date | null;
   @ApiProperty({
     type: Date,
     nullable: true,
     description:
       'When the grant was last updated; null when served from the Transaction Service, which does not report it',
   })
-  public readonly modified!: Date | null;
+  public readonly lastUpdatedAt!: Date | null;
 }
 
 export class ProposerDto {

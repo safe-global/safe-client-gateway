@@ -66,8 +66,8 @@ describe('ProposerMapper', () => {
             {
               delegator: first.delegator,
               label: first.label,
-              created: first.created,
-              modified: first.modified,
+              createdAt: first.created,
+              lastUpdatedAt: first.modified,
             },
           ],
         },
@@ -77,8 +77,8 @@ describe('ProposerMapper', () => {
             {
               delegator: second.delegator,
               label: second.label,
-              created: second.created,
-              modified: second.modified,
+              createdAt: second.created,
+              lastUpdatedAt: second.modified,
             },
           ],
         },
@@ -141,14 +141,14 @@ describe('ProposerMapper', () => {
             {
               delegator: byFirst.delegator,
               label: byFirst.label,
-              created: byFirst.created,
-              modified: byFirst.modified,
+              createdAt: byFirst.created,
+              lastUpdatedAt: byFirst.modified,
             },
             {
               delegator: bySecond.delegator,
               label: bySecond.label,
-              created: bySecond.created,
-              modified: bySecond.modified,
+              createdAt: bySecond.created,
+              lastUpdatedAt: bySecond.modified,
             },
           ],
         },
@@ -204,8 +204,8 @@ describe('ProposerMapper', () => {
         {
           delegator: unlabelled.delegator,
           label: '',
-          created: unlabelled.created,
-          modified: unlabelled.modified,
+          createdAt: unlabelled.created,
+          lastUpdatedAt: unlabelled.modified,
         },
       ]);
     });
@@ -218,8 +218,8 @@ describe('ProposerMapper', () => {
       const [policy] = map([delegate]);
 
       const [grant] = proposerData(policy).proposers[0].delegatedBy;
-      expect(grant.created).toBeNull();
-      expect(grant.modified).toBeNull();
+      expect(grant.createdAt).toBeNull();
+      expect(grant.lastUpdatedAt).toBeNull();
     });
 
     it('should carry the Queue Service’s timestamps through for its registrations', () => {
@@ -234,8 +234,8 @@ describe('ProposerMapper', () => {
       const [policy] = map([delegate]);
 
       const [grant] = proposerData(policy).proposers[0].delegatedBy;
-      expect(grant.created).toBe(created);
-      expect(grant.modified).toBe(modified);
+      expect(grant.createdAt).toBe(created);
+      expect(grant.lastUpdatedAt).toBe(modified);
     });
   });
 });

@@ -12,9 +12,8 @@ export const DelegateSchema = z.object({
   delegate: AddressSchema,
   delegator: AddressSchema,
   label: z.string(),
-  // The Transaction Service's delegates API does not report these - the Queue
-  // Service's does. Kept nullable here so both backends parse to the same
-  // shape; DelegatesV3Repository fills them in from the Queue Service.
+  // The Transaction Service does not report these; DelegatesV3Repository sets
+  // them from the Queue Service.
   created: NullableCoercedDateSchema,
   modified: NullableCoercedDateSchema,
 });
