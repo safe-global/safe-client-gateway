@@ -5,10 +5,12 @@ import {
   Inject,
   Injectable,
 } from '@nestjs/common';
+import { isAddressEqual, zeroAddress } from 'viem';
 import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
 import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '#/modules/auth/utils/assert-authenticated.utils';
 import type { SafeRef } from '#/modules/policies/domain/entities/safe-ref.entity';
+import { getPolicyTypeOfContract } from '#/modules/policies/domain/policy-deployments.constants';
 import { ISafePolicyGuardConfigurationRequestsRepository } from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository.interface';
 import { configurationRoot } from '#/modules/policies/domain/utils/policy-configuration-root.utils';
 import type {
@@ -49,6 +51,19 @@ export class PolicyConfigurationRequestsService {
     if (root !== args.payload.root.toLowerCase()) {
       throw new HttpExceptionNoLog(
         'The configurations do not hash to the given root',
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
+    }
+
+    // Each policy must be a known contract or the zero address, which removes a policy.
+    const unknownPolicy = args.payload.configurations.find(
+      ({ policy }) =>
+        !isAddressEqual(policy, zeroAddress) &&
+        getPolicyTypeOfContract(args.safe.chainId, policy) === null,
+    );
+    if (unknownPolicy) {
+      throw new HttpExceptionNoLog(
+        `Unknown policy contract ${unknownPolicy.policy} on chain ${args.safe.chainId}`,
         HttpStatus.UNPROCESSABLE_ENTITY,
       );
     }
