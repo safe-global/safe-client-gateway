@@ -2,6 +2,7 @@
 
 import { randomUUID } from 'node:crypto';
 import type { Server } from 'node:net';
+import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import { HttpStatus } from '@nestjs/common';
 import type postgres from 'postgres';
@@ -114,6 +115,20 @@ describe('SpaceTransactionsController', () => {
     );
   });
 
+  /**
+   * The app caches chains by id across tests, and the builder's one-digit id
+   * repeats within a file: a repeat would serve an earlier test's chain, with
+   * another Transaction Service URL than this test mocks.
+   */
+  function uniqueChain(): Chain {
+    return chainBuilder()
+      .with(
+        'chainId',
+        faker.string.numeric({ length: 12, allowLeadingZeros: false }),
+      )
+      .build();
+  }
+
   function mockUpstreams(args: { chain: Chain; deployed: Array<Safe> }): void {
     networkService.get.mockImplementation(({ url }) => {
       if (url === `${safeConfigUrl}/api/v1/chains/${args.chain.chainId}`) {
@@ -213,7 +228,7 @@ describe('SpaceTransactionsController', () => {
         jwtService,
         postgresDatabaseService,
       });
-      const chain = chainBuilder().build();
+      const chain = uniqueChain();
       const deployed = safeBuilder().build();
       const undeployed = safeBuilder().build();
       await addSafesFixture({
@@ -256,7 +271,7 @@ describe('SpaceTransactionsController', () => {
         jwtService,
         postgresDatabaseService,
       });
-      const chain = chainBuilder().build();
+      const chain = uniqueChain();
       const deployed = safeBuilder().build();
       await addSafesFixture({
         app,
@@ -282,7 +297,7 @@ describe('SpaceTransactionsController', () => {
         jwtService,
         postgresDatabaseService,
       });
-      const chain = chainBuilder().build();
+      const chain = uniqueChain();
       const [first, second] = [safeBuilder().build(), safeBuilder().build()];
       await addSafesFixture({
         app,
