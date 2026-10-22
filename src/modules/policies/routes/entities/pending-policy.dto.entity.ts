@@ -308,7 +308,7 @@ export class PendingDelayedGuardPoliciesDto
   @ApiProperty({
     enum: Object.values(PendingDelayedGuardPoliciesStatus),
     description:
-      'draft: stored in CGW, not requested. configuration-in-signing: requestConfiguration is queued. pending-application: requested, waiting for or past readyAt. application-in-signing: applyConfiguration is queued and collecting confirmations. application-ready: applyConfiguration is signed and can execute. expired: the application window has closed.',
+      'draft: stored in CGW, no transaction in signing yet. configuration-in-signing: requestConfiguration is queued. pending-application: requested, waiting for or past readyAt. application-in-signing: applyConfiguration is queued and collecting signatures. application-ready: applyConfiguration is signed and can execute. expired: the application window has closed.',
   })
   public readonly status!: PendingDelayedGuardPolicies['status'];
   @ApiProperty({
