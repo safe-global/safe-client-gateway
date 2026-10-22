@@ -9,7 +9,6 @@ export type RawIndexerConfigurationRoot = {
   safe: string;
   guard: string;
   root: string;
-  /** `numeric` columns serialise as decimal strings. */
   readyAt: string;
   expiresAt: string;
   status: string;

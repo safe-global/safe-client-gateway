@@ -231,7 +231,10 @@ export const PolicyIndexerConfigurationRootSchema = z.object({
   chainId: PolicyIndexerChainIdSchema,
   safe: AddressSchema,
   guard: AddressSchema,
-  /** Lower-cased, as CGW computes and stores roots. */
+  /**
+   * Lower-cased, as CGW computes and stores roots. Rebuilt from `0x` so the
+   * result is a `Hex` without a cast.
+   */
   root: HexSchema.transform((root): Hex => `0x${root.slice(2).toLowerCase()}`),
   /**
    * Unix seconds `applyConfiguration` is valid from. It is the `timestamp` of
