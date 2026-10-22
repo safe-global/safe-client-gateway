@@ -11,14 +11,8 @@ import { ChainIdSchema } from '#/modules/chains/domain/entities/schemas/chain-id
 import { AddressBookItemSchema as BaseAddressBookItemSchema } from '#/modules/spaces/domain/address-books/entities/address-book-item.entity';
 import {
   MAX_TAGS_PER_CONTACT,
-  MAX_TAGS_PER_WORKSPACE,
-  TagColorChoicesSchema,
   TagNamesSchema,
 } from '#/modules/spaces/domain/address-books/entities/address-book-tag.entity';
-import {
-  TAG_COLORS_PROPERTY_DESCRIPTION,
-  TagColorChoice,
-} from '#/modules/spaces/routes/address-books/entities/address-book-tags.dto.entity';
 import { AddressSchema } from '#/validation/entities/schemas/address.schema';
 
 const AddressBookItemSchema = z.object({
@@ -50,21 +44,12 @@ export class AddressBookItem implements z.infer<typeof AddressBookItemSchema> {
 
 export const UpsertAddressBookItemsSchema = z.object({
   items: z.array(AddressBookItemSchema),
-  tagColors: TagColorChoicesSchema.optional(),
 });
 
-@ApiExtraModels(AddressBookItem, TagColorChoice)
+@ApiExtraModels(AddressBookItem)
 export class UpsertAddressBookItemsDto
   implements z.infer<typeof UpsertAddressBookItemsSchema>
 {
-  @ApiPropertyOptional({
-    items: { $ref: getSchemaPath(TagColorChoice) },
-    type: 'array',
-    maxItems: MAX_TAGS_PER_WORKSPACE,
-    description: TAG_COLORS_PROPERTY_DESCRIPTION,
-  })
-  public readonly tagColors?: Array<TagColorChoice>;
-
   @ApiProperty({
     items: { $ref: getSchemaPath(AddressBookItem) },
     type: 'array',

@@ -105,6 +105,12 @@ const GATED_ROUTES: Array<Route> = [
   // Tags are shared by the whole Workspace, so any member's tag edit is gated
   // even though members (not only admins) may make it.
   {
+    name: 'POST /v1/spaces/:spaceId/address-book/tags',
+    method: 'post',
+    path: (id) => `/v1/spaces/${id}/address-book/tags`,
+    body: { name: faker.word.noun() },
+  },
+  {
     name: 'PUT /v1/spaces/:spaceId/address-book/tags',
     method: 'put',
     path: (id) => `/v1/spaces/${id}/address-book/tags`,

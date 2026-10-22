@@ -1,10 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import {
-  ApiExtraModels,
-  ApiProperty,
-  ApiPropertyOptional,
-  getSchemaPath,
-} from '@nestjs/swagger';
+import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 import type { Address } from 'viem';
 import { z } from 'zod';
 import type {
@@ -13,11 +8,8 @@ import type {
 } from '#/modules/spaces/domain/address-books/entities/address-book-tag.entity';
 import {
   MAX_TAGS_PER_CONTACT,
-  MAX_TAGS_PER_WORKSPACE,
   TAG_COLORS,
   TAG_NAME_MAX_LENGTH,
-  TagColorChoiceSchema,
-  TagColorChoicesSchema,
   TagNameSchema,
   TagNamesSchema,
 } from '#/modules/spaces/domain/address-books/entities/address-book-tag.entity';
@@ -28,22 +20,10 @@ const SetContactTagsItemSchema = z.object({
   tags: TagNamesSchema,
 });
 
-export class TagColorChoice implements z.infer<typeof TagColorChoiceSchema> {
-  @ApiProperty({ type: String, maxLength: TAG_NAME_MAX_LENGTH })
-  public readonly name!: string;
-
-  @ApiProperty({ enum: TAG_COLORS })
-  public readonly color!: TagColor;
-}
-
-export const TAG_COLORS_PROPERTY_DESCRIPTION =
-  'Colours for the tags this request creates. Ignored for tags the space already has; a colour another tag already uses is replaced by a free one';
-
 // The batch size is capped by `spaces.addressBooks.maxItems` in the route
 // service: every entry must be a distinct contact of the address book, so a
 // valid batch can never be larger than the book itself.
 export const SetContactTagsSchema = z.object({
-  tagColors: TagColorChoicesSchema.optional(),
   items: z
     .array(SetContactTagsItemSchema)
     .min(1)
@@ -71,16 +51,8 @@ export class SetContactTagsItem
   public readonly tags!: Array<string>;
 }
 
-@ApiExtraModels(SetContactTagsItem, TagColorChoice)
+@ApiExtraModels(SetContactTagsItem)
 export class SetContactTagsDto implements z.infer<typeof SetContactTagsSchema> {
-  @ApiPropertyOptional({
-    items: { $ref: getSchemaPath(TagColorChoice) },
-    type: 'array',
-    maxItems: MAX_TAGS_PER_WORKSPACE,
-    description: TAG_COLORS_PROPERTY_DESCRIPTION,
-  })
-  public readonly tagColors?: Array<TagColorChoice>;
-
   @ApiProperty({
     items: { $ref: getSchemaPath(SetContactTagsItem) },
     type: 'array',
@@ -89,6 +61,19 @@ export class SetContactTagsDto implements z.infer<typeof SetContactTagsSchema> {
       'At most as many entries as the address book can hold, each address at most once',
   })
   public readonly items!: Array<SetContactTagsItem>;
+}
+
+export const CreateTagSchema = z.object({
+  name: TagNameSchema,
+});
+
+export class CreateTagDto implements z.infer<typeof CreateTagSchema> {
+  @ApiProperty({
+    type: String,
+    maxLength: TAG_NAME_MAX_LENGTH,
+    description: "'Workspace Safe' and 'Signer' aren't allowed, in any case",
+  })
+  public readonly name!: string;
 }
 
 export const RenameTagSchema = z.object({

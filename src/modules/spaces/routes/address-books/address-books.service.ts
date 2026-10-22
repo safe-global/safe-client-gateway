@@ -15,6 +15,7 @@ import {
 } from '#/modules/spaces/domain/space-assert.utils';
 import { ISpacesRepository } from '#/modules/spaces/domain/spaces.repository.interface';
 import type {
+  CreateTagDto,
   RenameTagDto,
   SetContactTagsDto,
 } from '#/modules/spaces/routes/address-books/entities/address-book-tags.dto.entity';
@@ -100,7 +101,6 @@ export class AddressBooksService {
           userId,
           spaceId,
           entries: tagEntries,
-          tagColors: addressBookItems.tagColors,
           entityManager,
         });
         return contacts;
@@ -144,9 +144,25 @@ export class AddressBooksService {
       userId,
       spaceId,
       entries: dto.items,
-      tagColors: dto.tagColors,
     });
     return await this.getAddressBook(spaceId);
+  }
+
+  /** Any active member: a tag with no contacts yet. */
+  public async createTag(args: {
+    authPayload: AuthPayload;
+    spaceId: Space['id'];
+    dto: CreateTagDto;
+  }): Promise<SpaceAddressBookDto> {
+    const userId = getAuthenticatedUserIdOrFail(args.authPayload);
+    await assertMember(this.membersRepository, args.spaceId, userId);
+
+    await this.tagsRepository.createTag({
+      userId,
+      spaceId: args.spaceId,
+      name: args.dto.name,
+    });
+    return await this.getAddressBook(args.spaceId);
   }
 
   /** Any active member. Renaming to another tag's name merges the two. */

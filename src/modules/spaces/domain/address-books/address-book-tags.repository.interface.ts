@@ -4,7 +4,6 @@ import type { EntityManager } from 'typeorm';
 import type { Address } from 'viem';
 import type {
   AddressBookTag,
-  TagColorChoices,
   TagNames,
 } from '#/modules/spaces/domain/address-books/entities/address-book-tag.entity';
 
@@ -38,15 +37,23 @@ export interface IAddressBookTagsRepository {
    * (unknown address, 9th tag in the space) nothing is written. Creates missing
    * tags. Records one ADDRESS_BOOK_TAGS_UPDATED per contact whose tags actually
    * changed. Throws NotFoundException if an address is not in the book.
-   * A created tag takes its colour from `tagColors` when no tag of the space
-   * has that colour yet, else a random free one.
    */
   setTagsForItems(args: {
     userId: number;
     spaceId: number;
     entries: Array<{ address: Address; tags: TagNames }>;
-    tagColors?: TagColorChoices;
     entityManager?: EntityManager;
+  }): Promise<void>;
+
+  /**
+   * Creates a tag of the space with no contacts, in a random unused colour.
+   * Throws ConflictException if the space has a tag with that name (ignoring
+   * case), BadRequestException with WORKSPACE_TAG_LIMIT_MESSAGE if it has 8.
+   */
+  createTag(args: {
+    userId: number;
+    spaceId: number;
+    name: string;
   }): Promise<void>;
 
   /**

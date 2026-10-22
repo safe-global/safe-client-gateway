@@ -24,6 +24,8 @@ export const TAG_NAME_MAX_LENGTH = 32;
 // Compared ignoring case
 const DISALLOWED_TAG_NAMES = new Set(['workspace safe', 'signer']);
 
+export const TAG_NAME_TAKEN_MESSAGE = 'A tag with this name already exists.';
+
 export const WORKSPACE_TAG_LIMIT_MESSAGE = `Your workspace has ${MAX_TAGS_PER_WORKSPACE} tags. Rename or delete one to add another.`;
 
 const ALLOWED_TAG_NAME = /^[\p{L}\p{M}\p{N} \-_&/]+$/u;
@@ -89,18 +91,6 @@ export const TagNamesSchema = z
   });
 
 export type TagNames = z.infer<typeof TagNamesSchema>;
-
-export const TagColorChoiceSchema = z.object({
-  name: TagNameSchema,
-  color: TagColorSchema,
-});
-
-/** The colours a client picked for tags a request creates; a space has at most that many tags. */
-export const TagColorChoicesSchema = z
-  .array(TagColorChoiceSchema)
-  .max(MAX_TAGS_PER_WORKSPACE);
-
-export type TagColorChoices = z.infer<typeof TagColorChoicesSchema>;
 
 export const AddressBookTagSchema = z.object({
   id: z.number().int().positive(),

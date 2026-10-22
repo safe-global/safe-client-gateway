@@ -10,12 +10,15 @@ import {
   Param,
   ParseIntPipe,
   Patch,
+  Post,
   Put,
   UseGuards,
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiBody,
+  ApiConflictResponse,
+  ApiCreatedResponse,
   ApiForbiddenResponse,
   ApiNoContentResponse,
   ApiNotFoundResponse,
@@ -33,6 +36,8 @@ import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.en
 import { AuthGuard } from '#/modules/auth/routes/guards/auth.guard';
 import { AddressBooksService } from '#/modules/spaces/routes/address-books/address-books.service';
 import {
+  CreateTagDto,
+  CreateTagSchema,
   RenameTagDto,
   RenameTagSchema,
   SetContactTagsDto,
@@ -188,6 +193,49 @@ export class AddressBooksController {
     dto: SetContactTagsDto,
   ): Promise<SpaceAddressBookDto> {
     return await this.service.setContactTags(authPayload, spaceId, dto);
+  }
+
+  @ApiOperation({
+    summary: 'Create address book tag',
+    description:
+      'Creates a tag of the space with no contacts, in a random unused colour. Any active member of the space may create tags.',
+  })
+  @ApiParam({
+    name: 'spaceId',
+    type: 'string',
+    description: 'Space UUID containing the address book',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @ApiBody({ type: CreateTagDto, description: 'The tag name' })
+  @ApiCreatedResponse({
+    description: 'Tag created successfully',
+    type: SpaceAddressBookDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid space identifier, or the space already has 8 tags',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Authentication required - valid JWT token must be provided',
+  })
+  @ApiForbiddenResponse({
+    description:
+      'Access forbidden - user is not an active member of this space',
+  })
+  @ApiNotFoundResponse({ description: 'Space not found' })
+  @ApiConflictResponse({
+    description: 'The space has a tag with this name, ignoring case',
+  })
+  @ApiUnprocessableEntityResponse({ description: 'Invalid tag name' })
+  @ApiTooManyRequestsResponse({ description: 'Rate limit exceeded' })
+  @Post('/:spaceId/address-book/tags')
+  @UseGuards(AuthGuard, ElevationGuard, SpacesAddressBookRateLimitGuard)
+  public async createTag(
+    @Auth() authPayload: AuthPayload,
+    @Param('spaceId', SpaceIdPipe) spaceId: number,
+    @Body(new ValidationPipe(CreateTagSchema))
+    dto: CreateTagDto,
+  ): Promise<SpaceAddressBookDto> {
+    return await this.service.createTag({ authPayload, spaceId, dto });
   }
 
   @ApiOperation({

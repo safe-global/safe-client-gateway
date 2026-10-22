@@ -33,6 +33,7 @@ export enum SpaceAuditEventType {
   ADDRESS_BOOK_REQUEST_CREATED = 'ADDRESS_BOOK_REQUEST_CREATED',
   ADDRESS_BOOK_REQUEST_REJECTED = 'ADDRESS_BOOK_REQUEST_REJECTED',
   ADDRESS_BOOK_TAGS_UPDATED = 'ADDRESS_BOOK_TAGS_UPDATED',
+  ADDRESS_BOOK_TAG_CREATED = 'ADDRESS_BOOK_TAG_CREATED',
   ADDRESS_BOOK_TAG_RENAMED = 'ADDRESS_BOOK_TAG_RENAMED',
   ADDRESS_BOOK_TAG_DELETED = 'ADDRESS_BOOK_TAG_DELETED',
 }
@@ -171,6 +172,14 @@ export const AddressBookTagsUpdatedEventSchema = z.object({
   }),
 });
 
+export const AddressBookTagCreatedEventSchema = z.object({
+  eventType: z.literal(SpaceAuditEventType.ADDRESS_BOOK_TAG_CREATED),
+  payload: z.object({
+    name: z.string(),
+    color: z.string(),
+  }),
+});
+
 export const AddressBookTagRenamedEventSchema = z.object({
   eventType: z.literal(SpaceAuditEventType.ADDRESS_BOOK_TAG_RENAMED),
   payload: z.object({
@@ -207,6 +216,7 @@ export const SpaceAuditEventSchema = z.discriminatedUnion('eventType', [
   AddressBookRequestCreatedEventSchema,
   AddressBookRequestRejectedEventSchema,
   AddressBookTagsUpdatedEventSchema,
+  AddressBookTagCreatedEventSchema,
   AddressBookTagRenamedEventSchema,
   AddressBookTagDeletedEventSchema,
 ]);

@@ -23,6 +23,7 @@ import {
   MAX_TAGS_PER_CONTACT,
   MAX_TAGS_PER_WORKSPACE,
   TAG_COLORS,
+  TAG_NAME_TAKEN_MESSAGE,
   WORKSPACE_TAG_LIMIT_MESSAGE,
 } from '#/modules/spaces/domain/address-books/entities/address-book-tag.entity';
 import { SpaceAuditEventType } from '#/modules/spaces/domain/audit/entities/space-audit-event.entity';
@@ -953,6 +954,46 @@ describe('AddressBooksController', () => {
         accessToken: memberAccessToken,
       });
       expect(book).toEqual(body);
+    });
+
+    it('a member creates a tag with no contacts; the same name again, in any case, answers 409', async () => {
+      const { spaceId, accessToken } = await createSpace();
+      const { memberAccessToken } = await createActiveMember({
+        spaceId,
+        adminAccessToken: accessToken,
+      });
+      const [name] = fakeTagNames(1);
+
+      const { body } = await request(app.getHttpServer())
+        .post(`/v1/spaces/${spaceId}/address-book/tags`)
+        .set('Cookie', [`access_token=${memberAccessToken}`])
+        .send({ name })
+        .expect(201);
+
+      expect(body.tags).toEqual([
+        {
+          id: expect.any(Number),
+          name,
+          color: expect.any(String),
+          contactCount: 0,
+        },
+      ]);
+      expect(TAG_COLORS).toContain(body.tags[0].color);
+
+      await request(app.getHttpServer())
+        .post(`/v1/spaces/${spaceId}/address-book/tags`)
+        .set('Cookie', [`access_token=${memberAccessToken}`])
+        .send({ name: name.toUpperCase() })
+        .expect(409)
+        .expect(({ body: error }) =>
+          expect(error).toMatchObject({
+            statusCode: 409,
+            message: TAG_NAME_TAKEN_MESSAGE,
+          }),
+        );
+
+      const { body: after } = await getAddressBook({ spaceId, accessToken });
+      expect(after.tags).toEqual(body.tags);
     });
 
     it('a member tags several contacts in one request', async () => {

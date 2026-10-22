@@ -20,7 +20,6 @@ import type { IAddressBookItemsRepository } from '#/modules/spaces/domain/addres
 import type { IAddressBookTagsRepository } from '#/modules/spaces/domain/address-books/address-book-tags.repository.interface';
 import { addressBookItemBuilder } from '#/modules/spaces/domain/address-books/entities/__tests__/address-book-item.db.builder';
 import { addressBookTagBuilder } from '#/modules/spaces/domain/address-books/entities/__tests__/address-book-tag.builder';
-import { TAG_COLORS } from '#/modules/spaces/domain/address-books/entities/address-book-tag.entity';
 import type { ISpacesRepository } from '#/modules/spaces/domain/spaces.repository.interface';
 import { AddressBooksService } from '#/modules/spaces/routes/address-books/address-books.service';
 import { memberBuilder } from '#/modules/users/datasources/entities/__tests__/member.entity.db.builder';
@@ -67,6 +66,7 @@ const tagsRepositoryMock = {
   findBySpaceId: vi.fn(),
   lockSpaceForTagWrites: vi.fn(),
   setTagsForItems: vi.fn(),
+  createTag: vi.fn(),
   renameTag: vi.fn(),
   deleteTag: vi.fn(),
 } as MockedObject<IAddressBookTagsRepository>;
@@ -276,16 +276,9 @@ describe('AddressBooksService', () => {
           chainIds: untagged.chainIds,
         },
       ];
-      const tagColors = tags.map((name) => ({
-        name,
-        color: faker.helpers.arrayElement(TAG_COLORS),
-      }));
       repositoryMock.upsertMany.mockResolvedValue([tagged, untagged]);
 
-      await service.upsertMany(authPayload, spaceId, {
-        items: payload,
-        tagColors,
-      });
+      await service.upsertMany(authPayload, spaceId, { items: payload });
 
       expect(postgresDatabaseServiceMock.transaction).toHaveBeenCalledOnce();
       expect(
@@ -303,7 +296,6 @@ describe('AddressBooksService', () => {
         userId: Number(authPayload.sub),
         spaceId,
         entries: [{ address: tagged.address, tags }],
-        tagColors,
         entityManager,
       });
       expect(tagsRepositoryMock.lockSpaceForTagWrites).toHaveBeenCalledBefore(
@@ -552,16 +544,8 @@ describe('AddressBooksService', () => {
         itemTagIds: new Map([[item.id, tags.map((tag) => tag.id)]]),
       });
 
-      const tagColors = [
-        {
-          name: faker.word.noun(),
-          color: faker.helpers.arrayElement(TAG_COLORS),
-        },
-      ];
-
       const result = await service.setContactTags(authPayload, spaceId, {
         items,
-        tagColors,
       });
 
       expect(membersRepositoryMock.findOne).toHaveBeenCalledWith({
@@ -575,7 +559,6 @@ describe('AddressBooksService', () => {
         userId: Number(authPayload.sub),
         spaceId,
         entries: items,
-        tagColors,
       });
       expect(result.tags).toEqual(tags);
       expect(result.data).toEqual([
@@ -660,6 +643,62 @@ describe('AddressBooksService', () => {
       ).rejects.toThrow(UnauthorizedException);
       expect(membersRepositoryMock.findOne).not.toHaveBeenCalled();
       expect(tagsRepositoryMock.setTagsForItems).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('createTag', () => {
+    it('should create the tag for an active MEMBER and return the address book', async () => {
+      const spaceId = faker.number.int();
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const tag = addressBookTagBuilder().with('contactCount', 0).build();
+      membersRepositoryMock.findOne.mockResolvedValue(
+        memberBuilder().with('role', 'MEMBER').with('status', 'ACTIVE').build(),
+      );
+      repositoryMock.findAllBySpaceId.mockResolvedValue([]);
+      tagsRepositoryMock.findBySpaceId.mockResolvedValue({
+        tags: [tag],
+        itemTagIds: new Map(),
+      });
+
+      const result = await service.createTag({
+        authPayload,
+        spaceId,
+        dto: { name: tag.name },
+      });
+
+      expect(tagsRepositoryMock.createTag).toHaveBeenCalledExactlyOnceWith({
+        userId: Number(authPayload.sub),
+        spaceId,
+        name: tag.name,
+      });
+      expect(result.tags).toEqual([tag]);
+    });
+
+    it('should throw ForbiddenException when the caller is not an active member', async () => {
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      membersRepositoryMock.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.createTag({
+          authPayload,
+          spaceId: faker.number.int(),
+          dto: { name: faker.word.noun() },
+        }),
+      ).rejects.toThrow(
+        new ForbiddenException('User is not a member of this workspace'),
+      );
+      expect(tagsRepositoryMock.createTag).not.toHaveBeenCalled();
+    });
+
+    it('should throw UnauthorizedException for unauthenticated user', async () => {
+      await expect(
+        service.createTag({
+          authPayload: new AuthPayload(),
+          spaceId: faker.number.int(),
+          dto: { name: faker.word.noun() },
+        }),
+      ).rejects.toThrow(UnauthorizedException);
+      expect(tagsRepositoryMock.createTag).not.toHaveBeenCalled();
     });
   });
 
