@@ -249,7 +249,73 @@ describe('SpaceTransactionsController', () => {
         }),
       );
     });
+
+    it('serves a repeated request from the cache of the Space', async () => {
+      const { accessToken, spaceUuid } = await createSpaceForSignerFixture({
+        app,
+        jwtService,
+        postgresDatabaseService,
+      });
+      const chain = chainBuilder().build();
+      const deployed = safeBuilder().build();
+      await addSafesFixture({
+        app,
+        spaceUuid,
+        accessToken,
+        safes: [{ chainId: chain.chainId, address: deployed.address }],
+      }).then((response) => expect(response.status).toBe(HttpStatus.CREATED));
+      mockUpstreams({ chain, deployed: [deployed] });
+
+      for (let i = 0; i < 2; i++) {
+        await request(app.getHttpServer())
+          .get(`/v1/spaces/${spaceUuid}/transactions/queued`)
+          .set('Cookie', [`access_token=${accessToken}`])
+          .expect(HttpStatus.OK);
+      }
+
+      expect(queueRequests()).toHaveLength(1);
+    });
+
+    it('queries the queue again once a Safe is added to the Space', async () => {
+      const { accessToken, spaceUuid } = await createSpaceForSignerFixture({
+        app,
+        jwtService,
+        postgresDatabaseService,
+      });
+      const chain = chainBuilder().build();
+      const [first, second] = [safeBuilder().build(), safeBuilder().build()];
+      await addSafesFixture({
+        app,
+        spaceUuid,
+        accessToken,
+        safes: [{ chainId: chain.chainId, address: first.address }],
+      }).then((response) => expect(response.status).toBe(HttpStatus.CREATED));
+      mockUpstreams({ chain, deployed: [first, second] });
+      await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceUuid}/transactions/queued`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(HttpStatus.OK);
+
+      await addSafesFixture({
+        app,
+        spaceUuid,
+        accessToken,
+        safes: [{ chainId: chain.chainId, address: second.address }],
+      }).then((response) => expect(response.status).toBe(HttpStatus.CREATED));
+      await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceUuid}/transactions/queued`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(HttpStatus.OK);
+
+      expect(queueRequests()).toHaveLength(2);
+    });
   });
+
+  function queueRequests(): Array<unknown> {
+    return networkService.get.mock.calls.filter(([{ url }]) =>
+      url.startsWith(`${queueBaseUri}/api/v1/multisig-transactions/queue`),
+    );
+  }
 });
 
 describe('SpaceTransactionsController with features.spaceTransactions off', () => {

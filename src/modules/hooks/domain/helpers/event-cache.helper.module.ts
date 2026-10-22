@@ -13,6 +13,7 @@ import { MessagesModule } from '#/modules/messages/messages.module';
 import { PolicyIndexerRepositoryModule } from '#/modules/policies/domain/policy-indexer-repository.module';
 import { SafeRepositoryModule } from '#/modules/safe/domain/safe.repository.interface';
 import { SafeAppsModule } from '#/modules/safe-apps/safe-apps.module';
+import { SpaceSafesRepositoryModule } from '#/modules/spaces/domain/safes/space-safes-repository.module';
 import { StakingModule } from '#/modules/staking/staking.module';
 import { TransactionsModule } from '#/modules/transactions/transactions.module';
 import { ZerionModule } from '#/modules/zerion/zerion.module';
@@ -29,6 +30,7 @@ import { ZerionModule } from '#/modules/zerion/zerion.module';
     PolicyIndexerRepositoryModule,
     SafeAppsModule,
     SafeRepositoryModule,
+    SpaceSafesRepositoryModule,
     StakingModule,
     TransactionsModule,
     ZerionModule,

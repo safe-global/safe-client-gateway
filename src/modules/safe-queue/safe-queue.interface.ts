@@ -42,8 +42,10 @@ export interface ISafeQueueService {
     offset?: number;
   }): Promise<Raw<Page<SafeQueueMultisigTransactionEntity>>>;
 
-  // Not cached: no per-Safe invalidation can reach an entry keyed on a set of Safes.
+  // Cached per Space: a queue event of one of its Safes reaches the entry
+  // through clearSpaceTransactionQueue.
   getTransactionQueueForSafes(args: {
+    spaceId: number;
     safes: ReadonlyArray<{ chainId: string; safeAddress: Address }>;
     nonceOrder?: 'asc' | 'desc';
     limit?: number;
@@ -134,6 +136,8 @@ export interface ISafeQueueService {
     chainId: string;
     safeAddress: Address;
   }): Promise<void>;
+
+  clearSpaceTransactionQueue(args: { spaceId: number }): Promise<void>;
 
   clearMessagesBySafe(args: {
     chainId: string;

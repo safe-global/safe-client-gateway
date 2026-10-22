@@ -1691,6 +1691,8 @@ describe('SafeRepository', () => {
   });
 
   describe('getTransactionQueueForSafes', () => {
+    const spaceId = faker.number.int({ min: 1 });
+
     it('should list the queue of every Safe in nonce order, pairing each transaction with its chain', async () => {
       const chainId = faker.string.numeric({ length: 3 });
       const otherChainId = faker.string.numeric({ length: 4 });
@@ -1720,6 +1722,7 @@ describe('SafeRepository', () => {
       );
 
       const actual = await repository.getTransactionQueueForSafes({
+        spaceId,
         safes: [
           { chainId, safe },
           { chainId: otherChainId, safe: otherSafe },
@@ -1731,6 +1734,7 @@ describe('SafeRepository', () => {
       expect(
         mockSafeQueueService.getTransactionQueueForSafes,
       ).toHaveBeenCalledWith({
+        spaceId,
         safes: [
           { chainId, safeAddress: safe.address },
           { chainId: otherChainId, safeAddress: otherSafe.address },
@@ -1778,10 +1782,35 @@ describe('SafeRepository', () => {
       );
 
       const actual = await repository.getTransactionQueueForSafes({
+        spaceId,
         safes: [{ chainId, safe }],
       });
 
       expect(actual.results).toEqual([]);
+    });
+  });
+
+  describe('clearSpaceTransactionQueue', () => {
+    it('should clear the queue of the Space in the queue service', async () => {
+      const spaceId = faker.number.int({ min: 1 });
+
+      await repository.clearSpaceTransactionQueue({ spaceId });
+
+      expect(
+        mockSafeQueueService.clearSpaceTransactionQueue,
+      ).toHaveBeenCalledExactlyOnceWith({ spaceId });
+    });
+
+    it('should not touch the queue service when it is disabled', async () => {
+      const repo = createRepository({ safeQueueEnabled: false });
+
+      await repo.clearSpaceTransactionQueue({
+        spaceId: faker.number.int({ min: 1 }),
+      });
+
+      expect(
+        mockSafeQueueService.clearSpaceTransactionQueue,
+      ).not.toHaveBeenCalled();
     });
   });
 

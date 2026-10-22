@@ -14,7 +14,7 @@ import { UsersModule } from '#/modules/users/users.module';
  * `features.users` off. `AppModule` registers this one alongside
  * `SpacesModule`, and only with `features.safeQueueService` on, the one
  * upstream able to list many Safes in a request, and `features.spaceTransactions`
- * on, which keeps the uncached endpoint off until its cache lands.
+ * on, which rolls the endpoint out.
  *
  * `AuthGuard` resolves `IAuthRepository` here, `SpaceIdPipe`
  * `ISpacesRepository`, and `assertMember` `IMembersRepository`.

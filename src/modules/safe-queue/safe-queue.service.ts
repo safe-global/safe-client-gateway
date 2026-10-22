@@ -302,38 +302,51 @@ export class SafeQueueService implements ISafeQueueService {
   }
 
   async getTransactionQueueForSafes(args: {
+    spaceId: number;
     safes: ReadonlyArray<{ chainId: string; safeAddress: Address }>;
     nonceOrder?: 'asc' | 'desc';
     limit?: number;
     offset?: number;
   }): Promise<Raw<Page<SafeQueueMultisigTransactionEntity>>> {
     try {
-      const query = new URLSearchParams();
-      for (const [safeAddress, chainIds] of this.getChainIdsBySafe(
-        args.safes,
-      )) {
-        query.append('safes', [safeAddress, ...chainIds].join(':'));
-      }
-      query.set('nonceOrder', args.nonceOrder ?? 'asc');
+      const safes = Array.from(
+        this.getChainIdsBySafe(args.safes),
+        ([safeAddress, chainIds]) => [safeAddress, ...chainIds].join(':'),
+      );
+      const nonceOrder = args.nonceOrder ?? 'asc';
       const limit = this.capLimit(args.limit);
+      const query = new URLSearchParams();
+      for (const safe of safes) {
+        query.append('safes', safe);
+      }
+      query.set('nonceOrder', nonceOrder);
       if (limit !== undefined) {
         query.set('limit', limit.toString());
       }
       if (args.offset !== undefined) {
         query.set('offset', args.offset.toString());
       }
+      const cacheDir = CacheRouter.getSpaceTransactionQueueCacheDir({
+        spaceId: args.spaceId,
+        safes,
+        nonceOrder,
+        limit,
+        offset: args.offset,
+      });
       const url = `${this.baseUri}/api/v1/multisig-transactions/queue?${query.toString()}`;
-      const { data } = await this.networkService.get<
-        Raw<Page<SafeQueueMultisigTransactionEntity>>
+      return await this.dataSource.get<
+        Page<SafeQueueMultisigTransactionEntity>
       >({
+        cacheDir,
         url,
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
         networkRequest: {
           circuitBreaker: {
             key: CircuitBreakerKeys.getSafeQueueServiceKey(),
           },
         },
       });
-      return data;
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -666,6 +679,11 @@ export class SafeQueueService implements ISafeQueueService {
       chainId: args.chainId,
       safeAddress: args.safeAddress,
     });
+    await this.cacheService.deleteByKey(key);
+  }
+
+  async clearSpaceTransactionQueue(args: { spaceId: number }): Promise<void> {
+    const key = CacheRouter.getSpaceTransactionQueueCacheKey(args.spaceId);
     await this.cacheService.deleteByKey(key);
   }
 

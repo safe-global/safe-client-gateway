@@ -302,6 +302,7 @@ export class SafeRepository implements ISafeRepository {
   }
 
   async getTransactionQueueForSafes(args: {
+    spaceId: number;
     safes: ReadonlyArray<{ chainId: string; safe: Safe }>;
     limit?: number;
     offset?: number;
@@ -313,6 +314,7 @@ export class SafeRepository implements ISafeRepository {
       ]),
     );
     const page = await this.safeQueueService.getTransactionQueueForSafes({
+      spaceId: args.spaceId,
       safes: args.safes.map(({ chainId, safe }) => ({
         chainId,
         safeAddress: safe.address,
@@ -789,6 +791,12 @@ export class SafeRepository implements ISafeRepository {
         `Failed to clear multisig transactions from one or more caches. errors=${errors}`,
       );
       throw new Error('Failed to clear multisig transactions');
+    }
+  }
+
+  async clearSpaceTransactionQueue(args: { spaceId: number }): Promise<void> {
+    if (this.safeQueueEnabled) {
+      await this.safeQueueService.clearSpaceTransactionQueue(args);
     }
   }
 

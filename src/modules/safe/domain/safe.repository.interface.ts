@@ -114,6 +114,7 @@ export interface ISafeRepository {
    * Transaction Service cannot list many Safes in one request.
    */
   getTransactionQueueForSafes(args: {
+    spaceId: number;
     safes: ReadonlyArray<{ chainId: string; safe: Safe }>;
     limit?: number;
     offset?: number;
@@ -171,6 +172,9 @@ export interface ISafeRepository {
     chainId: string;
     safeAddress: Address;
   }): Promise<void>;
+
+  /** Every cached page of the queue of a Space, whatever Safes it held. */
+  clearSpaceTransactionQueue(args: { spaceId: number }): Promise<void>;
 
   getMultisigTransactions(args: {
     chainId: string;
