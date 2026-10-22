@@ -102,3 +102,8 @@ export function decodeConfigurations(args: {
   const parsed = PolicyConfigurationSchema.array().safeParse(decoded.args[0]);
   return parsed.success ? parsed.data : null;
 }
+
+/** Whether a queued transaction has every confirmation it needs to execute. */
+export function isFullySigned(transaction: PendingTransaction): boolean {
+  return transaction.confirmations >= transaction.confirmationsRequired;
+}

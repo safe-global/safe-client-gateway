@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import { type Address, type Hex, isAddressEqual, zeroAddress } from 'viem';
-import { toSecondsTimestamp } from '#/domain/common/utils/time';
 import {
   type ILoggingService,
   LoggingService,
@@ -9,6 +8,11 @@ import {
 import { asError } from '#/logging/utils';
 import { MultiSendDecoder } from '#/modules/contracts/domain/decoders/multi-send-decoder.helper';
 import { SafePolicyGuardDecoder } from '#/modules/policies/domain/contracts/decoders/safe-policy-guard-decoder.helper';
+import type {
+  DelayedPolicyChange,
+  QueuedPolicyChangeConfigurationCall,
+  ResolvedStatus,
+} from '#/modules/policies/domain/entities/delayed-policy-change.entity';
 import type {
   PolicyIndexerConfigurationRoot,
   PolicyIndexerGuardEnforcedPolicy,
@@ -28,8 +32,11 @@ import {
   getSafePolicyGuardDeployments,
 } from '#/modules/policies/domain/policy-deployments.constants';
 import {
+  applicationWindowOf,
+  createdAtOf,
   guardPolicyTypeOfKind,
   isRootApplicable,
+  queuedApplyStatus,
 } from '#/modules/policies/domain/utils/policy.utils';
 import { configurationRoot } from '#/modules/policies/domain/utils/policy-configuration-root.utils';
 import {
@@ -37,48 +44,25 @@ import {
   pendingTransactionOf,
   type QueuedCallContext,
   queuedCalls,
-} from '#/modules/policies/routes/mappers/queued-calls.utils';
+} from '#/modules/policies/domain/utils/queued-calls.utils';
 import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
 
-/** A `requestConfiguration` call in the queue. */
-type QueuedRequest = { guard: Address; transaction: PendingTransaction };
-
-/** An `applyConfiguration` call in the queue. */
-type QueuedApply = {
-  guard: Address;
-  configurations: Array<PolicyConfiguration>;
-  transaction: PendingTransaction;
-};
-
-/** Everything known about one root of the Safe. */
-type RootFacts = {
-  root: Hex;
-  onChain: PolicyIndexerConfigurationRoot | null;
-  stored: SafePolicyGuardConfiguration | null;
-  request: QueuedRequest | null;
-  apply: QueuedApply | null;
-};
-
 /**
- * Works out where each delayed `SafePolicyGuard` configuration of a Safe
- * stands, one item per root.
+ * Aggregates three sources of data and builds {Array<PendingDelayedGuardPolicies>}.
+ * The configuration root is the key all three share, so items are grouped by it.
+ * - The chain has the root (a hash of the configurations), its status and its application window, but not
+ * the configurations.
+ * - CGW has the configurations.
+ * - The transaction queue has the request and apply calls not yet
+ * executed.
  *
- * A root's facts come from three places: the guard's on-chain state (the
- * indexer), the configurations CGW stored, and the Safe's transaction queue.
- * The first matching rule decides its status, where "not expired" means
- * `now < expiresAt`:
- *
- * 1. A queued `applyConfiguration`, the root pending and not expired, fewer
- *    confirmations than required: `application-in-signing`.
- * 2. The same, fully signed, before `readyAt`: `pending-application`.
- * 3. The same, fully signed, from `readyAt`: `application-ready`.
- * 4. The root pending and not expired, no queued apply: `pending-application`.
- * 5. A queued `requestConfiguration`, whatever the on-chain state and however
- *    many confirmations: `configuration-in-signing`.
- * 6. The root pending and `now >= expiresAt`: `expired`.
- * 7. Stored in CGW, no on-chain root and nothing queued: `draft`.
- *
- * Anything else - an applied or invalidated root, say - is not pending.
+ * Where the sources overlap, the status follows the step closest to running
+ * on chain, since that is what the client acts on: a queued apply on an open
+ * window, else the open window, else a queued request, else an expired
+ * window, else a draft that never reached the chain. A fully signed apply is
+ * still `pending-application` before `readyAt`, because the guard rejects it
+ * until then. An expired root is reported rather than dropped, so a lapsed
+ * change does not vanish.
  */
 @Injectable()
 export class DelayedGuardPoliciesMapper {
@@ -90,218 +74,222 @@ export class DelayedGuardPoliciesMapper {
   ) {}
 
   /**
-   * @param args.roots The Safe's configuration roots, from the indexer.
-   * @param args.stored The configurations CGW stored for the Safe.
-   * @param args.bindings The Safe's current guard policy bindings.
+   * @param args.onChainConfigurations The Safe's configuration roots as the
+   * chain holds them, read from the indexer.
+   * @param args.storedConfigurations The configurations behind those roots,
+   * as CGW stored them when the wallet drafted them.
+   * @param args.guardEnforcedPolicies The Safe's current guard policy bindings.
    * @param args.types The requested policy types.
    * @param args.now Unix seconds.
    */
   public map(args: {
     safe: SafeRef;
     transactions: ReadonlyArray<MultisigTransaction>;
-    roots: ReadonlyArray<PolicyIndexerConfigurationRoot>;
-    stored: ReadonlyArray<SafePolicyGuardConfiguration>;
-    bindings: ReadonlyArray<PolicyIndexerGuardEnforcedPolicy>;
+    onChainConfigurations: ReadonlyArray<PolicyIndexerConfigurationRoot>;
+    storedConfigurations: ReadonlyArray<SafePolicyGuardConfiguration>;
+    guardEnforcedPolicies: ReadonlyArray<PolicyIndexerGuardEnforcedPolicy>;
     types: ReadonlyArray<PolicyType>;
     now: number;
   }): Array<PendingDelayedGuardPolicies> {
-    const facts = this.rootFacts({
-      ...args,
-      knownGuards: [
-        ...getSafePolicyGuardDeployments(args.safe.chainId),
-        ...args.roots.map((root) => root.guard),
-        ...args.bindings.map((binding) => binding.guard),
-      ],
+    const knownGuards = [
+      ...getSafePolicyGuardDeployments(args.safe.chainId),
+      ...args.onChainConfigurations.map((root) => root.guard),
+      ...args.guardEnforcedPolicies.map((binding) => binding.guard),
+    ];
+
+    const queuedPolicyChanges = this.findQueuedConfigurationRequestOrApplyCalls(
+      {
+        safe: args.safe,
+        transactions: args.transactions,
+        knownGuards,
+      },
+    );
+
+    const changes = this.changesByRoot({
+      onChainConfigurations: args.onChainConfigurations,
+      storedConfigurations: args.storedConfigurations,
+      queued: queuedPolicyChanges,
     });
 
-    return facts.flatMap((fact) => {
-      const item = this.mapRoot({
-        safe: args.safe,
-        fact,
-        now: args.now,
-      });
-
-      return item && this.isRequested({ item, ...args }) ? [item] : [];
+    return changes.flatMap((change) => {
+      const item = this.toItem({ change, safe: args.safe, now: args.now });
+      const wanted =
+        item &&
+        this.maySetRequestedType({
+          item,
+          safe: args.safe,
+          bindings: args.guardEnforcedPolicies,
+          types: args.types,
+        });
+      return wanted ? [item] : [];
     });
   }
 
   /**
-   * Gathers, per root, what the indexer, the store and the queue say about it.
+   * Merges the three sources into one change per root. Changes come out in
+   * the order their root was first seen: on chain, then in CGW, then in the
+   * queue.
    */
-  private rootFacts(args: {
-    safe: SafeRef;
-    transactions: ReadonlyArray<MultisigTransaction>;
-    roots: ReadonlyArray<PolicyIndexerConfigurationRoot>;
-    stored: ReadonlyArray<SafePolicyGuardConfiguration>;
-    knownGuards: ReadonlyArray<Address>;
-  }): Array<RootFacts> {
-    // Roots are lower-cased by every source: the indexer schema, viem and CGW.
-    const facts = new Map<Hex, RootFacts>();
-    const factOf = (root: Hex): RootFacts => {
-      let fact = facts.get(root);
-      if (!fact) {
-        fact = {
+  private changesByRoot(args: {
+    onChainConfigurations: ReadonlyArray<PolicyIndexerConfigurationRoot>;
+    storedConfigurations: ReadonlyArray<SafePolicyGuardConfiguration>;
+    queued: ReadonlyArray<QueuedPolicyChangeConfigurationCall>;
+  }): Array<DelayedPolicyChange> {
+    const changes = new Map<Hex, DelayedPolicyChange>();
+    const changeOf = (root: Hex): DelayedPolicyChange => {
+      let change = changes.get(root);
+      if (!change) {
+        change = {
           root,
           onChain: null,
           stored: null,
-          request: null,
-          apply: null,
+          queuedRequest: null,
+          queuedApply: null,
         };
-        facts.set(root, fact);
+        changes.set(root, change);
       }
-      return fact;
+      return change;
     };
 
-    for (const onChain of args.roots) {
-      factOf(onChain.root).onChain = onChain;
+    for (const onChain of args.onChainConfigurations) {
+      changeOf(onChain.root).onChain = onChain;
     }
 
-    for (const stored of args.stored) {
-      factOf(stored.root).stored = stored;
+    for (const stored of args.storedConfigurations) {
+      changeOf(stored.root).stored = stored;
     }
 
-    this.addQueuedCalls({ ...args, factOf });
+    // The queue is in nonce order, so the first call for a root executes first.
+    for (const call of args.queued) {
+      const change = changeOf(call.root);
+      if (call.kind === 'request') {
+        change.queuedRequest ??= call;
+      } else {
+        change.queuedApply ??= call;
+      }
+    }
 
-    return Array.from(facts.values());
+    return Array.from(changes.values());
   }
 
   /**
-   * Records the queued `requestConfiguration` and `applyConfiguration` calls
-   * on known guards. The queue is in nonce order, so the first call for a root
-   * is the one that executes first.
+   * The `requestConfiguration` and `applyConfiguration` calls queued on a known
+   * guard, in queue order. A call is found directly or one level inside a
+   * MultiSend batch.
    */
-  private addQueuedCalls(args: {
+  private findQueuedConfigurationRequestOrApplyCalls(args: {
     safe: SafeRef;
     transactions: ReadonlyArray<MultisigTransaction>;
     knownGuards: ReadonlyArray<Address>;
-    factOf: (root: Hex) => RootFacts;
-  }): void {
-    for (const transaction of args.transactions) {
+  }): Array<QueuedPolicyChangeConfigurationCall> {
+    return args.transactions.flatMap((transaction) => {
       const context = {
         chainId: args.safe.chainId,
         safeTxHash: transaction.safeTxHash,
       };
-      for (const call of queuedCalls(transaction, this.multiSendDecoder)) {
-        if (!args.knownGuards.some((guard) => isAddressEqual(guard, call.to))) {
-          continue;
-        }
 
-        const request = this.decodeRequest(call.data, context);
-        if (request) {
-          const fact = args.factOf(request);
-          fact.request ??= {
-            guard: call.to,
+      return queuedCalls(transaction, this.multiSendDecoder)
+        .filter((call) =>
+          args.knownGuards.some((guard) => isAddressEqual(guard, call.to)),
+        )
+        .flatMap((call) => {
+          const decoded = this.decodeConfigurationRequestOrApplyCall({
+            call,
             transaction: pendingTransactionOf(transaction),
-          };
-          continue;
-        }
+            context,
+          });
+          return decoded ? [decoded] : [];
+        });
+    });
+  }
 
-        const configurations = this.decodeApply(call.data, context);
-        if (configurations) {
-          const fact = args.factOf(configurationRoot(configurations));
-          fact.apply ??= {
-            guard: call.to,
-            configurations,
-            transaction: pendingTransactionOf(transaction),
-          };
-        }
-      }
+  /** The item for one change, or `null` when the change is not pending. */
+  private toItem(args: {
+    change: DelayedPolicyChange;
+    safe: SafeRef;
+    now: number;
+  }): PendingDelayedGuardPolicies | null {
+    const resolved = this.resolveStatus(args.change, args.now);
+    if (!resolved) {
+      return null;
     }
+
+    const { change } = args;
+    return {
+      kind: 'delayed-guard-policies',
+      safe: args.safe,
+      root: change.root,
+      // A queued apply carries the configurations in its calldata. Otherwise
+      // only CGW's copy can say what the root stands for.
+      configurations:
+        change.queuedApply?.configurations ??
+        change.stored?.configurations ??
+        null,
+      createdAt: createdAtOf(change),
+      ...resolved,
+    };
   }
 
   /**
-   * The item for one root, or `null` when the root is not pending.
+   * The precedence from the class doc, first match wins. `null` when the
+   * change is finished: applied or invalidated, with nothing queued.
    */
-  private mapRoot(args: {
-    safe: SafeRef;
-    fact: RootFacts;
-    now: number;
-  }): PendingDelayedGuardPolicies | null {
-    const { fact } = args;
-    const window =
-      fact.onChain?.status === 'PENDING'
-        ? {
-            guard: fact.onChain.guard,
-            readyAt: fact.onChain.readyAt,
-            expiresAt: fact.onChain.expiresAt,
-          }
-        : null;
-    // The window while the root can still be applied.
-    const applicable =
-      fact.onChain && isRootApplicable(fact.onChain, args.now) ? window : null;
-    const configurations =
-      fact.apply?.configurations ?? fact.stored?.configurations ?? null;
-    const createdAt =
-      (fact.stored && toSecondsTimestamp(fact.stored.createdAt)) ??
-      fact.request?.transaction.proposedAt ??
-      fact.apply?.transaction.proposedAt ??
-      null;
+  private resolveStatus(
+    change: DelayedPolicyChange,
+    now: number,
+  ): ResolvedStatus | null {
+    const { onChain, queuedRequest, queuedApply } = change;
+    const window = applicationWindowOf(onChain);
+    const openWindow =
+      onChain && isRootApplicable(onChain, now) ? window : null;
 
-    const item = (
-      status: PendingDelayedGuardPolicies['status'],
-      details: Pick<
-        PendingDelayedGuardPolicies,
-        'guard' | 'readyAt' | 'expiresAt' | 'transaction'
-      >,
-    ): PendingDelayedGuardPolicies => ({
-      kind: 'delayed-guard-policies',
-      status,
-      safe: args.safe,
-      root: fact.root,
-      configurations,
-      createdAt,
-      ...details,
-    });
-
-    if (applicable && fact.apply) {
-      const { transaction } = fact.apply;
-      const isSigned =
-        transaction.confirmations >= transaction.confirmationsRequired;
-      if (!isSigned) {
-        return item(PendingDelayedGuardPoliciesStatus.ApplicationInSigning, {
-          ...applicable,
-          transaction,
-        });
-      }
-      // The guard rejects an apply until `readyAt`, however signed.
-      return item(
-        args.now >= applicable.readyAt
-          ? PendingDelayedGuardPoliciesStatus.ApplicationReady
-          : PendingDelayedGuardPoliciesStatus.PendingApplication,
-        { ...applicable, transaction },
-      );
+    // The apply is the next step; its signatures and the delay decide.
+    if (openWindow && queuedApply) {
+      return {
+        status: queuedApplyStatus(queuedApply, openWindow, now),
+        ...openWindow,
+        transaction: queuedApply.transaction,
+      };
     }
 
-    if (applicable) {
-      return item(PendingDelayedGuardPoliciesStatus.PendingApplication, {
-        ...applicable,
+    // The window is open and the wallet has yet to queue the apply.
+    if (openWindow) {
+      return {
+        status: PendingDelayedGuardPoliciesStatus.PendingApplication,
+        ...openWindow,
         transaction: null,
-      });
+      };
     }
 
-    if (fact.request) {
-      return item(PendingDelayedGuardPoliciesStatus.ConfigurationInSigning, {
-        guard: fact.request.guard,
+    // No open window, so the queued request is what opens one.
+    if (queuedRequest) {
+      return {
+        status: PendingDelayedGuardPoliciesStatus.ConfigurationInSigning,
+        guard: queuedRequest.guard,
         readyAt: null,
         expiresAt: null,
-        transaction: fact.request.transaction,
-      });
+        transaction: queuedRequest.transaction,
+      };
     }
 
+    // Pending on chain but past `expiresAt`: it has to be requested again.
     if (window) {
-      return item(PendingDelayedGuardPoliciesStatus.Expired, {
+      return {
+        status: PendingDelayedGuardPoliciesStatus.Expired,
         ...window,
         transaction: null,
-      });
+      };
     }
 
-    if (fact.stored && !fact.onChain && !fact.apply) {
-      return item(PendingDelayedGuardPoliciesStatus.Draft, {
+    // Only CGW knows the change: the wallet saved it and went no further.
+    if (change.stored && !onChain && !queuedApply) {
+      return {
+        status: PendingDelayedGuardPoliciesStatus.Draft,
         guard: null,
         readyAt: null,
         expiresAt: null,
         transaction: null,
-      });
+      };
     }
 
     return null;
@@ -315,7 +303,7 @@ export class DelayedGuardPoliciesMapper {
    * contract, or configurations CGW does not hold - cannot be ruled out, so it
    * keeps the item in.
    */
-  private isRequested(args: {
+  private maySetRequestedType(args: {
     item: PendingDelayedGuardPolicies;
     safe: SafeRef;
     bindings: ReadonlyArray<PolicyIndexerGuardEnforcedPolicy>;
@@ -326,7 +314,11 @@ export class DelayedGuardPoliciesMapper {
     }
 
     return args.item.configurations.some((configuration) => {
-      const type = this.policyTypeOf({ configuration, ...args });
+      const type = this.policyTypeOf({
+        configuration,
+        safe: args.safe,
+        bindings: args.bindings,
+      });
       return type === null || args.types.includes(type);
     });
   }
@@ -359,54 +351,65 @@ export class DelayedGuardPoliciesMapper {
     return binding ? guardPolicyTypeOfKind(binding.kind) : null;
   }
 
-  /** The root of a `requestConfiguration` call, or `null` for other data. */
-  private decodeRequest(data: Hex, context: QueuedCallContext): Hex | null {
-    if (!this.safePolicyGuardDecoder.helpers.isRequestConfiguration(data)) {
+  /**
+   * The `requestConfiguration` or `applyConfiguration` a queued call is, or
+   * `null` for any other call.
+   *
+   * A call whose selector matches but whose arguments do not decode is a
+   * malformed queued transaction: it cannot be reported, so it is skipped and
+   * logged.
+   */
+  private decodeConfigurationRequestOrApplyCall(args: {
+    call: { to: Address; data: Hex };
+    transaction: PendingTransaction;
+    context: QueuedCallContext;
+  }): QueuedPolicyChangeConfigurationCall | null {
+    const { to: guard, data } = args.call;
+    const { helpers } = this.safePolicyGuardDecoder;
+    const isRequest = helpers.isRequestConfiguration(data);
+    const isApply = helpers.isApplyConfiguration(data);
+    if (!(isRequest || isApply)) {
       return null;
     }
 
     try {
-      const decoded = this.safePolicyGuardDecoder.decodeFunctionData({ data });
-      return decoded.functionName === 'requestConfiguration'
-        ? decoded.args[0]
-        : null;
-    } catch (error) {
-      this.logUndecodable(error, context);
-      return null;
-    }
-  }
+      if (isRequest) {
+        const decoded = this.safePolicyGuardDecoder.decodeFunctionData({
+          data,
+        });
+        if (decoded.functionName !== 'requestConfiguration') {
+          return null;
+        }
+        return {
+          kind: 'request',
+          root: decoded.args[0],
+          guard,
+          transaction: args.transaction,
+        };
+      }
 
-  /** The configurations of an `applyConfiguration` call, or `null`. */
-  private decodeApply(
-    data: Hex,
-    context: QueuedCallContext,
-  ): Array<PolicyConfiguration> | null {
-    if (!this.safePolicyGuardDecoder.helpers.isApplyConfiguration(data)) {
-      return null;
-    }
-
-    try {
-      return decodeConfigurations({
+      const configurations = decodeConfigurations({
         decoder: this.safePolicyGuardDecoder,
         data,
         functionName: 'applyConfiguration',
       });
+      if (!configurations) {
+        return null;
+      }
+      return {
+        kind: 'apply',
+        root: configurationRoot(configurations),
+        guard,
+        configurations,
+        transaction: args.transaction,
+      };
     } catch (error) {
-      this.logUndecodable(error, context);
+      this.loggingService.debug({
+        message: 'Could not decode a queued SafePolicyGuard configuration call',
+        ...args.context,
+        error: asError(error).message,
+      });
       return null;
     }
-  }
-
-  /**
-   * A call whose selector matched but whose arguments do not decode cannot be
-   * reported, so it is skipped - and logged, since it means a malformed queued
-   * transaction.
-   */
-  private logUndecodable(error: unknown, context: QueuedCallContext): void {
-    this.loggingService.debug({
-      message: 'Could not decode a queued SafePolicyGuard configuration call',
-      ...context,
-      error: asError(error).message,
-    });
   }
 }

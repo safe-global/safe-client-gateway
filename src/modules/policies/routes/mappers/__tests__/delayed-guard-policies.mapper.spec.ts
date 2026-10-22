@@ -148,8 +148,8 @@ describe('DelayedGuardPoliciesMapper', () => {
   }
 
   function map(args: {
-    roots?: Array<PolicyIndexerConfigurationRoot>;
-    stored?: Array<SafePolicyGuardConfiguration>;
+    onChainConfigurations?: Array<PolicyIndexerConfigurationRoot>;
+    storedConfigurations?: Array<SafePolicyGuardConfiguration>;
     transactions?: Array<MultisigTransaction>;
     bindings?: Array<PolicyIndexerGuardEnforcedPolicy>;
     types?: ReadonlyArray<PolicyType>;
@@ -157,9 +157,9 @@ describe('DelayedGuardPoliciesMapper', () => {
     return target.map({
       safe,
       transactions: args.transactions ?? [],
-      roots: args.roots ?? [],
-      stored: args.stored ?? [],
-      bindings: args.bindings ?? [],
+      onChainConfigurations: args.onChainConfigurations ?? [],
+      storedConfigurations: args.storedConfigurations ?? [],
+      guardEnforcedPolicies: args.bindings ?? [],
       types: args.types ?? GUARD_POLICY_TYPES,
       now,
     });
@@ -173,7 +173,7 @@ describe('DelayedGuardPoliciesMapper', () => {
     it('should report stored configurations nothing has requested as a draft', () => {
       const draft = stored(configurations());
 
-      expect(map({ stored: [draft] })).toStrictEqual([
+      expect(map({ storedConfigurations: [draft] })).toStrictEqual([
         {
           kind: 'delayed-guard-policies',
           status: 'draft',
@@ -195,7 +195,7 @@ describe('DelayedGuardPoliciesMapper', () => {
       const transaction = request(config, 1);
 
       expect(
-        map({ stored: [draft], transactions: [transaction] }),
+        map({ storedConfigurations: [draft], transactions: [transaction] }),
       ).toStrictEqual([
         {
           kind: 'delayed-guard-policies',
@@ -225,7 +225,7 @@ describe('DelayedGuardPoliciesMapper', () => {
         readyAt: now + 3_600,
       });
 
-      expect(map({ roots: [root] })).toStrictEqual([
+      expect(map({ onChainConfigurations: [root] })).toStrictEqual([
         {
           kind: 'delayed-guard-policies',
           status: 'pending-application',
@@ -247,7 +247,7 @@ describe('DelayedGuardPoliciesMapper', () => {
         readyAt: now - 60,
       });
 
-      const [item] = map({ roots: [root] });
+      const [item] = map({ onChainConfigurations: [root] });
 
       expect(item.status).toBe('pending-application');
     });
@@ -257,7 +257,9 @@ describe('DelayedGuardPoliciesMapper', () => {
       const transaction = apply(config, 1);
 
       const [item] = map({
-        roots: [onChain({ configurations: config, readyAt: now - 60 })],
+        onChainConfigurations: [
+          onChain({ configurations: config, readyAt: now - 60 }),
+        ],
         transactions: [transaction],
       });
 
@@ -277,7 +279,9 @@ describe('DelayedGuardPoliciesMapper', () => {
       const config = configurations();
 
       const [item] = map({
-        roots: [onChain({ configurations: config, readyAt: now - 60 })],
+        onChainConfigurations: [
+          onChain({ configurations: config, readyAt: now - 60 }),
+        ],
         transactions: [apply(config, 2)],
       });
 
@@ -290,7 +294,9 @@ describe('DelayedGuardPoliciesMapper', () => {
       const transaction = apply(config, 2);
 
       const [item] = map({
-        roots: [onChain({ configurations: config, readyAt: now + 60 })],
+        onChainConfigurations: [
+          onChain({ configurations: config, readyAt: now + 60 }),
+        ],
         transactions: [transaction],
       });
 
@@ -309,7 +315,9 @@ describe('DelayedGuardPoliciesMapper', () => {
       const first = apply(config, 1);
 
       const [item] = map({
-        roots: [onChain({ configurations: config, readyAt: now - 60 })],
+        onChainConfigurations: [
+          onChain({ configurations: config, readyAt: now - 60 }),
+        ],
         transactions: [first, apply(config, 2)],
       });
 
@@ -328,7 +336,9 @@ describe('DelayedGuardPoliciesMapper', () => {
       const transaction = apply(config, 1);
 
       const [item] = map({
-        roots: [onChain({ configurations: config, readyAt: now - 60 })],
+        onChainConfigurations: [
+          onChain({ configurations: config, readyAt: now - 60 }),
+        ],
         transactions: [transaction],
       });
 
@@ -339,7 +349,10 @@ describe('DelayedGuardPoliciesMapper', () => {
       const config = configurations();
 
       expect(
-        map({ stored: [stored(config)], transactions: [apply(config)] }),
+        map({
+          storedConfigurations: [stored(config)],
+          transactions: [apply(config)],
+        }),
       ).toStrictEqual([]);
     });
 
@@ -370,7 +383,9 @@ describe('DelayedGuardPoliciesMapper', () => {
       const config = configurations();
 
       const [item] = map({
-        roots: [onChain({ configurations: config, readyAt: now })],
+        onChainConfigurations: [
+          onChain({ configurations: config, readyAt: now }),
+        ],
         transactions: [apply(config, 2)],
       });
 
@@ -381,7 +396,9 @@ describe('DelayedGuardPoliciesMapper', () => {
       const config = configurations();
 
       const [item] = map({
-        roots: [onChain({ configurations: config, readyAt: now - 60 })],
+        onChainConfigurations: [
+          onChain({ configurations: config, readyAt: now - 60 }),
+        ],
         transactions: [apply(config, 3)],
       });
 
@@ -392,7 +409,9 @@ describe('DelayedGuardPoliciesMapper', () => {
       const config = configurations();
 
       const [item] = map({
-        roots: [onChain({ configurations: config, readyAt: now - 60 })],
+        onChainConfigurations: [
+          onChain({ configurations: config, readyAt: now - 60 }),
+        ],
         transactions: [request(config)],
       });
 
@@ -409,7 +428,9 @@ describe('DelayedGuardPoliciesMapper', () => {
       const queuedApply = apply(config, 1);
 
       const [item] = map({
-        roots: [onChain({ configurations: config, readyAt: now - 60 })],
+        onChainConfigurations: [
+          onChain({ configurations: config, readyAt: now - 60 }),
+        ],
         transactions: [request(config), queuedApply],
       });
 
@@ -428,7 +449,7 @@ describe('DelayedGuardPoliciesMapper', () => {
       const first = request(config, 1);
 
       const [item] = map({
-        stored: [stored(config)],
+        storedConfigurations: [stored(config)],
         transactions: [first, request(config, 2)],
       });
 
@@ -448,7 +469,7 @@ describe('DelayedGuardPoliciesMapper', () => {
         expiresAt: now + faker.number.int({ min: 1, max: 86_400 }),
       };
 
-      expect(map({ roots: [root] })).toStrictEqual([
+      expect(map({ onChainConfigurations: [root] })).toStrictEqual([
         expect.objectContaining({
           status: 'pending-application',
           readyAt: root.readyAt,
@@ -463,7 +484,7 @@ describe('DelayedGuardPoliciesMapper', () => {
         readyAt: now - expiry,
       });
 
-      expect(map({ roots: [root] })).toStrictEqual([
+      expect(map({ onChainConfigurations: [root] })).toStrictEqual([
         expect.objectContaining({
           status: 'expired',
           readyAt: root.readyAt,
@@ -477,7 +498,9 @@ describe('DelayedGuardPoliciesMapper', () => {
       const config = configurations();
 
       const [item] = map({
-        roots: [onChain({ configurations: config, readyAt: now - expiry })],
+        onChainConfigurations: [
+          onChain({ configurations: config, readyAt: now - expiry }),
+        ],
         transactions: [request(config)],
       });
 
@@ -489,7 +512,9 @@ describe('DelayedGuardPoliciesMapper', () => {
       const config = configurations();
 
       const [item] = map({
-        roots: [onChain({ configurations: config, readyAt: now - expiry })],
+        onChainConfigurations: [
+          onChain({ configurations: config, readyAt: now - expiry }),
+        ],
         transactions: [apply(config)],
       });
 
@@ -505,8 +530,10 @@ describe('DelayedGuardPoliciesMapper', () => {
 
         expect(
           map({
-            roots: [onChain({ configurations: config, status })],
-            stored: [stored(config)],
+            onChainConfigurations: [
+              onChain({ configurations: config, status }),
+            ],
+            storedConfigurations: [stored(config)],
           }),
         ).toStrictEqual([]);
       },
@@ -531,7 +558,9 @@ describe('DelayedGuardPoliciesMapper', () => {
         .encode();
 
       const [item] = map({
-        roots: [onChain({ configurations: config, readyAt: now - 60 })],
+        onChainConfigurations: [
+          onChain({ configurations: config, readyAt: now - 60 }),
+        ],
         transactions: [
           queued({
             to: getAddress(faker.finance.ethereumAddress()),
@@ -573,7 +602,7 @@ describe('DelayedGuardPoliciesMapper', () => {
       const erc20Transfer = stored(configurationOf(ERC20_TRANSFER_POLICY));
 
       const items = map({
-        stored: [cosigner, erc20Transfer],
+        storedConfigurations: [cosigner, erc20Transfer],
         types: [PolicyType.Cosigner],
       });
 
@@ -587,11 +616,11 @@ describe('DelayedGuardPoliciesMapper', () => {
       ]);
 
       expect(
-        map({ stored: [mixed], types: [PolicyType.MultiSend] }),
+        map({ storedConfigurations: [mixed], types: [PolicyType.MultiSend] }),
       ).toHaveLength(1);
-      expect(map({ stored: [mixed], types: [PolicyType.Allow] })).toStrictEqual(
-        [],
-      );
+      expect(
+        map({ storedConfigurations: [mixed], types: [PolicyType.Allow] }),
+      ).toStrictEqual([]);
     });
 
     it('should type a removal by the binding it removes', () => {
@@ -611,14 +640,14 @@ describe('DelayedGuardPoliciesMapper', () => {
 
       expect(
         map({
-          stored: [removal],
+          storedConfigurations: [removal],
           bindings: [binding],
           types: [PolicyType.Cosigner],
         }),
       ).toHaveLength(1);
       expect(
         map({
-          stored: [removal],
+          storedConfigurations: [removal],
           bindings: [binding],
           types: [PolicyType.Erc20Transfer],
         }),
@@ -651,14 +680,14 @@ describe('DelayedGuardPoliciesMapper', () => {
 
       expect(
         map({
-          stored: [removal],
+          storedConfigurations: [removal],
           bindings: [binding, delegateBinding],
           types: [PolicyType.Erc20Transfer],
         }),
       ).toHaveLength(1);
       expect(
         map({
-          stored: [removal],
+          storedConfigurations: [removal],
           bindings: [binding, delegateBinding],
           types: [PolicyType.Cosigner],
         }),
@@ -670,15 +699,17 @@ describe('DelayedGuardPoliciesMapper', () => {
         configurationOf(getAddress(faker.finance.ethereumAddress())),
       );
 
-      expect(map({ stored: [unknown], types: [PolicyType.Deny] })).toHaveLength(
-        1,
-      );
+      expect(
+        map({ storedConfigurations: [unknown], types: [PolicyType.Deny] }),
+      ).toHaveLength(1);
     });
 
     it('should keep a root whose configurations are unknown', () => {
       const root = onChain({ configurations: configurations() });
 
-      expect(map({ roots: [root], types: [PolicyType.Deny] })).toHaveLength(1);
+      expect(
+        map({ onChainConfigurations: [root], types: [PolicyType.Deny] }),
+      ).toHaveLength(1);
     });
   });
 });
