@@ -38,7 +38,7 @@ import {
 import type { Token } from '#/modules/tokens/domain/entities/token.entity';
 import { rawify } from '#/validation/entities/raw.entity';
 
-describe('List transfers by Safe - Transactions Controller', () => {
+describe('List outgoing transfers by Safe - Transactions Controller', () => {
   let app: INestApplication<Server>;
   let safeConfigUrl: string;
   let safeDecoderUrl: string;
@@ -115,7 +115,9 @@ describe('List transfers by Safe - Transactions Controller', () => {
     mockNetwork({ chain, safe, transfers: [], token });
 
     await request(app.getHttpServer())
-      .get(`/v1/chains/${chain.chainId}/safes/${safe.address}/transfers/`)
+      .get(
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/outgoing-transfers/`,
+      )
       .query({
         to,
         token_address: token.address,
@@ -146,7 +148,9 @@ describe('List transfers by Safe - Transactions Controller', () => {
     mockNetwork({ chain, safe, transfers: [], token });
 
     await request(app.getHttpServer())
-      .get(`/v1/chains/${chain.chainId}/safes/${safe.address}/transfers/`)
+      .get(
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/outgoing-transfers/`,
+      )
       .query({ from })
       .expect(200);
 
@@ -179,7 +183,9 @@ describe('List transfers by Safe - Transactions Controller', () => {
     });
 
     await request(app.getHttpServer())
-      .get(`/v1/chains/${chain.chainId}/safes/${safe.address}/transfers/`)
+      .get(
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/outgoing-transfers/`,
+      )
       .query({ to: recipient })
       .expect(200)
       .then(({ body }) => {
@@ -230,7 +236,9 @@ describe('List transfers by Safe - Transactions Controller', () => {
     });
 
     await request(app.getHttpServer())
-      .get(`/v1/chains/${chain.chainId}/safes/${safe.address}/transfers/`)
+      .get(
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/outgoing-transfers/`,
+      )
       .query({ to: recipient })
       .expect(200)
       .then(({ body }) => {
@@ -259,7 +267,9 @@ describe('List transfers by Safe - Transactions Controller', () => {
     });
 
     await request(app.getHttpServer())
-      .get(`/v1/chains/${chain.chainId}/safes/${safe.address}/transfers/`)
+      .get(
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/outgoing-transfers/`,
+      )
       .query({ to: recipient, trusted: 'false' })
       .expect(200)
       .then(({ body }) => {
@@ -290,7 +300,9 @@ describe('List transfers by Safe - Transactions Controller', () => {
     });
 
     await request(app.getHttpServer())
-      .get(`/v1/chains/${chain.chainId}/safes/${safe.address}/transfers/`)
+      .get(
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/outgoing-transfers/`,
+      )
       .query({ to: recipient })
       .expect(200)
       .then(({ body }) => {
@@ -319,7 +331,9 @@ describe('List transfers by Safe - Transactions Controller', () => {
     });
 
     const { body } = await request(app.getHttpServer())
-      .get(`/v1/chains/${chain.chainId}/safes/${safe.address}/transfers/`)
+      .get(
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/outgoing-transfers/`,
+      )
       .query({
         cursor: `limit=${limit}&offset=${offset}`,
         to: recipient,
@@ -358,7 +372,9 @@ describe('List transfers by Safe - Transactions Controller', () => {
     const safe = safeBuilder().build();
 
     await request(app.getHttpServer())
-      .get(`/v1/chains/${chain.chainId}/safes/${safe.address}/transfers/`)
+      .get(
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/outgoing-transfers/`,
+      )
       .query({ [param]: value })
       .expect(422);
 
@@ -370,7 +386,7 @@ describe('List transfers by Safe - Transactions Controller', () => {
 
     await request(app.getHttpServer())
       .get(
-        `/v1/chains/${faker.string.alpha(5)}/safes/${safe.address}/transfers/`,
+        `/v1/chains/${faker.string.alpha(5)}/safes/${safe.address}/outgoing-transfers/`,
       )
       .expect(422);
 
@@ -396,7 +412,9 @@ describe('List transfers by Safe - Transactions Controller', () => {
     });
 
     await request(app.getHttpServer())
-      .get(`/v1/chains/${chain.chainId}/safes/${safe.address}/transfers/`)
+      .get(
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/outgoing-transfers/`,
+      )
       .expect(500)
       .expect({ message: 'An error occurred', code: 500 });
   });
@@ -423,7 +441,9 @@ describe('List transfers by Safe - Transactions Controller', () => {
     });
 
     await request(app.getHttpServer())
-      .get(`/v1/chains/${chain.chainId}/safes/${safe.address}/transfers/`)
+      .get(
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/outgoing-transfers/`,
+      )
       .expect(404);
   });
 
@@ -444,7 +464,9 @@ describe('List transfers by Safe - Transactions Controller', () => {
     });
 
     await request(app.getHttpServer())
-      .get(`/v1/chains/${chain.chainId}/safes/${safe.address}/transfers/`)
+      .get(
+        `/v1/chains/${chain.chainId}/safes/${safe.address}/outgoing-transfers/`,
+      )
       .expect(502)
       .expect({ statusCode: 502, message: 'Bad gateway' });
   });

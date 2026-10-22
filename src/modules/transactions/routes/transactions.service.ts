@@ -402,7 +402,7 @@ export class TransactionsService {
     };
   }
 
-  async getTransfers(args: {
+  async getOutgoingTransfers(args: {
     chainId: string;
     routeUrl: Readonly<URL>;
     safeAddress: Address;

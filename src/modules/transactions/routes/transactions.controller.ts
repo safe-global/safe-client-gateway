@@ -517,8 +517,8 @@ export class TransactionsController {
   @ApiNotFoundResponse({
     description: 'Safe or chain not found',
   })
-  @Get('chains/:chainId/safes/:safeAddress/transfers')
-  getTransfers(
+  @Get('chains/:chainId/safes/:safeAddress/outgoing-transfers')
+  getOutgoingTransfers(
     @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
     @RouteUrlDecorator() routeUrl: URL,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
@@ -541,7 +541,7 @@ export class TransactionsController {
     @Query('token_address', new ValidationPipe(AddressSchema.optional()))
     tokenAddress?: Address,
   ): Promise<Partial<Page<TransactionItem>>> {
-    return this.transactionsService.getTransfers({
+    return this.transactionsService.getOutgoingTransfers({
       chainId,
       routeUrl,
       safeAddress,
