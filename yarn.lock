@@ -553,15 +553,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@datadog/pprof@npm:5.19.0":
-  version: 5.19.0
-  resolution: "@datadog/pprof@npm:5.19.0"
+"@datadog/pprof@npm:5.20.0":
+  version: 5.20.0
+  resolution: "@datadog/pprof@npm:5.20.0"
   dependencies:
     node-gyp: "npm:latest"
     node-gyp-build: "npm:^4.8.4"
-    pprof-format: "npm:^2.3.1"
+    pprof-format: "npm:^2.3.2"
     source-map: "npm:^0.8.0"
-  checksum: 10/db8ba256b1ae70b865ba5ddbeb08248c3613b8ca9fc77ebb402e5046c2910f7275e771a49bbcc4fd8d2361085a24b5b5e14ee518e0be0e3cc6b886253cca57bf
+  checksum: 10/528edcc0d50d1795709f89ffd7471c96750cf9a6bd8bb788ea50caddb47ec0f0d17866156909e40317238dfc6a7a0fd4bb73570ad8692f8f3b2aec4ffc314b30
   languageName: node
   linkType: hard
 
@@ -2784,16 +2784,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"dd-trace@npm:6.20.0":
-  version: 6.20.0
-  resolution: "dd-trace@npm:6.20.0"
+"dd-trace@npm:6.21.0":
+  version: 6.21.0
+  resolution: "dd-trace@npm:6.21.0"
   dependencies:
     "@datadog/libdatadog": "npm:^0.21.0"
     "@datadog/libdatadog-extras": "npm:^0.21.0"
     "@datadog/native-appsec": "npm:11.0.3"
     "@datadog/native-iast-taint-tracking": "npm:4.2.1"
     "@datadog/native-metrics": "npm:4.0.0"
-    "@datadog/pprof": "npm:5.19.0"
+    "@datadog/pprof": "npm:5.20.0"
     "@datadog/wasm-js-rewriter": "npm:5.0.4"
     "@opentelemetry/api": "npm:>=1.0.0 <1.10.0"
     "@opentelemetry/api-logs": "npm:<1.0.0"
@@ -2822,7 +2822,7 @@ __metadata:
       optional: true
     oxc-parser:
       optional: true
-  checksum: 10/c9f65681a3f3a96eca493c469d80bceb1363a50a0333137007775a4e9647c32962b4614243f8cf127d47334868df14c5f752ba175ed69fdf57e71c3c2869ed43
+  checksum: 10/39b927ab59f11f5355791fd61d61ff77945d354a6417aeaab444dd7aa721fcc5b3383254cb8ea4c69d116bbc32510c5d2a36e96a6fd5c4d6629c376e1fb06cd4
   languageName: node
   linkType: hard
 
@@ -4625,10 +4625,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"pprof-format@npm:^2.3.1":
-  version: 2.3.1
-  resolution: "pprof-format@npm:2.3.1"
-  checksum: 10/790a7e8dc62442ed47290ddd12518bcd6ab00598fdb043343f0576bc204635c3e229cb34354f3ab1a3082389e7b213b1039a510901c967b6ae85a2e4406e552c
+"pprof-format@npm:^2.3.2":
+  version: 2.3.2
+  resolution: "pprof-format@npm:2.3.2"
+  checksum: 10/b6eb50c4694fc87f82a7519f5d30d42d2fbe1f615d6cc88f223a3fdced6819960f7702b3dd21af128982304fc393df9491c53477d783a50d2e67a47078ffc2d8
   languageName: node
   linkType: hard
 
@@ -4895,7 +4895,7 @@ __metadata:
     concurrently: "npm:10.0.5"
     corepack: "npm:0.36.0"
     csv-stringify: "npm:^6.9.0"
-    dd-trace: "npm:6.20.0"
+    dd-trace: "npm:6.21.0"
     ecdsa-sig-formatter: "npm:1.0.11"
     husky: "npm:9.1.7"
     ioredis: "npm:6.0.0"
