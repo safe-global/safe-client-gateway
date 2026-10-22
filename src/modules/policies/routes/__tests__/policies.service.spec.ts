@@ -1433,6 +1433,7 @@ describe('PoliciesService', () => {
   });
 
   describe('pending guard installations', () => {
+    const guardRequest = { ...policyRequest, types: [PolicyType.Cosigner] };
     const installationRequest = {
       ...policyRequest,
       types: [PolicyType.Cosigner],
@@ -1590,9 +1591,9 @@ describe('PoliciesService', () => {
       expect(mockDelayedGuardPoliciesMapper.map).toHaveBeenCalledWith({
         safe,
         transactions: [],
-        roots: [root],
-        stored: [stored],
-        bindings: [binding],
+        onChainConfigurations: [root],
+        storedConfigurations: [stored],
+        guardEnforcedPolicies: [binding],
         types: guardRequest.types,
         now: Math.floor(now.getTime() / 1_000),
       });
@@ -1623,10 +1624,13 @@ describe('PoliciesService', () => {
       );
       expect(mockDelayedGuardPoliciesMapper.map).toHaveBeenCalledTimes(2);
       expect(mockDelayedGuardPoliciesMapper.map).toHaveBeenCalledWith(
-        expect.objectContaining({ safe, roots: [sepoliaRoot] }),
+        expect.objectContaining({ safe, onChainConfigurations: [sepoliaRoot] }),
       );
       expect(mockDelayedGuardPoliciesMapper.map).toHaveBeenCalledWith(
-        expect.objectContaining({ safe: polygonSafe, roots: [polygonRoot] }),
+        expect.objectContaining({
+          safe: polygonSafe,
+          onChainConfigurations: [polygonRoot],
+        }),
       );
     });
 
