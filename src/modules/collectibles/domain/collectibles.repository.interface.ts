@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { Address } from 'viem';
-import type { Page } from '@/domain/entities/page.entity';
-import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
-import type { Collectible } from '@/modules/collectibles/domain/entities/collectible.entity';
+import type { Page } from '#/domain/entities/page.entity';
+import type { Chain } from '#/modules/chains/domain/entities/chain.entity';
+import type { Collectible } from '#/modules/collectibles/domain/entities/collectible.entity';
 
 export const ICollectiblesRepository = Symbol('ICollectiblesRepository');
 

@@ -8,8 +8,8 @@ import { faker } from '@faker-js/faker';
 import { sdkStreamMixin } from '@smithy/util-stream';
 import { mockClient } from 'aws-sdk-client-mock';
 import type { MockedClass, MockedFunction, MockedObject } from 'vitest';
-import { AwsCloudStorageApiService } from '@/datasources/storage/aws-cloud-storage-api.service';
-import type { ILoggingService } from '@/logging/logging.interface';
+import { AwsCloudStorageApiService } from '#/datasources/storage/aws-cloud-storage-api.service';
+import type { ILoggingService } from '#/logging/logging.interface';
 
 vi.mock('@aws-sdk/s3-request-presigner', () => ({
   getSignedUrl: vi.fn(),

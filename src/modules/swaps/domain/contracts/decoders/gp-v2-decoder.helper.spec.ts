@@ -3,9 +3,9 @@
 import { faker } from '@faker-js/faker';
 import type { Hex } from 'viem';
 import type { MockedObject } from 'vitest';
-import type { ILoggingService } from '@/logging/logging.interface';
-import { setPreSignatureEncoder } from '@/modules/swaps/domain/contracts/__tests__/encoders/gp-v2-encoder.builder';
-import { GPv2Decoder } from '@/modules/swaps/domain/contracts/decoders/gp-v2-decoder.helper';
+import type { ILoggingService } from '#/logging/logging.interface';
+import { setPreSignatureEncoder } from '#/modules/swaps/domain/contracts/__tests__/encoders/gp-v2-encoder.builder';
+import { GPv2Decoder } from '#/modules/swaps/domain/contracts/decoders/gp-v2-decoder.helper';
 
 const loggingService = {
   debug: vi.fn(),

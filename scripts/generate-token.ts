@@ -32,10 +32,10 @@
  */
 import { createPublicKey } from 'node:crypto';
 import { parseArgs } from 'node:util';
-import configuration from '@/config/entities/configuration';
-import { AwsKmsSignerService } from '@/datasources/kms/aws-kms-signer.service';
-import { DEFAULT_BILLING_SERVICE_TOKEN_SUBJECT } from '@/modules/billing/domain/billing-auth.constants';
-import { BillingAuthService } from '@/modules/billing/domain/billing-auth.service';
+import configuration from '#/config/entities/configuration';
+import { AwsKmsSignerService } from '#/datasources/kms/aws-kms-signer.service';
+import { DEFAULT_BILLING_SERVICE_TOKEN_SUBJECT } from '#/modules/billing/domain/billing-auth.constants';
+import { BillingAuthService } from '#/modules/billing/domain/billing-auth.service';
 
 const DEFAULT_EXPIRES_IN_DAYS = 5 * 365; // ~5 years, long-lived service credential
 

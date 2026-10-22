@@ -3,27 +3,27 @@ import { faker } from '@faker-js/faker';
 import { NotFoundException } from '@nestjs/common';
 import { QueryFailedError } from 'typeorm';
 import type { MockedObject } from 'vitest';
-import { subscriptionBuilder } from '@/datasources/billing-api/entities/__tests__/subscription.builder';
-import { CacheRouter } from '@/datasources/cache/cache.router';
-import type { ICacheService } from '@/datasources/cache/cache.service.interface';
-import { toSecondsTimestamp } from '@/domain/common/utils/time';
-import type { ILoggingService } from '@/logging/logging.interface';
-import type { IBillingRepository } from '@/modules/billing/domain/billing.repository.interface';
+import { subscriptionBuilder } from '#/datasources/billing-api/entities/__tests__/subscription.builder';
+import { CacheRouter } from '#/datasources/cache/cache.router';
+import type { ICacheService } from '#/datasources/cache/cache.service.interface';
+import { toSecondsTimestamp } from '#/domain/common/utils/time';
+import type { ILoggingService } from '#/logging/logging.interface';
+import type { IBillingRepository } from '#/modules/billing/domain/billing.repository.interface';
 import {
   webhookEventBuilder,
   webhookEventCustomerBuilder,
-} from '@/modules/billing/domain/entities/__tests__/webhook-event.builder';
-import type { WebhookEvent } from '@/modules/billing/domain/entities/webhook-event.entity';
-import { WALLET_WEB_CUSTOMER_GROUP } from '@/modules/billing/domain/entities/webhook-event.entity';
-import { featureBuilder } from '@/modules/entitlements/domain/entities/__tests__/feature.builder';
-import type { Feature } from '@/modules/entitlements/domain/entities/feature.entity';
-import { FeatureType } from '@/modules/entitlements/domain/entities/feature.entity';
-import type { IFeaturesRepository } from '@/modules/entitlements/domain/features.repository.interface';
-import type { ISubscriptionsRepository } from '@/modules/entitlements/domain/subscriptions.repository.interface';
-import { EntitlementsService } from '@/modules/entitlements/routes/entitlements.service';
-import { SubscriptionSyncService } from '@/modules/entitlements/routes/subscription-sync.service';
-import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
-import { fakeUuid } from '@/validation/entities/schemas/__tests__/uuid.builder';
+} from '#/modules/billing/domain/entities/__tests__/webhook-event.builder';
+import type { WebhookEvent } from '#/modules/billing/domain/entities/webhook-event.entity';
+import { WALLET_WEB_CUSTOMER_GROUP } from '#/modules/billing/domain/entities/webhook-event.entity';
+import { featureBuilder } from '#/modules/entitlements/domain/entities/__tests__/feature.builder';
+import type { Feature } from '#/modules/entitlements/domain/entities/feature.entity';
+import { FeatureType } from '#/modules/entitlements/domain/entities/feature.entity';
+import type { IFeaturesRepository } from '#/modules/entitlements/domain/features.repository.interface';
+import type { ISubscriptionsRepository } from '#/modules/entitlements/domain/subscriptions.repository.interface';
+import { EntitlementsService } from '#/modules/entitlements/routes/entitlements.service';
+import { SubscriptionSyncService } from '#/modules/entitlements/routes/subscription-sync.service';
+import type { ISpacesRepository } from '#/modules/spaces/domain/spaces.repository.interface';
+import { fakeUuid } from '#/validation/entities/schemas/__tests__/uuid.builder';
 
 const FEATURES: Array<Feature> = [
   featureBuilder()
@@ -92,7 +92,10 @@ describe('SubscriptionSyncService', () => {
         customer: customerBuilder.build(),
         // An active payload without a package is not a complete snapshot, so
         // the baseline carries one to exercise the direct-payload path.
-        metadata: { FEATURE_SAFE_SEATS: '10' },
+        metadata: {
+          planCode: 'BUS-10-A',
+          FEATURE_SAFE_SEATS: '10',
+        },
         ...overrides?.data,
       },
     };
@@ -440,7 +443,11 @@ describe('SubscriptionSyncService', () => {
       data: {
         currentPeriodStart: 1_786_460_184,
         currentPeriodEnd: 1_789_138_584,
-        metadata: { planName: 'Business', FEATURE_SAFE_SEATS: '10' },
+        metadata: {
+          planName: 'Business',
+          planCode: 'BUS-10-A',
+          FEATURE_SAFE_SEATS: '10',
+        },
       },
     });
 
@@ -460,6 +467,7 @@ describe('SubscriptionSyncService', () => {
         status: 'active',
         planId: event.data?.planId,
         planName: 'Business',
+        planCode: 'BUS-10-A',
         currentPeriodStart: new Date(1_786_460_184_000),
         currentPeriodEnd: new Date(1_789_138_584_000),
         entitlements: [
@@ -472,6 +480,27 @@ describe('SubscriptionSyncService', () => {
         ],
       },
     });
+  });
+
+  it('logs an error when the subscription carries no plan code', async () => {
+    const event = webhookEvent({
+      type: 'customer.subscription.created',
+      data: {
+        currentPeriodStart: 1_786_460_184,
+        metadata: { FEATURE_SAFE_SEATS: '10' },
+      },
+    });
+
+    await target.handleWebhook(event);
+
+    expect(loggingService.error).toHaveBeenCalledExactlyOnceWith(
+      `Subscription ${event.data?.subscriptionId} carries no planCode in its metadata`,
+    );
+    expect(entitlementsService.materializeFromEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        subscription: expect.objectContaining({ planCode: null }),
+      }),
+    );
   });
 
   it.each([

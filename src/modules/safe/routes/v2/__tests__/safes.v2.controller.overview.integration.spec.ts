@@ -4,28 +4,44 @@ import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { getAddress } from 'viem';
+import { getAddress, numberToHex } from 'viem';
 import type { MockedObject } from 'vitest';
 import {
   initTestApplication,
   TestAppProvider,
-} from '@/__tests__/test-app.provider';
-import { createTestModule } from '@/__tests__/testing-module';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import configuration from '@/config/entities/__tests__/configuration';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import { NetworkService } from '@/datasources/network/network.service.interface';
-import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
-import { balanceBuilder } from '@/modules/balances/domain/entities/__tests__/balance.builder';
-import { balanceTokenBuilder } from '@/modules/balances/domain/entities/__tests__/balance.token.builder';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
+} from '#/__tests__/test-app.provider';
+import { createTestModule } from '#/__tests__/testing-module';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import configuration from '#/config/entities/__tests__/configuration';
+import type { INetworkService } from '#/datasources/network/network.service.interface';
+import { NetworkService } from '#/datasources/network/network.service.interface';
+import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
+import { balanceBuilder } from '#/modules/balances/domain/entities/__tests__/balance.builder';
+import { balanceTokenBuilder } from '#/modules/balances/domain/entities/__tests__/balance.token.builder';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
 import {
   multisigTransactionBuilder,
   toJson as multisigTransactionToJson,
-} from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
-import { confirmationBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction-confirmation.builder';
-import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
-import { rawify } from '@/validation/entities/raw.entity';
+} from '#/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
+import { confirmationBuilder } from '#/modules/safe/domain/entities/__tests__/multisig-transaction-confirmation.builder';
+import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
+import { rawify } from '#/validation/entities/raw.entity';
+
+/** Zerion's chain list keyed by network name, as served by GET /v1/chains. */
+const zerionChains = (
+  chainIds: Record<string, number>,
+): { data: Array<Record<string, unknown>> } => ({
+  data: Object.entries(chainIds).map(([id, chainId]) => ({
+    type: 'chain',
+    id,
+    attributes: { external_id: numberToHex(chainId), name: id, icon: null },
+  })),
+});
+const zerionChainsResponse = zerionChains({
+  ethereum: 1,
+  polygon: 137,
+  base: 8453,
+});
 
 describe('Safes V2 Controller Overview', () => {
   let app: INestApplication<Server>;
@@ -34,8 +50,8 @@ describe('Safes V2 Controller Overview', () => {
   let pricesProviderUrl: string;
   let zerionBaseUri: string;
 
-  const zerionChainId = '137'; // Polygon - enabled for Zerion
-  const nonZerionChainId = '10'; // Optimism - not enabled for Zerion
+  const zerionChainId = '137'; // Polygon - listed by Zerion
+  const nonZerionChainId = '10'; // Optimism - not listed by Zerion
 
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -83,8 +99,6 @@ describe('Safes V2 Controller Overview', () => {
       const chain = chainBuilder()
         .with('chainId', nonZerionChainId)
         .with('isTestnet', false)
-        .with('balancesProvider', { chainName: null, enabled: false })
-        .with('features', [])
         .build();
       const safeInfo = safeBuilder().build();
       const tokenAddress = faker.finance.ethereumAddress();
@@ -133,8 +147,7 @@ describe('Safes V2 Controller Overview', () => {
 
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
-          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-          case `${safeConfigUrl}/api/v2/chains/CGW/${chain.chainId}`: {
+          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`: {
             return Promise.resolve({ data: rawify(chain), status: 200 });
           }
           case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`: {
@@ -161,6 +174,12 @@ describe('Safes V2 Controller Overview', () => {
           case `${chain.transactionService}/api/v2/safes/${safeInfo.address}/multisig-transactions/`: {
             return Promise.resolve({
               data: rawify(queuedTransactions),
+              status: 200,
+            });
+          }
+          case `${zerionBaseUri}/v1/chains`: {
+            return Promise.resolve({
+              data: rawify(zerionChainsResponse),
               status: 200,
             });
           }
@@ -209,8 +228,6 @@ describe('Safes V2 Controller Overview', () => {
       const chain = chainBuilder()
         .with('chainId', zerionChainId)
         .with('isTestnet', false)
-        .with('balancesProvider', { chainName: 'polygon', enabled: true })
-        .with('features', ['PORTFOLIO_ENDPOINT'])
         .build();
       const safeInfo = safeBuilder().build();
       const currency = 'USD';
@@ -251,8 +268,7 @@ describe('Safes V2 Controller Overview', () => {
 
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
-          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-          case `${safeConfigUrl}/api/v2/chains/CGW/${chain.chainId}`: {
+          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`: {
             return Promise.resolve({ data: rawify(chain), status: 200 });
           }
           case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`: {
@@ -267,6 +283,12 @@ describe('Safes V2 Controller Overview', () => {
           case `${chain.transactionService}/api/v2/safes/${safeInfo.address}/multisig-transactions/`: {
             return Promise.resolve({
               data: rawify(queuedTransactions),
+              status: 200,
+            });
+          }
+          case `${zerionBaseUri}/v1/chains`: {
+            return Promise.resolve({
+              data: rawify(zerionChainsResponse),
               status: 200,
             });
           }
@@ -315,14 +337,10 @@ describe('Safes V2 Controller Overview', () => {
       const polygonChain = chainBuilder()
         .with('chainId', '137')
         .with('isTestnet', false)
-        .with('balancesProvider', { chainName: 'polygon', enabled: true })
-        .with('features', ['PORTFOLIO_ENDPOINT'])
         .build();
       const ethereumChain = chainBuilder()
         .with('chainId', '1')
         .with('isTestnet', false)
-        .with('balancesProvider', { chainName: 'ethereum', enabled: true })
-        .with('features', ['PORTFOLIO_ENDPOINT'])
         .build();
       const safeInfo = safeBuilder().build();
 
@@ -347,12 +365,10 @@ describe('Safes V2 Controller Overview', () => {
       let portfolioCallCount = 0;
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
-          case `${safeConfigUrl}/api/v1/chains/${polygonChain.chainId}`:
-          case `${safeConfigUrl}/api/v2/chains/CGW/${polygonChain.chainId}`: {
+          case `${safeConfigUrl}/api/v1/chains/${polygonChain.chainId}`: {
             return Promise.resolve({ data: rawify(polygonChain), status: 200 });
           }
-          case `${safeConfigUrl}/api/v1/chains/${ethereumChain.chainId}`:
-          case `${safeConfigUrl}/api/v2/chains/CGW/${ethereumChain.chainId}`: {
+          case `${safeConfigUrl}/api/v1/chains/${ethereumChain.chainId}`: {
             return Promise.resolve({
               data: rawify(ethereumChain),
               status: 200,
@@ -373,6 +389,12 @@ describe('Safes V2 Controller Overview', () => {
           case `${ethereumChain.transactionService}/api/v2/safes/${safeInfo.address}/multisig-transactions/`: {
             return Promise.resolve({
               data: rawify(queuedTransactions),
+              status: 200,
+            });
+          }
+          case `${zerionBaseUri}/v1/chains`: {
+            return Promise.resolve({
+              data: rawify(zerionChainsResponse),
               status: 200,
             });
           }
@@ -429,26 +451,23 @@ describe('Safes V2 Controller Overview', () => {
       const chain = chainBuilder()
         .with('chainId', zerionChainId)
         .with('isTestnet', false)
-        .with('balancesProvider', { chainName: 'polygon', enabled: true })
-        .with('features', ['PORTFOLIO_ENDPOINT'])
         .build();
       const safeInfo = safeBuilder().build();
       const tokenAddress = getAddress(faker.finance.ethereumAddress());
 
       testNetworkService.get.mockImplementation(({ url }: { url: string }) => {
-        if (
-          url === `${testSafeConfigUrl}/api/v1/chains/${chain.chainId}` ||
-          url === `${testSafeConfigUrl}/api/v2/chains/CGW/${chain.chainId}`
-        )
+        if (url === `${testSafeConfigUrl}/api/v1/chains/${chain.chainId}`) {
           return Promise.resolve({ data: rawify(chain), status: 200 });
+        }
         if (
           url === `${chain.transactionService}/api/v1/safes/${safeInfo.address}`
-        )
+        ) {
           return Promise.resolve({ data: rawify(safeInfo), status: 200 });
+        }
         if (
           url ===
           `${chain.transactionService}/api/v1/safes/${safeInfo.address}/balances/`
-        )
+        ) {
           return Promise.resolve({
             data: rawify([
               balanceBuilder()
@@ -459,31 +478,41 @@ describe('Safes V2 Controller Overview', () => {
             ]),
             status: 200,
           });
-        if (url === `${testPricesProviderUrl}/simple/price`)
+        }
+        if (url === `${testPricesProviderUrl}/simple/price`) {
           return Promise.resolve({
             data: rawify({
               [chain.pricesProvider.nativeCoin as string]: { usd: 100 },
             }),
             status: 200,
           });
+        }
         if (
           url ===
           `${testPricesProviderUrl}/simple/token_price/${chain.pricesProvider.chainName}`
-        )
+        ) {
           return Promise.resolve({
             data: rawify({ [tokenAddress]: { usd: 10 } }),
             status: 200,
           });
+        }
         if (
           url ===
           `${chain.transactionService}/api/v2/safes/${safeInfo.address}/multisig-transactions/`
-        )
+        ) {
           return Promise.resolve({
             data: rawify(
               pageBuilder().with('results', []).with('count', 0).build(),
             ),
             status: 200,
           });
+        }
+        if (url === `${zerionBaseUri}/v1/chains`) {
+          return Promise.resolve({
+            data: rawify(zerionChainsResponse),
+            status: 200,
+          });
+        }
         return Promise.reject(`No matching rule for url: ${url}`);
       });
 
@@ -514,8 +543,6 @@ describe('Safes V2 Controller Overview', () => {
       const chain = chainBuilder()
         .with('chainId', nonZerionChainId)
         .with('isTestnet', false)
-        .with('balancesProvider', { chainName: null, enabled: false })
-        .with('features', [])
         .build();
       const safeInfo = safeBuilder().build();
       const tokenAddress = faker.finance.ethereumAddress();
@@ -550,8 +577,7 @@ describe('Safes V2 Controller Overview', () => {
 
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
-          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-          case `${safeConfigUrl}/api/v2/chains/CGW/${chain.chainId}`: {
+          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`: {
             return Promise.resolve({ data: rawify(chain), status: 200 });
           }
           case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`: {
@@ -578,6 +604,12 @@ describe('Safes V2 Controller Overview', () => {
           case `${chain.transactionService}/api/v2/safes/${safeInfo.address}/multisig-transactions/`: {
             return Promise.resolve({
               data: rawify(queuedTransactions),
+              status: 200,
+            });
+          }
+          case `${zerionBaseUri}/v1/chains`: {
+            return Promise.resolve({
+              data: rawify(zerionChainsResponse),
               status: 200,
             });
           }
@@ -609,8 +641,6 @@ describe('Safes V2 Controller Overview', () => {
       const chain = chainBuilder()
         .with('chainId', nonZerionChainId)
         .with('isTestnet', false)
-        .with('balancesProvider', { chainName: null, enabled: false })
-        .with('features', [])
         .build();
       const safeInfo1 = safeBuilder().build();
       const safeInfo2 = safeBuilder().build();
@@ -636,10 +666,7 @@ describe('Safes V2 Controller Overview', () => {
         .build();
 
       networkService.get.mockImplementation(({ url }) => {
-        if (
-          url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}` ||
-          url === `${safeConfigUrl}/api/v2/chains/CGW/${chain.chainId}`
-        ) {
+        if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
           return Promise.resolve({ data: rawify(chain), status: 200 });
         }
         if (url.includes('/api/v1/safes/') && url.includes('/balances/')) {
@@ -675,6 +702,12 @@ describe('Safes V2 Controller Overview', () => {
             status: 200,
           });
         }
+        if (url === `${zerionBaseUri}/v1/chains`) {
+          return Promise.resolve({
+            data: rawify(zerionChainsResponse),
+            status: 200,
+          });
+        }
         return Promise.reject(`No matching rule for url: ${url}`);
       });
 
@@ -695,12 +728,10 @@ describe('Safes V2 Controller Overview', () => {
         });
     });
 
-    it('should handle Zerion API failures gracefully and continue with other Safes', async () => {
+    it('should degrade a Safe whose Zerion portfolio fails to the balances repository and keep the others', async () => {
       const chain = chainBuilder()
         .with('chainId', zerionChainId)
         .with('isTestnet', false)
-        .with('balancesProvider', { chainName: 'polygon', enabled: true })
-        .with('features', ['PORTFOLIO_ENDPOINT'])
         .build();
       const safeInfo1 = safeBuilder().build();
       const safeInfo2 = safeBuilder().build();
@@ -724,11 +755,20 @@ describe('Safes V2 Controller Overview', () => {
         .with('results', [])
         .with('count', 0)
         .build();
+      const transactionApiBalancesResponse = [
+        balanceBuilder()
+          .with('tokenAddress', null)
+          .with('balance', '1000000000000000000')
+          .with('token', null)
+          .build(),
+      ];
+      const nativeCoinPriceProviderResponse = {
+        [chain.pricesProvider.nativeCoin as string]: { usd: 100 },
+      };
 
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
-          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-          case `${safeConfigUrl}/api/v2/chains/CGW/${chain.chainId}`: {
+          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`: {
             return Promise.resolve({ data: rawify(chain), status: 200 });
           }
           case `${chain.transactionService}/api/v1/safes/${safeInfo1.address}`: {
@@ -741,6 +781,18 @@ describe('Safes V2 Controller Overview', () => {
             // Simulate Zerion API failure for first Safe
             return Promise.reject(new Error('Zerion API error'));
           }
+          case `${chain.transactionService}/api/v1/safes/${safeInfo1.address}/balances/`: {
+            return Promise.resolve({
+              data: rawify(transactionApiBalancesResponse),
+              status: 200,
+            });
+          }
+          case `${pricesProviderUrl}/simple/price`: {
+            return Promise.resolve({
+              data: rawify(nativeCoinPriceProviderResponse),
+              status: 200,
+            });
+          }
           case `${zerionBaseUri}/v1/wallets/${safeInfo2.address}/portfolio`: {
             return Promise.resolve({
               data: rawify(zerionPortfolioResponse),
@@ -751,6 +803,12 @@ describe('Safes V2 Controller Overview', () => {
           case `${chain.transactionService}/api/v2/safes/${safeInfo2.address}/multisig-transactions/`: {
             return Promise.resolve({
               data: rawify(queuedTransactions),
+              status: 200,
+            });
+          }
+          case `${zerionBaseUri}/v1/chains`: {
+            return Promise.resolve({
+              data: rawify(zerionChainsResponse),
               status: 200,
             });
           }
@@ -766,10 +824,11 @@ describe('Safes V2 Controller Overview', () => {
         )
         .expect(200)
         .expect(({ body }) => {
-          // Should only return safeInfo2 since safeInfo1 failed
-          expect(body.length).toBe(1);
-          expect(body[0].address.value).toBe(safeInfo2.address);
-          expect(body[0].fiatTotal).toBe('2500');
+          // safeInfo1 degrades to the balances fallback, safeInfo2 keeps its Zerion value
+          expect(body).toMatchObject([
+            { address: { value: safeInfo1.address }, fiatTotal: '100' },
+            { address: { value: safeInfo2.address }, fiatTotal: '2500' },
+          ]);
         });
     });
 
@@ -777,8 +836,6 @@ describe('Safes V2 Controller Overview', () => {
       const chain = chainBuilder()
         .with('chainId', zerionChainId)
         .with('isTestnet', false)
-        .with('balancesProvider', { chainName: 'polygon', enabled: true })
-        .with('features', ['PORTFOLIO_ENDPOINT'])
         .build();
       const safeInfo = safeBuilder().build();
 
@@ -796,8 +853,7 @@ describe('Safes V2 Controller Overview', () => {
 
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
-          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-          case `${safeConfigUrl}/api/v2/chains/CGW/${chain.chainId}`: {
+          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`: {
             return Promise.resolve({ data: rawify(chain), status: 200 });
           }
           case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`: {
@@ -813,6 +869,12 @@ describe('Safes V2 Controller Overview', () => {
           case `${chain.transactionService}/api/v2/safes/${safeInfo.address}/multisig-transactions/`: {
             return Promise.resolve({
               data: rawify(queuedTransactions),
+              status: 200,
+            });
+          }
+          case `${zerionBaseUri}/v1/chains`: {
+            return Promise.resolve({
+              data: rawify(zerionChainsResponse),
               status: 200,
             });
           }
@@ -837,8 +899,6 @@ describe('Safes V2 Controller Overview', () => {
       const chain = chainBuilder()
         .with('chainId', zerionChainId)
         .with('isTestnet', false)
-        .with('balancesProvider', { chainName: 'polygon', enabled: true })
-        .with('features', ['PORTFOLIO_ENDPOINT'])
         .build();
       const safeInfo = safeBuilder().build();
       const currency = 'USD';
@@ -865,8 +925,7 @@ describe('Safes V2 Controller Overview', () => {
 
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
-          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-          case `${safeConfigUrl}/api/v2/chains/CGW/${chain.chainId}`: {
+          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`: {
             return Promise.resolve({ data: rawify(chain), status: 200 });
           }
           case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`: {
@@ -881,6 +940,12 @@ describe('Safes V2 Controller Overview', () => {
           case `${chain.transactionService}/api/v2/safes/${safeInfo.address}/multisig-transactions/`: {
             return Promise.resolve({
               data: rawify(queuedTransactions),
+              status: 200,
+            });
+          }
+          case `${zerionBaseUri}/v1/chains`: {
+            return Promise.resolve({
+              data: rawify(zerionChainsResponse),
               status: 200,
             });
           }
@@ -909,12 +974,10 @@ describe('Safes V2 Controller Overview', () => {
       );
     });
 
-    it('should fall back to balances repository when PORTFOLIO_ENDPOINT feature flag is not present', async () => {
+    it('should fall back to balances repository when Zerion does not list the chain', async () => {
       const chain = chainBuilder()
         .with('chainId', zerionChainId)
         .with('isTestnet', false)
-        .with('balancesProvider', { chainName: 'polygon', enabled: true })
-        .with('features', []) // No PORTFOLIO_ENDPOINT feature
         .build();
       const safeInfo = safeBuilder().build();
       const currency = faker.finance.currencyCode();
@@ -937,8 +1000,7 @@ describe('Safes V2 Controller Overview', () => {
 
       networkService.get.mockImplementation(({ url }) => {
         switch (url) {
-          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`:
-          case `${safeConfigUrl}/api/v2/chains/CGW/${chain.chainId}`: {
+          case `${safeConfigUrl}/api/v1/chains/${chain.chainId}`: {
             return Promise.resolve({ data: rawify(chain), status: 200 });
           }
           case `${chain.transactionService}/api/v1/safes/${safeInfo.address}`: {
@@ -959,6 +1021,12 @@ describe('Safes V2 Controller Overview', () => {
           case `${chain.transactionService}/api/v2/safes/${safeInfo.address}/multisig-transactions/`: {
             return Promise.resolve({
               data: rawify(queuedTransactions),
+              status: 200,
+            });
+          }
+          case `${zerionBaseUri}/v1/chains`: {
+            return Promise.resolve({
+              data: rawify(zerionChains({ ethereum: 1 })),
               status: 200,
             });
           }
@@ -996,12 +1064,10 @@ describe('Safes V2 Controller Overview', () => {
       );
     });
 
-    it('should fall back to balances repository when feature flag check throws an error', async () => {
+    it('should fall back to balances repository when the Zerion chain list request fails', async () => {
       const chain = chainBuilder()
         .with('chainId', zerionChainId)
         .with('isTestnet', false)
-        .with('balancesProvider', { chainName: 'polygon', enabled: true })
-        .with('features', ['PORTFOLIO_ENDPOINT'])
         .build();
       const safeInfo = safeBuilder().build();
       const currency = faker.finance.currencyCode();
@@ -1023,12 +1089,11 @@ describe('Safes V2 Controller Overview', () => {
         .build();
 
       networkService.get.mockImplementation(({ url }) => {
-        // Return chain for v1 endpoint but fail for v2 (used by FeatureFlagService)
         if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
           return Promise.resolve({ data: rawify(chain), status: 200 });
         }
-        if (url === `${safeConfigUrl}/api/v2/chains/CGW/${chain.chainId}`) {
-          return Promise.reject(new Error('Config service unavailable'));
+        if (url === `${zerionBaseUri}/v1/chains`) {
+          return Promise.reject(new Error('Zerion unavailable'));
         }
         if (
           url === `${chain.transactionService}/api/v1/safes/${safeInfo.address}`
@@ -1076,7 +1141,7 @@ describe('Safes V2 Controller Overview', () => {
           ]),
         );
 
-      // Verify balances API was called (fallback due to feature flag error)
+      // Verify balances API was called (fallback due to the failed chain lookup)
       expect(networkService.get).toHaveBeenCalledWith(
         expect.objectContaining({
           url: `${chain.transactionService}/api/v1/safes/${safeInfo.address}/balances/`,

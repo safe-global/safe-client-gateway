@@ -6,7 +6,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import type { FastifyReply } from 'fastify';
-import { DataSourceError } from '@/domain/errors/data-source.error';
+import { DataSourceError } from '#/domain/errors/data-source.error';
 
 /**
  * This {@link ExceptionFilter} catches any {@link DataSourceError} thrown

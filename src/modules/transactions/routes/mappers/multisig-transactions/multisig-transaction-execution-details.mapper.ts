@@ -1,25 +1,22 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
-import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
-import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
-import type { SafeRepository } from '@/modules/safe/domain/safe.repository';
-import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
-import type { TokenRepository } from '@/modules/tokens/domain/token.repository';
-import { ITokenRepository } from '@/modules/tokens/domain/token.repository.interface';
+import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
+import type { Safe } from '#/modules/safe/domain/entities/safe.entity';
+import type { TokenRepository } from '#/modules/tokens/domain/token.repository';
+import { ITokenRepository } from '#/modules/tokens/domain/token.repository.interface';
 import {
   MultisigConfirmationDetails,
   MultisigExecutionDetails,
-} from '@/modules/transactions/routes/entities/transaction-details/multisig-execution-details.entity';
-import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
-import { NULL_ADDRESS } from '@/routes/common/constants';
-import { AddressInfo } from '@/routes/common/entities/address-info.entity';
+} from '#/modules/transactions/routes/entities/transaction-details/multisig-execution-details.entity';
+import { AddressInfoHelper } from '#/routes/common/address-info/address-info.helper';
+import { NULL_ADDRESS } from '#/routes/common/constants';
+import { AddressInfo } from '#/routes/common/entities/address-info.entity';
 
 @Injectable()
 export class MultisigTransactionExecutionDetailsMapper {
   constructor(
     private readonly addressInfoHelper: AddressInfoHelper,
     @Inject(ITokenRepository) private readonly tokenRepository: TokenRepository,
-    @Inject(ISafeRepository) private readonly safeRepository: SafeRepository,
   ) {}
 
   async mapMultisigExecutionDetails(
@@ -46,23 +43,21 @@ export class MultisigTransactionExecutionDetailsMapper {
       ? new AddressInfo(transaction.proposedByDelegate)
       : null;
 
-    const [gasTokenInfo, executor, refundReceiver, rejectors] =
-      await Promise.all([
-        gasToken !== NULL_ADDRESS
-          ? this.tokenRepository.getToken({ chainId, address: gasToken })
-          : Promise.resolve(null),
-        transaction.executor
-          ? this.addressInfoHelper.getOrDefault(chainId, transaction.executor, [
-              'CONTRACT',
-            ])
-          : Promise.resolve(null),
-        this.addressInfoHelper.getOrDefault(
-          chainId,
-          transaction.refundReceiver ?? NULL_ADDRESS,
-          ['CONTRACT'],
-        ),
-        this._getRejectors(chainId, transaction),
-      ]);
+    const [gasTokenInfo, executor, refundReceiver] = await Promise.all([
+      gasToken !== NULL_ADDRESS
+        ? this.tokenRepository.getToken({ chainId, address: gasToken })
+        : Promise.resolve(null),
+      transaction.executor
+        ? this.addressInfoHelper.getOrDefault(chainId, transaction.executor, [
+            'CONTRACT',
+          ])
+        : Promise.resolve(null),
+      this.addressInfoHelper.getOrDefault(
+        chainId,
+        transaction.refundReceiver ?? NULL_ADDRESS,
+        ['CONTRACT'],
+      ),
+    ]);
 
     return new MultisigExecutionDetails(
       transaction.submissionDate.getTime(),
@@ -79,52 +74,10 @@ export class MultisigTransactionExecutionDetailsMapper {
       signers,
       transaction.confirmationsRequired,
       confirmations,
-      rejectors,
       gasTokenInfo,
       transaction.trusted,
       proposer,
       proposedByDelegate,
-    );
-  }
-
-  /**
-   * Gets an array of {@link AddressInfo} representing the confirmations of the rejection
-   * transaction for the {@link Transaction} passed in.
-   *
-   * When a transaction is cancelled, another transaction acts as rejection.
-   * The rejection transaction has the same 'nonce' of the transaction being cancelled,
-   * its 'value' is 0, and its 'to' is the address of the safe that owns the transaction.
-   *
-   * This function retrieves that rejection transaction, and collects its confirmations as rejectors.
-   *
-   * @param chainId - chain id to use
-   * @param transaction - transaction to use
-   * @param safe - safe to use
-   * @returns confirmations for the rejection transaction
-   */
-  private async _getRejectors(
-    chainId: string,
-    transaction: MultisigTransaction,
-  ): Promise<Array<AddressInfo>> {
-    const rejectionTxsPage = await this.safeRepository.getMultisigTransactions({
-      chainId: chainId,
-      safeAddress: transaction.safe,
-      to: transaction.safe,
-      value: '0',
-      nonce: transaction.nonce.toString(),
-    });
-
-    // This only considers one page of nonce-sharing transactions, which
-    // would cover the vast majority of the cases. If needed, could be
-    // extended by requesting and iterating over multiple pages.
-    const rejectionTx = rejectionTxsPage.results.find(
-      (tx) => tx.safeTxHash !== transaction.safeTxHash,
-    );
-
-    return (
-      rejectionTx?.confirmations?.map(
-        (confirmation) => new AddressInfo(confirmation.owner),
-      ) ?? []
     );
   }
 }

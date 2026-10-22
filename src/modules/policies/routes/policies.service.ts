@@ -4,33 +4,47 @@ import {
   Injectable,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import { type Address, isAddressEqual } from 'viem';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { SAFE_QUEUE_SERVICE_MAX_LIMIT } from '@/domain/common/constants';
-import { batched } from '@/domain/common/utils/batch';
+import { type Address, isAddressEqual, zeroAddress } from 'viem';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { batched } from '#/domain/common/utils/batch';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import { asError } from '@/logging/utils';
-import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
-import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
-import { IDelegatesV3Repository } from '@/modules/delegate/domain/v3/delegates.v3.repository.interface';
-import type { ActivePolicy } from '@/modules/policies/domain/entities/active-policy.entity';
-import type { PolicyIndexerSafeAllowance } from '@/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
-import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
-import type { SafeRef } from '@/modules/policies/domain/entities/safe-ref.entity';
-import { IPolicyIndexerRepository } from '@/modules/policies/domain/policy-indexer.repository.interface';
-import { ProposerMapper } from '@/modules/policies/routes/mappers/proposer.mapper';
-import { SpendingLimitMapper } from '@/modules/policies/routes/mappers/spending-limit.mapper';
+} from '#/logging/logging.interface';
+import { asError } from '#/logging/utils';
+import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import { getAuthenticatedUserIdOrFail } from '#/modules/auth/utils/assert-authenticated.utils';
+import { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
+import type { Delegate } from '#/modules/delegate/domain/entities/delegate.entity';
+import { IDelegatesV3Repository } from '#/modules/delegate/domain/v3/delegates.v3.repository.interface';
+import type { ActivePolicy } from '#/modules/policies/domain/entities/active-policy.entity';
+import type { PendingPolicy } from '#/modules/policies/domain/entities/pending-policy.entity';
+import { PolicyType } from '#/modules/policies/domain/entities/policy-type.entity';
+import type { SafeRef } from '#/modules/policies/domain/entities/safe-ref.entity';
+import type {
+  Token,
+  TokenReference,
+} from '#/modules/policies/domain/entities/token.entity';
+import { IPolicyIndexerRepository } from '#/modules/policies/domain/policy-indexer.repository.interface';
+import { guardPolicyKindsOf } from '#/modules/policies/domain/utils/policy.utils';
+import {
+  type TokenMetadataKey,
+  tokenMetadataKey,
+} from '#/modules/policies/domain/utils/token-metadata-key.utils';
+import { GuardPolicyMapper } from '#/modules/policies/routes/mappers/guard-policy.mapper';
+import { PendingSpendingLimitMapper } from '#/modules/policies/routes/mappers/pending-spending-limit.mapper';
+import { ProposerMapper } from '#/modules/policies/routes/mappers/proposer.mapper';
+import { SpendingLimitMapper } from '#/modules/policies/routes/mappers/spending-limit.mapper';
 
-import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
-import type { Space } from '@/modules/spaces/domain/entities/space.entity';
-import { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
-import { assertMember } from '@/modules/spaces/domain/space-assert.utils';
-import { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
-import type { Caip10Address } from '@/validation/entities/schemas/caip-10-addresses.schema';
+import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
+import { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
+import type { Space } from '#/modules/spaces/domain/entities/space.entity';
+import { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository.interface';
+import { assertMember } from '#/modules/spaces/domain/space-assert.utils';
+import type { NativeToken } from '#/modules/tokens/domain/entities/token.entity';
+import { ITokenRepository } from '#/modules/tokens/domain/token.repository.interface';
+import { IMembersRepository } from '#/modules/users/domain/members/members.repository.interface';
+import type { Caip10Address } from '#/validation/entities/schemas/caip-10-addresses.schema';
 
 type SpacePolicyRequest = {
   spaceId: Space['id'];
@@ -41,9 +55,22 @@ type SpacePolicyRequest = {
   authPayload: AuthPayload;
 };
 
+type Enforcers = {
+  enabledModules: ReadonlyArray<Address>;
+  transactionGuard: Address | null;
+  moduleGuard: Address | null;
+};
+
 @Injectable()
 export class PoliciesService {
+  /**
+   * Safety cap on the number of pages read from a single Safe's transaction
+   * queue to guard against an unbounded loop.
+   */
+  static readonly MAX_TRANSACTION_QUEUE_PAGES_TO_SCAN = 10;
+
   private readonly batchSize: number;
+  private readonly maxPageSize: number;
 
   constructor(
     @Inject(IPolicyIndexerRepository)
@@ -56,15 +83,23 @@ export class PoliciesService {
     private readonly membersRepository: IMembersRepository,
     @Inject(IDelegatesV3Repository)
     private readonly delegatesV3Repository: IDelegatesV3Repository,
+    @Inject(ITokenRepository)
+    private readonly tokenRepository: ITokenRepository,
+    @Inject(IChainsRepository)
+    private readonly chainsRepository: IChainsRepository,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
     private readonly spendingLimitMapper: SpendingLimitMapper,
     private readonly proposerMapper: ProposerMapper,
+    private readonly pendingSpendingLimitMapper: PendingSpendingLimitMapper,
+    private readonly guardPolicyMapper: GuardPolicyMapper,
   ) {
     this.batchSize =
       this.configurationService.getOrThrow<number>('policies.batchSize');
+
+    this.maxPageSize = this.safeRepository.getTransactionQueueMaxPageSize();
   }
 
   /**
@@ -77,6 +112,18 @@ export class PoliciesService {
     const spaceSafes = await this.spaceSafes(request);
 
     return await this.resolveActivePolicies(spaceSafes, request.types);
+  }
+
+  /**
+   * The spending-limit changes in the transaction queue of every Safe of the
+   * Space, or the requested subset of them.
+   */
+  public async getSpacePendingPolicies(
+    request: SpacePolicyRequest,
+  ): Promise<Array<PendingPolicy>> {
+    const spaceSafes = await this.spaceSafes(request);
+
+    return await this.resolvePendingPolicies(spaceSafes, request.types);
   }
 
   /**
@@ -143,20 +190,33 @@ export class PoliciesService {
   ): Promise<Array<ActivePolicy>> {
     const spendingLimitsRequested = types.includes(PolicyType.SpendingLimit);
     const proposersRequested = types.includes(PolicyType.Proposer);
+    const guardPolicyKinds = guardPolicyKindsOf(types);
+    const guardPoliciesRequested = guardPolicyKinds.length > 0;
 
     if (
       safes.length === 0 ||
-      !(spendingLimitsRequested || proposersRequested)
+      !(spendingLimitsRequested || guardPoliciesRequested || proposersRequested)
     ) {
       return [];
     }
 
-    const state = spendingLimitsRequested
-      ? await this.policyIndexerRepository.getState({ safes })
+    // One indexer read serves both halves - it answers with the allowance rows
+    // and the guard bindings alike - and so does the Safe read that follows it,
+    // for the modules and the guard slot that say which of them are enforced.
+    const indexerRequested = spendingLimitsRequested || guardPoliciesRequested;
+    const state = indexerRequested
+      ? await this.policyIndexerRepository.getState({
+          safes,
+          guardPolicyKinds,
+        })
       : null;
-    const enabledModulesPerSafe = spendingLimitsRequested
-      ? await this.enabledModulesPerSafe(safes)
+    const enforcersPerSafe = indexerRequested
+      ? await this.enforcersPerSafe(safes)
       : null;
+    const tokenMetadata =
+      state && spendingLimitsRequested
+        ? await this.getTokenMetadata(state.allowances)
+        : new Map<TokenMetadataKey, Token>();
     const delegatesPerSafe = proposersRequested
       ? await this.delegatesPerSafe(safes)
       : null;
@@ -164,19 +224,20 @@ export class PoliciesService {
     const policies: Array<ActivePolicy> = [];
 
     for (const [index, safe] of safes.entries()) {
-      if (state && enabledModulesPerSafe) {
-        const enabledModules = enabledModulesPerSafe[index];
+      // A Safe whose modules and guard could not be read is skipped.
+      const enforcers = enforcersPerSafe?.[index] ?? null;
 
-        // A Safe whose enabled modules could not be read is skipped.
-        if (enabledModules) {
-          policies.push(
-            ...this.spendingLimitMapper.map({
-              safe,
-              allowances: this.getAllowancesBySafe(state.allowances, safe),
-              enabledModules,
-            }),
-          );
-        }
+      if (state && enforcers && spendingLimitsRequested) {
+        policies.push(
+          ...this.spendingLimitMapper.map({
+            safe,
+            allowances: state.allowances.filter((allowance) =>
+              this.isScopedToSafe(allowance, safe),
+            ),
+            enabledModules: enforcers.enabledModules,
+            tokenMetadata,
+          }),
+        );
       }
 
       if (delegatesPerSafe) {
@@ -187,9 +248,243 @@ export class PoliciesService {
           policies.push(...this.proposerMapper.map({ safe, delegates }));
         }
       }
+
+      if (state && enforcers && guardPoliciesRequested) {
+        policies.push(
+          ...this.guardPolicyMapper.map({
+            safe,
+            bindings: state.guardPolicyBindings.filter((binding) =>
+              this.isScopedToSafe(binding, safe),
+            ),
+            transactionGuard: enforcers.transactionGuard,
+            moduleGuard: enforcers.moduleGuard,
+          }),
+        );
+      }
     }
 
     return policies;
+  }
+
+  private async getTokenMetadata(
+    references: ReadonlyArray<TokenReference>,
+  ): Promise<Map<TokenMetadataKey, Token>> {
+    const nativeTokens = await this.fetchNativeTokens(
+      this.nativeCurrencyChainIds(references),
+    );
+    const erc20Tokens = await this.fetchErc20Tokens(
+      this.erc20TokensToFetch(references),
+    );
+
+    return new Map([...nativeTokens, ...erc20Tokens]);
+  }
+
+  private isNativeCurrency(reference: TokenReference): boolean {
+    return isAddressEqual(reference.token, zeroAddress);
+  }
+
+  /** The distinct chains a native-currency reference in {@link references} is on. */
+  private nativeCurrencyChainIds(
+    references: ReadonlyArray<TokenReference>,
+  ): Array<string> {
+    return [
+      ...new Set(
+        references
+          .filter((reference) => this.isNativeCurrency(reference))
+          .map((reference) => reference.chainId),
+      ),
+    ];
+  }
+
+  /**
+   * The distinct `(chainId, address)` pairs an ERC20 reference in
+   * {@link references} names.
+   */
+  private erc20TokensToFetch(
+    references: ReadonlyArray<TokenReference>,
+  ): Array<{ chainId: string; address: Address }> {
+    // Keyed by the same `chainId:address` the fetched token is later stored
+    // under, so a reference repeating a token - another spender, another
+    // Safe, same chain - collapses to the one pair fetched here.
+    const byKey = new Map<
+      TokenMetadataKey,
+      { chainId: string; address: Address }
+    >();
+    for (const reference of references) {
+      if (this.isNativeCurrency(reference)) {
+        continue;
+      }
+      const pair = { chainId: reference.chainId, address: reference.token };
+      byKey.set(tokenMetadataKey(pair), pair);
+    }
+    return [...byKey.values()];
+  }
+
+  private async fetchNativeTokens(
+    chainIds: ReadonlyArray<string>,
+  ): Promise<Map<TokenMetadataKey, Token>> {
+    const tokens = new Map<TokenMetadataKey, Token>();
+
+    const results = await batched(chainIds, this.batchSize, (chainId) =>
+      this.chainsRepository.getChain(chainId),
+    );
+    results.forEach((result, index) => {
+      const chainId = chainIds[index];
+      if (result.status !== 'fulfilled') {
+        this.loggingService.debug({
+          message: "Could not read a chain's native currency",
+          chainId,
+          error: asError(result.reason).message,
+        });
+        return;
+      }
+      const nativeToken: NativeToken = {
+        type: 'NATIVE_TOKEN',
+        address: zeroAddress,
+        ...result.value.nativeCurrency,
+        trusted: true,
+      };
+      tokens.set(
+        tokenMetadataKey({ chainId, address: zeroAddress }),
+        nativeToken,
+      );
+    });
+
+    return tokens;
+  }
+
+  private async fetchErc20Tokens(
+    pairs: ReadonlyArray<{ chainId: string; address: Address }>,
+  ): Promise<Map<TokenMetadataKey, Token>> {
+    const tokens = new Map<TokenMetadataKey, Token>();
+
+    const results = await batched(pairs, this.batchSize, (pair) =>
+      this.tokenRepository.getToken(pair),
+    );
+    results.forEach((result, index) => {
+      const pair = pairs[index];
+      if (result.status !== 'fulfilled') {
+        this.loggingService.debug({
+          message: 'Could not read a token',
+          chainId: pair.chainId,
+          address: pair.address,
+          error: asError(result.reason).message,
+        });
+        return;
+      }
+      if (result.value.type === 'ERC721') {
+        this.loggingService.debug({
+          message:
+            "An allowance's token resolved to an ERC721, not a fungible token",
+          chainId: pair.chainId,
+          address: pair.address,
+        });
+        return;
+      }
+      tokens.set(tokenMetadataKey(pair), result.value);
+    });
+
+    return tokens;
+  }
+
+  /**
+   * The pending spending-limit changes of every Safe of {@link safes}.
+   *
+   * `spending-limit` is the only pending type supported currently - a proposer is
+   * off-chain and requires no Safe transaction, so it never has a queued state.
+   *
+   * Concurrency is capped at `policies.batchSize`. A Safe
+   * whose queue could not be read is skipped rather than failing the whole
+   * request.
+   */
+  private async resolvePendingPolicies(
+    safes: ReadonlyArray<SafeRef>,
+    types: ReadonlyArray<PolicyType>,
+  ): Promise<Array<PendingPolicy>> {
+    if (safes.length === 0 || !types.includes(PolicyType.SpendingLimit)) {
+      return [];
+    }
+
+    const settled = await batched(safes, this.batchSize, (safe) =>
+      this.pendingPoliciesForSafe(safe),
+    );
+
+    const policies: Array<PendingPolicy> = [];
+
+    for (const [index, result] of settled.entries()) {
+      if (result.status === 'fulfilled') {
+        policies.push(...result.value);
+        continue;
+      }
+
+      const safe = safes[index];
+      this.loggingService.warn({
+        message: 'Could not read the transaction queue of a Safe',
+        chainId: safe.chainId,
+        safeAddress: safe.address,
+        error: asError(result.reason).message,
+      });
+    }
+
+    const tokenMetadata = await this.getTokenMetadata(
+      this.pendingSpendingLimitMapper.getTokenReferences(policies),
+    );
+    return this.pendingSpendingLimitMapper.attachTokenMetadata(
+      policies,
+      tokenMetadata,
+    );
+  }
+
+  /**
+   * The pending spending-limit changes found in one Safe's transaction queue.
+   *
+   * Reads the whole queue per Safe, capped at
+   * {@link PoliciesService.MAX_TRANSACTION_QUEUE_PAGES_TO_SCAN} pages as a safety valve
+   * against a runaway queue.
+   */
+  private async pendingPoliciesForSafe(
+    safe: SafeRef,
+  ): Promise<Array<PendingPolicy>> {
+    const safeInfo = await this.safeRepository.getSafe({
+      chainId: safe.chainId,
+      address: safe.address,
+    });
+
+    const transactions: Array<MultisigTransaction> = [];
+    let next: string | null = null;
+
+    for (
+      let page = 0;
+      page < PoliciesService.MAX_TRANSACTION_QUEUE_PAGES_TO_SCAN;
+      page++
+    ) {
+      const queue = await this.safeRepository.getTransactionQueue({
+        chainId: safe.chainId,
+        safe: safeInfo,
+        limit: this.maxPageSize,
+        offset: page * this.maxPageSize,
+      });
+      transactions.push(...queue.results);
+      next = queue.next;
+
+      if (!next) {
+        break;
+      }
+    }
+
+    if (next) {
+      this.loggingService.warn({
+        message: 'Truncated a Safe transaction queue at the page cap',
+        chainId: safe.chainId,
+        safeAddress: safe.address,
+        pages: PoliciesService.MAX_TRANSACTION_QUEUE_PAGES_TO_SCAN,
+      });
+    }
+
+    return this.pendingSpendingLimitMapper.map({
+      safe,
+      transactions,
+    });
   }
 
   /**
@@ -227,33 +522,30 @@ export class PoliciesService {
   /**
    * The addresses registered as delegates of the Safe - what a proposer grant
    * is.
-   *
-   * Read at the Queue Service's max page size i.e 100. That limit is lower
-   * than the Transaction Service i.e. 200.
    */
   private async delegates(safe: SafeRef): Promise<Array<Delegate>> {
     const { results } = await this.delegatesV3Repository.getDelegates({
       chainId: safe.chainId,
       safeAddress: safe.address,
-      limit: SAFE_QUEUE_SERVICE_MAX_LIMIT,
+      limit: this.maxPageSize,
     });
 
     return results;
   }
 
   /**
-   * The enabled modules of every Safe of {@link safes}, index-aligned with it.
+   * The {@link enforcers} of every Safe of {@link safes}, index-aligned with it.
    *
-   * Concurrency is capped at `policies.batchSize`. Unlike
-   * {@link delegatesPerSafe}, a Safe whose modules could not be read is
-   * reported as `null` rather than failing the whole request - the caller
-   * skips just that Safe's spending-limit policies instead.
+   * Concurrency is capped at `policies.batchSize`. A Safe whose modules and
+   * guard could not be read is reported as `null` rather than failing the
+   * whole request - the caller skips just that Safe's spending-limit and guard
+   * policies instead.
    */
-  private async enabledModulesPerSafe(
+  private async enforcersPerSafe(
     safes: ReadonlyArray<SafeRef>,
-  ): Promise<Array<ReadonlyArray<Address> | null>> {
+  ): Promise<Array<Enforcers | null>> {
     const settled = await batched(safes, this.batchSize, (safe) =>
-      this.enabledModules(safe),
+      this.enforcers(safe),
     );
 
     return settled.map((result, index) => {
@@ -263,7 +555,7 @@ export class PoliciesService {
 
       const safe = safes[index];
       this.loggingService.warn({
-        message: 'Could not read enabled modules of a Safe',
+        message: 'Could not read the modules and guards of a Safe',
         chainId: safe.chainId,
         safeAddress: safe.address,
         error: asError(result.reason).message,
@@ -273,35 +565,39 @@ export class PoliciesService {
   }
 
   /**
-   * The modules the Safe has enabled, which is what turns a configured
-   * module policy into an enforced one.
+   * What the Safe itself has switched on: the modules it has enabled and the
+   * guards it has set, in the transaction and the module slot. These are what
+   * turn a configured policy into an enforced one.
    *
    * Read from the Safe rather than the indexer: enablement lives in the Safe's
    * own storage, and CGW already serves it.
    */
-  private async enabledModules(safe: SafeRef): Promise<ReadonlyArray<Address>> {
-    const { modules } = await this.safeRepository.getSafe({
+  private async enforcers(safe: SafeRef): Promise<Enforcers> {
+    const { modules, guard, moduleGuard } = await this.safeRepository.getSafe({
       chainId: safe.chainId,
       address: safe.address,
     });
 
-    return modules ?? [];
+    return {
+      enabledModules: modules ?? [],
+      transactionGuard: guard,
+      moduleGuard,
+    };
   }
 
   /**
-   * The allowance rows belonging to {@link safe}.
+   * Whether an indexer row - an allowance or a guard binding - belongs to
+   * {@link safe}.
    *
    * One indexer read covers every Safe of a request, so an unscoped read would
    * report another Safe's policies on this one.
    */
-  private getAllowancesBySafe(
-    allowances: ReadonlyArray<PolicyIndexerSafeAllowance>,
+  private isScopedToSafe(
+    row: { chainId: string; safe: Address },
     safe: SafeRef,
-  ): Array<PolicyIndexerSafeAllowance> {
-    return allowances.filter(
-      (allowance) =>
-        allowance.chainId === safe.chainId &&
-        isAddressEqual(allowance.safe, safe.address),
+  ): boolean {
+    return (
+      row.chainId === safe.chainId && isAddressEqual(row.safe, safe.address)
     );
   }
 }

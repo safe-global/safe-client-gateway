@@ -6,48 +6,48 @@ import type { ConfigService } from '@nestjs/config';
 import { DataSource, In } from 'typeorm';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
-import configuration from '@/config/entities/__tests__/configuration';
-import { postgresConfig } from '@/config/entities/postgres.config';
-import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
-import { nameBuilder } from '@/domain/common/entities/name.builder';
-import { getStringEnumKeys } from '@/domain/common/utils/enum';
-import type { ILoggingService } from '@/logging/logging.interface';
+import type { IConfigurationService } from '#/config/configuration.service.interface';
+import configuration from '#/config/entities/__tests__/configuration';
+import { postgresConfig } from '#/config/entities/postgres.config';
+import { DatabaseMigrator } from '#/datasources/db/v2/database-migrator.service';
+import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
+import { DB_MAX_SAFE_INTEGER } from '#/domain/common/constants';
+import { nameBuilder } from '#/domain/common/entities/name.builder';
+import { getStringEnumKeys } from '#/domain/common/utils/enum';
+import type { ILoggingService } from '#/logging/logging.interface';
 import {
   oidcAuthPayloadDtoBuilder,
   siweAuthPayloadDtoBuilder,
-} from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
-import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
-import { createMockSpaceEncryptionService } from '@/modules/spaces/domain/__tests__/space-encryption.service.mock';
-import { createMockSpaceAuditRepository } from '@/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
-import { SpaceStatus } from '@/modules/spaces/domain/entities/space.entity';
-import { SpacesRepository } from '@/modules/spaces/domain/spaces.repository';
+} from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import { SpaceSafe } from '#/modules/spaces/datasources/safes/entities/space-safes.entity.db';
+import { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
+import { createMockSpaceEncryptionService } from '#/modules/spaces/domain/__tests__/space-encryption.service.mock';
+import { createMockSpaceAuditRepository } from '#/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
+import { SpaceStatus } from '#/modules/spaces/domain/entities/space.entity';
+import { SpacesRepository } from '#/modules/spaces/domain/spaces.repository';
 import {
   InviteType,
   type InviteUserInput,
-} from '@/modules/spaces/routes/members/entities/invite-users.dto.entity';
-import { Member } from '@/modules/users/datasources/entities/member.entity.db';
-import { User } from '@/modules/users/datasources/entities/users.entity.db';
+} from '#/modules/spaces/routes/members/entities/invite-users.dto.entity';
+import { Member } from '#/modules/users/datasources/entities/member.entity.db';
+import { User } from '#/modules/users/datasources/entities/users.entity.db';
 import {
   createEncryptingMockUserEncryptionService,
   createMockUserEncryptionService,
-} from '@/modules/users/domain/__tests__/user-encryption.service.mock';
+} from '#/modules/users/domain/__tests__/user-encryption.service.mock';
 import {
   MemberRole,
   MemberStatus,
-} from '@/modules/users/domain/entities/member.entity';
-import { UserStatus } from '@/modules/users/domain/entities/user.entity';
-import { createMockMemberEncryptionService } from '@/modules/users/domain/members/__tests__/member-encryption.service.mock';
-import { MembersRepository } from '@/modules/users/domain/members/members.repository';
-import { UsersRepository } from '@/modules/users/domain/users.repository';
-import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
-import { createMockWalletEncryptionService } from '@/modules/wallets/domain/__tests__/wallet-encryption.service.mock';
-import { WalletsRepository } from '@/modules/wallets/domain/wallets.repository';
-import { EmailAddressSchema } from '@/validation/entities/schemas/email-address.schema';
+} from '#/modules/users/domain/entities/member.entity';
+import { UserStatus } from '#/modules/users/domain/entities/user.entity';
+import { createMockMemberEncryptionService } from '#/modules/users/domain/members/__tests__/member-encryption.service.mock';
+import { MembersRepository } from '#/modules/users/domain/members/members.repository';
+import { UsersRepository } from '#/modules/users/domain/users.repository';
+import { Wallet } from '#/modules/wallets/datasources/entities/wallets.entity.db';
+import { createMockWalletEncryptionService } from '#/modules/wallets/domain/__tests__/wallet-encryption.service.mock';
+import { WalletsRepository } from '#/modules/wallets/domain/wallets.repository';
+import { EmailAddressSchema } from '#/validation/entities/schemas/email-address.schema';
 
 const mockLoggingService = {
   debug: vi.fn(),
@@ -158,9 +158,11 @@ describe('MembersRepository', () => {
         createMockMemberEncryptionService(),
       ),
       createMockSpaceAuditRepository(),
+      walletsRepo,
       createMockUserEncryptionService(),
       createMockWalletEncryptionService(),
       createMockMemberEncryptionService(),
+      mockLoggingService,
     );
   });
 
@@ -547,130 +549,6 @@ describe('MembersRepository', () => {
       await expect(
         membersRepository.find({ where: { id: memberId } }),
       ).resolves.toEqual([]);
-    });
-  });
-
-  describe('findActiveAdmin', () => {
-    it('should return the member when the user is an ACTIVE ADMIN of the space', async () => {
-      const { spaceId, userId } = await createSpaceAsAdmin();
-
-      await expect(
-        membersRepository.findActiveAdmin({ userId, spaceId }),
-      ).resolves.toEqual(
-        expect.objectContaining({
-          role: 'ADMIN',
-          status: 'ACTIVE',
-        }),
-      );
-    });
-
-    it('should return null when the user has no member record in the space', async () => {
-      const { userId } = await createSiweUser();
-      const space = await dbSpacesRepository.insert({
-        name: nameBuilder(),
-        status: 'ACTIVE',
-      });
-
-      await expect(
-        membersRepository.findActiveAdmin({
-          userId,
-          spaceId: space.generatedMaps[0].id,
-        }),
-      ).resolves.toBeNull();
-    });
-
-    it('should return null when the user is a MEMBER, not an ADMIN', async () => {
-      const { userId, user } = await createSiweUser();
-      const space = await dbSpacesRepository.insert({
-        name: nameBuilder(),
-        status: 'ACTIVE',
-      });
-      await dbMembersRepository.insert({
-        user,
-        space: space.generatedMaps[0],
-        name: nameBuilder(),
-        role: 'MEMBER',
-        status: 'ACTIVE',
-        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
-      });
-
-      await expect(
-        membersRepository.findActiveAdmin({
-          userId,
-          spaceId: space.generatedMaps[0].id,
-        }),
-      ).resolves.toBeNull();
-    });
-
-    it('should return null when the ADMIN status is not ACTIVE', async () => {
-      const nonActiveStatus = faker.helpers.arrayElement(
-        MemberStatusKeys.filter((s) => s !== 'ACTIVE'),
-      );
-      const { userId, user } = await createSiweUser();
-      const space = await dbSpacesRepository.insert({
-        name: nameBuilder(),
-        status: 'ACTIVE',
-      });
-      await dbMembersRepository.insert({
-        user,
-        space: space.generatedMaps[0],
-        name: nameBuilder(),
-        role: 'ADMIN',
-        status: nonActiveStatus,
-        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
-      });
-
-      await expect(
-        membersRepository.findActiveAdmin({
-          userId,
-          spaceId: space.generatedMaps[0].id,
-        }),
-      ).resolves.toBeNull();
-    });
-
-    it('should return null when the user is an ACTIVE ADMIN of a different space', async () => {
-      const { userId } = await createSpaceAsAdmin();
-      const otherSpace = await dbSpacesRepository.insert({
-        name: nameBuilder(),
-        status: 'ACTIVE',
-      });
-
-      await expect(
-        membersRepository.findActiveAdmin({
-          userId,
-          spaceId: otherSpace.generatedMaps[0].id,
-        }),
-      ).resolves.toBeNull();
-    });
-
-    it('should return null for an INVITED admin even when another ACTIVE admin exists in the same space', async () => {
-      const { spaceId } = await createSpaceAsAdmin();
-      const space = await dbSpacesRepository.findOneByOrFail({ id: spaceId });
-      const { userId, user } = await createSiweUser();
-      await dbMembersRepository.insert({
-        user,
-        space,
-        name: nameBuilder(),
-        role: 'ADMIN',
-        status: 'INVITED',
-        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
-      });
-
-      await expect(
-        membersRepository.findActiveAdmin({ userId, spaceId }),
-      ).resolves.toBeNull();
-    });
-
-    it('should return null when the caller is an ACTIVE ADMIN of a different space, even if the queried space has its own ACTIVE admin', async () => {
-      const { userId } = await createSpaceAsAdmin();
-      const { spaceId: otherSpaceId } = await createSpaceAsAdmin();
-
-      await expect(
-        membersRepository.findActiveAdmin({
-          userId,
-          spaceId: otherSpaceId,
-        }),
-      ).resolves.toBeNull();
     });
   });
 
@@ -2084,9 +1962,82 @@ describe('MembersRepository', () => {
             id: userId,
             status: userStatus,
             updatedAt: expect.any(Date),
+            // The SIWE user's wallet, attached by the read path.
+            address: authPayload.signer_address,
           },
         },
       ]);
+    });
+
+    it('should attach the lowest-id wallet address for a member with several wallets', async () => {
+      const { user, authPayload } = await createSiweUser();
+      // A later wallet on the same account: higher serial id, so the
+      // first (SIWE) wallet must win deterministically.
+      await dbWalletRepo.insert({
+        user,
+        address: getAddress(faker.finance.ethereumAddress()),
+      });
+      const space = await dbSpacesRepository.insert({
+        name: nameBuilder(),
+        status: 'ACTIVE',
+      });
+      const spaceId = space.generatedMaps[0].id;
+      await dbMembersRepository.insert({
+        user,
+        space: space.generatedMaps[0],
+        name: nameBuilder(),
+        role: 'ADMIN',
+        status: 'ACTIVE',
+        invitedBy: null,
+      });
+
+      const [member] = await membersRepository.findAuthorizedMembersOrFail({
+        authPayload,
+        spaceId,
+      });
+
+      expect(member.user.address).toBe(authPayload.signer_address);
+    });
+
+    it('should attach a null address for a member without wallets', async () => {
+      const { user: admin, authPayload } = await createSiweUser();
+      const { user: walletless, userId: walletlessUserId } =
+        await createOidcUser();
+      const space = await dbSpacesRepository.insert({
+        name: nameBuilder(),
+        status: 'ACTIVE',
+      });
+      const spaceId = space.generatedMaps[0].id;
+      await dbMembersRepository.insert({
+        user: admin,
+        space: space.generatedMaps[0],
+        name: nameBuilder(),
+        role: 'ADMIN',
+        status: 'ACTIVE',
+        invitedBy: null,
+      });
+      await dbMembersRepository.insert({
+        user: walletless,
+        space: space.generatedMaps[0],
+        name: nameBuilder(),
+        role: 'MEMBER',
+        status: 'ACTIVE',
+        invitedBy: null,
+      });
+
+      const members = await membersRepository.findAuthorizedMembersOrFail({
+        authPayload,
+        spaceId,
+      });
+
+      const walletlessMember = members.find(
+        (member) => member.user.id === walletlessUserId,
+      );
+      expect(walletlessMember?.user.address).toBeNull();
+      const adminMember = members.find(
+        (member) => member.user.id !== walletlessUserId,
+      );
+      expect(adminMember?.user.address).toBe(authPayload.signer_address);
     });
 
     it('should find members by space id for OIDC user', async () => {
@@ -2366,6 +2317,39 @@ describe('MembersRepository', () => {
       },
     );
 
+    it.each([
+      ['SIWE', createSiweUser],
+      ['OIDC', createOidcUser],
+    ] as const)(
+      'should attach the %s caller’s wallet address, or null without wallets',
+      async (authLabel, createUser) => {
+        const { user, authPayload } = await createUser();
+        const space = await dbSpacesRepository.insert({
+          name: nameBuilder(),
+          status: 'ACTIVE',
+        });
+        const spaceId = space.generatedMaps[0].id;
+        await dbMembersRepository.insert({
+          user,
+          space: space.generatedMaps[0],
+          name: nameBuilder(),
+          role: faker.helpers.arrayElement(MemberRoleKeys),
+          status: 'ACTIVE',
+          invitedBy: null,
+        });
+
+        const member = await membersRepository.findSelfMembershipOrFail({
+          authPayload,
+          spaceId,
+        });
+
+        // A SIWE account carries its signer wallet; an OIDC account has none.
+        expect(member.user.address).toBe(
+          authLabel === 'SIWE' ? authPayload.signer_address : null,
+        );
+      },
+    );
+
     it('should throw ForbiddenException for a DECLINED caller', async () => {
       const spaceName = nameBuilder();
       const { user, authPayload } = await createSiweUser();
@@ -2515,7 +2499,7 @@ describe('MembersRepository', () => {
 
       await expect(
         membersRepository.updateRole({
-          authPayload,
+          actorUserId: Number(authPayload.sub),
           spaceId,
           role: 'ADMIN',
           userId: memberUserId,
@@ -2560,7 +2544,7 @@ describe('MembersRepository', () => {
 
       await expect(
         membersRepository.updateRole({
-          authPayload,
+          actorUserId: Number(authPayload.sub),
           spaceId,
           role: 'ADMIN',
           userId: memberUserId,
@@ -2624,7 +2608,7 @@ describe('MembersRepository', () => {
 
         await expect(
           membersRepository.updateRole({
-            authPayload,
+            actorUserId: Number(authPayload.sub),
             spaceId,
             role: 'ADMIN',
             userId: memberUserId,
@@ -2675,151 +2659,6 @@ describe('MembersRepository', () => {
       },
     );
 
-    it('should not allow updating MEMBERs if the signer is not an ADMIN', async () => {
-      const spaceName = nameBuilder();
-      const memberName = nameBuilder();
-      const memberName2 = nameBuilder();
-      const { userId: userToUpdateId, user: userToUpdate } =
-        await createSiweUser();
-      const { user: member, authPayload: memberAuthPayload } =
-        await createSiweUser();
-      const space = await dbSpacesRepository.insert({
-        name: spaceName,
-        status: 'ACTIVE',
-      });
-      const spaceId = space.generatedMaps[0].id;
-      await dbMembersRepository.insert({
-        user: userToUpdate,
-        space: space.generatedMaps[0],
-        name: memberName,
-        role: 'MEMBER',
-        status: 'ACTIVE',
-        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
-      });
-      await dbMembersRepository.insert({
-        user: member,
-        space: space.generatedMaps[0],
-        name: memberName2,
-        role: 'MEMBER',
-        status: 'ACTIVE',
-        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
-      });
-
-      await expect(
-        membersRepository.updateRole({
-          authPayload: memberAuthPayload,
-          spaceId,
-          role: 'ADMIN',
-          userId: userToUpdateId,
-        }),
-      ).rejects.toThrow('No members found.');
-    });
-
-    it('should not allow updating ADMINs if the signer is not an ADMIN', async () => {
-      const spaceName = nameBuilder();
-      const memberName = nameBuilder();
-      const memberName2 = nameBuilder();
-      const { userId: userToUpdateId, user: userToUpdate } =
-        await createSiweUser();
-      const { user: member, authPayload: memberAuthPayload } =
-        await createSiweUser();
-      const space = await dbSpacesRepository.insert({
-        name: spaceName,
-        status: 'ACTIVE',
-      });
-      const spaceId = space.generatedMaps[0].id;
-      await dbMembersRepository.insert({
-        user: userToUpdate,
-        space: space.generatedMaps[0],
-        name: memberName,
-        role: 'ADMIN',
-        status: 'ACTIVE',
-        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
-      });
-      await dbMembersRepository.insert({
-        user: member,
-        space: space.generatedMaps[0],
-        name: memberName2,
-        role: 'MEMBER',
-        status: 'ACTIVE',
-        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
-      });
-
-      await expect(
-        membersRepository.updateRole({
-          authPayload: memberAuthPayload,
-          spaceId,
-          role: 'ADMIN',
-          userId: userToUpdateId,
-        }),
-      ).rejects.toThrow('User is not an active admin.');
-    });
-
-    it('should throw an error if not authenticated', async () => {
-      const spaceId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
-      const userId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
-
-      await expect(
-        membersRepository.updateRole({
-          authPayload: new AuthPayload(),
-          spaceId,
-          role: 'ADMIN',
-          userId: userId,
-        }),
-      ).rejects.toThrow('Not authenticated');
-    });
-
-    it('should throw an error if user does not have access to upgrade to ADMIN', async () => {
-      const spaceName = nameBuilder();
-      const memberName = nameBuilder();
-      const memberName2 = nameBuilder();
-      const { user: owner, authPayload } = await createSiweUser();
-      const member = await dbUserRepo.insert({
-        status: 'ACTIVE',
-      });
-      const memberUserId = member.generatedMaps[0].id;
-      await dbWalletRepo.insert({
-        user: member.generatedMaps[0],
-        address: getAddress(faker.finance.ethereumAddress()),
-      });
-      const space = await dbSpacesRepository.insert({
-        name: spaceName,
-        status: 'ACTIVE',
-      });
-      const spaceId = space.generatedMaps[0].id;
-      await dbMembersRepository.insert({
-        user: owner,
-        space: space.generatedMaps[0],
-        name: memberName,
-        role: 'MEMBER',
-        status: 'ACTIVE',
-        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
-      });
-      await dbMembersRepository.insert({
-        user: member.generatedMaps[0],
-        space: space.generatedMaps[0],
-        name: memberName2,
-        role: 'MEMBER',
-        status: 'ACTIVE',
-        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
-      });
-
-      await expect(
-        membersRepository.updateRole({
-          authPayload,
-          spaceId,
-          role: 'ADMIN',
-          userId: memberUserId,
-        }),
-      ).rejects.toThrow('No members found.');
-    });
-
     it('should throw an error if downgrading the last ACTIVE ADMIN', async () => {
       const spaceName = nameBuilder();
       const memberName = nameBuilder();
@@ -2840,7 +2679,7 @@ describe('MembersRepository', () => {
 
       await expect(
         membersRepository.updateRole({
-          authPayload,
+          actorUserId: Number(authPayload.sub),
           spaceId,
           role: 'MEMBER',
           userId,
@@ -2888,7 +2727,7 @@ describe('MembersRepository', () => {
 
       await expect(
         membersRepository.removeUser({
-          authPayload,
+          actorUserId: Number(authPayload.sub),
           spaceId,
           userId: memberUserId,
         }),
@@ -2937,7 +2776,7 @@ describe('MembersRepository', () => {
 
       await expect(
         membersRepository.removeUser({
-          authPayload,
+          actorUserId: Number(authPayload.sub),
           spaceId,
           userId: memberUserId,
         }),
@@ -3021,7 +2860,7 @@ describe('MembersRepository', () => {
         // Delete from space1
         await expect(
           membersRepository.removeUser({
-            authPayload,
+            actorUserId: Number(authPayload.sub),
             spaceId,
             userId: memberUserId,
           }),
@@ -3046,63 +2885,6 @@ describe('MembersRepository', () => {
         });
       },
     );
-
-    it('should not allow removing a user if the user is not an ADMIN', async () => {
-      const spaceName = nameBuilder();
-      const adminName = nameBuilder();
-      const memberName = nameBuilder();
-      const { userId: adminUserId, user: admin } = await createSiweUser();
-      const { user: member, authPayload: memberAuthPayload } =
-        await createSiweUser();
-      const space = await dbSpacesRepository.insert({
-        name: spaceName,
-        status: 'ACTIVE',
-      });
-      const spaceId = space.generatedMaps[0].id;
-      await dbMembersRepository.insert({
-        user: admin,
-        space: space.generatedMaps[0],
-        name: adminName,
-        role: 'ADMIN',
-        status: 'ACTIVE',
-        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
-      });
-      await dbMembersRepository.insert({
-        user: member,
-        space: space.generatedMaps[0],
-        name: memberName,
-        role: 'MEMBER',
-        status: 'ACTIVE',
-        invitedBy: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
-      });
-
-      await expect(
-        membersRepository.removeUser({
-          authPayload: memberAuthPayload,
-          spaceId,
-          userId: adminUserId,
-        }),
-      ).rejects.toThrow('User is not an active admin.');
-    });
-
-    it('should throw an error if not authenticated', async () => {
-      const spaceId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
-      const userId = faker.number.int({
-        min: 69420,
-        max: DB_MAX_SAFE_INTEGER,
-      });
-
-      await expect(
-        membersRepository.removeUser({
-          authPayload: new AuthPayload(),
-          spaceId,
-          userId,
-        }),
-      ).rejects.toThrow('Not authenticated');
-    });
 
     it.each([
       ['SIWE', createSiweUser],
@@ -3129,7 +2911,7 @@ describe('MembersRepository', () => {
 
         await expect(
           membersRepository.removeUser({
-            authPayload,
+            actorUserId: Number(authPayload.sub),
             spaceId,
             userId,
           }),
@@ -3146,11 +2928,11 @@ describe('MembersRepository', () => {
 
       await expect(
         membersRepository.removeUser({
-          authPayload,
+          actorUserId: Number(authPayload.sub),
           spaceId,
           userId,
         }),
-      ).rejects.toThrow('No members found.');
+      ).rejects.toThrow('Member not found.');
     });
 
     it('should throw an error if the user is not a member of the space', async () => {
@@ -3181,7 +2963,7 @@ describe('MembersRepository', () => {
 
       await expect(
         membersRepository.removeUser({
-          authPayload,
+          actorUserId: Number(authPayload.sub),
           spaceId,
           userId: nonMemberUserId,
         }),
@@ -3758,9 +3540,14 @@ describe('MembersRepository', () => {
           createMockMemberEncryptionService(),
         ),
         createMockSpaceAuditRepository(),
+        new WalletsRepository(
+          postgresDatabaseService,
+          createMockWalletEncryptionService(),
+        ),
         userEncryptionService,
         createMockWalletEncryptionService(),
         createMockMemberEncryptionService(),
+        mockLoggingService,
       );
     });
 
@@ -3930,33 +3717,6 @@ describe('MembersRepository', () => {
       userId,
       user: user.generatedMaps[0],
       authPayload: new AuthPayload(authPayloadDto),
-    };
-  }
-
-  async function createSpaceAsAdmin(): Promise<{
-    spaceId: Space['id'];
-    userId: number;
-    user: Record<string, unknown>;
-    authPayload: AuthPayload;
-  }> {
-    const { userId, user, authPayload } = await createSiweUser();
-    const space = await dbSpacesRepository.insert({
-      name: nameBuilder(),
-      status: 'ACTIVE',
-    });
-    await dbMembersRepository.insert({
-      user,
-      space: space.generatedMaps[0],
-      name: nameBuilder(),
-      status: 'ACTIVE',
-      role: 'ADMIN',
-      invitedBy: null,
-    });
-    return {
-      spaceId: space.generatedMaps[0].id,
-      userId,
-      user,
-      authPayload,
     };
   }
 });

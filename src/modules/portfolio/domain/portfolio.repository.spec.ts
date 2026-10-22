@@ -3,19 +3,19 @@
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
-import { CacheRouter } from '@/datasources/cache/cache.router';
-import type { ICacheService } from '@/datasources/cache/cache.service.interface';
-import { appBalanceBuilder } from '@/modules/portfolio/domain/entities/__tests__/app-balance.builder';
-import { appPositionBuilder } from '@/modules/portfolio/domain/entities/__tests__/app-position.builder';
-import { appPositionGroupBuilder } from '@/modules/portfolio/domain/entities/__tests__/app-position-group.builder';
-import { portfolioBuilder } from '@/modules/portfolio/domain/entities/__tests__/portfolio.builder';
-import { tokenBalanceBuilder } from '@/modules/portfolio/domain/entities/__tests__/token-balance.builder';
-import { tokenInfoBuilder } from '@/modules/portfolio/domain/entities/__tests__/token-info.builder';
-import { PortfolioRepository } from '@/modules/portfolio/domain/portfolio.repository';
-import type { IPortfolioApi } from '@/modules/portfolio/interfaces/portfolio-api.interface';
-import type { ZerionCacheService } from '@/modules/zerion/datasources/zerion-cache.service';
-import { rawify } from '@/validation/entities/raw.entity';
+import type { IConfigurationService } from '#/config/configuration.service.interface';
+import { CacheRouter } from '#/datasources/cache/cache.router';
+import type { ICacheService } from '#/datasources/cache/cache.service.interface';
+import { appBalanceBuilder } from '#/modules/portfolio/domain/entities/__tests__/app-balance.builder';
+import { appPositionBuilder } from '#/modules/portfolio/domain/entities/__tests__/app-position.builder';
+import { appPositionGroupBuilder } from '#/modules/portfolio/domain/entities/__tests__/app-position-group.builder';
+import { portfolioBuilder } from '#/modules/portfolio/domain/entities/__tests__/portfolio.builder';
+import { tokenBalanceBuilder } from '#/modules/portfolio/domain/entities/__tests__/token-balance.builder';
+import { tokenInfoBuilder } from '#/modules/portfolio/domain/entities/__tests__/token-info.builder';
+import { PortfolioRepository } from '#/modules/portfolio/domain/portfolio.repository';
+import type { IPortfolioApi } from '#/modules/portfolio/interfaces/portfolio-api.interface';
+import type { ZerionCacheService } from '#/modules/zerion/datasources/zerion-cache.service';
+import { rawify } from '#/validation/entities/raw.entity';
 
 describe('PortfolioRepository', () => {
   let repository: PortfolioRepository;
@@ -43,9 +43,12 @@ describe('PortfolioRepository', () => {
     mockConfigService = {
       get: vi.fn(),
       getOrThrow: vi.fn().mockImplementation((key: string) => {
-        if (key === 'portfolio.cache.ttlSeconds') return defaultCacheTtl;
-        if (key === 'portfolio.filters.dustThresholdUsd')
+        if (key === 'portfolio.cache.ttlSeconds') {
+          return defaultCacheTtl;
+        }
+        if (key === 'portfolio.filters.dustThresholdUsd') {
           return defaultDustThreshold;
+        }
         throw new Error(`Unexpected config key: ${key}`);
       }),
     } as unknown as MockedObject<IConfigurationService>;

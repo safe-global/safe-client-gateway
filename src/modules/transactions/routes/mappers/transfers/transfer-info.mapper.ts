@@ -4,25 +4,25 @@ import type { Address } from 'viem';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
-import type { Transfer as DomainTransfer } from '@/modules/safe/domain/entities/transfer.entity';
-import type { Token } from '@/modules/tokens/domain/entities/token.entity';
-import type { TokenRepository } from '@/modules/tokens/domain/token.repository';
-import { ITokenRepository } from '@/modules/tokens/domain/token.repository.interface';
+} from '#/logging/logging.interface';
+import type { Safe } from '#/modules/safe/domain/entities/safe.entity';
+import type { Transfer as DomainTransfer } from '#/modules/safe/domain/entities/transfer.entity';
+import type { Token } from '#/modules/tokens/domain/entities/token.entity';
+import type { TokenRepository } from '#/modules/tokens/domain/token.repository';
+import { ITokenRepository } from '#/modules/tokens/domain/token.repository.interface';
 import {
   type TransferDirection,
   TransferTransactionInfo,
-} from '@/modules/transactions/routes/entities/transfer-transaction-info.entity';
-import { Erc20Transfer } from '@/modules/transactions/routes/entities/transfers/erc20-transfer.entity';
-import { Erc721Transfer } from '@/modules/transactions/routes/entities/transfers/erc721-transfer.entity';
-import { NativeCoinTransfer } from '@/modules/transactions/routes/entities/transfers/native-coin-transfer.entity';
-import type { Transfer } from '@/modules/transactions/routes/entities/transfers/transfer.entity';
-import { getTransferDirection } from '@/modules/transactions/routes/mappers/common/transfer-direction.helper';
-import { SwapTransferInfoMapper } from '@/modules/transactions/routes/mappers/transfers/swap-transfer-info.mapper';
-import type { SwapTransferTransactionInfo } from '@/modules/transactions/routes/swap-transfer-transaction-info.entity';
-import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
-import type { AddressInfo } from '@/routes/common/entities/address-info.entity';
+} from '#/modules/transactions/routes/entities/transfer-transaction-info.entity';
+import { Erc20Transfer } from '#/modules/transactions/routes/entities/transfers/erc20-transfer.entity';
+import { Erc721Transfer } from '#/modules/transactions/routes/entities/transfers/erc721-transfer.entity';
+import { NativeCoinTransfer } from '#/modules/transactions/routes/entities/transfers/native-coin-transfer.entity';
+import type { Transfer } from '#/modules/transactions/routes/entities/transfers/transfer.entity';
+import { getTransferDirection } from '#/modules/transactions/routes/mappers/common/transfer-direction.helper';
+import { SwapTransferInfoMapper } from '#/modules/transactions/routes/mappers/transfers/swap-transfer-info.mapper';
+import type { SwapTransferTransactionInfo } from '#/modules/transactions/routes/swap-transfer-transaction-info.entity';
+import { AddressInfoHelper } from '#/routes/common/address-info/address-info.helper';
+import type { AddressInfo } from '#/routes/common/entities/address-info.entity';
 
 @Injectable()
 export class TransferInfoMapper {

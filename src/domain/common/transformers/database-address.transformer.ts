@@ -4,7 +4,7 @@ import { getAddress } from 'viem';
 
 /**
  * Encrypted address columns hold `kms:v1:…` ciphertext (see
- * `@/datasources/kms/encryption.constants`); checksumming would corrupt it,
+ * `#/datasources/kms/encryption.constants`); checksumming would corrupt it,
  * so ciphertext passes through untouched. The plaintext (EIP-55 checksummed)
  * form is what gets encrypted, and decryption restores it — plaintext-mode
  * behavior is byte-identical to the pre-encryption transformer.
@@ -26,11 +26,15 @@ export const databaseAddressTransformer: ValueTransformer = {
 
 export const databaseNullableAddressTransformer: ValueTransformer = {
   to(value: string | null): string | null {
-    if (value === null || value === undefined) return null;
+    if (value === null || value === undefined) {
+      return null;
+    }
     return isCiphertext(value) ? value : getAddress(value);
   },
   from(value: string | null): string | null {
-    if (value === null || value === undefined) return null;
+    if (value === null || value === undefined) {
+      return null;
+    }
     return isCiphertext(value) ? value : getAddress(value);
   },
 };

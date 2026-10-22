@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { MockedObject } from 'vitest';
-import type { INotificationsRepositoryV2 } from '@/modules/notifications/domain/v2/notifications.repository.interface';
+import type { INotificationsRepositoryV2 } from '#/modules/notifications/domain/v2/notifications.repository.interface';
 
 export const MockNotificationRepositoryV2: MockedObject<INotificationsRepositoryV2> =
   {

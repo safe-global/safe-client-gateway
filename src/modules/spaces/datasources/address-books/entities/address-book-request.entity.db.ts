@@ -9,14 +9,14 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import type { Address } from 'viem';
-import { databaseAddressTransformer } from '@/domain/common/transformers/database-address.transformer';
-import { databaseEnumTransformer } from '@/domain/common/utils/enum';
-import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
+import { databaseAddressTransformer } from '#/domain/common/transformers/database-address.transformer';
+import { databaseEnumTransformer } from '#/domain/common/utils/enum';
+import { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
 import {
   AddressBookRequestStatus,
   AddressBookRequest as DomainAddressBookRequest,
-} from '@/modules/spaces/domain/address-books/entities/address-book-request.entity';
-import { User } from '@/modules/users/datasources/entities/users.entity.db';
+} from '#/modules/spaces/domain/address-books/entities/address-book-request.entity';
+import { User } from '#/modules/users/datasources/entities/users.entity.db';
 
 @Entity('address_book_requests')
 // Split partial-unique indexes by encryption mode: plaintext pending rows

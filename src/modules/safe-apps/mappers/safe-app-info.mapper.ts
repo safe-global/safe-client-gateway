@@ -3,11 +3,11 @@ import { Inject, Injectable } from '@nestjs/common';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import type { SafeAppsRepository } from '@/modules/safe-apps/domain/safe-apps.repository';
-import { ISafeAppsRepository } from '@/modules/safe-apps/domain/safe-apps.repository.interface';
-import { parseOrigin } from '@/modules/safe-queue/helpers/origin.helper';
-import { SafeAppInfo } from '@/modules/transactions/routes/entities/safe-app-info.entity';
+} from '#/logging/logging.interface';
+import type { SafeAppsRepository } from '#/modules/safe-apps/domain/safe-apps.repository';
+import { ISafeAppsRepository } from '#/modules/safe-apps/domain/safe-apps.repository.interface';
+import { parseOrigin } from '#/modules/safe-queue/helpers/origin.helper';
+import { SafeAppInfo } from '#/modules/transactions/routes/entities/safe-app-info.entity';
 
 @Injectable()
 export class SafeAppInfoMapper {
@@ -27,7 +27,9 @@ export class SafeAppInfoMapper {
     safeTxHash: string,
   ): Promise<SafeAppInfo | null> {
     const originUrl = this.getOriginUrl(origin, safeTxHash);
-    if (!originUrl) return null;
+    if (!originUrl) {
+      return null;
+    }
 
     const [safeApp] = await this.safeAppsRepository.getSafeApps({
       chainId,
@@ -35,7 +37,7 @@ export class SafeAppInfoMapper {
       url: originUrl,
     });
     if (!safeApp) {
-      this.loggingService.info(
+      this.loggingService.debug(
         `No Safe Apps matching the origin url ${originUrl} (safeTxHash: ${safeTxHash})`,
       );
       return null;
@@ -56,7 +58,9 @@ export class SafeAppInfoMapper {
     origin: string | null,
     safeTxHash: string,
   ): string | null {
-    if (!origin) return null;
+    if (!origin) {
+      return null;
+    }
     const { originUrl } = parseOrigin(origin);
     if (!originUrl) {
       this.loggingService.debug(

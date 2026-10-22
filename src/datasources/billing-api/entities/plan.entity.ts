@@ -1,12 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
-import { StripeMetadataSchema } from '@/datasources/billing-api/entities/metadata.entity';
-
-export const PlanCurrencies = ['usd', 'eur'] as const;
-
-export const PlanBillingCycles = ['month', 'year'] as const;
-
-export const PlanTypes = ['standard', 'premium', 'enterprise'] as const;
+import { StripeMetadataSchema } from '#/datasources/billing-api/entities/metadata.entity';
 
 export type MarketingFeature = z.infer<typeof MarketingFeatureSchema>;
 
@@ -25,17 +19,18 @@ export const ProductSchema = z.object({
   name: z.string(),
 });
 
+// Forwarded to clients unchanged: the gateway does not interpret these values, so no closed set is enforced here.
 const BasePlanSchema = z.object({
   id: z.string(),
   name: z.string().nullish(),
   description: z.string().nullish(),
   currentPrice: z.number(),
   originalPrice: z.number().nullable(),
-  paymentMethod: z.literal('fiat'),
-  currency: z.enum(PlanCurrencies),
+  paymentMethod: z.string(),
+  currency: z.string(),
   features: z.array(z.string()),
-  billingCycle: z.enum(PlanBillingCycles).nullish(),
-  type: z.enum(PlanTypes),
+  billingCycle: z.string().nullish(),
+  type: z.string(),
 });
 
 export type SubscriptionPlan = z.infer<typeof SubscriptionPlanSchema>;

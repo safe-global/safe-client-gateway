@@ -3,13 +3,17 @@
 import { faker } from '@faker-js/faker';
 import type { MockedObject } from 'vitest';
 import { ZodError } from 'zod';
-import { checkoutSessionResultBuilder } from '@/datasources/billing-api/entities/__tests__/checkout-session.builder';
-import { paymentLinkBuilder } from '@/datasources/billing-api/entities/__tests__/payment-link.builder';
-import { subscriptionBuilder } from '@/datasources/billing-api/entities/__tests__/subscription.builder';
-import { stripDashes } from '@/datasources/billing-api/upstream-customer-id.util';
-import type { IBillingApi } from '@/domain/interfaces/billing-api.interface';
-import { BillingRepository } from '@/modules/billing/domain/billing.repository';
-import { rawify } from '@/validation/entities/raw.entity';
+import { checkoutSessionResultBuilder } from '#/datasources/billing-api/entities/__tests__/checkout-session.builder';
+import { paymentLinkBuilder } from '#/datasources/billing-api/entities/__tests__/payment-link.builder';
+import {
+  planBuilder,
+  subscriptionPlanBuilder,
+} from '#/datasources/billing-api/entities/__tests__/plan.builder';
+import { subscriptionBuilder } from '#/datasources/billing-api/entities/__tests__/subscription.builder';
+import { stripDashes } from '#/datasources/billing-api/upstream-customer-id.util';
+import type { IBillingApi } from '#/domain/interfaces/billing-api.interface';
+import { BillingRepository } from '#/modules/billing/domain/billing.repository';
+import { rawify } from '#/validation/entities/raw.entity';
 
 const billingApiMock = {
   listPlans: vi.fn(),
@@ -58,6 +62,19 @@ describe('BillingRepository', () => {
   });
 
   describe('schema behaviour', () => {
+    it('should drop the upstream payment link url', async () => {
+      const paymentLink = paymentLinkBuilder().build();
+      billingApiMock.listPaymentLinks.mockResolvedValue(
+        rawify({
+          paymentLinks: [{ ...paymentLink, url: faker.internet.url() }],
+        }),
+      );
+
+      const [actual] = await target.listPaymentLinks();
+
+      expect(actual).not.toHaveProperty('url');
+    });
+
     it('should restore dashes in a hex-only upstreamCustomerId on a subscription', async () => {
       const subscription = subscriptionBuilder().build();
       billingApiMock.getSubscriptionsByCustomerId.mockResolvedValue(
@@ -92,6 +109,43 @@ describe('BillingRepository', () => {
           upstreamCustomerId: faker.string.uuid(),
         }),
       ).resolves.toEqual([{ ...subscription, plan }]);
+    });
+
+    it('should forward a gbp subscription plan of an unlisted tier type, billing cycle and payment method unchanged', async () => {
+      const subscriptionOnGbpWeeklyPlan = subscriptionBuilder()
+        .with(
+          'plan',
+          subscriptionPlanBuilder()
+            .with('currency', 'gbp')
+            .with('billingCycle', 'week')
+            .with('type', 'legacy')
+            .with('paymentMethod', 'crypto')
+            .build(),
+        )
+        .build();
+      billingApiMock.getSubscriptionsByCustomerId.mockResolvedValue(
+        rawify({ subscriptions: [subscriptionOnGbpWeeklyPlan] }),
+      );
+
+      await expect(
+        target.getSubscriptionsByCustomerId({
+          upstreamCustomerId: faker.string.uuid(),
+        }),
+      ).resolves.toEqual([subscriptionOnGbpWeeklyPlan]);
+    });
+
+    it('should forward a gbp plan of an unlisted tier type, billing cycle and payment method unchanged', async () => {
+      const gbpWeeklyPlan = planBuilder()
+        .with('currency', 'gbp')
+        .with('billingCycle', 'week')
+        .with('type', 'legacy')
+        .with('paymentMethod', 'crypto')
+        .build();
+      billingApiMock.getPlan.mockResolvedValue(rawify(gbpWeeklyPlan));
+
+      await expect(
+        target.getPlan({ planId: gbpWeeklyPlan.id }),
+      ).resolves.toEqual(gbpWeeklyPlan);
     });
 
     it.each([true, false])(

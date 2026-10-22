@@ -7,26 +7,26 @@ import type { INestApplication } from '@nestjs/common';
 import type postgres from 'postgres';
 import request from 'supertest';
 import { getAddress } from 'viem';
-import { TestDbFactory } from '@/__tests__/db.factory';
+import { TestDbFactory } from '#/__tests__/db.factory';
 import {
   initTestApplication,
   TestAppProvider,
-} from '@/__tests__/test-app.provider';
-import { createTestModule } from '@/__tests__/testing-module';
-import configuration from '@/config/entities/__tests__/configuration';
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
+} from '#/__tests__/test-app.provider';
+import { createTestModule } from '#/__tests__/testing-module';
+import configuration from '#/config/entities/__tests__/configuration';
+import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
+import { IJwtService } from '#/datasources/jwt/jwt.service.interface';
 import {
   TEST_WRAPPED_INDEX_KEY,
   TestKmsModule,
-} from '@/datasources/kms/__tests__/test.kms.module';
-import { KmsModule } from '@/datasources/kms/kms.module';
-import { nameBuilder } from '@/domain/common/entities/name.builder';
-import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
-import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
-import { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
-import { SpacesCreationRateLimitGuard } from '@/modules/spaces/routes/guards/spaces-creation-rate-limit.guard';
+} from '#/datasources/kms/__tests__/test.kms.module';
+import { KmsModule } from '#/datasources/kms/kms.module';
+import { nameBuilder } from '#/domain/common/entities/name.builder';
+import { siweAuthPayloadDtoBuilder } from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { NotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/notifications.repository.module';
+import { TestNotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/test.notification.repository.module';
+import { SpaceSafe } from '#/modules/spaces/datasources/safes/entities/space-safes.entity.db';
+import { SpacesCreationRateLimitGuard } from '#/modules/spaces/routes/guards/spaces-creation-rate-limit.guard';
 
 /**
  * What field encryption puts in the table, from the route down. The write path
@@ -168,6 +168,92 @@ describe('Safe address encryption', () => {
       .set('Cookie', [`access_token=${accessToken}`])
       .expect(200);
     expect(response.body).toStrictEqual({ safes: { 1: [safe.address] } });
+  });
+
+  it('returns the decrypted Safes of only the spaces the caller is an active member of, admin or not', async () => {
+    const signUp = async (): Promise<{
+      accessToken: string;
+      address: `0x${string}`;
+    }> => {
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
+      const walletResponse = await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${jwtService.sign(authPayloadDto)}`])
+        .expect(201);
+      return {
+        accessToken: jwtService.sign({
+          ...authPayloadDto,
+          sub: String(walletResponse.body.id),
+        }),
+        address: authPayloadDto.signer_address,
+      };
+    };
+    const createSpace = async (accessToken: string): Promise<string> => {
+      const response = await request(app.getHttpServer())
+        .post('/v1/spaces')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: nameBuilder() })
+        .expect(201);
+      return response.body.uuid;
+    };
+    const buildSafe = (): { chainId: string; address: `0x${string}` } => ({
+      chainId: faker.string.numeric({ length: { min: 1, max: 4 } }),
+      address: getAddress(faker.finance.ethereumAddress()),
+    });
+    const caller = await signUp();
+    const otherAdmin = await signUp();
+    const inviteCaller = async (spaceUuid: string): Promise<void> => {
+      await request(app.getHttpServer())
+        .post(`/v1/spaces/${spaceUuid}/members/invite`)
+        .set('Cookie', [`access_token=${otherAdmin.accessToken}`])
+        .send({
+          users: [
+            { address: caller.address, name: nameBuilder(), role: 'MEMBER' },
+          ],
+        })
+        .expect(201);
+    };
+    const spaceUuid = await createSpace(caller.accessToken);
+    const emptySpaceUuid = await createSpace(caller.accessToken);
+    const memberSpaceUuid = await createSpace(otherAdmin.accessToken);
+    const invitedSpaceUuid = await createSpace(otherAdmin.accessToken);
+    const safe = buildSafe();
+    const memberSpaceSafe = buildSafe();
+    await addSafe(spaceUuid, caller.accessToken, safe).then((response) =>
+      expect(response.status).toBe(201),
+    );
+    await addSafe(
+      memberSpaceUuid,
+      otherAdmin.accessToken,
+      memberSpaceSafe,
+    ).then((response) => expect(response.status).toBe(201));
+    await addSafe(invitedSpaceUuid, otherAdmin.accessToken, buildSafe()).then(
+      (response) => expect(response.status).toBe(201),
+    );
+    await inviteCaller(memberSpaceUuid);
+    await request(app.getHttpServer())
+      .post(`/v1/spaces/${memberSpaceUuid}/members/accept`)
+      .set('Cookie', [`access_token=${caller.accessToken}`])
+      .send({ name: nameBuilder() })
+      .expect(201);
+    await inviteCaller(invitedSpaceUuid);
+
+    const response = await request(app.getHttpServer())
+      .get('/v1/spaces/safes')
+      .set('Cookie', [`access_token=${caller.accessToken}`])
+      .expect(200);
+
+    expect(response.body).toHaveLength(3);
+    expect(response.body).toEqual(
+      expect.arrayContaining([
+        { spaceUuid, safes: { [safe.chainId]: [safe.address] } },
+        { spaceUuid: emptySpaceUuid, safes: {} },
+        {
+          spaceUuid: memberSpaceUuid,
+          safes: { [memberSpaceSafe.chainId]: [memberSpaceSafe.address] },
+        },
+      ]),
+    );
   });
 
   it('rejects the same Safe twice, matching on the blind index', async () => {

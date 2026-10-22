@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.5.10/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.5.15/schema.json",
   "vcs": {
     "enabled": true,
     "clientKind": "git",
@@ -114,7 +114,7 @@
           "level": "error",
           "options": {
             "paths": {
-              "@safe-global/safe-deployments": "Please import from @/domain/common/utils/deployments instead."
+              "@safe-global/safe-deployments": "Please import from #/domain/common/utils/deployments instead."
             }
           }
         },
@@ -141,7 +141,8 @@
         "useAsConstAssertion": "error",
         "noUselessElse": "error",
         "noInferrableTypes": "error",
-        "useArrayLiterals": "error"
+        "useArrayLiterals": "error",
+        "useBlockStatements": "error"
       },
       "performance": {
         "noAccumulatingSpread": "warn",

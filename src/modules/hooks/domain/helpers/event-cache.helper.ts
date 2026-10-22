@@ -5,36 +5,36 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import type { MemoizedFunction } from 'lodash';
 import memoize from 'lodash/memoize';
 import type { Address, Hex } from 'viem';
-import { CacheRouter } from '@/datasources/cache/cache.router';
+import { CacheRouter } from '#/datasources/cache/cache.router';
 import {
   CacheService,
   type ICacheService,
-} from '@/datasources/cache/cache.service.interface';
-import { MAX_TTL } from '@/datasources/cache/constants';
+} from '#/datasources/cache/cache.service.interface';
+import { MAX_TTL } from '#/datasources/cache/constants';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import { IBalancesRepository } from '@/modules/balances/domain/balances.repository.interface';
-import { IBlockchainRepository } from '@/modules/blockchain/domain/blockchain.repository.interface';
-import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
-import { ICollectiblesRepository } from '@/modules/collectibles/domain/collectibles.repository.interface';
-import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
-import { SafeDecoder } from '@/modules/contracts/domain/decoders/safe-decoder.helper';
-import { IDelegatesV3Repository } from '@/modules/delegate/domain/v3/delegates.v3.repository.interface';
-import { EarnRepository } from '@/modules/earn/domain/earn.repository';
-import type { Event } from '@/modules/hooks/routes/entities/event.entity';
+} from '#/logging/logging.interface';
+import { IBalancesRepository } from '#/modules/balances/domain/balances.repository.interface';
+import { IBlockchainRepository } from '#/modules/blockchain/domain/blockchain.repository.interface';
+import { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
+import { ICollectiblesRepository } from '#/modules/collectibles/domain/collectibles.repository.interface';
+import { MultiSendDecoder } from '#/modules/contracts/domain/decoders/multi-send-decoder.helper';
+import { SafeDecoder } from '#/modules/contracts/domain/decoders/safe-decoder.helper';
+import { IDelegatesV3Repository } from '#/modules/delegate/domain/v3/delegates.v3.repository.interface';
+import { EarnRepository } from '#/modules/earn/domain/earn.repository';
+import type { Event } from '#/modules/hooks/routes/entities/event.entity';
 import {
   ConfigEventType,
   TransactionEventType,
-} from '@/modules/hooks/routes/entities/event-type.entity';
-import { IMessagesRepository } from '@/modules/messages/domain/messages.repository.interface';
-import { IPolicyIndexerRepository } from '@/modules/policies/domain/policy-indexer.repository.interface';
-import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
-import { ISafeAppsRepository } from '@/modules/safe-apps/domain/safe-apps.repository.interface';
-import { IStakingRepositoryWithRewardsFee } from '@/modules/staking/domain/staking.repository.interface';
-import { ITransactionsRepository } from '@/modules/transactions/domain/transactions.repository.interface';
-import { ZerionCacheService } from '@/modules/zerion/datasources/zerion-cache.service';
+} from '#/modules/hooks/routes/entities/event-type.entity';
+import { IMessagesRepository } from '#/modules/messages/domain/messages.repository.interface';
+import { IPolicyIndexerRepository } from '#/modules/policies/domain/policy-indexer.repository.interface';
+import { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
+import { ISafeAppsRepository } from '#/modules/safe-apps/domain/safe-apps.repository.interface';
+import { IStakingRepositoryWithRewardsFee } from '#/modules/staking/domain/staking.repository.interface';
+import { ITransactionsRepository } from '#/modules/transactions/domain/transactions.repository.interface';
+import { ZerionCacheService } from '#/modules/zerion/datasources/zerion-cache.service';
 
 @Injectable()
 export class EventCacheHelper {

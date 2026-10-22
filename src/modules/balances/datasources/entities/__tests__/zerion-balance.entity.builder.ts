@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import type { IBuilder } from '@/__tests__/builder';
-import { Builder } from '@/__tests__/builder';
+import type { IBuilder } from '#/__tests__/builder';
+import { Builder } from '#/__tests__/builder';
 import type {
   ZerionApplicationMetadata,
   ZerionAttributes,
@@ -13,8 +13,8 @@ import type {
   ZerionFungibleInfo,
   ZerionImplementation,
   ZerionQuantity,
-} from '@/modules/balances/datasources/entities/zerion-balance.entity';
-import { PositionTypes } from '@/modules/positions/domain/entities/position-type.entity';
+} from '#/modules/balances/datasources/entities/zerion-balance.entity';
+import { PositionTypes } from '#/modules/positions/domain/entities/position-type.entity';
 
 export function zerionImplementationBuilder(): IBuilder<ZerionImplementation> {
   return new Builder<ZerionImplementation>()

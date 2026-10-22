@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { StripeMetadata } from '@/datasources/billing-api/entities/metadata.entity';
-import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
+import type { StripeMetadata } from '#/datasources/billing-api/entities/metadata.entity';
+import { DB_MAX_SAFE_INTEGER } from '#/domain/common/constants';
 import {
   FeatureType,
   SAFE_SEATS_FEATURE_KEY,
-} from '@/modules/entitlements/domain/entities/feature.entity';
-import type { ParsedEntitlement } from '@/modules/entitlements/domain/entities/materialized-subscription.entity';
+} from '#/modules/entitlements/domain/entities/feature.entity';
+import type { ParsedEntitlement } from '#/modules/entitlements/domain/entities/materialized-subscription.entity';
 import {
   FEATURE_METADATA_PREFIX,
   MAX_ENTITLEMENT_VALUE_LENGTH,
   UNLIMITED_METADATA_VALUE,
-} from '@/modules/entitlements/domain/entitlements.constants';
-import { NonNegativeNumericStringSchema } from '@/validation/entities/schemas/non-negative-numeric-string.schema';
+} from '#/modules/entitlements/domain/entitlements.constants';
+import { NonNegativeNumericStringSchema } from '#/validation/entities/schemas/non-negative-numeric-string.schema';
 
 /** A metered quota the `quota` `integer` column can actually hold. */
 const QuotaSchema = NonNegativeNumericStringSchema.refine(

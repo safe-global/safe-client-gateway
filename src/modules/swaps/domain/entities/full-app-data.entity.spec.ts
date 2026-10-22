@@ -1,4 +1,5 @@
-import { FullAppDataSchema } from '@/modules/swaps/domain/entities/full-app-data.entity';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { FullAppDataSchema } from '#/modules/swaps/domain/entities/full-app-data.entity';
 
 describe('FullAppDataSchema', () => {
   it.each([

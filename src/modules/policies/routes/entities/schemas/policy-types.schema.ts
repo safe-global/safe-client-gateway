@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
-import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
+import { PolicyType } from '#/modules/policies/domain/entities/policy-type.entity';
 
 /**
  * The policy types a request asks for, comma-separated:

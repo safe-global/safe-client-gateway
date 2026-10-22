@@ -2,7 +2,7 @@
 
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import type { Mocked, MockedFunction } from 'vitest';
+import type { MockedFunction, MockedObject } from 'vitest';
 import {
   type EnvVariable,
   isSymbolicLink,
@@ -29,7 +29,7 @@ vi.mock('./env-json-helpers', async (importOriginal) => ({
   setFilePermissions: vi.fn(),
 }));
 
-const mockFs: Mocked<typeof fs> = vi.mocked(fs);
+const mockFs: MockedObject<typeof fs> = vi.mocked(fs);
 const mockLoadEnvJson: MockedFunction<typeof loadEnvJson> =
   vi.mocked(loadEnvJson);
 const mockIsSymbolicLink: MockedFunction<typeof isSymbolicLink> =
@@ -40,8 +40,8 @@ describe('generate-env', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.spyOn(console, 'log').mockImplementation();
-    vi.spyOn(console, 'error').mockImplementation();
+    vi.spyOn(console, 'log').mockReturnValue(undefined);
+    vi.spyOn(console, 'error').mockReturnValue(undefined);
     vi.spyOn(Date, 'now').mockReturnValue(1234567890000);
     mockIsSymbolicLink.mockReturnValue(false);
   });
@@ -351,7 +351,7 @@ ANOTHER_VAR=123
       mockIsSymbolicLink.mockReturnValue(true);
 
       const exitSpy = mockProcessExit();
-      const errorSpy = vi.spyOn(console, 'error').mockImplementation();
+      const errorSpy = vi.spyOn(console, 'error').mockReturnValue(undefined);
 
       expect(() => updateEnvFile()).toThrow('process.exit: 1');
       expect(errorSpy).toHaveBeenCalledWith(
@@ -377,7 +377,7 @@ ANOTHER_VAR=123
       mockIsSymbolicLink.mockReturnValue(true);
 
       const exitSpy = mockProcessExit();
-      const errorSpy = vi.spyOn(console, 'error').mockImplementation();
+      const errorSpy = vi.spyOn(console, 'error').mockReturnValue(undefined);
 
       expect(() => generateNewEnvFile()).toThrow('process.exit: 1');
       expect(errorSpy).toHaveBeenCalledWith(
@@ -514,7 +514,7 @@ ANOTHER_VAR=123
       mockFs.existsSync.mockReturnValue(true);
 
       const exitSpy = mockProcessExit();
-      const errorSpy = vi.spyOn(console, 'error').mockImplementation();
+      const errorSpy = vi.spyOn(console, 'error').mockReturnValue(undefined);
 
       expect(() => generateEnvFile()).toThrow('process.exit: 1');
       expect(errorSpy).toHaveBeenCalledWith(
@@ -537,7 +537,7 @@ ANOTHER_VAR=123
 
       mockFs.existsSync.mockReturnValue(false);
       mockLoadEnvJson.mockReturnValue(mockEnvVars);
-      mockFs.writeFileSync.mockImplementation();
+      mockFs.writeFileSync.mockReturnValue(undefined);
 
       generateEnvFile();
 
@@ -562,7 +562,7 @@ ANOTHER_VAR=123
 
       mockFs.existsSync.mockReturnValue(false);
       mockLoadEnvJson.mockReturnValue(mockEnvVars);
-      mockFs.writeFileSync.mockImplementation();
+      mockFs.writeFileSync.mockReturnValue(undefined);
 
       updateEnvFile();
 

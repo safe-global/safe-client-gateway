@@ -1,4 +1,5 @@
-import { TypedDataSchema } from '@/modules/messages/domain/entities/typed-data.entity';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { TypedDataSchema } from '#/modules/messages/domain/entities/typed-data.entity';
 
 // TODO: Increase test coverage
 describe('TypedDataSchema', () => {

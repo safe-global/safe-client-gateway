@@ -15,12 +15,12 @@ import { z } from 'zod';
 import {
   initTestApplication,
   TestAppProvider,
-} from '@/__tests__/test-app.provider';
-import { ConfigurationModule } from '@/config/configuration.module';
-import configuration from '@/config/entities/__tests__/configuration';
-import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
-import { ZodErrorFilter } from '@/routes/common/filters/zod-error.filter';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+} from '#/__tests__/test-app.provider';
+import { ConfigurationModule } from '#/config/configuration.module';
+import configuration from '#/config/entities/__tests__/configuration';
+import { TestLoggingModule } from '#/logging/__tests__/test.logging.module';
+import { ZodErrorFilter } from '#/routes/common/filters/zod-error.filter';
+import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
 const ZodSchema = z.object({
   value: z.string(),

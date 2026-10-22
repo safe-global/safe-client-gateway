@@ -2,22 +2,22 @@
 import { BullModule, getQueueToken } from '@nestjs/bullmq';
 import { Module } from '@nestjs/common';
 import type { Queue } from 'bullmq';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { JobQueueService } from '@/datasources/job-queue/job-queue.service';
-import { JobQueueShutdownHook } from '@/datasources/job-queue/job-queue.shutdown.hook';
-import { CloudStorageModule } from '@/datasources/storage/cloud-storage.module';
-import { CSV_EXPORT_QUEUE } from '@/domain/common/jobs.constants';
-import { IJobQueueService } from '@/domain/interfaces/job-queue.interface';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { JobQueueService } from '#/datasources/job-queue/job-queue.service';
+import { JobQueueShutdownHook } from '#/datasources/job-queue/job-queue.shutdown.hook';
+import { CloudStorageModule } from '#/datasources/storage/cloud-storage.module';
+import { CSV_EXPORT_QUEUE } from '#/domain/common/jobs.constants';
+import { IJobQueueService } from '#/domain/interfaces/job-queue.interface';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import { ChainsModule } from '@/modules/chains/chains.module';
-import { CsvService } from '@/modules/csv-export/csv-utils/csv.service';
-import { CsvExportConsumer } from '@/modules/csv-export/v1/consumers/csv-export.consumer';
-import { CsvExportController } from '@/modules/csv-export/v1/csv-export.controller';
-import { CsvExportService } from '@/modules/csv-export/v1/csv-export.service';
-import { ExportApiManagerModule } from '@/modules/csv-export/v1/datasources/export-api.manager.interface';
+} from '#/logging/logging.interface';
+import { ChainsModule } from '#/modules/chains/chains.module';
+import { CsvService } from '#/modules/csv-export/csv-utils/csv.service';
+import { CsvExportConsumer } from '#/modules/csv-export/v1/consumers/csv-export.consumer';
+import { CsvExportController } from '#/modules/csv-export/v1/csv-export.controller';
+import { CsvExportService } from '#/modules/csv-export/v1/csv-export.service';
+import { ExportApiManagerModule } from '#/modules/csv-export/v1/datasources/export-api.manager.interface';
 
 @Module({
   imports: [

@@ -10,9 +10,9 @@ import {
   keccak256,
   toBytes,
 } from 'viem';
-import { Builder } from '@/__tests__/builder';
-import type { IEncoder } from '@/__tests__/encoder-builder';
-import { DelayModifierAbi } from '@/modules/alerts/domain/contracts/decoders/delay-modifier-decoder.helper';
+import { Builder } from '#/__tests__/builder';
+import type { IEncoder } from '#/__tests__/encoder-builder';
+import { DelayModifierAbi } from '#/modules/alerts/domain/contracts/decoders/delay-modifier-decoder.helper';
 
 // TransactionAdded
 

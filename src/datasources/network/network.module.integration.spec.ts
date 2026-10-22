@@ -7,33 +7,33 @@ import type { TestingModule } from '@nestjs/testing';
 import { Test } from '@nestjs/testing';
 import { ClsModule } from 'nestjs-cls';
 import { getGlobalDispatcher } from 'undici';
-import { fakeJson } from '@/__tests__/faker';
+import { fakeJson } from '#/__tests__/faker';
 import {
   createTestApplication,
   initTestApplication,
-} from '@/__tests__/test-app.provider';
-import { ConfigurationModule } from '@/config/configuration.module';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import configuration from '@/config/entities/configuration';
-import { CircuitBreakerModule } from '@/datasources/circuit-breaker/circuit-breaker.module';
-import { CircuitBreakerService } from '@/datasources/circuit-breaker/circuit-breaker.service';
-import { CircuitBreakerException } from '@/datasources/circuit-breaker/exceptions/circuit-breaker.exception';
+} from '#/__tests__/test-app.provider';
+import { ConfigurationModule } from '#/config/configuration.module';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import configuration from '#/config/entities/configuration';
+import { CircuitBreakerModule } from '#/datasources/circuit-breaker/circuit-breaker.module';
+import { CircuitBreakerService } from '#/datasources/circuit-breaker/circuit-breaker.service';
+import { CircuitBreakerException } from '#/datasources/circuit-breaker/exceptions/circuit-breaker.exception';
 import {
   NetworkRequestError,
   NetworkResponseError,
-} from '@/datasources/network/entities/network.error.entity';
-import type { FetchClient } from '@/datasources/network/network.module';
+} from '#/datasources/network/entities/network.error.entity';
+import type { FetchClient } from '#/datasources/network/network.module';
 import {
   FetchClientToken,
   NetworkModule,
-} from '@/datasources/network/network.module';
-import { UndiciShutdownHook } from '@/datasources/network/undici.shutdown.hook';
-import { hashSha1 } from '@/domain/common/utils/utils';
+} from '#/datasources/network/network.module';
+import { UndiciShutdownHook } from '#/datasources/network/undici.shutdown.hook';
+import { hashSha1 } from '#/domain/common/utils/utils';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import { RequestScopedLoggingModule } from '@/logging/logging.module';
+} from '#/logging/logging.interface';
+import { RequestScopedLoggingModule } from '#/logging/logging.module';
 
 describe('NetworkModule', () => {
   let app: INestApplication<Server>;

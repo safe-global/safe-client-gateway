@@ -19,20 +19,20 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import type { Address } from 'viem';
-import { SafeShieldCoreDisabledExceptionFilter } from '@/modules/safe-shield/domain/exception-filters/safe-shield-core-disabled.exception-filter';
-import { CounterpartyAnalysisDto } from '@/modules/safe-shield/entities/dtos/counterparty-analysis.dto';
-import { CounterpartyAnalysisRequestDto } from '@/modules/safe-shield/entities/dtos/counterparty-analysis-request.dto';
+import { SafeShieldCoreDisabledExceptionFilter } from '#/modules/safe-shield/domain/exception-filters/safe-shield-core-disabled.exception-filter';
+import { CounterpartyAnalysisDto } from '#/modules/safe-shield/entities/dtos/counterparty-analysis.dto';
+import { CounterpartyAnalysisRequestDto } from '#/modules/safe-shield/entities/dtos/counterparty-analysis-request.dto';
 import {
   ReportFalseResultRequestDto,
   ReportFalseResultRequestSchema,
   ReportFalseResultResponseDto,
-} from '@/modules/safe-shield/entities/dtos/report-false-result.dto';
-import { ThreatAnalysisResponseDto } from '@/modules/safe-shield/entities/dtos/threat-analysis.dto';
-import { ThreatAnalysisRequestDto } from '@/modules/safe-shield/entities/dtos/threat-analysis-request.dto';
-import { SafeShieldCoreGatingGuard } from '@/modules/safe-shield/routes/guards/safe-shield-core-gating.guard';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+} from '#/modules/safe-shield/entities/dtos/report-false-result.dto';
+import { ThreatAnalysisResponseDto } from '#/modules/safe-shield/entities/dtos/threat-analysis.dto';
+import { ThreatAnalysisRequestDto } from '#/modules/safe-shield/entities/dtos/threat-analysis-request.dto';
+import { SafeShieldCoreGatingGuard } from '#/modules/safe-shield/routes/guards/safe-shield-core-gating.guard';
+import { AddressSchema } from '#/validation/entities/schemas/address.schema';
+import { NumericStringSchema } from '#/validation/entities/schemas/numeric-string.schema';
+import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 import {
   CounterpartyAnalysisRequestSchema,
   ThreatAnalysisRequestSchema,

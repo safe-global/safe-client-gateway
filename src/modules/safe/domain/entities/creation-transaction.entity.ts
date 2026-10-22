@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { z } from 'zod';
-import type { CreationTransactionSchema } from '@/modules/safe/domain/entities/schemas/creation-transaction.schema';
+import type { CreationTransactionSchema } from '#/modules/safe/domain/entities/schemas/creation-transaction.schema';
 
 export type CreationTransaction = z.infer<typeof CreationTransactionSchema>;

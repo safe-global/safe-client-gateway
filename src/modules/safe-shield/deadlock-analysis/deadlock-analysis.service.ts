@@ -2,31 +2,31 @@
 import { Inject, Injectable } from '@nestjs/common';
 import chunk from 'lodash/chunk';
 import { type Address, isAddressEqual } from 'viem';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { CacheRouter } from '@/datasources/cache/cache.router';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { CacheRouter } from '#/datasources/cache/cache.router';
 import {
   CacheService,
   type ICacheService,
-} from '@/datasources/cache/cache.service.interface';
-import { DataSourceError } from '@/domain/errors/data-source.error';
-import type { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
-import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
+} from '#/datasources/cache/cache.service.interface';
+import { DataSourceError } from '#/domain/errors/data-source.error';
+import type { ITransactionApi } from '#/domain/interfaces/transaction-api.interface';
+import { ITransactionApiManager } from '#/domain/interfaces/transaction-api.manager.interface';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import { asError } from '@/logging/utils';
-import type { BaseDataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
-import { SafeSchema } from '@/modules/safe/domain/entities/schemas/safe.schema';
-import type { DeadlockAnalysisResponse } from '@/modules/safe-shield/entities/analysis-responses.entity';
+} from '#/logging/logging.interface';
+import { asError } from '#/logging/utils';
+import type { BaseDataDecoded } from '#/modules/data-decoder/domain/v2/entities/data-decoded.entity';
+import { SafeSchema } from '#/modules/safe/domain/entities/schemas/safe.schema';
+import type { DeadlockAnalysisResponse } from '#/modules/safe-shield/entities/analysis-responses.entity';
 import {
   type AnalysisResult,
   CommonStatus,
-} from '@/modules/safe-shield/entities/analysis-result.entity';
-import { DeadlockStatus } from '@/modules/safe-shield/entities/deadlock-status.entity';
-import { DeadlockStatusGroup } from '@/modules/safe-shield/entities/status-group.entity';
-import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
-import { logCacheHit, logCacheMiss } from '@/modules/safe-shield/utils/common';
+} from '#/modules/safe-shield/entities/analysis-result.entity';
+import { DeadlockStatus } from '#/modules/safe-shield/entities/deadlock-status.entity';
+import { DeadlockStatusGroup } from '#/modules/safe-shield/entities/status-group.entity';
+import type { DecodedTransactionData } from '#/modules/safe-shield/entities/transaction-data.entity';
+import { logCacheHit, logCacheMiss } from '#/modules/safe-shield/utils/common';
 import {
   DEADLOCK_DESCRIPTION_MAPPING,
   DEADLOCK_SEVERITY_MAPPING,

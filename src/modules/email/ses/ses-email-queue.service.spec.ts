@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import type { MockedObject } from 'vitest';
-import { JobType } from '@/datasources/job-queue/types/job-types';
-import type { IJobQueueService } from '@/domain/interfaces/job-queue.interface';
-import { sendEmailJobDataBuilder } from '@/modules/email/ses/domain/entities/__tests__/send-email-job-data.builder';
-import { SesEmailQueueService } from '@/modules/email/ses/ses-email-queue.service';
+import { JobType } from '#/datasources/job-queue/types/job-types';
+import type { IJobQueueService } from '#/domain/interfaces/job-queue.interface';
+import { sendEmailJobDataBuilder } from '#/modules/email/ses/domain/entities/__tests__/send-email-job-data.builder';
+import { SesEmailQueueService } from '#/modules/email/ses/ses-email-queue.service';
 
 describe('SesEmailQueueService', () => {
   let service: SesEmailQueueService;

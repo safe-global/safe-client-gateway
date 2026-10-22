@@ -1,8 +1,9 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   Transfer,
   TransferType,
-} from '@/modules/transactions/routes/entities/transfers/transfer.entity';
+} from '#/modules/transactions/routes/entities/transfers/transfer.entity';
 
 export class NativeCoinTransfer extends Transfer {
   @ApiProperty({ enum: [TransferType.NativeCoin] })

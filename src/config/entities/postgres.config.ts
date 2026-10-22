@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { readFileSync } from 'node:fs';
 import type { PostgresDataSourceOptions } from 'typeorm/driver/postgres/PostgresDataSourceOptions';
-import { PostgresqlLogger } from '@/datasources/db/v2/postgresql-logger.service';
-import type { ILoggingService } from '@/logging/logging.interface';
+import { PostgresqlLogger } from '#/datasources/db/v2/postgresql-logger.service';
+import type { ILoggingService } from '#/logging/logging.interface';
 
 interface IPostgresEnvConfig {
   type: 'postgres';

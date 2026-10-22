@@ -5,9 +5,9 @@ import type {
   SurveyContent,
   SurveyOption,
   SurveyPage,
-} from '@/modules/surveys/domain/entities/survey.entity';
-import type { SurveyResponseSelections } from '@/modules/surveys/domain/entities/survey-response.entity';
-import type { User } from '@/modules/users/domain/entities/user.entity';
+} from '#/modules/surveys/domain/entities/survey.entity';
+import type { SurveyResponseSelections } from '#/modules/surveys/domain/entities/survey-response.entity';
+import type { User } from '#/modules/users/domain/entities/user.entity';
 
 class SurveyOptionDto implements SurveyOption {
   @ApiProperty({ type: String })

@@ -4,22 +4,22 @@ import { faker } from '@faker-js/faker';
 import { HttpStatus } from '@nestjs/common';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
-import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
-import { CacheRouter } from '@/datasources/cache/cache.router';
-import type { ICacheService } from '@/datasources/cache/cache.service.interface';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import { HttpExceptionNoLog } from '@/domain/common/errors/http-exception-no-log.error';
-import type { ILoggingService } from '@/logging/logging.interface';
-import type { ZerionBalance } from '@/modules/balances/datasources/entities/zerion-balance.entity';
-import { balancesProviderBuilder } from '@/modules/chains/domain/entities/__tests__/balances-provider.builder';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
-import { ZerionPositionsApi } from '@/modules/positions/datasources/zerion-positions-api.service';
-import type { ZerionChainMappingService } from '@/modules/zerion/datasources/zerion-chain-mapping.service';
-import { rawify } from '@/validation/entities/raw.entity';
+import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
+import type { IConfigurationService } from '#/config/configuration.service.interface';
+import { FakeCacheService } from '#/datasources/cache/__tests__/fake.cache.service';
+import { CacheRouter } from '#/datasources/cache/cache.router';
+import type { ICacheService } from '#/datasources/cache/cache.service.interface';
+import { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
+import type { INetworkService } from '#/datasources/network/network.service.interface';
+import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
+import type { ILoggingService } from '#/logging/logging.interface';
+import type { ZerionBalance } from '#/modules/balances/datasources/entities/zerion-balance.entity';
+import { balancesProviderBuilder } from '#/modules/chains/domain/entities/__tests__/balances-provider.builder';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
+import type { Chain } from '#/modules/chains/domain/entities/chain.entity';
+import { ZerionPositionsApi } from '#/modules/positions/datasources/zerion-positions-api.service';
+import type { ZerionChainMappingService } from '#/modules/zerion/datasources/zerion-chain-mapping.service';
+import { rawify } from '#/validation/entities/raw.entity';
 
 const loggingService = {
   debug: vi.fn(),
@@ -105,6 +105,7 @@ describe('ZerionPositionsApi', () => {
       );
       configurationService.set('expirationTimeInSeconds.zerionPositions', 60);
       configurationService.set('balances.providers.zerion.currencies', ['USD']);
+      configurationService.set('features.zerionTestnets', false);
       configurationService.set('balances.providers.zerion.chains', {
         1: { chainName },
       });
@@ -258,6 +259,7 @@ describe('ZerionPositionsApi', () => {
         'balances.providers.zerion.currencies',
         supportedFiatCodes,
       );
+      fakeConfigurationService.set('features.zerionTestnets', false);
 
       service = new ZerionPositionsApi(
         mockCacheService,
@@ -268,6 +270,18 @@ describe('ZerionPositionsApi', () => {
         mockChainMappingService,
       );
     });
+
+    const enableZerionTestnets = (): void => {
+      fakeConfigurationService.set('features.zerionTestnets', true);
+      service = new ZerionPositionsApi(
+        mockCacheService,
+        mockLoggingService,
+        mockNetworkService,
+        fakeConfigurationService,
+        mockHttpErrorFactory,
+        mockChainMappingService,
+      );
+    };
 
     describe('getPositions', () => {
       it('should fail for an invalid fiatCode', async () => {
@@ -318,7 +332,23 @@ describe('ZerionPositionsApi', () => {
         });
       });
 
+      it('returns no positions and calls no upstream for a testnet chain', async () => {
+        const chain = chainBuilder().with('isTestnet', true).build();
+        const safeAddress = getAddress(faker.finance.ethereumAddress());
+        const fiatCode = faker.helpers.arrayElement(supportedFiatCodes);
+
+        const positions = await service.getPositions({
+          chain,
+          safeAddress,
+          fiatCode,
+        });
+
+        expect(positions).toStrictEqual([]);
+        expect(mockNetworkService.get).not.toHaveBeenCalled();
+      });
+
       it('should include X-Env header for testnet chains', async () => {
+        enableZerionTestnets();
         const chain = chainBuilder().with('isTestnet', true).build();
         const safeAddress = getAddress(faker.finance.ethereumAddress());
         const fiatCode = faker.helpers.arrayElement(supportedFiatCodes);
@@ -432,6 +462,7 @@ describe('ZerionPositionsApi', () => {
       });
 
       it('should use chain mapping service with isTestnet flag', async () => {
+        enableZerionTestnets();
         const chainId = '11155111';
         const mappedChainName = 'ethereum';
         const chain = chainBuilder()

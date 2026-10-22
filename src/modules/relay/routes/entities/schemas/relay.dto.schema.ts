@@ -2,8 +2,8 @@
 
 import semver from 'semver';
 import { z } from 'zod';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { HexSchema } from '@/validation/entities/schemas/hex.schema';
+import { AddressSchema } from '#/validation/entities/schemas/address.schema';
+import { HexSchema } from '#/validation/entities/schemas/hex.schema';
 
 export const RelayDtoSchema = z.object({
   to: AddressSchema,

@@ -4,7 +4,7 @@ import type { Address } from 'viem';
 import {
   Transfer,
   TransferType,
-} from '@/modules/transactions/routes/entities/transfers/transfer.entity';
+} from '#/modules/transactions/routes/entities/transfers/transfer.entity';
 
 export class Erc20Transfer extends Transfer {
   @ApiProperty({ enum: [TransferType.Erc20] })

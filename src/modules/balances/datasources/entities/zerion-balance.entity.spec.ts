@@ -9,7 +9,7 @@ import {
   zerionFungibleInfoBuilder,
   zerionImplementationBuilder,
   zerionQuantityBuilder,
-} from '@/modules/balances/datasources/entities/__tests__/zerion-balance.entity.builder';
+} from '#/modules/balances/datasources/entities/__tests__/zerion-balance.entity.builder';
 import {
   ZerionAttributesSchema,
   ZerionBalanceSchema,
@@ -18,7 +18,7 @@ import {
   ZerionFungibleInfoSchema,
   ZerionImplementationSchema,
   ZerionQuantitySchema,
-} from '@/modules/balances/datasources/entities/zerion-balance.entity';
+} from '#/modules/balances/datasources/entities/zerion-balance.entity';
 
 describe('Zerion Balance Entity schemas', () => {
   describe('ZerionBalancesSchema', () => {

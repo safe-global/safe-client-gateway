@@ -3,8 +3,8 @@
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import type { KmsEncryptionService } from '@/datasources/kms/kms-encryption.service';
-import { SpaceEncryptionService } from '@/modules/spaces/domain/space-encryption.service';
+import type { KmsEncryptionService } from '#/datasources/kms/kms-encryption.service';
+import { SpaceEncryptionService } from '#/modules/spaces/domain/space-encryption.service';
 
 const fieldCryptoService = {
   isEncrypted: vi.fn(),

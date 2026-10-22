@@ -3,34 +3,35 @@ import { Inject, Injectable } from '@nestjs/common';
 import max from 'lodash/max';
 import semver from 'semver';
 import type { Address } from 'viem';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { getNumberString } from '@/domain/common/utils/utils';
-import type { Page } from '@/domain/entities/page.entity';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { getNumberString } from '#/domain/common/utils/utils';
+import type { Page } from '#/domain/entities/page.entity';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import { asError } from '@/logging/utils';
-import { IBalancesRepository } from '@/modules/balances/domain/balances.repository.interface';
-import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
-import type { Singleton } from '@/modules/chains/domain/entities/singleton.entity';
-import type { MessagesRepository } from '@/modules/messages/domain/messages.repository';
-import { IMessagesRepository } from '@/modules/messages/domain/messages.repository.interface';
-import type { ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
-import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
-import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
-import type { Transfer } from '@/modules/safe/domain/entities/transfer.entity';
-import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
-import { SafeNonces } from '@/modules/safe/routes/entities/nonces.entity';
+} from '#/logging/logging.interface';
+import { asError } from '#/logging/utils';
+import { IBalancesRepository } from '#/modules/balances/domain/balances.repository.interface';
+import { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
+import type { Singleton } from '#/modules/chains/domain/entities/singleton.entity';
+import type { MessagesRepository } from '#/modules/messages/domain/messages.repository';
+import { IMessagesRepository } from '#/modules/messages/domain/messages.repository.interface';
+import type { ModuleTransaction } from '#/modules/safe/domain/entities/module-transaction.entity';
+import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
+import type { Safe } from '#/modules/safe/domain/entities/safe.entity';
+import type { Transfer } from '#/modules/safe/domain/entities/transfer.entity';
+import { getLastModified } from '#/modules/safe/domain/helpers/last-modified.helper';
+import { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
+import { SafeNonces } from '#/modules/safe/routes/entities/nonces.entity';
 import {
   MasterCopyVersionState,
   SafeState,
-} from '@/modules/safe/routes/entities/safe-info.entity';
-import { SafeOverview } from '@/modules/safe/routes/entities/safe-overview.entity';
-import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
-import { NULL_ADDRESS } from '@/routes/common/constants';
-import { AddressInfo } from '@/routes/common/entities/address-info.entity';
-import type { Caip10Address } from '@/validation/entities/schemas/caip-10-addresses.schema';
+} from '#/modules/safe/routes/entities/safe-info.entity';
+import { SafeOverview } from '#/modules/safe/routes/entities/safe-overview.entity';
+import { AddressInfoHelper } from '#/routes/common/address-info/address-info.helper';
+import { NULL_ADDRESS } from '#/routes/common/constants';
+import { AddressInfo } from '#/routes/common/entities/address-info.entity';
+import type { Caip10Address } from '#/validation/entities/schemas/caip-10-addresses.schema';
 
 @Injectable()
 export class SafesService {
@@ -256,15 +257,25 @@ export class SafesService {
     chainId: string,
     safe: Safe,
   ): Promise<Date | null> {
-    const lastQueuedTransaction = await this.safeRepository
+    const queue = await this.safeRepository
       .getTransactionQueueByModified({
         chainId,
         safe,
         limit: 1,
       })
-      .catch(() => null);
+      .catch((error) => {
+        // A null tag is indistinguishable from an empty queue for the client,
+        // so leave a trace of why the queue could not be read.
+        this.loggingService.warn(
+          `Error while getting the queued transactions tag: ${asError(error)} `,
+        );
+        return null;
+      });
 
-    return lastQueuedTransaction?.results[0]?.modified ?? null;
+    const lastQueuedTransaction = queue?.results[0];
+    return lastQueuedTransaction
+      ? getLastModified(lastQueuedTransaction)
+      : null;
   }
 
   /**
@@ -331,20 +342,12 @@ export class SafesService {
     chainId: string,
     safeAddress: Address,
   ): Promise<Date | null> {
-    const messages = await this.messagesRepository.getMessagesBySafe({
+    const message = await this.messagesRepository.getLastModifiedMessage({
       chainId,
       safeAddress,
     });
 
-    if (messages.results.length === 0) {
-      return null;
-    }
-
-    const sortedMessages = messages.results.sort((m1, m2) => {
-      return m2.modified.getTime() - m1.modified.getTime();
-    });
-
-    return sortedMessages[0].modified;
+    return message?.modified ?? null;
   }
 
   private computeVersionState(
@@ -353,24 +356,31 @@ export class SafesService {
     supportedSingletons: Array<Singleton>,
   ): MasterCopyVersionState {
     // If the safe version is null we return UNKNOWN
-    if (safe.version === null) return MasterCopyVersionState.UNKNOWN;
-    // If the safe version or the recommended safe version is not valid we return UNKNOWN
-    if (!semver.valid(safe.version)) return MasterCopyVersionState.UNKNOWN;
-    if (!semver.valid(recommendedMasterCopyVersion))
+    if (safe.version === null) {
       return MasterCopyVersionState.UNKNOWN;
+    }
+    // If the safe version or the recommended safe version is not valid we return UNKNOWN
+    if (!semver.valid(safe.version)) {
+      return MasterCopyVersionState.UNKNOWN;
+    }
+    if (!semver.valid(recommendedMasterCopyVersion)) {
+      return MasterCopyVersionState.UNKNOWN;
+    }
     // If the singleton of this safe is not part of the collection
     // of the supported singletons we return UNKNOWN
     if (
       supportedSingletons.every(
         (singleton) => singleton.address !== safe.masterCopy,
       )
-    )
+    ) {
       return MasterCopyVersionState.UNKNOWN;
+    }
 
     // If the safe version is lower than the recommended safe version
     // we return it as outdated
-    if (semver.lt(safe.version, recommendedMasterCopyVersion))
+    if (semver.lt(safe.version, recommendedMasterCopyVersion)) {
       return MasterCopyVersionState.OUTDATED;
+    }
 
     // Else we consider that the safe is up-to-date
     return MasterCopyVersionState.UP_TO_DATE;

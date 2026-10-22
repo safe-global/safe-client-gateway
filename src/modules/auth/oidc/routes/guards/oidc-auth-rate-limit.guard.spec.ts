@@ -2,10 +2,10 @@
 
 import { faker } from '@faker-js/faker';
 import type { MockedObject } from 'vitest';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
-import type { ICacheService } from '@/datasources/cache/cache.service.interface';
-import type { ILoggingService } from '@/logging/logging.interface';
-import { RateLimitGuard } from '@/routes/common/guards/rate-limit.guard';
+import type { IConfigurationService } from '#/config/configuration.service.interface';
+import type { ICacheService } from '#/datasources/cache/cache.service.interface';
+import type { ILoggingService } from '#/logging/logging.interface';
+import { RateLimitGuard } from '#/routes/common/guards/rate-limit.guard';
 import { OidcAuthRateLimitGuard } from './oidc-auth-rate-limit.guard';
 
 const mockCacheService = vi.mocked({

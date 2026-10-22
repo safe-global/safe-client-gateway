@@ -7,16 +7,16 @@ import {
   dataDecodedBuilder,
   dataDecodedParameterBuilder,
   multisendBuilder,
-} from '@/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
-import { multisigTransactionBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
+} from '#/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
+import { multisigTransactionBuilder } from '#/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
 import {
   CustomTransactionInfo,
   MultiSendTransactionInfo,
-} from '@/modules/transactions/routes/entities/custom-transaction.entity';
-import { CustomTransactionMapper } from '@/modules/transactions/routes/mappers/common/custom-transaction.mapper';
-import type { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
-import { NULL_ADDRESS } from '@/routes/common/constants';
-import { AddressInfo } from '@/routes/common/entities/address-info.entity';
+} from '#/modules/transactions/routes/entities/custom-transaction.entity';
+import { CustomTransactionMapper } from '#/modules/transactions/routes/mappers/common/custom-transaction.mapper';
+import type { AddressInfoHelper } from '#/routes/common/address-info/address-info.helper';
+import { NULL_ADDRESS } from '#/routes/common/constants';
+import { AddressInfo } from '#/routes/common/entities/address-info.entity';
 
 const addressInfoHelper = vi.mocked({
   getOrDefault: vi.fn(),

@@ -1,18 +1,22 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { getStringEnumKeys } from '@/domain/common/utils/enum';
-import type { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
-import type { Member } from '@/modules/users/datasources/entities/member.entity.db';
-import { User } from '@/modules/users/datasources/entities/users.entity.db';
+import { getStringEnumKeys } from '#/domain/common/utils/enum';
+import type { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
+import {
+  type ExperimentalFeature,
+  ExperimentalFeatures,
+} from '#/modules/spaces/domain/entities/experimental-feature.entity';
+import type { Member } from '#/modules/users/datasources/entities/member.entity.db';
+import { User } from '#/modules/users/datasources/entities/users.entity.db';
 import {
   MemberRole,
   MemberStatus,
-} from '@/modules/users/domain/entities/member.entity';
+} from '#/modules/users/domain/entities/member.entity';
 
 class UserDto extends User {
   @ApiProperty({ type: Number })
-  public declare id: User['id'];
+  declare public id: User['id'];
 }
 
 class SpaceMemberDto {
@@ -70,4 +74,12 @@ export class GetSpaceResponse {
     example: 5,
   })
   public safeCount!: number;
+
+  @ApiProperty({
+    type: String,
+    isArray: true,
+    enum: ExperimentalFeatures,
+    description: 'Experimental features this Workspace has opted into.',
+  })
+  public experimentalFeatures!: Array<ExperimentalFeature>;
 }

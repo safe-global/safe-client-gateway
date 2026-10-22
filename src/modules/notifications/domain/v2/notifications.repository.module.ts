@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.module';
-import { PushNotificationsApiModule } from '@/datasources/push-notifications-api/push-notifications-api.module';
-import { NotificationDevice } from '@/modules/notifications/datasources/entities/notification-devices.entity.db';
-import { NotificationSubscription } from '@/modules/notifications/datasources/entities/notification-subscription.entity.db';
-import { NotificationSubscriptionNotificationType } from '@/modules/notifications/datasources/entities/notification-subscription-notification-type.entity.db';
-import { NotificationType } from '@/modules/notifications/datasources/entities/notification-type.entity.db';
-import { NotificationsRepositoryV2 } from '@/modules/notifications/domain/v2/notifications.repository';
-import { INotificationsRepositoryV2 } from '@/modules/notifications/domain/v2/notifications.repository.interface';
+import { PostgresDatabaseModuleV2 } from '#/datasources/db/v2/postgres-database.module';
+import { PushNotificationsApiModule } from '#/datasources/push-notifications-api/push-notifications-api.module';
+import { NotificationDevice } from '#/modules/notifications/datasources/entities/notification-devices.entity.db';
+import { NotificationSubscription } from '#/modules/notifications/datasources/entities/notification-subscription.entity.db';
+import { NotificationSubscriptionNotificationType } from '#/modules/notifications/datasources/entities/notification-subscription-notification-type.entity.db';
+import { NotificationType } from '#/modules/notifications/datasources/entities/notification-type.entity.db';
+import { NotificationsRepositoryV2 } from '#/modules/notifications/domain/v2/notifications.repository';
+import { INotificationsRepositoryV2 } from '#/modules/notifications/domain/v2/notifications.repository.interface';
 
 @Module({
   imports: [

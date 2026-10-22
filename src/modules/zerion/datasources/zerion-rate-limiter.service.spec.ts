@@ -2,13 +2,13 @@
 
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
-import { CacheRouter } from '@/datasources/cache/cache.router';
-import type { ICacheService } from '@/datasources/cache/cache.service.interface';
-import { LimitReachedError } from '@/datasources/network/entities/errors/limit-reached.error';
-import { LogType } from '@/domain/common/entities/log-type.entity';
-import type { ILoggingService } from '@/logging/logging.interface';
-import { ZerionRateLimiter } from '@/modules/zerion/datasources/zerion-rate-limiter.service';
+import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
+import { CacheRouter } from '#/datasources/cache/cache.router';
+import type { ICacheService } from '#/datasources/cache/cache.service.interface';
+import { LimitReachedError } from '#/datasources/network/entities/errors/limit-reached.error';
+import { LogType } from '#/domain/common/entities/log-type.entity';
+import type { ILoggingService } from '#/logging/logging.interface';
+import { ZerionRateLimiter } from '#/modules/zerion/datasources/zerion-rate-limiter.service';
 
 const mockCacheService = vi.mocked({
   increment: vi.fn(),

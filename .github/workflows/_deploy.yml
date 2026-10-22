@@ -20,7 +20,7 @@ on:
   workflow_call:
     inputs:
       environment:
-        description: Target environment (staging | production). Also selects env-scoped secrets.
+        description: Target environment (devstaging | production). Also selects env-scoped secrets.
         type: string
         required: true
       image_tag:
@@ -52,13 +52,13 @@ on:
           Optional JSON endpoint exposing a `.version` field (e.g. /api/v1/about/).
           After deploy, poll it until `.version` equals image_tag — confirms the
           new image actually rolled out. VPN-free alternative to the ArgoCD wait
-          when the controller is unreachable (e.g. staging behind a separate VPN).
+          when the controller is unreachable (e.g. devstaging behind a separate VPN).
         type: string
         default: ""
       health_gate:
         description: >-
           Enable the full production gate: ArgoCD wait + smoke test + post-deploy
-          checks. Set true for production only. For staging, set health_url
+          checks. Set true for production only. For devstaging, set health_url
           without health_gate to get a non-rolling smoke test.
         type: boolean
         default: false
@@ -139,7 +139,7 @@ jobs:
 
       - name: Mint GitHub App token (scoped to infra repo)
         id: app-token
-        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
           app-id: ${{ secrets.app_id }}
           private-key: ${{ secrets.app_private_key }}
@@ -248,7 +248,7 @@ jobs:
 
       - name: Configure AWS credentials
         if: ${{ env._HAS_ARN == 'true' }}
-        uses: aws-actions/configure-aws-credentials@cbe3b392738ccf3f987d68400dafcf4b0624a56c # v6.2.4
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
         with:
           role-to-assume: ${{ secrets.aws_role_arn }}
           aws-region: ${{ inputs.aws_region }}

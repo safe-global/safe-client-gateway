@@ -5,12 +5,12 @@ import {
   type StakingFinancialInfo,
   StakingStatus,
   type StakingTimeInfo,
-} from '@/modules/transactions/routes/entities/staking/staking.entity';
-import { TokenInfo } from '@/modules/transactions/routes/entities/swaps/token-info.entity';
+} from '#/modules/transactions/routes/entities/staking/staking.entity';
+import { TokenInfo } from '#/modules/transactions/routes/entities/swaps/token-info.entity';
 import {
   TransactionInfo,
   TransactionInfoType,
-} from '@/modules/transactions/routes/entities/transaction-info.entity';
+} from '#/modules/transactions/routes/entities/transaction-info.entity';
 
 export type NativeStakingDepositInfo = StakingTimeInfo & StakingFinancialInfo;
 

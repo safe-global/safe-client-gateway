@@ -15,17 +15,17 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import type { Address } from 'viem';
-import { CsvExportService } from '@/modules/csv-export/v1/csv-export.service';
+import { CsvExportService } from '#/modules/csv-export/v1/csv-export.service';
 import {
   JobStatusDto,
   JobStatusErrorDto,
   type JobStatusResponseDto,
-} from '@/modules/csv-export/v1/entities/job-status.dto';
-import { TransactionExportDtoSchema } from '@/modules/csv-export/v1/entities/schemas/transaction-export.dto.schema';
-import { TransactionExportDto } from '@/modules/csv-export/v1/entities/transaction-export-request';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+} from '#/modules/csv-export/v1/entities/job-status.dto';
+import { TransactionExportDtoSchema } from '#/modules/csv-export/v1/entities/schemas/transaction-export.dto.schema';
+import { TransactionExportDto } from '#/modules/csv-export/v1/entities/transaction-export-request';
+import { AddressSchema } from '#/validation/entities/schemas/address.schema';
+import { NumericStringSchema } from '#/validation/entities/schemas/numeric-string.schema';
+import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
 @ApiTags('export')
 @Controller({

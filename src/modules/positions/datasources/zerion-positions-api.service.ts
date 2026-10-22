@@ -2,45 +2,45 @@
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { type Address, getAddress } from 'viem';
 import { ZodError, z } from 'zod';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { CacheRouter } from '@/datasources/cache/cache.router';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { CacheRouter } from '#/datasources/cache/cache.router';
 import {
   CacheService,
   type ICacheService,
-} from '@/datasources/cache/cache.service.interface';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
+} from '#/datasources/cache/cache.service.interface';
+import { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
 import {
   type INetworkService,
   NetworkService,
-} from '@/datasources/network/network.service.interface';
-import { LogType } from '@/domain/common/entities/log-type.entity';
-import { HttpExceptionNoLog } from '@/domain/common/errors/http-exception-no-log.error';
-import { getNumberString } from '@/domain/common/utils/utils';
-import { DataSourceError } from '@/domain/errors/data-source.error';
-import type { IPositionsApi } from '@/domain/interfaces/positions-api.interface';
+} from '#/datasources/network/network.service.interface';
+import { LogType } from '#/domain/common/entities/log-type.entity';
+import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
+import { getNumberString } from '#/domain/common/utils/utils';
+import { DataSourceError } from '#/domain/errors/data-source.error';
+import type { IPositionsApi } from '#/domain/interfaces/positions-api.interface';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
+} from '#/logging/logging.interface';
 import {
   type ZerionAttributes,
   type ZerionBalance,
   ZerionBalanceSchema,
   type ZerionBalances,
   ZerionBalancesSchema,
-} from '@/modules/balances/datasources/entities/zerion-balance.entity';
+} from '#/modules/balances/datasources/entities/zerion-balance.entity';
 import {
   getZerionHeaders,
   normalizeZerionBalances,
-} from '@/modules/balances/datasources/zerion-api.helpers';
+} from '#/modules/balances/datasources/zerion-api.helpers';
 import type {
   Erc20Balance,
   NativeBalance,
-} from '@/modules/balances/domain/entities/balance.entity';
-import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
-import type { Position } from '@/modules/positions/domain/entities/position.entity';
-import { ZerionChainMappingService } from '@/modules/zerion/datasources/zerion-chain-mapping.service';
-import { type Raw, rawify } from '@/validation/entities/raw.entity';
+} from '#/modules/balances/domain/entities/balance.entity';
+import type { Chain } from '#/modules/chains/domain/entities/chain.entity';
+import type { Position } from '#/modules/positions/domain/entities/position.entity';
+import { ZerionChainMappingService } from '#/modules/zerion/datasources/zerion-chain-mapping.service';
+import { type Raw, rawify } from '#/validation/entities/raw.entity';
 
 @Injectable()
 export class ZerionPositionsApi implements IPositionsApi {
@@ -48,6 +48,7 @@ export class ZerionPositionsApi implements IPositionsApi {
   private readonly baseUri: string;
   private readonly defaultExpirationTimeInSeconds: number;
   private readonly fiatCodes: Array<string>;
+  private readonly testnetsEnabled: boolean;
 
   constructor(
     @Inject(CacheService) private readonly cacheService: ICacheService,
@@ -71,6 +72,9 @@ export class ZerionPositionsApi implements IPositionsApi {
     this.fiatCodes = this.configurationService.getOrThrow<Array<string>>(
       'balances.providers.zerion.currencies',
     );
+    this.testnetsEnabled = this.configurationService.getOrThrow<boolean>(
+      'features.zerionTestnets',
+    );
   }
 
   async getPositions(args: {
@@ -85,6 +89,10 @@ export class ZerionPositionsApi implements IPositionsApi {
         `Unsupported currency code: ${args.fiatCode}`,
         400,
       );
+    }
+
+    if (args.chain.isTestnet && !this.testnetsEnabled) {
+      return rawify([]);
     }
 
     const cacheDir = CacheRouter.getZerionPositionsCacheDir({
@@ -158,10 +166,11 @@ export class ZerionPositionsApi implements IPositionsApi {
         const implementation = zb.attributes.fungible_info.implementations.find(
           (implementation) => implementation.chain_id === chainName,
         );
-        if (!implementation)
+        if (!implementation) {
           throw Error(
             `Zerion error: ${chainName} implementation not found for balance ${zb.id}`,
           );
+        }
         const { value, price, application_metadata } = zb.attributes;
         const fiatBalance = value !== null ? getNumberString(value) : null;
         const fiatConversion = price !== null ? getNumberString(price) : null;

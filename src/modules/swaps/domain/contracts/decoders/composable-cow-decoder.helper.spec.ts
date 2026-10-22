@@ -1,9 +1,10 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   conditionalOrderParamsBuilder,
   createWithContextEncoder,
   staticInputEncoder,
-} from '@/modules/swaps/domain/contracts/__tests__/encoders/composable-cow-encoder.builder';
-import { ComposableCowDecoder } from '@/modules/swaps/domain/contracts/decoders/composable-cow-decoder.helper';
+} from '#/modules/swaps/domain/contracts/__tests__/encoders/composable-cow-encoder.builder';
+import { ComposableCowDecoder } from '#/modules/swaps/domain/contracts/decoders/composable-cow-decoder.helper';
 
 describe('ComposableCowDecoder', () => {
   const target = new ComposableCowDecoder();

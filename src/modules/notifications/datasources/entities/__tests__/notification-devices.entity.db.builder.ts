@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
-import type { IBuilder } from '@/__tests__/builder';
-import { Builder } from '@/__tests__/builder';
-import type { NotificationDevice } from '@/modules/notifications/datasources/entities/notification-devices.entity.db';
-import { DeviceType } from '@/modules/notifications/domain/v2/entities/device-type.entity';
-import { fakeUuid } from '@/validation/entities/schemas/__tests__/uuid.builder';
+import type { IBuilder } from '#/__tests__/builder';
+import { Builder } from '#/__tests__/builder';
+import type { NotificationDevice } from '#/modules/notifications/datasources/entities/notification-devices.entity.db';
+import { DeviceType } from '#/modules/notifications/domain/v2/entities/device-type.entity';
+import { fakeUuid } from '#/validation/entities/schemas/__tests__/uuid.builder';
 
 export function notificationDeviceBuilder(): IBuilder<NotificationDevice> {
   return new Builder<NotificationDevice>()

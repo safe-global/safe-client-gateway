@@ -3,19 +3,19 @@
 import { faker } from '@faker-js/faker';
 import type { Job } from 'bullmq';
 import type { MockedObject } from 'vitest';
-import { LogType } from '@/domain/common/entities/log-type.entity';
-import { CSV_EXPORT_WORKER_CONCURRENCY } from '@/domain/common/jobs.constants';
-import type { ILoggingService } from '@/logging/logging.interface';
-import { CsvExportConsumer } from '@/modules/csv-export/v1/consumers/csv-export.consumer';
-import type { CsvExportService } from '@/modules/csv-export/v1/csv-export.service';
+import { LogType } from '#/domain/common/entities/log-type.entity';
+import { CSV_EXPORT_WORKER_CONCURRENCY } from '#/domain/common/jobs.constants';
+import type { ILoggingService } from '#/logging/logging.interface';
+import { CsvExportConsumer } from '#/modules/csv-export/v1/consumers/csv-export.consumer';
+import type { CsvExportService } from '#/modules/csv-export/v1/csv-export.service';
 import {
   csvExportJobDataBuilder,
   csvExportJobResponseBuilder,
-} from '@/modules/csv-export/v1/entities/__tests__/csv-export-job-data.builder';
+} from '#/modules/csv-export/v1/entities/__tests__/csv-export-job-data.builder';
 import type {
   CsvExportJobData,
   CsvExportJobResponse,
-} from '@/modules/csv-export/v1/entities/csv-export-job-data.entity';
+} from '#/modules/csv-export/v1/entities/csv-export-job-data.entity';
 
 const csvExportService = {
   export: vi.fn(),

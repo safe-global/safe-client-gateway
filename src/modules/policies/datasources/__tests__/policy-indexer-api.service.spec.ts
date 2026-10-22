@@ -2,25 +2,26 @@
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
-import type { ICacheService } from '@/datasources/cache/cache.service.interface';
-import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import type { ILoggingService } from '@/logging/logging.interface';
-import { PolicyIndexerApi } from '@/modules/policies/datasources/policy-indexer-api.service';
-import type { RawIndexerMeta } from '@/modules/policies/domain/entities/indexer/__tests__/policy-indexer-state.builder';
+import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
+import type { ICacheService } from '#/datasources/cache/cache.service.interface';
+import { CacheDir } from '#/datasources/cache/entities/cache-dir.entity';
+import { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
+import type { INetworkService } from '#/datasources/network/network.service.interface';
+import type { ILoggingService } from '#/logging/logging.interface';
+import { PolicyIndexerApi } from '#/modules/policies/datasources/policy-indexer-api.service';
+import type { RawIndexerMeta } from '#/modules/policies/domain/entities/indexer/__tests__/policy-indexer-state.builder';
 import {
   rawIndexerMetaBuilder,
   rawPolicyIndexerResponse,
-} from '@/modules/policies/domain/entities/indexer/__tests__/policy-indexer-state.builder';
+} from '#/modules/policies/domain/entities/indexer/__tests__/policy-indexer-state.builder';
 import {
   rawIndexerSafeAllowanceBuilder,
   rawIndexerSafeDelegateBuilder,
-} from '@/modules/policies/domain/entities/indexer/__tests__/safe-allowance.builder';
-import type { SafeRef } from '@/modules/policies/domain/entities/safe-ref.entity';
-import type { Raw } from '@/validation/entities/raw.entity';
-import { rawify } from '@/validation/entities/raw.entity';
+} from '#/modules/policies/domain/entities/indexer/__tests__/safe-allowance.builder';
+import type { PolicyIndexerGuardPolicyKind } from '#/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
+import type { SafeRef } from '#/modules/policies/domain/entities/safe-ref.entity';
+import type { Raw } from '#/validation/entities/raw.entity';
+import { rawify } from '#/validation/entities/raw.entity';
 
 const mockNetworkService = {
   post: vi.fn(),
@@ -61,17 +62,35 @@ function pairGroup(chainId: string, ...safes: Array<SafeRef>) {
   };
 }
 
+const guardPolicyKinds: Array<PolicyIndexerGuardPolicyKind> = [
+  'ERC20_TRANSFER',
+  'COSIGNER',
+];
+
 /** A request whose filters are exactly {@link groups}, for every root field. */
 function requestWith(groups: Array<ReturnType<typeof pairGroup>>): object {
   return expect.objectContaining({
     data: expect.objectContaining({
-      variables: { allowances: groups, delegates: groups },
+      variables: {
+        allowances: groups,
+        delegates: groups,
+        guardPolicyBindings: groups,
+        guardPolicyKinds: [...guardPolicyKinds],
+      },
     }),
   });
 }
 
 function cacheKey(safe: SafeRef): string {
   return `${safe.chainId}_policy_indexer_state_${safe.address}`;
+}
+
+/**
+ * Where a read for {@link guardPolicyKinds} caches its slice: the kinds, sorted, are
+ * the field, so a narrowed read cannot answer a wider one.
+ */
+function cacheDirOf(safe: SafeRef): CacheDir {
+  return new CacheDir(cacheKey(safe), 'COSIGNER,ERC20_TRANSFER');
 }
 
 /** The indexing-progress row of one chain. */
@@ -121,7 +140,7 @@ describe('PolicyIndexerApi', () => {
 
   /** A read of one Sepolia Safe, for the cases that do not care which. */
   function readOneSafe(): Promise<Raw<unknown>> {
-    return target.getState({ safes: [safeRef(SEPOLIA)] });
+    return target.getState({ safes: [safeRef(SEPOLIA)], guardPolicyKinds });
   }
 
   describe('get policies request', () => {
@@ -137,9 +156,8 @@ describe('PolicyIndexerApi', () => {
       );
     });
 
-    it('should request the allowance-module fields in one document', async () => {
-      // Guard bindings are a field this client does not pay for; the PR that
-      // reports them adds it.
+    it('should request every root field in one document', async () => {
+      // One document serves both mechanisms, so one cached answer does too.
       await readOneSafe();
 
       expect(mockNetworkService.post).toHaveBeenCalledWith(
@@ -149,7 +167,12 @@ describe('PolicyIndexerApi', () => {
           }),
         }),
       );
-      for (const field of ['_meta', 'SafeAllowance', 'SafeDelegate']) {
+      for (const field of [
+        '_meta',
+        'SafeAllowance',
+        'SafeDelegate',
+        'GuardPolicyBinding',
+      ]) {
         expect(mockNetworkService.post).toHaveBeenCalledWith(
           expect.objectContaining({
             data: expect.objectContaining({
@@ -164,7 +187,7 @@ describe('PolicyIndexerApi', () => {
       const sepolia = safeRef(SEPOLIA);
       const polygon = safeRef(POLYGON);
 
-      await target.getState({ safes: [sepolia, polygon] });
+      await target.getState({ safes: [sepolia, polygon], guardPolicyKinds });
 
       expect(mockNetworkService.post).toHaveBeenCalledTimes(1);
     });
@@ -176,7 +199,10 @@ describe('PolicyIndexerApi', () => {
       const sepoliaTwo = safeRef(SEPOLIA);
       const polygon = safeRef(POLYGON);
 
-      await target.getState({ safes: [sepoliaOne, polygon, sepoliaTwo] });
+      await target.getState({
+        safes: [sepoliaOne, polygon, sepoliaTwo],
+        guardPolicyKinds,
+      });
 
       expect(mockNetworkService.post).toHaveBeenCalledWith(
         requestWith([
@@ -254,7 +280,7 @@ describe('PolicyIndexerApi', () => {
         ),
       );
 
-      await target.getState({ safes: [cached, missed] });
+      await target.getState({ safes: [cached, missed], guardPolicyKinds });
 
       expect(mockNetworkService.post).toHaveBeenCalledTimes(1);
       expect(mockNetworkService.post).toHaveBeenCalledWith(
@@ -266,16 +292,57 @@ describe('PolicyIndexerApi', () => {
       const sepolia = safeRef(SEPOLIA);
       const polygon = safeRef(POLYGON);
 
-      await target.getState({ safes: [sepolia, polygon] });
+      await target.getState({ safes: [sepolia, polygon], guardPolicyKinds });
 
       expect(mockCacheService.hSet).toHaveBeenCalledTimes(2);
       for (const safe of [sepolia, polygon]) {
         expect(mockCacheService.hSet).toHaveBeenCalledWith(
-          new CacheDir(cacheKey(safe), ''),
+          cacheDirOf(safe),
           expect.any(String),
           expirationTimeSeconds,
         );
       }
+    });
+
+    it('should not let a narrower read answer a wider one', async () => {
+      // A read narrowed to some kinds is served rows of only those kinds, so
+      // its slice would under-report a later read asking for more. The kinds
+      // are part of the entry, not just of the query.
+      const safe = safeRef(SEPOLIA);
+
+      await target.getState({ safes: [safe], guardPolicyKinds: ['COSIGNER'] });
+      await target.getState({ safes: [safe], guardPolicyKinds });
+
+      expect(mockCacheService.hGet).toHaveBeenNthCalledWith(
+        1,
+        new CacheDir(cacheKey(safe), 'COSIGNER'),
+      );
+      expect(mockCacheService.hGet).toHaveBeenNthCalledWith(
+        2,
+        new CacheDir(cacheKey(safe), 'COSIGNER,ERC20_TRANSFER'),
+      );
+    });
+
+    it('should ask for an entry by the set of kinds, not the order asked in', async () => {
+      const safe = safeRef(SEPOLIA);
+
+      await target.getState({
+        safes: [safe],
+        guardPolicyKinds: ['COSIGNER', 'ERC20_TRANSFER'],
+      });
+      await target.getState({
+        safes: [safe],
+        guardPolicyKinds: ['ERC20_TRANSFER', 'COSIGNER'],
+      });
+
+      expect(mockCacheService.hGet).toHaveBeenNthCalledWith(
+        1,
+        cacheDirOf(safe),
+      );
+      expect(mockCacheService.hGet).toHaveBeenNthCalledWith(
+        2,
+        cacheDirOf(safe),
+      );
     });
 
     it('should give each safe only its own rows', async () => {
@@ -295,10 +362,10 @@ describe('PolicyIndexerApi', () => {
         ],
       });
 
-      await target.getState({ safes: [mine, other] });
+      await target.getState({ safes: [mine, other], guardPolicyKinds });
 
       expect(mockCacheService.hSet).toHaveBeenCalledWith(
-        new CacheDir(cacheKey(mine), ''),
+        cacheDirOf(mine),
         JSON.stringify(
           rawPolicyIndexerResponse({
             _meta: [sepoliaMeta],
@@ -316,10 +383,10 @@ describe('PolicyIndexerApi', () => {
       const sepoliaMeta = meta(SEPOLIA);
       mockIndexerState({ _meta: [sepoliaMeta] });
 
-      await target.getState({ safes: [safe] });
+      await target.getState({ safes: [safe], guardPolicyKinds });
 
       expect(mockCacheService.hSet).toHaveBeenCalledWith(
-        new CacheDir(cacheKey(safe), ''),
+        cacheDirOf(safe),
         JSON.stringify(rawPolicyIndexerResponse({ _meta: [sepoliaMeta] })),
         expirationTimeSeconds,
       );
@@ -342,6 +409,7 @@ describe('PolicyIndexerApi', () => {
       mockIndexerState({ _meta: [sepoliaMeta, polygonMeta] });
 
       const result = await target.getState({
+        guardPolicyKinds,
         safes: [safeRef(SEPOLIA), safeRef(POLYGON)],
       });
 
@@ -373,7 +441,7 @@ describe('PolicyIndexerApi', () => {
         Promise.resolve(key === cacheKey(safe) ? Date.now() : null),
       );
 
-      await target.getState({ safes: [safe] });
+      await target.getState({ safes: [safe], guardPolicyKinds });
 
       expect(mockCacheService.hSet).not.toHaveBeenCalled();
     });
@@ -385,7 +453,7 @@ describe('PolicyIndexerApi', () => {
       mockIndexerState({ _meta: [sepoliaMeta] });
       mockCacheService.getInvalidationTimeMs.mockResolvedValue(Date.now());
 
-      const result = await target.getState({ safes: [safe] });
+      const result = await target.getState({ safes: [safe], guardPolicyKinds });
 
       expect(result).toStrictEqual(
         rawPolicyIndexerResponse({ _meta: [sepoliaMeta] }),
@@ -398,10 +466,10 @@ describe('PolicyIndexerApi', () => {
         Date.now() - faker.number.int({ min: 1000, max: 10_000 }),
       );
 
-      await target.getState({ safes: [safe] });
+      await target.getState({ safes: [safe], guardPolicyKinds });
 
       expect(mockCacheService.hSet).toHaveBeenCalledWith(
-        new CacheDir(cacheKey(safe), ''),
+        cacheDirOf(safe),
         expect.any(String),
         expirationTimeSeconds,
       );
@@ -416,11 +484,11 @@ describe('PolicyIndexerApi', () => {
         Promise.resolve(key === cacheKey(cleared) ? Date.now() : null),
       );
 
-      await target.getState({ safes: [cleared, untouched] });
+      await target.getState({ safes: [cleared, untouched], guardPolicyKinds });
 
       expect(mockCacheService.hSet).toHaveBeenCalledTimes(1);
       expect(mockCacheService.hSet).toHaveBeenCalledWith(
-        new CacheDir(cacheKey(untouched), ''),
+        cacheDirOf(untouched),
         expect.any(String),
         expirationTimeSeconds,
       );

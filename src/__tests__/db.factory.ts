@@ -2,7 +2,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import postgres from 'postgres';
-import configuration from '@/config/entities/__tests__/configuration';
+import configuration from '#/config/entities/__tests__/configuration';
 
 export class TestDbFactory {
   private static readonly TEST_CERTIFICATE_PATH = path.join(

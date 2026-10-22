@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Module } from '@nestjs/common';
-import { OwnersControllerV1 } from '@/modules/owners/routes/owners.controller.v1';
-import { OwnersControllerV2 } from '@/modules/owners/routes/owners.controller.v2';
-import { OwnersControllerV3 } from '@/modules/owners/routes/owners.controller.v3';
-import { OwnersService } from '@/modules/owners/routes/owners.service';
-import { SafeRepositoryModule } from '@/modules/safe/domain/safe.repository.interface';
-import { MaliciousAddressScanModule } from '@/modules/safe-shield/malicious-address-scan/malicious-address-scan.module';
-import { CaptchaModule } from '@/routes/captcha/captcha.module';
+import { OwnersControllerV1 } from '#/modules/owners/routes/owners.controller.v1';
+import { OwnersControllerV2 } from '#/modules/owners/routes/owners.controller.v2';
+import { OwnersControllerV3 } from '#/modules/owners/routes/owners.controller.v3';
+import { OwnersService } from '#/modules/owners/routes/owners.service';
+import { SafeRepositoryModule } from '#/modules/safe/domain/safe.repository.interface';
+import { MaliciousAddressScanModule } from '#/modules/safe-shield/malicious-address-scan/malicious-address-scan.module';
+import { CaptchaModule } from '#/routes/captcha/captcha.module';
 
 @Module({
   imports: [SafeRepositoryModule, CaptchaModule, MaliciousAddressScanModule],

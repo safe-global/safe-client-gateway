@@ -3,7 +3,7 @@ import {
   databaseEnumTransformer,
   getEnumKey,
   getStringEnumKeys,
-} from '@/domain/common/utils/enum';
+} from '#/domain/common/utils/enum';
 
 enum NumericEnum {
   A = 0,

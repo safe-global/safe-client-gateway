@@ -8,10 +8,10 @@ import {
   Unique,
 } from 'typeorm';
 import { z } from 'zod';
-import { RowSchema } from '@/datasources/db/v1/entities/row.entity';
-import { NotificationSubscription } from '@/modules/notifications/datasources/entities/notification-subscription.entity.db';
-import { DeviceType } from '@/modules/notifications/domain/v2/entities/device-type.entity';
-import { UuidSchema } from '@/validation/entities/schemas/uuid.schema';
+import { RowSchema } from '#/datasources/db/v1/entities/row.entity';
+import { NotificationSubscription } from '#/modules/notifications/datasources/entities/notification-subscription.entity.db';
+import { DeviceType } from '#/modules/notifications/domain/v2/entities/device-type.entity';
+import { UuidSchema } from '#/validation/entities/schemas/uuid.schema';
 
 export const NotificationDeviceSchema = RowSchema.extend({
   device_type: z.enum(DeviceType),

@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { forwardRef, Module } from '@nestjs/common';
-import { PostgresDatabaseModuleV2 } from '@/datasources/db/v2/postgres-database.module';
-import { IEntitlementEnforcement } from '@/modules/entitlements/domain/entitlement-enforcement.interface';
-import { EntitlementsRepositoryModule } from '@/modules/entitlements/domain/entitlements-repository.module';
-import { EntitlementsService } from '@/modules/entitlements/routes/entitlements.service';
-import { SpacesModule } from '@/modules/spaces/spaces.module';
-import { UsersModule } from '@/modules/users/users.module';
+import { PostgresDatabaseModuleV2 } from '#/datasources/db/v2/postgres-database.module';
+import { IEntitlementEnforcement } from '#/modules/entitlements/domain/entitlement-enforcement.interface';
+import { EntitlementsRepositoryModule } from '#/modules/entitlements/domain/entitlements-repository.module';
+import { EntitlementsService } from '#/modules/entitlements/routes/entitlements.service';
+import { SpacesModule } from '#/modules/spaces/spaces.module';
+import { UsersModule } from '#/modules/users/users.module';
 
 /**
  * Service layer of the entitlements feature: `EntitlementsService`, reached

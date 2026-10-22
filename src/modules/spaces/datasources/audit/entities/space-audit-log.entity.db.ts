@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { UUID } from 'node:crypto';
 import { Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
-import type { SpaceAuditEventType } from '@/modules/spaces/domain/audit/entities/space-audit-event.entity';
+import type { SpaceAuditEventType } from '#/modules/spaces/domain/audit/entities/space-audit-event.entity';
 
 /**
  * Append-only audit log of space mutations. Rows are immutable — the table

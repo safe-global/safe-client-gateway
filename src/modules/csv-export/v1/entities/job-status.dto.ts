@@ -5,7 +5,7 @@ import type { Job } from 'bullmq';
 import type {
   JobData,
   JobResponse,
-} from '@/datasources/job-queue/types/job-types';
+} from '#/datasources/job-queue/types/job-types';
 
 export class JobStatusDto {
   @ApiProperty({ description: 'Job ID' })

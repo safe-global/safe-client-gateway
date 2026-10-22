@@ -1,27 +1,26 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
-import type { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
-import { IAddressBookItemsRepository } from '@/modules/spaces/domain/address-books/address-book-items.repository.interface';
-import { IAddressBookRequestsRepository } from '@/modules/spaces/domain/address-books/address-book-requests.repository.interface';
-import type { AddressBookItem } from '@/modules/spaces/domain/address-books/entities/address-book-item.entity';
-import type { AddressBookRequest } from '@/modules/spaces/domain/address-books/entities/address-book-request.entity';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
+import { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import { getAuthenticatedUserIdOrFail } from '#/modules/auth/utils/assert-authenticated.utils';
+import type { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
+import { IAddressBookItemsRepository } from '#/modules/spaces/domain/address-books/address-book-items.repository.interface';
+import { IAddressBookRequestsRepository } from '#/modules/spaces/domain/address-books/address-book-requests.repository.interface';
+import type { AddressBookItem } from '#/modules/spaces/domain/address-books/entities/address-book-item.entity';
+import type { AddressBookRequest } from '#/modules/spaces/domain/address-books/entities/address-book-request.entity';
 import {
   assertAdmin,
   assertMember,
-  isAdmin,
-} from '@/modules/spaces/domain/space-assert.utils';
-import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
+} from '#/modules/spaces/domain/space-assert.utils';
+import { ISpacesRepository } from '#/modules/spaces/domain/spaces.repository.interface';
 import {
   AddressBookRequestItemDto,
   AddressBookRequestsDto,
-} from '@/modules/spaces/routes/address-books/entities/address-book-request.dto.entity';
-import { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
-import { UserIdentityResolverService } from '@/modules/users/domain/user-identity-resolver/user-identity-resolver.service';
+} from '#/modules/spaces/routes/address-books/entities/address-book-request.dto.entity';
+import { IMembersRepository } from '#/modules/users/domain/members/members.repository.interface';
+import { UserIdentityResolverService } from '#/modules/users/domain/user-identity-resolver/user-identity-resolver.service';
 
 @Injectable()
 export class AddressBookRequestsService {
@@ -53,20 +52,19 @@ export class AddressBookRequestsService {
     spaceId: Space['id'],
   ): Promise<AddressBookRequestsDto> {
     const userId = getAuthenticatedUserIdOrFail(authPayload);
-    await assertMember(this.membersRepository, spaceId, userId);
+    const member = await assertMember(this.membersRepository, spaceId, userId);
 
-    const callerIsAdmin = await isAdmin(this.spacesRepository, spaceId, userId);
-
-    const requests = callerIsAdmin
-      ? await this.requestsRepository.findBySpaceId({
-          spaceId,
-          status: 'PENDING',
-        })
-      : await this.requestsRepository.findBySpaceAndRequester({
-          spaceId,
-          requestedById: userId,
-          status: 'PENDING',
-        });
+    const requests =
+      member.role === 'ADMIN'
+        ? await this.requestsRepository.findBySpaceId({
+            spaceId,
+            status: 'PENDING',
+          })
+        : await this.requestsRepository.findBySpaceAndRequester({
+            spaceId,
+            requestedById: userId,
+            status: 'PENDING',
+          });
 
     return this.mapRequests(spaceId, requests);
   }
@@ -105,7 +103,7 @@ export class AddressBookRequestsService {
     requestId: number,
   ): Promise<void> {
     const userId = getAuthenticatedUserIdOrFail(authPayload);
-    await assertAdmin(this.spacesRepository, spaceId, userId);
+    await assertAdmin(this.membersRepository, spaceId, userId);
 
     const request = await this.requestsRepository.findOneOrFail({
       id: requestId,
@@ -125,7 +123,7 @@ export class AddressBookRequestsService {
       }
 
       await this.spaceAddressBookRepository.upsertMany({
-        authPayload,
+        userId,
         spaceId,
         addressBookItems: [
           {
@@ -146,7 +144,7 @@ export class AddressBookRequestsService {
     requestId: number,
   ): Promise<void> {
     const userId = getAuthenticatedUserIdOrFail(authPayload);
-    await assertAdmin(this.spacesRepository, spaceId, userId);
+    await assertAdmin(this.membersRepository, spaceId, userId);
 
     const rejected = await this.requestsRepository.reject({
       id: requestId,

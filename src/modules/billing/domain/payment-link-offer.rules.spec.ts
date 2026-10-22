@@ -4,13 +4,14 @@ import {
   paymentLinkBuilder,
   paymentLinkPricedAt,
   trialPaymentLinkBuilder,
-} from '@/datasources/billing-api/entities/__tests__/payment-link.builder';
-import type { PaymentLink } from '@/datasources/billing-api/entities/payment-link.entity';
+} from '#/datasources/billing-api/entities/__tests__/payment-link.builder';
+import type { PaymentLink } from '#/datasources/billing-api/entities/payment-link.entity';
 import {
   gracePeriodOf,
+  isGracePeriodClaimOpen,
   isOfferedToSpace,
   offersPlan,
-} from '@/modules/billing/domain/payment-link-offer.rules';
+} from '#/modules/billing/domain/payment-link-offer.rules';
 
 /** A trial link carrying `metadata` instead of a recognized `gracePeriod` tag. */
 function trialLinkWithMetadata(metadata: Record<string, string>): PaymentLink {
@@ -38,13 +39,45 @@ describe('payment-link offer rules', () => {
     });
   });
 
+  describe('isGracePeriodClaimOpen', () => {
+    it('should be open before the claim window ends', () => {
+      const endsAt = faker.date.future();
+
+      expect(
+        isGracePeriodClaimOpen({
+          now: faker.date.past({ refDate: endsAt }),
+          endsAt,
+        }),
+      ).toBe(true);
+    });
+
+    it('should be closed exactly when the claim window ends', () => {
+      const endsAt = faker.date.anytime();
+
+      expect(isGracePeriodClaimOpen({ now: new Date(endsAt), endsAt })).toBe(
+        false,
+      );
+    });
+
+    it('should be closed after the claim window ends', () => {
+      const endsAt = faker.date.past();
+
+      expect(
+        isGracePeriodClaimOpen({
+          now: faker.date.future({ refDate: endsAt }),
+          endsAt,
+        }),
+      ).toBe(false);
+    });
+  });
+
   describe('isOfferedToSpace', () => {
     it('should not offer a paid link to a space that has never subscribed', () => {
       const link = paymentLinkBuilder().build();
 
       expect(
         isOfferedToSpace(link, {
-          createdBeforeEnforcement: faker.datatype.boolean(),
+          isOfferedGracePeriod: faker.datatype.boolean(),
           hasEverSubscribed: false,
           activePlanId: null,
         }),
@@ -56,7 +89,7 @@ describe('payment-link offer rules', () => {
 
       expect(
         isOfferedToSpace(link, {
-          createdBeforeEnforcement: faker.datatype.boolean(),
+          isOfferedGracePeriod: faker.datatype.boolean(),
           hasEverSubscribed: true,
           activePlanId: null,
         }),
@@ -68,7 +101,7 @@ describe('payment-link offer rules', () => {
 
       expect(
         isOfferedToSpace(link, {
-          createdBeforeEnforcement: faker.datatype.boolean(),
+          isOfferedGracePeriod: faker.datatype.boolean(),
           hasEverSubscribed: true,
           activePlanId: faker.string.alphanumeric(32),
         }),
@@ -81,7 +114,7 @@ describe('payment-link offer rules', () => {
 
       expect(
         isOfferedToSpace(link, {
-          createdBeforeEnforcement: faker.datatype.boolean(),
+          isOfferedGracePeriod: faker.datatype.boolean(),
           hasEverSubscribed: true,
           activePlanId: planId,
         }),
@@ -93,7 +126,7 @@ describe('payment-link offer rules', () => {
       const siblingPlanId = faker.string.alphanumeric(32);
       const planName = faker.commerce.productName();
       const eligibility = {
-        createdBeforeEnforcement: faker.datatype.boolean(),
+        isOfferedGracePeriod: faker.datatype.boolean(),
         hasEverSubscribed: true,
         activePlanId,
       };
@@ -111,48 +144,48 @@ describe('payment-link offer rules', () => {
       expect(isOfferedToSpace(siblingLink, eligibility)).toBe(true);
     });
 
-    it('should offer the legacy grace to a space created before enforcement', () => {
+    it('should offer the legacy grace to a space offered it', () => {
       const link = trialPaymentLinkBuilder(true).build();
 
       expect(
         isOfferedToSpace(link, {
-          createdBeforeEnforcement: true,
+          isOfferedGracePeriod: true,
           hasEverSubscribed: false,
           activePlanId: null,
         }),
       ).toBe(true);
     });
 
-    it('should not offer the standard trial to a space created before enforcement', () => {
+    it('should not offer the standard trial to a space offered the legacy grace', () => {
       const link = trialPaymentLinkBuilder(false).build();
 
       expect(
         isOfferedToSpace(link, {
-          createdBeforeEnforcement: true,
+          isOfferedGracePeriod: true,
           hasEverSubscribed: false,
           activePlanId: null,
         }),
       ).toBe(false);
     });
 
-    it('should offer the standard trial to a space created from enforcement on', () => {
+    it('should offer the standard trial to a space not offered the legacy grace', () => {
       const link = trialPaymentLinkBuilder(false).build();
 
       expect(
         isOfferedToSpace(link, {
-          createdBeforeEnforcement: false,
+          isOfferedGracePeriod: false,
           hasEverSubscribed: false,
           activePlanId: null,
         }),
       ).toBe(true);
     });
 
-    it('should not offer the legacy grace to a space created from enforcement on', () => {
+    it('should not offer the legacy grace to a space not offered it', () => {
       const link = trialPaymentLinkBuilder(true).build();
 
       expect(
         isOfferedToSpace(link, {
-          createdBeforeEnforcement: false,
+          isOfferedGracePeriod: false,
           hasEverSubscribed: false,
           activePlanId: null,
         }),
@@ -166,14 +199,14 @@ describe('payment-link offer rules', () => {
 
         expect(
           isOfferedToSpace(link, {
-            createdBeforeEnforcement: true,
+            isOfferedGracePeriod: true,
             hasEverSubscribed: true,
             activePlanId: null,
           }),
         ).toBe(false);
         expect(
           isOfferedToSpace(link, {
-            createdBeforeEnforcement: false,
+            isOfferedGracePeriod: false,
             hasEverSubscribed: true,
             activePlanId: null,
           }),
@@ -186,14 +219,14 @@ describe('payment-link offer rules', () => {
 
       expect(
         isOfferedToSpace(link, {
-          createdBeforeEnforcement: true,
+          isOfferedGracePeriod: true,
           hasEverSubscribed: false,
           activePlanId: null,
         }),
       ).toBe(false);
       expect(
         isOfferedToSpace(link, {
-          createdBeforeEnforcement: false,
+          isOfferedGracePeriod: false,
           hasEverSubscribed: false,
           activePlanId: null,
         }),

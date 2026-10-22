@@ -5,14 +5,14 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Test, type TestingModule } from '@nestjs/testing';
 import type { DataSource } from 'typeorm';
 import type { MockedObject } from 'vitest';
-import { ConfigurationModule } from '@/config/configuration.module';
-import configuration from '@/config/entities/__tests__/configuration';
-import { mockPostgresDataSource } from '@/datasources/db/v2/__tests__/postgresql-datasource.mock';
-import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { TestPostgresDatabaseModuleV2 } from '@/datasources/db/v2/test.postgres-database.module';
-import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
-import type { ILoggingService } from '@/logging/logging.interface';
+import { ConfigurationModule } from '#/config/configuration.module';
+import configuration from '#/config/entities/__tests__/configuration';
+import { mockPostgresDataSource } from '#/datasources/db/v2/__tests__/postgresql-datasource.mock';
+import { DatabaseMigrator } from '#/datasources/db/v2/database-migrator.service';
+import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
+import { TestPostgresDatabaseModuleV2 } from '#/datasources/db/v2/test.postgres-database.module';
+import { TestLoggingModule } from '#/logging/__tests__/test.logging.module';
+import type { ILoggingService } from '#/logging/logging.interface';
 
 const mockLoggingService = {
   debug: vi.fn(),

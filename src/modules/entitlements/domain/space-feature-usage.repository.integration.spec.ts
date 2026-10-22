@@ -5,25 +5,25 @@ import { faker } from '@faker-js/faker';
 import type { ConfigService } from '@nestjs/config';
 import { DataSource, type ObjectLiteral } from 'typeorm';
 import type { MockedObject } from 'vitest';
-import configuration from '@/config/entities/__tests__/configuration';
-import { postgresConfig } from '@/config/entities/postgres.config';
-import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { nameBuilder } from '@/domain/common/entities/name.builder';
-import type { ILoggingService } from '@/logging/logging.interface';
-import { Feature } from '@/modules/entitlements/datasources/entities/feature.entity.db';
-import { SpaceFeatureUsage } from '@/modules/entitlements/datasources/entities/space-feature-usage.entity.db';
-import { SpaceSubscription } from '@/modules/entitlements/datasources/entities/space-subscription.entity.db';
-import { SubscriptionEntitlement } from '@/modules/entitlements/datasources/entities/subscription-entitlement.entity.db';
-import { featureBuilder } from '@/modules/entitlements/domain/entities/__tests__/feature.builder';
-import { FeatureType } from '@/modules/entitlements/domain/entities/feature.entity';
-import { SpaceFeatureUsageRepository } from '@/modules/entitlements/domain/space-feature-usage.repository';
-import type { UsageKey } from '@/modules/entitlements/domain/space-feature-usage.repository.interface';
-import { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
-import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
-import { Member } from '@/modules/users/datasources/entities/member.entity.db';
-import { User } from '@/modules/users/datasources/entities/users.entity.db';
-import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
+import configuration from '#/config/entities/__tests__/configuration';
+import { postgresConfig } from '#/config/entities/postgres.config';
+import { DatabaseMigrator } from '#/datasources/db/v2/database-migrator.service';
+import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
+import { nameBuilder } from '#/domain/common/entities/name.builder';
+import type { ILoggingService } from '#/logging/logging.interface';
+import { Feature } from '#/modules/entitlements/datasources/entities/feature.entity.db';
+import { SpaceFeatureUsage } from '#/modules/entitlements/datasources/entities/space-feature-usage.entity.db';
+import { SpaceSubscription } from '#/modules/entitlements/datasources/entities/space-subscription.entity.db';
+import { SubscriptionEntitlement } from '#/modules/entitlements/datasources/entities/subscription-entitlement.entity.db';
+import { featureBuilder } from '#/modules/entitlements/domain/entities/__tests__/feature.builder';
+import { FeatureType } from '#/modules/entitlements/domain/entities/feature.entity';
+import { SpaceFeatureUsageRepository } from '#/modules/entitlements/domain/space-feature-usage.repository';
+import type { UsageKey } from '#/modules/entitlements/domain/space-feature-usage.repository.interface';
+import { SpaceSafe } from '#/modules/spaces/datasources/safes/entities/space-safes.entity.db';
+import { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
+import { Member } from '#/modules/users/datasources/entities/member.entity.db';
+import { User } from '#/modules/users/datasources/entities/users.entity.db';
+import { Wallet } from '#/modules/wallets/datasources/entities/wallets.entity.db';
 
 const mockLoggingService = {
   debug: vi.fn(),
@@ -160,6 +160,111 @@ describe('SpaceFeatureUsageRepository', () => {
       periodStart: faker.date.recent(),
     };
   }
+
+  describe('getUsageBySpaceIds', () => {
+    it("should key each space's counters by space id, then by feature id", async () => {
+      const [spaceId, otherSpaceId] = await Promise.all([
+        createSpace(),
+        createSpace(),
+      ]);
+      const [period, otherPeriod] = await Promise.all([usageKey(), usageKey()]);
+      const [used, otherUsed, otherSpaceUsed] = faker.helpers.multiple(
+        () => faker.number.int({ min: 1, max: 10 }),
+        { count: 3 },
+      );
+      await spaceFeatureUsageRepository.incrementUsage({
+        spaceId,
+        period,
+        delta: used,
+      });
+      await spaceFeatureUsageRepository.incrementUsage({
+        spaceId,
+        period: otherPeriod,
+        delta: otherUsed,
+      });
+      await spaceFeatureUsageRepository.incrementUsage({
+        spaceId: otherSpaceId,
+        period,
+        delta: otherSpaceUsed,
+      });
+
+      await expect(
+        spaceFeatureUsageRepository.getUsageBySpaceIds([
+          { spaceId, periods: [period, otherPeriod] },
+          { spaceId: otherSpaceId, periods: [period] },
+        ]),
+      ).resolves.toStrictEqual(
+        new Map([
+          [
+            spaceId,
+            new Map([
+              [period.featureId, used],
+              [otherPeriod.featureId, otherUsed],
+            ]),
+          ],
+          [otherSpaceId, new Map([[period.featureId, otherSpaceUsed]])],
+        ]),
+      );
+    });
+
+    it('should read only the periods requested for each space', async () => {
+      const [spaceId, otherSpaceId] = await Promise.all([
+        createSpace(),
+        createSpace(),
+      ]);
+      const { featureId } = await usageKey();
+      const previous = faker.date.past();
+      const current = faker.date.recent();
+      const used = faker.number.int({ min: 1, max: 10 });
+      await spaceFeatureUsageRepository.incrementUsage({
+        spaceId,
+        period: { featureId, periodStart: previous },
+        delta: used,
+      });
+      await spaceFeatureUsageRepository.incrementUsage({
+        spaceId: otherSpaceId,
+        period: { featureId, periodStart: current },
+        delta: used,
+      });
+
+      await expect(
+        spaceFeatureUsageRepository.getUsageBySpaceIds([
+          { spaceId, periods: [{ featureId, periodStart: current }] },
+          {
+            spaceId: otherSpaceId,
+            periods: [{ featureId, periodStart: previous }],
+          },
+        ]),
+      ).resolves.toStrictEqual(new Map());
+    });
+
+    it('should not leak the counters of a space that was not requested', async () => {
+      const [spaceId, otherSpaceId] = await Promise.all([
+        createSpace(),
+        createSpace(),
+      ]);
+      const period = await usageKey();
+      await spaceFeatureUsageRepository.incrementUsage({
+        spaceId: otherSpaceId,
+        period,
+        delta: faker.number.int({ min: 1, max: 10 }),
+      });
+
+      await expect(
+        spaceFeatureUsageRepository.getUsageBySpaceIds([
+          { spaceId, periods: [period] },
+        ]),
+      ).resolves.toStrictEqual(new Map());
+    });
+
+    it('should return an empty map when no period is requested', async () => {
+      await expect(
+        spaceFeatureUsageRepository.getUsageBySpaceIds([
+          { spaceId: await createSpace(), periods: [] },
+        ]),
+      ).resolves.toStrictEqual(new Map());
+    });
+  });
 
   describe('incrementUsage', () => {
     it('should create the counter when the period has none yet', async () => {

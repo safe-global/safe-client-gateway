@@ -1,28 +1,28 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { Mocked, MockedObject } from 'vitest';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { contractBuilder } from '@/modules/contracts/domain/entities/__tests__/contract.builder';
-import type { IDataDecoderRepository } from '@/modules/data-decoder/domain/v2/data-decoder.repository.interface';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
+import { contractBuilder } from '#/modules/contracts/domain/entities/__tests__/contract.builder';
+import type { IDataDecoderRepository } from '#/modules/data-decoder/domain/v2/data-decoder.repository.interface';
 import {
   dataDecodedBuilder,
   dataDecodedParameterBuilder,
-} from '@/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
-import { multisigTransactionBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
-import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
-import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
-import type { SafeAppInfoMapper } from '@/modules/safe-apps/mappers/safe-app-info.mapper';
-import { tokenBuilder } from '@/modules/tokens/domain/__tests__/token.builder';
-import { transferTransactionInfoBuilder } from '@/modules/transactions/routes/entities/__tests__/transfer-transaction-info.builder';
-import { MultisigExecutionInfo } from '@/modules/transactions/routes/entities/multisig-execution-info.entity';
-import { TransactionStatus } from '@/modules/transactions/routes/entities/transaction-status.entity';
-import type { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers/transaction-verifier.helper';
-import { DataDecodedParamHelper } from '@/modules/transactions/routes/mappers/common/data-decoded-param.helper';
-import type { MultisigTransactionInfoMapper } from '@/modules/transactions/routes/mappers/common/transaction-info.mapper';
-import { MultisigTransactionMapper } from '@/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction.mapper';
-import type { MultisigTransactionExecutionInfoMapper } from '@/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction-execution-info.mapper';
-import type { MultisigTransactionNoteMapper } from '@/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction-note.mapper';
-import type { MultisigTransactionStatusMapper } from '@/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction-status.mapper';
-import type { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
+} from '#/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
+import { multisigTransactionBuilder } from '#/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
+import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
+import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
+import type { SafeAppInfoMapper } from '#/modules/safe-apps/mappers/safe-app-info.mapper';
+import { tokenBuilder } from '#/modules/tokens/domain/__tests__/token.builder';
+import { transferTransactionInfoBuilder } from '#/modules/transactions/routes/entities/__tests__/transfer-transaction-info.builder';
+import { MultisigExecutionInfo } from '#/modules/transactions/routes/entities/multisig-execution-info.entity';
+import { TransactionStatus } from '#/modules/transactions/routes/entities/transaction-status.entity';
+import type { TransactionVerifierHelper } from '#/modules/transactions/routes/helpers/transaction-verifier.helper';
+import { DataDecodedParamHelper } from '#/modules/transactions/routes/mappers/common/data-decoded-param.helper';
+import type { MultisigTransactionInfoMapper } from '#/modules/transactions/routes/mappers/common/transaction-info.mapper';
+import { MultisigTransactionMapper } from '#/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction.mapper';
+import type { MultisigTransactionExecutionInfoMapper } from '#/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction-execution-info.mapper';
+import type { MultisigTransactionNoteMapper } from '#/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction-note.mapper';
+import type { MultisigTransactionStatusMapper } from '#/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction-status.mapper';
+import type { AddressInfoHelper } from '#/routes/common/address-info/address-info.helper';
 
 const mockDataDecodedRepository = {
   getTransactionDataDecoded: vi.fn(),

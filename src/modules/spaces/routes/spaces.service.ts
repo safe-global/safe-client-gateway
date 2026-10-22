@@ -2,26 +2,26 @@
 
 import { Inject, NotFoundException } from '@nestjs/common';
 import { In } from 'typeorm';
-import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
-import type { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
-import { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
-import { assertAdmin } from '@/modules/spaces/domain/space-assert.utils';
-import { SpaceEncryptionService } from '@/modules/spaces/domain/space-encryption.service';
-import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
-import type { CreateSpaceResponse } from '@/modules/spaces/routes/entities/create-space.dto.entity';
-import type { GetSpaceResponse } from '@/modules/spaces/routes/entities/get-space.dto.entity';
+import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import { getAuthenticatedUserIdOrFail } from '#/modules/auth/utils/assert-authenticated.utils';
+import type { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
+import { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository.interface';
+import { assertAdmin } from '#/modules/spaces/domain/space-assert.utils';
+import { SpaceEncryptionService } from '#/modules/spaces/domain/space-encryption.service';
+import { ISpacesRepository } from '#/modules/spaces/domain/spaces.repository.interface';
+import type { CreateSpaceResponse } from '#/modules/spaces/routes/entities/create-space.dto.entity';
+import type { GetSpaceResponse } from '#/modules/spaces/routes/entities/get-space.dto.entity';
 import type {
   UpdateSpaceDto,
   UpdateSpaceResponse,
-} from '@/modules/spaces/routes/entities/update-space.dto.entity';
-import type { Member } from '@/modules/users/domain/entities/member.entity';
-import { MemberEncryptionService } from '@/modules/users/domain/members/member-encryption.service';
-import { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
-import { activeOrPendingMemberWhere } from '@/modules/users/domain/members/utils/members.utils';
-import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
-import { WalletEncryptionService } from '@/modules/wallets/domain/wallet-encryption.service';
-import { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
+} from '#/modules/spaces/routes/entities/update-space.dto.entity';
+import type { Member } from '#/modules/users/domain/entities/member.entity';
+import { MemberEncryptionService } from '#/modules/users/domain/members/member-encryption.service';
+import { IMembersRepository } from '#/modules/users/domain/members/members.repository.interface';
+import { activeOrPendingMemberWhere } from '#/modules/users/domain/members/utils/members.utils';
+import { IUsersRepository } from '#/modules/users/domain/users.repository.interface';
+import { WalletEncryptionService } from '#/modules/wallets/domain/wallet-encryption.service';
+import { IWalletsRepository } from '#/modules/wallets/domain/wallets.repository.interface';
 
 export class SpacesService {
   public constructor(
@@ -97,6 +97,7 @@ export class SpacesService {
         id: true,
         uuid: true,
         name: true,
+        experimentalFeatures: true,
         members: {
           role: true,
           name: true,
@@ -132,6 +133,7 @@ export class SpacesService {
         return {
           uuid: space.uuid,
           name: space.name,
+          experimentalFeatures: space.experimentalFeatures,
           members: await Promise.all(
             visibleMembers.map(async (member) => ({
               ...member,
@@ -162,7 +164,7 @@ export class SpacesService {
     authPayload: AuthPayload;
   }): Promise<UpdateSpaceResponse> {
     const userId = getAuthenticatedUserIdOrFail(args.authPayload);
-    await assertAdmin(this.spacesRepository, args.id, userId);
+    await assertAdmin(this.membersRepository, args.id, userId);
 
     return await this.spacesRepository.update({
       id: args.id,
@@ -237,7 +239,7 @@ export class SpacesService {
     authPayload: AuthPayload;
   }): ReturnType<ISpacesRepository['delete']> {
     const userId = getAuthenticatedUserIdOrFail(args.authPayload);
-    await assertAdmin(this.spacesRepository, args.id, userId);
+    await assertAdmin(this.membersRepository, args.id, userId);
 
     return await this.spacesRepository.delete({
       id: args.id,

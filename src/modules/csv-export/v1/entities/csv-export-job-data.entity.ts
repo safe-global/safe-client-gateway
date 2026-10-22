@@ -3,7 +3,7 @@ import type { Address } from 'viem';
 import type {
   JobData,
   JobResponse,
-} from '@/datasources/job-queue/types/job-types';
+} from '#/datasources/job-queue/types/job-types';
 
 export interface CsvExportJobData extends JobData {
   chainId: string;

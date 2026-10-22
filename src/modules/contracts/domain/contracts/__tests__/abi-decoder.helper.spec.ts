@@ -1,7 +1,8 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import type { Hex } from 'viem';
 import { encodeFunctionData, parseAbi } from 'viem';
-import { _generateHelpers } from '@/modules/contracts/domain/decoders/abi-decoder.helper';
+import { _generateHelpers } from '#/modules/contracts/domain/decoders/abi-decoder.helper';
 
 describe('AbiDecoder', () => {
   describe('generateHelpers', () => {

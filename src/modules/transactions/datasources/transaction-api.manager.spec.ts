@@ -2,16 +2,16 @@
 
 import { faker } from '@faker-js/faker';
 import type { MockedObject } from 'vitest';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
-import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
-import type { ICacheService } from '@/datasources/cache/cache.service.interface';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import type { IConfigApi } from '@/domain/interfaces/config-api.interface';
-import type { ILoggingService } from '@/logging/logging.interface';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { TransactionApiManager } from '@/modules/transactions/datasources/transaction-api.manager';
-import { rawify } from '@/validation/entities/raw.entity';
+import type { IConfigurationService } from '#/config/configuration.service.interface';
+import type { CacheFirstDataSource } from '#/datasources/cache/cache.first.data.source';
+import type { ICacheService } from '#/datasources/cache/cache.service.interface';
+import { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
+import type { INetworkService } from '#/datasources/network/network.service.interface';
+import type { IConfigApi } from '#/domain/interfaces/config-api.interface';
+import type { ILoggingService } from '#/logging/logging.interface';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
+import { TransactionApiManager } from '#/modules/transactions/datasources/transaction-api.manager';
+import { rawify } from '#/validation/entities/raw.entity';
 
 const configurationService = {
   getOrThrow: vi.fn(),
@@ -67,19 +67,31 @@ describe('Transaction API Manager Tests', () => {
     const ownersTtlSeconds = faker.number.int();
     const ownerTimeout = faker.number.int();
     configurationServiceMock.getOrThrow.mockImplementation((key) => {
-      if (key === 'safeTransaction.useVpcUrl') return useVpcUrl;
-      if (key === 'expirationTimeInSeconds.default')
+      if (key === 'safeTransaction.useVpcUrl') {
+        return useVpcUrl;
+      }
+      if (key === 'expirationTimeInSeconds.default') {
         return expirationTimeInSeconds;
-      if (key === 'expirationTimeInSeconds.indexing')
+      }
+      if (key === 'expirationTimeInSeconds.indexing') {
         return indexingExpirationTimeInSeconds;
-      if (key === 'expirationTimeInSeconds.notFound.default')
+      }
+      if (key === 'expirationTimeInSeconds.notFound.default') {
         return notFoundExpireTimeSeconds;
-      if (key === 'expirationTimeInSeconds.notFound.token')
+      }
+      if (key === 'expirationTimeInSeconds.notFound.token') {
         return notFoundExpireTimeSeconds;
-      if (key === 'owners.ownersTtlSeconds') return ownersTtlSeconds;
-      if (key === 'httpClient.ownersTimeout') return ownerTimeout;
+      }
+      if (key === 'owners.ownersTtlSeconds') {
+        return ownersTtlSeconds;
+      }
+      if (key === 'httpClient.ownersTimeout') {
+        return ownerTimeout;
+      }
       // TODO: Remove after Vault decoding has been released
-      if (key === 'application.isProduction') return true;
+      if (key === 'application.isProduction') {
+        return true;
+      }
 
       throw new Error(`Unexpected key: ${key}`);
     });

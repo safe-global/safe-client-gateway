@@ -2,9 +2,9 @@
 
 import { faker } from '@faker-js/faker';
 import omit from 'lodash/omit';
-import { fakeJson } from '@/__tests__/faker';
-import configurationValidator from '@/config/configuration.validator';
-import { RootConfigurationSchema } from '@/config/entities/schemas/configuration.schema';
+import { fakeJson } from '#/__tests__/faker';
+import configurationValidator from '#/config/configuration.validator';
+import { RootConfigurationSchema } from '#/config/entities/schemas/configuration.schema';
 
 describe('Configuration validator', () => {
   const originalNodeEnv = process.env.NODE_ENV;
@@ -22,9 +22,6 @@ describe('Configuration validator', () => {
     AWS_KMS_ENCRYPTION_KEY_ID: faker.string.uuid(),
     AWS_SECRET_ACCESS_KEY: faker.string.uuid(),
     AWS_REGION: faker.string.alphanumeric(),
-    BLOCKLIST_ENCRYPTED_DATA: faker.string.hexadecimal({ length: 64 }),
-    BLOCKLIST_SECRET_KEY: faker.string.hexadecimal({ length: 64 }),
-    BLOCKLIST_SECRET_SALT: faker.string.hexadecimal({ length: 64 }),
     ALERTS_PROVIDER_SIGNING_KEY: faker.string.uuid(),
     ALERTS_PROVIDER_API_KEY: faker.string.uuid(),
     ALERTS_PROVIDER_ACCOUNT: faker.string.alphanumeric(),
@@ -168,7 +165,7 @@ describe('Configuration validator', () => {
     expect(() =>
       configurationValidator(invalidConfiguration, RootConfigurationSchema),
     ).toThrow(
-      /LOG_LEVEL Invalid option: expected one of "error"\|"warn"\|"info"\|"http"\|"verbose"\|"debug"\|"silly"/,
+      /LOG_LEVEL Invalid option: expected one of "fatal"\|"error"\|"warn"\|"info"\|"debug"\|"trace"/,
     );
   });
 

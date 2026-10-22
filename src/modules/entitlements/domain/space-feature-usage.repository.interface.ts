@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { EntityManager } from 'typeorm';
-import type { Space } from '@/modules/spaces/domain/entities/space.entity';
+import type { Space } from '#/modules/spaces/domain/entities/space.entity';
 
 export const ISpaceFeatureUsageRepository = Symbol(
   'ISpaceFeatureUsageRepository',
@@ -19,6 +19,15 @@ export interface ISpaceFeatureUsageRepository {
     args: { spaceId: Space['id']; periods: Array<UsageKey> },
     entityManager?: EntityManager,
   ): Promise<Map<number, number>>;
+
+  /**
+   * {@link getUsageByFeatureId} for several spaces, each with its own periods,
+   * in one query, keyed by space id. A space with no counters is absent.
+   */
+  getUsageBySpaceIds(
+    args: Array<{ spaceId: Space['id']; periods: Array<UsageKey> }>,
+    entityManager?: EntityManager,
+  ): Promise<Map<Space['id'], Map<number, number>>>;
 
   /**
    * Adds `delta` to one counter, creating it when the period has none yet, and

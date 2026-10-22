@@ -2,43 +2,44 @@
 
 import { Inject, Injectable } from '@nestjs/common';
 import type { Address, Hex } from 'viem';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
-import { CacheRouter } from '@/datasources/cache/cache.router';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { CacheFirstDataSource } from '#/datasources/cache/cache.first.data.source';
+import { CacheRouter } from '#/datasources/cache/cache.router';
 import {
   CacheService,
   ICacheService,
-} from '@/datasources/cache/cache.service.interface';
-import { CircuitBreakerKeys } from '@/datasources/circuit-breaker/circuit-breaker.keys';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
+} from '#/datasources/cache/cache.service.interface';
+import { CircuitBreakerKeys } from '#/datasources/circuit-breaker/circuit-breaker.keys';
+import { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
 import {
   INetworkService,
   NetworkService,
-} from '@/datasources/network/network.service.interface';
-import { LogType } from '@/domain/common/entities/log-type.entity';
-import type { Page } from '@/domain/entities/page.entity';
+} from '#/datasources/network/network.service.interface';
+import { SAFE_QUEUE_SERVICE_MAX_LIMIT } from '#/domain/common/constants';
+import { LogType } from '#/domain/common/entities/log-type.entity';
+import type { Page } from '#/domain/entities/page.entity';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import { asError } from '@/logging/utils';
-import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
-import { SafeQueueMessage } from '@/modules/safe-queue/entities/message.entity';
-import type { SafeQueueMultisigTransactionEntity } from '@/modules/safe-queue/entities/multisig-transaction.entity';
+} from '#/logging/logging.interface';
+import { asError } from '#/logging/utils';
+import type { Delegate } from '#/modules/delegate/domain/entities/delegate.entity';
+import { SafeQueueMessage } from '#/modules/safe-queue/entities/message.entity';
+import type { SafeQueueMultisigTransactionEntity } from '#/modules/safe-queue/entities/multisig-transaction.entity';
 import {
   SafeQueueMultisigTransactionListSchema,
   SafeQueueMultisigTransactionSchema,
-} from '@/modules/safe-queue/entities/multisig-transaction.entity';
-import { parseOrigin } from '@/modules/safe-queue/helpers/origin.helper';
-import type { ISafeQueueService } from '@/modules/safe-queue/safe-queue.interface';
-import type { ProposeTransactionDto } from '@/modules/transactions/domain/entities/propose-transaction.dto.entity';
-import type { Raw } from '@/validation/entities/raw.entity';
-import { rawify } from '@/validation/entities/raw.entity';
+} from '#/modules/safe-queue/entities/multisig-transaction.entity';
+import { parseOrigin } from '#/modules/safe-queue/helpers/origin.helper';
+import type { ISafeQueueService } from '#/modules/safe-queue/safe-queue.interface';
+import type { ProposeTransactionDto } from '#/modules/transactions/domain/entities/propose-transaction.dto.entity';
+import type { Raw } from '#/validation/entities/raw.entity';
+import { rawify } from '#/validation/entities/raw.entity';
 
 @Injectable()
 export class SafeQueueService implements ISafeQueueService {
-  // Chunk size for multisig batch fetches. Each `safe_tx_hash=0x<64 hex>&`
-  // pair is ~81 bytes; nginx's default `large_client_header_buffers 4 8k`
+  // Chunk size for multisig batch fetches. Each `safeTxHash=0x<64 hex>&`
+  // pair is ~79 bytes; nginx's default `large_client_header_buffers 4 8k`
   // and many WAFs reject request lines beyond 8KB, so we cap each call at
   // 50 hashes (~4KB URL) to stay safely under that limit.
   private static readonly MAX_BATCH_HASHES_PER_CALL = 50;
@@ -161,6 +162,27 @@ export class SafeQueueService implements ISafeQueueService {
     }
   }
 
+  async getMultisigTransactionWithNoCache(args: {
+    safeTxHash: string;
+  }): Promise<Raw<SafeQueueMultisigTransactionEntity>> {
+    try {
+      const url = `${this.baseUri}/api/v1/multisig-transactions/${encodeURIComponent(args.safeTxHash)}`;
+      const { data } = await this.networkService.get<
+        Raw<SafeQueueMultisigTransactionEntity>
+      >({
+        url,
+        networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getSafeQueueServiceKey(),
+          },
+        },
+      });
+      return data;
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
   // Note: unlike its siblings, this returns an already-validated array (each
   // chunk is safeParse'd below), not a Raw<T> — re-parsing an already-parsed
   // chunk at the call site would be a pointless double validation, and would
@@ -186,7 +208,7 @@ export class SafeQueueService implements ISafeQueueService {
         chunks.map((chunk) => {
           const query = new URLSearchParams();
           for (const hash of chunk) {
-            query.append('safe_tx_hash', hash);
+            query.append('safeTxHash', hash);
           }
           const url = `${this.baseUri}/api/v1/multisig-transactions/batch?${query.toString()}`;
           const cacheDir =
@@ -265,8 +287,8 @@ export class SafeQueueService implements ISafeQueueService {
         networkRequest: {
           params: {
             safes: `${args.safeAddress}:${args.chainId}`,
-            nonce_order: nonceOrder,
-            limit: args.limit,
+            nonceOrder,
+            limit: this.capLimit(args.limit),
             offset: args.offset,
           },
           circuitBreaker: {
@@ -344,7 +366,8 @@ export class SafeQueueService implements ISafeQueueService {
             safe: args.safeAddress,
             delegate: args.delegate,
             delegator: args.delegator,
-            limit: args.limit,
+            label: args.label,
+            limit: this.capLimit(args.limit),
             offset: args.offset,
           },
           circuitBreaker: {
@@ -498,7 +521,7 @@ export class SafeQueueService implements ISafeQueueService {
         networkRequest: {
           params: {
             chainId: Number(args.chainId),
-            limit: args.limit,
+            limit: this.capLimit(args.limit),
             offset: args.offset,
           },
           circuitBreaker: {
@@ -621,5 +644,9 @@ export class SafeQueueService implements ISafeQueueService {
       safeAddress: args.safeAddress,
     });
     await this.cacheService.deleteByKey(key);
+  }
+
+  private capLimit(limit?: number): number | undefined {
+    return limit && Math.min(limit, SAFE_QUEUE_SERVICE_MAX_LIMIT);
   }
 }

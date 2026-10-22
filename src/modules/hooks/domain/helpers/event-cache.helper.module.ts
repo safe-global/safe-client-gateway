@@ -1,21 +1,21 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Module } from '@nestjs/common';
-import { BalancesModule } from '@/modules/balances/balances.module';
-import { BlockchainModule } from '@/modules/blockchain/blockchain.module';
-import { ChainsModule } from '@/modules/chains/chains.module';
-import { CollectiblesModule } from '@/modules/collectibles/collectibles.module';
-import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
-import { SafeDecoder } from '@/modules/contracts/domain/decoders/safe-decoder.helper';
-import { DelegatesV3RepositoryModule } from '@/modules/delegate/domain/v3/delegates.v3.repository.interface';
-import { EarnModule } from '@/modules/earn/earn.module';
-import { EventCacheHelper } from '@/modules/hooks/domain/helpers/event-cache.helper';
-import { MessagesModule } from '@/modules/messages/messages.module';
-import { PolicyIndexerRepositoryModule } from '@/modules/policies/domain/policy-indexer-repository.module';
-import { SafeRepositoryModule } from '@/modules/safe/domain/safe.repository.interface';
-import { SafeAppsModule } from '@/modules/safe-apps/safe-apps.module';
-import { StakingModule } from '@/modules/staking/staking.module';
-import { TransactionsModule } from '@/modules/transactions/transactions.module';
-import { ZerionModule } from '@/modules/zerion/zerion.module';
+import { BalancesModule } from '#/modules/balances/balances.module';
+import { BlockchainModule } from '#/modules/blockchain/blockchain.module';
+import { ChainsModule } from '#/modules/chains/chains.module';
+import { CollectiblesModule } from '#/modules/collectibles/collectibles.module';
+import { MultiSendDecoder } from '#/modules/contracts/domain/decoders/multi-send-decoder.helper';
+import { SafeDecoder } from '#/modules/contracts/domain/decoders/safe-decoder.helper';
+import { DelegatesV3RepositoryModule } from '#/modules/delegate/domain/v3/delegates.v3.repository.interface';
+import { EarnModule } from '#/modules/earn/earn.module';
+import { EventCacheHelper } from '#/modules/hooks/domain/helpers/event-cache.helper';
+import { MessagesModule } from '#/modules/messages/messages.module';
+import { PolicyIndexerRepositoryModule } from '#/modules/policies/domain/policy-indexer-repository.module';
+import { SafeRepositoryModule } from '#/modules/safe/domain/safe.repository.interface';
+import { SafeAppsModule } from '#/modules/safe-apps/safe-apps.module';
+import { StakingModule } from '#/modules/staking/staking.module';
+import { TransactionsModule } from '#/modules/transactions/transactions.module';
+import { ZerionModule } from '#/modules/zerion/zerion.module';
 
 @Module({
   imports: [

@@ -3,37 +3,38 @@
 import { faker } from '@faker-js/faker';
 import type { ConfigService } from '@nestjs/config';
 import { DataSource } from 'typeorm';
+import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
-import configuration from '@/config/entities/__tests__/configuration';
-import { postgresConfig } from '@/config/entities/postgres.config';
-import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { nameBuilder } from '@/domain/common/entities/name.builder';
-import type { ILoggingService } from '@/logging/logging.interface';
-import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { SpaceAuditLog } from '@/modules/spaces/datasources/audit/entities/space-audit-log.entity.db';
-import { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
-import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
-import { createMockSpaceEncryptionService } from '@/modules/spaces/domain/__tests__/space-encryption.service.mock';
-import { SpaceAuditEventType } from '@/modules/spaces/domain/audit/entities/space-audit-event.entity';
-import { SpaceAuditRepository } from '@/modules/spaces/domain/audit/space-audit.repository';
-import { SpacesRepository } from '@/modules/spaces/domain/spaces.repository';
+import type { IConfigurationService } from '#/config/configuration.service.interface';
+import configuration from '#/config/entities/__tests__/configuration';
+import { postgresConfig } from '#/config/entities/postgres.config';
+import { DatabaseMigrator } from '#/datasources/db/v2/database-migrator.service';
+import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
+import { nameBuilder } from '#/domain/common/entities/name.builder';
+import type { ILoggingService } from '#/logging/logging.interface';
+import { siweAuthPayloadDtoBuilder } from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import { SpaceAuditLog } from '#/modules/spaces/datasources/audit/entities/space-audit-log.entity.db';
+import { SpaceSafe } from '#/modules/spaces/datasources/safes/entities/space-safes.entity.db';
+import { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
+import { createMockSpaceEncryptionService } from '#/modules/spaces/domain/__tests__/space-encryption.service.mock';
+import { SpaceAuditEventType } from '#/modules/spaces/domain/audit/entities/space-audit-event.entity';
+import { SpaceAuditRepository } from '#/modules/spaces/domain/audit/space-audit.repository';
+import { SpacesRepository } from '#/modules/spaces/domain/spaces.repository';
 import {
   InviteType,
   type InviteUserInput,
-} from '@/modules/spaces/routes/members/entities/invite-users.dto.entity';
-import { Member } from '@/modules/users/datasources/entities/member.entity.db';
-import { User } from '@/modules/users/datasources/entities/users.entity.db';
-import { createMockUserEncryptionService } from '@/modules/users/domain/__tests__/user-encryption.service.mock';
-import { createMockMemberEncryptionService } from '@/modules/users/domain/members/__tests__/member-encryption.service.mock';
-import { MembersRepository } from '@/modules/users/domain/members/members.repository';
-import { UsersRepository } from '@/modules/users/domain/users.repository';
-import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
-import { createMockWalletEncryptionService } from '@/modules/wallets/domain/__tests__/wallet-encryption.service.mock';
-import { WalletsRepository } from '@/modules/wallets/domain/wallets.repository';
-import { fakeEmailAddress } from '@/validation/entities/schemas/__tests__/email-address.builder';
+} from '#/modules/spaces/routes/members/entities/invite-users.dto.entity';
+import { Member } from '#/modules/users/datasources/entities/member.entity.db';
+import { User } from '#/modules/users/datasources/entities/users.entity.db';
+import { createMockUserEncryptionService } from '#/modules/users/domain/__tests__/user-encryption.service.mock';
+import { createMockMemberEncryptionService } from '#/modules/users/domain/members/__tests__/member-encryption.service.mock';
+import { MembersRepository } from '#/modules/users/domain/members/members.repository';
+import { UsersRepository } from '#/modules/users/domain/users.repository';
+import { Wallet } from '#/modules/wallets/datasources/entities/wallets.entity.db';
+import { createMockWalletEncryptionService } from '#/modules/wallets/domain/__tests__/wallet-encryption.service.mock';
+import { WalletsRepository } from '#/modules/wallets/domain/wallets.repository';
+import { fakeEmailAddress } from '#/validation/entities/schemas/__tests__/email-address.builder';
 
 const mockLoggingService = {
   debug: vi.fn(),
@@ -152,9 +153,11 @@ describe('SpaceAuditRepository', () => {
       usersRepository,
       spacesRepository,
       spaceAuditRepository,
+      walletsRepository,
       createMockUserEncryptionService(),
       createMockWalletEncryptionService(),
       createMockMemberEncryptionService(),
+      mockLoggingService,
     );
   });
 
@@ -232,7 +235,7 @@ describe('SpaceAuditRepository', () => {
       users: [
         {
           type: InviteType.Wallet,
-          address: wallet.address,
+          address: getAddress(wallet.address),
           role: args.role ?? 'MEMBER',
           name: nameBuilder(),
         },
@@ -264,7 +267,7 @@ describe('SpaceAuditRepository', () => {
       const invitee = await inviteUser({ spaceId, adminAuthPayload });
 
       await membersRepository.updateRole({
-        authPayload: adminAuthPayload,
+        actorUserId: adminUserId,
         spaceId,
         userId: invitee.userId,
         role: 'ADMIN',
@@ -370,7 +373,7 @@ describe('SpaceAuditRepository', () => {
           users: [
             {
               type: InviteType.Wallet,
-              address: wallet.address,
+              address: getAddress(wallet.address),
               role: 'MEMBER',
               name: nameBuilder(),
             },
@@ -449,11 +452,12 @@ describe('SpaceAuditRepository', () => {
 
   describe('findBySpaceId', () => {
     it('should order newest-first by default, scope by space and reverse with asc', async () => {
-      const { spaceId, adminAuthPayload } = await createSpaceWithAdmin();
+      const { spaceId, adminUserId, adminAuthPayload } =
+        await createSpaceWithAdmin();
       const other = await createSpaceWithAdmin();
       const invitee = await inviteUser({ spaceId, adminAuthPayload });
       await membersRepository.updateRole({
-        authPayload: adminAuthPayload,
+        actorUserId: adminUserId,
         spaceId,
         userId: invitee.userId,
         role: 'ADMIN',
@@ -532,7 +536,7 @@ describe('SpaceAuditRepository', () => {
         await createSpaceWithAdmin();
       const invitee = await inviteUser({ spaceId, adminAuthPayload });
       await membersRepository.updateRole({
-        authPayload: adminAuthPayload,
+        actorUserId: adminUserId,
         spaceId,
         userId: invitee.userId,
         role: 'ADMIN',
@@ -606,7 +610,7 @@ describe('SpaceAuditRepository', () => {
         payload: { name: nameBuilder() },
       });
       await membersRepository.removeUser({
-        authPayload: adminAuthPayload,
+        actorUserId: adminUserId,
         spaceId,
         userId: invitee.userId,
       });

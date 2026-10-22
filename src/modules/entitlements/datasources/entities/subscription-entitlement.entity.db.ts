@@ -8,9 +8,9 @@ import {
   PrimaryGeneratedColumn,
   Unique,
 } from 'typeorm';
-import { Feature } from '@/modules/entitlements/datasources/entities/feature.entity.db';
-import { SpaceSubscription } from '@/modules/entitlements/datasources/entities/space-subscription.entity.db';
-import type { SubscriptionEntitlement as DomainSubscriptionEntitlement } from '@/modules/entitlements/domain/entities/subscription-entitlement.entity';
+import { Feature } from '#/modules/entitlements/datasources/entities/feature.entity.db';
+import { SpaceSubscription } from '#/modules/entitlements/datasources/entities/space-subscription.entity.db';
+import type { SubscriptionEntitlement as DomainSubscriptionEntitlement } from '#/modules/entitlements/domain/entities/subscription-entitlement.entity';
 
 @Entity('subscription_entitlements')
 @Unique('UQ_SE_subscription_feature', ['subscription', 'feature'])

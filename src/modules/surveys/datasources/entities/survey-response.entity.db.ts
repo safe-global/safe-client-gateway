@@ -7,10 +7,10 @@ import {
   PrimaryGeneratedColumn,
   Unique,
 } from 'typeorm';
-import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
-import { Survey } from '@/modules/surveys/datasources/entities/survey.entity.db';
-import type { SurveyResponse as DomainSurveyResponse } from '@/modules/surveys/domain/entities/survey-response.entity';
-import { User } from '@/modules/users/datasources/entities/users.entity.db';
+import { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
+import { Survey } from '#/modules/surveys/datasources/entities/survey.entity.db';
+import type { SurveyResponse as DomainSurveyResponse } from '#/modules/surveys/domain/entities/survey-response.entity';
+import { User } from '#/modules/users/datasources/entities/users.entity.db';
 
 @Entity('survey_responses')
 @Unique('UQ_survey_responses_space_survey', ['space', 'survey'])

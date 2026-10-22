@@ -4,38 +4,38 @@ import { get, groupBy } from 'lodash';
 import type { Address } from 'viem';
 import { getAddress, isAddress } from 'viem';
 import { ZodError } from 'zod';
-import { IConfigurationService } from '@/config/configuration.service.interface';
+import { IConfigurationService } from '#/config/configuration.service.interface';
 import {
   CacheService,
   ICacheService,
-} from '@/datasources/cache/cache.service.interface';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
+} from '#/datasources/cache/cache.service.interface';
+import { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
+import { NetworkResponseError } from '#/datasources/network/entities/network.error.entity';
 import {
   INetworkService,
   NetworkService,
-} from '@/datasources/network/network.service.interface';
-import { LogType } from '@/domain/common/entities/log-type.entity';
-import { getNumberString } from '@/domain/common/utils/utils';
-import { DataSourceError } from '@/domain/errors/data-source.error';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import { asError } from '@/logging/utils';
-import type { ZerionBalance } from '@/modules/balances/datasources/entities/zerion-balance.entity';
-import { ZerionBalancesSchema } from '@/modules/balances/datasources/entities/zerion-balance.entity';
+} from '#/datasources/network/network.service.interface';
+import { LogType } from '#/domain/common/entities/log-type.entity';
+import { getNumberString } from '#/domain/common/utils/utils';
+import { DataSourceError } from '#/domain/errors/data-source.error';
+import { ILoggingService, LoggingService } from '#/logging/logging.interface';
+import { asError } from '#/logging/utils';
+import type { ZerionBalance } from '#/modules/balances/datasources/entities/zerion-balance.entity';
+import { ZerionBalancesSchema } from '#/modules/balances/datasources/entities/zerion-balance.entity';
 import {
   getZerionHeaders,
   normalizeZerionBalances,
-} from '@/modules/balances/datasources/zerion-api.helpers';
-import type { AppBalance } from '@/modules/portfolio/domain/entities/app-balance.entity';
+} from '#/modules/balances/datasources/zerion-api.helpers';
+import type { AppBalance } from '#/modules/portfolio/domain/entities/app-balance.entity';
 import type {
   AppPosition,
   AppPositionGroup,
-} from '@/modules/portfolio/domain/entities/app-position.entity';
-import type { Portfolio } from '@/modules/portfolio/domain/entities/portfolio.entity';
-import type { TokenBalance } from '@/modules/portfolio/domain/entities/token-balance.entity';
-import { IPortfolioApi } from '@/modules/portfolio/interfaces/portfolio-api.interface';
-import { ZerionChainMappingService } from '@/modules/zerion/datasources/zerion-chain-mapping.service';
-import { type Raw, rawify } from '@/validation/entities/raw.entity';
+} from '#/modules/portfolio/domain/entities/app-position.entity';
+import type { Portfolio } from '#/modules/portfolio/domain/entities/portfolio.entity';
+import type { TokenBalance } from '#/modules/portfolio/domain/entities/token-balance.entity';
+import { IPortfolioApi } from '#/modules/portfolio/interfaces/portfolio-api.interface';
+import { ZerionChainMappingService } from '#/modules/zerion/datasources/zerion-chain-mapping.service';
+import { type Raw, rawify } from '#/validation/entities/raw.entity';
 
 /**
  * Zerion portfolio API integration.
@@ -59,6 +59,7 @@ export class ZerionPortfolioApi implements IPortfolioApi {
   private readonly apiKey: string | undefined;
   private readonly baseUri: string;
   private readonly fiatCodes: Array<string>;
+  private readonly testnetsEnabled: boolean;
 
   constructor(
     @Inject(NetworkService) private readonly networkService: INetworkService,
@@ -79,6 +80,9 @@ export class ZerionPortfolioApi implements IPortfolioApi {
     this.fiatCodes = this.configurationService.getOrThrow<Array<string>>(
       'balances.providers.zerion.currencies',
     );
+    this.testnetsEnabled = this.configurationService.getOrThrow<boolean>(
+      'features.zerionTestnets',
+    );
   }
 
   public async getPortfolio(args: {
@@ -96,8 +100,13 @@ export class ZerionPortfolioApi implements IPortfolioApi {
       );
     }
 
-    const positions = await this._fetchPositions(args);
     const isTestnet = args.isTestnet ?? false;
+    // Zerion prices no testnet asset, so an empty portfolio lets the caller
+    // fall back instead of serving a zero-valued one.
+    const positions =
+      isTestnet && !this.testnetsEnabled
+        ? []
+        : await this._fetchPositions(args);
     return await this._buildPortfolio(positions, isTestnet);
   }
 
@@ -245,15 +254,21 @@ export class ZerionPortfolioApi implements IPortfolioApi {
     const tokenBalances = await Promise.all(
       positions.map(async (position): Promise<TokenBalance | null> => {
         const networkName = position.relationships?.chain?.data?.id;
-        if (!networkName) return null;
+        if (!networkName) {
+          return null;
+        }
 
         const chainId = await this._mapNetworkToChainId(networkName, isTestnet);
-        if (!chainId) return null;
+        if (!chainId) {
+          return null;
+        }
 
         const impl = position.attributes.fungible_info.implementations.find(
           (i) => i.chain_id === networkName,
         );
-        if (!impl) return null;
+        if (!impl) {
+          return null;
+        }
 
         if (impl.address !== null && !isAddress(impl.address)) {
           return null;
@@ -392,15 +407,21 @@ export class ZerionPortfolioApi implements IPortfolioApi {
     const appPositions = await Promise.all(
       positions.map(async (position): Promise<AppPosition | null> => {
         const networkName = position.relationships?.chain?.data?.id;
-        if (!networkName) return null;
+        if (!networkName) {
+          return null;
+        }
 
         const chainId = await this._mapNetworkToChainId(networkName, isTestnet);
-        if (!chainId) return null;
+        if (!chainId) {
+          return null;
+        }
 
         const impl = position.attributes.fungible_info.implementations.find(
           (i) => i.chain_id === networkName,
         );
-        if (!impl) return null;
+        if (!impl) {
+          return null;
+        }
 
         if (impl.address !== null && !isAddress(impl.address)) {
           return null;

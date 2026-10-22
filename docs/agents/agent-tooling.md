@@ -79,7 +79,7 @@ Adding one back is a reasonable thing to do — but the bar is that it must do s
 1. **It must act, not inform.** Perform something, or run a sequence nobody would think to ask for. A command that only points at a guide is a guide with extra steps.
 2. **Reference, never restate.** Name the skills and guides to load, then list only the steps specific to that workflow.
 3. **Idempotent.** Inspect current state before writing; re-running it reports what is already correct rather than duplicating it.
-4. **End in verification** — `yarn format`, `yarn lint --fix`, the relevant tests, with the **real output** reported. [reviewing.md](reviewing.md) treats an unproven "tests pass" as a finding.
+4. **End in verification** — `yarn format`, `yarn lint --fix`, `yarn typecheck`, the relevant tests, with the **real output** reported. [reviewing.md](reviewing.md) treats an unproven "tests pass" as a finding.
 5. **Frontmatter:** a one-line `description` (this is what shows in the command list) plus an `argument-hint` when it takes arguments; `$ARGUMENTS` in the body. No SPDX header, for the same frontmatter reason as skills.
 6. **Name it for the workflow, not the tool** — `/new-env-var`, not `/config-helper`.
 7. **Nothing but command files lives under `.claude/commands/`** — a loose markdown file there becomes a command, exactly as a loose one under `.claude/skills/` becomes a skill.

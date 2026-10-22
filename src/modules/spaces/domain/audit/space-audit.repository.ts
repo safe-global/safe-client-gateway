@@ -8,16 +8,16 @@ import {
   LessThanOrEqual,
   MoreThanOrEqual,
 } from 'typeorm';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { SpaceAuditLog } from '@/modules/spaces/datasources/audit/entities/space-audit-log.entity.db';
-import { SpaceAuditEventSchema } from '@/modules/spaces/domain/audit/entities/space-audit-event.entity';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
+import { SpaceAuditLog } from '#/modules/spaces/datasources/audit/entities/space-audit-log.entity.db';
+import { SpaceAuditEventSchema } from '#/modules/spaces/domain/audit/entities/space-audit-event.entity';
 import type {
   ISpaceAuditRepository,
   SpaceAuditFindArgs,
   SpaceAuditRecordArgs,
-} from '@/modules/spaces/domain/audit/space-audit.repository.interface';
-import { SpaceEncryptionService } from '@/modules/spaces/domain/space-encryption.service';
+} from '#/modules/spaces/domain/audit/space-audit.repository.interface';
+import { SpaceEncryptionService } from '#/modules/spaces/domain/space-encryption.service';
 
 @Injectable()
 export class SpaceAuditRepository implements ISpaceAuditRepository {

@@ -9,19 +9,19 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiExcludeController } from '@nestjs/swagger';
-import { IConfigurationService } from '@/config/configuration.service.interface';
+import { IConfigurationService } from '#/config/configuration.service.interface';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import type { Event } from '@/modules/hooks/routes/entities/event.entity';
-import { ConfigEventType } from '@/modules/hooks/routes/entities/event-type.entity';
-import { EventSchema } from '@/modules/hooks/routes/entities/schemas/event.schema';
-import { EventProtocolChangedError } from '@/modules/hooks/routes/errors/event-protocol-changed.error';
-import { EventProtocolChangedFilter } from '@/modules/hooks/routes/filters/event-protocol-changed.filter';
-import { HooksService } from '@/modules/hooks/routes/hooks.service';
-import { BasicAuthGuard } from '@/routes/common/auth/basic-auth.guard';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+} from '#/logging/logging.interface';
+import type { Event } from '#/modules/hooks/routes/entities/event.entity';
+import { ConfigEventType } from '#/modules/hooks/routes/entities/event-type.entity';
+import { EventSchema } from '#/modules/hooks/routes/entities/schemas/event.schema';
+import { EventProtocolChangedError } from '#/modules/hooks/routes/errors/event-protocol-changed.error';
+import { EventProtocolChangedFilter } from '#/modules/hooks/routes/filters/event-protocol-changed.filter';
+import { HooksService } from '#/modules/hooks/routes/hooks.service';
+import { BasicAuthGuard } from '#/routes/common/auth/basic-auth.guard';
+import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
 @Controller({
   path: '',

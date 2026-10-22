@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { SafeAppAccessControl } from '@/modules/safe-apps/routes/entities/safe-app-access-control.entity';
-import { SafeAppProvider } from '@/modules/safe-apps/routes/entities/safe-app-provider.entity';
-import { SafeAppSocialProfile } from '@/modules/safe-apps/routes/entities/safe-app-social-profile.entity';
+import { SafeAppAccessControl } from '#/modules/safe-apps/routes/entities/safe-app-access-control.entity';
+import { SafeAppProvider } from '#/modules/safe-apps/routes/entities/safe-app-provider.entity';
+import { SafeAppSocialProfile } from '#/modules/safe-apps/routes/entities/safe-app-social-profile.entity';
 
 export class SafeApp {
   @ApiProperty()

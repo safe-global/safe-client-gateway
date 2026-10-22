@@ -8,7 +8,7 @@ import {
   parseAbiParameters,
   zeroAddress,
 } from 'viem';
-import { LogType } from '@/domain/common/entities/log-type.entity';
+import { LogType } from '#/domain/common/entities/log-type.entity';
 import {
   getMultiSendCallOnlyDeployments,
   getMultiSendDeployments,
@@ -16,18 +16,18 @@ import {
   getSafeL2SingletonDeployments,
   getSafeSingletonDeployments,
   getSignerFactoryDeployments,
-} from '@/domain/common/utils/deployments';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import { DelayModifierDecoder } from '@/modules/alerts/domain/contracts/decoders/delay-modifier-decoder.helper';
-import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
-import { SafeDecoder } from '@/modules/contracts/domain/decoders/safe-decoder.helper';
-import { Erc20Decoder } from '@/modules/relay/domain/contracts/decoders/erc-20-decoder.helper';
-import { ProxyFactoryDecoder } from '@/modules/relay/domain/contracts/decoders/proxy-factory-decoder.helper';
-import { SignerFactoryDecoder } from '@/modules/relay/domain/contracts/decoders/signer-factory-decoder.helper';
-import { InvalidMultiSendError } from '@/modules/relay/domain/errors/invalid-multisend.error';
-import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
-import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
-import type { SafeTransaction } from '@/modules/transactions/domain/entities/safe-transaction.entity';
+} from '#/domain/common/utils/deployments';
+import { ILoggingService, LoggingService } from '#/logging/logging.interface';
+import { DelayModifierDecoder } from '#/modules/alerts/domain/contracts/decoders/delay-modifier-decoder.helper';
+import { MultiSendDecoder } from '#/modules/contracts/domain/decoders/multi-send-decoder.helper';
+import { SafeDecoder } from '#/modules/contracts/domain/decoders/safe-decoder.helper';
+import { Erc20Decoder } from '#/modules/relay/domain/contracts/decoders/erc-20-decoder.helper';
+import { ProxyFactoryDecoder } from '#/modules/relay/domain/contracts/decoders/proxy-factory-decoder.helper';
+import { SignerFactoryDecoder } from '#/modules/relay/domain/contracts/decoders/signer-factory-decoder.helper';
+import { InvalidMultiSendError } from '#/modules/relay/domain/errors/invalid-multisend.error';
+import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
+import { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
+import type { SafeTransaction } from '#/modules/transactions/domain/entities/safe-transaction.entity';
 
 @Injectable()
 export class RelayTransactionHelper {
@@ -46,7 +46,9 @@ export class RelayTransactionHelper {
 
   isValidExecTransactionCall(args: { to: Address; data: Hex }): boolean {
     const decoded = this.decodeExecTransaction(args.data);
-    if (!decoded) return false;
+    if (!decoded) {
+      return false;
+    }
     return this.isValidDecodedExecTransaction({ to: args.to, decoded });
   }
 
@@ -427,6 +429,22 @@ export class RelayTransactionHelper {
     }
 
     return [{ to: args.address, data: args.data }];
+  }
+
+  /** Whether an execTransaction has the Safe repay gas to the relayer (`gasPrice > 0`). */
+  private isRefundingExecTransaction(data: Hex): boolean {
+    const decoded = this.decodeExecTransaction(data);
+    return decoded !== null && decoded.gasPrice > BigInt(0);
+  }
+
+  /** Whether the calldata, or any transaction inside its MultiSend, is a refunding execTransaction. */
+  hasRefundingTransaction(data: Hex): boolean {
+    if (!this.isMultiSend(data)) {
+      return this.isRefundingExecTransaction(data);
+    }
+    return this.multiSendDecoder
+      .mapMultiSendTransactions(data)
+      .some((transaction) => this.isRefundingExecTransaction(transaction.data));
   }
 
   /**

@@ -5,7 +5,7 @@ import type { MockedObject } from 'vitest';
 import {
   type INetworkService,
   NetworkService,
-} from '@/datasources/network/network.service.interface';
+} from '#/datasources/network/network.service.interface';
 
 export const networkService: INetworkService = {
   get: vi.fn(),

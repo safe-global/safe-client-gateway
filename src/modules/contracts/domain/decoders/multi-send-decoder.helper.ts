@@ -8,12 +8,12 @@ import {
   size,
   slice,
 } from 'viem';
-import MultiSendCallOnly130 from '@/abis/safe/v1.3.0/MultiSendCallOnly.abi';
+import MultiSendCallOnly130 from '#/abis/safe/v1.3.0/MultiSendCallOnly.abi';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import { AbiDecoder } from '@/modules/contracts/domain/decoders/abi-decoder.helper';
+} from '#/logging/logging.interface';
+import { AbiDecoder } from '#/modules/contracts/domain/decoders/abi-decoder.helper';
 
 @Injectable()
 export class MultiSendDecoder extends AbiDecoder<typeof MultiSendCallOnly130> {

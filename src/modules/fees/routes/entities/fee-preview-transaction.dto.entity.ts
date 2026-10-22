@@ -2,9 +2,9 @@
 import { ApiProperty } from '@nestjs/swagger';
 import type { Address, Hex } from 'viem';
 import type { z } from 'zod';
-import { Origin } from '@/modules/fees/domain/entities/origin.entity';
-import type { FeePreviewTransactionDtoSchema } from '@/modules/fees/routes/entities/schemas/fee-preview-transaction.dto.schema';
-import { Operation } from '@/modules/safe/domain/entities/operation.entity';
+import { Origin } from '#/modules/fees/domain/entities/origin.entity';
+import type { FeePreviewTransactionDtoSchema } from '#/modules/fees/routes/entities/schemas/fee-preview-transaction.dto.schema';
+import { Operation } from '#/modules/safe/domain/entities/operation.entity';
 
 export class FeePreviewTransactionDto
   implements z.infer<typeof FeePreviewTransactionDtoSchema>

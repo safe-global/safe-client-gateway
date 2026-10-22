@@ -6,13 +6,13 @@ import type {
   FindOptionsRelations,
   FindOptionsWhere,
 } from 'typeorm';
-import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import type { Space } from '@/modules/spaces/domain/entities/space.entity';
-import type { InviteUserInput } from '@/modules/spaces/routes/members/entities/invite-users.dto.entity';
-import type { Member as DbMember } from '@/modules/users/datasources/entities/member.entity.db';
-import type { Invitation } from '@/modules/users/domain/entities/invitation.entity';
-import type { Member } from '@/modules/users/domain/entities/member.entity';
-import type { User } from '@/modules/users/domain/entities/user.entity';
+import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import type { Space } from '#/modules/spaces/domain/entities/space.entity';
+import type { InviteUserInput } from '#/modules/spaces/routes/members/entities/invite-users.dto.entity';
+import type { Member as DbMember } from '#/modules/users/datasources/entities/member.entity.db';
+import type { Invitation } from '#/modules/users/domain/entities/invitation.entity';
+import type { Member } from '#/modules/users/domain/entities/member.entity';
+import type { User } from '#/modules/users/domain/entities/user.entity';
 
 export const IMembersRepository = Symbol('IMembersRepository');
 
@@ -32,11 +32,6 @@ export interface IMembersRepository {
   ): Promise<[DbMember, ...Array<DbMember>]>;
 
   find(args?: FindManyOptions<DbMember>): Promise<Array<DbMember>>;
-
-  findActiveAdmin(args: {
-    userId: User['id'];
-    spaceId: Space['id'];
-  }): Promise<DbMember | null>;
 
   /**
    * Invites users to a space until the provided expiry date.
@@ -95,7 +90,7 @@ export interface IMembersRepository {
   }): Promise<Member>;
 
   updateRole(args: {
-    authPayload: AuthPayload;
+    actorUserId: User['id'];
     spaceId: Space['id'];
     userId: User['id'];
     role: Member['role'];
@@ -108,7 +103,7 @@ export interface IMembersRepository {
   }): Promise<void>;
 
   removeUser(args: {
-    authPayload: AuthPayload;
+    actorUserId: User['id'];
     spaceId: Space['id'];
     userId: User['id'];
   }): Promise<void>;

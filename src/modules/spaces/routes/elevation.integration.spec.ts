@@ -8,20 +8,20 @@ import { getAddress } from 'viem';
 import {
   initTestApplication,
   TestAppProvider,
-} from '@/__tests__/test-app.provider';
-import { createTestModule } from '@/__tests__/testing-module';
-import configuration from '@/config/entities/__tests__/configuration';
-import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
-import { nameBuilder } from '@/domain/common/entities/name.builder';
+} from '#/__tests__/test-app.provider';
+import { createTestModule } from '#/__tests__/testing-module';
+import configuration from '#/config/entities/__tests__/configuration';
+import { IJwtService } from '#/datasources/jwt/jwt.service.interface';
+import { nameBuilder } from '#/domain/common/entities/name.builder';
 import {
   oidcAuthPayloadDtoBuilder,
   siweAuthPayloadDtoBuilder,
-} from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
-import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
-import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
-import { ELEVATION_REQUIRED_ERROR } from '@/routes/common/auth/elevation.guard';
-import { fakeEmailAddress } from '@/validation/entities/schemas/__tests__/email-address.builder';
+} from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { NotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/notifications.repository.module';
+import { TestNotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/test.notification.repository.module';
+import { IUsersRepository } from '#/modules/users/domain/users.repository.interface';
+import { ELEVATION_REQUIRED_ERROR } from '#/routes/common/auth/elevation.guard';
+import { fakeEmailAddress } from '#/validation/entities/schemas/__tests__/email-address.builder';
 
 // Deliberately not the production default (30 minutes), so that a guard which
 // ignored configuration and hardcoded the default would fail these tests.
@@ -153,9 +153,19 @@ const UNGATED_ROUTES: Array<Route> = [
     path: (id) => `/v1/spaces/${id}`,
   },
   {
+    name: 'GET /v1/spaces/entitlements',
+    method: 'get',
+    path: () => '/v1/spaces/entitlements',
+  },
+  {
     name: 'GET /v1/spaces/:spaceId/members',
     method: 'get',
     path: (id) => `/v1/spaces/${id}/members`,
+  },
+  {
+    name: 'GET /v1/spaces/safes',
+    method: 'get',
+    path: () => '/v1/spaces/safes',
   },
   {
     name: 'GET /v1/spaces/:spaceId/safes',
@@ -226,6 +236,17 @@ const UNGATED_ROUTES: Array<Route> = [
     name: 'POST /v1/spaces/:spaceId/members/:userId/invite/renew',
     method: 'post',
     path: (id) => `/v1/spaces/${id}/members/1/invite/renew`,
+  },
+  // Like proposing a contact, storing a policy configuration request only
+  // stores a proposal: nothing takes effect until the Safe owners sign it
+  // on-chain. A row must hash to its root, and the per-Space cap bounds how
+  // many a stolen session can store.
+  {
+    name: 'POST /v1/spaces/:spaceId/chains/:chainId/safes/:safeAddress/policies/requests',
+    method: 'post',
+    path: (id) =>
+      `/v1/spaces/${id}/chains/11155111/safes/${getAddress(faker.finance.ethereumAddress())}/policies/requests`,
+    body: {},
   },
   {
     name: 'POST /v1/spaces/:spaceId/address-book/requests (propose contact)',

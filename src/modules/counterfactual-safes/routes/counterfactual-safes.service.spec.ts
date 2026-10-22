@@ -4,14 +4,14 @@ import { faker } from '@faker-js/faker';
 import { ConflictException } from '@nestjs/common';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import type { ILoggingService } from '@/logging/logging.interface';
-import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { counterfactualSafeBuilder } from '@/modules/counterfactual-safes/datasources/entities/__tests__/counterfactual-safe.entity.db.builder';
-import type { ICounterfactualSafesRepository } from '@/modules/counterfactual-safes/domain/counterfactual-safes.repository.interface';
-import { CounterfactualSafesService } from '@/modules/counterfactual-safes/routes/counterfactual-safes.service';
-import type { CreateCounterfactualSafeDto } from '@/modules/counterfactual-safes/routes/entities/create-counterfactual-safe.dto.entity';
-import type { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
+import type { ILoggingService } from '#/logging/logging.interface';
+import { siweAuthPayloadDtoBuilder } from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import { counterfactualSafeBuilder } from '#/modules/counterfactual-safes/datasources/entities/__tests__/counterfactual-safe.entity.db.builder';
+import type { ICounterfactualSafesRepository } from '#/modules/counterfactual-safes/domain/counterfactual-safes.repository.interface';
+import { CounterfactualSafesService } from '#/modules/counterfactual-safes/routes/counterfactual-safes.service';
+import type { CreateCounterfactualSafeDto } from '#/modules/counterfactual-safes/routes/entities/create-counterfactual-safe.dto.entity';
+import type { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
 
 const mockCounterfactualSafesRepository = vi.mocked({
   create: vi.fn(),

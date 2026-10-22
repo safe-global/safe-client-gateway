@@ -2,9 +2,9 @@
 import { faker } from '@faker-js/faker';
 import type { Address, Hex } from 'viem';
 import { encodeFunctionData, keccak256, toBytes } from 'viem';
-import { Builder } from '@/__tests__/builder';
-import type { IEncoder } from '@/__tests__/encoder-builder';
-import { GPv2Abi } from '@/modules/swaps/domain/contracts/decoders/gp-v2-decoder.helper';
+import { Builder } from '#/__tests__/builder';
+import type { IEncoder } from '#/__tests__/encoder-builder';
+import { GPv2Abi } from '#/modules/swaps/domain/contracts/decoders/gp-v2-decoder.helper';
 
 type SetPreSignatureArgs = {
   orderUid: Address;

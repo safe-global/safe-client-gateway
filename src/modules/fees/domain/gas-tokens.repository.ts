@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import differenceBy from 'lodash/differenceBy';
-import type { Page } from '@/domain/entities/page.entity';
-import { LenientBasePageSchema } from '@/domain/entities/schemas/page.schema.factory';
-import { IConfigApi } from '@/domain/interfaces/config-api.interface';
+import type { Page } from '#/domain/entities/page.entity';
+import { LenientBasePageSchema } from '#/domain/entities/schemas/page.schema.factory';
+import { IConfigApi } from '#/domain/interfaces/config-api.interface';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
+} from '#/logging/logging.interface';
 import {
   type GasToken,
   GasTokenLenientPageSchema,
-} from '@/modules/fees/domain/entities/gas-token.entity';
-import type { IGasTokensRepository } from '@/modules/fees/domain/gas-tokens.repository.interface';
+} from '#/modules/fees/domain/entities/gas-token.entity';
+import type { IGasTokensRepository } from '#/modules/fees/domain/gas-tokens.repository.interface';
 
 @Injectable()
 export class GasTokensRepository implements IGasTokensRepository {

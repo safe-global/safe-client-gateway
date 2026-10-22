@@ -1,6 +1,7 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { DataSource } from 'typeorm';
-import configuration from '@/config/entities/configuration';
-import { postgresConfig } from '@/config/entities/postgres.config';
+import configuration from '#/config/entities/configuration';
+import { postgresConfig } from '#/config/entities/postgres.config';
 
 const dbConfig = configuration().db;
 export default new DataSource({

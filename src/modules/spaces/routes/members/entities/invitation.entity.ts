@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiProperty } from '@nestjs/swagger';
-import { getStringEnumKeys } from '@/domain/common/utils/enum';
-import type { Space } from '@/modules/spaces/domain/entities/space.entity';
+import { getStringEnumKeys } from '#/domain/common/utils/enum';
+import type { Space } from '#/modules/spaces/domain/entities/space.entity';
 import {
   type Member,
   MemberRole,
   MemberStatus,
-} from '@/modules/users/domain/entities/member.entity';
-import type { User } from '@/modules/users/domain/entities/user.entity';
+} from '#/modules/users/domain/entities/member.entity';
+import type { User } from '#/modules/users/domain/entities/user.entity';
 
 export class Invitation {
   @ApiProperty({ type: Number })

@@ -2,10 +2,10 @@
 
 import { faker } from '@faker-js/faker';
 import type { MockedObject } from 'vitest';
-import { fakeJson } from '@/__tests__/faker';
-import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
-import type { JwtClient } from '@/datasources/jwt/jwt.module';
-import { JwtService } from '@/datasources/jwt/jwt.service';
+import { fakeJson } from '#/__tests__/faker';
+import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
+import type { JwtClient } from '#/datasources/jwt/jwt.module';
+import { JwtService } from '#/datasources/jwt/jwt.service';
 
 const jwtClientMock: MockedObject<JwtClient> = vi.mocked({
   sign: vi.fn(),

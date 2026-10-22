@@ -3,16 +3,16 @@
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import { errorStatusCodeExcluding } from '@/__tests__/faker';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
-import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
-import { UNAVAILABLE_FOR_LEGAL_REASONS_STATUS } from '@/datasources/errors/constants';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
-import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
-import { DataSourceError } from '@/domain/errors/data-source.error';
-import { transactionExportBuilder } from '@/modules/csv-export/v1/entities/__tests__/transaction-export.builder';
-import { rawify } from '@/validation/entities/raw.entity';
+import { errorStatusCodeExcluding } from '#/__tests__/faker';
+import type { IConfigurationService } from '#/config/configuration.service.interface';
+import type { CacheFirstDataSource } from '#/datasources/cache/cache.first.data.source';
+import { UNAVAILABLE_FOR_LEGAL_REASONS_STATUS } from '#/datasources/errors/constants';
+import { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
+import { NetworkResponseError } from '#/datasources/network/entities/network.error.entity';
+import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
+import { DataSourceError } from '#/domain/errors/data-source.error';
+import { transactionExportBuilder } from '#/modules/csv-export/v1/entities/__tests__/transaction-export.builder';
+import { rawify } from '#/validation/entities/raw.entity';
 import { ExportApi } from './export-api.service';
 
 const mockConfigurationService = vi.mocked({
@@ -35,9 +35,12 @@ describe('ExportApi', () => {
     vi.resetAllMocks();
 
     mockConfigurationService.getOrThrow.mockImplementation((key) => {
-      if (key === 'expirationTimeInSeconds.default') return defaultExpiration;
-      if (key === 'expirationTimeInSeconds.notFound.default')
+      if (key === 'expirationTimeInSeconds.default') {
+        return defaultExpiration;
+      }
+      if (key === 'expirationTimeInSeconds.notFound.default') {
         return defaultNotFoundExpiration;
+      }
       throw new Error(`Unexpected key: ${key}`);
     });
     const httpErrorFactory = new HttpErrorFactory();

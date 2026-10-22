@@ -18,12 +18,12 @@ import { ZodError } from 'zod';
 import {
   createTestApplication,
   initTestApplication,
-} from '@/__tests__/test-app.provider';
-import { DataSourceError } from '@/domain/errors/data-source.error';
-import type { ILoggingService } from '@/logging/logging.interface';
-import { RouteLoggerInterceptor } from '@/routes/common/interceptors/route-logger.interceptor';
-import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+} from '#/__tests__/test-app.provider';
+import { DataSourceError } from '#/domain/errors/data-source.error';
+import type { ILoggingService } from '#/logging/logging.interface';
+import { RouteLoggerInterceptor } from '#/routes/common/interceptors/route-logger.interceptor';
+import { NumericStringSchema } from '#/validation/entities/schemas/numeric-string.schema';
+import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
 // We expect 500 instead of the status code of the DataSourceError
 // The reason is that this test webserver does not have logic to map

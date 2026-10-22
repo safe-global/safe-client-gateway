@@ -6,39 +6,52 @@ import {
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
+import { type Address, getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
+import type { IConfigurationService } from '#/config/configuration.service.interface';
 import {
   oidcAuthPayloadDtoBuilder,
   siweAuthPayloadDtoBuilder,
-} from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import type { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
+} from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import type { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
 import {
   emailInviteUserDtoBuilder,
   walletInviteUserDtoBuilder,
-} from '@/modules/spaces/routes/members/entities/__tests__/invite-user.dto.builder';
-import type { InviteUsersDto } from '@/modules/spaces/routes/members/entities/invite-users.dto.entity';
-import { MembersService } from '@/modules/spaces/routes/members/members.service';
-import type { SpaceInviteEmailService } from '@/modules/spaces/routes/members/space-invite-email.service';
-import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
-import { userBuilder } from '@/modules/users/datasources/entities/__tests__/users.entity.db.builder';
-import { createMockMemberEncryptionService } from '@/modules/users/domain/members/__tests__/member-encryption.service.mock';
-import type { MemberEncryptionService } from '@/modules/users/domain/members/member-encryption.service';
-import type { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
-import { fakeEmailAddress } from '@/validation/entities/schemas/__tests__/email-address.builder';
-import { fakeUuid } from '@/validation/entities/schemas/__tests__/uuid.builder';
+} from '#/modules/spaces/routes/members/entities/__tests__/invite-user.dto.builder';
+import type { InviteUsersDto } from '#/modules/spaces/routes/members/entities/invite-users.dto.entity';
+import { MembersService } from '#/modules/spaces/routes/members/members.service';
+import type { SpaceInviteEmailService } from '#/modules/spaces/routes/members/space-invite-email.service';
+import { memberBuilder } from '#/modules/users/datasources/entities/__tests__/member.entity.db.builder';
+import { userBuilder } from '#/modules/users/datasources/entities/__tests__/users.entity.db.builder';
+import type { Member } from '#/modules/users/domain/entities/member.entity';
+import { createMockMemberEncryptionService } from '#/modules/users/domain/members/__tests__/member-encryption.service.mock';
+import type { MemberEncryptionService } from '#/modules/users/domain/members/member-encryption.service';
+import type { IMembersRepository } from '#/modules/users/domain/members/members.repository.interface';
+import { fakeEmailAddress } from '#/validation/entities/schemas/__tests__/email-address.builder';
+import { fakeUuid } from '#/validation/entities/schemas/__tests__/uuid.builder';
 
 const MAX_INVITES = 10;
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 const membersRepositoryMock = {
-  findActiveAdmin: vi.fn(),
+  findOne: vi.fn(),
   findAuthorizedMembersOrFail: vi.fn(),
+  findSelfMembershipOrFail: vi.fn(),
   findOneOrFail: vi.fn(),
   inviteUsers: vi.fn(),
   renewInvite: vi.fn(),
+  updateRole: vi.fn(),
+  removeUser: vi.fn(),
 } as MockedObject<IMembersRepository>;
+
+/** The builders cannot carry the derived `address` — no DB column backs it. */
+function memberWithAddress(
+  member: ReturnType<ReturnType<typeof memberBuilder>['build']>,
+  address: Address | null,
+): Member {
+  return { ...member, user: { ...member.user, address } };
+}
 
 const configurationServiceMock = {
   getOrThrow: vi.fn(),
@@ -91,7 +104,6 @@ describe('MembersService', () => {
       membersRepositoryMock.findAuthorizedMembersOrFail.mockResolvedValue([
         invitedMember,
       ]);
-      membersRepositoryMock.findActiveAdmin.mockResolvedValue(null);
 
       await expect(service.get({ authPayload, spaceId })).resolves.toEqual({
         members: [
@@ -101,13 +113,10 @@ describe('MembersService', () => {
               id: invitedMember.user.id,
               status: invitedMember.user.status,
               email: null,
+              address: null,
             },
           },
         ],
-      });
-      expect(membersRepositoryMock.findActiveAdmin).toHaveBeenCalledWith({
-        userId: Number(authPayload.sub),
-        spaceId,
       });
     });
 
@@ -133,7 +142,6 @@ describe('MembersService', () => {
         callerMember,
         invitedMember,
       ]);
-      membersRepositoryMock.findActiveAdmin.mockResolvedValue(callerMember);
 
       await expect(service.get({ authPayload, spaceId })).resolves.toEqual({
         members: [
@@ -143,6 +151,7 @@ describe('MembersService', () => {
               id: callerMember.user.id,
               status: callerMember.user.status,
               email: callerMember.user.email,
+              address: null,
             },
           },
           {
@@ -151,9 +160,147 @@ describe('MembersService', () => {
               id: invitedMember.user.id,
               status: invitedMember.user.status,
               email,
+              address: null,
             },
           },
         ],
+      });
+    });
+
+    it('should expose the wallet address of an ACTIVE member to a non-admin caller', async () => {
+      const walletAddress = getAddress(faker.finance.ethereumAddress());
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const callerMember = memberBuilder()
+        .with('role', 'MEMBER')
+        .with('status', 'ACTIVE')
+        .with('user', userBuilder().with('id', Number(authPayload.sub)).build())
+        .build();
+      const walletMember = memberWithAddress(
+        memberBuilder()
+          .with('role', 'MEMBER')
+          .with('status', 'ACTIVE')
+          .with(
+            'user',
+            userBuilder().with('email', null).with('status', 'ACTIVE').build(),
+          )
+          .build(),
+        walletAddress,
+      );
+      const spaceId = faker.number.int({ min: 1 });
+
+      membersRepositoryMock.findAuthorizedMembersOrFail.mockResolvedValue([
+        callerMember,
+        walletMember,
+      ]);
+
+      const result = await service.get({ authPayload, spaceId });
+
+      expect(result.members[1].user).toEqual({
+        id: walletMember.user.id,
+        status: walletMember.user.status,
+        email: null,
+        address: walletAddress,
+      });
+    });
+
+    it('should hide the wallet address of an invited member when the caller is not an active admin', async () => {
+      const walletAddress = getAddress(faker.finance.ethereumAddress());
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const callerMember = memberBuilder()
+        .with('role', 'MEMBER')
+        .with('status', 'ACTIVE')
+        .with('user', userBuilder().with('id', Number(authPayload.sub)).build())
+        .build();
+      const invitedWalletMember = memberWithAddress(
+        memberBuilder()
+          .with('role', 'MEMBER')
+          .with('status', 'INVITED')
+          .with(
+            'user',
+            userBuilder().with('email', null).with('status', 'PENDING').build(),
+          )
+          .build(),
+        walletAddress,
+      );
+      const spaceId = faker.number.int({ min: 1 });
+
+      membersRepositoryMock.findAuthorizedMembersOrFail.mockResolvedValue([
+        callerMember,
+        invitedWalletMember,
+      ]);
+
+      const result = await service.get({ authPayload, spaceId });
+
+      expect(result.members[1].user).toEqual({
+        id: invitedWalletMember.user.id,
+        status: invitedWalletMember.user.status,
+        email: null,
+        address: null,
+      });
+    });
+
+    it('should expose the wallet address of an invited member to an active admin', async () => {
+      const walletAddress = getAddress(faker.finance.ethereumAddress());
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const callerAdmin = memberBuilder()
+        .with('role', 'ADMIN')
+        .with('status', 'ACTIVE')
+        .with('user', userBuilder().with('id', Number(authPayload.sub)).build())
+        .build();
+      const invitedWalletMember = memberWithAddress(
+        memberBuilder()
+          .with('role', 'MEMBER')
+          .with('status', 'INVITED')
+          .with(
+            'user',
+            userBuilder().with('email', null).with('status', 'PENDING').build(),
+          )
+          .build(),
+        walletAddress,
+      );
+      const spaceId = faker.number.int({ min: 1 });
+
+      membersRepositoryMock.findAuthorizedMembersOrFail.mockResolvedValue([
+        callerAdmin,
+        invitedWalletMember,
+      ]);
+
+      const result = await service.get({ authPayload, spaceId });
+
+      expect(result.members[1].user).toEqual({
+        id: invitedWalletMember.user.id,
+        status: invitedWalletMember.user.status,
+        email: null,
+        address: walletAddress,
+      });
+    });
+
+    it('should return null email and address for an ACTIVE member with neither', async () => {
+      const authPayload = new AuthPayload(oidcAuthPayloadDtoBuilder().build());
+      const member = memberBuilder()
+        .with('role', 'MEMBER')
+        .with('status', 'ACTIVE')
+        .with(
+          'user',
+          userBuilder()
+            .with('id', Number(authPayload.sub))
+            .with('email', null)
+            .build(),
+        )
+        .build();
+      const spaceId = faker.number.int({ min: 1 });
+
+      membersRepositoryMock.findAuthorizedMembersOrFail.mockResolvedValue([
+        member,
+      ]);
+
+      const result = await service.get({ authPayload, spaceId });
+
+      expect(result.members[0].user).toEqual({
+        id: member.user.id,
+        status: member.user.status,
+        email: null,
+        address: null,
       });
     });
 
@@ -175,11 +322,66 @@ describe('MembersService', () => {
       membersRepositoryMock.findAuthorizedMembersOrFail.mockResolvedValue([
         invitedMember,
       ]);
-      membersRepositoryMock.findActiveAdmin.mockResolvedValue(null);
 
       const result = await service.get({ authPayload, spaceId });
 
       expect(result.members[0].user).not.toHaveProperty('extUserId');
+    });
+  });
+
+  describe('getSelfMembership', () => {
+    it('should return the caller’s own wallet address even while INVITED', async () => {
+      // Unlike get(), the own-row read is not gated by invite status.
+      const walletAddress = getAddress(faker.finance.ethereumAddress());
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const member = memberWithAddress(
+        memberBuilder()
+          .with('role', 'MEMBER')
+          .with('status', 'INVITED')
+          .with(
+            'user',
+            userBuilder()
+              .with('id', Number(authPayload.sub))
+              .with('email', null)
+              .with('status', 'PENDING')
+              .build(),
+          )
+          .build(),
+        walletAddress,
+      );
+      const spaceId = faker.number.int({ min: 1 });
+
+      membersRepositoryMock.findSelfMembershipOrFail.mockResolvedValue(member);
+
+      const result = await service.getSelfMembership({ authPayload, spaceId });
+
+      expect(result.user).toEqual({
+        id: member.user.id,
+        status: member.user.status,
+        email: null,
+        address: walletAddress,
+      });
+    });
+
+    it('should map a missing address to null', async () => {
+      const authPayload = new AuthPayload(oidcAuthPayloadDtoBuilder().build());
+      const member = memberBuilder()
+        .with('role', 'MEMBER')
+        .with('status', 'ACTIVE')
+        .with('user', userBuilder().with('id', Number(authPayload.sub)).build())
+        .build();
+      const spaceId = faker.number.int({ min: 1 });
+
+      membersRepositoryMock.findSelfMembershipOrFail.mockResolvedValue(member);
+
+      const result = await service.getSelfMembership({ authPayload, spaceId });
+
+      expect(result.user).toEqual({
+        id: member.user.id,
+        status: member.user.status,
+        email: member.user.email,
+        address: null,
+      });
     });
   });
 
@@ -192,7 +394,7 @@ describe('MembersService', () => {
       await expect(
         service.inviteUser({ authPayload, spaceId, inviteUsersDto }),
       ).rejects.toThrow('Not authenticated');
-      expect(membersRepositoryMock.findActiveAdmin).not.toHaveBeenCalled();
+      expect(membersRepositoryMock.findOne).not.toHaveBeenCalled();
       expect(membersRepositoryMock.inviteUsers).not.toHaveBeenCalled();
     });
 
@@ -200,18 +402,18 @@ describe('MembersService', () => {
       ['SIWE', siweAuthPayloadDtoBuilder],
       ['OIDC', oidcAuthPayloadDtoBuilder],
     ] as const)(
-      'should throw ForbiddenException for the %s caller when findActiveAdmin returns null',
+      'should throw ForbiddenException when the %s caller is not an active admin',
       async (_label, builder) => {
         const authPayload = new AuthPayload(builder().build());
         const spaceId = faker.number.int({ min: 1 });
         const inviteUsersDto: InviteUsersDto = { users: [] };
 
-        membersRepositoryMock.findActiveAdmin.mockResolvedValue(null);
+        membersRepositoryMock.findOne.mockResolvedValue(null);
 
         await expect(
           service.inviteUser({ authPayload, spaceId, inviteUsersDto }),
         ).rejects.toThrow(
-          new ForbiddenException('User is not an active admin.'),
+          new ForbiddenException('User is not an admin of this workspace'),
         );
         expect(membersRepositoryMock.inviteUsers).not.toHaveBeenCalled();
       },
@@ -233,14 +435,14 @@ describe('MembersService', () => {
         const now = new Date('2026-01-15T00:00:00Z');
         vi.useFakeTimers().setSystemTime(now);
 
-        membersRepositoryMock.findActiveAdmin.mockResolvedValue(adminMember);
+        membersRepositoryMock.findOne.mockResolvedValue(adminMember);
         membersRepositoryMock.inviteUsers.mockResolvedValue([]);
 
         try {
           await expect(
             service.inviteUser({ authPayload, spaceId, inviteUsersDto }),
           ).resolves.toEqual([]);
-          expect(membersRepositoryMock.findActiveAdmin).toHaveBeenCalled();
+          expect(membersRepositoryMock.findOne).toHaveBeenCalled();
           expect(membersRepositoryMock.inviteUsers).toHaveBeenCalledWith({
             authPayload,
             spaceId,
@@ -288,12 +490,30 @@ describe('MembersService', () => {
         invitedBy: Number(authPayload.sub),
       };
       const invitations = [emailInvitation, walletInvitation];
-      membersRepositoryMock.findActiveAdmin.mockResolvedValue(adminMember);
+      membersRepositoryMock.findOne.mockResolvedValue(adminMember);
       membersRepositoryMock.inviteUsers.mockResolvedValue(invitations);
 
+      // Strict: the internal numeric `spaceId` must not reach the response.
       await expect(
         service.inviteUser({ authPayload, spaceId, inviteUsersDto }),
-      ).resolves.toEqual(invitations);
+      ).resolves.toStrictEqual([
+        {
+          userId: emailInvitation.userId,
+          spaceUuid,
+          name: emailInvite.name,
+          role: emailInvite.role,
+          status: 'INVITED',
+          invitedBy: Number(authPayload.sub),
+        },
+        {
+          userId: walletInvitation.userId,
+          spaceUuid,
+          name: walletInvite.name,
+          role: walletInvite.role,
+          status: 'INVITED',
+          invitedBy: Number(authPayload.sub),
+        },
+      ]);
 
       expect(
         spaceInviteEmailServiceMock.enqueueInviteEmails,
@@ -310,11 +530,13 @@ describe('MembersService', () => {
       const spaceId = faker.number.int({ min: 1 });
       const userId = faker.number.int({ min: 1 });
 
-      membersRepositoryMock.findActiveAdmin.mockResolvedValue(null);
+      membersRepositoryMock.findOne.mockResolvedValue(null);
 
       await expect(
         service.renewInvite({ authPayload, spaceId, userId }),
-      ).rejects.toThrow(new ForbiddenException('User is not an active admin.'));
+      ).rejects.toThrow(
+        new ForbiddenException('User is not an admin of this workspace'),
+      );
       expect(membersRepositoryMock.findOneOrFail).not.toHaveBeenCalled();
       expect(membersRepositoryMock.renewInvite).not.toHaveBeenCalled();
     });
@@ -328,7 +550,7 @@ describe('MembersService', () => {
         .with('status', 'ACTIVE')
         .build();
 
-      membersRepositoryMock.findActiveAdmin.mockResolvedValue(adminMember);
+      membersRepositoryMock.findOne.mockResolvedValue(adminMember);
       membersRepositoryMock.findOneOrFail.mockRejectedValue(
         new NotFoundException('Member not found.'),
       );
@@ -353,7 +575,7 @@ describe('MembersService', () => {
           .build();
         const targetMember = memberBuilder().with('status', status).build();
 
-        membersRepositoryMock.findActiveAdmin.mockResolvedValue(adminMember);
+        membersRepositoryMock.findOne.mockResolvedValue(adminMember);
         membersRepositoryMock.findOneOrFail.mockResolvedValue(targetMember);
 
         await expect(
@@ -382,7 +604,7 @@ describe('MembersService', () => {
       const now = new Date('2026-01-15T00:00:00Z');
       vi.useFakeTimers().setSystemTime(now);
 
-      membersRepositoryMock.findActiveAdmin.mockResolvedValue(adminMember);
+      membersRepositoryMock.findOne.mockResolvedValue(adminMember);
       membersRepositoryMock.findOneOrFail.mockResolvedValue(targetMember);
 
       try {
@@ -419,7 +641,7 @@ describe('MembersService', () => {
         .with('status', 'ACTIVE')
         .build();
 
-      membersRepositoryMock.findActiveAdmin.mockResolvedValue(adminMember);
+      membersRepositoryMock.findOne.mockResolvedValue(adminMember);
       membersRepositoryMock.findOneOrFail.mockResolvedValue(targetMember);
 
       await service.renewInvite({ authPayload, spaceId, userId });
@@ -445,7 +667,7 @@ describe('MembersService', () => {
         .with('status', 'ACTIVE')
         .build();
 
-      membersRepositoryMock.findActiveAdmin.mockResolvedValue(adminMember);
+      membersRepositoryMock.findOne.mockResolvedValue(adminMember);
       membersRepositoryMock.findOneOrFail.mockResolvedValue(targetMember);
 
       await service.renewInvite({ authPayload, spaceId, userId });
@@ -481,7 +703,7 @@ describe('MembersService', () => {
         .with('status', 'ACTIVE')
         .build();
 
-      membersRepositoryMock.findActiveAdmin.mockResolvedValue(adminMember);
+      membersRepositoryMock.findOne.mockResolvedValue(adminMember);
       membersRepositoryMock.findOneOrFail.mockResolvedValue(targetMember);
       memberEncryptionServiceMock.decryptName.mockResolvedValue(plaintextName);
 
@@ -519,7 +741,7 @@ describe('MembersService', () => {
         .with('status', 'ACTIVE')
         .build();
 
-      membersRepositoryMock.findActiveAdmin.mockResolvedValue(adminMember);
+      membersRepositoryMock.findOne.mockResolvedValue(adminMember);
       membersRepositoryMock.findOneOrFail.mockResolvedValue(targetMember);
 
       await service.renewInvite({ authPayload, spaceId, userId });
@@ -528,6 +750,65 @@ describe('MembersService', () => {
       expect(
         spaceInviteEmailServiceMock.enqueueRenewalEmail,
       ).not.toHaveBeenCalled();
+    });
+  });
+
+  describe.each([
+    [
+      'updateRole',
+      (args: { authPayload: AuthPayload; spaceId: number; userId: number }) =>
+        service.updateRole({ ...args, updateRoleDto: { role: 'MEMBER' } }),
+      (): MockedObject<IMembersRepository>['updateRole'] =>
+        membersRepositoryMock.updateRole,
+    ],
+    [
+      'removeUser',
+      (args: { authPayload: AuthPayload; spaceId: number; userId: number }) =>
+        service.removeUser(args),
+      (): MockedObject<IMembersRepository>['removeUser'] =>
+        membersRepositoryMock.removeUser,
+    ],
+  ] as const)('%s', (_name, call, repositoryMethod) => {
+    it('should throw ForbiddenException when the caller is not an active admin', async () => {
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const spaceId = faker.number.int({ min: 1 });
+      const userId = faker.number.int({ min: 1 });
+
+      membersRepositoryMock.findOne.mockResolvedValue(null);
+
+      await expect(call({ authPayload, spaceId, userId })).rejects.toThrow(
+        new ForbiddenException('User is not an admin of this workspace'),
+      );
+      expect(repositoryMethod()).not.toHaveBeenCalled();
+    });
+
+    it('should delegate to the repository when the caller is an active admin', async () => {
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const spaceId = faker.number.int({ min: 1 });
+      const userId = faker.number.int({ min: 1 });
+
+      membersRepositoryMock.findOne.mockResolvedValue(
+        memberBuilder().with('role', 'ADMIN').with('status', 'ACTIVE').build(),
+      );
+      repositoryMethod().mockResolvedValue(undefined);
+
+      await expect(
+        call({ authPayload, spaceId, userId }),
+      ).resolves.toBeUndefined();
+
+      expect(membersRepositoryMock.findOne).toHaveBeenCalledWith({
+        user: { id: Number(authPayload.sub) },
+        space: { id: spaceId },
+        status: 'ACTIVE',
+        role: 'ADMIN',
+      });
+      expect(repositoryMethod()).toHaveBeenCalledWith(
+        expect.objectContaining({
+          actorUserId: Number(authPayload.sub),
+          spaceId,
+          userId,
+        }),
+      );
     });
   });
 });

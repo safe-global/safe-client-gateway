@@ -4,13 +4,13 @@ import { shuffle } from 'lodash';
 import type { Address, Hex } from 'viem';
 import { concat } from 'viem';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
-import { SignatureType } from '@/domain/common/entities/signature-type.entity';
-import { getSignature } from '@/domain/common/utils/__tests__/signatures.builder';
+import { SignatureType } from '#/domain/common/entities/signature-type.entity';
+import { getSignature } from '#/domain/common/utils/__tests__/signatures.builder';
 import {
   DYNAMIC_PART_LENGTH_FIELD_HEX_LENGTH,
   parseSignaturesByType,
   SIGNATURE_HEX_LENGTH,
-} from '@/domain/common/utils/signatures';
+} from '#/domain/common/utils/signatures';
 
 describe('parseSignaturesByType', () => {
   it.each(Object.values(SignatureType))(

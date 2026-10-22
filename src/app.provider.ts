@@ -10,7 +10,7 @@ import {
 } from '@nestjs/platform-fastify';
 import type { SwaggerDocumentOptions } from '@nestjs/swagger';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { IConfigurationService } from '@/config/configuration.service.interface';
+import { IConfigurationService } from '#/config/configuration.service.interface';
 
 export function configureVersioning(app: INestApplication): void {
   app.enableVersioning({

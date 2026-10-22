@@ -1,8 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { Address } from 'viem';
-import type { PolicyEnforcement } from '@/modules/policies/domain/entities/policy-enforcement.entity';
-import type { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
-import type { SafeRef } from '@/modules/policies/domain/entities/safe-ref.entity';
+import { z } from 'zod';
+import type { PolicyEnforcement } from '#/modules/policies/domain/entities/policy-enforcement.entity';
+import type { PolicyType } from '#/modules/policies/domain/entities/policy-type.entity';
+import type { SafeRef } from '#/modules/policies/domain/entities/safe-ref.entity';
+import type { Token } from '#/modules/policies/domain/entities/token.entity';
+import { AddressSchema } from '#/validation/entities/schemas/address.schema';
 
 /**
  * `spending-limit`: what each spender may still withdraw, and on what schedule.
@@ -27,6 +30,8 @@ export type SpendingLimitPolicyData = {
 export type SpendingLimitAllowance = {
   /** The zero address is the native currency. */
   tokenAddress: Address;
+  /** Metadata of {@link tokenAddress}; `null` when it could not be resolved. */
+  tokenMetadata: Token | null;
   /** Per-window ceiling, in base units. */
   amount: string;
   /** Spent in the window that began at the last reset, in base units. */
@@ -50,6 +55,12 @@ export type SpendingLimitAllowance = {
    * delegate is re-added.
    */
   isDelegateActive: boolean;
+  /**
+   * Unix seconds this allowance was (re-)established.
+   */
+  createdAt: number;
+  /** Unix seconds of the last event that changed this allowance. */
+  updatedAt: number;
 };
 
 /**
@@ -78,12 +89,49 @@ export type ProposerPolicyData = {
   }>;
 };
 
+export const PolicyPermissionSchema = z.enum(['ONCE', 'ALWAYS']);
+
+export type PolicyPermission = z.infer<typeof PolicyPermissionSchema>;
+
+export const Erc20TransferRecipientSchema = z.object({
+  account: AddressSchema,
+  permission: PolicyPermissionSchema,
+});
+
+export type Erc20TransferRecipient = z.infer<
+  typeof Erc20TransferRecipientSchema
+>;
+
+/**
+ * `ERC20TransferPolicy`: per token, the recipients the Safe can send to.
+ */
+export type Erc20TransferPolicyData = {
+  tokenAddress: Address;
+  recipients: Array<Erc20TransferRecipient>;
+};
+
+/**
+ * `CoSignerPolicy`: the cosigner the policy enforces.
+ */
+export type CosignerPolicyData = {
+  cosignerAddress: Address;
+};
+
+/**
+ * The stateless policies - allow, deny, native transfer and multisend.
+ *
+ */
+export type StatelessPolicyData = Record<string, never>;
+
 /**
  * The configuration a policy reports, discriminated by the item's `type`.
- *
- * The remaining policy types join the union as the code reading them lands.
  */
-export type ActivePolicyData = SpendingLimitPolicyData | ProposerPolicyData;
+export type ActivePolicyData =
+  | SpendingLimitPolicyData
+  | ProposerPolicyData
+  | Erc20TransferPolicyData
+  | CosignerPolicyData
+  | StatelessPolicyData;
 
 /**
  * A policy in effect on a Safe.

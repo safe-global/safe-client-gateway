@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import type { Address, Hex } from 'viem';
-import { IRelayApi } from '@/domain/interfaces/relay-api.interface';
-import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
-import type { Relay } from '@/modules/relay/domain/entities/relay.entity';
-import type { RelayTaskStatus } from '@/modules/relay/domain/entities/relay-task-status.entity';
-import { IRelayManager } from '@/modules/relay/domain/interfaces/relay-manager.interface';
+import { IRelayApi } from '#/domain/interfaces/relay-api.interface';
+import { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
+import type { Relay } from '#/modules/relay/domain/entities/relay.entity';
+import type { RelayTaskStatus } from '#/modules/relay/domain/entities/relay-task-status.entity';
+import { IRelayManager } from '#/modules/relay/domain/interfaces/relay-manager.interface';
 
 @Injectable()
 export class RelayRepository {
@@ -26,13 +26,20 @@ export class RelayRepository {
     acceptUnverifiedSimulation?: boolean;
   }): Promise<Relay> {
     const { relayer } = await this.chainsRepository.getChain(args.chainId);
-    return this.relayManager
-      .getRelayer(relayer?.type ?? null, args.data)
-      .relay({
-        ...args,
-        simulationEnabled:
-          relayer?.enableTenderlySimulationBeforeRelay ?? false,
-      });
+    return this.relayManager.getRelayer({ relayer, data: args.data }).relay({
+      ...args,
+      simulationEnabled: relayer?.enableTenderlySimulationBeforeRelay ?? false,
+    });
+  }
+
+  /** Submits a transaction without any relayer limits, for callers that pay for it themselves. */
+  relayWithoutLimits(args: {
+    chainId: string;
+    to: Address;
+    data: Hex;
+    safeTxHash?: Hex;
+  }): Promise<Relay> {
+    return this.relayApi.relay(args);
   }
 
   getTaskStatus(args: {
@@ -48,8 +55,6 @@ export class RelayRepository {
     safeTxHash?: Hex;
   }): Promise<{ remaining: number; limit: number }> {
     const { relayer } = await this.chainsRepository.getChain(args.chainId);
-    return this.relayManager
-      .getRelayer(relayer?.type ?? null)
-      .getRelaysRemaining(args);
+    return this.relayManager.getFreeRelayer(relayer).getRelaysRemaining(args);
   }
 }

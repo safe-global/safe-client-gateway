@@ -8,10 +8,10 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import type { Address } from 'viem';
-import { databaseAddressTransformer } from '@/domain/common/transformers/database-address.transformer';
-import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
-import type { SpaceSafe as DomainSpaceSafe } from '@/modules/spaces/domain/safes/entities/space-safe.entity';
-import { CHAIN_ID_MAXLENGTH } from '@/routes/common/constants';
+import { databaseAddressTransformer } from '#/domain/common/transformers/database-address.transformer';
+import { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
+import type { SpaceSafe as DomainSpaceSafe } from '#/modules/spaces/domain/safes/entities/space-safe.entity';
+import { CHAIN_ID_MAXLENGTH } from '#/routes/common/constants';
 
 @Entity('space_safes')
 // Uniqueness is split by encryption mode (TypeORM @Unique cannot express

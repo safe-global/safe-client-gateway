@@ -3,56 +3,60 @@ import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import isEmpty from 'lodash/isEmpty';
 import type { Address } from 'viem';
 import { z } from 'zod';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { SAFE_TRANSACTION_SERVICE_MAX_LIMIT } from '@/domain/common/constants';
-import { HttpExceptionNoLog } from '@/domain/common/errors/http-exception-no-log.error';
-import { Page } from '@/domain/entities/page.entity';
-import { DataSourceError } from '@/domain/errors/data-source.error';
-import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
-import { CreationTransaction } from '@/modules/safe/domain/entities/creation-transaction.entity';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import {
+  SAFE_QUEUE_SERVICE_MAX_LIMIT,
+  SAFE_TRANSACTION_SERVICE_MAX_LIMIT,
+} from '#/domain/common/constants';
+import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
+import { Page } from '#/domain/entities/page.entity';
+import { DataSourceError } from '#/domain/errors/data-source.error';
+import { ITransactionApiManager } from '#/domain/interfaces/transaction-api.manager.interface';
+import { ILoggingService, LoggingService } from '#/logging/logging.interface';
+import { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
+import { CreationTransaction } from '#/modules/safe/domain/entities/creation-transaction.entity';
 import {
   ModuleTransaction,
   ModuleTransactionPageSchema,
   ModuleTransactionSchema,
-} from '@/modules/safe/domain/entities/module-transaction.entity';
+} from '#/modules/safe/domain/entities/module-transaction.entity';
 import {
   MultisigTransaction,
   MultisigTransactionPageSchema,
   MultisigTransactionSchema,
-} from '@/modules/safe/domain/entities/multisig-transaction.entity';
-import { Safe } from '@/modules/safe/domain/entities/safe.entity';
-import { SafeList } from '@/modules/safe/domain/entities/safe-list.entity';
-import { SafesByChainId } from '@/modules/safe/domain/entities/safes-by-chain-id.entity';
-import { CreationTransactionSchema } from '@/modules/safe/domain/entities/schemas/creation-transaction.schema';
+} from '#/modules/safe/domain/entities/multisig-transaction.entity';
+import { Safe } from '#/modules/safe/domain/entities/safe.entity';
+import { SafeList } from '#/modules/safe/domain/entities/safe-list.entity';
+import { SafesByChainId } from '#/modules/safe/domain/entities/safes-by-chain-id.entity';
+import { CreationTransactionSchema } from '#/modules/safe/domain/entities/schemas/creation-transaction.schema';
 import {
   SafePageV2Schema,
   SafeSchema,
-} from '@/modules/safe/domain/entities/schemas/safe.schema';
-import { SafeListSchema } from '@/modules/safe/domain/entities/schemas/safe-list.schema';
-import { TransactionTypePageSchema } from '@/modules/safe/domain/entities/schemas/transaction-type.schema';
+} from '#/modules/safe/domain/entities/schemas/safe.schema';
+import { SafeListSchema } from '#/modules/safe/domain/entities/schemas/safe-list.schema';
+import { TransactionTypePageSchema } from '#/modules/safe/domain/entities/schemas/transaction-type.schema';
 import {
   isMultisigTransaction,
   Transaction,
-} from '@/modules/safe/domain/entities/transaction.entity';
+} from '#/modules/safe/domain/entities/transaction.entity';
 import {
   Transfer,
   TransferPageSchema,
   TransferSchema,
-} from '@/modules/safe/domain/entities/transfer.entity';
-import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
+} from '#/modules/safe/domain/entities/transfer.entity';
+import { getLastModified } from '#/modules/safe/domain/helpers/last-modified.helper';
+import { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
 import {
   type SafeQueueMultisigTransactionEntity,
   SafeQueueMultisigTransactionPageSchema,
   SafeQueueMultisigTransactionSchema,
-} from '@/modules/safe-queue/entities/multisig-transaction.entity';
-import { buildOrigin } from '@/modules/safe-queue/helpers/origin.helper';
-import { mapSafeQueueToMultisigTransaction } from '@/modules/safe-queue/mappers/transaction.mapper';
-import { ISafeQueueService } from '@/modules/safe-queue/safe-queue.interface';
-import { ProposeTransactionDto } from '@/modules/transactions/domain/entities/propose-transaction.dto.entity';
-import { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers/transaction-verifier.helper';
-import { PaginationData } from '@/routes/common/pagination/pagination.data';
+} from '#/modules/safe-queue/entities/multisig-transaction.entity';
+import { buildOrigin } from '#/modules/safe-queue/helpers/origin.helper';
+import { mapSafeQueueToMultisigTransaction } from '#/modules/safe-queue/mappers/transaction.mapper';
+import { ISafeQueueService } from '#/modules/safe-queue/safe-queue.interface';
+import { ProposeTransactionDto } from '#/modules/transactions/domain/entities/propose-transaction.dto.entity';
+import { TransactionVerifierHelper } from '#/modules/transactions/routes/helpers/transaction-verifier.helper';
+import { PaginationData } from '#/routes/common/pagination/pagination.data';
 
 @Injectable()
 export class SafeRepository implements ISafeRepository {
@@ -276,16 +280,30 @@ export class SafeRepository implements ISafeRepository {
     });
   }
 
+  /**
+   * The queue ordered by last modification, newest first. Used to derive
+   * `txQueuedTag`; the queue itself is served nonce-ordered by
+   * {@link getTransactionQueue}.
+   */
   getTransactionQueueByModified(args: {
     chainId: string;
     safe: Safe;
     limit?: number;
     offset?: number;
   }): Promise<Page<MultisigTransaction>> {
-    return this._getTransactionQueue({
-      ...args,
-      ordering: '-modified',
-    });
+    if (!this.safeQueueEnabled) {
+      return this._getTransactionQueue({
+        ...args,
+        ordering: '-modified',
+      });
+    }
+    return this.getSafeQueueSortedByLastModified(args);
+  }
+
+  getTransactionQueueMaxPageSize(): number {
+    return this.safeQueueEnabled
+      ? SAFE_QUEUE_SERVICE_MAX_LIMIT
+      : SAFE_TRANSACTION_SERVICE_MAX_LIMIT;
   }
 
   private async _getTransactionQueue(args: {
@@ -307,37 +325,6 @@ export class SafeRepository implements ISafeRepository {
       });
       return MultisigTransactionPageSchema.parse(page);
     }
-    // The queue service can only order by nonce, not by modification date.
-    // For '-modified' ordering, fetch the whole queue and sort by `modified`
-    // locally rather than degrading to nonce order, which would return the
-    // wrong transaction whenever a lower-nonce entry is the most recently
-    // touched one (e.g. a new confirmation on it).
-    if (args.ordering === '-modified') {
-      const page = await this.safeQueueService.getTransactionQueue({
-        chainId: args.chainId,
-        safeAddress: args.safe.address,
-        nonceOrder: 'asc',
-        limit: SAFE_TRANSACTION_SERVICE_MAX_LIMIT,
-      });
-      const parsed = SafeQueueMultisigTransactionPageSchema.parse(page);
-      const sortedByModified = [...parsed.results].sort(
-        (a, b) => b.modified.getTime() - a.modified.getTime(),
-      );
-      const offset = args.offset ?? 0;
-      const sliced = sortedByModified.slice(
-        offset,
-        args.limit ? offset + args.limit : undefined,
-      );
-      return {
-        count: parsed.count,
-        next: null,
-        previous: null,
-        results: sliced.map((tx) =>
-          mapSafeQueueToMultisigTransaction(tx, args.safe),
-        ),
-      };
-    }
-
     const nonceOrder = args.ordering.startsWith('-') ? 'desc' : 'asc';
     const page = await this.safeQueueService.getTransactionQueue({
       chainId: args.chainId,
@@ -353,6 +340,50 @@ export class SafeRepository implements ISafeRepository {
       previous: parsed.previous,
       results: parsed.results.map((tx) =>
         mapSafeQueueToMultisigTransaction(tx, args.safe),
+      ),
+    };
+  }
+
+  /**
+   * Queue-service counterpart of the tx-service's `ordering=-modified`.
+   *
+   * The queue service can only order by nonce, so the first page of the queue
+   * (`SAFE_QUEUE_SERVICE_MAX_LIMIT` transactions, enough for any realistic
+   * queue) is fetched and sorted locally rather than degrading to nonce
+   * order, which would return the wrong transaction whenever a lower-nonce
+   * entry is the most recently touched one.
+   * The sort key is the last modification including confirmations, so a new
+   * signature moves a transaction to the front even if the queue service
+   * leaves its `modified` date untouched.
+   */
+  private async getSafeQueueSortedByLastModified(args: {
+    chainId: string;
+    safe: Safe;
+    limit?: number;
+    offset?: number;
+  }): Promise<Page<MultisigTransaction>> {
+    const page = await this.safeQueueService.getTransactionQueue({
+      chainId: args.chainId,
+      safeAddress: args.safe.address,
+      nonceOrder: 'asc',
+      limit: SAFE_QUEUE_SERVICE_MAX_LIMIT,
+    });
+    const parsed = SafeQueueMultisigTransactionPageSchema.parse(page);
+    const sortedByLastModified = parsed.results
+      .map((tx) => mapSafeQueueToMultisigTransaction(tx, args.safe))
+      .sort(
+        (a, b) =>
+          (getLastModified(b)?.getTime() ?? 0) -
+          (getLastModified(a)?.getTime() ?? 0),
+      );
+    const offset = args.offset ?? 0;
+    return {
+      count: parsed.count,
+      next: null,
+      previous: null,
+      results: sortedByLastModified.slice(
+        offset,
+        args.limit ? offset + args.limit : undefined,
       ),
     };
   }
@@ -418,7 +449,9 @@ export class SafeRepository implements ISafeRepository {
     safeTxHashes: Array<string>,
   ): Promise<Map<string, SafeQueueMultisigTransactionEntity>> {
     const byHash = new Map<string, SafeQueueMultisigTransactionEntity>();
-    if (safeTxHashes.length === 0) return byHash;
+    if (safeTxHashes.length === 0) {
+      return byHash;
+    }
     try {
       // Already validated by getMultisigTransactionsBatch (per-chunk
       // safeParse) — not Raw<T>, re-parsing here would be redundant.
@@ -427,7 +460,9 @@ export class SafeRepository implements ISafeRepository {
           chainId,
           safeTxHashes,
         });
-      for (const queue of transactions) byHash.set(queue.safeTxHash, queue);
+      for (const queue of transactions) {
+        byHash.set(queue.safeTxHash, queue);
+      }
       const missing = safeTxHashes.filter((hash) => !byHash.has(hash));
       if (missing.length > 0) {
         this.loggingService.warn(
@@ -475,7 +510,9 @@ export class SafeRepository implements ISafeRepository {
       notes: string | null;
     },
   ): void {
-    if (!(queue.originName || queue.originUrl)) return;
+    if (!(queue.originName || queue.originUrl)) {
+      return;
+    }
     tx.origin = buildOrigin(queue.originName, queue.originUrl, queue.notes);
   }
 
@@ -483,16 +520,22 @@ export class SafeRepository implements ISafeRepository {
     txs: ReadonlyArray<Transaction>,
     chainId: string,
   ): Promise<void> {
-    if (!this.safeQueueEnabled) return;
+    if (!this.safeQueueEnabled) {
+      return;
+    }
     const multisigs = txs.filter(isMultisigTransaction);
-    if (multisigs.length === 0) return;
+    if (multisigs.length === 0) {
+      return;
+    }
     const byHash = await this.fetchQueueMultisigByHash(
       chainId,
       multisigs.map((tx) => tx.safeTxHash),
     );
     for (const tx of multisigs) {
       const queue = byHash.get(tx.safeTxHash);
-      if (queue === undefined) continue;
+      if (queue === undefined) {
+        continue;
+      }
       if (!this.isQueueOriginAuthoritative(queue, { chainId, safe: tx.safe })) {
         continue;
       }
@@ -624,6 +667,13 @@ export class SafeRepository implements ISafeRepository {
     }
 
     // Not executed: the queue service is the source of truth.
+    if (queue.chainId !== args.chainId) {
+      throw new HttpExceptionNoLog(
+        'Transaction not found',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
     const safe = await this.getSafe({
       chainId: args.chainId,
       address: queue.safe,
@@ -727,6 +777,7 @@ export class SafeRepository implements ISafeRepository {
     );
     const page = await transactionService.getMultisigTransactions({
       ...args,
+      ...(this.safeQueueEnabled && { executed: true }),
       ordering: '-nonce',
       trusted: true,
     });
@@ -929,24 +980,33 @@ export class SafeRepository implements ISafeRepository {
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
     );
-    const [safe, transaction] = await Promise.all([
+    const safeTxHash = args.proposeTransactionDto.safeTxHash;
+    const [safe, txServiceProposal, queueProposal] = await Promise.all([
       this.getSafe({
         chainId: args.chainId,
         address: args.safeAddress,
       }),
-      transactionService
-        .getMultisigTransactionWithNoCache(
-          args.proposeTransactionDto.safeTxHash,
-        )
-        .then(MultisigTransactionSchema.parse)
-        .catch(() => null),
+      this.safeQueueEnabled
+        ? null
+        : transactionService
+            .getMultisigTransactionWithNoCache(safeTxHash)
+            .then(MultisigTransactionSchema.parse)
+            .catch(() => null),
+      this.safeQueueEnabled
+        ? this.safeQueueService
+            .getMultisigTransactionWithNoCache({ safeTxHash })
+            .then(SafeQueueMultisigTransactionSchema.parse)
+            .catch(() => null)
+        : null,
     ]);
 
     await this.transactionVerifier.verifyProposal({
       chainId: args.chainId,
       safe,
       proposal: args.proposeTransactionDto,
-      transaction,
+      transaction: queueProposal
+        ? mapSafeQueueToMultisigTransaction(queueProposal, safe)
+        : txServiceProposal,
     });
 
     if (this.safeQueueEnabled) {

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { ILoggingService } from '@/logging/logging.interface';
+import type { ILoggingService } from '#/logging/logging.interface';
 
 // The tx-service and queue caches are independent layers, so a failure in
 // one must not skip invalidating the other. Best-effort: catch and log per

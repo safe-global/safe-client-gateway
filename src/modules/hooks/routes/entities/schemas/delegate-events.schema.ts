@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
-import { TransactionEventType } from '@/modules/hooks/routes/entities/event-type.entity';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { TransactionEventType } from '#/modules/hooks/routes/entities/event-type.entity';
+import { AddressSchema } from '#/validation/entities/schemas/address.schema';
 import {
   NullableAddressSchema,
   NullableNumberSchema,
-} from '@/validation/entities/schemas/nullable.schema';
-import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
+} from '#/validation/entities/schemas/nullable.schema';
+import { NumericStringSchema } from '#/validation/entities/schemas/numeric-string.schema';
 
 export const DelegateEventPayloadSchema = z.object({
   chainId: NumericStringSchema,

@@ -2,10 +2,10 @@
 import { faker } from '@faker-js/faker';
 import type { Hash } from 'viem';
 import { getAddress, type Hex } from 'viem';
-import type { IBuilder } from '@/__tests__/builder';
-import { Builder } from '@/__tests__/builder';
-import { SignatureType } from '@/domain/common/entities/signature-type.entity';
-import type { Confirmation } from '@/modules/safe/domain/entities/multisig-transaction.entity';
+import type { IBuilder } from '#/__tests__/builder';
+import { Builder } from '#/__tests__/builder';
+import { SignatureType } from '#/domain/common/entities/signature-type.entity';
+import type { Confirmation } from '#/modules/safe/domain/entities/multisig-transaction.entity';
 
 const HASH_LENGTH = 64;
 const SIGNATURE_LENGTH = 130;

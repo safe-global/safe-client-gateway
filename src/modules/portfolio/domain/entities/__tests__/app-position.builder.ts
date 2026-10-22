@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import type { IBuilder } from '@/__tests__/builder';
-import { Builder } from '@/__tests__/builder';
-import { tokenInfoBuilder } from '@/modules/portfolio/domain/entities/__tests__/token-info.builder';
-import type { AppPosition } from '@/modules/portfolio/domain/entities/app-position.entity';
+import type { IBuilder } from '#/__tests__/builder';
+import { Builder } from '#/__tests__/builder';
+import { tokenInfoBuilder } from '#/modules/portfolio/domain/entities/__tests__/token-info.builder';
+import type { AppPosition } from '#/modules/portfolio/domain/entities/app-position.entity';
 
 export function appPositionBuilder(): IBuilder<AppPosition> {
   return new Builder<AppPosition>()

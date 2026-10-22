@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import { Builder, type IBuilder } from '@/__tests__/builder';
-import type { PolicyIndexerState } from '@/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
+import { Builder, type IBuilder } from '#/__tests__/builder';
+import type { PolicyIndexerState } from '#/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 
 export type RawIndexerMeta = {
   chainId: number;
@@ -28,12 +28,14 @@ export function rawPolicyIndexerResponse(
     _meta: Array<unknown>;
     SafeAllowance: Array<unknown>;
     SafeDelegate: Array<unknown>;
+    GuardPolicyBinding: Array<unknown>;
   }> = {},
 ): Record<string, Array<unknown>> {
   return {
     _meta: [rawIndexerMetaBuilder().build()],
     SafeAllowance: [],
     SafeDelegate: [],
+    GuardPolicyBinding: [],
     ...overrides,
   };
 }
@@ -48,5 +50,6 @@ export function policyIndexerResponseBuilder(): IBuilder<PolicyIndexerState> {
   return new Builder<PolicyIndexerState>()
     .with('meta', [])
     .with('allowances', [])
-    .with('delegates', []);
+    .with('delegates', [])
+    .with('guardPolicyBindings', []);
 }

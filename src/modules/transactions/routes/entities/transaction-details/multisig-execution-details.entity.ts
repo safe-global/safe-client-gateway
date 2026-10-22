@@ -9,12 +9,12 @@ import {
   Erc20Token,
   Erc721Token,
   NativeToken,
-} from '@/modules/balances/routes/entities/token.entity';
+} from '#/modules/balances/routes/entities/token.entity';
 import {
   ExecutionDetails,
   ExecutionDetailsType,
-} from '@/modules/transactions/routes/entities/transaction-details/execution-details.entity';
-import { AddressInfo } from '@/routes/common/entities/address-info.entity';
+} from '#/modules/transactions/routes/entities/transaction-details/execution-details.entity';
+import { AddressInfo } from '#/routes/common/entities/address-info.entity';
 
 export class MultisigConfirmationDetails {
   @ApiProperty()
@@ -67,7 +67,8 @@ export class MultisigExecutionDetails extends ExecutionDetails {
   confirmationsRequired: number;
   @ApiProperty({ type: MultisigConfirmationDetails, isArray: true })
   confirmations: Array<MultisigConfirmationDetails>;
-  @ApiProperty({ type: AddressInfo, isArray: true })
+  /** @deprecated Always empty. Read the signers from the `confirmations` of the rejection transaction instead. */
+  @ApiProperty({ type: AddressInfo, isArray: true, deprecated: true })
   rejectors: Array<AddressInfo>;
   @ApiPropertyOptional({
     oneOf: [
@@ -100,7 +101,6 @@ export class MultisigExecutionDetails extends ExecutionDetails {
     signers: Array<AddressInfo>,
     confirmationsRequired: number,
     confirmations: Array<MultisigConfirmationDetails>,
-    rejectors: Array<AddressInfo>,
     gasTokenInfo: NativeToken | Erc20Token | Erc721Token | null,
     trusted: boolean,
     proposer: AddressInfo | null,
@@ -121,7 +121,7 @@ export class MultisigExecutionDetails extends ExecutionDetails {
     this.signers = signers;
     this.confirmationsRequired = confirmationsRequired;
     this.confirmations = confirmations;
-    this.rejectors = rejectors;
+    this.rejectors = [];
     this.gasTokenInfo = gasTokenInfo;
     this.trusted = trusted;
     this.proposer = proposer;

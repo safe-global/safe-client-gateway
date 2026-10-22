@@ -7,12 +7,12 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import type { Address } from 'viem';
-import type { Contract } from '@/modules/contracts/domain/entities/contract.entity';
-import { ContractsService } from '@/modules/contracts/routes/contracts.service';
-import { Contract as ApiContract } from '@/modules/contracts/routes/entities/contract.entity';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+import type { Contract } from '#/modules/contracts/domain/entities/contract.entity';
+import { ContractsService } from '#/modules/contracts/routes/contracts.service';
+import { Contract as ApiContract } from '#/modules/contracts/routes/entities/contract.entity';
+import { AddressSchema } from '#/validation/entities/schemas/address.schema';
+import { NumericStringSchema } from '#/validation/entities/schemas/numeric-string.schema';
+import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
 @ApiTags('contracts')
 @Controller({

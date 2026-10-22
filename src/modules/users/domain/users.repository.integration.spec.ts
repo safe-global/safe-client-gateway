@@ -6,43 +6,48 @@ import {
   KMSClient,
 } from '@aws-sdk/client-kms';
 import { faker } from '@faker-js/faker';
-import { NotFoundException, UnauthorizedException } from '@nestjs/common';
+import {
+  ConflictException,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
 import { mockClient } from 'aws-sdk-client-mock';
 import { DataSource } from 'typeorm';
 import { type Address, getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
-import configuration from '@/config/entities/__tests__/configuration';
-import { postgresConfig } from '@/config/entities/postgres.config';
-import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { AwsKmsService } from '@/datasources/kms/aws-kms.service';
-import { INDEX_KEY_LENGTH } from '@/datasources/kms/encryption.constants';
-import { KmsEncryptionService } from '@/datasources/kms/kms-encryption.service';
-import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
-import { getStringEnumKeys } from '@/domain/common/utils/enum';
-import type { ILoggingService } from '@/logging/logging.interface';
+import type { IConfigurationService } from '#/config/configuration.service.interface';
+import configuration from '#/config/entities/__tests__/configuration';
+import { postgresConfig } from '#/config/entities/postgres.config';
+import { DatabaseMigrator } from '#/datasources/db/v2/database-migrator.service';
+import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
+import { AwsKmsService } from '#/datasources/kms/aws-kms.service';
+import { INDEX_KEY_LENGTH } from '#/datasources/kms/encryption.constants';
+import { KmsEncryptionService } from '#/datasources/kms/kms-encryption.service';
+import { DB_MAX_SAFE_INTEGER } from '#/domain/common/constants';
+import { getStringEnumKeys } from '#/domain/common/utils/enum';
+import type { ILoggingService } from '#/logging/logging.interface';
 import {
   oidcAuthPayloadDtoBuilder,
   siweAuthPayloadDtoBuilder,
-} from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
-import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
-import { createMockSpaceAuditRepository } from '@/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
-import { Member } from '@/modules/users/datasources/entities/member.entity.db';
-import { User } from '@/modules/users/datasources/entities/users.entity.db';
-import { createMockUserEncryptionService } from '@/modules/users/domain/__tests__/user-encryption.service.mock';
-import { UserStatus } from '@/modules/users/domain/entities/user.entity';
-import { UserEmailAlreadyInUseError } from '@/modules/users/domain/errors/user-email-already-in-use.error';
-import { UserEncryptionService } from '@/modules/users/domain/user-encryption.service';
-import { UsersRepository } from '@/modules/users/domain/users.repository';
-import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
-import { createMockWalletEncryptionService } from '@/modules/wallets/domain/__tests__/wallet-encryption.service.mock';
-import { WalletsRepository } from '@/modules/wallets/domain/wallets.repository';
-import { fakeEmailAddress } from '@/validation/entities/schemas/__tests__/email-address.builder';
-import type { EmailAddress } from '@/validation/entities/schemas/email-address.schema';
+} from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import { SpaceSafe } from '#/modules/spaces/datasources/safes/entities/space-safes.entity.db';
+import { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
+import { createMockSpaceAuditRepository } from '#/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
+import type { ISpaceAuditRepository } from '#/modules/spaces/domain/audit/space-audit.repository.interface';
+import { Member } from '#/modules/users/datasources/entities/member.entity.db';
+import { User } from '#/modules/users/datasources/entities/users.entity.db';
+import { createMockUserEncryptionService } from '#/modules/users/domain/__tests__/user-encryption.service.mock';
+import { UserStatus } from '#/modules/users/domain/entities/user.entity';
+import { UserEmailAlreadyInUseError } from '#/modules/users/domain/errors/user-email-already-in-use.error';
+import { UserEncryptionService } from '#/modules/users/domain/user-encryption.service';
+import { UsersRepository } from '#/modules/users/domain/users.repository';
+import { Wallet } from '#/modules/wallets/datasources/entities/wallets.entity.db';
+import { createMockWalletEncryptionService } from '#/modules/wallets/domain/__tests__/wallet-encryption.service.mock';
+import { WalletsRepository } from '#/modules/wallets/domain/wallets.repository';
+import { fakeEmailAddress } from '#/validation/entities/schemas/__tests__/email-address.builder';
+import type { EmailAddress } from '#/validation/entities/schemas/email-address.schema';
 
 const mockLoggingService = {
   debug: vi.fn(),
@@ -56,6 +61,7 @@ const UserStatusKeys = getStringEnumKeys(UserStatus);
 describe('UsersRepository', () => {
   let postgresDatabaseService: PostgresDatabaseService;
   let usersRepository: UsersRepository;
+  let spaceAuditRepository: MockedObject<ISpaceAuditRepository>;
 
   const testDatabaseName = faker.string.alpha({
     length: 10,
@@ -117,13 +123,14 @@ describe('UsersRepository', () => {
     );
     await migrator.migrate();
 
+    spaceAuditRepository = createMockSpaceAuditRepository();
     usersRepository = new UsersRepository(
       postgresDatabaseService,
       new WalletsRepository(
         postgresDatabaseService,
         createMockWalletEncryptionService(),
       ),
-      createMockSpaceAuditRepository(),
+      spaceAuditRepository,
       createMockUserEncryptionService(),
       createMockWalletEncryptionService(),
     );
@@ -134,9 +141,11 @@ describe('UsersRepository', () => {
 
     const dbWalletRepository = dataSource.getRepository(Wallet);
     const dbUserRepository = dataSource.getRepository(User);
+    const dbSpaceRepository = dataSource.getRepository(Space);
 
     await dbWalletRepository.createQueryBuilder().delete().execute();
     await dbUserRepository.createQueryBuilder().delete().execute();
+    await dbSpaceRepository.createQueryBuilder().delete().execute();
   });
 
   afterAll(async () => {
@@ -641,6 +650,42 @@ describe('UsersRepository', () => {
   });
 
   describe('delete', () => {
+    const insertUser = async (): Promise<User['id']> => {
+      const result = await dataSource.getRepository(User).insert({
+        status: faker.helpers.arrayElement(UserStatusKeys),
+      });
+      return result.identifiers[0].id as User['id'];
+    };
+
+    const insertSpace = async (): Promise<Space['id']> => {
+      const result = await dataSource.getRepository(Space).insert({
+        name: faker.word.noun(),
+        status: 'ACTIVE',
+      });
+      return result.identifiers[0].id as Space['id'];
+    };
+
+    const insertMember = async (args: {
+      userId: User['id'];
+      spaceId: Space['id'];
+      role: Member['role'];
+      status: Member['status'];
+    }): Promise<void> => {
+      await dataSource.getRepository(Member).insert({
+        user: { id: args.userId },
+        space: { id: args.spaceId },
+        name: faker.person.firstName(),
+        role: args.role,
+        status: args.status,
+        invitedBy: null,
+      });
+    };
+
+    const authPayloadFor = (userId: User['id']): AuthPayload =>
+      new AuthPayload(
+        siweAuthPayloadDtoBuilder().with('sub', userId.toString()).build(),
+      );
+
     it('should delete a user and their wallets', async () => {
       const dbWalletRepository = dataSource.getRepository(Wallet);
       const dbUserRepository = dataSource.getRepository(User);
@@ -687,6 +732,120 @@ describe('UsersRepository', () => {
       await usersRepository.delete(authPayload);
 
       await expect(dbUserRepository.find()).resolves.toEqual([]);
+    });
+
+    it('should not delete a user who is the sole active admin of a space', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const dbMemberRepository = dataSource.getRepository(Member);
+      const userId = await insertUser();
+      const spaceId = await insertSpace();
+      await insertMember({ userId, spaceId, role: 'ADMIN', status: 'ACTIVE' });
+
+      await expect(
+        usersRepository.delete(authPayloadFor(userId)),
+      ).rejects.toThrow(
+        new ConflictException(
+          'Cannot delete account while last admin of a workspace.',
+        ),
+      );
+
+      await expect(dbUserRepository.find()).resolves.toHaveLength(1);
+      await expect(dbMemberRepository.find()).resolves.toHaveLength(1);
+      expect(spaceAuditRepository.record).not.toHaveBeenCalled();
+    });
+
+    it('should delete a user who shares a space with another active admin', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const dbMemberRepository = dataSource.getRepository(Member);
+      const userId = await insertUser();
+      const coAdminUserId = await insertUser();
+      const spaceId = await insertSpace();
+      await insertMember({ userId, spaceId, role: 'ADMIN', status: 'ACTIVE' });
+      await insertMember({
+        userId: coAdminUserId,
+        spaceId,
+        role: 'ADMIN',
+        status: 'ACTIVE',
+      });
+
+      await usersRepository.delete(authPayloadFor(userId));
+
+      await expect(dbUserRepository.find()).resolves.toEqual([
+        expect.objectContaining({ id: coAdminUserId }),
+      ]);
+      await expect(dbMemberRepository.find()).resolves.toHaveLength(1);
+    });
+
+    it('should delete a user whose only admin membership is not active', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const dbMemberRepository = dataSource.getRepository(Member);
+      const userId = await insertUser();
+      const spaceId = await insertSpace();
+      await insertMember({ userId, spaceId, role: 'ADMIN', status: 'INVITED' });
+
+      await usersRepository.delete(authPayloadFor(userId));
+
+      await expect(dbUserRepository.find()).resolves.toEqual([]);
+      await expect(dbMemberRepository.find()).resolves.toEqual([]);
+    });
+
+    it('should delete a user who is only a non-admin member of a space', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const userId = await insertUser();
+      const adminUserId = await insertUser();
+      const spaceId = await insertSpace();
+      await insertMember({ userId, spaceId, role: 'MEMBER', status: 'ACTIVE' });
+      await insertMember({
+        userId: adminUserId,
+        spaceId,
+        role: 'ADMIN',
+        status: 'ACTIVE',
+      });
+
+      await usersRepository.delete(authPayloadFor(userId));
+
+      await expect(dbUserRepository.find()).resolves.toEqual([
+        expect.objectContaining({ id: adminUserId }),
+      ]);
+    });
+
+    it('should not delete a user who is the sole active admin of one of several spaces', async () => {
+      const dbUserRepository = dataSource.getRepository(User);
+      const dbMemberRepository = dataSource.getRepository(Member);
+      const userId = await insertUser();
+      const coAdminUserId = await insertUser();
+      const sharedSpaceId = await insertSpace();
+      const soleAdminSpaceId = await insertSpace();
+      await insertMember({
+        userId,
+        spaceId: sharedSpaceId,
+        role: 'ADMIN',
+        status: 'ACTIVE',
+      });
+      await insertMember({
+        userId: coAdminUserId,
+        spaceId: sharedSpaceId,
+        role: 'ADMIN',
+        status: 'ACTIVE',
+      });
+      await insertMember({
+        userId,
+        spaceId: soleAdminSpaceId,
+        role: 'ADMIN',
+        status: 'ACTIVE',
+      });
+
+      await expect(
+        usersRepository.delete(authPayloadFor(userId)),
+      ).rejects.toThrow(
+        new ConflictException(
+          'Cannot delete account while last admin of a workspace.',
+        ),
+      );
+
+      await expect(dbUserRepository.find()).resolves.toHaveLength(2);
+      await expect(dbMemberRepository.find()).resolves.toHaveLength(3);
+      expect(spaceAuditRepository.record).not.toHaveBeenCalled();
     });
   });
 
@@ -1340,10 +1499,14 @@ describe('UsersRepository', () => {
         if (key === 'encryption.indexKey') {
           return wrappedIndexKey;
         }
-        if (key === 'encryption.kms.keyId') return keyId;
+        if (key === 'encryption.kms.keyId') {
+          return keyId;
+        }
       });
       configurationService.getOrThrow.mockImplementation((key: string) => {
-        if (key === 'encryption.enabled') return true;
+        if (key === 'encryption.enabled') {
+          return true;
+        }
         if (key === 'encryption.kms.accessKeyId') {
           return accessKeyId;
         }

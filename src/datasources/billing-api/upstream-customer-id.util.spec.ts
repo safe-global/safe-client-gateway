@@ -4,7 +4,7 @@ import { faker } from '@faker-js/faker';
 import {
   stripDashes,
   withDashes,
-} from '@/datasources/billing-api/upstream-customer-id.util';
+} from '#/datasources/billing-api/upstream-customer-id.util';
 
 describe('upstream-customer-id.util', () => {
   describe('stripDashes', () => {

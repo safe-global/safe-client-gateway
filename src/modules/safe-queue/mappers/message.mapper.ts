@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
-import type { Message } from '@/modules/messages/domain/entities/message.entity';
-import type { SafeQueueMessage } from '@/modules/safe-queue/entities/message.entity';
-import { buildOrigin } from '@/modules/safe-queue/helpers/origin.helper';
+import type { Message } from '#/modules/messages/domain/entities/message.entity';
+import type { SafeQueueMessage } from '#/modules/safe-queue/entities/message.entity';
+import { buildOrigin } from '#/modules/safe-queue/helpers/origin.helper';
 
 export function mapSafeQueueMessageToMessage(msg: SafeQueueMessage): Message {
   // Pick only domain fields explicitly. Spreading `msg` would leak queue-only

@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import type { Address } from 'viem';
-import type { ContractsRepository } from '@/modules/contracts/domain/contracts.repository';
-import { IContractsRepository } from '@/modules/contracts/domain/contracts.repository.interface';
-import type { Contract } from '@/modules/contracts/domain/entities/contract.entity';
-import { ContractMapper } from '@/modules/contracts/routes/mappers/contract.mapper';
+import type { ContractsRepository } from '#/modules/contracts/domain/contracts.repository';
+import { IContractsRepository } from '#/modules/contracts/domain/contracts.repository.interface';
+import type { Contract } from '#/modules/contracts/domain/entities/contract.entity';
+import { ContractMapper } from '#/modules/contracts/routes/mappers/contract.mapper';
 
 @Injectable()
 export class ContractsService {

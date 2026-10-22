@@ -2,9 +2,9 @@
 import { faker } from '@faker-js/faker';
 import type postgres from 'postgres';
 import type { Sql } from 'postgres';
-import { TestDbFactory } from '@/__tests__/db.factory';
-import { PostgresDatabaseMigrator } from '@/datasources/db/v1/postgres-database.migrator';
-import type { Outreach } from '@/modules/targeted-messaging/domain/entities/outreach.entity';
+import { TestDbFactory } from '#/__tests__/db.factory';
+import { PostgresDatabaseMigrator } from '#/datasources/db/v1/postgres-database.migrator';
+import type { Outreach } from '#/modules/targeted-messaging/domain/entities/outreach.entity';
 
 describe('Migration 00014_targeted_messaging_add_chain_id', () => {
   let sql: postgres.Sql;

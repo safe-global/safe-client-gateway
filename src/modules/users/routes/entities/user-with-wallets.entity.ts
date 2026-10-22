@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiExtraModels, ApiProperty } from '@nestjs/swagger';
-import type { User } from '@/modules/users/domain/entities/user.entity';
-import { UserStatus } from '@/modules/users/domain/entities/user.entity';
-import type { Wallet } from '@/modules/wallets/domain/entities/wallet.entity';
+import type { User } from '#/modules/users/domain/entities/user.entity';
+import { UserStatus } from '#/modules/users/domain/entities/user.entity';
+import type { Wallet } from '#/modules/wallets/domain/entities/wallet.entity';
 
 class UserWallet implements Pick<Wallet, 'id' | 'address'> {
   @ApiProperty()

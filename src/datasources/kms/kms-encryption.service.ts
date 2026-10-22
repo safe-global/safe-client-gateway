@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { createHmac } from 'node:crypto';
 import { Inject, Injectable, type OnModuleInit } from '@nestjs/common';
-import { IConfigurationService } from '@/config/configuration.service.interface';
+import { IConfigurationService } from '#/config/configuration.service.interface';
 import {
   BLIND_INDEX_LABEL,
   ENCRYPTION_PREFIX,
@@ -10,13 +10,13 @@ import {
   ENVELOPE_KEY_LENGTH_BYTES,
   ENVELOPE_TAG_BYTES,
   INDEX_KEY_LENGTH,
-} from '@/datasources/kms/encryption.constants';
-import { IKmsService } from '@/datasources/kms/kms.service.interface';
+} from '#/datasources/kms/encryption.constants';
+import { IKmsService } from '#/datasources/kms/kms.service.interface';
 import {
   aesGcmDecrypt,
   aesGcmEncrypt,
   canonicalContext,
-} from '@/domain/common/utils/encryption';
+} from '#/domain/common/utils/encryption';
 
 /**
  * The single, domain-free crypto mechanics for all field-level encryption,

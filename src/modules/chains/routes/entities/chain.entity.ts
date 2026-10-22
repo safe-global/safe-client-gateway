@@ -9,37 +9,37 @@ import type { Address } from 'viem';
 import {
   BeaconChainExplorerUriTemplate as ApiBeaconChainExplorerUriTemplate,
   type BeaconChainExplorerUriTemplate,
-} from '@/modules/chains/domain/entities/beacon-chain-explorer-uri-template.entity';
-import { BalancesProvider } from '@/modules/chains/routes/entities/balances-provider.entity';
+} from '#/modules/chains/domain/entities/beacon-chain-explorer-uri-template.entity';
+import { BalancesProvider } from '#/modules/chains/routes/entities/balances-provider.entity';
 import {
   BlockExplorerUriTemplate as ApiBlockExplorerUriTemplate,
   type BlockExplorerUriTemplate,
-} from '@/modules/chains/routes/entities/block-explorer-uri-template.entity';
+} from '#/modules/chains/routes/entities/block-explorer-uri-template.entity';
 import {
   GasPriceFixed as ApiGasPriceFixed,
   type GasPriceFixed,
-} from '@/modules/chains/routes/entities/gas-price-fixed.entity';
+} from '#/modules/chains/routes/entities/gas-price-fixed.entity';
 import {
   GasPriceFixedEIP1559 as ApiGasPriceFixedEIP1559,
   type GasPriceFixedEIP1559,
-} from '@/modules/chains/routes/entities/gas-price-fixed-eip-1559.entity';
+} from '#/modules/chains/routes/entities/gas-price-fixed-eip-1559.entity';
 import {
   GasPriceOracle as ApiGasPriceOracle,
   type GasPriceOracle,
-} from '@/modules/chains/routes/entities/gas-price-oracle.entity';
+} from '#/modules/chains/routes/entities/gas-price-oracle.entity';
 import {
   NativeCurrency as ApiNativeCurrency,
   type NativeCurrency,
-} from '@/modules/chains/routes/entities/native-currency.entity';
-import { Relayer } from '@/modules/chains/routes/entities/relayer.entity';
+} from '#/modules/chains/routes/entities/native-currency.entity';
+import { Relayer } from '#/modules/chains/routes/entities/relayer.entity';
 import {
   RpcUri as ApiRpcUri,
   type RpcUri,
-} from '@/modules/chains/routes/entities/rpc-uri.entity';
+} from '#/modules/chains/routes/entities/rpc-uri.entity';
 import {
   Theme as ApiTheme,
   type Theme,
-} from '@/modules/chains/routes/entities/theme.entity';
+} from '#/modules/chains/routes/entities/theme.entity';
 
 @ApiExtraModels(ApiGasPriceOracle, ApiGasPriceFixed, ApiGasPriceFixedEIP1559)
 export class Chain {

@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
-import { getStringEnumKeys } from '@/domain/common/utils/enum';
-import { SpaceStatus } from '@/modules/spaces/domain/entities/space.entity';
-import { MemberRole } from '@/modules/users/domain/entities/member.entity';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
+import { getStringEnumKeys } from '#/domain/common/utils/enum';
+import { SpaceStatus } from '#/modules/spaces/domain/entities/space.entity';
+import { MemberRole } from '#/modules/users/domain/entities/member.entity';
+import { AddressSchema } from '#/validation/entities/schemas/address.schema';
+import { NumericStringSchema } from '#/validation/entities/schemas/numeric-string.schema';
 
 /**
  * Event taxonomy of the append-only space audit log.
@@ -43,6 +43,7 @@ const UserIdSchema = z.number().int().positive();
 const SpaceFieldsSchema = z.object({
   name: z.string().optional(),
   status: z.enum(getStringEnumKeys(SpaceStatus)).optional(),
+  experimentalFeatures: z.array(z.string()).optional(),
 });
 
 const SpaceSafeSchema = z.object({

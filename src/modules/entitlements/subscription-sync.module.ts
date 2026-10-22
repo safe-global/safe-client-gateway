@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { forwardRef, Module } from '@nestjs/common';
-import { BillingRepositoryModule } from '@/modules/billing/domain/billing-repository.module';
-import { EntitlementsRepositoryModule } from '@/modules/entitlements/domain/entitlements-repository.module';
-import { ISubscriptionSyncService } from '@/modules/entitlements/domain/subscription-sync.service.interface';
-import { EntitlementsModule } from '@/modules/entitlements/entitlements.module';
-import { SubscriptionSyncService } from '@/modules/entitlements/routes/subscription-sync.service';
-import { SpacesModule } from '@/modules/spaces/spaces.module';
+import { BillingRepositoryModule } from '#/modules/billing/domain/billing-repository.module';
+import { EntitlementsRepositoryModule } from '#/modules/entitlements/domain/entitlements-repository.module';
+import { ISubscriptionSyncService } from '#/modules/entitlements/domain/subscription-sync.service.interface';
+import { EntitlementsModule } from '#/modules/entitlements/entitlements.module';
+import { SubscriptionSyncService } from '#/modules/entitlements/routes/subscription-sync.service';
+import { SpacesModule } from '#/modules/spaces/spaces.module';
 
 /**
  * What `BillingModule`'s webhook handler consumes, kept apart from

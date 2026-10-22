@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
-import { SpaceSchema } from '@/modules/spaces/domain/entities/space.entity';
-import { SurveySchema } from '@/modules/surveys/domain/entities/survey.entity';
-import { UserSchema } from '@/modules/users/domain/entities/user.entity';
+import { SpaceSchema } from '#/modules/spaces/domain/entities/space.entity';
+import { SurveySchema } from '#/modules/surveys/domain/entities/survey.entity';
+import { UserSchema } from '#/modules/users/domain/entities/user.entity';
 
 // selections is a map from page id → selected option keys for that page.
 // Keys are non-empty arrays (cannot submit an empty page), and the map

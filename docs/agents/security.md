@@ -47,6 +47,16 @@ This applies whether the datasource is module-owned (`src/modules/*/datasources/
 
 `OptionalAuthGuard` letting a request through with no cookie present is only safe when every downstream branch treats a missing `authPayload` as unauthenticated; it is never a substitute for `AuthGuard` on a route that actually requires a signed-in user.
 
+### Workspace authorization through the shared assertions only
+
+**Rule:** A Workspace-scoped handler checks the caller with `assertMember` or `assertAdmin` from `src/modules/spaces/domain/space-assert.utils.ts`, called from the route service with the injected `IMembersRepository` — never a private `assertActiveAdmin`, an inline `findOne({ role: 'ADMIN' })`, or a membership filter inside a repository query. Repositories receive the resolved `userId` and do data access only. Both helpers return the membership row, so "member, and is it an admin?" is one `assertMember` call plus `.role`. Rejections are 403, never 404.
+
+**Why:** the same predicate had grown five implementations with three different messages and one 404; a fix to one copy silently misses the others.
+
+**Canonical example:** `src/modules/spaces/routes/address-books/address-books.service.ts` asserts, then hands `userId` to the repository; `src/modules/spaces/routes/audit/space-audit.service.ts`'s `assertViewer` shows the one-query `assertMember(...).role === 'ADMIN'` form.
+
+**Anti-example:** a service-level `private async assertActiveAdmin(...)` running its own query, or a repository method taking `authPayload` to filter the space by `members: { user: { id } }`. The last-admin rule in `src/modules/users/domain/members/members.repository.ts` stays in the repository because it needs the whole admin list, but it is a 409 conflict check, not authorization — the route service still calls `assertAdmin` before it.
+
 ### Ownership by signature recovery only
 
 **Rule:** An endpoint that binds a wallet/signer to an account verifies a fresh signed message — a SIWE message and signature for login/session binding, or an equivalent recovered-signature check for other wallet-binding flows — and trusts only the address the verification resolves to; a client-supplied address field is never accepted as an ownership claim on its own.
@@ -173,9 +183,9 @@ Outside production, the same allowlist also accepts `localhost`/`127.0.0.1`/`[::
 
 ### Domain freshness in verifiers
 
-**Rule:** Proposal and confirmation verification rejects a nonce below the Safe's current on-chain nonce, an already-executed transaction, and a blocklisted signer, each via `HttpExceptionNoLog` rather than a silently-swallowed rejection or a generic 500.
+**Rule:** Proposal and confirmation verification rejects a nonce below the Safe's current on-chain nonce, and an already-executed transaction, each via `HttpExceptionNoLog` rather than a silently-swallowed rejection or a generic 500.
 
-**Why:** PR #2408 — a stale-nonce/already-executed transaction could be replayed through verification; PRs #2399/#2405 — a blocklisted signer's confirmation was accepted.
+**Why:** PR #2408 — a stale-nonce/already-executed transaction could be replayed through verification.
 
 **Canonical example:** `src/modules/transactions/routes/helpers/transaction-verifier.helper.ts` — `verifyConfirmation` throws `HttpExceptionNoLog(ErrorMessage.InvalidNonce, ...)` when `transaction.isExecuted || transaction.nonce < safe.nonce`:
 
@@ -184,8 +194,6 @@ if (args.transaction.isExecuted || args.transaction.nonce < args.safe.nonce) {
   throw new HttpExceptionNoLog(ErrorMessage.InvalidNonce, code);
 }
 ```
-
-`verifyApiSignatures`, `verifyProposalSignature`, and `verifyConfirmationSignature` each separately throw `HttpExceptionNoLog(ErrorMessage.BlockedAddress, ...)` when a recovered signer address is found in `this.blocklist` (backed by `IBlocklistService`), before the signature is even checked against the Safe's owners.
 
 ### Structured logging only
 

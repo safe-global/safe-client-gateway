@@ -4,16 +4,16 @@ import { ConflictException, Inject, Injectable } from '@nestjs/common';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import { asError } from '@/logging/utils';
-import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
-import { ICounterfactualSafesRepository } from '@/modules/counterfactual-safes/domain/counterfactual-safes.repository.interface';
-import { transformCounterfactualSafesResponse } from '@/modules/counterfactual-safes/routes/counterfactual-safes.utils';
-import type { CreateCounterfactualSafeDto } from '@/modules/counterfactual-safes/routes/entities/create-counterfactual-safe.dto.entity';
-import type { DeleteCounterfactualSafeDto } from '@/modules/counterfactual-safes/routes/entities/delete-counterfactual-safe.dto.entity';
-import type { GetCounterfactualSafesResponse } from '@/modules/counterfactual-safes/routes/entities/get-counterfactual-safe.dto.entity';
-import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
+} from '#/logging/logging.interface';
+import { asError } from '#/logging/utils';
+import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import { getAuthenticatedUserIdOrFail } from '#/modules/auth/utils/assert-authenticated.utils';
+import { ICounterfactualSafesRepository } from '#/modules/counterfactual-safes/domain/counterfactual-safes.repository.interface';
+import { transformCounterfactualSafesResponse } from '#/modules/counterfactual-safes/routes/counterfactual-safes.utils';
+import type { CreateCounterfactualSafeDto } from '#/modules/counterfactual-safes/routes/entities/create-counterfactual-safe.dto.entity';
+import type { DeleteCounterfactualSafeDto } from '#/modules/counterfactual-safes/routes/entities/delete-counterfactual-safe.dto.entity';
+import type { GetCounterfactualSafesResponse } from '#/modules/counterfactual-safes/routes/entities/get-counterfactual-safe.dto.entity';
+import { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
 
 @Injectable()
 export class CounterfactualSafesService {

@@ -5,8 +5,8 @@ import request from 'supertest';
 import {
   initTestApplication,
   TestAppProvider,
-} from '@/__tests__/test-app.provider';
-import { createBaseTestModule } from '@/__tests__/testing-module';
+} from '#/__tests__/test-app.provider';
+import { createBaseTestModule } from '#/__tests__/testing-module';
 
 describe('Get health e2e test', () => {
   let app: INestApplication<Server>;

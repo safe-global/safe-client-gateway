@@ -8,22 +8,22 @@ import type { MockedObject } from 'vitest';
 import {
   initTestApplication,
   TestAppProvider,
-} from '@/__tests__/test-app.provider';
-import { createTestModule } from '@/__tests__/testing-module';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import configuration from '@/config/entities/__tests__/configuration';
-import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import { NetworkService } from '@/datasources/network/network.service.interface';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
+} from '#/__tests__/test-app.provider';
+import { createTestModule } from '#/__tests__/testing-module';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import configuration from '#/config/entities/__tests__/configuration';
+import { NetworkResponseError } from '#/datasources/network/entities/network.error.entity';
+import type { INetworkService } from '#/datasources/network/network.service.interface';
+import { NetworkService } from '#/datasources/network/network.service.interface';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
+import type { Chain } from '#/modules/chains/domain/entities/chain.entity';
 import {
   erc20TokenBuilder,
   nativeTokenBuilder,
-} from '@/modules/tokens/domain/__tests__/token.builder';
-import type { Token } from '@/modules/tokens/domain/entities/token.entity';
-import { MAX_TOKEN_ADDRESSES } from '@/modules/tokens/routes/entities/token-addresses.dto.entity';
-import { rawify } from '@/validation/entities/raw.entity';
+} from '#/modules/tokens/domain/__tests__/token.builder';
+import type { Token } from '#/modules/tokens/domain/entities/token.entity';
+import { MAX_TOKEN_ADDRESSES } from '#/modules/tokens/routes/entities/token-addresses.dto.entity';
+import { rawify } from '#/validation/entities/raw.entity';
 
 describe('Tokens controller', () => {
   let app: INestApplication<Server>;

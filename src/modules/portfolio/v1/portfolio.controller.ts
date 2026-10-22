@@ -16,13 +16,13 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import type { Address } from 'viem';
-import type { GetPortfolioDto } from '@/modules/portfolio/v1/entities/get-portfolio.dto.entity';
-import { Portfolio } from '@/modules/portfolio/v1/entities/portfolio.entity';
-import { GetPortfolioDtoSchema } from '@/modules/portfolio/v1/entities/schemas/get-portfolio.dto.schema';
-import { PortfolioRouteGuard } from '@/modules/portfolio/v1/guards/portfolio-route.guard';
-import { PortfolioApiService } from '@/modules/portfolio/v1/portfolio.service';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+import type { GetPortfolioDto } from '#/modules/portfolio/v1/entities/get-portfolio.dto.entity';
+import { Portfolio } from '#/modules/portfolio/v1/entities/portfolio.entity';
+import { GetPortfolioDtoSchema } from '#/modules/portfolio/v1/entities/schemas/get-portfolio.dto.schema';
+import { PortfolioRouteGuard } from '#/modules/portfolio/v1/guards/portfolio-route.guard';
+import { PortfolioApiService } from '#/modules/portfolio/v1/portfolio.service';
+import { AddressSchema } from '#/validation/entities/schemas/address.schema';
+import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
 /**
  * Portfolio controller.

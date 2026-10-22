@@ -121,7 +121,9 @@ export function cursorUrlFromLimitAndOffset(
   base: Readonly<URL | string>,
   from: Readonly<URL | string | null>,
 ): Readonly<URL> | null {
-  if (from == null) return null;
+  if (from == null) {
+    return null;
+  }
   const fromUrl = new URL(from);
   const paginationData = PaginationData.fromLimitAndOffset(fromUrl);
   return setCursor(base, paginationData);

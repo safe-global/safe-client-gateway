@@ -5,9 +5,9 @@ import type {
   FindOptionsSelect,
   FindOptionsWhere,
 } from 'typeorm';
-import type { CounterfactualSafe } from '@/modules/counterfactual-safes/datasources/entities/counterfactual-safe.entity.db';
-import type { CounterfactualSafesRepository } from '@/modules/counterfactual-safes/domain/counterfactual-safes.repository';
-import type { User } from '@/modules/users/datasources/entities/users.entity.db';
+import type { CounterfactualSafe } from '#/modules/counterfactual-safes/datasources/entities/counterfactual-safe.entity.db';
+import type { CounterfactualSafesRepository } from '#/modules/counterfactual-safes/domain/counterfactual-safes.repository';
+import type { User } from '#/modules/users/datasources/entities/users.entity.db';
 
 export const ICounterfactualSafesRepository = Symbol(
   'ICounterfactualSafesRepository',
@@ -60,4 +60,15 @@ export interface ICounterfactualSafesRepository {
       address: CounterfactualSafe['address'];
     }>;
   }): Promise<void>;
+
+  /**
+   * Soft-deletes the Safe: the row and its user associations stay as a record,
+   * and reads leave it out.
+   *
+   * @returns `true` if a Safe that was not yet deployed was marked
+   */
+  markAsDeployed(args: {
+    chainId: CounterfactualSafe['chainId'];
+    address: CounterfactualSafe['address'];
+  }): Promise<boolean>;
 }

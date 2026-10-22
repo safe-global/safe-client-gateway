@@ -8,23 +8,23 @@ import { DataSource } from 'typeorm';
 import type { Address } from 'viem';
 import { getAddress, maxUint256 } from 'viem';
 import type { MockedObject } from 'vitest';
-import configuration from '@/config/entities/__tests__/configuration';
-import { postgresConfig } from '@/config/entities/postgres.config';
-import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-error';
-import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
-import { getStringEnumKeys } from '@/domain/common/utils/enum';
-import type { ILoggingService } from '@/logging/logging.interface';
-import { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
-import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
-import { createMockSpaceEncryptionService } from '@/modules/spaces/domain/__tests__/space-encryption.service.mock';
-import { createMockSpaceAuditRepository } from '@/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
-import { SpaceStatus } from '@/modules/spaces/domain/entities/space.entity';
-import { SpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository';
-import { Member } from '@/modules/users/datasources/entities/member.entity.db';
-import { User } from '@/modules/users/datasources/entities/users.entity.db';
-import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
+import configuration from '#/config/entities/__tests__/configuration';
+import { postgresConfig } from '#/config/entities/postgres.config';
+import { DatabaseMigrator } from '#/datasources/db/v2/database-migrator.service';
+import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
+import { UniqueConstraintError } from '#/datasources/errors/unique-constraint-error';
+import { DB_MAX_SAFE_INTEGER } from '#/domain/common/constants';
+import { getStringEnumKeys } from '#/domain/common/utils/enum';
+import type { ILoggingService } from '#/logging/logging.interface';
+import { SpaceSafe } from '#/modules/spaces/datasources/safes/entities/space-safes.entity.db';
+import { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
+import { createMockSpaceEncryptionService } from '#/modules/spaces/domain/__tests__/space-encryption.service.mock';
+import { createMockSpaceAuditRepository } from '#/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
+import { SpaceStatus } from '#/modules/spaces/domain/entities/space.entity';
+import { SpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository';
+import { Member } from '#/modules/users/datasources/entities/member.entity.db';
+import { User } from '#/modules/users/datasources/entities/users.entity.db';
+import { Wallet } from '#/modules/wallets/datasources/entities/wallets.entity.db';
 
 const mockLoggingService = {
   debug: vi.fn(),
@@ -743,6 +743,88 @@ describe('SpaceSafesRepository', () => {
           faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
         ),
       ).resolves.toEqual([]);
+    });
+  });
+
+  describe('findBySpaceIds', () => {
+    it('should return the Safes of each space, keyed by space id', async () => {
+      const insertSpace = async (): Promise<Space['id']> => {
+        const space = await dbSpaceRepository.insert({
+          status: faker.helpers.arrayElement(getStringEnumKeys(SpaceStatus)),
+          name: faker.word.noun(),
+        });
+        return space.identifiers[0].id as Space['id'];
+      };
+      const buildSafes = (): Array<{ chainId: string; address: Address }> =>
+        faker.helpers.multiple(
+          () => ({
+            chainId: faker.string.numeric(),
+            address: getAddress(faker.finance.ethereumAddress()),
+          }),
+          { count: { min: 1, max: 4 } },
+        );
+      const [spaceId, otherSpaceId, emptySpaceId, unrequestedSpaceId] =
+        await Promise.all([
+          insertSpace(),
+          insertSpace(),
+          insertSpace(),
+          insertSpace(),
+        ]);
+      const spaceSafes = buildSafes();
+      const otherSpaceSafes = buildSafes();
+      await Promise.all(
+        [
+          ...spaceSafes.map((safe) => ({ ...safe, spaceId })),
+          ...otherSpaceSafes.map((safe) => ({
+            ...safe,
+            spaceId: otherSpaceId,
+          })),
+          ...buildSafes().map((safe) => ({
+            ...safe,
+            spaceId: unrequestedSpaceId,
+          })),
+        ].map(({ chainId, address, spaceId }) =>
+          dbSpaceSafesRepository.insert({
+            chainId,
+            address,
+            space: { id: spaceId },
+          }),
+        ),
+      );
+
+      const result = await spaceSafesRepo.findBySpaceIds([
+        spaceId,
+        otherSpaceId,
+        emptySpaceId,
+      ]);
+
+      expect([...result.keys()]).toEqual([spaceId, otherSpaceId, emptySpaceId]);
+      expect(result.get(spaceId)).toHaveLength(spaceSafes.length);
+      expect(result.get(spaceId)).toEqual(expect.arrayContaining(spaceSafes));
+      expect(result.get(otherSpaceId)).toHaveLength(otherSpaceSafes.length);
+      expect(result.get(otherSpaceId)).toEqual(
+        expect.arrayContaining(otherSpaceSafes),
+      );
+      expect(result.get(emptySpaceId)).toEqual([]);
+      expect(encryptionService.decryptSpaceSafes).toHaveBeenCalledTimes(3);
+      expect(encryptionService.decryptSpaceSafes).toHaveBeenCalledWith(
+        spaceId,
+        expect.arrayContaining(spaceSafes),
+      );
+      expect(encryptionService.decryptSpaceSafes).toHaveBeenCalledWith(
+        otherSpaceId,
+        expect.arrayContaining(otherSpaceSafes),
+      );
+      expect(encryptionService.decryptSpaceSafes).toHaveBeenCalledWith(
+        emptySpaceId,
+        [],
+      );
+    });
+
+    it('should return an empty map if no space is requested', async () => {
+      await expect(spaceSafesRepo.findBySpaceIds([])).resolves.toEqual(
+        new Map(),
+      );
     });
   });
 

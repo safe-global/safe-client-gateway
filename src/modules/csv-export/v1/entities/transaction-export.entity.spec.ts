@@ -3,8 +3,8 @@ import { faker } from '@faker-js/faker';
 import omit from 'lodash/omit';
 import type { Address, Hex } from 'viem';
 import { getAddress } from 'viem';
-import { transactionExportBuilder } from '@/modules/csv-export/v1/entities/__tests__/transaction-export.builder';
-import { TransactionExportSchema } from '@/modules/csv-export/v1/entities/transaction-export.entity';
+import { transactionExportBuilder } from '#/modules/csv-export/v1/entities/__tests__/transaction-export.builder';
+import { TransactionExportSchema } from '#/modules/csv-export/v1/entities/transaction-export.entity';
 
 describe('TransactionExportSchema', () => {
   it('should verify a valid TransactionExport', () => {

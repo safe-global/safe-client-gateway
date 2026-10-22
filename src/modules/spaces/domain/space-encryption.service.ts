@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
-import { KmsEncryptionService } from '@/datasources/kms/kms-encryption.service';
+import { KmsEncryptionService } from '#/datasources/kms/kms-encryption.service';
 
 /**
  * Space-scoped field-encryption policy for the spaces module: space names,

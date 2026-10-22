@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
-import { NullableNumberSchema } from '@/validation/entities/schemas/nullable.schema';
+import { NullableNumberSchema } from '#/validation/entities/schemas/nullable.schema';
 
 export type AssetPrice = z.infer<ReturnType<typeof getAssetPriceSchema>>;
 

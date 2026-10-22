@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { Address } from 'viem';
 import { z } from 'zod';
-import { RowSchema } from '@/datasources/db/v2/entities/row.entity';
-import type { SpaceSafe as DbSpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
-import { SpaceSchema } from '@/modules/spaces/domain/entities/space.entity';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
+import { RowSchema } from '#/datasources/db/v2/entities/row.entity';
+import type { SpaceSafe as DbSpaceSafe } from '#/modules/spaces/datasources/safes/entities/space-safes.entity.db';
+import type { Space as DbSpace } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
+import { SpaceSchema } from '#/modules/spaces/domain/entities/space.entity';
+import { AddressSchema } from '#/validation/entities/schemas/address.schema';
+import { NumericStringSchema } from '#/validation/entities/schemas/numeric-string.schema';
 
 export type SpaceSafe = z.infer<typeof SpaceSafeSchema>;
 
@@ -21,3 +22,22 @@ export const SpaceSafeSchema: z.ZodType<
   address: AddressSchema as z.ZodType<Address>,
   space: z.lazy(() => SpaceSchema).optional(),
 });
+
+/**
+ * A Safe ready to insert: encrypted address, its blind index, and the
+ * plaintext the audit event needs. Produced by `encryptRows` and consumed by
+ * `insertRows`; nothing else reads its fields.
+ */
+export type PreparedSpaceSafe = {
+  space: { id: DbSpace['id'] };
+  chainId: DbSpaceSafe['chainId'];
+  address: DbSpaceSafe['address'];
+  addressIndex: string | null;
+  plaintextAddress: DbSpaceSafe['address'];
+};
+
+/** A space's Safes, plaintext, keyed by space id. */
+export type SpaceSafesBySpaceId = Map<
+  DbSpace['id'],
+  Array<Pick<DbSpaceSafe, 'chainId' | 'address'>>
+>;

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiProperty } from '@nestjs/swagger';
-import type { EligibilityRequest as DomainEligibilityRequest } from '@/modules/community/domain/entities/eligibility-request.entity';
+import type { EligibilityRequest as DomainEligibilityRequest } from '#/modules/community/domain/entities/eligibility-request.entity';
 
 export class EligibilityRequest implements DomainEligibilityRequest {
   @ApiProperty()

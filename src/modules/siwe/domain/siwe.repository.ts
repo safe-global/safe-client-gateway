@@ -3,10 +3,10 @@ import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import type { Hex } from 'viem';
 import { verifyMessage } from 'viem';
 import { generateSiweNonce, type SiweMessage } from 'viem/siwe';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { ISiweApi } from '@/domain/interfaces/siwe-api.interface';
-import { buildSiweMessageSchema } from '@/modules/siwe/domain/entities/siwe-message.entity';
-import type { ISiweRepository } from '@/modules/siwe/domain/siwe.repository.interface';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { ISiweApi } from '#/domain/interfaces/siwe-api.interface';
+import { buildSiweMessageSchema } from '#/modules/siwe/domain/entities/siwe-message.entity';
+import type { ISiweRepository } from '#/modules/siwe/domain/siwe.repository.interface';
 
 @Injectable()
 export class SiweRepository implements ISiweRepository {

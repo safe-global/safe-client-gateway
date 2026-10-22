@@ -2,7 +2,7 @@
 
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import { ThreatStatus } from '@/modules/safe-shield/entities/threat-status.entity';
+import { ThreatStatus } from '#/modules/safe-shield/entities/threat-status.entity';
 import {
   ContractAnalysisResponseSchema,
   CounterpartyAnalysisResponseSchema,

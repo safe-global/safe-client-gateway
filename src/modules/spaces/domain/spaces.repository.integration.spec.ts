@@ -4,27 +4,28 @@ import { faker } from '@faker-js/faker';
 import type { ConfigService } from '@nestjs/config';
 import { DataSource, EntityNotFoundError, In } from 'typeorm';
 import type { MockedObject } from 'vitest';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
-import configuration from '@/config/entities/__tests__/configuration';
-import { postgresConfig } from '@/config/entities/postgres.config';
-import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
-import { nameBuilder } from '@/domain/common/entities/name.builder';
-import { getStringEnumKeys } from '@/domain/common/utils/enum';
-import type { ILoggingService } from '@/logging/logging.interface';
-import { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
-import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
-import { createMockSpaceEncryptionService } from '@/modules/spaces/domain/__tests__/space-encryption.service.mock';
-import { createMockSpaceAuditRepository } from '@/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
-import { SpaceStatus } from '@/modules/spaces/domain/entities/space.entity';
-import { SpacesRepository } from '@/modules/spaces/domain/spaces.repository';
-import { Member } from '@/modules/users/datasources/entities/member.entity.db';
-import { User } from '@/modules/users/datasources/entities/users.entity.db';
-import { UserStatus } from '@/modules/users/domain/entities/user.entity';
-import { createMockMemberEncryptionService } from '@/modules/users/domain/members/__tests__/member-encryption.service.mock';
-import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
-import { fakeUuid } from '@/validation/entities/schemas/__tests__/uuid.builder';
+import type { IConfigurationService } from '#/config/configuration.service.interface';
+import configuration from '#/config/entities/__tests__/configuration';
+import { postgresConfig } from '#/config/entities/postgres.config';
+import { DatabaseMigrator } from '#/datasources/db/v2/database-migrator.service';
+import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
+import { DB_MAX_SAFE_INTEGER } from '#/domain/common/constants';
+import { nameBuilder } from '#/domain/common/entities/name.builder';
+import { getStringEnumKeys } from '#/domain/common/utils/enum';
+import type { ILoggingService } from '#/logging/logging.interface';
+import { SpaceSafe } from '#/modules/spaces/datasources/safes/entities/space-safes.entity.db';
+import { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
+import { createMockSpaceEncryptionService } from '#/modules/spaces/domain/__tests__/space-encryption.service.mock';
+import { createMockSpaceAuditRepository } from '#/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
+import { ExperimentalFeatures } from '#/modules/spaces/domain/entities/experimental-feature.entity';
+import { SpaceStatus } from '#/modules/spaces/domain/entities/space.entity';
+import { SpacesRepository } from '#/modules/spaces/domain/spaces.repository';
+import { Member } from '#/modules/users/datasources/entities/member.entity.db';
+import { User } from '#/modules/users/datasources/entities/users.entity.db';
+import { UserStatus } from '#/modules/users/domain/entities/user.entity';
+import { createMockMemberEncryptionService } from '#/modules/users/domain/members/__tests__/member-encryption.service.mock';
+import { Wallet } from '#/modules/wallets/datasources/entities/wallets.entity.db';
+import { fakeUuid } from '#/validation/entities/schemas/__tests__/uuid.builder';
 
 const mockLoggingService = {
   debug: vi.fn(),
@@ -257,6 +258,7 @@ describe('SpacesRepository', () => {
           uuid: expect.any(String),
           name,
           status: spaceStatus,
+          experimentalFeatures: [],
           createdAt: expect.any(Date),
           updatedAt: expect.any(Date),
         },
@@ -268,7 +270,9 @@ describe('SpacesRepository', () => {
         getOrThrow: vi.fn(),
       } as MockedObject<IConfigurationService>);
       config.getOrThrow.mockImplementation((key) => {
-        if (key === 'spaces.maxSpaceCreationsPerUser') return 1;
+        if (key === 'spaces.maxSpaceCreationsPerUser') {
+          return 1;
+        }
       });
       const target = new SpacesRepository(
         postgresDatabaseService,
@@ -311,7 +315,9 @@ describe('SpacesRepository', () => {
         getOrThrow: vi.fn(),
       } as MockedObject<IConfigurationService>);
       config.getOrThrow.mockImplementation((key) => {
-        if (key === 'spaces.maxSpaceCreationsPerUser') return 1;
+        if (key === 'spaces.maxSpaceCreationsPerUser') {
+          return 1;
+        }
       });
       const target = new SpacesRepository(
         postgresDatabaseService,
@@ -407,6 +413,7 @@ describe('SpacesRepository', () => {
           uuid: expect.any(String),
           name: spaceName,
           status: spaceStatus,
+          experimentalFeatures: [],
           createdAt: expect.any(Date),
           updatedAt: expect.any(Date),
         },
@@ -475,9 +482,34 @@ describe('SpacesRepository', () => {
         uuid: space.uuid,
         name,
         status: spaceStatus,
+        experimentalFeatures: [],
         createdAt: expect.any(Date),
         updatedAt: expect.any(Date),
       });
+    });
+
+    it('should drop stored experimental features that no longer exist', async () => {
+      const feature = faker.helpers.arrayElement(ExperimentalFeatures);
+      const stale = faker.string.alpha(8);
+      const user = await dbUserRepo.insert({
+        status: faker.helpers.arrayElement(UserStatusKeys),
+      });
+      const space = await spacesRepository.create({
+        userId: user.identifiers[0].id as User['id'],
+        name: faker.word.noun(),
+        status: faker.helpers.arrayElement(SpaceStatusKeys),
+      });
+      const spaceId = await spacesRepository.findIdByUuid(space.uuid);
+      await dataSource.query(
+        'UPDATE spaces SET experimental_features = $1 WHERE id = $2',
+        [JSON.stringify([stale, feature]), spaceId],
+      );
+
+      const found = await spacesRepository.findOneOrFail({
+        where: { id: spaceId },
+      });
+
+      expect(found.experimentalFeatures).toStrictEqual([feature]);
     });
 
     it('should throw an error if the space does not exist', async () => {
@@ -539,6 +571,7 @@ describe('SpacesRepository', () => {
         uuid: space.uuid,
         name,
         status: spaceStatus,
+        experimentalFeatures: [],
         createdAt: expect.any(Date),
         updatedAt: expect.any(Date),
         members: undefined,
@@ -592,6 +625,7 @@ describe('SpacesRepository', () => {
           uuid: space1.uuid,
           name: spaceName1,
           status: spaceStatus1,
+          experimentalFeatures: [],
           createdAt: expect.any(Date),
           updatedAt: expect.any(Date),
           members: undefined,
@@ -602,6 +636,7 @@ describe('SpacesRepository', () => {
           uuid: space2.uuid,
           name: spaceName2,
           status: spaceStatus2,
+          experimentalFeatures: [],
           createdAt: expect.any(Date),
           updatedAt: expect.any(Date),
           members: undefined,
@@ -658,6 +693,7 @@ describe('SpacesRepository', () => {
           uuid: space1.uuid,
           name: spaceName1,
           status: spaceStatus1,
+          experimentalFeatures: [],
           createdAt: expect.any(Date),
           updatedAt: expect.any(Date),
           members: undefined,
@@ -668,6 +704,7 @@ describe('SpacesRepository', () => {
           uuid: space2.uuid,
           name: spaceName2,
           status: spaceStatus2,
+          experimentalFeatures: [],
           createdAt: expect.any(Date),
           updatedAt: expect.any(Date),
           members: undefined,
@@ -714,6 +751,7 @@ describe('SpacesRepository', () => {
         uuid: space.uuid,
         name: spaceName,
         status: spaceStatus,
+        experimentalFeatures: [],
         createdAt: expect.any(Date),
         updatedAt: expect.any(Date),
         members: undefined,
@@ -759,6 +797,7 @@ describe('SpacesRepository', () => {
         uuid: space.uuid,
         name: spaceName,
         status: spaceStatus,
+        experimentalFeatures: [],
         createdAt: expect.any(Date),
         updatedAt: expect.any(Date),
         members: undefined,
@@ -813,6 +852,7 @@ describe('SpacesRepository', () => {
         uuid: space.uuid,
         name: newName,
         status: newStatus,
+        experimentalFeatures: [],
         createdAt: expect.any(Date),
         updatedAt: expect.any(Date),
         members: undefined,

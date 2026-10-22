@@ -5,23 +5,23 @@ import { faker } from '@faker-js/faker';
 import type { ConfigService } from '@nestjs/config';
 import { DataSource, type ObjectLiteral } from 'typeorm';
 import type { MockedObject } from 'vitest';
-import configuration from '@/config/entities/__tests__/configuration';
-import { postgresConfig } from '@/config/entities/postgres.config';
-import type { SubscriptionStatus } from '@/datasources/billing-api/entities/subscription.entity';
-import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { nameBuilder } from '@/domain/common/entities/name.builder';
-import type { ILoggingService } from '@/logging/logging.interface';
-import { Feature } from '@/modules/entitlements/datasources/entities/feature.entity.db';
-import { SpaceFeatureUsage } from '@/modules/entitlements/datasources/entities/space-feature-usage.entity.db';
-import { SpaceSubscription } from '@/modules/entitlements/datasources/entities/space-subscription.entity.db';
-import { SubscriptionEntitlement } from '@/modules/entitlements/datasources/entities/subscription-entitlement.entity.db';
-import { SubscriptionsRepository } from '@/modules/entitlements/domain/subscriptions.repository';
-import { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
-import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
-import { Member } from '@/modules/users/datasources/entities/member.entity.db';
-import { User } from '@/modules/users/datasources/entities/users.entity.db';
-import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
+import configuration from '#/config/entities/__tests__/configuration';
+import { postgresConfig } from '#/config/entities/postgres.config';
+import type { SubscriptionStatus } from '#/datasources/billing-api/entities/subscription.entity';
+import { DatabaseMigrator } from '#/datasources/db/v2/database-migrator.service';
+import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
+import { nameBuilder } from '#/domain/common/entities/name.builder';
+import type { ILoggingService } from '#/logging/logging.interface';
+import { Feature } from '#/modules/entitlements/datasources/entities/feature.entity.db';
+import { SpaceFeatureUsage } from '#/modules/entitlements/datasources/entities/space-feature-usage.entity.db';
+import { SpaceSubscription } from '#/modules/entitlements/datasources/entities/space-subscription.entity.db';
+import { SubscriptionEntitlement } from '#/modules/entitlements/datasources/entities/subscription-entitlement.entity.db';
+import { SubscriptionsRepository } from '#/modules/entitlements/domain/subscriptions.repository';
+import { SpaceSafe } from '#/modules/spaces/datasources/safes/entities/space-safes.entity.db';
+import { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
+import { Member } from '#/modules/users/datasources/entities/member.entity.db';
+import { User } from '#/modules/users/datasources/entities/users.entity.db';
+import { Wallet } from '#/modules/wallets/datasources/entities/wallets.entity.db';
 
 const mockLoggingService = {
   debug: vi.fn(),
@@ -149,6 +149,7 @@ describe('SubscriptionsRepository', () => {
         status,
         planId,
         planName: nameBuilder(),
+        planCode: faker.string.alphanumeric(8),
         currentPeriodStart: null,
         currentPeriodEnd: null,
         lastEventAt: null,
@@ -156,6 +157,72 @@ describe('SubscriptionsRepository', () => {
     });
     return planId;
   }
+
+  describe('getActiveSubscriptionsBySpaceIds', () => {
+    it("should key each requested space's active subscription by space id", async () => {
+      const [activeSpaceId, trialingSpaceId] = await Promise.all([
+        createSpace(),
+        createSpace(),
+      ]);
+      const activePlanId = await subscribe(activeSpaceId, 'active');
+      const trialingPlanId = await subscribe(trialingSpaceId, 'trialing');
+
+      const subscriptions =
+        await subscriptionsRepository.getActiveSubscriptionsBySpaceIds([
+          activeSpaceId,
+          trialingSpaceId,
+        ]);
+
+      expect(
+        new Map(
+          [...subscriptions].map(([spaceId, subscription]) => [
+            spaceId,
+            subscription.planId,
+          ]),
+        ),
+      ).toStrictEqual(
+        new Map([
+          [activeSpaceId, activePlanId],
+          [trialingSpaceId, trialingPlanId],
+        ]),
+      );
+    });
+
+    it('should leave out a requested space with no active subscription', async () => {
+      const [unsubscribedSpaceId, canceledSpaceId] = await Promise.all([
+        createSpace(),
+        createSpace(),
+      ]);
+      await subscribe(canceledSpaceId, 'canceled');
+
+      await expect(
+        subscriptionsRepository.getActiveSubscriptionsBySpaceIds([
+          unsubscribedSpaceId,
+          canceledSpaceId,
+        ]),
+      ).resolves.toStrictEqual(new Map());
+    });
+
+    it('should not leak the subscription of a space that was not requested', async () => {
+      const [spaceId, otherSpaceId] = await Promise.all([
+        createSpace(),
+        createSpace(),
+      ]);
+      await subscribe(otherSpaceId, 'active');
+
+      await expect(
+        subscriptionsRepository.getActiveSubscriptionsBySpaceIds([spaceId]),
+      ).resolves.toStrictEqual(new Map());
+    });
+
+    it('should return an empty map for no spaces', async () => {
+      await subscribe(await createSpace(), 'active');
+
+      await expect(
+        subscriptionsRepository.getActiveSubscriptionsBySpaceIds([]),
+      ).resolves.toStrictEqual(new Map());
+    });
+  });
 
   describe('getSubscriptionSummary', () => {
     it('should report a space that never subscribed', async () => {

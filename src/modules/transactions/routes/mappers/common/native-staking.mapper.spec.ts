@@ -3,38 +3,38 @@
 import { faker } from '@faker-js/faker';
 import { type Address, concat, getAddress, type Hash } from 'viem';
 import type { MockedObject } from 'vitest';
-import type { ILoggingService } from '@/logging/logging.interface';
-import type { ChainsRepository } from '@/modules/chains/domain/chains.repository';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
-import { multisigTransactionBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
+import type { ILoggingService } from '#/logging/logging.interface';
+import type { ChainsRepository } from '#/modules/chains/domain/chains.repository';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
+import { MultiSendDecoder } from '#/modules/contracts/domain/decoders/multi-send-decoder.helper';
+import { multisigTransactionBuilder } from '#/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
 import {
   dedicatedStakingStatsBuilder,
   dedicatedStakingStatsGrossApyBuilder,
-} from '@/modules/staking/datasources/entities/__tests__/dedicated-staking-stats.entity.builder';
-import { deploymentBuilder } from '@/modules/staking/datasources/entities/__tests__/deployment.entity.builder';
-import { networkStatsBuilder } from '@/modules/staking/datasources/entities/__tests__/network-stats.entity.builder';
-import { rewardsFeeBuilder } from '@/modules/staking/datasources/entities/__tests__/rewards-fee.entity.builder';
-import { stakeBuilder } from '@/modules/staking/datasources/entities/__tests__/stake.entity.builder';
+} from '#/modules/staking/datasources/entities/__tests__/dedicated-staking-stats.entity.builder';
+import { deploymentBuilder } from '#/modules/staking/datasources/entities/__tests__/deployment.entity.builder';
+import { networkStatsBuilder } from '#/modules/staking/datasources/entities/__tests__/network-stats.entity.builder';
+import { rewardsFeeBuilder } from '#/modules/staking/datasources/entities/__tests__/rewards-fee.entity.builder';
+import { stakeBuilder } from '#/modules/staking/datasources/entities/__tests__/stake.entity.builder';
 import {
   transactionStatusBuilder,
   transactionStatusReceiptBuilder,
   transactionStatusReceiptLogBuilder,
-} from '@/modules/staking/datasources/entities/__tests__/transaction-status.entity.builder';
-import { StakeState } from '@/modules/staking/datasources/entities/stake.entity';
+} from '#/modules/staking/datasources/entities/__tests__/transaction-status.entity.builder';
+import { StakeState } from '#/modules/staking/datasources/entities/stake.entity';
 import {
   batchWithdrawCLFeeEncoder,
   depositEventEventBuilder,
   requestValidatorsExitEncoder,
   withdrawalEventBuilder,
-} from '@/modules/staking/domain/contracts/decoders/__tests__/encoders/kiln-encoder.builder';
-import { KilnDecoder } from '@/modules/staking/domain/contracts/decoders/kiln-decoder.helper';
-import type { StakingRepository } from '@/modules/staking/domain/staking.repository';
-import { StakingStatus } from '@/modules/transactions/routes/entities/staking/staking.entity';
-import { KilnNativeStakingHelper } from '@/modules/transactions/routes/helpers/kiln-native-staking.helper';
-import { TransactionFinder } from '@/modules/transactions/routes/helpers/transaction-finder.helper';
-import { NativeStakingMapper } from '@/modules/transactions/routes/mappers/common/native-staking.mapper';
-import { NULL_ADDRESS } from '@/routes/common/constants';
+} from '#/modules/staking/domain/contracts/decoders/__tests__/encoders/kiln-encoder.builder';
+import { KilnDecoder } from '#/modules/staking/domain/contracts/decoders/kiln-decoder.helper';
+import type { StakingRepository } from '#/modules/staking/domain/staking.repository';
+import { StakingStatus } from '#/modules/transactions/routes/entities/staking/staking.entity';
+import { KilnNativeStakingHelper } from '#/modules/transactions/routes/helpers/kiln-native-staking.helper';
+import { TransactionFinder } from '#/modules/transactions/routes/helpers/transaction-finder.helper';
+import { NativeStakingMapper } from '#/modules/transactions/routes/mappers/common/native-staking.mapper';
+import { NULL_ADDRESS } from '#/routes/common/constants';
 
 const mockStakingRepository = vi.mocked({
   getDeployment: vi.fn(),

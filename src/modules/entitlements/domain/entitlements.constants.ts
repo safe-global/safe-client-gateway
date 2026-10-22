@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { SubscriptionStatus } from '@/datasources/billing-api/entities/subscription.entity';
+import type { SubscriptionStatus } from '#/datasources/billing-api/entities/subscription.entity';
 import {
   FEATURE_KEYS,
   FeatureType,
   SAFE_SEATS_FEATURE_KEY,
-} from '@/modules/entitlements/domain/entities/feature.entity';
+} from '#/modules/entitlements/domain/entities/feature.entity';
 
 export const DAY_IN_MS = 24 * 60 * 60 * 1_000;
 
@@ -35,6 +35,7 @@ export function isStockMeteredFeatureKey(
 export const BINARY_FEATURES = [
   'copilot_scans',
   'policies',
+  'safenet_checks',
 ] as const satisfies ReadonlyArray<(typeof FEATURE_KEYS)[number]>;
 
 export type BinaryFeature = (typeof BINARY_FEATURES)[number];
@@ -68,9 +69,12 @@ export const ACTIVE_SUBSCRIPTION_STATUSES = [
   'trialing',
 ] as const satisfies ReadonlyArray<SubscriptionStatus>;
 
+export type ActiveSubscriptionStatus =
+  (typeof ACTIVE_SUBSCRIPTION_STATUSES)[number];
+
 export function isActiveSubscriptionStatus(
   status: SubscriptionStatus,
-): boolean {
+): status is ActiveSubscriptionStatus {
   return (ACTIVE_SUBSCRIPTION_STATUSES as ReadonlyArray<string>).includes(
     status,
   );
@@ -83,7 +87,9 @@ export function isActiveSubscriptionStatus(
  * at all.
  */
 export function ordersAfter(stamp: Date | null, mark: Date | null): boolean {
-  if (stamp === null) return false;
+  if (stamp === null) {
+    return false;
+  }
   return mark === null || stamp > mark;
 }
 
@@ -97,6 +103,13 @@ export function ordersAfter(stamp: Date | null, mark: Date | null): boolean {
 export const FEATURE_METADATA_PREFIX = 'FEATURE_';
 
 export const PLAN_NAME_METADATA_KEY = 'planName';
+
+/**
+ * Metadata key identifying the offer a subscription was sold under, e.g.
+ * `BUS-10-A`. Upstream copies it from the payment link onto the subscription
+ * on checkout and on every plan change, so it moves with the price.
+ */
+export const PLAN_CODE_METADATA_KEY = 'planCode';
 
 /**
  * Metadata key marking which trial a payment link offers: `'true'` for the

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
-import { OPAQUE_ID_MAXLENGTH } from '@/routes/common/constants';
+import { OPAQUE_ID_MAXLENGTH } from '#/routes/common/constants';
 
 /**
  * An opaque identifier minted by an upstream provider — a relay task id, a

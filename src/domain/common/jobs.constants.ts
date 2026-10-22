@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import configuration from '@/config/entities/configuration';
+import configuration from '#/config/entities/configuration';
 
 // CSV export queue constants
 export const CSV_EXPORT_QUEUE = 'csv-export';
@@ -15,3 +15,6 @@ export const PUSH_NOTIFICATION_WORKER_CONCURRENCY =
 export const SES_EMAIL_QUEUE = 'ses-email';
 export const SES_EMAIL_WORKER_CONCURRENCY =
   configuration().email.ses.queue.concurrency;
+
+// Safenet checks queue constants
+export const SAFENET_CHECKS_QUEUE = 'safenet-checks';

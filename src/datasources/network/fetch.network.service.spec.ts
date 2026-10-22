@@ -2,12 +2,12 @@
 
 import { faker } from '@faker-js/faker';
 import type { MockedFunction, MockedObject } from 'vitest';
-import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
-import type { NetworkRequest } from '@/datasources/network/entities/network.request.entity';
-import { FetchNetworkService } from '@/datasources/network/fetch.network.service';
-import type { FetchClient } from '@/datasources/network/network.module';
-import type { ILoggingService } from '@/logging/logging.interface';
-import { rawify } from '@/validation/entities/raw.entity';
+import { NetworkResponseError } from '#/datasources/network/entities/network.error.entity';
+import type { NetworkRequest } from '#/datasources/network/entities/network.request.entity';
+import { FetchNetworkService } from '#/datasources/network/fetch.network.service';
+import type { FetchClient } from '#/datasources/network/network.module';
+import type { ILoggingService } from '#/logging/logging.interface';
+import { rawify } from '#/validation/entities/raw.entity';
 
 const fetchClient = vi.fn();
 

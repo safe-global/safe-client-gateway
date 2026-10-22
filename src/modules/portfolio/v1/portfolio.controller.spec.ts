@@ -3,10 +3,10 @@
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import type { GetPortfolioDto } from '@/modules/portfolio/v1/entities/get-portfolio.dto.entity';
-import type { Portfolio } from '@/modules/portfolio/v1/entities/portfolio.entity';
-import { PortfolioController } from '@/modules/portfolio/v1/portfolio.controller';
-import type { PortfolioApiService } from '@/modules/portfolio/v1/portfolio.service';
+import type { GetPortfolioDto } from '#/modules/portfolio/v1/entities/get-portfolio.dto.entity';
+import type { Portfolio } from '#/modules/portfolio/v1/entities/portfolio.entity';
+import { PortfolioController } from '#/modules/portfolio/v1/portfolio.controller';
+import type { PortfolioApiService } from '#/modules/portfolio/v1/portfolio.service';
 
 const service = {
   getPortfolio: vi.fn(),

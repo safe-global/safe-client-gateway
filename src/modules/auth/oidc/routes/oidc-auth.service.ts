@@ -1,36 +1,36 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { randomBytes } from 'node:crypto';
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { getSecondsUntil } from '@/domain/common/utils/time';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { getSecondsUntil } from '#/domain/common/utils/time';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import { asError } from '@/logging/utils';
-import { IAuthRepository } from '@/modules/auth/domain/auth.repository.interface';
+} from '#/logging/logging.interface';
+import { asError } from '#/logging/utils';
+import { IAuthRepository } from '#/modules/auth/domain/auth.repository.interface';
 import {
   AuthMethod,
   type AuthPayload,
-} from '@/modules/auth/domain/entities/auth-payload.entity';
-import { TOTP_AUTHENTICATION_METHOD_TYPE } from '@/modules/auth/oidc/auth0/datasources/entities/auth0-authentication-method.entity';
-import { IAuth0Repository } from '@/modules/auth/oidc/auth0/domain/auth0.repository.interface';
-import type { Authenticator } from '@/modules/auth/oidc/routes/entities/authenticator.entity';
-import type { OidcConnection } from '@/modules/auth/oidc/routes/entities/oidc-connection.entity';
+} from '#/modules/auth/domain/entities/auth-payload.entity';
+import { TOTP_AUTHENTICATION_METHOD_TYPE } from '#/modules/auth/oidc/auth0/datasources/entities/auth0-authentication-method.entity';
+import { IAuth0Repository } from '#/modules/auth/oidc/auth0/domain/auth0.repository.interface';
+import type { Authenticator } from '#/modules/auth/oidc/routes/entities/authenticator.entity';
+import type { OidcConnection } from '#/modules/auth/oidc/routes/entities/oidc-connection.entity';
 import {
   type OidcState,
   OidcStateSchema,
-} from '@/modules/auth/oidc/routes/entities/oidc-state.entity';
+} from '#/modules/auth/oidc/routes/entities/oidc-state.entity';
 import {
   getRedirectConfig,
   type RedirectConfig,
   resolveAndValidateRedirectUrl,
-} from '@/modules/auth/utils/auth-redirect.helper';
+} from '#/modules/auth/utils/auth-redirect.helper';
 import {
   assertExpirationTime,
   getMaxExpirationTime,
-} from '@/modules/auth/utils/token-expiration.utils';
-import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
+} from '#/modules/auth/utils/token-expiration.utils';
+import { IUsersRepository } from '#/modules/users/domain/users.repository.interface';
 
 type OidcAuthTokenResponse = {
   accessToken: string;

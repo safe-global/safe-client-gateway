@@ -10,7 +10,7 @@ Read **[docs/agents/module-structure.md](../../../docs/agents/module-structure.m
 Two non-negotiables from [AGENTS.md](../../../AGENTS.md) live here:
 
 - **New feature code goes in `src/modules/<kebab>/`** following the canonical skeleton — never in `src/routes/`, `src/domain/`, or `src/datasources/`. Those three are frozen legacy trees; `src/datasources/` takes cross-cutting infrastructure only (cache, db, network, jwt, kms, job-queue, storage, circuit-breaker). A new external API client belongs in its own module's `datasources/`.
-- **Imports use the `@/` alias only, and reach other modules only through their `domain/`.** Importing another module's `routes/` or `datasources/` is a layering violation.
+- **Imports use the `#/` alias only, and reach other modules only through their `domain/`.** Importing another module's `routes/` or `datasources/` is a layering violation.
 
 The doc also names the five structurally deviant modules (portfolio, safe-shield, csv-export, email, owners) and what specifically not to copy from each — they pass their tests and are still not the pattern. Four controller-versioning styles coexist in the tree; only one is current.
 

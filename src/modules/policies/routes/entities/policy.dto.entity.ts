@@ -1,24 +1,38 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
-import type { Address } from 'viem';
+import type { Address, Hex } from 'viem';
+import {
+  type ActivePolicy,
+  type ActivePolicyData,
+  type CosignerPolicyData,
+  type Erc20TransferPolicyData,
+  type Erc20TransferRecipient,
+  type PolicyPermission,
+  PolicyPermissionSchema,
+  type ProposerPolicyData,
+  type SpendingLimitAllowance,
+  type SpendingLimitPolicyData,
+  type StatelessPolicyData,
+} from '#/modules/policies/domain/entities/active-policy.entity';
 import type {
-  ActivePolicy,
-  ActivePolicyData,
-  ProposerPolicyData,
-  SpendingLimitAllowance,
-  SpendingLimitPolicyData,
-} from '@/modules/policies/domain/entities/active-policy.entity';
-import type {
+  GuardEnforcement,
   GuardSlots,
   ModuleEnforcement,
   OffChainEnforcement,
+  PolicyAccess,
   PolicyContracts,
   PolicyEnforcement,
-} from '@/modules/policies/domain/entities/policy-enforcement.entity';
+} from '#/modules/policies/domain/entities/policy-enforcement.entity';
+import { PolicyOperation } from '#/modules/policies/domain/entities/policy-operation.entity';
 import {
   PolicyEnforcementKind,
   PolicyType,
-} from '@/modules/policies/domain/entities/policy-type.entity';
+} from '#/modules/policies/domain/entities/policy-type.entity';
+import type { Token } from '#/modules/policies/domain/entities/token.entity';
+import type {
+  Erc20Token,
+  NativeToken,
+} from '#/modules/tokens/domain/entities/token.entity';
 
 /**
  * Which Safe an item belongs to.
@@ -62,11 +76,31 @@ export class ModuleEnforcementDto implements ModuleEnforcement {
   public readonly moduleAddress!: Address;
 }
 
-export class GuardEnforcementDto {
+export class PolicyAccessDto implements PolicyAccess {
+  @ApiProperty({
+    type: String,
+    description: 'The contract the governed calls target',
+  })
+  public readonly target!: Address;
+  @ApiProperty({
+    type: String,
+    description: 'The 4-byte function selector of the governed calls',
+  })
+  public readonly selector!: Hex;
+  @ApiProperty({ enum: Object.values(PolicyOperation) })
+  public readonly operation!: PolicyOperation;
+}
+
+export class GuardEnforcementDto implements GuardEnforcement {
   @ApiProperty({ enum: [PolicyEnforcementKind.Guard] })
   public readonly via!: typeof PolicyEnforcementKind.Guard;
   @ApiProperty({ type: GuardSlotsDto })
   public readonly guards!: GuardSlots;
+  @ApiProperty({
+    type: PolicyAccessDto,
+    description: 'The calls the guard applies the policy to',
+  })
+  public readonly access!: PolicyAccess;
 }
 
 export class OffChainEnforcementDto implements OffChainEnforcement {
@@ -96,12 +130,75 @@ const EnforcementSchema = {
   },
 };
 
+/**
+ * Mirrors the token module's own `BaseTokenMetadata`/`*TokenMetadata` DTOs
+ * (`src/modules/tokens/routes/entities/token.dto.entity.ts`) - not imported
+ * from there directly, since a module reaches another only through its
+ * `domain/` (see `docs/agents/module-structure.md`).
+ */
+class BaseTokenMetadataDto {
+  @ApiProperty({ type: String })
+  public readonly address!: Address;
+  @ApiProperty()
+  public readonly decimals!: number;
+  @ApiProperty()
+  public readonly logoUri!: string;
+  @ApiProperty()
+  public readonly name!: string;
+  @ApiProperty()
+  public readonly symbol!: string;
+  @ApiProperty({
+    description:
+      'Whether the Transaction Service lists the token in one of its imported token lists',
+  })
+  public readonly trusted!: boolean;
+}
+
+export class NativeTokenMetadataDto
+  extends BaseTokenMetadataDto
+  implements NativeToken
+{
+  @ApiProperty({ enum: ['NATIVE_TOKEN'] })
+  public readonly type!: 'NATIVE_TOKEN';
+}
+
+export class Erc20TokenMetadataDto
+  extends BaseTokenMetadataDto
+  implements Erc20Token
+{
+  @ApiProperty({ enum: ['ERC20'] })
+  public readonly type!: 'ERC20';
+}
+
+/** ERC721 never applies: a spending limit is always a fungible amount. */
+export const SpendingLimitTokenMetadataSchema = {
+  oneOf: [
+    { $ref: getSchemaPath(NativeTokenMetadataDto) },
+    { $ref: getSchemaPath(Erc20TokenMetadataDto) },
+  ],
+  discriminator: {
+    propertyName: 'type',
+    mapping: {
+      NATIVE_TOKEN: getSchemaPath(NativeTokenMetadataDto),
+      ERC20: getSchemaPath(Erc20TokenMetadataDto),
+    },
+  },
+};
+
+@ApiExtraModels(NativeTokenMetadataDto, Erc20TokenMetadataDto)
 export class SpendingLimitAllowanceDto implements SpendingLimitAllowance {
   @ApiProperty({
     type: String,
     description: 'The token the limit applies to; zero address for native',
   })
   public readonly tokenAddress!: Address;
+  @ApiProperty({
+    ...SpendingLimitTokenMetadataSchema,
+    nullable: true,
+    description:
+      'Metadata of `tokenAddress`; null when it could not be resolved',
+  })
+  public readonly tokenMetadata!: Token | null;
   @ApiProperty({ description: 'Per-window ceiling, in base units' })
   public readonly amount!: string;
   @ApiProperty({ description: 'Spent in the current window, in base units' })
@@ -125,6 +222,14 @@ export class SpendingLimitAllowanceDto implements SpendingLimitAllowance {
       "False when the spender's delegate registration was removed: nothing is spendable now, but the allowance returns to effect if the delegate is re-added",
   })
   public readonly isDelegateActive!: boolean;
+  @ApiProperty({
+    description: 'Unix seconds this allowance was (re-)established',
+  })
+  public readonly createdAt!: number;
+  @ApiProperty({
+    description: 'Unix seconds of the last event that changed this allowance',
+  })
+  public readonly updatedAt!: number;
 }
 
 export class SpendingLimitSpenderDto {
@@ -199,10 +304,54 @@ export class ProposerPolicyDataDto implements ProposerPolicyData {
   public readonly proposers!: ProposerPolicyData['proposers'];
 }
 
+export class Erc20TransferRecipientDto implements Erc20TransferRecipient {
+  @ApiProperty({
+    type: String,
+    description: 'An address the Safe can send this token to',
+  })
+  public readonly account!: Address;
+  @ApiProperty({
+    enum: PolicyPermissionSchema.options,
+  })
+  public readonly permission!: PolicyPermission;
+}
+
+export class Erc20TransferPolicyDataDto implements Erc20TransferPolicyData {
+  @ApiProperty({
+    type: String,
+    description: 'The ERC20 token the allowlist applies to',
+  })
+  public readonly tokenAddress!: Address;
+  @ApiProperty({
+    type: Erc20TransferRecipientDto,
+    isArray: true,
+    description: 'The recipients of the token transfers the policy permits',
+  })
+  public readonly recipients!: Array<Erc20TransferRecipient>;
+}
+
+export class CosignerPolicyDataDto implements CosignerPolicyData {
+  @ApiProperty({
+    type: String,
+    description: 'The cosigner the policy enforces.',
+  })
+  public readonly cosignerAddress!: Address;
+}
+
+/**
+ * Allow, deny, native transfer and multisend carry no configuration.
+ */
+export class StatelessPolicyDataDto implements StatelessPolicyData {
+  [key: string]: never;
+}
+
 const PolicyDataSchema = {
   oneOf: [
     { $ref: getSchemaPath(SpendingLimitPolicyDataDto) },
     { $ref: getSchemaPath(ProposerPolicyDataDto) },
+    { $ref: getSchemaPath(Erc20TransferPolicyDataDto) },
+    { $ref: getSchemaPath(CosignerPolicyDataDto) },
+    { $ref: getSchemaPath(StatelessPolicyDataDto) },
   ],
 };
 
@@ -212,6 +361,10 @@ const PolicyDataSchema = {
   OffChainEnforcementDto,
   SpendingLimitPolicyDataDto,
   ProposerPolicyDataDto,
+  Erc20TransferRecipientDto,
+  Erc20TransferPolicyDataDto,
+  CosignerPolicyDataDto,
+  StatelessPolicyDataDto,
 )
 export class ActivePolicyDto implements ActivePolicy {
   @ApiProperty({ enum: Object.values(PolicyType) })

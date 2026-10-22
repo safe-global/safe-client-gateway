@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { HttpStatus, Injectable } from '@nestjs/common';
 import get from 'lodash/get';
-import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
-import { DataSourceError } from '@/domain/errors/data-source.error';
+import { NetworkResponseError } from '#/datasources/network/entities/network.error.entity';
+import { DataSourceError } from '#/domain/errors/data-source.error';
 
 /**
  * Maps a {@link NetworkError} or {@link Error} into a {@link DataSourceError}

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { addressBookItemBuilder } from '@/modules/spaces/domain/address-books/entities/__tests__/address-book-item.db.builder';
-import { UpsertAddressBookItemsSchema } from '@/modules/spaces/routes/address-books/entities/upsert-address-book-items.dto.entity';
+import { addressBookItemBuilder } from '#/modules/spaces/domain/address-books/entities/__tests__/address-book-item.db.builder';
+import { UpsertAddressBookItemsSchema } from '#/modules/spaces/routes/address-books/entities/upsert-address-book-items.dto.entity';
 
 const validItem = (): {
   name: string;

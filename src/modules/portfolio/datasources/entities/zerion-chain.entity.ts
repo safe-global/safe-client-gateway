@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
 
 export type ZerionChain = z.infer<typeof ZerionChainSchema>;
@@ -13,6 +14,7 @@ export const ZerionChainAttributesSchema = z.object({
     })
     .nullish()
     .default(null),
+  flags: z.object({ supports_positions: z.boolean() }).nullish(),
 });
 
 export const ZerionChainSchema = z.object({

@@ -2,31 +2,31 @@
 import { Inject, Injectable } from '@nestjs/common';
 import groupBy from 'lodash/groupBy';
 import type { Address } from 'viem';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { IDataDecoderRepository } from '@/modules/data-decoder/domain/v2/data-decoder.repository.interface';
-import type { DataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
-import type { EthereumTransaction } from '@/modules/safe/domain/entities/ethereum-transaction.entity';
-import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { IDataDecoderRepository } from '#/modules/data-decoder/domain/v2/data-decoder.repository.interface';
+import type { DataDecoded } from '#/modules/data-decoder/domain/v2/entities/data-decoded.entity';
+import type { EthereumTransaction } from '#/modules/safe/domain/entities/ethereum-transaction.entity';
+import type { Safe } from '#/modules/safe/domain/entities/safe.entity';
 import {
   isCreationTransaction,
   isEthereumTransaction,
   isModuleTransaction,
   isMultisigTransaction,
   type Transaction as TransactionDomain,
-} from '@/modules/safe/domain/entities/transaction.entity';
-import type { Transfer } from '@/modules/safe/domain/entities/transfer.entity';
-import { TransactionItem } from '@/modules/transactions/routes/entities/transaction-item.entity';
+} from '#/modules/safe/domain/entities/transaction.entity';
+import type { Transfer } from '#/modules/safe/domain/entities/transfer.entity';
+import { TransactionItem } from '#/modules/transactions/routes/entities/transaction-item.entity';
 import {
   calculateTimezoneOffset,
   convertToTimezone,
-} from '@/modules/transactions/routes/helpers/timezone.helper';
-import { CreationTransactionMapper } from '@/modules/transactions/routes/mappers/creation-transaction/creation-transaction.mapper';
-import { ModuleTransactionMapper } from '@/modules/transactions/routes/mappers/module-transactions/module-transaction.mapper';
-import { MultisigTransactionMapper } from '@/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction.mapper';
-import { TransferMapper } from '@/modules/transactions/routes/mappers/transfers/transfer.mapper';
-import { TransferImitationMapper } from '@/modules/transactions/routes/mappers/transfers/transfer-imitation.mapper';
-import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
-import { DateLabel } from '@/routes/common/entities/date-label.entity';
+} from '#/modules/transactions/routes/helpers/timezone.helper';
+import { CreationTransactionMapper } from '#/modules/transactions/routes/mappers/creation-transaction/creation-transaction.mapper';
+import { ModuleTransactionMapper } from '#/modules/transactions/routes/mappers/module-transactions/module-transaction.mapper';
+import { MultisigTransactionMapper } from '#/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction.mapper';
+import { TransferMapper } from '#/modules/transactions/routes/mappers/transfers/transfer.mapper';
+import { TransferImitationMapper } from '#/modules/transactions/routes/mappers/transfers/transfer-imitation.mapper';
+import { AddressInfoHelper } from '#/routes/common/address-info/address-info.helper';
+import { DateLabel } from '#/routes/common/entities/date-label.entity';
 
 @Injectable()
 export class TransactionsHistoryMapper {

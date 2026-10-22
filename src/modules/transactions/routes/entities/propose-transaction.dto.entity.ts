@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import type { Address, Hash, Hex } from 'viem';
-import { Operation } from '@/modules/safe/domain/entities/operation.entity';
+import { Operation } from '#/modules/safe/domain/entities/operation.entity';
 import type {
   NestedTransactionDto as DomainNestedTransactionDto,
   ProposeTransactionDto as DomainProposeTransactionDto,
-} from '@/modules/transactions/domain/entities/propose-transaction.dto.entity';
+} from '#/modules/transactions/domain/entities/propose-transaction.dto.entity';
 
 export class NestedTransactionDto implements DomainNestedTransactionDto {
   @ApiPropertyOptional({ type: String, nullable: true })

@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable, Optional } from '@nestjs/common';
-import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
-import type { NetworkRequest } from '@/datasources/network/entities/network.request.entity';
-import type { NetworkResponse } from '@/datasources/network/entities/network.response.entity';
+import { NetworkResponseError } from '#/datasources/network/entities/network.error.entity';
+import type { NetworkRequest } from '#/datasources/network/entities/network.request.entity';
+import type { NetworkResponse } from '#/datasources/network/entities/network.response.entity';
 import {
   type FetchClient,
   FetchClientToken,
-} from '@/datasources/network/network.module';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import { LogType } from '@/domain/common/entities/log-type.entity';
+} from '#/datasources/network/network.module';
+import type { INetworkService } from '#/datasources/network/network.service.interface';
+import { LogType } from '#/domain/common/entities/log-type.entity';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
+} from '#/logging/logging.interface';
 
 /**
  * A {@link INetworkService} which uses fetch as the main HTTP client

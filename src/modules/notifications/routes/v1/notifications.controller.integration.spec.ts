@@ -9,24 +9,24 @@ import type { MockedObject } from 'vitest';
 import {
   initTestApplication,
   TestAppProvider,
-} from '@/__tests__/test-app.provider';
-import { createTestModule } from '@/__tests__/testing-module';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import configuration from '@/config/entities/__tests__/configuration';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import { NetworkService } from '@/datasources/network/network.service.interface';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
-import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
-import { createV2RegisterDtoBuilder } from '@/modules/notifications/routes/v1/entities/__tests__/create-registration-v2.dto.builder';
-import { registerDeviceDtoBuilder } from '@/modules/notifications/routes/v1/entities/__tests__/register-device.dto.builder';
-import { safeRegistrationBuilder } from '@/modules/notifications/routes/v1/entities/__tests__/safe-registration.builder';
-import type { RegisterDeviceDto } from '@/modules/notifications/routes/v1/entities/register-device.dto.entity';
-import { NotificationsModuleV2 } from '@/modules/notifications/routes/v2/notifications.module';
-import { NotificationsServiceV2 } from '@/modules/notifications/routes/v2/notifications.service';
-import { TestNotificationsModuleV2 } from '@/modules/notifications/routes/v2/test.notifications.module';
-import { rawify } from '@/validation/entities/raw.entity';
-import { fakeUuid } from '@/validation/entities/schemas/__tests__/uuid.builder';
+} from '#/__tests__/test-app.provider';
+import { createTestModule } from '#/__tests__/testing-module';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import configuration from '#/config/entities/__tests__/configuration';
+import type { INetworkService } from '#/datasources/network/network.service.interface';
+import { NetworkService } from '#/datasources/network/network.service.interface';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
+import { NotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/notifications.repository.module';
+import { TestNotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/test.notification.repository.module';
+import { createV2RegisterDtoBuilder } from '#/modules/notifications/routes/v1/entities/__tests__/create-registration-v2.dto.builder';
+import { registerDeviceDtoBuilder } from '#/modules/notifications/routes/v1/entities/__tests__/register-device.dto.builder';
+import { safeRegistrationBuilder } from '#/modules/notifications/routes/v1/entities/__tests__/safe-registration.builder';
+import type { RegisterDeviceDto } from '#/modules/notifications/routes/v1/entities/register-device.dto.entity';
+import { NotificationsModuleV2 } from '#/modules/notifications/routes/v2/notifications.module';
+import { NotificationsServiceV2 } from '#/modules/notifications/routes/v2/notifications.service';
+import { TestNotificationsModuleV2 } from '#/modules/notifications/routes/v2/test.notifications.module';
+import { rawify } from '#/validation/entities/raw.entity';
+import { fakeUuid } from '#/validation/entities/schemas/__tests__/uuid.builder';
 
 describe('Notifications Controller', () => {
   let app: INestApplication<Server>;

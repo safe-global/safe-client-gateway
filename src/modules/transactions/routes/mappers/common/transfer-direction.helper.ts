@@ -1,4 +1,5 @@
-import { TransferDirection } from '@/modules/transactions/routes/entities/transfer-transaction-info.entity';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { TransferDirection } from '#/modules/transactions/routes/entities/transfer-transaction-info.entity';
 
 export function getTransferDirection(
   safeAddress: string,

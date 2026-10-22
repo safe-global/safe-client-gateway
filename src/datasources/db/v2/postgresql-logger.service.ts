@@ -6,7 +6,7 @@ import {
   type LogLevel,
   type LogMessage,
 } from 'typeorm';
-import type { ILoggingService } from '@/logging/logging.interface';
+import type { ILoggingService } from '#/logging/logging.interface';
 
 @Injectable()
 export class PostgresqlLogger extends AbstractLogger {

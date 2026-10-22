@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
-import { safeQueueMultisigTransactionBuilder } from '@/modules/safe-queue/entities/__tests__/queue-multisig-transaction.builder';
-import { SafeQueueMultisigTransactionListSchema } from '@/modules/safe-queue/entities/multisig-transaction.entity';
+import { safeQueueMultisigTransactionBuilder } from '#/modules/safe-queue/entities/__tests__/queue-multisig-transaction.builder';
+import { SafeQueueMultisigTransactionListSchema } from '#/modules/safe-queue/entities/multisig-transaction.entity';
 import {
   OriginNameSchema,
   OriginUrlSchema,
-} from '@/modules/safe-queue/entities/schemas/origin.schema';
+} from '#/modules/safe-queue/entities/schemas/origin.schema';
 
 describe('OriginNameSchema', () => {
   it('accepts a normal string', () => {

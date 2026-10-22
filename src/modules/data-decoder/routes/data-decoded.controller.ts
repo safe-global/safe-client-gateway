@@ -7,13 +7,14 @@ import {
   ApiParam,
   ApiTags,
 } from '@nestjs/swagger';
-import { DataDecodedService } from '@/modules/data-decoder/routes/data-decoded.service';
-import { DataDecoded } from '@/modules/data-decoder/routes/entities/data-decoded.entity';
+import { ChainIdSchema } from '#/modules/chains/domain/entities/schemas/chain-id.schema';
+import { DataDecodedService } from '#/modules/data-decoder/routes/data-decoded.service';
+import { DataDecoded } from '#/modules/data-decoder/routes/entities/data-decoded.entity';
 import {
   TransactionDataDto,
   TransactionDataDtoSchema,
-} from '@/routes/common/entities/transaction-data.dto.entity';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+} from '#/routes/common/entities/transaction-data.dto.entity';
+import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
 @ApiTags('data-decoded')
 @Controller({
@@ -47,7 +48,7 @@ export class DataDecodedController {
   @HttpCode(200)
   @Post('chains/:chainId/data-decoder')
   getDataDecoded(
-    @Param('chainId') chainId: string,
+    @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
     @Body(new ValidationPipe(TransactionDataDtoSchema))
     getDataDecodedDto: TransactionDataDto,
   ): Promise<DataDecoded> {

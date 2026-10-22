@@ -5,11 +5,11 @@ import type { Mock, MockedObject } from 'vitest';
 import {
   NetworkRequestError,
   NetworkResponseError,
-} from '@/datasources/network/entities/network.error.entity';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import type { IBlockchainApiManager } from '@/domain/interfaces/blockchain-api.manager.interface';
-import type { ILoggingService } from '@/logging/logging.interface';
-import { TenderlySimulationApi } from '@/modules/relay/datasources/tenderly-simulation-api.service';
+} from '#/datasources/network/entities/network.error.entity';
+import type { INetworkService } from '#/datasources/network/network.service.interface';
+import type { IBlockchainApiManager } from '#/domain/interfaces/blockchain-api.manager.interface';
+import type { ILoggingService } from '#/logging/logging.interface';
+import { TenderlySimulationApi } from '#/modules/relay/datasources/tenderly-simulation-api.service';
 
 const SAFE_EXECUTION_FAILURE_TOPIC = toEventSelector(
   'event ExecutionFailure(bytes32 txHash, uint256 payment)',

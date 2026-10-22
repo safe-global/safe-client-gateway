@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { Address } from 'viem';
-import type { Contract } from '@/modules/data-decoder/domain/v2/entities/contract.entity';
+import type { Contract } from '#/modules/data-decoder/domain/v2/entities/contract.entity';
 
 export const IContractsRepository = Symbol('IContractsRepository');
 

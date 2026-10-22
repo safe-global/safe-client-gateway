@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { forwardRef, Module } from '@nestjs/common';
-import { AuthModule } from '@/modules/auth/auth.module';
-import { EntitlementsModule } from '@/modules/entitlements/entitlements.module';
-import { EntitlementsController } from '@/modules/entitlements/routes/entitlements.controller';
-import { SpacesModule } from '@/modules/spaces/spaces.module';
+import { AuthModule } from '#/modules/auth/auth.module';
+import { EntitlementsModule } from '#/modules/entitlements/entitlements.module';
+import { EntitlementsController } from '#/modules/entitlements/routes/entitlements.controller';
+import { SpacesModule } from '#/modules/spaces/spaces.module';
 
 /**
  * The HTTP surface of the entitlements feature, kept apart from

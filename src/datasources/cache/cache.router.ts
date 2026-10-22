@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import crypto from 'node:crypto';
 import type { Address, Hash } from 'viem';
-import type { SubscriptionStatusFilter } from '@/datasources/billing-api/entities/subscription.entity';
-import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
-import type { BaseDataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
-import { Origin } from '@/modules/fees/domain/entities/origin.entity';
-import type { ExtractedContract } from '@/modules/safe-shield/entities/extracted-contract.entity';
-import type { TransactionInfo } from '@/modules/transactions/routes/entities/transaction-info.entity';
+import type { SubscriptionStatusFilter } from '#/datasources/billing-api/entities/subscription.entity';
+import { CacheDir } from '#/datasources/cache/entities/cache-dir.entity';
+import type { BaseDataDecoded } from '#/modules/data-decoder/domain/v2/entities/data-decoded.entity';
+import { Origin } from '#/modules/fees/domain/entities/origin.entity';
+import type { ExtractedContract } from '#/modules/safe-shield/entities/extracted-contract.entity';
+import type { TransactionInfo } from '#/modules/transactions/routes/entities/transaction-info.entity';
 
 export class CacheRouter {
   private static readonly ACCOUNT_DATA_SETTINGS_KEY = 'account_data_settings';
@@ -96,7 +96,7 @@ export class CacheRouter {
   private static readonly ZERION_BALANCES_KEY = 'zerion_balances';
   private static readonly ZERION_COLLECTIBLES_KEY = 'zerion_collectibles';
   private static readonly ZERION_POSITIONS_KEY = 'zerion_positions';
-  private static readonly ZERION_CHAINS_KEY = 'zerion_chains';
+  private static readonly ZERION_CHAINS_KEY = 'zerion_indexed_chains';
   private static readonly PORTFOLIO_KEY = 'portfolio';
   private static readonly ZERION_WALLET_PORTFOLIO_KEY =
     'zerion_wallet_portfolio';
@@ -108,6 +108,25 @@ export class CacheRouter {
   private static readonly GAS_PRICE_KEY = 'gas_price';
   private static readonly RELAY_FEE_PREVIEW_KEY = 'relay_fee_preview';
   private static readonly GTF_FEE_PREVIEW_KEY = 'gtf_fee_preview';
+  private static readonly SAFENET_PAYER_NONCE_KEY = 'safenet_payer_nonce';
+  private static readonly SAFENET_CHECKS_KEY = 'safenet_checks';
+
+  static getSafenetPayerNonceCacheKey(args: {
+    chainId: string;
+    safeAddress: Address;
+  }): string {
+    const address = args.safeAddress.toLowerCase();
+    return `${CacheRouter.SAFENET_PAYER_NONCE_KEY}_${args.chainId}_${address}`;
+  }
+
+  static getSafenetChecksRateLimitCacheKey(args: {
+    spaceId: number;
+    day: string;
+  }): string {
+    return CacheRouter.getRateLimitCacheKey(
+      `${CacheRouter.SAFENET_CHECKS_KEY}_${args.spaceId}_${args.day}`,
+    );
+  }
 
   static getAuthNonceCacheKey(nonce: string): string {
     return `${CacheRouter.AUTH_NONCE_KEY}_${nonce}`;
@@ -658,12 +677,13 @@ export class CacheRouter {
   static getMessagesBySafeCacheDir(args: {
     chainId: string;
     safeAddress: Address;
+    ordering?: string;
     limit?: number;
     offset?: number;
   }): CacheDir {
     return new CacheDir(
       CacheRouter.getMessagesBySafeCacheKey(args),
-      `${args.limit}_${args.offset}`,
+      `${args.ordering}_${args.limit}_${args.offset}`,
     );
   }
 
@@ -1364,8 +1384,12 @@ export class CacheRouter {
   static getPolicyIndexerStateCacheDir(args: {
     chainId: string;
     safeAddress: Address;
+    guardPolicyKinds: ReadonlyArray<string>;
   }): CacheDir {
-    return new CacheDir(CacheRouter.getPolicyIndexerStateCacheKey(args), '');
+    return new CacheDir(
+      CacheRouter.getPolicyIndexerStateCacheKey(args),
+      [...args.guardPolicyKinds].sort().join(','),
+    );
   }
 
   static getPolicyIndexerStateCacheKey(args: {

@@ -1,7 +1,8 @@
-import { CommonStatus } from '@/modules/safe-shield/entities/analysis-result.entity';
-import { COMMON_SEVERITY_MAPPING } from '@/modules/safe-shield/entities/common-status.constants';
-import type { Severity } from '@/modules/safe-shield/entities/severity.entity';
-import { ThreatStatus } from '@/modules/safe-shield/entities/threat-status.entity';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { CommonStatus } from '#/modules/safe-shield/entities/analysis-result.entity';
+import { COMMON_SEVERITY_MAPPING } from '#/modules/safe-shield/entities/common-status.constants';
+import type { Severity } from '#/modules/safe-shield/entities/severity.entity';
+import { ThreatStatus } from '#/modules/safe-shield/entities/threat-status.entity';
 
 /**
  * Severity mapping for threat analysis results.

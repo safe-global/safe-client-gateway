@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { EntityManager } from 'typeorm';
-import type { SpaceSubscription } from '@/modules/entitlements/datasources/entities/space-subscription.entity.db';
-import type { SubscriptionValues } from '@/modules/entitlements/domain/entities/space-subscription.entity';
-import type { Space } from '@/modules/spaces/domain/entities/space.entity';
+import type { SpaceSubscription } from '#/modules/entitlements/datasources/entities/space-subscription.entity.db';
+import type { SubscriptionValues } from '#/modules/entitlements/domain/entities/space-subscription.entity';
+import type { Space } from '#/modules/spaces/domain/entities/space.entity';
 
 export const ISubscriptionsRepository = Symbol('ISubscriptionsRepository');
 
@@ -23,6 +23,15 @@ export interface ISubscriptionsRepository {
     spaceId: Space['id'],
     entityManager?: EntityManager,
   ): Promise<SpaceSubscription | null>;
+
+  /**
+   * {@link getActiveSubscriptionBySpaceId} for several spaces, in one query,
+   * keyed by space id. A space with no active subscription is absent.
+   */
+  getActiveSubscriptionsBySpaceIds(
+    spaceIds: Array<Space['id']>,
+    entityManager?: EntityManager,
+  ): Promise<Map<Space['id'], SpaceSubscription>>;
 
   /**
    * The space's subscription standing, in one read. Prefer it over

@@ -7,10 +7,10 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import type { Address } from 'viem';
-import { SafeList } from '@/modules/owners/routes/entities/safe-list.entity';
-import { OwnersService } from '@/modules/owners/routes/owners.service';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+import { SafeList } from '#/modules/owners/routes/entities/safe-list.entity';
+import { OwnersService } from '#/modules/owners/routes/owners.service';
+import { AddressSchema } from '#/validation/entities/schemas/address.schema';
+import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
 @ApiTags('owners')
 @Controller({

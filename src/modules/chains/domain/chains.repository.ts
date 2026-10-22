@@ -1,33 +1,33 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import differenceBy from 'lodash/differenceBy';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import type { Page } from '@/domain/entities/page.entity';
-import { LenientBasePageSchema } from '@/domain/entities/schemas/page.schema.factory';
-import { IConfigApi } from '@/domain/interfaces/config-api.interface';
-import { IEtherscanApi } from '@/domain/interfaces/etherscan-api.interface';
-import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import type { Page } from '#/domain/entities/page.entity';
+import { LenientBasePageSchema } from '#/domain/entities/schemas/page.schema.factory';
+import { IConfigApi } from '#/domain/interfaces/config-api.interface';
+import { IEtherscanApi } from '#/domain/interfaces/etherscan-api.interface';
+import { ITransactionApiManager } from '#/domain/interfaces/transaction-api.manager.interface';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import type { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
-import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
+} from '#/logging/logging.interface';
+import type { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
+import type { Chain } from '#/modules/chains/domain/entities/chain.entity';
 import {
   type GasPriceResponse,
   GasPriceResponseSchema,
-} from '@/modules/chains/domain/entities/gas-price-response.entity';
+} from '#/modules/chains/domain/entities/gas-price-response.entity';
 import {
   ChainLenientPageSchema,
   ChainSchema,
-} from '@/modules/chains/domain/entities/schemas/chain.schema';
-import { SingletonsSchema } from '@/modules/chains/domain/entities/schemas/singleton.schema';
-import type { Singleton } from '@/modules/chains/domain/entities/singleton.entity';
+} from '#/modules/chains/domain/entities/schemas/chain.schema';
+import { SingletonsSchema } from '#/modules/chains/domain/entities/schemas/singleton.schema';
+import type { Singleton } from '#/modules/chains/domain/entities/singleton.entity';
 import {
   type IndexingStatus,
   IndexingStatusSchema,
-} from '@/modules/indexing/domain/entities/indexing-status.entity';
-import { PaginationData } from '@/routes/common/pagination/pagination.data';
+} from '#/modules/indexing/domain/entities/indexing-status.entity';
+import { PaginationData } from '#/routes/common/pagination/pagination.data';
 
 @Injectable()
 export class ChainsRepository implements IChainsRepository {

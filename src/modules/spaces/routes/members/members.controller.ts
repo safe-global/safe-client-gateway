@@ -24,35 +24,35 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { RowSchema } from '@/datasources/db/v1/entities/row.entity';
-import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
+import { RowSchema } from '#/datasources/db/v1/entities/row.entity';
+import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import { AuthGuard } from '#/modules/auth/routes/guards/auth.guard';
 import {
   AcceptInviteDto,
   AcceptInviteDtoSchema,
-} from '@/modules/spaces/routes/members/entities/accept-invite.dto.entity';
-import { Invitation } from '@/modules/spaces/routes/members/entities/invitation.entity';
+} from '#/modules/spaces/routes/members/entities/accept-invite.dto.entity';
+import { Invitation } from '#/modules/spaces/routes/members/entities/invitation.entity';
 import {
   InviteUsersDto,
   InviteUsersDtoSchema,
-} from '@/modules/spaces/routes/members/entities/invite-users.dto.entity';
+} from '#/modules/spaces/routes/members/entities/invite-users.dto.entity';
 import {
   MemberDto,
   MembersDto,
-} from '@/modules/spaces/routes/members/entities/members.dto.entity';
+} from '#/modules/spaces/routes/members/entities/members.dto.entity';
 import {
   UpdateMemberAliasDto,
   UpdateMemberAliasDtoSchema,
-} from '@/modules/spaces/routes/members/entities/update-member-name.dto.entity';
+} from '#/modules/spaces/routes/members/entities/update-member-name.dto.entity';
 import {
   UpdateRoleDto,
   UpdateRoleDtoSchema,
-} from '@/modules/spaces/routes/members/entities/update-role.dto.entity';
-import { MembersService } from '@/modules/spaces/routes/members/members.service';
-import { Auth } from '@/routes/common/auth/auth.decorator';
-import { ElevationGuard } from '@/routes/common/auth/elevation.guard';
-import { SpaceIdPipe } from '@/routes/common/pipes/space-id.pipe';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+} from '#/modules/spaces/routes/members/entities/update-role.dto.entity';
+import { MembersService } from '#/modules/spaces/routes/members/members.service';
+import { Auth } from '#/routes/common/auth/auth.decorator';
+import { ElevationGuard } from '#/routes/common/auth/elevation.guard';
+import { SpaceIdPipe } from '#/routes/common/pipes/space-id.pipe';
+import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
 @ApiTags('spaces')
 @Controller({ path: 'spaces', version: '1' })

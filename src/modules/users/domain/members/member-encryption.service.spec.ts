@@ -2,8 +2,8 @@
 
 import { faker } from '@faker-js/faker';
 import type { MockedObject } from 'vitest';
-import type { KmsEncryptionService } from '@/datasources/kms/kms-encryption.service';
-import { MemberEncryptionService } from '@/modules/users/domain/members/member-encryption.service';
+import type { KmsEncryptionService } from '#/datasources/kms/kms-encryption.service';
+import { MemberEncryptionService } from '#/modules/users/domain/members/member-encryption.service';
 
 // Plain vi.fn() mock: the wrapper is policy only — these tests assert the
 // exact (value, context) wiring into KmsEncryptionService and nothing else.

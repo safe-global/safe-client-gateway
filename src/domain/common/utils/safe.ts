@@ -10,12 +10,12 @@ import {
   getSafeMigrationVersions,
   getSafeSingletonDeployments,
   getSafeSingletonVersions,
-} from '@/domain/common/utils/deployments';
-import { MessageSchema } from '@/modules/messages/domain/entities/message.entity';
-import type { TypedData } from '@/modules/messages/domain/entities/typed-data.entity';
-import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
-import { Operation } from '@/modules/safe/domain/entities/operation.entity';
-import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
+} from '#/domain/common/utils/deployments';
+import { MessageSchema } from '#/modules/messages/domain/entities/message.entity';
+import type { TypedData } from '#/modules/messages/domain/entities/typed-data.entity';
+import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
+import { Operation } from '#/modules/safe/domain/entities/operation.entity';
+import type { Safe } from '#/modules/safe/domain/entities/safe.entity';
 
 const CHAIN_ID_DOMAIN_HASH_VERSION = '>=1.3.0';
 const TRANSACTION_PRIMARY_TYPE = 'SafeTx';

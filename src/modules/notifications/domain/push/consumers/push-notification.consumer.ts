@@ -6,25 +6,25 @@ import type { Job } from 'bullmq';
 import {
   JobType,
   type JobTypeName,
-} from '@/datasources/job-queue/types/job-types';
-import { LogType } from '@/domain/common/entities/log-type.entity';
+} from '#/datasources/job-queue/types/job-types';
+import { LogType } from '#/domain/common/entities/log-type.entity';
 import {
   PUSH_NOTIFICATION_QUEUE,
   PUSH_NOTIFICATION_WORKER_CONCURRENCY,
-} from '@/domain/common/jobs.constants';
+} from '#/domain/common/jobs.constants';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import { asError } from '@/logging/utils';
+} from '#/logging/logging.interface';
+import { asError } from '#/logging/utils';
 import type {
   JobMetadata,
   PushNotificationDeliveryJobData,
   PushNotificationEventJobData,
   PushNotificationJob,
   PushNotificationJobResponse,
-} from '@/modules/notifications/domain/push/entities/push-notification-job-data.entity';
-import { PushNotificationService } from '@/modules/notifications/domain/push/push-notification.service';
+} from '#/modules/notifications/domain/push/entities/push-notification-job-data.entity';
+import { PushNotificationService } from '#/modules/notifications/domain/push/push-notification.service';
 
 @Processor(PUSH_NOTIFICATION_QUEUE, {
   concurrency: PUSH_NOTIFICATION_WORKER_CONCURRENCY,

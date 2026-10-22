@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import type { IBuilder } from '@/__tests__/builder';
-import { Builder } from '@/__tests__/builder';
+import type { IBuilder } from '#/__tests__/builder';
+import { Builder } from '#/__tests__/builder';
 import type {
   PaymentLink,
   PaymentLinkLineItem,
-} from '@/datasources/billing-api/entities/payment-link.entity';
+} from '#/datasources/billing-api/entities/payment-link.entity';
 
 function paymentLinkLineItemBuilder(): IBuilder<PaymentLinkLineItem> {
   return new Builder<PaymentLinkLineItem>()
@@ -25,7 +25,6 @@ function paymentLinkLineItemBuilder(): IBuilder<PaymentLinkLineItem> {
 export function paymentLinkBuilder(): IBuilder<PaymentLink> {
   return new Builder<PaymentLink>()
     .with('id', faker.string.uuid())
-    .with('url', faker.internet.url())
     .with('active', faker.datatype.boolean())
     .with('metadata', {
       customerGroup: faker.word.noun(),

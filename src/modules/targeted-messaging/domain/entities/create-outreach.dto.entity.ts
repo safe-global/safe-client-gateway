@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
-import { OutreachBaseSchema } from '@/modules/targeted-messaging/domain/entities/outreach.entity';
+import { OutreachBaseSchema } from '#/modules/targeted-messaging/domain/entities/outreach.entity';
 import {
   NullableCoercedDateSchema,
   NullableStringSchema,
-} from '@/validation/entities/schemas/nullable.schema';
+} from '#/validation/entities/schemas/nullable.schema';
 
 export const CreateOutreachDtoSchema = OutreachBaseSchema.extend({
   sourceFile: NullableStringSchema,

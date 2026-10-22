@@ -5,7 +5,7 @@ import type {
   LockingEventSchema,
   UnlockEventItemSchema,
   WithdrawEventItemSchema,
-} from '@/modules/community/domain/entities/schemas/locking-event.schema';
+} from '#/modules/community/domain/entities/schemas/locking-event.schema';
 
 export type LockEventItem = z.infer<typeof LockEventItemSchema>;
 

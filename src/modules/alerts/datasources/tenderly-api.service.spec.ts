@@ -3,14 +3,14 @@
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import { DataSourceError } from '@/domain/errors/data-source.error';
-import { TenderlyApi } from '@/modules/alerts/datasources/tenderly-api.service';
-import type { AlertsDeletion } from '@/modules/alerts/domain/entities/alerts-deletion.entity';
-import type { AlertsRegistration } from '@/modules/alerts/domain/entities/alerts-registration.entity';
+import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
+import { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
+import { NetworkResponseError } from '#/datasources/network/entities/network.error.entity';
+import type { INetworkService } from '#/datasources/network/network.service.interface';
+import { DataSourceError } from '#/domain/errors/data-source.error';
+import { TenderlyApi } from '#/modules/alerts/datasources/tenderly-api.service';
+import type { AlertsDeletion } from '#/modules/alerts/domain/entities/alerts-deletion.entity';
+import type { AlertsRegistration } from '#/modules/alerts/domain/entities/alerts-registration.entity';
 
 const networkService = {
   post: vi.fn(),

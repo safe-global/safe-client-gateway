@@ -1,5 +1,6 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
-import { ChainIdsSchema } from '@/modules/portfolio/schemas/chain-ids.schema';
+import { ChainIdsSchema } from '#/modules/portfolio/schemas/chain-ids.schema';
 
 const BooleanStringDefaultTrueSchema = z
   .enum(['true', 'false'])

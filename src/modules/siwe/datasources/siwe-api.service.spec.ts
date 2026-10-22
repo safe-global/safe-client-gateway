@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
-import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
-import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
-import { SiweApi } from '@/modules/siwe/datasources/siwe-api.service';
+import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
+import { FakeCacheService } from '#/datasources/cache/__tests__/fake.cache.service';
+import { CacheDir } from '#/datasources/cache/entities/cache-dir.entity';
+import { SiweApi } from '#/modules/siwe/datasources/siwe-api.service';
 
 describe('SiweApiService', () => {
   let service: SiweApi;

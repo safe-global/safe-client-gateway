@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Operation } from '@/modules/safe/domain/entities/operation.entity';
+import { Operation } from '#/modules/safe/domain/entities/operation.entity';
 
 /**
  * The operation of a guarded call, as the wire reports it.

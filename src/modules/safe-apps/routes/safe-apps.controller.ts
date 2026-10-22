@@ -7,8 +7,10 @@ import {
   ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
-import { SafeApp } from '@/modules/safe-apps/routes/entities/safe-app.entity';
-import { SafeAppsService } from '@/modules/safe-apps/routes/safe-apps.service';
+import { ChainIdSchema } from '#/modules/chains/domain/entities/schemas/chain-id.schema';
+import { SafeApp } from '#/modules/safe-apps/routes/entities/safe-app.entity';
+import { SafeAppsService } from '#/modules/safe-apps/routes/safe-apps.service';
+import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
 @ApiTags('safe-apps')
 @Controller({
@@ -49,7 +51,7 @@ export class SafeAppsController {
   })
   @Get('chains/:chainId/safe-apps')
   getSafeApps(
-    @Param('chainId') chainId: string,
+    @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
     @Query('clientUrl') clientUrl?: string,
     @Query('url') url?: string,
   ): Promise<Array<SafeApp>> {

@@ -2,10 +2,10 @@
 import type { UUID } from 'node:crypto';
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
-import type { DeviceType } from '@/modules/notifications/domain/v2/entities/device-type.entity';
-import { NotificationType } from '@/modules/notifications/domain/v2/entities/notification-type.entity';
-import { UpsertSubscriptionsDtoSchema } from '@/modules/notifications/domain/v2/entities/upsert-subscriptions.dto.entity';
-import { upsertSubscriptionsDtoBuilder } from '@/modules/notifications/routes/v2/entities/__tests__/upsert-subscriptions.dto.builder';
+import type { DeviceType } from '#/modules/notifications/domain/v2/entities/device-type.entity';
+import { NotificationType } from '#/modules/notifications/domain/v2/entities/notification-type.entity';
+import { UpsertSubscriptionsDtoSchema } from '#/modules/notifications/domain/v2/entities/upsert-subscriptions.dto.entity';
+import { upsertSubscriptionsDtoBuilder } from '#/modules/notifications/routes/v2/entities/__tests__/upsert-subscriptions.dto.builder';
 
 describe('UpsertSubscriptionsDtoSchema', () => {
   it('should validate a valid UpsertSubscriptionsDto', () => {

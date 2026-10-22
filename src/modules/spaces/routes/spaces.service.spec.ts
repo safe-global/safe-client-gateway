@@ -12,28 +12,28 @@ import type { MockedObject } from 'vitest';
 import {
   oidcAuthPayloadDtoBuilder,
   siweAuthPayloadDtoBuilder,
-} from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { createMockSpaceEncryptionService } from '@/modules/spaces/domain/__tests__/space-encryption.service.mock';
-import { spaceBuilder } from '@/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
-import type { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
-import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
-import { SpacesService } from '@/modules/spaces/routes/spaces.service';
-import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
-import { userBuilder } from '@/modules/users/datasources/entities/__tests__/users.entity.db.builder';
-import { createMockMemberEncryptionService } from '@/modules/users/domain/members/__tests__/member-encryption.service.mock';
-import type { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
-import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
-import type { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
-import { createMockWalletEncryptionService } from '@/modules/wallets/domain/__tests__/wallet-encryption.service.mock';
-import type { WalletEncryptionService } from '@/modules/wallets/domain/wallet-encryption.service';
-import type { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
-import { fakeUuid } from '@/validation/entities/schemas/__tests__/uuid.builder';
+} from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import { createMockSpaceEncryptionService } from '#/modules/spaces/domain/__tests__/space-encryption.service.mock';
+import { spaceBuilder } from '#/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
+import { ExperimentalFeatures } from '#/modules/spaces/domain/entities/experimental-feature.entity';
+import type { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository.interface';
+import type { ISpacesRepository } from '#/modules/spaces/domain/spaces.repository.interface';
+import { SpacesService } from '#/modules/spaces/routes/spaces.service';
+import { memberBuilder } from '#/modules/users/datasources/entities/__tests__/member.entity.db.builder';
+import { userBuilder } from '#/modules/users/datasources/entities/__tests__/users.entity.db.builder';
+import { createMockMemberEncryptionService } from '#/modules/users/domain/members/__tests__/member-encryption.service.mock';
+import type { IMembersRepository } from '#/modules/users/domain/members/members.repository.interface';
+import type { IUsersRepository } from '#/modules/users/domain/users.repository.interface';
+import type { Wallet } from '#/modules/wallets/datasources/entities/wallets.entity.db';
+import { createMockWalletEncryptionService } from '#/modules/wallets/domain/__tests__/wallet-encryption.service.mock';
+import type { WalletEncryptionService } from '#/modules/wallets/domain/wallet-encryption.service';
+import type { IWalletsRepository } from '#/modules/wallets/domain/wallets.repository.interface';
+import { fakeUuid } from '#/validation/entities/schemas/__tests__/uuid.builder';
 
 const spacesRepositoryMock = {
   create: vi.fn(),
   find: vi.fn(),
-  findOne: vi.fn(),
   findOneOrFail: vi.fn(),
   update: vi.fn(),
   delete: vi.fn(),
@@ -120,6 +120,7 @@ describe('SpacesService', () => {
         {
           uuid: mockSpace.uuid,
           name: space.name,
+          experimentalFeatures: mockSpace.experimentalFeatures,
           members: [member],
           memberCount: 1,
           safeCount: 3,
@@ -132,6 +133,40 @@ describe('SpacesService', () => {
               inviteExpiresAt: true,
             }),
           }),
+        }),
+      );
+    });
+
+    it('should return the space experimental features', async () => {
+      const features = [faker.helpers.arrayElement(ExperimentalFeatures)];
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const user = userBuilder().with('id', Number(authPayload.sub)).build();
+      const space = spaceBuilder().build();
+      const member = memberBuilder()
+        .with('user', user)
+        .with('space', space)
+        .build();
+
+      membersRepositoryMock.find.mockResolvedValue([member]);
+
+      const mockSpace = spaceBuilder()
+        .with('id', space.id)
+        .with('name', space.name)
+        .with('members', [member])
+        .with('experimentalFeatures', features)
+        .build();
+
+      spacesRepositoryMock.find.mockResolvedValue([mockSpace]);
+      spaceSafesRepositoryMock.countSeatsBySpaceIds.mockResolvedValue(
+        new Map([[space.id, 0]]),
+      );
+
+      const result = await service.getActiveOrInvitedSpaces(authPayload);
+
+      expect(result[0].experimentalFeatures).toStrictEqual(features);
+      expect(spacesRepositoryMock.find).toHaveBeenCalledWith(
+        expect.objectContaining({
+          select: expect.objectContaining({ experimentalFeatures: true }),
         }),
       );
     });
@@ -926,8 +961,8 @@ describe('SpacesService', () => {
       const authPayload = new AuthPayload(builder().build());
       const updatePayload = { name: faker.word.noun() };
 
-      spacesRepositoryMock.findOne.mockResolvedValue(
-        spaceBuilder().with('id', spaceId).with('uuid', spaceUuid).build(),
+      membersRepositoryMock.findOne.mockResolvedValue(
+        memberBuilder().with('role', 'ADMIN').with('status', 'ACTIVE').build(),
       );
       spacesRepositoryMock.update.mockResolvedValue({
         uuid: spaceUuid,
@@ -947,7 +982,7 @@ describe('SpacesService', () => {
       ['OIDC', oidcAuthPayloadDtoBuilder],
     ])('should throw when %s user is not admin', async (_label, builder) => {
       const authPayload = new AuthPayload(builder().build());
-      spacesRepositoryMock.findOne.mockResolvedValue(null);
+      membersRepositoryMock.findOne.mockResolvedValue(null);
 
       await expect(
         service.update({
@@ -967,8 +1002,8 @@ describe('SpacesService', () => {
       const spaceId = faker.number.int();
       const authPayload = new AuthPayload(builder().build());
 
-      spacesRepositoryMock.findOne.mockResolvedValue(
-        spaceBuilder().with('id', spaceId).build(),
+      membersRepositoryMock.findOne.mockResolvedValue(
+        memberBuilder().with('role', 'ADMIN').with('status', 'ACTIVE').build(),
       );
 
       await service.delete({ id: spaceId, authPayload });
@@ -984,7 +1019,7 @@ describe('SpacesService', () => {
       ['OIDC', oidcAuthPayloadDtoBuilder],
     ])('should throw when %s user is not admin', async (_label, builder) => {
       const authPayload = new AuthPayload(builder().build());
-      spacesRepositoryMock.findOne.mockResolvedValue(null);
+      membersRepositoryMock.findOne.mockResolvedValue(null);
 
       await expect(
         service.delete({

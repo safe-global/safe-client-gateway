@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type { Address, Hash } from 'viem';
-import { IBridgeApiFactory } from '@/domain/interfaces/bridge-api.factory.interface';
-import type { IBridgeRepository } from '@/modules/bridge/domain/bridge.repository.interface';
-import { BridgeChainPageSchema } from '@/modules/bridge/domain/entities/bridge-chain.entity';
-import type { BridgeName } from '@/modules/bridge/domain/entities/bridge-name.entity';
+import { IBridgeApiFactory } from '#/domain/interfaces/bridge-api.factory.interface';
+import type { IBridgeRepository } from '#/modules/bridge/domain/bridge.repository.interface';
+import { BridgeChainPageSchema } from '#/modules/bridge/domain/entities/bridge-chain.entity';
+import type { BridgeName } from '#/modules/bridge/domain/entities/bridge-name.entity';
 import {
   type BridgeStatus,
   BridgeStatusSchema,
-} from '@/modules/bridge/domain/entities/bridge-status.entity';
+} from '#/modules/bridge/domain/entities/bridge-status.entity';
 
 @Injectable()
 export class BridgeRepository implements IBridgeRepository {

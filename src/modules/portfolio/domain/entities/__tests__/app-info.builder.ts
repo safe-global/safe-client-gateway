@@ -1,7 +1,8 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import type { IBuilder } from '@/__tests__/builder';
-import { Builder } from '@/__tests__/builder';
-import type { AppBalanceAppInfo } from '@/modules/portfolio/domain/entities/app-balance.entity';
+import type { IBuilder } from '#/__tests__/builder';
+import { Builder } from '#/__tests__/builder';
+import type { AppBalanceAppInfo } from '#/modules/portfolio/domain/entities/app-balance.entity';
 
 export function appInfoBuilder(): IBuilder<AppBalanceAppInfo> {
   return new Builder<AppBalanceAppInfo>()

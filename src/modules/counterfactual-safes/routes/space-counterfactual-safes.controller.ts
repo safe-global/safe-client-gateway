@@ -10,12 +10,12 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
-import { GetCounterfactualSafesResponse } from '@/modules/counterfactual-safes/routes/entities/get-counterfactual-safe.dto.entity';
-import { SpaceCounterfactualSafesService } from '@/modules/counterfactual-safes/routes/space-counterfactual-safes.service';
-import { Auth } from '@/routes/common/auth/auth.decorator';
-import { SpaceIdPipe } from '@/routes/common/pipes/space-id.pipe';
+import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import { AuthGuard } from '#/modules/auth/routes/guards/auth.guard';
+import { GetCounterfactualSafesResponse } from '#/modules/counterfactual-safes/routes/entities/get-counterfactual-safe.dto.entity';
+import { SpaceCounterfactualSafesService } from '#/modules/counterfactual-safes/routes/space-counterfactual-safes.service';
+import { Auth } from '#/routes/common/auth/auth.decorator';
+import { SpaceIdPipe } from '#/routes/common/pipes/space-id.pipe';
 
 @ApiTags('spaces')
 @Controller({

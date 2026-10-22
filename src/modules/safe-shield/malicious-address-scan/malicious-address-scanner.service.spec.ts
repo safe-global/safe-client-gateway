@@ -2,11 +2,11 @@
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
-import type { ICacheService } from '@/datasources/cache/cache.service.interface';
-import type { ILoggingService } from '@/logging/logging.interface';
-import { MaliciousAddressScanner } from '@/modules/safe-shield/malicious-address-scan/malicious-address-scanner.service';
-import type { IBlockaidApi } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.interface';
+import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
+import type { ICacheService } from '#/datasources/cache/cache.service.interface';
+import type { ILoggingService } from '#/logging/logging.interface';
+import { MaliciousAddressScanner } from '#/modules/safe-shield/malicious-address-scan/malicious-address-scanner.service';
+import type { IBlockaidApi } from '#/modules/safe-shield/threat-analysis/blockaid/blockaid-api.interface';
 
 const scanAddressBulk = vi.fn();
 const mockBlockaidApi = { scanAddressBulk } as MockedObject<IBlockaidApi>;

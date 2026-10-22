@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { PolicyType } from '@/modules/policies/domain/entities/policy-type.entity';
-import { PolicyTypesSchema } from '@/modules/policies/routes/entities/schemas/policy-types.schema';
+import { PolicyType } from '#/modules/policies/domain/entities/policy-type.entity';
+import { PolicyTypesSchema } from '#/modules/policies/routes/entities/schemas/policy-types.schema';
 
 describe('PolicyTypesSchema', () => {
   it('should parse a single type', () => {

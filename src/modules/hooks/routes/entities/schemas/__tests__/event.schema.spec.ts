@@ -1,24 +1,24 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { chainUpdateEventBuilder } from '@/modules/hooks/routes/entities/__tests__/chain-update.builder';
+import { chainUpdateEventBuilder } from '#/modules/hooks/routes/entities/__tests__/chain-update.builder';
 import {
   deletedDelegateEventBuilder,
   newDelegateEventBuilder,
   updatedDelegateEventBuilder,
-} from '@/modules/hooks/routes/entities/__tests__/delegate-events.builder';
-import { deletedMultisigTransactionEventBuilder } from '@/modules/hooks/routes/entities/__tests__/deleted-multisig-transaction.builder';
-import { executedTransactionEventBuilder } from '@/modules/hooks/routes/entities/__tests__/executed-transaction.builder';
-import { incomingEtherEventBuilder } from '@/modules/hooks/routes/entities/__tests__/incoming-ether.builder';
-import { incomingTokenEventBuilder } from '@/modules/hooks/routes/entities/__tests__/incoming-token.builder';
-import { messageCreatedEventBuilder } from '@/modules/hooks/routes/entities/__tests__/message-created.builder';
-import { moduleTransactionEventBuilder } from '@/modules/hooks/routes/entities/__tests__/module-transaction.builder';
-import { newConfirmationEventBuilder } from '@/modules/hooks/routes/entities/__tests__/new-confirmation.builder';
-import { newMessageConfirmationEventBuilder } from '@/modules/hooks/routes/entities/__tests__/new-message-confirmation.builder';
-import { outgoingEtherEventBuilder } from '@/modules/hooks/routes/entities/__tests__/outgoing-ether.builder';
-import { outgoingTokenEventBuilder } from '@/modules/hooks/routes/entities/__tests__/outgoing-token.builder';
-import { pendingTransactionEventBuilder } from '@/modules/hooks/routes/entities/__tests__/pending-transaction.builder';
-import { reorgDetectedEventBuilder } from '@/modules/hooks/routes/entities/__tests__/reorg-detected.builder';
-import { safeAppsEventBuilder } from '@/modules/hooks/routes/entities/__tests__/safe-apps-update.builder';
-import { EventSchema } from '@/modules/hooks/routes/entities/schemas/event.schema';
+} from '#/modules/hooks/routes/entities/__tests__/delegate-events.builder';
+import { deletedMultisigTransactionEventBuilder } from '#/modules/hooks/routes/entities/__tests__/deleted-multisig-transaction.builder';
+import { executedTransactionEventBuilder } from '#/modules/hooks/routes/entities/__tests__/executed-transaction.builder';
+import { incomingEtherEventBuilder } from '#/modules/hooks/routes/entities/__tests__/incoming-ether.builder';
+import { incomingTokenEventBuilder } from '#/modules/hooks/routes/entities/__tests__/incoming-token.builder';
+import { messageCreatedEventBuilder } from '#/modules/hooks/routes/entities/__tests__/message-created.builder';
+import { moduleTransactionEventBuilder } from '#/modules/hooks/routes/entities/__tests__/module-transaction.builder';
+import { newConfirmationEventBuilder } from '#/modules/hooks/routes/entities/__tests__/new-confirmation.builder';
+import { newMessageConfirmationEventBuilder } from '#/modules/hooks/routes/entities/__tests__/new-message-confirmation.builder';
+import { outgoingEtherEventBuilder } from '#/modules/hooks/routes/entities/__tests__/outgoing-ether.builder';
+import { outgoingTokenEventBuilder } from '#/modules/hooks/routes/entities/__tests__/outgoing-token.builder';
+import { pendingTransactionEventBuilder } from '#/modules/hooks/routes/entities/__tests__/pending-transaction.builder';
+import { reorgDetectedEventBuilder } from '#/modules/hooks/routes/entities/__tests__/reorg-detected.builder';
+import { safeAppsEventBuilder } from '#/modules/hooks/routes/entities/__tests__/safe-apps-update.builder';
+import { EventSchema } from '#/modules/hooks/routes/entities/schemas/event.schema';
 
 describe('EventSchema', () => {
   for (const builder of [

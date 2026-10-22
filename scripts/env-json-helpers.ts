@@ -3,7 +3,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { z } from 'zod';
 
-export const PROJECT_ROOT = path.resolve(__dirname, '..');
+export const PROJECT_ROOT = process.cwd();
 export const ENV_JSON_PATH = path.join(PROJECT_ROOT, '.env.sample.json');
 export const EnvVariableSchema = z.object({
   name: z

@@ -2,7 +2,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import type { Address, Hex } from 'viem';
 import type { z } from 'zod';
-import { RelayDtoSchema } from '@/modules/relay/routes/entities/schemas/relay.dto.schema';
+import { RelayDtoSchema } from '#/modules/relay/routes/entities/schemas/relay.dto.schema';
 
 /**
  * The chain-scoped request without `gasLimit`: it is only ever read as the

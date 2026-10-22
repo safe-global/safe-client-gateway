@@ -1,7 +1,8 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import type { IBuilder } from '@/__tests__/builder';
-import { Builder } from '@/__tests__/builder';
-import type { Page } from '@/domain/entities/page.entity';
+import type { IBuilder } from '#/__tests__/builder';
+import { Builder } from '#/__tests__/builder';
+import type { Page } from '#/domain/entities/page.entity';
 
 export function pageBuilder<T>(): IBuilder<Page<T>> {
   return new Builder<Page<T>>()

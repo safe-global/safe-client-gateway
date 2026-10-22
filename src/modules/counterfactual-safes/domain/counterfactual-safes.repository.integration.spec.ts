@@ -7,21 +7,21 @@ import type { Repository } from 'typeorm';
 import { DataSource } from 'typeorm';
 import { type Address, getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import configuration from '@/config/entities/__tests__/configuration';
-import { postgresConfig } from '@/config/entities/postgres.config';
-import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-error';
-import type { ILoggingService } from '@/logging/logging.interface';
-import { counterfactualSafeBuilder } from '@/modules/counterfactual-safes/datasources/entities/__tests__/counterfactual-safe.entity.db.builder';
-import { CounterfactualSafe } from '@/modules/counterfactual-safes/datasources/entities/counterfactual-safe.entity.db';
-import { CounterfactualSafeUser } from '@/modules/counterfactual-safes/datasources/entities/counterfactual-safe-user.entity.db';
-import { CounterfactualSafesRepository } from '@/modules/counterfactual-safes/domain/counterfactual-safes.repository';
-import { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
-import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
-import { Member } from '@/modules/users/datasources/entities/member.entity.db';
-import { User } from '@/modules/users/datasources/entities/users.entity.db';
-import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
+import configuration from '#/config/entities/__tests__/configuration';
+import { postgresConfig } from '#/config/entities/postgres.config';
+import { DatabaseMigrator } from '#/datasources/db/v2/database-migrator.service';
+import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
+import { UniqueConstraintError } from '#/datasources/errors/unique-constraint-error';
+import type { ILoggingService } from '#/logging/logging.interface';
+import { counterfactualSafeBuilder } from '#/modules/counterfactual-safes/datasources/entities/__tests__/counterfactual-safe.entity.db.builder';
+import { CounterfactualSafe } from '#/modules/counterfactual-safes/datasources/entities/counterfactual-safe.entity.db';
+import { CounterfactualSafeUser } from '#/modules/counterfactual-safes/datasources/entities/counterfactual-safe-user.entity.db';
+import { CounterfactualSafesRepository } from '#/modules/counterfactual-safes/domain/counterfactual-safes.repository';
+import { SpaceSafe } from '#/modules/spaces/datasources/safes/entities/space-safes.entity.db';
+import { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
+import { Member } from '#/modules/users/datasources/entities/member.entity.db';
+import { User } from '#/modules/users/datasources/entities/users.entity.db';
+import { Wallet } from '#/modules/wallets/datasources/entities/wallets.entity.db';
 
 const mockLoggingService = {
   debug: vi.fn(),
@@ -638,6 +638,103 @@ describe('CounterfactualSafesRepository', () => {
           ],
         }),
       ).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('markAsDeployed', () => {
+    it('should set deployedAt and keep the row and its user associations', async () => {
+      const user = await dbUserRepo.insert({ status: 'ACTIVE' });
+      const userId = user.identifiers[0].id as User['id'];
+      const payload = buildCounterfactualSafePayload();
+      await counterfactualSafesRepo.create({
+        creatorId: userId,
+        payload: [payload],
+      });
+
+      const isMarked = await counterfactualSafesRepo.markAsDeployed({
+        chainId: payload.chainId,
+        address: payload.address,
+      });
+
+      expect(isMarked).toBe(true);
+      const [row] = await dbCounterfactualSafeRepo.find();
+      expect(row.deployedAt).toBeInstanceOf(Date);
+      await expect(dbCounterfactualSafeUserRepo.find()).resolves.toHaveLength(
+        1,
+      );
+    });
+
+    it('should leave a deployed Safe out of findByUserId', async () => {
+      const user = await dbUserRepo.insert({ status: 'ACTIVE' });
+      const userId = user.identifiers[0].id as User['id'];
+      const deployed = buildCounterfactualSafePayload();
+      const undeployed = buildCounterfactualSafePayload();
+      await counterfactualSafesRepo.create({
+        creatorId: userId,
+        payload: [deployed, undeployed],
+      });
+
+      await counterfactualSafesRepo.markAsDeployed({
+        chainId: deployed.chainId,
+        address: deployed.address,
+      });
+
+      const result = await counterfactualSafesRepo.findByUserId({ userId });
+      expect(result.map((safe) => safe.address)).toEqual([undeployed.address]);
+    });
+
+    it('should keep the same address on another chain undeployed', async () => {
+      const user = await dbUserRepo.insert({ status: 'ACTIVE' });
+      const userId = user.identifiers[0].id as User['id'];
+      const payload = buildCounterfactualSafePayload();
+      const otherChainPayload = {
+        ...payload,
+        chainId: `${payload.chainId}${faker.string.numeric()}`,
+      };
+      await counterfactualSafesRepo.create({
+        creatorId: userId,
+        payload: [payload, otherChainPayload],
+      });
+
+      await counterfactualSafesRepo.markAsDeployed({
+        chainId: payload.chainId,
+        address: payload.address,
+      });
+
+      const otherChainRow = await dbCounterfactualSafeRepo.findOneOrFail({
+        where: { chainId: otherChainPayload.chainId },
+      });
+      expect(otherChainRow.deployedAt).toBeNull();
+    });
+
+    it('should keep the first deployedAt and return false when marked again', async () => {
+      const user = await dbUserRepo.insert({ status: 'ACTIVE' });
+      const userId = user.identifiers[0].id as User['id'];
+      const payload = buildCounterfactualSafePayload();
+      await counterfactualSafesRepo.create({
+        creatorId: userId,
+        payload: [payload],
+      });
+      const args = { chainId: payload.chainId, address: payload.address };
+      await counterfactualSafesRepo.markAsDeployed(args);
+      const [first] = await dbCounterfactualSafeRepo.find();
+
+      const isMarked = await counterfactualSafesRepo.markAsDeployed(args);
+
+      expect(isMarked).toBe(false);
+      const [second] = await dbCounterfactualSafeRepo.find();
+      expect(second.deployedAt).toEqual(first.deployedAt);
+    });
+
+    it('should return false if no counterfactual Safe matches', async () => {
+      const payload = buildCounterfactualSafePayload();
+
+      const isMarked = await counterfactualSafesRepo.markAsDeployed({
+        chainId: payload.chainId,
+        address: payload.address,
+      });
+
+      expect(isMarked).toBe(false);
     });
   });
 

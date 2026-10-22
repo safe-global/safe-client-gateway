@@ -5,7 +5,7 @@ import {
   buildPreviousPageURL,
   cursorUrlFromLimitAndOffset,
   PaginationData,
-} from '@/routes/common/pagination/pagination.data';
+} from '#/routes/common/pagination/pagination.data';
 
 describe('PaginationData', () => {
   describe('fromCursor', () => {

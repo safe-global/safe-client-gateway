@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { AddressSchema } from '#/validation/entities/schemas/address.schema';
 
 /**
  * Upper bound for one batch lookup. The web app's popular list is at most 8

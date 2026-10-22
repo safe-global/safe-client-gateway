@@ -1,20 +1,20 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import type { Hex } from 'viem';
-import { IAlertsApi } from '@/domain/interfaces/alerts-api.interface';
+import { IAlertsApi } from '#/domain/interfaces/alerts-api.interface';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import type { IAlertsRepository } from '@/modules/alerts/domain/alerts.repository.interface';
-import { DelayModifierDecoder } from '@/modules/alerts/domain/contracts/decoders/delay-modifier-decoder.helper';
-import type { AlertsDeletion } from '@/modules/alerts/domain/entities/alerts-deletion.entity';
-import type { AlertsRegistration } from '@/modules/alerts/domain/entities/alerts-registration.entity';
-import type { AlertLog } from '@/modules/alerts/routes/entities/alert.dto.entity';
-import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
-import { SafeDecoder } from '@/modules/contracts/domain/decoders/safe-decoder.helper';
-import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
-import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
+} from '#/logging/logging.interface';
+import type { IAlertsRepository } from '#/modules/alerts/domain/alerts.repository.interface';
+import { DelayModifierDecoder } from '#/modules/alerts/domain/contracts/decoders/delay-modifier-decoder.helper';
+import type { AlertsDeletion } from '#/modules/alerts/domain/entities/alerts-deletion.entity';
+import type { AlertsRegistration } from '#/modules/alerts/domain/entities/alerts-registration.entity';
+import type { AlertLog } from '#/modules/alerts/routes/entities/alert.dto.entity';
+import { MultiSendDecoder } from '#/modules/contracts/domain/decoders/multi-send-decoder.helper';
+import { SafeDecoder } from '#/modules/contracts/domain/decoders/safe-decoder.helper';
+import type { Safe } from '#/modules/safe/domain/entities/safe.entity';
+import { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
 
 @Injectable()
 export class AlertsRepository implements IAlertsRepository {

@@ -1,5 +1,6 @@
-import type { GasPriceResponse } from '@/modules/chains/routes/entities/gas-price-response.entity';
-import type { Raw } from '@/validation/entities/raw.entity';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { GasPriceResponse } from '#/modules/chains/routes/entities/gas-price-response.entity';
+import type { Raw } from '#/validation/entities/raw.entity';
 
 export const IEtherscanApi = Symbol('IEtherscanApi');
 

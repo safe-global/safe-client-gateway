@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Module } from '@nestjs/common';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import { LockingApi } from '@/datasources/locking-api/locking-api.service';
-import { ILockingApi } from '@/domain/interfaces/locking-api.interface';
+import { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
+import { LockingApi } from '#/datasources/locking-api/locking-api.service';
+import { ILockingApi } from '#/domain/interfaces/locking-api.interface';
 
 @Module({
   providers: [HttpErrorFactory, { provide: ILockingApi, useClass: LockingApi }],

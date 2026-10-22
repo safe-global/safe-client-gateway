@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import { safeQueueMessageBuilder } from '@/modules/safe-queue/entities/__tests__/safe-queue-message.builder';
-import { ProposalRoute } from '@/modules/safe-queue/entities/proposal-route.entity';
-import { mapSafeQueueMessageToMessage } from '@/modules/safe-queue/mappers/message.mapper';
+import { safeQueueMessageBuilder } from '#/modules/safe-queue/entities/__tests__/safe-queue-message.builder';
+import { ProposalRoute } from '#/modules/safe-queue/entities/proposal-route.entity';
+import { mapSafeQueueMessageToMessage } from '#/modules/safe-queue/mappers/message.mapper';
 
 describe('mapSafeQueueMessageToMessage', () => {
   it('credits the proposer as proposedBy on the OWNER route', () => {

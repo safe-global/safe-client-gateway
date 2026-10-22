@@ -1,15 +1,18 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
-import type { FeatureKey } from '@/modules/entitlements/domain/entities/feature.entity';
+import type { FeatureKey } from '#/modules/entitlements/domain/entities/feature.entity';
 import {
   FEATURE_KEYS,
   FeatureType,
-} from '@/modules/entitlements/domain/entities/feature.entity';
+} from '#/modules/entitlements/domain/entities/feature.entity';
 import type {
   ResolvedBinaryEntitlement,
   ResolvedMeteredEntitlement,
   ResolvedValueEntitlement,
-} from '@/modules/entitlements/domain/entities/resolved-entitlements.entity';
+} from '#/modules/entitlements/domain/entities/resolved-entitlements.entity';
+import type { ActiveSubscriptionStatus } from '#/modules/entitlements/domain/entitlements.constants';
+import { ACTIVE_SUBSCRIPTION_STATUSES } from '#/modules/entitlements/domain/entitlements.constants';
+import type { Space } from '#/modules/spaces/domain/entities/space.entity';
 
 export class EntitlementsPlan {
   @ApiProperty({ description: 'Plan identifier in the billing service' })
@@ -24,6 +27,13 @@ export class EntitlementsPlan {
     description: 'End of the current billing cycle',
   })
   public readonly cycleEndsAt!: Date | null;
+
+  @ApiProperty({
+    enum: ACTIVE_SUBSCRIPTION_STATUSES,
+    enumName: 'EntitlementsPlanStatus',
+    description: 'Status of the subscription the plan comes from',
+  })
+  public readonly status!: ActiveSubscriptionStatus;
 }
 
 class EntitlementItemBase {
@@ -128,3 +138,8 @@ export class EntitlementsResponse {
   })
   public readonly entitlements!: Array<EntitlementItem>;
 }
+
+export type SpacesEntitlementsResponse = Record<
+  Space['uuid'],
+  EntitlementsResponse
+>;

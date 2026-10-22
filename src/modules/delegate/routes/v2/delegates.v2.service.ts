@@ -1,20 +1,20 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type { Address } from 'viem';
-import type { Page } from '@/domain/entities/page.entity';
+import type { Page } from '#/domain/entities/page.entity';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
-import { IDelegatesV2Repository } from '@/modules/delegate/domain/v2/delegates.v2.repository.interface';
-import type { CreateDelegateDto } from '@/modules/delegate/routes/entities/create-delegate.dto.entity';
-import type { GetDelegateDto } from '@/modules/delegate/routes/entities/get-delegate.dto.entity';
-import type { DeleteDelegateV2Dto } from '@/modules/delegate/routes/v2/entities/delete-delegate.v2.dto.entity';
+} from '#/logging/logging.interface';
+import type { Delegate } from '#/modules/delegate/domain/entities/delegate.entity';
+import { IDelegatesV2Repository } from '#/modules/delegate/domain/v2/delegates.v2.repository.interface';
+import type { CreateDelegateDto } from '#/modules/delegate/routes/entities/create-delegate.dto.entity';
+import type { GetDelegateDto } from '#/modules/delegate/routes/entities/get-delegate.dto.entity';
+import type { DeleteDelegateV2Dto } from '#/modules/delegate/routes/v2/entities/delete-delegate.v2.dto.entity';
 import {
   cursorUrlFromLimitAndOffset,
   type PaginationData,
-} from '@/routes/common/pagination/pagination.data';
+} from '#/routes/common/pagination/pagination.data';
 
 @Injectable()
 export class DelegatesV2Service {

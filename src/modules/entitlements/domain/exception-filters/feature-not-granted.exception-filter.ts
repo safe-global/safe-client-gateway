@@ -6,7 +6,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import type { FastifyReply } from 'fastify';
-import { FeatureNotGrantedError } from '@/modules/entitlements/domain/errors/feature-not-granted.error';
+import { FeatureNotGrantedError } from '#/modules/entitlements/domain/errors/feature-not-granted.error';
 
 /**
  * Registered on gated routes so the rejection never reaches

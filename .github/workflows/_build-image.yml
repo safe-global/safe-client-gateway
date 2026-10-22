@@ -11,9 +11,9 @@
 #   * Native arm64. Production runs arm64 only, so this builds single-arch on an
 #     arm64 runner instead of emulating through QEMU. Faster, and the artifact
 #     is what actually ships.
-#   * Dual registry. The image is published to GHCR and to Docker Hub while
-#     external consumers of the public Docker Hub image are still being
-#     inventoried. Drop `docker_image` to publish to GHCR only.
+#   * Dual registry, available but unused. Setting `docker_image` publishes to
+#     Docker Hub alongside GHCR. No caller sets it any more; it is kept so the
+#     mirror can be restored with one line.
 # -----------------------------------------------------------------------------
 name: _build-image
 

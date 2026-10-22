@@ -5,8 +5,8 @@ import type { MockedObject } from 'vitest';
 import {
   type IQueueReadiness,
   QueueReadiness,
-} from '@/domain/interfaces/queue-readiness.interface';
-import { IQueuesApiService } from '@/modules/queues/datasources/queues-api.service.interface';
+} from '#/domain/interfaces/queue-readiness.interface';
+import { IQueuesApiService } from '#/modules/queues/datasources/queues-api.service.interface';
 
 @Module({
   providers: [

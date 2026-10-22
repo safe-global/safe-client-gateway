@@ -10,13 +10,13 @@ import {
   PrimaryGeneratedColumn,
   Unique,
 } from 'typeorm';
-import type { SubscriptionStatus } from '@/datasources/billing-api/entities/subscription.entity';
-import { SubscriptionStatuses } from '@/datasources/billing-api/entities/subscription.entity';
-import { toSqlList } from '@/datasources/db/v2/entities/sql.utils';
-import { SubscriptionEntitlement } from '@/modules/entitlements/datasources/entities/subscription-entitlement.entity.db';
-import type { SpaceSubscription as DomainSpaceSubscription } from '@/modules/entitlements/domain/entities/space-subscription.entity';
-import { ACTIVE_SUBSCRIPTION_STATUSES } from '@/modules/entitlements/domain/entitlements.constants';
-import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
+import type { SubscriptionStatus } from '#/datasources/billing-api/entities/subscription.entity';
+import { SubscriptionStatuses } from '#/datasources/billing-api/entities/subscription.entity';
+import { toSqlList } from '#/datasources/db/v2/entities/sql.utils';
+import { SubscriptionEntitlement } from '#/modules/entitlements/datasources/entities/subscription-entitlement.entity.db';
+import type { SpaceSubscription as DomainSpaceSubscription } from '#/modules/entitlements/domain/entities/space-subscription.entity';
+import { ACTIVE_SUBSCRIPTION_STATUSES } from '#/modules/entitlements/domain/entitlements.constants';
+import { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
 
 @Entity('subscriptions')
 // "1 active per space": only one row may hold the active slot; terminal rows
@@ -55,6 +55,9 @@ export class SpaceSubscription implements DomainSpaceSubscription {
 
   @Column({ name: 'plan_name', type: 'varchar', length: 255, nullable: true })
   public readonly planName!: string | null;
+
+  @Column({ name: 'plan_code', type: 'varchar', length: 255, nullable: true })
+  public readonly planCode!: string | null;
 
   // Anchor for quota resets; advanced by renewal webhooks.
   @Column({

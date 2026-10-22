@@ -2,14 +2,14 @@
 import { Injectable } from '@nestjs/common';
 import type { Address } from 'viem';
 import { decodeAbiParameters, isAddressEqual, parseAbiParameters } from 'viem';
-import { AbiDecoder } from '@/modules/contracts/domain/decoders/abi-decoder.helper';
+import { AbiDecoder } from '#/modules/contracts/domain/decoders/abi-decoder.helper';
 
 /**
  * Taken from CoW SDK:
  *
  * @see https://github.com/cowprotocol/cow-sdk/blob/5aa61a03d2ed9921c5f95522866b2af0ceb1c24d/abi/ComposableCoW.json
  *
- * TODO: We should locate this in @/abis/... but we will need to refactor the /scripts/generate-abis.js
+ * TODO: We should locate this in #/abis/... but we will need to refactor the /scripts/generate-abis.js
  * to handle ABIs that are present (or alternatively install the @cowprotocol/contracts package and generate
  * the ABIs from there)
  */

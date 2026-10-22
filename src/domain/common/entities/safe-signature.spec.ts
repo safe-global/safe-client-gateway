@@ -4,13 +4,13 @@ import { shuffle } from 'lodash';
 import type { Hash, Hex } from 'viem';
 import * as viem from 'viem';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
-import { SafeSignature } from '@/domain/common/entities/safe-signature';
-import { SignatureType } from '@/domain/common/entities/signature-type.entity';
-import { getSignature } from '@/domain/common/utils/__tests__/signatures.builder';
+import { SafeSignature } from '#/domain/common/entities/safe-signature';
+import { SignatureType } from '#/domain/common/entities/signature-type.entity';
+import { getSignature } from '#/domain/common/utils/__tests__/signatures.builder';
 import {
   DYNAMIC_PART_LENGTH_FIELD_HEX_LENGTH,
   SIGNATURE_HEX_LENGTH,
-} from '@/domain/common/utils/signatures';
+} from '#/domain/common/utils/signatures';
 
 // `vi.spyOn` cannot redefine read-only ESM named exports, so partially mock
 // viem with a spy that wraps the real `getAddress` implementation.
@@ -20,6 +20,13 @@ vi.mock('viem', async (importOriginal) => {
 });
 
 describe('SafeSignature', () => {
+  // A v of 00 would make it a contract signature, which needs a dynamic part
+  function getNonContractSignature(): Hex {
+    const rs = faker.string.hexadecimal({ length: 128 });
+    const v = faker.number.int({ min: 1, max: 255 }).toString(16);
+    return `${rs}${v.padStart(2, '0')}` as Hex;
+  }
+
   it('should create an instance', () => {
     const baseSignature = faker.string.hexadecimal({
       length: 128,
@@ -140,9 +147,7 @@ describe('SafeSignature', () => {
   });
 
   it('should return the r value', () => {
-    const signature = faker.string.hexadecimal({
-      length: 130,
-    }) as Hex;
+    const signature = getNonContractSignature();
     const hash = faker.string.hexadecimal({ length: 66 }) as Hash;
 
     const safeSignature = new SafeSignature({
@@ -154,9 +159,7 @@ describe('SafeSignature', () => {
   });
 
   it('should return the s value', () => {
-    const signature = faker.string.hexadecimal({
-      length: 130,
-    }) as Hex;
+    const signature = getNonContractSignature();
     const hash = faker.string.hexadecimal({ length: 66 }) as Hash;
 
     const safeSignature = new SafeSignature({
@@ -168,9 +171,7 @@ describe('SafeSignature', () => {
   });
 
   it('should return the v value', () => {
-    const signature = faker.string.hexadecimal({
-      length: 130,
-    }) as Hex;
+    const signature = getNonContractSignature();
     const hash = faker.string.hexadecimal({ length: 66 }) as Hash;
 
     const safeSignature = new SafeSignature({

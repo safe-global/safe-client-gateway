@@ -5,14 +5,15 @@ import {
   FindOptionsRelations,
   FindOptionsSelect,
   FindOptionsWhere,
+  IsNull,
 } from 'typeorm';
 import { type Address, getAddress } from 'viem';
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-error';
-import { CounterfactualSafe } from '@/modules/counterfactual-safes/datasources/entities/counterfactual-safe.entity.db';
-import { CounterfactualSafeUser } from '@/modules/counterfactual-safes/datasources/entities/counterfactual-safe-user.entity.db';
-import type { ICounterfactualSafesRepository } from '@/modules/counterfactual-safes/domain/counterfactual-safes.repository.interface';
-import { User } from '@/modules/users/datasources/entities/users.entity.db';
+import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
+import { UniqueConstraintError } from '#/datasources/errors/unique-constraint-error';
+import { CounterfactualSafe } from '#/modules/counterfactual-safes/datasources/entities/counterfactual-safe.entity.db';
+import { CounterfactualSafeUser } from '#/modules/counterfactual-safes/datasources/entities/counterfactual-safe-user.entity.db';
+import type { ICounterfactualSafesRepository } from '#/modules/counterfactual-safes/domain/counterfactual-safes.repository.interface';
+import { User } from '#/modules/users/datasources/entities/users.entity.db';
 
 type CreateItem = Parameters<
   ICounterfactualSafesRepository['create']
@@ -29,7 +30,9 @@ export class CounterfactualSafesRepository
   public async create(
     args: Parameters<ICounterfactualSafesRepository['create']>[0],
   ): Promise<void> {
-    if (args.payload.length === 0) return;
+    if (args.payload.length === 0) {
+      return;
+    }
 
     // Checksum every address field before comparing against or inserting into
     // the DB: the canonical row is stored checksummed via the TypeORM
@@ -156,6 +159,7 @@ export class CounterfactualSafesRepository
         'cfsu.counterfactual_safe_id = cfs.id',
       )
       .where('cfsu.user_id = :userId', { userId: args.userId })
+      .andWhere('cfs.deployed_at IS NULL')
       .getMany();
   }
 
@@ -234,6 +238,21 @@ export class CounterfactualSafesRepository
         .execute();
     });
   }
+
+  public async markAsDeployed(args: {
+    chainId: CounterfactualSafe['chainId'];
+    address: CounterfactualSafe['address'];
+  }): Promise<boolean> {
+    const repository =
+      await this.postgresDatabaseService.getRepository(CounterfactualSafe);
+
+    const result = await repository.update(
+      { chainId: args.chainId, address: args.address, deployedAt: IsNull() },
+      { deployedAt: new Date() },
+    );
+
+    return !!result.affected;
+  }
 }
 
 function isSameInitParams(
@@ -260,9 +279,13 @@ function isSameAddressList(
   a: ReadonlyArray<Address>,
   b: ReadonlyArray<Address>,
 ): boolean {
-  if (a.length !== b.length) return false;
+  if (a.length !== b.length) {
+    return false;
+  }
   for (let i = 0; i < a.length; i++) {
-    if (a[i] !== b[i]) return false;
+    if (a[i] !== b[i]) {
+      return false;
+    }
   }
   return true;
 }

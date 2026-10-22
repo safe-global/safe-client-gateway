@@ -9,24 +9,24 @@ import type { MockedObject } from 'vitest';
 import {
   initTestApplication,
   TestAppProvider,
-} from '@/__tests__/test-app.provider';
-import { createTestModule } from '@/__tests__/testing-module';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import configuration from '@/config/entities/__tests__/configuration';
+} from '#/__tests__/test-app.provider';
+import { createTestModule } from '#/__tests__/testing-module';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import configuration from '#/config/entities/__tests__/configuration';
 import {
   UNAVAILABLE_FOR_LEGAL_REASONS_MESSAGE,
   UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
-} from '@/datasources/errors/constants';
-import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import { NetworkService } from '@/datasources/network/network.service.interface';
-import { balanceBuilder } from '@/modules/balances/domain/entities/__tests__/balance.builder';
-import { balanceTokenBuilder } from '@/modules/balances/domain/entities/__tests__/balance.token.builder';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { pricesProviderBuilder } from '@/modules/chains/domain/entities/__tests__/prices-provider.builder';
-import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
-import { NULL_ADDRESS } from '@/routes/common/constants';
-import { rawify } from '@/validation/entities/raw.entity';
+} from '#/datasources/errors/constants';
+import { NetworkResponseError } from '#/datasources/network/entities/network.error.entity';
+import type { INetworkService } from '#/datasources/network/network.service.interface';
+import { NetworkService } from '#/datasources/network/network.service.interface';
+import { balanceBuilder } from '#/modules/balances/domain/entities/__tests__/balance.builder';
+import { balanceTokenBuilder } from '#/modules/balances/domain/entities/__tests__/balance.token.builder';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
+import { pricesProviderBuilder } from '#/modules/chains/domain/entities/__tests__/prices-provider.builder';
+import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
+import { NULL_ADDRESS } from '#/routes/common/constants';
+import { rawify } from '#/validation/entities/raw.entity';
 
 describe('Balances Controller', () => {
   let app: INestApplication<Server>;

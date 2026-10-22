@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import type { Address, Hex } from 'viem';
-import type { Relay } from '@/modules/relay/domain/entities/relay.entity';
-import type { RelayTaskStatus } from '@/modules/relay/domain/entities/relay-task-status.entity';
+import type { Relay } from '#/modules/relay/domain/entities/relay.entity';
+import type { RelayTaskStatus } from '#/modules/relay/domain/entities/relay-task-status.entity';
 
 export const IRelayApi = Symbol('IRelayApi');
 

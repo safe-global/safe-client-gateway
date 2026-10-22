@@ -3,15 +3,15 @@
 import { faker } from '@faker-js/faker';
 import type { Address, Hex } from 'viem';
 import type { MockedObject } from 'vitest';
-import type { ILoggingService } from '@/logging/logging.interface';
+import type { ILoggingService } from '#/logging/logging.interface';
 import {
   batchWithdrawCLFeeEncoder,
   depositEncoder,
   depositEventEventBuilder,
   requestValidatorsExitEncoder,
   withdrawalEventBuilder,
-} from '@/modules/staking/domain/contracts/decoders/__tests__/encoders/kiln-encoder.builder';
-import { KilnDecoder } from '@/modules/staking/domain/contracts/decoders/kiln-decoder.helper';
+} from '#/modules/staking/domain/contracts/decoders/__tests__/encoders/kiln-encoder.builder';
+import { KilnDecoder } from '#/modules/staking/domain/contracts/decoders/kiln-decoder.helper';
 
 const mockLoggingService = {
   debug: vi.fn(),

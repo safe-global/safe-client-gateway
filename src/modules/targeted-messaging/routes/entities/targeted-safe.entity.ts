@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiProperty } from '@nestjs/swagger';
-import type { TargetedSafe as DomainTargetedSafe } from '@/modules/targeted-messaging/domain/entities/targeted-safe.entity';
+import type { TargetedSafe as DomainTargetedSafe } from '#/modules/targeted-messaging/domain/entities/targeted-safe.entity';
 
 export class TargetedSafe
   implements Pick<DomainTargetedSafe, 'outreachId' | 'address'>

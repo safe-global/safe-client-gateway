@@ -1,19 +1,19 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import { errorStatusCodeExcluding } from '@/__tests__/faker';
+import { errorStatusCodeExcluding } from '#/__tests__/faker';
 import {
   UNAVAILABLE_FOR_LEGAL_REASONS_MESSAGE,
   UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
-} from '@/datasources/errors/constants';
+} from '#/datasources/errors/constants';
 import {
   isBannedSafeError,
   mapBannedSafeError,
-} from '@/datasources/errors/helpers/banned-safe.helper';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
+} from '#/datasources/errors/helpers/banned-safe.helper';
+import { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
 import {
   NetworkRequestError,
   NetworkResponseError,
-} from '@/datasources/network/entities/network.error.entity';
+} from '#/datasources/network/entities/network.error.entity';
 
 describe('mapBannedSafeError', () => {
   it('replaces the payload of a banned-Safe response with a client-facing message', () => {

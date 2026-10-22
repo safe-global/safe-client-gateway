@@ -1,17 +1,18 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
-import { balancesProviderBuilder } from '@/modules/chains/domain/entities/__tests__/balances-provider.builder';
-import { beaconChainExplorerUriTemplateBuilder } from '@/modules/chains/domain/entities/__tests__/beacon-chain-explorer-uri-template.builder';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { gasPriceFixedBuilder } from '@/modules/chains/domain/entities/__tests__/gas-price-fixed.builder';
-import { gasPriceFixedEIP1559Builder } from '@/modules/chains/domain/entities/__tests__/gas-price-fixed-eip-1559.builder';
-import { gasPriceOracleBuilder } from '@/modules/chains/domain/entities/__tests__/gas-price-oracle.builder';
-import { nativeCurrencyBuilder } from '@/modules/chains/domain/entities/__tests__/native.currency.builder';
-import { pricesProviderBuilder } from '@/modules/chains/domain/entities/__tests__/prices-provider.builder';
-import { rpcUriBuilder } from '@/modules/chains/domain/entities/__tests__/rpc-uri.builder';
-import { themeBuilder } from '@/modules/chains/domain/entities/__tests__/theme.builder';
-import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
+import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
+import { balancesProviderBuilder } from '#/modules/chains/domain/entities/__tests__/balances-provider.builder';
+import { beaconChainExplorerUriTemplateBuilder } from '#/modules/chains/domain/entities/__tests__/beacon-chain-explorer-uri-template.builder';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
+import { gasPriceFixedBuilder } from '#/modules/chains/domain/entities/__tests__/gas-price-fixed.builder';
+import { gasPriceFixedEIP1559Builder } from '#/modules/chains/domain/entities/__tests__/gas-price-fixed-eip-1559.builder';
+import { gasPriceOracleBuilder } from '#/modules/chains/domain/entities/__tests__/gas-price-oracle.builder';
+import { nativeCurrencyBuilder } from '#/modules/chains/domain/entities/__tests__/native.currency.builder';
+import { pricesProviderBuilder } from '#/modules/chains/domain/entities/__tests__/prices-provider.builder';
+import { relayerBuilder } from '#/modules/chains/domain/entities/__tests__/relayer.builder';
+import { rpcUriBuilder } from '#/modules/chains/domain/entities/__tests__/rpc-uri.builder';
+import { themeBuilder } from '#/modules/chains/domain/entities/__tests__/theme.builder';
+import type { Chain } from '#/modules/chains/domain/entities/chain.entity';
 import {
   BalancesProviderSchema,
   BeaconChainExplorerUriTemplateSchema,
@@ -23,9 +24,10 @@ import {
   GasPriceSchema,
   NativeCurrencySchema,
   PricesProviderSchema,
+  RelayerSchema,
   RpcUriSchema,
   ThemeSchema,
-} from '@/modules/chains/domain/entities/schemas/chain.schema';
+} from '#/modules/chains/domain/entities/schemas/chain.schema';
 
 describe('Chain schemas', () => {
   describe('NativeCurrencySchema', () => {
@@ -375,6 +377,63 @@ describe('Chain schemas', () => {
           path: ['nativeCoin'],
           message: 'Invalid input: expected string, received number',
         },
+      ]);
+    });
+  });
+
+  describe('RelayerSchema', () => {
+    const ALL_GAS_PAYMENT_OPTIONS = [
+      'FREE_DAILY_LIMIT',
+      'SUBSCRIPTION',
+      'PAY_FROM_SAFE',
+      'NO_FEE_CAMPAIGN',
+    ];
+
+    it('should keep the listed gas payment options', () => {
+      const gasPaymentOptions = faker.helpers.arrayElements(
+        ALL_GAS_PAYMENT_OPTIONS,
+      );
+      const relayer = {
+        ...relayerBuilder().build(),
+        gasPaymentOptions,
+      };
+
+      const result = RelayerSchema.safeParse(relayer);
+
+      expect(result.success && result.data.gasPaymentOptions).toStrictEqual(
+        gasPaymentOptions,
+      );
+    });
+
+    it('should keep an explicitly empty list', () => {
+      const relayer = relayerBuilder().with('gasPaymentOptions', []).build();
+
+      const result = RelayerSchema.safeParse(relayer);
+
+      expect(result.success && result.data.gasPaymentOptions).toStrictEqual([]);
+    });
+
+    it('should default to no options when the list is missing', () => {
+      const { gasPaymentOptions: _, ...relayer } = relayerBuilder().build();
+
+      const result = RelayerSchema.safeParse(relayer);
+
+      expect(result.success && result.data.gasPaymentOptions).toStrictEqual([]);
+    });
+
+    it('should drop options it does not know', () => {
+      const relayer = {
+        ...relayerBuilder().build(),
+        gasPaymentOptions: [
+          'SUBSCRIPTION',
+          faker.string.alpha({ length: 32, casing: 'upper' }),
+        ],
+      };
+
+      const result = RelayerSchema.safeParse(relayer);
+
+      expect(result.success && result.data.gasPaymentOptions).toStrictEqual([
+        'SUBSCRIPTION',
       ]);
     });
   });

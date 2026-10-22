@@ -2,13 +2,41 @@
 
 import { faker } from '@faker-js/faker';
 import { getAddress, zeroAddress } from 'viem';
-import { CacheRouter } from '@/datasources/cache/cache.router';
-import type { BaseDataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
-import { Origin } from '@/modules/fees/domain/entities/origin.entity';
+import { CacheRouter } from '#/datasources/cache/cache.router';
+import type { BaseDataDecoded } from '#/modules/data-decoder/domain/v2/entities/data-decoded.entity';
+import { Origin } from '#/modules/fees/domain/entities/origin.entity';
 
 const address = getAddress(faker.finance.ethereumAddress());
 
 describe('CacheRouter', () => {
+  describe('Safenet checks daily counter key', () => {
+    const spaceId = faker.number.int({ min: 1 });
+    const day = '2026-10-21';
+
+    it('differs per workspace and per UTC day', () => {
+      const key = CacheRouter.getSafenetChecksRateLimitCacheKey({
+        spaceId,
+        day,
+      });
+
+      expect(
+        CacheRouter.getSafenetChecksRateLimitCacheKey({
+          spaceId: spaceId + 1,
+          day,
+        }),
+      ).not.toBe(key);
+      expect(
+        CacheRouter.getSafenetChecksRateLimitCacheKey({
+          spaceId,
+          day: '2026-10-22',
+        }),
+      ).not.toBe(key);
+      expect(
+        CacheRouter.getSafenetChecksRateLimitCacheKey({ spaceId, day }),
+      ).toBe(key);
+    });
+  });
+
   describe('portfolio cache keys', () => {
     it('should use distinct keys for positions and wallet portfolio endpoints', () => {
       const portfolioDir = CacheRouter.getPortfolioCacheDir({

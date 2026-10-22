@@ -3,16 +3,16 @@
 import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
 import { Inject } from '@nestjs/common';
 import { Job, UnrecoverableError } from 'bullmq';
-import { LogType } from '@/domain/common/entities/log-type.entity';
+import { LogType } from '#/domain/common/entities/log-type.entity';
 import {
   SES_EMAIL_QUEUE,
   SES_EMAIL_WORKER_CONCURRENCY,
-} from '@/domain/common/jobs.constants';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import { asError } from '@/logging/utils';
-import type { SendEmailJobData } from '@/modules/email/ses/domain/entities/email-job-data.entity';
-import { PermanentEmailError } from '@/modules/email/ses/domain/errors/email.errors';
-import { IEmailService } from '@/modules/email/ses/domain/interfaces/email-service.interface';
+} from '#/domain/common/jobs.constants';
+import { ILoggingService, LoggingService } from '#/logging/logging.interface';
+import { asError } from '#/logging/utils';
+import type { SendEmailJobData } from '#/modules/email/ses/domain/entities/email-job-data.entity';
+import { PermanentEmailError } from '#/modules/email/ses/domain/errors/email.errors';
+import { IEmailService } from '#/modules/email/ses/domain/interfaces/email-service.interface';
 
 @Processor(SES_EMAIL_QUEUE, { concurrency: SES_EMAIL_WORKER_CONCURRENCY })
 export class EmailConsumer extends WorkerHost {

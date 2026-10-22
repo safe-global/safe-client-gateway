@@ -2,12 +2,12 @@
 import type { UUID } from 'node:crypto';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import type { Address } from 'viem';
-import { DeviceType } from '@/modules/notifications/domain/v2/entities/device-type.entity';
-import { NotificationType } from '@/modules/notifications/domain/v2/entities/notification-type.entity';
+import { DeviceType } from '#/modules/notifications/domain/v2/entities/device-type.entity';
+import { NotificationType } from '#/modules/notifications/domain/v2/entities/notification-type.entity';
 import type {
   UpsertSubscriptionsDto as DomainUpsertSubscriptionsDto,
   UpsertSubscriptionsSafesDto as DomainUpsertSubscriptionsSafesDto,
-} from '@/modules/notifications/domain/v2/entities/upsert-subscriptions.dto.entity';
+} from '#/modules/notifications/domain/v2/entities/upsert-subscriptions.dto.entity';
 
 export class UpsertSubscriptionsSafesDto
   implements DomainUpsertSubscriptionsSafesDto

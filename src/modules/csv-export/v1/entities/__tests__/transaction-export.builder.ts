@@ -2,12 +2,12 @@
 import { faker } from '@faker-js/faker';
 import type { Hash } from 'viem';
 import { formatUnits, getAddress } from 'viem';
-import type { IBuilder } from '@/__tests__/builder';
-import { Builder } from '@/__tests__/builder';
+import type { IBuilder } from '#/__tests__/builder';
+import { Builder } from '#/__tests__/builder';
 import {
   formatTransactionExportGasFees,
   type TransactionExport,
-} from '@/modules/csv-export/v1/entities/transaction-export.entity';
+} from '#/modules/csv-export/v1/entities/transaction-export.entity';
 
 /**
  * Creates a builder for transaction export data

@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { ExecutionContext } from '@nestjs/common';
 import { HttpStatus } from '@nestjs/common';
-import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
-import { HttpExceptionNoLog } from '@/domain/common/errors/http-exception-no-log.error';
+import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
+import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
 import {
   oidcAuthPayloadDtoBuilder,
   siweAuthPayloadDtoBuilder,
-} from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import type { AuthPayloadDto } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { AUTH_PAYLOAD_REQUEST_PROPERTY } from '@/routes/common/auth/auth-payload.request';
+} from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import type { AuthPayloadDto } from '#/modules/auth/domain/entities/auth-payload.entity';
+import { AUTH_PAYLOAD_REQUEST_PROPERTY } from '#/routes/common/auth/auth-payload.request';
 import {
   ELEVATION_REQUIRED_ERROR,
   ElevationGuard,
-} from '@/routes/common/auth/elevation.guard';
+} from '#/routes/common/auth/elevation.guard';
 
 // Deliberately not the production default (30 minutes): a test window that
 // matched it would still pass if the guard hardcoded the constant instead of

@@ -3,12 +3,12 @@
 import { MessageRejected, SESv2Client } from '@aws-sdk/client-sesv2';
 import { fromTokenFile } from '@aws-sdk/credential-provider-web-identity';
 import { faker } from '@faker-js/faker';
-import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
-import { AwsSesEmailService } from '@/modules/email/ses/datasources/aws-ses-email.service';
+import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
+import { AwsSesEmailService } from '#/modules/email/ses/datasources/aws-ses-email.service';
 import {
   PermanentEmailError,
   TransientEmailError,
-} from '@/modules/email/ses/domain/errors/email.errors';
+} from '#/modules/email/ses/domain/errors/email.errors';
 
 const { mockSend } = vi.hoisted(() => ({ mockSend: vi.fn() }));
 

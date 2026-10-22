@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { IApiManager } from '@/domain/interfaces/api.manager.interface';
-import type { IBalancesApi } from '@/domain/interfaces/balances-api.interface';
-import type { Raw } from '@/validation/entities/raw.entity';
+import type { IApiManager } from '#/domain/interfaces/api.manager.interface';
+import type { IBalancesApi } from '#/domain/interfaces/balances-api.interface';
+import type { Raw } from '#/validation/entities/raw.entity';
 
 export const IBalancesApiManager = Symbol('IBalancesApiManager');
 
