@@ -6,12 +6,14 @@ describe('BooleanStringSchema', () => {
   it('should parse "true" to true', () => {
     const result = BooleanStringSchema.safeParse('true');
 
+    expect(result.success).toBe(true);
     expect(result.success && result.data).toBe(true);
   });
 
   it('should parse "false" to false', () => {
     const result = BooleanStringSchema.safeParse('false');
 
+    expect(result.success).toBe(true);
     expect(result.success && result.data).toBe(false);
   });
 
