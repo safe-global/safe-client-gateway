@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import { ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
 import type { Address } from 'viem';
+import { ChainIdSchema } from '#/modules/chains/domain/entities/schemas/chain-id.schema';
 import { CollectiblesService } from '#/modules/collectibles/routes/collectibles.service';
 import type { Collectible } from '#/modules/collectibles/routes/entities/collectible.entity';
 import { CollectiblePage } from '#/modules/collectibles/routes/entities/collectible.page.entity';
@@ -44,7 +45,7 @@ export class CollectiblesController {
   })
   @Get('chains/:chainId/safes/:safeAddress/collectibles')
   getCollectibles(
-    @Param('chainId') chainId: string,
+    @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,
     @RouteUrlDecorator() routeUrl: URL,

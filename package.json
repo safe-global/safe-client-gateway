@@ -44,15 +44,15 @@
     "mark:deployed-counterfactual-safes": "yarn build && node --env-file=.env dist/scripts/mark-deployed-counterfactual-safes.js"
   },
   "dependencies": {
-    "@aws-sdk/client-kms": "3.1147.0",
-    "@aws-sdk/client-s3": "3.1147.0",
-    "@aws-sdk/client-sesv2": "3.1147.0",
-    "@aws-sdk/credential-provider-web-identity": "3.972.78",
-    "@aws-sdk/lib-storage": "3.1147.0",
-    "@aws-sdk/s3-request-presigner": "3.1147.0",
+    "@aws-sdk/client-kms": "3.1150.0",
+    "@aws-sdk/client-s3": "3.1150.0",
+    "@aws-sdk/client-sesv2": "3.1150.0",
+    "@aws-sdk/credential-provider-web-identity": "3.972.80",
+    "@aws-sdk/lib-storage": "3.1150.0",
+    "@aws-sdk/s3-request-presigner": "3.1150.0",
     "@blockaid/client": "^1.8.0",
-    "@fastify/cookie": "^11.1.2",
-    "@fastify/static": "^10.1.5",
+    "@fastify/cookie": "^11.1.3",
+    "@fastify/static": "^10.1.6",
     "@fingerprintjs/fingerprintjs-pro-server-api": "6.13.1",
     "@nestjs/bullmq": "^12.0.0",
     "@nestjs/cache-manager": "12.0.0",
@@ -71,7 +71,7 @@
     "bullmq": "^6.3.11",
     "cache-manager": "7.2.9",
     "csv-stringify": "^6.9.0",
-    "dd-trace": "6.20.0",
+    "dd-trace": "6.21.0",
     "ecdsa-sig-formatter": "1.0.11",
     "ioredis": "6.0.0",
     "jose": "6.2.12",
@@ -87,9 +87,9 @@
     "rxjs": "7.8.2",
     "sanitize-html": "2.18.0",
     "semver": "7.8.5",
-    "typeorm": "1.1.1",
+    "typeorm": "1.1.2",
     "undici": "8.11.2",
-    "viem": "2.57.4",
+    "viem": "2.57.5",
     "zod": "4.6.5"
   },
   "devDependencies": {
@@ -97,15 +97,15 @@
     "@faker-js/faker": "10.6.0",
     "@nestjs/testing": "12.1.2",
     "@smithy/util-stream": "4.8.2",
-    "@swc/core": "1.16.13",
+    "@swc/core": "1.16.18",
     "@types/amqplib": "0",
     "@types/jsonwebtoken": "9",
     "@types/lodash": "4.17.25",
-    "@types/node": "26.6.4",
+    "@types/node": "26.6.5",
     "@types/sanitize-html": "2",
     "@types/semver": "7.8.0",
     "@types/supertest": "7.2.1",
-    "@vitest/coverage-v8": "5.0.3",
+    "@vitest/coverage-v8": "5.0.4",
     "aws-sdk-client-mock": "4.1.0",
     "concurrently": "10.0.5",
     "corepack": "0.36.0",
@@ -137,7 +137,7 @@
   "repository": "https://github.com/5afe/safe-client-gateway-nest.git",
   "packageManager": "yarn@4.18.0",
   "engines": {
-    "node": ">=26.10.0"
+    "node": ">=26.12.1"
   },
   "resolutions": {
     "tmp": "0.2.7"
