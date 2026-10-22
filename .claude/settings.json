@@ -7,10 +7,10 @@
         "hooks": [
           {
             "type": "command",
-            "if": "Bash(git commit *)",
-            "statusMessage": "Checking whether src/ changed",
+            "if": "Bash(git push *)",
+            "statusMessage": "Checking the pre-PR architecture review ran for HEAD",
             "timeout": 15,
-            "command": "test -n \"$(git status --porcelain -- src/)\" && printf '%s' '{\"systemMessage\":\"src/ changed — applying the repo review checklist from docs/agents/reviewing.md before this commit.\",\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"additionalContext\":\"This commit touches src/. Before treating it as done, read docs/agents/reviewing.md and apply it to the diff in full, along with the matching sections of docs/agents/remarks.md. Those two files are the single source of truth for what to check and how to report findings — work from what they say, not from memory of them.\"}}' || true"
+            "command": "node -e 'const c=JSON.parse(require(\"fs\").readFileSync(0,\"utf8\")).tool_input?.command??\"\";process.exit(/(^|[\\s;&|(])git(\\s+-{1,2}\\S+(\\s+[^\\s-]\\S*)?)*\\s+push(\\s|$)/m.test(c)?0:1)' || exit 0; h=\"$(git rev-parse HEAD)\" && test \"$(cat \"$(git rev-parse --git-common-dir)/arch-reviewed\" 2>/dev/null)\" = \"$h\" || { printf '%s\\n' 'Push blocked: HEAD has not passed the pre-PR architecture review (AGENTS.md \"Pre-PR Architecture Review\"). Load the cgw-review skill and apply docs/agents/reviewing.md to the full branch diff (git diff origin/main...HEAD), not only the last commit. Fix every finding you can and commit the fixes. For a finding that needs a human decision, ask the user and do not push. When the review of the current HEAD reports no findings, or the user explicitly accepts the remaining ones, record it with: git rev-parse HEAD > \"$(git rev-parse --git-common-dir)/arch-reviewed\" and push again.' >&2; exit 2; }"
           }
         ]
       }

@@ -22,9 +22,9 @@
 | Env var, feature flag, config | [docs/agents/configuration-and-flags.md](docs/agents/configuration-and-flags.md) |
 | Reviewing a PR / verifying a completed task | [docs/agents/reviewing.md](docs/agents/reviewing.md) + [docs/agents/remarks.md](docs/agents/remarks.md) |
 | Commit message, PR title, PR body, splitting a PR | [docs/agents/commits-and-prs.md](docs/agents/commits-and-prs.md) |
-| Adding a skill or a slash command for this repo | [docs/agents/agent-tooling.md](docs/agents/agent-tooling.md) |
+| Adding a skill, a slash command, or a hook (`.claude/settings.json`, `.husky/`) for this repo | [docs/agents/agent-tooling.md](docs/agents/agent-tooling.md) |
 
-Delivery is automatic, not opt-in: each guide above is also a `cgw-*` Claude Code skill that loads itself on the matching work, and a `PreToolUse` hook in `.claude/settings.json` applies the review checklist on any commit that touches `src/`. On demand, commenting `@claude arch-review` on a PR runs the `Architecture Check` workflow, which applies the same checklist to the PR diff and posts a brief verdict comment. There are no repo-specific slash commands to remember. All three mechanisms are documented in [docs/agents/agent-tooling.md](docs/agents/agent-tooling.md).
+These rules apply to every agent, whichever one you are. The routing table above tells you which guide to read. "Pre-PR Architecture Review" below makes applying the review checklist to the whole branch mandatory before any push, and `.husky/pre-push` rejects a push that skipped it. On demand, commenting `@claude arch-review` on a PR runs the `Architecture Check` workflow, which applies the same checklist to the PR diff and posts a brief verdict comment. Each agent also gets this delivered automatically through whatever mechanism it reads. Each guide above is also a `cgw-*` skill in `.claude/skills/` that loads itself on the matching work. A `PreToolUse` hook in `.claude/settings.json` stops an unreviewed `git push` before it runs. There are no repo-specific slash commands to remember. Every mechanism is documented in [docs/agents/agent-tooling.md](docs/agents/agent-tooling.md).
 
 ## Non-negotiables
 
@@ -108,6 +108,22 @@ yarn test
 git add <files>
 git commit -m "Your commit message"
 ```
+
+## Pre-PR Architecture Review
+
+Before **EACH** push, and so before opening any PR, every agent MUST apply [docs/agents/reviewing.md](docs/agents/reviewing.md) to the full branch diff (`git diff origin/main...HEAD`), not only the last commit. This is the same review the `@claude arch-review` CI check runs. Under Claude Code, load the `cgw-review` skill for it.
+
+1. **Findings:** fix every finding you can resolve from the code and the cited guide, commit the fixes, and review the new `HEAD` again.
+2. **A finding needs a human decision:** stop and ask the user. Do not push.
+3. **No findings, or the user explicitly accepts the remaining ones:** record the reviewed commit, then push:
+
+   ```bash
+   git rev-parse HEAD > "$(git rev-parse --git-common-dir)/arch-reviewed"
+   ```
+
+   Never record a commit you have not reviewed, and never treat findings as accepted without the user's explicit word.
+
+Every push is gated on that marker, whichever agent runs it: `.husky/pre-push` rejects a pushed branch whose tip does not match it. Agents with hook support also stop before the push runs: under Claude Code, a `PreToolUse` hook blocks `git push` and hands the agent this loop. Details: [docs/agents/agent-tooling.md](docs/agents/agent-tooling.md#the-pre-push-gate).
 
 ## License Headers
 
