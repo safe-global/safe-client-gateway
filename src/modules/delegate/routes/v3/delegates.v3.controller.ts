@@ -33,11 +33,11 @@ import { DeleteDelegateV3Dto } from '#/modules/delegate/routes/v3/entities/delet
 import { DeleteDelegateV3DtoSchema } from '#/modules/delegate/routes/v3/entities/schemas/delete-delegate.v3.dto.schema';
 import { UpdateDelegateV3DtoSchema } from '#/modules/delegate/routes/v3/entities/schemas/update-delegate.v3.dto.schema';
 import { UpdateDelegateV3Dto } from '#/modules/delegate/routes/v3/entities/update-delegate.v3.dto.entity';
-import { PaginationDataDecorator } from '#/routes/common/decorators/pagination.data.decorator';
 import { RouteUrlDecorator } from '#/routes/common/decorators/route.url.decorator';
 import type { Page } from '#/routes/common/entities/page.entity';
 import type { PaginationData } from '#/routes/common/pagination/pagination.data';
 import { AddressSchema } from '#/validation/entities/schemas/address.schema';
+import { PaginationCursorSchema } from '#/validation/entities/schemas/pagination-cursor.schema';
 import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
 @ApiTags('delegates')
@@ -96,7 +96,8 @@ export class DelegatesV3Controller {
     @RouteUrlDecorator() routeUrl: URL,
     @Query(new ValidationPipe(GetDelegateDtoSchema))
     getDelegateDto: GetDelegateDto,
-    @PaginationDataDecorator() paginationData: PaginationData,
+    @Query('cursor', new ValidationPipe(PaginationCursorSchema))
+    paginationData: PaginationData,
   ): Promise<Page<Delegate>> {
     return this.service.getDelegates({
       chainId,

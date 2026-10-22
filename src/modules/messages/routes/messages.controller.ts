@@ -1,5 +1,13 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Body, Controller, Get, HttpCode, Param, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Param,
+  Post,
+  Query,
+} from '@nestjs/common';
 import {
   ApiAcceptedResponse,
   ApiBadRequestResponse,
@@ -22,13 +30,13 @@ import { CreateMessageDtoSchema } from '#/modules/messages/routes/entities/schem
 import { UpdateMessageSignatureDtoSchema } from '#/modules/messages/routes/entities/schemas/update-message-signature.dto.schema';
 import { UpdateMessageSignatureDto } from '#/modules/messages/routes/entities/update-message-signature.entity';
 import { MessagesService } from '#/modules/messages/routes/messages.service';
-import { PaginationDataDecorator } from '#/routes/common/decorators/pagination.data.decorator';
 import { RouteUrlDecorator } from '#/routes/common/decorators/route.url.decorator';
 import type { DateLabel } from '#/routes/common/entities/date-label.entity';
 import type { Page } from '#/routes/common/entities/page.entity';
 import type { PaginationData } from '#/routes/common/pagination/pagination.data';
 import { AddressSchema } from '#/validation/entities/schemas/address.schema';
 import { HexSchema } from '#/validation/entities/schemas/hex.schema';
+import { PaginationCursorSchema } from '#/validation/entities/schemas/pagination-cursor.schema';
 import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
 @ApiTags('messages')
@@ -111,7 +119,8 @@ export class MessagesController {
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,
     @RouteUrlDecorator() routeUrl: URL,
-    @PaginationDataDecorator() paginationData: PaginationData,
+    @Query('cursor', new ValidationPipe(PaginationCursorSchema))
+    paginationData: PaginationData,
   ): Promise<Page<DateLabel | MessageItem>> {
     return this.messagesService.getMessagesBySafe({
       chainId,

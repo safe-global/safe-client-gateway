@@ -1,5 +1,13 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Body, Controller, Get, HttpCode, Param, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Param,
+  Post,
+  Query,
+} from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiBody,
@@ -16,12 +24,12 @@ import { GasToken } from '#/modules/fees/routes/entities/gas-token.entity';
 import { GasTokenPage } from '#/modules/fees/routes/entities/gas-token-page.entity';
 import { FeePreviewTransactionDtoSchema } from '#/modules/fees/routes/entities/schemas/fee-preview-transaction.dto.schema';
 import { FeesService } from '#/modules/fees/routes/fees.service';
-import { PaginationDataDecorator } from '#/routes/common/decorators/pagination.data.decorator';
 import { RouteUrlDecorator } from '#/routes/common/decorators/route.url.decorator';
 import type { Page } from '#/routes/common/entities/page.entity';
 import type { PaginationData } from '#/routes/common/pagination/pagination.data';
 import { AddressSchema } from '#/validation/entities/schemas/address.schema';
 import { NumericStringSchema } from '#/validation/entities/schemas/numeric-string.schema';
+import { PaginationCursorSchema } from '#/validation/entities/schemas/pagination-cursor.schema';
 import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
 @ApiTags('fees')
@@ -57,7 +65,8 @@ export class FeesController {
   getGasTokens(
     @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,
     @RouteUrlDecorator() routeUrl: URL,
-    @PaginationDataDecorator() paginationData: PaginationData,
+    @Query('cursor', new ValidationPipe(PaginationCursorSchema))
+    paginationData: PaginationData,
   ): Promise<Page<GasToken>> {
     return this.feesService.getGasTokens(routeUrl, chainId, paginationData);
   }

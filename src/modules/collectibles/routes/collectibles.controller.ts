@@ -13,11 +13,11 @@ import { ChainIdSchema } from '#/modules/chains/domain/entities/schemas/chain-id
 import { CollectiblesService } from '#/modules/collectibles/routes/collectibles.service';
 import type { Collectible } from '#/modules/collectibles/routes/entities/collectible.entity';
 import { CollectiblePage } from '#/modules/collectibles/routes/entities/collectible.page.entity';
-import { PaginationDataDecorator } from '#/routes/common/decorators/pagination.data.decorator';
 import { RouteUrlDecorator } from '#/routes/common/decorators/route.url.decorator';
 import type { Page } from '#/routes/common/entities/page.entity';
 import type { PaginationData } from '#/routes/common/pagination/pagination.data';
 import { AddressSchema } from '#/validation/entities/schemas/address.schema';
+import { PaginationCursorSchema } from '#/validation/entities/schemas/pagination-cursor.schema';
 import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
 @ApiTags('collectibles')
@@ -49,7 +49,8 @@ export class CollectiblesController {
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,
     @RouteUrlDecorator() routeUrl: URL,
-    @PaginationDataDecorator() paginationData: PaginationData,
+    @Query('cursor', new ValidationPipe(PaginationCursorSchema))
+    paginationData: PaginationData,
     @Query('trusted', new DefaultValuePipe(false), ParseBoolPipe)
     trusted: boolean,
     @Query('exclude_spam', new DefaultValuePipe(true), ParseBoolPipe)

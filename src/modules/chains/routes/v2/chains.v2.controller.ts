@@ -11,10 +11,10 @@ import { ChainIdSchema } from '#/modules/chains/domain/entities/schemas/chain-id
 import { Chain } from '#/modules/chains/routes/entities/chain.entity';
 import { ChainPage } from '#/modules/chains/routes/entities/chain-page.entity';
 import { ServiceKeyQuerySchema } from '#/modules/chains/routes/v2/entities/schemas/service-key.schema';
-import { PaginationDataDecorator } from '#/routes/common/decorators/pagination.data.decorator';
 import { RouteUrlDecorator } from '#/routes/common/decorators/route.url.decorator';
 import type { Page } from '#/routes/common/entities/page.entity';
 import type { PaginationData } from '#/routes/common/pagination/pagination.data';
+import { PaginationCursorSchema } from '#/validation/entities/schemas/pagination-cursor.schema';
 import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 import { ChainsV2Service } from './chains.v2.service';
 
@@ -55,7 +55,8 @@ export class ChainsV2Controller {
     @Query('serviceKey', new ValidationPipe(ServiceKeyQuerySchema))
     serviceKey: string,
     @RouteUrlDecorator() routeUrl: URL,
-    @PaginationDataDecorator() paginationData: PaginationData,
+    @Query('cursor', new ValidationPipe(PaginationCursorSchema))
+    paginationData: PaginationData,
   ): Promise<Page<Chain>> {
     return this.chainsV2Service.getChains(serviceKey, routeUrl, paginationData);
   }

@@ -30,11 +30,11 @@ import { GetDelegateDtoSchema } from '#/modules/delegate/routes/entities/schemas
 import { DelegatesV2Service } from '#/modules/delegate/routes/v2/delegates.v2.service';
 import { DeleteDelegateV2Dto } from '#/modules/delegate/routes/v2/entities/delete-delegate.v2.dto.entity';
 import { DeleteDelegateV2DtoSchema } from '#/modules/delegate/routes/v2/entities/schemas/delete-delegate.v2.dto.schema';
-import { PaginationDataDecorator } from '#/routes/common/decorators/pagination.data.decorator';
 import { RouteUrlDecorator } from '#/routes/common/decorators/route.url.decorator';
 import type { Page } from '#/routes/common/entities/page.entity';
 import type { PaginationData } from '#/routes/common/pagination/pagination.data';
 import { AddressSchema } from '#/validation/entities/schemas/address.schema';
+import { PaginationCursorSchema } from '#/validation/entities/schemas/pagination-cursor.schema';
 import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
 @ApiTags('delegates')
@@ -94,7 +94,8 @@ export class DelegatesV2Controller {
     @RouteUrlDecorator() routeUrl: URL,
     @Query(new ValidationPipe(GetDelegateDtoSchema))
     getDelegateDto: GetDelegateDto,
-    @PaginationDataDecorator() paginationData: PaginationData,
+    @Query('cursor', new ValidationPipe(PaginationCursorSchema))
+    paginationData: PaginationData,
   ): Promise<Page<Delegate>> {
     return this.service.getDelegates({
       chainId,
