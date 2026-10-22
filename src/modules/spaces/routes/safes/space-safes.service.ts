@@ -4,9 +4,15 @@ import { Inject, Injectable } from '@nestjs/common';
 import { groupBy, mapValues } from 'lodash';
 import { Equal } from 'typeorm';
 import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '#/logging/logging.interface';
+import { asError } from '#/logging/utils';
 import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '#/modules/auth/utils/assert-authenticated.utils';
 import { IEntitlementEnforcement } from '#/modules/entitlements/domain/entitlement-enforcement.interface';
+import { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
 import type { SpaceSafe } from '#/modules/spaces/datasources/safes/entities/space-safes.entity.db';
 import type { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
 import { IAddressBookItemsRepository } from '#/modules/spaces/domain/address-books/address-book-items.repository.interface';
@@ -37,6 +43,10 @@ export class SpaceSafesService {
     private readonly postgresDatabaseService: PostgresDatabaseService,
     @Inject(IAddressBookItemsRepository)
     private readonly addressBookItemsRepository: IAddressBookItemsRepository,
+    @Inject(ISafeRepository)
+    private readonly safeRepository: ISafeRepository,
+    @Inject(LoggingService)
+    private readonly loggingService: ILoggingService,
   ) {}
 
   public async create(args: {
@@ -94,6 +104,9 @@ export class SpaceSafesService {
         });
       }
     });
+    // After the commit: cleared inside the transaction, the queue could be
+    // cached again from the Safes it is replacing.
+    await this.clearTransactionQueue(args.spaceId);
   }
 
   public async get(
@@ -145,6 +158,22 @@ export class SpaceSafesService {
       actorUserId: userId,
       payload: args.payload,
     });
+    await this.clearTransactionQueue(args.spaceId);
+  }
+
+  /**
+   * Housekeeping only: the queue is cached per set of Safes, so a page of the
+   * previous set is never served again. A failure must not fail a write that
+   * is already committed.
+   */
+  private async clearTransactionQueue(spaceId: Space['id']): Promise<void> {
+    await this.safeRepository
+      .clearSpaceTransactionQueue({ spaceId })
+      .catch((error: unknown) => {
+        this.loggingService.warn(
+          `Failed to clear the transaction queue of workspace ${spaceId}: ${asError(error).message}`,
+        );
+      });
   }
 
   /**

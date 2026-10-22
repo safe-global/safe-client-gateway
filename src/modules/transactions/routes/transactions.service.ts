@@ -1,5 +1,12 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  HttpStatus,
+  Inject,
+  Injectable,
+} from '@nestjs/common';
+import sortBy from 'lodash/sortBy';
+import takeWhile from 'lodash/takeWhile';
 import type { Address } from 'viem';
 import {
   getAddress,
@@ -9,13 +16,21 @@ import {
   parseUnits,
 } from 'viem';
 import { IConfigurationService } from '#/config/configuration.service.interface';
+import {
+  SAFE_QUEUE_SERVICE_MAX_LIMIT,
+  SAFE_QUEUE_SERVICE_MAX_SAFES,
+} from '#/domain/common/constants';
 import { LogType } from '#/domain/common/entities/log-type.entity';
+import { DataSourceError } from '#/domain/errors/data-source.error';
 import {
   type ILoggingService,
   LoggingService,
 } from '#/logging/logging.interface';
+import { asError } from '#/logging/utils';
 import { IDataDecoderRepository } from '#/modules/data-decoder/domain/v2/data-decoder.repository.interface';
 import type { MultisigTransaction as DomainMultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
+import type { Safe } from '#/modules/safe/domain/entities/safe.entity';
+import { getChainSafeKey } from '#/modules/safe/domain/helpers/chain-safe-key.helper';
 import type { SafeRepository } from '#/modules/safe/domain/safe.repository';
 import { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
 import { ITokenRepository } from '#/modules/tokens/domain/token.repository.interface';
@@ -34,6 +49,7 @@ import { ModuleTransaction } from '#/modules/transactions/routes/entities/module
 import { MultisigTransaction } from '#/modules/transactions/routes/entities/multisig-transaction.entity';
 import type { PreviewTransactionDto } from '#/modules/transactions/routes/entities/preview-transaction.dto.entity';
 import type { QueuedItem } from '#/modules/transactions/routes/entities/queued-item.entity';
+import type { SpaceQueuedItemPage } from '#/modules/transactions/routes/entities/space-queued-item-page.entity';
 import type { TransactionDetails } from '#/modules/transactions/routes/entities/transaction-details/transaction-details.entity';
 import type { TransactionItemPage } from '#/modules/transactions/routes/entities/transaction-item-page.entity';
 import type { TransactionPreview } from '#/modules/transactions/routes/entities/transaction-preview.entity';
@@ -53,6 +69,7 @@ import {
   buildPreviousPageURL,
   cursorUrlFromLimitAndOffset,
   PaginationData,
+  setCursor,
 } from '#/routes/common/pagination/pagination.data';
 
 @Injectable()
@@ -453,6 +470,265 @@ export class TransactionsService {
       previous: previousURL?.toString() ?? null,
       results,
     };
+  }
+
+  /**
+   * The merged queue of several Safes, in nonce order. A page never ends
+   * inside a nonce, so every conflict lands whole on one page, and each run of
+   * one Safe's transactions is mapped against that Safe.
+   */
+  async getTransactionQueueForSafes(args: {
+    spaceId: number;
+    safes: ReadonlyArray<{ chainId: string; address: Address }>;
+    routeUrl: Readonly<URL>;
+    paginationData: PaginationData;
+  }): Promise<SpaceQueuedItemPage> {
+    const { requested, unavailableSafes } = this.partitionQueueSafes(
+      args.safes,
+    );
+    const safes = await this.loadQueueSafes(requested, unavailableSafes);
+    if (safes.length === 0) {
+      return {
+        count: 0,
+        next: null,
+        previous: null,
+        results: [],
+        unavailableSafes,
+      };
+    }
+
+    const { offset } = args.paginationData;
+    const limit = Math.max(
+      1,
+      Math.min(args.paginationData.limit, SAFE_QUEUE_SERVICE_MAX_LIMIT - 1),
+    );
+    const page = await this.getQueuePageOfSafes({
+      spaceId: args.spaceId,
+      safes,
+      limit,
+      offset,
+    }).catch((error: unknown) => {
+      this.loggingService.warn({
+        message: 'Failed to load the queue of the Space Safes',
+        error: asError(error).message,
+      });
+      return null;
+    });
+    // The Space stays readable: its Safes are reported as unavailable instead.
+    if (!page) {
+      unavailableSafes.push(
+        ...safes.map(({ chainId, safe }) => ({
+          chainId,
+          safeAddress: safe.address,
+        })),
+      );
+      return {
+        count: 0,
+        next: null,
+        previous: null,
+        results: [],
+        unavailableSafes,
+      };
+    }
+    const { transactions } = page;
+
+    const nextOffset = offset + transactions.length;
+    const next =
+      page.count !== null && nextOffset < page.count
+        ? setCursor(args.routeUrl, new PaginationData(limit, nextOffset))
+        : null;
+    const safesByKey = new Map(
+      safes.map(({ chainId, safe }) => [
+        getChainSafeKey(chainId, safe.address),
+        safe,
+      ]),
+    );
+
+    return {
+      count: page.count,
+      next: next?.toString() ?? null,
+      previous: null,
+      results: await this.mapQueueRuns(transactions, safesByKey),
+      unavailableSafes,
+    };
+  }
+
+  /**
+   * One page of the merged queue, extended past `limit` to the end of its
+   * last nonce.
+   */
+  private async getQueuePageOfSafes(args: {
+    spaceId: number;
+    safes: Array<{ chainId: string; safe: Safe }>;
+    limit: number;
+    offset: number;
+  }): Promise<{
+    count: number | null;
+    transactions: Array<{
+      chainId: string;
+      transaction: DomainMultisigTransaction;
+    }>;
+  }> {
+    // One transaction more than the page, to tell whether its last nonce continues.
+    const page = await this.safeRepository.getTransactionQueueForSafes({
+      spaceId: args.spaceId,
+      safes: args.safes,
+      limit: args.limit + 1,
+      offset: args.offset,
+    });
+    const transactions = page.results.slice(0, args.limit);
+    const lookahead = page.results.at(args.limit);
+    const lastNonce = transactions.at(-1)?.transaction.nonce;
+    if (lookahead && lookahead.transaction.nonce === lastNonce) {
+      const rest = await this.safeRepository.getTransactionQueueForSafes({
+        spaceId: args.spaceId,
+        safes: args.safes,
+        limit: SAFE_QUEUE_SERVICE_MAX_LIMIT,
+        offset: args.offset + transactions.length,
+      });
+      const sameNonce = takeWhile(
+        rest.results,
+        (item) => item.transaction.nonce === lastNonce,
+      );
+      transactions.push(...sameNonce);
+    }
+    return { count: page.count, transactions };
+  }
+
+  private partitionQueueSafes(
+    safes: ReadonlyArray<{ chainId: string; address: Address }>,
+  ): {
+    requested: Array<{ chainId: string; address: Address }>;
+    unavailableSafes: Array<{ chainId: string; safeAddress: Address }>;
+  } {
+    const requested: Array<{ chainId: string; address: Address }> = [];
+    const unavailableSafes: Array<{ chainId: string; safeAddress: Address }> =
+      [];
+    const seen = new Set<string>();
+    const addresses = new Set<string>();
+    for (const { chainId, address } of safes) {
+      const key = getChainSafeKey(chainId, address);
+      if (seen.has(key)) {
+        continue;
+      }
+      seen.add(key);
+      const normalizedAddress = address.toLowerCase();
+      if (
+        !addresses.has(normalizedAddress) &&
+        addresses.size >= SAFE_QUEUE_SERVICE_MAX_SAFES
+      ) {
+        unavailableSafes.push({ chainId, safeAddress: address });
+        continue;
+      }
+      addresses.add(normalizedAddress);
+      requested.push({ chainId, address });
+    }
+    return { requested, unavailableSafes };
+  }
+
+  /**
+   * Safe information for every requested Safe. A Safe that cannot be loaded
+   * (not deployed on that chain, or its chain unreachable) is reported as
+   * unavailable instead of failing the whole queue upstream.
+   */
+  private async loadQueueSafes(
+    requested: Array<{ chainId: string; address: Address }>,
+    unavailableSafes: Array<{ chainId: string; safeAddress: Address }>,
+  ): Promise<Array<{ chainId: string; safe: Safe }>> {
+    const results = await Promise.allSettled(
+      requested.map(({ chainId, address }) =>
+        this.safeRepository.getSafe({ chainId, address }),
+      ),
+    );
+    const safes: Array<{ chainId: string; safe: Safe }> = [];
+    results.forEach((result, index) => {
+      const { chainId, address } = requested[index];
+      if (result.status === 'fulfilled') {
+        safes.push({ chainId, safe: result.value });
+        return;
+      }
+      // An undeployed Safe is expected in a Space; anything else is worth a look.
+      if (!this.isNotFound(result.reason)) {
+        this.loggingService.warn({
+          message: 'Failed to load Safe; leaving it out of the Space queue',
+          chainId,
+          address,
+          error: asError(result.reason).message,
+        });
+      }
+      unavailableSafes.push({ chainId, safeAddress: address });
+    });
+    return safes;
+  }
+
+  private async mapQueueRuns(
+    transactions: Array<{
+      chainId: string;
+      transaction: DomainMultisigTransaction;
+    }>,
+    safesByKey: Map<string, Safe>,
+  ): Promise<SpaceQueuedItemPage['results']> {
+    const sorted = sortBy(
+      transactions.map((item, index) => ({ ...item, index })),
+      [
+        ({ transaction }): number => transaction.nonce,
+        ({ chainId }): string => chainId,
+        ({ transaction }): string => transaction.safe.toLowerCase(),
+        ({ index }): number => index,
+      ],
+    );
+
+    const runs: Array<{
+      chainId: string;
+      safe: Safe;
+      transactions: Array<DomainMultisigTransaction>;
+      previousNonce: number | null;
+    }> = [];
+    const lastNonceBySafe = new Map<string, number>();
+    for (const { chainId, transaction } of sorted) {
+      const key = getChainSafeKey(chainId, transaction.safe);
+      const safe = safesByKey.get(key);
+      if (!safe) {
+        continue;
+      }
+      const run = runs.at(-1);
+      if (run && run.chainId === chainId && run.safe === safe) {
+        run.transactions.push(transaction);
+      } else {
+        runs.push({
+          chainId,
+          safe,
+          transactions: [transaction],
+          previousNonce: lastNonceBySafe.get(key) ?? null,
+        });
+      }
+      lastNonceBySafe.set(key, transaction.nonce);
+    }
+
+    return await Promise.all(
+      runs.map(async (run) => ({
+        chainId: run.chainId,
+        safeAddress: run.safe.address,
+        items: await this.queuedItemsMapper.getQueuedItems(
+          {
+            count: run.transactions.length,
+            next: null,
+            previous: null,
+            results: run.transactions,
+          },
+          run.safe,
+          run.chainId,
+          run.previousNonce,
+          null,
+        ),
+      })),
+    );
+  }
+
+  private isNotFound(error: unknown): boolean {
+    return (
+      error instanceof DataSourceError && error.code === HttpStatus.NOT_FOUND
+    );
   }
 
   private getAdjustedPaginationForHistory(

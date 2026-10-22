@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { faker } from '@faker-js/faker';
 import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
 import { FakeCacheService } from '#/datasources/cache/__tests__/fake.cache.service';
@@ -16,15 +17,20 @@ import type { EarnRepository } from '#/modules/earn/domain/earn.repository';
 import { EventCacheHelper } from '#/modules/hooks/domain/helpers/event-cache.helper';
 import { HooksRepository } from '#/modules/hooks/domain/hooks.repository';
 import { chainUpdateEventBuilder } from '#/modules/hooks/routes/entities/__tests__/chain-update.builder';
+import { deletedMultisigTransactionEventBuilder } from '#/modules/hooks/routes/entities/__tests__/deleted-multisig-transaction.builder';
 import { executedTransactionEventBuilder } from '#/modules/hooks/routes/entities/__tests__/executed-transaction.builder';
 import { incomingTokenEventBuilder } from '#/modules/hooks/routes/entities/__tests__/incoming-token.builder';
 import { moduleTransactionEventBuilder } from '#/modules/hooks/routes/entities/__tests__/module-transaction.builder';
+import { newConfirmationEventBuilder } from '#/modules/hooks/routes/entities/__tests__/new-confirmation.builder';
+import { pendingTransactionEventBuilder } from '#/modules/hooks/routes/entities/__tests__/pending-transaction.builder';
+import { safeCreatedEventBuilder } from '#/modules/hooks/routes/entities/__tests__/safe-created.build';
 import type { MessagesRepository } from '#/modules/messages/domain/messages.repository';
 import type { IPushNotificationService } from '#/modules/notifications/domain/push/push-notification.service.interface';
 import type { IPolicyIndexerRepository } from '#/modules/policies/domain/policy-indexer.repository.interface';
 import type { QueuesRepository } from '#/modules/queues/domain/queues-repository';
 import type { SafeRepository } from '#/modules/safe/domain/safe.repository';
 import type { SafeAppsRepository } from '#/modules/safe-apps/domain/safe-apps.repository';
+import type { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository.interface';
 import type { StakingRepository } from '#/modules/staking/domain/staking.repository';
 import type { TransactionsRepository } from '#/modules/transactions/domain/transactions.repository';
 import type { ZerionCacheService } from '#/modules/zerion/datasources/zerion-cache.service';
@@ -74,7 +80,13 @@ const mockSafeRepository = vi.mocked({
   clearModuleTransactions: vi.fn(),
   clearIncomingTransfers: vi.fn(),
   clearSafe: vi.fn(),
+  clearIsSafe: vi.fn(),
+  clearSpaceTransactionQueue: vi.fn(),
 } as MockedObject<SafeRepository>);
+
+const mockSpaceSafesRepository = vi.mocked({
+  findSpaceIdsBySafe: vi.fn(),
+} as MockedObject<ISpaceSafesRepository>);
 
 const mockStakingRepository = vi.mocked({
   clearApi: vi.fn(),
@@ -123,7 +135,19 @@ describe('HooksRepository (Unit)', () => {
     vi.clearAllMocks();
 
     fakeCacheService = new FakeCacheService();
-    eventCacheHelper = new EventCacheHelper(
+    eventCacheHelper = buildEventCacheHelper();
+    mockPushNotificationService.enqueueEvent.mockResolvedValue();
+    hooksRepository = new HooksRepository(
+      mockLoggingService,
+      mockQueuesRepository,
+      mockConfigurationService,
+      mockPushNotificationService,
+      eventCacheHelper,
+    );
+  });
+
+  function buildEventCacheHelper(): EventCacheHelper {
+    return new EventCacheHelper(
       mockBalancesRepository,
       mockBlockchainRepository,
       mockChainsRepository,
@@ -141,15 +165,89 @@ describe('HooksRepository (Unit)', () => {
       fakeCacheService,
       new SafeDecoder(),
       new MultiSendDecoder(mockLoggingService),
-    );
-    mockPushNotificationService.enqueueEvent.mockResolvedValue();
-    hooksRepository = new HooksRepository(
-      mockLoggingService,
-      mockQueuesRepository,
+      mockSpaceSafesRepository,
       mockConfigurationService,
-      mockPushNotificationService,
-      eventCacheHelper,
     );
+  }
+
+  describe('Space transaction queue', () => {
+    const queueEvents = [
+      ['PENDING_MULTISIG_TRANSACTION', pendingTransactionEventBuilder],
+      ['NEW_CONFIRMATION', newConfirmationEventBuilder],
+      ['EXECUTED_MULTISIG_TRANSACTION', executedTransactionEventBuilder],
+      ['DELETED_MULTISIG_TRANSACTION', deletedMultisigTransactionEventBuilder],
+      ['SAFE_CREATED', safeCreatedEventBuilder],
+    ] as const;
+
+    function enableSpaceTransactionQueue(): void {
+      mockConfigurationService.getOrThrow.mockImplementation((key: string) =>
+        [
+          'features.users',
+          'features.safeQueueService',
+          'features.spaceTransactions',
+        ].includes(key),
+      );
+    }
+
+    afterEach(() => {
+      mockConfigurationService.getOrThrow.mockReset();
+    });
+
+    it.each(queueEvents)(
+      'should clear the queue of every Space holding the Safe on %s',
+      async (_, builder) => {
+        enableSpaceTransactionQueue();
+        const spaceIds = [
+          faker.number.int({ min: 1 }),
+          faker.number.int({ min: 1 }),
+        ];
+        mockSpaceSafesRepository.findSpaceIdsBySafe.mockResolvedValue(spaceIds);
+        const event = builder().build();
+
+        await buildEventCacheHelper().onEventClearCache(event);
+
+        expect(
+          mockSpaceSafesRepository.findSpaceIdsBySafe,
+        ).toHaveBeenCalledExactlyOnceWith({
+          chainId: event.chainId,
+          address: event.address,
+        });
+        expect(
+          mockSafeRepository.clearSpaceTransactionQueue,
+        ).toHaveBeenCalledTimes(spaceIds.length);
+        for (const spaceId of spaceIds) {
+          expect(
+            mockSafeRepository.clearSpaceTransactionQueue,
+          ).toHaveBeenCalledWith({ spaceId });
+        }
+      },
+    );
+
+    it.each(queueEvents)(
+      'should not look up Spaces on %s while the Space queue is not served',
+      async (_, builder) => {
+        await buildEventCacheHelper().onEventClearCache(builder().build());
+
+        expect(
+          mockSpaceSafesRepository.findSpaceIdsBySafe,
+        ).not.toHaveBeenCalled();
+        expect(
+          mockSafeRepository.clearSpaceTransactionQueue,
+        ).not.toHaveBeenCalled();
+      },
+    );
+
+    it('should not look up Spaces on an event that leaves the queue as it is', async () => {
+      enableSpaceTransactionQueue();
+
+      await buildEventCacheHelper().onEventClearCache(
+        incomingTokenEventBuilder().build(),
+      );
+
+      expect(
+        mockSpaceSafesRepository.findSpaceIdsBySafe,
+      ).not.toHaveBeenCalled();
+    });
   });
 
   it('should forget the policy state of a safe after a policy change', async () => {

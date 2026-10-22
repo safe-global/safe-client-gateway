@@ -42,6 +42,16 @@ export interface ISafeQueueService {
     offset?: number;
   }): Promise<Raw<Page<SafeQueueMultisigTransactionEntity>>>;
 
+  // Cached per Space: a queue event of one of its Safes reaches the entry
+  // through clearSpaceTransactionQueue.
+  getTransactionQueueForSafes(args: {
+    spaceId: number;
+    safes: ReadonlyArray<{ chainId: string; safeAddress: Address }>;
+    nonceOrder?: 'asc' | 'desc';
+    limit?: number;
+    offset?: number;
+  }): Promise<Raw<Page<SafeQueueMultisigTransactionEntity>>>;
+
   postConfirmation(args: {
     chainId: string;
     safeTxHash: string;
@@ -126,6 +136,8 @@ export interface ISafeQueueService {
     chainId: string;
     safeAddress: Address;
   }): Promise<void>;
+
+  clearSpaceTransactionQueue(args: { spaceId: number }): Promise<void>;
 
   clearMessagesBySafe(args: {
     chainId: string;

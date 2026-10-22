@@ -44,6 +44,7 @@ import {
   TransferPageSchema,
   TransferSchema,
 } from '#/modules/safe/domain/entities/transfer.entity';
+import { getChainSafeKey } from '#/modules/safe/domain/helpers/chain-safe-key.helper';
 import { getLastModified } from '#/modules/safe/domain/helpers/last-modified.helper';
 import { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
 import {
@@ -298,6 +299,47 @@ export class SafeRepository implements ISafeRepository {
       });
     }
     return this.getSafeQueueSortedByLastModified(args);
+  }
+
+  async getTransactionQueueForSafes(args: {
+    spaceId: number;
+    safes: ReadonlyArray<{ chainId: string; safe: Safe }>;
+    limit?: number;
+    offset?: number;
+  }): Promise<Page<{ chainId: string; transaction: MultisigTransaction }>> {
+    const safesByKey = new Map(
+      args.safes.map(({ chainId, safe }) => [
+        getChainSafeKey(chainId, safe.address),
+        safe,
+      ]),
+    );
+    const page = await this.safeQueueService.getTransactionQueueForSafes({
+      spaceId: args.spaceId,
+      safes: args.safes.map(({ chainId, safe }) => ({
+        chainId,
+        safeAddress: safe.address,
+      })),
+      nonceOrder: 'asc',
+      limit: args.limit,
+      offset: args.offset,
+    });
+    const parsed = SafeQueueMultisigTransactionPageSchema.parse(page);
+    return {
+      count: parsed.count,
+      next: parsed.next,
+      previous: parsed.previous,
+      results: parsed.results.flatMap((tx) => {
+        const safe = safesByKey.get(getChainSafeKey(tx.chainId, tx.safe));
+        return safe
+          ? [
+              {
+                chainId: tx.chainId,
+                transaction: mapSafeQueueToMultisigTransaction(tx, safe),
+              },
+            ]
+          : [];
+      }),
+    };
   }
 
   getTransactionQueueMaxPageSize(): number {
@@ -756,6 +798,12 @@ export class SafeRepository implements ISafeRepository {
         `Failed to clear multisig transactions from one or more caches. errors=${errors}`,
       );
       throw new Error('Failed to clear multisig transactions');
+    }
+  }
+
+  async clearSpaceTransactionQueue(args: { spaceId: number }): Promise<void> {
+    if (this.safeQueueEnabled) {
+      await this.safeQueueService.clearSpaceTransactionQueue(args);
     }
   }
 

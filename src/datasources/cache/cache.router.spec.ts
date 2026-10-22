@@ -350,6 +350,58 @@ describe('CacheRouter', () => {
     });
   });
 
+  describe('getSpaceTransactionQueueCacheDir', () => {
+    const spaceId = faker.number.int({ min: 1 });
+    const safes = [
+      `${getAddress(faker.finance.ethereumAddress())}:1`,
+      `${getAddress(faker.finance.ethereumAddress())}:1:10`,
+    ];
+
+    it('keys every page of a Space under the key its clear deletes', () => {
+      const dir = CacheRouter.getSpaceTransactionQueueCacheDir({
+        spaceId,
+        safes,
+        nonceOrder: 'asc',
+      });
+
+      expect(dir.key).toBe(
+        CacheRouter.getSpaceTransactionQueueCacheKey(spaceId),
+      );
+    });
+
+    it('does not depend on the order of the Safes', () => {
+      const dir = CacheRouter.getSpaceTransactionQueueCacheDir({
+        spaceId,
+        safes,
+        nonceOrder: 'asc',
+      });
+      const reversed = CacheRouter.getSpaceTransactionQueueCacheDir({
+        spaceId,
+        safes: safes.toReversed(),
+        nonceOrder: 'asc',
+      });
+
+      expect(reversed.field).toBe(dir.field);
+    });
+
+    it('produces distinct fields for distinct pages and sets of Safes', () => {
+      const pages: Array<
+        Parameters<typeof CacheRouter.getSpaceTransactionQueueCacheDir>[0]
+      > = [
+        { spaceId, safes, nonceOrder: 'asc', limit: 10, offset: 0 },
+        { spaceId, safes, nonceOrder: 'asc', limit: 10, offset: 10 },
+        { spaceId, safes, nonceOrder: 'asc', limit: 20, offset: 0 },
+        { spaceId, safes, nonceOrder: 'desc', limit: 10, offset: 0 },
+        { spaceId, safes: safes.slice(1), nonceOrder: 'asc', limit: 10 },
+      ];
+      const fields = pages.map(
+        (page) => CacheRouter.getSpaceTransactionQueueCacheDir(page).field,
+      );
+
+      expect(new Set(fields).size).toBe(fields.length);
+    });
+  });
+
   describe('getSafeQueueMultisigTransactionsCacheKey', () => {
     const chainId = '1';
     const safeAddress = getAddress(faker.finance.ethereumAddress());

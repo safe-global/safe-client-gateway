@@ -301,6 +301,75 @@ export class SafeQueueService implements ISafeQueueService {
     }
   }
 
+  async getTransactionQueueForSafes(args: {
+    spaceId: number;
+    safes: ReadonlyArray<{ chainId: string; safeAddress: Address }>;
+    nonceOrder?: 'asc' | 'desc';
+    limit?: number;
+    offset?: number;
+  }): Promise<Raw<Page<SafeQueueMultisigTransactionEntity>>> {
+    try {
+      const safes = Array.from(
+        this.getChainIdsBySafe(args.safes),
+        ([safeAddress, chainIds]) => [safeAddress, ...chainIds].join(':'),
+      );
+      const nonceOrder = args.nonceOrder ?? 'asc';
+      const limit = this.capLimit(args.limit);
+      const query = new URLSearchParams();
+      for (const safe of safes) {
+        query.append('safes', safe);
+      }
+      query.set('nonceOrder', nonceOrder);
+      if (limit !== undefined) {
+        query.set('limit', limit.toString());
+      }
+      if (args.offset !== undefined) {
+        query.set('offset', args.offset.toString());
+      }
+      const cacheDir = CacheRouter.getSpaceTransactionQueueCacheDir({
+        spaceId: args.spaceId,
+        safes,
+        nonceOrder,
+        limit,
+        offset: args.offset,
+      });
+      const url = `${this.baseUri}/api/v1/multisig-transactions/queue?${query.toString()}`;
+      return await this.dataSource.get<
+        Page<SafeQueueMultisigTransactionEntity>
+      >({
+        cacheDir,
+        url,
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+        networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getSafeQueueServiceKey(),
+          },
+        },
+      });
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
+  /**
+   * The chains of each Safe address, for one `safes` value per address: the
+   * service counts values, not addresses, against its maximum.
+   */
+  private getChainIdsBySafe(
+    safes: ReadonlyArray<{ chainId: string; safeAddress: Address }>,
+  ): Map<Address, Array<string>> {
+    const chainIdsBySafe = new Map<Address, Array<string>>();
+    for (const { chainId, safeAddress } of safes) {
+      const chainIds = chainIdsBySafe.get(safeAddress) ?? [];
+      if (!chainIds.includes(chainId)) {
+        chainIds.push(chainId);
+      }
+      chainIdsBySafe.set(safeAddress, chainIds);
+    }
+    return chainIdsBySafe;
+  }
+
   async postConfirmation(args: {
     chainId: string;
     safeTxHash: string;
@@ -610,6 +679,11 @@ export class SafeQueueService implements ISafeQueueService {
       chainId: args.chainId,
       safeAddress: args.safeAddress,
     });
+    await this.cacheService.deleteByKey(key);
+  }
+
+  async clearSpaceTransactionQueue(args: { spaceId: number }): Promise<void> {
+    const key = CacheRouter.getSpaceTransactionQueueCacheKey(args.spaceId);
     await this.cacheService.deleteByKey(key);
   }
 

@@ -51,6 +51,7 @@ import { predatesEnforcement } from '#/modules/entitlements/domain/entitlements.
 import { parseSafeSeatQuota } from '#/modules/entitlements/domain/feature-package.mapper';
 import { ISubscriptionSyncService } from '#/modules/entitlements/domain/subscription-sync.service.interface';
 import { ISubscriptionsRepository } from '#/modules/entitlements/domain/subscriptions.repository.interface';
+import { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
 import type { Space } from '#/modules/spaces/domain/entities/space.entity';
 import { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository.interface';
 import {
@@ -83,6 +84,8 @@ export class BillingService {
     private readonly spaceSafesRepository: ISpaceSafesRepository,
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
+    @Inject(ISafeRepository)
+    private readonly safeRepository: ISafeRepository,
   ) {
     this.redirectConfig = getRedirectConfig(this.configurationService);
     this.enforcementStartsAt = this.configurationService.getOrThrow<Date>(
@@ -346,7 +349,18 @@ export class BillingService {
       this.loggingService.debug(
         `None of the ${args.removedSafes.length} Safe(s) to remove are left in workspace ${args.spaceId}`,
       );
+      return;
     }
+    // Housekeeping only: the queue is cached per set of Safes, so a page of
+    // the removed ones is never served again. A failure must not fail the
+    // plan change after the Safes are gone.
+    await this.safeRepository
+      .clearSpaceTransactionQueue({ spaceId: args.spaceId })
+      .catch((error: unknown) => {
+        this.loggingService.warn(
+          `Failed to clear the transaction queue of workspace ${args.spaceId}: ${asError(error).message}`,
+        );
+      });
   }
 
   /**
