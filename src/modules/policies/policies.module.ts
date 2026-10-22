@@ -10,6 +10,7 @@ import { MultiSendDecoder } from '#/modules/contracts/domain/decoders/multi-send
 import { SafeDecoder } from '#/modules/contracts/domain/decoders/safe-decoder.helper';
 import { DelegatesV3RepositoryModule } from '#/modules/delegate/domain/v3/delegates.v3.repository.interface';
 import { PolicyConfigurationRequest } from '#/modules/policies/datasources/entities/policy-configuration-request.entity.db';
+import { SafePolicyGuardDecoder } from '#/modules/policies/domain/contracts/decoders/safe-policy-guard-decoder.helper';
 import { PolicyIndexerRepositoryModule } from '#/modules/policies/domain/policy-indexer-repository.module';
 import { SafePolicyGuardConfigurationRequestsRepository } from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository';
 import { ISafePolicyGuardConfigurationRequestsRepository } from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository.interface';
@@ -58,6 +59,7 @@ import { UsersModule } from '#/modules/users/users.module';
     AllowanceModuleDecoder,
     SafeDecoder,
     MultiSendDecoder,
+    SafePolicyGuardDecoder,
     {
       provide: ISafePolicyGuardConfigurationRequestsRepository,
       useClass: SafePolicyGuardConfigurationRequestsRepository,

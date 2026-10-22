@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import type { Hex } from 'viem';
 import type { PolicyConfigurationRequest } from '#/modules/policies/domain/entities/policy-configuration-request.entity';
 import type { SafePolicyGuardConfiguration } from '#/modules/policies/domain/entities/safe-policy-guard-configuration.entity';
 import type { SafeRef } from '#/modules/policies/domain/entities/safe-ref.entity';
@@ -25,4 +26,7 @@ export interface ISafePolicyGuardConfigurationRequestsRepository {
     spaceId: number;
     safes: ReadonlyArray<SafeRef>;
   }): Promise<Array<SafePolicyGuardConfiguration>>;
+
+  /** Deletes the request stored under {@link args.root} for a Safe in a Space. */
+  delete(args: { spaceId: number; safe: SafeRef; root: Hex }): Promise<void>;
 }
