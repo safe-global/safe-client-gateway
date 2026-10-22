@@ -16,6 +16,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import type { Address } from 'viem';
+import { ChainIdSchema } from '#/modules/chains/domain/entities/schemas/chain-id.schema';
 import { SafeNonces } from '#/modules/safe/routes/entities/nonces.entity';
 import { SafeState } from '#/modules/safe/routes/entities/safe-info.entity';
 import { SafeOverview } from '#/modules/safe/routes/entities/safe-overview.entity';
@@ -59,7 +60,7 @@ export class SafesController {
   })
   @Get('chains/:chainId/safes/:safeAddress')
   getSafe(
-    @Param('chainId') chainId: string,
+    @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,
   ): Promise<SafeState> {
@@ -91,7 +92,7 @@ export class SafesController {
   })
   @Get('chains/:chainId/safes/:safeAddress/nonces')
   getNonces(
-    @Param('chainId') chainId: string,
+    @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,
   ): Promise<SafeNonces> {

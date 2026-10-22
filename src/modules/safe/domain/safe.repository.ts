@@ -667,6 +667,13 @@ export class SafeRepository implements ISafeRepository {
     }
 
     // Not executed: the queue service is the source of truth.
+    if (queue.chainId !== args.chainId) {
+      throw new HttpExceptionNoLog(
+        'Transaction not found',
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
     const safe = await this.getSafe({
       chainId: args.chainId,
       address: queue.safe,

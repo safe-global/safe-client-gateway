@@ -151,6 +151,7 @@ export const RootConfigurationSchema = z
     FF_SAFENET: z.string().optional(),
     SAFENET_CONSENSUS_ADDRESS: AddressSchema.optional(),
     SAFENET_ORACLE_ADDRESS: AddressSchema.optional(),
+    SAFENET_RPC_URI: z.url().optional(),
     SAFENET_PAYER_SAFE_ADDRESS: AddressSchema.optional(),
     SAFENET_POLL_INTERVAL_MS: z.coerce.number().int().min(1).optional(),
     SAFENET_POLL_TIMEOUT_MS: z.coerce.number().int().min(1).optional(),
@@ -257,6 +258,17 @@ export const RootConfigurationSchema = z
     // Relay-fee configuration
     FEE_SERVICE_BASE_URI: z.url().optional(),
     RELAY_FEE_PREVIEW_TTL_SECONDS: z.coerce.number().int().min(0).optional(),
+    // Policy configuration
+    POLICIES_MAX_CONFIGURATION_REQUESTS_PER_SPACE_SAFE: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .optional(),
+    POLICIES_CONFIGURATION_REQUEST_RETENTION_DAYS: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .optional(),
     // Policy indexer configuration
     POLICY_INDEXER_BASE_URI: z.url().optional(),
     POLICY_INDEXER_EXPIRE_TIME_SECONDS: z.coerce

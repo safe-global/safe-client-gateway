@@ -18,7 +18,7 @@ on:
       node_version:
         description: Node version to lint/type-check/test against.
         type: string
-        default: "26.10.0"
+        default: "26.12.1"
       python_version:
         description: Python version used only to run pre-commit for license headers.
         type: string

@@ -43,6 +43,7 @@ import { AddConfirmationDtoSchema } from '#/modules/transactions/routes/entities
 import { DeleteTransactionDtoSchema } from '#/modules/transactions/routes/entities/schemas/delete-transaction.dto.schema';
 import { PreviewTransactionDtoSchema } from '#/modules/transactions/routes/entities/schemas/preview-transaction.dto.schema';
 import { ProposeTransactionDtoSchema } from '#/modules/transactions/routes/entities/schemas/propose-transaction.dto.schema';
+import { TransactionIdSchema } from '#/modules/transactions/routes/entities/schemas/transaction-id.schema';
 import { TransactionDetails } from '#/modules/transactions/routes/entities/transaction-details/transaction-details.entity';
 import type { TransactionItem } from '#/modules/transactions/routes/entities/transaction-item.entity';
 import { TransactionItemPage } from '#/modules/transactions/routes/entities/transaction-item-page.entity';
@@ -56,6 +57,7 @@ import type { PaginationData } from '#/routes/common/pagination/pagination.data'
 import { AddressSchema } from '#/validation/entities/schemas/address.schema';
 import { BooleanStringSchema } from '#/validation/entities/schemas/boolean-string.schema';
 import { DateStringSchema } from '#/validation/entities/schemas/date-string.schema';
+import { HexSchema } from '#/validation/entities/schemas/hex.schema';
 import { TimezoneSchema } from '#/validation/entities/schemas/timezone.schema';
 import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
@@ -94,8 +96,8 @@ export class TransactionsController {
   })
   @Get(`chains/:chainId/transactions/:id`)
   getTransactionById(
-    @Param('chainId') chainId: string,
-    @Param('id') id: string,
+    @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
+    @Param('id', new ValidationPipe(TransactionIdSchema)) id: string,
   ): Promise<TransactionDetails> {
     return this.transactionsService.getById({
       chainId,
@@ -170,7 +172,7 @@ export class TransactionsController {
   })
   @Get('chains/:chainId/safes/:safeAddress/multisig-transactions')
   getMultisigTransactions(
-    @Param('chainId') chainId: string,
+    @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
     @RouteUrlDecorator() routeUrl: URL,
     @PaginationDataDecorator() paginationData: PaginationData,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
@@ -229,8 +231,8 @@ export class TransactionsController {
   })
   @Delete('chains/:chainId/transactions/:safeTxHash')
   deleteTransaction(
-    @Param('chainId') chainId: string,
-    @Param('safeTxHash') safeTxHash: string,
+    @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
+    @Param('safeTxHash', new ValidationPipe(HexSchema)) safeTxHash: string,
     @Body(new ValidationPipe(DeleteTransactionDtoSchema))
     deleteTransactionDto: DeleteTransactionDto,
   ): Promise<void> {
@@ -287,7 +289,7 @@ export class TransactionsController {
   })
   @Get('chains/:chainId/safes/:safeAddress/module-transactions')
   getModuleTransactions(
-    @Param('chainId') chainId: string,
+    @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
     @RouteUrlDecorator() routeUrl: URL,
     @PaginationDataDecorator() paginationData: PaginationData,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
@@ -342,8 +344,8 @@ export class TransactionsController {
   @HttpCode(200)
   @Post('chains/:chainId/transactions/:safeTxHash/confirmations')
   addConfirmation(
-    @Param('chainId') chainId: string,
-    @Param('safeTxHash') safeTxHash: string,
+    @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
+    @Param('safeTxHash', new ValidationPipe(HexSchema)) safeTxHash: string,
     @Body(new ValidationPipe(AddConfirmationDtoSchema))
     addConfirmationDto: AddConfirmationDto,
   ): Promise<TransactionDetails> {
@@ -422,7 +424,7 @@ export class TransactionsController {
   })
   @Get('chains/:chainId/safes/:safeAddress/incoming-transfers')
   getIncomingTransfers(
-    @Param('chainId') chainId: string,
+    @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
     @RouteUrlDecorator() routeUrl: URL,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,
@@ -589,7 +591,7 @@ export class TransactionsController {
   @HttpCode(200)
   @Post('chains/:chainId/transactions/:safeAddress/preview')
   previewTransaction(
-    @Param('chainId') chainId: string,
+    @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,
     @Body(new ValidationPipe(PreviewTransactionDtoSchema))
@@ -637,7 +639,7 @@ export class TransactionsController {
   })
   @Get('chains/:chainId/safes/:safeAddress/transactions/queued')
   getTransactionQueue(
-    @Param('chainId') chainId: string,
+    @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
     @RouteUrlDecorator() routeUrl: URL,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,
@@ -711,7 +713,7 @@ export class TransactionsController {
   })
   @Get('chains/:chainId/safes/:safeAddress/transactions/history')
   getTransactionsHistory(
-    @Param('chainId') chainId: string,
+    @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
     @RouteUrlDecorator() routeUrl: URL,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,
@@ -768,7 +770,7 @@ export class TransactionsController {
   @HttpCode(200)
   @Post('chains/:chainId/transactions/:safeAddress/propose')
   proposeTransaction(
-    @Param('chainId') chainId: string,
+    @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,
     @Body(new ValidationPipe(ProposeTransactionDtoSchema))
@@ -807,7 +809,7 @@ export class TransactionsController {
   @HttpCode(200)
   @Get('chains/:chainId/safes/:safeAddress/transactions/creation')
   getCreationTransaction(
-    @Param('chainId') chainId: string,
+    @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,
   ): Promise<CreationTransaction> {
