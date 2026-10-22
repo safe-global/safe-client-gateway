@@ -34,9 +34,9 @@ import {
 import { GuardPolicyMapper } from '#/modules/policies/routes/mappers/guard-policy.mapper';
 import { PendingSpendingLimitMapper } from '#/modules/policies/routes/mappers/pending-spending-limit.mapper';
 import { ProposerMapper } from '#/modules/policies/routes/mappers/proposer.mapper';
+import { readQueue } from '#/modules/policies/routes/mappers/queued-calls.utils';
 import { SpendingLimitMapper } from '#/modules/policies/routes/mappers/spending-limit.mapper';
 
-import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
 import { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
 import type { Space } from '#/modules/spaces/domain/entities/space.entity';
 import { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository.interface';
@@ -63,12 +63,6 @@ type Enforcers = {
 
 @Injectable()
 export class PoliciesService {
-  /**
-   * Safety cap on the number of pages read from a single Safe's transaction
-   * queue to guard against an unbounded loop.
-   */
-  static readonly MAX_TRANSACTION_QUEUE_PAGES_TO_SCAN = 10;
-
   private readonly batchSize: number;
   private readonly maxPageSize: number;
 
@@ -437,49 +431,15 @@ export class PoliciesService {
 
   /**
    * The pending spending-limit changes found in one Safe's transaction queue.
-   *
-   * Reads the whole queue per Safe, capped at
-   * {@link PoliciesService.MAX_TRANSACTION_QUEUE_PAGES_TO_SCAN} pages as a safety valve
-   * against a runaway queue.
    */
   private async pendingPoliciesForSafe(
     safe: SafeRef,
   ): Promise<Array<PendingPolicy>> {
-    const safeInfo = await this.safeRepository.getSafe({
-      chainId: safe.chainId,
-      address: safe.address,
+    const { transactions } = await readQueue({
+      safeRepository: this.safeRepository,
+      loggingService: this.loggingService,
+      safe,
     });
-
-    const transactions: Array<MultisigTransaction> = [];
-    let next: string | null = null;
-
-    for (
-      let page = 0;
-      page < PoliciesService.MAX_TRANSACTION_QUEUE_PAGES_TO_SCAN;
-      page++
-    ) {
-      const queue = await this.safeRepository.getTransactionQueue({
-        chainId: safe.chainId,
-        safe: safeInfo,
-        limit: this.maxPageSize,
-        offset: page * this.maxPageSize,
-      });
-      transactions.push(...queue.results);
-      next = queue.next;
-
-      if (!next) {
-        break;
-      }
-    }
-
-    if (next) {
-      this.loggingService.warn({
-        message: 'Truncated a Safe transaction queue at the page cap',
-        chainId: safe.chainId,
-        safeAddress: safe.address,
-        pages: PoliciesService.MAX_TRANSACTION_QUEUE_PAGES_TO_SCAN,
-      });
-    }
 
     return this.pendingSpendingLimitMapper.map({
       safe,

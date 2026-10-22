@@ -15,6 +15,11 @@ export const CreatePolicyConfigurationRequestSchema = z.object({
   configurations: PolicyConfigurationsSchema,
 });
 
+export const PolicyConfigurationRootSchema = HexSchema.refine(
+  (root) => root.length === 66,
+  { error: 'Invalid 32-byte hex' },
+);
+
 export type CreatePolicyConfigurationRequestPayload = z.infer<
   typeof CreatePolicyConfigurationRequestSchema
 >;
