@@ -35,6 +35,7 @@ import {
   GUARD_POLICY_TYPES,
   guardPolicyKindsOf,
 } from '#/modules/policies/domain/utils/policy.utils';
+import { readQueue } from '#/modules/policies/domain/utils/queued-calls.utils';
 import {
   type TokenMetadataKey,
   tokenMetadataKey,
@@ -66,12 +67,6 @@ import { IMembersRepository } from '#/modules/users/domain/members/members.repos
 
 @Injectable()
 export class PoliciesService {
-  /**
-   * Safety cap on the number of pages read from a single Safe's transaction
-   * queue to guard against an unbounded loop.
-   */
-  static readonly MAX_TRANSACTION_QUEUE_PAGES_TO_SCAN = 10;
-
   private readonly batchSize: number;
   private readonly maxPageSize: number;
   private readonly guardPoliciesEnabled: boolean;
@@ -533,51 +528,18 @@ export class PoliciesService {
   }
 
   /**
-   * The pending policy changes of one Safe.
-   *
-   * Reads the whole queue per Safe, capped at
-   * {@link PoliciesService.MAX_TRANSACTION_QUEUE_PAGES_TO_SCAN} pages as a safety valve
-   * against a runaway queue.
+   * The pending policy changes of one Safe, from its queue as {@link readQueue}
+   * reads it.
    */
   private async pendingPoliciesForSafe(
     safe: SafeRef,
     read: PendingRead,
   ): Promise<Array<PendingPolicy>> {
-    const safeInfo = await this.safeRepository.getSafe({
-      chainId: safe.chainId,
-      address: safe.address,
+    const { safeInfo, transactions } = await readQueue({
+      safeRepository: this.safeRepository,
+      loggingService: this.loggingService,
+      safe,
     });
-
-    const transactions: Array<MultisigTransaction> = [];
-    let next: string | null = null;
-
-    for (
-      let page = 0;
-      page < PoliciesService.MAX_TRANSACTION_QUEUE_PAGES_TO_SCAN;
-      page++
-    ) {
-      const queue = await this.safeRepository.getTransactionQueue({
-        chainId: safe.chainId,
-        safe: safeInfo,
-        limit: this.maxPageSize,
-        offset: page * this.maxPageSize,
-      });
-      transactions.push(...queue.results);
-      next = queue.next;
-
-      if (!next) {
-        break;
-      }
-    }
-
-    if (next) {
-      this.loggingService.warn({
-        message: 'Truncated a Safe transaction queue at the page cap',
-        chainId: safe.chainId,
-        safeAddress: safe.address,
-        pages: PoliciesService.MAX_TRANSACTION_QUEUE_PAGES_TO_SCAN,
-      });
-    }
 
     const policies: Array<PendingPolicy> = [];
 
