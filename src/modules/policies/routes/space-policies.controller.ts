@@ -36,6 +36,7 @@ import {
 import { PoliciesService } from '#/modules/policies/routes/policies.service';
 import { Auth } from '#/routes/common/auth/auth.decorator';
 import { SpaceIdPipe } from '#/routes/common/pipes/space-id.pipe';
+import { BooleanStringSchema } from '#/validation/entities/schemas/boolean-string.schema';
 import {
   type Caip10Addresses,
   Caip10AddressesSchema,
@@ -142,15 +143,24 @@ export class SpacePoliciesController {
     isArray: true,
     enum: Object.values(PolicyType),
     description:
-      'The policy types to report, comma-separated. `proposer` returns none, as a proposer change needs no Safe transaction.',
+      'The policy types to report, comma-separated. `spending-limit` returns queued AllowanceModule changes; every other type returns none.',
     example: 'spending-limit',
+  })
+  @ApiQuery({
+    name: 'includeGuardInstallation',
+    required: false,
+    type: Boolean,
+    default: false,
+    description:
+      'Also report the queued `setGuard` and `setModuleGuard` calls that install, replace or remove a `SafePolicyGuard` on each Safe, as `guard-installation` items.',
+    example: true,
   })
   @ApiExtraModels(PendingPolicyDto, PendingGuardInstallationDto)
   @ApiOkResponse({ schema: { type: 'array', items: PendingPolicySchema } })
   @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @ApiUnprocessableEntityResponse({
     description:
-      'Invalid CAIP-10 address, a Safe outside this space, or a missing or unknown policy type',
+      'Invalid CAIP-10 address, a Safe outside this space, a missing or unknown policy type, or an `includeGuardInstallation` value other than `true` or `false`',
   })
   @ApiForbiddenResponse({
     description:
@@ -167,11 +177,17 @@ export class SpacePoliciesController {
     types: PolicyTypes,
     @Query('safes', new ValidationPipe(Caip10AddressesSchema.optional()))
     safes?: Caip10Addresses,
+    @Query(
+      'includeGuardInstallation',
+      new ValidationPipe(BooleanStringSchema.optional()),
+    )
+    includeGuardInstallation?: boolean,
   ): Promise<Array<PendingPolicy>> {
     return await this.policiesService.getSpacePendingPolicies({
       spaceId,
       safes,
       types,
+      includeGuardInstallation,
       authPayload,
     });
   }

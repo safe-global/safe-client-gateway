@@ -1322,10 +1322,16 @@ describe('Space Policies Controller', () => {
       accessToken: string;
       spaceId: string;
       types: string;
+      includeGuardInstallation?: boolean;
     }): Promise<Array<Record<string, unknown>>> {
+      const query: Record<string, string> = { types: args.types };
+      if (args.includeGuardInstallation !== undefined) {
+        query.includeGuardInstallation = String(args.includeGuardInstallation);
+      }
+
       const { body } = await request(app.getHttpServer())
         .get(`/v1/spaces/${args.spaceId}/policies/pending`)
-        .query({ types: args.types })
+        .query(query)
         .set('Cookie', [`access_token=${args.accessToken}`])
         .expect(200);
 
@@ -1367,6 +1373,7 @@ describe('Space Policies Controller', () => {
         accessToken,
         spaceId,
         types: PolicyType.Cosigner,
+        includeGuardInstallation: true,
       });
 
       expect(body).toEqual([
@@ -1385,6 +1392,40 @@ describe('Space Policies Controller', () => {
           }),
         },
       ]);
+    });
+
+    it('should not report a queued guard installation unless requested', async () => {
+      const transaction = queued({
+        to: safeAddress,
+        data: setGuardEncoder().with('guard', guard).encode(),
+        confirmations: 1,
+      });
+      mockUpstream({ guard: zeroAddress, queuedTransactions: [transaction] });
+      mockIndexer(rawPolicyIndexerResponse());
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+
+      const body = await getPending({
+        accessToken,
+        spaceId,
+        types: PolicyType.Cosigner,
+      });
+
+      expect(body).toEqual([]);
+    });
+
+    it('should reject an includeGuardInstallation value that is not a boolean', async () => {
+      mockUpstream();
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}/policies/pending`)
+        .query({ types: PolicyType.Cosigner, includeGuardInstallation: 'yes' })
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(422);
     });
 
     it('should report a spending-limit change and a guard installation together, with token metadata on the spending-limit change only', async () => {
@@ -1413,6 +1454,7 @@ describe('Space Policies Controller', () => {
         accessToken,
         spaceId,
         types: `${PolicyType.SpendingLimit},${PolicyType.Cosigner}`,
+        includeGuardInstallation: true,
       });
 
       expect(body).toEqual([

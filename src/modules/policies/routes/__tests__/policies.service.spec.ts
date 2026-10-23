@@ -1412,8 +1412,12 @@ describe('PoliciesService', () => {
     });
   });
 
-  describe('pending guard policies', () => {
-    const guardRequest = { ...policyRequest, types: [PolicyType.Cosigner] };
+  describe('pending guard installations', () => {
+    const installationRequest = {
+      ...policyRequest,
+      types: [PolicyType.Cosigner],
+      includeGuardInstallation: true,
+    };
     const safe = { chainId: SEPOLIA, address: safeAddress };
 
     beforeEach(() => {
@@ -1425,13 +1429,43 @@ describe('PoliciesService', () => {
       );
     });
 
-    it('should read nothing for guard items when no guard type is requested', async () => {
+    it('should not report guard installations unless requested', async () => {
       await target.getSpacePendingPolicies({
         ...policyRequest,
-        types: [PolicyType.SpendingLimit],
+        types: [PolicyType.SpendingLimit, PolicyType.Cosigner],
       });
 
       expect(mockGuardInstallationMapper.map).not.toHaveBeenCalled();
+    });
+
+    it('should read nothing at all for a guard type alone', async () => {
+      await target.getSpacePendingPolicies({
+        ...policyRequest,
+        types: [PolicyType.Cosigner],
+      });
+
+      expect(mockSafeRepository.getTransactionQueue).not.toHaveBeenCalled();
+      expect(mockGuardInstallationMapper.map).not.toHaveBeenCalled();
+    });
+
+    it('should report guard installations when asked for, whatever the types', async () => {
+      const transaction = multisigTransactionBuilder().build();
+      mockSafeRepository.getTransactionQueue.mockResolvedValue(
+        pageBuilder<MultisigTransaction>()
+          .with('results', [transaction])
+          .with('next', null)
+          .build(),
+      );
+
+      await target.getSpacePendingPolicies({
+        ...policyRequest,
+        types: [PolicyType.SpendingLimit],
+        includeGuardInstallation: true,
+      });
+
+      expect(mockGuardInstallationMapper.map).toHaveBeenCalledWith(
+        expect.objectContaining({ safe, transactions: [transaction] }),
+      );
     });
 
     it('should give the setup mapper the queue and the current guards', async () => {
@@ -1447,7 +1481,7 @@ describe('PoliciesService', () => {
           .build(),
       );
 
-      await target.getSpacePendingPolicies(guardRequest);
+      await target.getSpacePendingPolicies(installationRequest);
 
       expect(mockGuardInstallationMapper.map).toHaveBeenCalledWith({
         safe,
@@ -1475,7 +1509,8 @@ describe('PoliciesService', () => {
           .build(),
       );
 
-      const policies = await target.getSpacePendingPolicies(guardRequest);
+      const policies =
+        await target.getSpacePendingPolicies(installationRequest);
 
       expect(queuedOnly(policies)).toStrictEqual([]);
     });

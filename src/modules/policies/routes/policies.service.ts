@@ -59,6 +59,10 @@ type SpacePolicyRequest = {
   authPayload: AuthPayload;
 };
 
+type SpacePendingPolicyRequest = SpacePolicyRequest & {
+  includeGuardInstallation?: boolean;
+};
+
 type Enforcers = {
   enabledModules: ReadonlyArray<Address>;
   transactionGuard: Address | null;
@@ -70,7 +74,7 @@ type Enforcers = {
  */
 type PendingRead = {
   spendingLimitsRequested: boolean;
-  guardPoliciesRequested: boolean;
+  guardInstallationRequested: boolean;
 };
 
 @Injectable()
@@ -132,11 +136,14 @@ export class PoliciesService {
    * subset of them.
    */
   public async getSpacePendingPolicies(
-    request: SpacePolicyRequest,
+    request: SpacePendingPolicyRequest,
   ): Promise<Array<PendingPolicy>> {
     const spaceSafes = await this.spaceSafes(request);
 
-    return await this.resolvePendingPolicies(spaceSafes, request.types);
+    return await this.resolvePendingPolicies(spaceSafes, {
+      spendingLimitsRequested: request.types.includes(PolicyType.SpendingLimit),
+      guardInstallationRequested: request.includeGuardInstallation ?? false,
+    });
   }
 
   /**
@@ -401,10 +408,11 @@ export class PoliciesService {
   }
 
   /**
-   * The pending policy changes of every Safe of {@link safes}.
+   * The pending policy changes of every Safe of {@link safes}, plus the
+   * queued guard installations when {@link read} asks for them.
    *
-   * A proposer is off-chain and needs no Safe transaction, so it never has a
-   * pending state.
+   * Only `spending-limit` has pending changes to report today. A proposer is
+   * off-chain and needs no Safe transaction, so it never has a pending state.
    *
    * Concurrency is capped at `policies.batchSize`. A Safe
    * whose queue could not be read is skipped rather than failing the whole
@@ -412,16 +420,11 @@ export class PoliciesService {
    */
   private async resolvePendingPolicies(
     safes: ReadonlyArray<SafeRef>,
-    types: ReadonlyArray<PolicyType>,
+    read: PendingRead,
   ): Promise<Array<PendingPolicy>> {
-    const read: PendingRead = {
-      spendingLimitsRequested: types.includes(PolicyType.SpendingLimit),
-      guardPoliciesRequested: guardPolicyKindsOf(types).length > 0,
-    };
-
     if (
       safes.length === 0 ||
-      !(read.spendingLimitsRequested || read.guardPoliciesRequested)
+      !(read.spendingLimitsRequested || read.guardInstallationRequested)
     ) {
       return [];
     }
@@ -521,7 +524,7 @@ export class PoliciesService {
       );
     }
 
-    if (read.guardPoliciesRequested) {
+    if (read.guardInstallationRequested) {
       policies.push(
         ...this.guardInstallationMapper.map({
           safe,
