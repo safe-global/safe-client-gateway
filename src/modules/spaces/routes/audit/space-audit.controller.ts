@@ -9,6 +9,7 @@ import {
   ApiQuery,
   ApiTags,
   ApiUnauthorizedResponse,
+  ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
 import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
 import { AuthGuard } from '#/modules/auth/routes/guards/auth.guard';
@@ -24,10 +25,10 @@ import {
 import { SpaceAuditRouteGuard } from '#/modules/spaces/routes/audit/guards/space-audit-route.guard';
 import { SpaceAuditService } from '#/modules/spaces/routes/audit/space-audit.service';
 import { Auth } from '#/routes/common/auth/auth.decorator';
-import { PaginationDataDecorator } from '#/routes/common/decorators/pagination.data.decorator';
 import { RouteUrlDecorator } from '#/routes/common/decorators/route.url.decorator';
 import type { PaginationData } from '#/routes/common/pagination/pagination.data';
 import { SpaceIdPipe } from '#/routes/common/pipes/space-id.pipe';
+import { PaginationCursorSchema } from '#/validation/entities/schemas/pagination-cursor.schema';
 import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
 @ApiTags('spaces')
@@ -97,12 +98,14 @@ export class SpaceAuditController {
     description: 'Authentication required - valid JWT token must be provided',
   })
   @ApiBadRequestResponse({ description: 'Invalid space identifier' })
+  @ApiUnprocessableEntityResponse({ description: 'Invalid cursor' })
   @Get(':spaceId/audit-log')
   public async getAuditLog(
     @Param('spaceId', SpaceIdPipe) spaceId: number,
     @Auth() authPayload: AuthPayload,
     @RouteUrlDecorator() routeUrl: URL,
-    @PaginationDataDecorator() paginationData: PaginationData,
+    @Query('cursor', new ValidationPipe(PaginationCursorSchema))
+    paginationData: PaginationData,
     @Query('event_type', new ValidationPipe(SpaceAuditEventTypesQuerySchema))
     eventTypes?: Array<keyof typeof SpaceAuditEventType>,
     @Query(

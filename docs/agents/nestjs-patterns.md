@@ -142,4 +142,4 @@ async getSafe(
 
 ## What this repo does not use
 
-Custom decorators exist but are rare — three in total (`@Auth()`, `@PaginationData()`, `@RouteUrl()`), each a `createParamDecorator` that reads one thing off the request. There are no custom class decorators, no `@nestjs/cqrs`, no dynamic-module builders beyond the `useFactory` providers listed above, no request-scoped providers, and no `@nestjs/passport` strategies — authentication is the guards in `src/modules/auth/routes/guards/`. Introducing any of these is a new pattern for this repo, not an application of an existing one.
+Custom decorators exist but are rare — two in total (`@Auth()`, `@RouteUrl()`), each a `createParamDecorator` that reads one thing off the request. There are no custom class decorators, no `@nestjs/cqrs`, no dynamic-module builders beyond the `useFactory` providers listed above, no request-scoped providers, and no `@nestjs/passport` strategies — authentication is the guards in `src/modules/auth/routes/guards/`. Introducing any of these is a new pattern for this repo, not an application of an existing one.
