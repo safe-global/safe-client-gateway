@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
+import { SAFE_QUEUE_SERVICE_MAX_LIMIT } from '#/domain/common/constants';
 import { AddressSchema } from '#/validation/entities/schemas/address.schema';
 
 // A finished check job stays at least 30 days: its ID blocks a repeated request.
@@ -323,6 +324,13 @@ export const RootConfigurationSchema = z
     TARGETED_MESSAGING_FILE_STORAGE_TYPE: z.enum(['local', 'aws']).optional(),
     CSV_EXPORT_FILE_STORAGE_TYPE: z.enum(['local', 'aws']).optional(),
     SPACES_INVITE_TTL_MS: z.coerce.number().int().min(1).optional(),
+    // Below the queue service's maximum page, which holds one lookahead transaction more
+    SPACES_TRANSACTION_QUEUE_PAGE_SIZE: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(SAFE_QUEUE_SERVICE_MAX_LIMIT - 1)
+      .optional(),
     ENCRYPTION_ENABLED: z.string().optional(),
     ENCRYPTION_INDEX_KEY: z.string().optional(),
     CSV_AWS_ACCESS_KEY_ID: z.string().optional(),

@@ -202,7 +202,7 @@ describe('SpaceTransactionsController', () => {
         .expect(HttpStatus.FORBIDDEN);
     });
 
-    it('returns an empty page for a Space without Safes', async () => {
+    it('returns an empty queue for a Space without Safes', async () => {
       const { accessToken, spaceUuid } = await createSpaceForSignerFixture({
         app,
         jwtService,
@@ -213,13 +213,7 @@ describe('SpaceTransactionsController', () => {
         .get(`/v1/spaces/${spaceUuid}/transactions/queued`)
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(HttpStatus.OK)
-        .expect({
-          count: 0,
-          next: null,
-          previous: null,
-          results: [],
-          unavailableSafes: [],
-        });
+        .expect({ results: [], unavailableSafes: [] });
     });
 
     it('queries the queue for the deployed Safes of the Space and reports the others as unavailable', async () => {
@@ -247,9 +241,6 @@ describe('SpaceTransactionsController', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(HttpStatus.OK)
         .expect({
-          count: 0,
-          next: null,
-          previous: null,
           results: [],
           unavailableSafes: [
             { chainId: chain.chainId, safeAddress: undeployed.address },
@@ -323,6 +314,58 @@ describe('SpaceTransactionsController', () => {
         .expect(HttpStatus.OK);
 
       expect(queueRequests()).toHaveLength(2);
+    });
+  });
+
+  describe('GET /v1/spaces/:spaceId/transactions/queued?limits=', () => {
+    it('rejects invalid limits', async () => {
+      const { accessToken, spaceUuid } = await createSpaceForSignerFixture({
+        app,
+        jwtService,
+        postgresDatabaseService,
+      });
+
+      await request(app.getHttpServer())
+        .get(
+          `/v1/spaces/${spaceUuid}/transactions/queued?limits=${safeBuilder().build().address}:0`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(HttpStatus.UNPROCESSABLE_ENTITY);
+    });
+
+    it('queries a listed Safe with its own limit', async () => {
+      const { accessToken, spaceUuid } = await createSpaceForSignerFixture({
+        app,
+        jwtService,
+        postgresDatabaseService,
+      });
+      const chain = uniqueChain();
+      const deployed = safeBuilder().build();
+      await addSafesFixture({
+        app,
+        spaceUuid,
+        accessToken,
+        safes: [{ chainId: chain.chainId, address: deployed.address }],
+      }).then((response) => expect(response.status).toBe(HttpStatus.CREATED));
+      mockUpstreams({ chain, deployed: [deployed] });
+
+      await request(app.getHttpServer())
+        .get(
+          `/v1/spaces/${spaceUuid}/transactions/queued?limits=${deployed.address}:3`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(HttpStatus.OK)
+        .expect({ results: [], unavailableSafes: [] });
+
+      expect(networkService.get).toHaveBeenCalledWith(
+        expect.objectContaining({
+          url: expect.stringMatching(
+            new RegExp(
+              `[?&]safes=${deployed.address}%3A${chain.chainId}&nonceOrder=asc&limit=4(&|$)`,
+            ),
+          ),
+        }),
+      );
     });
   });
 

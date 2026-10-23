@@ -49,7 +49,15 @@ import { ModuleTransaction } from '#/modules/transactions/routes/entities/module
 import { MultisigTransaction } from '#/modules/transactions/routes/entities/multisig-transaction.entity';
 import type { PreviewTransactionDto } from '#/modules/transactions/routes/entities/preview-transaction.dto.entity';
 import type { QueuedItem } from '#/modules/transactions/routes/entities/queued-item.entity';
-import type { SpaceQueuedItemPage } from '#/modules/transactions/routes/entities/space-queued-item-page.entity';
+import {
+  SPACE_QUEUE_MAX_SAFE_LIMIT,
+  type SpaceQueueLimits,
+} from '#/modules/transactions/routes/entities/space-queue-limits.dto.entity';
+import type {
+  SpaceQueueChainItems,
+  SpaceQueueSafeItems,
+  SpaceTransactionQueue,
+} from '#/modules/transactions/routes/entities/space-transaction-queue.entity';
 import type { TransactionDetails } from '#/modules/transactions/routes/entities/transaction-details/transaction-details.entity';
 import type { TransactionItemPage } from '#/modules/transactions/routes/entities/transaction-item-page.entity';
 import type { TransactionPreview } from '#/modules/transactions/routes/entities/transaction-preview.entity';
@@ -69,7 +77,6 @@ import {
   buildPreviousPageURL,
   cursorUrlFromLimitAndOffset,
   PaginationData,
-  setCursor,
 } from '#/routes/common/pagination/pagination.data';
 
 @Injectable()
@@ -473,84 +480,112 @@ export class TransactionsService {
   }
 
   /**
-   * The merged queue of several Safes, in nonce order. A page never ends
-   * inside a nonce, so every conflict lands whole on one page, and each run of
-   * one Safe's transactions is mapped against that Safe.
+   * The first pending transactions of every Safe, one section per Safe
+   * address across its chains: as many as `limits` asks for the Safe, or
+   * `pageSize`. Each Safe's queue is a request of its own, so a busy Safe
+   * never pushes the others out, and a section never ends inside a nonce.
    */
   async getTransactionQueueForSafes(args: {
     spaceId: number;
     safes: ReadonlyArray<{ chainId: string; address: Address }>;
     routeUrl: Readonly<URL>;
-    paginationData: PaginationData;
-  }): Promise<SpaceQueuedItemPage> {
+    pageSize: number;
+    limits: SpaceQueueLimits;
+  }): Promise<SpaceTransactionQueue> {
     const { requested, unavailableSafes } = this.partitionQueueSafes(
       args.safes,
     );
     const safes = await this.loadQueueSafes(requested, unavailableSafes);
-    if (safes.length === 0) {
-      return {
-        count: 0,
-        next: null,
-        previous: null,
-        results: [],
-        unavailableSafes,
-      };
-    }
 
-    const { offset } = args.paginationData;
-    const limit = Math.max(
-      1,
-      Math.min(args.paginationData.limit, SAFE_QUEUE_SERVICE_MAX_LIMIT - 1),
-    );
-    const page = await this.getQueuePageOfSafes({
-      spaceId: args.spaceId,
-      safes,
-      limit,
-      offset,
-    }).catch((error: unknown) => {
-      this.loggingService.warn({
-        message: 'Failed to load the queue of the Space Safes',
-        error: asError(error).message,
-      });
-      return null;
-    });
-    // The Space stays readable: its Safes are reported as unavailable instead.
-    if (!page) {
-      unavailableSafes.push(
-        ...safes.map(({ chainId, safe }) => ({
-          chainId,
-          safeAddress: safe.address,
-        })),
-      );
-      return {
-        count: 0,
-        next: null,
-        previous: null,
-        results: [],
-        unavailableSafes,
-      };
-    }
-    const { transactions } = page;
-
-    const nextOffset = offset + transactions.length;
-    const next =
-      page.count !== null && nextOffset < page.count
-        ? setCursor(args.routeUrl, new PaginationData(limit, nextOffset))
-        : null;
-    const safesByKey = new Map(
-      safes.map(({ chainId, safe }) => [
-        getChainSafeKey(chainId, safe.address),
-        safe,
-      ]),
+    const sections = await Promise.all(
+      this.groupByAddress(safes).map(async (chainSafes) => {
+        const { address } = chainSafes[0].safe;
+        const limit =
+          args.limits.find(({ safeAddress }) =>
+            isAddressEqual(safeAddress, address),
+          )?.limit ?? args.pageSize;
+        try {
+          const { count, transactions } = await this.getQueuePageOfSafes({
+            spaceId: args.spaceId,
+            safes: chainSafes,
+            limit: Math.min(limit, SPACE_QUEUE_MAX_SAFE_LIMIT),
+            offset: 0,
+          });
+          const shown = transactions.length;
+          const hasMore =
+            count !== null &&
+            shown < count &&
+            shown < SPACE_QUEUE_MAX_SAFE_LIMIT;
+          return {
+            safeAddress: address,
+            count,
+            next: hasMore
+              ? this.getSpaceQueueUrl(args.routeUrl, args.limits, {
+                  safeAddress: address,
+                  limit: Math.min(
+                    shown + args.pageSize,
+                    SPACE_QUEUE_MAX_SAFE_LIMIT,
+                  ),
+                })
+              : null,
+            chains: await this.mapQueueChains(transactions, chainSafes),
+          };
+        } catch (error) {
+          this.loggingService.warn({
+            message: 'Failed to load the queue of a Space Safe',
+            address,
+            error: asError(error).message,
+          });
+          // The Space stays readable: the Safe is reported as unavailable instead.
+          unavailableSafes.push(
+            ...chainSafes.map(({ chainId, safe }) => ({
+              chainId,
+              safeAddress: safe.address,
+            })),
+          );
+          return null;
+        }
+      }),
     );
 
     return {
-      count: page.count,
-      next: next?.toString() ?? null,
-      previous: null,
-      results: await this.mapQueueRuns(transactions, safesByKey),
+      results: sections.filter(
+        (section): section is SpaceQueueSafeItems =>
+          section !== null && section.chains.length > 0,
+      ),
       unavailableSafes,
     };
+  }
+
+  /** The Space queue URL with the given Safe's limit changed and every other limit kept. */
+  private getSpaceQueueUrl(
+    routeUrl: Readonly<URL>,
+    limits: SpaceQueueLimits,
+    change: SpaceQueueLimits[number],
+  ): string {
+    const index = limits.findIndex(({ safeAddress }) =>
+      isAddressEqual(safeAddress, change.safeAddress),
+    );
+    const next =
+      index === -1 ? [...limits, change] : limits.with(index, change);
+    const url = new URL(routeUrl);
+    url.searchParams.set(
+      'limits',
+      next.map(({ safeAddress, limit }) => `${safeAddress}:${limit}`).join(','),
+    );
+    return url.toString();
+  }
+
+  /** The Safes grouped by address, in order of first appearance. */
+  private groupByAddress(
+    safes: Array<{ chainId: string; safe: Safe }>,
+  ): Array<Array<{ chainId: string; safe: Safe }>> {
+    const groups = new Map<string, Array<{ chainId: string; safe: Safe }>>();
+    for (const item of safes) {
+      const key = item.safe.address.toLowerCase();
+      groups.set(key, [...(groups.get(key) ?? []), item]);
+    }
+    return Array.from(groups.values());
   }
 
   /**
@@ -661,64 +696,36 @@ export class TransactionsService {
     return safes;
   }
 
-  private async mapQueueRuns(
+  /**
+   * A page of one Safe's queue split by chain, each chain's transactions
+   * mapped against the Safe's nonce there. A page never ends inside a nonce,
+   * so no conflict needs the previous or next page to be told apart.
+   */
+  private async mapQueueChains(
     transactions: Array<{
       chainId: string;
       transaction: DomainMultisigTransaction;
     }>,
-    safesByKey: Map<string, Safe>,
-  ): Promise<SpaceQueuedItemPage['results']> {
-    const sorted = sortBy(
-      transactions.map((item, index) => ({ ...item, index })),
-      [
-        ({ transaction }): number => transaction.nonce,
-        ({ chainId }): string => chainId,
-        ({ transaction }): string => transaction.safe.toLowerCase(),
-        ({ index }): number => index,
-      ],
-    );
-
-    const runs: Array<{
-      chainId: string;
-      safe: Safe;
-      transactions: Array<DomainMultisigTransaction>;
-      previousNonce: number | null;
-    }> = [];
-    const lastNonceBySafe = new Map<string, number>();
-    for (const { chainId, transaction } of sorted) {
-      const key = getChainSafeKey(chainId, transaction.safe);
-      const safe = safesByKey.get(key);
-      if (!safe) {
-        continue;
-      }
-      const run = runs.at(-1);
-      if (run && run.chainId === chainId && run.safe === safe) {
-        run.transactions.push(transaction);
-      } else {
-        runs.push({
-          chainId,
-          safe,
-          transactions: [transaction],
-          previousNonce: lastNonceBySafe.get(key) ?? null,
-        });
-      }
-      lastNonceBySafe.set(key, transaction.nonce);
-    }
+    safes: Array<{ chainId: string; safe: Safe }>,
+  ): Promise<Array<SpaceQueueChainItems>> {
+    const chains = safes.flatMap(({ chainId, safe }) => {
+      const results = sortBy(
+        transactions.flatMap((item) =>
+          item.chainId === chainId ? [item.transaction] : [],
+        ),
+        ({ nonce }) => nonce,
+      );
+      return results.length > 0 ? [{ chainId, safe, results }] : [];
+    });
 
     return await Promise.all(
-      runs.map(async (run) => ({
-        chainId: run.chainId,
-        safeAddress: run.safe.address,
+      chains.map(async ({ chainId, safe, results }) => ({
+        chainId,
         items: await this.queuedItemsMapper.getQueuedItems(
-          {
-            count: run.transactions.length,
-            next: null,
-            previous: null,
-            results: run.transactions,
-          },
-          run.safe,
-          run.chainId,
-          run.previousNonce,
+          { count: results.length, next: null, previous: null, results },
+          safe,
+          chainId,
+          null,
           null,
         ),
       })),
