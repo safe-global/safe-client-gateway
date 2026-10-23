@@ -89,7 +89,11 @@ export class GuardInstallationMapper {
 
     // Calls run in calldata order, so the slots are carried forward: a later
     // setter in a batch replaces what an earlier one set.
-    for (const call of queuedCalls(args.transaction, this.multiSendDecoder)) {
+    for (const call of queuedCalls({
+      chainId: args.safe.chainId,
+      transaction: args.transaction,
+      multiSendDecoder: this.multiSendDecoder,
+    })) {
       if (!isAddressEqual(call.to, args.safe.address)) {
         continue;
       }

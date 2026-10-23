@@ -2,6 +2,7 @@
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress, type Hex, zeroAddress } from 'viem';
 import type { MockedObject } from 'vitest';
+import { getAllMultiSendDeployments } from '#/domain/common/utils/deployments';
 import type { ILoggingService } from '#/logging/logging.interface';
 import {
   multiSendEncoder,
@@ -29,6 +30,12 @@ const mockLoggingService = {
 
 const SEPOLIA_CHAIN_ID = '11155111';
 
+function randomSepoliaMultiSendAddress(): Address {
+  return faker.helpers.arrayElement(
+    getAllMultiSendDeployments({ chainId: SEPOLIA_CHAIN_ID }),
+  );
+}
+
 describe('GuardInstallationMapper', () => {
   let target: GuardInstallationMapper;
   const safe = {
@@ -51,11 +58,12 @@ describe('GuardInstallationMapper', () => {
     data: Hex;
     confirmations?: number;
     required?: number;
+    operation?: Operation;
   }): MultisigTransaction {
     const required = args.required ?? 2;
     return multisigTransactionBuilder()
       .with('to', args.to)
-      .with('operation', Operation.CALL)
+      .with('operation', args.operation ?? Operation.CALL)
       .with('data', args.data)
       .with('confirmationsRequired', required)
       .with(
@@ -99,7 +107,8 @@ describe('GuardInstallationMapper', () => {
 
   it('should report a setup batch in calldata order while it is being signed', () => {
     const transaction = queued({
-      to: getAddress(faker.finance.ethereumAddress()),
+      to: randomSepoliaMultiSendAddress(),
+      operation: Operation.DELEGATE,
       data: batch([
         {
           to: safe.address,
@@ -150,7 +159,8 @@ describe('GuardInstallationMapper', () => {
 
   it('should carry the guard slot through the calls of a batch', () => {
     const transaction = queued({
-      to: getAddress(faker.finance.ethereumAddress()),
+      to: randomSepoliaMultiSendAddress(),
+      operation: Operation.DELEGATE,
       data: batch([
         {
           to: safe.address,
@@ -219,7 +229,8 @@ describe('GuardInstallationMapper', () => {
 
   it('should report only the setup calls of a batch that also requests a configuration', () => {
     const transaction = queued({
-      to: getAddress(faker.finance.ethereumAddress()),
+      to: randomSepoliaMultiSendAddress(),
+      operation: Operation.DELEGATE,
       data: batch([
         {
           to: safe.address,
