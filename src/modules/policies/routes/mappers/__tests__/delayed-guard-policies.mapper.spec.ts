@@ -712,6 +712,27 @@ describe('DelayedGuardPoliciesMapper', () => {
       ]);
     });
 
+    it('should not match an apply queued on another known guard that has no row for the root', () => {
+      const [, otherDeployment] =
+        getSafePolicyGuardDeployments(SEPOLIA_CHAIN_ID);
+      const config = configurations();
+
+      expect(
+        map({
+          onChainConfigurations: [
+            onChain({ configurations: config, readyAt: now - 60 }),
+          ],
+          transactions: [apply(config, 2, otherDeployment)],
+        }),
+      ).toStrictEqual([
+        expect.objectContaining({
+          status: 'pending-application',
+          guard,
+          transaction: null,
+        }),
+      ]);
+    });
+
     it('should attach the stored configurations to the change on the current guard', () => {
       const config = configurations();
       const configuration = stored(config);
