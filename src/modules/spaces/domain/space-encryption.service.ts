@@ -129,6 +129,44 @@ export class SpaceEncryptionService {
     return await this.decryptEntries(spaceId, requests);
   }
 
+  async encryptTagName(spaceId: number, name: string): Promise<string> {
+    return await this.kmsEncryption.encrypt(name, this.context(spaceId));
+  }
+
+  /**
+   * Blind index of a tag name, scoped to the space so equal names in two
+   * spaces never share a value. `blindIndex` trims and lowercases, which is
+   * what makes tag names unique regardless of case. Without an index key
+   * (environments where encryption was never configured) the name itself is
+   * plaintext, so the normalised plaintext is used as the index.
+   *
+   * Precondition: staging and production run with ENCRYPTION_ENABLED=true,
+   * which config validation ties to ENCRYPTION_INDEX_KEY, so every tag row
+   * there is written with an HMAC index from the start. An environment that
+   * adds a key after creating tags would need its tag indexes recomputed;
+   * scripts/backfill-field-encryption.ts encrypts tag names but does not
+   * recompute tag indexes.
+   */
+  tagNameIndex(spaceId: number, name: string): string {
+    // Normalise the name part here: `blindIndex` only trims the ends of the
+    // whole string, so `${spaceId}:  Vendor` would keep the inner spaces.
+    // Runs of spaces collapse to one, as in TagNameSchema.
+    const scoped = `${spaceId}:${name.trim().replace(/ {2,}/g, ' ').toLowerCase()}`;
+    return this.kmsEncryption.blindIndex(scoped) ?? scoped;
+  }
+
+  async decryptTagNames<T extends { name: string }>(
+    spaceId: number,
+    tags: Array<T>,
+  ): Promise<Array<T>> {
+    return await Promise.all(
+      tags.map(async (tag) => ({
+        ...tag,
+        name: await this.kmsEncryption.decrypt(tag.name, this.context(spaceId)),
+      })),
+    );
+  }
+
   /**
    * Encrypts an entire audit payload as one blob: the payload is serialized to
    * JSON and encrypted under the row's space scope. Returns the plaintext JSON
