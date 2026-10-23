@@ -74,6 +74,7 @@ export class PoliciesService {
 
   private readonly batchSize: number;
   private readonly maxPageSize: number;
+  private readonly guardPoliciesEnabled: boolean;
 
   constructor(
     @Inject(IPolicyIndexerRepository)
@@ -108,6 +109,10 @@ export class PoliciesService {
       this.configurationService.getOrThrow<number>('policies.batchSize');
 
     this.maxPageSize = this.safeRepository.getTransactionQueueMaxPageSize();
+
+    this.guardPoliciesEnabled = this.configurationService.getOrThrow<boolean>(
+      'features.guardPolicies',
+    );
   }
 
   /**
@@ -201,7 +206,9 @@ export class PoliciesService {
   ): Promise<Array<ActivePolicy>> {
     const spendingLimitsRequested = types.includes(PolicyType.SpendingLimit);
     const proposersRequested = types.includes(PolicyType.Proposer);
-    const guardPolicyKinds = guardPolicyKindsOf(types);
+    const guardPolicyKinds = this.guardPoliciesEnabled
+      ? guardPolicyKindsOf(types)
+      : [];
     const guardPoliciesRequested = guardPolicyKinds.length > 0;
 
     if (
@@ -419,14 +426,17 @@ export class PoliciesService {
   ): Promise<Array<PendingPolicy>> {
     const { types } = request;
     const spendingLimitsRequested = types.includes(PolicyType.SpendingLimit);
-    const guardPoliciesRequested = guardPolicyKindsOf(types).length > 0;
+    const guardPoliciesRequested =
+      this.guardPoliciesEnabled && guardPolicyKindsOf(types).length > 0;
+    const guardInstallationRequested =
+      this.guardPoliciesEnabled && request.includeGuardInstallation;
 
     if (
       safes.length === 0 ||
       !(
         spendingLimitsRequested ||
         guardPoliciesRequested ||
-        request.includeGuardInstallation
+        guardInstallationRequested
       )
     ) {
       return [];
@@ -436,7 +446,7 @@ export class PoliciesService {
       types,
       spendingLimitsRequested,
       guardPoliciesRequested,
-      guardInstallationRequested: request.includeGuardInstallation,
+      guardInstallationRequested,
       guardConfigurations: guardPoliciesRequested
         ? await this.getSafePolicyGuardConfigurationsOf(spaceId, safes)
         : null,
