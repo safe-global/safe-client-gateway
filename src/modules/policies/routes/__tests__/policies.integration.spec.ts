@@ -81,6 +81,9 @@ describe('Space Policies Controller', () => {
   const polygonSafeAddress = getAddress(faker.finance.ethereumAddress());
   const allowanceModule = getAddress(faker.finance.ethereumAddress());
   const safePolicyGuard = getAddress(faker.finance.ethereumAddress());
+  const SEPOLIA_ALLOWANCE_MODULE = getAddress(
+    '0xCFbFaC74C26F8647cBDb8c5caf80BB5b32E43134',
+  );
   const txServiceUrl = chain.transactionService;
 
   /**
@@ -1073,10 +1076,6 @@ describe('Space Policies Controller', () => {
   });
 
   describe('GET /v1/spaces/:spaceId/policies/pending', () => {
-    const SEPOLIA_ALLOWANCE_MODULE = getAddress(
-      '0xCFbFaC74C26F8647cBDb8c5caf80BB5b32E43134',
-    );
-
     it('should detect a spending-limit change queued for a safe in the space', async () => {
       const addDelegate = addDelegateEncoder();
       const addDelegateArgs = addDelegate.build();
@@ -1383,6 +1382,59 @@ describe('Space Policies Controller', () => {
             safeTxHash: transaction.safeTxHash,
             confirmations: 1,
             confirmationsRequired: 2,
+          }),
+        },
+      ]);
+    });
+
+    it('should report a spending-limit change and a guard installation together, with token metadata on the spending-limit change only', async () => {
+      const token = erc20TokenBuilder().build();
+      const spendingLimit = queued({
+        to: SEPOLIA_ALLOWANCE_MODULE,
+        data: setAllowanceEncoder().with('token', token.address).encode(),
+        confirmations: 1,
+      });
+      const installation = queued({
+        to: safeAddress,
+        data: setGuardEncoder().with('guard', guard).encode(),
+        confirmations: 1,
+      });
+      mockUpstream({
+        guard: zeroAddress,
+        queuedTransactions: [spendingLimit, installation],
+        tokens: [token],
+      });
+      mockIndexer(rawPolicyIndexerResponse());
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+
+      const body = await getPending({
+        accessToken,
+        spaceId,
+        types: `${PolicyType.SpendingLimit},${PolicyType.Cosigner}`,
+      });
+
+      expect(body).toEqual([
+        expect.objectContaining({
+          kind: 'queued-transaction',
+          safeTxHash: spendingLimit.safeTxHash,
+          data: expect.objectContaining({
+            changes: [
+              expect.objectContaining({
+                kind: 'set-allowance',
+                tokenMetadata: token,
+              }),
+            ],
+          }),
+        }),
+        {
+          kind: 'guard-installation',
+          status: 'in-signing',
+          safe: { chainId: SEPOLIA_CHAIN_ID, address: safeAddress },
+          changes: [{ kind: 'set-guard', from: null, to: guard }],
+          transaction: expect.objectContaining({
+            safeTxHash: installation.safeTxHash,
           }),
         },
       ]);
