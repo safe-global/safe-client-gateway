@@ -25,22 +25,33 @@ import { SafeDecoder } from '#/modules/contracts/domain/decoders/safe-decoder.he
 import { delegateBuilder } from '#/modules/delegate/domain/entities/__tests__/delegate.builder';
 import type { Delegate } from '#/modules/delegate/domain/entities/delegate.entity';
 import type { IDelegatesV3Repository } from '#/modules/delegate/domain/v3/delegates.v3.repository.interface';
+import { storedPolicyConfigurationBuilder } from '#/modules/policies/domain/entities/__tests__/stored-policy-configuration.builder';
 import type {
   ActivePolicy,
   SpendingLimitAllowance,
   SpendingLimitPolicyData,
 } from '#/modules/policies/domain/entities/active-policy.entity';
+import { policyIndexerConfigurationRootBuilder } from '#/modules/policies/domain/entities/indexer/__tests__/configuration-root.builder';
 import { policyIndexerGuardEnforcedPolicyBuilder } from '#/modules/policies/domain/entities/indexer/__tests__/guard-enforced-policy.builder';
 import { policyIndexerResponseBuilder } from '#/modules/policies/domain/entities/indexer/__tests__/policy-indexer-state.builder';
 import { policyIndexerSafeAllowanceBuilder } from '#/modules/policies/domain/entities/indexer/__tests__/safe-allowance.builder';
 import type {
+  PolicyIndexerConfigurationRoot,
   PolicyIndexerGuardEnforcedPolicy,
   PolicyIndexerSafeAllowance,
 } from '#/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
+import type {
+  PendingPolicy,
+  PendingQueuedPolicy,
+} from '#/modules/policies/domain/entities/pending-policy.entity';
 import { PolicyType } from '#/modules/policies/domain/entities/policy-type.entity';
+import type { SafeRef } from '#/modules/policies/domain/entities/safe-ref.entity';
 import type { IPolicyIndexerRepository } from '#/modules/policies/domain/policy-indexer.repository.interface';
+import type { ISafePolicyGuardConfigurationRequestsRepository } from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository.interface';
 import { guardPolicyKindsOf } from '#/modules/policies/domain/utils/policy.utils';
+import type { GuardConfigurationMapper } from '#/modules/policies/routes/mappers/guard-configuration.mapper';
 import { GuardPolicyMapper } from '#/modules/policies/routes/mappers/guard-policy.mapper';
+import type { GuardSetupMapper } from '#/modules/policies/routes/mappers/guard-setup.mapper';
 import { PendingSpendingLimitMapper } from '#/modules/policies/routes/mappers/pending-spending-limit.mapper';
 import { ProposerMapper } from '#/modules/policies/routes/mappers/proposer.mapper';
 import { SpendingLimitMapper } from '#/modules/policies/routes/mappers/spending-limit.mapper';
@@ -63,6 +74,20 @@ const mockPolicyIndexerRepository = {
   getState: vi.fn(),
   clearState: vi.fn(),
 } as MockedObject<IPolicyIndexerRepository>;
+
+const mockConfigurationRequestsRepository: MockedObject<
+  Pick<ISafePolicyGuardConfigurationRequestsRepository, 'findBySafes'>
+> = {
+  findBySafes: vi.fn(),
+};
+
+const mockGuardSetupMapper = {
+  map: vi.fn(),
+} as MockedObject<GuardSetupMapper>;
+
+const mockGuardConfigurationMapper = {
+  map: vi.fn(),
+} as MockedObject<GuardConfigurationMapper>;
 
 const mockSafeRepository: MockedObject<
   Pick<
@@ -117,6 +142,16 @@ function pendingSpendingLimitMapper(): PendingSpendingLimitMapper {
 
 const SEPOLIA = '11155111';
 
+/** The queued spending-limit items of a pending read, narrowed by `kind`. */
+function queuedOnly(
+  policies: ReadonlyArray<PendingPolicy>,
+): Array<PendingQueuedPolicy> {
+  return policies.filter(
+    (policy): policy is PendingQueuedPolicy =>
+      policy.kind === 'queued-transaction',
+  );
+}
+
 describe('PoliciesService', () => {
   let target: PoliciesService;
   const spaceId = faker.number.int({ min: 1, max: 100 });
@@ -154,6 +189,9 @@ describe('PoliciesService', () => {
     mockChainsRepository.getChain.mockResolvedValue(chainBuilder().build());
     // No proposers unless a case registers some.
     withDelegates([]);
+    mockConfigurationRequestsRepository.findBySafes.mockResolvedValue([]);
+    mockGuardSetupMapper.map.mockReturnValue([]);
+    mockGuardConfigurationMapper.map.mockReturnValue([]);
   });
 
   /**
@@ -174,6 +212,7 @@ describe('PoliciesService', () => {
 
     return new PoliciesService(
       mockPolicyIndexerRepository,
+      mockConfigurationRequestsRepository as MockedObject<ISafePolicyGuardConfigurationRequestsRepository>,
       mockSafeRepository as MockedObject<ISafeRepository>,
       mockSpaceSafesRepository as MockedObject<ISpaceSafesRepository>,
       mockMembersRepository as MockedObject<IMembersRepository>,
@@ -186,6 +225,8 @@ describe('PoliciesService', () => {
       new ProposerMapper(),
       pendingSpendingLimitMapper(),
       new GuardPolicyMapper(),
+      mockGuardSetupMapper,
+      mockGuardConfigurationMapper,
     );
   }
 
@@ -1045,7 +1086,7 @@ describe('PoliciesService', () => {
       ).resolves.toStrictEqual([]);
     });
 
-    it('should read nothing when spending-limit is not requested', async () => {
+    it('should read nothing when only proposer is requested', async () => {
       const policies = await target.getSpacePendingPolicies({
         ...policyRequest,
         types: [PolicyType.Proposer],
@@ -1273,7 +1314,9 @@ describe('PoliciesService', () => {
             .build(),
         ]);
 
-        const [policy] = await target.getSpacePendingPolicies(pendingRequest);
+        const [policy] = queuedOnly(
+          await target.getSpacePendingPolicies(pendingRequest),
+        );
 
         expect(policy.data.changes).toStrictEqual([
           expect.objectContaining({
@@ -1324,7 +1367,9 @@ describe('PoliciesService', () => {
             .build(),
         ]);
 
-        const [policy] = await target.getSpacePendingPolicies(pendingRequest);
+        const [policy] = queuedOnly(
+          await target.getSpacePendingPolicies(pendingRequest),
+        );
 
         expect(policy.data.changes).toStrictEqual([
           expect.objectContaining({
@@ -1354,7 +1399,9 @@ describe('PoliciesService', () => {
             .build(),
         ]);
 
-        const [policy] = await target.getSpacePendingPolicies(pendingRequest);
+        const [policy] = queuedOnly(
+          await target.getSpacePendingPolicies(pendingRequest),
+        );
 
         expect(policy.data.changes).toStrictEqual([
           expect.objectContaining({
@@ -1374,12 +1421,220 @@ describe('PoliciesService', () => {
             .build(),
         ]);
 
-        const [policy] = await target.getSpacePendingPolicies(pendingRequest);
+        const [policy] = queuedOnly(
+          await target.getSpacePendingPolicies(pendingRequest),
+        );
 
         expect(policy.data.changes[0]).not.toHaveProperty('tokenMetadata');
         expect(mockTokenRepository.getToken).not.toHaveBeenCalled();
         expect(mockChainsRepository.getChain).not.toHaveBeenCalled();
       });
+    });
+  });
+
+  describe('pending guard policies', () => {
+    const guardRequest = { ...policyRequest, types: [PolicyType.Cosigner] };
+    const safe = { chainId: SEPOLIA, address: safeAddress };
+    const otherSafe = {
+      chainId: SEPOLIA,
+      address: getAddress(faker.finance.ethereumAddress()),
+    };
+
+    /** A pending root of {@link of}. */
+    function pendingRoot(of: SafeRef): PolicyIndexerConfigurationRoot {
+      return policyIndexerConfigurationRootBuilder()
+        .with('chainId', of.chainId)
+        .with('safe', of.address)
+        .with('status', 'PENDING')
+        .build();
+    }
+
+    beforeEach(() => {
+      mockSafeRepository.getTransactionQueue.mockResolvedValue(
+        pageBuilder<MultisigTransaction>()
+          .with('results', [])
+          .with('next', null)
+          .build(),
+      );
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('should read nothing for guard items when no guard type is requested', async () => {
+      await target.getSpacePendingPolicies({
+        ...policyRequest,
+        types: [PolicyType.SpendingLimit],
+      });
+
+      expect(mockGuardSetupMapper.map).not.toHaveBeenCalled();
+      expect(mockGuardConfigurationMapper.map).not.toHaveBeenCalled();
+      expect(mockPolicyIndexerRepository.getState).not.toHaveBeenCalled();
+      expect(
+        mockConfigurationRequestsRepository.findBySafes,
+      ).not.toHaveBeenCalled();
+    });
+
+    it('should give the setup mapper the queue and the current guards', async () => {
+      const safeInfo = safeBuilder()
+        .with('moduleGuard', getAddress(faker.finance.ethereumAddress()))
+        .build();
+      const transaction = multisigTransactionBuilder().build();
+      mockSafeRepository.getSafe.mockResolvedValue(safeInfo);
+      mockSafeRepository.getTransactionQueue.mockResolvedValue(
+        pageBuilder<MultisigTransaction>()
+          .with('results', [transaction])
+          .with('next', null)
+          .build(),
+      );
+
+      await target.getSpacePendingPolicies(guardRequest);
+
+      expect(mockGuardSetupMapper.map).toHaveBeenCalledWith({
+        safe,
+        guard: safeInfo.guard,
+        moduleGuard: safeInfo.moduleGuard,
+        transactions: [transaction],
+      });
+    });
+
+    it('should read every guard kind and the stored configurations once for all safes', async () => {
+      mockSpaceSafesRepository.findBySpaceId.mockResolvedValue([
+        safe,
+        otherSafe,
+      ]);
+
+      await target.getSpacePendingPolicies(guardRequest);
+
+      expect(mockPolicyIndexerRepository.getState).toHaveBeenCalledTimes(1);
+      expect(mockPolicyIndexerRepository.getState).toHaveBeenCalledWith({
+        safes: [safe, otherSafe],
+        guardPolicyKinds: everyGuardKind,
+      });
+      expect(
+        mockConfigurationRequestsRepository.findBySafes,
+      ).toHaveBeenCalledTimes(1);
+      expect(
+        mockConfigurationRequestsRepository.findBySafes,
+      ).toHaveBeenCalledWith({ spaceId, safes: [safe, otherSafe] });
+    });
+
+    it("should give the configuration mapper only the safe's own data", async () => {
+      const now = faker.date.recent();
+      vi.useFakeTimers({ now });
+      const root = pendingRoot(safe);
+      const otherRoot = pendingRoot(otherSafe);
+      const binding = policyIndexerGuardEnforcedPolicyBuilder()
+        .with('chainId', SEPOLIA)
+        .with('safe', safeAddress)
+        .build();
+      const otherBinding = policyIndexerGuardEnforcedPolicyBuilder()
+        .with('chainId', SEPOLIA)
+        .with('safe', otherSafe.address)
+        .build();
+      const stored = storedPolicyConfigurationBuilder()
+        .with('chainId', SEPOLIA)
+        .with('safeAddress', safeAddress)
+        .build();
+      const otherStored = storedPolicyConfigurationBuilder()
+        .with('chainId', SEPOLIA)
+        .with('safeAddress', otherSafe.address)
+        .build();
+      mockPolicyIndexerRepository.getState.mockResolvedValue(
+        policyIndexerResponseBuilder()
+          .with('roots', [root, otherRoot])
+          .with('guardPolicyBindings', [binding, otherBinding])
+          .build(),
+      );
+      mockConfigurationRequestsRepository.findBySafes.mockResolvedValue([
+        stored,
+        otherStored,
+      ]);
+
+      await target.getSpacePendingPolicies(guardRequest);
+
+      expect(mockGuardConfigurationMapper.map).toHaveBeenCalledWith({
+        safe,
+        transactions: [],
+        roots: [root],
+        stored: [stored],
+        bindings: [binding],
+        types: guardRequest.types,
+        now: Math.floor(now.getTime() / 1_000),
+      });
+    });
+
+    it('should keep the roots of the same address on two chains apart', async () => {
+      const polygonSafe = { chainId: '137', address: safeAddress };
+      mockSpaceSafesRepository.findBySpaceId.mockResolvedValue([
+        safe,
+        polygonSafe,
+      ]);
+      const sepoliaRoot = pendingRoot(safe);
+      const polygonRoot = pendingRoot(polygonSafe);
+      mockPolicyIndexerRepository.getState.mockResolvedValue(
+        policyIndexerResponseBuilder()
+          .with('roots', [sepoliaRoot, polygonRoot])
+          .build(),
+      );
+
+      await target.getSpacePendingPolicies({
+        ...guardRequest,
+        // The same Safe asked for twice is read once.
+        safes: [safe, polygonSafe, safe],
+      });
+
+      expect(mockPolicyIndexerRepository.getState).toHaveBeenCalledWith(
+        expect.objectContaining({ safes: [safe, polygonSafe] }),
+      );
+      expect(mockGuardConfigurationMapper.map).toHaveBeenCalledTimes(2);
+      expect(mockGuardConfigurationMapper.map).toHaveBeenCalledWith(
+        expect.objectContaining({ safe, roots: [sepoliaRoot] }),
+      );
+      expect(mockGuardConfigurationMapper.map).toHaveBeenCalledWith(
+        expect.objectContaining({ safe: polygonSafe, roots: [polygonRoot] }),
+      );
+    });
+
+    it('should report no queued spending-limit change when only guard types are requested', async () => {
+      // Sepolia's AllowanceModule deployment.
+      const allowanceModule = getAddress(
+        '0xCFbFaC74C26F8647cBDb8c5caf80BB5b32E43134',
+      );
+      mockSafeRepository.getTransactionQueue.mockResolvedValue(
+        pageBuilder<MultisigTransaction>()
+          .with('results', [
+            multisigTransactionBuilder()
+              .with('to', allowanceModule)
+              .with('operation', Operation.CALL)
+              .with('data', addDelegateEncoder().encode())
+              .build(),
+          ])
+          .with('next', null)
+          .build(),
+      );
+
+      const policies = await target.getSpacePendingPolicies(guardRequest);
+
+      expect(queuedOnly(policies)).toStrictEqual([]);
+    });
+
+    it('should keep the setup items but leave out configuration items when the guard state cannot be read', async () => {
+      mockPolicyIndexerRepository.getState.mockRejectedValue(
+        new Error('Service unavailable'),
+      );
+
+      await target.getSpacePendingPolicies(guardRequest);
+
+      expect(mockGuardSetupMapper.map).toHaveBeenCalled();
+      expect(mockGuardConfigurationMapper.map).not.toHaveBeenCalled();
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: 'Could not read the guard configurations of the Safes',
+          spaceId,
+        }),
+      );
     });
   });
 });

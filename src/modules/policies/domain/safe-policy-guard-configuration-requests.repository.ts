@@ -7,7 +7,16 @@ import { IConfigurationService } from '#/config/configuration.service.interface'
 import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
 import { PolicyConfigurationRequest } from '#/modules/policies/datasources/entities/policy-configuration-request.entity.db';
 import type { PolicyConfigurationRequest as DomainPolicyConfigurationRequest } from '#/modules/policies/domain/entities/policy-configuration-request.entity';
-import type { ISafePolicyGuardConfigurationRequestsRepository } from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository.interface';
+import type { SafeRef } from '#/modules/policies/domain/entities/safe-ref.entity';
+import {
+  type StoredPolicyConfiguration,
+  StoredPolicyConfigurationSchema,
+} from '#/modules/policies/domain/entities/stored-policy-configuration.entity';
+import {
+  type ActiveRootsRule,
+  EVERY_ROOT_ACTIVE,
+  type ISafePolicyGuardConfigurationRequestsRepository,
+} from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository.interface';
 import { SpaceEncryptionService } from '#/modules/spaces/domain/space-encryption.service';
 
 @Injectable()
@@ -35,6 +44,7 @@ export class SafePolicyGuardConfigurationRequestsRepository
 
   public async create(
     args: Omit<DomainPolicyConfigurationRequest, 'id' | 'createdAt'>,
+    activeRoots: ActiveRootsRule = EVERY_ROOT_ACTIVE,
   ): Promise<void> {
     const safeAddressIndex = this.spaceEncryptionService.safeAddressIndex(
       args.safeAddress,
@@ -53,13 +63,18 @@ export class SafePolicyGuardConfigurationRequestsRepository
       const repository = manager.getRepository(PolicyConfigurationRequest);
       const safe = this.safeMatch({ ...args, safeAddressIndex });
 
+      const stored = await repository.find({
+        select: { root: true },
+        where: safe,
+      });
       // Re-submitting a stored root is a no-op, even at the cap.
-      if (await repository.existsBy({ ...safe, root: args.root })) {
+      if (stored.some(({ root }) => root === args.root)) {
         return;
       }
-      if ((await repository.countBy(safe)) >= this.maxPerSpaceSafe) {
+      const active = stored.filter(({ root }) => activeRoots.get(root) ?? true);
+      if (active.length >= this.maxPerSpaceSafe) {
         throw new BadRequestException(
-          `This Safe only allows a maximum of ${this.maxPerSpaceSafe} stored policy configuration requests in this space.`,
+          `This Safe only allows a maximum of ${this.maxPerSpaceSafe} active policy configuration requests in this space.`,
         );
       }
       await repository.insert({
@@ -80,6 +95,59 @@ export class SafePolicyGuardConfigurationRequestsRepository
 
     const repository = await this.db.getRepository(PolicyConfigurationRequest);
     await repository.delete({ createdAt: LessThan(cutoff) });
+  }
+
+  /**
+   * The configurations stored for {@link args.safes} in one Space, oldest
+   * first, in one query matched like {@link create} matches a Safe.
+   */
+  public async findBySafes(args: {
+    spaceId: number;
+    safes: ReadonlyArray<SafeRef>;
+  }): Promise<Array<StoredPolicyConfiguration>> {
+    if (args.safes.length === 0) {
+      return [];
+    }
+    // Keyed by chain and blind index (or plaintext address), as rows store it.
+    const safesByKey = new Map(
+      args.safes.map((safe) => {
+        const index = this.spaceEncryptionService.safeAddressIndex(
+          safe.address,
+        );
+        return [`${safe.chainId}:${index ?? safe.address}`, { safe, index }];
+      }),
+    );
+
+    const repository = await this.db.getRepository(PolicyConfigurationRequest);
+    const rows = await repository.find({
+      where: [...safesByKey.values()].map(({ safe, index }) =>
+        this.safeMatch({
+          spaceId: args.spaceId,
+          chainId: safe.chainId,
+          safeAddress: safe.address,
+          safeAddressIndex: index,
+        }),
+      ),
+      order: { createdAt: 'ASC' },
+    });
+
+    // The stored address may be ciphertext; report the one the caller asked for.
+    return rows.flatMap((row) => {
+      const match = safesByKey.get(
+        `${row.chainId}:${row.safeAddressIndex ?? row.safeAddress}`,
+      );
+      return match
+        ? [
+            StoredPolicyConfigurationSchema.parse({
+              chainId: row.chainId,
+              safeAddress: match.safe.address,
+              root: row.root,
+              configurations: row.configurations,
+              createdAt: row.createdAt,
+            }),
+          ]
+        : [];
+    });
   }
 
   /**

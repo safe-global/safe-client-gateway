@@ -76,10 +76,16 @@ describe('SafePolicyGuardConfigurationRequestsRepository', () => {
   }
 
   /** Stores {@link maxPerSafe} requests for one Safe in the current Space. */
-  async function fillCap(safeAddress: Address): Promise<void> {
-    for (let index = 0; index < maxPerSafe; index++) {
-      await repository.create(storableRequest({ safeAddress }));
+  async function fillCap(
+    safeAddress: Address,
+  ): Promise<Array<StorableRequest>> {
+    const requests = Array.from({ length: maxPerSafe }, () =>
+      storableRequest({ safeAddress }),
+    );
+    for (const request of requests) {
+      await repository.create(request);
     }
+    return requests;
   }
 
   /** Inserts an active Space and returns its id. */
@@ -351,6 +357,30 @@ describe('SafePolicyGuardConfigurationRequestsRepository', () => {
       ).rejects.toThrow(BadRequestException);
     });
 
+    it('should not count a root that can no longer be applied', async () => {
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const [closed] = await fillCap(safeAddress);
+
+      await expect(
+        repository.create(
+          storableRequest({ safeAddress }),
+          new Map([[closed.root, false]]),
+        ),
+      ).resolves.toBeUndefined();
+    });
+
+    it('should count a stored root with no on-chain root', async () => {
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const [onChain] = await fillCap(safeAddress);
+
+      await expect(
+        repository.create(
+          storableRequest({ safeAddress }),
+          new Map([[onChain.root, true]]),
+        ),
+      ).rejects.toThrow(BadRequestException);
+    });
+
     it('should not exceed the cap under concurrent requests', async () => {
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       for (let index = 0; index < maxPerSafe - 1; index++) {
@@ -426,6 +456,85 @@ describe('SafePolicyGuardConfigurationRequestsRepository', () => {
             [request.root],
           ),
       ).rejects.toThrow('policy_configuration_requests rows are immutable');
+    });
+  });
+
+  describe('findBySafes', () => {
+    it('should return the stored configurations of the given Safes only, oldest first', async () => {
+      const first = storableRequest();
+      const second = storableRequest();
+      const third = storableRequest({ safeAddress: first.safeAddress });
+      for (const request of [first, second, third, storableRequest()]) {
+        await repository.create(request);
+      }
+
+      const stored = await repository.findBySafes({
+        spaceId,
+        safes: [
+          { chainId: first.chainId, address: first.safeAddress },
+          { chainId: second.chainId, address: second.safeAddress },
+        ],
+      });
+
+      expect(stored).toStrictEqual(
+        [first, second, third].map((request) => ({
+          chainId: request.chainId,
+          safeAddress: request.safeAddress,
+          root: request.root,
+          configurations: request.configurations,
+          createdAt: expect.any(Date),
+        })),
+      );
+    });
+
+    it('should not return the requests of another Space', async () => {
+      const request = storableRequest({ spaceId: await insertSpace() });
+      await repository.create(request);
+
+      await expect(
+        repository.findBySafes({
+          spaceId,
+          safes: [{ chainId: request.chainId, address: request.safeAddress }],
+        }),
+      ).resolves.toStrictEqual([]);
+    });
+
+    it('should not return a Safe of the same address on another chain', async () => {
+      const request = storableRequest();
+      await repository.create(request);
+
+      await expect(
+        repository.findBySafes({
+          spaceId,
+          safes: [{ chainId: '1', address: request.safeAddress }],
+        }),
+      ).resolves.toStrictEqual([]);
+    });
+
+    it('should report the plaintext address when encryption is enabled', async () => {
+      const request = storableRequest();
+      encryptionService.safeAddressIndex.mockReturnValue(
+        faker.string.hexadecimal({ length: 64 }),
+      );
+      encryptionService.encryptSafeAddress.mockResolvedValue(
+        `kms:v1:${faker.string.alphanumeric(32)}`,
+      );
+      await repository.create(request);
+
+      const [stored] = await repository.findBySafes({
+        spaceId,
+        safes: [{ chainId: request.chainId, address: request.safeAddress }],
+      });
+
+      expect(stored.safeAddress).toBe(request.safeAddress);
+    });
+
+    it('should return nothing for no Safes', async () => {
+      await repository.create(storableRequest());
+
+      await expect(
+        repository.findBySafes({ spaceId, safes: [] }),
+      ).resolves.toStrictEqual([]);
     });
   });
 });
