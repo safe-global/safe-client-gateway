@@ -14,7 +14,7 @@ import type {
   FindOptionsRelations,
   FindOptionsWhere,
 } from 'typeorm';
-import { In, IsNull } from 'typeorm';
+import { In, IsNull, LessThanOrEqual, Or } from 'typeorm';
 import { type Address, getAddress } from 'viem';
 import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
 import { isUniqueConstraintError } from '#/datasources/errors/helpers/is-unique-constraint-error.helper';
@@ -402,24 +402,39 @@ export class MembersRepository implements IMembersRepository {
   public async renewInvite(args: {
     memberId: Member['id'];
     inviteExpiresAt: Date;
+    notRenewedSince: Date;
     spaceId: Space['id'];
     spaceUuid: UUID;
     targetUserId: User['id'];
     actorUserId: User['id'];
-  }): Promise<void> {
-    await this.postgresDatabaseService.transaction(async (entityManager) => {
-      await entityManager.update(DbMember, args.memberId, {
-        inviteExpiresAt: args.inviteExpiresAt,
-      });
+  }): Promise<boolean> {
+    return await this.postgresDatabaseService.transaction(
+      async (entityManager) => {
+        const { affected } = await entityManager.update(
+          DbMember,
+          {
+            id: args.memberId,
+            inviteExpiresAt: Or(
+              IsNull(),
+              LessThanOrEqual(args.notRenewedSince),
+            ),
+          },
+          { inviteExpiresAt: args.inviteExpiresAt },
+        );
+        if (!affected) {
+          return false;
+        }
 
-      await this.spaceAuditRepository.record(entityManager, {
-        spaceId: args.spaceId,
-        spaceUuid: args.spaceUuid,
-        eventType: SpaceAuditEventType.MEMBER_INVITE_RENEWED,
-        actorUserId: args.actorUserId,
-        payload: { targetUserId: args.targetUserId },
-      });
-    });
+        await this.spaceAuditRepository.record(entityManager, {
+          spaceId: args.spaceId,
+          spaceUuid: args.spaceUuid,
+          eventType: SpaceAuditEventType.MEMBER_INVITE_RENEWED,
+          actorUserId: args.actorUserId,
+          payload: { targetUserId: args.targetUserId },
+        });
+        return true;
+      },
+    );
   }
 
   public async acceptInvite(args: {
