@@ -35,8 +35,12 @@ import { delegateBuilder } from '#/modules/delegate/domain/entities/__tests__/de
 import type { Delegate } from '#/modules/delegate/domain/entities/delegate.entity';
 import { NotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/notifications.repository.module';
 import { TestNotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/test.notification.repository.module';
-import { setModuleGuardEncoder } from '#/modules/policies/domain/contracts/__tests__/encoders/safe-policy-guard-encoder.builder';
+import {
+  applyConfigurationEncoder,
+  setModuleGuardEncoder,
+} from '#/modules/policies/domain/contracts/__tests__/encoders/safe-policy-guard-encoder.builder';
 import { policyConfigurationBuilder } from '#/modules/policies/domain/entities/__tests__/policy-configuration.builder';
+import { rawIndexerConfigurationRootBuilder } from '#/modules/policies/domain/entities/indexer/__tests__/configuration-root.builder';
 import { rawIndexerGuardEnforcedPolicyBuilder } from '#/modules/policies/domain/entities/indexer/__tests__/guard-enforced-policy.builder';
 import {
   rawIndexerMetaBuilder,
@@ -1305,6 +1309,7 @@ describe('Space Policies Controller', () => {
 
   describe('GET /v1/spaces/:spaceId/policies/pending - guard policies', () => {
     const [guard] = getSafePolicyGuardDeployments(SEPOLIA_CHAIN_ID);
+    const expiry = faker.number.int({ min: 3_600, max: 86_400 });
 
     /** A queued transaction with `confirmations` of 2 signatures. */
     function queued(args: {
@@ -1325,6 +1330,29 @@ describe('Space Policies Controller', () => {
           ),
         )
         .build();
+    }
+
+    /** A configuration root of the Sepolia Safe on {@link guard}. */
+    function aRoot(args: {
+      configurations: Array<PolicyConfiguration>;
+      readyAt: number;
+      status?: string;
+    }): ReturnType<
+      ReturnType<typeof rawIndexerConfigurationRootBuilder>['build']
+    > {
+      return rawIndexerConfigurationRootBuilder()
+        .with('chainId', Number(SEPOLIA_CHAIN_ID))
+        .with('safe', safeAddress)
+        .with('guard', guard)
+        .with('root', configurationRoot(args.configurations))
+        .with('readyAt', String(args.readyAt))
+        .with('expiresAt', String(args.readyAt + expiry))
+        .with('status', args.status ?? 'PENDING')
+        .build();
+    }
+
+    function nowInSeconds(): number {
+      return Math.floor(Date.now() / 1_000);
     }
 
     async function getPending(args: {
@@ -1495,6 +1523,64 @@ describe('Space Policies Controller', () => {
           }),
         },
       ]);
+    });
+
+    it('should report the status of on-chain and stored roots', async () => {
+      const now = nowInSeconds();
+      const toApply = [policyConfigurationBuilder().build()];
+      mockUpstream({
+        guard,
+        queuedTransactions: [
+          queued({
+            to: guard,
+            data: applyConfigurationEncoder()
+              .with('configurations', toApply)
+              .encode(),
+            confirmations: 2,
+          }),
+        ],
+      });
+      mockIndexer(
+        rawPolicyIndexerResponse({
+          ConfigurationRoot: [
+            aRoot({ configurations: toApply, readyAt: now - 60 }),
+          ],
+        }),
+      );
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+      const draft = payload();
+      await request(app.getHttpServer())
+        .post(
+          `/v1/spaces/${spaceId}/chains/${SEPOLIA_CHAIN_ID}/safes/${safeAddress}/policies/requests`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send(draft)
+        .expect(201);
+
+      const body = await getPending({
+        accessToken,
+        spaceId,
+        types: Object.values(PolicyType).join(','),
+      });
+
+      const statuses = body
+        .filter((item) => item.kind === 'delayed-guard-policies')
+        .map((item) => ({
+          root: item.root,
+          status: item.status,
+        }));
+      expect(statuses).toEqual(
+        expect.arrayContaining([
+          {
+            root: configurationRoot(toApply),
+            status: 'application-ready',
+          },
+          { root: draft.root, status: 'draft' },
+        ]),
+      );
+      expect(statuses).toHaveLength(2);
     });
   });
 });
