@@ -18,6 +18,7 @@ import { NetworkResponseError } from '#/datasources/network/entities/network.err
 import type { INetworkService } from '#/datasources/network/network.service.interface';
 import { NetworkService } from '#/datasources/network/network.service.interface';
 import { nameBuilder } from '#/domain/common/entities/name.builder';
+import { getAllMultiSendDeployments } from '#/domain/common/utils/deployments';
 import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
 import { siweAuthPayloadDtoBuilder } from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
@@ -64,9 +65,16 @@ import type { Token } from '#/modules/tokens/domain/entities/token.entity';
 import { rawify } from '#/validation/entities/raw.entity';
 
 const SEPOLIA_CHAIN_ID = '11155111';
+
 const DAY_IN_MINUTES = 1440;
 const MILLISECONDS_IN_MINUTE = 60_000;
 const POLYGON_CHAIN_ID = '137';
+
+function randomSepoliaMultiSendAddress(): Address {
+  return faker.helpers.arrayElement(
+    getAllMultiSendDeployments({ chainId: SEPOLIA_CHAIN_ID }),
+  );
+}
 
 describe('Space Policies Controller', () => {
   let app: INestApplication<Server>;
@@ -1303,10 +1311,11 @@ describe('Space Policies Controller', () => {
       to: Address;
       data: `0x${string}`;
       confirmations: number;
+      operation?: Operation;
     }): MultisigTransaction {
       return multisigTransactionBuilder()
         .with('to', args.to)
-        .with('operation', Operation.CALL)
+        .with('operation', args.operation ?? Operation.CALL)
         .with('data', args.data)
         .with('confirmationsRequired', 2)
         .with(
@@ -1361,7 +1370,8 @@ describe('Space Policies Controller', () => {
         )
         .encode();
       const transaction = queued({
-        to: getAddress(faker.finance.ethereumAddress()),
+        to: randomSepoliaMultiSendAddress(),
+        operation: Operation.DELEGATE,
         data: batch,
         confirmations: 1,
       });
