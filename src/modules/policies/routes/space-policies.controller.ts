@@ -147,7 +147,7 @@ export class SpacePoliciesController {
     example: 'spending-limit',
   })
   @ApiQuery({
-    name: 'includeGuardInstallation',
+    name: 'include_guard_installation',
     required: false,
     type: Boolean,
     default: false,
@@ -160,7 +160,7 @@ export class SpacePoliciesController {
   @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @ApiUnprocessableEntityResponse({
     description:
-      'Invalid CAIP-10 address, a Safe outside this space, a missing or unknown policy type, or an `includeGuardInstallation` value other than `true` or `false`',
+      'Invalid CAIP-10 address, a Safe outside this space, a missing or unknown policy type, or an `include_guard_installation` value other than `true` or `false`',
   })
   @ApiForbiddenResponse({
     description:
@@ -178,7 +178,7 @@ export class SpacePoliciesController {
     @Query('safes', new ValidationPipe(Caip10AddressesSchema.optional()))
     safes?: Caip10Addresses,
     @Query(
-      'includeGuardInstallation',
+      'include_guard_installation',
       new ValidationPipe(BooleanStringSchema.optional()),
     )
     includeGuardInstallation?: boolean,

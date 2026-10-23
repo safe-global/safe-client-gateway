@@ -1326,7 +1326,9 @@ describe('Space Policies Controller', () => {
     }): Promise<Array<Record<string, unknown>>> {
       const query: Record<string, string> = { types: args.types };
       if (args.includeGuardInstallation !== undefined) {
-        query.includeGuardInstallation = String(args.includeGuardInstallation);
+        query.include_guard_installation = String(
+          args.includeGuardInstallation,
+        );
       }
 
       const { body } = await request(app.getHttpServer())
@@ -1415,7 +1417,7 @@ describe('Space Policies Controller', () => {
       expect(body).toEqual([]);
     });
 
-    it('should reject an includeGuardInstallation value that is not a boolean', async () => {
+    it('should reject an include_guard_installation value that is not a boolean', async () => {
       mockUpstream();
       const { accessToken, spaceId } = await createSpaceWithSafe({
         withSafe: true,
@@ -1423,7 +1425,10 @@ describe('Space Policies Controller', () => {
 
       await request(app.getHttpServer())
         .get(`/v1/spaces/${spaceId}/policies/pending`)
-        .query({ types: PolicyType.Cosigner, includeGuardInstallation: 'yes' })
+        .query({
+          types: PolicyType.Cosigner,
+          include_guard_installation: 'yes',
+        })
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(422);
     });
