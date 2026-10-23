@@ -199,7 +199,7 @@ export class PendingPolicyDto implements PendingQueuedPolicy {
   public readonly safe!: SafeRefResponse;
 }
 
-export class PendingTransactionDto {
+class PendingTransactionDto {
   @ApiProperty()
   public readonly safeTxHash!: Hex;
   @ApiProperty()
@@ -218,7 +218,7 @@ export class PendingTransactionDto {
   public readonly proposer!: Address | null;
 }
 
-export class SetGuardChangeDto {
+class SetGuardChangeDto {
   @ApiProperty({ enum: [PendingGuardInstallationChangeKind.SetGuard] })
   public readonly kind!: typeof PendingGuardInstallationChangeKind.SetGuard;
   @ApiProperty({
@@ -235,7 +235,7 @@ export class SetGuardChangeDto {
   public readonly to!: Address | null;
 }
 
-export class SetModuleGuardChangeDto {
+class SetModuleGuardChangeDto {
   @ApiProperty({ enum: [PendingGuardInstallationChangeKind.SetModuleGuard] })
   public readonly kind!: typeof PendingGuardInstallationChangeKind.SetModuleGuard;
   @ApiProperty({
