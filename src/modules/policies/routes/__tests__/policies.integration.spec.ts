@@ -37,6 +37,7 @@ import { NotificationsRepositoryV2Module } from '#/modules/notifications/domain/
 import { TestNotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/test.notification.repository.module';
 import {
   applyConfigurationEncoder,
+  configureImmediatelyEncoder,
   setModuleGuardEncoder,
 } from '#/modules/policies/domain/contracts/__tests__/encoders/safe-policy-guard-encoder.builder';
 import { policyConfigurationBuilder } from '#/modules/policies/domain/entities/__tests__/policy-configuration.builder';
@@ -1520,6 +1521,41 @@ describe('Space Policies Controller', () => {
           changes: [{ kind: 'set-guard', from: null, to: guard }],
           transaction: expect.objectContaining({
             safeTxHash: installation.safeTxHash,
+          }),
+        },
+      ]);
+    });
+
+    it('should report a queued configureImmediately as immediate guard policies', async () => {
+      const configureImmediately = configureImmediatelyEncoder();
+      const transaction = queued({
+        to: guard,
+        data: configureImmediately.encode(),
+        confirmations: 2,
+      });
+      mockUpstream({ guard: zeroAddress, queuedTransactions: [transaction] });
+      mockIndexer(rawPolicyIndexerResponse());
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+
+      const body = await getPending({
+        accessToken,
+        spaceId,
+        types: PolicyType.Cosigner,
+      });
+
+      expect(body).toEqual([
+        {
+          kind: 'immediate-guard-policies',
+          status: 'ready',
+          safe: { chainId: SEPOLIA_CHAIN_ID, address: safeAddress },
+          guard,
+          configurations: configureImmediately.build().configurations,
+          transaction: expect.objectContaining({
+            safeTxHash: transaction.safeTxHash,
+            confirmations: 2,
+            confirmationsRequired: 2,
           }),
         },
       ]);
