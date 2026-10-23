@@ -13,10 +13,12 @@ import {
   multiSendTransactionsEncoder,
 } from '#/modules/contracts/domain/__tests__/encoders/multi-send-encoder.builder';
 import { MultiSendDecoder } from '#/modules/contracts/domain/decoders/multi-send-decoder.helper';
+import type { PendingTransaction } from '#/modules/policies/domain/entities/pending-policy.entity';
 import {
+  isFullySigned,
   pendingTransactionOf,
   queuedCalls,
-} from '#/modules/policies/routes/mappers/queued-calls.utils';
+} from '#/modules/policies/domain/utils/queued-calls.utils';
 import { multisigTransactionBuilder } from '#/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
 import { confirmationBuilder } from '#/modules/safe/domain/entities/__tests__/multisig-transaction-confirmation.builder';
 import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
@@ -181,5 +183,27 @@ describe('pendingTransactionOf', () => {
       proposedAt: Math.floor(transaction.submissionDate.getTime() / 1000),
       proposer: transaction.proposer,
     });
+  });
+});
+
+describe('isFullySigned', () => {
+  function withConfirmations(count: number): PendingTransaction {
+    return pendingTransactionOf(
+      multisigTransactionBuilder()
+        .with('confirmationsRequired', 2)
+        .with(
+          'confirmations',
+          Array.from({ length: count }, () => confirmationBuilder().build()),
+        )
+        .build(),
+    );
+  }
+
+  it('should be true once every required confirmation is in', () => {
+    expect(isFullySigned(withConfirmations(2))).toBe(true);
+  });
+
+  it('should be false while a confirmation is missing', () => {
+    expect(isFullySigned(withConfirmations(1))).toBe(false);
   });
 });
