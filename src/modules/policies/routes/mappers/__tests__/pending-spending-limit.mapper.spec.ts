@@ -3,6 +3,7 @@ import { faker } from '@faker-js/faker';
 import type { Hex } from 'viem';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
+import { getAllMultiSendDeployments } from '#/domain/common/utils/deployments';
 import type { ILoggingService } from '#/logging/logging.interface';
 import {
   addDelegateEncoder,
@@ -29,6 +30,13 @@ const SEPOLIA_ALLOWANCE_MODULE = getAddress(
 );
 // No AllowanceModule has ever been deployed here.
 const CHAIN_ID_WITHOUT_ALLOWANCE_MODULE = '999999999';
+
+/** An official MultiSend or MultiSendCallOnly deployment on Sepolia. */
+function randomSepoliaMultiSendAddress(): `0x${string}` {
+  return faker.helpers.arrayElement(
+    getAllMultiSendDeployments({ chainId: SEPOLIA_CHAIN_ID }),
+  );
+}
 
 const mockLoggingService = {
   warn: vi.fn(),
@@ -131,8 +139,8 @@ describe('PendingSpendingLimitMapper', () => {
       .with('transactions', batchedTransactions)
       .encode();
     const transaction = multisigTransactionBuilder()
-      .with('to', getAddress(faker.finance.ethereumAddress()))
-      .with('operation', Operation.CALL)
+      .with('to', randomSepoliaMultiSendAddress())
+      .with('operation', Operation.DELEGATE)
       .with('data', data)
       .build();
 
@@ -175,8 +183,8 @@ describe('PendingSpendingLimitMapper', () => {
       .with('transactions', batchedTransactions)
       .encode();
     const transaction = multisigTransactionBuilder()
-      .with('to', getAddress(faker.finance.ethereumAddress()))
-      .with('operation', Operation.CALL)
+      .with('to', randomSepoliaMultiSendAddress())
+      .with('operation', Operation.DELEGATE)
       .with('data', data)
       .build();
 
@@ -286,8 +294,8 @@ describe('PendingSpendingLimitMapper', () => {
     ]);
     const data = multiSendEncoder().with('transactions', outerBatch).encode();
     const transaction = multisigTransactionBuilder()
-      .with('to', getAddress(faker.finance.ethereumAddress()))
-      .with('operation', Operation.CALL)
+      .with('to', randomSepoliaMultiSendAddress())
+      .with('operation', Operation.DELEGATE)
       .with('data', data)
       .build();
 

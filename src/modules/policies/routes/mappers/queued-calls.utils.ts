@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { Address, Hex } from 'viem';
+import { type Address, type Hex, isAddressEqual } from 'viem';
+import { getAllMultiSendDeployments } from '#/domain/common/utils/deployments';
 import { toSecondsTimestamp } from '#/domain/common/utils/time';
 import type { MultiSendDecoder } from '#/modules/contracts/domain/decoders/multi-send-decoder.helper';
 import type { PendingTransaction } from '#/modules/policies/domain/entities/pending-policy.entity';
@@ -7,36 +8,51 @@ import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisi
 import { Operation } from '#/modules/safe/domain/entities/operation.entity';
 
 /**
- * The calls a queued transaction makes: the transaction itself, plus - one level
- * only, no recursion - every sub-transaction of a MultiSend batch.
+ * The calls a queued transaction makes on the Safe's behalf: the transaction
+ * itself, or - one level only, no recursion - the sub-transactions of a
+ * MultiSend batch.
  *
- * `Operation.DELEGATE` calls are dropped: a delegatecall runs against the Safe's
- * own storage, not the target's, so it cannot be a real change of the target -
- * treating it as one would be actively misleading (it is also a known way to
- * disguise an unrelated malicious call as an innocuous one).
+ * A batch is unpacked only when the transaction delegatecalls an official
+ * MultiSend or MultiSendCallOnly deployment.
+ *
+ * `Operation.DELEGATE` calls are then dropped: a delegatecall runs against the
+ * Safe's own storage, not the target's, so it cannot be a real change of the
+ * target - treating it as one would be actively misleading (it is also a known
+ * way to disguise an unrelated malicious call as an innocuous one).
  */
-export function queuedCalls(
-  transaction: MultisigTransaction,
-  multiSendDecoder: MultiSendDecoder,
-): Array<{ to: Address; data: Hex }> {
-  if (!transaction.data) {
+export function queuedCalls(args: {
+  chainId: string;
+  transaction: MultisigTransaction;
+  multiSendDecoder: MultiSendDecoder;
+}): Array<{ to: Address; data: Hex }> {
+  const { transaction, multiSendDecoder } = args;
+  const { data } = transaction;
+  if (!data) {
     return [];
   }
 
-  const all = [
-    {
-      to: transaction.to,
-      data: transaction.data,
-      operation: transaction.operation,
-    },
-    ...(multiSendDecoder.helpers.isMultiSend(transaction.data)
-      ? multiSendDecoder.mapMultiSendTransactions(transaction.data)
-      : []),
-  ];
+  const calls = isMultiSendBatch({ ...args, data })
+    ? multiSendDecoder.mapMultiSendTransactions(data)
+    : [{ to: transaction.to, data, operation: transaction.operation }];
 
-  return all
+  return calls
     .filter((call) => call.operation === Operation.CALL)
     .map(({ to, data }) => ({ to, data }));
+}
+
+function isMultiSendBatch(args: {
+  chainId: string;
+  transaction: MultisigTransaction;
+  data: Hex;
+  multiSendDecoder: MultiSendDecoder;
+}): boolean {
+  return (
+    args.transaction.operation === Operation.DELEGATE &&
+    getAllMultiSendDeployments({ chainId: args.chainId }).some((multiSend) =>
+      isAddressEqual(multiSend, args.transaction.to),
+    ) &&
+    args.multiSendDecoder.helpers.isMultiSend(args.data)
+  );
 }
 
 /**

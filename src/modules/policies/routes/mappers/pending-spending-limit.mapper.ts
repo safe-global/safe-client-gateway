@@ -122,10 +122,11 @@ export class PendingSpendingLimitMapper {
     transaction: MultisigTransaction;
     knownModules: ReadonlyArray<Address>;
   }): Array<PendingQueuedPolicy> {
-    const matches = queuedCalls(
-      args.transaction,
-      this.multiSendDecoder,
-    ).flatMap((candidate) =>
+    const matches = queuedCalls({
+      chainId: args.safe.chainId,
+      transaction: args.transaction,
+      multiSendDecoder: this.multiSendDecoder,
+    }).flatMap((candidate) =>
       this.classify({
         candidate,
         safeAddress: args.safe.address,
