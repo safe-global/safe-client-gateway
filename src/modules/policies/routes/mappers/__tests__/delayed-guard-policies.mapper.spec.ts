@@ -2,6 +2,7 @@
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress, type Hex, zeroAddress } from 'viem';
 import type { MockedObject } from 'vitest';
+import { getAllMultiSendDeployments } from '#/domain/common/utils/deployments';
 import type { ILoggingService } from '#/logging/logging.interface';
 import {
   multiSendEncoder,
@@ -39,6 +40,7 @@ const mockLoggingService = {
 } as MockedObject<ILoggingService>;
 
 const SEPOLIA_CHAIN_ID = '11155111';
+
 // Policy contracts of the policy-engine deployment CGW recognises.
 const COSIGNER_POLICY = getAddress(
   '0x65Bc0DADF4173C6d7125300cad9360339B3Ee478',
@@ -49,6 +51,12 @@ const ERC20_TRANSFER_POLICY = getAddress(
 const MULTISEND_POLICY = getAddress(
   '0xF933Ec646F9cd6Dd27Ae2f808D133D3f5847210c',
 );
+
+function randomSepoliaMultiSendAddress(): Address {
+  return faker.helpers.arrayElement(
+    getAllMultiSendDeployments({ chainId: SEPOLIA_CHAIN_ID }),
+  );
+}
 
 describe('DelayedGuardPoliciesMapper', () => {
   let target: DelayedGuardPoliciesMapper;
@@ -107,10 +115,11 @@ describe('DelayedGuardPoliciesMapper', () => {
     to: Address;
     data: Hex;
     confirmations: number;
+    operation?: Operation;
   }): MultisigTransaction {
     return multisigTransactionBuilder()
       .with('to', args.to)
-      .with('operation', Operation.CALL)
+      .with('operation', args.operation ?? Operation.CALL)
       .with('data', args.data)
       .with('confirmationsRequired', 2)
       .with(
@@ -572,7 +581,8 @@ describe('DelayedGuardPoliciesMapper', () => {
         ],
         transactions: [
           queued({
-            to: getAddress(faker.finance.ethereumAddress()),
+            to: randomSepoliaMultiSendAddress(),
+            operation: Operation.DELEGATE,
             data,
             confirmations: 1,
           }),

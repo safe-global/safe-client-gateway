@@ -228,7 +228,11 @@ export class DelayedGuardPoliciesMapper {
         safeTxHash: transaction.safeTxHash,
       };
 
-      return queuedCalls(transaction, this.multiSendDecoder)
+      return queuedCalls({
+        chainId: args.safe.chainId,
+        transaction,
+        multiSendDecoder: this.multiSendDecoder,
+      })
         .filter((call) =>
           args.knownGuards.some((guard) => isAddressEqual(guard, call.to)),
         )
