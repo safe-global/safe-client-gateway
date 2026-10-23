@@ -6,6 +6,7 @@ import {
   ApiParam,
   ApiQuery,
   ApiTags,
+  ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
 import { ChainIdSchema } from '#/modules/chains/domain/entities/schemas/chain-id.schema';
 import { ChainsService } from '#/modules/chains/routes/chains.service';
@@ -48,6 +49,7 @@ export class ChainsController {
     type: ChainPage,
     description: 'Paginated list of supported chains',
   })
+  @ApiUnprocessableEntityResponse({ description: 'Invalid cursor' })
   @Get()
   getChains(
     @RouteUrlDecorator() routeUrl: URL,

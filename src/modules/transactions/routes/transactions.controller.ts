@@ -22,6 +22,7 @@ import {
   ApiParam,
   ApiQuery,
   ApiTags,
+  ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
 import type { Address } from 'viem';
 import { ChainIdSchema } from '#/modules/chains/domain/entities/schemas/chain-id.schema';
@@ -165,6 +166,7 @@ export class TransactionsController {
     type: MultisigTransactionPage,
     description: 'Paginated list of multisig transactions',
   })
+  @ApiUnprocessableEntityResponse({ description: 'Invalid cursor' })
   @Get('chains/:chainId/safes/:safeAddress/multisig-transactions')
   getMultisigTransactions(
     @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
@@ -283,6 +285,7 @@ export class TransactionsController {
     type: ModuleTransactionPage,
     description: 'Paginated list of module transactions',
   })
+  @ApiUnprocessableEntityResponse({ description: 'Invalid cursor' })
   @Get('chains/:chainId/safes/:safeAddress/module-transactions')
   getModuleTransactions(
     @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
@@ -419,6 +422,7 @@ export class TransactionsController {
     type: IncomingTransferPage,
     description: 'Paginated list of incoming transfers',
   })
+  @ApiUnprocessableEntityResponse({ description: 'Invalid cursor' })
   @Get('chains/:chainId/safes/:safeAddress/incoming-transfers')
   getIncomingTransfers(
     @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
@@ -532,6 +536,7 @@ export class TransactionsController {
     type: QueuedItemPage,
     description: 'Paginated list of queued transactions',
   })
+  @ApiUnprocessableEntityResponse({ description: 'Invalid cursor' })
   @Get('chains/:chainId/safes/:safeAddress/transactions/queued')
   getTransactionQueue(
     @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
@@ -607,6 +612,7 @@ export class TransactionsController {
     type: TransactionItemPage,
     description: 'Paginated list of historical transactions',
   })
+  @ApiUnprocessableEntityResponse({ description: 'Invalid cursor' })
   @Get('chains/:chainId/safes/:safeAddress/transactions/history')
   getTransactionsHistory(
     @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,

@@ -19,6 +19,7 @@ import {
   ApiParam,
   ApiQuery,
   ApiTags,
+  ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
 import type { Address } from 'viem';
 import { ChainIdSchema } from '#/modules/chains/domain/entities/schemas/chain-id.schema';
@@ -90,6 +91,7 @@ export class DelegatesV3Controller {
     type: DelegatePage,
     description: 'Paginated list of delegates retrieved successfully',
   })
+  @ApiUnprocessableEntityResponse({ description: 'Invalid cursor' })
   @Get('chains/:chainId/delegates')
   getDelegates(
     @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,

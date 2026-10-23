@@ -14,7 +14,16 @@ const CursorValueSchema = NonNegativeNumericStringSchema.transform(Number)
 export const PaginationCursorSchema = z
   .string()
   .optional()
-  .transform((cursor) => Object.fromEntries(new URLSearchParams(cursor)))
+  .transform((cursor) => {
+    // The first value of a repeated key, as `PaginationData.fromCursor` reads it for the page links.
+    const params = new URLSearchParams(cursor);
+    return Object.fromEntries(
+      ['limit', 'offset'].flatMap((key) => {
+        const value = params.get(key);
+        return value === null ? [] : [[key, value]];
+      }),
+    );
+  })
   .pipe(z.object({ limit: CursorValueSchema, offset: CursorValueSchema }))
   .transform(
     ({ limit, offset }) =>

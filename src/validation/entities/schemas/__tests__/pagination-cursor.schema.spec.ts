@@ -38,6 +38,16 @@ describe('PaginationCursorSchema', () => {
     );
   });
 
+  it('should validate the first value of a repeated key', () => {
+    const offset = faker.number.int({ min: 0, max: 1_000 });
+
+    const result = PaginationCursorSchema.safeParse(
+      `limit=20&offset=-${offset + 1}&offset=${offset}`,
+    );
+
+    expect(result.success).toBe(false);
+  });
+
   it.each([
     ['negative', '-1'],
     ['decimal', '1.5'],

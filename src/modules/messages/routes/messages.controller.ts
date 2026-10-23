@@ -111,7 +111,7 @@ export class MessagesController {
     description: 'Safe not found on the specified chain',
   })
   @ApiUnprocessableEntityResponse({
-    description: 'Invalid chainId or safeAddress',
+    description: 'Invalid chainId, safeAddress or cursor',
   })
   @Get('chains/:chainId/safes/:safeAddress/messages')
   getMessagesBySafe(

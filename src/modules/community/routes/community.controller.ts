@@ -8,7 +8,13 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { ApiBody, ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBody,
+  ApiOkResponse,
+  ApiQuery,
+  ApiTags,
+  ApiUnprocessableEntityResponse,
+} from '@nestjs/swagger';
 import type { Address } from 'viem';
 import { EligibilityRequestSchema } from '#/modules/community/domain/entities/eligibility-request.entity';
 import { CommunityService } from '#/modules/community/routes/community.service';
@@ -43,6 +49,7 @@ export class CommunityController {
     required: false,
     type: String,
   })
+  @ApiUnprocessableEntityResponse({ description: 'Invalid cursor' })
   @Get('/campaigns')
   getCampaigns(
     @RouteUrlDecorator() routeUrl: URL,
@@ -60,6 +67,7 @@ export class CommunityController {
     return this.communityService.getCampaignById(resourceId);
   }
 
+  @ApiUnprocessableEntityResponse({ description: 'Invalid cursor' })
   @Get('/campaigns/:resourceId/activities')
   @ApiQuery({ name: 'cursor', required: false, type: String })
   @ApiQuery({ name: 'holder', required: false, type: String })
@@ -85,6 +93,7 @@ export class CommunityController {
     required: false,
     type: String,
   })
+  @ApiUnprocessableEntityResponse({ description: 'Invalid cursor' })
   @Get('/campaigns/:resourceId/leaderboard')
   getCampaignLeaderboard(
     @Param('resourceId', new ValidationPipe(OpaqueIdSchema)) resourceId: string,
@@ -126,6 +135,7 @@ export class CommunityController {
     required: false,
     type: String,
   })
+  @ApiUnprocessableEntityResponse({ description: 'Invalid cursor' })
   @Get('/locking/leaderboard')
   getLeaderboard(
     @RouteUrlDecorator() routeUrl: URL,
@@ -153,6 +163,7 @@ export class CommunityController {
     required: false,
     type: String,
   })
+  @ApiUnprocessableEntityResponse({ description: 'Invalid cursor' })
   @Get('/locking/:safeAddress/history')
   getLockingHistory(
     @Param('safeAddress', new ValidationPipe(AddressSchema))

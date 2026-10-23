@@ -9,6 +9,7 @@ import {
   ApiQuery,
   ApiTags,
   ApiUnauthorizedResponse,
+  ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
 import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
 import { AuthGuard } from '#/modules/auth/routes/guards/auth.guard';
@@ -97,6 +98,7 @@ export class SpaceAuditController {
     description: 'Authentication required - valid JWT token must be provided',
   })
   @ApiBadRequestResponse({ description: 'Invalid space identifier' })
+  @ApiUnprocessableEntityResponse({ description: 'Invalid cursor' })
   @Get(':spaceId/audit-log')
   public async getAuditLog(
     @Param('spaceId', SpaceIdPipe) spaceId: number,

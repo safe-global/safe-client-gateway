@@ -16,6 +16,7 @@ import {
   ApiParam,
   ApiQuery,
   ApiTags,
+  ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
 import type { Address } from 'viem';
 import { FeePreviewResponse } from '#/modules/fees/routes/entities/fee-preview-response.entity';
@@ -61,6 +62,7 @@ export class FeesController {
     type: GasTokenPage,
     description: 'Paginated list of supported gas tokens, ordered by priority',
   })
+  @ApiUnprocessableEntityResponse({ description: 'Invalid cursor' })
   @Get('gas-tokens')
   getGasTokens(
     @Param('chainId', new ValidationPipe(NumericStringSchema)) chainId: string,

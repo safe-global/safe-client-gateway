@@ -7,7 +7,12 @@ import {
   ParseBoolPipe,
   Query,
 } from '@nestjs/common';
-import { ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  ApiOkResponse,
+  ApiQuery,
+  ApiTags,
+  ApiUnprocessableEntityResponse,
+} from '@nestjs/swagger';
 import type { Address } from 'viem';
 import { ChainIdSchema } from '#/modules/chains/domain/entities/schemas/chain-id.schema';
 import { CollectiblesService } from '#/modules/collectibles/routes/collectibles.service';
@@ -43,6 +48,7 @@ export class CollectiblesController {
     required: false,
     type: String,
   })
+  @ApiUnprocessableEntityResponse({ description: 'Invalid cursor' })
   @Get('chains/:chainId/safes/:safeAddress/collectibles')
   getCollectibles(
     @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
