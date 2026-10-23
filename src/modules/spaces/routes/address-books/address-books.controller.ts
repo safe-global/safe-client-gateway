@@ -31,7 +31,6 @@ import {
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
 import type { Address } from 'viem';
-import { RowSchema } from '#/datasources/db/v2/entities/row.entity';
 import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
 import { AuthGuard } from '#/modules/auth/routes/guards/auth.guard';
 import { AddressBooksService } from '#/modules/spaces/routes/address-books/address-books.service';
@@ -42,6 +41,7 @@ import {
   RenameTagSchema,
   SetContactTagsDto,
   SetContactTagsSchema,
+  TagIdSchema,
 } from '#/modules/spaces/routes/address-books/entities/address-book-tags.dto.entity';
 import { SpaceAddressBookDto } from '#/modules/spaces/routes/address-books/entities/space-address-book.dto.entity';
 import {
@@ -282,7 +282,7 @@ export class AddressBooksController {
   public async renameTag(
     @Auth() authPayload: AuthPayload,
     @Param('spaceId', SpaceIdPipe) spaceId: number,
-    @Param('tagId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
+    @Param('tagId', ParseIntPipe, new ValidationPipe(TagIdSchema))
     tagId: number,
     @Body(new ValidationPipe(RenameTagSchema))
     dto: RenameTagDto,
@@ -329,7 +329,7 @@ export class AddressBooksController {
   public async deleteTag(
     @Auth() authPayload: AuthPayload,
     @Param('spaceId', SpaceIdPipe) spaceId: number,
-    @Param('tagId', ParseIntPipe, new ValidationPipe(RowSchema.shape.id))
+    @Param('tagId', ParseIntPipe, new ValidationPipe(TagIdSchema))
     tagId: number,
   ): Promise<void> {
     return await this.service.deleteTag({ authPayload, spaceId, tagId });

@@ -35,8 +35,8 @@ export interface IAddressBookTagsRepository {
   /**
    * Replaces the tags of the given contacts, atomically: if any entry fails
    * (unknown address, 9th tag in the space) nothing is written. Creates missing
-   * tags. Records one ADDRESS_BOOK_TAGS_UPDATED per contact whose tags actually
-   * changed. Throws NotFoundException if an address is not in the book.
+   * tags. Records one ADDRESS_BOOK_TAGS_UPDATED listing every contact whose
+   * tags actually changed, and one ADDRESS_BOOK_TAG_CREATED per new tag. Throws NotFoundException if an address is not in the book.
    */
   setTagsForItems(args: {
     userId: number;

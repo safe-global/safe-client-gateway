@@ -18,7 +18,6 @@ import {
   type AddressBookTag,
   TAG_COLORS,
   TAG_NAME_TAKEN_MESSAGE,
-  type TagColor,
   type TagNames,
   WORKSPACE_TAG_LIMIT_MESSAGE,
 } from '#/modules/spaces/domain/address-books/entities/address-book-tag.entity';
@@ -33,13 +32,11 @@ import {
 import {
   groupTagIdsByItemId,
   isSameSet,
+  lastEntryPerContact,
   nameOf,
 } from '#/modules/spaces/domain/address-books/helpers/address-book-tags.helper';
 import { SpaceAuditEventType } from '#/modules/spaces/domain/audit/entities/space-audit-event.entity';
-import {
-  ISpaceAuditRepository,
-  type SpaceAuditRecordArgs,
-} from '#/modules/spaces/domain/audit/space-audit.repository.interface';
+import { ISpaceAuditRepository } from '#/modules/spaces/domain/audit/space-audit.repository.interface';
 import { SpaceEncryptionService } from '#/modules/spaces/domain/space-encryption.service';
 
 @Injectable()
@@ -124,17 +121,16 @@ export class AddressBookTagsRepository implements IAddressBookTagsRepository {
         entityManager,
         args.spaceId,
       );
-      const contacts = await this.resolveContactsOrFail(
-        entityManager,
-        space.id,
-        args.entries,
+      // Only the tags a contact ends up with are created
+      const contacts = lastEntryPerContact(
+        await this.resolveContactsOrFail(entityManager, space.id, args.entries),
       );
       const spaceTags = await this.loadSpaceTags(entityManager, space.id);
       const tagIdByIndex = await this.resolveOrCreateTags(
         entityManager,
-        space.id,
+        space,
         args.userId,
-        args.entries.flatMap((entry) => entry.tags),
+        contacts.flatMap((contact) => contact.tags),
         spaceTags,
       );
       const currentTagIds = await this.findTagIdsByItemIds(
@@ -177,19 +173,12 @@ export class AddressBookTagsRepository implements IAddressBookTagsRepository {
       if (spaceTags.idByIndex.has(nameIndex)) {
         throw new ConflictException(TAG_NAME_TAKEN_MESSAGE);
       }
-      const { color } = await this.insertTag(entityManager, {
-        spaceId: space.id,
+      await this.insertTag(entityManager, {
+        space,
         userId: args.userId,
         name: args.name,
         nameIndex,
         spaceTags,
-      });
-      await this.spaceAuditRepository.record(entityManager, {
-        spaceId: space.id,
-        spaceUuid: space.uuid,
-        actorUserId: args.userId,
-        eventType: SpaceAuditEventType.ADDRESS_BOOK_TAG_CREATED,
-        payload: { name: args.name, color },
       });
     });
   }
@@ -297,14 +286,17 @@ export class AddressBookTagsRepository implements IAddressBookTagsRepository {
    */
   private async resolveOrCreateTags(
     entityManager: EntityManager,
-    spaceId: number,
+    space: LockedSpace,
     userId: number,
     names: Array<string>,
     spaceTags: SpaceTags,
   ): Promise<Map<string, number>> {
     const tagIdByIndex = new Map<string, number>();
     for (const name of names) {
-      const nameIndex = this.spaceEncryptionService.tagNameIndex(spaceId, name);
+      const nameIndex = this.spaceEncryptionService.tagNameIndex(
+        space.id,
+        name,
+      );
       if (tagIdByIndex.has(nameIndex)) {
         continue;
       }
@@ -312,7 +304,7 @@ export class AddressBookTagsRepository implements IAddressBookTagsRepository {
         spaceTags.idByIndex.get(nameIndex) ??
         (
           await this.insertTag(entityManager, {
-            spaceId,
+            space,
             userId,
             name,
             nameIndex,
@@ -324,17 +316,20 @@ export class AddressBookTagsRepository implements IAddressBookTagsRepository {
     return tagIdByIndex;
   }
 
-  /** Takes a random colour no tag of the space has; none left = 8 tags. */
+  /**
+   * Takes a random colour no tag of the space has; none left = 8 tags.
+   * Records ADDRESS_BOOK_TAG_CREATED, however the tag was created.
+   */
   private async insertTag(
     entityManager: EntityManager,
     args: {
-      spaceId: number;
+      space: LockedSpace;
       userId: number;
       name: string;
       nameIndex: string;
       spaceTags: SpaceTags;
     },
-  ): Promise<{ id: number; color: TagColor }> {
+  ): Promise<{ id: number }> {
     const { spaceTags } = args;
     const free = TAG_COLORS.filter((color) => !spaceTags.usedColors.has(color));
     if (free.length === 0) {
@@ -342,9 +337,9 @@ export class AddressBookTagsRepository implements IAddressBookTagsRepository {
     }
     const color = free[randomInt(free.length)];
     const result = await entityManager.insert(DbAddressBookTag, {
-      space: { id: args.spaceId },
+      space: { id: args.space.id },
       name: await this.spaceEncryptionService.encryptTagName(
-        args.spaceId,
+        args.space.id,
         args.name,
       ),
       nameIndex: args.nameIndex,
@@ -355,7 +350,14 @@ export class AddressBookTagsRepository implements IAddressBookTagsRepository {
     spaceTags.idByIndex.set(args.nameIndex, id);
     spaceTags.nameById.set(id, args.name);
     spaceTags.usedColors.add(color);
-    return { id, color };
+    await this.spaceAuditRepository.record(entityManager, {
+      spaceId: args.space.id,
+      spaceUuid: args.space.uuid,
+      actorUserId: args.userId,
+      eventType: SpaceAuditEventType.ADDRESS_BOOK_TAG_CREATED,
+      payload: { name: args.name, color },
+    });
+    return { id };
   }
 
   private async findTagIdsByItemIds(
@@ -374,9 +376,9 @@ export class AddressBookTagsRepository implements IAddressBookTagsRepository {
   }
 
   /**
-   * The contacts whose tag set changes, once each. A repeated address keeps
-   * the tags of its last entry, compared against the stored set; an unchanged
-   * set is no change (no write, no audit event).
+   * The contacts whose tag set changes, compared against the stored set; an
+   * unchanged set is no change (no write, no audit event). Each contact is
+   * listed once ({@link lastEntryPerContact}).
    */
   private findTagChanges(args: {
     spaceId: number;
@@ -384,11 +386,7 @@ export class AddressBookTagsRepository implements IAddressBookTagsRepository {
     tagIdByIndex: Map<string, number>;
     currentTagIds: Map<number, Array<number>>;
   }): Array<ContactTagChange> {
-    const lastContactById = new Map<number, ResolvedContact>();
-    for (const contact of args.contacts) {
-      lastContactById.set(contact.itemId, contact);
-    }
-    return Array.from(lastContactById.values()).flatMap((contact) => {
+    return args.contacts.flatMap((contact) => {
       const oldTagIds = args.currentTagIds.get(contact.itemId) ?? [];
       const newTagIds = this.toTagIds(
         args.tagIdByIndex,
@@ -410,12 +408,7 @@ export class AddressBookTagsRepository implements IAddressBookTagsRepository {
 
   /**
    * One DELETE and one INSERT for all changed contacts, then one audit event
-   * per contact, recorded concurrently.
-   *
-   * Every payload is built before the first record starts, and a failed
-   * record is rethrown only once all of them have settled. Failing early
-   * would roll the transaction back while other records still await KMS, and
-   * an INSERT sent after the ROLLBACK runs outside it and autocommits.
+   * listing every change.
    */
   private async replaceItemTags(
     entityManager: EntityManager,
@@ -438,28 +431,19 @@ export class AddressBookTagsRepository implements IAddressBookTagsRepository {
     if (links.length > 0) {
       await entityManager.insert(DbAddressBookItemTag, links);
     }
-    const events: Array<SpaceAuditRecordArgs> = args.changes.map((change) => ({
+    await this.spaceAuditRepository.record(entityManager, {
       spaceId: args.space.id,
       spaceUuid: args.space.uuid,
       actorUserId: args.userId,
       eventType: SpaceAuditEventType.ADDRESS_BOOK_TAGS_UPDATED,
       payload: {
-        address: change.address,
-        oldTags: change.oldTagIds.map((id) => nameOf(args.spaceTags, id)),
-        newTags: change.newTagIds.map((id) => nameOf(args.spaceTags, id)),
+        changes: args.changes.map((change) => ({
+          address: change.address,
+          oldTags: change.oldTagIds.map((id) => nameOf(args.spaceTags, id)),
+          newTags: change.newTagIds.map((id) => nameOf(args.spaceTags, id)),
+        })),
       },
-    }));
-    const results = await Promise.allSettled(
-      events.map((event) =>
-        this.spaceAuditRepository.record(entityManager, event),
-      ),
-    );
-    const failure = results.find(
-      (result): result is PromiseRejectedResult => result.status === 'rejected',
-    );
-    if (failure) {
-      throw failure.reason;
-    }
+    });
   }
 
   /** Every name was resolved by {@link resolveOrCreateTags}; a miss is a bug. */

@@ -15,10 +15,14 @@ import {
 } from '#/modules/spaces/domain/address-books/entities/address-book-tag.entity';
 import { AddressSchema } from '#/validation/entities/schemas/address.schema';
 
-const AddressBookItemSchema = z.object({
+export const AddressBookItemSchema = z.object({
   name: BaseAddressBookItemSchema.shape.name,
   address: AddressSchema,
   chainIds: z.array(ChainIdSchema),
+});
+
+// POST /safes takes items without tags; PUT /address-book can set them
+const UpsertAddressBookItemSchema = AddressBookItemSchema.extend({
   tags: TagNamesSchema.optional(),
 });
 
@@ -31,7 +35,12 @@ export class AddressBookItem implements z.infer<typeof AddressBookItemSchema> {
 
   @ApiProperty({ type: String, isArray: true })
   readonly chainIds!: Array<string>;
+}
 
+export class UpsertAddressBookItem
+  extends AddressBookItem
+  implements z.infer<typeof UpsertAddressBookItemSchema>
+{
   @ApiPropertyOptional({
     type: String,
     isArray: true,
@@ -43,16 +52,16 @@ export class AddressBookItem implements z.infer<typeof AddressBookItemSchema> {
 }
 
 export const UpsertAddressBookItemsSchema = z.object({
-  items: z.array(AddressBookItemSchema),
+  items: z.array(UpsertAddressBookItemSchema),
 });
 
-@ApiExtraModels(AddressBookItem)
+@ApiExtraModels(UpsertAddressBookItem)
 export class UpsertAddressBookItemsDto
   implements z.infer<typeof UpsertAddressBookItemsSchema>
 {
   @ApiProperty({
-    items: { $ref: getSchemaPath(AddressBookItem) },
+    items: { $ref: getSchemaPath(UpsertAddressBookItem) },
     type: 'array',
   })
-  public readonly items!: Array<AddressBookItem>;
+  public readonly items!: Array<UpsertAddressBookItem>;
 }

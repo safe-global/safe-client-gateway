@@ -144,7 +144,8 @@ export class SpaceEncryptionService {
    * which config validation ties to ENCRYPTION_INDEX_KEY, so every tag row
    * there is written with an HMAC index from the start. An environment that
    * adds a key after creating tags would need its tag indexes recomputed;
-   * scripts/backfill-field-encryption.ts does not cover this table.
+   * scripts/backfill-field-encryption.ts encrypts tag names but does not
+   * recompute tag indexes.
    */
   tagNameIndex(spaceId: number, name: string): string {
     // Normalise the name part here: `blindIndex` only trims the ends of the

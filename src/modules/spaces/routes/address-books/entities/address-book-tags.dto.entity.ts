@@ -2,6 +2,8 @@
 import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 import type { Address } from 'viem';
 import { z } from 'zod';
+import { RowSchema } from '#/datasources/db/v2/entities/row.entity';
+import { DB_MAX_SAFE_INTEGER } from '#/domain/common/constants';
 import type {
   AddressBookTag,
   TagColor,
@@ -14,6 +16,11 @@ import {
   TagNamesSchema,
 } from '#/modules/spaces/domain/address-books/entities/address-book-tag.entity';
 import { AddressSchema } from '#/validation/entities/schemas/address.schema';
+
+// A tag id beyond the int column range would fail in the query, not here
+export const TagIdSchema = RowSchema.shape.id
+  .positive()
+  .max(DB_MAX_SAFE_INTEGER);
 
 const SetContactTagsItemSchema = z.object({
   address: AddressSchema,

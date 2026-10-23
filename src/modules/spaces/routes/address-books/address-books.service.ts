@@ -130,6 +130,8 @@ export class AddressBooksService {
     spaceId: Space['id'],
     dto: SetContactTagsDto,
   ): Promise<SpaceAddressBookDto> {
+    const userId = getAuthenticatedUserIdOrFail(authPayload);
+    await assertMember(this.membersRepository, spaceId, userId);
     // Each entry is a distinct contact of the book, so a valid batch is never
     // larger than the book's own limit.
     if (dto.items.length > this.maxItems) {
@@ -137,8 +139,6 @@ export class AddressBooksService {
         `A tag update can change at most ${this.maxItems} contacts.`,
       );
     }
-    const userId = getAuthenticatedUserIdOrFail(authPayload);
-    await assertMember(this.membersRepository, spaceId, userId);
 
     await this.tagsRepository.setTagsForItems({
       userId,

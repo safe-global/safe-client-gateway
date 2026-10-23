@@ -9,7 +9,7 @@ import {
 import type { EntityManager } from 'typeorm';
 import { type Address, getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import type { IConfigurationService } from '#/config/configuration.service.interface';
+import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
 import type { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
 import {
   oidcAuthPayloadDtoBuilder,
@@ -39,12 +39,7 @@ const repositoryMock = {
   deleteByAddress: vi.fn(),
 } as MockedObject<IAddressBookItemsRepository>;
 
-// Every config read in the service is `spaces.addressBooks.maxItems`.
 const MAX_ADDRESS_BOOK_ITEMS = 20;
-
-const configurationServiceMock = {
-  getOrThrow: vi.fn().mockReturnValue(MAX_ADDRESS_BOOK_ITEMS),
-} as MockedObject<IConfigurationService>;
 
 const usersRepositoryMock = {
   find: vi.fn(),
@@ -82,7 +77,11 @@ describe('AddressBooksService', () => {
 
   beforeEach(() => {
     vi.resetAllMocks();
-    configurationServiceMock.getOrThrow.mockReturnValue(MAX_ADDRESS_BOOK_ITEMS);
+    const fakeConfigurationService = new FakeConfigurationService();
+    fakeConfigurationService.set(
+      'spaces.addressBooks.maxItems',
+      MAX_ADDRESS_BOOK_ITEMS,
+    );
     usersRepositoryMock.find.mockResolvedValue([]);
     walletsRepositoryMock.find.mockResolvedValue([]);
     spacesRepositoryMock.findUuidById.mockResolvedValue(fakeUuid());
@@ -105,7 +104,7 @@ describe('AddressBooksService', () => {
         walletsRepositoryMock,
         createMockWalletEncryptionService(),
       ),
-      configurationServiceMock,
+      fakeConfigurationService,
       spacesRepositoryMock,
       membersRepositoryMock,
       tagsRepositoryMock,
@@ -589,7 +588,7 @@ describe('AddressBooksService', () => {
       expect(tagsRepositoryMock.setTagsForItems).not.toHaveBeenCalled();
     });
 
-    it('should reject a batch larger than the address book limit before any lookup', async () => {
+    it('should reject a batch larger than the address book limit', async () => {
       const spaceId = faker.number.int();
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
       const items = faker.helpers.multiple(
@@ -607,8 +606,26 @@ describe('AddressBooksService', () => {
           `A tag update can change at most ${MAX_ADDRESS_BOOK_ITEMS} contacts.`,
         ),
       );
-      expect(membersRepositoryMock.findOne).not.toHaveBeenCalled();
       expect(tagsRepositoryMock.setTagsForItems).not.toHaveBeenCalled();
+    });
+
+    it('should answer a non-member with 403, not the batch limit', async () => {
+      const spaceId = faker.number.int();
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      membersRepositoryMock.findOne.mockResolvedValue(null);
+      const items = faker.helpers.multiple(
+        (): { address: Address; tags: Array<string> } => ({
+          address: getAddress(faker.finance.ethereumAddress()),
+          tags: [faker.word.noun()],
+        }),
+        { count: MAX_ADDRESS_BOOK_ITEMS + 1 },
+      );
+
+      await expect(
+        service.setContactTags(authPayload, spaceId, { items }),
+      ).rejects.toThrow(
+        new ForbiddenException('User is not a member of this workspace'),
+      );
     });
 
     it('should accept a batch of exactly the address book limit', async () => {

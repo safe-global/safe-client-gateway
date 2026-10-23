@@ -41,7 +41,6 @@ import {
 } from '#/modules/spaces/domain/address-books/entities/address-book-tag.entity';
 import { createMockSpaceAuditRepository } from '#/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
 import { SpaceAuditEventType } from '#/modules/spaces/domain/audit/entities/space-audit-event.entity';
-import type { SpaceAuditRecordArgs } from '#/modules/spaces/domain/audit/space-audit.repository.interface';
 import { spaceBuilder } from '#/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
 import { SpacesRepository } from '#/modules/spaces/domain/spaces.repository';
 import { Member } from '#/modules/users/datasources/entities/member.entity.db';
@@ -300,6 +299,15 @@ describe('AddressBookTagsRepository', () => {
       expect(itemTagIds.get(itemId)?.sort()).toStrictEqual(
         tags.map((tag) => tag.id).sort(),
       );
+      for (const tag of tags) {
+        expect(tagsAuditRepository.record).toHaveBeenCalledWith(
+          expect.anything(),
+          expect.objectContaining({
+            eventType: SpaceAuditEventType.ADDRESS_BOOK_TAG_CREATED,
+            payload: { name: tag.name, color: tag.color },
+          }),
+        );
+      }
     });
 
     it('reuses an existing tag regardless of case and keeps its first spelling', async () => {
@@ -565,9 +573,11 @@ describe('AddressBookTagsRepository', () => {
         expect.anything(),
         expect.objectContaining({
           payload: {
-            address: addresses[2],
-            oldTags: [names[2]],
-            newTags: [names[3]],
+            changes: addresses.map((address, index) => ({
+              address,
+              oldTags: [names[index]],
+              newTags: [names[3]],
+            })),
           },
         }),
       );
@@ -578,27 +588,34 @@ describe('AddressBookTagsRepository', () => {
       const [address] = await createContacts({ spaceId, userId, count: 1 });
       const names = tagNames(2);
 
-      for (const _ of [1, 2]) {
-        await addressBookTagsRepository.setTagsForItems({
-          userId,
-          spaceId,
-          entries: [{ address, tags: names }],
-        });
-      }
+      await addressBookTagsRepository.setTagsForItems({
+        userId,
+        spaceId,
+        entries: [{ address, tags: names }],
+      });
 
-      expect(tagsAuditRepository.record).toHaveBeenCalledExactlyOnceWith(
+      expect(tagsAuditRepository.record).toHaveBeenLastCalledWith(
         expect.anything(),
         {
           spaceId,
           spaceUuid,
           actorUserId: userId,
           eventType: SpaceAuditEventType.ADDRESS_BOOK_TAGS_UPDATED,
-          payload: { address, oldTags: [], newTags: names },
+          payload: { changes: [{ address, oldTags: [], newTags: names }] },
         },
       );
+      tagsAuditRepository.record.mockClear();
+
+      await addressBookTagsRepository.setTagsForItems({
+        userId,
+        spaceId,
+        entries: [{ address, tags: names }],
+      });
+
+      expect(tagsAuditRepository.record).not.toHaveBeenCalled();
     });
 
-    it('records one ADDRESS_BOOK_TAGS_UPDATED per changed contact of a batch and none for an unchanged one', async () => {
+    it('records one ADDRESS_BOOK_TAGS_UPDATED listing the changed contacts of a batch, leaving out an unchanged one', async () => {
       const { spaceId, spaceUuid, userId } = await createSpace();
       const [unchanged, retagged, cleared] = await createContacts({
         spaceId,
@@ -627,25 +644,30 @@ describe('AddressBookTagsRepository', () => {
         ],
       });
 
-      const event = (
-        address: Address,
-        oldTags: Array<string>,
-        newTags: Array<string>,
-      ): SpaceAuditRecordArgs => ({
-        spaceId,
-        spaceUuid,
-        actorUserId: userId,
-        eventType: SpaceAuditEventType.ADDRESS_BOOK_TAGS_UPDATED,
-        payload: { address, oldTags, newTags },
-      });
+      // The new tag, then the contacts
       expect(tagsAuditRepository.record).toHaveBeenCalledTimes(2);
-      expect(tagsAuditRepository.record).toHaveBeenCalledWith(
+      expect(tagsAuditRepository.record).toHaveBeenNthCalledWith(
+        1,
         expect.anything(),
-        event(retagged, [before], [after]),
+        expect.objectContaining({
+          eventType: SpaceAuditEventType.ADDRESS_BOOK_TAG_CREATED,
+          payload: { name: after, color: expect.any(String) },
+        }),
       );
-      expect(tagsAuditRepository.record).toHaveBeenCalledWith(
+      expect(tagsAuditRepository.record).toHaveBeenLastCalledWith(
         expect.anything(),
-        event(cleared, [kept, before], []),
+        {
+          spaceId,
+          spaceUuid,
+          actorUserId: userId,
+          eventType: SpaceAuditEventType.ADDRESS_BOOK_TAGS_UPDATED,
+          payload: {
+            changes: [
+              { address: retagged, oldTags: [before], newTags: [after] },
+              { address: cleared, oldTags: [kept, before], newTags: [] },
+            ],
+          },
+        },
       );
       await expect(tagNamesOf(spaceId, unchanged)).resolves.toStrictEqual(
         new Set([kept]),
@@ -658,7 +680,7 @@ describe('AddressBookTagsRepository', () => {
       );
     });
 
-    it('gives a repeated address the tags of its last item, with one audit event against the stored set', async () => {
+    it('gives a repeated address the tags of its last item, creating no tag for the earlier one, with one audit event against the stored set', async () => {
       const { spaceId, userId } = await createSpace();
       const [address] = await createContacts({ spaceId, userId, count: 1 });
       const [stored, first, last] = tagNames(3);
@@ -681,15 +703,30 @@ describe('AddressBookTagsRepository', () => {
       await expect(tagNamesOf(spaceId, address)).resolves.toStrictEqual(
         new Set([last]),
       );
-      expect(tagsAuditRepository.record).toHaveBeenCalledExactlyOnceWith(
+      const { tags } = await addressBookTagsRepository.findBySpaceId(spaceId);
+      expect(tags.map((tag) => tag.name).sort()).toStrictEqual(
+        [stored, last].sort(),
+      );
+      expect(tagsAuditRepository.record).toHaveBeenCalledTimes(2);
+      expect(tagsAuditRepository.record).toHaveBeenNthCalledWith(
+        1,
         expect.anything(),
         expect.objectContaining({
-          payload: { address, oldTags: [stored], newTags: [last] },
+          eventType: SpaceAuditEventType.ADDRESS_BOOK_TAG_CREATED,
+          payload: { name: last, color: expect.any(String) },
+        }),
+      );
+      expect(tagsAuditRepository.record).toHaveBeenLastCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          payload: {
+            changes: [{ address, oldTags: [stored], newTags: [last] }],
+          },
         }),
       );
     });
 
-    it('fails a batch only after every audit record has settled, and changes no contact', async () => {
+    it('changes no contact and creates no tag when the audit record fails', async () => {
       const { spaceId, userId } = await createSpace();
       const [first, second] = await createContacts({
         spaceId,
@@ -697,43 +734,19 @@ describe('AddressBookTagsRepository', () => {
         count: 2,
       });
       const error = new Error(faker.lorem.sentence());
-      let releaseSecondRecord = (): void => {};
-      const secondRecord = new Promise<void>((resolve) => {
-        releaseSecondRecord = resolve;
-      });
-      tagsAuditRepository.record
-        .mockRejectedValueOnce(error)
-        .mockReturnValueOnce(secondRecord);
+      tagsAuditRepository.record.mockRejectedValueOnce(error);
 
-      let settled = false;
-      const outcome = addressBookTagsRepository
-        .setTagsForItems({
+      await expect(
+        addressBookTagsRepository.setTagsForItems({
           userId,
           spaceId,
           entries: [
             { address: first, tags: tagNames(1) },
             { address: second, tags: tagNames(1) },
           ],
-        })
-        .then(
-          () => {
-            settled = true;
-          },
-          (reason: unknown) => {
-            settled = true;
-            return reason;
-          },
-        );
-      await vi.waitFor(() =>
-        expect(tagsAuditRepository.record).toHaveBeenCalledTimes(2),
-      );
-      // Failing here, with the second record still in flight, would roll the
-      // transaction back under it.
-      await new Promise((resolve) => setTimeout(resolve, 100));
-      expect(settled).toBe(false);
+        }),
+      ).rejects.toBe(error);
 
-      releaseSecondRecord();
-      await expect(outcome).resolves.toBe(error);
       await expect(tagNamesOf(spaceId, first)).resolves.toStrictEqual(
         new Set(),
       );

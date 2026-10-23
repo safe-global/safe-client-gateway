@@ -127,9 +127,13 @@ describe('SpaceAuditEventSchema — SPACE_UPDATED experimentalFeatures', () => {
 describe('SpaceAuditEventSchema — address book tag events', () => {
   it('parses ADDRESS_BOOK_TAGS_UPDATED', () => {
     const payload = {
-      address: getAddress(faker.finance.ethereumAddress()),
-      oldTags: [faker.word.noun()],
-      newTags: [faker.word.noun(), faker.word.noun()],
+      changes: [
+        {
+          address: getAddress(faker.finance.ethereumAddress()),
+          oldTags: [faker.word.noun()],
+          newTags: [faker.word.noun(), faker.word.noun()],
+        },
+      ],
     };
 
     expect(

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Column, Entity, Index, PrimaryGeneratedColumn, Unique } from 'typeorm';
-import type { AddressBookItemTagDbItem as DomainAddressBookItemTag } from '#/modules/spaces/domain/address-books/entities/address-book-tag-db.entity';
+import type { AddressBookItemTagDbItem as DomainAddressBookItemTag } from '#/modules/spaces/domain/address-books/entities/address-book-tag.db.entity';
 
 // The foreign keys (item_id, tag_id) live in the migration.
 @Entity('space_address_book_item_tags')

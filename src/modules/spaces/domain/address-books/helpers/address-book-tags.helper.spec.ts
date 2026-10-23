@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
+import { getAddress } from 'viem';
 import { DB_MAX_SAFE_INTEGER } from '#/domain/common/constants';
 import type { SpaceTags } from '#/modules/spaces/domain/address-books/entities/address-book-tag-write.entity';
 import {
   groupTagIdsByItemId,
   isSameSet,
+  lastEntryPerContact,
   nameOf,
 } from '#/modules/spaces/domain/address-books/helpers/address-book-tags.helper';
 
@@ -38,6 +40,31 @@ describe('address-book-tags.helper', () => {
 
     it('returns an empty map for no links', () => {
       expect(groupTagIdsByItemId([])).toStrictEqual(new Map());
+    });
+  });
+
+  describe('lastEntryPerContact', () => {
+    it('keeps the last entry of a repeated contact, in the order of first appearance', () => {
+      const [first, second] = ids(2);
+      const address = getAddress(faker.finance.ethereumAddress());
+      const entry = (itemId: number, tag: string) => ({
+        itemId,
+        address,
+        tags: [tag],
+      });
+
+      const [earlier, other, later] = faker.helpers.uniqueArray(
+        () => faker.word.noun(),
+        3,
+      );
+
+      expect(
+        lastEntryPerContact([
+          entry(first, earlier),
+          entry(second, other),
+          entry(first, later),
+        ]),
+      ).toStrictEqual([entry(first, later), entry(second, other)]);
     });
   });
 

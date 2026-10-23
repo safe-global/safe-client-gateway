@@ -1,5 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { SpaceTags } from '#/modules/spaces/domain/address-books/entities/address-book-tag-write.entity';
+import type {
+  ResolvedContact,
+  SpaceTags,
+} from '#/modules/spaces/domain/address-books/entities/address-book-tag-write.entity';
 
 export function groupTagIdsByItemId(
   links: Array<{ itemId: number; tagId: number }>,
@@ -11,6 +14,17 @@ export function groupTagIdsByItemId(
     tagIdsByItemId.set(link.itemId, tagIds);
   }
   return tagIdsByItemId;
+}
+
+/** One entry per contact: a repeated address keeps its last entry. */
+export function lastEntryPerContact(
+  contacts: Array<ResolvedContact>,
+): Array<ResolvedContact> {
+  const lastByItemId = new Map<number, ResolvedContact>();
+  for (const contact of contacts) {
+    lastByItemId.set(contact.itemId, contact);
+  }
+  return Array.from(lastByItemId.values());
 }
 
 export function isSameSet(a: Array<number>, b: Array<number>): boolean {

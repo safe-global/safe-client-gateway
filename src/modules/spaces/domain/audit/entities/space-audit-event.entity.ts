@@ -166,9 +166,13 @@ export const AddressBookRequestRejectedEventSchema = z.object({
 export const AddressBookTagsUpdatedEventSchema = z.object({
   eventType: z.literal(SpaceAuditEventType.ADDRESS_BOOK_TAGS_UPDATED),
   payload: z.object({
-    address: AddressSchema,
-    oldTags: z.array(z.string()),
-    newTags: z.array(z.string()),
+    changes: z.array(
+      z.object({
+        address: AddressSchema,
+        oldTags: z.array(z.string()),
+        newTags: z.array(z.string()),
+      }),
+    ),
   }),
 });
 
