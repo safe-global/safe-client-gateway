@@ -31,11 +31,17 @@ export type QueuedPolicyChangeConfigurationCall =
   | QueuedApplyConfiguration;
 
 /**
- * One delayed configuration change of the Safe, identified by its root, as
- * each source sees it. A field is `null` when its source has no record of the
- * root.
+ * One delayed configuration change of the Safe, identified by its guard and
+ * root, as each source sees it. A field is `null` when its source has no record
+ * of the change.
+ *
+ * The root alone is not enough: it hashes only the configurations, so the same
+ * configurations requested on two guards share a root but have separate
+ * windows.
  */
 export type DelayedPolicyChange = {
+  /** The guard the change is requested on; `null` for a draft. */
+  guard: Address | null;
   root: Hex;
   /** The root on chain, with its status and application window. */
   onChain: PolicyIndexerConfigurationRoot | null;

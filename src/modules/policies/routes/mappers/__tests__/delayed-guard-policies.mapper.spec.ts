@@ -77,12 +77,13 @@ describe('DelayedGuardPoliciesMapper', () => {
     configurations: Array<PolicyConfiguration>;
     status?: PolicyIndexerConfigurationRoot['status'];
     readyAt?: number;
+    guard?: Address;
   }): PolicyIndexerConfigurationRoot {
     const readyAt = args.readyAt ?? now + 60;
     return policyIndexerConfigurationRootBuilder()
       .with('chainId', safe.chainId)
       .with('safe', safe.address)
-      .with('guard', guard)
+      .with('guard', args.guard ?? guard)
       .with('root', configurationRoot(args.configurations))
       .with('status', args.status ?? 'PENDING')
       .with('readyAt', readyAt)
@@ -137,9 +138,10 @@ describe('DelayedGuardPoliciesMapper', () => {
   function apply(
     configurations: Array<PolicyConfiguration>,
     confirmations = 1,
+    to: Address = guard,
   ): MultisigTransaction {
     return queued({
-      to: guard,
+      to,
       data: applyConfigurationEncoder()
         .with('configurations', configurations)
         .encode(),
@@ -147,7 +149,12 @@ describe('DelayedGuardPoliciesMapper', () => {
     });
   }
 
+  /**
+   * Maps for a Safe whose transaction guard is {@link guard} unless
+   * {@link args.enabledGuard} names another.
+   */
   function map(args: {
+    enabledGuard?: Address | null;
     onChainConfigurations?: Array<PolicyIndexerConfigurationRoot>;
     storedConfigurations?: Array<SafePolicyGuardConfiguration>;
     transactions?: Array<MultisigTransaction>;
@@ -156,6 +163,8 @@ describe('DelayedGuardPoliciesMapper', () => {
   }): ReturnType<DelayedGuardPoliciesMapper['map']> {
     return target.map({
       safe,
+      guard: args.enabledGuard === undefined ? guard : args.enabledGuard,
+      moduleGuard: null,
       transactions: args.transactions ?? [],
       onChainConfigurations: args.onChainConfigurations ?? [],
       storedConfigurations: args.storedConfigurations ?? [],
@@ -589,6 +598,148 @@ describe('DelayedGuardPoliciesMapper', () => {
           ],
         }),
       ).toStrictEqual([]);
+    });
+  });
+
+  describe('the same root on two guards', () => {
+    // The root hashes only the configurations, so requesting the same
+    // configurations on two guards gives both the same root.
+    const previousGuard = getAddress(faker.finance.ethereumAddress());
+
+    it("should report the window of the Safe's current guard, not the root read last", () => {
+      const config = configurations();
+      const transaction = apply(config, 2);
+      const current = onChain({ configurations: config, readyAt: now - 60 });
+      // The previous guard has a longer delay, so the indexer returns its row
+      // last.
+      const previous = onChain({
+        configurations: config,
+        readyAt: now + 3_600,
+        guard: previousGuard,
+      });
+
+      expect(
+        map({
+          onChainConfigurations: [current, previous],
+          transactions: [transaction],
+        }),
+      ).toStrictEqual([
+        expect.objectContaining({
+          status: 'application-ready',
+          guard,
+          readyAt: current.readyAt,
+          expiresAt: current.expiresAt,
+          transaction: expect.objectContaining({
+            safeTxHash: transaction.safeTxHash,
+          }),
+        }),
+      ]);
+    });
+
+    it('should not report a pending root on a guard the Safe no longer uses', () => {
+      const config = configurations();
+
+      expect(
+        map({
+          onChainConfigurations: [
+            onChain({
+              configurations: config,
+              readyAt: now - 60,
+              guard: previousGuard,
+            }),
+          ],
+        }),
+      ).toStrictEqual([]);
+    });
+
+    it("should report a root on the current guard when the previous guard's row is invalidated", () => {
+      const config = configurations();
+      const current = onChain({ configurations: config, readyAt: now - 60 });
+
+      expect(
+        map({
+          onChainConfigurations: [
+            current,
+            onChain({
+              configurations: config,
+              readyAt: now + 3_600,
+              status: 'INVALIDATED',
+              guard: previousGuard,
+            }),
+          ],
+        }),
+      ).toStrictEqual([
+        expect.objectContaining({
+          status: 'pending-application',
+          guard,
+          readyAt: current.readyAt,
+        }),
+      ]);
+    });
+
+    it('should not match an apply queued on another guard to the open window', () => {
+      const config = configurations();
+      const current = onChain({ configurations: config, readyAt: now - 60 });
+
+      expect(
+        map({
+          onChainConfigurations: [
+            current,
+            onChain({
+              configurations: config,
+              readyAt: now - 60,
+              guard: previousGuard,
+            }),
+          ],
+          transactions: [apply(config, 2, previousGuard)],
+        }),
+      ).toStrictEqual([
+        expect.objectContaining({
+          status: 'pending-application',
+          guard,
+          transaction: null,
+        }),
+      ]);
+    });
+
+    it('should attach the stored configurations to the change on the current guard', () => {
+      const config = configurations();
+      const configuration = stored(config);
+
+      expect(
+        map({
+          onChainConfigurations: [
+            onChain({ configurations: config, readyAt: now - 60 }),
+          ],
+          storedConfigurations: [configuration],
+        }),
+      ).toStrictEqual([
+        expect.objectContaining({
+          status: 'pending-application',
+          guard,
+          configurations: config,
+          createdAt: unixSeconds(configuration.createdAt),
+        }),
+      ]);
+    });
+
+    it('should report stored configurations as a draft when only a guard the Safe no longer uses has their root', () => {
+      const config = configurations();
+
+      expect(
+        map({
+          onChainConfigurations: [
+            onChain({
+              configurations: config,
+              readyAt: now - 60,
+              guard: previousGuard,
+            }),
+          ],
+          storedConfigurations: [stored(config)],
+        }),
+      ).toStrictEqual([
+        expect.objectContaining({ status: 'draft', guard: null }),
+      ]);
     });
   });
 

@@ -74,6 +74,8 @@ export class DelayedGuardPoliciesMapper {
   ) {}
 
   /**
+   * @param args.guard The Safe's current transaction guard.
+   * @param args.moduleGuard The Safe's current module guard.
    * @param args.onChainConfigurations The Safe's configuration roots as the
    * chain holds them, read from the indexer.
    * @param args.storedConfigurations The configurations behind those roots,
@@ -84,6 +86,8 @@ export class DelayedGuardPoliciesMapper {
    */
   public map(args: {
     safe: SafeRef;
+    guard: Address | null;
+    moduleGuard: Address | null;
     transactions: ReadonlyArray<MultisigTransaction>;
     onChainConfigurations: ReadonlyArray<PolicyIndexerConfigurationRoot>;
     storedConfigurations: ReadonlyArray<SafePolicyGuardConfiguration>;
@@ -105,7 +109,11 @@ export class DelayedGuardPoliciesMapper {
       },
     );
 
-    const changes = this.changesByRoot({
+    const changes = this.changesByGuardAndRoot({
+      enabledGuards: [args.guard, args.moduleGuard].filter(
+        (guard): guard is Address =>
+          guard !== null && !isAddressEqual(guard, zeroAddress),
+      ),
       onChainConfigurations: args.onChainConfigurations,
       storedConfigurations: args.storedConfigurations,
       queued: queuedPolicyChanges,
@@ -126,42 +134,54 @@ export class DelayedGuardPoliciesMapper {
   }
 
   /**
-   * Merges the three sources into one change per root. Changes come out in
-   * the order their root was first seen: on chain, then in CGW, then in the
-   * queue.
+   * Merges the three sources into one change per guard and root.
+   *
+   * A root on chain is kept only for a guard currently set on the Safe: a
+   * guard the Safe has moved away from still holds its pending roots, but
+   * applying them changes nothing the Safe enforces. A queued call is the
+   * Safe's own next step, so it is kept on whichever guard it targets.
+   *
+   * CGW stores configurations per Safe and root, not per guard, so they
+   * belong to every change with their root; with no such change they are a
+   * draft.
    */
-  private changesByRoot(args: {
+  private changesByGuardAndRoot(args: {
+    enabledGuards: ReadonlyArray<Address>;
     onChainConfigurations: ReadonlyArray<PolicyIndexerConfigurationRoot>;
     storedConfigurations: ReadonlyArray<SafePolicyGuardConfiguration>;
     queued: ReadonlyArray<QueuedPolicyChangeConfigurationCall>;
   }): Array<DelayedPolicyChange> {
-    const changes = new Map<Hex, DelayedPolicyChange>();
-    const changeOf = (root: Hex): DelayedPolicyChange => {
-      let change = changes.get(root);
+    // Roots are lower-cased by every source; guards are compared the same way.
+    const changes = new Map<string, DelayedPolicyChange>();
+    const changeOf = (guard: Address, root: Hex): DelayedPolicyChange => {
+      const key = `${guard.toLowerCase()}:${root}`;
+      let change = changes.get(key);
       if (!change) {
         change = {
+          guard,
           root,
           onChain: null,
           stored: null,
           queuedRequest: null,
           queuedApply: null,
         };
-        changes.set(root, change);
+        changes.set(key, change);
       }
       return change;
     };
 
     for (const onChain of args.onChainConfigurations) {
-      changeOf(onChain.root).onChain = onChain;
+      if (
+        args.enabledGuards.some((guard) => isAddressEqual(guard, onChain.guard))
+      ) {
+        changeOf(onChain.guard, onChain.root).onChain = onChain;
+      }
     }
 
-    for (const stored of args.storedConfigurations) {
-      changeOf(stored.root).stored = stored;
-    }
-
-    // The queue is in nonce order, so the first call for a root executes first.
+    // The queue is in nonce order, so the first call for a change executes
+    // first.
     for (const call of args.queued) {
-      const change = changeOf(call.root);
+      const change = changeOf(call.guard, call.root);
       if (call.kind === 'request') {
         change.queuedRequest ??= call;
       } else {
@@ -169,7 +189,27 @@ export class DelayedGuardPoliciesMapper {
       }
     }
 
-    return Array.from(changes.values());
+    const drafts: Array<DelayedPolicyChange> = [];
+    for (const stored of args.storedConfigurations) {
+      const withRoot = [...changes.values()].filter(
+        (change) => change.root === stored.root,
+      );
+      for (const change of withRoot) {
+        change.stored = stored;
+      }
+      if (withRoot.length === 0) {
+        drafts.push({
+          guard: null,
+          root: stored.root,
+          onChain: null,
+          stored,
+          queuedRequest: null,
+          queuedApply: null,
+        });
+      }
+    }
+
+    return [...changes.values(), ...drafts];
   }
 
   /**

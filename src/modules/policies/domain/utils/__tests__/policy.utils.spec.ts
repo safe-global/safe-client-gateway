@@ -135,6 +135,7 @@ describe('delayed changes', () => {
     overrides: Partial<Omit<DelayedPolicyChange, 'root'>>,
   ): DelayedPolicyChange {
     return {
+      guard,
       root,
       onChain: null,
       stored: null,
