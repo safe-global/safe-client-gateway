@@ -206,10 +206,17 @@ describe('PoliciesService', () => {
    */
   function policiesService(
     size: number,
-    args?: { safeQueueServiceEnabled?: boolean },
+    args?: {
+      safeQueueServiceEnabled?: boolean;
+      guardPoliciesEnabled?: boolean;
+    },
   ): PoliciesService {
     const fakeConfigurationService = new FakeConfigurationService();
     fakeConfigurationService.set('policies.batchSize', size);
+    fakeConfigurationService.set(
+      'features.guardPolicies',
+      args?.guardPoliciesEnabled ?? true,
+    );
     mockSafeRepository.getTransactionQueueMaxPageSize.mockReturnValue(
       args?.safeQueueServiceEnabled
         ? SAFE_QUEUE_SERVICE_MAX_LIMIT
@@ -1567,6 +1574,8 @@ describe('PoliciesService', () => {
     });
 
     it("should give the configuration mapper only the safe's own data", async () => {
+      const safeInfo = safeBuilder().build();
+      mockSafeRepository.getSafe.mockResolvedValue(safeInfo);
       const now = faker.date.recent();
       vi.useFakeTimers({ now });
       const root = pendingRoot(safe);
@@ -1602,6 +1611,8 @@ describe('PoliciesService', () => {
 
       expect(mockDelayedGuardPoliciesMapper.map).toHaveBeenCalledWith({
         safe,
+        guard: safeInfo.guard,
+        moduleGuard: safeInfo.moduleGuard,
         transactions: [],
         onChainConfigurations: [root],
         storedConfigurations: [stored],
@@ -1675,7 +1686,7 @@ describe('PoliciesService', () => {
         new Error('Service unavailable'),
       );
 
-      await target.getSpacePendingPolicies(guardRequest);
+      await target.getSpacePendingPolicies(installationRequest);
 
       expect(mockGuardInstallationMapper.map).toHaveBeenCalled();
       expect(mockDelayedGuardPoliciesMapper.map).not.toHaveBeenCalled();
@@ -1685,6 +1696,65 @@ describe('PoliciesService', () => {
           spaceId,
         }),
       );
+    });
+  });
+
+  describe('with guard policies flag switched off', () => {
+    beforeEach(() => {
+      target = policiesService(batchSize, { guardPoliciesEnabled: false });
+      mockSafeRepository.getTransactionQueue.mockResolvedValue(
+        pageBuilder<MultisigTransaction>()
+          .with('results', [])
+          .with('next', null)
+          .build(),
+      );
+    });
+
+    it('should read nothing for a request with only guard types', async () => {
+      const active = await target.getSpaceActivePolicies({
+        ...policyRequest,
+        types: [PolicyType.Cosigner],
+      });
+      const pending = await target.getSpacePendingPolicies({
+        ...policyRequest,
+        types: [PolicyType.Cosigner],
+        includeGuardInstallation: true,
+      });
+
+      expect(active).toStrictEqual([]);
+      expect(pending).toStrictEqual([]);
+      expect(mockPolicyIndexerRepository.getState).not.toHaveBeenCalled();
+      expect(mockSafeRepository.getTransactionQueue).not.toHaveBeenCalled();
+      expect(
+        mockConfigurationRequestsRepository.findBySafes,
+      ).not.toHaveBeenCalled();
+    });
+
+    it('should read no guard enforced policies for the active policies', async () => {
+      await target.getSpaceActivePolicies({
+        ...policyRequest,
+        types: [PolicyType.SpendingLimit, PolicyType.Cosigner],
+      });
+
+      expect(mockPolicyIndexerRepository.getState).toHaveBeenCalledWith(
+        expect.objectContaining({ guardPolicyKinds: [] }),
+      );
+    });
+
+    it('should report no guard item among the pending policies', async () => {
+      await target.getSpacePendingPolicies({
+        ...policyRequest,
+        types: [PolicyType.SpendingLimit, PolicyType.Cosigner],
+        includeGuardInstallation: true,
+      });
+
+      expect(mockSafeRepository.getTransactionQueue).toHaveBeenCalled();
+      expect(mockGuardInstallationMapper.map).not.toHaveBeenCalled();
+      expect(mockImmediateGuardPoliciesMapper.map).not.toHaveBeenCalled();
+      expect(mockDelayedGuardPoliciesMapper.map).not.toHaveBeenCalled();
+      expect(
+        mockConfigurationRequestsRepository.findBySafes,
+      ).not.toHaveBeenCalled();
     });
   });
 });
