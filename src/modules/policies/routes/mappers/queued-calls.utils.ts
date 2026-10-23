@@ -7,6 +7,9 @@ import type { PendingTransaction } from '#/modules/policies/domain/entities/pend
 import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
 import { Operation } from '#/modules/safe/domain/entities/operation.entity';
 
+/** Where a queued call was found, for logging one that does not decode. */
+export type QueuedCallContext = { chainId: string; safeTxHash: Hex };
+
 /**
  * The calls a queued transaction makes on the Safe's behalf: the transaction
  * itself, or - one level only, no recursion - the sub-transactions of a

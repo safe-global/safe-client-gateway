@@ -21,6 +21,50 @@ export type PendingTransaction = {
   proposer: Address | null;
 };
 
+export const PendingGuardInstallationStatus = {
+  /** Fewer confirmations than the threshold. */
+  InSigning: 'in-signing',
+  /** Every confirmation is in; the transaction is not executed yet. */
+  Ready: 'ready',
+};
+
+export type PendingGuardInstallationStatus =
+  (typeof PendingGuardInstallationStatus)[keyof typeof PendingGuardInstallationStatus];
+
+export const PendingGuardInstallationChangeKind = {
+  SetGuard: 'set-guard',
+  SetModuleGuard: 'set-module-guard',
+};
+
+/**
+ * One guard setter call found in a queued transaction. `null` stands for the
+ * zero address - no guard in that slot.
+ */
+export type PendingGuardInstallationChange =
+  | {
+      kind: typeof PendingGuardInstallationChangeKind.SetGuard;
+      from: Address | null;
+      to: Address | null;
+    }
+  | {
+      kind: typeof PendingGuardInstallationChangeKind.SetModuleGuard;
+      from: Address | null;
+      to: Address | null;
+    };
+
+/**
+ * A queued transaction that installs, replaces or removes the
+ * `SafePolicyGuard` of a Safe.
+ */
+export type PendingGuardInstallation = {
+  kind: 'guard-installation';
+  status: PendingGuardInstallationStatus;
+  safe: SafeRef;
+  /** The guard setter calls of the transaction, in calldata order. */
+  changes: Array<PendingGuardInstallationChange>;
+  transaction: PendingTransaction;
+};
+
 /**
  * A spending-limit change in the transaction queue.
  */
