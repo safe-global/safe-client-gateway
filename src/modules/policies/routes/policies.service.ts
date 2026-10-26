@@ -590,7 +590,14 @@ export class PoliciesService {
 
     if (read.guardPoliciesRequested) {
       policies.push(
-        ...this.immediateGuardPoliciesMapper.map({ safe, transactions }),
+        ...this.immediateGuardPoliciesMapper.map({
+          safe,
+          transactions,
+          guardEnforcedPolicies: (
+            read.guardConfigurations?.guardEnforcedPolicies ?? []
+          ).filter((binding) => this.isScopedToSafe(binding, safe)),
+          types: read.types,
+        }),
       );
     }
 

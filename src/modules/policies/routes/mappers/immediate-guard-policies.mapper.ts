@@ -8,12 +8,15 @@ import {
 import { asError } from '#/logging/utils';
 import { MultiSendDecoder } from '#/modules/contracts/domain/decoders/multi-send-decoder.helper';
 import { SafePolicyGuardDecoder } from '#/modules/policies/domain/contracts/decoders/safe-policy-guard-decoder.helper';
+import type { PolicyIndexerGuardEnforcedPolicy } from '#/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 import {
   type PendingImmediateGuardPolicies,
   PendingImmediateGuardPoliciesStatus,
 } from '#/modules/policies/domain/entities/pending-policy.entity';
+import type { PolicyType } from '#/modules/policies/domain/entities/policy-type.entity';
 import type { SafeRef } from '#/modules/policies/domain/entities/safe-ref.entity';
 import { getSafePolicyGuardDeployments } from '#/modules/policies/domain/policy-deployments.constants';
+import { maySetRequestedType } from '#/modules/policies/domain/utils/policy.utils';
 import {
   decodeConfigurations,
   pendingTransactionOf,
@@ -38,6 +41,8 @@ export class ImmediateGuardPoliciesMapper {
   public map(args: {
     safe: SafeRef;
     transactions: ReadonlyArray<MultisigTransaction>;
+    guardEnforcedPolicies: ReadonlyArray<PolicyIndexerGuardEnforcedPolicy>;
+    types: ReadonlyArray<PolicyType>;
   }): Array<PendingImmediateGuardPolicies> {
     const knownGuards = getSafePolicyGuardDeployments(args.safe.chainId);
 
@@ -53,7 +58,17 @@ export class ImmediateGuardPoliciesMapper {
           call,
           knownGuards,
         });
-        return item ? [item] : [];
+        if (!item) {
+          return [];
+        }
+
+        const isRequested = maySetRequestedType({
+          chainId: args.safe.chainId,
+          configurations: item.configurations,
+          guardEnforcedPolicies: args.guardEnforcedPolicies,
+          types: args.types,
+        });
+        return isRequested ? [item] : [];
       }),
     );
   }

@@ -1539,10 +1539,53 @@ describe('PoliciesService', () => {
         moduleGuard: safeInfo.moduleGuard,
         transactions: [transaction],
       });
+      expect(mockImmediateGuardPoliciesMapper.map).toHaveBeenCalledWith(
+        expect.objectContaining({ safe, transactions: [transaction] }),
+      );
+    });
+
+    it("should give the immediate mapper the requested types and only the safe's own guard enforced policies", async () => {
+      mockSpaceSafesRepository.findBySpaceId.mockResolvedValue([
+        safe,
+        otherSafe,
+      ]);
+      const guardEnforcedPolicy = policyIndexerGuardEnforcedPolicyBuilder()
+        .with('chainId', SEPOLIA)
+        .with('safe', safeAddress)
+        .build();
+      const otherGuardEnforcedPolicy = policyIndexerGuardEnforcedPolicyBuilder()
+        .with('chainId', SEPOLIA)
+        .with('safe', otherSafe.address)
+        .build();
+      mockPolicyIndexerRepository.getState.mockResolvedValue(
+        policyIndexerResponseBuilder()
+          .with('guardPolicyBindings', [
+            guardEnforcedPolicy,
+            otherGuardEnforcedPolicy,
+          ])
+          .build(),
+      );
+
+      await target.getSpacePendingPolicies(guardRequest);
+
       expect(mockImmediateGuardPoliciesMapper.map).toHaveBeenCalledWith({
         safe,
-        transactions: [transaction],
+        transactions: [],
+        guardEnforcedPolicies: [guardEnforcedPolicy],
+        types: guardRequest.types,
       });
+    });
+
+    it('should give the immediate mapper no guard enforced policies when the guard state cannot be read', async () => {
+      mockPolicyIndexerRepository.getState.mockRejectedValue(
+        new Error('Service unavailable'),
+      );
+
+      await target.getSpacePendingPolicies(guardRequest);
+
+      expect(mockImmediateGuardPoliciesMapper.map).toHaveBeenCalledWith(
+        expect.objectContaining({ guardEnforcedPolicies: [] }),
+      );
     });
 
     it('should read every guard kind and the stored configurations once for all safes', async () => {
