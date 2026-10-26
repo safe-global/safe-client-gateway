@@ -1087,10 +1087,8 @@ describe('MembersRepository', () => {
       await expect(
         membersRepository.renewInvite({
           memberId,
-          inviteExpiresAt: faker.date.future({
-            refDate: renewedInviteExpiresAt,
-          }),
-          notRenewedSince: faker.date.past({ refDate: renewedInviteExpiresAt }),
+          inviteExpiresAt: faker.date.future(),
+          notRenewedSince: faker.date.past(),
           spaceId,
           spaceUuid,
           targetUserId: inviteeId,

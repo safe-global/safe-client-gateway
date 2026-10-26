@@ -111,11 +111,10 @@ export class MembersService {
       args.spaceId,
       name,
     );
-    const inviteExpiresAt = Date.now() + this.inviteTtlMs;
     const renewed = await this.membersRepository.renewInvite({
       memberId: id,
-      inviteExpiresAt: new Date(inviteExpiresAt),
-      notRenewedSince: new Date(inviteExpiresAt - RENEW_INVITE_COOLDOWN_MS),
+      inviteExpiresAt: new Date(Date.now() + this.inviteTtlMs),
+      notRenewedSince: new Date(Date.now() - RENEW_INVITE_COOLDOWN_MS),
       spaceId: args.spaceId,
       spaceUuid: space.uuid,
       targetUserId: args.userId,

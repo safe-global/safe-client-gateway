@@ -14,7 +14,7 @@ import type {
   FindOptionsRelations,
   FindOptionsWhere,
 } from 'typeorm';
-import { In, IsNull, LessThanOrEqual, Or } from 'typeorm';
+import { In, IsNull, LessThanOrEqual } from 'typeorm';
 import { type Address, getAddress } from 'viem';
 import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
 import { isUniqueConstraintError } from '#/datasources/errors/helpers/is-unique-constraint-error.helper';
@@ -414,10 +414,7 @@ export class MembersRepository implements IMembersRepository {
           DbMember,
           {
             id: args.memberId,
-            inviteExpiresAt: Or(
-              IsNull(),
-              LessThanOrEqual(args.notRenewedSince),
-            ),
+            updatedAt: LessThanOrEqual(args.notRenewedSince),
           },
           { inviteExpiresAt: args.inviteExpiresAt },
         );

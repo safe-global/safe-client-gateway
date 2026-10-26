@@ -627,7 +627,7 @@ describe('MembersService', () => {
         expect(membersRepositoryMock.renewInvite).toHaveBeenCalledWith({
           memberId: targetMember.id,
           inviteExpiresAt: new Date(now.getTime() + INVITE_TTL_MS),
-          notRenewedSince: new Date(now.getTime() + INVITE_TTL_MS - 60_000),
+          notRenewedSince: new Date(now.getTime() - 60_000),
           spaceId,
           spaceUuid,
           targetUserId: userId,

@@ -50,7 +50,7 @@ export interface IMembersRepository {
   /**
    * Refreshes the expiry of an existing invite. Callers are responsible for
    * loading the member and enforcing that it is still pending.
-   * Returns false, writing nothing, if the invite was renewed after notRenewedSince.
+   * Returns false, writing nothing, if the member row changed after notRenewedSince.
    */
   renewInvite(args: {
     memberId: Member['id'];
