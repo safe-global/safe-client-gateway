@@ -8,7 +8,7 @@ The guides in this directory are the content. This file documents the three mech
 
 The first two are **automatic by design**. Nothing here needs a slash command typed to take effect, which is why the repo ships none of its own (see "Commands" below).
 
-Everything follows the one-content-home rule: `docs/agents/` holds the content, and everything under `.claude/` is a thin loader that links back to it. A loader that starts restating a guide's rules has created a second copy that will drift, and only the guide gets reviewed.
+Everything follows the one-content-home rule: `docs/agents/` holds the content, and everything under `.claude/` either loads a guide or enforces one, and links back to it. A loader that starts restating a guide's rules has created a second copy that will drift, and only the guide gets reviewed.
 
 ## Skills
 

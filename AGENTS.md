@@ -114,7 +114,14 @@ git commit -m "Your commit message"
 Before **EACH** push, and so before opening any PR, every agent MUST run the review the `@claude arch-review` CI check runs and loop on it until it passes. Run it the way CI does:
 
 - **Fresh context.** Use a reviewer that has not seen the work, such as a subagent if your agent supports one (under Claude Code, an Opus subagent).
-- **CI's own prompt.** Give the reviewer the `prompt:` of [.github/workflows/architecture-check.yml](.github/workflows/architecture-check.yml) unchanged, except for three substitutions. The changes come from `git diff` and `git log` over the round's range, not `gh pr view`/`gh pr diff`. Locations are `path:line`, not permalinks, since nothing is pushed yet. The report is printed, not posted with `gh pr comment`. Write no reviewer prompt of your own: a paraphrase steers the review and misses what CI catches.
+- **CI's own prompt.** Give the reviewer the `prompt:` of [.github/workflows/architecture-check.yml](.github/workflows/architecture-check.yml) unchanged, except for its GitHub plumbing:
+  - Resolve `${{ github.repository }}` to `safe-global/safe-client-gateway` and `${{ github.event.repository.default_branch }}` to `main`. There is no PR number.
+  - Take the changes from `git diff` and `git log` over the round's range, not from `gh pr view` and `gh pr diff`. Where the prompt refers to the PR title and description, use the commit messages.
+  - Read changed files from the working tree. Read AGENTS.md and `docs/agents/` from `origin/main` (`git show origin/main:<path>`), as CI's checkout does.
+  - Cite locations as `path:line`, not permalinks, since nothing is pushed yet.
+  - Print the report; do not post it with `gh pr comment`.
+
+  Write no reviewer prompt of your own: a paraphrase steers the review and misses what CI catches.
 
 The loop is bounded:
 
