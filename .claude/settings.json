@@ -8,9 +8,9 @@
           {
             "type": "command",
             "if": "Bash(git push *)",
-            "statusMessage": "Checking the pre-PR architecture review ran for HEAD",
+            "statusMessage": "Checking HEAD passed the pre-PR architecture review",
             "timeout": 15,
-            "command": "node -e 'const c=JSON.parse(require(\"fs\").readFileSync(0,\"utf8\")).tool_input?.command??\"\";process.exit(/(^|[\\s;&|(])git(\\s+-{1,2}\\S+(\\s+[^\\s-]\\S*)?)*\\s+push(\\s|$)/m.test(c)?0:1)' || exit 0; h=\"$(git rev-parse HEAD)\" && test \"$(cat \"$(git rev-parse --git-common-dir)/arch-reviewed\" 2>/dev/null)\" = \"$h\" || { printf '%s\\n' 'Push blocked: HEAD has not passed the pre-PR architecture review (AGENTS.md \"Pre-PR Architecture Review\"). Load the cgw-review skill and apply docs/agents/reviewing.md to the full branch diff (git diff origin/main...HEAD), not only the last commit. Fix every finding you can and commit the fixes. For a finding that needs a human decision, ask the user and do not push. When the review of the current HEAD reports no findings, or the user explicitly accepts the remaining ones, record it with: git rev-parse HEAD > \"$(git rev-parse --git-common-dir)/arch-reviewed\" and push again.' >&2; exit 2; }"
+            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/pre-push-gate.mjs"
           }
         ]
       }
