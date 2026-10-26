@@ -7,9 +7,12 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-// `git push`, with optional global options (`git -C dir push`), anywhere in a
-// compound command. `git stash push` and `git commit -m "push"` do not match.
-const GIT_PUSH = /(^|[\s;&|(])git(\s+-{1,2}\S+(\s+[^\s-]\S*)?)*\s+push(\s|$)/m;
+// `git push` in command position (line start, or after `;`, `&`, `|`, `(`, and
+// optional `VAR=value` assignments), with optional global options
+// (`git -C dir push`). A push quoted inside an argument, such as a commit
+// message, does not match, nor do `git stash push` or `git commit -m "push"`.
+const GIT_PUSH =
+  /(?:^|[;&|(])\s*(?:\w+=\S*\s+)*git(?:\s+-{1,2}\S+(?:\s+[^\s-]\S*)?)*\s+push(?=$|[\s;&|)])/m;
 const MARKER_FILE = 'arch-reviewed';
 const BLOCKED_REASON =
   'Push blocked: HEAD has not passed the pre-PR architecture review. Follow AGENTS.md "Pre-PR Architecture Review", then push again.';
