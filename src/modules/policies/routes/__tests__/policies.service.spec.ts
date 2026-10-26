@@ -52,6 +52,7 @@ import { guardPolicyKindsOf } from '#/modules/policies/domain/utils/policy.utils
 import type { DelayedGuardPoliciesMapper } from '#/modules/policies/routes/mappers/delayed-guard-policies.mapper';
 import type { GuardInstallationMapper } from '#/modules/policies/routes/mappers/guard-installation.mapper';
 import { GuardPolicyMapper } from '#/modules/policies/routes/mappers/guard-policy.mapper';
+import type { ImmediateGuardPoliciesMapper } from '#/modules/policies/routes/mappers/immediate-guard-policies.mapper';
 import { PendingSpendingLimitMapper } from '#/modules/policies/routes/mappers/pending-spending-limit.mapper';
 import { ProposerMapper } from '#/modules/policies/routes/mappers/proposer.mapper';
 import { SpendingLimitMapper } from '#/modules/policies/routes/mappers/spending-limit.mapper';
@@ -84,6 +85,10 @@ const mockConfigurationRequestsRepository: MockedObject<
 const mockGuardInstallationMapper = {
   map: vi.fn(),
 } as MockedObject<GuardInstallationMapper>;
+
+const mockImmediateGuardPoliciesMapper = {
+  map: vi.fn(),
+} as MockedObject<ImmediateGuardPoliciesMapper>;
 
 const mockDelayedGuardPoliciesMapper = {
   map: vi.fn(),
@@ -191,6 +196,7 @@ describe('PoliciesService', () => {
     withDelegates([]);
     mockConfigurationRequestsRepository.findBySafes.mockResolvedValue([]);
     mockGuardInstallationMapper.map.mockReturnValue([]);
+    mockImmediateGuardPoliciesMapper.map.mockReturnValue([]);
     mockDelayedGuardPoliciesMapper.map.mockReturnValue([]);
   });
 
@@ -226,6 +232,7 @@ describe('PoliciesService', () => {
       pendingSpendingLimitMapper(),
       new GuardPolicyMapper(),
       mockGuardInstallationMapper,
+      mockImmediateGuardPoliciesMapper,
       mockDelayedGuardPoliciesMapper,
     );
   }
@@ -1483,6 +1490,7 @@ describe('PoliciesService', () => {
       });
 
       expect(mockGuardInstallationMapper.map).not.toHaveBeenCalled();
+      expect(mockImmediateGuardPoliciesMapper.map).not.toHaveBeenCalled();
       expect(mockDelayedGuardPoliciesMapper.map).not.toHaveBeenCalled();
       expect(mockPolicyIndexerRepository.getState).not.toHaveBeenCalled();
       expect(
@@ -1510,7 +1518,7 @@ describe('PoliciesService', () => {
       );
     });
 
-    it('should give the setup mapper the queue and the current guards', async () => {
+    it('should give the setup mappers the queue and the current guards', async () => {
       const safeInfo = safeBuilder()
         .with('moduleGuard', getAddress(faker.finance.ethereumAddress()))
         .build();
@@ -1531,6 +1539,53 @@ describe('PoliciesService', () => {
         moduleGuard: safeInfo.moduleGuard,
         transactions: [transaction],
       });
+      expect(mockImmediateGuardPoliciesMapper.map).toHaveBeenCalledWith(
+        expect.objectContaining({ safe, transactions: [transaction] }),
+      );
+    });
+
+    it("should give the immediate mapper the requested types and only the safe's own guard enforced policies", async () => {
+      mockSpaceSafesRepository.findBySpaceId.mockResolvedValue([
+        safe,
+        otherSafe,
+      ]);
+      const guardEnforcedPolicy = policyIndexerGuardEnforcedPolicyBuilder()
+        .with('chainId', SEPOLIA)
+        .with('safe', safeAddress)
+        .build();
+      const otherGuardEnforcedPolicy = policyIndexerGuardEnforcedPolicyBuilder()
+        .with('chainId', SEPOLIA)
+        .with('safe', otherSafe.address)
+        .build();
+      mockPolicyIndexerRepository.getState.mockResolvedValue(
+        policyIndexerResponseBuilder()
+          .with('guardPolicyBindings', [
+            guardEnforcedPolicy,
+            otherGuardEnforcedPolicy,
+          ])
+          .build(),
+      );
+
+      await target.getSpacePendingPolicies(guardRequest);
+
+      expect(mockImmediateGuardPoliciesMapper.map).toHaveBeenCalledWith({
+        safe,
+        transactions: [],
+        guardEnforcedPolicies: [guardEnforcedPolicy],
+        types: guardRequest.types,
+      });
+    });
+
+    it('should give the immediate mapper no guard enforced policies when the guard state cannot be read', async () => {
+      mockPolicyIndexerRepository.getState.mockRejectedValue(
+        new Error('Service unavailable'),
+      );
+
+      await target.getSpacePendingPolicies(guardRequest);
+
+      expect(mockImmediateGuardPoliciesMapper.map).toHaveBeenCalledWith(
+        expect.objectContaining({ guardEnforcedPolicies: [] }),
+      );
     });
 
     it('should read every guard kind and the stored configurations once for all safes', async () => {

@@ -22,20 +22,15 @@ import {
   PendingDelayedGuardPoliciesStatus,
   type PendingTransaction,
 } from '#/modules/policies/domain/entities/pending-policy.entity';
-import type { PolicyConfiguration } from '#/modules/policies/domain/entities/policy-configuration.entity';
-import { policyOperationFromValue } from '#/modules/policies/domain/entities/policy-operation.entity';
 import type { PolicyType } from '#/modules/policies/domain/entities/policy-type.entity';
 import type { SafePolicyGuardConfiguration } from '#/modules/policies/domain/entities/safe-policy-guard-configuration.entity';
 import type { SafeRef } from '#/modules/policies/domain/entities/safe-ref.entity';
-import {
-  getPolicyTypeOfContract,
-  getSafePolicyGuardDeployments,
-} from '#/modules/policies/domain/policy-deployments.constants';
+import { getSafePolicyGuardDeployments } from '#/modules/policies/domain/policy-deployments.constants';
 import {
   applicationWindowOf,
   createdAtOf,
-  guardPolicyTypeOfKind,
   isRootApplicable,
+  maySetRequestedType,
   queuedApplyStatus,
 } from '#/modules/policies/domain/utils/policy.utils';
 import { configurationRoot } from '#/modules/policies/domain/utils/policy-configuration-root.utils';
@@ -121,15 +116,21 @@ export class DelayedGuardPoliciesMapper {
 
     return changes.flatMap((change) => {
       const item = this.toItem({ change, safe: args.safe, now: args.now });
-      const wanted =
-        item &&
-        this.maySetRequestedType({
-          item,
-          safe: args.safe,
-          bindings: args.guardEnforcedPolicies,
+      if (!item) {
+        return [];
+      }
+
+      // Configurations CGW does not hold cannot be ruled out, so they keep the
+      // item in.
+      const isRequested =
+        item.configurations === null ||
+        maySetRequestedType({
+          chainId: args.safe.chainId,
+          configurations: item.configurations,
+          guardEnforcedPolicies: args.guardEnforcedPolicies,
           types: args.types,
         });
-      return wanted ? [item] : [];
+      return isRequested ? [item] : [];
     });
   }
 
@@ -337,62 +338,6 @@ export class DelayedGuardPoliciesMapper {
     }
 
     return null;
-  }
-
-  /**
-   * Whether the item may set a requested policy type.
-   *
-   * An item is left out only when CGW knows the type of every configuration and
-   * none was requested. A configuration of an unknown type - an unknown policy
-   * contract, or configurations CGW does not hold - cannot be ruled out, so it
-   * keeps the item in.
-   */
-  private maySetRequestedType(args: {
-    item: PendingDelayedGuardPolicies;
-    safe: SafeRef;
-    bindings: ReadonlyArray<PolicyIndexerGuardEnforcedPolicy>;
-    types: ReadonlyArray<PolicyType>;
-  }): boolean {
-    if (!args.item.configurations) {
-      return true;
-    }
-
-    return args.item.configurations.some((configuration) => {
-      const type = this.policyTypeOf({
-        configuration,
-        safe: args.safe,
-        bindings: args.bindings,
-      });
-      return type === null || args.types.includes(type);
-    });
-  }
-
-  /**
-   * The policy type a configuration sets. A configuration that removes a
-   * policy names no policy contract, so its type is that of the binding it
-   * removes.
-   */
-  private policyTypeOf(args: {
-    configuration: PolicyConfiguration;
-    safe: SafeRef;
-    bindings: ReadonlyArray<PolicyIndexerGuardEnforcedPolicy>;
-  }): PolicyType | null {
-    const { configuration } = args;
-
-    if (!isAddressEqual(configuration.policy, zeroAddress)) {
-      return getPolicyTypeOfContract(args.safe.chainId, configuration.policy);
-    }
-
-    const operation = policyOperationFromValue(configuration.operation);
-    const binding = args.bindings.find(
-      (binding) =>
-        isAddressEqual(binding.target, configuration.target) &&
-        binding.selector.toLowerCase() ===
-          configuration.selector.toLowerCase() &&
-        binding.operation === operation,
-    );
-
-    return binding ? guardPolicyTypeOfKind(binding.kind) : null;
   }
 
   /**
