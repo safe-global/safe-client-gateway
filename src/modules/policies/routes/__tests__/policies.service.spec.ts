@@ -1555,6 +1555,8 @@ describe('PoliciesService', () => {
     });
 
     it("should give the configuration mapper only the safe's own data", async () => {
+      const safeInfo = safeBuilder().build();
+      mockSafeRepository.getSafe.mockResolvedValue(safeInfo);
       const now = faker.date.recent();
       vi.useFakeTimers({ now });
       const root = pendingRoot(safe);
@@ -1590,6 +1592,8 @@ describe('PoliciesService', () => {
 
       expect(mockDelayedGuardPoliciesMapper.map).toHaveBeenCalledWith({
         safe,
+        guard: safeInfo.guard,
+        moduleGuard: safeInfo.moduleGuard,
         transactions: [],
         onChainConfigurations: [root],
         storedConfigurations: [stored],
@@ -1663,7 +1667,7 @@ describe('PoliciesService', () => {
         new Error('Service unavailable'),
       );
 
-      await target.getSpacePendingPolicies(guardRequest);
+      await target.getSpacePendingPolicies(installationRequest);
 
       expect(mockGuardInstallationMapper.map).toHaveBeenCalled();
       expect(mockDelayedGuardPoliciesMapper.map).not.toHaveBeenCalled();
