@@ -66,7 +66,7 @@
     "@nestjs/typeorm": "12.0.2",
     "@safe-global/safe-deployments": "1.37.63",
     "@safe-global/safe-modules-deployments": "3.0.10",
-    "amqp-connection-manager": "5.0.0",
+    "amqp-connection-manager": "5.0.1",
     "amqplib": "2.2.0",
     "bullmq": "^6.3.11",
     "cache-manager": "7.2.9",
