@@ -1666,6 +1666,21 @@ describe('Space Policies Controller', () => {
       return body.root;
     }
 
+    /** The roots the pending API reports as `draft`. */
+    async function draftRoots(args: {
+      accessToken: string;
+      spaceId: string;
+    }): Promise<Array<unknown>> {
+      const { body } = await request(app.getHttpServer())
+        .get(`/v1/spaces/${args.spaceId}/policies/pending`)
+        .query({ types: Object.values(PolicyType).join(',') })
+        .set('Cookie', [`access_token=${args.accessToken}`])
+        .expect(200);
+      return (body as Array<Record<string, unknown>>)
+        .filter((item) => item.status === 'draft')
+        .map((item) => item.root);
+    }
+
     it('should delete a draft, then report it as gone', async () => {
       mockUpstream();
       mockIndexer(rawPolicyIndexerResponse());
@@ -1674,11 +1689,15 @@ describe('Space Policies Controller', () => {
       });
       const root = await storeRequest({ accessToken, spaceId });
       const url = `/v1/spaces/${spaceId}/chains/${SEPOLIA_CHAIN_ID}/safes/${safeAddress}/policies/requests/0x${root.slice(2).toUpperCase()}`;
+      await expect(draftRoots({ accessToken, spaceId })).resolves.toEqual([
+        root,
+      ]);
 
       await request(app.getHttpServer())
         .delete(url)
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(204);
+      await expect(draftRoots({ accessToken, spaceId })).resolves.toEqual([]);
       await request(app.getHttpServer())
         .delete(url)
         .set('Cookie', [`access_token=${accessToken}`])
