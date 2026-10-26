@@ -4,7 +4,7 @@
 
 # Review Checklist
 
-Repo-specific checklist for anyone reviewing a task, diff, or PR — per-task review checkpoints in agent workflows, the CI review agent, and humans. *When* reviews happen is governed by your process (e.g. Superpowers, spec-kit); *what to verify in this repo* is defined here.
+Repo-specific checklist for anyone reviewing a task, diff, or PR — per-task review checkpoints in agent workflows, the CI review agent, and humans. *When* reviews happen is governed by your process (e.g. Superpowers, spec-kit), except the pre-push review [AGENTS.md](../../AGENTS.md) mandates; *what to verify in this repo* is defined here.
 
 ## Part 1 — Guideline compliance
 

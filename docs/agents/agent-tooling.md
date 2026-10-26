@@ -43,6 +43,8 @@ One skill per guide, each a loader. Skills exist because a routing table only wo
 
 The review and its loop are defined in [AGENTS.md](../../AGENTS.md)'s "Pre-PR Architecture Review". This section covers why it exists and how it is enforced. It is the CI gate below, run before the push, so findings are fixed before a PR exists, not after someone comments `@claude arch-review`. Nothing copies the review: every rule stays in [reviewing.md](reviewing.md) and [remarks.md](remarks.md). [reviewing.md](reviewing.md) already covers the pre-PR case, because its PR-description items are "not-yet-checkable" before a PR exists.
 
+**Parity with CI.** The local reviewer runs the CI workflow's own prompt, with only its GitHub plumbing swapped for `git`, so the workflow file is the single source for both reviews. When local reviewers were given paraphrased prompts instead, CI caught a stale-guide contradiction that three local rounds had missed. Two gaps remain. LLM reviews are not deterministic, so CI can still occasionally find what a local run did not. And rounds 2 and 3 review only the fixes, so a contradiction a fix creates with untouched text is caught by the next loop's round 1, or by CI.
+
 **Why a gate rather than a slash command.** The review is the one part of the pre-PR flow that nothing else triggers. `.husky/pre-commit` already runs `yarn env:validate:silent`, `yarn lint` and `yarn format` on every commit. The guideline and deviation checks depended on someone remembering to ask, and a gate removes the remembering (see "Commands" below). It sits at push rather than commit because the branch diff covers every commit. A commit-time hook used to review each `src/` commit, so the same code was reviewed twice, and it was removed.
 
 **Why the loop is bounded.** Every fix is a new commit, so without a limit, review, fix and re-review can run forever, or end silently whenever the agent gives up. The round cap and the stop report in AGENTS.md exist for those two failures. Re-reviewing only the fixes after round 1 keeps each round's diff shrinking, so the loop converges.
@@ -106,6 +108,6 @@ Re-testing after an edit needs a genuinely fresh session — a subagent spawned 
 
 ## Relationship to process plugins
 
-Skills and commands here carry **repo context**, never workflow. Process plugins (Superpowers, spec-kit) govern *how* work happens — brainstorming, TDD, debugging, verification order. These guides define *what correct looks like here*, and are the answer when a process skill asks for repo specifics: verification commands, test conventions, architectural context. A skill or command in this repo that starts dictating the order of work has overstepped.
+Skills and commands here carry **repo context**, never workflow, the one exception being the pre-push review [AGENTS.md](../../AGENTS.md) mandates. Process plugins (Superpowers, spec-kit) govern *how* work happens — brainstorming, TDD, debugging, verification order. These guides define *what correct looks like here*, and are the answer when a process skill asks for repo specifics: verification commands, test conventions, architectural context. A skill or command in this repo that starts dictating the order of work has overstepped.
 
 The same contract is stated at the top of [AGENTS.md](../../AGENTS.md).

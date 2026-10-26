@@ -4,7 +4,7 @@
 
 # Agent Guidelines
 
-> These documents describe **this repository** — its architecture, constraints, and conventions. They are not a workflow. Process skills and plugins you run (e.g. Superpowers, spec-kit) govern *how* you work; these guides define *what correct looks like here*. When a process skill needs repo specifics — verification commands, test conventions, architectural context — these guides are the answer.
+> These documents describe **this repository** — its architecture, constraints, and conventions. They are not a workflow, with one exception: the mandatory "Pre-PR Architecture Review" below. Process skills and plugins you run (e.g. Superpowers, spec-kit) govern *how* you work; these guides define *what correct looks like here*. When a process skill needs repo specifics — verification commands, test conventions, architectural context — these guides are the answer.
 
 ## Read this first
 
@@ -113,9 +113,8 @@ git commit -m "Your commit message"
 
 Before **EACH** push, and so before opening any PR, every agent MUST run the review the `@claude arch-review` CI check runs and loop on it until it passes. Run it the way CI does:
 
-- **Fresh context.** Use a reviewer that has not seen the work, such as a subagent if your agent supports one (under Claude Code, a subagent that loads the `cgw-review` skill). Give it only the diff range and these instructions.
-- **The same standard.** Read [AGENTS.md](AGENTS.md) and [docs/agents/reviewing.md](docs/agents/reviewing.md) and apply both parts exactly as written. Part 1 maps every changed file against every row of the routing table. Part 2 runs all seven checks; the PR-description items are not yet checkable. Consult [docs/agents/remarks.md](docs/agents/remarks.md) for the R-NNN entries the diff would earn.
-- **The same report.** Use reviewing.md's "Reporting format": the applicable guides, numbered findings or "No findings.", and a last line of `**Verdict:** ✅ compliant` or `**Verdict:** ❌ N finding(s)`.
+- **Fresh context.** Use a reviewer that has not seen the work, such as a subagent if your agent supports one (under Claude Code, an Opus subagent).
+- **CI's own prompt.** Give the reviewer the `prompt:` of [.github/workflows/architecture-check.yml](.github/workflows/architecture-check.yml) unchanged, except for three substitutions. The changes come from `git diff` and `git log` over the round's range, not `gh pr view`/`gh pr diff`. Locations are `path:line`, not permalinks, since nothing is pushed yet. The report is printed, not posted with `gh pr comment`. Write no reviewer prompt of your own: a paraphrase steers the review and misses what CI catches.
 
 The loop is bounded:
 
