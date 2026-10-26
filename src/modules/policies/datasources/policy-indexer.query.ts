@@ -85,12 +85,14 @@ export function toPolicyIndexerVariables(
     safe: { _in: addresses },
   }));
 
+  const guardPolicyGroups = guardPolicyKinds.length > 0 ? groups : [];
+
   // The same groups for each, since the pairs are the same set.
   return {
     allowances: groups,
     delegates: groups,
-    guardPolicyBindings: groups,
+    guardPolicyBindings: guardPolicyGroups,
     guardPolicyKinds,
-    roots: groups,
+    roots: guardPolicyGroups,
   };
 }
