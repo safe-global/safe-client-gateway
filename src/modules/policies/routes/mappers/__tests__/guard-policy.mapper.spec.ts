@@ -12,7 +12,13 @@ import type {
 } from '#/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 import type { PolicyAccess } from '#/modules/policies/domain/entities/policy-enforcement.entity';
 import { PolicyType } from '#/modules/policies/domain/entities/policy-type.entity';
+import type { Token } from '#/modules/policies/domain/entities/token.entity';
+import {
+  type TokenMetadataKey,
+  tokenMetadataKey,
+} from '#/modules/policies/domain/utils/token-metadata-key.utils';
 import { GuardPolicyMapper } from '#/modules/policies/routes/mappers/guard-policy.mapper';
+import { erc20TokenBuilder } from '#/modules/tokens/domain/__tests__/token.builder';
 
 const SEPOLIA = '11155111';
 const TRANSFER_SELECTOR = '0xa9059cbb';
@@ -34,6 +40,7 @@ describe('GuardPolicyMapper', () => {
     overrides?: {
       transactionGuard?: Address | null;
       moduleGuard?: Address | null;
+      tokenMetadata?: ReadonlyMap<TokenMetadataKey, Token>;
     },
   ) {
     return target.map({
@@ -45,6 +52,7 @@ describe('GuardPolicyMapper', () => {
           : overrides.transactionGuard,
       moduleGuard:
         overrides?.moduleGuard === undefined ? null : overrides.moduleGuard,
+      tokenMetadata: overrides?.tokenMetadata ?? new Map(),
     });
   }
 
@@ -86,8 +94,52 @@ describe('GuardPolicyMapper', () => {
       expect(result.type).toBe(PolicyType.Erc20Transfer);
       expect(result.data as Erc20TransferPolicyData).toStrictEqual({
         tokenAddress: token,
+        tokenMetadata: null,
         recipients: [{ account: recipient, permission: 'ALWAYS' }],
       });
+    });
+
+    it('should report the metadata of the token the allowlist applies to', () => {
+      const token = getAddress(faker.finance.ethereumAddress());
+      const metadata = erc20TokenBuilder().with('address', token).build();
+      const policy = binding()
+        .with('kind', 'ERC20_TRANSFER')
+        .with('target', token)
+        .with('state', { recipients: [] })
+        .build();
+
+      const [result] = map([policy], {
+        tokenMetadata: new Map([
+          [tokenMetadataKey({ chainId: SEPOLIA, address: token }), metadata],
+        ]),
+      });
+
+      expect((result.data as Erc20TransferPolicyData).tokenMetadata).toBe(
+        metadata,
+      );
+    });
+
+    it('should report null metadata when the token could not be resolved', () => {
+      const token = getAddress(faker.finance.ethereumAddress());
+      const policy = binding()
+        .with('kind', 'ERC20_TRANSFER')
+        .with('target', token)
+        .with('state', { recipients: [] })
+        .build();
+
+      const [result] = map([policy], {
+        tokenMetadata: new Map([
+          [
+            tokenMetadataKey({
+              chainId: SEPOLIA,
+              address: getAddress(faker.finance.ethereumAddress()),
+            }),
+            erc20TokenBuilder().build(),
+          ],
+        ]),
+      });
+
+      expect((result.data as Erc20TransferPolicyData).tokenMetadata).toBeNull();
     });
 
     it.each([['ONCE'], ['ALWAYS']])(
@@ -408,8 +460,16 @@ describe('GuardPolicyMapper', () => {
       expect(
         result.map((item) => item.data as Erc20TransferPolicyData),
       ).toStrictEqual([
-        { tokenAddress: token, recipients: state.recipients },
-        { tokenAddress: token, recipients: state.recipients },
+        {
+          tokenAddress: token,
+          tokenMetadata: null,
+          recipients: state.recipients,
+        },
+        {
+          tokenAddress: token,
+          tokenMetadata: null,
+          recipients: state.recipients,
+        },
       ]);
     });
 
