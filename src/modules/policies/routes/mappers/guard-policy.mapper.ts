@@ -11,7 +11,12 @@ import {
   guardEnforcement,
 } from '#/modules/policies/domain/entities/policy-enforcement.entity';
 import type { SafeRef } from '#/modules/policies/domain/entities/safe-ref.entity';
+import type { Token } from '#/modules/policies/domain/entities/token.entity';
 import { guardPolicyTypeOfKind } from '#/modules/policies/domain/utils/policy.utils';
+import {
+  type TokenMetadataKey,
+  tokenMetadataKey,
+} from '#/modules/policies/domain/utils/token-metadata-key.utils';
 
 @Injectable()
 export class GuardPolicyMapper {
@@ -20,6 +25,7 @@ export class GuardPolicyMapper {
     bindings: ReadonlyArray<PolicyIndexerGuardEnforcedPolicy>;
     transactionGuard: Address | null;
     moduleGuard: Address | null;
+    tokenMetadata: ReadonlyMap<TokenMetadataKey, Token>;
   }): Array<ActivePolicy> {
     const guardPolicies: Array<ActivePolicy> = [];
 
@@ -48,7 +54,7 @@ export class GuardPolicyMapper {
         // guard set - a policy configured before setGuard is reported, with no
         // slot, rather than hidden.
         enabled: Object.keys(guards).length > 0,
-        data: this.toData(binding),
+        data: this.toData(binding, args.tokenMetadata),
         safe: args.safe,
       });
     }
@@ -59,13 +65,23 @@ export class GuardPolicyMapper {
   /**
    * The payload of a policy.
    */
-  private toData(binding: PolicyIndexerGuardEnforcedPolicy): ActivePolicyData {
+  private toData(
+    binding: PolicyIndexerGuardEnforcedPolicy,
+    tokenMetadata: ReadonlyMap<TokenMetadataKey, Token>,
+  ): ActivePolicyData {
     switch (binding.kind) {
       case 'ERC20_TRANSFER':
         // The policy keys its recipients by token, and the access target is
         // the token.
         return {
           tokenAddress: binding.target,
+          tokenMetadata:
+            tokenMetadata.get(
+              tokenMetadataKey({
+                chainId: binding.chainId,
+                address: binding.target,
+              }),
+            ) ?? null,
           recipients: binding.state.recipients,
         };
       case 'COSIGNER':
