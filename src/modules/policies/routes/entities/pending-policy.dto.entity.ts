@@ -2,7 +2,10 @@
 import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 import type { Address, Hex } from 'viem';
 import {
-  type PendingPolicy,
+  type PendingGuardInstallation,
+  type PendingGuardInstallationChange,
+  PendingGuardInstallationChangeKind,
+  PendingGuardInstallationStatus,
   type PendingQueuedPolicy,
   type PendingSpendingLimitChange,
   PendingSpendingLimitChangeKind,
@@ -160,8 +163,9 @@ export class PendingSpendingLimitDataDto implements PendingSpendingLimitData {
   public readonly changes!: Array<PendingSpendingLimitChange>;
 }
 
+/** The `queued-transaction` item; keeps the schema name clients generate. */
 @ApiExtraModels(ModuleEnforcementDto, PendingSpendingLimitDataDto)
-export class PendingQueuedPolicyDto implements PendingQueuedPolicy {
+export class PendingPolicyDto implements PendingQueuedPolicy {
   @ApiProperty({ enum: ['queued-transaction'] })
   public readonly kind!: 'queued-transaction';
   @ApiProperty({ enum: [PolicyType.SpendingLimit] })
@@ -195,6 +199,115 @@ export class PendingQueuedPolicyDto implements PendingQueuedPolicy {
   public readonly safe!: SafeRefResponse;
 }
 
-export class PendingPolicyDto
-  extends PendingQueuedPolicyDto
-  implements PendingPolicy {}
+class PendingTransactionDto {
+  @ApiProperty()
+  public readonly safeTxHash!: Hex;
+  @ApiProperty()
+  public readonly nonce!: number;
+  @ApiProperty()
+  public readonly confirmations!: number;
+  @ApiProperty()
+  public readonly confirmationsRequired!: number;
+  @ApiProperty({ description: 'Unix seconds the transaction was proposed at' })
+  public readonly proposedAt!: number;
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description: 'The owner or delegate who proposed the transaction, if known',
+  })
+  public readonly proposer!: Address | null;
+}
+
+class SetGuardChangeDto {
+  @ApiProperty({ enum: [PendingGuardInstallationChangeKind.SetGuard] })
+  public readonly kind!: typeof PendingGuardInstallationChangeKind.SetGuard;
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description: 'The transaction guard before this call; null for none',
+  })
+  public readonly from!: Address | null;
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description: 'The transaction guard after this call; null removes it',
+  })
+  public readonly to!: Address | null;
+}
+
+class SetModuleGuardChangeDto {
+  @ApiProperty({ enum: [PendingGuardInstallationChangeKind.SetModuleGuard] })
+  public readonly kind!: typeof PendingGuardInstallationChangeKind.SetModuleGuard;
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description: 'The module guard before this call; null for none',
+  })
+  public readonly from!: Address | null;
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description: 'The module guard after this call; null removes it',
+  })
+  public readonly to!: Address | null;
+}
+
+const PendingGuardInstallationChangeSchema = {
+  oneOf: [
+    { $ref: getSchemaPath(SetGuardChangeDto) },
+    { $ref: getSchemaPath(SetModuleGuardChangeDto) },
+  ],
+  discriminator: {
+    propertyName: 'kind',
+    mapping: {
+      [PendingGuardInstallationChangeKind.SetGuard]:
+        getSchemaPath(SetGuardChangeDto),
+      [PendingGuardInstallationChangeKind.SetModuleGuard]: getSchemaPath(
+        SetModuleGuardChangeDto,
+      ),
+    },
+  },
+};
+
+@ApiExtraModels(
+  SetGuardChangeDto,
+  SetModuleGuardChangeDto,
+  PendingTransactionDto,
+)
+export class PendingGuardInstallationDto implements PendingGuardInstallation {
+  @ApiProperty({ enum: ['guard-installation'] })
+  public readonly kind!: 'guard-installation';
+  @ApiProperty({ enum: Object.values(PendingGuardInstallationStatus) })
+  public readonly status!: PendingGuardInstallation['status'];
+  @ApiProperty({
+    type: SafeRefDto,
+    description: 'The Safe the transaction is queued on',
+  })
+  public readonly safe!: SafeRefResponse;
+  @ApiProperty({
+    type: 'array',
+    items: PendingGuardInstallationChangeSchema,
+    description:
+      'The guard installation calls of the transaction, in calldata order',
+  })
+  public readonly changes!: Array<PendingGuardInstallationChange>;
+  @ApiProperty({ type: PendingTransactionDto })
+  public readonly transaction!: PendingTransactionDto;
+}
+
+/**
+ * A pending item is one of two kinds, told apart by `kind`.
+ */
+export const PendingPolicySchema = {
+  oneOf: [
+    { $ref: getSchemaPath(PendingPolicyDto) },
+    { $ref: getSchemaPath(PendingGuardInstallationDto) },
+  ],
+  discriminator: {
+    propertyName: 'kind',
+    mapping: {
+      'queued-transaction': getSchemaPath(PendingPolicyDto),
+      'guard-installation': getSchemaPath(PendingGuardInstallationDto),
+    },
+  },
+};

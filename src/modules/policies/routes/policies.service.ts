@@ -18,7 +18,10 @@ import { IChainsRepository } from '#/modules/chains/domain/chains.repository.int
 import type { Delegate } from '#/modules/delegate/domain/entities/delegate.entity';
 import { IDelegatesV3Repository } from '#/modules/delegate/domain/v3/delegates.v3.repository.interface';
 import type { ActivePolicy } from '#/modules/policies/domain/entities/active-policy.entity';
-import type { PendingPolicy } from '#/modules/policies/domain/entities/pending-policy.entity';
+import type {
+  PendingPolicy,
+  PendingQueuedPolicy,
+} from '#/modules/policies/domain/entities/pending-policy.entity';
 import { PolicyType } from '#/modules/policies/domain/entities/policy-type.entity';
 import type { SafeRef } from '#/modules/policies/domain/entities/safe-ref.entity';
 import type {
@@ -31,6 +34,7 @@ import {
   type TokenMetadataKey,
   tokenMetadataKey,
 } from '#/modules/policies/domain/utils/token-metadata-key.utils';
+import { GuardInstallationMapper } from '#/modules/policies/routes/mappers/guard-installation.mapper';
 import { GuardPolicyMapper } from '#/modules/policies/routes/mappers/guard-policy.mapper';
 import { PendingSpendingLimitMapper } from '#/modules/policies/routes/mappers/pending-spending-limit.mapper';
 import { ProposerMapper } from '#/modules/policies/routes/mappers/proposer.mapper';
@@ -55,10 +59,22 @@ type SpacePolicyRequest = {
   authPayload: AuthPayload;
 };
 
+type SpacePendingPolicyRequest = SpacePolicyRequest & {
+  includeGuardInstallation?: boolean;
+};
+
 type Enforcers = {
   enabledModules: ReadonlyArray<Address>;
   transactionGuard: Address | null;
   moduleGuard: Address | null;
+};
+
+/**
+ * One pending read, as each Safe of it sees it.
+ */
+type PendingRead = {
+  spendingLimitsRequested: boolean;
+  guardInstallationRequested: boolean;
 };
 
 @Injectable()
@@ -95,6 +111,7 @@ export class PoliciesService {
     private readonly proposerMapper: ProposerMapper,
     private readonly pendingSpendingLimitMapper: PendingSpendingLimitMapper,
     private readonly guardPolicyMapper: GuardPolicyMapper,
+    private readonly guardInstallationMapper: GuardInstallationMapper,
   ) {
     this.batchSize =
       this.configurationService.getOrThrow<number>('policies.batchSize');
@@ -115,15 +132,18 @@ export class PoliciesService {
   }
 
   /**
-   * The spending-limit changes in the transaction queue of every Safe of the
-   * Space, or the requested subset of them.
+   * The pending policy changes of every Safe of the Space, or the requested
+   * subset of them.
    */
   public async getSpacePendingPolicies(
-    request: SpacePolicyRequest,
+    request: SpacePendingPolicyRequest,
   ): Promise<Array<PendingPolicy>> {
     const spaceSafes = await this.spaceSafes(request);
 
-    return await this.resolvePendingPolicies(spaceSafes, request.types);
+    return await this.resolvePendingPolicies(spaceSafes, {
+      spendingLimitsRequested: request.types.includes(PolicyType.SpendingLimit),
+      guardInstallationRequested: request.includeGuardInstallation ?? false,
+    });
   }
 
   /**
@@ -388,10 +408,11 @@ export class PoliciesService {
   }
 
   /**
-   * The pending spending-limit changes of every Safe of {@link safes}.
+   * The pending policy changes of every Safe of {@link safes}, plus the
+   * queued guard installations when {@link read} asks for them.
    *
-   * `spending-limit` is the only pending type supported currently - a proposer is
-   * off-chain and requires no Safe transaction, so it never has a queued state.
+   * Only `spending-limit` has pending changes to report today. A proposer is
+   * off-chain and needs no Safe transaction, so it never has a pending state.
    *
    * Concurrency is capped at `policies.batchSize`. A Safe
    * whose queue could not be read is skipped rather than failing the whole
@@ -399,14 +420,17 @@ export class PoliciesService {
    */
   private async resolvePendingPolicies(
     safes: ReadonlyArray<SafeRef>,
-    types: ReadonlyArray<PolicyType>,
+    read: PendingRead,
   ): Promise<Array<PendingPolicy>> {
-    if (safes.length === 0 || !types.includes(PolicyType.SpendingLimit)) {
+    if (
+      safes.length === 0 ||
+      !(read.spendingLimitsRequested || read.guardInstallationRequested)
+    ) {
       return [];
     }
 
     const settled = await batched(safes, this.batchSize, (safe) =>
-      this.pendingPoliciesForSafe(safe),
+      this.pendingPoliciesForSafe(safe, read),
     );
 
     const policies: Array<PendingPolicy> = [];
@@ -426,17 +450,27 @@ export class PoliciesService {
       });
     }
 
-    const tokenMetadata = await this.getTokenMetadata(
-      this.pendingSpendingLimitMapper.getTokenReferences(policies),
+    // Only queued spending-limit changes carry tokens; guard items pass through
+    // unchanged and keep their position.
+    const queued = policies.filter(
+      (policy): policy is PendingQueuedPolicy =>
+        policy.kind === 'queued-transaction',
     );
-    return this.pendingSpendingLimitMapper.attachTokenMetadata(
-      policies,
-      tokenMetadata,
+    const tokenMetadata = await this.getTokenMetadata(
+      this.pendingSpendingLimitMapper.getTokenReferences(queued),
+    );
+    return policies.map((policy) =>
+      policy.kind === 'queued-transaction'
+        ? this.pendingSpendingLimitMapper.attachTokenMetadata(
+            [policy],
+            tokenMetadata,
+          )[0]
+        : policy,
     );
   }
 
   /**
-   * The pending spending-limit changes found in one Safe's transaction queue.
+   * The pending policy changes of one Safe.
    *
    * Reads the whole queue per Safe, capped at
    * {@link PoliciesService.MAX_TRANSACTION_QUEUE_PAGES_TO_SCAN} pages as a safety valve
@@ -444,6 +478,7 @@ export class PoliciesService {
    */
   private async pendingPoliciesForSafe(
     safe: SafeRef,
+    read: PendingRead,
   ): Promise<Array<PendingPolicy>> {
     const safeInfo = await this.safeRepository.getSafe({
       chainId: safe.chainId,
@@ -481,10 +516,26 @@ export class PoliciesService {
       });
     }
 
-    return this.pendingSpendingLimitMapper.map({
-      safe,
-      transactions,
-    });
+    const policies: Array<PendingPolicy> = [];
+
+    if (read.spendingLimitsRequested) {
+      policies.push(
+        ...this.pendingSpendingLimitMapper.map({ safe, transactions }),
+      );
+    }
+
+    if (read.guardInstallationRequested) {
+      policies.push(
+        ...this.guardInstallationMapper.map({
+          safe,
+          guard: safeInfo.guard,
+          moduleGuard: safeInfo.moduleGuard,
+          transactions,
+        }),
+      );
+    }
+
+    return policies;
   }
 
   /**
