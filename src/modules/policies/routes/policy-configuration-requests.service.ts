@@ -55,18 +55,10 @@ export class PolicyConfigurationRequestsService {
       );
     }
 
-    // Each policy must be a known contract or the zero address, which removes a policy.
-    const unknownPolicy = args.payload.configurations.find(
-      ({ policy }) =>
-        !isAddressEqual(policy, zeroAddress) &&
-        getPolicyTypeOfContract(args.safe.chainId, policy) === null,
-    );
-    if (unknownPolicy) {
-      throw new HttpExceptionNoLog(
-        `Unknown policy contract ${unknownPolicy.policy} on chain ${args.safe.chainId}`,
-        HttpStatus.UNPROCESSABLE_ENTITY,
-      );
-    }
+    this.assertKnownPolicies({
+      chainId: args.safe.chainId,
+      configurations: args.payload.configurations,
+    });
 
     await this.configurationRequestsRepository.create({
       spaceId: args.spaceId,
@@ -78,6 +70,24 @@ export class PolicyConfigurationRequestsService {
     });
 
     return { root };
+  }
+
+  /** Each policy must be a known contract or the zero address, which removes a policy. */
+  private assertKnownPolicies(args: {
+    chainId: string;
+    configurations: CreatePolicyConfigurationRequestPayload['configurations'];
+  }): void {
+    const unknownPolicy = args.configurations.find(
+      ({ policy }) =>
+        !isAddressEqual(policy, zeroAddress) &&
+        getPolicyTypeOfContract(args.chainId, policy) === null,
+    );
+    if (unknownPolicy) {
+      throw new HttpExceptionNoLog(
+        `Unknown policy contract ${unknownPolicy.policy} on chain ${args.chainId}`,
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
+    }
   }
 
   private async assertSafeInSpace(args: {
