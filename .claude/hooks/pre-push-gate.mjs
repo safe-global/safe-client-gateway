@@ -7,12 +7,16 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-// `git push` in command position (line start, or after `;`, `&`, `|`, `(`, and
-// optional `VAR=value` assignments), with optional global options
-// (`git -C dir push`). A push quoted inside an argument, such as a commit
-// message, does not match, nor do `git stash push` or `git commit -m "push"`.
+// Heredoc bodies and quoted strings hold text, not commands (a commit message
+// that mentions a push), so they are removed before matching.
+const HEREDOC_BODY = /<<-?\s*(['"]?)(\w+)\1[^\n]*\n[\s\S]*?^\s*\2\s*$/gm;
+const QUOTED_STRING = /'[^']*'|"(?:\\.|[^"\\])*"/g;
+
+// `git push` anywhere in what is left, with optional global options
+// (`git -C dir push`), behind any prefix (`time`, `env`, `!`, `then`, `{`).
+// `git stash push` and `git log --grep push` do not match.
 const GIT_PUSH =
-  /(?:^|[;&|(])\s*(?:\w+=\S*\s+)*git(?:\s+-{1,2}\S+(?:\s+[^\s-]\S*)?)*\s+push(?=$|[\s;&|)])/m;
+  /(?<![\w.-])git(?:\s+-{1,2}\S+(?:\s+[^\s-]\S*)?)*\s+push(?![\w-])/;
 const MARKER_FILE = 'arch-reviewed';
 const BLOCKED_REASON =
   'Push blocked: HEAD has not passed the pre-PR architecture review. Follow AGENTS.md "Pre-PR Architecture Review", then push again.';
@@ -34,7 +38,9 @@ function isHeadReviewed() {
 }
 
 const input = JSON.parse(readFileSync(0, 'utf8'));
-const command = input.tool_input?.command ?? '';
+const command = (input.tool_input?.command ?? '')
+  .replace(HEREDOC_BODY, '<<')
+  .replace(QUOTED_STRING, "''");
 
 if (GIT_PUSH.test(command) && !isHeadReviewed()) {
   process.stderr.write(`${BLOCKED_REASON}\n`);
