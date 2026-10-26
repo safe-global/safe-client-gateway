@@ -59,7 +59,8 @@ export async function assertMember(
 
 /**
  * Asserts the Safe belongs to the space. Call it after {@link assertMember},
- * so a non-member cannot probe which Safes a space holds.
+ * so a non-member cannot probe which Safes a space holds, and before any
+ * entitlement check, so a disallowed request never reaches the plan.
  */
 export async function assertSafeInSpace(
   spaceSafesRepository: ISpaceSafesRepository,
