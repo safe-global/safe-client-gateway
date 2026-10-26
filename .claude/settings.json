@@ -7,7 +7,7 @@
         "hooks": [
           {
             "type": "command",
-            "if": "Bash(git push *)",
+            "if": "Bash(git *)",
             "statusMessage": "Checking HEAD passed the pre-PR architecture review",
             "timeout": 15,
             "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/pre-push-gate.mjs"

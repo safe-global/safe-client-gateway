@@ -4,10 +4,11 @@
 
 # Pre-PR architecture review gate — see AGENTS.md "Pre-PR Architecture Review".
 reviewed="$(cat "$(git rev-parse --git-common-dir)/arch-reviewed" 2>/dev/null)" || reviewed=
-while read -r local_ref local_sha _ _; do
-  case "$local_ref" in refs/heads/*) ;; *) continue ;; esac
+while read -r _ local_sha remote_ref _; do
+  case "$remote_ref" in refs/heads/*) ;; *) continue ;; esac
+  case "$local_sha" in *[!0]*) ;; *) continue ;; esac
   [ "$local_sha" = "$reviewed" ] && continue
   git merge-base --is-ancestor "$local_sha" origin/main 2>/dev/null && continue
-  echo "pre-push: ${local_ref#refs/heads/} has not passed the pre-PR architecture review — see AGENTS.md \"Pre-PR Architecture Review\"." >&2
+  echo "pre-push: ${remote_ref#refs/heads/} has not passed the pre-PR architecture review — see AGENTS.md \"Pre-PR Architecture Review\"." >&2
   exit 1
 done
