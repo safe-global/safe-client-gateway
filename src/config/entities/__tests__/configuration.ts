@@ -254,6 +254,7 @@ export default (): ReturnType<typeof configuration> => ({
     safeShieldCoreDisabled: false,
     safeQueueService: false,
     safenet: false,
+    guardPolicies: true,
   },
   httpClient: {
     requestTimeout: faker.number.int(),

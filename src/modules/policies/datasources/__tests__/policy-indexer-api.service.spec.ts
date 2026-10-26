@@ -213,6 +213,26 @@ describe('PolicyIndexerApi', () => {
         ]),
       );
     });
+
+    it('should filter out guard policies and roots when no guard kinds are asked for', async () => {
+      const safe = safeRef(SEPOLIA);
+
+      await target.getState({ safes: [safe], guardPolicyKinds: [] });
+
+      expect(mockNetworkService.post).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            variables: {
+              allowances: [pairGroup(SEPOLIA, safe)],
+              delegates: [pairGroup(SEPOLIA, safe)],
+              guardPolicyBindings: [],
+              guardPolicyKinds: [],
+              roots: [],
+            },
+          }),
+        }),
+      );
+    });
   });
 
   describe('failures', () => {

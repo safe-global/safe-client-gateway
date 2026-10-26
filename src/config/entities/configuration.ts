@@ -492,6 +492,9 @@ export default () => ({
       process.env.FF_SAFE_QUEUE_SERVICE?.toLowerCase() === 'true',
     // Safe Labs: remove after the KMS-backed payer rollout is complete.
     safenet: process.env.FF_SAFENET?.toLowerCase() === 'true',
+    // Hides every SafePolicyGuard policy from the active and pending policy
+    // endpoints while the guard flow is unreleased.
+    guardPolicies: process.env.FF_GUARD_POLICIES?.toLowerCase() === 'true',
   },
   httpClient: {
     // Timeout in milliseconds to be used for the HTTP client.
