@@ -17,12 +17,12 @@ import type {
   Token,
   TokenReference,
 } from '#/modules/policies/domain/entities/token.entity';
-import type { TokenMetadataKey } from '#/modules/policies/domain/utils/token-metadata-key.utils';
-import { tokenMetadataKey } from '#/modules/policies/domain/utils/token-metadata-key.utils';
 import {
   pendingTransactionOf,
   queuedCalls,
-} from '#/modules/policies/routes/mappers/queued-calls.utils';
+} from '#/modules/policies/domain/utils/queued-calls.utils';
+import type { TokenMetadataKey } from '#/modules/policies/domain/utils/token-metadata-key.utils';
+import { tokenMetadataKey } from '#/modules/policies/domain/utils/token-metadata-key.utils';
 import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
 
 type ModuleChange = { module: Address; change: PendingSpendingLimitChange };

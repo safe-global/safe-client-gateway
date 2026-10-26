@@ -20,7 +20,7 @@ import {
   pendingTransactionOf,
   type QueuedCallContext,
   queuedCalls,
-} from '#/modules/policies/routes/mappers/queued-calls.utils';
+} from '#/modules/policies/domain/utils/queued-calls.utils';
 import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
 
 /**
