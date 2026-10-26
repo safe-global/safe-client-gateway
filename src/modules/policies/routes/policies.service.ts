@@ -7,18 +7,19 @@ import {
 import { type Address, isAddressEqual, zeroAddress } from 'viem';
 import { IConfigurationService } from '#/config/configuration.service.interface';
 import { batched } from '#/domain/common/utils/batch';
+import { toSecondsTimestamp } from '#/domain/common/utils/time';
 import {
   type ILoggingService,
   LoggingService,
 } from '#/logging/logging.interface';
 import { asError } from '#/logging/utils';
-import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '#/modules/auth/utils/assert-authenticated.utils';
 import { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
 import type { Delegate } from '#/modules/delegate/domain/entities/delegate.entity';
 import { IDelegatesV3Repository } from '#/modules/delegate/domain/v3/delegates.v3.repository.interface';
 import type { ActivePolicy } from '#/modules/policies/domain/entities/active-policy.entity';
 import type {
+  PendingDelayedGuardPolicies,
   PendingPolicy,
   PendingQueuedPolicy,
 } from '#/modules/policies/domain/entities/pending-policy.entity';
@@ -29,17 +30,30 @@ import type {
   TokenReference,
 } from '#/modules/policies/domain/entities/token.entity';
 import { IPolicyIndexerRepository } from '#/modules/policies/domain/policy-indexer.repository.interface';
-import { guardPolicyKindsOf } from '#/modules/policies/domain/utils/policy.utils';
+import { ISafePolicyGuardConfigurationRequestsRepository } from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository.interface';
+import {
+  GUARD_POLICY_TYPES,
+  guardPolicyKindsOf,
+} from '#/modules/policies/domain/utils/policy.utils';
 import {
   type TokenMetadataKey,
   tokenMetadataKey,
 } from '#/modules/policies/domain/utils/token-metadata-key.utils';
+import type { Enforcers } from '#/modules/policies/routes/entities/enforcers.entity';
+import type {
+  PendingRead,
+  SafePolicyGuardConfigurationContext,
+} from '#/modules/policies/routes/entities/pending-read.entity';
+import type {
+  SpacePendingPolicyRequest,
+  SpacePolicyRequest,
+} from '#/modules/policies/routes/entities/space-policy-request.entity';
+import { DelayedGuardPoliciesMapper } from '#/modules/policies/routes/mappers/delayed-guard-policies.mapper';
 import { GuardInstallationMapper } from '#/modules/policies/routes/mappers/guard-installation.mapper';
 import { GuardPolicyMapper } from '#/modules/policies/routes/mappers/guard-policy.mapper';
 import { PendingSpendingLimitMapper } from '#/modules/policies/routes/mappers/pending-spending-limit.mapper';
 import { ProposerMapper } from '#/modules/policies/routes/mappers/proposer.mapper';
 import { SpendingLimitMapper } from '#/modules/policies/routes/mappers/spending-limit.mapper';
-
 import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
 import { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
 import type { Space } from '#/modules/spaces/domain/entities/space.entity';
@@ -48,34 +62,6 @@ import { assertMember } from '#/modules/spaces/domain/space-assert.utils';
 import type { NativeToken } from '#/modules/tokens/domain/entities/token.entity';
 import { ITokenRepository } from '#/modules/tokens/domain/token.repository.interface';
 import { IMembersRepository } from '#/modules/users/domain/members/members.repository.interface';
-import type { Caip10Address } from '#/validation/entities/schemas/caip-10-addresses.schema';
-
-type SpacePolicyRequest = {
-  spaceId: Space['id'];
-  /** Narrows the read to a subset of the Space's Safes. */
-  safes?: ReadonlyArray<Caip10Address>;
-  /** The policy types to report. Required: naming none asks for nothing. */
-  types: ReadonlyArray<PolicyType>;
-  authPayload: AuthPayload;
-};
-
-type SpacePendingPolicyRequest = SpacePolicyRequest & {
-  includeGuardInstallation?: boolean;
-};
-
-type Enforcers = {
-  enabledModules: ReadonlyArray<Address>;
-  transactionGuard: Address | null;
-  moduleGuard: Address | null;
-};
-
-/**
- * One pending read, as each Safe of it sees it.
- */
-type PendingRead = {
-  spendingLimitsRequested: boolean;
-  guardInstallationRequested: boolean;
-};
 
 @Injectable()
 export class PoliciesService {
@@ -91,6 +77,8 @@ export class PoliciesService {
   constructor(
     @Inject(IPolicyIndexerRepository)
     private readonly policyIndexerRepository: IPolicyIndexerRepository,
+    @Inject(ISafePolicyGuardConfigurationRequestsRepository)
+    private readonly configurationRequestsRepository: ISafePolicyGuardConfigurationRequestsRepository,
     @Inject(ISafeRepository)
     private readonly safeRepository: ISafeRepository,
     @Inject(ISpaceSafesRepository)
@@ -112,6 +100,7 @@ export class PoliciesService {
     private readonly pendingSpendingLimitMapper: PendingSpendingLimitMapper,
     private readonly guardPolicyMapper: GuardPolicyMapper,
     private readonly guardInstallationMapper: GuardInstallationMapper,
+    private readonly delayedGuardPoliciesMapper: DelayedGuardPoliciesMapper,
   ) {
     this.batchSize =
       this.configurationService.getOrThrow<number>('policies.batchSize');
@@ -140,9 +129,9 @@ export class PoliciesService {
   ): Promise<Array<PendingPolicy>> {
     const spaceSafes = await this.spaceSafes(request);
 
-    return await this.resolvePendingPolicies(spaceSafes, {
-      spendingLimitsRequested: request.types.includes(PolicyType.SpendingLimit),
-      guardInstallationRequested: request.includeGuardInstallation ?? false,
+    return await this.resolvePendingPolicies(request.spaceId, spaceSafes, {
+      types: request.types,
+      includeGuardInstallation: request.includeGuardInstallation ?? false,
     });
   }
 
@@ -409,25 +398,47 @@ export class PoliciesService {
 
   /**
    * The pending policy changes of every Safe of {@link safes}, plus the
-   * queued guard installations when {@link read} asks for them.
+   * queued guard installations when {@link request} asks for them.
    *
-   * Only `spending-limit` has pending changes to report today. A proposer is
-   * off-chain and needs no Safe transaction, so it never has a pending state.
+   * A proposer is off-chain and needs no Safe transaction, so it never has a
+   * pending state.
    *
    * Concurrency is capped at `policies.batchSize`. A Safe
    * whose queue could not be read is skipped rather than failing the whole
    * request.
    */
   private async resolvePendingPolicies(
+    spaceId: Space['id'],
     safes: ReadonlyArray<SafeRef>,
-    read: PendingRead,
+    request: {
+      types: ReadonlyArray<PolicyType>;
+      includeGuardInstallation: boolean;
+    },
   ): Promise<Array<PendingPolicy>> {
+    const { types } = request;
+    const spendingLimitsRequested = types.includes(PolicyType.SpendingLimit);
+    const guardPoliciesRequested = guardPolicyKindsOf(types).length > 0;
+
     if (
       safes.length === 0 ||
-      !(read.spendingLimitsRequested || read.guardInstallationRequested)
+      !(
+        spendingLimitsRequested ||
+        guardPoliciesRequested ||
+        request.includeGuardInstallation
+      )
     ) {
       return [];
     }
+
+    const read: PendingRead = {
+      types,
+      spendingLimitsRequested,
+      guardInstallationRequested: request.includeGuardInstallation,
+      guardConfigurations: guardPoliciesRequested
+        ? await this.getSafePolicyGuardConfigurationsOf(spaceId, safes)
+        : null,
+      now: toSecondsTimestamp(new Date()),
+    };
 
     const settled = await batched(safes, this.batchSize, (safe) =>
       this.pendingPoliciesForSafe(safe, read),
@@ -467,6 +478,45 @@ export class PoliciesService {
           )[0]
         : policy,
     );
+  }
+
+  /**
+   * The configuration roots, stored configurations and guard policy bindings of
+   * every Safe of {@link safes}, read once for all of them.
+   *
+   * `null` when any of it cannot be read. The delayed guard items are then left
+   * out, rather than failing the whole request; the guard installation items
+   * do not need any of it and are still reported.
+   */
+  private async getSafePolicyGuardConfigurationsOf(
+    spaceId: Space['id'],
+    safes: ReadonlyArray<SafeRef>,
+  ): Promise<SafePolicyGuardConfigurationContext | null> {
+    try {
+      const [indexerState, storedConfigurations] = await Promise.all([
+        this.policyIndexerRepository.getState({
+          safes,
+          // Every guard kind, whatever was requested: a configuration that
+          // removes a policy names no policy contract, so its type comes from
+          // the binding it removes.
+          guardPolicyKinds: guardPolicyKindsOf(GUARD_POLICY_TYPES),
+        }),
+        this.configurationRequestsRepository.findBySafes({ spaceId, safes }),
+      ]);
+
+      return {
+        onChainConfigurations: indexerState.roots,
+        storedConfigurations,
+        guardEnforcedPolicies: indexerState.guardPolicyBindings,
+      };
+    } catch (error) {
+      this.loggingService.warn({
+        message: 'Could not read the guard configurations of the Safes',
+        spaceId,
+        error: asError(error).message,
+      });
+      return null;
+    }
   }
 
   /**
@@ -535,7 +585,59 @@ export class PoliciesService {
       );
     }
 
+    if (read.guardConfigurations) {
+      policies.push(
+        ...this.delayedGuardPoliciesForSafe({
+          safe,
+          guard: safeInfo.guard,
+          moduleGuard: safeInfo.moduleGuard,
+          transactions,
+          guardConfigurations: read.guardConfigurations,
+          types: read.types,
+          now: read.now,
+        }),
+      );
+    }
+
     return policies;
+  }
+
+  /** The guard configurations of one Safe applied after DELAY. */
+  private delayedGuardPoliciesForSafe(args: {
+    safe: SafeRef;
+    guard: Address | null;
+    moduleGuard: Address | null;
+    transactions: ReadonlyArray<MultisigTransaction>;
+    guardConfigurations: SafePolicyGuardConfigurationContext;
+    types: ReadonlyArray<PolicyType>;
+    now: number;
+  }): Array<PendingDelayedGuardPolicies> {
+    const {
+      onChainConfigurations,
+      storedConfigurations,
+      guardEnforcedPolicies,
+    } = args.guardConfigurations;
+
+    return this.delayedGuardPoliciesMapper.map({
+      safe: args.safe,
+      guard: args.guard,
+      moduleGuard: args.moduleGuard,
+      transactions: args.transactions,
+      onChainConfigurations: onChainConfigurations.filter((root) =>
+        this.isScopedToSafe(root, args.safe),
+      ),
+      storedConfigurations: storedConfigurations.filter((stored) =>
+        this.compareSafes(
+          { chainId: stored.chainId, address: stored.safeAddress },
+          args.safe,
+        ),
+      ),
+      guardEnforcedPolicies: guardEnforcedPolicies.filter((binding) =>
+        this.isScopedToSafe(binding, args.safe),
+      ),
+      types: args.types,
+      now: args.now,
+    });
   }
 
   /**
@@ -637,8 +739,8 @@ export class PoliciesService {
   }
 
   /**
-   * Whether an indexer row - an allowance or a guard binding - belongs to
-   * {@link safe}.
+   * Whether an indexer row - an allowance, a guard binding or a configuration
+   * root - belongs to {@link safe}.
    *
    * One indexer read covers every Safe of a request, so an unscoped read would
    * report another Safe's policies on this one.
