@@ -116,7 +116,7 @@ Before **EACH** push, and so before opening any PR, every agent MUST run the rev
 - **Fresh context.** Use a reviewer that has not seen the work, such as a subagent if your agent supports one (under Claude Code, an Opus subagent).
 - **CI's own prompt.** Give the reviewer the `prompt:` of [.github/workflows/architecture-check.yml](.github/workflows/architecture-check.yml) unchanged, except for its GitHub plumbing:
   - Resolve `${{ github.repository }}` to `safe-global/safe-client-gateway` and `${{ github.event.repository.default_branch }}` to `main`. There is no PR number.
-  - Take the changes from `git diff` and `git log` over the round's range, not from `gh pr view` and `gh pr diff`. Where the prompt refers to the PR title and description, use the commit messages.
+  - Take the changes from `git diff` and `git log` over the round's range, not from `gh pr view` and `gh pr diff`. Where the prompt refers to the PR title, use the commit subjects. The PR-description items, such as the baseline-growth justification, are not-yet-checkable before a PR exists, as reviewing.md defines.
   - Read changed files from the working tree. Read AGENTS.md and `docs/agents/` from `origin/main` (`git show origin/main:<path>`), as CI's checkout does.
   - Cite locations as `path:line`, not permalinks, since nothing is pushed yet.
   - Print the report; do not post it with `gh pr comment`.
