@@ -11,6 +11,7 @@ import { join } from 'node:path';
 // that mentions a push), so they are removed before matching.
 const HEREDOC_BODY = /<<-?\s*(['"]?)(\w+)\1[^\n]*\n[\s\S]*?^\s*\2\s*$/gm;
 const QUOTED_STRING = /'[^']*'|"(?:\\.|[^"\\])*"/g;
+const LINE_CONTINUATION = /\\\n/g;
 
 // `git push` anywhere in what is left, with optional global options
 // (`git -C dir push`), behind any prefix (`time`, `env`, `!`, `then`, `{`).
@@ -40,6 +41,7 @@ function isHeadReviewed() {
 const input = JSON.parse(readFileSync(0, 'utf8'));
 const command = (input.tool_input?.command ?? '')
   .replace(HEREDOC_BODY, '<<')
+  .replace(LINE_CONTINUATION, ' ')
   .replace(QUOTED_STRING, "''");
 
 if (GIT_PUSH.test(command) && !isHeadReviewed()) {
