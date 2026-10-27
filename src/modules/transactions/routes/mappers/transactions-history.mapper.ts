@@ -15,6 +15,7 @@ import {
   type Transaction as TransactionDomain,
 } from '#/modules/safe/domain/entities/transaction.entity';
 import type { Transfer } from '#/modules/safe/domain/entities/transfer.entity';
+import type { DecodedTransaction } from '#/modules/transactions/domain/entities/decoded-transaction.entity';
 import { TransactionItem } from '#/modules/transactions/routes/entities/transaction-item.entity';
 import {
   calculateTimezoneOffset,
@@ -134,10 +135,7 @@ export class TransactionsHistoryMapper {
 
   private async prefetchAddressInfos(args: {
     chainId: string;
-    transactions: Array<{
-      transaction: TransactionDomain;
-      dataDecoded: DataDecoded | null;
-    }>;
+    transactions: Array<DecodedTransaction>;
   }): Promise<void> {
     // Prefetch tokens and contracts AddressInfos for transactions
     const transactions = args.transactions.flatMap(
@@ -180,10 +178,7 @@ export class TransactionsHistoryMapper {
   }
 
   private async getPreviousTransaction(args: {
-    transactions: Array<{
-      transaction: TransactionDomain;
-      dataDecoded: DataDecoded | null;
-    }>;
+    transactions: Array<DecodedTransaction>;
     chainId: string;
     safe: Safe;
     onlyTrusted: boolean;
@@ -206,10 +201,7 @@ export class TransactionsHistoryMapper {
   }
 
   private async getMappedTransactions(args: {
-    transactions: Array<{
-      transaction: TransactionDomain;
-      dataDecoded: DataDecoded | null;
-    }>;
+    transactions: Array<DecodedTransaction>;
     chainId: string;
     safe: Safe;
     previousTransaction: TransactionItem | undefined;

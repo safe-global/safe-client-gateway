@@ -5,6 +5,7 @@ import type { DataDecoded } from '#/modules/data-decoder/domain/v2/entities/data
 import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
 import type { Safe } from '#/modules/safe/domain/entities/safe.entity';
 import { SafeAppInfoMapper } from '#/modules/safe-apps/mappers/safe-app-info.mapper';
+import type { DecodedTransaction } from '#/modules/transactions/domain/entities/decoded-transaction.entity';
 import {
   MULTISIG_TRANSACTION_PREFIX,
   TRANSACTION_ID_SEPARATOR,
@@ -80,10 +81,7 @@ export class MultisigTransactionMapper {
    */
   public async prefetchAddressInfos(args: {
     chainId: string;
-    transactions: Array<{
-      transaction: MultisigTransaction;
-      dataDecoded: DataDecoded | null;
-    }>;
+    transactions: Array<DecodedTransaction<MultisigTransaction>>;
   }): Promise<void> {
     const addresses: Set<Address> = new Set();
     for (const { transaction, dataDecoded } of args.transactions) {
