@@ -282,25 +282,23 @@ describe('SafeQueueService', () => {
         `${safeAddress}:${chainId}:${otherChainId}`,
         `${otherSafeAddress}:${chainId}`,
       ];
-      const query = new URLSearchParams();
-      for (const safe of safes) {
-        query.append('safes', safe);
-      }
-      query.set('nonceOrder', 'asc');
-      query.set('limit', limit.toString());
-      query.set('offset', offset.toString());
       expect(mockDataSource.get).toHaveBeenCalledExactlyOnceWith({
         cacheDir: CacheRouter.getSpaceTransactionQueueCacheDir({
           spaceId,
           safes,
-          nonceOrder: 'asc',
           limit,
           offset,
         }),
-        url: `${baseUri}/api/v1/multisig-transactions/queue?${query.toString()}`,
+        url: `${baseUri}/api/v1/multisig-transactions/queue`,
         expireTimeSeconds: defaultExpirationTimeInSeconds,
         notFoundExpireTimeSeconds: notFoundExpirationTimeInSeconds,
         networkRequest: {
+          params: {
+            safes,
+            nonceOrder: 'asc',
+            limit,
+            offset,
+          },
           circuitBreaker: {
             key: CircuitBreakerKeys.getSafeQueueServiceKey(),
           },
@@ -317,10 +315,13 @@ describe('SafeQueueService', () => {
         safes: [{ chainId, safeAddress }],
       });
 
-      const cacheDir = (
-        mockDataSource.get.mock.calls[0][0] as { cacheDir: CacheDir }
-      ).cacheDir;
-      expect(cacheDir.key).toBe(`${spaceId}_space_transaction_queue`);
+      expect(mockDataSource.get).toHaveBeenCalledExactlyOnceWith(
+        expect.objectContaining({
+          cacheDir: expect.objectContaining({
+            key: CacheRouter.getSpaceTransactionQueueCacheKey(spaceId),
+          }),
+        }),
+      );
     });
 
     it('Should cache the same page for another set of Safes under another field', async () => {
@@ -339,11 +340,27 @@ describe('SafeQueueService', () => {
         ],
       });
 
-      const [before, after] = mockDataSource.get.mock.calls.map(
-        (call) => (call[0] as { cacheDir: CacheDir }).cacheDir,
+      expect(mockDataSource.get).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({
+          cacheDir: CacheRouter.getSpaceTransactionQueueCacheDir({
+            spaceId,
+            safes: [`${safeAddress}:${chainId}`],
+          }),
+        }),
       );
-      expect(before.key).toBe(after.key);
-      expect(before.field).not.toBe(after.field);
+      expect(mockDataSource.get).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({
+          cacheDir: CacheRouter.getSpaceTransactionQueueCacheDir({
+            spaceId,
+            safes: [
+              `${safeAddress}:${chainId}`,
+              `${otherSafeAddress}:${chainId}`,
+            ],
+          }),
+        }),
+      );
     });
 
     it('Should cap the limit at the queue service maximum', async () => {
@@ -360,9 +377,11 @@ describe('SafeQueueService', () => {
 
       expect(mockDataSource.get).toHaveBeenCalledWith(
         expect.objectContaining({
-          url: expect.stringMatching(
-            new RegExp(`[?&]limit=${SAFE_QUEUE_SERVICE_MAX_LIMIT}(&|$)`),
-          ),
+          networkRequest: expect.objectContaining({
+            params: expect.objectContaining({
+              limit: SAFE_QUEUE_SERVICE_MAX_LIMIT,
+            }),
+          }),
         }),
       );
     });

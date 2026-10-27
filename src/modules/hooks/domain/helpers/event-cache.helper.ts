@@ -5,7 +5,6 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import type { MemoizedFunction } from 'lodash';
 import memoize from 'lodash/memoize';
 import type { Address, Hex } from 'viem';
-import { IConfigurationService } from '#/config/configuration.service.interface';
 import { CacheRouter } from '#/datasources/cache/cache.router';
 import {
   CacheService,
@@ -33,7 +32,6 @@ import { IMessagesRepository } from '#/modules/messages/domain/messages.reposito
 import { IPolicyIndexerRepository } from '#/modules/policies/domain/policy-indexer.repository.interface';
 import { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
 import { ISafeAppsRepository } from '#/modules/safe-apps/domain/safe-apps.repository.interface';
-import { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository.interface';
 import { IStakingRepositoryWithRewardsFee } from '#/modules/staking/domain/staking.repository.interface';
 import { ITransactionsRepository } from '#/modules/transactions/domain/transactions.repository.interface';
 import { ZerionCacheService } from '#/modules/zerion/datasources/zerion-cache.service';
@@ -45,7 +43,6 @@ export class EventCacheHelper {
   public isSupportedChainMemo: ((chainId: string) => Promise<boolean>) &
     MemoizedFunction;
   private unsupportedChains: Array<string> = [];
-  private readonly isSpaceTransactionQueueEnabled: boolean;
 
   constructor(
     @Inject(IBalancesRepository)
@@ -79,20 +76,10 @@ export class EventCacheHelper {
     private readonly cacheService: ICacheService,
     private readonly safeDecoder: SafeDecoder,
     private readonly multiSendDecoder: MultiSendDecoder,
-    @Inject(ISpaceSafesRepository)
-    private readonly spaceSafesRepository: ISpaceSafesRepository,
-    @Inject(IConfigurationService)
-    private readonly configurationService: IConfigurationService,
   ) {
     this.isSupportedChainMemo = memoize(
       this.chainsRepository.isSupportedChain.bind(this.chainsRepository),
     );
-    // The same conditions `AppModule` serves the Space queue under.
-    this.isSpaceTransactionQueueEnabled = [
-      'features.users',
-      'features.safeQueueService',
-      'features.spaceTransactions',
-    ].every((key) => this.configurationService.getOrThrow<boolean>(key));
   }
 
   // TODO: Split service into multiple classes, each handling Config/Transactions events
@@ -243,7 +230,7 @@ export class EventCacheHelper {
         chainId: event.chainId,
         safeAddress: event.address,
       }),
-      this.clearSpaceTransactionQueues(event),
+      this.safeRepository.clearSpaceTransactionQueues(event),
       this.safeRepository.clearMultisigTransaction({
         chainId: event.chainId,
         safeTransactionHash: event.safeTxHash,
@@ -266,7 +253,7 @@ export class EventCacheHelper {
         chainId: event.chainId,
         safeAddress: event.address,
       }),
-      this.clearSpaceTransactionQueues(event),
+      this.safeRepository.clearSpaceTransactionQueues(event),
       this.safeRepository.clearMultisigTransaction({
         chainId: event.chainId,
         safeTransactionHash: event.safeTxHash,
@@ -353,7 +340,7 @@ export class EventCacheHelper {
         chainId: event.chainId,
         safeAddress: event.address,
       }),
-      this.clearSpaceTransactionQueues(event),
+      this.safeRepository.clearSpaceTransactionQueues(event),
       this.safeRepository.clearMultisigTransaction({
         chainId: event.chainId,
         safeTransactionHash: event.safeTxHash,
@@ -382,7 +369,7 @@ export class EventCacheHelper {
           chainId: event.chainId,
           safeAddress: child.safeAddress,
         }),
-        this.clearSpaceTransactionQueues({
+        this.safeRepository.clearSpaceTransactionQueues({
           chainId: event.chainId,
           address: child.safeAddress,
         }),
@@ -478,7 +465,7 @@ export class EventCacheHelper {
         chainId: event.chainId,
         safeAddress: event.address,
       }),
-      this.clearSpaceTransactionQueues(event),
+      this.safeRepository.clearSpaceTransactionQueues(event),
       this.safeRepository.clearMultisigTransaction({
         chainId: event.chainId,
         safeTransactionHash: event.safeTxHash,
@@ -698,34 +685,12 @@ export class EventCacheHelper {
     event: Extract<Event, { type: TransactionEventType.SAFE_CREATED }>,
   ): Array<Promise<void>> {
     // A freshly indexed Safe may have been funded before deployment, and
-    // the queue of a Space holding it no longer reports it as unavailable.
+    // its cached 404 would keep it unavailable in the queue of a Space.
     return [
       this.safeRepository.clearIsSafe(event),
+      this.safeRepository.clearSafe(event),
       this.zerionCache.invalidate(event.address, event.type),
-      this.clearSpaceTransactionQueues(event),
     ];
-  }
-
-  /**
-   * The queue of every Space holding the Safe. Skipped while the Space queue
-   * is not served, as finding those Spaces costs a query per event.
-   */
-  private async clearSpaceTransactionQueues(args: {
-    chainId: string;
-    address: Address;
-  }): Promise<void> {
-    if (!this.isSpaceTransactionQueueEnabled) {
-      return;
-    }
-    const spaceIds = await this.spaceSafesRepository.findSpaceIdsBySafe({
-      chainId: args.chainId,
-      address: args.address,
-    });
-    await Promise.all(
-      spaceIds.map((spaceId) =>
-        this.safeRepository.clearSpaceTransactionQueue({ spaceId }),
-      ),
-    );
   }
 
   private onTransactionEventDelegate(

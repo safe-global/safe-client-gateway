@@ -304,7 +304,6 @@ export class SafeQueueService implements ISafeQueueService {
   async getTransactionQueueForSafes(args: {
     spaceId: number;
     safes: ReadonlyArray<{ chainId: string; safeAddress: Address }>;
-    nonceOrder?: 'asc' | 'desc';
     limit?: number;
     offset?: number;
   }): Promise<Raw<Page<SafeQueueMultisigTransactionEntity>>> {
@@ -313,27 +312,14 @@ export class SafeQueueService implements ISafeQueueService {
         this.getChainIdsBySafe(args.safes),
         ([safeAddress, chainIds]) => [safeAddress, ...chainIds].join(':'),
       );
-      const nonceOrder = args.nonceOrder ?? 'asc';
       const limit = this.capLimit(args.limit);
-      const query = new URLSearchParams();
-      for (const safe of safes) {
-        query.append('safes', safe);
-      }
-      query.set('nonceOrder', nonceOrder);
-      if (limit !== undefined) {
-        query.set('limit', limit.toString());
-      }
-      if (args.offset !== undefined) {
-        query.set('offset', args.offset.toString());
-      }
       const cacheDir = CacheRouter.getSpaceTransactionQueueCacheDir({
         spaceId: args.spaceId,
         safes,
-        nonceOrder,
         limit,
         offset: args.offset,
       });
-      const url = `${this.baseUri}/api/v1/multisig-transactions/queue?${query.toString()}`;
+      const url = `${this.baseUri}/api/v1/multisig-transactions/queue`;
       return await this.dataSource.get<
         Page<SafeQueueMultisigTransactionEntity>
       >({
@@ -342,6 +328,12 @@ export class SafeQueueService implements ISafeQueueService {
         notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
         expireTimeSeconds: this.defaultExpirationTimeInSeconds,
         networkRequest: {
+          params: {
+            safes,
+            nonceOrder: 'asc',
+            limit,
+            offset: args.offset,
+          },
           circuitBreaker: {
             key: CircuitBreakerKeys.getSafeQueueServiceKey(),
           },

@@ -3,6 +3,7 @@ import { Controller, Get, Param, UseGuards } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiForbiddenResponse,
+  ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiParam,
@@ -51,6 +52,7 @@ export class SpaceTransactionsController {
   @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @ApiUnauthorizedResponse({ description: 'Authentication required' })
   @ApiForbiddenResponse({ description: 'Not a member of this Space' })
+  @ApiNotFoundResponse({ description: 'Space not found' })
   @Get('queued')
   public async getTransactionQueue(
     @Param('spaceId', SpaceIdPipe) spaceId: Space['id'],

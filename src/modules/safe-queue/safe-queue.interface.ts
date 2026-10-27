@@ -47,7 +47,6 @@ export interface ISafeQueueService {
   getTransactionQueueForSafes(args: {
     spaceId: number;
     safes: ReadonlyArray<{ chainId: string; safeAddress: Address }>;
-    nonceOrder?: 'asc' | 'desc';
     limit?: number;
     offset?: number;
   }): Promise<Raw<Page<SafeQueueMultisigTransactionEntity>>>;

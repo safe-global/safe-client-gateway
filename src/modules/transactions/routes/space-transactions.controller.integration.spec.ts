@@ -258,9 +258,12 @@ describe('SpaceTransactionsController', () => {
 
       expect(networkService.get).toHaveBeenCalledWith(
         expect.objectContaining({
-          url: expect.stringContaining(
-            `${queueBaseUri}/api/v1/multisig-transactions/queue?safes=${deployed.address}%3A${chain.chainId}&`,
-          ),
+          url: `${queueBaseUri}/api/v1/multisig-transactions/queue`,
+          networkRequest: expect.objectContaining({
+            params: expect.objectContaining({
+              safes: [`${deployed.address}:${chain.chainId}`],
+            }),
+          }),
         }),
       );
     });

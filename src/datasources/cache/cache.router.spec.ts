@@ -361,7 +361,6 @@ describe('CacheRouter', () => {
       const dir = CacheRouter.getSpaceTransactionQueueCacheDir({
         spaceId,
         safes,
-        nonceOrder: 'asc',
       });
 
       expect(dir.key).toBe(
@@ -373,12 +372,10 @@ describe('CacheRouter', () => {
       const dir = CacheRouter.getSpaceTransactionQueueCacheDir({
         spaceId,
         safes,
-        nonceOrder: 'asc',
       });
       const reversed = CacheRouter.getSpaceTransactionQueueCacheDir({
         spaceId,
         safes: safes.toReversed(),
-        nonceOrder: 'asc',
       });
 
       expect(reversed.field).toBe(dir.field);
@@ -388,11 +385,10 @@ describe('CacheRouter', () => {
       const pages: Array<
         Parameters<typeof CacheRouter.getSpaceTransactionQueueCacheDir>[0]
       > = [
-        { spaceId, safes, nonceOrder: 'asc', limit: 10, offset: 0 },
-        { spaceId, safes, nonceOrder: 'asc', limit: 10, offset: 10 },
-        { spaceId, safes, nonceOrder: 'asc', limit: 20, offset: 0 },
-        { spaceId, safes, nonceOrder: 'desc', limit: 10, offset: 0 },
-        { spaceId, safes: safes.slice(1), nonceOrder: 'asc', limit: 10 },
+        { spaceId, safes, limit: 10, offset: 0 },
+        { spaceId, safes, limit: 10, offset: 10 },
+        { spaceId, safes, limit: 20, offset: 0 },
+        { spaceId, safes: safes.slice(1), limit: 10 },
       ];
       const fields = pages.map(
         (page) => CacheRouter.getSpaceTransactionQueueCacheDir(page).field,

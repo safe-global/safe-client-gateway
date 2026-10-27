@@ -475,18 +475,12 @@ export class CacheRouter {
   static getSpaceTransactionQueueCacheDir(args: {
     spaceId: number;
     safes: ReadonlyArray<string>;
-    nonceOrder: 'asc' | 'desc';
     limit?: number;
     offset?: number;
   }): CacheDir {
     const hash = crypto.createHash('sha256');
     hash.update(
-      [
-        args.safes.toSorted().join(','),
-        args.nonceOrder,
-        args.limit,
-        args.offset,
-      ].join('_'),
+      [args.safes.toSorted().join(','), args.limit, args.offset].join('_'),
     );
     return new CacheDir(
       CacheRouter.getSpaceTransactionQueueCacheKey(args.spaceId),
