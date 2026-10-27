@@ -144,7 +144,8 @@ export class DelayedGuardPoliciesMapper {
    *
    * CGW stores configurations per Safe and root, not per guard, so they
    * belong to every change with their root; with no such change they are a
-   * draft.
+   * draft. A queued apply alone does not count: with nothing requested it
+   * reverts, so it must not hide the draft.
    */
   private changesByGuardAndRoot(args: {
     enabledGuards: ReadonlyArray<Address>;
@@ -193,7 +194,9 @@ export class DelayedGuardPoliciesMapper {
     const drafts: Array<DelayedPolicyChange> = [];
     for (const stored of args.storedConfigurations) {
       const withRoot = [...changes.values()].filter(
-        (change) => change.root === stored.root,
+        (change) =>
+          change.root === stored.root &&
+          (change.onChain !== null || change.queuedRequest !== null),
       );
       for (const change of withRoot) {
         change.stored = stored;

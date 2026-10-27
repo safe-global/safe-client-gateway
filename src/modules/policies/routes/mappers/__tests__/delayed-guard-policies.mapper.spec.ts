@@ -363,15 +363,28 @@ describe('DelayedGuardPoliciesMapper', () => {
       expect(item.createdAt).toBe(unixSeconds(transaction.submissionDate));
     });
 
-    it('should not report a stored root as a draft while an apply is queued', () => {
-      const config = configurations();
+    it('should report a stored root as a draft while only an apply of it is queued', () => {
+      const draft = stored(configurations());
 
       expect(
         map({
-          storedConfigurations: [stored(config)],
-          transactions: [apply(config)],
+          storedConfigurations: [draft],
+          transactions: [apply(draft.configurations, 2)],
         }),
-      ).toStrictEqual([]);
+      ).toStrictEqual([
+        {
+          kind: 'delayed-guard-policies',
+          status: 'draft',
+          safe,
+          guard: null,
+          root: draft.root,
+          configurations: draft.configurations,
+          readyAt: null,
+          expiresAt: null,
+          transaction: null,
+          createdAt: unixSeconds(draft.createdAt),
+        },
+      ]);
     });
 
     it('should skip and log a guard call whose arguments do not decode', () => {
