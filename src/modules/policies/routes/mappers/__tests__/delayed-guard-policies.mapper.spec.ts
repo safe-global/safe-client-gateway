@@ -592,6 +592,97 @@ describe('DelayedGuardPoliciesMapper', () => {
       expect(item.status).toBe('application-in-signing');
     });
 
+    it('should not report an apply batched with a request of a root still open on its guard', () => {
+      const config = configurations();
+      const data = multiSendEncoder()
+        .with(
+          'transactions',
+          multiSendTransactionsEncoder([
+            {
+              operation: Operation.CALL,
+              to: guard,
+              value: BigInt(0),
+              data: requestConfigurationEncoder()
+                .with('configureRoot', configurationRoot(config))
+                .encode(),
+            },
+            {
+              operation: Operation.CALL,
+              to: guard,
+              value: BigInt(0),
+              data: applyConfigurationEncoder()
+                .with('configurations', config)
+                .encode(),
+            },
+          ]),
+        )
+        .encode();
+
+      const [item] = map({
+        onChainConfigurations: [
+          onChain({ configurations: config, readyAt: now - 60 }),
+        ],
+        transactions: [
+          queued({
+            to: randomSepoliaMultiSendAddress(),
+            operation: Operation.DELEGATE,
+            data,
+            confirmations: 2,
+          }),
+        ],
+      });
+
+      expect(item).toStrictEqual(
+        expect.objectContaining({
+          status: 'pending-application',
+          transaction: null,
+        }),
+      );
+    });
+
+    it('should report an apply batched before a new request of the same root', () => {
+      const config = configurations();
+      const data = multiSendEncoder()
+        .with(
+          'transactions',
+          multiSendTransactionsEncoder([
+            {
+              operation: Operation.CALL,
+              to: guard,
+              value: BigInt(0),
+              data: applyConfigurationEncoder()
+                .with('configurations', config)
+                .encode(),
+            },
+            {
+              operation: Operation.CALL,
+              to: guard,
+              value: BigInt(0),
+              data: requestConfigurationEncoder()
+                .with('configureRoot', configurationRoot(config))
+                .encode(),
+            },
+          ]),
+        )
+        .encode();
+
+      const [item] = map({
+        onChainConfigurations: [
+          onChain({ configurations: config, readyAt: now - 60 }),
+        ],
+        transactions: [
+          queued({
+            to: randomSepoliaMultiSendAddress(),
+            operation: Operation.DELEGATE,
+            data,
+            confirmations: 2,
+          }),
+        ],
+      });
+
+      expect(item.status).toBe('application-ready');
+    });
+
     it('should ignore a request to an unknown contract', () => {
       const config = configurations();
 

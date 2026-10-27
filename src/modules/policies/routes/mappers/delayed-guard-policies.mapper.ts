@@ -101,6 +101,11 @@ export class DelayedGuardPoliciesMapper {
         safe: args.safe,
         transactions: args.transactions,
         knownGuards,
+        openRoots: new Set(
+          args.onChainConfigurations
+            .filter((root) => isRootApplicable(root, args.now))
+            .map((root) => `${root.guard.toLowerCase()}:${root.root}`),
+        ),
       },
     );
 
@@ -217,11 +222,18 @@ export class DelayedGuardPoliciesMapper {
    * The `requestConfiguration` and `applyConfiguration` calls queued on a known
    * guard, in queue order. A call is found directly or one level inside a
    * MultiSend batch.
+   *
+   * A transaction that requests a root still open on its guard, before
+   * applying it, reverts as a whole (`RootAlreadyConfigured`), so none of its
+   * calls are kept.
+   *
+   * @param args.openRoots `guard:root` keys of the roots open on chain.
    */
   private findQueuedConfigurationRequestOrApplyCalls(args: {
     safe: SafeRef;
     transactions: ReadonlyArray<MultisigTransaction>;
     knownGuards: ReadonlyArray<Address>;
+    openRoots: ReadonlySet<string>;
   }): Array<QueuedPolicyChangeConfigurationCall> {
     return args.transactions.flatMap((transaction) => {
       const context = {
@@ -229,7 +241,7 @@ export class DelayedGuardPoliciesMapper {
         safeTxHash: transaction.safeTxHash,
       };
 
-      return queuedCalls({
+      const calls = queuedCalls({
         chainId: args.safe.chainId,
         transaction,
         multiSendDecoder: this.multiSendDecoder,
@@ -245,6 +257,17 @@ export class DelayedGuardPoliciesMapper {
           });
           return decoded ? [decoded] : [];
         });
+
+      // An apply earlier in the batch closes the window the request needs.
+      const keyOf = (call: QueuedPolicyChangeConfigurationCall): string =>
+        `${call.guard.toLowerCase()}:${call.root}`;
+      const reverts = calls.some(
+        (call, index) =>
+          call.kind === 'request' &&
+          args.openRoots.has(keyOf(call)) &&
+          calls.findIndex((other) => keyOf(other) === keyOf(call)) === index,
+      );
+      return reverts ? [] : calls;
     });
   }
 
