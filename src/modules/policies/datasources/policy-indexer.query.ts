@@ -15,19 +15,25 @@ export type PolicyIndexerVariables = {
   delegates: ReadonlyArray<PolicyIndexerPairFilter>;
   guardPolicyBindings: ReadonlyArray<PolicyIndexerPairFilter>;
   guardPolicyKinds: ReadonlyArray<PolicyIndexerGuardPolicyKind>;
+  roots: ReadonlyArray<PolicyIndexerPairFilter>;
 };
 
 /**
- * Current allowance-module state for a set of Safes.
+ * Current policy state for a set of Safes.
  *
  * The indexer calls its `SafePolicyGuard` bindings `SafePolicy`; they are
  * aliased to `GuardPolicyBinding` so the name says what a row is.
+ *
+ * `ConfigurationRoot` is not filtered by status: an applied or invalidated root
+ * is not pending, but knowing it was requested at all is what tells it apart
+ * from configurations stored in CGW that nobody requested yet - a draft.
  */
 export const POLICY_INDEXER_STATE_QUERY = `query PolicyIndexerState(
   $allowances: [SafeAllowance_bool_exp!]!
   $delegates: [SafeDelegate_bool_exp!]!
   $guardPolicyBindings: [SafePolicy_bool_exp!]!
   $guardPolicyKinds: [policykind!]!
+  $roots: [ConfigurationRoot_bool_exp!]!
 ) {
   _meta { chainId progressBlock sourceBlock isReady }
   SafeAllowance(
@@ -48,6 +54,12 @@ export const POLICY_INDEXER_STATE_QUERY = `query PolicyIndexerState(
     order_by: [{ chainId: asc }, { safe: asc }, { target: asc }, { selector: asc }]
   ) {
     chainId safe guard target selector operation kind policy state
+  }
+  ConfigurationRoot(
+    where: { _or: $roots }
+    order_by: [{ chainId: asc }, { safe: asc }, { readyAt: asc }]
+  ) {
+    chainId safe guard root readyAt expiresAt status
   }
 }`;
 
@@ -73,11 +85,14 @@ export function toPolicyIndexerVariables(
     safe: { _in: addresses },
   }));
 
+  const guardPolicyGroups = guardPolicyKinds.length > 0 ? groups : [];
+
   // The same groups for each, since the pairs are the same set.
   return {
     allowances: groups,
     delegates: groups,
-    guardPolicyBindings: groups,
+    guardPolicyBindings: guardPolicyGroups,
     guardPolicyKinds,
+    roots: guardPolicyGroups,
   };
 }

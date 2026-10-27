@@ -10,7 +10,7 @@ export default (): ReturnType<typeof configuration> => ({
   },
   amqp: {
     url: faker.internet.url({ appendSlash: false }),
-    exchange: { name: faker.string.sample(), mode: faker.string.sample() },
+    exchange: { name: faker.string.sample() },
     queue: faker.string.sample(),
     prefetch: faker.number.int(),
     heartbeatIntervalInSeconds: 60,
@@ -254,6 +254,7 @@ export default (): ReturnType<typeof configuration> => ({
     safeShieldCoreDisabled: false,
     safeQueueService: false,
     safenet: false,
+    guardPolicies: true,
   },
   httpClient: {
     requestTimeout: faker.number.int(),

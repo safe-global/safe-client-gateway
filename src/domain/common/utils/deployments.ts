@@ -14,6 +14,8 @@ import {
 import {
   _COMPAT_FALLBACK_HANDLER_DEPLOYMENTS,
   _EXTENSIBLE_FALLBACK_HANDLER_DEPLOYMENTS,
+  _MULTI_SEND_CALL_ONLY_DEPLOYMENTS,
+  _MULTI_SEND_DEPLOYMENTS,
   _SAFE_DEPLOYMENTS,
   _SAFE_L2_DEPLOYMENTS,
   _SAFE_MIGRATION_DEPLOYMENTS,
@@ -482,6 +484,19 @@ export function getSignerFactoryAbi(): SignerFactoryAbi {
   });
 
   return abi as unknown as SignerFactoryAbi;
+}
+
+export function getAllMultiSendDeployments(args: {
+  chainId: string;
+}): Array<Address> {
+  return [
+    ..._MULTI_SEND_DEPLOYMENTS.flatMap(({ version }) =>
+      getMultiSendDeployments({ chainId: args.chainId, version }),
+    ),
+    ..._MULTI_SEND_CALL_ONLY_DEPLOYMENTS.flatMap(({ version }) =>
+      getMultiSendCallOnlyDeployments({ chainId: args.chainId, version }),
+    ),
+  ];
 }
 
 /**
