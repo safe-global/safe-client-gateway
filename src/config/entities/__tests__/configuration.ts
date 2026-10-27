@@ -526,9 +526,6 @@ export default (): ReturnType<typeof configuration> => ({
     maxSafesPerSpace: faker.number.int({ min: 5, max: 10 }),
     maxSpaceCreationsPerUser: faker.number.int({ min: 100, max: 200 }),
     maxInvites: faker.number.int({ min: 5, max: 10 }),
-    transactionQueue: {
-      pageSize: faker.number.int({ min: 1, max: 20 }),
-    },
     invite: {
       ttlMs: faker.number.int({ min: 60_000, max: 7 * 24 * 60 * 60 * 1000 }),
     },

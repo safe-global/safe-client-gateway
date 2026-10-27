@@ -972,12 +972,6 @@ export default () => ({
       10,
     ),
     maxInvites: Number.parseInt(process.env.SPACES_MAX_INVITES ?? `${50}`, 10),
-    transactionQueue: {
-      pageSize: Number.parseInt(
-        process.env.SPACES_TRANSACTION_QUEUE_PAGE_SIZE ?? `${20}`,
-        10,
-      ),
-    },
     invite: {
       ttlMs: Number.parseInt(
         process.env.SPACES_INVITE_TTL_MS ?? `${7 * 24 * 60 * 60 * 1000}`,
