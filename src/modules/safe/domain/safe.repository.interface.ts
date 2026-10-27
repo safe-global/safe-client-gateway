@@ -17,6 +17,7 @@ import { Transaction } from '#/modules/safe/domain/entities/transaction.entity';
 import { Transfer } from '#/modules/safe/domain/entities/transfer.entity';
 import { SafeRepository } from '#/modules/safe/domain/safe.repository';
 import { SafeQueueModule } from '#/modules/safe-queue/safe-queue.module';
+import { SpaceSafesRepositoryModule } from '#/modules/spaces/domain/safes/space-safes-repository.module';
 import { AddConfirmationDto } from '#/modules/transactions/domain/entities/add-confirmation.dto.entity';
 import { ProposeTransactionDto } from '#/modules/transactions/domain/entities/propose-transaction.dto.entity';
 import { TransactionVerifierHelper } from '#/modules/transactions/routes/helpers/transaction-verifier.helper';
@@ -114,6 +115,7 @@ export interface ISafeRepository {
    * Transaction Service cannot list many Safes in one request.
    */
   getTransactionQueueForSafes(args: {
+    spaceId: number;
     safes: ReadonlyArray<{ chainId: string; safe: Safe }>;
     limit?: number;
     offset?: number;
@@ -170,6 +172,12 @@ export interface ISafeRepository {
   clearMultisigTransactions(args: {
     chainId: string;
     safeAddress: Address;
+  }): Promise<void>;
+
+  /** The queue of every Space holding the Safe. */
+  clearSpaceTransactionQueues(args: {
+    chainId: string;
+    address: Address;
   }): Promise<void>;
 
   getMultisigTransactions(args: {
@@ -254,6 +262,7 @@ export interface ISafeRepository {
     DelegatesV3RepositoryModule,
     ContractsModule,
     SafeQueueModule,
+    SpaceSafesRepositoryModule,
   ],
   providers: [
     {

@@ -22,6 +22,7 @@ export function createMockSafeQueueService(): MockedObject<ISafeQueueService> {
     postMessageSignature: vi.fn(),
     clearMultisigTransaction: vi.fn(),
     clearAllTransactions: vi.fn(),
+    clearSpaceTransactionQueue: vi.fn(),
     clearMessagesBySafe: vi.fn(),
     clearMessagesByHash: vi.fn(),
     clearDelegates: vi.fn(),

@@ -302,6 +302,7 @@ export class SafeQueueService implements ISafeQueueService {
   }
 
   async getTransactionQueueForSafes(args: {
+    spaceId: number;
     safes: ReadonlyArray<{ chainId: string; safeAddress: Address }>;
     limit?: number;
     offset?: number;
@@ -311,16 +312,26 @@ export class SafeQueueService implements ISafeQueueService {
         this.getChainIdsBySafe(args.safes),
         ([safeAddress, chainIds]) => [safeAddress, ...chainIds].join(':'),
       );
+      const limit = this.capLimit(args.limit);
+      const cacheDir = CacheRouter.getSpaceTransactionQueueCacheDir({
+        spaceId: args.spaceId,
+        safes,
+        limit,
+        offset: args.offset,
+      });
       const url = `${this.baseUri}/api/v1/multisig-transactions/queue`;
-      const { data } = await this.networkService.get<
-        Raw<Page<SafeQueueMultisigTransactionEntity>>
+      return await this.dataSource.get<
+        Page<SafeQueueMultisigTransactionEntity>
       >({
+        cacheDir,
         url,
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
         networkRequest: {
           params: {
             safes,
             nonceOrder: 'asc',
-            limit: this.capLimit(args.limit),
+            limit,
             offset: args.offset,
           },
           circuitBreaker: {
@@ -328,7 +339,6 @@ export class SafeQueueService implements ISafeQueueService {
           },
         },
       });
-      return data;
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
@@ -661,6 +671,11 @@ export class SafeQueueService implements ISafeQueueService {
       chainId: args.chainId,
       safeAddress: args.safeAddress,
     });
+    await this.cacheService.deleteByKey(key);
+  }
+
+  async clearSpaceTransactionQueue(args: { spaceId: number }): Promise<void> {
+    const key = CacheRouter.getSpaceTransactionQueueCacheKey(args.spaceId);
     await this.cacheService.deleteByKey(key);
   }
 

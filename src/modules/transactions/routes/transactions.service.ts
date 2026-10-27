@@ -478,6 +478,7 @@ export class TransactionsService {
    * one Safe's transactions is mapped against that Safe.
    */
   async getTransactionQueueForSafes(args: {
+    spaceId: number;
     safes: ReadonlyArray<{ chainId: string; address: Address }>;
     routeUrl: Readonly<URL>;
     paginationData: PaginationData;
@@ -501,15 +502,18 @@ export class TransactionsService {
       1,
       Math.min(args.paginationData.limit, SAFE_QUEUE_SERVICE_MAX_LIMIT - 1),
     );
-    const page = await this.getQueuePageOfSafes({ safes, limit, offset }).catch(
-      (error: unknown) => {
-        this.loggingService.warn({
-          message: 'Failed to load the queue of the Space Safes',
-          error: asError(error).message,
-        });
-        return null;
-      },
-    );
+    const page = await this.getQueuePageOfSafes({
+      spaceId: args.spaceId,
+      safes,
+      limit,
+      offset,
+    }).catch((error: unknown) => {
+      this.loggingService.warn({
+        message: 'Failed to load the queue of the Space Safes',
+        error: asError(error).message,
+      });
+      return null;
+    });
     // The Space stays readable: its Safes are reported as unavailable instead.
     if (!page) {
       unavailableSafes.push(
@@ -554,6 +558,7 @@ export class TransactionsService {
    * last nonce.
    */
   private async getQueuePageOfSafes(args: {
+    spaceId: number;
     safes: Array<{ chainId: string; safe: Safe }>;
     limit: number;
     offset: number;
@@ -566,6 +571,7 @@ export class TransactionsService {
   }> {
     // One transaction more than the page, to tell whether its last nonce continues.
     const page = await this.safeRepository.getTransactionQueueForSafes({
+      spaceId: args.spaceId,
       safes: args.safes,
       limit: args.limit + 1,
       offset: args.offset,
@@ -575,6 +581,7 @@ export class TransactionsService {
     const lastNonce = transactions.at(-1)?.transaction.nonce;
     if (lookahead && lookahead.transaction.nonce === lastNonce) {
       const rest = await this.safeRepository.getTransactionQueueForSafes({
+        spaceId: args.spaceId,
         safes: args.safes,
         limit: SAFE_QUEUE_SERVICE_MAX_LIMIT,
         offset: args.offset + transactions.length,
