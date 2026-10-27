@@ -349,6 +349,51 @@ describe('DelayedGuardPoliciesMapper', () => {
       );
     });
 
+    it('should report the fully signed apply replacing a less signed one at the same nonce', () => {
+      const config = configurations();
+      const nonce = faker.number.int({ max: 100 });
+      const replaced = { ...apply(config, 1), nonce };
+      const replacement = { ...apply(config, 2), nonce };
+
+      const [item] = map({
+        onChainConfigurations: [
+          onChain({ configurations: config, readyAt: now - 60 }),
+        ],
+        transactions: [replaced, replacement],
+      });
+
+      expect(item).toStrictEqual(
+        expect.objectContaining({
+          status: 'application-ready',
+          transaction: expect.objectContaining({
+            safeTxHash: replacement.safeTxHash,
+          }),
+        }),
+      );
+    });
+
+    it('should report the apply at the lower nonce over a fully signed one after it', () => {
+      const config = configurations();
+      const nonce = faker.number.int({ max: 100 });
+      const first = { ...apply(config, 1), nonce };
+
+      const [item] = map({
+        onChainConfigurations: [
+          onChain({ configurations: config, readyAt: now - 60 }),
+        ],
+        transactions: [first, { ...apply(config, 2), nonce: nonce + 1 }],
+      });
+
+      expect(item).toStrictEqual(
+        expect.objectContaining({
+          status: 'application-in-signing',
+          transaction: expect.objectContaining({
+            safeTxHash: first.safeTxHash,
+          }),
+        }),
+      );
+    });
+
     it('should date a root CGW did not store by its queued transaction', () => {
       const config = configurations();
       const transaction = apply(config, 1);

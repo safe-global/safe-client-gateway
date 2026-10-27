@@ -36,6 +36,7 @@ import {
 import { configurationRoot } from '#/modules/policies/domain/utils/policy-configuration-root.utils';
 import {
   decodeConfigurations,
+  isFullySigned,
   pendingTransactionOf,
   type QueuedCallContext,
   queuedCalls,
@@ -180,13 +181,19 @@ export class DelayedGuardPoliciesMapper {
     }
 
     // The queue is in nonce order, so the first call for a change executes
-    // first.
+    // first. Of applies replacing each other at one nonce, a fully signed one
+    // is the one that can execute.
     for (const call of args.queued) {
       const change = changeOf(call.guard, call.root);
       if (call.kind === 'request') {
         change.queuedRequest ??= call;
-      } else {
-        change.queuedApply ??= call;
+      } else if (
+        !change.queuedApply ||
+        (call.transaction.nonce === change.queuedApply.transaction.nonce &&
+          isFullySigned(call.transaction) &&
+          !isFullySigned(change.queuedApply.transaction))
+      ) {
+        change.queuedApply = call;
       }
     }
 
