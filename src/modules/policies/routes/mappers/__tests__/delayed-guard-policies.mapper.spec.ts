@@ -393,6 +393,13 @@ describe('DelayedGuardPoliciesMapper', () => {
 
       expect(
         map({
+          // The row makes the guard known; it is not the Safe's guard.
+          onChainConfigurations: [
+            onChain({
+              configurations: draft.configurations,
+              guard: previousGuard,
+            }),
+          ],
           storedConfigurations: [draft],
           transactions: [apply(draft.configurations, 2, previousGuard)],
         }),
