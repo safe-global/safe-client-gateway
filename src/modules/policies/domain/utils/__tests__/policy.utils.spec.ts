@@ -24,6 +24,7 @@ import {
   createdAtOf,
   guardPolicyKindsOf,
   guardPolicyTypeOfKind,
+  isRootApplicable,
   queuedApplyStatus,
 } from '#/modules/policies/domain/utils/policy.utils';
 import { configurationRoot } from '#/modules/policies/domain/utils/policy-configuration-root.utils';
@@ -109,6 +110,39 @@ describe('applicationWindowOf', () => {
   it('should return null without an on-chain root', () => {
     expect(applicationWindowOf(null)).toBeNull();
   });
+});
+
+describe('isRootApplicable', () => {
+  const now = Math.floor(faker.date.recent().getTime() / 1000);
+
+  function root(
+    status: PolicyIndexerConfigurationRoot['status'],
+    expiresAt: number,
+  ): PolicyIndexerConfigurationRoot {
+    return policyIndexerConfigurationRootBuilder()
+      .with('status', status)
+      .with('expiresAt', expiresAt)
+      .build();
+  }
+
+  it('should apply a pending root before expiresAt', () => {
+    expect(isRootApplicable(root('PENDING', now + 1), now)).toBe(true);
+  });
+
+  it('should not apply a pending root from expiresAt', () => {
+    expect(isRootApplicable(root('PENDING', now), now)).toBe(false);
+  });
+
+  it('should treat an expiresAt of 0 as an unknown expiry, not a past one', () => {
+    expect(isRootApplicable(root('PENDING', 0), now)).toBe(true);
+  });
+
+  it.each(['APPLIED', 'INVALIDATED'] as const)(
+    'should not apply a %s root with an unknown expiry',
+    (status: PolicyIndexerConfigurationRoot['status']) => {
+      expect(isRootApplicable(root(status, 0), now)).toBe(false);
+    },
+  );
 });
 
 describe('delayed changes', () => {

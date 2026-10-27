@@ -306,6 +306,21 @@ describe('DelayedGuardPoliciesMapper', () => {
       expect(item.status).toBe('application-ready');
     });
 
+    it('should report a fully signed apply as ready when the expiry is unknown', () => {
+      const config = configurations();
+      const root = {
+        ...onChain({ configurations: config, readyAt: now - 60 }),
+        expiresAt: 0,
+      };
+
+      const [item] = map({
+        onChainConfigurations: [root],
+        transactions: [apply(config, 2)],
+      });
+
+      expect(item.status).toBe('application-ready');
+    });
+
     it('should keep a fully signed apply pending until its delay has passed', () => {
       // The guard reverts an apply before `readyAt`, however signed.
       const config = configurations();

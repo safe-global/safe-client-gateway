@@ -115,12 +115,17 @@ function policyTypeOf(args: {
     : null;
 }
 
-/** Whether {@link root} can still be applied: pending and before `expiresAt`. */
+/**
+ * Whether {@link root} can still be applied: pending and before `expiresAt`.
+ * An `expiresAt` of 0 means the expiry is unknown, so it is not expired.
+ */
 export function isRootApplicable(
   root: Pick<PolicyIndexerConfigurationRoot, 'status' | 'expiresAt'>,
   now: number,
 ): boolean {
-  return root.status === 'PENDING' && now < root.expiresAt;
+  return (
+    root.status === 'PENDING' && (root.expiresAt === 0 || now < root.expiresAt)
+  );
 }
 
 // --- Delayed guard configurations --------------------------------------------
