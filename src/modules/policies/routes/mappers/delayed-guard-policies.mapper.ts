@@ -174,23 +174,28 @@ export class DelayedGuardPoliciesMapper {
       return change;
     };
 
-    // Roots still open on a guard the Safe no longer uses.
-    const openElsewhere = new Set<string>();
+    // Guard and root keys still open on a guard the Safe no longer uses.
+    const openOnUnusedGuard = new Set<string>();
     for (const onChain of args.onChainConfigurations) {
       if (
         args.enabledGuards.some((guard) => isAddressEqual(guard, onChain.guard))
       ) {
         changeOf(onChain.guard, onChain.root).onChain = onChain;
       } else if (isRootApplicable(onChain, args.now)) {
-        openElsewhere.add(`${onChain.guard.toLowerCase()}:${onChain.root}`);
+        openOnUnusedGuard.add(`${onChain.guard.toLowerCase()}:${onChain.root}`);
       }
     }
+    // Requesting a root while it is open reverts, so the call never executes.
+    const isRequestThatReverts = (
+      call: QueuedPolicyChangeConfigurationCall,
+    ): boolean =>
+      call.kind === 'request' &&
+      openOnUnusedGuard.has(`${call.guard.toLowerCase()}:${call.root}`);
 
     // The queue is in nonce order, so the first call for a change executes
     // first.
     for (const call of args.queued) {
-      const key = `${call.guard.toLowerCase()}:${call.root}`;
-      if (call.kind === 'request' && openElsewhere.has(key)) {
+      if (isRequestThatReverts(call)) {
         continue;
       }
       const change = changeOf(call.guard, call.root);
