@@ -321,6 +321,54 @@ describe('DelayedGuardPoliciesMapper', () => {
       expect(item.status).toBe('application-ready');
     });
 
+    describe('with an unknown expiry', () => {
+      function unknownExpiry(
+        config: Array<PolicyConfiguration>,
+        readyAt: number,
+      ): PolicyIndexerConfigurationRoot {
+        return {
+          ...onChain({ configurations: config, readyAt }),
+          expiresAt: 0,
+        };
+      }
+
+      it('should report a root with no queued apply as pending application', () => {
+        const config = configurations();
+
+        expect(
+          map({ onChainConfigurations: [unknownExpiry(config, now - 60)] }),
+        ).toStrictEqual([
+          expect.objectContaining({
+            status: 'pending-application',
+            expiresAt: 0,
+            transaction: null,
+          }),
+        ]);
+      });
+
+      it('should report a partly signed apply as being signed', () => {
+        const config = configurations();
+
+        const [item] = map({
+          onChainConfigurations: [unknownExpiry(config, now - 60)],
+          transactions: [apply(config, 1)],
+        });
+
+        expect(item.status).toBe('application-in-signing');
+      });
+
+      it('should keep a fully signed apply pending before readyAt', () => {
+        const config = configurations();
+
+        const [item] = map({
+          onChainConfigurations: [unknownExpiry(config, now + 60)],
+          transactions: [apply(config, 2)],
+        });
+
+        expect(item.status).toBe('pending-application');
+      });
+    });
+
     it('should keep a fully signed apply pending until its delay has passed', () => {
       // The guard reverts an apply before `readyAt`, however signed.
       const config = configurations();
