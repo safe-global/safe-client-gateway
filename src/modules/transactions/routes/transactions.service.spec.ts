@@ -18,6 +18,7 @@ import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisi
 import type { Safe } from '#/modules/safe/domain/entities/safe.entity';
 import type { SafeRepository } from '#/modules/safe/domain/safe.repository';
 import type { ITokenRepository } from '#/modules/tokens/domain/token.repository.interface';
+import { ConflictHeaderQueuedItem } from '#/modules/transactions/routes/entities/queued-items/conflict-header-queued-item.entity';
 import type { ModuleTransactionMapper } from '#/modules/transactions/routes/mappers/module-transactions/module-transaction.mapper';
 import type { ModuleTransactionDetailsMapper } from '#/modules/transactions/routes/mappers/module-transactions/module-transaction-details.mapper';
 import type { MultisigTransactionMapper } from '#/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction.mapper';
@@ -107,71 +108,77 @@ describe('TransactionsService', () => {
   }
 
   describe('getTransactionQueueForSafes', () => {
-    it('maps consecutive runs of one Safe in nonce order, each against its own Safe', async () => {
+    it('groups the queue by Safe address and chain, mapping each Safe once in nonce order', async () => {
       const chainId = faker.string.numeric({ length: 3 });
-      const [addressA, addressB] = [
-        getAddress(faker.finance.ethereumAddress()),
-        getAddress(faker.finance.ethereumAddress()),
-      ].sort((x, y) => (x.toLowerCase() < y.toLowerCase() ? -1 : 1));
-      const safeA = safeBuilder()
-        .with('address', addressA)
-        .with('nonce', 3)
-        .build();
-      const safeB = safeBuilder()
-        .with('address', addressB)
-        .with('nonce', 3)
-        .build();
+      const otherChainId = faker.string.numeric({ length: 4 });
+      const safeA = safeBuilder().with('nonce', 3).build();
+      const safeB = safeBuilder().with('nonce', 3).build();
       mockSafeRepository.getSafe.mockImplementation(({ address }) =>
-        Promise.resolve(address === addressA ? safeA : safeB),
+        Promise.resolve(address === safeA.address ? safeA : safeB),
       );
       const a3 = queuedTransaction(chainId, safeA, 3);
       const b3 = queuedTransaction(chainId, safeB, 3);
       const a3Replacement = queuedTransaction(chainId, safeA, 3);
+      const aOther3 = queuedTransaction(otherChainId, safeA, 3);
       const a4 = queuedTransaction(chainId, safeA, 4);
       // The queue service breaks nonce ties by insertion, interleaving Safes
       mockSafeRepository.getTransactionQueueForSafes.mockResolvedValue(
-        queuePage([a3, b3, a3Replacement, a4], 4),
+        queuePage([a3, b3, a3Replacement, aOther3, a4], 5),
+      );
+      const expectedGroups = [
+        { chainId, safe: safeA, transactions: [a3, a3Replacement, a4] },
+        { chainId, safe: safeB, transactions: [b3] },
+        { chainId: otherChainId, safe: safeA, transactions: [aOther3] },
+      ].map((group) => ({
+        ...group,
+        items: [new ConflictHeaderQueuedItem(faker.number.int())],
+      }));
+      mockQueuedItemsMapper.getQueuedItems.mockImplementation(
+        (_, safe, groupChainId) =>
+          Promise.resolve(
+            expectedGroups.find(
+              (group) => group.safe === safe && group.chainId === groupChainId,
+            )?.items ?? [],
+          ),
       );
 
       const actual = await target.getTransactionQueueForSafes({
         safes: [
-          { chainId, address: addressA },
-          { chainId, address: addressB },
+          { chainId, address: safeA.address },
+          { chainId, address: safeB.address },
+          { chainId: otherChainId, address: safeA.address },
         ],
         routeUrl,
         paginationData: new PaginationData(20, 0),
       });
 
       expect(actual.next).toBeNull();
-      expect(actual.count).toBe(4);
+      expect(actual.count).toBe(5);
       expect(actual.unavailableSafes).toEqual([]);
-      const expectedRuns = [
-        { safe: safeA, transactions: [a3, a3Replacement], previous: null },
-        { safe: safeB, transactions: [b3], previous: null },
-        { safe: safeA, transactions: [a4], previous: 3 },
-      ];
-      expect(actual.results).toEqual(
-        expectedRuns.map(({ safe }) => ({
-          chainId,
-          safeAddress: safe.address,
-          items: [],
-        })),
+      expect(actual.results).toEqual({
+        [safeA.address]: {
+          [chainId]: expectedGroups[0].items,
+          [otherChainId]: expectedGroups[2].items,
+        },
+        [safeB.address]: { [chainId]: expectedGroups[1].items },
+      });
+      expect(mockQueuedItemsMapper.getQueuedItems).toHaveBeenCalledTimes(
+        expectedGroups.length,
       );
-      expectedRuns.forEach(({ safe, transactions, previous }, index) => {
-        expect(mockQueuedItemsMapper.getQueuedItems).toHaveBeenNthCalledWith(
-          index + 1,
+      for (const group of expectedGroups) {
+        expect(mockQueuedItemsMapper.getQueuedItems).toHaveBeenCalledWith(
           {
-            count: transactions.length,
+            count: group.transactions.length,
             next: null,
             previous: null,
-            results: transactions.map(({ transaction }) => transaction),
+            results: group.transactions.map(({ transaction }) => transaction),
           },
-          safe,
-          chainId,
-          previous,
+          group.safe,
+          group.chainId,
+          null,
           null,
         );
-      });
+      }
     });
 
     it('completes the last nonce of a page and points the next page past it', async () => {
@@ -286,7 +293,7 @@ describe('TransactionsService', () => {
         count: 0,
         next: null,
         previous: null,
-        results: [],
+        results: {},
         unavailableSafes: [{ chainId, safeAddress: address }],
       });
       expect(
@@ -324,7 +331,7 @@ describe('TransactionsService', () => {
         count: 0,
         next: null,
         previous: null,
-        results: [],
+        results: {},
         unavailableSafes: [
           { chainId, safeAddress: undeployed },
           { chainId, safeAddress: safe.address },
@@ -363,7 +370,7 @@ describe('TransactionsService', () => {
         paginationData: new PaginationData(1, 0),
       });
 
-      expect(actual.results).toEqual([]);
+      expect(actual.results).toEqual({});
       expect(actual.unavailableSafes).toEqual([
         { chainId, safeAddress: safe.address },
       ]);
