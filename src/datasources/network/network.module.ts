@@ -11,6 +11,7 @@ import type { NetworkRequest } from '#/datasources/network/entities/network.requ
 import type { NetworkResponse } from '#/datasources/network/entities/network.response.entity';
 import { FetchNetworkService } from '#/datasources/network/fetch.network.service';
 import { NetworkService } from '#/datasources/network/network.service.interface';
+import { SAFE_REQUEST_ID_HEADER } from '#/datasources/network/safe-request-id-header.helper';
 import {
   UndiciAgent,
   UndiciShutdownHook,
@@ -238,11 +239,35 @@ function getCacheKey(
   const key = JSON.stringify({
     url,
     responseType,
-    ...requestInit,
+    ...withoutRequestIdHeader(requestInit),
     timeout,
     circuitBreakerKey,
   });
   return hashSha1(key);
+}
+
+/**
+ * The request ID differs per request, so keying on it would stop identical
+ * in-flight requests (of any method) from being shared. A shared request only
+ * carries the ID of the request that started it.
+ */
+function withoutRequestIdHeader(
+  requestInit?: RequestInit,
+): RequestInit | undefined {
+  const headers = requestInit?.headers;
+  if (!headers || headers instanceof Headers || Array.isArray(headers)) {
+    return requestInit;
+  }
+
+  const entries = Object.entries(headers);
+  const keyedEntries = entries.filter(([name]) => {
+    return name.toLowerCase() !== SAFE_REQUEST_ID_HEADER;
+  });
+  if (keyedEntries.length === entries.length) {
+    return requestInit;
+  }
+
+  return { ...requestInit, headers: Object.fromEntries(keyedEntries) };
 }
 
 /**

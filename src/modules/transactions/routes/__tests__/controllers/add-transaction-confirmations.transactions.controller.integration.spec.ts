@@ -19,9 +19,11 @@ import { IConfigurationService } from '#/config/configuration.service.interface'
 import configuration from '#/config/entities/__tests__/configuration';
 import { TestCacheModule } from '#/datasources/cache/__tests__/test.cache.module';
 import { TestNetworkModule } from '#/datasources/network/__tests__/test.network.module';
+import { TestSafeInternalNetworkModule } from '#/datasources/network/__tests__/test.safe-internal.network.module';
 import { TestTxAuthNetworkModule } from '#/datasources/network/__tests__/test.tx-auth.network.module';
 import type { INetworkService } from '#/datasources/network/network.service.interface';
 import { NetworkService } from '#/datasources/network/network.service.interface';
+import { SafeInternalNetworkModule } from '#/datasources/network/safe-internal.network.module';
 import { TxAuthNetworkModule } from '#/datasources/network/tx-auth.network.module';
 import { SignatureType } from '#/domain/common/entities/signature-type.entity';
 import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
@@ -78,6 +80,8 @@ describe('Add transaction confirmations - Transactions Controller', () => {
     })
       .overrideModule(TxAuthNetworkModule)
       .useModule(TestTxAuthNetworkModule)
+      .overrideModule(SafeInternalNetworkModule)
+      .useModule(TestSafeInternalNetworkModule)
       .overrideModule(SafeQueueModule)
       .useModule(TestSafeQueueModule)
       .compile();

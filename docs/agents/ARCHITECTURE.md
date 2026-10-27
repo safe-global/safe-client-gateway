@@ -263,6 +263,16 @@ All outbound HTTP goes through `INetworkService` (`src/datasources/network/netwo
 Requests default to a 5-second timeout (`httpClient.requestTimeout`) with no automatic retries.
 A circuit breaker (`src/datasources/circuit-breaker/`) is opt-in per request via a `circuitBreaker.key`, and trips after `circuitBreaker.threshold` consecutive failures within `circuitBreaker.rollingWindow`. While HALF_OPEN it admits at most as many concurrent probes as the number of failures that would re-open it (`threshold × halfOpenFailureRateThreshold / 100`) and rejects the rest, so a hanging upstream never receives a burst of probes that each wait out the full request timeout.
 
+There is more than one `INetworkService` instance:
+
+- **Global (`NetworkModule`).** Third-party APIs use this one.
+- **Module-scoped, for Safe services.** These replace the global instance for every provider in the module that imports them, and send the current request ID as `x-safe-req-id`, the same value logged as `request_id`:
+  - `SafeInternalNetworkModule`
+  - `TxAuthNetworkModule`, which also adds Transaction Service auth
+  - `SafeQueueModule`, which also adds queue-service auth
+- **No caller-supplied `x-safe-*`.** Every instance drops `x-safe-*` headers set by a caller.
+- **Guard.** `src/datasources/network/network-wiring.integration.spec.ts` pins which providers get a module-scoped instance.
+
 Per-chain external APIs share a common shape: `IApiManager<T>` (`src/domain/interfaces/api.manager.interface.ts`) declares `getApi(chainId)`/`destroyApi(chainId)`, and is implemented once per API family — `IBalancesApiManager`, `ITransactionApiManager`, `IStakingApiManager`, `IBlockchainApiManager`, and others.
 The rest of the codebase asks its manager for "the client for this chain" rather than juggling per-chain client instances itself.
 
