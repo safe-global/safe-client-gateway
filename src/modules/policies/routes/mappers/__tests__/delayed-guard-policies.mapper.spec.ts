@@ -683,6 +683,34 @@ describe('DelayedGuardPoliciesMapper', () => {
       ).toStrictEqual([]);
     });
 
+    it('should report stored configurations as a draft when their request on a guard the Safe no longer uses is dropped', () => {
+      const config = configurations();
+
+      expect(
+        map({
+          onChainConfigurations: [
+            onChain({ configurations: config, guard: previousGuard }),
+          ],
+          storedConfigurations: [stored(config)],
+          transactions: [
+            queued({
+              to: previousGuard,
+              data: requestConfigurationEncoder()
+                .with('configureRoot', configurationRoot(config))
+                .encode(),
+              confirmations: 1,
+            }),
+          ],
+        }),
+      ).toStrictEqual([
+        expect.objectContaining({
+          status: 'draft',
+          guard: null,
+          transaction: null,
+        }),
+      ]);
+    });
+
     it('should report a request on a guard the Safe no longer uses once the root expired there', () => {
       const config = configurations();
 
