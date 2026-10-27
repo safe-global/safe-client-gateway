@@ -98,7 +98,7 @@ describe('SafeRepository', () => {
 
   function createRepository(opts: {
     safeQueueEnabled: boolean;
-    spaceTransactionsEnabled?: boolean;
+    usersEnabled?: boolean;
   }): SafeRepository {
     mockConfigurationService.getOrThrow.mockImplementation((key: string) => {
       if (key === 'safeConfig.safes.maxSequentialPages') {
@@ -107,8 +107,8 @@ describe('SafeRepository', () => {
       if (key === 'features.safeQueueService') {
         return opts.safeQueueEnabled;
       }
-      if (key === 'features.users' || key === 'features.spaceTransactions') {
-        return opts.spaceTransactionsEnabled ?? false;
+      if (key === 'features.users') {
+        return opts.usersEnabled ?? false;
       }
       throw new Error(`Unexpected key: ${key}`);
     });
@@ -1447,7 +1447,7 @@ describe('SafeRepository', () => {
     it('should clear the queue of every Space holding the Safe', async () => {
       const repo = createRepository({
         safeQueueEnabled: true,
-        spaceTransactionsEnabled: true,
+        usersEnabled: true,
       });
       const tx = multisigTransactionBuilder().with('safe', safeAddress).build();
       const spaceIds = faker.helpers.multiple(
@@ -1892,7 +1892,7 @@ describe('SafeRepository', () => {
     it('should clear the queue of every Space holding the Safe', async () => {
       const repo = createRepository({
         safeQueueEnabled: true,
-        spaceTransactionsEnabled: true,
+        usersEnabled: true,
       });
       const spaceIds = faker.helpers.multiple(
         () => faker.number.int({ min: 1 }),

@@ -13,8 +13,7 @@ import { UsersModule } from '#/modules/users/users.module';
  * `SpacesModule` from there would serve its controllers even with
  * `features.users` off. `AppModule` registers this one alongside
  * `SpacesModule`, and only with `features.safeQueueService` on, the one
- * upstream able to list many Safes in a request, and `features.spaceTransactions`
- * on, which rolls the endpoint out.
+ * upstream able to list many Safes in a request.
  *
  * `AuthGuard` resolves `IAuthRepository` here, `SpaceIdPipe`
  * `ISpacesRepository`, and `assertMember` `IMembersRepository`.

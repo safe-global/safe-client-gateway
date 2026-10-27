@@ -68,7 +68,6 @@ describe('SpaceTransactionsController', () => {
         auth: true,
         users: true,
         safeQueueService: true,
-        spaceTransactions: true,
       },
     });
 
@@ -336,7 +335,7 @@ describe('SpaceTransactionsController', () => {
   }
 });
 
-describe('SpaceTransactionsController with features.spaceTransactions off', () => {
+describe('SpaceTransactionsController with features.safeQueueService off', () => {
   let app: INestApplication<Server>;
   let jwtService: IJwtService;
   let postgresDatabaseService: PostgresDatabaseService;
@@ -365,8 +364,7 @@ describe('SpaceTransactionsController with features.spaceTransactions off', () =
         ...defaultConfiguration.features,
         auth: true,
         users: true,
-        safeQueueService: true,
-        spaceTransactions: false,
+        safeQueueService: false,
       },
     });
 

@@ -253,7 +253,6 @@ export default (): ReturnType<typeof configuration> => ({
     mfaStepUp: true,
     safeShieldCoreDisabled: false,
     safeQueueService: false,
-    spaceTransactions: false,
     safenet: false,
     guardPolicies: true,
   },

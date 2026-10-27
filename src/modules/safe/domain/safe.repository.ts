@@ -87,11 +87,9 @@ export class SafeRepository implements ISafeRepository {
       'features.safeQueueService',
     );
     // The same conditions `AppModule` serves the Space queue under.
-    this.spaceTransactionQueueEnabled = [
-      'features.users',
-      'features.safeQueueService',
-      'features.spaceTransactions',
-    ].every((key) => this.configurationService.getOrThrow<boolean>(key));
+    this.spaceTransactionQueueEnabled =
+      this.safeQueueEnabled &&
+      this.configurationService.getOrThrow<boolean>('features.users');
   }
 
   async getSafe(args: { chainId: string; address: Address }): Promise<Safe> {
