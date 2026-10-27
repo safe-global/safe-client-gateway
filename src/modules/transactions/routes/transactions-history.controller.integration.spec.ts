@@ -742,6 +742,20 @@ describe('Transactions History Controller', () => {
           ],
         });
       });
+
+    expect(networkService.post).toHaveBeenCalledTimes(2);
+    expect(networkService.post).toHaveBeenCalledWith(
+      expect.objectContaining({
+        url: `${safeDecoderUrl}/api/v1/data-decoder`,
+        data: expect.objectContaining({ data: multisigTransaction.data }),
+      }),
+    );
+    expect(networkService.post).toHaveBeenCalledWith(
+      expect.objectContaining({
+        url: `${safeDecoderUrl}/api/v1/data-decoder`,
+        data: expect.objectContaining({ data: incomingTransaction.data }),
+      }),
+    );
   });
 
   it('Should include multisig transaction note', async () => {

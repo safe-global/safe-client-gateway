@@ -222,26 +222,26 @@ export class TransactionsService {
       chainId: args.chainId,
       address: args.safeAddress,
     });
+    const decodedTransactions = await Promise.all(
+      domainTransactions.results.map(async (transaction) => ({
+        transaction,
+        dataDecoded: await this.dataDecoderRepository.getTransactionDataDecoded(
+          { chainId: args.chainId, transaction },
+        ),
+      })),
+    );
     await this.multisigTransactionMapper.prefetchAddressInfos({
       chainId: args.chainId,
-      transactions: domainTransactions.results,
+      transactions: decodedTransactions,
     });
 
-    const dataDecoded = await Promise.all(
-      domainTransactions.results.map((domainTransaction) => {
-        return this.dataDecoderRepository.getTransactionDataDecoded({
-          chainId: args.chainId,
-          transaction: domainTransaction,
-        });
-      }),
-    );
     const mappedTransactions = await Promise.all(
-      domainTransactions.results.map((domainTransaction, index) => {
+      decodedTransactions.map(({ transaction, dataDecoded }) => {
         return this.multisigTransactionMapper.mapTransaction(
           args.chainId,
-          domainTransaction,
+          transaction,
           safeInfo,
-          dataDecoded[index],
+          dataDecoded,
         );
       }),
     );

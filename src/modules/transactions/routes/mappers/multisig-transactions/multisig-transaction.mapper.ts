@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { type Address, getAddress, isAddress } from 'viem';
-import { IDataDecoderRepository } from '#/modules/data-decoder/domain/v2/data-decoder.repository.interface';
 import type { DataDecoded } from '#/modules/data-decoder/domain/v2/entities/data-decoded.entity';
 import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
 import type { Safe } from '#/modules/safe/domain/entities/safe.entity';
@@ -22,8 +21,6 @@ import { AddressInfoHelper } from '#/routes/common/address-info/address-info.hel
 @Injectable()
 export class MultisigTransactionMapper {
   constructor(
-    @Inject(IDataDecoderRepository)
-    private readonly dataDecoderRepository: IDataDecoderRepository,
     private readonly statusMapper: MultisigTransactionStatusMapper,
     private readonly transactionInfoMapper: MultisigTransactionInfoMapper,
     private readonly executionInfoMapper: MultisigTransactionExecutionInfoMapper,
@@ -83,18 +80,16 @@ export class MultisigTransactionMapper {
    */
   public async prefetchAddressInfos(args: {
     chainId: string;
-    transactions: Array<MultisigTransaction>;
+    transactions: Array<{
+      transaction: MultisigTransaction;
+      dataDecoded: DataDecoded | null;
+    }>;
   }): Promise<void> {
     const addresses: Set<Address> = new Set();
-    for (const transaction of args.transactions) {
+    for (const { transaction, dataDecoded } of args.transactions) {
       addresses.add(transaction.safe);
       addresses.add(transaction.to);
 
-      const dataDecoded =
-        await this.dataDecoderRepository.getTransactionDataDecoded({
-          chainId: args.chainId,
-          transaction,
-        });
       if (dataDecoded) {
         const fromAddress = this.dataDecodedParamHelper.getFromParam(
           dataDecoded,

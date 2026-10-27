@@ -2,14 +2,12 @@
 import type { Mocked, MockedObject } from 'vitest';
 import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
 import { contractBuilder } from '#/modules/contracts/domain/entities/__tests__/contract.builder';
-import type { IDataDecoderRepository } from '#/modules/data-decoder/domain/v2/data-decoder.repository.interface';
 import {
   dataDecodedBuilder,
   dataDecodedParameterBuilder,
 } from '#/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
 import { multisigTransactionBuilder } from '#/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
 import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
-import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
 import type { SafeAppInfoMapper } from '#/modules/safe-apps/mappers/safe-app-info.mapper';
 import { tokenBuilder } from '#/modules/tokens/domain/__tests__/token.builder';
 import { transferTransactionInfoBuilder } from '#/modules/transactions/routes/entities/__tests__/transfer-transaction-info.builder';
@@ -23,10 +21,6 @@ import type { MultisigTransactionExecutionInfoMapper } from '#/modules/transacti
 import type { MultisigTransactionNoteMapper } from '#/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction-note.mapper';
 import type { MultisigTransactionStatusMapper } from '#/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction-status.mapper';
 import type { AddressInfoHelper } from '#/routes/common/address-info/address-info.helper';
-
-const mockDataDecodedRepository = {
-  getTransactionDataDecoded: vi.fn(),
-} as MockedObject<IDataDecoderRepository>;
 
 describe('MultisigTransactionMapper', () => {
   let mapper: MultisigTransactionMapper;
@@ -59,7 +53,6 @@ describe('MultisigTransactionMapper', () => {
     vi.resetAllMocks();
 
     mapper = new MultisigTransactionMapper(
-      mockDataDecodedRepository,
       statusMapper,
       transactionInfoMapper,
       executionInfoMapper,
@@ -120,24 +113,13 @@ describe('MultisigTransactionMapper', () => {
             .build(),
         ])
         .build();
-      mockDataDecodedRepository.getTransactionDataDecoded.mockImplementation(
-        (args) => {
-          const tx = args.transaction as MultisigTransaction;
-          if (tx.data === transaction1.data) {
-            return Promise.resolve(decodedData1);
-          }
-          if (tx.data === transaction2.data) {
-            return Promise.resolve(decodedData2);
-          }
-          if (tx.data === transaction3.data) {
-            return Promise.resolve(decodedData3);
-          }
-          return Promise.reject(new Error('Unknown transaction data'));
-        },
-      );
       await mapper.prefetchAddressInfos({
         chainId: chain.chainId,
-        transactions: [transaction1, transaction2, transaction3],
+        transactions: [
+          { transaction: transaction1, dataDecoded: decodedData1 },
+          { transaction: transaction2, dataDecoded: decodedData2 },
+          { transaction: transaction3, dataDecoded: decodedData3 },
+        ],
       });
 
       // Check that the addressInfoHelper.getCollection was called with deduplicated addresses

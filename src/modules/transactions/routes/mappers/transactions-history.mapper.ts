@@ -63,14 +63,23 @@ export class TransactionsHistoryMapper {
       return [];
     }
 
+    const decodedTransactions = await Promise.all(
+      transactionsDomain.map(async (transaction) => ({
+        transaction,
+        dataDecoded: await this.dataDecoderRepository.getTransactionDataDecoded(
+          { chainId, transaction },
+        ),
+      })),
+    );
+
     // Prefetch tokens and contracts to avoid multiple parallel requests for the same address
     await this.prefetchAddressInfos({
       chainId,
-      transactions: transactionsDomain,
+      transactions: decodedTransactions,
     });
 
     let previousTransaction: TransactionItem | undefined;
-    let transactions = transactionsDomain;
+    let transactions = decodedTransactions;
 
     /**
      * We insert a {@link DateLabel} between transactions on different days.
@@ -79,18 +88,18 @@ export class TransactionsHistoryMapper {
      */
     if (offset > 0 && transactionsDomain.length > 1) {
       previousTransaction = await this.getPreviousTransaction({
-        transactionsDomain,
+        transactions: decodedTransactions,
         chainId,
         safe,
         onlyTrusted,
       });
 
       // Remove first transaction that was requested to get previous day timestamp
-      transactions = transactionsDomain.slice(1);
+      transactions = decodedTransactions.slice(1);
     }
 
     const mappedTransactions = await this.getMappedTransactions({
-      transactionsDomain: transactions,
+      transactions,
       chainId,
       safe,
       previousTransaction,
@@ -125,18 +134,26 @@ export class TransactionsHistoryMapper {
 
   private async prefetchAddressInfos(args: {
     chainId: string;
-    transactions: Array<TransactionDomain>;
+    transactions: Array<{
+      transaction: TransactionDomain;
+      dataDecoded: DataDecoded | null;
+    }>;
   }): Promise<void> {
     // Prefetch tokens and contracts AddressInfos for transactions
-    const transactions = args.transactions.filter(
-      isMultisigTransaction || isModuleTransaction,
+    const transactions = args.transactions.flatMap(
+      ({ transaction, dataDecoded }) =>
+        isMultisigTransaction(transaction)
+          ? [{ transaction, dataDecoded }]
+          : [],
     );
     await this.multisigTransactionMapper.prefetchAddressInfos({
       chainId: args.chainId,
       transactions,
     });
     // Prefetch tokens and contracts AddressInfos for native Ethereum transfers
-    const transfers = args.transactions.filter(isEthereumTransaction);
+    const transfers = args.transactions
+      .map(({ transaction }) => transaction)
+      .filter(isEthereumTransaction);
     const addressesFromTransfers = Array.from(
       new Set(this.getAddressesFromTransfers(transfers)),
     );
@@ -163,21 +180,19 @@ export class TransactionsHistoryMapper {
   }
 
   private async getPreviousTransaction(args: {
-    transactionsDomain: Array<TransactionDomain>;
+    transactions: Array<{
+      transaction: TransactionDomain;
+      dataDecoded: DataDecoded | null;
+    }>;
     chainId: string;
     safe: Safe;
     onlyTrusted: boolean;
   }): Promise<TransactionItem | undefined> {
-    const prevDomainTransaction = args.transactionsDomain[0];
-    const dataDecoded =
-      await this.dataDecoderRepository.getTransactionDataDecoded({
-        chainId: args.chainId,
-        transaction: prevDomainTransaction,
-      });
+    const { transaction, dataDecoded } = args.transactions[0];
 
     // We map in order to filter last list item against it
     const mappedPreviousTransaction = await this.mapTransaction(
-      prevDomainTransaction,
+      transaction,
       args.chainId,
       args.safe,
       args.onlyTrusted,
@@ -191,7 +206,10 @@ export class TransactionsHistoryMapper {
   }
 
   private async getMappedTransactions(args: {
-    transactionsDomain: Array<TransactionDomain>;
+    transactions: Array<{
+      transaction: TransactionDomain;
+      dataDecoded: DataDecoded | null;
+    }>;
     chainId: string;
     safe: Safe;
     previousTransaction: TransactionItem | undefined;
@@ -199,12 +217,7 @@ export class TransactionsHistoryMapper {
     showImitations: boolean;
   }): Promise<Array<TransactionItem>> {
     const mappedTransactions = await Promise.all(
-      args.transactionsDomain.map(async (transaction) => {
-        const dataDecoded =
-          await this.dataDecoderRepository.getTransactionDataDecoded({
-            chainId: args.chainId,
-            transaction,
-          });
+      args.transactions.map(({ transaction, dataDecoded }) => {
         return this.mapTransaction(
           transaction,
           args.chainId,
