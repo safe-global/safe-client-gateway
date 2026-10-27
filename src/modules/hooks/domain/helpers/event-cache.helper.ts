@@ -224,13 +224,11 @@ export class EventCacheHelper {
     // A new pending multisig transaction affects:
     // queued transactions – clear multisig transactions
     // the pending transaction – clear multisig transaction
-    // the queue of every Space holding the Safe
     return [
       this.safeRepository.clearMultisigTransactions({
         chainId: event.chainId,
         safeAddress: event.address,
       }),
-      this.safeRepository.clearSpaceTransactionQueues(event),
       this.safeRepository.clearMultisigTransaction({
         chainId: event.chainId,
         safeTransactionHash: event.safeTxHash,
@@ -247,13 +245,11 @@ export class EventCacheHelper {
     // A deleted multisig transaction affects:
     // queued transactions – clear multisig transactions
     // the pending transaction – clear multisig transaction
-    // the queue of every Space holding the Safe
     return [
       this.safeRepository.clearMultisigTransactions({
         chainId: event.chainId,
         safeAddress: event.address,
       }),
-      this.safeRepository.clearSpaceTransactionQueues(event),
       this.safeRepository.clearMultisigTransaction({
         chainId: event.chainId,
         safeTransactionHash: event.safeTxHash,
@@ -313,7 +309,6 @@ export class EventCacheHelper {
     // - the list of all executed transactions for the safe
     // - the transfers for that safe
     // - queued transactions and history – clear multisig transactions
-    // - the queue of every Space holding the Safe
     // - the transaction executed – clear multisig transaction
     // - the safe configuration - clear safe info
     // - the stakes of a safe
@@ -340,7 +335,6 @@ export class EventCacheHelper {
         chainId: event.chainId,
         safeAddress: event.address,
       }),
-      this.safeRepository.clearSpaceTransactionQueues(event),
       this.safeRepository.clearMultisigTransaction({
         chainId: event.chainId,
         safeTransactionHash: event.safeTxHash,
@@ -368,10 +362,6 @@ export class EventCacheHelper {
         this.safeRepository.clearMultisigTransactions({
           chainId: event.chainId,
           safeAddress: child.safeAddress,
-        }),
-        this.safeRepository.clearSpaceTransactionQueues({
-          chainId: event.chainId,
-          address: child.safeAddress,
         }),
         this.safeRepository.clearMultisigTransaction({
           chainId: event.chainId,
@@ -458,14 +448,12 @@ export class EventCacheHelper {
   ): Array<Promise<void>> {
     // A new confirmation for a pending transaction affects:
     // - queued transactions – clear multisig transactions
-    // - the queue of every Space holding the Safe
     // - the pending transaction – clear multisig transaction
     return [
       this.safeRepository.clearMultisigTransactions({
         chainId: event.chainId,
         safeAddress: event.address,
       }),
-      this.safeRepository.clearSpaceTransactionQueues(event),
       this.safeRepository.clearMultisigTransaction({
         chainId: event.chainId,
         safeTransactionHash: event.safeTxHash,
@@ -684,11 +672,9 @@ export class EventCacheHelper {
   private onTransactionEventSafeCreated(
     event: Extract<Event, { type: TransactionEventType.SAFE_CREATED }>,
   ): Array<Promise<void>> {
-    // A freshly indexed Safe may have been funded before deployment, and
-    // its cached 404 would keep it unavailable in the queue of a Space.
+    // A freshly indexed Safe may have been funded before deployment.
     return [
       this.safeRepository.clearIsSafe(event),
-      this.safeRepository.clearSafe(event),
       this.zerionCache.invalidate(event.address, event.type),
     ];
   }

@@ -85,12 +85,7 @@ describe('SpaceTransactionsService', () => {
     });
     expect(
       mockTransactionsService.getTransactionQueueForSafes,
-    ).toHaveBeenCalledWith({
-      spaceId,
-      safes,
-      routeUrl,
-      paginationData,
-    });
+    ).toHaveBeenCalledWith({ safes, routeUrl, paginationData });
   });
 
   it('rejects a caller who is not an active member of the Space', async () => {

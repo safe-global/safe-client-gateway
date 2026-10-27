@@ -44,7 +44,6 @@ import { toCheckoutSessionDto } from '#/modules/billing/routes/entities/checkout
 import { spaceSubscriptionBuilder } from '#/modules/entitlements/domain/entities/__tests__/space-subscription.builder';
 import type { ISubscriptionSyncService } from '#/modules/entitlements/domain/subscription-sync.service.interface';
 import type { ISubscriptionsRepository } from '#/modules/entitlements/domain/subscriptions.repository.interface';
-import type { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
 import type { Space } from '#/modules/spaces/domain/entities/space.entity';
 import type { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository.interface';
 import type { ISpacesRepository } from '#/modules/spaces/domain/spaces.repository.interface';
@@ -84,10 +83,6 @@ const spaceSafesRepositoryMock = {
   countSeatsBySpaceId: vi.fn(),
   delete: vi.fn(),
 } as MockedObject<ISpaceSafesRepository>;
-
-const safeRepositoryMock = {
-  clearSpaceTransactionQueue: vi.fn(),
-} as MockedObject<ISafeRepository>;
 
 const loggingServiceMock = {
   warn: vi.fn(),
@@ -139,7 +134,6 @@ describe('BillingService', () => {
       spacesRepositoryMock,
       spaceSafesRepositoryMock,
       loggingServiceMock,
-      safeRepositoryMock,
     );
   }
 
@@ -154,7 +148,6 @@ describe('BillingService', () => {
 
   beforeEach(() => {
     vi.resetAllMocks();
-    safeRepositoryMock.clearSpaceTransactionQueue.mockResolvedValue();
     postLoginRedirectUri = faker.internet.url();
     fakeConfigurationService = new FakeConfigurationService();
     fakeConfigurationService.set(
@@ -1439,9 +1432,6 @@ describe('BillingService', () => {
           spaceSafesRepositoryMock.countSeatsBySpaceId,
         );
         expect(
-          safeRepositoryMock.clearSpaceTransactionQueue,
-        ).toHaveBeenCalledExactlyOnceWith({ spaceId });
-        expect(
           spaceSafesRepositoryMock.countSeatsBySpaceId,
         ).toHaveBeenCalledBefore(billingRepositoryMock.updateSubscription);
         expect(billingRepositoryMock.updateSubscription).toHaveBeenCalledWith(
@@ -1497,9 +1487,6 @@ describe('BillingService', () => {
         ).resolves.toBe(updateResult);
 
         expect(loggingServiceMock.debug).toHaveBeenCalled();
-        expect(
-          safeRepositoryMock.clearSpaceTransactionQueue,
-        ).not.toHaveBeenCalled();
       });
 
       it('keeps the plan when the removal fails', async () => {

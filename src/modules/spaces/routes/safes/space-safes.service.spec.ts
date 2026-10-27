@@ -8,7 +8,6 @@ import type { Address } from 'viem';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
 import type { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
-import type { ILoggingService } from '#/logging/logging.interface';
 import {
   oidcAuthPayloadDtoBuilder,
   siweAuthPayloadDtoBuilder,
@@ -16,7 +15,6 @@ import {
 import { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
 import type { IEntitlementEnforcement } from '#/modules/entitlements/domain/entitlement-enforcement.interface';
 import { QuotaExceededError } from '#/modules/entitlements/domain/errors/quota-exceeded.error';
-import type { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
 import type { IAddressBookItemsRepository } from '#/modules/spaces/domain/address-books/address-book-items.repository.interface';
 import { spaceBuilder } from '#/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
 import type { PreparedSpaceSafe } from '#/modules/spaces/domain/safes/entities/space-safe.entity';
@@ -68,14 +66,6 @@ const addressBookItemsRepositoryMock = {
   upsertMany: vi.fn(),
 } as MockedObject<IAddressBookItemsRepository>;
 
-const safeRepositoryMock = {
-  clearSpaceTransactionQueue: vi.fn(),
-} as MockedObject<ISafeRepository>;
-
-const loggingServiceMock = {
-  warn: vi.fn(),
-} as MockedObject<ILoggingService>;
-
 const entitlementEnforcementMock = {
   assertWithinQuota: vi.fn(),
   prepareQuotaCheck: vi.fn(),
@@ -86,15 +76,12 @@ describe('SpaceSafesService', () => {
 
   beforeEach(() => {
     vi.resetAllMocks();
-    safeRepositoryMock.clearSpaceTransactionQueue.mockResolvedValue();
     service = new SpaceSafesService(
       spaceSafesRepositoryMock,
       membersRepositoryMock,
       entitlementEnforcementMock,
       postgresDatabaseServiceMock,
       addressBookItemsRepositoryMock,
-      safeRepositoryMock,
-      loggingServiceMock,
     );
   });
 
@@ -217,28 +204,6 @@ describe('SpaceSafesService', () => {
       expect(spaceSafesRepositoryMock.insertRows).toHaveBeenCalledOnce();
     });
 
-    it('clears the Space queue once the Safes are committed', async () => {
-      const spaceId = faker.number.int();
-      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
-      const payload = [
-        { address: addr(), chainId: faker.number.int().toString() },
-      ];
-      membersRepositoryMock.findOne.mockResolvedValue(adminMember());
-      entitlementEnforcementMock.prepareQuotaCheck.mockResolvedValue(vi.fn());
-      spaceSafesRepositoryMock.encryptRows.mockResolvedValue(
-        payload.map(({ address }) => preparedRow(spaceId, address)),
-      );
-
-      await service.create({ spaceId, authPayload, payload });
-
-      expect(
-        safeRepositoryMock.clearSpaceTransactionQueue,
-      ).toHaveBeenCalledExactlyOnceWith({ spaceId });
-      expect(postgresDatabaseServiceMock.transaction).toHaveBeenCalledBefore(
-        safeRepositoryMock.clearSpaceTransactionQueue,
-      );
-    });
-
     it('takes no seat for another chain of a Safe the Workspace holds', async () => {
       const spaceId = faker.number.int();
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
@@ -293,9 +258,6 @@ describe('SpaceSafesService', () => {
       ).rejects.toThrow(quotaExceeded);
 
       expect(spaceSafesRepositoryMock.insertRows).not.toHaveBeenCalled();
-      expect(
-        safeRepositoryMock.clearSpaceTransactionQueue,
-      ).not.toHaveBeenCalled();
     });
   });
 
@@ -568,33 +530,6 @@ describe('SpaceSafesService', () => {
         actorUserId: Number(authPayload.sub),
         payload,
       });
-      expect(
-        safeRepositoryMock.clearSpaceTransactionQueue,
-      ).toHaveBeenCalledExactlyOnceWith({ spaceId });
-      expect(spaceSafesRepositoryMock.delete).toHaveBeenCalledBefore(
-        safeRepositoryMock.clearSpaceTransactionQueue,
-      );
-    });
-
-    it('still succeeds, logging it, when the Space queue cannot be cleared', async () => {
-      const spaceId = faker.number.int();
-      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
-      membersRepositoryMock.findOne.mockResolvedValue(adminMember());
-      safeRepositoryMock.clearSpaceTransactionQueue.mockRejectedValue(
-        new Error(faker.lorem.sentence()),
-      );
-
-      await expect(
-        service.delete({
-          spaceId,
-          authPayload,
-          payload: [
-            { address: addr(), chainId: faker.number.int().toString() },
-          ],
-        }),
-      ).resolves.toBeUndefined();
-
-      expect(loggingServiceMock.warn).toHaveBeenCalledOnce();
     });
 
     it('should throw when not authenticated', async () => {

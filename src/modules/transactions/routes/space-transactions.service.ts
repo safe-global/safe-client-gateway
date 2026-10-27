@@ -34,7 +34,6 @@ export class SpaceTransactionsService {
     );
 
     return await this.transactionsService.getTransactionQueueForSafes({
-      spaceId: args.spaceId,
       safes: spaceSafes,
       routeUrl: args.routeUrl,
       paginationData: args.paginationData,

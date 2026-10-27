@@ -4,7 +4,6 @@ import { type Address, getAddress, type Hex } from 'viem';
 import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
 import type { CacheFirstDataSource } from '#/datasources/cache/cache.first.data.source';
-import { CacheRouter } from '#/datasources/cache/cache.router';
 import type { ICacheService } from '#/datasources/cache/cache.service.interface';
 import { CacheDir } from '#/datasources/cache/entities/cache-dir.entity';
 import { CircuitBreakerKeys } from '#/datasources/circuit-breaker/circuit-breaker.keys';
@@ -59,8 +58,6 @@ describe('SafeQueueService', () => {
   const safeAddress = getAddress(faker.finance.ethereumAddress());
   const safeTxHash = faker.string.hexadecimal({ length: 64 });
   const messageHash = faker.string.hexadecimal({ length: 64 });
-  const defaultExpirationTimeInSeconds = faker.number.int({ min: 1 });
-  const notFoundExpirationTimeInSeconds = faker.number.int({ min: 1 });
   let service: SafeQueueService;
 
   beforeEach(() => {
@@ -70,10 +67,10 @@ describe('SafeQueueService', () => {
         return baseUri;
       }
       if (key === 'expirationTimeInSeconds.default') {
-        return defaultExpirationTimeInSeconds;
+        return 60;
       }
       if (key === 'expirationTimeInSeconds.notFound.default') {
-        return notFoundExpirationTimeInSeconds;
+        return 30;
       }
       throw new Error(`Unexpected key: ${key}`);
     });
@@ -247,9 +244,7 @@ describe('SafeQueueService', () => {
   });
 
   describe('getTransactionQueueForSafes', () => {
-    const spaceId = faker.number.int({ min: 1 });
-
-    it('Should request every Safe once, with its chains, through the cache of the Space', async () => {
+    it('Should request every Safe once, with its chains, without the cache', async () => {
       const otherChainId = faker.string.numeric({ length: 6 });
       const otherSafeAddress = getAddress(faker.finance.ethereumAddress());
       const page = rawify({
@@ -263,10 +258,9 @@ describe('SafeQueueService', () => {
         max: SAFE_QUEUE_SERVICE_MAX_LIMIT,
       });
       const offset = faker.number.int({ min: 0, max: 100 });
-      mockDataSource.get.mockResolvedValueOnce(page);
+      networkService.get.mockResolvedValueOnce({ status: 200, data: page });
 
       const actual = await service.getTransactionQueueForSafes({
-        spaceId,
         safes: [
           { chainId, safeAddress },
           { chainId: otherChainId, safeAddress },
@@ -278,23 +272,14 @@ describe('SafeQueueService', () => {
       });
 
       expect(actual).toBe(page);
-      const safes = [
-        `${safeAddress}:${chainId}:${otherChainId}`,
-        `${otherSafeAddress}:${chainId}`,
-      ];
-      expect(mockDataSource.get).toHaveBeenCalledExactlyOnceWith({
-        cacheDir: CacheRouter.getSpaceTransactionQueueCacheDir({
-          spaceId,
-          safes,
-          limit,
-          offset,
-        }),
+      expect(networkService.get).toHaveBeenCalledExactlyOnceWith({
         url: `${baseUri}/api/v1/multisig-transactions/queue`,
-        expireTimeSeconds: defaultExpirationTimeInSeconds,
-        notFoundExpireTimeSeconds: notFoundExpirationTimeInSeconds,
         networkRequest: {
           params: {
-            safes,
+            safes: [
+              `${safeAddress}:${chainId}:${otherChainId}`,
+              `${otherSafeAddress}:${chainId}`,
+            ],
             nonceOrder: 'asc',
             limit,
             offset,
@@ -304,70 +289,16 @@ describe('SafeQueueService', () => {
           },
         },
       });
-      expect(networkService.get).not.toHaveBeenCalled();
-    });
-
-    it('Should key the cache by Space id', async () => {
-      mockDataSource.get.mockResolvedValueOnce(rawify({ results: [] }));
-
-      await service.getTransactionQueueForSafes({
-        spaceId,
-        safes: [{ chainId, safeAddress }],
-      });
-
-      expect(mockDataSource.get).toHaveBeenCalledExactlyOnceWith(
-        expect.objectContaining({
-          cacheDir: expect.objectContaining({
-            key: CacheRouter.getSpaceTransactionQueueCacheKey(spaceId),
-          }),
-        }),
-      );
-    });
-
-    it('Should cache the same page for another set of Safes under another field', async () => {
-      mockDataSource.get.mockResolvedValue(rawify({ results: [] }));
-      const otherSafeAddress = getAddress(faker.finance.ethereumAddress());
-
-      await service.getTransactionQueueForSafes({
-        spaceId,
-        safes: [{ chainId, safeAddress }],
-      });
-      await service.getTransactionQueueForSafes({
-        spaceId,
-        safes: [
-          { chainId, safeAddress },
-          { chainId, safeAddress: otherSafeAddress },
-        ],
-      });
-
-      expect(mockDataSource.get).toHaveBeenNthCalledWith(
-        1,
-        expect.objectContaining({
-          cacheDir: CacheRouter.getSpaceTransactionQueueCacheDir({
-            spaceId,
-            safes: [`${safeAddress}:${chainId}`],
-          }),
-        }),
-      );
-      expect(mockDataSource.get).toHaveBeenNthCalledWith(
-        2,
-        expect.objectContaining({
-          cacheDir: CacheRouter.getSpaceTransactionQueueCacheDir({
-            spaceId,
-            safes: [
-              `${safeAddress}:${chainId}`,
-              `${otherSafeAddress}:${chainId}`,
-            ],
-          }),
-        }),
-      );
+      expect(mockDataSource.get).not.toHaveBeenCalled();
     });
 
     it('Should cap the limit at the queue service maximum', async () => {
-      mockDataSource.get.mockResolvedValueOnce(rawify({ results: [] }));
+      networkService.get.mockResolvedValueOnce({
+        status: 200,
+        data: rawify({ results: [] }),
+      });
 
       await service.getTransactionQueueForSafes({
-        spaceId,
         safes: [{ chainId, safeAddress }],
         limit: faker.number.int({
           min: SAFE_QUEUE_SERVICE_MAX_LIMIT + 1,
@@ -375,7 +306,7 @@ describe('SafeQueueService', () => {
         }),
       });
 
-      expect(mockDataSource.get).toHaveBeenCalledWith(
+      expect(networkService.get).toHaveBeenCalledWith(
         expect.objectContaining({
           networkRequest: expect.objectContaining({
             params: expect.objectContaining({
@@ -389,7 +320,7 @@ describe('SafeQueueService', () => {
     it('Should map a network failure through the HTTP error factory', async () => {
       const status = faker.internet.httpStatusCode({ types: ['serverError'] });
       const message = faker.lorem.sentence();
-      mockDataSource.get.mockRejectedValueOnce(
+      networkService.get.mockRejectedValueOnce(
         new NetworkResponseError(
           new URL(`${baseUri}/api/v1/multisig-transactions/queue`),
           { status } as Response,
@@ -399,7 +330,6 @@ describe('SafeQueueService', () => {
 
       await expect(
         service.getTransactionQueueForSafes({
-          spaceId,
           safes: [{ chainId, safeAddress }],
         }),
       ).rejects.toThrow(new DataSourceError(message, status));
@@ -524,18 +454,6 @@ describe('SafeQueueService', () => {
       );
       expect(mockCacheService.deleteByKey).not.toHaveBeenCalledWith(
         `${chainId}_all_transactions_${safeAddress}`,
-      );
-    });
-  });
-
-  describe('clearSpaceTransactionQueue', () => {
-    it('Should delete the cache key of the Space queue', async () => {
-      const spaceId = faker.number.int({ min: 1 });
-
-      await service.clearSpaceTransactionQueue({ spaceId });
-
-      expect(mockCacheService.deleteByKey).toHaveBeenCalledExactlyOnceWith(
-        `${spaceId}_space_transaction_queue`,
       );
     });
   });

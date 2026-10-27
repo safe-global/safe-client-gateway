@@ -55,7 +55,6 @@ import {
 import { buildOrigin } from '#/modules/safe-queue/helpers/origin.helper';
 import { mapSafeQueueToMultisigTransaction } from '#/modules/safe-queue/mappers/transaction.mapper';
 import { ISafeQueueService } from '#/modules/safe-queue/safe-queue.interface';
-import { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository.interface';
 import { ProposeTransactionDto } from '#/modules/transactions/domain/entities/propose-transaction.dto.entity';
 import { TransactionVerifierHelper } from '#/modules/transactions/routes/helpers/transaction-verifier.helper';
 import { PaginationData } from '#/routes/common/pagination/pagination.data';
@@ -64,7 +63,6 @@ import { PaginationData } from '#/routes/common/pagination/pagination.data';
 export class SafeRepository implements ISafeRepository {
   private readonly maxSequentialPages: number;
   private readonly safeQueueEnabled: boolean;
-  private readonly spaceTransactionQueueEnabled: boolean;
 
   constructor(
     @Inject(ITransactionApiManager)
@@ -77,8 +75,6 @@ export class SafeRepository implements ISafeRepository {
     private readonly configurationService: IConfigurationService,
     @Inject(ISafeQueueService)
     private readonly safeQueueService: ISafeQueueService,
-    @Inject(ISpaceSafesRepository)
-    private readonly spaceSafesRepository: ISpaceSafesRepository,
   ) {
     this.maxSequentialPages = this.configurationService.getOrThrow<number>(
       'safeConfig.safes.maxSequentialPages',
@@ -86,10 +82,6 @@ export class SafeRepository implements ISafeRepository {
     this.safeQueueEnabled = this.configurationService.getOrThrow<boolean>(
       'features.safeQueueService',
     );
-    // The same conditions `AppModule` serves the Space queue under.
-    this.spaceTransactionQueueEnabled =
-      this.safeQueueEnabled &&
-      this.configurationService.getOrThrow<boolean>('features.users');
   }
 
   async getSafe(args: { chainId: string; address: Address }): Promise<Safe> {
@@ -310,7 +302,6 @@ export class SafeRepository implements ISafeRepository {
   }
 
   async getTransactionQueueForSafes(args: {
-    spaceId: number;
     safes: ReadonlyArray<{ chainId: string; safe: Safe }>;
     limit?: number;
     offset?: number;
@@ -322,7 +313,6 @@ export class SafeRepository implements ISafeRepository {
       ]),
     );
     const page = await this.safeQueueService.getTransactionQueueForSafes({
-      spaceId: args.spaceId,
       safes: args.safes.map(({ chainId, safe }) => ({
         chainId,
         safeAddress: safe.address,
@@ -768,10 +758,6 @@ export class SafeRepository implements ISafeRepository {
         chainId: args.chainId,
         safeAddress: safe,
       }),
-      this.clearSpaceTransactionQueues({
-        chainId: args.chainId,
-        address: safe,
-      }),
     ]).catch((error) => {
       this.loggingService.warn(
         `Failed to immediately clear deleted transaction from cache. chainId=${args.chainId}, safeTxHash=${args.safeTxHash}, error=${error}`,
@@ -810,29 +796,6 @@ export class SafeRepository implements ISafeRepository {
       );
       throw new Error('Failed to clear multisig transactions');
     }
-  }
-
-  async clearSpaceTransactionQueue(args: { spaceId: number }): Promise<void> {
-    if (this.safeQueueEnabled) {
-      await this.safeQueueService.clearSpaceTransactionQueue(args);
-    }
-  }
-
-  async clearSpaceTransactionQueues(args: {
-    chainId: string;
-    address: Address;
-  }): Promise<void> {
-    // Finding the Spaces costs a query, so skip it while the queue is not served.
-    if (!this.spaceTransactionQueueEnabled) {
-      return;
-    }
-    const spaceIds = await this.spaceSafesRepository.findSpaceIdsBySafe({
-      chainId: args.chainId,
-      address: args.address,
-    });
-    await Promise.all(
-      spaceIds.map((spaceId) => this.clearSpaceTransactionQueue({ spaceId })),
-    );
   }
 
   async getMultisigTransactions(args: {

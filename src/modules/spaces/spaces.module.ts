@@ -6,7 +6,6 @@ import { PostgresDatabaseModuleV2 } from '#/datasources/db/v2/postgres-database.
 import { KmsEncryptionModule } from '#/datasources/kms/kms-encryption.module';
 import { AuthModule } from '#/modules/auth/auth.module';
 import { EntitlementsModule } from '#/modules/entitlements/entitlements.module';
-import { SafeRepositoryModule } from '#/modules/safe/domain/safe.repository.interface';
 import { AddressBookItem } from '#/modules/spaces/datasources/address-books/entities/address-book-item.entity.db';
 import { AddressBookRequest } from '#/modules/spaces/datasources/address-books/entities/address-book-request.entity.db';
 import { SpaceSafe } from '#/modules/spaces/datasources/safes/entities/space-safes.entity.db';
@@ -57,7 +56,6 @@ import { SpaceIdPipe } from '#/routes/common/pipes/space-id.pipe';
     forwardRef(() => EntitlementsModule),
     SpaceAuditModule,
     KmsEncryptionModule,
-    SafeRepositoryModule,
     MemberEncryptionModule,
     UserIdentityResolverModule,
     WalletsModule,

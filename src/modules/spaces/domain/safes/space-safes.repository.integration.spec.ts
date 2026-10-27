@@ -942,36 +942,6 @@ describe('SpaceSafesRepository', () => {
     });
   });
 
-  describe('findSpaceIdsBySafe', () => {
-    it('should find every space holding the Safe on its chain', async () => {
-      const safe = {
-        chainId: faker.string.numeric(),
-        address: getAddress(faker.finance.ethereumAddress()),
-      };
-      const spaceIds = [await spaceHolding([safe]), await spaceHolding([safe])];
-      await spaceHolding([]);
-
-      const actual = await spaceSafesRepo.findSpaceIdsBySafe(safe);
-
-      expect(actual.toSorted()).toEqual(spaceIds.toSorted());
-    });
-
-    it('should not find a space holding the address on another chain', async () => {
-      const safe = {
-        chainId: faker.string.numeric(),
-        address: getAddress(faker.finance.ethereumAddress()),
-      };
-      await spaceHolding([safe]);
-
-      await expect(
-        spaceSafesRepo.findSpaceIdsBySafe({
-          chainId: `${safe.chainId}1`,
-          address: safe.address,
-        }),
-      ).resolves.toEqual([]);
-    });
-  });
-
   describe('existsInSpace', () => {
     it('should find a Safe the space holds', async () => {
       const safe = {

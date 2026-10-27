@@ -107,8 +107,6 @@ describe('TransactionsService', () => {
   }
 
   describe('getTransactionQueueForSafes', () => {
-    const spaceId = faker.number.int({ min: 1 });
-
     it('maps consecutive runs of one Safe in nonce order, each against its own Safe', async () => {
       const chainId = faker.string.numeric({ length: 3 });
       const [addressA, addressB] = [
@@ -136,7 +134,6 @@ describe('TransactionsService', () => {
       );
 
       const actual = await target.getTransactionQueueForSafes({
-        spaceId,
         safes: [
           { chainId, address: addressA },
           { chainId, address: addressB },
@@ -191,7 +188,6 @@ describe('TransactionsService', () => {
         .mockResolvedValueOnce(queuePage([conflicting, following], 3));
 
       const actual = await target.getTransactionQueueForSafes({
-        spaceId,
         safes: [{ chainId, address: safe.address }],
         routeUrl,
         paginationData: new PaginationData(limit, 0),
@@ -200,16 +196,10 @@ describe('TransactionsService', () => {
       const safes = [{ chainId, safe }];
       expect(
         mockSafeRepository.getTransactionQueueForSafes,
-      ).toHaveBeenNthCalledWith(1, {
-        spaceId,
-        safes,
-        limit: limit + 1,
-        offset: 0,
-      });
+      ).toHaveBeenNthCalledWith(1, { safes, limit: limit + 1, offset: 0 });
       expect(
         mockSafeRepository.getTransactionQueueForSafes,
       ).toHaveBeenNthCalledWith(2, {
-        spaceId,
         safes,
         limit: SAFE_QUEUE_SERVICE_MAX_LIMIT,
         offset: limit,
@@ -255,7 +245,6 @@ describe('TransactionsService', () => {
       );
 
       const actual = await target.getTransactionQueueForSafes({
-        spaceId,
         safes: [
           { chainId, address: safe.address },
           { chainId, address: undeployed },
@@ -272,7 +261,7 @@ describe('TransactionsService', () => {
       expect(
         mockSafeRepository.getTransactionQueueForSafes,
       ).toHaveBeenCalledWith(
-        expect.objectContaining({ spaceId, safes: [{ chainId, safe }] }),
+        expect.objectContaining({ safes: [{ chainId, safe }] }),
       );
       expect(mockLoggingService.warn).toHaveBeenCalledTimes(1);
       expect(mockLoggingService.warn).toHaveBeenCalledWith(
@@ -288,7 +277,6 @@ describe('TransactionsService', () => {
       );
 
       const actual = await target.getTransactionQueueForSafes({
-        spaceId,
         safes: [{ chainId, address }],
         routeUrl,
         paginationData: new PaginationData(20, 0),
@@ -324,7 +312,6 @@ describe('TransactionsService', () => {
       mockSafeRepository.getTransactionQueueForSafes.mockRejectedValue(error);
 
       const actual = await target.getTransactionQueueForSafes({
-        spaceId,
         safes: [
           { chainId, address: safe.address },
           { chainId, address: undeployed },
@@ -371,7 +358,6 @@ describe('TransactionsService', () => {
         );
 
       const actual = await target.getTransactionQueueForSafes({
-        spaceId,
         safes: [{ chainId, address: safe.address }],
         routeUrl,
         paginationData: new PaginationData(1, 0),
@@ -400,7 +386,6 @@ describe('TransactionsService', () => {
       );
 
       const actual = await target.getTransactionQueueForSafes({
-        spaceId,
         safes: [
           ...addresses.map((address) => ({ chainId, address })),
           { chainId, address: addresses[0] },
