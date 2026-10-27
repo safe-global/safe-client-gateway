@@ -372,6 +372,69 @@ describe('DelayedGuardPoliciesMapper', () => {
       );
     });
 
+    it('should report the fully signed apply among several at the same nonce', () => {
+      const config = configurations();
+      const nonce = faker.number.int({ max: 100 });
+      const replacement = { ...apply(config, 2), nonce };
+
+      const [item] = map({
+        onChainConfigurations: [
+          onChain({ configurations: config, readyAt: now - 60 }),
+        ],
+        transactions: [
+          { ...apply(config, 0), nonce },
+          { ...apply(config, 1), nonce },
+          replacement,
+        ],
+      });
+
+      expect(item.transaction?.safeTxHash).toBe(replacement.safeTxHash);
+    });
+
+    it('should keep a fully signed apply over a less signed one after it at the same nonce', () => {
+      const config = configurations();
+      const nonce = faker.number.int({ max: 100 });
+      const signed = { ...apply(config, 2), nonce };
+
+      const [item] = map({
+        onChainConfigurations: [
+          onChain({ configurations: config, readyAt: now - 60 }),
+        ],
+        transactions: [signed, { ...apply(config, 1), nonce }],
+      });
+
+      expect(item).toStrictEqual(
+        expect.objectContaining({
+          status: 'application-ready',
+          transaction: expect.objectContaining({
+            safeTxHash: signed.safeTxHash,
+          }),
+        }),
+      );
+    });
+
+    it('should keep a fully signed replacement pending before readyAt', () => {
+      const config = configurations();
+      const nonce = faker.number.int({ max: 100 });
+      const replacement = { ...apply(config, 2), nonce };
+
+      const [item] = map({
+        onChainConfigurations: [
+          onChain({ configurations: config, readyAt: now + 60 }),
+        ],
+        transactions: [{ ...apply(config, 1), nonce }, replacement],
+      });
+
+      expect(item).toStrictEqual(
+        expect.objectContaining({
+          status: 'pending-application',
+          transaction: expect.objectContaining({
+            safeTxHash: replacement.safeTxHash,
+          }),
+        }),
+      );
+    });
+
     it('should report the apply at the lower nonce over a fully signed one after it', () => {
       const config = configurations();
       const nonce = faker.number.int({ max: 100 });
