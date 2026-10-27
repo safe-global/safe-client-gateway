@@ -98,7 +98,8 @@ export const PendingDelayedGuardPoliciesStatus = {
   Draft: 'draft',
   /**
    * A queued transaction calls `requestConfiguration(root)`, with any number of
-   * confirmations and whatever the on-chain state.
+   * confirmations, and the root has no open window on the guard: a request
+   * while one is open would revert, so the window is reported instead.
    */
   ConfigurationInSigning: 'configuration-in-signing',
   /**
