@@ -180,8 +180,10 @@ export class FetchNetworkService implements INetworkService {
     const urlObject = new URL(baseUrl);
 
     for (const [key, value] of Object.entries(params)) {
-      if (value != null && value !== '') {
-        urlObject.searchParams.append(key, String(value));
+      for (const element of Array.isArray(value) ? value : [value]) {
+        if (element != null && element !== '') {
+          urlObject.searchParams.append(key, String(element));
+        }
       }
     }
 

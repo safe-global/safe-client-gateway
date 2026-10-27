@@ -125,6 +125,33 @@ describe('FetchNetworkService', () => {
       });
     });
 
+    it(`get should append an array query param once per element`, async () => {
+      const url = faker.internet.url({ appendSlash: false });
+      const values = faker.helpers.multiple(() => faker.string.alphanumeric(), {
+        count: { min: 2, max: 5 },
+      });
+      const networkRequest: NetworkRequest = {
+        params: { values: [...values, '', null, undefined] },
+      };
+
+      await target.get({ url, networkRequest });
+
+      const expectedUrl = new URL(url);
+      for (const value of values) {
+        expectedUrl.searchParams.append('values', value);
+      }
+      expect(fetchClientMock).toHaveBeenCalledExactlyOnceWith(
+        expectedUrl.toString(),
+        {
+          method: 'GET',
+          headers: {},
+        },
+        undefined,
+        undefined,
+        undefined,
+      );
+    });
+
     it(`get logs response error`, async () => {
       const url = faker.internet.url({ appendSlash: false });
       const error = new NetworkResponseError(
