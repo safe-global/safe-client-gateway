@@ -257,6 +257,7 @@ describe('ImmediateGuardPoliciesMapper', () => {
       const guardEnforcedPolicy = policyIndexerGuardEnforcedPolicyBuilder()
         .with('chainId', safe.chainId)
         .with('safe', safe.address)
+        .with('guard', guard)
         .with('operation', 'CALL')
         .with('kind', 'COSIGNER')
         .build();

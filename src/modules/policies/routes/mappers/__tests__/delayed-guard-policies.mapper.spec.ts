@@ -836,6 +836,41 @@ describe('DelayedGuardPoliciesMapper', () => {
       ).toStrictEqual([]);
     });
 
+    it('should type a removal by the binding on its own guard, not on another guard', () => {
+      const onGuard = policyIndexerGuardEnforcedPolicyBuilder()
+        .with('chainId', safe.chainId)
+        .with('safe', safe.address)
+        .with('guard', guard)
+        .with('kind', 'COSIGNER')
+        .build();
+      const onOtherGuard = policyIndexerGuardEnforcedPolicyBuilder()
+        .with('chainId', safe.chainId)
+        .with('safe', safe.address)
+        .with('target', onGuard.target)
+        .with('selector', onGuard.selector)
+        .with('kind', 'ERC20_TRANSFER')
+        .build();
+      const config = [
+        policyConfigurationBuilder()
+          .with('target', onGuard.target)
+          .with('selector', onGuard.selector)
+          .with('operation', 0)
+          .with('policy', zeroAddress)
+          .build(),
+      ];
+
+      expect(
+        map({
+          onChainConfigurations: [onChain({ configurations: config })],
+          storedConfigurations: [stored([config[0]])],
+          bindings: [onOtherGuard, onGuard],
+          types: [PolicyType.Cosigner],
+        }),
+      ).toStrictEqual([
+        expect.objectContaining({ guard, status: 'pending-application' }),
+      ]);
+    });
+
     it('should type a removal by the binding of its exact access', () => {
       const binding = policyIndexerGuardEnforcedPolicyBuilder()
         .with('chainId', safe.chainId)

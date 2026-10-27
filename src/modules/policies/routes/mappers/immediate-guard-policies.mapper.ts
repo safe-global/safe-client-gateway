@@ -64,6 +64,7 @@ export class ImmediateGuardPoliciesMapper {
 
         const isRequested = maySetRequestedType({
           chainId: args.safe.chainId,
+          guard: item.guard,
           configurations: item.configurations,
           guardEnforcedPolicies: args.guardEnforcedPolicies,
           types: args.types,

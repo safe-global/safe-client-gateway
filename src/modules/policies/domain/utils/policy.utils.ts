@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { isAddressEqual, zeroAddress } from 'viem';
+import { type Address, isAddressEqual, zeroAddress } from 'viem';
 import { toSecondsTimestamp } from '#/domain/common/utils/time';
 import type {
   ApplicationWindow,
@@ -69,9 +69,13 @@ export function guardPolicyTypeOfKind(
  * `false` only when CGW knows the type of every configuration and none was
  * requested. A configuration of an unknown type - an unknown policy contract,
  * or a removal of no known binding - cannot be ruled out, so it keeps them in.
+ *
+ * @param args.guard The guard the configurations are for; `null` when not yet
+ * known, which matches a removal against the bindings of every guard.
  */
 export function maySetRequestedType(args: {
   chainId: string;
+  guard: Address | null;
   configurations: ReadonlyArray<PolicyConfiguration>;
   guardEnforcedPolicies: ReadonlyArray<PolicyIndexerGuardEnforcedPolicy>;
   types: ReadonlyArray<PolicyType>;
@@ -79,6 +83,7 @@ export function maySetRequestedType(args: {
   return args.configurations.some((configuration) => {
     const type = policyTypeOf({
       chainId: args.chainId,
+      guard: args.guard,
       configuration,
       guardEnforcedPolicies: args.guardEnforcedPolicies,
     });
@@ -88,10 +93,12 @@ export function maySetRequestedType(args: {
 
 /**
  * The policy type a configuration sets. A configuration that removes a policy
- * names no policy contract, so its type is that of the binding it removes.
+ * names no policy contract, so its type is that of the binding it removes on
+ * its guard.
  */
 function policyTypeOf(args: {
   chainId: string;
+  guard: Address | null;
   configuration: PolicyConfiguration;
   guardEnforcedPolicies: ReadonlyArray<PolicyIndexerGuardEnforcedPolicy>;
 }): PolicyType | null {
@@ -104,6 +111,8 @@ function policyTypeOf(args: {
   const operation = policyOperationFromValue(configuration.operation);
   const guardEnforcedPolicy = args.guardEnforcedPolicies.find(
     (guardEnforcedPolicy) =>
+      (args.guard === null ||
+        isAddressEqual(guardEnforcedPolicy.guard, args.guard)) &&
       isAddressEqual(guardEnforcedPolicy.target, configuration.target) &&
       guardEnforcedPolicy.selector.toLowerCase() ===
         configuration.selector.toLowerCase() &&
