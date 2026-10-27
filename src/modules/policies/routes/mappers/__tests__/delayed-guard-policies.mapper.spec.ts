@@ -387,6 +387,53 @@ describe('DelayedGuardPoliciesMapper', () => {
       ]);
     });
 
+    it('should report a stored root as a draft while only an apply on a guard the Safe no longer uses is queued', () => {
+      const draft = stored(configurations());
+      const previousGuard = getAddress(faker.finance.ethereumAddress());
+
+      expect(
+        map({
+          storedConfigurations: [draft],
+          transactions: [apply(draft.configurations, 2, previousGuard)],
+        }),
+      ).toStrictEqual([
+        expect.objectContaining({ status: 'draft', guard: null }),
+      ]);
+    });
+
+    it('should report a stored root queued for apply and then request as being signed, once', () => {
+      const draft = stored(configurations());
+      const nonce = faker.number.int({ max: 100 });
+      const queuedRequest = {
+        ...request(draft.configurations),
+        nonce: nonce + 1,
+      };
+
+      expect(
+        map({
+          storedConfigurations: [draft],
+          transactions: [
+            { ...apply(draft.configurations, 2), nonce },
+            queuedRequest,
+          ],
+        }),
+      ).toStrictEqual([
+        expect.objectContaining({
+          status: 'configuration-in-signing',
+          guard,
+          transaction: expect.objectContaining({
+            safeTxHash: queuedRequest.safeTxHash,
+          }),
+        }),
+      ]);
+    });
+
+    it('should report nothing for a queued apply of a root CGW did not store', () => {
+      expect(map({ transactions: [apply(configurations(), 2)] })).toStrictEqual(
+        [],
+      );
+    });
+
     it('should skip and log a guard call whose arguments do not decode', () => {
       const valid = applyConfigurationEncoder()
         .with('configurations', configurations())
