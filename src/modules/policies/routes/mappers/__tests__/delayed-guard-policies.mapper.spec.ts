@@ -713,6 +713,88 @@ describe('DelayedGuardPoliciesMapper', () => {
       );
     });
 
+    it.each(['APPLIED', 'INVALIDATED'] as const)(
+      'should report a request on a guard the Safe no longer uses whose root is %s there',
+      (status) => {
+        const config = configurations();
+
+        const [item] = map({
+          onChainConfigurations: [
+            onChain({ configurations: config, status, guard: previousGuard }),
+          ],
+          transactions: [
+            queued({
+              to: previousGuard,
+              data: requestConfigurationEncoder()
+                .with('configureRoot', configurationRoot(config))
+                .encode(),
+              confirmations: 1,
+            }),
+          ],
+        });
+
+        expect(item).toStrictEqual(
+          expect.objectContaining({
+            status: 'configuration-in-signing',
+            guard: previousGuard,
+          }),
+        );
+      },
+    );
+
+    it('should report a request on the current guard while the root is open on the previous one', () => {
+      const config = configurations();
+
+      expect(
+        map({
+          onChainConfigurations: [
+            onChain({ configurations: config, guard: previousGuard }),
+          ],
+          transactions: [request(config)],
+        }),
+      ).toStrictEqual([
+        expect.objectContaining({
+          status: 'configuration-in-signing',
+          guard,
+        }),
+      ]);
+    });
+
+    it('should not report a batched request on a guard the Safe no longer uses while the root is open there', () => {
+      const config = configurations();
+      const data = multiSendEncoder()
+        .with(
+          'transactions',
+          multiSendTransactionsEncoder([
+            {
+              operation: Operation.CALL,
+              to: previousGuard,
+              value: BigInt(0),
+              data: requestConfigurationEncoder()
+                .with('configureRoot', configurationRoot(config))
+                .encode(),
+            },
+          ]),
+        )
+        .encode();
+
+      expect(
+        map({
+          onChainConfigurations: [
+            onChain({ configurations: config, guard: previousGuard }),
+          ],
+          transactions: [
+            queued({
+              to: randomSepoliaMultiSendAddress(),
+              operation: Operation.DELEGATE,
+              data,
+              confirmations: 1,
+            }),
+          ],
+        }),
+      ).toStrictEqual([]);
+    });
+
     it("should report a root on the current guard when the previous guard's row is invalidated", () => {
       const config = configurations();
       const current = onChain({ configurations: config, readyAt: now - 60 });
