@@ -662,6 +662,57 @@ describe('DelayedGuardPoliciesMapper', () => {
       ).toStrictEqual([]);
     });
 
+    it('should not report a request on a guard the Safe no longer uses while the root is open there', () => {
+      const config = configurations();
+
+      expect(
+        map({
+          onChainConfigurations: [
+            onChain({ configurations: config, guard: previousGuard }),
+          ],
+          transactions: [
+            queued({
+              to: previousGuard,
+              data: requestConfigurationEncoder()
+                .with('configureRoot', configurationRoot(config))
+                .encode(),
+              confirmations: 1,
+            }),
+          ],
+        }),
+      ).toStrictEqual([]);
+    });
+
+    it('should report a request on a guard the Safe no longer uses once the root expired there', () => {
+      const config = configurations();
+
+      const [item] = map({
+        onChainConfigurations: [
+          onChain({
+            configurations: config,
+            readyAt: now - expiry,
+            guard: previousGuard,
+          }),
+        ],
+        transactions: [
+          queued({
+            to: previousGuard,
+            data: requestConfigurationEncoder()
+              .with('configureRoot', configurationRoot(config))
+              .encode(),
+            confirmations: 1,
+          }),
+        ],
+      });
+
+      expect(item).toStrictEqual(
+        expect.objectContaining({
+          status: 'configuration-in-signing',
+          guard: previousGuard,
+        }),
+      );
+    });
+
     it("should report a root on the current guard when the previous guard's row is invalidated", () => {
       const config = configurations();
       const current = onChain({ configurations: config, readyAt: now - 60 });

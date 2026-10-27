@@ -112,6 +112,7 @@ export class DelayedGuardPoliciesMapper {
       onChainConfigurations: args.onChainConfigurations,
       storedConfigurations: args.storedConfigurations,
       queued: queuedPolicyChanges,
+      now: args.now,
     });
 
     return changes.flatMap((change) => {
@@ -140,7 +141,8 @@ export class DelayedGuardPoliciesMapper {
    * A root on chain is kept only for a guard currently set on the Safe: a
    * guard the Safe has moved away from still holds its pending roots, but
    * applying them changes nothing the Safe enforces. A queued call is the
-   * Safe's own next step, so it is kept on whichever guard it targets.
+   * Safe's own next step, so it is kept on whichever guard it targets -
+   * except a request of a root still open on that guard, which reverts.
    *
    * CGW stores configurations per Safe and root, not per guard, so they
    * belong to every change with their root; with no such change they are a
@@ -151,6 +153,7 @@ export class DelayedGuardPoliciesMapper {
     onChainConfigurations: ReadonlyArray<PolicyIndexerConfigurationRoot>;
     storedConfigurations: ReadonlyArray<SafePolicyGuardConfiguration>;
     queued: ReadonlyArray<QueuedPolicyChangeConfigurationCall>;
+    now: number;
   }): Array<DelayedPolicyChange> {
     // Roots are lower-cased by every source; guards are compared the same way.
     const changes = new Map<string, DelayedPolicyChange>();
@@ -171,17 +174,25 @@ export class DelayedGuardPoliciesMapper {
       return change;
     };
 
+    // Roots still open on a guard the Safe no longer uses.
+    const openElsewhere = new Set<string>();
     for (const onChain of args.onChainConfigurations) {
       if (
         args.enabledGuards.some((guard) => isAddressEqual(guard, onChain.guard))
       ) {
         changeOf(onChain.guard, onChain.root).onChain = onChain;
+      } else if (isRootApplicable(onChain, args.now)) {
+        openElsewhere.add(`${onChain.guard.toLowerCase()}:${onChain.root}`);
       }
     }
 
     // The queue is in nonce order, so the first call for a change executes
     // first.
     for (const call of args.queued) {
+      const key = `${call.guard.toLowerCase()}:${call.root}`;
+      if (call.kind === 'request' && openElsewhere.has(key)) {
+        continue;
+      }
       const change = changeOf(call.guard, call.root);
       if (call.kind === 'request') {
         change.queuedRequest ??= call;
