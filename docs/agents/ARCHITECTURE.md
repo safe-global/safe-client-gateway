@@ -130,6 +130,7 @@ A shared schema library (`src/validation/entities/schemas/`) backs common primit
 - `AddressSchema` — parses and checksums addresses via viem's `getAddress`, rejecting anything that fails checksum/format validation.
 - `NumericStringSchema` — a base-10 numeric string, explicitly rejecting hex-looking values.
 - `HexSchema` — a `0x`-prefixed hex string (viem's `isHex`).
+- `BooleanStringSchema` — a query-string boolean, exactly `true` or `false`, parsed to a `boolean`.
 - `UuidSchema` — validates a UUID and casts it to Node's `UUID` type.
 - `RedirectUrlSchema` — bounds length (2048 chars) and rejects control characters; used to validate post-login redirect targets.
 
@@ -152,8 +153,9 @@ flowchart TD
     end
 
     subgraph Invalidate["Invalidation path"]
-        J["Transaction or Config Service event"] -->|AMQP exchange| K["QueuesRepository subscribe"]
+        J["Transaction Service event"] -->|"AMQP topic exchange (#)"| K["QueuesRepository subscribe"]
         K --> L["HooksRepository onEvent"]
+        P["Config Service event"] -->|"POST /hooks/events"| L
         L --> M["EventCacheHelper"]
         M --> N["repository clear call"]
         N --> O["cacheService deleteByKey, sets invalidationTimeMs marker"]
@@ -177,10 +179,11 @@ TTLs are never hard-coded at the call site; they come from `expirationTimeInSeco
 Every stored TTL is randomly deviated by `expirationTimeInSeconds.deviatePercent` (±10% by default) via `deviateRandomlyByPercentage` (`src/domain/common/utils/number.ts`), so identically-configured keys do not all expire at the same instant and stampede the upstream service.
 
 Cache invalidation is event-driven.
-The Transaction Service (and Config Service) publish events to an AMQP fanout exchange; CGW's `queues` module subscribes and hands each message to `HooksRepository` (`src/modules/hooks/domain/hooks.repository.ts`), which parses it against `EventSchema` and delegates to `EventCacheHelper` (`src/modules/hooks/domain/helpers/event-cache.helper.ts`).
+The Transaction Service publishes events to an AMQP topic exchange; CGW's `queues` module binds its queue to it with routing key `#` and subscribes and hands each message to `HooksRepository` (`src/modules/hooks/domain/hooks.repository.ts`), which parses it against `EventSchema` and delegates to `EventCacheHelper` (`src/modules/hooks/domain/helpers/event-cache.helper.ts`).
 `EventCacheHelper` maps each event type (`PENDING_MULTISIG_TRANSACTION`, `EXECUTED_MULTISIG_TRANSACTION`, `INCOMING_TOKEN`, `CHAIN_UPDATE`, and so on) to targeted deletes: the specific repository `clear*` calls that event affects, each of which ultimately calls `cacheService.deleteByKey`.
 An executed multisig transaction, for example, clears the safe's collectibles, transfers, multisig transactions and Safe info in one pass.
 A same-effect HTTP fallback exists at `POST /hooks/events` (`src/modules/hooks/routes/hooks.controller.ts`, guarded by `BasicAuthGuard`), gated by the `features.hookHttpPostEvent` flag.
+Config Service events (`CHAIN_UPDATE`, `SAFE_APPS_UPDATE`) always use this endpoint; the flag only gates Transaction Service events.
 
 ## Persistence
 

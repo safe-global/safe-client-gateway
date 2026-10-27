@@ -143,6 +143,13 @@ export class CounterfactualSafe implements DomainCounterfactualSafe {
   })
   public readonly updatedAt!: Date;
 
+  @Column({
+    name: 'deployed_at',
+    type: 'timestamp with time zone',
+    nullable: true,
+  })
+  public readonly deployedAt!: Date | null;
+
   @ManyToOne(
     () => User,
     (user: User) => user.id,

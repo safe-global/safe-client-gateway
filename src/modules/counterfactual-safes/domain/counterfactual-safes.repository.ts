@@ -5,8 +5,9 @@ import {
   FindOptionsRelations,
   FindOptionsSelect,
   FindOptionsWhere,
+  IsNull,
 } from 'typeorm';
-import { type Address, getAddress } from 'viem';
+import { type Address, getAddress, zeroAddress } from 'viem';
 import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
 import { UniqueConstraintError } from '#/datasources/errors/unique-constraint-error';
 import { CounterfactualSafe } from '#/modules/counterfactual-safes/datasources/entities/counterfactual-safe.entity.db';
@@ -158,6 +159,7 @@ export class CounterfactualSafesRepository
         'cfsu.counterfactual_safe_id = cfs.id',
       )
       .where('cfsu.user_id = :userId', { userId: args.userId })
+      .andWhere('cfs.deployed_at IS NULL')
       .getMany();
   }
 
@@ -236,6 +238,21 @@ export class CounterfactualSafesRepository
         .execute();
     });
   }
+
+  public async markAsDeployed(args: {
+    chainId: CounterfactualSafe['chainId'];
+    address: CounterfactualSafe['address'];
+  }): Promise<boolean> {
+    const repository =
+      await this.postgresDatabaseService.getRepository(CounterfactualSafe);
+
+    const result = await repository.update(
+      { chainId: args.chainId, address: args.address, deployedAt: IsNull() },
+      { deployedAt: new Date() },
+    );
+
+    return !!result.affected;
+  }
 }
 
 function isSameInitParams(
@@ -252,10 +269,21 @@ function isSameInitParams(
     existing.fallbackHandler === incoming.fallbackHandler &&
     existing.setupTo === incoming.setupTo &&
     existing.setupData === incoming.setupData &&
-    existing.paymentToken === incoming.paymentToken &&
-    existing.payment === incoming.payment &&
+    paymentTokenOrZero(existing.paymentToken) ===
+      paymentTokenOrZero(incoming.paymentToken) &&
+    paymentOrZero(existing.payment) === paymentOrZero(incoming.payment) &&
     existing.paymentReceiver === incoming.paymentReceiver
   );
+}
+
+// Clients encode an omitted payment token as the zero address and an omitted
+// payment as 0 in the Safe setup call, so either form predicts the same address.
+function paymentTokenOrZero(paymentToken: Address | null): Address {
+  return paymentToken ?? zeroAddress;
+}
+
+function paymentOrZero(payment: string | null): string {
+  return payment ?? '0';
 }
 
 function isSameAddressList(
