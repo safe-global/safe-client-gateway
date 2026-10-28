@@ -1039,6 +1039,7 @@ describe('MembersRepository', () => {
       const inviteeName = nameBuilder();
       const expiredAt = faker.date.past();
       const renewedInviteExpiresAt = faker.date.future();
+      const notRenewedSince = faker.date.recent();
       const invitee = await dbUserRepo.insert({ status: 'PENDING' });
       const space = await dbSpacesRepository.insert({
         name: nameBuilder(),
@@ -1052,6 +1053,7 @@ describe('MembersRepository', () => {
         status: 'INVITED',
         invitedBy,
         inviteExpiresAt: expiredAt,
+        updatedAt: faker.date.past({ refDate: notRenewedSince }),
       });
       const memberId = memberInsert.identifiers[0].id as Member['id'];
       const inviteeId = invitee.identifiers[0].id as User['id'];
@@ -1062,7 +1064,7 @@ describe('MembersRepository', () => {
         membersRepository.renewInvite({
           memberId,
           inviteExpiresAt: renewedInviteExpiresAt,
-          notRenewedSince: faker.date.soon(),
+          notRenewedSince,
           spaceId,
           spaceUuid,
           targetUserId: inviteeId,
@@ -1088,7 +1090,7 @@ describe('MembersRepository', () => {
         membersRepository.renewInvite({
           memberId,
           inviteExpiresAt: faker.date.future(),
-          notRenewedSince: faker.date.past(),
+          notRenewedSince,
           spaceId,
           spaceUuid,
           targetUserId: inviteeId,

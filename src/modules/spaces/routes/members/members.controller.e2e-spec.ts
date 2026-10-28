@@ -566,7 +566,7 @@ describe('MembersController', () => {
       }
     });
 
-    it('should throw a 429 when the invite was renewed within the cooldown', async () => {
+    it('should throw a 429 when the invite was created within the cooldown', async () => {
       const { accessToken, spaceId } = await createSpaceForSigner(
         nameBuilder(),
       );
@@ -583,21 +583,11 @@ describe('MembersController', () => {
           ],
         })
         .expect(201);
-      const renewPath = `/v1/spaces/${spaceId}/members/${inviteResponse.body[0].userId}/invite/renew`;
-
-      vi.useFakeTimers({ toFake: ['Date'] });
-      vi.setSystemTime(Date.now() + 61_000);
-      try {
-        await request(app.getHttpServer())
-          .post(renewPath)
-          .set('Cookie', [`access_token=${accessToken}`])
-          .expect(201);
-      } finally {
-        vi.useRealTimers();
-      }
 
       await request(app.getHttpServer())
-        .post(renewPath)
+        .post(
+          `/v1/spaces/${spaceId}/members/${inviteResponse.body[0].userId}/invite/renew`,
+        )
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(429)
         .expect({
