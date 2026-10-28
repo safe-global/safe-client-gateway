@@ -12,11 +12,11 @@ export default () => ({
   amqp: {
     url: process.env.AMQP_URL || 'amqp://localhost:5672',
     exchange: {
-      name: process.env.AMQP_EXCHANGE_NAME || 'safe-transaction-service-events',
-      // The Safe Transaction Service AMQP Exchange mode defaults to 'fanout'.
-      // https://www.rabbitmq.com/tutorials/amqp-concepts#exchange-fanout
-      // A fanout exchange routes messages to all of the queues that are bound to it and the routing key is ignored.
-      mode: process.env.AMQP_EXCHANGE_MODE || 'fanout',
+      // Topic exchange of the Safe Transaction Service.
+      // https://www.rabbitmq.com/tutorials/amqp-concepts#exchange-topic
+      name:
+        process.env.AMQP_EXCHANGE_NAME ||
+        'safe-transaction-service-events-with-topics',
     },
     queue: process.env.AMQP_QUEUE || 'safe-client-gateway',
     // The AMQP Prefetch value defaults to 0.
@@ -378,6 +378,8 @@ export default () => ({
       process.env.EXPIRATION_TIME_RPC_SECONDS ?? `${15}`,
       10,
     ),
+    safenetNonce: 60,
+    safenetDailyCheckCounter: 24 * 60 * 60,
     hoodi: Number.parseInt(
       process.env.HOODI_EXPIRATION_TIME_SECONDS ?? `${60}`,
       10,
@@ -490,6 +492,9 @@ export default () => ({
       process.env.FF_SAFE_QUEUE_SERVICE?.toLowerCase() === 'true',
     // Safe Labs: remove after the KMS-backed payer rollout is complete.
     safenet: process.env.FF_SAFENET?.toLowerCase() === 'true',
+    // Hides every SafePolicyGuard policy from the active and pending policy
+    // endpoints while the guard flow is unreleased.
+    guardPolicies: process.env.FF_GUARD_POLICIES?.toLowerCase() === 'true',
   },
   httpClient: {
     // Timeout in milliseconds to be used for the HTTP client.
@@ -576,6 +581,10 @@ export default () => ({
     // When enforcement goes live; workspaces created before it predate it.
     enforcementStartsAt: parseEnforcementStartsAt(
       process.env.ENTITLEMENTS_ENFORCEMENT_STARTS_AT,
+    ),
+    // When pre-enforcement workspaces stop being offered the legacy grace.
+    gracePeriodClaimEndsAt: parseGracePeriodClaimEndsAt(
+      process.env.ENTITLEMENTS_GRACE_PERIOD_CLAIM_ENDS_AT,
     ),
   },
   billing: {
@@ -830,6 +839,17 @@ export default () => ({
     cgwServiceKey: process.env.SAFE_CONFIG_CGW_KEY || 'CGW',
   },
   policies: {
+    /** How many delayed configuration requests CGW stores per Safe and Space. */
+    maxConfigurationRequestsPerSpaceSafe: Number.parseInt(
+      process.env.POLICIES_MAX_CONFIGURATION_REQUESTS_PER_SPACE_SAFE ??
+        `${100}`,
+      10,
+    ),
+    /** How long a stored configuration request is kept before it is pruned. */
+    configurationRequestRetentionDays: Number.parseInt(
+      process.env.POLICIES_CONFIGURATION_REQUEST_RETENTION_DAYS ?? `${60}`,
+      10,
+    ),
     indexer: {
       baseUri: process.env.POLICY_INDEXER_BASE_URI || 'POLICY_INDEXER_BASE_URI',
     },
@@ -847,8 +867,62 @@ export default () => ({
   safenet: {
     consensusAddress: process.env.SAFENET_CONSENSUS_ADDRESS,
     oracleAddress: process.env.SAFENET_ORACLE_ADDRESS,
+    rpcUri: process.env.SAFENET_RPC_URI,
     payer: {
       safeAddress: process.env.SAFENET_PAYER_SAFE_ADDRESS,
+      kms: {
+        keyId: process.env.SAFENET_PAYER_KMS_KEY_ID,
+        webIdentityTokenFile: process.env.AWS_WEB_IDENTITY_TOKEN_FILE,
+        // A hung KMS call would hold the only safenet-checks queue slot, so every call is bounded.
+        connectionTimeoutMs: Number.parseInt(
+          process.env.SAFENET_PAYER_KMS_CONNECTION_TIMEOUT_MS ?? `${5_000}`,
+          10,
+        ),
+        requestTimeoutMs: Number.parseInt(
+          process.env.SAFENET_PAYER_KMS_REQUEST_TIMEOUT_MS ?? `${10_000}`,
+          10,
+        ),
+      },
+    },
+    pollIntervalMs: Number.parseInt(
+      process.env.SAFENET_POLL_INTERVAL_MS ?? `${1_000}`,
+      10,
+    ),
+    pollTimeoutMs: Number.parseInt(
+      process.env.SAFENET_POLL_TIMEOUT_MS ?? `${120_000}`,
+      10,
+    ),
+    checksPerSpacePerDay: Number.parseInt(
+      process.env.SAFENET_CHECKS_PER_SPACE_PER_DAY ?? '100',
+      10,
+    ),
+    // The schema bounds the attempts to 1-10 and the retention ages to 30 days or more.
+    queue: {
+      attempts: Number.parseInt(
+        process.env.SAFENET_CHECKS_QUEUE_ATTEMPTS ?? `${3}`,
+        10,
+      ),
+      backoff: {
+        type: process.env.SAFENET_CHECKS_QUEUE_BACKOFF_TYPE || 'exponential',
+        delay: Number.parseInt(
+          process.env.SAFENET_CHECKS_QUEUE_BACKOFF_DELAY ?? `${5_000}`,
+          10,
+        ),
+      },
+      removeOnComplete: {
+        age: Number.parseInt(
+          process.env.SAFENET_CHECKS_QUEUE_REMOVE_ON_COMPLETE_AGE ??
+            `${30 * 24 * 60 * 60}`,
+          10,
+        ), // 30 days
+      },
+      removeOnFail: {
+        age: Number.parseInt(
+          process.env.SAFENET_CHECKS_QUEUE_REMOVE_ON_FAIL_AGE ??
+            `${30 * 24 * 60 * 60}`,
+          10,
+        ), // 30 days
+      },
     },
   },
   transactions: {
@@ -1125,6 +1199,18 @@ const parseEnforcementStartsAt = (envValue: string | undefined): Date => {
     throw Error('ENTITLEMENTS_ENFORCEMENT_STARTS_AT is not a valid date');
   }
   return startsAt;
+};
+
+// 60 days after enforcement started in production (2026-10-06T12:30:00Z).
+const DEFAULT_GRACE_PERIOD_CLAIM_ENDS_AT = '2026-12-05T12:30:00Z';
+
+// Unset or invalid falls back to the default: an Invalid Date would close the window.
+const parseGracePeriodClaimEndsAt = (envValue: string | undefined): Date => {
+  const endsAt = new Date(envValue ?? DEFAULT_GRACE_PERIOD_CLAIM_ENDS_AT);
+  if (Number.isNaN(endsAt.getTime())) {
+    return new Date(DEFAULT_GRACE_PERIOD_CLAIM_ENDS_AT);
+  }
+  return endsAt;
 };
 
 // Helper function to parse relay rules from environment variable

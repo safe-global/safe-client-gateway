@@ -7,11 +7,6 @@ import type {
   Product as DomainProduct,
   SubscriptionPlan as DomainSubscriptionPlan,
 } from '#/datasources/billing-api/entities/plan.entity';
-import {
-  PlanBillingCycles,
-  PlanCurrencies,
-  PlanTypes,
-} from '#/datasources/billing-api/entities/plan.entity';
 
 export class MarketingFeature implements DomainMarketingFeature {
   @ApiProperty()
@@ -44,16 +39,16 @@ class BasePlan {
   currentPrice!: number;
   @ApiProperty({ type: Number, nullable: true })
   originalPrice!: number | null;
-  @ApiProperty({ enum: ['fiat'] })
-  paymentMethod!: 'fiat';
-  @ApiProperty({ enum: PlanCurrencies })
-  currency!: (typeof PlanCurrencies)[number];
+  @ApiProperty()
+  paymentMethod!: string;
+  @ApiProperty()
+  currency!: string;
   @ApiProperty({ type: [String] })
   features!: Array<string>;
-  @ApiPropertyOptional({ enum: PlanBillingCycles, nullable: true })
-  billingCycle?: (typeof PlanBillingCycles)[number] | null;
-  @ApiProperty({ enum: PlanTypes })
-  type!: (typeof PlanTypes)[number];
+  @ApiPropertyOptional({ type: String, nullable: true })
+  billingCycle?: string | null;
+  @ApiProperty()
+  type!: string;
 }
 
 // As embedded in a Subscription: the product is referenced by ID only.

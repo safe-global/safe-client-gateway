@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { faker } from '@faker-js/faker';
 import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
 import { FakeCacheService } from '#/datasources/cache/__tests__/fake.cache.service';
@@ -11,6 +12,7 @@ import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.b
 import type { CollectiblesRepository } from '#/modules/collectibles/domain/collectibles.repository';
 import { MultiSendDecoder } from '#/modules/contracts/domain/decoders/multi-send-decoder.helper';
 import { SafeDecoder } from '#/modules/contracts/domain/decoders/safe-decoder.helper';
+import type { ICounterfactualSafesRepository } from '#/modules/counterfactual-safes/domain/counterfactual-safes.repository.interface';
 import type { DelegatesV3Repository } from '#/modules/delegate/domain/v3/delegates.v3.repository';
 import type { EarnRepository } from '#/modules/earn/domain/earn.repository';
 import { EventCacheHelper } from '#/modules/hooks/domain/helpers/event-cache.helper';
@@ -19,6 +21,7 @@ import { chainUpdateEventBuilder } from '#/modules/hooks/routes/entities/__tests
 import { executedTransactionEventBuilder } from '#/modules/hooks/routes/entities/__tests__/executed-transaction.builder';
 import { incomingTokenEventBuilder } from '#/modules/hooks/routes/entities/__tests__/incoming-token.builder';
 import { moduleTransactionEventBuilder } from '#/modules/hooks/routes/entities/__tests__/module-transaction.builder';
+import { safeCreatedEventBuilder } from '#/modules/hooks/routes/entities/__tests__/safe-created.build';
 import type { MessagesRepository } from '#/modules/messages/domain/messages.repository';
 import type { IPushNotificationService } from '#/modules/notifications/domain/push/push-notification.service.interface';
 import type { IPolicyIndexerRepository } from '#/modules/policies/domain/policy-indexer.repository.interface';
@@ -74,6 +77,7 @@ const mockSafeRepository = vi.mocked({
   clearModuleTransactions: vi.fn(),
   clearIncomingTransfers: vi.fn(),
   clearSafe: vi.fn(),
+  clearIsSafe: vi.fn(),
 } as MockedObject<SafeRepository>);
 
 const mockStakingRepository = vi.mocked({
@@ -114,6 +118,10 @@ const mockPushNotificationService = vi.mocked({
   enqueueEvent: vi.fn(),
 } as MockedObject<IPushNotificationService>);
 
+const mockCounterfactualSafesRepository = vi.mocked({
+  markAsDeployed: vi.fn(),
+} as MockedObject<ICounterfactualSafesRepository>);
+
 describe('HooksRepository (Unit)', () => {
   let hooksRepository: HooksRepository;
   let fakeCacheService: FakeCacheService;
@@ -149,6 +157,7 @@ describe('HooksRepository (Unit)', () => {
       mockConfigurationService,
       mockPushNotificationService,
       eventCacheHelper,
+      mockCounterfactualSafesRepository,
     );
   });
 
@@ -434,5 +443,90 @@ describe('HooksRepository (Unit)', () => {
     await hooksRepository.onEvent(event);
 
     expect(mockPushNotificationService.enqueueEvent).not.toHaveBeenCalled();
+  });
+  describe('SAFE_CREATED', () => {
+    it('should mark the counterfactual Safe as deployed and log it', async () => {
+      const chain = chainBuilder().build();
+      const event = safeCreatedEventBuilder()
+        .with('chainId', chain.chainId)
+        .build();
+      mockChainsRepository.isSupportedChain.mockResolvedValue(true);
+      mockCounterfactualSafesRepository.markAsDeployed.mockResolvedValue(true);
+
+      await hooksRepository.onEvent(event);
+
+      expect(
+        mockCounterfactualSafesRepository.markAsDeployed,
+      ).toHaveBeenCalledWith({
+        chainId: event.chainId,
+        address: event.address,
+      });
+      expect(mockLoggingService.info).toHaveBeenCalledWith({
+        message: 'Marked counterfactual Safe as deployed',
+        chainId: event.chainId,
+        address: event.address,
+      });
+    });
+
+    it('should not log when no undeployed counterfactual Safe exists', async () => {
+      const chain = chainBuilder().build();
+      const event = safeCreatedEventBuilder()
+        .with('chainId', chain.chainId)
+        .build();
+      mockChainsRepository.isSupportedChain.mockResolvedValue(true);
+      mockCounterfactualSafesRepository.markAsDeployed.mockResolvedValue(false);
+
+      await hooksRepository.onEvent(event);
+
+      expect(mockLoggingService.info).not.toHaveBeenCalled();
+    });
+
+    it('should log the failure and still clear the Safe existence cache if marking rejects', async () => {
+      const chain = chainBuilder().build();
+      const event = safeCreatedEventBuilder()
+        .with('chainId', chain.chainId)
+        .build();
+      const error = new Error(faker.lorem.sentence());
+      mockChainsRepository.isSupportedChain.mockResolvedValue(true);
+      mockCounterfactualSafesRepository.markAsDeployed.mockRejectedValue(error);
+
+      await expect(hooksRepository.onEvent(event)).resolves.not.toThrow();
+
+      expect(mockLoggingService.error).toHaveBeenCalledWith({
+        message: 'Failed to mark counterfactual Safe as deployed',
+        chainId: event.chainId,
+        address: event.address,
+        error: error.message,
+      });
+      expect(mockSafeRepository.clearIsSafe).toHaveBeenCalledWith(event);
+    });
+
+    it('should not mark a counterfactual Safe on other events', async () => {
+      const chain = chainBuilder().build();
+      mockChainsRepository.isSupportedChain.mockResolvedValue(true);
+
+      await hooksRepository.onEvent(
+        executedTransactionEventBuilder()
+          .with('chainId', chain.chainId)
+          .build(),
+      );
+
+      expect(
+        mockCounterfactualSafesRepository.markAsDeployed,
+      ).not.toHaveBeenCalled();
+    });
+
+    it('should not mark a counterfactual Safe for an unsupported chain', async () => {
+      const chain = chainBuilder().build();
+      mockChainsRepository.isSupportedChain.mockResolvedValue(false);
+
+      await hooksRepository.onEvent(
+        safeCreatedEventBuilder().with('chainId', chain.chainId).build(),
+      );
+
+      expect(
+        mockCounterfactualSafesRepository.markAsDeployed,
+      ).not.toHaveBeenCalled();
+    });
   });
 });

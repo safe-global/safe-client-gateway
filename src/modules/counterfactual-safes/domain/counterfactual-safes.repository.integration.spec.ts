@@ -5,7 +5,7 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
 import type { Repository } from 'typeorm';
 import { DataSource } from 'typeorm';
-import { type Address, getAddress } from 'viem';
+import { type Address, getAddress, zeroAddress } from 'viem';
 import type { MockedObject } from 'vitest';
 import configuration from '#/config/entities/__tests__/configuration';
 import { postgresConfig } from '#/config/entities/postgres.config';
@@ -65,6 +65,10 @@ function buildCounterfactualSafePayload(): Pick<
     paymentReceiver: cfSafe.paymentReceiver,
   };
 }
+
+type CounterfactualSafePayload = ReturnType<
+  typeof buildCounterfactualSafePayload
+>;
 
 describe('CounterfactualSafesRepository', () => {
   let postgresDatabaseService: PostgresDatabaseService;
@@ -345,25 +349,99 @@ describe('CounterfactualSafesRepository', () => {
       );
     });
 
-    it('should throw UniqueConstraintError when (chainId, address) collides with different init params', async () => {
-      const user1 = await dbUserRepo.insert({ status: 'ACTIVE' });
-      const userId1 = user1.identifiers[0].id as User['id'];
-      const user2 = await dbUserRepo.insert({ status: 'ACTIVE' });
-      const userId2 = user2.identifiers[0].id as User['id'];
-      const payload = buildCounterfactualSafePayload();
-
-      await counterfactualSafesRepo.create({
-        creatorId: userId1,
-        payload: [payload],
-      });
-
-      await expect(
-        counterfactualSafesRepo.create({
-          creatorId: userId2,
-          payload: [{ ...payload, threshold: payload.threshold + 1 }],
+    it.each([
+      {
+        field: 'the threshold',
+        change: (payload: CounterfactualSafePayload) => ({
+          threshold: payload.threshold + 1,
         }),
-      ).rejects.toThrow(UniqueConstraintError);
-    });
+      },
+      {
+        field: 'a non-zero payment token',
+        change: () => ({
+          paymentToken: getAddress(faker.finance.ethereumAddress()),
+        }),
+      },
+      {
+        field: 'a non-zero payment',
+        change: () => ({
+          payment: faker.string.numeric({
+            length: 3,
+            allowLeadingZeros: false,
+          }),
+        }),
+      },
+    ])(
+      'should throw UniqueConstraintError when (chainId, address) collides with $field',
+      async ({ change }) => {
+        const user1 = await dbUserRepo.insert({ status: 'ACTIVE' });
+        const userId1 = user1.identifiers[0].id as User['id'];
+        const user2 = await dbUserRepo.insert({ status: 'ACTIVE' });
+        const userId2 = user2.identifiers[0].id as User['id'];
+        const payload = {
+          ...buildCounterfactualSafePayload(),
+          paymentToken: null,
+          payment: null,
+        };
+
+        await counterfactualSafesRepo.create({
+          creatorId: userId1,
+          payload: [payload],
+        });
+
+        await expect(
+          counterfactualSafesRepo.create({
+            creatorId: userId2,
+            payload: [{ ...payload, ...change(payload) }],
+          }),
+        ).rejects.toThrow(UniqueConstraintError);
+      },
+    );
+
+    // Clients encode an omitted payment token as the zero address and an omitted
+    // payment as 0 in the Safe setup call, so both forms predict the same address.
+    it.each([
+      {
+        name: 'stored omitted and submitted as zero',
+        stored: { paymentToken: null, payment: null },
+        submitted: { paymentToken: zeroAddress, payment: '0' },
+      },
+      {
+        name: 'stored as zero and submitted omitted',
+        stored: { paymentToken: zeroAddress, payment: '0' },
+        submitted: { paymentToken: null, payment: null },
+      },
+    ])(
+      'should share the canonical row when the payment token and payment are $name',
+      async ({ stored, submitted }) => {
+        const user1 = await dbUserRepo.insert({ status: 'ACTIVE' });
+        const userId1 = user1.identifiers[0].id as User['id'];
+        const user2 = await dbUserRepo.insert({ status: 'ACTIVE' });
+        const userId2 = user2.identifiers[0].id as User['id'];
+        const payload = buildCounterfactualSafePayload();
+
+        await counterfactualSafesRepo.create({
+          creatorId: userId1,
+          payload: [{ ...payload, ...stored }],
+        });
+        await counterfactualSafesRepo.create({
+          creatorId: userId2,
+          payload: [{ ...payload, ...submitted }],
+        });
+
+        const all = await dbCounterfactualSafeRepo.find();
+        expect(all).toHaveLength(1);
+        expect(all[0].paymentToken).toBe(stored.paymentToken);
+        expect(all[0].payment).toBe(stored.payment);
+
+        const associations = await dbCounterfactualSafeUserRepo.find({
+          relations: { user: true },
+        });
+        expect(associations.map((a) => a.user.id).sort()).toEqual(
+          [userId1, userId2].sort(),
+        );
+      },
+    );
   });
 
   describe('findByUserId', () => {
@@ -638,6 +716,103 @@ describe('CounterfactualSafesRepository', () => {
           ],
         }),
       ).rejects.toThrow(BadRequestException);
+    });
+  });
+
+  describe('markAsDeployed', () => {
+    it('should set deployedAt and keep the row and its user associations', async () => {
+      const user = await dbUserRepo.insert({ status: 'ACTIVE' });
+      const userId = user.identifiers[0].id as User['id'];
+      const payload = buildCounterfactualSafePayload();
+      await counterfactualSafesRepo.create({
+        creatorId: userId,
+        payload: [payload],
+      });
+
+      const isMarked = await counterfactualSafesRepo.markAsDeployed({
+        chainId: payload.chainId,
+        address: payload.address,
+      });
+
+      expect(isMarked).toBe(true);
+      const [row] = await dbCounterfactualSafeRepo.find();
+      expect(row.deployedAt).toBeInstanceOf(Date);
+      await expect(dbCounterfactualSafeUserRepo.find()).resolves.toHaveLength(
+        1,
+      );
+    });
+
+    it('should leave a deployed Safe out of findByUserId', async () => {
+      const user = await dbUserRepo.insert({ status: 'ACTIVE' });
+      const userId = user.identifiers[0].id as User['id'];
+      const deployed = buildCounterfactualSafePayload();
+      const undeployed = buildCounterfactualSafePayload();
+      await counterfactualSafesRepo.create({
+        creatorId: userId,
+        payload: [deployed, undeployed],
+      });
+
+      await counterfactualSafesRepo.markAsDeployed({
+        chainId: deployed.chainId,
+        address: deployed.address,
+      });
+
+      const result = await counterfactualSafesRepo.findByUserId({ userId });
+      expect(result.map((safe) => safe.address)).toEqual([undeployed.address]);
+    });
+
+    it('should keep the same address on another chain undeployed', async () => {
+      const user = await dbUserRepo.insert({ status: 'ACTIVE' });
+      const userId = user.identifiers[0].id as User['id'];
+      const payload = buildCounterfactualSafePayload();
+      const otherChainPayload = {
+        ...payload,
+        chainId: `${payload.chainId}${faker.string.numeric()}`,
+      };
+      await counterfactualSafesRepo.create({
+        creatorId: userId,
+        payload: [payload, otherChainPayload],
+      });
+
+      await counterfactualSafesRepo.markAsDeployed({
+        chainId: payload.chainId,
+        address: payload.address,
+      });
+
+      const otherChainRow = await dbCounterfactualSafeRepo.findOneOrFail({
+        where: { chainId: otherChainPayload.chainId },
+      });
+      expect(otherChainRow.deployedAt).toBeNull();
+    });
+
+    it('should keep the first deployedAt and return false when marked again', async () => {
+      const user = await dbUserRepo.insert({ status: 'ACTIVE' });
+      const userId = user.identifiers[0].id as User['id'];
+      const payload = buildCounterfactualSafePayload();
+      await counterfactualSafesRepo.create({
+        creatorId: userId,
+        payload: [payload],
+      });
+      const args = { chainId: payload.chainId, address: payload.address };
+      await counterfactualSafesRepo.markAsDeployed(args);
+      const [first] = await dbCounterfactualSafeRepo.find();
+
+      const isMarked = await counterfactualSafesRepo.markAsDeployed(args);
+
+      expect(isMarked).toBe(false);
+      const [second] = await dbCounterfactualSafeRepo.find();
+      expect(second.deployedAt).toEqual(first.deployedAt);
+    });
+
+    it('should return false if no counterfactual Safe matches', async () => {
+      const payload = buildCounterfactualSafePayload();
+
+      const isMarked = await counterfactualSafesRepo.markAsDeployed({
+        chainId: payload.chainId,
+        address: payload.address,
+      });
+
+      expect(isMarked).toBe(false);
     });
   });
 

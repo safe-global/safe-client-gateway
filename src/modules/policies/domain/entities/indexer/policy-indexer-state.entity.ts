@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import type { Hex } from 'viem';
 import { z } from 'zod';
 import { ChainIdSchema } from '#/modules/chains/domain/entities/schemas/chain-id.schema';
 import { Erc20TransferRecipientSchema } from '#/modules/policies/domain/entities/active-policy.entity';
@@ -206,6 +207,50 @@ export type PolicyIndexerGuardEnforcedPolicy = z.infer<
 >;
 
 /**
+ * Where a delayed configuration root stands on-chain.
+ *
+ * This is the current state, not a final one: applying or invalidating a root
+ * clears the guard's storage, so the same root can be requested again and go
+ * back to `PENDING`.
+ */
+export const PolicyIndexerRootStatusSchema = z.enum([
+  'PENDING',
+  'APPLIED',
+  'INVALIDATED',
+]);
+
+export type PolicyIndexerRootStatus = z.infer<
+  typeof PolicyIndexerRootStatusSchema
+>;
+
+/**
+ * A delayed configuration root of a `SafePolicyGuard`, one per
+ * `(guard, safe, root)`.
+ */
+export const PolicyIndexerConfigurationRootSchema = z.object({
+  chainId: PolicyIndexerChainIdSchema,
+  safe: AddressSchema,
+  guard: AddressSchema,
+  /**
+   * Lower-cased, as CGW computes and stores roots. Rebuilt from `0x` so the
+   * result is a `Hex` without a cast.
+   */
+  root: HexSchema.transform((root): Hex => `0x${root.slice(2).toLowerCase()}`),
+  /**
+   * Unix seconds `applyConfiguration` is valid from. It is the `timestamp` of
+   * `RootConfigured`, which is already `block.timestamp + DELAY`.
+   */
+  readyAt: PolicyIndexerIntegerSchema,
+  /** Unix seconds `applyConfiguration` is valid until: `readyAt + EXPIRY`. */
+  expiresAt: PolicyIndexerIntegerSchema,
+  status: PolicyIndexerRootStatusSchema,
+});
+
+export type PolicyIndexerConfigurationRoot = z.infer<
+  typeof PolicyIndexerConfigurationRootSchema
+>;
+
+/**
  * Indexing progress, one entry per chain - `_meta` is a list, not an object.
  *
  * `isReady` only records that a chain caught up *once*, so it stays `true` while
@@ -235,6 +280,7 @@ export const PolicyIndexerRowsSchema = z.object({
   SafeAllowance: z.array(z.unknown()),
   SafeDelegate: z.array(z.unknown()),
   GuardPolicyBinding: z.array(z.unknown()),
+  ConfigurationRoot: z.array(z.unknown()),
 });
 
 export type PolicyIndexerRows = z.infer<typeof PolicyIndexerRowsSchema>;
@@ -247,4 +293,5 @@ export type PolicyIndexerState = {
   allowances: ReadonlyArray<PolicyIndexerSafeAllowance>;
   delegates: ReadonlyArray<PolicyIndexerSafeDelegate>;
   guardPolicyBindings: ReadonlyArray<PolicyIndexerGuardEnforcedPolicy>;
+  roots: ReadonlyArray<PolicyIndexerConfigurationRoot>;
 };

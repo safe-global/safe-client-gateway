@@ -32,6 +32,16 @@ export class RelayRepository {
     });
   }
 
+  /** Submits a transaction without any relayer limits, for callers that pay for it themselves. */
+  relayWithoutLimits(args: {
+    chainId: string;
+    to: Address;
+    data: Hex;
+    safeTxHash?: Hex;
+  }): Promise<Relay> {
+    return this.relayApi.relay(args);
+  }
+
   getTaskStatus(args: {
     chainId: string;
     taskId: string;
