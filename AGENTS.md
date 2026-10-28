@@ -4,7 +4,7 @@
 
 # Agent Guidelines
 
-> These documents describe **this repository** — its architecture, constraints, and conventions. They are not a workflow. Process skills and plugins you run (e.g. Superpowers, spec-kit) govern *how* you work; these guides define *what correct looks like here*. When a process skill needs repo specifics — verification commands, test conventions, architectural context — these guides are the answer.
+> These documents describe **this repository** — its architecture, constraints, and conventions. They are not a workflow, with one exception: the mandatory "Pre-PR Architecture Review" below. Process skills and plugins you run (e.g. Superpowers, spec-kit) govern *how* you work; these guides define *what correct looks like here*. When a process skill needs repo specifics — verification commands, test conventions, architectural context — these guides are the answer.
 
 ## Read this first
 
@@ -22,9 +22,9 @@
 | Env var, feature flag, config | [docs/agents/configuration-and-flags.md](docs/agents/configuration-and-flags.md) |
 | Reviewing a PR / verifying a completed task | [docs/agents/reviewing.md](docs/agents/reviewing.md) + [docs/agents/remarks.md](docs/agents/remarks.md) |
 | Commit message, PR title, PR body, splitting a PR | [docs/agents/commits-and-prs.md](docs/agents/commits-and-prs.md) |
-| Adding a skill or a slash command for this repo | [docs/agents/agent-tooling.md](docs/agents/agent-tooling.md) |
+| Adding a skill, a slash command, or a hook (`.claude/settings.json`, `.husky/`) for this repo | [docs/agents/agent-tooling.md](docs/agents/agent-tooling.md) |
 
-Delivery is automatic, not opt-in: each guide above is also a `cgw-*` Claude Code skill that loads itself on the matching work, and a `PreToolUse` hook in `.claude/settings.json` applies the review checklist on any commit that touches `src/`. On demand, commenting `@claude arch-review` on a PR runs the `Architecture Check` workflow, which applies the same checklist to the PR diff and posts a brief verdict comment. There are no repo-specific slash commands to remember. All three mechanisms are documented in [docs/agents/agent-tooling.md](docs/agents/agent-tooling.md).
+These rules apply to every agent, whichever one you are. The routing table above tells you which guide to read. "Pre-PR Architecture Review" below makes running the CI review locally, on the whole branch, mandatory before any push, and `.husky/pre-push` rejects a push that skipped it. On demand, commenting `@claude arch-review` on a PR runs the `Architecture Check` workflow, which applies the same checklist to the PR diff and posts a brief verdict comment. Each agent also gets this delivered automatically through whatever mechanism it reads. Each guide above is also a `cgw-*` skill in `.claude/skills/` that loads itself on the matching work. A `PreToolUse` hook in `.claude/settings.json` stops an unreviewed `git push` before it runs. There are no repo-specific slash commands to remember. Every mechanism is documented in [docs/agents/agent-tooling.md](docs/agents/agent-tooling.md).
 
 ## Non-negotiables
 
@@ -108,6 +108,43 @@ yarn test
 git add <files>
 git commit -m "Your commit message"
 ```
+
+## Pre-PR Architecture Review
+
+Before **EACH** push, and so before opening any PR, every agent MUST run the review the `@claude arch-review` CI check runs and loop on it until it passes. Run it the way CI does:
+
+- **Fresh context.** Use a reviewer that has not seen the work, such as a subagent if your agent supports one (under Claude Code, an Opus subagent).
+- **CI's own prompt.** Give the reviewer the `prompt:` of [.github/workflows/architecture-check.yml](.github/workflows/architecture-check.yml) unchanged, except for its GitHub plumbing:
+  - Resolve `${{ github.repository }}` to `safe-global/safe-client-gateway` and `${{ github.event.repository.default_branch }}` to `main`. There is no PR number.
+  - Take the changes from `git diff` and `git log` over the round's range, not from `gh pr view` and `gh pr diff`. Where the prompt refers to the PR title, use the commit subjects. The PR-description items, such as the baseline-growth justification, are not-yet-checkable before a PR exists, as reviewing.md defines.
+  - Read changed files from the working tree. Read AGENTS.md and `docs/agents/` from `origin/main` (`git show origin/main:<path>`), as CI's checkout does.
+  - Cite locations as `path:line`, not permalinks, since nothing is pushed yet.
+  - Print the report; do not post it with `gh pr comment`.
+
+  Write no reviewer prompt of your own: a paraphrase steers the review and misses what CI catches.
+
+The loop is bounded:
+
+1. **Round 1** reviews the whole branch: `git diff origin/main...HEAD`.
+2. **Findings:** fix every finding you can resolve from the code and the cited guide, and commit the fixes. A finding that needs a human decision is not yours to fix: stop and ask the user.
+3. **Rounds 2 and 3** review only the commits since the previous round, plus whether that round's findings are resolved.
+4. **Stop and hand over to the user** after round 3, or earlier when a round does not reduce the number of findings or a fixed finding comes back.
+5. **Record the reviewed commit** only when a round reports no findings, or when the user explicitly accepts the remaining ones. Write it in its own command, then push:
+
+   ```bash
+   git rev-parse HEAD > "$(git rev-parse --git-common-dir)/arch-reviewed"
+   ```
+
+**Never stop without saying why.** Whenever you stop, whatever the reason, end with:
+
+- the round you reached (`N of 3`);
+- the outcome (clean, findings fixed, cap reached, no progress, or needs your decision);
+- the open findings in the reporting format;
+- what the user needs to do.
+
+Never record a commit that has not passed a round, and never treat findings as accepted without the user's explicit word.
+
+Every push is gated on that record, whichever agent runs it: `.husky/pre-push` rejects a pushed branch whose tip does not match it. Under Claude Code, a `PreToolUse` hook also stops an unreviewed `git push` before it runs and points here. Details: [docs/agents/agent-tooling.md](docs/agents/agent-tooling.md#the-pre-push-gate).
 
 ## License Headers
 
