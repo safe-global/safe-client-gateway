@@ -3,7 +3,7 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 import z from 'zod';
 import {
   AddressBookItem,
-  UpsertAddressBookItemsSchema,
+  AddressBookItemSchema,
 } from '#/modules/spaces/routes/address-books/entities/upsert-address-book-items.dto.entity';
 import {
   SpaceSafeDto,
@@ -12,7 +12,7 @@ import {
 } from '#/modules/spaces/routes/safes/entities/space-safe.dto.entity';
 
 export const CreateSpaceSafesSchema = SpaceSafesSchema.extend({
-  addressBookItems: UpsertAddressBookItemsSchema.shape.items.optional(),
+  addressBookItems: z.array(AddressBookItemSchema).optional(),
 });
 
 export class CreateSpaceSafeDto extends SpaceSafeDto {}
