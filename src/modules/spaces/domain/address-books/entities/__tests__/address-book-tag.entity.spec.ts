@@ -2,6 +2,7 @@
 import { faker } from '@faker-js/faker';
 import {
   MAX_TAGS_PER_CONTACT,
+  normalizeTagNameKey,
   TAG_NAME_MAX_LENGTH,
   TagNameSchema,
   TagNamesSchema,
@@ -95,5 +96,15 @@ describe('TagNamesSchema', () => {
       TagNamesSchema.safeParse(names.slice(0, MAX_TAGS_PER_CONTACT)).success,
     ).toBe(true);
     expect(TagNamesSchema.safeParse(names).success).toBe(false);
+  });
+});
+
+describe('normalizeTagNameKey', () => {
+  it('gives names that render the same, in any case, one key', () => {
+    const name = faker.string.alpha({ length: 8 });
+
+    expect(normalizeTagNameKey(` ${name.toUpperCase()}  Ops\u200B `)).toBe(
+      normalizeTagNameKey(`${name.toLowerCase()} ops`),
+    );
   });
 });

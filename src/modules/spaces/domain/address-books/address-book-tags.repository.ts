@@ -317,7 +317,7 @@ export class AddressBookTagsRepository implements IAddressBookTagsRepository {
   }
 
   /**
-   * Takes a random colour no tag of the space has; none left = 8 tags.
+   * Takes a random colour no tag of the space has; none left = MAX_TAGS_PER_WORKSPACE tags.
    * Records ADDRESS_BOOK_TAG_CREATED, however the tag was created.
    */
   private async insertTag(
@@ -408,7 +408,8 @@ export class AddressBookTagsRepository implements IAddressBookTagsRepository {
 
   /**
    * One DELETE and one INSERT for all changed contacts, then one audit event
-   * listing every change.
+   * listing every change. Runs in `setTagsForItems`' transaction, which already
+   * holds the tag lock: `space` is the `LockedSpace` that lock returned.
    */
   private async replaceItemTags(
     entityManager: EntityManager,

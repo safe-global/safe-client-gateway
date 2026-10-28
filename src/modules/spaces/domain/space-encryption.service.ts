@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import { KmsEncryptionService } from '#/datasources/kms/kms-encryption.service';
+import { normalizeTagNameKey } from '#/modules/spaces/domain/address-books/entities/address-book-tag.entity';
 
 /**
  * Space-scoped field-encryption policy for the spaces module: space names,
@@ -148,10 +149,8 @@ export class SpaceEncryptionService {
    * recompute tag indexes.
    */
   tagNameIndex(spaceId: number, name: string): string {
-    // Normalise the name part here: `blindIndex` only trims the ends of the
-    // whole string, so `${spaceId}:  Vendor` would keep the inner spaces.
-    // Runs of spaces collapse to one, as in TagNameSchema.
-    const scoped = `${spaceId}:${name.trim().replace(/ {2,}/g, ' ').toLowerCase()}`;
+    // `blindIndex` only trims the ends of the whole string, so the name part is normalised here
+    const scoped = `${spaceId}:${normalizeTagNameKey(name)}`;
     return this.kmsEncryption.blindIndex(scoped) ?? scoped;
   }
 

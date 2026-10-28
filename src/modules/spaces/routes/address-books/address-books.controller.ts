@@ -33,6 +33,7 @@ import {
 import type { Address } from 'viem';
 import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
 import { AuthGuard } from '#/modules/auth/routes/guards/auth.guard';
+import { MAX_TAGS_PER_WORKSPACE } from '#/modules/spaces/domain/address-books/entities/address-book-tag.entity';
 import { AddressBooksService } from '#/modules/spaces/routes/address-books/address-books.service';
 import {
   CreateTagDto,
@@ -212,7 +213,7 @@ export class AddressBooksController {
     type: SpaceAddressBookDto,
   })
   @ApiBadRequestResponse({
-    description: 'Invalid space identifier, or the space already has 8 tags',
+    description: `Invalid space identifier, or the space already has ${MAX_TAGS_PER_WORKSPACE} tags`,
   })
   @ApiUnauthorizedResponse({
     description: 'Authentication required - valid JWT token must be provided',

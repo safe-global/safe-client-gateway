@@ -387,6 +387,17 @@ describe('SpaceEncryptionService', () => {
       );
     });
 
+    it('normalises the name as TagNameSchema does, invisible characters included', () => {
+      const name = faker.word.noun();
+      fieldCryptoService.blindIndex.mockImplementation(
+        (value: string) => `hmac:${value}`,
+      );
+
+      expect(target.tagNameIndex(spaceId, `${name}\u200B`)).toBe(
+        target.tagNameIndex(spaceId, name),
+      );
+    });
+
     it('falls back to the normalised plaintext when no index key is configured', () => {
       const name = faker.word.noun();
       fieldCryptoService.blindIndex.mockReturnValue(null);

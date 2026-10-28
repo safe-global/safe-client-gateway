@@ -21,8 +21,8 @@ export const MAX_TAGS_PER_CONTACT = 3;
 export const MAX_TAGS_PER_WORKSPACE = TAG_COLORS.length;
 export const TAG_NAME_MAX_LENGTH = 32;
 
-// Compared ignoring case
-const DISALLOWED_TAG_NAMES = new Set(['workspace safe', 'signer']);
+/** The automatic labels; no tag may take their names, in any case. */
+export const RESERVED_TAG_NAMES = ['Workspace Safe', 'Signer'] as const;
 
 export const TAG_NAME_TAKEN_MESSAGE = 'A tag with this name already exists.';
 
@@ -31,18 +31,28 @@ export const WORKSPACE_TAG_LIMIT_MESSAGE = `Your workspace has ${MAX_TAGS_PER_WO
 const ALLOWED_TAG_NAME = /^[\p{L}\p{M}\p{N} \-_&/]+$/u;
 const FORBIDDEN_TAG_PREFIX = /^[=+\-@]/;
 
+/** A tag name as stored: sanitized, with runs of spaces collapsed, so names that render the same are one tag. */
+const normalizeTagName = (name: string): string =>
+  sanitizeName(name).replace(/ {2,}/g, ' ');
+
+/** What makes two tag names the same tag. */
+export const normalizeTagNameKey = (name: string): string =>
+  normalizeTagName(name).toLowerCase();
+
+const RESERVED_TAG_NAME_KEYS = new Set(
+  RESERVED_TAG_NAMES.map(normalizeTagNameKey),
+);
+
 export const TagNameSchema = z
   .string()
-  // Runs of spaces collapse to one, so names that render the same are one tag
-  // (SpaceEncryptionService.tagNameIndex collapses them the same way).
-  .transform((name) => sanitizeName(name).replace(/ {2,}/g, ' '))
+  .transform(normalizeTagName)
   .superRefine((name, ctx) => {
     const length = [...name].length;
     if (length === 0) {
       ctx.addIssue({ code: 'custom', message: 'Tags cannot be empty' });
       return;
     }
-    if (DISALLOWED_TAG_NAMES.has(name.toLowerCase())) {
+    if (RESERVED_TAG_NAME_KEYS.has(normalizeTagNameKey(name))) {
       ctx.addIssue({
         code: 'custom',
         message: `'${name}' is added automatically and can't be used as a tag name`,
@@ -78,7 +88,7 @@ export const TagNamesSchema = z
   .transform((names) => {
     const seen = new Set<string>();
     return names.filter((name) => {
-      const key = name.toLowerCase();
+      const key = normalizeTagNameKey(name);
       if (seen.has(key)) {
         return false;
       }

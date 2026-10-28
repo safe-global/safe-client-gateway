@@ -10,12 +10,15 @@ import type {
 } from '#/modules/spaces/domain/address-books/entities/address-book-tag.entity';
 import {
   MAX_TAGS_PER_CONTACT,
+  RESERVED_TAG_NAMES,
   TAG_COLORS,
   TAG_NAME_MAX_LENGTH,
   TagNameSchema,
   TagNamesSchema,
 } from '#/modules/spaces/domain/address-books/entities/address-book-tag.entity';
 import { AddressSchema } from '#/validation/entities/schemas/address.schema';
+
+const RESERVED_TAG_NAMES_DESCRIPTION = `${RESERVED_TAG_NAMES.map((name) => `'${name}'`).join(' and ')} aren't allowed, in any case`;
 
 // A tag id beyond the int column range would fail in the query, not here
 export const TagIdSchema = RowSchema.shape.id
@@ -52,8 +55,7 @@ export class SetContactTagsItem
     type: String,
     isArray: true,
     maxItems: MAX_TAGS_PER_CONTACT,
-    description:
-      "The full set of tag names for the contact. 'Workspace Safe' and 'Signer' aren't allowed, in any case",
+    description: `The full set of tag names for the contact. ${RESERVED_TAG_NAMES_DESCRIPTION}`,
   })
   public readonly tags!: Array<string>;
 }
@@ -78,7 +80,7 @@ export class CreateTagDto implements z.infer<typeof CreateTagSchema> {
   @ApiProperty({
     type: String,
     maxLength: TAG_NAME_MAX_LENGTH,
-    description: "'Workspace Safe' and 'Signer' aren't allowed, in any case",
+    description: RESERVED_TAG_NAMES_DESCRIPTION,
   })
   public readonly name!: string;
 }
@@ -91,7 +93,7 @@ export class RenameTagDto implements z.infer<typeof RenameTagSchema> {
   @ApiProperty({
     type: String,
     maxLength: TAG_NAME_MAX_LENGTH,
-    description: "'Workspace Safe' and 'Signer' aren't allowed, in any case",
+    description: RESERVED_TAG_NAMES_DESCRIPTION,
   })
   public readonly name!: string;
 }
