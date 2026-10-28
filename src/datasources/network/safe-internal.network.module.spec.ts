@@ -28,7 +28,11 @@ describe('createSafeInternalNetworkService', () => {
   });
 
   it('sends the request ID alongside the default headers', async () => {
-    const requestId = faker.string.uuid();
+    const requestId = faker.string.hexadecimal({
+      length: 32,
+      casing: 'lower',
+      prefix: '',
+    });
     const url = faker.internet.url({ appendSlash: false });
 
     await cls.run(() => {

@@ -266,7 +266,7 @@ A circuit breaker (`src/datasources/circuit-breaker/`) is opt-in per request via
 There is more than one `INetworkService` instance:
 
 - **Global (`NetworkModule`).** Third-party APIs use this one.
-- **Module-scoped, for Safe services.** These replace the global instance for every provider in the module that imports them, and send the current request ID as `x-safe-req-id`, the same value logged as `request_id`:
+- **Module-scoped, for Safe services.** These replace the global instance for every provider in the module that imports them, and send the current request ID as `x-safe-req-id`, the same value logged as `request_id` (32 lowercase hex characters, the format APISIX uses):
   - `SafeInternalNetworkModule`
   - `TxAuthNetworkModule`, which also adds Transaction Service auth
   - `SafeQueueModule`, which also adds queue-service auth
