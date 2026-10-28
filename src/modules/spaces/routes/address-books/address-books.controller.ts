@@ -130,7 +130,11 @@ export class AddressBooksController {
   })
   @ApiBadRequestResponse({
     description:
-      'Address book items limit exceeded, space tag limit reached, or invalid data provided',
+      'Invalid space identifier, address book items limit exceeded, or space tag limit reached',
+  })
+  @ApiUnprocessableEntityResponse({
+    description:
+      'Invalid body - an invalid address, name or chain ID, an invalid tag name, or more tags on an entry than allowed',
   })
   @Put('/:spaceId/address-book')
   @UseGuards(AuthGuard, ElevationGuard, SpacesAddressBookRateLimitGuard)
