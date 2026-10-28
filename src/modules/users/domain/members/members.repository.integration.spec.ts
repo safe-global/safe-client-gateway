@@ -1034,11 +1034,12 @@ describe('MembersRepository', () => {
   });
 
   describe('renewInvite', () => {
-    it("should refresh the member's inviteExpiresAt, leaving the rest untouched", async () => {
+    it('should refresh the invite expiry once and refuse a second renewal within the cooldown', async () => {
       const invitedBy = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
       const inviteeName = nameBuilder();
       const expiredAt = faker.date.past();
       const renewedInviteExpiresAt = faker.date.future();
+      const notRenewedSince = faker.date.recent();
       const invitee = await dbUserRepo.insert({ status: 'PENDING' });
       const space = await dbSpacesRepository.insert({
         name: nameBuilder(),
@@ -1052,6 +1053,7 @@ describe('MembersRepository', () => {
         status: 'INVITED',
         invitedBy,
         inviteExpiresAt: expiredAt,
+        updatedAt: faker.date.past({ refDate: notRenewedSince }),
       });
       const memberId = memberInsert.identifiers[0].id as Member['id'];
       const inviteeId = invitee.identifiers[0].id as User['id'];
@@ -1062,12 +1064,13 @@ describe('MembersRepository', () => {
         membersRepository.renewInvite({
           memberId,
           inviteExpiresAt: renewedInviteExpiresAt,
+          notRenewedSince,
           spaceId,
           spaceUuid,
           targetUserId: inviteeId,
           actorUserId: invitedBy,
         }),
-      ).resolves.toBeUndefined();
+      ).resolves.toBe(true);
 
       // Only the expiry changes; status/name/role/invitedBy are untouched.
       await expect(
@@ -1081,6 +1084,23 @@ describe('MembersRepository', () => {
           invitedBy,
           inviteExpiresAt: renewedInviteExpiresAt,
         }),
+      );
+
+      await expect(
+        membersRepository.renewInvite({
+          memberId,
+          inviteExpiresAt: faker.date.future(),
+          notRenewedSince,
+          spaceId,
+          spaceUuid,
+          targetUserId: inviteeId,
+          actorUserId: invitedBy,
+        }),
+      ).resolves.toBe(false);
+      await expect(
+        dbMembersRepository.findOneOrFail({ where: { id: memberId } }),
+      ).resolves.toEqual(
+        expect.objectContaining({ inviteExpiresAt: renewedInviteExpiresAt }),
       );
     });
   });
