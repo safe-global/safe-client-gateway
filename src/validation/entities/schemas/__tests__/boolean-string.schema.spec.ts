@@ -9,6 +9,7 @@ describe('BooleanStringSchema', () => {
   ])('should parse %s as %s', (value, expected) => {
     const result = BooleanStringSchema.safeParse(value);
 
+    expect(result.success).toBe(true);
     expect(result.success && result.data).toBe(expected);
   });
 

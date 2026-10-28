@@ -35,6 +35,7 @@ import { MultisigTransaction } from '#/modules/transactions/routes/entities/mult
 import type { PreviewTransactionDto } from '#/modules/transactions/routes/entities/preview-transaction.dto.entity';
 import type { QueuedItem } from '#/modules/transactions/routes/entities/queued-item.entity';
 import type { TransactionDetails } from '#/modules/transactions/routes/entities/transaction-details/transaction-details.entity';
+import { TransactionItem } from '#/modules/transactions/routes/entities/transaction-item.entity';
 import type { TransactionItemPage } from '#/modules/transactions/routes/entities/transaction-item-page.entity';
 import type { TransactionPreview } from '#/modules/transactions/routes/entities/transaction-preview.entity';
 import { ModuleTransactionMapper } from '#/modules/transactions/routes/mappers/module-transactions/module-transaction.mapper';
@@ -387,6 +388,57 @@ export class TransactionsService {
         onlyTrusted: args.onlyTrusted,
       })
     ).map((incomingTransfer) => new IncomingTransfer(incomingTransfer));
+
+    const nextURL = cursorUrlFromLimitAndOffset(args.routeUrl, transfers.next);
+    const previousURL = cursorUrlFromLimitAndOffset(
+      args.routeUrl,
+      transfers.previous,
+    );
+
+    return {
+      next: nextURL?.toString() ?? null,
+      previous: previousURL?.toString() ?? null,
+      results,
+    };
+  }
+
+  async getOutgoingTransfers(args: {
+    chainId: string;
+    routeUrl: Readonly<URL>;
+    safeAddress: Address;
+    executionDateGte?: string;
+    executionDateLte?: string;
+    to?: Address;
+    tokenAddress?: Address;
+    paginationData?: PaginationData;
+    onlyTrusted: boolean;
+  }): Promise<Partial<Page<TransactionItem>>> {
+    const [transfers, safeInfo] = await Promise.all([
+      this.safeRepository.getTransfers({
+        chainId: args.chainId,
+        safeAddress: args.safeAddress,
+        executionDateGte: args.executionDateGte,
+        executionDateLte: args.executionDateLte,
+        to: args.to,
+        // Only transfers sent by the Safe
+        from: args.safeAddress,
+        tokenAddress: args.tokenAddress,
+        limit: args.paginationData?.limit,
+        offset: args.paginationData?.offset,
+      }),
+      this.safeRepository.getSafe({
+        chainId: args.chainId,
+        address: args.safeAddress,
+      }),
+    ]);
+    const results = (
+      await this.transferMapper.mapTransfers({
+        chainId: args.chainId,
+        transfers: transfers.results,
+        safe: safeInfo,
+        onlyTrusted: args.onlyTrusted,
+      })
+    ).map((transfer) => new TransactionItem(transfer));
 
     const nextURL = cursorUrlFromLimitAndOffset(args.routeUrl, transfers.next);
     const previousURL = cursorUrlFromLimitAndOffset(

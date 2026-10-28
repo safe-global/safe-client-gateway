@@ -972,7 +972,7 @@ describe('TransactionApi', () => {
       const getTransfersUrl = `${baseUrl}/api/v1/safes/${safeAddress}/transfers/`;
       const cacheDir = new CacheDir(
         `${chainId}_transfers_${safeAddress}`,
-        `${onlyErc20}_${onlyErc721}_${limit}_${offset}_undefined`,
+        `${onlyErc20}_${onlyErc721}_${limit}_${offset}_undefined_undefined_undefined_undefined_undefined`,
       );
       mockDataSource.get.mockResolvedValueOnce(rawify(transfersPage));
 
@@ -1005,6 +1005,59 @@ describe('TransactionApi', () => {
       });
     });
 
+    it('should forward the sender, token and execution date filters', async () => {
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const limit = faker.number.int();
+      const offset = faker.number.int();
+      const to = getAddress(faker.finance.ethereumAddress());
+      const from = getAddress(faker.finance.ethereumAddress());
+      const tokenAddress = getAddress(faker.finance.ethereumAddress());
+      const executionDateGte = faker.date.past().toISOString();
+      const executionDateLte = faker.date.recent().toISOString();
+      const transfer = erc20TransferBuilder().build();
+      const transfersPage = pageBuilder().with('results', [transfer]).build();
+      const getTransfersUrl = `${baseUrl}/api/v1/safes/${safeAddress}/transfers/`;
+      const cacheDir = new CacheDir(
+        `${chainId}_transfers_${safeAddress}`,
+        `undefined_undefined_${limit}_${offset}_${to}_${from}_${tokenAddress}_${executionDateGte}_${executionDateLte}`,
+      );
+      mockDataSource.get.mockResolvedValueOnce(rawify(transfersPage));
+
+      const actual = await service.getTransfers({
+        safeAddress,
+        limit,
+        offset,
+        to,
+        from,
+        tokenAddress,
+        executionDateGte,
+        executionDateLte,
+      });
+
+      expect(actual).toBe(transfersPage);
+      expect(mockDataSource.get).toHaveBeenCalledTimes(1);
+      expect(mockDataSource.get).toHaveBeenCalledWith({
+        cacheDir,
+        expireTimeSeconds: defaultExpirationTimeInSeconds,
+        notFoundExpireTimeSeconds: notFoundExpireTimeSeconds,
+        url: getTransfersUrl,
+        networkRequest: {
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getTransactionServiceKey(chainId),
+          },
+          params: {
+            limit,
+            offset,
+            to,
+            _from: from,
+            token_address: tokenAddress,
+            execution_date__gte: executionDateGte,
+            execution_date__lte: executionDateLte,
+          },
+        },
+      });
+    });
+
     it('should return the transfers retrieved with `to` filter', async () => {
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       const onlyErc20 = faker.datatype.boolean();
@@ -1017,7 +1070,7 @@ describe('TransactionApi', () => {
       const getTransfersUrl = `${baseUrl}/api/v1/safes/${safeAddress}/transfers/`;
       const cacheDir = new CacheDir(
         `${chainId}_transfers_${safeAddress}`,
-        `${onlyErc20}_${onlyErc721}_${limit}_${offset}_${to}`,
+        `${onlyErc20}_${onlyErc721}_${limit}_${offset}_${to}_undefined_undefined_undefined_undefined`,
       );
       mockDataSource.get.mockResolvedValueOnce(rawify(transfersPage));
 
@@ -1069,7 +1122,7 @@ describe('TransactionApi', () => {
       const expected = new DataSourceError(errorMessage, statusCode);
       const cacheDir = new CacheDir(
         `${chainId}_transfers_${safeAddress}`,
-        `${onlyErc20}_${onlyErc721}_${limit}_${offset}_undefined`,
+        `${onlyErc20}_${onlyErc721}_${limit}_${offset}_undefined_undefined_undefined_undefined_undefined`,
       );
       mockDataSource.get.mockRejectedValueOnce(
         new NetworkResponseError(
