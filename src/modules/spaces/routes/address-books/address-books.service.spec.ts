@@ -1,17 +1,25 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
-import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
-import { getAddress } from 'viem';
+import {
+  BadRequestException,
+  ForbiddenException,
+  UnauthorizedException,
+} from '@nestjs/common';
+import type { EntityManager } from 'typeorm';
+import { type Address, getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import type { IConfigurationService } from '#/config/configuration.service.interface';
+import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
+import type { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
 import {
   oidcAuthPayloadDtoBuilder,
   siweAuthPayloadDtoBuilder,
 } from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
 import type { IAddressBookItemsRepository } from '#/modules/spaces/domain/address-books/address-book-items.repository.interface';
+import type { IAddressBookTagsRepository } from '#/modules/spaces/domain/address-books/address-book-tags.repository.interface';
 import { addressBookItemBuilder } from '#/modules/spaces/domain/address-books/entities/__tests__/address-book-item.db.builder';
+import { addressBookTagBuilder } from '#/modules/spaces/domain/address-books/entities/__tests__/address-book-tag.builder';
 import type { ISpacesRepository } from '#/modules/spaces/domain/spaces.repository.interface';
 import { AddressBooksService } from '#/modules/spaces/routes/address-books/address-books.service';
 import { memberBuilder } from '#/modules/users/datasources/entities/__tests__/member.entity.db.builder';
@@ -31,9 +39,7 @@ const repositoryMock = {
   deleteByAddress: vi.fn(),
 } as MockedObject<IAddressBookItemsRepository>;
 
-const configurationServiceMock = {
-  getOrThrow: vi.fn().mockReturnValue(20),
-} as MockedObject<IConfigurationService>;
+const MAX_ADDRESS_BOOK_ITEMS = 20;
 
 const usersRepositoryMock = {
   find: vi.fn(),
@@ -51,12 +57,31 @@ const membersRepositoryMock = {
   findOne: vi.fn(),
 } as MockedObject<IMembersRepository>;
 
+const tagsRepositoryMock = {
+  findBySpaceId: vi.fn(),
+  lockSpaceForTagWrites: vi.fn(),
+  setTagsForItems: vi.fn(),
+  createTag: vi.fn(),
+  renameTag: vi.fn(),
+  deleteTag: vi.fn(),
+} as MockedObject<IAddressBookTagsRepository>;
+
+const entityManager = {} as EntityManager;
+
+const postgresDatabaseServiceMock = {
+  transaction: vi.fn(),
+} as MockedObject<PostgresDatabaseService>;
+
 describe('AddressBooksService', () => {
   let service: AddressBooksService;
 
   beforeEach(() => {
     vi.resetAllMocks();
-    configurationServiceMock.getOrThrow.mockReturnValue(20);
+    const fakeConfigurationService = new FakeConfigurationService();
+    fakeConfigurationService.set(
+      'spaces.addressBooks.maxItems',
+      MAX_ADDRESS_BOOK_ITEMS,
+    );
     usersRepositoryMock.find.mockResolvedValue([]);
     walletsRepositoryMock.find.mockResolvedValue([]);
     spacesRepositoryMock.findUuidById.mockResolvedValue(fakeUuid());
@@ -65,6 +90,13 @@ describe('AddressBooksService', () => {
     membersRepositoryMock.findOne.mockResolvedValue(
       memberBuilder().with('role', 'ADMIN').with('status', 'ACTIVE').build(),
     );
+    tagsRepositoryMock.findBySpaceId.mockResolvedValue({
+      tags: [],
+      itemTagIds: new Map(),
+    });
+    postgresDatabaseServiceMock.transaction.mockImplementation((callback) =>
+      callback(entityManager),
+    );
     service = new AddressBooksService(
       repositoryMock,
       new UserIdentityResolverService(
@@ -72,9 +104,11 @@ describe('AddressBooksService', () => {
         walletsRepositoryMock,
         createMockWalletEncryptionService(),
       ),
-      configurationServiceMock,
+      fakeConfigurationService,
       spacesRepositoryMock,
       membersRepositoryMock,
+      tagsRepositoryMock,
+      postgresDatabaseServiceMock,
     );
   });
 
@@ -97,6 +131,41 @@ describe('AddressBooksService', () => {
         expect(repositoryMock.findAllBySpaceId).toHaveBeenCalledWith(spaceId);
       },
     );
+
+    it('should return the tags of the space and the tag ids of each item', async () => {
+      const spaceId = faker.number.int();
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const [taggedItem, untaggedItem] = [
+        addressBookItemBuilder().build(),
+        addressBookItemBuilder().build(),
+      ];
+      const tags = faker.helpers.multiple(
+        () => addressBookTagBuilder().build(),
+        {
+          count: { min: 1, max: 3 },
+        },
+      );
+      repositoryMock.findAllBySpaceId.mockResolvedValue([
+        taggedItem,
+        untaggedItem,
+      ]);
+      tagsRepositoryMock.findBySpaceId.mockResolvedValue({
+        tags,
+        itemTagIds: new Map([[taggedItem.id, tags.map((tag) => tag.id)]]),
+      });
+
+      const result = await service.findAllBySpaceId(authPayload, spaceId);
+
+      expect(result.tags).toEqual(tags);
+      expect(result.data).toEqual([
+        expect.objectContaining({
+          address: taggedItem.address,
+          tagIds: tags.map((tag) => tag.id),
+        }),
+        expect.objectContaining({ address: untaggedItem.address, tagIds: [] }),
+      ]);
+      expect(tagsRepositoryMock.findBySpaceId).toHaveBeenCalledWith(spaceId);
+    });
 
     it('should allow an active MEMBER to read the address book', async () => {
       const spaceId = faker.number.int();
@@ -172,11 +241,68 @@ describe('AddressBooksService', () => {
         status: 'ACTIVE',
         role: 'ADMIN',
       });
-      expect(repositoryMock.upsertMany).toHaveBeenCalledWith({
+      // No tags: no service transaction, the repository opens its own.
+      expect(repositoryMock.upsertMany).toHaveBeenCalledExactlyOnceWith({
         userId: Number(authPayload.sub),
         spaceId,
         addressBookItems: payload,
       });
+      expect(postgresDatabaseServiceMock.transaction).not.toHaveBeenCalled();
+      expect(tagsRepositoryMock.lockSpaceForTagWrites).not.toHaveBeenCalled();
+      expect(tagsRepositoryMock.setTagsForItems).not.toHaveBeenCalled();
+    });
+
+    it('should lock, upsert and then tag the items that carry tags, in one transaction', async () => {
+      const spaceId = faker.number.int();
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const [tagged, untagged] = [
+        addressBookItemBuilder().build(),
+        addressBookItemBuilder().build(),
+      ];
+      const tags = faker.helpers.multiple(() => faker.word.noun(), {
+        count: { min: 0, max: 3 },
+      });
+      const payload = [
+        {
+          address: tagged.address,
+          name: tagged.name,
+          chainIds: tagged.chainIds,
+          tags,
+        },
+        {
+          address: untagged.address,
+          name: untagged.name,
+          chainIds: untagged.chainIds,
+        },
+      ];
+      repositoryMock.upsertMany.mockResolvedValue([tagged, untagged]);
+
+      await service.upsertMany(authPayload, spaceId, { items: payload });
+
+      expect(postgresDatabaseServiceMock.transaction).toHaveBeenCalledOnce();
+      expect(
+        tagsRepositoryMock.lockSpaceForTagWrites,
+      ).toHaveBeenCalledExactlyOnceWith(entityManager, spaceId);
+      expect(repositoryMock.upsertMany).toHaveBeenCalledExactlyOnceWith({
+        userId: Number(authPayload.sub),
+        spaceId,
+        addressBookItems: payload,
+        entityManager,
+      });
+      expect(
+        tagsRepositoryMock.setTagsForItems,
+      ).toHaveBeenCalledExactlyOnceWith({
+        userId: Number(authPayload.sub),
+        spaceId,
+        entries: [{ address: tagged.address, tags }],
+        entityManager,
+      });
+      expect(tagsRepositoryMock.lockSpaceForTagWrites).toHaveBeenCalledBefore(
+        repositoryMock.upsertMany,
+      );
+      expect(repositoryMock.upsertMany).toHaveBeenCalledBefore(
+        tagsRepositoryMock.setTagsForItems,
+      );
     });
 
     it('should throw ForbiddenException when the caller is not an admin', async () => {
@@ -391,6 +517,319 @@ describe('AddressBooksService', () => {
       ).rejects.toThrow(UnauthorizedException);
       expect(membersRepositoryMock.findOne).not.toHaveBeenCalled();
       expect(repositoryMock.deleteByAddress).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('setContactTags', () => {
+    it('should set the tags for an active MEMBER and return the address book', async () => {
+      const spaceId = faker.number.int();
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const item = addressBookItemBuilder().build();
+      const tags = faker.helpers.multiple(
+        () => addressBookTagBuilder().build(),
+        {
+          count: { min: 1, max: 3 },
+        },
+      );
+      const items = [
+        { address: item.address, tags: tags.map((tag) => tag.name) },
+      ];
+      membersRepositoryMock.findOne.mockResolvedValue(
+        memberBuilder().with('role', 'MEMBER').with('status', 'ACTIVE').build(),
+      );
+      repositoryMock.findAllBySpaceId.mockResolvedValue([item]);
+      tagsRepositoryMock.findBySpaceId.mockResolvedValue({
+        tags,
+        itemTagIds: new Map([[item.id, tags.map((tag) => tag.id)]]),
+      });
+
+      const result = await service.setContactTags(authPayload, spaceId, {
+        items,
+      });
+
+      expect(membersRepositoryMock.findOne).toHaveBeenCalledWith({
+        user: { id: Number(authPayload.sub) },
+        space: { id: spaceId },
+        status: 'ACTIVE',
+      });
+      expect(
+        tagsRepositoryMock.setTagsForItems,
+      ).toHaveBeenCalledExactlyOnceWith({
+        userId: Number(authPayload.sub),
+        spaceId,
+        entries: items,
+      });
+      expect(result.tags).toEqual(tags);
+      expect(result.data).toEqual([
+        expect.objectContaining({
+          address: item.address,
+          tagIds: tags.map((tag) => tag.id),
+        }),
+      ]);
+    });
+
+    it('should throw ForbiddenException when the caller is not an active member', async () => {
+      const spaceId = faker.number.int();
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      membersRepositoryMock.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.setContactTags(authPayload, spaceId, {
+          items: [
+            {
+              address: getAddress(faker.finance.ethereumAddress()),
+              tags: [faker.word.noun()],
+            },
+          ],
+        }),
+      ).rejects.toThrow(
+        new ForbiddenException('User is not a member of this workspace'),
+      );
+      expect(tagsRepositoryMock.setTagsForItems).not.toHaveBeenCalled();
+    });
+
+    it('should reject a batch larger than the address book limit', async () => {
+      const spaceId = faker.number.int();
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const items = faker.helpers.multiple(
+        (): { address: Address; tags: Array<string> } => ({
+          address: getAddress(faker.finance.ethereumAddress()),
+          tags: [faker.word.noun()],
+        }),
+        { count: MAX_ADDRESS_BOOK_ITEMS + 1 },
+      );
+
+      await expect(
+        service.setContactTags(authPayload, spaceId, { items }),
+      ).rejects.toThrow(
+        new BadRequestException(
+          `A tag update can change at most ${MAX_ADDRESS_BOOK_ITEMS} contacts.`,
+        ),
+      );
+      expect(tagsRepositoryMock.setTagsForItems).not.toHaveBeenCalled();
+    });
+
+    it('should answer a non-member with 403, not the batch limit', async () => {
+      const spaceId = faker.number.int();
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      membersRepositoryMock.findOne.mockResolvedValue(null);
+      const items = faker.helpers.multiple(
+        (): { address: Address; tags: Array<string> } => ({
+          address: getAddress(faker.finance.ethereumAddress()),
+          tags: [faker.word.noun()],
+        }),
+        { count: MAX_ADDRESS_BOOK_ITEMS + 1 },
+      );
+
+      await expect(
+        service.setContactTags(authPayload, spaceId, { items }),
+      ).rejects.toThrow(
+        new ForbiddenException('User is not a member of this workspace'),
+      );
+    });
+
+    it('should accept a batch of exactly the address book limit', async () => {
+      const spaceId = faker.number.int();
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const items = faker.helpers.multiple(
+        (): { address: Address; tags: Array<string> } => ({
+          address: getAddress(faker.finance.ethereumAddress()),
+          tags: [faker.word.noun()],
+        }),
+        { count: MAX_ADDRESS_BOOK_ITEMS },
+      );
+      repositoryMock.findAllBySpaceId.mockResolvedValue([]);
+
+      await service.setContactTags(authPayload, spaceId, { items });
+
+      expect(
+        tagsRepositoryMock.setTagsForItems,
+      ).toHaveBeenCalledExactlyOnceWith({
+        userId: Number(authPayload.sub),
+        spaceId,
+        entries: items,
+      });
+    });
+
+    it('should throw UnauthorizedException for unauthenticated user', async () => {
+      const spaceId = faker.number.int();
+      const authPayload = new AuthPayload();
+
+      await expect(
+        service.setContactTags(authPayload, spaceId, { items: [] }),
+      ).rejects.toThrow(UnauthorizedException);
+      expect(membersRepositoryMock.findOne).not.toHaveBeenCalled();
+      expect(tagsRepositoryMock.setTagsForItems).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('createTag', () => {
+    it('should create the tag for an active MEMBER and return the address book', async () => {
+      const spaceId = faker.number.int();
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const tag = addressBookTagBuilder().with('contactCount', 0).build();
+      membersRepositoryMock.findOne.mockResolvedValue(
+        memberBuilder().with('role', 'MEMBER').with('status', 'ACTIVE').build(),
+      );
+      repositoryMock.findAllBySpaceId.mockResolvedValue([]);
+      tagsRepositoryMock.findBySpaceId.mockResolvedValue({
+        tags: [tag],
+        itemTagIds: new Map(),
+      });
+
+      const result = await service.createTag({
+        authPayload,
+        spaceId,
+        dto: { name: tag.name },
+      });
+
+      expect(tagsRepositoryMock.createTag).toHaveBeenCalledExactlyOnceWith({
+        userId: Number(authPayload.sub),
+        spaceId,
+        name: tag.name,
+      });
+      expect(result.tags).toEqual([tag]);
+    });
+
+    it('should throw ForbiddenException when the caller is not an active member', async () => {
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      membersRepositoryMock.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.createTag({
+          authPayload,
+          spaceId: faker.number.int(),
+          dto: { name: faker.word.noun() },
+        }),
+      ).rejects.toThrow(
+        new ForbiddenException('User is not a member of this workspace'),
+      );
+      expect(tagsRepositoryMock.createTag).not.toHaveBeenCalled();
+    });
+
+    it('should throw UnauthorizedException for unauthenticated user', async () => {
+      await expect(
+        service.createTag({
+          authPayload: new AuthPayload(),
+          spaceId: faker.number.int(),
+          dto: { name: faker.word.noun() },
+        }),
+      ).rejects.toThrow(UnauthorizedException);
+      expect(tagsRepositoryMock.createTag).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('renameTag', () => {
+    it('should rename the tag for an active MEMBER and return the address book', async () => {
+      const spaceId = faker.number.int();
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const tag = addressBookTagBuilder().build();
+      const name = faker.word.noun();
+      membersRepositoryMock.findOne.mockResolvedValue(
+        memberBuilder().with('role', 'MEMBER').with('status', 'ACTIVE').build(),
+      );
+      repositoryMock.findAllBySpaceId.mockResolvedValue([]);
+      tagsRepositoryMock.findBySpaceId.mockResolvedValue({
+        tags: [{ ...tag, name }],
+        itemTagIds: new Map(),
+      });
+
+      const result = await service.renameTag({
+        authPayload,
+        spaceId,
+        tagId: tag.id,
+        dto: { name },
+      });
+
+      expect(tagsRepositoryMock.renameTag).toHaveBeenCalledExactlyOnceWith({
+        userId: Number(authPayload.sub),
+        spaceId,
+        tagId: tag.id,
+        name,
+      });
+      expect(result.tags).toEqual([{ ...tag, name }]);
+    });
+
+    it('should throw ForbiddenException when the caller is not an active member', async () => {
+      const spaceId = faker.number.int();
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      membersRepositoryMock.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.renameTag({
+          authPayload,
+          spaceId,
+          tagId: faker.number.int(),
+          dto: { name: faker.word.noun() },
+        }),
+      ).rejects.toThrow(
+        new ForbiddenException('User is not a member of this workspace'),
+      );
+      expect(tagsRepositoryMock.renameTag).not.toHaveBeenCalled();
+    });
+
+    it('should throw UnauthorizedException for unauthenticated user', async () => {
+      const authPayload = new AuthPayload();
+
+      await expect(
+        service.renameTag({
+          authPayload,
+          spaceId: faker.number.int(),
+          tagId: faker.number.int(),
+          dto: { name: faker.word.noun() },
+        }),
+      ).rejects.toThrow(UnauthorizedException);
+      expect(membersRepositoryMock.findOne).not.toHaveBeenCalled();
+      expect(tagsRepositoryMock.renameTag).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('deleteTag', () => {
+    it('should delete the tag for an active MEMBER', async () => {
+      const spaceId = faker.number.int();
+      const tagId = faker.number.int();
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      membersRepositoryMock.findOne.mockResolvedValue(
+        memberBuilder().with('role', 'MEMBER').with('status', 'ACTIVE').build(),
+      );
+
+      await service.deleteTag({ authPayload, spaceId, tagId });
+
+      expect(tagsRepositoryMock.deleteTag).toHaveBeenCalledExactlyOnceWith({
+        userId: Number(authPayload.sub),
+        spaceId,
+        tagId,
+      });
+    });
+
+    it('should throw ForbiddenException when the caller is not an active member', async () => {
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      membersRepositoryMock.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.deleteTag({
+          authPayload,
+          spaceId: faker.number.int(),
+          tagId: faker.number.int(),
+        }),
+      ).rejects.toThrow(
+        new ForbiddenException('User is not a member of this workspace'),
+      );
+      expect(tagsRepositoryMock.deleteTag).not.toHaveBeenCalled();
+    });
+
+    it('should throw UnauthorizedException for unauthenticated user', async () => {
+      const authPayload = new AuthPayload();
+
+      await expect(
+        service.deleteTag({
+          authPayload,
+          spaceId: faker.number.int(),
+          tagId: faker.number.int(),
+        }),
+      ).rejects.toThrow(UnauthorizedException);
+      expect(membersRepositoryMock.findOne).not.toHaveBeenCalled();
+      expect(tagsRepositoryMock.deleteTag).not.toHaveBeenCalled();
     });
   });
 });

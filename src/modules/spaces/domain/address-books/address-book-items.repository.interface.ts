@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import type { EntityManager } from 'typeorm';
+import type { Address } from 'viem';
 import type { AddressBookDbItem } from '#/modules/spaces/domain/address-books/entities/address-book-item.db.entity';
 import type { Space } from '#/modules/spaces/domain/entities/space.entity';
 import type { UpsertAddressBookItemsDto } from '#/modules/spaces/routes/address-books/entities/upsert-address-book-items.dto.entity';
@@ -44,6 +45,22 @@ export interface IAddressBookItemsRepository {
     createdByOverride?: number;
     entityManager?: EntityManager;
   }): Promise<Array<AddressBookDbItem>>;
+
+  /**
+   * Finds the ids of the Space's items for the given addresses.
+   *
+   * @param args.spaceId - The ID of the Space.
+   * @param args.addresses - The addresses to look up.
+   * @param args.entityManager - If provided, the lookup runs in this
+   *   (caller-owned) transaction.
+   * @returns a map from the lowercased address to the item id; an address
+   *   that is not in the book is absent.
+   */
+  findItemIdsByAddresses(args: {
+    spaceId: Space['id'];
+    addresses: Array<Address>;
+    entityManager?: EntityManager;
+  }): Promise<Map<string, number>>;
 
   /**
    * Deletes an {@link AddressBookDbItem} by address.
