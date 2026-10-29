@@ -11,7 +11,6 @@ import { SpaceTransactionsService } from '#/modules/transactions/routes/space-tr
 import type { TransactionsService } from '#/modules/transactions/routes/transactions.service';
 import { memberBuilder } from '#/modules/users/datasources/entities/__tests__/member.entity.db.builder';
 import type { IMembersRepository } from '#/modules/users/domain/members/members.repository.interface';
-import { PaginationData } from '#/routes/common/pagination/pagination.data';
 
 const mockMembersRepository = vi.mocked({
   findOne: vi.fn(),
@@ -31,11 +30,6 @@ describe('SpaceTransactionsService', () => {
   const authPayloadDto = siweAuthPayloadDtoBuilder().build();
   const userId = Number(authPayloadDto.sub);
   const authPayload = new AuthPayload(authPayloadDto);
-  const routeUrl = new URL(faker.internet.url());
-  const paginationData = new PaginationData(
-    faker.number.int({ min: 1, max: 50 }),
-    faker.number.int({ min: 0, max: 50 }),
-  );
 
   beforeEach(() => {
     vi.resetAllMocks();
@@ -73,8 +67,6 @@ describe('SpaceTransactionsService', () => {
     const actual = await target.getTransactionQueue({
       spaceId,
       authPayload,
-      routeUrl,
-      paginationData,
     });
 
     expect(actual).toBe(page);
@@ -88,8 +80,6 @@ describe('SpaceTransactionsService', () => {
     ).toHaveBeenCalledWith({
       spaceId,
       safes,
-      routeUrl,
-      paginationData,
     });
   });
 
@@ -100,8 +90,6 @@ describe('SpaceTransactionsService', () => {
       target.getTransactionQueue({
         spaceId,
         authPayload,
-        routeUrl,
-        paginationData,
       }),
     ).rejects.toThrow(
       new ForbiddenException('User is not a member of this workspace'),

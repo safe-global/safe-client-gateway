@@ -23,12 +23,25 @@ export type SpaceQueueItems = {
   TransactionQueuedItem,
 )
 export class SpaceQueuedItemPage {
-  @ApiProperty({ type: Number, nullable: true })
+  @ApiProperty({
+    type: Number,
+    nullable: true,
+    description:
+      'Size of the whole queue, which can exceed the items returned when the queue is longer than the pages read',
+  })
   count!: number | null;
-  @ApiProperty({ type: String, nullable: true })
-  next!: string | null;
-  @ApiProperty({ type: String, nullable: true })
-  previous!: string | null;
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description: 'Always null: the queue is returned in one response',
+  })
+  next!: null;
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description: 'Always null: the queue is returned in one response',
+  })
+  previous!: null;
 
   @ApiProperty({
     type: 'object',
@@ -49,7 +62,7 @@ export class SpaceQueuedItemPage {
       '{safeAddress}': { '{chainId}': [] },
     },
     description:
-      'Queued items of this page, keyed by Safe address and then by chain ID, each list in nonce order. A Safe can continue on the next page.',
+      'Queued items, keyed by Safe address and then by chain ID, each list in nonce order.',
   })
   results!: SpaceQueueItems;
 

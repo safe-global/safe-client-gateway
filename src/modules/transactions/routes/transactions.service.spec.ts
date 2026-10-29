@@ -30,7 +30,6 @@ import type { TransactionsHistoryMapper } from '#/modules/transactions/routes/ma
 import type { TransferMapper } from '#/modules/transactions/routes/mappers/transfers/transfer.mapper';
 import type { TransferDetailsMapper } from '#/modules/transactions/routes/mappers/transfers/transfer-details.mapper';
 import { TransactionsService } from '#/modules/transactions/routes/transactions.service';
-import { PaginationData } from '#/routes/common/pagination/pagination.data';
 
 const mockSafeRepository = {
   getSafe: vi.fn(),
@@ -50,12 +49,14 @@ const mockLoggingService = {
 
 describe('TransactionsService', () => {
   let target: TransactionsService;
-  const routeUrl = new URL(faker.internet.url());
+  // At least three pages, so a test can read fewer pages than the maximum.
+  const maxPages = faker.number.int({ min: 3, max: 5 });
 
   beforeEach(() => {
     vi.resetAllMocks();
     const configurationService = new FakeConfigurationService();
     configurationService.set('features.filterValueParsing', false);
+    configurationService.set('spaces.transactionQueue.maxPages', maxPages);
     target = new TransactionsService(
       mockSafeRepository,
       {} as IDataDecoderRepository,
@@ -151,10 +152,20 @@ describe('TransactionsService', () => {
           { chainId, address: safeB.address },
           { chainId: otherChainId, address: safeA.address },
         ],
-        routeUrl,
-        paginationData: new PaginationData(20, 0),
       });
 
+      expect(
+        mockSafeRepository.getTransactionQueueForSafes,
+      ).toHaveBeenCalledExactlyOnceWith({
+        spaceId,
+        safes: [
+          { chainId, safe: safeA },
+          { chainId, safe: safeB },
+          { chainId: otherChainId, safe: safeA },
+        ],
+        limit: SAFE_QUEUE_SERVICE_MAX_LIMIT,
+        offset: 0,
+      });
       expect(actual.next).toBeNull();
       expect(actual.count).toBe(5);
       expect(actual.unavailableSafes).toEqual([]);
@@ -184,56 +195,89 @@ describe('TransactionsService', () => {
       }
     });
 
-    it('completes the last nonce of a page and points the next page past it', async () => {
+    it('reads every page of the queue and maps them as one queue', async () => {
       const chainId = faker.string.numeric({ length: 3 });
-      const safe = safeBuilder().with('nonce', 1).build();
+      const safe = safeBuilder().with('nonce', 0).build();
       mockSafeRepository.getSafe.mockResolvedValue(safe);
-      const limit = 2;
-      const first = queuedTransaction(chainId, safe, 1);
-      const second = queuedTransaction(chainId, safe, 2);
-      const conflicting = queuedTransaction(chainId, safe, 2);
-      const following = queuedTransaction(chainId, safe, 3);
-      mockSafeRepository.getTransactionQueueForSafes
-        .mockResolvedValueOnce(queuePage([first, second, conflicting], 5))
-        .mockResolvedValueOnce(queuePage([conflicting, following], 3));
+      const pageCount = maxPages - 1;
+      const count = faker.number.int({
+        min: (pageCount - 1) * SAFE_QUEUE_SERVICE_MAX_LIMIT + 1,
+        max: pageCount * SAFE_QUEUE_SERVICE_MAX_LIMIT,
+      });
+      // One transaction stands in for the results of each page
+      const pages = Array.from({ length: pageCount }, (_, page) => [
+        queuedTransaction(chainId, safe, page),
+      ]);
+      mockSafeRepository.getTransactionQueueForSafes.mockImplementation(
+        ({ offset = 0 }) =>
+          Promise.resolve(
+            queuePage(pages[offset / SAFE_QUEUE_SERVICE_MAX_LIMIT], count),
+          ),
+      );
 
       const actual = await target.getTransactionQueueForSafes({
         spaceId,
         safes: [{ chainId, address: safe.address }],
-        routeUrl,
-        paginationData: new PaginationData(limit, 0),
       });
 
-      const safes = [{ chainId, safe }];
       expect(
         mockSafeRepository.getTransactionQueueForSafes,
-      ).toHaveBeenNthCalledWith(1, {
-        spaceId,
-        safes,
-        limit: limit + 1,
-        offset: 0,
-      });
-      expect(
-        mockSafeRepository.getTransactionQueueForSafes,
-      ).toHaveBeenNthCalledWith(2, {
-        spaceId,
-        safes,
-        limit: SAFE_QUEUE_SERVICE_MAX_LIMIT,
-        offset: limit,
-      });
+      ).toHaveBeenCalledTimes(pageCount);
+      for (let page = 0; page < pageCount; page++) {
+        expect(
+          mockSafeRepository.getTransactionQueueForSafes,
+        ).toHaveBeenCalledWith({
+          spaceId,
+          safes: [{ chainId, safe }],
+          limit: SAFE_QUEUE_SERVICE_MAX_LIMIT,
+          offset: page * SAFE_QUEUE_SERVICE_MAX_LIMIT,
+        });
+      }
       expect(mockQueuedItemsMapper.getQueuedItems).toHaveBeenCalledWith(
-        expect.objectContaining({
-          results: [first, second, conflicting].map(
-            ({ transaction }) => transaction,
-          ),
-        }),
+        {
+          count: pageCount,
+          next: null,
+          previous: null,
+          results: pages.flat().map(({ transaction }) => transaction),
+        },
         safe,
         chainId,
         null,
         null,
       );
-      const next = new URL(actual.next ?? '');
-      expect(next.searchParams.get('cursor')).toBe(`limit=${limit}&offset=3`);
+      expect(actual.count).toBe(count);
+      expect(actual.next).toBeNull();
+    });
+
+    it('reads no more than the maximum number of pages', async () => {
+      const chainId = faker.string.numeric({ length: 3 });
+      const safe = safeBuilder().build();
+      mockSafeRepository.getSafe.mockResolvedValue(safe);
+      const count = faker.number.int({
+        min: maxPages * SAFE_QUEUE_SERVICE_MAX_LIMIT + 1,
+        max: maxPages * SAFE_QUEUE_SERVICE_MAX_LIMIT * 2,
+      });
+      mockSafeRepository.getTransactionQueueForSafes.mockResolvedValue(
+        queuePage([], count),
+      );
+
+      const actual = await target.getTransactionQueueForSafes({
+        spaceId,
+        safes: [{ chainId, address: safe.address }],
+      });
+
+      expect(
+        mockSafeRepository.getTransactionQueueForSafes,
+      ).toHaveBeenCalledTimes(maxPages);
+      expect(
+        mockSafeRepository.getTransactionQueueForSafes,
+      ).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          offset: (maxPages - 1) * SAFE_QUEUE_SERVICE_MAX_LIMIT,
+        }),
+      );
+      expect(actual.count).toBe(count);
+      expect(actual.next).toBeNull();
     });
 
     it('reports Safes that cannot be loaded as unavailable and leaves them out of the queue', async () => {
@@ -268,8 +312,6 @@ describe('TransactionsService', () => {
           { chainId, address: undeployed },
           { chainId, address: unreachable },
         ],
-        routeUrl,
-        paginationData: new PaginationData(20, 0),
       });
 
       expect(actual.unavailableSafes).toEqual([
@@ -297,8 +339,6 @@ describe('TransactionsService', () => {
       const actual = await target.getTransactionQueueForSafes({
         spaceId,
         safes: [{ chainId, address }],
-        routeUrl,
-        paginationData: new PaginationData(20, 0),
       });
 
       expect(actual).toEqual({
@@ -336,8 +376,6 @@ describe('TransactionsService', () => {
           { chainId, address: safe.address },
           { chainId, address: undeployed },
         ],
-        routeUrl,
-        paginationData: new PaginationData(20, 0),
       });
 
       expect(actual).toEqual({
@@ -356,18 +394,15 @@ describe('TransactionsService', () => {
       );
     });
 
-    it('reports the Safes as unavailable when completing the last nonce fails', async () => {
+    it('reports the Safes as unavailable when a later page of the queue fails', async () => {
       const chainId = faker.string.numeric({ length: 3 });
       const safe = safeBuilder().with('nonce', 1).build();
       mockSafeRepository.getSafe.mockResolvedValue(safe);
       mockSafeRepository.getTransactionQueueForSafes
         .mockResolvedValueOnce(
           queuePage(
-            [
-              queuedTransaction(chainId, safe, 1),
-              queuedTransaction(chainId, safe, 1),
-            ],
-            2,
+            [queuedTransaction(chainId, safe, 1)],
+            SAFE_QUEUE_SERVICE_MAX_LIMIT + 1,
           ),
         )
         .mockRejectedValueOnce(
@@ -380,8 +415,6 @@ describe('TransactionsService', () => {
       const actual = await target.getTransactionQueueForSafes({
         spaceId,
         safes: [{ chainId, address: safe.address }],
-        routeUrl,
-        paginationData: new PaginationData(1, 0),
       });
 
       expect(actual.results).toEqual({});
@@ -414,8 +447,6 @@ describe('TransactionsService', () => {
           { chainId: otherChainId, address: addresses[0] },
           { chainId: otherChainId, address: overflow },
         ],
-        routeUrl,
-        paginationData: new PaginationData(20, 0),
       });
 
       expect(actual.unavailableSafes).toEqual([

@@ -6,7 +6,6 @@ import {
   Injectable,
 } from '@nestjs/common';
 import sortBy from 'lodash/sortBy';
-import takeWhile from 'lodash/takeWhile';
 import type { Address } from 'viem';
 import {
   getAddress,
@@ -72,12 +71,12 @@ import {
   buildPreviousPageURL,
   cursorUrlFromLimitAndOffset,
   PaginationData,
-  setCursor,
 } from '#/routes/common/pagination/pagination.data';
 
 @Injectable()
 export class TransactionsService {
   private readonly isFilterValueParsingEnabled: boolean;
+  private readonly maxSpaceQueuePages: number;
 
   constructor(
     @Inject(ISafeRepository) private readonly safeRepository: SafeRepository,
@@ -101,6 +100,9 @@ export class TransactionsService {
   ) {
     this.isFilterValueParsingEnabled = this.configurationService.getOrThrow(
       'features.filterValueParsing',
+    );
+    this.maxSpaceQueuePages = this.configurationService.getOrThrow(
+      'spaces.transactionQueue.maxPages',
     );
   }
 
@@ -476,16 +478,13 @@ export class TransactionsService {
   }
 
   /**
-   * The merged queue of several Safes, paged in nonce order and grouped by
-   * Safe address and chain. A page never ends inside a nonce, so every
-   * conflict lands whole on one page, and each Safe's transactions are mapped
-   * against that Safe.
+   * The merged queue of several Safes, in nonce order and grouped by Safe
+   * address and chain, read up to `spaces.transactionQueue.maxPages` pages of
+   * the queue service. Each Safe's transactions are mapped against that Safe.
    */
   async getTransactionQueueForSafes(args: {
     spaceId: number;
     safes: ReadonlyArray<{ chainId: string; address: Address }>;
-    routeUrl: Readonly<URL>;
-    paginationData: PaginationData;
   }): Promise<SpaceQueuedItemPage> {
     const { requested, unavailableSafes } = this.partitionQueueSafes(
       args.safes,
@@ -501,16 +500,9 @@ export class TransactionsService {
       };
     }
 
-    const { offset } = args.paginationData;
-    const limit = Math.max(
-      1,
-      Math.min(args.paginationData.limit, SAFE_QUEUE_SERVICE_MAX_LIMIT - 1),
-    );
-    const page = await this.getQueuePageOfSafes({
+    const queue = await this.getQueueOfSafes({
       spaceId: args.spaceId,
       safes,
-      limit,
-      offset,
     }).catch((error: unknown) => {
       this.loggingService.warn({
         message: 'Failed to load the queue of the Space Safes',
@@ -519,7 +511,7 @@ export class TransactionsService {
       return null;
     });
     // The Space stays readable: its Safes are reported as unavailable instead.
-    if (!page) {
+    if (!queue) {
       unavailableSafes.push(
         ...safes.map(({ chainId, safe }) => ({
           chainId,
@@ -534,13 +526,6 @@ export class TransactionsService {
         unavailableSafes,
       };
     }
-    const { transactions } = page;
-
-    const nextOffset = offset + transactions.length;
-    const next =
-      page.count !== null && nextOffset < page.count
-        ? setCursor(args.routeUrl, new PaginationData(limit, nextOffset))
-        : null;
     const safesByKey = new Map(
       safes.map(({ chainId, safe }) => [
         getChainSafeKey(chainId, safe.address),
@@ -549,23 +534,22 @@ export class TransactionsService {
     );
 
     return {
-      count: page.count,
-      next: next?.toString() ?? null,
+      count: queue.count,
+      next: null,
       previous: null,
-      results: await this.mapQueueBySafe(transactions, safesByKey),
+      results: await this.mapQueueBySafe(queue.transactions, safesByKey),
       unavailableSafes,
     };
   }
 
   /**
-   * One page of the merged queue, extended past `limit` to the end of its
-   * last nonce.
+   * The merged queue, one queue service page at a time: the first page gives
+   * the count, and the remaining pages, up to `maxSpaceQueuePages` in all, are
+   * fetched together.
    */
-  private async getQueuePageOfSafes(args: {
+  private async getQueueOfSafes(args: {
     spaceId: number;
     safes: Array<{ chainId: string; safe: Safe }>;
-    limit: number;
-    offset: number;
   }): Promise<{
     count: number | null;
     transactions: Array<{
@@ -573,30 +557,29 @@ export class TransactionsService {
       transaction: DomainMultisigTransaction;
     }>;
   }> {
-    // One transaction more than the page, to tell whether its last nonce continues.
-    const page = await this.safeRepository.getTransactionQueueForSafes({
-      spaceId: args.spaceId,
-      safes: args.safes,
-      limit: args.limit + 1,
-      offset: args.offset,
-    });
-    const transactions = page.results.slice(0, args.limit);
-    const lookahead = page.results.at(args.limit);
-    const lastNonce = transactions.at(-1)?.transaction.nonce;
-    if (lookahead && lookahead.transaction.nonce === lastNonce) {
-      const rest = await this.safeRepository.getTransactionQueueForSafes({
+    const getPage = (
+      offset: number,
+    ): ReturnType<SafeRepository['getTransactionQueueForSafes']> =>
+      this.safeRepository.getTransactionQueueForSafes({
         spaceId: args.spaceId,
         safes: args.safes,
         limit: SAFE_QUEUE_SERVICE_MAX_LIMIT,
-        offset: args.offset + transactions.length,
+        offset,
       });
-      const sameNonce = takeWhile(
-        rest.results,
-        (item) => item.transaction.nonce === lastNonce,
-      );
-      transactions.push(...sameNonce);
-    }
-    return { count: page.count, transactions };
+    const firstPage = await getPage(0);
+    const pageCount = Math.min(
+      Math.ceil((firstPage.count ?? 0) / SAFE_QUEUE_SERVICE_MAX_LIMIT),
+      this.maxSpaceQueuePages,
+    );
+    const nextPages = await Promise.all(
+      Array.from({ length: Math.max(pageCount - 1, 0) }, (_, index) =>
+        getPage((index + 1) * SAFE_QUEUE_SERVICE_MAX_LIMIT),
+      ),
+    );
+    return {
+      count: firstPage.count,
+      transactions: [firstPage, ...nextPages].flatMap(({ results }) => results),
+    };
   }
 
   private partitionQueueSafes(

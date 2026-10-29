@@ -8,7 +8,6 @@ import { assertMember } from '#/modules/spaces/domain/space-assert.utils';
 import type { SpaceQueuedItemPage } from '#/modules/transactions/routes/entities/space-queued-item-page.entity';
 import { TransactionsService } from '#/modules/transactions/routes/transactions.service';
 import { IMembersRepository } from '#/modules/users/domain/members/members.repository.interface';
-import type { PaginationData } from '#/routes/common/pagination/pagination.data';
 
 @Injectable()
 export class SpaceTransactionsService {
@@ -23,8 +22,6 @@ export class SpaceTransactionsService {
   public async getTransactionQueue(args: {
     spaceId: Space['id'];
     authPayload: AuthPayload;
-    routeUrl: Readonly<URL>;
-    paginationData: PaginationData;
   }): Promise<SpaceQueuedItemPage> {
     const userId = getAuthenticatedUserIdOrFail(args.authPayload);
     await assertMember(this.membersRepository, args.spaceId, userId);
@@ -36,8 +33,6 @@ export class SpaceTransactionsService {
     return await this.transactionsService.getTransactionQueueForSafes({
       spaceId: args.spaceId,
       safes: spaceSafes,
-      routeUrl: args.routeUrl,
-      paginationData: args.paginationData,
     });
   }
 }

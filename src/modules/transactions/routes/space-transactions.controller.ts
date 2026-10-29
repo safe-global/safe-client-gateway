@@ -7,7 +7,6 @@ import {
   ApiOkResponse,
   ApiOperation,
   ApiParam,
-  ApiQuery,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
@@ -17,9 +16,6 @@ import type { Space } from '#/modules/spaces/domain/entities/space.entity';
 import { SpaceQueuedItemPage } from '#/modules/transactions/routes/entities/space-queued-item-page.entity';
 import { SpaceTransactionsService } from '#/modules/transactions/routes/space-transactions.service';
 import { Auth } from '#/routes/common/auth/auth.decorator';
-import { PaginationDataDecorator } from '#/routes/common/decorators/pagination.data.decorator';
-import { RouteUrlDecorator } from '#/routes/common/decorators/route.url.decorator';
-import type { PaginationData } from '#/routes/common/pagination/pagination.data';
 import { SpaceIdPipe } from '#/routes/common/pipes/space-id.pipe';
 
 @ApiTags('transactions')
@@ -36,18 +32,12 @@ export class SpaceTransactionsController {
   @ApiOperation({
     summary: 'Get the transaction queue of a Space',
     description:
-      'Retrieves the pending transactions of every Safe in a Space, across chains. Pages follow nonce order; results are keyed by Safe address and then by chain ID, and a page never ends inside a nonce.',
+      'Retrieves the pending transactions of every Safe in a Space, across chains, in nonce order. Results are keyed by Safe address and then by chain ID. The queue is read up to a maximum number of queue service pages; `count` is the size of the whole queue.',
   })
   @ApiParam({ name: 'spaceId', type: 'string', description: 'Space UUID' })
-  @ApiQuery({
-    name: 'cursor',
-    required: false,
-    type: String,
-    description: 'Pagination cursor from the `next` URL of a previous page',
-  })
   @ApiOkResponse({
     type: SpaceQueuedItemPage,
-    description: 'Paginated queue of the Safes in the Space',
+    description: 'Queue of the Safes in the Space',
   })
   @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @ApiUnauthorizedResponse({ description: 'Authentication required' })
@@ -57,14 +47,10 @@ export class SpaceTransactionsController {
   public async getTransactionQueue(
     @Param('spaceId', SpaceIdPipe) spaceId: Space['id'],
     @Auth() authPayload: AuthPayload,
-    @RouteUrlDecorator() routeUrl: URL,
-    @PaginationDataDecorator() paginationData: PaginationData,
   ): Promise<SpaceQueuedItemPage> {
     return await this.spaceTransactionsService.getTransactionQueue({
       spaceId,
       authPayload,
-      routeUrl,
-      paginationData,
     });
   }
 }
