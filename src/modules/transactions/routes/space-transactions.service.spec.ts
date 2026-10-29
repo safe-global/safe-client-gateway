@@ -61,7 +61,7 @@ describe('SpaceTransactionsService', () => {
       count: 0,
       next: null,
       previous: null,
-      results: [],
+      results: {},
       unavailableSafes: [],
     };
     mockMembersRepository.findOne.mockResolvedValue(

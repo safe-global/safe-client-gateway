@@ -5,7 +5,6 @@ import type { QueuedItem } from '#/modules/transactions/routes/entities/queued-i
 import { ConflictHeaderQueuedItem } from '#/modules/transactions/routes/entities/queued-items/conflict-header-queued-item.entity';
 import { LabelQueuedItem } from '#/modules/transactions/routes/entities/queued-items/label-queued-item.entity';
 import { TransactionQueuedItem } from '#/modules/transactions/routes/entities/queued-items/transaction-queued-item.entity';
-import { Page } from '#/routes/common/entities/page.entity';
 
 export class SpaceQueueSafe {
   @ApiProperty()
@@ -14,31 +13,45 @@ export class SpaceQueueSafe {
   safeAddress!: Address;
 }
 
+export type SpaceQueueItems = {
+  [safeAddress: Address]: { [chainId: string]: Array<QueuedItem> };
+};
+
 @ApiExtraModels(
   ConflictHeaderQueuedItem,
   LabelQueuedItem,
   TransactionQueuedItem,
 )
-export class SpaceQueueSafeItems extends SpaceQueueSafe {
-  @ApiProperty({
-    isArray: true,
-    oneOf: [
-      { $ref: getSchemaPath(ConflictHeaderQueuedItem) },
-      { $ref: getSchemaPath(LabelQueuedItem) },
-      { $ref: getSchemaPath(TransactionQueuedItem) },
-    ],
-  })
-  items!: Array<QueuedItem>;
-}
+export class SpaceQueuedItemPage {
+  @ApiProperty({ type: Number, nullable: true })
+  count!: number | null;
+  @ApiProperty({ type: String, nullable: true })
+  next!: string | null;
+  @ApiProperty({ type: String, nullable: true })
+  previous!: string | null;
 
-export class SpaceQueuedItemPage extends Page<SpaceQueueSafeItems> {
   @ApiProperty({
-    type: SpaceQueueSafeItems,
-    isArray: true,
+    type: 'object',
+    additionalProperties: {
+      type: 'object',
+      additionalProperties: {
+        type: 'array',
+        items: {
+          oneOf: [
+            { $ref: getSchemaPath(ConflictHeaderQueuedItem) },
+            { $ref: getSchemaPath(LabelQueuedItem) },
+            { $ref: getSchemaPath(TransactionQueuedItem) },
+          ],
+        },
+      },
+    },
+    example: {
+      '{safeAddress}': { '{chainId}': [] },
+    },
     description:
-      'Consecutive runs of queued items of one Safe, in nonce order. A Safe can appear in several runs, and a run can continue on the next page.',
+      'Queued items of this page, keyed by Safe address and then by chain ID, each list in nonce order. A Safe can continue on the next page.',
   })
-  results!: Array<SpaceQueueSafeItems>;
+  results!: SpaceQueueItems;
 
   @ApiProperty({
     type: SpaceQueueSafe,

@@ -49,7 +49,10 @@ import { ModuleTransaction } from '#/modules/transactions/routes/entities/module
 import { MultisigTransaction } from '#/modules/transactions/routes/entities/multisig-transaction.entity';
 import type { PreviewTransactionDto } from '#/modules/transactions/routes/entities/preview-transaction.dto.entity';
 import type { QueuedItem } from '#/modules/transactions/routes/entities/queued-item.entity';
-import type { SpaceQueuedItemPage } from '#/modules/transactions/routes/entities/space-queued-item-page.entity';
+import type {
+  SpaceQueuedItemPage,
+  SpaceQueueItems,
+} from '#/modules/transactions/routes/entities/space-queued-item-page.entity';
 import type { TransactionDetails } from '#/modules/transactions/routes/entities/transaction-details/transaction-details.entity';
 import type { TransactionItemPage } from '#/modules/transactions/routes/entities/transaction-item-page.entity';
 import type { TransactionPreview } from '#/modules/transactions/routes/entities/transaction-preview.entity';
@@ -473,9 +476,10 @@ export class TransactionsService {
   }
 
   /**
-   * The merged queue of several Safes, in nonce order. A page never ends
-   * inside a nonce, so every conflict lands whole on one page, and each run of
-   * one Safe's transactions is mapped against that Safe.
+   * The merged queue of several Safes, paged in nonce order and grouped by
+   * Safe address and chain. A page never ends inside a nonce, so every
+   * conflict lands whole on one page, and each Safe's transactions are mapped
+   * against that Safe.
    */
   async getTransactionQueueForSafes(args: {
     spaceId: number;
@@ -492,7 +496,7 @@ export class TransactionsService {
         count: 0,
         next: null,
         previous: null,
-        results: [],
+        results: {},
         unavailableSafes,
       };
     }
@@ -526,7 +530,7 @@ export class TransactionsService {
         count: 0,
         next: null,
         previous: null,
-        results: [],
+        results: {},
         unavailableSafes,
       };
     }
@@ -548,7 +552,7 @@ export class TransactionsService {
       count: page.count,
       next: next?.toString() ?? null,
       previous: null,
-      results: await this.mapQueueRuns(transactions, safesByKey),
+      results: await this.mapQueueBySafe(transactions, safesByKey),
       unavailableSafes,
     };
   }
@@ -661,68 +665,63 @@ export class TransactionsService {
     return safes;
   }
 
-  private async mapQueueRuns(
+  private async mapQueueBySafe(
     transactions: Array<{
       chainId: string;
       transaction: DomainMultisigTransaction;
     }>,
     safesByKey: Map<string, Safe>,
-  ): Promise<SpaceQueuedItemPage['results']> {
+  ): Promise<SpaceQueueItems> {
     const sorted = sortBy(
-      transactions.map((item, index) => ({ ...item, index })),
-      [
-        ({ transaction }): number => transaction.nonce,
-        ({ chainId }): string => chainId,
-        ({ transaction }): string => transaction.safe.toLowerCase(),
-        ({ index }): number => index,
-      ],
+      transactions,
+      ({ transaction }): number => transaction.nonce,
     );
 
-    const runs: Array<{
-      chainId: string;
-      safe: Safe;
-      transactions: Array<DomainMultisigTransaction>;
-      previousNonce: number | null;
-    }> = [];
-    const lastNonceBySafe = new Map<string, number>();
+    const groups = new Map<
+      string,
+      {
+        chainId: string;
+        safe: Safe;
+        transactions: Array<DomainMultisigTransaction>;
+      }
+    >();
     for (const { chainId, transaction } of sorted) {
       const key = getChainSafeKey(chainId, transaction.safe);
       const safe = safesByKey.get(key);
       if (!safe) {
         continue;
       }
-      const run = runs.at(-1);
-      if (run && run.chainId === chainId && run.safe === safe) {
-        run.transactions.push(transaction);
+      const group = groups.get(key);
+      if (group) {
+        group.transactions.push(transaction);
       } else {
-        runs.push({
-          chainId,
-          safe,
-          transactions: [transaction],
-          previousNonce: lastNonceBySafe.get(key) ?? null,
-        });
+        groups.set(key, { chainId, safe, transactions: [transaction] });
       }
-      lastNonceBySafe.set(key, transaction.nonce);
     }
 
-    return await Promise.all(
-      runs.map(async (run) => ({
-        chainId: run.chainId,
-        safeAddress: run.safe.address,
+    const mapped = await Promise.all(
+      Array.from(groups.values()).map(async (group) => ({
+        ...group,
         items: await this.queuedItemsMapper.getQueuedItems(
           {
-            count: run.transactions.length,
+            count: group.transactions.length,
             next: null,
             previous: null,
-            results: run.transactions,
+            results: group.transactions,
           },
-          run.safe,
-          run.chainId,
-          run.previousNonce,
+          group.safe,
+          group.chainId,
+          null,
           null,
         ),
       })),
     );
+
+    const results: SpaceQueueItems = {};
+    for (const { chainId, safe, items } of mapped) {
+      results[safe.address] = { ...results[safe.address], [chainId]: items };
+    }
+    return results;
   }
 
   private isNotFound(error: unknown): boolean {

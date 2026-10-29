@@ -36,7 +36,7 @@ export class SpaceTransactionsController {
   @ApiOperation({
     summary: 'Get the transaction queue of a Space',
     description:
-      'Retrieves the pending transactions of every Safe in a Space, across chains, ordered by nonce. Results come in runs of one Safe each; a page never ends inside a nonce.',
+      'Retrieves the pending transactions of every Safe in a Space, across chains. Pages follow nonce order; results are keyed by Safe address and then by chain ID, and a page never ends inside a nonce.',
   })
   @ApiParam({ name: 'spaceId', type: 'string', description: 'Space UUID' })
   @ApiQuery({
