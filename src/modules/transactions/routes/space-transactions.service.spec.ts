@@ -79,7 +79,10 @@ describe('SpaceTransactionsService', () => {
       mockTransactionsService.getTransactionQueueForSafes,
     ).toHaveBeenCalledWith({
       spaceId,
-      safes,
+      safes: safes.map(({ chainId, address }) => ({
+        chainId,
+        safeAddress: address,
+      })),
     });
   });
 

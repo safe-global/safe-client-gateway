@@ -32,7 +32,10 @@ export class SpaceTransactionsService {
 
     return await this.transactionsService.getTransactionQueueForSafes({
       spaceId: args.spaceId,
-      safes: spaceSafes,
+      safes: spaceSafes.map(({ chainId, address }) => ({
+        chainId,
+        safeAddress: address,
+      })),
     });
   }
 }

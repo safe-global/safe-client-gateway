@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 import type { Address } from 'viem';
+import type { ChainSafeAddress } from '#/modules/safe/domain/entities/chain-safe-address.entity';
 import type { QueuedItem } from '#/modules/transactions/routes/entities/queued-item.entity';
 import { ConflictHeaderQueuedItem } from '#/modules/transactions/routes/entities/queued-items/conflict-header-queued-item.entity';
 import { LabelQueuedItem } from '#/modules/transactions/routes/entities/queued-items/label-queued-item.entity';
 import { TransactionQueuedItem } from '#/modules/transactions/routes/entities/queued-items/transaction-queued-item.entity';
 
-export class SpaceQueueSafe {
+export class SpaceQueueSafe implements ChainSafeAddress {
   @ApiProperty()
   chainId!: string;
   @ApiProperty()

@@ -148,9 +148,9 @@ describe('TransactionsService', () => {
       const actual = await target.getTransactionQueueForSafes({
         spaceId,
         safes: [
-          { chainId, address: safeA.address },
-          { chainId, address: safeB.address },
-          { chainId: otherChainId, address: safeA.address },
+          { chainId, safeAddress: safeA.address },
+          { chainId, safeAddress: safeB.address },
+          { chainId: otherChainId, safeAddress: safeA.address },
         ],
       });
 
@@ -209,7 +209,7 @@ describe('TransactionsService', () => {
         queuedTransaction(chainId, safe, page),
       ]);
       mockSafeRepository.getTransactionQueueForSafes.mockImplementation(
-        ({ offset = 0 }) =>
+        ({ offset }) =>
           Promise.resolve(
             queuePage(pages[offset / SAFE_QUEUE_SERVICE_MAX_LIMIT], count),
           ),
@@ -217,7 +217,7 @@ describe('TransactionsService', () => {
 
       const actual = await target.getTransactionQueueForSafes({
         spaceId,
-        safes: [{ chainId, address: safe.address }],
+        safes: [{ chainId, safeAddress: safe.address }],
       });
 
       expect(
@@ -263,7 +263,7 @@ describe('TransactionsService', () => {
 
       const actual = await target.getTransactionQueueForSafes({
         spaceId,
-        safes: [{ chainId, address: safe.address }],
+        safes: [{ chainId, safeAddress: safe.address }],
       });
 
       expect(
@@ -308,9 +308,9 @@ describe('TransactionsService', () => {
       const actual = await target.getTransactionQueueForSafes({
         spaceId,
         safes: [
-          { chainId, address: safe.address },
-          { chainId, address: undeployed },
-          { chainId, address: unreachable },
+          { chainId, safeAddress: safe.address },
+          { chainId, safeAddress: undeployed },
+          { chainId, safeAddress: unreachable },
         ],
       });
 
@@ -338,7 +338,7 @@ describe('TransactionsService', () => {
 
       const actual = await target.getTransactionQueueForSafes({
         spaceId,
-        safes: [{ chainId, address }],
+        safes: [{ chainId, safeAddress: address }],
       });
 
       expect(actual).toEqual({
@@ -373,8 +373,8 @@ describe('TransactionsService', () => {
       const actual = await target.getTransactionQueueForSafes({
         spaceId,
         safes: [
-          { chainId, address: safe.address },
-          { chainId, address: undeployed },
+          { chainId, safeAddress: safe.address },
+          { chainId, safeAddress: undeployed },
         ],
       });
 
@@ -414,7 +414,7 @@ describe('TransactionsService', () => {
 
       const actual = await target.getTransactionQueueForSafes({
         spaceId,
-        safes: [{ chainId, address: safe.address }],
+        safes: [{ chainId, safeAddress: safe.address }],
       });
 
       expect(actual.results).toEqual({});
@@ -442,10 +442,10 @@ describe('TransactionsService', () => {
       const actual = await target.getTransactionQueueForSafes({
         spaceId,
         safes: [
-          ...addresses.map((address) => ({ chainId, address })),
-          { chainId, address: addresses[0] },
-          { chainId: otherChainId, address: addresses[0] },
-          { chainId: otherChainId, address: overflow },
+          ...addresses.map((address) => ({ chainId, safeAddress: address })),
+          { chainId, safeAddress: addresses[0] },
+          { chainId: otherChainId, safeAddress: addresses[0] },
+          { chainId: otherChainId, safeAddress: overflow },
         ],
       });
 

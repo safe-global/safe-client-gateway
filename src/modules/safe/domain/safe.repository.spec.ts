@@ -1855,6 +1855,8 @@ describe('SafeRepository', () => {
       const actual = await repository.getTransactionQueueForSafes({
         spaceId,
         safes: [{ chainId, safe }],
+        limit: faker.number.int({ min: 1, max: 50 }),
+        offset: faker.number.int({ min: 0, max: 50 }),
       });
 
       expect(actual.results).toEqual([]);

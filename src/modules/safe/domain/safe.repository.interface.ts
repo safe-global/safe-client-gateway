@@ -7,6 +7,8 @@ import { TransactionApiManagerModule } from '#/domain/interfaces/transaction-api
 import { ChainsModule } from '#/modules/chains/chains.module';
 import { ContractsModule } from '#/modules/contracts/contracts.module';
 import { DelegatesV3RepositoryModule } from '#/modules/delegate/domain/v3/delegates.v3.repository.interface';
+import type { ChainMultisigTransaction } from '#/modules/safe/domain/entities/chain-multisig-transaction.entity';
+import type { ChainSafe } from '#/modules/safe/domain/entities/chain-safe.entity';
 import { CreationTransaction } from '#/modules/safe/domain/entities/creation-transaction.entity';
 import { ModuleTransaction } from '#/modules/safe/domain/entities/module-transaction.entity';
 import { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
@@ -116,10 +118,10 @@ export interface ISafeRepository {
    */
   getTransactionQueueForSafes(args: {
     spaceId: number;
-    safes: ReadonlyArray<{ chainId: string; safe: Safe }>;
-    limit?: number;
-    offset?: number;
-  }): Promise<Page<{ chainId: string; transaction: MultisigTransaction }>>;
+    safes: ReadonlyArray<ChainSafe>;
+    limit: number;
+    offset: number;
+  }): Promise<Page<ChainMultisigTransaction>>;
 
   /**
    * Returns the Safe Transaction Queue sorted by modified status.

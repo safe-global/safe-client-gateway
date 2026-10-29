@@ -14,6 +14,8 @@ import { DataSourceError } from '#/domain/errors/data-source.error';
 import { ITransactionApiManager } from '#/domain/interfaces/transaction-api.manager.interface';
 import { ILoggingService, LoggingService } from '#/logging/logging.interface';
 import { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
+import type { ChainMultisigTransaction } from '#/modules/safe/domain/entities/chain-multisig-transaction.entity';
+import type { ChainSafe } from '#/modules/safe/domain/entities/chain-safe.entity';
 import { CreationTransaction } from '#/modules/safe/domain/entities/creation-transaction.entity';
 import {
   ModuleTransaction,
@@ -311,10 +313,10 @@ export class SafeRepository implements ISafeRepository {
 
   async getTransactionQueueForSafes(args: {
     spaceId: number;
-    safes: ReadonlyArray<{ chainId: string; safe: Safe }>;
-    limit?: number;
-    offset?: number;
-  }): Promise<Page<{ chainId: string; transaction: MultisigTransaction }>> {
+    safes: ReadonlyArray<ChainSafe>;
+    limit: number;
+    offset: number;
+  }): Promise<Page<ChainMultisigTransaction>> {
     const safesByKey = new Map(
       args.safes.map(({ chainId, safe }) => [
         getChainSafeKey(chainId, safe.address),

@@ -24,6 +24,7 @@ import {
 } from '#/logging/logging.interface';
 import { asError } from '#/logging/utils';
 import type { Delegate } from '#/modules/delegate/domain/entities/delegate.entity';
+import type { ChainSafeAddress } from '#/modules/safe/domain/entities/chain-safe-address.entity';
 import { SafeQueueMessage } from '#/modules/safe-queue/entities/message.entity';
 import type { SafeQueueMultisigTransactionEntity } from '#/modules/safe-queue/entities/multisig-transaction.entity';
 import {
@@ -303,16 +304,18 @@ export class SafeQueueService implements ISafeQueueService {
 
   async getTransactionQueueForSafes(args: {
     spaceId: number;
-    safes: ReadonlyArray<{ chainId: string; safeAddress: Address }>;
-    limit?: number;
-    offset?: number;
+    safes: ReadonlyArray<ChainSafeAddress>;
+    limit: number;
+    offset: number;
   }): Promise<Raw<Page<SafeQueueMultisigTransactionEntity>>> {
     try {
+      // Chains sorted, so the same Safes always hash to the same cache field.
       const safes = Array.from(
         this.getChainIdsBySafe(args.safes),
-        ([safeAddress, chainIds]) => [safeAddress, ...chainIds].join(':'),
+        ([safeAddress, chainIds]) =>
+          [safeAddress, ...chainIds.toSorted()].join(':'),
       );
-      const limit = this.capLimit(args.limit);
+      const limit = Math.min(args.limit, SAFE_QUEUE_SERVICE_MAX_LIMIT);
       const cacheDir = CacheRouter.getSpaceTransactionQueueCacheDir({
         spaceId: args.spaceId,
         safes,
@@ -349,7 +352,7 @@ export class SafeQueueService implements ISafeQueueService {
    * service counts values, not addresses, against its maximum.
    */
   private getChainIdsBySafe(
-    safes: ReadonlyArray<{ chainId: string; safeAddress: Address }>,
+    safes: ReadonlyArray<ChainSafeAddress>,
   ): Map<Address, Array<string>> {
     const chainIdsBySafe = new Map<Address, Array<string>>();
     for (const { chainId, safeAddress } of safes) {

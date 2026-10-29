@@ -3,6 +3,7 @@
 import type { Address, Hex } from 'viem';
 import type { Page } from '#/domain/entities/page.entity';
 import type { Delegate } from '#/modules/delegate/domain/entities/delegate.entity';
+import type { ChainSafeAddress } from '#/modules/safe/domain/entities/chain-safe-address.entity';
 import type { SafeQueueMessage } from '#/modules/safe-queue/entities/message.entity';
 import type { SafeQueueMultisigTransactionEntity } from '#/modules/safe-queue/entities/multisig-transaction.entity';
 import type { ProposeTransactionDto } from '#/modules/transactions/domain/entities/propose-transaction.dto.entity';
@@ -46,9 +47,9 @@ export interface ISafeQueueService {
   // through clearSpaceTransactionQueue.
   getTransactionQueueForSafes(args: {
     spaceId: number;
-    safes: ReadonlyArray<{ chainId: string; safeAddress: Address }>;
-    limit?: number;
-    offset?: number;
+    safes: ReadonlyArray<ChainSafeAddress>;
+    limit: number;
+    offset: number;
   }): Promise<Raw<Page<SafeQueueMultisigTransactionEntity>>>;
 
   postConfirmation(args: {

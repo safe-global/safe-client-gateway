@@ -248,6 +248,11 @@ describe('SafeQueueService', () => {
 
   describe('getTransactionQueueForSafes', () => {
     const spaceId = faker.number.int({ min: 1 });
+    const limit = faker.number.int({
+      min: 1,
+      max: SAFE_QUEUE_SERVICE_MAX_LIMIT,
+    });
+    const offset = faker.number.int({ min: 0, max: 100 });
 
     it('Should request every Safe once, with its chains, through the cache of the Space', async () => {
       const otherChainId = faker.string.numeric({ length: 6 });
@@ -258,11 +263,6 @@ describe('SafeQueueService', () => {
         previous: null,
         results: [safeQueueMultisigTransactionBuilder().build()],
       });
-      const limit = faker.number.int({
-        min: 1,
-        max: SAFE_QUEUE_SERVICE_MAX_LIMIT,
-      });
-      const offset = faker.number.int({ min: 0, max: 100 });
       mockDataSource.get.mockResolvedValueOnce(page);
 
       const actual = await service.getTransactionQueueForSafes({
@@ -279,7 +279,7 @@ describe('SafeQueueService', () => {
 
       expect(actual).toBe(page);
       const safes = [
-        `${safeAddress}:${chainId}:${otherChainId}`,
+        [safeAddress, ...[chainId, otherChainId].toSorted()].join(':'),
         `${otherSafeAddress}:${chainId}`,
       ];
       expect(mockDataSource.get).toHaveBeenCalledExactlyOnceWith({
@@ -307,12 +307,54 @@ describe('SafeQueueService', () => {
       expect(networkService.get).not.toHaveBeenCalled();
     });
 
+    it('Should request the chains of a Safe in the same order whatever order they come in', async () => {
+      const otherChainId = faker.string.numeric({ length: 6 });
+      const safes = [
+        { chainId, safeAddress },
+        { chainId: otherChainId, safeAddress },
+      ];
+      mockDataSource.get.mockResolvedValue(rawify({ results: [] }));
+
+      await service.getTransactionQueueForSafes({
+        spaceId,
+        safes,
+        limit,
+        offset,
+      });
+      await service.getTransactionQueueForSafes({
+        spaceId,
+        safes: safes.toReversed(),
+        limit,
+        offset,
+      });
+
+      const expectedSafes = [
+        [safeAddress, ...[chainId, otherChainId].toSorted()].join(':'),
+      ];
+      const expected = expect.objectContaining({
+        cacheDir: CacheRouter.getSpaceTransactionQueueCacheDir({
+          spaceId,
+          safes: expectedSafes,
+          limit,
+          offset,
+        }),
+        networkRequest: expect.objectContaining({
+          params: expect.objectContaining({ safes: expectedSafes }),
+        }),
+      });
+      expect(mockDataSource.get).toHaveBeenCalledTimes(2);
+      expect(mockDataSource.get).toHaveBeenNthCalledWith(1, expected);
+      expect(mockDataSource.get).toHaveBeenNthCalledWith(2, expected);
+    });
+
     it('Should key the cache by Space id', async () => {
       mockDataSource.get.mockResolvedValueOnce(rawify({ results: [] }));
 
       await service.getTransactionQueueForSafes({
         spaceId,
         safes: [{ chainId, safeAddress }],
+        limit,
+        offset,
       });
 
       expect(mockDataSource.get).toHaveBeenCalledExactlyOnceWith(
@@ -331,6 +373,8 @@ describe('SafeQueueService', () => {
       await service.getTransactionQueueForSafes({
         spaceId,
         safes: [{ chainId, safeAddress }],
+        limit,
+        offset,
       });
       await service.getTransactionQueueForSafes({
         spaceId,
@@ -338,6 +382,8 @@ describe('SafeQueueService', () => {
           { chainId, safeAddress },
           { chainId, safeAddress: otherSafeAddress },
         ],
+        limit,
+        offset,
       });
 
       expect(mockDataSource.get).toHaveBeenNthCalledWith(
@@ -346,6 +392,8 @@ describe('SafeQueueService', () => {
           cacheDir: CacheRouter.getSpaceTransactionQueueCacheDir({
             spaceId,
             safes: [`${safeAddress}:${chainId}`],
+            limit,
+            offset,
           }),
         }),
       );
@@ -358,6 +406,8 @@ describe('SafeQueueService', () => {
               `${safeAddress}:${chainId}`,
               `${otherSafeAddress}:${chainId}`,
             ],
+            limit,
+            offset,
           }),
         }),
       );
@@ -373,6 +423,7 @@ describe('SafeQueueService', () => {
           min: SAFE_QUEUE_SERVICE_MAX_LIMIT + 1,
           max: SAFE_QUEUE_SERVICE_MAX_LIMIT * 3,
         }),
+        offset,
       });
 
       expect(mockDataSource.get).toHaveBeenCalledWith(
@@ -401,6 +452,8 @@ describe('SafeQueueService', () => {
         service.getTransactionQueueForSafes({
           spaceId,
           safes: [{ chainId, safeAddress }],
+          limit,
+          offset,
         }),
       ).rejects.toThrow(new DataSourceError(message, status));
     });

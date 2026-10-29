@@ -27,6 +27,9 @@ import {
 } from '#/logging/logging.interface';
 import { asError } from '#/logging/utils';
 import { IDataDecoderRepository } from '#/modules/data-decoder/domain/v2/data-decoder.repository.interface';
+import type { ChainMultisigTransaction } from '#/modules/safe/domain/entities/chain-multisig-transaction.entity';
+import type { ChainSafe } from '#/modules/safe/domain/entities/chain-safe.entity';
+import type { ChainSafeAddress } from '#/modules/safe/domain/entities/chain-safe-address.entity';
 import type { MultisigTransaction as DomainMultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
 import type { Safe } from '#/modules/safe/domain/entities/safe.entity';
 import { getChainSafeKey } from '#/modules/safe/domain/helpers/chain-safe-key.helper';
@@ -484,7 +487,7 @@ export class TransactionsService {
    */
   async getTransactionQueueForSafes(args: {
     spaceId: number;
-    safes: ReadonlyArray<{ chainId: string; address: Address }>;
+    safes: ReadonlyArray<ChainSafeAddress>;
   }): Promise<SpaceQueuedItemPage> {
     const { requested, unavailableSafes } = this.partitionQueueSafes(
       args.safes,
@@ -549,13 +552,10 @@ export class TransactionsService {
    */
   private async getQueueOfSafes(args: {
     spaceId: number;
-    safes: Array<{ chainId: string; safe: Safe }>;
+    safes: Array<ChainSafe>;
   }): Promise<{
     count: number | null;
-    transactions: Array<{
-      chainId: string;
-      transaction: DomainMultisigTransaction;
-    }>;
+    transactions: Array<ChainMultisigTransaction>;
   }> {
     const getPage = (
       offset: number,
@@ -582,33 +582,30 @@ export class TransactionsService {
     };
   }
 
-  private partitionQueueSafes(
-    safes: ReadonlyArray<{ chainId: string; address: Address }>,
-  ): {
-    requested: Array<{ chainId: string; address: Address }>;
-    unavailableSafes: Array<{ chainId: string; safeAddress: Address }>;
+  private partitionQueueSafes(safes: ReadonlyArray<ChainSafeAddress>): {
+    requested: Array<ChainSafeAddress>;
+    unavailableSafes: Array<ChainSafeAddress>;
   } {
-    const requested: Array<{ chainId: string; address: Address }> = [];
-    const unavailableSafes: Array<{ chainId: string; safeAddress: Address }> =
-      [];
+    const requested: Array<ChainSafeAddress> = [];
+    const unavailableSafes: Array<ChainSafeAddress> = [];
     const seen = new Set<string>();
     const addresses = new Set<string>();
-    for (const { chainId, address } of safes) {
-      const key = getChainSafeKey(chainId, address);
+    for (const { chainId, safeAddress } of safes) {
+      const key = getChainSafeKey(chainId, safeAddress);
       if (seen.has(key)) {
         continue;
       }
       seen.add(key);
-      const normalizedAddress = address.toLowerCase();
+      const normalizedAddress = safeAddress.toLowerCase();
       if (
         !addresses.has(normalizedAddress) &&
         addresses.size >= SAFE_QUEUE_SERVICE_MAX_SAFES
       ) {
-        unavailableSafes.push({ chainId, safeAddress: address });
+        unavailableSafes.push({ chainId, safeAddress });
         continue;
       }
       addresses.add(normalizedAddress);
-      requested.push({ chainId, address });
+      requested.push({ chainId, safeAddress });
     }
     return { requested, unavailableSafes };
   }
@@ -619,17 +616,17 @@ export class TransactionsService {
    * unavailable instead of failing the whole queue upstream.
    */
   private async loadQueueSafes(
-    requested: Array<{ chainId: string; address: Address }>,
-    unavailableSafes: Array<{ chainId: string; safeAddress: Address }>,
-  ): Promise<Array<{ chainId: string; safe: Safe }>> {
+    requested: Array<ChainSafeAddress>,
+    unavailableSafes: Array<ChainSafeAddress>,
+  ): Promise<Array<ChainSafe>> {
     const results = await Promise.allSettled(
-      requested.map(({ chainId, address }) =>
-        this.safeRepository.getSafe({ chainId, address }),
+      requested.map(({ chainId, safeAddress }) =>
+        this.safeRepository.getSafe({ chainId, address: safeAddress }),
       ),
     );
-    const safes: Array<{ chainId: string; safe: Safe }> = [];
+    const safes: Array<ChainSafe> = [];
     results.forEach((result, index) => {
-      const { chainId, address } = requested[index];
+      const { chainId, safeAddress } = requested[index];
       if (result.status === 'fulfilled') {
         safes.push({ chainId, safe: result.value });
         return;
@@ -639,20 +636,17 @@ export class TransactionsService {
         this.loggingService.warn({
           message: 'Failed to load Safe; leaving it out of the Space queue',
           chainId,
-          address,
+          address: safeAddress,
           error: asError(result.reason).message,
         });
       }
-      unavailableSafes.push({ chainId, safeAddress: address });
+      unavailableSafes.push({ chainId, safeAddress });
     });
     return safes;
   }
 
   private async mapQueueBySafe(
-    transactions: Array<{
-      chainId: string;
-      transaction: DomainMultisigTransaction;
-    }>,
+    transactions: Array<ChainMultisigTransaction>,
     safesByKey: Map<string, Safe>,
   ): Promise<SpaceQueueItems> {
     const sorted = sortBy(

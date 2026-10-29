@@ -475,8 +475,8 @@ export class CacheRouter {
   static getSpaceTransactionQueueCacheDir(args: {
     spaceId: number;
     safes: ReadonlyArray<string>;
-    limit?: number;
-    offset?: number;
+    limit: number;
+    offset: number;
   }): CacheDir {
     const hash = crypto.createHash('sha256');
     hash.update(
