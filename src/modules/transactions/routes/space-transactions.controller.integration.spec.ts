@@ -216,7 +216,7 @@ describe('SpaceTransactionsController', () => {
           count: 0,
           next: null,
           previous: null,
-          results: [],
+          results: {},
           unavailableSafes: [],
         });
     });
@@ -249,7 +249,7 @@ describe('SpaceTransactionsController', () => {
           count: 0,
           next: null,
           previous: null,
-          results: [],
+          results: {},
           unavailableSafes: [
             { chainId: chain.chainId, safeAddress: undeployed.address },
           ],
