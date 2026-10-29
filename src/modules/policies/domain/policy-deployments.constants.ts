@@ -9,6 +9,7 @@ import { PolicyType } from '#/modules/policies/domain/entities/policy-type.entit
 const SAFE_POLICY_GUARDS: ReadonlyArray<Address> = [
   '0x55c241591E12CE3c58491D02b737F12D3199ae95',
   '0xC83bC185770ac0Da8A970f35695064eEe62e236c',
+  '0x4d1fB05cc9bcd31cCA651B2833b4E71229c31d1f',
   '0x46d22E0B3DC367b48bc2d64B789ae154b3177a57',
   '0xd2fB492adADBa5BcFb7FeBE25746fd5FdE090b20',
   '0x2d4527fD0E79ca1e533E3C7BBEF7e0668b700aED',
