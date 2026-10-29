@@ -174,19 +174,18 @@ export class FetchNetworkService implements INetworkService {
     requestHeaders?: Record<string, string>,
     methodHeaders?: Record<string, string>,
   ): Record<string, string> | undefined {
-    const headers = Object.entries({
-      ...this.options.defaultHeaders,
-      ...methodHeaders,
-      ...requestHeaders,
-    }).filter(([name]) => {
-      // Only contextHeaders may set x-safe-* headers: drop any other, in any casing
-      return !name.toLowerCase().startsWith(SAFE_HEADER_PREFIX);
-    });
+    const allowedHeaders = Object.fromEntries(
+      Object.entries({
+        ...this.options.defaultHeaders,
+        ...methodHeaders,
+        ...requestHeaders,
+      }).filter(([name]) => {
+        // Only contextHeaders may set x-safe-* headers: drop any other, in any casing
+        return !name.toLowerCase().startsWith(SAFE_HEADER_PREFIX);
+      }),
+    );
 
-    return {
-      ...Object.fromEntries(headers),
-      ...this.options.contextHeaders?.(),
-    };
+    return { ...allowedHeaders, ...this.options.contextHeaders?.() };
   }
 
   private buildUrl(
