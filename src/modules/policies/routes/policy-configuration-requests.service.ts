@@ -5,10 +5,12 @@ import {
   Inject,
   Injectable,
 } from '@nestjs/common';
+import { isAddressEqual, zeroAddress } from 'viem';
 import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
 import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '#/modules/auth/utils/assert-authenticated.utils';
 import type { SafeRef } from '#/modules/policies/domain/entities/safe-ref.entity';
+import { getPolicyTypeOfContract } from '#/modules/policies/domain/policy-deployments.constants';
 import { ISafePolicyGuardConfigurationRequestsRepository } from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository.interface';
 import { configurationRoot } from '#/modules/policies/domain/utils/policy-configuration-root.utils';
 import type {
@@ -53,6 +55,11 @@ export class PolicyConfigurationRequestsService {
       );
     }
 
+    this.assertKnownPolicies({
+      chainId: args.safe.chainId,
+      configurations: args.payload.configurations,
+    });
+
     await this.configurationRequestsRepository.create({
       spaceId: args.spaceId,
       chainId: args.safe.chainId,
@@ -63,6 +70,24 @@ export class PolicyConfigurationRequestsService {
     });
 
     return { root };
+  }
+
+  /** Each policy must be a known contract or the zero address, which removes a policy. */
+  private assertKnownPolicies(args: {
+    chainId: string;
+    configurations: CreatePolicyConfigurationRequestPayload['configurations'];
+  }): void {
+    const unknownPolicy = args.configurations.find(
+      ({ policy }) =>
+        !isAddressEqual(policy, zeroAddress) &&
+        getPolicyTypeOfContract(args.chainId, policy) === null,
+    );
+    if (unknownPolicy) {
+      throw new HttpExceptionNoLog(
+        `Unknown policy contract ${unknownPolicy.policy} on chain ${args.chainId}`,
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
+    }
   }
 
   private async assertSafeInSpace(args: {
