@@ -512,6 +512,12 @@ export default (): ReturnType<typeof configuration> => ({
       windowSeconds: faker.number.int({ min: 100, max: 200 }),
     },
   },
+  portfolioSummaries: {
+    rateLimit: {
+      max: faker.number.int({ min: 100, max: 200 }),
+      windowSeconds: faker.number.int({ min: 100, max: 200 }),
+    },
+  },
   safeWebApp: {
     baseUri: faker.internet.url({ appendSlash: false }),
   },

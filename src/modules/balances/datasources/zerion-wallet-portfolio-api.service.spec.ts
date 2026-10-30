@@ -11,6 +11,11 @@ import type { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
 import { LimitReachedError } from '#/datasources/network/entities/errors/limit-reached.error';
 import type { INetworkService } from '#/datasources/network/network.service.interface';
 import type { ILoggingService } from '#/logging/logging.interface';
+import {
+  zerionWalletPortfolioAttributesBuilder,
+  zerionWalletPortfolioSnapshotBuilder,
+} from '#/modules/balances/datasources/entities/__tests__/zerion-wallet-portfolio.entity.builder';
+import { ZerionWalletPortfolioSnapshotSchema } from '#/modules/balances/datasources/entities/zerion-wallet-portfolio.entity';
 import { ZerionWalletPortfolioApi } from '#/modules/balances/datasources/zerion-wallet-portfolio-api.service';
 import type { ZerionRateLimiter } from '#/modules/zerion/datasources/zerion-rate-limiter.service';
 import { rawify } from '#/validation/entities/raw.entity';
@@ -58,6 +63,7 @@ describe('ZerionWalletPortfolioApi', () => {
   const zerionApiKey = faker.string.sample();
   const zerionBaseUri = faker.internet.url({ appendSlash: false });
   const address = getAddress(faker.finance.ethereumAddress());
+  const ttlSeconds = 10;
 
   beforeEach(() => {
     vi.resetAllMocks();
@@ -72,7 +78,7 @@ describe('ZerionWalletPortfolioApi', () => {
     );
     fakeConfigurationService.set(
       'balances.providers.zerion.walletPortfolioTtlSeconds',
-      10,
+      ttlSeconds,
     );
 
     service = new ZerionWalletPortfolioApi(
@@ -206,5 +212,89 @@ describe('ZerionWalletPortfolioApi', () => {
 
     expect(mainnet.field).not.toBe(testnet.field);
     expect(mainnet.field).not.toBe(trusted.field);
+  });
+
+  it('reads an entry written with snapshot timestamps', async () => {
+    const snapshot = zerionWalletPortfolioSnapshotBuilder().build();
+    mockCacheService.hGet.mockResolvedValue(JSON.stringify(snapshot));
+
+    const result = await service.getPortfolio({
+      address,
+      currency: 'usd',
+      isTestnet: false,
+    });
+
+    expect(result.data.attributes).toEqual(snapshot.data.attributes);
+    expect(mockNetworkService.get).not.toHaveBeenCalled();
+  });
+
+  describe('getPortfolioSnapshot', () => {
+    const identity = {
+      address,
+      currency: 'usd',
+      isTestnet: false,
+      trusted: false,
+    };
+
+    it('returns a cached snapshot without a network call or budget check', async () => {
+      const snapshot = zerionWalletPortfolioSnapshotBuilder().build();
+      mockCacheService.hGet.mockResolvedValue(JSON.stringify(snapshot));
+
+      const result = await service.getPortfolioSnapshot(identity);
+
+      expect(result).toEqual(snapshot);
+      expect(mockZerionRateLimiter.assertWithinBudget).not.toHaveBeenCalled();
+      expect(mockNetworkService.get).not.toHaveBeenCalled();
+    });
+
+    it('fetches and caches the snapshot with its fetch and expiry times on a cache miss', async () => {
+      const attributes = zerionWalletPortfolioAttributesBuilder().build();
+      const response = {
+        data: { type: 'portfolio', id: faker.string.uuid(), attributes },
+      };
+      mockCacheService.hGet.mockResolvedValue(null);
+      mockNetworkService.get.mockResolvedValue({
+        data: rawify(response),
+        status: 200,
+      });
+      const before = Date.now();
+
+      const result = await service.getPortfolioSnapshot(identity);
+
+      const after = Date.now();
+      const snapshot = ZerionWalletPortfolioSnapshotSchema.parse(result);
+      expect(mockCacheService.hSet).toHaveBeenCalledWith(
+        CacheRouter.getZerionWalletPortfolioCacheDir({
+          address,
+          fiatCode: 'usd',
+          isTestnet: false,
+          trusted: false,
+        }),
+        JSON.stringify(result),
+        ttlSeconds,
+      );
+      expect(snapshot.data.attributes).toEqual(attributes);
+      expect(snapshot.fetchedAt).toBeGreaterThanOrEqual(before);
+      expect(snapshot.fetchedAt).toBeLessThanOrEqual(after);
+      expect(snapshot.expiresAt).toBe(snapshot.fetchedAt + ttlSeconds * 1_000);
+    });
+
+    it('refetches an entry cached before snapshots carried timestamps', async () => {
+      const legacy = {
+        data: zerionWalletPortfolioSnapshotBuilder().build().data,
+      };
+      mockCacheService.hGet.mockResolvedValue(JSON.stringify(legacy));
+      mockNetworkService.get.mockResolvedValue({
+        data: rawify(legacy),
+        status: 200,
+      });
+
+      const result = await service.getPortfolioSnapshot(identity);
+
+      expect(mockNetworkService.get).toHaveBeenCalledTimes(1);
+      expect(
+        ZerionWalletPortfolioSnapshotSchema.safeParse(result).success,
+      ).toBe(true);
+    });
   });
 });
