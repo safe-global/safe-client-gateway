@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import { ForbiddenException, HttpStatus } from '@nestjs/common';
+import { HttpStatus } from '@nestjs/common';
 import { getAddress, type Hex } from 'viem';
 import type { MockedObject } from 'vitest';
 import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
@@ -126,7 +126,12 @@ describe('PolicyConfigurationRequestsService', () => {
 
     await expect(
       target.create({ ...request, payload: validPayload() }),
-    ).rejects.toThrow(new ForbiddenException());
+    ).rejects.toThrow(
+      new HttpExceptionNoLog(
+        'Safe is not in this workspace',
+        HttpStatus.FORBIDDEN,
+      ),
+    );
     expect(configurationRequestsRepository.create).not.toHaveBeenCalled();
   });
 });
