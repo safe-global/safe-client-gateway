@@ -507,4 +507,51 @@ describe('SafePolicyGuardConfigurationRequestsRepository', () => {
       ).resolves.toStrictEqual([]);
     });
   });
+
+  describe('delete', () => {
+    it('should delete only the given root of the Safe', async () => {
+      const deleted = storableRequest();
+      const kept = storableRequest({ safeAddress: deleted.safeAddress });
+      await repository.create(deleted);
+      await repository.create(kept);
+      const safe = { chainId: deleted.chainId, address: deleted.safeAddress };
+
+      await repository.delete({ spaceId, safe, root: deleted.root });
+
+      await expect(
+        repository.findBySafes({ spaceId, safes: [safe] }),
+      ).resolves.toStrictEqual([expect.objectContaining({ root: kept.root })]);
+    });
+
+    it('should not delete the root of the Safe in another Space', async () => {
+      const request = storableRequest({ spaceId: await insertSpace() });
+      await repository.create(request);
+
+      await repository.delete({
+        spaceId,
+        safe: { chainId: request.chainId, address: request.safeAddress },
+        root: request.root,
+      });
+
+      await expect(dbRepository.count()).resolves.toBe(1);
+    });
+
+    it('should match the Safe by its blind index when encryption is enabled', async () => {
+      const request = storableRequest();
+      encryptionService.safeAddressIndex.mockReturnValue(
+        faker.string.hexadecimal({ length: 64 }),
+      );
+      encryptionService.encryptSafeAddress.mockResolvedValue(
+        `kms:v1:${faker.string.alphanumeric(32)}`,
+      );
+      await repository.create(request);
+      const safe = { chainId: request.chainId, address: request.safeAddress };
+
+      await repository.delete({ spaceId, safe, root: request.root });
+
+      await expect(
+        repository.findBySafes({ spaceId, safes: [safe] }),
+      ).resolves.toStrictEqual([]);
+    });
+  });
 });

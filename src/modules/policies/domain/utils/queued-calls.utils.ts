@@ -2,6 +2,7 @@
 import { type Address, type Hex, isAddressEqual } from 'viem';
 import { getAllMultiSendDeployments } from '#/domain/common/utils/deployments';
 import { toSecondsTimestamp } from '#/domain/common/utils/time';
+import type { ILoggingService } from '#/logging/logging.interface';
 import type { MultiSendDecoder } from '#/modules/contracts/domain/decoders/multi-send-decoder.helper';
 import type { SafePolicyGuardDecoder } from '#/modules/policies/domain/contracts/decoders/safe-policy-guard-decoder.helper';
 import type { PendingTransaction } from '#/modules/policies/domain/entities/pending-policy.entity';
@@ -9,8 +10,67 @@ import {
   type PolicyConfiguration,
   PolicyConfigurationSchema,
 } from '#/modules/policies/domain/entities/policy-configuration.entity';
+import type { SafeRef } from '#/modules/policies/domain/entities/safe-ref.entity';
 import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
 import { Operation } from '#/modules/safe/domain/entities/operation.entity';
+import type { Safe } from '#/modules/safe/domain/entities/safe.entity';
+import type { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
+
+/**
+ * Safety cap on the number of pages read from a single Safe's transaction
+ * queue to guard against an unbounded loop.
+ */
+export const MAX_TRANSACTION_QUEUE_PAGES_TO_SCAN = 10;
+
+/**
+ * The Safe and its whole transaction queue, capped at
+ * {@link MAX_TRANSACTION_QUEUE_PAGES_TO_SCAN} pages. `truncated` when pages
+ * remain past the cap, which is logged.
+ */
+export async function readQueue(args: {
+  safeRepository: ISafeRepository;
+  loggingService: ILoggingService;
+  safe: SafeRef;
+}): Promise<{
+  safeInfo: Safe;
+  transactions: Array<MultisigTransaction>;
+  truncated: boolean;
+}> {
+  const safeInfo = await args.safeRepository.getSafe({
+    chainId: args.safe.chainId,
+    address: args.safe.address,
+  });
+  const limit = args.safeRepository.getTransactionQueueMaxPageSize();
+
+  const transactions: Array<MultisigTransaction> = [];
+  let next: string | null = null;
+
+  for (let page = 0; page < MAX_TRANSACTION_QUEUE_PAGES_TO_SCAN; page++) {
+    const queue = await args.safeRepository.getTransactionQueue({
+      chainId: args.safe.chainId,
+      safe: safeInfo,
+      limit,
+      offset: page * limit,
+    });
+    transactions.push(...queue.results);
+    next = queue.next;
+
+    if (!next) {
+      break;
+    }
+  }
+
+  if (next) {
+    args.loggingService.warn({
+      message: 'Truncated a Safe transaction queue at the page cap',
+      chainId: args.safe.chainId,
+      safeAddress: args.safe.address,
+      pages: MAX_TRANSACTION_QUEUE_PAGES_TO_SCAN,
+    });
+  }
+
+  return { safeInfo, transactions, truncated: next !== null };
+}
 
 /** Where a queued call was found, for logging one that does not decode. */
 export type QueuedCallContext = { chainId: string; safeTxHash: Hex };
