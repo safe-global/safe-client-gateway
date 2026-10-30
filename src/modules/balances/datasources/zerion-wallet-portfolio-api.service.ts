@@ -8,6 +8,7 @@ import {
   CacheService,
   type ICacheService,
 } from '#/datasources/cache/cache.service.interface';
+import type { CacheDir } from '#/datasources/cache/entities/cache-dir.entity';
 import { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
 import {
   type INetworkService,
@@ -21,9 +22,18 @@ import {
 import {
   type ZerionWalletPortfolio,
   ZerionWalletPortfolioSchema,
+  type ZerionWalletPortfolioSnapshot,
+  ZerionWalletPortfolioSnapshotSchema,
 } from '#/modules/balances/datasources/entities/zerion-wallet-portfolio.entity';
 import { getZerionHeaders } from '#/modules/balances/datasources/zerion-api.helpers';
+import type { WalletPortfolioIdentity } from '#/modules/balances/domain/entities/wallet-portfolio-identity.entity';
 import { ZerionRateLimiter } from '#/modules/zerion/datasources/zerion-rate-limiter.service';
+import { type Raw, rawify } from '#/validation/entities/raw.entity';
+
+const SnapshotTimestampsSchema = ZerionWalletPortfolioSnapshotSchema.pick({
+  fetchedAt: true,
+  expiresAt: true,
+});
 
 export const IZerionWalletPortfolioApi = Symbol('IZerionWalletPortfolioApi');
 
@@ -44,6 +54,17 @@ export interface IZerionWalletPortfolioApi {
     isTestnet: boolean;
     trusted?: boolean;
   }): Promise<ZerionWalletPortfolio>;
+
+  /**
+   * Same Zerion call and cache entry as {@link getPortfolio}, returned with
+   * the entry's fetch and expiry timestamps.
+   *
+   * @param args - The wallet, environment, currency and token filter
+   * @returns The unvalidated cached snapshot
+   */
+  getPortfolioSnapshot(
+    args: WalletPortfolioIdentity,
+  ): Promise<Raw<ZerionWalletPortfolioSnapshot>>;
 }
 
 @Injectable()
@@ -79,26 +100,63 @@ export class ZerionWalletPortfolioApi implements IZerionWalletPortfolioApi {
     isTestnet: boolean;
     trusted?: boolean;
   }): Promise<ZerionWalletPortfolio> {
-    const cacheDir = CacheRouter.getZerionWalletPortfolioCacheDir({
+    const cacheDir = this.getCacheDir(args);
+    const cached = await this.getCached(cacheDir);
+    if (cached !== null) {
+      this.logCacheHit(cacheDir);
+      return ZerionWalletPortfolioSchema.parse(cached);
+    }
+    this.logCacheMiss(cacheDir);
+    return await this.fetchAndCache({ ...args, cacheDir });
+  }
+
+  async getPortfolioSnapshot(
+    args: WalletPortfolioIdentity,
+  ): Promise<Raw<ZerionWalletPortfolioSnapshot>> {
+    const cacheDir = this.getCacheDir(args);
+    const cached = await this.getCached(cacheDir);
+    // An entry written before snapshots carried timestamps is refetched once,
+    // so the reported freshness is always the entry's real fetch time.
+    if (cached !== null && SnapshotTimestampsSchema.safeParse(cached).success) {
+      this.logCacheHit(cacheDir);
+      return rawify(cached);
+    }
+    this.logCacheMiss(cacheDir);
+    return rawify(await this.fetchAndCache({ ...args, cacheDir }));
+  }
+
+  private getCacheDir(
+    args: Parameters<IZerionWalletPortfolioApi['getPortfolio']>[0],
+  ): CacheDir {
+    return CacheRouter.getZerionWalletPortfolioCacheDir({
       address: args.address,
       fiatCode: args.currency,
       trusted: args.trusted,
       isTestnet: args.isTestnet,
     });
+  }
 
-    const { key, field } = cacheDir;
-
+  private async getCached(cacheDir: CacheDir): Promise<unknown> {
     const cached = await this.cacheService.hGet(cacheDir);
-    if (cached != null) {
-      this.loggingService.debug({ type: LogType.CacheHit, key, field });
-      return ZerionWalletPortfolioSchema.parse(JSON.parse(cached));
-    }
+    return cached == null ? null : JSON.parse(cached);
+  }
 
+  private logCacheHit({ key, field }: CacheDir): void {
+    this.loggingService.debug({ type: LogType.CacheHit, key, field });
+  }
+
+  private logCacheMiss({ key, field }: CacheDir): void {
     this.loggingService.debug({ type: LogType.CacheMiss, key, field });
+  }
 
+  private async fetchAndCache(
+    args: Parameters<IZerionWalletPortfolioApi['getPortfolio']>[0] & {
+      cacheDir: CacheDir;
+    },
+  ): Promise<ZerionWalletPortfolioSnapshot> {
     // Enforce the shared cross-pod Zerion budget before the network call. Over
-    // budget throws LimitReachedError, which the overview service degrades into
-    // a fallback (it is never surfaced as a client-facing 429).
+    // budget throws LimitReachedError, which callers degrade into a fallback
+    // (it is never surfaced as a client-facing 429).
     await this.zerionRateLimiter.assertWithinBudget({
       datasource: 'wallet_portfolio',
       address: args.address,
@@ -125,14 +183,20 @@ export class ZerionWalletPortfolioApi implements IZerionWalletPortfolioApi {
       });
 
       const portfolio = ZerionWalletPortfolioSchema.parse(data);
+      const fetchedAt = Date.now();
+      const snapshot: ZerionWalletPortfolioSnapshot = {
+        ...portfolio,
+        fetchedAt,
+        expiresAt: fetchedAt + this.cacheTtlSeconds * 1_000,
+      };
 
       await this.cacheService.hSet(
-        cacheDir,
-        JSON.stringify(portfolio),
+        args.cacheDir,
+        JSON.stringify(snapshot),
         this.cacheTtlSeconds,
       );
 
-      return portfolio;
+      return snapshot;
     } catch (error) {
       if (error instanceof ZodError) {
         throw error;
