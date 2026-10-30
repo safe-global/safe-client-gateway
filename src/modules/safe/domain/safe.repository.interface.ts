@@ -7,6 +7,8 @@ import { TransactionApiManagerModule } from '#/domain/interfaces/transaction-api
 import { ChainsModule } from '#/modules/chains/chains.module';
 import { ContractsModule } from '#/modules/contracts/contracts.module';
 import { DelegatesV3RepositoryModule } from '#/modules/delegate/domain/v3/delegates.v3.repository.interface';
+import type { ChainMultisigTransaction } from '#/modules/safe/domain/entities/chain-multisig-transaction.entity';
+import type { ChainSafe } from '#/modules/safe/domain/entities/chain-safe.entity';
 import { CreationTransaction } from '#/modules/safe/domain/entities/creation-transaction.entity';
 import { ModuleTransaction } from '#/modules/safe/domain/entities/module-transaction.entity';
 import { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
@@ -17,6 +19,7 @@ import { Transaction } from '#/modules/safe/domain/entities/transaction.entity';
 import { Transfer } from '#/modules/safe/domain/entities/transfer.entity';
 import { SafeRepository } from '#/modules/safe/domain/safe.repository';
 import { SafeQueueModule } from '#/modules/safe-queue/safe-queue.module';
+import { SpaceSafesRepositoryModule } from '#/modules/spaces/domain/safes/space-safes-repository.module';
 import { AddConfirmationDto } from '#/modules/transactions/domain/entities/add-confirmation.dto.entity';
 import { ProposeTransactionDto } from '#/modules/transactions/domain/entities/propose-transaction.dto.entity';
 import { TransactionVerifierHelper } from '#/modules/transactions/routes/helpers/transaction-verifier.helper';
@@ -109,6 +112,18 @@ export interface ISafeRepository {
   }): Promise<Page<MultisigTransaction>>;
 
   /**
+   * Returns the merged queue of several Safes, ordered by nonce, each
+   * transaction paired with its chain. Served by the Queue Service only: the
+   * Transaction Service cannot list many Safes in one request.
+   */
+  getTransactionQueueForSafes(args: {
+    spaceId: number;
+    safes: ReadonlyArray<ChainSafe>;
+    limit: number;
+    offset: number;
+  }): Promise<Page<ChainMultisigTransaction>>;
+
+  /**
    * Returns the Safe Transaction Queue sorted by modified status.
    * (from most recently modified to last)
    */
@@ -159,6 +174,12 @@ export interface ISafeRepository {
   clearMultisigTransactions(args: {
     chainId: string;
     safeAddress: Address;
+  }): Promise<void>;
+
+  /** The queue of every Space holding the Safe. */
+  clearSpaceTransactionQueues(args: {
+    chainId: string;
+    address: Address;
   }): Promise<void>;
 
   getMultisigTransactions(args: {
@@ -243,6 +264,7 @@ export interface ISafeRepository {
     DelegatesV3RepositoryModule,
     ContractsModule,
     SafeQueueModule,
+    SpaceSafesRepositoryModule,
   ],
   providers: [
     {
