@@ -41,7 +41,7 @@ This applies whether the datasource is module-owned (`src/modules/*/datasources/
 
 **Why:** enforcement is opt-in per route, so a sensitive route that simply omits the guard is silently unprotected — the failure mode is absence, which no test on the route itself can catch. The two tables in that spec exist so the omission fails CI instead: every gated route is asserted to reject a session with no fresh factor, and every ungated one is asserted not to, which makes gating or un-gating a route a deliberate edit rather than a side effect of touching a controller.
 
-**Canonical example:** `src/modules/spaces/routes/members/members.controller.ts` guards `POST /:spaceId/members/invite` with `@UseGuards(AuthGuard, ElevationGuard)`; `src/modules/spaces/routes/address-books/address-books.controller.ts:116` shows the rate-limited form, `@UseGuards(AuthGuard, ElevationGuard, SpacesAddressBookRateLimitGuard)`.
+**Canonical example:** `src/modules/spaces/routes/members/members.controller.ts` guards `POST /:spaceId/members/invite` with `@UseGuards(AuthGuard, ElevationGuard)`; `src/modules/spaces/routes/address-books/address-books.controller.ts:135` shows the rate-limited form, `@UseGuards(AuthGuard, ElevationGuard, SpacesAddressBookRateLimitGuard)`.
 
 **Anti-example:** `POST /v1/spaces` is ungated on purpose — creating a Workspace has no prior state to tamper with, and a challenge there would land mid-onboarding. That is a recorded entry in the ungated table, not an omission; do not read it as licence to skip the guard on a route that mutates existing state.
 
@@ -108,6 +108,14 @@ The same single-use nonce lifecycle is described in `docs/agents/ARCHITECTURE.md
 
 `trustProxy` itself (`httpServer.trustProxy` in configuration) is a comma-separated subnet/preset list — it bounds which upstream addresses Fastify trusts before it stops adjusting `request.ip`, which is what keeps the value trustworthy in the first place. Hop counts are rejected at startup: they ignore the connecting address entirely.
 
+### `x-safe-*` headers are never client input
+
+**Rule:** `x-safe-*` is a reserved header namespace. CGW drops every inbound `x-safe-*` header at the HTTP edge, so code never reads one from a request. Outbound, only a module-scoped Safe-service `NetworkService` sets one, through its `contextHeaders`.
+
+**Why:** Safe services such as queue-service trust `x-safe-*` headers for attribution (for example `x-safe-req-id` in `request_event`). A client-supplied value would let a caller forge that attribution.
+
+**Canonical example:** the `onRequest` hook in `configureFastifyAdapter` (`src/app.provider.ts`) deletes them from `request.raw.headers`. `FetchNetworkService.mergeHeaders` drops any caller-set `x-safe-*` header before adding its context headers.
+
 ### Constant-time secret comparison
 
 **Rule:** Compare a token, HMAC, or digest only with `crypto.timingSafeEqual`; never compare a secret with `===`/`==`. `timingSafeEqual` requires equal-length buffers, so handle a length mismatch one of two ways: treat it as comparison failure (the canonical guard below wraps the call in try/catch for exactly this), or hash both sides to a fixed length first when inputs can legitimately vary in length.
@@ -159,7 +167,7 @@ The same base-class design is described in `docs/agents/ARCHITECTURE.md`'s AuthN
 
 **Canonical example:** `src/datasources/kms/encryption.constants.ts` documents the on-disk contract as immutable: the `kms:v1:` prefix, the envelope blob layout (wrapped data key + IV + ciphertext + GCM tag), and the blind-index HMAC label and key length. `src/datasources/kms/kms-encryption.service.ts` is the single, domain-free implementation of the mechanics: `encrypt`/`decrypt` pass the caller-supplied `encryptionContext` to KMS as AAD (and bind it again locally as GCM AAD) so a value can't be transplanted to another owner, and `blindIndex` computes a keyed HMAC over the normalised plaintext for lookups without ever decrypting stored rows. `src/modules/users/domain/user-encryption.service.ts` shows how a module consumes it: a thin wrapper that binds the owning row's id into the context — `this.kmsEncryption.encrypt(email, { userId: String(userId) })` — and adds batch helpers, but implements no crypto of its own.
 
-The pattern is implemented today for `users.email`, wallet addresses, member names/aliases, and the `spaces` module's names, Safe addresses, address-book entries, and audit payloads — each via its own thin wrapper (`UserEncryptionService`, `WalletEncryptionService`, `MemberEncryptionService`, `SpaceEncryptionService`). A new PII column gets the same shape: extend the owning module's wrapper (or add one if the module has none) to bind that entity's `encryptionContext` and delegate to `KmsEncryptionService` — never reimplement the envelope or blind-index mechanics per field, and never alter the constants, which are a frozen on-disk contract.
+The pattern is implemented today for `users.email`, wallet addresses, member names/aliases, and the `spaces` module's names, Safe addresses, address-book entries and tag names, and audit payloads — each via its own thin wrapper (`UserEncryptionService`, `WalletEncryptionService`, `MemberEncryptionService`, `SpaceEncryptionService`). A new PII column gets the same shape: extend the owning module's wrapper (or add one if the module has none) to bind that entity's `encryptionContext` and delegate to `KmsEncryptionService` — never reimplement the envelope or blind-index mechanics per field, and never alter the constants, which are a frozen on-disk contract.
 
 ### Sanitize user text
 

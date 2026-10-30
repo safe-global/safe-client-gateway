@@ -80,21 +80,25 @@ export class QueuedItemsMapper {
     isEdgeGroup: boolean,
     transactionGroup: TransactionGroup,
   ): Promise<Array<TransactionQueuedItem>> {
+    const decodedTransactions = await Promise.all(
+      transactionGroup.transactions.map(async (transaction) => ({
+        transaction,
+        dataDecoded: await this.dataDecoderRepository.getTransactionDataDecoded(
+          { chainId, transaction },
+        ),
+      })),
+    );
+
     // Prefetch tokens and contracts to avoid multiple parallel requests for the same address
     await this.mapper.prefetchAddressInfos({
       chainId: chainId,
-      transactions: transactionGroup.transactions,
+      transactions: decodedTransactions,
     });
 
     return Promise.all(
-      transactionGroup.transactions.map(async (transaction, idx) => {
+      decodedTransactions.map(async ({ transaction, dataDecoded }, idx) => {
         const isFirstInGroup = idx === 0;
         const isLastInGroup = idx === transactionGroup.transactions.length - 1;
-        const dataDecoded =
-          await this.dataDecoderRepository.getTransactionDataDecoded({
-            chainId,
-            transaction,
-          });
         return new TransactionQueuedItem(
           await this.mapper.mapTransaction(
             chainId,
