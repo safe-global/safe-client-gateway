@@ -317,7 +317,7 @@ describe('ZerionPositionsApi', () => {
         });
 
         expect(mockNetworkService.get).toHaveBeenCalledWith({
-          url: `${zerionBaseUri}/v1/wallets/${safeAddress}/positions`,
+          url: `${zerionBaseUri}/v1/wallets/${safeAddress}/positions/`,
           networkRequest: {
             headers: {
               Authorization: `Basic ${zerionApiKey}`,
@@ -365,7 +365,7 @@ describe('ZerionPositionsApi', () => {
         });
 
         expect(mockNetworkService.get).toHaveBeenCalledWith({
-          url: `${zerionBaseUri}/v1/wallets/${safeAddress}/positions`,
+          url: `${zerionBaseUri}/v1/wallets/${safeAddress}/positions/`,
           networkRequest: {
             headers: {
               Authorization: `Basic ${zerionApiKey}`,
@@ -446,7 +446,7 @@ describe('ZerionPositionsApi', () => {
           mockChainMappingService.getNetworkFromChainId,
         ).toHaveBeenCalledWith(chainId, false);
         expect(mockNetworkService.get).toHaveBeenCalledWith({
-          url: `${zerionBaseUri}/v1/wallets/${safeAddress}/positions`,
+          url: `${zerionBaseUri}/v1/wallets/${safeAddress}/positions/`,
           networkRequest: {
             headers: {
               Authorization: `Basic ${zerionApiKey}`,

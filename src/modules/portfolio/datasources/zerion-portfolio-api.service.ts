@@ -124,7 +124,8 @@ export class ZerionPortfolioApi implements IPortfolioApi {
     sync?: boolean;
   }): Promise<Array<ZerionBalance>> {
     try {
-      const url = `${this.baseUri}/v1/wallets/${args.address}/positions`;
+      // Trailing slash is required: without it Zerion answers with a 301.
+      const url = `${this.baseUri}/v1/wallets/${args.address}/positions/`;
       const params: Record<string, string> = {
         currency: args.fiatCode.toLowerCase(),
         sort: 'value',
