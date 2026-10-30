@@ -940,6 +940,18 @@ export default () => ({
       ),
     },
   },
+  portfolioSummaries: {
+    rateLimit: {
+      max: Number.parseInt(
+        process.env.PORTFOLIO_SUMMARIES_RATE_LIMIT_MAX ?? `${60}`,
+        10,
+      ),
+      windowSeconds: Number.parseInt(
+        process.env.PORTFOLIO_SUMMARIES_RATE_LIMIT_WINDOW_SECONDS ?? `${60}`,
+        10,
+      ),
+    },
+  },
   safeWebApp: {
     baseUri: process.env.SAFE_WEB_APP_BASE_URI || 'https://app.safe.global',
   },

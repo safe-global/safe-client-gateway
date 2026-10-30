@@ -12,8 +12,12 @@ import {
 } from '#/modules/balances/datasources/zerion-wallet-portfolio-api.service';
 import { BalancesRepository } from '#/modules/balances/domain/balances.repository';
 import { IBalancesRepository } from '#/modules/balances/domain/balances.repository.interface';
+import { PortfolioSnapshotRepository } from '#/modules/balances/domain/portfolio-snapshot.repository';
+import { IPortfolioSnapshotRepository } from '#/modules/balances/domain/portfolio-snapshot.repository.interface';
 import { BalancesController } from '#/modules/balances/routes/balances.controller';
 import { BalancesService } from '#/modules/balances/routes/balances.service';
+import { PortfolioSummariesV2Controller } from '#/modules/balances/routes/v2/portfolio-summaries.v2.controller';
+import { PortfolioSummariesV2Service } from '#/modules/balances/routes/v2/portfolio-summaries.v2.service';
 import { ChainsModule } from '#/modules/chains/chains.module';
 import { SafeRepositoryModule } from '#/modules/safe/domain/safe.repository.interface';
 import { ZerionModule } from '#/modules/zerion/zerion.module';
@@ -26,7 +30,7 @@ import { ZerionModule } from '#/modules/zerion/zerion.module';
     SafeRepositoryModule,
     ZerionModule,
   ],
-  controllers: [BalancesController],
+  controllers: [BalancesController, PortfolioSummariesV2Controller],
   providers: [
     { provide: IBalancesApiManager, useClass: BalancesApiManager },
     { provide: IZerionWalletPortfolioApi, useClass: ZerionWalletPortfolioApi },
@@ -35,7 +39,12 @@ import { ZerionModule } from '#/modules/zerion/zerion.module';
       provide: IBalancesRepository,
       useClass: BalancesRepository,
     },
+    {
+      provide: IPortfolioSnapshotRepository,
+      useClass: PortfolioSnapshotRepository,
+    },
     BalancesService,
+    PortfolioSummariesV2Service,
   ],
   exports: [
     IBalancesApiManager,
