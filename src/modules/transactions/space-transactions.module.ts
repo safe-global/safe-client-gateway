@@ -6,6 +6,7 @@ import { SpaceTransactionsController } from '#/modules/transactions/routes/space
 import { SpaceTransactionsService } from '#/modules/transactions/routes/space-transactions.service';
 import { TransactionsModule } from '#/modules/transactions/transactions.module';
 import { UsersModule } from '#/modules/users/users.module';
+import { WalletsModule } from '#/modules/wallets/wallets.module';
 
 /**
  * The transaction queue of a Space, kept apart from `TransactionsModule`
@@ -16,10 +17,17 @@ import { UsersModule } from '#/modules/users/users.module';
  * upstream able to list many Safes in a request.
  *
  * `AuthGuard` resolves `IAuthRepository` here, `SpaceIdPipe`
- * `ISpacesRepository`, and `assertMember` `IMembersRepository`.
+ * `ISpacesRepository`, `assertMember` `IMembersRepository`, and the "sign"
+ * count the caller's wallets from `IWalletsRepository`.
  */
 @Module({
-  imports: [TransactionsModule, AuthModule, SpacesModule, UsersModule],
+  imports: [
+    TransactionsModule,
+    AuthModule,
+    SpacesModule,
+    UsersModule,
+    WalletsModule,
+  ],
   controllers: [SpaceTransactionsController],
   providers: [SpaceTransactionsService],
 })

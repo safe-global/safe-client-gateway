@@ -52,7 +52,7 @@ import { MultisigTransaction } from '#/modules/transactions/routes/entities/mult
 import type { PreviewTransactionDto } from '#/modules/transactions/routes/entities/preview-transaction.dto.entity';
 import type { QueuedItem } from '#/modules/transactions/routes/entities/queued-item.entity';
 import type {
-  SpaceQueuedItemPage,
+  SpaceQueue,
   SpaceQueueItems,
 } from '#/modules/transactions/routes/entities/space-queued-item-page.entity';
 import type { TransactionDetails } from '#/modules/transactions/routes/entities/transaction-details/transaction-details.entity';
@@ -488,7 +488,7 @@ export class TransactionsService {
   async getTransactionQueueForSafes(args: {
     spaceId: number;
     safes: ReadonlyArray<ChainSafeAddress>;
-  }): Promise<SpaceQueuedItemPage> {
+  }): Promise<SpaceQueue> {
     const { requested, unavailableSafes } = this.partitionQueueSafes(
       args.safes,
     );

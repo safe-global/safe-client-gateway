@@ -218,6 +218,15 @@ describe('SpaceTransactionsController', () => {
           previous: null,
           results: {},
           unavailableSafes: [],
+          counts: {
+            total: 0,
+            execute: 0,
+            sign: 0,
+            blocked: 0,
+            waiting: 0,
+            conflicting: 0,
+            stale: 0,
+          },
         });
     });
 
@@ -253,6 +262,15 @@ describe('SpaceTransactionsController', () => {
           unavailableSafes: [
             { chainId: chain.chainId, safeAddress: undeployed.address },
           ],
+          counts: {
+            total: 0,
+            execute: 0,
+            sign: 0,
+            blocked: 0,
+            waiting: 0,
+            conflicting: 0,
+            stale: 0,
+          },
         });
 
       expect(networkService.get).toHaveBeenCalledWith(
@@ -265,6 +283,61 @@ describe('SpaceTransactionsController', () => {
           }),
         }),
       );
+    });
+
+    it('rejects an unknown status, an invalid Safe and a non-boolean flag', async () => {
+      const { accessToken, spaceUuid } = await createSpaceForSignerFixture({
+        app,
+        jwtService,
+        postgresDatabaseService,
+      });
+
+      for (const query of [
+        { status: faker.word.noun() },
+        { safes: faker.finance.ethereumAddress() },
+        { conflicting: faker.word.noun() },
+        { stale: faker.word.noun() },
+      ]) {
+        await request(app.getHttpServer())
+          .get(`/v1/spaces/${spaceUuid}/transactions/queued`)
+          .query(query)
+          .set('Cookie', [`access_token=${accessToken}`])
+          .expect(HttpStatus.UNPROCESSABLE_ENTITY);
+      }
+    });
+
+    it('filters the cached queue without querying it again', async () => {
+      const { accessToken, spaceUuid } = await createSpaceForSignerFixture({
+        app,
+        jwtService,
+        postgresDatabaseService,
+      });
+      const chain = uniqueChain();
+      const deployed = safeBuilder().build();
+      await addSafesFixture({
+        app,
+        spaceUuid,
+        accessToken,
+        safes: [{ chainId: chain.chainId, address: deployed.address }],
+      }).then((response) => expect(response.status).toBe(HttpStatus.CREATED));
+      mockUpstreams({ chain, deployed: [deployed] });
+
+      await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceUuid}/transactions/queued`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(HttpStatus.OK);
+      await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceUuid}/transactions/queued`)
+        .query({
+          status: 'sign,execute',
+          safes: `${chain.chainId}:${deployed.address}`,
+          conflicting: 'true',
+          stale: 'false',
+        })
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(HttpStatus.OK);
+
+      expect(queueRequests()).toHaveLength(1);
     });
 
     it('serves a repeated request from the cache of the Space', async () => {
