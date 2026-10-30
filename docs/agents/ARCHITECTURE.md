@@ -30,7 +30,7 @@ sequenceDiagram
     participant Up as Upstream API
 
     C->>F: HTTP request
-    F->>F: apply trustProxy, body-size limit, proto-poisoning guard
+    F->>F: apply trustProxy, body-size limit, proto-poisoning guard, strip x-safe-* headers
     F->>G: dispatch to route
     G->>V: request authorized
     V->>Ctrl: per-param parsed value
@@ -55,6 +55,8 @@ sequenceDiagram
 Fastify is the HTTP platform (`src/app.provider.ts`).
 `trustProxy` is read from configuration (`httpServer.trustProxy` — a comma-separated subnet/preset list; hop counts are rejected), and the body-size limit is parsed from `httpServer.bodyLimit` (`parseBodyLimit`).
 The custom body parser preserves Fastify's default prototype-poisoning protection (`onProtoPoisoning`/`onConstructorPoisoning`) while restoring Express-compatible empty-body handling for requests with no payload.
+An `onRequest` hook drops every inbound `x-safe-*` header before Nest middleware runs, since Safe services trust those headers for attribution.
+`configureFastifyAdapter` applies the hook and the body parsers to both the app and `createTestApplication`.
 
 Guards (`@UseGuards`) run next — see the guard inventory under AuthN/AuthZ below.
 Each `@Param`/`@Query`/`@Body` argument is independently validated through a `ValidationPipe` (`src/validation/pipes/validation.pipe.ts`) wrapping a Zod schema; a failed parse throws `ZodErrorWithCode`, not a generic `BadRequestException`.
