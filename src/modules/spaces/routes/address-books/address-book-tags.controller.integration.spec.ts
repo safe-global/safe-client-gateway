@@ -415,7 +415,6 @@ describe('AddressBooksController tags', () => {
       const forbidden = {
         statusCode: 403,
         message: 'User is not a member of this workspace',
-        error: 'Forbidden',
       };
 
       for (const callerAccessToken of [
@@ -722,7 +721,6 @@ describe('AddressBooksController tags', () => {
         .expect({
           statusCode: 403,
           message: 'User is not an admin of this workspace',
-          error: 'Forbidden',
         });
 
       const { body } = await getAddressBook({
