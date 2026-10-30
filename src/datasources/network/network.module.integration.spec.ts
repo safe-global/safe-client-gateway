@@ -27,6 +27,7 @@ import {
   FetchClientToken,
   NetworkModule,
 } from '#/datasources/network/network.module';
+import { SAFE_REQUEST_ID_HEADER } from '#/datasources/network/safe-request-id-header.helper';
 import { UndiciShutdownHook } from '#/datasources/network/undici.shutdown.hook';
 import { hashSha1 } from '#/domain/common/utils/utils';
 import {
@@ -221,6 +222,54 @@ describe('NetworkModule', () => {
         url,
         key,
       });
+      expect(loggingService.debug).toHaveBeenNthCalledWith(2, {
+        type: 'EXTERNAL_REQUEST_CACHE_HIT',
+        url,
+        key,
+      });
+    });
+
+    it('shares requests that differ only by their request ID', async () => {
+      const json = fakeJson();
+      const response = {
+        ok: true,
+        json: () => Promise.resolve(json),
+      } as Response;
+      fetchMock.mockResolvedValue(response);
+
+      const url = faker.internet.url({ appendSlash: false });
+      const customHeaders = { 'X-Custom': faker.string.alphanumeric() };
+      const firstRequestId = faker.string.uuid();
+      const firstOptions = {
+        method: 'POST',
+        headers: { ...customHeaders, [SAFE_REQUEST_ID_HEADER]: firstRequestId },
+      };
+      const secondOptions = {
+        method: 'POST',
+        headers: {
+          ...customHeaders,
+          [SAFE_REQUEST_ID_HEADER]: faker.string.uuid(),
+        },
+      };
+
+      const pendingRequest = fetchClient(url, firstOptions);
+      await fetchClient(url, secondOptions);
+      await pendingRequest;
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(fetchMock).toHaveBeenCalledWith(url, {
+        ...firstOptions,
+        signal: expect.any(AbortSignal),
+        keepalive: true,
+      });
+      const key = hashSha1(
+        JSON.stringify({
+          url,
+          method: 'POST',
+          headers: customHeaders,
+          circuitBreakerKey: '',
+        }),
+      );
       expect(loggingService.debug).toHaveBeenNthCalledWith(2, {
         type: 'EXTERNAL_REQUEST_CACHE_HIT',
         url,

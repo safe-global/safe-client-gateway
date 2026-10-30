@@ -8,11 +8,19 @@ import {
   FetchClientToken,
 } from '#/datasources/network/network.module';
 import type { INetworkService } from '#/datasources/network/network.service.interface';
+import { SAFE_HEADER_PREFIX } from '#/datasources/network/safe-request-id-header.helper';
 import { LogType } from '#/domain/common/entities/log-type.entity';
 import {
   type ILoggingService,
   LoggingService,
 } from '#/logging/logging.interface';
+
+export type FetchNetworkServiceOptions = {
+  /** Sent with every request; a request's own headers take precedence */
+  defaultHeaders?: Record<string, string>;
+  /** Evaluated for every request; take precedence over all other headers */
+  contextHeaders?: () => Record<string, string>;
+};
 
 /**
  * A {@link INetworkService} which uses fetch as the main HTTP client
@@ -25,7 +33,7 @@ export class FetchNetworkService implements INetworkService {
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
     @Optional()
-    private readonly defaultHeaders?: Record<string, string>,
+    private readonly options: FetchNetworkServiceOptions = {},
   ) {}
 
   async get<T>(args: {
@@ -166,11 +174,18 @@ export class FetchNetworkService implements INetworkService {
     requestHeaders?: Record<string, string>,
     methodHeaders?: Record<string, string>,
   ): Record<string, string> | undefined {
-    return {
-      ...this.defaultHeaders,
-      ...methodHeaders,
-      ...requestHeaders,
-    };
+    const allowedHeaders = Object.fromEntries(
+      Object.entries({
+        ...this.options.defaultHeaders,
+        ...methodHeaders,
+        ...requestHeaders,
+      }).filter(([name]) => {
+        // Only contextHeaders may set x-safe-* headers: drop any other, in any casing
+        return !name.toLowerCase().startsWith(SAFE_HEADER_PREFIX);
+      }),
+    );
+
+    return { ...allowedHeaders, ...this.options.contextHeaders?.() };
   }
 
   private buildUrl(
