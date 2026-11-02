@@ -89,7 +89,7 @@
     "semver": "7.8.5",
     "typeorm": "1.1.2",
     "undici": "8.12.3",
-    "viem": "2.57.5",
+    "viem": "2.57.11",
     "zod": "4.6.5"
   },
   "devDependencies": {
