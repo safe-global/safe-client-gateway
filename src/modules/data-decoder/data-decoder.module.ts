@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Module } from '@nestjs/common';
-import { CacheFirstDataSourceModule } from '#/datasources/cache/cache.first.data.source.module';
 import { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
+import { SafeInternalNetworkModule } from '#/datasources/network/safe-internal.network.module';
 import { IDataDecoderApi } from '#/domain/interfaces/data-decoder-api.interface';
 import { TransactionApiManagerModule } from '#/domain/interfaces/transaction-api.manager.interface';
 import { DataDecoderApi } from '#/modules/data-decoder/datasources/data-decoder-api.service';
@@ -13,7 +13,7 @@ import { DataDecodedController } from '#/modules/data-decoder/routes/data-decode
 import { DataDecodedService } from '#/modules/data-decoder/routes/data-decoded.service';
 
 @Module({
-  imports: [CacheFirstDataSourceModule, TransactionApiManagerModule],
+  imports: [SafeInternalNetworkModule, TransactionApiManagerModule],
   controllers: [DataDecodedController],
   providers: [
     HttpErrorFactory,

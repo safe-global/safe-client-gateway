@@ -7,13 +7,17 @@ import { KmsEncryptionModule } from '#/datasources/kms/kms-encryption.module';
 import { AuthModule } from '#/modules/auth/auth.module';
 import { EntitlementsModule } from '#/modules/entitlements/entitlements.module';
 import { AddressBookItem } from '#/modules/spaces/datasources/address-books/entities/address-book-item.entity.db';
+import { AddressBookItemTag } from '#/modules/spaces/datasources/address-books/entities/address-book-item-tag.entity.db';
 import { AddressBookRequest } from '#/modules/spaces/datasources/address-books/entities/address-book-request.entity.db';
+import { AddressBookTag } from '#/modules/spaces/datasources/address-books/entities/address-book-tag.entity.db';
 import { SpaceSafe } from '#/modules/spaces/datasources/safes/entities/space-safes.entity.db';
 import { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
 import { AddressBookItemsRepository } from '#/modules/spaces/domain/address-books/address-book-items.repository';
 import { IAddressBookItemsRepository } from '#/modules/spaces/domain/address-books/address-book-items.repository.interface';
 import { AddressBookRequestsRepository } from '#/modules/spaces/domain/address-books/address-book-requests.repository';
 import { IAddressBookRequestsRepository } from '#/modules/spaces/domain/address-books/address-book-requests.repository.interface';
+import { AddressBookTagsRepository } from '#/modules/spaces/domain/address-books/address-book-tags.repository';
+import { IAddressBookTagsRepository } from '#/modules/spaces/domain/address-books/address-book-tags.repository.interface';
 import { SpaceAuditModule } from '#/modules/spaces/domain/audit/space-audit.module';
 import { SpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository';
 import { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository.interface';
@@ -49,6 +53,8 @@ import { SpaceIdPipe } from '#/routes/common/pipes/space-id.pipe';
       Member,
       AddressBookItem,
       AddressBookRequest,
+      AddressBookTag,
+      AddressBookItemTag,
     ]),
     forwardRef(() => AuthModule),
     forwardRef(() => UsersModule),
@@ -92,6 +98,10 @@ import { SpaceIdPipe } from '#/routes/common/pipes/space-id.pipe';
     {
       provide: IAddressBookRequestsRepository,
       useClass: AddressBookRequestsRepository,
+    },
+    {
+      provide: IAddressBookTagsRepository,
+      useClass: AddressBookTagsRepository,
     },
     SpaceIdPipe,
   ],

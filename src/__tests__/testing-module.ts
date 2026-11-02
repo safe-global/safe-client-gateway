@@ -13,8 +13,10 @@ import { PostgresDatabaseModule } from '#/datasources/db/v1/postgres-database.mo
 import { PostgresDatabaseModuleV2 } from '#/datasources/db/v2/postgres-database.module';
 import { TestPostgresDatabaseModuleV2 } from '#/datasources/db/v2/test.postgres-database.module';
 import { TestNetworkModule } from '#/datasources/network/__tests__/test.network.module';
+import { TestSafeInternalNetworkModule } from '#/datasources/network/__tests__/test.safe-internal.network.module';
 import { TestTxAuthNetworkModule } from '#/datasources/network/__tests__/test.tx-auth.network.module';
 import { NetworkModule } from '#/datasources/network/network.module';
+import { SafeInternalNetworkModule } from '#/datasources/network/safe-internal.network.module';
 import { TxAuthNetworkModule } from '#/datasources/network/tx-auth.network.module';
 import { TestLoggingModule } from '#/logging/__tests__/test.logging.module';
 import { RequestScopedLoggingModule } from '#/logging/logging.module';
@@ -82,6 +84,10 @@ export function createTestModule(
       {
         originalModule: TxAuthNetworkModule,
         testModule: TestTxAuthNetworkModule,
+      },
+      {
+        originalModule: SafeInternalNetworkModule,
+        testModule: TestSafeInternalNetworkModule,
       },
       {
         originalModule: SafeQueueModule,
