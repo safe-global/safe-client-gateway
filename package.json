@@ -74,7 +74,7 @@
     "dd-trace": "6.21.0",
     "ecdsa-sig-formatter": "1.0.11",
     "ioredis": "6.0.0",
-    "jose": "6.2.12",
+    "jose": "6.2.13",
     "jsonwebtoken": "9.0.3",
     "lodash": "4.18.1",
     "nestjs-cls": "7.0.1",
