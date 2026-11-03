@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
-import type { Address } from 'viem';
 import { ZodError } from 'zod';
 import { IConfigurationService } from '#/config/configuration.service.interface';
 import { CacheRouter } from '#/datasources/cache/cache.router';
@@ -45,15 +44,10 @@ export interface IZerionWalletPortfolioApi {
    * @param args.address - Wallet address
    * @param args.currency - Fiat currency code (e.g., 'USD', 'EUR')
    * @param args.isTestnet - Whether the returned data is for testnets or for mainnets
-   * @param args.trusted - If true, only includes trusted (non-trash) tokens (optional)
+   * @param args.trusted - If true, only includes trusted (non-trash) tokens
    * @returns Portfolio data with total and per-chain breakdown
    */
-  getPortfolio(args: {
-    address: Address;
-    currency: string;
-    isTestnet: boolean;
-    trusted?: boolean;
-  }): Promise<ZerionWalletPortfolio>;
+  getPortfolio(args: WalletPortfolioIdentity): Promise<ZerionWalletPortfolio>;
 
   /**
    * Same Zerion call and cache entry as {@link getPortfolio}, returned with
@@ -94,12 +88,9 @@ export class ZerionWalletPortfolioApi implements IZerionWalletPortfolioApi {
     );
   }
 
-  async getPortfolio(args: {
-    address: Address;
-    currency: string;
-    isTestnet: boolean;
-    trusted?: boolean;
-  }): Promise<ZerionWalletPortfolio> {
+  async getPortfolio(
+    args: WalletPortfolioIdentity,
+  ): Promise<ZerionWalletPortfolio> {
     const cacheDir = this.getCacheDir(args);
     const cached = await this.getCached(cacheDir);
     if (cached !== null) {
@@ -125,9 +116,7 @@ export class ZerionWalletPortfolioApi implements IZerionWalletPortfolioApi {
     return rawify(await this.fetchAndCache({ ...args, cacheDir }));
   }
 
-  private getCacheDir(
-    args: Parameters<IZerionWalletPortfolioApi['getPortfolio']>[0],
-  ): CacheDir {
+  private getCacheDir(args: WalletPortfolioIdentity): CacheDir {
     return CacheRouter.getZerionWalletPortfolioCacheDir({
       address: args.address,
       fiatCode: args.currency,
@@ -150,7 +139,7 @@ export class ZerionWalletPortfolioApi implements IZerionWalletPortfolioApi {
   }
 
   private async fetchAndCache(
-    args: Parameters<IZerionWalletPortfolioApi['getPortfolio']>[0] & {
+    args: WalletPortfolioIdentity & {
       cacheDir: CacheDir;
     },
   ): Promise<ZerionWalletPortfolioSnapshot> {
