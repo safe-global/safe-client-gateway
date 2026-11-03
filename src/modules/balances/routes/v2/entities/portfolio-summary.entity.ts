@@ -36,7 +36,7 @@ export class PortfolioSummarySnapshot {
     type: 'object',
     additionalProperties: { type: 'string' },
     description:
-      'Total per position type as returned by Zerion (e.g. wallet, deposited, borrowed, locked, staked).',
+      'Total per position type as returned by Zerion (e.g. wallet, deposited, borrowed, locked, staked), for the whole address across this environment, not for this chain alone: Zerion does not split position types per chain.',
   })
   readonly fiatTotalByType: Record<string, string>;
   @ApiProperty({
