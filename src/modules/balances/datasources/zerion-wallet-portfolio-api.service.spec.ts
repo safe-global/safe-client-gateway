@@ -99,6 +99,7 @@ describe('ZerionWalletPortfolioApi', () => {
       address,
       currency: 'usd',
       isTestnet: false,
+      trusted: false,
     });
 
     expect(
@@ -120,6 +121,7 @@ describe('ZerionWalletPortfolioApi', () => {
       address,
       currency: 'usd',
       isTestnet: false,
+      trusted: false,
     });
 
     expect(mockZerionRateLimiter.assertWithinBudget).toHaveBeenCalledWith({
@@ -147,7 +149,12 @@ describe('ZerionWalletPortfolioApi', () => {
     );
 
     await expect(
-      service.getPortfolio({ address, currency: 'usd', isTestnet: false }),
+      service.getPortfolio({
+        address,
+        currency: 'usd',
+        isTestnet: false,
+        trusted: false,
+      }),
     ).rejects.toThrow(LimitReachedError);
     expect(mockNetworkService.get).not.toHaveBeenCalled();
     expect(mockCacheService.hSet).not.toHaveBeenCalled();
@@ -161,7 +168,12 @@ describe('ZerionWalletPortfolioApi', () => {
     });
 
     await expect(
-      service.getPortfolio({ address, currency: 'usd', isTestnet: false }),
+      service.getPortfolio({
+        address,
+        currency: 'usd',
+        isTestnet: false,
+        trusted: false,
+      }),
     ).rejects.toThrow(ZodError);
     expect(mockCacheService.hSet).not.toHaveBeenCalled();
   });
@@ -222,6 +234,7 @@ describe('ZerionWalletPortfolioApi', () => {
       address,
       currency: 'usd',
       isTestnet: false,
+      trusted: false,
     });
 
     expect(result.data.attributes).toEqual(snapshot.data.attributes);

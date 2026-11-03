@@ -20,6 +20,8 @@ import {
 } from '#/validation/entities/schemas/caip-10-addresses.schema';
 import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
+// Lives in balances, next to the Zerion snapshot it reads, rather than in the
+// legacy portfolio module that owns /v1/portfolio.
 @ApiTags('portfolio')
 @Controller({ path: 'portfolio', version: '2' })
 export class PortfolioSummariesV2Controller {

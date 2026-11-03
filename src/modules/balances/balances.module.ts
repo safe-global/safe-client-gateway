@@ -16,6 +16,7 @@ import { PortfolioSummariesV2Controller } from '#/modules/balances/routes/v2/por
 import { PortfolioSummariesV2Service } from '#/modules/balances/routes/v2/portfolio-summaries.v2.service';
 import { ChainsModule } from '#/modules/chains/chains.module';
 import { SafeRepositoryModule } from '#/modules/safe/domain/safe.repository.interface';
+import { ZerionModule } from '#/modules/zerion/zerion.module';
 
 // Third-party clients live in their own modules: every provider declared here
 // resolves the Transaction Service NetworkService from TxAuthNetworkModule.
@@ -27,6 +28,7 @@ import { SafeRepositoryModule } from '#/modules/safe/domain/safe.repository.inte
     SafeRepositoryModule,
     PricesApiModule,
     ZerionWalletPortfolioApiModule,
+    ZerionModule,
   ],
   controllers: [BalancesController, PortfolioSummariesV2Controller],
   providers: [

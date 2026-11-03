@@ -319,7 +319,7 @@ export class PortfolioSummariesV2Service {
       return new PortfolioSummary({
         chainId: chain.chainId,
         address,
-        // A chain missing from the distribution holds nothing: a real 0.
+        // Zerion only lists chains that hold value, so a missing chain reads as 0.
         fiatTotal: getNumberString(snapshot.fiatTotalByNetwork[network] ?? 0),
         source: 'zerion',
         snapshot: this.toSnapshotDto(
@@ -365,9 +365,7 @@ export class PortfolioSummariesV2Service {
       });
       return balances.reduce((total, { fiatBalance }) => {
         const value = Number(fiatBalance);
-        return fiatBalance !== null && Number.isFinite(value)
-          ? total + value
-          : total;
+        return Number.isFinite(value) ? total + value : total;
       }, 0);
     } catch (error) {
       this.loggingService.warn({
