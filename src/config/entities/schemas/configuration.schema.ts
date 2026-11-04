@@ -217,6 +217,13 @@ export const RootConfigurationSchema = z
       .int()
       .min(1)
       .optional(),
+    PORTFOLIO_CLEAR_COOLDOWN_SECONDS: z.coerce.number().int().min(1).optional(),
+    PORTFOLIO_CLEAR_RATE_LIMIT_MAX: z.coerce.number().int().min(1).optional(),
+    PORTFOLIO_CLEAR_RATE_LIMIT_WINDOW_SECONDS: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .optional(),
     SAFE_CONFIG_CGW_KEY: z.string().min(1).optional(),
     LOG_LEVEL: z
       .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace'])
