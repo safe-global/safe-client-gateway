@@ -19,8 +19,7 @@ import { IAddressBookRequestsRepository } from '#/modules/spaces/domain/address-
 import { AddressBookTagsRepository } from '#/modules/spaces/domain/address-books/address-book-tags.repository';
 import { IAddressBookTagsRepository } from '#/modules/spaces/domain/address-books/address-book-tags.repository.interface';
 import { SpaceAuditModule } from '#/modules/spaces/domain/audit/space-audit.module';
-import { SpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository';
-import { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository.interface';
+import { SpaceSafesRepositoryModule } from '#/modules/spaces/domain/safes/space-safes-repository.module';
 import { SpaceEncryptionService } from '#/modules/spaces/domain/space-encryption.service';
 import { SpacesRepository } from '#/modules/spaces/domain/spaces.repository';
 import { ISpacesRepository } from '#/modules/spaces/domain/spaces.repository.interface';
@@ -61,6 +60,7 @@ import { SpaceIdPipe } from '#/routes/common/pipes/space-id.pipe';
     // Plan limits, through `IEntitlementEnforcement`.
     forwardRef(() => EntitlementsModule),
     SpaceAuditModule,
+    SpaceSafesRepositoryModule,
     KmsEncryptionModule,
     MemberEncryptionModule,
     UserIdentityResolverModule,
@@ -88,10 +88,6 @@ import { SpaceIdPipe } from '#/routes/common/pipes/space-id.pipe';
       useClass: SpacesRepository,
     },
     {
-      provide: ISpaceSafesRepository,
-      useClass: SpaceSafesRepository,
-    },
-    {
       provide: IAddressBookItemsRepository,
       useClass: AddressBookItemsRepository,
     },
@@ -107,7 +103,7 @@ import { SpaceIdPipe } from '#/routes/common/pipes/space-id.pipe';
   ],
   exports: [
     ISpacesRepository,
-    ISpaceSafesRepository,
+    SpaceSafesRepositoryModule,
     IAddressBookItemsRepository,
     IAddressBookRequestsRepository,
     SpaceIdPipe,

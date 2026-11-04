@@ -1,5 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  HttpStatus,
+  Inject,
+  Injectable,
+} from '@nestjs/common';
+import sortBy from 'lodash/sortBy';
 import type { Address } from 'viem';
 import {
   getAddress,
@@ -9,13 +15,24 @@ import {
   parseUnits,
 } from 'viem';
 import { IConfigurationService } from '#/config/configuration.service.interface';
+import {
+  SAFE_QUEUE_SERVICE_MAX_LIMIT,
+  SAFE_QUEUE_SERVICE_MAX_SAFES,
+} from '#/domain/common/constants';
 import { LogType } from '#/domain/common/entities/log-type.entity';
+import { DataSourceError } from '#/domain/errors/data-source.error';
 import {
   type ILoggingService,
   LoggingService,
 } from '#/logging/logging.interface';
+import { asError } from '#/logging/utils';
 import { IDataDecoderRepository } from '#/modules/data-decoder/domain/v2/data-decoder.repository.interface';
+import type { ChainMultisigTransaction } from '#/modules/safe/domain/entities/chain-multisig-transaction.entity';
+import type { ChainSafe } from '#/modules/safe/domain/entities/chain-safe.entity';
+import type { ChainSafeAddress } from '#/modules/safe/domain/entities/chain-safe-address.entity';
 import type { MultisigTransaction as DomainMultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
+import type { Safe } from '#/modules/safe/domain/entities/safe.entity';
+import { getChainSafeKey } from '#/modules/safe/domain/helpers/chain-safe-key.helper';
 import type { SafeRepository } from '#/modules/safe/domain/safe.repository';
 import { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
 import { ITokenRepository } from '#/modules/tokens/domain/token.repository.interface';
@@ -34,6 +51,10 @@ import { ModuleTransaction } from '#/modules/transactions/routes/entities/module
 import { MultisigTransaction } from '#/modules/transactions/routes/entities/multisig-transaction.entity';
 import type { PreviewTransactionDto } from '#/modules/transactions/routes/entities/preview-transaction.dto.entity';
 import type { QueuedItem } from '#/modules/transactions/routes/entities/queued-item.entity';
+import type {
+  SpaceQueue,
+  SpaceQueueItems,
+} from '#/modules/transactions/routes/entities/space-queued-item-page.entity';
 import type { TransactionDetails } from '#/modules/transactions/routes/entities/transaction-details/transaction-details.entity';
 import type { TransactionItemPage } from '#/modules/transactions/routes/entities/transaction-item-page.entity';
 import type { TransactionPreview } from '#/modules/transactions/routes/entities/transaction-preview.entity';
@@ -58,6 +79,7 @@ import {
 @Injectable()
 export class TransactionsService {
   private readonly isFilterValueParsingEnabled: boolean;
+  private readonly maxSpaceQueuePages: number;
 
   constructor(
     @Inject(ISafeRepository) private readonly safeRepository: SafeRepository,
@@ -81,6 +103,9 @@ export class TransactionsService {
   ) {
     this.isFilterValueParsingEnabled = this.configurationService.getOrThrow(
       'features.filterValueParsing',
+    );
+    this.maxSpaceQueuePages = this.configurationService.getOrThrow(
+      'spaces.transactionQueue.maxPages',
     );
   }
 
@@ -453,6 +478,233 @@ export class TransactionsService {
       previous: previousURL?.toString() ?? null,
       results,
     };
+  }
+
+  /**
+   * The merged queue of several Safes, in nonce order and grouped by Safe
+   * address and chain, read up to `spaces.transactionQueue.maxPages` pages of
+   * the queue service. Each Safe's transactions are mapped against that Safe.
+   */
+  async getTransactionQueueForSafes(args: {
+    spaceId: number;
+    safes: ReadonlyArray<ChainSafeAddress>;
+  }): Promise<SpaceQueue> {
+    const { requested, unavailableSafes } = this.partitionQueueSafes(
+      args.safes,
+    );
+    const safes = await this.loadQueueSafes(requested, unavailableSafes);
+    if (safes.length === 0) {
+      return {
+        count: 0,
+        next: null,
+        previous: null,
+        results: {},
+        unavailableSafes,
+      };
+    }
+
+    const queue = await this.getQueueOfSafes({
+      spaceId: args.spaceId,
+      safes,
+    }).catch((error: unknown) => {
+      this.loggingService.warn({
+        message: 'Failed to load the queue of the Space Safes',
+        error: asError(error).message,
+      });
+      return null;
+    });
+    // The Space stays readable: its Safes are reported as unavailable instead.
+    if (!queue) {
+      unavailableSafes.push(
+        ...safes.map(({ chainId, safe }) => ({
+          chainId,
+          safeAddress: safe.address,
+        })),
+      );
+      return {
+        count: 0,
+        next: null,
+        previous: null,
+        results: {},
+        unavailableSafes,
+      };
+    }
+    const safesByKey = new Map(
+      safes.map(({ chainId, safe }) => [
+        getChainSafeKey(chainId, safe.address),
+        safe,
+      ]),
+    );
+
+    return {
+      count: queue.count,
+      next: null,
+      previous: null,
+      results: await this.mapQueueBySafe(queue.transactions, safesByKey),
+      unavailableSafes,
+    };
+  }
+
+  /**
+   * The merged queue, one queue service page at a time: the first page gives
+   * the count, and the remaining pages, up to `maxSpaceQueuePages` in all, are
+   * fetched together.
+   */
+  private async getQueueOfSafes(args: {
+    spaceId: number;
+    safes: Array<ChainSafe>;
+  }): Promise<{
+    count: number | null;
+    transactions: Array<ChainMultisigTransaction>;
+  }> {
+    const getPage = (
+      offset: number,
+    ): ReturnType<SafeRepository['getTransactionQueueForSafes']> =>
+      this.safeRepository.getTransactionQueueForSafes({
+        spaceId: args.spaceId,
+        safes: args.safes,
+        limit: SAFE_QUEUE_SERVICE_MAX_LIMIT,
+        offset,
+      });
+    const firstPage = await getPage(0);
+    const pageCount = Math.min(
+      Math.ceil((firstPage.count ?? 0) / SAFE_QUEUE_SERVICE_MAX_LIMIT),
+      this.maxSpaceQueuePages,
+    );
+    const nextPages = await Promise.all(
+      Array.from({ length: Math.max(pageCount - 1, 0) }, (_, index) =>
+        getPage((index + 1) * SAFE_QUEUE_SERVICE_MAX_LIMIT),
+      ),
+    );
+    return {
+      count: firstPage.count,
+      transactions: [firstPage, ...nextPages].flatMap(({ results }) => results),
+    };
+  }
+
+  private partitionQueueSafes(safes: ReadonlyArray<ChainSafeAddress>): {
+    requested: Array<ChainSafeAddress>;
+    unavailableSafes: Array<ChainSafeAddress>;
+  } {
+    const requested: Array<ChainSafeAddress> = [];
+    const unavailableSafes: Array<ChainSafeAddress> = [];
+    const seen = new Set<string>();
+    const addresses = new Set<string>();
+    for (const { chainId, safeAddress } of safes) {
+      const key = getChainSafeKey(chainId, safeAddress);
+      if (seen.has(key)) {
+        continue;
+      }
+      seen.add(key);
+      const normalizedAddress = safeAddress.toLowerCase();
+      if (
+        !addresses.has(normalizedAddress) &&
+        addresses.size >= SAFE_QUEUE_SERVICE_MAX_SAFES
+      ) {
+        unavailableSafes.push({ chainId, safeAddress });
+        continue;
+      }
+      addresses.add(normalizedAddress);
+      requested.push({ chainId, safeAddress });
+    }
+    return { requested, unavailableSafes };
+  }
+
+  /**
+   * Safe information for every requested Safe. A Safe that cannot be loaded
+   * (not deployed on that chain, or its chain unreachable) is reported as
+   * unavailable instead of failing the whole queue upstream.
+   */
+  private async loadQueueSafes(
+    requested: Array<ChainSafeAddress>,
+    unavailableSafes: Array<ChainSafeAddress>,
+  ): Promise<Array<ChainSafe>> {
+    const results = await Promise.allSettled(
+      requested.map(({ chainId, safeAddress }) =>
+        this.safeRepository.getSafe({ chainId, address: safeAddress }),
+      ),
+    );
+    const safes: Array<ChainSafe> = [];
+    results.forEach((result, index) => {
+      const { chainId, safeAddress } = requested[index];
+      if (result.status === 'fulfilled') {
+        safes.push({ chainId, safe: result.value });
+        return;
+      }
+      // An undeployed Safe is expected in a Space; anything else is worth a look.
+      if (!this.isNotFound(result.reason)) {
+        this.loggingService.warn({
+          message: 'Failed to load Safe; leaving it out of the Space queue',
+          chainId,
+          address: safeAddress,
+          error: asError(result.reason).message,
+        });
+      }
+      unavailableSafes.push({ chainId, safeAddress });
+    });
+    return safes;
+  }
+
+  private async mapQueueBySafe(
+    transactions: Array<ChainMultisigTransaction>,
+    safesByKey: Map<string, Safe>,
+  ): Promise<SpaceQueueItems> {
+    const sorted = sortBy(
+      transactions,
+      ({ transaction }): number => transaction.nonce,
+    );
+
+    const groups = new Map<
+      string,
+      {
+        chainId: string;
+        safe: Safe;
+        transactions: Array<DomainMultisigTransaction>;
+      }
+    >();
+    for (const { chainId, transaction } of sorted) {
+      const key = getChainSafeKey(chainId, transaction.safe);
+      const safe = safesByKey.get(key);
+      if (!safe) {
+        continue;
+      }
+      const group = groups.get(key);
+      if (group) {
+        group.transactions.push(transaction);
+      } else {
+        groups.set(key, { chainId, safe, transactions: [transaction] });
+      }
+    }
+
+    const mapped = await Promise.all(
+      Array.from(groups.values()).map(async (group) => ({
+        ...group,
+        items: await this.queuedItemsMapper.getQueuedItems(
+          {
+            count: group.transactions.length,
+            next: null,
+            previous: null,
+            results: group.transactions,
+          },
+          group.safe,
+          group.chainId,
+          null,
+          null,
+        ),
+      })),
+    );
+
+    const results: SpaceQueueItems = {};
+    for (const { chainId, safe, items } of mapped) {
+      results[safe.address] = { ...results[safe.address], [chainId]: items };
+    }
+    return results;
+  }
+
+  private isNotFound(error: unknown): boolean {
+    return (
+      error instanceof DataSourceError && error.code === HttpStatus.NOT_FOUND
+    );
   }
 
   private getAdjustedPaginationForHistory(
