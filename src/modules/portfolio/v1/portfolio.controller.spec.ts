@@ -201,24 +201,27 @@ describe('PortfolioController', () => {
   });
 
   describe('clearPortfolio', () => {
-    it('should call service with address', async () => {
+    it('should call service with chainId and address', async () => {
+      const chainId = faker.string.numeric();
       const address = getAddress(faker.finance.ethereumAddress());
 
       service.clearZerionCaches.mockResolvedValue(undefined);
 
-      await controller.clearPortfolio(address);
+      await controller.clearPortfolio(address, chainId);
 
       expect(service.clearZerionCaches).toHaveBeenCalledWith({
+        chainId,
         address,
       });
     });
 
     it('should return void', async () => {
+      const chainId = faker.string.numeric();
       const address = getAddress(faker.finance.ethereumAddress());
 
       service.clearZerionCaches.mockResolvedValue(undefined);
 
-      const result = await controller.clearPortfolio(address);
+      const result = await controller.clearPortfolio(address, chainId);
 
       expect(result).toBeUndefined();
     });

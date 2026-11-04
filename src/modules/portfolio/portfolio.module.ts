@@ -11,10 +11,11 @@ import { IPortfolioApi } from '#/modules/portfolio/interfaces/portfolio-api.inte
 import { PortfolioController } from '#/modules/portfolio/v1/portfolio.controller';
 import { PortfolioRouteMapper } from '#/modules/portfolio/v1/portfolio.mapper';
 import { PortfolioApiService } from '#/modules/portfolio/v1/portfolio.service';
+import { SafeRepositoryModule } from '#/modules/safe/domain/safe.repository.interface';
 import { ZerionModule } from '#/modules/zerion/zerion.module';
 
 @Module({
-  imports: [ChainsModule, ZerionModule],
+  imports: [ChainsModule, SafeRepositoryModule, ZerionModule],
   controllers: [PortfolioController],
   providers: [
     HttpErrorFactory,

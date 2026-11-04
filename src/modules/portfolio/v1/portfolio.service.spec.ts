@@ -3,6 +3,9 @@
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
+import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
+import { CacheRouter } from '#/datasources/cache/cache.router';
+import type { ICacheService } from '#/datasources/cache/cache.service.interface';
 import type { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
 import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
 import { appBalanceBuilder } from '#/modules/portfolio/domain/entities/__tests__/app-balance.builder';
@@ -11,12 +14,17 @@ import { tokenBalanceBuilder } from '#/modules/portfolio/domain/entities/__tests
 import type { IPortfolioService as IDomainPortfolioService } from '#/modules/portfolio/domain/portfolio.service.interface';
 import { PortfolioRouteMapper } from '#/modules/portfolio/v1/portfolio.mapper';
 import { PortfolioApiService } from '#/modules/portfolio/v1/portfolio.service';
+import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
+import type { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
 
 describe('PortfolioApiService', () => {
   let service: PortfolioApiService;
   let mockDomainService: MockedObject<IDomainPortfolioService>;
   let mockChainsRepository: MockedObject<IChainsRepository>;
+  let mockSafeRepository: MockedObject<ISafeRepository>;
+  let mockCacheService: MockedObject<ICacheService>;
   let portfolioRouteMapper: PortfolioRouteMapper;
+  const clearCooldownSeconds = faker.number.int({ min: 10, max: 60 });
 
   beforeEach(() => {
     vi.resetAllMocks();
@@ -36,12 +44,29 @@ describe('PortfolioApiService', () => {
       isSupportedChain: vi.fn(),
     } as MockedObject<IChainsRepository>;
 
+    mockSafeRepository = {
+      getSafe: vi.fn(),
+    } as MockedObject<ISafeRepository>;
+
+    mockCacheService = {
+      increment: vi.fn(),
+    } as MockedObject<ICacheService>;
+
+    const configurationService = new FakeConfigurationService();
+    configurationService.set(
+      'portfolio.clear.cooldownSeconds',
+      clearCooldownSeconds,
+    );
+
     portfolioRouteMapper = new PortfolioRouteMapper();
 
     service = new PortfolioApiService(
       mockDomainService,
       portfolioRouteMapper,
       mockChainsRepository,
+      mockSafeRepository,
+      mockCacheService,
+      configurationService,
     );
   });
 
@@ -216,14 +241,57 @@ describe('PortfolioApiService', () => {
   });
 
   describe('clearZerionCaches', () => {
-    it('should call domain service clearZerionCaches', async () => {
+    it('should clear the caches of a Safe', async () => {
+      const chainId = faker.string.numeric();
       const address = getAddress(faker.finance.ethereumAddress());
+      mockSafeRepository.getSafe.mockResolvedValue(
+        safeBuilder().with('address', address).build(),
+      );
+      mockCacheService.increment.mockResolvedValue(1);
 
-      await service.clearZerionCaches({ address });
+      await service.clearZerionCaches({ chainId, address });
 
+      expect(mockSafeRepository.getSafe).toHaveBeenCalledWith({
+        chainId,
+        address,
+      });
+      expect(mockCacheService.increment).toHaveBeenCalledWith(
+        CacheRouter.getPortfolioClearCooldownCacheKey({ address }),
+        clearCooldownSeconds,
+        0,
+      );
       expect(mockDomainService.clearZerionCaches).toHaveBeenCalledWith({
         address,
       });
+    });
+
+    it('should skip a repeat clear within the cooldown', async () => {
+      const chainId = faker.string.numeric();
+      const address = getAddress(faker.finance.ethereumAddress());
+      mockSafeRepository.getSafe.mockResolvedValue(
+        safeBuilder().with('address', address).build(),
+      );
+      mockCacheService.increment.mockResolvedValue(
+        faker.number.int({ min: 2, max: 10 }),
+      );
+
+      await service.clearZerionCaches({ chainId, address });
+
+      expect(mockDomainService.clearZerionCaches).not.toHaveBeenCalled();
+    });
+
+    it('should not clear or count an address that is not a Safe', async () => {
+      const chainId = faker.string.numeric();
+      const address = getAddress(faker.finance.ethereumAddress());
+      const error = new Error('Not found');
+      mockSafeRepository.getSafe.mockRejectedValue(error);
+
+      await expect(
+        service.clearZerionCaches({ chainId, address }),
+      ).rejects.toThrow(error);
+
+      expect(mockCacheService.increment).not.toHaveBeenCalled();
+      expect(mockDomainService.clearZerionCaches).not.toHaveBeenCalled();
     });
   });
 });
