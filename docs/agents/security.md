@@ -108,6 +108,14 @@ The same single-use nonce lifecycle is described in `docs/agents/ARCHITECTURE.md
 
 `trustProxy` itself (`httpServer.trustProxy` in configuration) is a comma-separated subnet/preset list — it bounds which upstream addresses Fastify trusts before it stops adjusting `request.ip`, which is what keeps the value trustworthy in the first place. Hop counts are rejected at startup: they ignore the connecting address entirely.
 
+### `x-safe-*` headers are never client input
+
+**Rule:** `x-safe-*` is a reserved header namespace. CGW drops every inbound `x-safe-*` header at the HTTP edge, so code never reads one from a request. Outbound, only a module-scoped Safe-service `NetworkService` sets one, through its `contextHeaders`.
+
+**Why:** Safe services such as queue-service trust `x-safe-*` headers for attribution (for example `x-safe-req-id` in `request_event`). A client-supplied value would let a caller forge that attribution.
+
+**Canonical example:** the `onRequest` hook in `configureFastifyAdapter` (`src/app.provider.ts`) deletes them from `request.raw.headers`. `FetchNetworkService.mergeHeaders` drops any caller-set `x-safe-*` header before adding its context headers.
+
 ### Constant-time secret comparison
 
 **Rule:** Compare a token, HMAC, or digest only with `crypto.timingSafeEqual`; never compare a secret with `===`/`==`. `timingSafeEqual` requires equal-length buffers, so handle a length mismatch one of two ways: treat it as comparison failure (the canonical guard below wraps the call in try/catch for exactly this), or hash both sides to a fixed length first when inputs can legitimately vary in length.
