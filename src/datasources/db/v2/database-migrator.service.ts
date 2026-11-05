@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import type { DataSource } from 'typeorm';
+import type { DataSource, EntityManager } from 'typeorm';
 import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
 import {
   type ILoggingService,
@@ -20,6 +20,8 @@ enum MigrationStatus {
 @Injectable()
 export class DatabaseMigrator {
   private readonly LOCK_TABLE_NAME = '_lock';
+  // Arbitrary key of the advisory lock guarding the lock table
+  private readonly LOCK_TABLE_ADVISORY_KEY = 1;
 
   public constructor(
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
@@ -48,7 +50,6 @@ export class DatabaseMigrator {
 
     const connection =
       await this.databaseService.initializeDatabaseConnection();
-    await this.createLockTableIfNotExists(connection);
 
     let numberOfIterations = 0;
     const numberOfRetries = await this.configService.getOrThrow(
@@ -56,8 +57,7 @@ export class DatabaseMigrator {
     );
     while (numberOfRetries >= numberOfIterations) {
       ++numberOfIterations;
-      if (!(await this.lockExists(connection))) {
-        await this.insertLock(connection);
+      if (await this.acquireLock()) {
         await this.runMigration(connection);
         await this.truncateLocks(connection);
 
@@ -79,14 +79,35 @@ export class DatabaseMigrator {
   }
 
   /**
+   * Creates the locks table if needed and inserts a lock unless one exists.
+   *    Neither step is atomic, so concurrent instances (e.g. parallel test files)
+   *    are serialised by a transaction-scoped advisory lock.
+   *
+   * @returns {Promise<boolean>} A promise that resolves to true if the lock was acquired.
+   */
+  private async acquireLock(): Promise<boolean> {
+    return await this.databaseService.transaction(async (entityManager) => {
+      await entityManager.query('SELECT pg_advisory_xact_lock($1)', [
+        this.LOCK_TABLE_ADVISORY_KEY,
+      ]);
+      await this.createLockTableIfNotExists(entityManager);
+      if (await this.lockExists(entityManager)) {
+        return false;
+      }
+      await this.insertLock(entityManager);
+      return true;
+    });
+  }
+
+  /**
    * Creates the locks table in the database if it does not already exist.
    *
-   * @param {DataSource} connection The database connection to create the locks table on.
+   * @param {EntityManager} connection The database connection to create the locks table on.
    *
    * @returns {Promise<void>} A promise that resolves when the locks table has been created or confirmed to exist.
    */
   private async createLockTableIfNotExists(
-    connection: DataSource,
+    connection: EntityManager,
   ): Promise<void> {
     await connection.query(
       `CREATE TABLE IF NOT EXISTS "${this.LOCK_TABLE_NAME}" ("id" SERIAL NOT NULL, "status" int NOT NULL, PRIMARY KEY ("id"))`,
@@ -96,11 +117,11 @@ export class DatabaseMigrator {
   /**
    * Inserts a new lock into the database.
    *
-   * @param {DataSource} connection The database connection to insert the lock into.
+   * @param {EntityManager} connection The database connection to insert the lock into.
    *
    * @returns {Promise<void>} A promise that resolves when the lock has been inserted.
    */
-  private async insertLock(connection: DataSource): Promise<void> {
+  private async insertLock(connection: EntityManager): Promise<void> {
     await connection.query(
       `INSERT INTO "${this.LOCK_TABLE_NAME}" (status) VALUES ($1);`,
       [MigrationStatus.RUNNING],
@@ -121,11 +142,13 @@ export class DatabaseMigrator {
   /**
    * Selects and retrieves locks from the database.
    *
-   * @param {DataSource} connection The database connection to select locks from.
+   * @param {EntityManager} connection The database connection to select locks from.
    *
    * @returns {Promise<Array<LockSchema>>} A promise that resolves to an array of LockSchema objects.
    */
-  private async selectLock(connection: DataSource): Promise<Array<LockSchema>> {
+  private async selectLock(
+    connection: EntityManager,
+  ): Promise<Array<LockSchema>> {
     return await connection.query(
       `SELECT "id", "status" FROM "${this.LOCK_TABLE_NAME}";`,
     );
@@ -134,11 +157,11 @@ export class DatabaseMigrator {
   /**
    * Checks if a lock exists in the database.
    *
-   * @param {DataSource} connection The database connection to check for the lock.
+   * @param {EntityManager} connection The database connection to check for the lock.
    *
    * @returns {Promise<boolean>} A promise that resolves to true if the lock exists, otherwise false.
    */
-  private async lockExists(connection: DataSource): Promise<boolean> {
+  private async lockExists(connection: EntityManager): Promise<boolean> {
     const lock = await this.selectLock(connection);
 
     return lock && lock.length > 0;
