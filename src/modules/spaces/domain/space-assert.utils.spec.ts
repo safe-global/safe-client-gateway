@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
-import { ForbiddenException, HttpStatus } from '@nestjs/common';
+import { HttpStatus } from '@nestjs/common';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
 import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
@@ -50,7 +50,7 @@ describe('space-assert.utils', () => {
       });
     });
 
-    it('should throw ForbiddenException when user is not admin', async () => {
+    it('should throw a 403 when user is not admin', async () => {
       // findOne is queried with role ADMIN and status ACTIVE, so a MEMBER,
       // a pending admin and a non-member all yield null
       membersRepositoryMock.findOne.mockResolvedValue(null);
@@ -62,7 +62,10 @@ describe('space-assert.utils', () => {
           faker.number.int(),
         ),
       ).rejects.toThrow(
-        new ForbiddenException('User is not an admin of this workspace'),
+        new HttpExceptionNoLog(
+          'User is not an admin of this workspace',
+          HttpStatus.FORBIDDEN,
+        ),
       );
     });
   });
@@ -86,7 +89,7 @@ describe('space-assert.utils', () => {
       });
     });
 
-    it('should throw ForbiddenException for a pending member', async () => {
+    it('should throw a 403 for a pending member', async () => {
       // findOne is queried with status ACTIVE only, so a pending invite yields null
       membersRepositoryMock.findOne.mockResolvedValue(null);
 
@@ -97,11 +100,14 @@ describe('space-assert.utils', () => {
           faker.number.int(),
         ),
       ).rejects.toThrow(
-        new ForbiddenException('User is not a member of this workspace'),
+        new HttpExceptionNoLog(
+          'User is not a member of this workspace',
+          HttpStatus.FORBIDDEN,
+        ),
       );
     });
 
-    it('should throw ForbiddenException when user is not member', async () => {
+    it('should throw a 403 when user is not member', async () => {
       membersRepositoryMock.findOne.mockResolvedValue(null);
 
       await expect(
@@ -111,7 +117,10 @@ describe('space-assert.utils', () => {
           faker.number.int(),
         ),
       ).rejects.toThrow(
-        new ForbiddenException('User is not a member of this workspace'),
+        new HttpExceptionNoLog(
+          'User is not a member of this workspace',
+          HttpStatus.FORBIDDEN,
+        ),
       );
     });
   });

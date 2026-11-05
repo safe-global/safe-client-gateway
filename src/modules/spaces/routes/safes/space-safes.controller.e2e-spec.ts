@@ -331,8 +331,7 @@ describe('SpaceSafesController', () => {
         })
         .expect(403)
         .expect({
-          error: 'Forbidden',
-          message: 'User is not an admin of this space',
+          message: 'User is not an admin of this workspace',
           statusCode: 403,
         });
     });
@@ -383,8 +382,7 @@ describe('SpaceSafesController', () => {
         })
         .expect(403)
         .expect({
-          error: 'Forbidden',
-          message: 'User is not an admin of this space',
+          message: 'User is not an admin of this workspace',
           statusCode: 403,
         });
     });
@@ -439,8 +437,7 @@ describe('SpaceSafesController', () => {
         })
         .expect(403)
         .expect({
-          error: 'Forbidden',
-          message: 'User is not an admin of this space',
+          message: 'User is not an admin of this workspace',
           statusCode: 403,
         });
     });
@@ -832,8 +829,7 @@ describe('SpaceSafesController', () => {
         .set('Cookie', [`access_token=${userAccessToken}`])
         .expect(403)
         .expect({
-          error: 'Forbidden',
-          message: 'User is not a member of this space',
+          message: 'User is not a member of this workspace',
           statusCode: 403,
         });
     });
@@ -864,8 +860,7 @@ describe('SpaceSafesController', () => {
         .set('Cookie', [`access_token=${nonMemberAccessToken}`])
         .expect(403)
         .expect({
-          error: 'Forbidden',
-          message: 'User is not a member of this space',
+          message: 'User is not a member of this workspace',
           statusCode: 403,
         });
     });
@@ -1108,8 +1103,7 @@ describe('SpaceSafesController', () => {
         .send(spaceSafes)
         .expect(403)
         .expect({
-          error: 'Forbidden',
-          message: 'User is not an admin of this space',
+          message: 'User is not an admin of this workspace',
           statusCode: 403,
         });
     });
