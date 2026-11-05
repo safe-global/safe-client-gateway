@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { ForbiddenException, HttpStatus } from '@nestjs/common';
-import { getAddress, type Hex } from 'viem';
+import { type Address, getAddress, type Hex, zeroAddress } from 'viem';
 import type { MockedObject } from 'vitest';
 import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
 import { siweAuthPayloadDtoBuilder } from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
@@ -14,6 +14,11 @@ import { PolicyConfigurationRequestsService } from '#/modules/policies/routes/po
 import type { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository.interface';
 import { memberBuilder } from '#/modules/users/datasources/entities/__tests__/member.entity.db.builder';
 import type { IMembersRepository } from '#/modules/users/domain/members/members.repository.interface';
+
+/** `AllowPolicy`, a known policy contract on the policy-engine chains. */
+const KNOWN_POLICY = getAddress('0x92e94Af03982C2486dffa8DcBc5d069D33996eF2');
+/** Gnosis Chain, which has no policy engine. */
+const NON_POLICY_ENGINE_CHAIN_ID = '100';
 
 describe('PolicyConfigurationRequestsService', () => {
   const configurationRequestsRepository: MockedObject<ISafePolicyGuardConfigurationRequestsRepository> =
@@ -34,7 +39,7 @@ describe('PolicyConfigurationRequestsService', () => {
   const spaceId = faker.number.int({ min: 1, max: 100 });
   const userId = faker.number.int({ min: 1, max: 100 });
   const safe = {
-    chainId: faker.string.numeric(),
+    chainId: '11155111',
     address: getAddress(faker.finance.ethereumAddress()),
   };
   const request = {
@@ -46,12 +51,12 @@ describe('PolicyConfigurationRequestsService', () => {
   };
 
   /** A payload whose root is the hash of its configurations. */
-  function validPayload(): {
+  function validPayload(policy: Address = KNOWN_POLICY): {
     root: Hex;
     configurations: [PolicyConfiguration, ...Array<PolicyConfiguration>];
   } {
     const configurations: [PolicyConfiguration, ...Array<PolicyConfiguration>] =
-      [policyConfigurationBuilder().build()];
+      [policyConfigurationBuilder().with('policy', policy).build()];
     return { root: configurationRoot(configurations), configurations };
   }
 
@@ -94,6 +99,53 @@ describe('PolicyConfigurationRequestsService', () => {
     ).rejects.toThrow(
       new HttpExceptionNoLog(
         'The configurations do not hash to the given root',
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      ),
+    );
+    expect(configurationRequestsRepository.create).not.toHaveBeenCalled();
+  });
+
+  it('should store the removal of a policy on any chain', async () => {
+    const payload = validPayload(zeroAddress);
+    const chainId = NON_POLICY_ENGINE_CHAIN_ID;
+
+    await expect(
+      target.create({ ...request, safe: { ...safe, chainId }, payload }),
+    ).resolves.toStrictEqual({ root: payload.root });
+    expect(configurationRequestsRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        chainId,
+        configurations: payload.configurations,
+      }),
+    );
+  });
+
+  it('should reject an unknown policy contract without logging', async () => {
+    const policy = getAddress(faker.finance.ethereumAddress());
+
+    await expect(
+      target.create({ ...request, payload: validPayload(policy) }),
+    ).rejects.toThrow(
+      new HttpExceptionNoLog(
+        `Unknown policy contract ${policy} on chain ${safe.chainId}`,
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      ),
+    );
+    expect(configurationRequestsRepository.create).not.toHaveBeenCalled();
+  });
+
+  it('should reject a known policy contract on a chain without a policy engine', async () => {
+    const chainId = NON_POLICY_ENGINE_CHAIN_ID;
+
+    await expect(
+      target.create({
+        ...request,
+        safe: { ...safe, chainId },
+        payload: validPayload(),
+      }),
+    ).rejects.toThrow(
+      new HttpExceptionNoLog(
+        `Unknown policy contract ${KNOWN_POLICY} on chain ${chainId}`,
         HttpStatus.UNPROCESSABLE_ENTITY,
       ),
     );
