@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { type FindOptionsWhere, IsNull, LessThan } from 'typeorm';
 import type { Address } from 'viem';
@@ -19,7 +19,6 @@ import { SpaceEncryptionService } from '#/modules/spaces/domain/space-encryption
 export class SafePolicyGuardConfigurationRequestsRepository
   implements ISafePolicyGuardConfigurationRequestsRepository
 {
-  private readonly maxPerSpaceSafe: number;
   private readonly retentionDays: number;
 
   public constructor(
@@ -30,9 +29,6 @@ export class SafePolicyGuardConfigurationRequestsRepository
     @Inject(SpaceEncryptionService)
     private readonly spaceEncryptionService: SpaceEncryptionService,
   ) {
-    this.maxPerSpaceSafe = this.configurationService.getOrThrow<number>(
-      'policies.maxConfigurationRequestsPerSpaceSafe',
-    );
     this.retentionDays = this.configurationService.getOrThrow<number>(
       'policies.configurationRequestRetentionDays',
     );
@@ -50,22 +46,17 @@ export class SafePolicyGuardConfigurationRequestsRepository
     );
 
     await this.db.transaction(async (manager) => {
-      // Serialises writes per Space and Safe, so concurrent requests cannot
-      // pass the cap together.
+      // Serialises writes per Space and Safe, so a concurrent re-submission
+      // is stored once.
       await manager.query('SELECT pg_advisory_xact_lock(hashtext($1))', [
         `${args.spaceId}:${args.chainId}:${args.safeAddress}`,
       ]);
       const repository = manager.getRepository(PolicyConfigurationRequest);
       const safe = this.safeMatch({ ...args, safeAddressIndex });
 
-      // Re-submitting a stored root is a no-op, even at the cap.
+      // Re-submitting a stored root is a no-op.
       if (await repository.existsBy({ ...safe, root: args.root })) {
         return;
-      }
-      if ((await repository.countBy(safe)) >= this.maxPerSpaceSafe) {
-        throw new BadRequestException(
-          `This Safe only allows a maximum of ${this.maxPerSpaceSafe} stored policy configuration requests in this space.`,
-        );
       }
       await repository.insert({
         ...args,
