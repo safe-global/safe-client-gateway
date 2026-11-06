@@ -13,6 +13,19 @@ describe('DelegateSchema', () => {
     expect(result.success).toBe(true);
   });
 
+  it('should default created and modified to null when absent', () => {
+    const delegate = delegateBuilder().build();
+    // @ts-expect-error - inferred type doesn't allow optional properties
+    delegate.created = undefined;
+    // @ts-expect-error - inferred type doesn't allow optional properties
+    delegate.modified = undefined;
+
+    const result = DelegateSchema.safeParse(delegate);
+
+    expect(result.success && result.data.created).toBeNull();
+    expect(result.success && result.data.modified).toBeNull();
+  });
+
   it('should allow optional safe, defaulting to null', () => {
     const delegate = delegateBuilder().build();
     // @ts-expect-error - inferred type doesn't allow optional properties

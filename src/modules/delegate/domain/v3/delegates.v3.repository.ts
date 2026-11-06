@@ -54,6 +54,8 @@ export class DelegatesV3Repository implements IDelegatesV3Repository {
           // tx-service v2 path) require a string. Coerce to '' so both backends
           // represent "no label" identically for downstream consumers.
           label: d.label ?? '',
+          created: d.created,
+          modified: d.modified,
         })),
       };
     }
