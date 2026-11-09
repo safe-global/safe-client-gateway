@@ -2,7 +2,10 @@
 
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import { SpaceAuditEventSchema } from '#/modules/spaces/domain/audit/entities/space-audit-event.entity';
+import {
+  SpaceAuditEventSchema,
+  SpaceAuditEventType,
+} from '#/modules/spaces/domain/audit/entities/space-audit-event.entity';
 import { ExperimentalFeatures } from '#/modules/spaces/domain/entities/experimental-feature.entity';
 
 describe('SpaceAuditEventSchema — plaintext addresses', () => {
@@ -118,5 +121,58 @@ describe('SpaceAuditEventSchema — SPACE_UPDATED experimentalFeatures', () => {
     });
 
     expect(result.success).toBe(true);
+  });
+});
+
+describe('SpaceAuditEventSchema — address book tag events', () => {
+  it('parses ADDRESS_BOOK_TAGS_UPDATED', () => {
+    const payload = {
+      changes: [
+        {
+          address: getAddress(faker.finance.ethereumAddress()),
+          oldTags: [faker.word.noun()],
+          newTags: [faker.word.noun(), faker.word.noun()],
+        },
+      ],
+    };
+
+    expect(
+      SpaceAuditEventSchema.parse({
+        eventType: SpaceAuditEventType.ADDRESS_BOOK_TAGS_UPDATED,
+        payload,
+      }),
+    ).toStrictEqual({
+      eventType: 'ADDRESS_BOOK_TAGS_UPDATED',
+      payload,
+    });
+  });
+
+  it('parses ADDRESS_BOOK_TAG_RENAMED', () => {
+    const payload = {
+      oldName: faker.word.noun(),
+      newName: faker.word.noun(),
+      merged: faker.datatype.boolean(),
+    };
+
+    expect(
+      SpaceAuditEventSchema.parse({
+        eventType: SpaceAuditEventType.ADDRESS_BOOK_TAG_RENAMED,
+        payload,
+      }).payload,
+    ).toStrictEqual(payload);
+  });
+
+  it('parses ADDRESS_BOOK_TAG_DELETED', () => {
+    const payload = {
+      name: faker.word.noun(),
+      contactCount: faker.number.int({ max: 500 }),
+    };
+
+    expect(
+      SpaceAuditEventSchema.parse({
+        eventType: SpaceAuditEventType.ADDRESS_BOOK_TAG_DELETED,
+        payload,
+      }).payload,
+    ).toStrictEqual(payload);
   });
 });

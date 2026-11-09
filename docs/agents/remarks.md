@@ -239,13 +239,24 @@ status: faker.helpers.arrayElement(SubscriptionStatus),
 
 ### R-013: Interfaces, types, constants, and helpers inline in a service file
 
-**Pattern:** a service or guard file that also declares its interface, its constants, and two or three module-level helper functions.
+**Pattern:** a service or guard file that also declares its interface, its constants, and two or three module-level helper functions. The same remark covers an anonymous object type written out in full at two or more signatures — the same `Array<{ transaction: ...; dataDecoded: ... }>` repeated across methods of one file or across files — instead of being named once and imported.
 
 **Why it's bad:** the file stops being findable by name — a reader looking for the interface has no reason to open the implementation — and a helper declared beside its one caller gets copied rather than imported by the second caller. This repo's naming convention exists precisely so each of these has a predictable path.
 
-**Corrected form:** interface to `*.interface.ts`, constants and shared types to their own file beside it, helpers to a `helpers/` module. `module-structure.md` has the naming table.
+**Corrected form:** interface to `*.interface.ts`, constants and shared types to their own file beside it, helpers to a `helpers/` module. `module-structure.md` has the naming table. A repeated inline object type becomes one named type, generic where callers narrow it, in the owning module's `domain/entities/`:
 
-**Spotted in:** #3217 (three separate comments: "Interface should be extracted to another file", "Helpers should also be extracted to another file", "const and `type` should be extracted to a separate file"), #3284 ("i think its getting crowded, we can extract it to `types` file or smth").
+```ts
+// Don't — the same shape at every signature
+transactions: Array<{ transaction: Transaction; dataDecoded: DataDecoded | null }>;
+// Do — src/modules/transactions/domain/entities/decoded-transaction.entity.ts
+export type DecodedTransaction<T extends Transaction = Transaction> = {
+  transaction: T;
+  dataDecoded: DataDecoded | null;
+};
+transactions: Array<DecodedTransaction<MultisigTransaction>>;
+```
+
+**Spotted in:** #3217 (three separate comments: "Interface should be extracted to another file", "Helpers should also be extracted to another file", "const and `type` should be extracted to a separate file"), #3284 ("i think its getting crowded, we can extract it to `types` file or smth"), #3703 (an inline pair type "is reused 3 times in current file and 1 time by `multisig-transaction.mapper.ts`. Maybe it is worth to extract this type and use everywhere").
 **Status:** active
 
 ### R-014: A method too large to follow
