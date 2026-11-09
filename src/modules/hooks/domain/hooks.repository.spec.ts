@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
+import type { ConsumeMessage } from 'amqplib';
+import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
 import { FakeCacheService } from '#/datasources/cache/__tests__/fake.cache.service';
@@ -21,6 +23,7 @@ import { chainUpdateEventBuilder } from '#/modules/hooks/routes/entities/__tests
 import { executedTransactionEventBuilder } from '#/modules/hooks/routes/entities/__tests__/executed-transaction.builder';
 import { incomingTokenEventBuilder } from '#/modules/hooks/routes/entities/__tests__/incoming-token.builder';
 import { moduleTransactionEventBuilder } from '#/modules/hooks/routes/entities/__tests__/module-transaction.builder';
+import { safeConfigUpdatedEventBuilder } from '#/modules/hooks/routes/entities/__tests__/safe-config-updated.builder';
 import { safeCreatedEventBuilder } from '#/modules/hooks/routes/entities/__tests__/safe-created.build';
 import type { MessagesRepository } from '#/modules/messages/domain/messages.repository';
 import type { IPushNotificationService } from '#/modules/notifications/domain/push/push-notification.service.interface';
@@ -527,6 +530,66 @@ describe('HooksRepository (Unit)', () => {
       expect(
         mockCounterfactualSafesRepository.markAsDeployed,
       ).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('queue messages', () => {
+    async function consume(content: unknown): Promise<void> {
+      let onMessage: ((msg: ConsumeMessage) => Promise<void>) | undefined;
+      mockQueuesRepository.subscribe.mockImplementation((_queueName, fn) => {
+        onMessage = fn;
+        return Promise.resolve();
+      });
+      await hooksRepository.onModuleInit();
+      if (!onMessage) {
+        throw new Error('HooksRepository did not subscribe to the queue');
+      }
+      await onMessage({
+        content: Buffer.from(JSON.stringify(content)),
+      } as ConsumeMessage);
+    }
+
+    it('should process a SAFE_CONFIG_UPDATED event without logging an error', async () => {
+      const event = safeConfigUpdatedEventBuilder().build();
+      mockChainsRepository.isSupportedChain.mockResolvedValue(true);
+
+      await consume({
+        ...event,
+        change: 'ADDED_OWNER',
+        data: { owner: getAddress(faker.finance.ethereumAddress()) },
+      });
+
+      expect(mockPushNotificationService.enqueueEvent).toHaveBeenCalledWith(
+        event,
+      );
+      expect(mockLoggingService.error).not.toHaveBeenCalled();
+    });
+
+    it('should log the type and chain of an event it cannot parse', async () => {
+      const type = faker.word.sample();
+      const chainId = faker.string.numeric();
+
+      await consume({ type, chainId });
+
+      expect(mockLoggingService.error).toHaveBeenCalledWith({
+        type: 'HOOK_EVENT_INVALID',
+        event_type: type,
+        chain_id: chainId,
+        reason: expect.stringContaining('Invalid discriminator value'),
+      });
+      expect(mockPushNotificationService.enqueueEvent).not.toHaveBeenCalled();
+    });
+
+    it('should log an event without a type or chain it cannot parse', async () => {
+      await consume(faker.word.words());
+
+      expect(mockLoggingService.error).toHaveBeenCalledWith({
+        type: 'HOOK_EVENT_INVALID',
+        event_type: undefined,
+        chain_id: undefined,
+        reason: expect.any(String),
+      });
+      expect(mockPushNotificationService.enqueueEvent).not.toHaveBeenCalled();
     });
   });
 });

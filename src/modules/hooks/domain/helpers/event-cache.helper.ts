@@ -111,6 +111,8 @@ export class EventCacheHelper {
     [TransactionEventType.MESSAGE_CONFIRMATION]:
       this.onTransactionEventMessageConfirmation.bind(this),
     [TransactionEventType.REORG_DETECTED]: () => [],
+    // The executed or module transaction event of the same change clears the caches
+    [TransactionEventType.SAFE_CONFIG_UPDATED]: () => [],
     [TransactionEventType.SAFE_CREATED]:
       this.onTransactionEventSafeCreated.bind(this),
     [TransactionEventType.NEW_DELEGATE]:
@@ -146,6 +148,7 @@ export class EventCacheHelper {
       case TransactionEventType.OUTGOING_ETHER:
       case TransactionEventType.INCOMING_TOKEN:
       case TransactionEventType.OUTGOING_TOKEN:
+      case TransactionEventType.SAFE_CONFIG_UPDATED:
         this._logTxEvent(event);
         break;
       case TransactionEventType.MESSAGE_CREATED:
@@ -730,7 +733,8 @@ export class EventCacheHelper {
           | TransactionEventType.INCOMING_ETHER
           | TransactionEventType.OUTGOING_ETHER
           | TransactionEventType.INCOMING_TOKEN
-          | TransactionEventType.OUTGOING_TOKEN;
+          | TransactionEventType.OUTGOING_TOKEN
+          | TransactionEventType.SAFE_CONFIG_UPDATED;
       }
     >,
   ): void {

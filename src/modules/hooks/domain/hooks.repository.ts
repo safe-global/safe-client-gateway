@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable, type OnModuleInit } from '@nestjs/common';
 import type { ConsumeMessage } from 'amqplib';
+import { z } from 'zod';
 import { IConfigurationService } from '#/config/configuration.service.interface';
+import { LogType } from '#/domain/common/entities/log-type.entity';
 import {
   type ILoggingService,
   LoggingService,
@@ -18,6 +20,13 @@ import {
 import { EventSchema } from '#/modules/hooks/routes/entities/schemas/event.schema';
 import { IPushNotificationService } from '#/modules/notifications/domain/push/push-notification.service.interface';
 import { IQueuesRepository } from '#/modules/queues/domain/queues-repository.interface';
+
+const InvalidEventContextSchema = z
+  .object({
+    type: z.string().optional().catch(undefined),
+    chainId: z.string().optional().catch(undefined),
+  })
+  .catch({});
 
 @Injectable()
 export class HooksRepository implements IHooksRepository, OnModuleInit {
@@ -45,14 +54,28 @@ export class HooksRepository implements IHooksRepository, OnModuleInit {
       this.queueName,
       async (msg: ConsumeMessage) => {
         try {
-          const content = JSON.parse(msg.content.toString());
-          const event: Event = EventSchema.parse(content);
-          await this.onEvent(event);
+          const content: unknown = JSON.parse(msg.content.toString());
+          const result = EventSchema.safeParse(content);
+          if (!result.success) {
+            this.logInvalidEvent(content, result.error);
+            return;
+          }
+          await this.onEvent(result.data);
         } catch (err) {
           this.loggingService.error(err);
         }
       },
     );
+  }
+
+  private logInvalidEvent(content: unknown, error: z.ZodError): void {
+    const { type, chainId } = InvalidEventContextSchema.parse(content);
+    this.loggingService.error({
+      type: LogType.HookEventInvalid,
+      event_type: type,
+      chain_id: chainId,
+      reason: z.prettifyError(error),
+    });
   }
 
   async onEvent(event: Event): Promise<unknown> {
