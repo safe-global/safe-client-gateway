@@ -334,15 +334,19 @@ export class CacheRouter {
   static getTransfersCacheDir(args: {
     chainId: string;
     safeAddress: string;
-    onlyErc20: boolean;
-    onlyErc721: boolean;
+    onlyErc20?: boolean;
+    onlyErc721?: boolean;
     limit?: number;
     offset?: number;
     to?: string;
+    from?: string;
+    tokenAddress?: string;
+    executionDateGte?: string;
+    executionDateLte?: string;
   }): CacheDir {
     return new CacheDir(
       CacheRouter.getTransfersCacheKey(args),
-      `${args.onlyErc20}_${args.onlyErc721}_${args.limit}_${args.offset}_${args.to}`,
+      `${args.onlyErc20}_${args.onlyErc721}_${args.limit}_${args.offset}_${args.to}_${args.from}_${args.tokenAddress}_${args.executionDateGte}_${args.executionDateLte}`,
     );
   }
 
