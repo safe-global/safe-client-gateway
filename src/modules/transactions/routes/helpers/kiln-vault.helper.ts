@@ -1,50 +1,51 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Injectable, Module } from '@nestjs/common';
-import {
-  type Address,
-  type ContractFunctionName,
-  type DecodeFunctionDataReturnType,
-  erc4626Abi,
-  getAbiItem,
-  toFunctionSelector,
-} from 'viem';
+import { decodeFunctionData } from 'viem';
 import type { ModuleTransaction } from '#/modules/safe/domain/entities/module-transaction.entity';
 import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
 import { KilnDecoder } from '#/modules/staking/domain/contracts/decoders/kiln-decoder.helper';
-import { Erc4262Decoder } from '#/modules/transactions/routes/decoders/erc4262-decoder.helper';
+import {
+  type Erc4626VaultCall,
+  type Erc4626VaultMethod,
+  Erc4626VaultMethods,
+} from '#/modules/transactions/domain/entities/erc4626-vault.entity';
+import {
+  ERC4626_VAULT_SELECTORS,
+  erc4626VaultAbi,
+} from '#/modules/transactions/routes/decoders/erc4626-vault.abi';
 import {
   TransactionFinder,
   TransactionFinderModule,
 } from '#/modules/transactions/routes/helpers/transaction-finder.helper';
 
 @Injectable()
-export class KilnVaultHelper extends Erc4262Decoder {
-  constructor(private readonly transactionFinder: TransactionFinder) {
-    super();
-  }
+export class KilnVaultHelper {
+  constructor(private readonly transactionFinder: TransactionFinder) {}
 
   public getVaultDepositTransaction(
     args: Pick<
       MultisigTransaction | ModuleTransaction,
       'to' | 'data' | 'value'
     >,
-  ): {
-    to?: Address;
-    data: Address;
-    assets: number;
-  } | null {
-    const decoded = this.getDecodedTransaction({
-      functionName: 'deposit',
+  ):
+    | (Pick<Erc4626VaultCall, 'to' | 'data' | 'value'> & {
+        assets: bigint;
+      })
+    | null {
+    const call = this.findVaultCall({
       transaction: args,
+      methods: ['deposit'],
     });
 
-    if (!decoded) {
+    if (call?.method !== 'deposit') {
       return null;
     }
 
     return {
-      ...decoded.transaction,
-      assets: Number(decoded.args[0]),
+      to: call.to,
+      data: call.data,
+      value: call.value,
+      assets: call.assets,
     };
   }
 
@@ -53,97 +54,101 @@ export class KilnVaultHelper extends Erc4262Decoder {
       MultisigTransaction | ModuleTransaction,
       'to' | 'data' | 'value'
     >,
-  ): {
-    to?: Address;
-    data: Address;
-    assets: number;
-  } | null {
-    const decoded =
-      // redeem = full withdrawal from Vault
-      this.getDecodedTransaction({
-        functionName: 'redeem',
-        transaction: args,
-      }) ??
-      // withdraw = partial withdrawal from Vault
-      this.getDecodedTransaction({
-        functionName: 'withdraw',
-        transaction: args,
-      });
+  ): Extract<Erc4626VaultCall, { method: 'redeem' | 'withdraw' }> | null {
+    const call = this.findVaultCall({
+      transaction: args,
+      // redeem = full withdrawal (in shares), withdraw = partial (in assets)
+      methods: ['redeem', 'withdraw'],
+    });
 
-    if (!decoded) {
-      return null;
+    if (call?.method === 'redeem' || call?.method === 'withdraw') {
+      return call;
     }
 
-    return {
-      ...decoded.transaction,
-      assets: Number(decoded.args[0]),
-    };
+    return null;
   }
 
-  // TODO: Move to generic helper as it replaces a majority of ABI methods
-  private getDecodedTransaction<
-    TAbi extends typeof erc4626Abi,
-    TFunctionName extends ContractFunctionName<TAbi>,
-  >(args: {
-    functionName: TFunctionName;
+  /**
+   * Finds and decodes an ERC-4626 call, made directly or batched in a MultiSend.
+   *
+   * @param args.transaction - transaction to search
+   * @param args.methods - vault methods to look for, all of them by default
+   * @returns the decoded call, or null if none is found
+   */
+  public findVaultCall(args: {
     transaction: Pick<
       MultisigTransaction | ModuleTransaction,
       'to' | 'data' | 'value'
     >;
-  }): {
-    transaction: {
-      to?: Address;
-      data: Address;
-      value: string;
-    };
-    args: DecodeFunctionDataReturnType<TAbi, TFunctionName>['args'];
-  } | null {
-    if (!(args.transaction.data && args.transaction.value)) {
+    methods?: ReadonlyArray<Erc4626VaultMethod>;
+  }): Erc4626VaultCall | null {
+    const { to, data, value } = args.transaction;
+    if (!(data && value)) {
       return null;
     }
 
-    // On a type level, functionName can be a union {@link ContractFunctionName},
-    // whereas the value is always a string. For type-safety, we extract the first
-    // value of the union to use as the name instead of casting
-    const name = Array.isArray(args.functionName)
-      ? args.functionName[0]
-      : args.functionName;
-
-    const item = getAbiItem({
-      abi: erc4626Abi,
-      name,
-    });
-    const selector = toFunctionSelector(item);
+    const selectors = (args.methods ?? Erc4626VaultMethods).flatMap(
+      (method) => ERC4626_VAULT_SELECTORS[method],
+    );
     const transaction = this.transactionFinder.findTransaction(
-      (transaction) => transaction.data.startsWith(selector),
-      {
-        to: args.transaction.to,
-        data: args.transaction.data,
-        value: args.transaction.value,
+      (transaction) => {
+        return selectors.some((selector) => {
+          return transaction.data.startsWith(selector);
+        });
       },
+      { to, data, value },
     );
 
     if (!transaction) {
       return null;
     }
 
-    const decoded = this.decodeFunctionData({
+    return this.decodeVaultCall(transaction);
+  }
+
+  private decodeVaultCall(
+    transaction: Pick<Erc4626VaultCall, 'to' | 'data' | 'value'>,
+  ): Erc4626VaultCall | null {
+    const decoded = decodeFunctionData({
+      abi: erc4626VaultAbi,
       data: transaction.data,
     });
-    if (decoded.functionName !== args.functionName) {
-      return null;
-    }
 
-    return {
-      transaction,
-      args: decoded.args,
-    };
+    switch (decoded.functionName) {
+      case 'deposit': {
+        const [assets, receiver] = decoded.args;
+        const referral = decoded.args.length === 3 ? decoded.args[2] : null;
+        return {
+          ...transaction,
+          method: 'deposit',
+          assets,
+          receiver,
+          referral,
+        };
+      }
+      case 'mint': {
+        const [shares, receiver] = decoded.args;
+        const referral = decoded.args.length === 3 ? decoded.args[2] : null;
+        return { ...transaction, method: 'mint', shares, receiver, referral };
+      }
+      case 'withdraw': {
+        const [assets, receiver, owner] = decoded.args;
+        return { ...transaction, method: 'withdraw', assets, receiver, owner };
+      }
+      case 'redeem': {
+        const [shares, receiver, owner] = decoded.args;
+        return { ...transaction, method: 'redeem', shares, receiver, owner };
+      }
+      default: {
+        return null;
+      }
+    }
   }
 }
 
 @Module({
   imports: [TransactionFinderModule],
-  providers: [Erc4262Decoder, KilnVaultHelper, KilnDecoder],
+  providers: [KilnVaultHelper, KilnDecoder],
   exports: [KilnVaultHelper, KilnDecoder],
 })
 export class KilnVaultHelperModule {}

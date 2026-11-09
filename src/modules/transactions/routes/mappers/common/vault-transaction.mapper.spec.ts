@@ -48,7 +48,7 @@ describe('VaultTransactionMapper', () => {
       const chain = chainBuilder().build();
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       const data = faker.string.hexadecimal() as Address;
-      const assets = 1_000_000;
+      const assets = BigInt(1_000_000);
       const deployment = deploymentBuilder()
         .with('product_type', 'defi')
         .with('status', 'active')
@@ -81,7 +81,7 @@ describe('VaultTransactionMapper', () => {
         .build();
       const cumulativeNrr =
         defiVaultStats.nrr + defiVaultStats.additional_rewards_nrr;
-      const expectedAnnualReward = (cumulativeNrr / 100) * assets;
+      const expectedAnnualReward = (cumulativeNrr / 100) * Number(assets);
       mockEarnRepository.getDeployment.mockResolvedValue(deployment);
       mockEarnRepository.getDefiVaultStats.mockResolvedValue(defiVaultStats);
       mockEarnRepository.getDefiMorphoExtraRewards.mockResolvedValue([
@@ -155,7 +155,7 @@ describe('VaultTransactionMapper', () => {
       const chain = chainBuilder().build();
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       const data = faker.string.hexadecimal() as Address;
-      const assets = faker.number.int();
+      const assets = faker.number.bigInt();
       const deployment = deploymentBuilder()
         .with('product_type', 'pooling')
         .with('status', 'active')
@@ -178,7 +178,7 @@ describe('VaultTransactionMapper', () => {
       const chain = chainBuilder().build();
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       const data = faker.string.hexadecimal() as Address;
-      const assets = faker.number.int();
+      const assets = faker.number.bigInt();
       const deployment = deploymentBuilder()
         .with('product_type', 'defi')
         .with('status', 'disabled')
@@ -201,7 +201,7 @@ describe('VaultTransactionMapper', () => {
       const chain = chainBuilder().build();
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       const data = faker.string.hexadecimal() as Address;
-      const assets = faker.number.int();
+      const assets = faker.number.bigInt();
       const deployment = deploymentBuilder()
         .with('product_type', 'defi')
         .with('status', 'active')
@@ -229,7 +229,7 @@ describe('VaultTransactionMapper', () => {
       const chain = chainBuilder().build();
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       const data = faker.string.hexadecimal() as Address;
-      const assets = 1_000_000;
+      const assets = BigInt(1_000_000);
       const deployment = deploymentBuilder()
         .with('product_type', 'defi')
         .with('status', 'active')
@@ -283,7 +283,7 @@ describe('VaultTransactionMapper', () => {
       const actual = await target.mapRedeemInfo({
         chainId: chain.chainId,
         to: deployment.address,
-        assets,
+        amount: { assets },
         data,
         safeAddress,
       });
@@ -333,7 +333,7 @@ describe('VaultTransactionMapper', () => {
       const chain = chainBuilder().build();
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       const data = faker.string.hexadecimal() as Address;
-      const assets = faker.number.int();
+      const assets = faker.number.bigInt();
       const deployment = deploymentBuilder()
         .with('product_type', 'defi')
         .with('status', 'disabled')
@@ -345,7 +345,7 @@ describe('VaultTransactionMapper', () => {
         target.mapRedeemInfo({
           chainId: chain.chainId,
           to: deployment.address,
-          assets,
+          amount: { assets },
           data,
           safeAddress,
         }),
@@ -356,7 +356,7 @@ describe('VaultTransactionMapper', () => {
       const chain = chainBuilder().build();
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       const data = faker.string.hexadecimal() as Address;
-      const assets = faker.number.int();
+      const assets = faker.number.bigInt();
       const deployment = deploymentBuilder()
         .with('product_type', 'defi')
         .with('status', 'disabled')
@@ -368,7 +368,7 @@ describe('VaultTransactionMapper', () => {
         target.mapRedeemInfo({
           chainId: chain.chainId,
           to: deployment.address,
-          assets,
+          amount: { assets },
           data,
           safeAddress,
         }),
@@ -379,7 +379,7 @@ describe('VaultTransactionMapper', () => {
       const chain = chainBuilder().build();
       const safeAddress = getAddress(faker.finance.ethereumAddress());
       const data = faker.string.hexadecimal() as Address;
-      const assets = faker.number.int();
+      const assets = faker.number.bigInt();
       const deployment = deploymentBuilder()
         .with('product_type', 'defi')
         .with('status', 'active')
@@ -395,11 +395,93 @@ describe('VaultTransactionMapper', () => {
         target.mapRedeemInfo({
           chainId: chain.chainId,
           to: deployment.address,
-          assets,
+          amount: { assets },
           data,
           safeAddress,
         }),
       ).rejects.toThrow(new NotFoundException('DeFi deployment not found'));
+    });
+  });
+  describe('amounts', () => {
+    function mockActiveDeployment(chainId: string): Address {
+      const deployment = deploymentBuilder()
+        .with('product_type', 'defi')
+        .with('status', 'active')
+        .with('chain_id', Number(chainId))
+        .build();
+      const token = tokenBuilder()
+        .with('type', 'ERC20')
+        .with('decimals', 18)
+        .build();
+      mockEarnRepository.getDeployment.mockResolvedValue(deployment);
+      mockEarnRepository.getDefiVaultStats.mockResolvedValue(
+        defiVaultStatsBuilder()
+          .with('asset', token.address)
+          .with('additional_rewards', null)
+          .build(),
+      );
+      mockTokenRepository.getToken.mockResolvedValue(token);
+      return deployment.address;
+    }
+
+    it('should keep an 18-decimal deposit above 2^53 exact', async () => {
+      const chain = chainBuilder().build();
+      const to = mockActiveDeployment(chain.chainId);
+      const assets = BigInt('123456789012345678901');
+
+      const actual = await target.mapDepositInfo({
+        chainId: chain.chainId,
+        to,
+        assets,
+        data: faker.string.hexadecimal() as Address,
+        safeAddress: getAddress(faker.finance.ethereumAddress()),
+      });
+
+      expect(actual.value).toBe('123456789012345678901');
+    });
+
+    it('should convert redeemed shares to assets at the position rate', async () => {
+      const chain = chainBuilder().build();
+      const to = mockActiveDeployment(chain.chainId);
+      // 2,000 shares worth 2,100 assets: 1 share = 1.05 assets
+      mockEarnRepository.getDefiVaultStake.mockResolvedValue(
+        defiVaultStakeBuilder()
+          .with('shares_balance', '2000000000000000000000')
+          .with('current_balance', '2100000000000000000000')
+          .build(),
+      );
+      const shares = BigInt('1000000000000000000000');
+
+      const actual = await target.mapRedeemInfo({
+        chainId: chain.chainId,
+        to,
+        amount: { shares },
+        data: faker.string.hexadecimal() as Address,
+        safeAddress: getAddress(faker.finance.ethereumAddress()),
+      });
+
+      expect(actual.value).toBe('1050000000000000000000');
+      expect(actual.value).not.toBe(shares.toString());
+    });
+
+    it('should fail a redeem when the position has no shares', async () => {
+      const chain = chainBuilder().build();
+      const to = mockActiveDeployment(chain.chainId);
+      mockEarnRepository.getDefiVaultStake.mockResolvedValue(
+        defiVaultStakeBuilder().with('shares_balance', '0').build(),
+      );
+
+      await expect(
+        target.mapRedeemInfo({
+          chainId: chain.chainId,
+          to,
+          amount: { shares: faker.number.bigInt({ min: 1n }) },
+          data: faker.string.hexadecimal() as Address,
+          safeAddress: getAddress(faker.finance.ethereumAddress()),
+        }),
+      ).rejects.toThrow(
+        new NotFoundException('DeFi vault share price not found'),
+      );
     });
   });
 });
