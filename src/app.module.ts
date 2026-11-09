@@ -158,7 +158,8 @@ export class AppModule implements NestModule {
           global: true,
           middleware: {
             generateId: true,
-            idGenerator: () => crypto.randomUUID(),
+            // 32 lowercase hex characters, the same format as APISIX request IDs
+            idGenerator: () => crypto.randomUUID().replaceAll('-', ''),
           },
         }),
         ConfigurationModule.register(configFactory),
