@@ -5,6 +5,7 @@ import type { IBuilder } from '#/__tests__/builder';
 import { Builder } from '#/__tests__/builder';
 import { fakeJson } from '#/__tests__/faker';
 import type { CreateMessageDto } from '#/modules/messages/routes/entities/create-message.dto.entity';
+import { declaredAttributionBuilder } from '#/modules/transactions/domain/entities/__tests__/declared-attribution.builder';
 
 const SIGNATURE_LENGTH = 130;
 
@@ -15,5 +16,6 @@ export function createMessageDtoBuilder(): IBuilder<CreateMessageDto> {
       'signature',
       faker.string.hexadecimal({ length: SIGNATURE_LENGTH }) as Hex,
     )
-    .with('origin', fakeJson());
+    .with('origin', fakeJson())
+    .with('declared', declaredAttributionBuilder().build());
 }
