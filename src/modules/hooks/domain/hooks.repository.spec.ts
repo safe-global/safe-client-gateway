@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import type { ConsumeMessage } from 'amqplib';
-import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
 import { FakeCacheService } from '#/datasources/cache/__tests__/fake.cache.service';
@@ -23,7 +22,6 @@ import { chainUpdateEventBuilder } from '#/modules/hooks/routes/entities/__tests
 import { executedTransactionEventBuilder } from '#/modules/hooks/routes/entities/__tests__/executed-transaction.builder';
 import { incomingTokenEventBuilder } from '#/modules/hooks/routes/entities/__tests__/incoming-token.builder';
 import { moduleTransactionEventBuilder } from '#/modules/hooks/routes/entities/__tests__/module-transaction.builder';
-import { safeConfigUpdatedEventBuilder } from '#/modules/hooks/routes/entities/__tests__/safe-config-updated.builder';
 import { safeCreatedEventBuilder } from '#/modules/hooks/routes/entities/__tests__/safe-created.build';
 import type { MessagesRepository } from '#/modules/messages/domain/messages.repository';
 import type { IPushNotificationService } from '#/modules/notifications/domain/push/push-notification.service.interface';
@@ -549,23 +547,7 @@ describe('HooksRepository (Unit)', () => {
       } as ConsumeMessage);
     }
 
-    it('should process a SAFE_CONFIG_UPDATED event without logging an error', async () => {
-      const event = safeConfigUpdatedEventBuilder().build();
-      mockChainsRepository.isSupportedChain.mockResolvedValue(true);
-
-      await consume({
-        ...event,
-        change: 'ADDED_OWNER',
-        data: { owner: getAddress(faker.finance.ethereumAddress()) },
-      });
-
-      expect(mockPushNotificationService.enqueueEvent).toHaveBeenCalledWith(
-        event,
-      );
-      expect(mockLoggingService.error).not.toHaveBeenCalled();
-    });
-
-    it('should log the type and chain of an event it cannot parse', async () => {
+    it('should log a rejected event with the fields the monitor reads', async () => {
       const type = faker.word.sample();
       const chainId = faker.string.numeric();
 

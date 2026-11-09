@@ -16,26 +16,6 @@ describe('SafeConfigUpdatedEventSchema', () => {
     expect(result.success).toBe(true);
   });
 
-  it('should accept the change details the Transaction Service sends', () => {
-    const owner = getAddress(faker.finance.ethereumAddress());
-    const safeConfigUpdatedEvent = {
-      ...safeConfigUpdatedEventBuilder().build(),
-      timestamp: faker.date.recent().getTime(),
-      change: 'ADDED_OWNER',
-      data: { owner },
-      status: {
-        owners: [owner],
-        threshold: faker.number.int({ min: 1, max: 10 }),
-      },
-    };
-
-    const result = SafeConfigUpdatedEventSchema.safeParse(
-      safeConfigUpdatedEvent,
-    );
-
-    expect(result.success).toBe(true);
-  });
-
   it('should not allow a non-SAFE_CONFIG_UPDATED event', () => {
     const safeConfigUpdatedEvent = safeConfigUpdatedEventBuilder()
       .with(

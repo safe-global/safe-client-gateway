@@ -111,7 +111,6 @@ export class EventCacheHelper {
     [TransactionEventType.MESSAGE_CONFIRMATION]:
       this.onTransactionEventMessageConfirmation.bind(this),
     [TransactionEventType.REORG_DETECTED]: () => [],
-    // The executed or module transaction event of the same change clears the caches
     [TransactionEventType.SAFE_CONFIG_UPDATED]: () => [],
     [TransactionEventType.SAFE_CREATED]:
       this.onTransactionEventSafeCreated.bind(this),
