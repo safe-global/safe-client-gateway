@@ -14,10 +14,18 @@ export class SpaceQueueSafe implements ChainSafeAddress {
   safeAddress!: Address;
 }
 
+export class SpaceQueueSafeCount extends SpaceQueueSafe {
+  @ApiProperty({
+    description:
+      'Transactions of this Safe on this chain that match the status filters',
+  })
+  count!: number;
+}
+
 export class SpaceQueueCounts {
   @ApiProperty({
     description:
-      'Transactions read, the sum of execute, sign, blocked and waiting',
+      'Transactions of the selected Safes, the sum of execute, sign, blocked and waiting',
   })
   total!: number;
   @ApiProperty({
@@ -42,6 +50,13 @@ export class SpaceQueueCounts {
   conflicting!: number;
   @ApiProperty({ description: 'Proposed more than 7 days ago' })
   stale!: number;
+  @ApiProperty({
+    type: SpaceQueueSafeCount,
+    isArray: true,
+    description:
+      'Every Safe and chain of the queue read, with how many of its transactions match the status filters',
+  })
+  safes!: Array<SpaceQueueSafeCount>;
 }
 
 export type SpaceQueueItems = {
@@ -108,7 +123,7 @@ export class SpaceQueuedItemPage {
   @ApiProperty({
     type: SpaceQueueCounts,
     description:
-      'Transactions per status across the whole queue read, regardless of the filters applied to `results`',
+      'Faceted counts of the queue read: the status counts apply the `safes` filter but not the status filters, and `safes` applies the status filters but not the `safes` filter',
   })
   counts!: SpaceQueueCounts;
 }

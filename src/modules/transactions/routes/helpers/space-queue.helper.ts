@@ -26,20 +26,32 @@ import type {
   SpaceQueueSafe,
 } from '#/modules/transactions/routes/entities/space-queued-item-page.entity';
 import { TransactionStatus } from '#/modules/transactions/routes/entities/transaction-status.entity';
+import type { AddressInfo } from '#/routes/common/entities/address-info.entity';
 
 export const SPACE_QUEUE_STALE_AFTER_MS = 7 * 24 * 60 * 60 * 1_000;
+
+/** A free-text search over Safe, network, status and the signers still to sign. */
+export type SpaceQueueSearch = {
+  /** Trimmed and lowercased */
+  query: string;
+  /** Address book names, keyed by lowercased address */
+  names: ReadonlyMap<string, ReadonlyArray<string>>;
+  chainNames: ReadonlyMap<string, string>;
+};
 
 export type SpaceQueueFilters = {
   statuses?: SpaceQueueStatuses;
   safes?: Array<ChainSafeAddress>;
   conflicting?: boolean;
   stale?: boolean;
+  search?: SpaceQueueSearch;
 };
 
 type TransactionTraits = {
   status: SpaceQueueStatus;
   conflicting: boolean;
   stale: boolean;
+  missingSigners: Array<AddressInfo>;
 };
 
 const isSameAddress = (a: string, b: string): boolean =>
@@ -65,23 +77,63 @@ const getTraits = (args: {
   const { transaction, conflictType } = args.item;
   const conflicting = conflictType !== ConflictType.None;
   const stale = transaction.timestamp < args.now - SPACE_QUEUE_STALE_AFTER_MS;
+  const missingSigners = isMultisig(transaction.executionInfo)
+    ? (transaction.executionInfo.missingSigners ?? [])
+    : [];
 
   if (transaction.txStatus === TransactionStatus.AwaitingExecution) {
     const status = args.isNext
       ? SpaceQueueStatus.Execute
       : SpaceQueueStatus.Blocked;
-    return { status, conflicting, stale };
+    return { status, conflicting, stale, missingSigners };
   }
 
-  const missingSigners = isMultisig(transaction.executionInfo)
-    ? (transaction.executionInfo.missingSigners ?? [])
-    : [];
   const canSign = missingSigners.some(({ value }) =>
     args.signers.some((signer) => isSameAddress(signer, value)),
   );
   const status = canSign ? SpaceQueueStatus.Sign : SpaceQueueStatus.Waiting;
-  return { status, conflicting, stale };
+  return { status, conflicting, stale, missingSigners };
 };
+
+const includesQuery = (
+  text: string | null | undefined,
+  query: string,
+): boolean => !!text && text.toLowerCase().includes(query);
+
+const addressMatches = (address: string, search: SpaceQueueSearch): boolean =>
+  includesQuery(address, search.query) ||
+  (search.names.get(address.toLowerCase()) ?? []).some((name) =>
+    includesQuery(name, search.query),
+  );
+
+/** Whether every transaction of this Safe on this chain matches, by Safe or network. */
+const safeMatchesSearch = (
+  safe: SpaceQueueSafe,
+  search: SpaceQueueFilters['search'],
+): boolean =>
+  !search ||
+  addressMatches(safe.safeAddress, search) ||
+  includesQuery(search.chainNames.get(safe.chainId), search.query);
+
+const transactionMatchesSearch = (
+  traits: TransactionTraits,
+  search: SpaceQueueSearch,
+): boolean =>
+  includesQuery(traits.status, search.query) ||
+  traits.missingSigners.some(
+    (signer) =>
+      addressMatches(signer.value, search) ||
+      includesQuery(signer.name, search.query),
+  );
+
+const inSearch = (
+  traits: TransactionTraits,
+  filters: SpaceQueueFilters,
+  safeMatches: boolean,
+): boolean =>
+  !filters.search ||
+  safeMatches ||
+  transactionMatchesSearch(traits, filters.search);
 
 /**
  * The items of one Safe on one chain, split where the queue reads them as a
@@ -138,6 +190,7 @@ const getGroups = (args: {
 
 export const getSpaceQueueCounts = (args: {
   results: SpaceQueueItems;
+  filters: SpaceQueueFilters;
   signers: ReadonlyArray<string>;
   now: number;
 }): SpaceQueueCounts => {
@@ -149,15 +202,32 @@ export const getSpaceQueueCounts = (args: {
     waiting: 0,
     conflicting: 0,
     stale: 0,
+    safes: [],
   };
-  for (const chains of Object.values(args.results)) {
-    for (const items of Object.values(chains)) {
+  // Faceted: each count applies every filter but its own, so a menu tells how
+  // many transactions picking one of its options would show.
+  for (const [safeAddress, chains] of Object.entries(args.results)) {
+    for (const [chainId, items] of Object.entries(chains)) {
+      const safe = { chainId, safeAddress: safeAddress as Address };
+      const isSafeSelected = isSelected(safe, args.filters.safes);
+      const safeMatches = safeMatchesSearch(safe, args.filters.search);
+      let count = 0;
       for (const group of getGroups({
         items,
         signers: args.signers,
         now: args.now,
       })) {
         for (const traits of group.traits) {
+          // The search is not a facet: it narrows every count
+          if (!inSearch(traits, args.filters, safeMatches)) {
+            continue;
+          }
+          if (matches(traits, args.filters)) {
+            count++;
+          }
+          if (!isSafeSelected) {
+            continue;
+          }
           counts.total++;
           counts[traits.status]++;
           if (traits.conflicting) {
@@ -168,6 +238,7 @@ export const getSpaceQueueCounts = (args: {
           }
         }
       }
+      counts.safes.push({ ...safe, count });
     }
   }
   return counts;
@@ -208,14 +279,11 @@ export const filterSpaceQueue = (args: {
 
   for (const [safeAddress, chains] of Object.entries(args.results)) {
     for (const [chainId, items] of Object.entries(chains)) {
-      if (
-        !isSelected(
-          { chainId, safeAddress: safeAddress as Address },
-          args.filters.safes,
-        )
-      ) {
+      const safe = { chainId, safeAddress: safeAddress as Address };
+      if (!isSelected(safe, args.filters.safes)) {
         continue;
       }
+      const safeMatches = safeMatchesSearch(safe, args.filters.search);
       const kept: Array<QueuedItem> = [];
       let pendingLabel: LabelQueuedItem | undefined;
       for (const group of getGroups({
@@ -227,7 +295,13 @@ export const filterSpaceQueue = (args: {
           pendingLabel = group.label;
           continue;
         }
-        if (!group.traits.some((traits) => matches(traits, args.filters))) {
+        if (
+          !group.traits.some(
+            (traits) =>
+              matches(traits, args.filters) &&
+              inSearch(traits, args.filters, safeMatches),
+          )
+        ) {
           continue;
         }
         if (pendingLabel) {

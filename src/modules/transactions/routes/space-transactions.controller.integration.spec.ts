@@ -226,6 +226,7 @@ describe('SpaceTransactionsController', () => {
             waiting: 0,
             conflicting: 0,
             stale: 0,
+            safes: [],
           },
         });
     });
@@ -270,6 +271,7 @@ describe('SpaceTransactionsController', () => {
             waiting: 0,
             conflicting: 0,
             stale: 0,
+            safes: [],
           },
         });
 

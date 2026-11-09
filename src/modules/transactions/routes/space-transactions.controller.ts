@@ -16,6 +16,8 @@ import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.en
 import { AuthGuard } from '#/modules/auth/routes/guards/auth.guard';
 import type { Space } from '#/modules/spaces/domain/entities/space.entity';
 import {
+  SPACE_QUEUE_SEARCH_MAX_LENGTH,
+  SpaceQueueSearchSchema,
   SpaceQueueStatus,
   type SpaceQueueStatuses,
   SpaceQueueStatusesSchema,
@@ -45,7 +47,7 @@ export class SpaceTransactionsController {
   @ApiOperation({
     summary: 'Get the transaction queue of a Space',
     description:
-      'Retrieves the pending transactions of every Safe in a Space, across chains, in nonce order. Results are keyed by Safe address and then by chain ID. The queue is read up to a maximum number of queue service pages; `count` is the size of the whole queue. The filters narrow `results`; `counts` always covers the whole queue read. A matching transaction is returned with the rest of its conflict group and its label.',
+      'Retrieves the pending transactions of every Safe in a Space, across chains, in nonce order. Results are keyed by Safe address and then by chain ID. The queue is read up to a maximum number of queue service pages; `count` is the size of the whole queue. The filters narrow `results`; `counts` are faceted, each applying every filter but its own. A matching transaction is returned with the rest of its conflict group and its label.',
   })
   @ApiParam({ name: 'spaceId', type: 'string', description: 'Space UUID' })
   @ApiQuery({
@@ -77,6 +79,13 @@ export class SpaceTransactionsController {
     required: false,
     description: 'Keep the transactions proposed more than 7 days ago',
   })
+  @ApiQuery({
+    name: 'search',
+    type: String,
+    required: false,
+    description: `Keep the transactions whose Safe (address or Space address book name), network name, status, or a signer still to sign (address or name) contains this text, ignoring case. Unlike the filters, it narrows every count. At most ${SPACE_QUEUE_SEARCH_MAX_LENGTH} characters.`,
+    example: 'treasury',
+  })
   @ApiOkResponse({
     type: SpaceQueuedItemPage,
     description: 'Queue of the Safes in the Space',
@@ -86,7 +95,8 @@ export class SpaceTransactionsController {
   @ApiForbiddenResponse({ description: 'Not a member of this Space' })
   @ApiNotFoundResponse({ description: 'Space not found' })
   @ApiUnprocessableEntityResponse({
-    description: 'Unknown status, invalid CAIP-10 address or non-boolean flag',
+    description:
+      'Unknown status, invalid CAIP-10 address, non-boolean flag or too long search',
   })
   @Get('queued')
   public async getTransactionQueue(
@@ -100,6 +110,8 @@ export class SpaceTransactionsController {
     conflicting?: boolean,
     @Query('stale', new ValidationPipe(BooleanStringSchema.optional()))
     stale?: boolean,
+    @Query('search', new ValidationPipe(SpaceQueueSearchSchema.optional()))
+    search?: string,
   ): Promise<SpaceQueuedItemPage> {
     return await this.spaceTransactionsService.getTransactionQueue({
       spaceId,
@@ -113,6 +125,7 @@ export class SpaceTransactionsController {
         conflicting,
         stale,
       },
+      search,
     });
   }
 }

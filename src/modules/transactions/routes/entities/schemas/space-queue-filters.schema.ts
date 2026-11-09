@@ -18,3 +18,12 @@ export const SpaceQueueStatusesSchema = z
   .pipe(z.array(SpaceQueueStatusSchema).nonempty());
 
 export type SpaceQueueStatuses = z.infer<typeof SpaceQueueStatusesSchema>;
+
+export const SPACE_QUEUE_SEARCH_MAX_LENGTH = 100;
+
+/** Trimmed and lowercased; blank reads as no search */
+export const SpaceQueueSearchSchema = z
+  .string()
+  .trim()
+  .max(SPACE_QUEUE_SEARCH_MAX_LENGTH)
+  .transform((value) => value.toLowerCase() || undefined);

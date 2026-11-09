@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Module } from '@nestjs/common';
 import { AuthModule } from '#/modules/auth/auth.module';
+import { ChainsModule } from '#/modules/chains/chains.module';
 import { SpacesModule } from '#/modules/spaces/spaces.module';
 import { SpaceTransactionsController } from '#/modules/transactions/routes/space-transactions.controller';
 import { SpaceTransactionsService } from '#/modules/transactions/routes/space-transactions.service';
@@ -18,12 +19,14 @@ import { WalletsModule } from '#/modules/wallets/wallets.module';
  *
  * `AuthGuard` resolves `IAuthRepository` here, `SpaceIdPipe`
  * `ISpacesRepository`, `assertMember` `IMembersRepository`, and the "sign"
- * count the caller's wallets from `IWalletsRepository`.
+ * count the caller's wallets from `IWalletsRepository`. The search reads names
+ * from `IAddressBookItemsRepository` and `IChainsRepository`.
  */
 @Module({
   imports: [
     TransactionsModule,
     AuthModule,
+    ChainsModule,
     SpacesModule,
     UsersModule,
     WalletsModule,

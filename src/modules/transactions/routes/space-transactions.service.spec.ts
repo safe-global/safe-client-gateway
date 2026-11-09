@@ -5,6 +5,9 @@ import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
 import { siweAuthPayloadDtoBuilder } from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import type { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
+import type { IAddressBookItemsRepository } from '#/modules/spaces/domain/address-books/address-book-items.repository.interface';
 import type { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository.interface';
 import { transferTransactionInfoBuilder } from '#/modules/transactions/routes/entities/__tests__/transfer-transaction-info.builder';
 import { ConflictType } from '#/modules/transactions/routes/entities/conflict-type.entity';
@@ -58,6 +61,14 @@ const mockTransactionsService = {
   getTransactionQueueForSafes: vi.fn(),
 } as unknown as MockedObject<TransactionsService>;
 
+const mockAddressBookItemsRepository = vi.mocked({
+  findAllBySpaceId: vi.fn(),
+} as MockedObject<IAddressBookItemsRepository>);
+
+const mockChainsRepository = vi.mocked({
+  getChain: vi.fn(),
+} as MockedObject<IChainsRepository>);
+
 describe('SpaceTransactionsService', () => {
   let target: SpaceTransactionsService;
   const spaceId = faker.number.int({ min: 1 });
@@ -72,6 +83,8 @@ describe('SpaceTransactionsService', () => {
       mockSpaceSafesRepository,
       mockWalletsRepository,
       mockTransactionsService,
+      mockAddressBookItemsRepository,
+      mockChainsRepository,
     );
     mockWalletsRepository.findByUser.mockResolvedValue([]);
   });
@@ -115,6 +128,7 @@ describe('SpaceTransactionsService', () => {
         waiting: 0,
         conflicting: 0,
         stale: 0,
+        safes: [],
       },
     });
     expect(mockMembersRepository.findOne).toHaveBeenCalledWith({
@@ -169,7 +183,118 @@ describe('SpaceTransactionsService', () => {
       [safeAddress]: { [chainId]: [label, toSign] },
     });
     expect(actual.count).toBe(2);
-    expect(actual.counts).toMatchObject({ total: 2, sign: 1, waiting: 1 });
+    expect(actual.counts).toMatchObject({
+      total: 2,
+      sign: 1,
+      waiting: 1,
+      safes: [{ chainId, safeAddress, count: 1 }],
+    });
+  });
+
+  describe('search', () => {
+    const safeAddress = getAddress(faker.finance.ethereumAddress());
+    const chainId = faker.string.numeric({ length: 3 });
+    const signer = getAddress(faker.finance.ethereumAddress());
+    const toSign = awaitingSignatureFrom(signer);
+
+    beforeEach(() => {
+      mockMembersRepository.findOne.mockResolvedValue(
+        memberBuilder().with('id', userId).build(),
+      );
+      mockSpaceSafesRepository.findBySpaceId.mockResolvedValue([
+        { chainId, address: safeAddress },
+      ]);
+      mockTransactionsService.getTransactionQueueForSafes.mockResolvedValue({
+        count: 1,
+        next: null,
+        previous: null,
+        results: { [safeAddress]: { [chainId]: [toSign] } },
+        unavailableSafes: [],
+      });
+      mockAddressBookItemsRepository.findAllBySpaceId.mockResolvedValue([]);
+      mockChainsRepository.getChain.mockResolvedValue(
+        chainBuilder()
+          .with('chainId', chainId)
+          .with('chainName', 'Unrelated chain')
+          .build(),
+      );
+    });
+
+    it('matches the Space address book names of Safes and signers', async () => {
+      mockAddressBookItemsRepository.findAllBySpaceId.mockResolvedValue([
+        { chainIds: [chainId], address: signer, name: 'Alice' },
+      ] as Awaited<
+        ReturnType<IAddressBookItemsRepository['findAllBySpaceId']>
+      >);
+
+      const actual = await target.getTransactionQueue({
+        spaceId,
+        authPayload,
+        search: 'alice',
+      });
+
+      expect(
+        mockAddressBookItemsRepository.findAllBySpaceId,
+      ).toHaveBeenCalledWith(spaceId);
+      expect(actual.results).toEqual({
+        [safeAddress]: { [chainId]: [toSign] },
+      });
+      expect(actual.counts.total).toBe(1);
+    });
+
+    it('matches the network names of the queued chains', async () => {
+      mockChainsRepository.getChain.mockResolvedValue(
+        chainBuilder()
+          .with('chainId', chainId)
+          .with('chainName', 'Gnosis Chain')
+          .build(),
+      );
+
+      const actual = await target.getTransactionQueue({
+        spaceId,
+        authPayload,
+        search: 'gnosis',
+      });
+
+      expect(mockChainsRepository.getChain).toHaveBeenCalledWith(chainId);
+      expect(actual.results).toEqual({
+        [safeAddress]: { [chainId]: [toSign] },
+      });
+    });
+
+    it('still searches the rest when a chain cannot be loaded', async () => {
+      mockChainsRepository.getChain.mockRejectedValue(new Error('down'));
+
+      const actual = await target.getTransactionQueue({
+        spaceId,
+        authPayload,
+        search: 'waiting',
+      });
+
+      expect(actual.results).toEqual({
+        [safeAddress]: { [chainId]: [toSign] },
+      });
+    });
+
+    it('leaves out what does not match', async () => {
+      const actual = await target.getTransactionQueue({
+        spaceId,
+        authPayload,
+        search: 'no such thing',
+      });
+
+      expect(actual.results).toEqual({});
+      expect(actual.counts.total).toBe(0);
+    });
+
+    it('looks up no names without a search', async () => {
+      await target.getTransactionQueue({ spaceId, authPayload });
+
+      expect(
+        mockAddressBookItemsRepository.findAllBySpaceId,
+      ).not.toHaveBeenCalled();
+      expect(mockChainsRepository.getChain).not.toHaveBeenCalled();
+    });
   });
 
   it('rejects a caller who is not an active member of the Space', async () => {
