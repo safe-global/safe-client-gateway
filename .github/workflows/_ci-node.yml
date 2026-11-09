@@ -22,7 +22,7 @@ on:
       python_version:
         description: Python version used only to run pre-commit for license headers.
         type: string
-        default: "3.14.3"
+        default: "3.14.10"
 permissions:
   contents: read
 
