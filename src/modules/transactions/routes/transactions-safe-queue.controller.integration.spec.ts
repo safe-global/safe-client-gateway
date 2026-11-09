@@ -35,6 +35,8 @@ import type { Safe } from '#/modules/safe/domain/entities/safe.entity';
 import { safeQueueMultisigTransactionBuilder } from '#/modules/safe-queue/entities/__tests__/queue-multisig-transaction.builder';
 import type { SafeQueueMultisigTransactionEntity } from '#/modules/safe-queue/entities/multisig-transaction.entity';
 import { tokenBuilder } from '#/modules/tokens/domain/__tests__/token.builder';
+import { declaredAttributionBuilder } from '#/modules/transactions/domain/entities/__tests__/declared-attribution.builder';
+import { DECLARED_APP_NAME_MAX_LENGTH } from '#/modules/transactions/domain/entities/declared-attribution.entity';
 import { addConfirmationDtoBuilder } from '#/modules/transactions/routes/__tests__/entities/add-confirmation.dto.builder';
 import { proposeTransactionDtoBuilder } from '#/modules/transactions/routes/entities/__tests__/propose-transaction.dto.builder';
 import type { ProposeTransactionDto } from '#/modules/transactions/routes/entities/propose-transaction.dto.entity';
@@ -409,6 +411,88 @@ describe('Transactions Controller - Safe Queue Service', () => {
       expect(networkService.post).not.toHaveBeenCalledWith(
         expect.objectContaining({
           url: `${chain.transactionService}/api/v2/safes/${safe.address}/multisig-transactions/`,
+        }),
+      );
+    });
+
+    it('forwards the declared attribution, truncating it instead of rejecting the proposal', async () => {
+      const chain = chainBuilder().build();
+      const signer = privateKeyToAccount(generatePrivateKey());
+      const safe = safeBuilder()
+        .with('owners', [signer.address])
+        .with('threshold', 1)
+        .build();
+      const { proposal, transaction } = await buildSignedProposal({
+        chainId: chain.chainId,
+        safe,
+        nonce: safe.nonce,
+        signer,
+        signatureType: faker.helpers.arrayElement(NON_ETH_SIGN_SIGNATURE_TYPES),
+      });
+      const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
+      const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
+      const getQueueTransactionUrl = `${queueBaseUri}/api/v1/multisig-transactions/${transaction.safeTxHash}`;
+      const gasToken = tokenBuilder().build();
+      const getGasTokenUrl = `${chain.transactionService}/api/v1/tokens/${transaction.gasToken}`;
+      const getQueueUrl = `${queueBaseUri}/api/v1/multisig-transactions/queue`;
+      const proposeUrl = `${queueBaseUri}/api/v1/multisig-transactions`;
+      const queuePage = pageBuilder().with('results', [transaction]).build();
+      let isProposed = false;
+      networkService.get.mockImplementation(({ url }) => {
+        switch (url) {
+          case getChainUrl:
+            return Promise.resolve({ data: rawify(chain), status: 200 });
+          case getSafeUrl:
+            return Promise.resolve({ data: rawify(safe), status: 200 });
+          case getQueueTransactionUrl:
+            return isProposed
+              ? Promise.resolve({
+                  data: rawify(transaction),
+                  status: 200,
+                })
+              : Promise.reject(notFoundError(url));
+          case getGasTokenUrl:
+            return Promise.resolve({ data: rawify(gasToken), status: 200 });
+          case getQueueUrl:
+            return Promise.resolve({ data: rawify(queuePage), status: 200 });
+          default:
+            return Promise.reject(new Error(`Could not match ${url}`));
+        }
+      });
+      networkService.post.mockImplementation(({ url }) => {
+        if (url === proposeUrl) {
+          isProposed = true;
+          return Promise.resolve({
+            data: rawify(transaction),
+            status: 201,
+          });
+        }
+        return Promise.reject(new Error(`Could not match ${url}`));
+      });
+      const appName = faker.string.alpha({
+        length: DECLARED_APP_NAME_MAX_LENGTH + 1,
+      });
+      const declared = declaredAttributionBuilder()
+        .with('channel', faker.string.alpha({ length: { min: 1, max: 20 } }))
+        .with('appName', appName)
+        .build();
+
+      await request(app.getHttpServer())
+        .post(
+          `/v1/chains/${chain.chainId}/transactions/${safe.address}/propose`,
+        )
+        .send({ ...proposal, declared })
+        .expect(200);
+
+      expect(networkService.post).toHaveBeenCalledWith(
+        expect.objectContaining({
+          url: proposeUrl,
+          data: expect.objectContaining({
+            declared: {
+              ...declared,
+              appName: appName.slice(0, DECLARED_APP_NAME_MAX_LENGTH),
+            },
+          }),
         }),
       );
     });

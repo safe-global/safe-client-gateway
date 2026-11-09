@@ -2,6 +2,7 @@
 import { z } from 'zod';
 import { TransactionBaseSchema } from '#/domain/common/schemas/transaction-base.schema';
 import { Operation } from '#/modules/safe/domain/entities/operation.entity';
+import { NullableDeclaredAttributionSchema } from '#/modules/transactions/domain/entities/declared-attribution.entity';
 import { AddressSchema } from '#/validation/entities/schemas/address.schema';
 import { HexSchema } from '#/validation/entities/schemas/hex.schema';
 import {
@@ -43,4 +44,5 @@ export const ProposeTransactionDtoSchema = TransactionBaseSchema.extend({
   signature: SignatureSchema.nullish().default(null),
   origin: z.string().max(MAX_ORIGIN_DTO_LENGTH).nullish().default(null),
   nestedTransaction: NestedTransactionDtoSchema.nullish().default(null),
+  declared: NullableDeclaredAttributionSchema,
 });

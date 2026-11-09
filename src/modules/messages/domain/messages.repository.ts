@@ -24,6 +24,7 @@ import {
 import { clearBothCacheLayers } from '#/modules/safe-queue/helpers/clear-cache-layers.helper';
 import { mapSafeQueueMessageToMessage } from '#/modules/safe-queue/mappers/message.mapper';
 import { ISafeQueueService } from '#/modules/safe-queue/safe-queue.interface';
+import type { DeclaredAttribution } from '#/modules/transactions/domain/entities/declared-attribution.entity';
 
 @Injectable()
 export class MessagesRepository implements IMessagesRepository {
@@ -146,6 +147,7 @@ export class MessagesRepository implements IMessagesRepository {
     message: string | TypedData;
     signature: Hex;
     origin: string | null;
+    declared: DeclaredAttribution | null;
   }): Promise<unknown> {
     const safe = await this.safeRepository.getSafe({
       chainId: args.chainId,

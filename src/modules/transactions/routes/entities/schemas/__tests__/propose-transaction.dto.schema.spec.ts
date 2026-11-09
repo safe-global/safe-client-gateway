@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
+import omit from 'lodash/omit';
 import { type Address, getAddress, type Hash, type Hex } from 'viem';
 import type { Operation } from '#/modules/safe/domain/entities/operation.entity';
 import {
@@ -296,6 +297,7 @@ describe('ProposeTransactionDtoSchema', () => {
       'originName',
       'originUrl',
       'nestedTransaction',
+      'declared',
     ])('should reject the unknown key %s', (key) => {
       const nestedTransaction = {
         ...nestedTransactionDtoBuilder().build(),
@@ -376,6 +378,41 @@ describe('ProposeTransactionDtoSchema', () => {
           path: ['nestedTransaction', 'nonce'],
         }),
       ]);
+    });
+  });
+
+  describe('declared attribution', () => {
+    it('should keep the declared attribution', () => {
+      const proposeTransactionDto = proposeTransactionDtoBuilder().build();
+
+      const result = ProposeTransactionDtoSchema.safeParse(
+        proposeTransactionDto,
+      );
+
+      expect(result.success && result.data.declared).toEqual(
+        proposeTransactionDto.declared,
+      );
+    });
+
+    it('should default a missing declared attribution to null', () => {
+      const proposeTransactionDto = proposeTransactionDtoBuilder().build();
+
+      const result = ProposeTransactionDtoSchema.safeParse(
+        omit(proposeTransactionDto, 'declared'),
+      );
+
+      expect(result.success && result.data.declared).toBe(null);
+    });
+
+    it('should default a non-object declared attribution to null instead of rejecting it', () => {
+      const proposeTransactionDto = proposeTransactionDtoBuilder().build();
+
+      const result = ProposeTransactionDtoSchema.safeParse({
+        ...proposeTransactionDto,
+        declared: faker.string.alpha(),
+      });
+
+      expect(result.success && result.data.declared).toBe(null);
     });
   });
 });

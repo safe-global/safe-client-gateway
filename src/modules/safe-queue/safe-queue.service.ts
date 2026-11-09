@@ -33,6 +33,7 @@ import {
 } from '#/modules/safe-queue/entities/multisig-transaction.entity';
 import { parseOrigin } from '#/modules/safe-queue/helpers/origin.helper';
 import type { ISafeQueueService } from '#/modules/safe-queue/safe-queue.interface';
+import type { DeclaredAttribution } from '#/modules/transactions/domain/entities/declared-attribution.entity';
 import type { ProposeTransactionDto } from '#/modules/transactions/domain/entities/propose-transaction.dto.entity';
 import type { Raw } from '#/validation/entities/raw.entity';
 import { rawify } from '#/validation/entities/raw.entity';
@@ -103,6 +104,7 @@ export class SafeQueueService implements ISafeQueueService {
           originName,
           originUrl,
           notes: note ?? null,
+          declared: dto.declared,
           signatures: dto.signature ? [dto.signature] : [],
           // Mapped field-by-field: the queue service forbids unknown keys on
           // this object, and `safe`/`chainId`/`origin*` are inherited from
@@ -605,6 +607,7 @@ export class SafeQueueService implements ISafeQueueService {
     message: unknown;
     signature: string;
     origin: string | null;
+    declared: DeclaredAttribution | null;
   }): Promise<unknown> {
     try {
       // Deliberately drop `note`: it's a transaction-only concept, and the
@@ -620,6 +623,7 @@ export class SafeQueueService implements ISafeQueueService {
           signatures: [args.signature],
           originName,
           originUrl,
+          declared: args.declared,
         },
         networkRequest: {
           circuitBreaker: {
