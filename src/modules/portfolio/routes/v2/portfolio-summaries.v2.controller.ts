@@ -9,10 +9,10 @@ import {
   ApiTooManyRequestsResponse,
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
-import { PortfolioSummariesRateLimitGuard } from '#/modules/balances/routes/guards/portfolio-summaries-rate-limit.guard';
-import { FiatCodeSchema } from '#/modules/balances/routes/v2/entities/fiat-code.schema';
-import { PortfolioSummary } from '#/modules/balances/routes/v2/entities/portfolio-summary.entity';
-import { PortfolioSummariesV2Service } from '#/modules/balances/routes/v2/portfolio-summaries.v2.service';
+import { PortfolioSummariesRateLimitGuard } from '#/modules/portfolio/routes/guards/portfolio-summaries-rate-limit.guard';
+import { FiatCodeSchema } from '#/modules/portfolio/routes/v2/entities/fiat-code.schema';
+import { PortfolioSummary } from '#/modules/portfolio/routes/v2/entities/portfolio-summary.dto.entity';
+import { PortfolioSummariesV2Service } from '#/modules/portfolio/routes/v2/portfolio-summaries.v2.service';
 import { BooleanStringSchema } from '#/validation/entities/schemas/boolean-string.schema';
 import {
   type Caip10Addresses,
@@ -20,8 +20,6 @@ import {
 } from '#/validation/entities/schemas/caip-10-addresses.schema';
 import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
-// Lives in balances, next to the Zerion snapshot it reads, rather than in the
-// legacy portfolio module that owns /v1/portfolio.
 @ApiTags('portfolio')
 @Controller({ path: 'portfolio', version: '2' })
 export class PortfolioSummariesV2Controller {
@@ -30,7 +28,7 @@ export class PortfolioSummariesV2Controller {
   @ApiOperation({
     summary: 'Get portfolio summaries',
     description:
-      'Returns the fiat value of each Safe, read from one cached Zerion snapshot per wallet on Zerion-supported chains and from the Transaction Service elsewhere. Safes that cannot be resolved are left out of the response.',
+      'Returns the fiat value of each Safe, summed from the cached Zerion snapshot that GET /v1/portfolio serves (one /positions call per wallet and environment) on Zerion-supported chains, and from the Transaction Service elsewhere. Safes that cannot be resolved, or that no source can value, are left out of the response.',
   })
   @ApiQuery({
     name: 'safes',
@@ -45,7 +43,7 @@ export class PortfolioSummariesV2Controller {
     name: 'currency',
     required: true,
     type: String,
-    description: 'Fiat currency code (e.g. USD, EUR)',
+    description: 'Fiat currency code, any case (e.g. USD, eur)',
     example: 'USD',
   })
   @ApiQuery({

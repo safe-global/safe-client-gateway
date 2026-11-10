@@ -6,29 +6,31 @@ import { IConfigurationService } from '#/config/configuration.service.interface'
 import { LimitReachedError } from '#/datasources/network/entities/errors/limit-reached.error';
 import { LogType } from '#/domain/common/entities/log-type.entity';
 import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
-import { getNumberString } from '#/domain/common/utils/utils';
 import {
   type ILoggingService,
   LoggingService,
 } from '#/logging/logging.interface';
 import { asError } from '#/logging/utils';
 import { IBalancesRepository } from '#/modules/balances/domain/balances.repository.interface';
-import type { PortfolioSnapshot } from '#/modules/balances/domain/entities/portfolio-snapshot.entity';
-import { IPortfolioSnapshotRepository } from '#/modules/balances/domain/portfolio-snapshot.repository.interface';
-import {
-  PortfolioSummary,
-  PortfolioSummarySnapshot,
-} from '#/modules/balances/routes/v2/entities/portfolio-summary.entity';
-import type {
-  ResolvedSafe,
-  ZerionNetworks,
-} from '#/modules/balances/routes/v2/entities/portfolio-summary-inputs.entity';
 import { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
 import type { Chain } from '#/modules/chains/domain/entities/chain.entity';
+import type { PortfolioSnapshot } from '#/modules/portfolio/domain/entities/portfolio-snapshot.entity';
+import { IPortfolioRepository } from '#/modules/portfolio/domain/portfolio.repository.interface';
+import type { PortfolioSummary } from '#/modules/portfolio/routes/v2/entities/portfolio-summary.dto.entity';
+import type {
+  PortfolioSummaryRequest,
+  ResolvedSafe,
+} from '#/modules/portfolio/routes/v2/entities/portfolio-summary-request.entity';
+import { PortfolioSummaryMapper } from '#/modules/portfolio/routes/v2/portfolio-summary.mapper';
 import { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
 import { IZerionRepository } from '#/modules/zerion/domain/zerion.repository.interface';
 import type { Caip10Address } from '#/validation/entities/schemas/caip-10-addresses.schema';
 
+/**
+ * Values each requested Safe from the portfolio snapshot GET /v1/portfolio
+ * caches, one Zerion /positions call per wallet and environment, and from the
+ * Transaction Service where Zerion cannot.
+ */
 @Injectable()
 export class PortfolioSummariesV2Service {
   private readonly maxSafes: number;
@@ -43,10 +45,11 @@ export class PortfolioSummariesV2Service {
     private readonly safeRepository: ISafeRepository,
     @Inject(IZerionRepository)
     private readonly zerionRepository: IZerionRepository,
-    @Inject(IPortfolioSnapshotRepository)
-    private readonly portfolioSnapshotRepository: IPortfolioSnapshotRepository,
+    @Inject(IPortfolioRepository)
+    private readonly portfolioRepository: IPortfolioRepository,
     @Inject(IBalancesRepository)
     private readonly balancesRepository: IBalancesRepository,
+    private readonly mapper: PortfolioSummaryMapper,
     @Inject(IConfigurationService) configurationService: IConfigurationService,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
   ) {
@@ -67,13 +70,19 @@ export class PortfolioSummariesV2Service {
    * Returns one summary per requested Safe, in request order. A Safe that
    * cannot be resolved, or whose value no source can provide, is logged and
    * left out; the other summaries are still returned.
+   *
+   * @param args.safes - The Safes to value; only the first distinct entries up to the cap are used
+   * @param args.currency - Upper-case fiat code
+   * @param args.trusted - Whether to count trusted tokens only
+   * @returns The summaries of the Safes that could be valued
+   * @throws {HttpExceptionNoLog} 400 when the currency is not supported
    */
   async getSummaries(args: {
     safes: ReadonlyArray<Caip10Address>;
     currency: string;
     trusted: boolean;
   }): Promise<Array<PortfolioSummary>> {
-    if (!this.currencies.includes(args.currency.toUpperCase())) {
+    if (!this.currencies.includes(args.currency)) {
       throw new HttpExceptionNoLog(
         `Unsupported currency code: ${args.currency}`,
         HttpStatus.BAD_REQUEST,
@@ -83,40 +92,50 @@ export class PortfolioSummariesV2Service {
     const chainsById = await this.resolveChains(requested);
     // Validate every Safe before any Zerion call, so a non-Safe address never
     // spends a paid call or the shared budget.
-    const safes = await this.resolveSafes(requested, chainsById);
-    const networks = await this.resolveZerionNetworks(
+    const safes = (await this.resolveSafes(requested, chainsById)).map(
+      (safe): PortfolioSummaryRequest => ({
+        ...safe,
+        currency: args.currency,
+        trusted: args.trusted,
+      }),
+    );
+    const zerionChainIds = await this.getZerionChainIds(
       safes.map(({ chain }) => chain),
     );
-    const snapshots = await this.fetchSnapshotsOncePerWallet({
-      safes: safes.filter(({ chain }) => this.getNetwork(chain, networks)),
-      currency: args.currency,
-      trusted: args.trusted,
-    });
-
-    const settled = await Promise.allSettled(
-      safes.map((safe) =>
-        this.buildSummary({
-          ...safe,
-          currency: args.currency,
-          trusted: args.trusted,
-          networks,
-          snapshots,
-        }),
-      ),
+    const onZerion = (safe: ResolvedSafe): boolean =>
+      zerionChainIds.get(safe.chain.isTestnet)?.has(safe.chain.chainId) ??
+      false;
+    const snapshots = await this.fetchSnapshotsOncePerWallet(
+      safes.filter(onZerion),
     );
 
-    const summaries: Array<PortfolioSummary> = [];
-    for (const result of settled) {
-      if (result.status === 'fulfilled') {
-        summaries.push(result.value);
-      }
-    }
-    return summaries;
+    const settled = await Promise.allSettled(
+      safes.map((safe) => {
+        const snapshot = snapshots.get(this.getWalletKey(safe));
+        if (onZerion(safe) && snapshot) {
+          return Promise.resolve(
+            this.mapper.fromSnapshot({
+              chainId: safe.chain.chainId,
+              address: safe.address,
+              snapshot,
+            }),
+          );
+        }
+        return this.getTxServiceSummary({
+          ...safe,
+          isSnapshotMissing: onZerion(safe),
+        });
+      }),
+    );
+    return settled.flatMap((result) =>
+      result.status === 'fulfilled' ? [result.value] : [],
+    );
   }
 
   private dedupe(safes: ReadonlyArray<Caip10Address>): Array<Caip10Address> {
     const unique = new Map<string, Caip10Address>();
     for (const safe of safes) {
+      // Caip10AddressesSchema checksums addresses, so equal Safes share a key.
       unique.set(`${safe.chainId}:${safe.address}`, safe);
     }
     return [...unique.values()];
@@ -161,7 +180,9 @@ export class PortfolioSummariesV2Service {
       if (result.status === 'fulfilled') {
         resolved.push(result.value);
       } else {
-        this.loggingService.warn(
+        // Debug: the addresses come from the client, so anyone could fill
+        // the logs with non-Safes.
+        this.loggingService.debug(
           `Error while resolving Safe for portfolio summary: ${asError(result.reason)}`,
         );
       }
@@ -172,14 +193,17 @@ export class PortfolioSummariesV2Service {
   /**
    * Zerion's chain list decides which chains read the snapshot. It is fetched
    * once per environment present in the request; a failed lookup leaves that
-   * environment empty, so its Safes fall back to the tx service.
+   * environment empty, so its Safes fall back to the Transaction Service.
+   *
+   * @param chains - The chains of the resolved Safes
+   * @returns The chainIds Zerion supports, keyed by isTestnet
    */
-  private async resolveZerionNetworks(
+  private async getZerionChainIds(
     chains: Array<Chain>,
-  ): Promise<Map<boolean, ZerionNetworks>> {
-    const networks = new Map<boolean, ZerionNetworks>();
+  ): Promise<Map<boolean, Set<string>>> {
+    const chainIds = new Map<boolean, Set<string>>();
     if (!this.zerionEnabled) {
-      return networks;
+      return chainIds;
     }
     const environments = new Set(
       chains
@@ -188,86 +212,63 @@ export class PortfolioSummariesV2Service {
     );
     await Promise.all(
       [...environments].map(async (isTestnet) => {
-        const byChainId = await this.getZerionNetworkNames(isTestnet);
-        networks.set(isTestnet, {
-          byChainId,
-          chainIdByNetwork: new Map(
-            Object.entries(byChainId).map(([chainId, network]) => [
-              network,
-              chainId,
-            ]),
-          ),
-        });
+        try {
+          const mapping =
+            await this.zerionRepository.getChainIdToNetworkMapping(isTestnet);
+          chainIds.set(isTestnet, new Set(Object.keys(mapping)));
+        } catch (error) {
+          this.loggingService.warn({
+            type: LogType.ZerionChainListError,
+            source: 'PortfolioSummariesV2Service',
+            event: 'Zerion chain lookup failed',
+            isTestnet,
+            detail: asError(error).message,
+          });
+        }
       }),
     );
-    return networks;
-  }
-
-  private async getZerionNetworkNames(
-    isTestnet: boolean,
-  ): Promise<Record<string, string>> {
-    try {
-      return await this.zerionRepository.getChainIdToNetworkMapping(isTestnet);
-    } catch (error) {
-      this.loggingService.warn({
-        type: LogType.ZerionChainListError,
-        source: 'PortfolioSummariesV2Service',
-        event: 'Zerion chain lookup failed',
-        isTestnet,
-        detail: asError(error).message,
-      });
-      return {};
-    }
-  }
-
-  private getNetwork(
-    chain: Chain,
-    networks: Map<boolean, ZerionNetworks>,
-  ): string | undefined {
-    return networks.get(chain.isTestnet)?.byChainId[chain.chainId];
+    return chainIds;
   }
 
   /**
-   * One Zerion snapshot covers every chain of an address in one environment,
-   * so it is fetched once per (address, environment). A failed fetch is
-   * logged and left out of the map; its Safes fall back to the tx service.
+   * One snapshot covers every chain of an address in one environment, so it
+   * is fetched once per (address, environment). A failed fetch is logged and
+   * left out of the map; its Safes fall back to the Transaction Service.
+   *
+   * @param safes - The Safes on Zerion chains
+   * @returns The snapshots, keyed by {@link getWalletKey}
    */
-  private async fetchSnapshotsOncePerWallet(args: {
-    safes: Array<ResolvedSafe>;
-    currency: string;
-    trusted: boolean;
-  }): Promise<Map<string, PortfolioSnapshot>> {
-    const wallets = new Map<string, { address: Address; isTestnet: boolean }>();
-    for (const { address, chain } of args.safes) {
-      wallets.set(this.getWalletKey(address, chain), {
-        address,
-        isTestnet: chain.isTestnet,
-      });
+  private async fetchSnapshotsOncePerWallet(
+    safes: Array<PortfolioSummaryRequest>,
+  ): Promise<Map<string, PortfolioSnapshot>> {
+    const wallets = new Map<string, PortfolioSummaryRequest>();
+    for (const safe of safes) {
+      wallets.set(this.getWalletKey(safe), safe);
     }
 
     const snapshots = new Map<string, PortfolioSnapshot>();
     await Promise.all(
-      [...wallets.entries()].map(async ([key, { address, isTestnet }]) => {
+      [...wallets.entries()].map(async ([key, wallet]) => {
         try {
           snapshots.set(
             key,
-            await this.portfolioSnapshotRepository.getSnapshot({
-              address,
-              isTestnet,
-              currency: args.currency,
-              trusted: args.trusted,
+            await this.portfolioRepository.getPortfolioSnapshot({
+              address: wallet.address,
+              fiatCode: wallet.currency,
+              trusted: wallet.trusted,
+              isTestnet: wallet.chain.isTestnet,
             }),
           );
         } catch (error) {
-          this.logSnapshotError({ address, error });
+          this.logSnapshotError({ address: wallet.address, error });
         }
       }),
     );
     return snapshots;
   }
 
-  private getWalletKey(address: Address, chain: Chain): string {
-    return `${address}_${chain.isTestnet}`;
+  private getWalletKey(safe: ResolvedSafe): string {
+    return `${safe.address}_${safe.chain.isTestnet}`;
   }
 
   /**
@@ -303,59 +304,22 @@ export class PortfolioSummariesV2Service {
     }
   }
 
-  private async buildSummary(args: {
-    chain: Chain;
-    address: Address;
-    currency: string;
-    trusted: boolean;
-    networks: Map<boolean, ZerionNetworks>;
-    snapshots: Map<string, PortfolioSnapshot>;
-  }): Promise<PortfolioSummary> {
-    const { chain, address } = args;
-    const network = this.getNetwork(chain, args.networks);
-    const snapshot = args.snapshots.get(this.getWalletKey(address, chain));
-
-    if (network && snapshot) {
-      return new PortfolioSummary({
-        chainId: chain.chainId,
-        address,
-        // Zerion only lists chains that hold value, so a missing chain reads as 0.
-        fiatTotal: getNumberString(snapshot.fiatTotalByNetwork[network] ?? 0),
-        source: 'zerion',
-        snapshot: this.toSnapshotDto(
-          snapshot,
-          args.networks.get(chain.isTestnet)?.chainIdByNetwork ?? new Map(),
-        ),
-      });
-    }
-
-    const fiatTotal = await this.getTxServiceFiatTotal(args);
-    if (network) {
-      // The chain is on Zerion but its snapshot is unavailable.
+  /**
+   * @param args.isSnapshotMissing - The chain is on Zerion but its snapshot failed
+   * @throws When the Transaction Service fails, so the Safe is dropped, never shown a fabricated 0
+   */
+  private async getTxServiceSummary(
+    args: PortfolioSummaryRequest & { isSnapshotMissing: boolean },
+  ): Promise<PortfolioSummary> {
+    if (args.isSnapshotMissing) {
       this.loggingService.warn({
         type: LogType.PortfolioDegradedServe,
         source: 'PortfolioSummariesV2Service',
-        safeAddress: address,
-        chainId: chain.chainId,
+        safeAddress: args.address,
+        chainId: args.chain.chainId,
         balanceSource: 'balances_repo',
       });
     }
-    return new PortfolioSummary({
-      chainId: chain.chainId,
-      address,
-      fiatTotal: getNumberString(fiatTotal),
-      source: 'tx_service',
-      snapshot: null,
-    });
-  }
-
-  /** Throws when the tx service fails, so the Safe is dropped, never shown a fabricated 0. */
-  private async getTxServiceFiatTotal(args: {
-    chain: Chain;
-    address: Address;
-    currency: string;
-    trusted: boolean;
-  }): Promise<number> {
     try {
       const balances = await this.balancesRepository.getBalances({
         chain: args.chain,
@@ -363,10 +327,11 @@ export class PortfolioSummariesV2Service {
         fiatCode: args.currency,
         trusted: args.trusted,
       });
-      return balances.reduce((total, { fiatBalance }) => {
-        const value = Number(fiatBalance);
-        return Number.isFinite(value) ? total + value : total;
-      }, 0);
+      return this.mapper.fromBalances({
+        chainId: args.chain.chainId,
+        address: args.address,
+        balances,
+      });
     } catch (error) {
       this.loggingService.warn({
         type: LogType.PortfolioDegradedServe,
@@ -378,37 +343,5 @@ export class PortfolioSummariesV2Service {
       });
       throw error;
     }
-  }
-
-  private toSnapshotDto(
-    snapshot: PortfolioSnapshot,
-    chainIdByNetwork: Map<string, string>,
-  ): PortfolioSummarySnapshot {
-    const fiatTotalByChain: Record<string, string> = {};
-    for (const [network, value] of Object.entries(
-      snapshot.fiatTotalByNetwork,
-    )) {
-      const chainId = chainIdByNetwork.get(network);
-      if (chainId) {
-        fiatTotalByChain[chainId] = getNumberString(value);
-      }
-    }
-    return new PortfolioSummarySnapshot({
-      fiatTotal: getNumberString(snapshot.fiatTotal),
-      fiatChange1d:
-        snapshot.fiatChange1d === null
-          ? null
-          : getNumberString(snapshot.fiatChange1d),
-      percentChange1d: snapshot.percentChange1d,
-      fiatTotalByChain,
-      fiatTotalByType: Object.fromEntries(
-        Object.entries(snapshot.fiatTotalByType).map(([type, value]) => [
-          type,
-          getNumberString(value),
-        ]),
-      ),
-      updatedAt: snapshot.updatedAt,
-      expiresAt: snapshot.expiresAt,
-    });
   }
 }

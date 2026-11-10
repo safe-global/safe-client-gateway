@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
+import type { Address } from 'viem';
 import { ZodError } from 'zod';
 import { IConfigurationService } from '#/config/configuration.service.interface';
 import { CacheRouter } from '#/datasources/cache/cache.router';
@@ -7,7 +8,6 @@ import {
   CacheService,
   type ICacheService,
 } from '#/datasources/cache/cache.service.interface';
-import type { CacheDir } from '#/datasources/cache/entities/cache-dir.entity';
 import { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
 import {
   type INetworkService,
@@ -21,18 +21,9 @@ import {
 import {
   type ZerionWalletPortfolio,
   ZerionWalletPortfolioSchema,
-  type ZerionWalletPortfolioSnapshot,
-  ZerionWalletPortfolioSnapshotSchema,
 } from '#/modules/balances/datasources/entities/zerion-wallet-portfolio.entity';
 import { getZerionHeaders } from '#/modules/balances/datasources/zerion-api.helpers';
-import type { WalletPortfolioIdentity } from '#/modules/balances/domain/entities/wallet-portfolio-identity.entity';
 import { ZerionRateLimiter } from '#/modules/zerion/datasources/zerion-rate-limiter.service';
-import { type Raw, rawify } from '#/validation/entities/raw.entity';
-
-const SnapshotTimestampsSchema = ZerionWalletPortfolioSnapshotSchema.pick({
-  fetchedAt: true,
-  expiresAt: true,
-});
 
 export const IZerionWalletPortfolioApi = Symbol('IZerionWalletPortfolioApi');
 
@@ -44,21 +35,15 @@ export interface IZerionWalletPortfolioApi {
    * @param args.address - Wallet address
    * @param args.currency - Fiat currency code (e.g., 'USD', 'EUR')
    * @param args.isTestnet - Whether the returned data is for testnets or for mainnets
-   * @param args.trusted - If true, only includes trusted (non-trash) tokens
+   * @param args.trusted - If true, only includes trusted (non-trash) tokens (optional)
    * @returns Portfolio data with total and per-chain breakdown
    */
-  getPortfolio(args: WalletPortfolioIdentity): Promise<ZerionWalletPortfolio>;
-
-  /**
-   * Same Zerion call and cache entry as {@link getPortfolio}, returned with
-   * the entry's fetch and expiry timestamps.
-   *
-   * @param args - The wallet, environment, currency and token filter
-   * @returns The unvalidated cached snapshot
-   */
-  getPortfolioSnapshot(
-    args: WalletPortfolioIdentity,
-  ): Promise<Raw<ZerionWalletPortfolioSnapshot>>;
+  getPortfolio(args: {
+    address: Address;
+    currency: string;
+    isTestnet: boolean;
+    trusted?: boolean;
+  }): Promise<ZerionWalletPortfolio>;
 }
 
 @Injectable()
@@ -88,64 +73,32 @@ export class ZerionWalletPortfolioApi implements IZerionWalletPortfolioApi {
     );
   }
 
-  async getPortfolio(
-    args: WalletPortfolioIdentity,
-  ): Promise<ZerionWalletPortfolio> {
-    const cacheDir = this.getCacheDir(args);
-    const cached = await this.getCached(cacheDir);
-    if (cached !== null) {
-      this.logCacheHit(cacheDir);
-      return ZerionWalletPortfolioSchema.parse(cached);
-    }
-    this.logCacheMiss(cacheDir);
-    return await this.fetchAndCache({ ...args, cacheDir });
-  }
-
-  async getPortfolioSnapshot(
-    args: WalletPortfolioIdentity,
-  ): Promise<Raw<ZerionWalletPortfolioSnapshot>> {
-    const cacheDir = this.getCacheDir(args);
-    const cached = await this.getCached(cacheDir);
-    // An entry written before snapshots carried timestamps is refetched once,
-    // so the reported freshness is always the entry's real fetch time.
-    if (cached !== null && SnapshotTimestampsSchema.safeParse(cached).success) {
-      this.logCacheHit(cacheDir);
-      return rawify(cached);
-    }
-    this.logCacheMiss(cacheDir);
-    return rawify(await this.fetchAndCache({ ...args, cacheDir }));
-  }
-
-  private getCacheDir(args: WalletPortfolioIdentity): CacheDir {
-    return CacheRouter.getZerionWalletPortfolioCacheDir({
+  async getPortfolio(args: {
+    address: Address;
+    currency: string;
+    isTestnet: boolean;
+    trusted?: boolean;
+  }): Promise<ZerionWalletPortfolio> {
+    const cacheDir = CacheRouter.getZerionWalletPortfolioCacheDir({
       address: args.address,
       fiatCode: args.currency,
       trusted: args.trusted,
       isTestnet: args.isTestnet,
     });
-  }
 
-  private async getCached(cacheDir: CacheDir): Promise<unknown> {
+    const { key, field } = cacheDir;
+
     const cached = await this.cacheService.hGet(cacheDir);
-    return cached == null ? null : JSON.parse(cached);
-  }
+    if (cached != null) {
+      this.loggingService.debug({ type: LogType.CacheHit, key, field });
+      return ZerionWalletPortfolioSchema.parse(JSON.parse(cached));
+    }
 
-  private logCacheHit({ key, field }: CacheDir): void {
-    this.loggingService.debug({ type: LogType.CacheHit, key, field });
-  }
-
-  private logCacheMiss({ key, field }: CacheDir): void {
     this.loggingService.debug({ type: LogType.CacheMiss, key, field });
-  }
 
-  private async fetchAndCache(
-    args: WalletPortfolioIdentity & {
-      cacheDir: CacheDir;
-    },
-  ): Promise<ZerionWalletPortfolioSnapshot> {
     // Enforce the shared cross-pod Zerion budget before the network call. Over
-    // budget throws LimitReachedError, which callers degrade into a fallback
-    // (it is never surfaced as a client-facing 429).
+    // budget throws LimitReachedError, which the overview service degrades into
+    // a fallback (it is never surfaced as a client-facing 429).
     await this.zerionRateLimiter.assertWithinBudget({
       datasource: 'wallet_portfolio',
       address: args.address,
@@ -172,20 +125,14 @@ export class ZerionWalletPortfolioApi implements IZerionWalletPortfolioApi {
       });
 
       const portfolio = ZerionWalletPortfolioSchema.parse(data);
-      const fetchedAt = Date.now();
-      const snapshot: ZerionWalletPortfolioSnapshot = {
-        ...portfolio,
-        fetchedAt,
-        expiresAt: fetchedAt + this.cacheTtlSeconds * 1_000,
-      };
 
       await this.cacheService.hSet(
-        args.cacheDir,
-        JSON.stringify(snapshot),
+        cacheDir,
+        JSON.stringify(portfolio),
         this.cacheTtlSeconds,
       );
 
-      return snapshot;
+      return portfolio;
     } catch (error) {
       if (error instanceof ZodError) {
         throw error;

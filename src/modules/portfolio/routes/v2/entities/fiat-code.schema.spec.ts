@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import { FiatCodeSchema } from '#/modules/balances/routes/v2/entities/fiat-code.schema';
+import { FiatCodeSchema } from '#/modules/portfolio/routes/v2/entities/fiat-code.schema';
 
 describe('FiatCodeSchema', () => {
-  it('accepts a three-letter code in any case', () => {
+  it('accepts a three-letter code in any case and upper-cases it', () => {
     const code = faker.finance.currencyCode();
 
-    expect(FiatCodeSchema.safeParse(code).success).toBe(true);
-    expect(FiatCodeSchema.safeParse(code.toLowerCase()).success).toBe(true);
+    expect(FiatCodeSchema.parse(code)).toBe(code);
+    expect(FiatCodeSchema.parse(code.toLowerCase())).toBe(code);
   });
 
   it.each([

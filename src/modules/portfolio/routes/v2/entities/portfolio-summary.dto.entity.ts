@@ -12,31 +12,17 @@ export class PortfolioSummarySnapshot {
   })
   readonly fiatTotal: string;
   @ApiProperty({
-    type: String,
-    nullable: true,
-    description:
-      'Absolute change of the total over 1 day. Decimal string, null when Zerion has no history.',
-  })
-  readonly fiatChange1d: string | null;
-  @ApiProperty({
-    type: Number,
-    nullable: true,
-    description:
-      'Percentage change of the total over 1 day, null when Zerion has no history.',
-  })
-  readonly percentChange1d: number | null;
-  @ApiProperty({
     type: 'object',
     additionalProperties: { type: 'string' },
     description:
-      'Total per chain, keyed by chainId. Only chains whose Zerion network maps to a chainId are listed, so the values may not add up to fiatTotal.',
+      'Total per chain, keyed by chainId. Adds up to fiatTotal. Decimal strings.',
   })
   readonly fiatTotalByChain: Record<string, string>;
   @ApiProperty({
     type: 'object',
     additionalProperties: { type: 'string' },
     description:
-      'Total per position type as returned by Zerion (e.g. wallet, deposited, borrowed, locked, staked), for the whole address across this environment, not for this chain alone: Zerion does not split position types per chain.',
+      'Total per Zerion position type (wallet, deposit, loan, staked, locked, reward, ...) across every chain of this address in this environment. Loans are negative. Adds up to fiatTotal. Decimal strings.',
   })
   readonly fiatTotalByType: Record<string, string>;
   @ApiProperty({
@@ -47,22 +33,18 @@ export class PortfolioSummarySnapshot {
   @ApiProperty({
     type: Date,
     description:
-      'When the cached snapshot expires. A transaction or a manual refresh can clear it earlier.',
+      'Approximately when the cached snapshot expires: the cache adds jitter to its lifetime, and a transaction or a manual refresh can clear it earlier.',
   })
   readonly expiresAt: Date;
 
   constructor(args: {
     fiatTotal: string;
-    fiatChange1d: string | null;
-    percentChange1d: number | null;
     fiatTotalByChain: Record<string, string>;
     fiatTotalByType: Record<string, string>;
     updatedAt: Date;
     expiresAt: Date;
   }) {
     this.fiatTotal = args.fiatTotal;
-    this.fiatChange1d = args.fiatChange1d;
-    this.percentChange1d = args.percentChange1d;
     this.fiatTotalByChain = args.fiatTotalByChain;
     this.fiatTotalByType = args.fiatTotalByType;
     this.updatedAt = args.updatedAt;
@@ -82,14 +64,14 @@ export class PortfolioSummary {
   @ApiProperty({
     enum: PortfolioSummarySources,
     description:
-      'zerion: read from the Zerion snapshot. tx_service: the chain is not on Zerion, or the snapshot is unavailable.',
+      'zerion: summed from the Zerion snapshot the Assets page reads. tx_service: the chain is not on Zerion, or the snapshot is unavailable.',
   })
   readonly source: PortfolioSummarySource;
   @ApiProperty({
     type: PortfolioSummarySnapshot,
     nullable: true,
     description:
-      'The Zerion snapshot the value was read from, null for tx_service.',
+      'The Zerion snapshot the value was summed from, null for tx_service.',
   })
   readonly snapshot: PortfolioSummarySnapshot | null;
 

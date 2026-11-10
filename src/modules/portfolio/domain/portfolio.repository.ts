@@ -7,6 +7,7 @@ import {
   CacheService,
   type ICacheService,
 } from '#/datasources/cache/cache.service.interface';
+import type { CacheDir } from '#/datasources/cache/entities/cache-dir.entity';
 import { getNumberString } from '#/domain/common/utils/utils';
 import type { AppBalance } from '#/modules/portfolio/domain/entities/app-balance.entity';
 import type { AppPosition } from '#/modules/portfolio/domain/entities/app-position.entity';
@@ -14,10 +15,15 @@ import {
   type Portfolio,
   PortfolioSchema,
 } from '#/modules/portfolio/domain/entities/portfolio.entity';
+import {
+  type PortfolioSnapshot,
+  PortfolioSnapshotSchema,
+} from '#/modules/portfolio/domain/entities/portfolio-snapshot.entity';
 import type { TokenBalance } from '#/modules/portfolio/domain/entities/token-balance.entity';
 import type { IPortfolioRepository } from '#/modules/portfolio/domain/portfolio.repository.interface';
 import { IPortfolioApi } from '#/modules/portfolio/interfaces/portfolio-api.interface';
 import { ZerionCacheService } from '#/modules/zerion/datasources/zerion-cache.service';
+import { ZerionRateLimiter } from '#/modules/zerion/datasources/zerion-rate-limiter.service';
 
 /**
  * Portfolio repository.
@@ -35,6 +41,7 @@ export class PortfolioRepository implements IPortfolioRepository {
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
     private readonly zerionCache: ZerionCacheService,
+    private readonly zerionRateLimiter: ZerionRateLimiter,
   ) {
     this.cacheExpirationSeconds = this.configurationService.getOrThrow<number>(
       'portfolio.cache.ttlSeconds',
@@ -53,38 +60,112 @@ export class PortfolioRepository implements IPortfolioRepository {
     isTestnet?: boolean;
     sync?: boolean;
   }): Promise<Portfolio> {
-    const cacheDir = CacheRouter.getPortfolioCacheDir({
+    const cacheDir = this._getCacheDir(args);
+    // If sync is true, we bypass the cache and fetch the portfolio from the API
+    const cached = args.sync ? null : await this._getCached(cacheDir);
+    const portfolio = PortfolioSchema.parse(
+      cached ?? (await this._fetchAndCache({ ...args, cacheDir })),
+    );
+    return this._applyFilters(portfolio, args);
+  }
+
+  public async getPortfolioSnapshot(args: {
+    address: Address;
+    fiatCode: string;
+    trusted: boolean;
+    isTestnet: boolean;
+  }): Promise<PortfolioSnapshot> {
+    const cacheDir = this._getCacheDir(args);
+    const cached = PortfolioSnapshotSchema.safeParse(
+      await this._getCached(cacheDir),
+    );
+    // A miss, or an entry written before snapshots carried timestamps, is
+    // fetched again, so the reported times are always the entry's own.
+    const snapshot = cached.success
+      ? cached.data
+      : await this._fetchAndCacheWithinBudget({ ...args, cacheDir });
+    // Same token filters as the GET /v1/portfolio defaults, so the totals
+    // summed from this snapshot match the Assets page.
+    return {
+      ...this._applyFilters(snapshot, {
+        trusted: args.trusted,
+        excludeDust: true,
+      }),
+      fetchedAt: snapshot.fetchedAt,
+      expiresAt: snapshot.expiresAt,
+    };
+  }
+
+  private _getCacheDir(args: {
+    address: Address;
+    fiatCode: string;
+    trusted?: boolean;
+    isTestnet?: boolean;
+  }): CacheDir {
+    return CacheRouter.getPortfolioCacheDir({
       address: args.address,
       fiatCode: args.fiatCode,
       trusted: args.trusted,
       isTestnet: args.isTestnet,
     });
+  }
 
-    // If sync is true, we bypass the cache and fetch the portfolio from the API
-    const cached = args.sync ? null : await this.cacheService.hGet(cacheDir);
-    let portfolio: Portfolio;
+  private async _getCached(cacheDir: CacheDir): Promise<unknown> {
+    const cached = await this.cacheService.hGet(cacheDir);
+    return cached ? JSON.parse(cached) : null;
+  }
 
-    if (cached) {
-      portfolio = PortfolioSchema.parse(JSON.parse(cached));
-    } else {
-      const rawPortfolio = await this.portfolioApi.getPortfolio({
-        address: args.address,
-        fiatCode: args.fiatCode,
-        trusted: args.trusted,
-        isTestnet: args.isTestnet,
-        sync: args.sync,
-      });
+  /**
+   * Snapshot reads come from batched summaries, so unlike the Assets page a
+   * miss spends the shared Zerion budget first.
+   *
+   * @throws {LimitReachedError} When the shared Zerion budget is exhausted
+   */
+  private async _fetchAndCacheWithinBudget(args: {
+    address: Address;
+    fiatCode: string;
+    trusted: boolean;
+    isTestnet: boolean;
+    cacheDir: CacheDir;
+  }): Promise<PortfolioSnapshot> {
+    await this.zerionRateLimiter.assertWithinBudget({
+      datasource: 'portfolio_snapshot',
+      address: args.address,
+    });
+    return await this._fetchAndCache(args);
+  }
 
-      portfolio = PortfolioSchema.parse(rawPortfolio);
-
-      await this.cacheService.hSet(
-        cacheDir,
-        JSON.stringify(portfolio),
-        this.cacheExpirationSeconds,
-      );
-    }
-
-    return this._applyFilters(portfolio, args);
+  /**
+   * Fetches the portfolio and caches it with its fetch and expiry times, so
+   * every later read of the entry reports the same times.
+   */
+  private async _fetchAndCache(args: {
+    address: Address;
+    fiatCode: string;
+    trusted?: boolean;
+    isTestnet?: boolean;
+    sync?: boolean;
+    cacheDir: CacheDir;
+  }): Promise<PortfolioSnapshot> {
+    const rawPortfolio = await this.portfolioApi.getPortfolio({
+      address: args.address,
+      fiatCode: args.fiatCode,
+      trusted: args.trusted,
+      isTestnet: args.isTestnet,
+      sync: args.sync,
+    });
+    const fetchedAt = Date.now();
+    const snapshot: PortfolioSnapshot = {
+      ...PortfolioSchema.parse(rawPortfolio),
+      fetchedAt,
+      expiresAt: fetchedAt + this.cacheExpirationSeconds * 1_000,
+    };
+    await this.cacheService.hSet(
+      args.cacheDir,
+      JSON.stringify(snapshot),
+      this.cacheExpirationSeconds,
+    );
+    return snapshot;
   }
 
   /**

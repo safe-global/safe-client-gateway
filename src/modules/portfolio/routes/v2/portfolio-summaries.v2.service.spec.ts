@@ -4,40 +4,45 @@ import { HttpStatus } from '@nestjs/common';
 import { type Address, getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
 import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
+import { LogType } from '#/domain/common/entities/log-type.entity';
 import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
 import { getNumberString } from '#/domain/common/utils/utils';
 import type { ILoggingService } from '#/logging/logging.interface';
 import type { IBalancesRepository } from '#/modules/balances/domain/balances.repository.interface';
 import { balanceBuilder } from '#/modules/balances/domain/entities/__tests__/balance.builder';
-import { portfolioSnapshotBuilder } from '#/modules/balances/domain/entities/__tests__/portfolio-snapshot.builder';
-import type { IPortfolioSnapshotRepository } from '#/modules/balances/domain/portfolio-snapshot.repository.interface';
-import { PortfolioSummariesV2Service } from '#/modules/balances/routes/v2/portfolio-summaries.v2.service';
 import type { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
 import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
 import type { Chain } from '#/modules/chains/domain/entities/chain.entity';
+import { portfolioSnapshotBuilder } from '#/modules/portfolio/domain/entities/__tests__/portfolio-snapshot.builder';
+import { tokenBalanceBuilder } from '#/modules/portfolio/domain/entities/__tests__/token-balance.builder';
+import { tokenInfoBuilder } from '#/modules/portfolio/domain/entities/__tests__/token-info.builder';
+import type { PortfolioSnapshot } from '#/modules/portfolio/domain/entities/portfolio-snapshot.entity';
+import type { IPortfolioRepository } from '#/modules/portfolio/domain/portfolio.repository.interface';
+import { PortfolioSummariesV2Service } from '#/modules/portfolio/routes/v2/portfolio-summaries.v2.service';
+import { PortfolioSummaryMapper } from '#/modules/portfolio/routes/v2/portfolio-summary.mapper';
 import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
 import type { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
 import type { IZerionRepository } from '#/modules/zerion/domain/zerion.repository.interface';
 
 const mockChainsRepository = vi.mocked({
   getChain: vi.fn(),
-} as unknown as MockedObject<IChainsRepository>);
+} as MockedObject<IChainsRepository>);
 
 const mockSafeRepository = vi.mocked({
   getSafe: vi.fn(),
-} as unknown as MockedObject<ISafeRepository>);
+} as MockedObject<ISafeRepository>);
 
 const mockZerionRepository = vi.mocked({
   getChainIdToNetworkMapping: vi.fn(),
 } as MockedObject<IZerionRepository>);
 
-const mockPortfolioSnapshotRepository = vi.mocked({
-  getSnapshot: vi.fn(),
-} as MockedObject<IPortfolioSnapshotRepository>);
+const mockPortfolioRepository = vi.mocked({
+  getPortfolioSnapshot: vi.fn(),
+} as MockedObject<IPortfolioRepository>);
 
 const mockBalancesRepository = vi.mocked({
   getBalances: vi.fn(),
-} as unknown as MockedObject<IBalancesRepository>);
+} as MockedObject<IBalancesRepository>);
 
 const mockLoggingService = {
   debug: vi.fn(),
@@ -55,6 +60,28 @@ const unsupportedChainId = '100';
 
 const buildChain = (chainId: string, isTestnet = false): Chain =>
   chainBuilder().with('chainId', chainId).with('isTestnet', isTestnet).build();
+
+// A snapshot holding one priced token on each given chain.
+const snapshotWith = (
+  valuesByChain: Record<string, number>,
+): PortfolioSnapshot =>
+  portfolioSnapshotBuilder()
+    .with(
+      'tokenBalances',
+      Object.entries(valuesByChain).map(([chainId, value]) =>
+        tokenBalanceBuilder()
+          .with(
+            'tokenInfo',
+            tokenInfoBuilder().with('chainId', chainId).build(),
+          )
+          .with('balanceFiat', getNumberString(value))
+          .build(),
+      ),
+    )
+    .with('positionBalances', [])
+    .build();
+
+const fiat = (): number => faker.number.int({ min: 1, max: 100_000 }) / 100;
 
 const chainsById: Record<string, Chain> = {
   '1': buildChain('1'),
@@ -74,8 +101,9 @@ describe('PortfolioSummariesV2Service', () => {
       mockChainsRepository,
       mockSafeRepository,
       mockZerionRepository,
-      mockPortfolioSnapshotRepository,
+      mockPortfolioRepository,
       mockBalancesRepository,
+      new PortfolioSummaryMapper(),
       fakeConfigurationService,
       mockLoggingService,
     );
@@ -126,20 +154,14 @@ describe('PortfolioSummariesV2Service', () => {
       ),
     );
     expect(mockChainsRepository.getChain).not.toHaveBeenCalled();
-    expect(mockPortfolioSnapshotRepository.getSnapshot).not.toHaveBeenCalled();
+    expect(mockPortfolioRepository.getPortfolioSnapshot).not.toHaveBeenCalled();
   });
 
-  it('reads every chain of a wallet from one Zerion snapshot', async () => {
+  it('values every chain of a wallet from one Zerion snapshot', async () => {
     const address = randomAddress();
-    const unmappedNetwork = faker.string.alpha({ length: 12, casing: 'lower' });
-    const snapshot = portfolioSnapshotBuilder()
-      .with('fiatTotalByNetwork', {
-        ethereum: faker.number.float({ min: 1, max: 1_000 }),
-        polygon: faker.number.float({ min: 1, max: 1_000 }),
-        [unmappedNetwork]: faker.number.float({ min: 1, max: 1_000 }),
-      })
-      .build();
-    mockPortfolioSnapshotRepository.getSnapshot.mockResolvedValue(snapshot);
+    const [mainnetValue, polygonValue] = [fiat(), fiat()];
+    const snapshot = snapshotWith({ '1': mainnetValue, '137': polygonValue });
+    mockPortfolioRepository.getPortfolioSnapshot.mockResolvedValue(snapshot);
     const trusted = faker.datatype.boolean();
 
     const result = await service.getSummaries({
@@ -151,48 +173,37 @@ describe('PortfolioSummariesV2Service', () => {
       trusted,
     });
 
-    expect(mockPortfolioSnapshotRepository.getSnapshot).toHaveBeenCalledTimes(
+    expect(mockPortfolioRepository.getPortfolioSnapshot).toHaveBeenCalledTimes(
       1,
     );
-    expect(mockPortfolioSnapshotRepository.getSnapshot).toHaveBeenCalledWith({
+    expect(mockPortfolioRepository.getPortfolioSnapshot).toHaveBeenCalledWith({
       address,
-      isTestnet: false,
-      currency,
+      fiatCode: currency,
       trusted,
+      isTestnet: false,
     });
     const expectedSnapshot = {
-      fiatTotal: getNumberString(snapshot.fiatTotal),
-      fiatChange1d:
-        snapshot.fiatChange1d === null
-          ? null
-          : getNumberString(snapshot.fiatChange1d),
-      percentChange1d: snapshot.percentChange1d,
-      // The unmapped network has no chainId, so it is left out.
+      fiatTotal: getNumberString(mainnetValue + polygonValue),
       fiatTotalByChain: {
-        '1': getNumberString(snapshot.fiatTotalByNetwork.ethereum),
-        '137': getNumberString(snapshot.fiatTotalByNetwork.polygon),
+        '1': getNumberString(mainnetValue),
+        '137': getNumberString(polygonValue),
       },
-      fiatTotalByType: Object.fromEntries(
-        Object.entries(snapshot.fiatTotalByType).map(([type, value]) => [
-          type,
-          getNumberString(value),
-        ]),
-      ),
-      updatedAt: snapshot.updatedAt,
-      expiresAt: snapshot.expiresAt,
+      fiatTotalByType: { wallet: getNumberString(mainnetValue + polygonValue) },
+      updatedAt: new Date(snapshot.fetchedAt),
+      expiresAt: new Date(snapshot.expiresAt),
     };
     expect(result).toEqual([
       {
         chainId: '1',
         address,
-        fiatTotal: getNumberString(snapshot.fiatTotalByNetwork.ethereum),
+        fiatTotal: getNumberString(mainnetValue),
         source: 'zerion',
         snapshot: expectedSnapshot,
       },
       {
         chainId: '137',
         address,
-        fiatTotal: getNumberString(snapshot.fiatTotalByNetwork.polygon),
+        fiatTotal: getNumberString(polygonValue),
         source: 'zerion',
         snapshot: expectedSnapshot,
       },
@@ -200,16 +211,13 @@ describe('PortfolioSummariesV2Service', () => {
     expect(mockBalancesRepository.getBalances).not.toHaveBeenCalled();
   });
 
-  it('reports 0 for a Zerion chain missing from the distribution', async () => {
-    const address = randomAddress();
-    mockPortfolioSnapshotRepository.getSnapshot.mockResolvedValue(
-      portfolioSnapshotBuilder()
-        .with('fiatTotalByNetwork', { ethereum: faker.number.float() })
-        .build(),
+  it('values a Zerion chain without rows at 0', async () => {
+    mockPortfolioRepository.getPortfolioSnapshot.mockResolvedValue(
+      snapshotWith({ '1': fiat() }),
     );
 
     const [summary] = await service.getSummaries({
-      safes: [{ chainId: '137', address }],
+      safes: [{ chainId: '137', address: randomAddress() }],
       currency,
       trusted: false,
     });
@@ -220,12 +228,10 @@ describe('PortfolioSummariesV2Service', () => {
 
   it('reads a chain Zerion does not list from the Transaction Service', async () => {
     const address = randomAddress();
-    const balances = [
-      balanceBuilder().with('fiatBalance', '12.5').build(),
-      balanceBuilder().with('fiatBalance', '7.5').build(),
-      balanceBuilder().with('fiatBalance', null).build(),
-    ];
-    mockBalancesRepository.getBalances.mockResolvedValue(balances);
+    const value = fiat();
+    mockBalancesRepository.getBalances.mockResolvedValue([
+      balanceBuilder().with('fiatBalance', getNumberString(value)).build(),
+    ]);
     const trusted = faker.datatype.boolean();
 
     const result = await service.getSummaries({
@@ -238,7 +244,7 @@ describe('PortfolioSummariesV2Service', () => {
       {
         chainId: unsupportedChainId,
         address,
-        fiatTotal: '20',
+        fiatTotal: getNumberString(value),
         source: 'tx_service',
         snapshot: null,
       },
@@ -249,16 +255,17 @@ describe('PortfolioSummariesV2Service', () => {
       fiatCode: currency,
       trusted,
     });
-    expect(mockPortfolioSnapshotRepository.getSnapshot).not.toHaveBeenCalled();
+    expect(mockPortfolioRepository.getPortfolioSnapshot).not.toHaveBeenCalled();
   });
 
   it('falls back to the Transaction Service when the snapshot is unavailable', async () => {
     const address = randomAddress();
-    mockPortfolioSnapshotRepository.getSnapshot.mockRejectedValue(
+    mockPortfolioRepository.getPortfolioSnapshot.mockRejectedValue(
       new Error('Zerion unavailable'),
     );
+    const value = fiat();
     mockBalancesRepository.getBalances.mockResolvedValue([
-      balanceBuilder().with('fiatBalance', '3').build(),
+      balanceBuilder().with('fiatBalance', getNumberString(value)).build(),
     ]);
 
     const result = await service.getSummaries({
@@ -271,25 +278,29 @@ describe('PortfolioSummariesV2Service', () => {
       {
         chainId: '1',
         address,
-        fiatTotal: '3',
+        fiatTotal: getNumberString(value),
         source: 'tx_service',
         snapshot: null,
       },
     ]);
+    expect(mockLoggingService.warn).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: LogType.PortfolioDegradedServe,
+        safeAddress: address,
+        balanceSource: 'balances_repo',
+      }),
+    );
   });
 
   it('leaves out a Safe no source can value, and returns the others', async () => {
     const failing = randomAddress();
     const working = randomAddress();
-    mockPortfolioSnapshotRepository.getSnapshot.mockImplementation(
+    const value = fiat();
+    mockPortfolioRepository.getPortfolioSnapshot.mockImplementation(
       ({ address }) =>
         address === failing
           ? Promise.reject(new Error('Zerion unavailable'))
-          : Promise.resolve(
-              portfolioSnapshotBuilder()
-                .with('fiatTotalByNetwork', { ethereum: 1 })
-                .build(),
-            ),
+          : Promise.resolve(snapshotWith({ '1': value })),
     );
     mockBalancesRepository.getBalances.mockRejectedValue(
       new Error('Transaction Service unavailable'),
@@ -305,7 +316,10 @@ describe('PortfolioSummariesV2Service', () => {
     });
 
     expect(result).toEqual([
-      expect.objectContaining({ address: working, fiatTotal: '1' }),
+      expect.objectContaining({
+        address: working,
+        fiatTotal: getNumberString(value),
+      }),
     ]);
   });
 
@@ -320,7 +334,8 @@ describe('PortfolioSummariesV2Service', () => {
     });
 
     expect(result).toEqual([]);
-    expect(mockPortfolioSnapshotRepository.getSnapshot).not.toHaveBeenCalled();
+    expect(mockPortfolioRepository.getPortfolioSnapshot).not.toHaveBeenCalled();
+    expect(mockLoggingService.warn).not.toHaveBeenCalled();
   });
 
   it('leaves out a Safe whose chain cannot be resolved', async () => {
@@ -358,8 +373,8 @@ describe('PortfolioSummariesV2Service', () => {
     fakeConfigurationService.set('features.zerionTestnets', true);
     service = buildService();
     const address = randomAddress();
-    mockPortfolioSnapshotRepository.getSnapshot.mockResolvedValue(
-      portfolioSnapshotBuilder().build(),
+    mockPortfolioRepository.getPortfolioSnapshot.mockResolvedValue(
+      snapshotWith({}),
     );
 
     await service.getSummaries({
@@ -371,13 +386,13 @@ describe('PortfolioSummariesV2Service', () => {
       trusted: false,
     });
 
-    expect(mockPortfolioSnapshotRepository.getSnapshot).toHaveBeenCalledTimes(
+    expect(mockPortfolioRepository.getPortfolioSnapshot).toHaveBeenCalledTimes(
       2,
     );
-    expect(mockPortfolioSnapshotRepository.getSnapshot).toHaveBeenCalledWith(
+    expect(mockPortfolioRepository.getPortfolioSnapshot).toHaveBeenCalledWith(
       expect.objectContaining({ address, isTestnet: false }),
     );
-    expect(mockPortfolioSnapshotRepository.getSnapshot).toHaveBeenCalledWith(
+    expect(mockPortfolioRepository.getPortfolioSnapshot).toHaveBeenCalledWith(
       expect.objectContaining({ address, isTestnet: true }),
     );
   });
@@ -392,7 +407,7 @@ describe('PortfolioSummariesV2Service', () => {
     });
 
     expect(summary.source).toBe('tx_service');
-    expect(mockPortfolioSnapshotRepository.getSnapshot).not.toHaveBeenCalled();
+    expect(mockPortfolioRepository.getPortfolioSnapshot).not.toHaveBeenCalled();
   });
 
   it('reads every chain from the Transaction Service while Zerion is disabled', async () => {
@@ -410,6 +425,6 @@ describe('PortfolioSummariesV2Service', () => {
     expect(
       mockZerionRepository.getChainIdToNetworkMapping,
     ).not.toHaveBeenCalled();
-    expect(mockPortfolioSnapshotRepository.getSnapshot).not.toHaveBeenCalled();
+    expect(mockPortfolioRepository.getPortfolioSnapshot).not.toHaveBeenCalled();
   });
 });
