@@ -95,6 +95,10 @@ describe('PortfolioSummariesV2Controller', () => {
       config: () => ({
         ...defaultConfiguration,
         features: { ...defaultConfiguration.features, zerion: true },
+        mappings: {
+          ...defaultConfiguration.mappings,
+          safe: { ...defaultConfiguration.mappings.safe, maxOverviews: 10 },
+        },
         portfolio: {
           ...defaultConfiguration.portfolio,
           summaries: {
