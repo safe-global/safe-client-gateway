@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import type { Address } from 'viem';
 import { z } from 'zod';
 import { PortfolioSchema } from '#/modules/portfolio/domain/entities/portfolio.entity';
 
@@ -14,3 +15,11 @@ export const PortfolioSnapshotSchema = PortfolioSchema.extend({
 });
 
 export type PortfolioSnapshot = z.infer<typeof PortfolioSnapshotSchema>;
+
+/** What picks a snapshot: the wallet, its environment, the currency and the token filter. */
+export type PortfolioSnapshotArgs = {
+  address: Address;
+  fiatCode: string;
+  trusted: boolean;
+  isTestnet: boolean;
+};

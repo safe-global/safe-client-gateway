@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { Address } from 'viem';
 import type { Portfolio } from '#/modules/portfolio/domain/entities/portfolio.entity';
-import type { PortfolioSnapshot } from '#/modules/portfolio/domain/entities/portfolio-snapshot.entity';
+import type {
+  PortfolioSnapshot,
+  PortfolioSnapshotArgs,
+} from '#/modules/portfolio/domain/entities/portfolio-snapshot.entity';
 
 export const IPortfolioRepository = Symbol('IPortfolioRepository');
 
@@ -42,12 +45,7 @@ export interface IPortfolioRepository {
    * @returns {Promise<PortfolioSnapshot>} The filtered snapshot
    * @throws {LimitReachedError} On a miss when the shared Zerion budget is exhausted
    */
-  getPortfolioSnapshot(args: {
-    address: Address;
-    fiatCode: string;
-    trusted: boolean;
-    isTestnet: boolean;
-  }): Promise<PortfolioSnapshot>;
+  getPortfolioSnapshot(args: PortfolioSnapshotArgs): Promise<PortfolioSnapshot>;
 
   /**
    * Clears the cached portfolio data for a given wallet address.

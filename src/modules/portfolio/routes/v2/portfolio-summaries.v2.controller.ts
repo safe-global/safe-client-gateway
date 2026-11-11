@@ -10,7 +10,6 @@ import {
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
 import { PortfolioSummariesRateLimitGuard } from '#/modules/portfolio/routes/guards/portfolio-summaries-rate-limit.guard';
-import { FiatCodeSchema } from '#/modules/portfolio/routes/v2/entities/fiat-code.schema';
 import { PortfolioSummary } from '#/modules/portfolio/routes/v2/entities/portfolio-summary.dto.entity';
 import { PortfolioSummariesV2Service } from '#/modules/portfolio/routes/v2/portfolio-summaries.v2.service';
 import { BooleanStringSchema } from '#/validation/entities/schemas/boolean-string.schema';
@@ -18,6 +17,7 @@ import {
   type Caip10Addresses,
   Caip10AddressesSchema,
 } from '#/validation/entities/schemas/caip-10-addresses.schema';
+import { FiatCodeSchema } from '#/validation/entities/schemas/fiat-code.schema';
 import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
 @ApiTags('portfolio')
@@ -50,8 +50,9 @@ export class PortfolioSummariesV2Controller {
     name: 'trusted',
     required: false,
     type: Boolean,
-    description: 'If true, only trusted tokens count. Defaults to false.',
-    example: false,
+    description:
+      'If true, only trusted tokens count. Defaults to true, like GET /v1/portfolio, so the totals match the Assets page.',
+    example: true,
   })
   @ApiOkResponse({ type: PortfolioSummary, isArray: true })
   @ApiBadRequestResponse({ description: 'Unsupported currency' })
@@ -70,7 +71,7 @@ export class PortfolioSummariesV2Controller {
     return this.service.getSummaries({
       safes,
       currency,
-      trusted: trusted ?? false,
+      trusted: trusted ?? true,
     });
   }
 }

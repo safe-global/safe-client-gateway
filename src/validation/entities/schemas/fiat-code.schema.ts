@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 /**
  * An ISO 4217-shaped currency code, upper-cased so every layer sees one form.
- * Which codes are supported is checked by the route service.
+ * Which codes are supported is checked by the caller.
  */
 export const FiatCodeSchema = z
   .string()

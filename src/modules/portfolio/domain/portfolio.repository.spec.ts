@@ -18,7 +18,7 @@ import { PortfolioSnapshotSchema } from '#/modules/portfolio/domain/entities/por
 import { PortfolioRepository } from '#/modules/portfolio/domain/portfolio.repository';
 import type { IPortfolioApi } from '#/modules/portfolio/interfaces/portfolio-api.interface';
 import type { ZerionCacheService } from '#/modules/zerion/datasources/zerion-cache.service';
-import type { ZerionRateLimiter } from '#/modules/zerion/datasources/zerion-rate-limiter.service';
+import type { IZerionRepository } from '#/modules/zerion/domain/zerion.repository.interface';
 import { rawify } from '#/validation/entities/raw.entity';
 
 describe('PortfolioRepository', () => {
@@ -27,7 +27,7 @@ describe('PortfolioRepository', () => {
   let mockCacheService: MockedObject<ICacheService>;
   let mockConfigService: MockedObject<IConfigurationService>;
   let mockZerionCache: MockedObject<ZerionCacheService>;
-  let mockZerionRateLimiter: MockedObject<ZerionRateLimiter>;
+  let mockZerionRepository: MockedObject<IZerionRepository>;
 
   const defaultCacheTtl = 30;
   const defaultDustThreshold = 0.001;
@@ -62,16 +62,16 @@ describe('PortfolioRepository', () => {
       invalidate: vi.fn(),
     } as MockedObject<ZerionCacheService>;
 
-    mockZerionRateLimiter = {
+    mockZerionRepository = {
       assertWithinBudget: vi.fn(),
-    } as MockedObject<ZerionRateLimiter>;
+    } as MockedObject<IZerionRepository>;
 
     repository = new PortfolioRepository(
       mockPortfolioApi,
       mockCacheService,
       mockConfigService,
       mockZerionCache,
-      mockZerionRateLimiter,
+      mockZerionRepository,
     );
   });
 
@@ -659,7 +659,7 @@ describe('PortfolioRepository', () => {
       expect(mockCacheService.hGet).toHaveBeenCalledWith(cacheDir);
       expect(result.fetchedAt).toBe(fetchedAt);
       expect(result.expiresAt).toBe(expiresAt);
-      expect(mockZerionRateLimiter.assertWithinBudget).not.toHaveBeenCalled();
+      expect(mockZerionRepository.assertWithinBudget).not.toHaveBeenCalled();
       expect(mockPortfolioApi.getPortfolio).not.toHaveBeenCalled();
     });
 
@@ -672,7 +672,7 @@ describe('PortfolioRepository', () => {
       const result = await repository.getPortfolioSnapshot(args);
 
       const after = Date.now();
-      expect(mockZerionRateLimiter.assertWithinBudget).toHaveBeenCalledWith({
+      expect(mockZerionRepository.assertWithinBudget).toHaveBeenCalledWith({
         datasource: 'portfolio_snapshot',
         address,
       });
@@ -730,7 +730,7 @@ describe('PortfolioRepository', () => {
     it('does not fetch when over the Zerion budget', async () => {
       const error = new LimitReachedError();
       mockCacheService.hGet.mockResolvedValue(null);
-      mockZerionRateLimiter.assertWithinBudget.mockRejectedValue(error);
+      mockZerionRepository.assertWithinBudget.mockRejectedValue(error);
 
       await expect(repository.getPortfolioSnapshot(args)).rejects.toBe(error);
 

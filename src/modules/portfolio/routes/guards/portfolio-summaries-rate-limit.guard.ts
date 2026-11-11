@@ -26,10 +26,10 @@ export class PortfolioSummariesRateLimitGuard extends RateLimitGuard {
   ) {
     const rateLimits = {
       max: configurationService.getOrThrow<number>(
-        'portfolioSummaries.rateLimit.max',
+        'portfolio.summaries.rateLimit.max',
       ),
       windowSeconds: configurationService.getOrThrow<number>(
-        'portfolioSummaries.rateLimit.windowSeconds',
+        'portfolio.summaries.rateLimit.windowSeconds',
       ),
     };
     super(cacheService, loggingService, rateLimits);

@@ -24,7 +24,10 @@ type RateLimitScope = 'global' | 'per_address';
  * and every datasource on the main API key (balances, collectibles, wallet
  * portfolio). The assets-page endpoints (portfolio, positions) use the
  * dedicated assets key so they keep working even when the main budget is
- * exhausted; they are not throttled here. This
+ * exhausted, and are not throttled here. The one exception is a cache miss
+ * from the batched portfolio summaries, which fetches with the assets key but
+ * spends this budget on purpose: it is a public, batched route, and over
+ * budget its Safes fall back to the Transaction Service. This
  * limiter increments a single Redis fixed-window counter so the cluster stays
  * under that ceiling, with an optional per-address sub-budget that prevents one
  * hot wallet from starving the global budget.

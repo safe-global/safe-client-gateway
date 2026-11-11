@@ -3,7 +3,9 @@ import { faker } from '@faker-js/faker';
 import { HttpStatus } from '@nestjs/common';
 import { type Address, getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
+import { ZodError } from 'zod';
 import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
+import { LimitReachedError } from '#/datasources/network/entities/errors/limit-reached.error';
 import { LogType } from '#/domain/common/entities/log-type.entity';
 import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
 import { getNumberString } from '#/domain/common/utils/utils';
@@ -51,12 +53,26 @@ const mockLoggingService = {
   info: vi.fn(),
 } as MockedObject<ILoggingService>;
 
+const [
+  mainnetChainId,
+  otherMainnetChainId,
+  testnetChainId,
+  unsupportedChainId,
+] = faker.helpers.uniqueArray(
+  () => faker.string.numeric({ length: { min: 1, max: 9 } }),
+  4,
+);
+const networkName = (): string =>
+  faker.string.alpha({ length: 12, casing: 'lower' });
+
 // Chains Zerion lists per environment, keyed by chainId; anything else is unsupported.
 const zerionNetworks: Record<'mainnet' | 'testnet', Record<string, string>> = {
-  mainnet: { '1': 'ethereum', '137': 'polygon' },
-  testnet: { '11155111': 'sepolia' },
+  mainnet: {
+    [mainnetChainId]: networkName(),
+    [otherMainnetChainId]: networkName(),
+  },
+  testnet: { [testnetChainId]: networkName() },
 };
-const unsupportedChainId = '100';
 
 const buildChain = (chainId: string, isTestnet = false): Chain =>
   chainBuilder().with('chainId', chainId).with('isTestnet', isTestnet).build();
@@ -84,14 +100,15 @@ const snapshotWith = (
 const fiat = (): number => faker.number.int({ min: 1, max: 100_000 }) / 100;
 
 const chainsById: Record<string, Chain> = {
-  '1': buildChain('1'),
-  '137': buildChain('137'),
+  [mainnetChainId]: buildChain(mainnetChainId),
+  [otherMainnetChainId]: buildChain(otherMainnetChainId),
   [unsupportedChainId]: buildChain(unsupportedChainId),
-  '11155111': buildChain('11155111', true),
+  [testnetChainId]: buildChain(testnetChainId, true),
 };
 
 describe('PortfolioSummariesV2Service', () => {
-  const currency = 'USD';
+  const [currency, otherCurrency, unsupportedCurrency] =
+    faker.helpers.uniqueArray(() => faker.finance.currencyCode(), 3);
   const maxSafes = 5;
   let fakeConfigurationService: FakeConfigurationService;
   let service: PortfolioSummariesV2Service;
@@ -118,8 +135,8 @@ describe('PortfolioSummariesV2Service', () => {
     fakeConfigurationService.set('features.zerion', true);
     fakeConfigurationService.set('features.zerionTestnets', false);
     fakeConfigurationService.set('balances.providers.zerion.currencies', [
-      'USD',
-      'EUR',
+      currency,
+      otherCurrency,
     ]);
     service = buildService();
 
@@ -143,13 +160,13 @@ describe('PortfolioSummariesV2Service', () => {
   it('rejects an unsupported currency before any upstream call', async () => {
     await expect(
       service.getSummaries({
-        safes: [{ chainId: '1', address: randomAddress() }],
-        currency: 'XYZ',
+        safes: [{ chainId: mainnetChainId, address: randomAddress() }],
+        currency: unsupportedCurrency,
         trusted: false,
       }),
     ).rejects.toThrow(
       new HttpExceptionNoLog(
-        'Unsupported currency code: XYZ',
+        `Unsupported currency code: ${unsupportedCurrency}`,
         HttpStatus.BAD_REQUEST,
       ),
     );
@@ -160,14 +177,17 @@ describe('PortfolioSummariesV2Service', () => {
   it('values every chain of a wallet from one Zerion snapshot', async () => {
     const address = randomAddress();
     const [mainnetValue, polygonValue] = [fiat(), fiat()];
-    const snapshot = snapshotWith({ '1': mainnetValue, '137': polygonValue });
+    const snapshot = snapshotWith({
+      [mainnetChainId]: mainnetValue,
+      [otherMainnetChainId]: polygonValue,
+    });
     mockPortfolioRepository.getPortfolioSnapshot.mockResolvedValue(snapshot);
     const trusted = faker.datatype.boolean();
 
     const result = await service.getSummaries({
       safes: [
-        { chainId: '1', address },
-        { chainId: '137', address },
+        { chainId: mainnetChainId, address },
+        { chainId: otherMainnetChainId, address },
       ],
       currency,
       trusted,
@@ -185,8 +205,8 @@ describe('PortfolioSummariesV2Service', () => {
     const expectedSnapshot = {
       fiatTotal: getNumberString(mainnetValue + polygonValue),
       fiatTotalByChain: {
-        '1': getNumberString(mainnetValue),
-        '137': getNumberString(polygonValue),
+        [mainnetChainId]: getNumberString(mainnetValue),
+        [otherMainnetChainId]: getNumberString(polygonValue),
       },
       fiatTotalByType: { wallet: getNumberString(mainnetValue + polygonValue) },
       updatedAt: new Date(snapshot.fetchedAt),
@@ -194,14 +214,14 @@ describe('PortfolioSummariesV2Service', () => {
     };
     expect(result).toEqual([
       {
-        chainId: '1',
+        chainId: mainnetChainId,
         address,
         fiatTotal: getNumberString(mainnetValue),
         source: 'zerion',
         snapshot: expectedSnapshot,
       },
       {
-        chainId: '137',
+        chainId: otherMainnetChainId,
         address,
         fiatTotal: getNumberString(polygonValue),
         source: 'zerion',
@@ -213,11 +233,11 @@ describe('PortfolioSummariesV2Service', () => {
 
   it('values a Zerion chain without rows at 0', async () => {
     mockPortfolioRepository.getPortfolioSnapshot.mockResolvedValue(
-      snapshotWith({ '1': fiat() }),
+      snapshotWith({ [mainnetChainId]: fiat() }),
     );
 
     const [summary] = await service.getSummaries({
-      safes: [{ chainId: '137', address: randomAddress() }],
+      safes: [{ chainId: otherMainnetChainId, address: randomAddress() }],
       currency,
       trusted: false,
     });
@@ -269,14 +289,14 @@ describe('PortfolioSummariesV2Service', () => {
     ]);
 
     const result = await service.getSummaries({
-      safes: [{ chainId: '1', address }],
+      safes: [{ chainId: mainnetChainId, address }],
       currency,
       trusted: false,
     });
 
     expect(result).toEqual([
       {
-        chainId: '1',
+        chainId: mainnetChainId,
         address,
         fiatTotal: getNumberString(value),
         source: 'tx_service',
@@ -300,7 +320,7 @@ describe('PortfolioSummariesV2Service', () => {
       ({ address }) =>
         address === failing
           ? Promise.reject(new Error('Zerion unavailable'))
-          : Promise.resolve(snapshotWith({ '1': value })),
+          : Promise.resolve(snapshotWith({ [mainnetChainId]: value })),
     );
     mockBalancesRepository.getBalances.mockRejectedValue(
       new Error('Transaction Service unavailable'),
@@ -308,8 +328,8 @@ describe('PortfolioSummariesV2Service', () => {
 
     const result = await service.getSummaries({
       safes: [
-        { chainId: '1', address: failing },
-        { chainId: '1', address: working },
+        { chainId: mainnetChainId, address: failing },
+        { chainId: mainnetChainId, address: working },
       ],
       currency,
       trusted: false,
@@ -328,7 +348,7 @@ describe('PortfolioSummariesV2Service', () => {
     mockSafeRepository.getSafe.mockRejectedValue(new Error('Not a Safe'));
 
     const result = await service.getSummaries({
-      safes: [{ chainId: '1', address: notASafe }],
+      safes: [{ chainId: mainnetChainId, address: notASafe }],
       currency,
       trusted: false,
     });
@@ -379,8 +399,8 @@ describe('PortfolioSummariesV2Service', () => {
 
     await service.getSummaries({
       safes: [
-        { chainId: '1', address },
-        { chainId: '11155111', address },
+        { chainId: mainnetChainId, address },
+        { chainId: testnetChainId, address },
       ],
       currency,
       trusted: false,
@@ -401,7 +421,7 @@ describe('PortfolioSummariesV2Service', () => {
     mockBalancesRepository.getBalances.mockResolvedValue([]);
 
     const [summary] = await service.getSummaries({
-      safes: [{ chainId: '11155111', address: randomAddress() }],
+      safes: [{ chainId: testnetChainId, address: randomAddress() }],
       currency,
       trusted: false,
     });
@@ -416,7 +436,7 @@ describe('PortfolioSummariesV2Service', () => {
     mockBalancesRepository.getBalances.mockResolvedValue([]);
 
     const [summary] = await service.getSummaries({
-      safes: [{ chainId: '1', address: randomAddress() }],
+      safes: [{ chainId: mainnetChainId, address: randomAddress() }],
       currency,
       trusted: false,
     });
@@ -426,5 +446,73 @@ describe('PortfolioSummariesV2Service', () => {
       mockZerionRepository.getChainIdToNetworkMapping,
     ).not.toHaveBeenCalled();
     expect(mockPortfolioRepository.getPortfolioSnapshot).not.toHaveBeenCalled();
+  });
+  it('reads an environment from the Transaction Service when its Zerion chain list fails', async () => {
+    mockZerionRepository.getChainIdToNetworkMapping.mockRejectedValue(
+      new Error('Zerion unavailable'),
+    );
+    mockBalancesRepository.getBalances.mockResolvedValue([]);
+
+    const [summary] = await service.getSummaries({
+      safes: [{ chainId: mainnetChainId, address: randomAddress() }],
+      currency,
+      trusted: false,
+    });
+
+    expect(summary.source).toBe('tx_service');
+    expect(mockBalancesRepository.getBalances).toHaveBeenCalledTimes(1);
+    expect(mockPortfolioRepository.getPortfolioSnapshot).not.toHaveBeenCalled();
+    expect(mockLoggingService.warn).toHaveBeenCalledWith(
+      expect.objectContaining({ type: LogType.ZerionChainListError }),
+    );
+  });
+
+  it('logs an over-budget snapshot at debug and falls back', async () => {
+    const address = randomAddress();
+    mockPortfolioRepository.getPortfolioSnapshot.mockRejectedValue(
+      new LimitReachedError(),
+    );
+    mockBalancesRepository.getBalances.mockResolvedValue([]);
+
+    const [summary] = await service.getSummaries({
+      safes: [{ chainId: mainnetChainId, address }],
+      currency,
+      trusted: false,
+    });
+
+    expect(summary.source).toBe('tx_service');
+    expect(mockLoggingService.debug).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: LogType.PortfolioRequestError,
+        event: 'Portfolio over budget',
+        safeAddress: address,
+      }),
+    );
+    expect(mockLoggingService.warn).not.toHaveBeenCalledWith(
+      expect.objectContaining({ type: LogType.PortfolioRequestError }),
+    );
+  });
+
+  it('logs a malformed snapshot as schema drift and falls back', async () => {
+    const address = randomAddress();
+    mockPortfolioRepository.getPortfolioSnapshot.mockRejectedValue(
+      new ZodError([]),
+    );
+    mockBalancesRepository.getBalances.mockResolvedValue([]);
+
+    const [summary] = await service.getSummaries({
+      safes: [{ chainId: mainnetChainId, address }],
+      currency,
+      trusted: false,
+    });
+
+    expect(summary.source).toBe('tx_service');
+    expect(mockLoggingService.error).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: LogType.PortfolioRequestError,
+        event: 'Portfolio schema drift',
+        safeAddress: address,
+      }),
+    );
   });
 });

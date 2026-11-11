@@ -117,12 +117,14 @@ describe('PortfolioSummaryMapper', () => {
   });
 
   describe('fromBalances', () => {
-    it('sums the priced balances and has no snapshot', () => {
+    it('sums the priced balances, skipping unpriced and malformed ones', () => {
       const [first, second] = [fiat(), fiat()];
       const balances = [
         balanceBuilder().with('fiatBalance', getNumberString(first)).build(),
         balanceBuilder().with('fiatBalance', getNumberString(second)).build(),
         balanceBuilder().with('fiatBalance', null).build(),
+        // Not a number: skipped instead of turning the total into NaN.
+        balanceBuilder().with('fiatBalance', faker.string.alpha(8)).build(),
       ];
 
       const result = mapper.fromBalances({ chainId, address, balances });

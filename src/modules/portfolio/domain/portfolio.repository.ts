@@ -17,13 +17,14 @@ import {
 } from '#/modules/portfolio/domain/entities/portfolio.entity';
 import {
   type PortfolioSnapshot,
+  type PortfolioSnapshotArgs,
   PortfolioSnapshotSchema,
 } from '#/modules/portfolio/domain/entities/portfolio-snapshot.entity';
 import type { TokenBalance } from '#/modules/portfolio/domain/entities/token-balance.entity';
 import type { IPortfolioRepository } from '#/modules/portfolio/domain/portfolio.repository.interface';
 import { IPortfolioApi } from '#/modules/portfolio/interfaces/portfolio-api.interface';
 import { ZerionCacheService } from '#/modules/zerion/datasources/zerion-cache.service';
-import { ZerionRateLimiter } from '#/modules/zerion/datasources/zerion-rate-limiter.service';
+import { IZerionRepository } from '#/modules/zerion/domain/zerion.repository.interface';
 
 /**
  * Portfolio repository.
@@ -41,7 +42,8 @@ export class PortfolioRepository implements IPortfolioRepository {
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
     private readonly zerionCache: ZerionCacheService,
-    private readonly zerionRateLimiter: ZerionRateLimiter,
+    @Inject(IZerionRepository)
+    private readonly zerionRepository: IZerionRepository,
   ) {
     this.cacheExpirationSeconds = this.configurationService.getOrThrow<number>(
       'portfolio.cache.ttlSeconds',
@@ -69,12 +71,9 @@ export class PortfolioRepository implements IPortfolioRepository {
     return this._applyFilters(portfolio, args);
   }
 
-  public async getPortfolioSnapshot(args: {
-    address: Address;
-    fiatCode: string;
-    trusted: boolean;
-    isTestnet: boolean;
-  }): Promise<PortfolioSnapshot> {
+  public async getPortfolioSnapshot(
+    args: PortfolioSnapshotArgs,
+  ): Promise<PortfolioSnapshot> {
     const cacheDir = this._getCacheDir(args);
     const cached = PortfolioSnapshotSchema.safeParse(
       await this._getCached(cacheDir),
@@ -121,14 +120,10 @@ export class PortfolioRepository implements IPortfolioRepository {
    *
    * @throws {LimitReachedError} When the shared Zerion budget is exhausted
    */
-  private async _fetchAndCacheWithinBudget(args: {
-    address: Address;
-    fiatCode: string;
-    trusted: boolean;
-    isTestnet: boolean;
-    cacheDir: CacheDir;
-  }): Promise<PortfolioSnapshot> {
-    await this.zerionRateLimiter.assertWithinBudget({
+  private async _fetchAndCacheWithinBudget(
+    args: PortfolioSnapshotArgs & { cacheDir: CacheDir },
+  ): Promise<PortfolioSnapshot> {
+    await this.zerionRepository.assertWithinBudget({
       datasource: 'portfolio_snapshot',
       address: args.address,
     });

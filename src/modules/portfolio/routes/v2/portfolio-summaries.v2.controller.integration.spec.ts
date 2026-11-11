@@ -28,7 +28,20 @@ import { PositionType } from '#/modules/positions/domain/entities/position-type.
 import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
 import { rawify } from '#/validation/entities/raw.entity';
 
-const networks = { ethereum: 1, polygon: 137 } as const;
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
+
+const [firstNetwork, secondNetwork] = faker.helpers.uniqueArray(
+  () => faker.string.alpha({ length: 12, casing: 'lower' }),
+  2,
+);
+const [firstChainId, secondChainId] = faker.helpers.uniqueArray(
+  () => faker.number.int({ min: 1, max: 1_000_000 }),
+  2,
+);
+const networks = {
+  [firstNetwork]: firstChainId,
+  [secondNetwork]: secondChainId,
+};
 
 /** Zerion's chain list keyed by network name, as served by GET /v1/chains. */
 const zerionChainsResponse = {
@@ -66,6 +79,9 @@ describe('PortfolioSummariesV2Controller', () => {
   let networkService: MockedObject<INetworkService>;
   let safeConfigUrl: string;
   let zerionBaseUri: string;
+  let currencies: Array<string>;
+  let ttlSeconds: number;
+  const rateLimitMax = faker.number.int({ min: 3, max: 5 });
 
   // Above the dust threshold of the test configuration.
   const fiat = (): number => faker.number.int({ min: 1_000, max: 100_000 });
@@ -76,6 +92,15 @@ describe('PortfolioSummariesV2Controller', () => {
       config: () => ({
         ...defaultConfiguration,
         features: { ...defaultConfiguration.features, zerion: true },
+        portfolio: {
+          ...defaultConfiguration.portfolio,
+          summaries: {
+            rateLimit: {
+              max: rateLimitMax,
+              windowSeconds: faker.number.int({ min: 60, max: 120 }),
+            },
+          },
+        },
       }),
     });
     const configurationService = moduleFixture.get<IConfigurationService>(
@@ -85,6 +110,10 @@ describe('PortfolioSummariesV2Controller', () => {
     zerionBaseUri = configurationService.getOrThrow(
       'balances.providers.zerion.baseUri',
     );
+    currencies = configurationService.getOrThrow(
+      'balances.providers.zerion.currencies',
+    );
+    ttlSeconds = configurationService.getOrThrow('portfolio.cache.ttlSeconds');
     networkService = moduleFixture.get(NetworkService);
     app = await new TestAppProvider().provide(moduleFixture);
     await initTestApplication(app);
@@ -140,18 +169,19 @@ describe('PortfolioSummariesV2Controller', () => {
         .with('isTestnet', false)
         .build(),
     );
-    const [onEthereum, onPolygon] = [fiat(), fiat()];
+    const [onFirst, onSecond] = [fiat(), fiat()];
     const getPositions = mockUpstreams({
       chains,
       address,
       rows: [
-        zerionRow('ethereum', onEthereum),
-        zerionRow('polygon', onPolygon),
+        zerionRow(firstNetwork, onFirst),
+        zerionRow(secondNetwork, onSecond),
       ],
     });
     const query = {
       safes: chains.map(({ chainId }) => `${chainId}:${address}`).join(','),
-      currency: 'usd',
+      // Any case is accepted.
+      currency: faker.helpers.arrayElement(currencies).toLowerCase(),
     };
 
     for (let i = 0; i < 2; i++) {
@@ -162,41 +192,80 @@ describe('PortfolioSummariesV2Controller', () => {
         .expect(({ body }) =>
           expect(body).toMatchObject([
             {
-              chainId: '1',
+              chainId: String(firstChainId),
               address,
-              fiatTotal: getNumberString(onEthereum),
+              fiatTotal: getNumberString(onFirst),
               source: 'zerion',
               snapshot: {
-                fiatTotal: getNumberString(onEthereum + onPolygon),
+                fiatTotal: getNumberString(onFirst + onSecond),
                 fiatTotalByChain: {
-                  '1': getNumberString(onEthereum),
-                  '137': getNumberString(onPolygon),
+                  [firstChainId]: getNumberString(onFirst),
+                  [secondChainId]: getNumberString(onSecond),
                 },
+                fiatTotalByType: {
+                  wallet: getNumberString(onFirst + onSecond),
+                },
+                updatedAt: expect.stringMatching(ISO_DATE),
+                expiresAt: expect.stringMatching(ISO_DATE),
               },
             },
             {
-              chainId: '137',
+              chainId: String(secondChainId),
               address,
-              fiatTotal: getNumberString(onPolygon),
+              fiatTotal: getNumberString(onSecond),
               source: 'zerion',
             },
           ]),
+        )
+        .expect(({ body: [{ snapshot }] }) =>
+          expect(
+            Date.parse(snapshot.expiresAt) - Date.parse(snapshot.updatedAt),
+          ).toBe(ttlSeconds * 1_000),
         );
     }
 
     // The second request reads the cached snapshot.
     expect(getPositions).toHaveBeenCalledTimes(1);
+    // Trusted by default, like GET /v1/portfolio.
+    expect(networkService.get).toHaveBeenCalledWith(
+      expect.objectContaining({
+        url: `${zerionBaseUri}/v1/wallets/${address}/positions/`,
+        networkRequest: expect.objectContaining({
+          params: expect.objectContaining({
+            'filter[trash]': 'only_non_trash',
+          }),
+        }),
+      }),
+    );
   });
 
   it('rejects a currency code that is not three letters', async () => {
     await request(app.getHttpServer())
       .get('/v2/portfolio/summaries')
       .query({
-        safes: `1:${getAddress(faker.finance.ethereumAddress())}`,
+        safes: `${firstChainId}:${getAddress(faker.finance.ethereumAddress())}`,
         currency: faker.string.numeric(3),
       })
       .expect(422);
 
     expect(networkService.get).not.toHaveBeenCalled();
+  });
+
+  it('rejects requests over the per-client rate limit', async () => {
+    const query = {
+      safes: `${firstChainId}:${getAddress(faker.finance.ethereumAddress())}`,
+      currency: faker.string.numeric(3),
+    };
+    for (let i = 0; i < rateLimitMax; i++) {
+      await request(app.getHttpServer())
+        .get('/v2/portfolio/summaries')
+        .query(query)
+        .expect(422);
+    }
+
+    await request(app.getHttpServer())
+      .get('/v2/portfolio/summaries')
+      .query(query)
+      .expect(429);
   });
 });
