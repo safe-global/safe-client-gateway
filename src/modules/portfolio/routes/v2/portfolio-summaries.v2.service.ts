@@ -172,16 +172,21 @@ export class PortfolioSummariesV2Service {
       }),
     );
     const resolved: Array<ResolvedSafe> = [];
-    for (const result of settled) {
+    settled.forEach((result, i) => {
       if (result.status === 'fulfilled') {
         resolved.push(result.value);
       } else {
         // Debug: addresses come from the client, so anyone could flood the logs.
-        this.loggingService.debug(
-          `Error while resolving Safe for portfolio summary: ${asError(result.reason)}`,
-        );
+        this.loggingService.debug({
+          type: LogType.PortfolioRequestError,
+          source: 'PortfolioSummariesV2Service',
+          event: 'Safe could not be resolved',
+          safeAddress: safes[i].address,
+          chainId: safes[i].chainId,
+          detail: asError(result.reason).message,
+        });
       }
-    }
+    });
     return resolved;
   }
 
