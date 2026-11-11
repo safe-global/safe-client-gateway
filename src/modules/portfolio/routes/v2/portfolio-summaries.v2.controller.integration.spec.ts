@@ -52,14 +52,18 @@ const zerionChainsResponse = {
   })),
 };
 
-const zerionRow = (network: string, value: number): ZerionBalance =>
+const zerionRow = (
+  network: string,
+  value: number,
+  isTrash = false,
+): ZerionBalance =>
   zerionBalanceBuilder()
     .with(
       'attributes',
       zerionAttributesBuilder()
         .with('value', value)
         .with('position_type', PositionType.wallet)
-        .with('flags', { displayable: true, is_trash: false })
+        .with('flags', { displayable: true, is_trash: isTrash })
         .with(
           'fungible_info',
           zerionFungibleInfoBuilder()
@@ -232,6 +236,61 @@ describe('PortfolioSummariesV2Controller', () => {
         }),
       }),
     );
+  });
+
+  it('counts untrusted tokens when trusted=false', async () => {
+    const address = getAddress(faker.finance.ethereumAddress());
+    const chain = chainBuilder()
+      .with('chainId', String(firstChainId))
+      .with('isTestnet', false)
+      .build();
+    const [trustedValue, untrustedValue] = [fiat(), fiat()];
+    mockUpstreams({
+      chains: [chain],
+      address,
+      rows: [
+        zerionRow(firstNetwork, trustedValue),
+        zerionRow(firstNetwork, untrustedValue, true),
+      ],
+    });
+
+    await request(app.getHttpServer())
+      .get('/v2/portfolio/summaries')
+      .query({
+        safes: `${chain.chainId}:${address}`,
+        currency: faker.helpers.arrayElement(currencies),
+        trusted: 'false',
+      })
+      .expect(200)
+      .expect(({ body }) =>
+        expect(body).toMatchObject([
+          { fiatTotal: getNumberString(trustedValue + untrustedValue) },
+        ]),
+      );
+
+    expect(networkService.get).toHaveBeenCalledWith(
+      expect.objectContaining({
+        url: `${zerionBaseUri}/v1/wallets/${address}/positions/`,
+        networkRequest: expect.objectContaining({
+          params: expect.not.objectContaining({
+            'filter[trash]': expect.anything(),
+          }),
+        }),
+      }),
+    );
+  });
+
+  it('rejects a trusted value that is not a boolean', async () => {
+    await request(app.getHttpServer())
+      .get('/v2/portfolio/summaries')
+      .query({
+        safes: `${firstChainId}:${getAddress(faker.finance.ethereumAddress())}`,
+        currency: faker.helpers.arrayElement(currencies),
+        trusted: faker.string.alpha(5),
+      })
+      .expect(422);
+
+    expect(networkService.get).not.toHaveBeenCalled();
   });
 
   it('rejects a currency code that is not three letters', async () => {
