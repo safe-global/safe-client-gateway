@@ -707,7 +707,6 @@ describe('PortfolioRepository', () => {
       });
       mockPortfolioApi.getPortfolio.mockResolvedValue(rawify(portfolio));
 
-      // Untrusted, so GET /v1/portfolio applies no filter of its own.
       const untrusted = { ...args, trusted: false };
       await repository.getPortfolioSnapshot(untrusted);
       const fromAssets = await repository.getPortfolio(untrusted);

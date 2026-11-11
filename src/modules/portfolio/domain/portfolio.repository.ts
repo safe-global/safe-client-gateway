@@ -78,13 +78,11 @@ export class PortfolioRepository implements IPortfolioRepository {
     const cached = PortfolioSnapshotSchema.safeParse(
       await this._getCached(cacheDir),
     );
-    // A miss, or an entry written before snapshots carried timestamps, is
-    // fetched again, so the reported times are always the entry's own.
+    // Entries cached before timestamps existed fail the parse and are refetched.
     const snapshot = cached.success
       ? cached.data
       : await this._fetchAndCacheWithinBudget({ ...args, cacheDir });
-    // Same token filters as the GET /v1/portfolio defaults, so the totals
-    // summed from this snapshot match the Assets page.
+    // The GET /v1/portfolio defaults, so the totals match the Assets page.
     return {
       ...this._applyFilters(snapshot, {
         trusted: args.trusted,
@@ -115,10 +113,9 @@ export class PortfolioRepository implements IPortfolioRepository {
   }
 
   /**
-   * Snapshot reads come from batched summaries, so unlike the Assets page a
-   * miss spends the shared Zerion budget first.
+   * Summaries are public and batched, so unlike the Assets page a miss spends the shared Zerion budget.
    *
-   * @throws {LimitReachedError} When the shared Zerion budget is exhausted
+   * @throws {LimitReachedError} When the budget is exhausted
    */
   private async _fetchAndCacheWithinBudget(
     args: PortfolioSnapshotArgs & { cacheDir: CacheDir },
@@ -130,10 +127,6 @@ export class PortfolioRepository implements IPortfolioRepository {
     return await this._fetchAndCache(args);
   }
 
-  /**
-   * Fetches the portfolio and caches it with its fetch and expiry times, so
-   * every later read of the entry reports the same times.
-   */
   private async _fetchAndCache(args: {
     address: Address;
     fiatCode: string;

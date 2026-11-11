@@ -10,19 +10,9 @@ import {
 } from '#/modules/portfolio/routes/v2/entities/portfolio-summary.dto.entity';
 import { PositionType } from '#/modules/positions/domain/entities/position-type.entity';
 
-/**
- * Builds portfolio summaries. Zerion values are summed from the snapshot's
- * rows (every token and DeFi position), the same rows the Assets page lists,
- * so every total matches it.
- */
+/** Sums the snapshot's rows, the same rows the Assets page lists, so the totals match. */
 @Injectable()
 export class PortfolioSummaryMapper {
-  /**
-   * @param args.chainId - The Safe's chain, which picks its value out of the snapshot
-   * @param args.address - The Safe's address
-   * @param args.snapshot - The address's snapshot for the chain's environment
-   * @returns The summary, valued from the snapshot
-   */
   fromSnapshot(args: {
     chainId: string;
     address: Address;
@@ -45,12 +35,6 @@ export class PortfolioSummaryMapper {
     });
   }
 
-  /**
-   * @param args.chainId - The Safe's chain
-   * @param args.address - The Safe's address
-   * @param args.balances - The Safe's Transaction Service balances on that chain
-   * @returns The summary, valued from the balances, without a snapshot
-   */
   fromBalances(args: {
     chainId: string;
     address: Address;
@@ -78,7 +62,6 @@ export class PortfolioSummaryMapper {
     const byChain: Record<string, number> = {};
     const byType: Record<string, number> = {};
     const add = (chainId: string, type: string, balanceFiat?: string): void => {
-      // Unpriced rows carry no fiat value and count as nothing.
       const value = Number(balanceFiat ?? 0);
       total += value;
       byChain[chainId] = (byChain[chainId] ?? 0) + value;

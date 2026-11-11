@@ -8,7 +8,6 @@ export type ResolvedSafe = {
   address: Address;
 };
 
-/** A resolved Safe with the currency and token filter it is valued in. */
 export type PortfolioSummaryRequest = ResolvedSafe & {
   currency: string;
   trusted: boolean;

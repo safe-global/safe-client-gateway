@@ -71,10 +71,6 @@ export class PortfolioSummariesV2Service {
    * cannot be resolved, or whose value no source can provide, is logged and
    * left out; the other summaries are still returned.
    *
-   * @param args.safes - The Safes to value; only the first distinct entries up to the cap are used
-   * @param args.currency - Upper-case fiat code
-   * @param args.trusted - Whether to count trusted tokens only
-   * @returns The summaries of the Safes that could be valued
    * @throws {HttpExceptionNoLog} 400 when the currency is not supported
    */
   async getSummaries(args: {
@@ -180,8 +176,7 @@ export class PortfolioSummariesV2Service {
       if (result.status === 'fulfilled') {
         resolved.push(result.value);
       } else {
-        // Debug: the addresses come from the client, so anyone could fill
-        // the logs with non-Safes.
+        // Debug: addresses come from the client, so anyone could flood the logs.
         this.loggingService.debug(
           `Error while resolving Safe for portfolio summary: ${asError(result.reason)}`,
         );
@@ -190,14 +185,7 @@ export class PortfolioSummariesV2Service {
     return resolved;
   }
 
-  /**
-   * Zerion's chain list decides which chains read the snapshot. It is fetched
-   * once per environment present in the request; a failed lookup leaves that
-   * environment empty, so its Safes fall back to the Transaction Service.
-   *
-   * @param chains - The chains of the resolved Safes
-   * @returns The chainIds Zerion supports, keyed by isTestnet
-   */
+  /** A failed lookup leaves that environment empty, so its Safes fall back to the Transaction Service. */
   private async getZerionChainIds(
     chains: Array<Chain>,
   ): Promise<Map<boolean, Set<string>>> {
@@ -230,14 +218,7 @@ export class PortfolioSummariesV2Service {
     return chainIds;
   }
 
-  /**
-   * One snapshot covers every chain of an address in one environment, so it
-   * is fetched once per (address, environment). A failed fetch is logged and
-   * left out of the map; its Safes fall back to the Transaction Service.
-   *
-   * @param safes - The Safes on Zerion chains
-   * @returns The snapshots, keyed by {@link getWalletKey}
-   */
+  /** One snapshot covers every chain of an address, so it is fetched once per (address, environment). */
   private async fetchSnapshotsOncePerWallet(
     safes: Array<PortfolioSummaryRequest>,
   ): Promise<Map<string, PortfolioSnapshot>> {
@@ -304,10 +285,7 @@ export class PortfolioSummariesV2Service {
     }
   }
 
-  /**
-   * @param args.isSnapshotMissing - The chain is on Zerion but its snapshot failed
-   * @throws When the Transaction Service fails, so the Safe is dropped, never shown a fabricated 0
-   */
+  /** Throws when the Transaction Service fails, so the Safe is dropped rather than shown as 0. */
   private async getTxServiceSummary(
     args: PortfolioSummaryRequest & { isSnapshotMissing: boolean },
   ): Promise<PortfolioSummary> {

@@ -77,7 +77,6 @@ const zerionNetworks: Record<'mainnet' | 'testnet', Record<string, string>> = {
 const buildChain = (chainId: string, isTestnet = false): Chain =>
   chainBuilder().with('chainId', chainId).with('isTestnet', isTestnet).build();
 
-// A snapshot holding one priced token on each given chain.
 const snapshotWith = (
   valuesByChain: Record<string, number>,
 ): PortfolioSnapshot =>

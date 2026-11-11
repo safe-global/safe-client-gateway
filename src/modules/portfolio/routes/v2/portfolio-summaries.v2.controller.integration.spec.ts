@@ -52,7 +52,6 @@ const zerionChainsResponse = {
   })),
 };
 
-/** A displayable, non-trash wallet row worth {@link value} on {@link network}. */
 const zerionRow = (network: string, value: number): ZerionBalance =>
   zerionBalanceBuilder()
     .with(
@@ -123,7 +122,6 @@ describe('PortfolioSummariesV2Controller', () => {
     await app.close();
   });
 
-  /** @returns A spy on the Zerion /positions call */
   const mockUpstreams = (args: {
     chains: Array<Chain>;
     address: Address;
@@ -161,7 +159,7 @@ describe('PortfolioSummariesV2Controller', () => {
     return getPositions;
   };
 
-  it('values each chain of a Safe from one cached Zerion /positions call', async () => {
+  it('values each chain of a Safe from one cached, trusted Zerion /positions call', async () => {
     const address = getAddress(faker.finance.ethereumAddress());
     const chains = Object.values(networks).map((chainId) =>
       chainBuilder()
@@ -180,7 +178,6 @@ describe('PortfolioSummariesV2Controller', () => {
     });
     const query = {
       safes: chains.map(({ chainId }) => `${chainId}:${address}`).join(','),
-      // Any case is accepted.
       currency: faker.helpers.arrayElement(currencies).toLowerCase(),
     };
 
@@ -224,9 +221,7 @@ describe('PortfolioSummariesV2Controller', () => {
         );
     }
 
-    // The second request reads the cached snapshot.
     expect(getPositions).toHaveBeenCalledTimes(1);
-    // Trusted by default, like GET /v1/portfolio.
     expect(networkService.get).toHaveBeenCalledWith(
       expect.objectContaining({
         url: `${zerionBaseUri}/v1/wallets/${address}/positions/`,

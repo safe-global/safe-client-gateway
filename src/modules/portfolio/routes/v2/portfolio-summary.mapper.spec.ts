@@ -56,7 +56,6 @@ describe('PortfolioSummaryMapper', () => {
         .with('tokenBalances', [
           token({ chainId, value: walletHere }),
           token({ chainId: otherChainId, value: walletThere }),
-          // Unpriced: no fiat value, counts as nothing.
           token({ chainId }),
         ])
         .with('positionBalances', [
@@ -123,7 +122,6 @@ describe('PortfolioSummaryMapper', () => {
         balanceBuilder().with('fiatBalance', getNumberString(first)).build(),
         balanceBuilder().with('fiatBalance', getNumberString(second)).build(),
         balanceBuilder().with('fiatBalance', null).build(),
-        // Not a number: skipped instead of turning the total into NaN.
         balanceBuilder().with('fiatBalance', faker.string.alpha(8)).build(),
       ];
 
