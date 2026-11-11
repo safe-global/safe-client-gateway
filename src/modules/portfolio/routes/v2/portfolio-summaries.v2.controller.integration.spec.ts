@@ -24,7 +24,10 @@ import {
 import type { ZerionBalance } from '#/modules/balances/datasources/entities/zerion-balance.entity';
 import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
 import type { Chain } from '#/modules/chains/domain/entities/chain.entity';
-import { PositionType } from '#/modules/positions/domain/entities/position-type.entity';
+import {
+  PositionType,
+  type PositionTypes,
+} from '#/modules/positions/domain/entities/position-type.entity';
 import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
 import { rawify } from '#/validation/entities/raw.entity';
 
@@ -55,15 +58,18 @@ const zerionChainsResponse = {
 const zerionRow = (
   network: string,
   value: number,
-  isTrash = false,
+  options: { isTrash?: boolean; type?: (typeof PositionTypes)[number] } = {},
 ): ZerionBalance =>
   zerionBalanceBuilder()
     .with(
       'attributes',
       zerionAttributesBuilder()
         .with('value', value)
-        .with('position_type', PositionType.wallet)
-        .with('flags', { displayable: true, is_trash: isTrash })
+        .with('position_type', options.type ?? PositionType.wallet)
+        .with('flags', {
+          displayable: true,
+          is_trash: options.isTrash ?? false,
+        })
         .with(
           'fungible_info',
           zerionFungibleInfoBuilder()
@@ -254,7 +260,7 @@ describe('PortfolioSummariesV2Controller', () => {
       address,
       rows: [
         zerionRow(firstNetwork, trustedValue),
-        zerionRow(firstNetwork, untrustedValue, true),
+        zerionRow(firstNetwork, untrustedValue, { isTrash: true }),
       ],
     });
 
@@ -283,6 +289,67 @@ describe('PortfolioSummariesV2Controller', () => {
       }),
     );
   });
+
+  it.each(['true', 'false'])(
+    'matches the totals of GET /v1/portfolio when trusted=%s',
+    async (trusted) => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const chains = Object.values(networks).map((chainId) =>
+        chainBuilder()
+          .with('chainId', String(chainId))
+          .with('isTestnet', false)
+          .build(),
+      );
+      const amount = (): number =>
+        faker.number.float({ min: 1, max: 10_000, fractionDigits: 6 });
+      mockUpstreams({
+        chains,
+        address,
+        rows: [
+          zerionRow(firstNetwork, amount()),
+          zerionRow(firstNetwork, amount(), { type: PositionType.deposit }),
+          zerionRow(firstNetwork, amount(), { type: PositionType.loan }),
+          zerionRow(firstNetwork, amount(), { isTrash: true }),
+          zerionRow(firstNetwork, faker.number.float({ max: 0.09 })),
+          zerionRow(secondNetwork, amount()),
+          zerionRow(secondNetwork, amount(), { type: PositionType.staked }),
+        ],
+      });
+      const currency = faker.helpers.arrayElement(currencies);
+      const getAssetsTotal = async (chainId?: string): Promise<number> => {
+        const { body } = await request(app.getHttpServer())
+          .get(`/v1/portfolio/${address}`)
+          .query({
+            fiatCode: currency,
+            trusted,
+            ...(chainId && { chainIds: chainId }),
+          })
+          .expect(200);
+        return Number(body.totalBalanceFiat);
+      };
+
+      const { body: summaries } = await request(app.getHttpServer())
+        .get('/v2/portfolio/summaries')
+        .query({
+          safes: chains.map(({ chainId }) => `${chainId}:${address}`).join(','),
+          currency,
+          trusted,
+        })
+        .expect(200);
+
+      expect(summaries).toHaveLength(chains.length);
+      for (const summary of summaries) {
+        expect(Number(summary.fiatTotal)).toBeCloseTo(
+          await getAssetsTotal(summary.chainId),
+          6,
+        );
+      }
+      expect(Number(summaries[0].snapshot.fiatTotal)).toBeCloseTo(
+        await getAssetsTotal(),
+        6,
+      );
+    },
+  );
 
   it('rejects a trusted value that is not a boolean', async () => {
     await request(app.getHttpServer())
