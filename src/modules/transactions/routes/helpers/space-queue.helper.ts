@@ -197,8 +197,10 @@ type CountTallies = {
   signers: Map<string, { address: Address; count: number }>;
 };
 
-/** Which filters, other than the search, a transaction passes. */
+/** Which filters a transaction passes. */
 type FilterMatches = {
+  /** The search is not a facet: it narrows every count */
+  search: boolean;
   status: boolean;
   safe: boolean;
   chain: boolean;
@@ -214,19 +216,24 @@ const tallyTransaction = (args: {
   passes: FilterMatches;
 }): number => {
   const { tallies, chainId, traits, passes } = args;
-  if (passes.status && passes.safe && passes.signer) {
-    tallies.chains.set(chainId, (tallies.chains.get(chainId) ?? 0) + 1);
-  }
+  // Every signer stays listed, like every chain and Safe, with 0 when no
+  // transaction awaiting them passes the other filters or the search
   for (const { value } of traits.missingSigners) {
     const key = value.toLowerCase();
     const signer = tallies.signers.get(key) ?? {
       address: value as Address,
       count: 0,
     };
-    if (passes.status && passes.safe && passes.chain) {
+    if (passes.search && passes.status && passes.safe && passes.chain) {
       signer.count++;
     }
     tallies.signers.set(key, signer);
+  }
+  if (!passes.search) {
+    return 0;
+  }
+  if (passes.status && passes.safe && passes.signer) {
+    tallies.chains.set(chainId, (tallies.chains.get(chainId) ?? 0) + 1);
   }
   if (passes.safe && passes.chain && passes.signer) {
     tallies.counts.total++;
@@ -277,15 +284,13 @@ export const getSpaceQueueCounts = (args: {
         signers: args.signers,
         now: args.now,
       })) {
-        // The search is not a facet: it narrows every count
-        for (const traits of group.traits.filter((traits) =>
-          inSearch(traits, args.filters, safeMatches),
-        )) {
+        for (const traits of group.traits) {
           count += tallyTransaction({
             tallies,
             chainId,
             traits,
             passes: {
+              search: inSearch(traits, args.filters, safeMatches),
               status: matches(traits, args.filters),
               safe: passesSafe,
               chain: passesChain,

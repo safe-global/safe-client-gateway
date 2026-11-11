@@ -714,5 +714,48 @@ describe('space-queue.helper', () => {
         }),
       );
     });
+
+    it('keeps listing the signers and chains the search leaves out, with a count of 0', () => {
+      const alice = getAddress(faker.finance.ethereumAddress());
+      const bob = getAddress(faker.finance.ethereumAddress());
+      const awaitingAlice = queuedTransaction({
+        status: TransactionStatus.AwaitingConfirmations,
+        missingSigners: [alice],
+      });
+      const awaitingBob = queuedTransaction({
+        status: TransactionStatus.AwaitingConfirmations,
+        missingSigners: [bob],
+      });
+      const names = new Map([
+        [alice.toLowerCase(), ['Alice']],
+        [bob.toLowerCase(), ['Bob']],
+      ]);
+
+      const counts = getSpaceQueueCounts({
+        results: {
+          [safeA]: {
+            [chainId]: [awaitingAlice],
+            [otherChainId]: [awaitingBob],
+          },
+        },
+        filters: { search: search('alice', { names }) },
+        signers: [],
+        now,
+      });
+
+      expect(counts).toMatchObject({ total: 1, waiting: 1 });
+      expect(counts.signers).toEqual([
+        { address: alice, count: 1 },
+        { address: bob, count: 0 },
+      ]);
+      expect(counts.chains).toEqual([
+        { chainId, count: 1 },
+        { chainId: otherChainId, count: 0 },
+      ]);
+      expect(counts.safes).toEqual([
+        { chainId, safeAddress: safeA, count: 1 },
+        { chainId: otherChainId, safeAddress: safeA, count: 0 },
+      ]);
+    });
   });
 });
