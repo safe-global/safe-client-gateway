@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import { ForbiddenException } from '@nestjs/common';
+import { ForbiddenException, HttpStatus } from '@nestjs/common';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
+import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
 import { siweAuthPayloadDtoBuilder } from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
 import type { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
@@ -295,6 +296,88 @@ describe('SpaceTransactionsService', () => {
       ).not.toHaveBeenCalled();
       expect(mockChainsRepository.getChain).not.toHaveBeenCalled();
     });
+  });
+
+  describe('limit', () => {
+    beforeEach(() => {
+      mockMembersRepository.findOne.mockResolvedValue(
+        memberBuilder().with('id', userId).build(),
+      );
+      mockSpaceSafesRepository.findBySpaceId.mockResolvedValue([]);
+    });
+
+    it('passes the limit on to the queue read and keeps the whole-queue count', async () => {
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const chainId = faker.string.numeric({ length: 3 });
+      const item = awaitingSignatureFrom(
+        getAddress(faker.finance.ethereumAddress()),
+      );
+      const limit = faker.number.int({ min: 1, max: 100 });
+      const count = faker.number.int({ min: limit + 1, max: 1_000 });
+      mockTransactionsService.getTransactionQueueForSafes.mockResolvedValue({
+        count,
+        next: null,
+        previous: null,
+        results: { [safeAddress]: { [chainId]: [item] } },
+        unavailableSafes: [],
+      });
+
+      const actual = await target.getTransactionQueue({
+        spaceId,
+        authPayload,
+        limit,
+      });
+
+      expect(
+        mockTransactionsService.getTransactionQueueForSafes,
+      ).toHaveBeenCalledWith({ spaceId, safes: [], limit });
+      expect(actual.count).toBe(count);
+      expect(actual.results).toEqual({
+        [safeAddress]: { [chainId]: [item] },
+      });
+      expect(actual.counts.total).toBe(1);
+    });
+
+    it.each([
+      ['status', { filters: { statuses: ['sign' as const] } }],
+      [
+        'safes',
+        {
+          filters: {
+            safes: [
+              {
+                chainId: faker.string.numeric({ length: 3 }),
+                safeAddress: getAddress(faker.finance.ethereumAddress()),
+              },
+            ],
+          },
+        },
+      ],
+      ['conflicting', { filters: { conflicting: true } }],
+      ['stale', { filters: { stale: false } }],
+      ['search', { search: faker.word.noun() }],
+    ])(
+      'rejects a limit combined with %s without reading the queue',
+      async (_, args) => {
+        await expect(
+          target.getTransactionQueue({
+            spaceId,
+            authPayload,
+            limit: faker.number.int({ min: 1, max: 100 }),
+            ...args,
+          }),
+        ).rejects.toThrow(
+          new HttpExceptionNoLog(
+            'limit cannot be combined with a filter or a search',
+            HttpStatus.UNPROCESSABLE_ENTITY,
+          ),
+        );
+
+        expect(
+          mockTransactionsService.getTransactionQueueForSafes,
+        ).not.toHaveBeenCalled();
+      },
+    );
   });
 
   it('rejects a caller who is not an active member of the Space', async () => {

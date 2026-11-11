@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Inject, Injectable } from '@nestjs/common';
+import { HttpStatus, Inject, Injectable } from '@nestjs/common';
+import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
 import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '#/modules/auth/utils/assert-authenticated.utils';
 import { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
@@ -17,6 +18,8 @@ import {
 import { TransactionsService } from '#/modules/transactions/routes/transactions.service';
 import { IMembersRepository } from '#/modules/users/domain/members/members.repository.interface';
 import { IWalletsRepository } from '#/modules/wallets/domain/wallets.repository.interface';
+
+const isDefined = (value: unknown): boolean => value !== undefined;
 
 @Injectable()
 export class SpaceTransactionsService {
@@ -40,9 +43,23 @@ export class SpaceTransactionsService {
     filters?: Omit<SpaceQueueFilters, 'search'>;
     /** Trimmed and lowercased */
     search?: string;
+    /** Read only the first transactions, by nonce across every Safe */
+    limit?: number;
   }): Promise<SpaceQueuedItemPage> {
     const userId = getAuthenticatedUserIdOrFail(args.authPayload);
     await assertMember(this.membersRepository, args.spaceId, userId);
+
+    // The filters and counts run on the queue read: on a limited read, they
+    // would miss the transactions left unread.
+    if (
+      args.limit !== undefined &&
+      (args.search || Object.values(args.filters ?? {}).some(isDefined))
+    ) {
+      throw new HttpExceptionNoLog(
+        'limit cannot be combined with a filter or a search',
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
+    }
 
     const [spaceSafes, wallets] = await Promise.all([
       this.spaceSafesRepository.findBySpaceId(args.spaceId),
@@ -55,6 +72,7 @@ export class SpaceTransactionsService {
         chainId,
         safeAddress: address,
       })),
+      limit: args.limit,
     });
 
     // "sign" is the caller's own: a wallet linked to the authenticated user

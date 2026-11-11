@@ -280,6 +280,50 @@ describe('TransactionsService', () => {
       expect(actual.next).toBeNull();
     });
 
+    it('reads only the first page of `limit` transactions when given a limit', async () => {
+      const chainId = faker.string.numeric({ length: 3 });
+      const safe = safeBuilder().with('nonce', 0).build();
+      mockSafeRepository.getSafe.mockResolvedValue(safe);
+      const limit = faker.number.int({
+        min: 1,
+        max: SAFE_QUEUE_SERVICE_MAX_LIMIT,
+      });
+      // Long enough that an unlimited read would fetch every page
+      const count = maxPages * SAFE_QUEUE_SERVICE_MAX_LIMIT;
+      const transactions = [queuedTransaction(chainId, safe, 0)];
+      mockSafeRepository.getTransactionQueueForSafes.mockResolvedValue(
+        queuePage(transactions, count),
+      );
+
+      const actual = await target.getTransactionQueueForSafes({
+        spaceId,
+        safes: [{ chainId, safeAddress: safe.address }],
+        limit,
+      });
+
+      expect(
+        mockSafeRepository.getTransactionQueueForSafes,
+      ).toHaveBeenCalledExactlyOnceWith({
+        spaceId,
+        safes: [{ chainId, safe }],
+        limit,
+        offset: 0,
+      });
+      expect(mockQueuedItemsMapper.getQueuedItems).toHaveBeenCalledWith(
+        {
+          count: 1,
+          next: null,
+          previous: null,
+          results: transactions.map(({ transaction }) => transaction),
+        },
+        safe,
+        chainId,
+        null,
+        null,
+      );
+      expect(actual.count).toBe(count);
+    });
+
     it('reports Safes that cannot be loaded as unavailable and leaves them out of the queue', async () => {
       const chainId = faker.string.numeric({ length: 3 });
       const safe = safeBuilder().build();

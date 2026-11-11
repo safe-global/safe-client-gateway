@@ -128,7 +128,11 @@ describe('SpaceTransactionsController', () => {
       .build();
   }
 
-  function mockUpstreams(args: { chain: Chain; deployed: Array<Safe> }): void {
+  function mockUpstreams(args: {
+    chain: Chain;
+    deployed: Array<Safe>;
+    queueCount?: number;
+  }): void {
     networkService.get.mockImplementation(({ url }) => {
       if (url === `${safeConfigUrl}/api/v1/chains/${args.chain.chainId}`) {
         return Promise.resolve({ data: rawify(args.chain), status: 200 });
@@ -156,7 +160,7 @@ describe('SpaceTransactionsController', () => {
         return Promise.resolve({
           data: rawify(
             pageBuilder()
-              .with('count', 0)
+              .with('count', args.queueCount ?? 0)
               .with('next', null)
               .with('previous', null)
               .with('results', [])
@@ -306,6 +310,99 @@ describe('SpaceTransactionsController', () => {
           .set('Cookie', [`access_token=${accessToken}`])
           .expect(HttpStatus.UNPROCESSABLE_ENTITY);
       }
+    });
+
+    it('reads only the first `limit` transactions, in one queue page', async () => {
+      const { accessToken, spaceUuid } = await createSpaceForSignerFixture({
+        app,
+        jwtService,
+        postgresDatabaseService,
+      });
+      const chain = uniqueChain();
+      const deployed = safeBuilder().build();
+      await addSafesFixture({
+        app,
+        spaceUuid,
+        accessToken,
+        safes: [{ chainId: chain.chainId, address: deployed.address }],
+      }).then((response) => expect(response.status).toBe(HttpStatus.CREATED));
+      // Long enough that an unlimited read would fetch more pages
+      const queueCount = faker.number.int({ min: 201, max: 1_000 });
+      mockUpstreams({ chain, deployed: [deployed], queueCount });
+      const limit = faker.number.int({ min: 1, max: 100 });
+
+      await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceUuid}/transactions/queued`)
+        .query({ limit })
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(HttpStatus.OK)
+        .expect(({ body }) => expect(body.count).toBe(queueCount));
+
+      expect(queueRequests()).toEqual([
+        [
+          expect.objectContaining({
+            networkRequest: expect.objectContaining({
+              params: expect.objectContaining({ limit, offset: 0 }),
+            }),
+          }),
+        ],
+      ]);
+    });
+
+    it('rejects a limit that is not an integer from 1 to 100', async () => {
+      const { accessToken, spaceUuid } = await createSpaceForSignerFixture({
+        app,
+        jwtService,
+        postgresDatabaseService,
+      });
+
+      for (const limit of [
+        '0',
+        '-1',
+        faker.number.int({ min: 101 }).toString(),
+        faker.number.float({ min: 1, max: 99, fractionDigits: 2 }).toFixed(2),
+        faker.word.noun(),
+      ]) {
+        await request(app.getHttpServer())
+          .get(`/v1/spaces/${spaceUuid}/transactions/queued`)
+          .query({ limit })
+          .set('Cookie', [`access_token=${accessToken}`])
+          .expect(HttpStatus.UNPROCESSABLE_ENTITY);
+      }
+    });
+
+    it('rejects a limit combined with a filter or a search, without reading the queue', async () => {
+      const { accessToken, spaceUuid } = await createSpaceForSignerFixture({
+        app,
+        jwtService,
+        postgresDatabaseService,
+      });
+      const chain = uniqueChain();
+      const deployed = safeBuilder().build();
+      await addSafesFixture({
+        app,
+        spaceUuid,
+        accessToken,
+        safes: [{ chainId: chain.chainId, address: deployed.address }],
+      }).then((response) => expect(response.status).toBe(HttpStatus.CREATED));
+      mockUpstreams({ chain, deployed: [deployed] });
+      const limit = faker.number.int({ min: 1, max: 100 });
+
+      for (const query of [
+        { status: 'sign' },
+        { safes: `${chain.chainId}:${deployed.address}` },
+        { conflicting: 'true' },
+        { stale: 'false' },
+        { search: faker.word.noun() },
+      ]) {
+        await request(app.getHttpServer())
+          .get(`/v1/spaces/${spaceUuid}/transactions/queued`)
+          .query({ ...query, limit })
+          .set('Cookie', [`access_token=${accessToken}`])
+          .expect(HttpStatus.UNPROCESSABLE_ENTITY);
+      }
+
+      expect(queueRequests()).toHaveLength(0);
     });
 
     it('filters the cached queue without querying it again', async () => {
