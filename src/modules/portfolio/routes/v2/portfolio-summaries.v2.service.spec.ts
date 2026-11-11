@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { HttpStatus } from '@nestjs/common';
-import { type Address, getAddress } from 'viem';
+import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
 import { ZodError } from 'zod';
 import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
@@ -124,9 +124,6 @@ describe('PortfolioSummariesV2Service', () => {
       mockLoggingService,
     );
 
-  const randomAddress = (): Address =>
-    getAddress(faker.finance.ethereumAddress());
-
   beforeEach(() => {
     vi.resetAllMocks();
     fakeConfigurationService = new FakeConfigurationService();
@@ -159,7 +156,12 @@ describe('PortfolioSummariesV2Service', () => {
   it('rejects an unsupported currency before any upstream call', async () => {
     await expect(
       service.getSummaries({
-        safes: [{ chainId: mainnetChainId, address: randomAddress() }],
+        safes: [
+          {
+            chainId: mainnetChainId,
+            address: getAddress(faker.finance.ethereumAddress()),
+          },
+        ],
         currency: unsupportedCurrency,
         trusted: false,
       }),
@@ -174,7 +176,7 @@ describe('PortfolioSummariesV2Service', () => {
   });
 
   it('values every chain of a wallet from one Zerion snapshot', async () => {
-    const address = randomAddress();
+    const address = getAddress(faker.finance.ethereumAddress());
     const [mainnetValue, polygonValue] = [fiat(), fiat()];
     const snapshot = snapshotWith({
       [mainnetChainId]: mainnetValue,
@@ -236,7 +238,12 @@ describe('PortfolioSummariesV2Service', () => {
     );
 
     const [summary] = await service.getSummaries({
-      safes: [{ chainId: otherMainnetChainId, address: randomAddress() }],
+      safes: [
+        {
+          chainId: otherMainnetChainId,
+          address: getAddress(faker.finance.ethereumAddress()),
+        },
+      ],
       currency,
       trusted: false,
     });
@@ -246,7 +253,7 @@ describe('PortfolioSummariesV2Service', () => {
   });
 
   it('reads a chain Zerion does not list from the Transaction Service', async () => {
-    const address = randomAddress();
+    const address = getAddress(faker.finance.ethereumAddress());
     const value = fiat();
     mockBalancesRepository.getBalances.mockResolvedValue([
       balanceBuilder().with('fiatBalance', getNumberString(value)).build(),
@@ -278,7 +285,7 @@ describe('PortfolioSummariesV2Service', () => {
   });
 
   it('falls back to the Transaction Service when the snapshot is unavailable', async () => {
-    const address = randomAddress();
+    const address = getAddress(faker.finance.ethereumAddress());
     mockPortfolioRepository.getPortfolioSnapshot.mockRejectedValue(
       new Error('Zerion unavailable'),
     );
@@ -312,8 +319,8 @@ describe('PortfolioSummariesV2Service', () => {
   });
 
   it('leaves out a Safe no source can value, and returns the others', async () => {
-    const failing = randomAddress();
-    const working = randomAddress();
+    const failing = getAddress(faker.finance.ethereumAddress());
+    const working = getAddress(faker.finance.ethereumAddress());
     const value = fiat();
     mockPortfolioRepository.getPortfolioSnapshot.mockImplementation(
       ({ address }) =>
@@ -343,7 +350,7 @@ describe('PortfolioSummariesV2Service', () => {
   });
 
   it('never calls Zerion for an address that is not a Safe', async () => {
-    const notASafe = randomAddress();
+    const notASafe = getAddress(faker.finance.ethereumAddress());
     mockSafeRepository.getSafe.mockRejectedValue(new Error('Not a Safe'));
 
     const result = await service.getSummaries({
@@ -355,11 +362,23 @@ describe('PortfolioSummariesV2Service', () => {
     expect(result).toEqual([]);
     expect(mockPortfolioRepository.getPortfolioSnapshot).not.toHaveBeenCalled();
     expect(mockLoggingService.warn).not.toHaveBeenCalled();
+    expect(mockLoggingService.debug).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: 'Safe could not be resolved',
+        safeAddress: notASafe,
+        chainId: mainnetChainId,
+      }),
+    );
   });
 
   it('leaves out a Safe whose chain cannot be resolved', async () => {
     const result = await service.getSummaries({
-      safes: [{ chainId: faker.string.numeric(9), address: randomAddress() }],
+      safes: [
+        {
+          chainId: faker.string.numeric(9),
+          address: getAddress(faker.finance.ethereumAddress()),
+        },
+      ],
       currency,
       trusted: false,
     });
@@ -369,8 +388,10 @@ describe('PortfolioSummariesV2Service', () => {
   });
 
   it('drops repeated Safes and keeps at most the configured number', async () => {
-    const repeated = randomAddress();
-    const others = Array.from({ length: maxSafes }, randomAddress);
+    const repeated = getAddress(faker.finance.ethereumAddress());
+    const others = Array.from({ length: maxSafes }, () =>
+      getAddress(faker.finance.ethereumAddress()),
+    );
     mockBalancesRepository.getBalances.mockResolvedValue([]);
 
     const result = await service.getSummaries({
@@ -391,7 +412,7 @@ describe('PortfolioSummariesV2Service', () => {
   it('fetches one snapshot per environment of the same address', async () => {
     fakeConfigurationService.set('features.zerionTestnets', true);
     service = buildService();
-    const address = randomAddress();
+    const address = getAddress(faker.finance.ethereumAddress());
     mockPortfolioRepository.getPortfolioSnapshot.mockResolvedValue(
       snapshotWith({}),
     );
@@ -420,7 +441,12 @@ describe('PortfolioSummariesV2Service', () => {
     mockBalancesRepository.getBalances.mockResolvedValue([]);
 
     const [summary] = await service.getSummaries({
-      safes: [{ chainId: testnetChainId, address: randomAddress() }],
+      safes: [
+        {
+          chainId: testnetChainId,
+          address: getAddress(faker.finance.ethereumAddress()),
+        },
+      ],
       currency,
       trusted: false,
     });
@@ -435,7 +461,12 @@ describe('PortfolioSummariesV2Service', () => {
     mockBalancesRepository.getBalances.mockResolvedValue([]);
 
     const [summary] = await service.getSummaries({
-      safes: [{ chainId: mainnetChainId, address: randomAddress() }],
+      safes: [
+        {
+          chainId: mainnetChainId,
+          address: getAddress(faker.finance.ethereumAddress()),
+        },
+      ],
       currency,
       trusted: false,
     });
@@ -453,7 +484,12 @@ describe('PortfolioSummariesV2Service', () => {
     mockBalancesRepository.getBalances.mockResolvedValue([]);
 
     const [summary] = await service.getSummaries({
-      safes: [{ chainId: mainnetChainId, address: randomAddress() }],
+      safes: [
+        {
+          chainId: mainnetChainId,
+          address: getAddress(faker.finance.ethereumAddress()),
+        },
+      ],
       currency,
       trusted: false,
     });
@@ -467,7 +503,7 @@ describe('PortfolioSummariesV2Service', () => {
   });
 
   it('logs an over-budget snapshot at debug and falls back', async () => {
-    const address = randomAddress();
+    const address = getAddress(faker.finance.ethereumAddress());
     mockPortfolioRepository.getPortfolioSnapshot.mockRejectedValue(
       new LimitReachedError(),
     );
@@ -493,7 +529,7 @@ describe('PortfolioSummariesV2Service', () => {
   });
 
   it('logs a malformed snapshot as schema drift and falls back', async () => {
-    const address = randomAddress();
+    const address = getAddress(faker.finance.ethereumAddress());
     mockPortfolioRepository.getPortfolioSnapshot.mockRejectedValue(
       new ZodError([]),
     );
