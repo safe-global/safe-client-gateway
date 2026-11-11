@@ -227,6 +227,8 @@ describe('SpaceTransactionsController', () => {
             conflicting: 0,
             stale: 0,
             safes: [],
+            chains: [],
+            signers: [],
           },
         });
     });
@@ -272,6 +274,8 @@ describe('SpaceTransactionsController', () => {
             conflicting: 0,
             stale: 0,
             safes: [],
+            chains: [],
+            signers: [],
           },
         });
 
@@ -287,7 +291,7 @@ describe('SpaceTransactionsController', () => {
       );
     });
 
-    it('rejects an unknown status, an invalid Safe and a non-boolean flag', async () => {
+    it('rejects an unknown status, an invalid Safe, chain ID or signer and a non-boolean flag', async () => {
       const { accessToken, spaceUuid } = await createSpaceForSignerFixture({
         app,
         jwtService,
@@ -297,6 +301,8 @@ describe('SpaceTransactionsController', () => {
       for (const query of [
         { status: faker.word.noun() },
         { safes: faker.finance.ethereumAddress() },
+        { chainIds: faker.word.noun() },
+        { signers: faker.word.noun() },
         { conflicting: faker.word.noun() },
         { stale: faker.word.noun() },
       ]) {
@@ -333,6 +339,8 @@ describe('SpaceTransactionsController', () => {
         .query({
           status: 'sign,execute',
           safes: `${chain.chainId}:${deployed.address}`,
+          chainIds: chain.chainId,
+          signers: faker.finance.ethereumAddress(),
           conflicting: 'true',
           stale: 'false',
         })
