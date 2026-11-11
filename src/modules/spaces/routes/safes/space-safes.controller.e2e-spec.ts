@@ -1168,8 +1168,7 @@ describe('SpaceSafesController', () => {
         .send(spaceSafes)
         .expect(403)
         .expect({
-          message: 'User is not an admin of this space',
-          error: 'Forbidden',
+          message: 'User is not an admin of this workspace',
           statusCode: 403,
         });
     });
@@ -1229,8 +1228,7 @@ describe('SpaceSafesController', () => {
         .send(spaceSafes)
         .expect(403)
         .expect({
-          message: 'User is not an admin of this space',
-          error: 'Forbidden',
+          message: 'User is not an admin of this workspace',
           statusCode: 403,
         });
     });

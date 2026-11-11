@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import { ForbiddenException } from '@nestjs/common';
+import { HttpStatus } from '@nestjs/common';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
+import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
 import { siweAuthPayloadDtoBuilder } from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
 import type { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
@@ -306,7 +307,10 @@ describe('SpaceTransactionsService', () => {
         authPayload,
       }),
     ).rejects.toThrow(
-      new ForbiddenException('User is not a member of this workspace'),
+      new HttpExceptionNoLog(
+        'User is not a member of this workspace',
+        HttpStatus.FORBIDDEN,
+      ),
     );
 
     expect(mockSpaceSafesRepository.findBySpaceId).not.toHaveBeenCalled();
