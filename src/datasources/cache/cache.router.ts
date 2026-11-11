@@ -61,6 +61,8 @@ export class CacheRouter {
   private static readonly SAFE_KEY = 'safe';
   private static readonly SINGLETONS_KEY = 'singletons';
   private static readonly SPACE_ENTITLEMENTS_KEY = 'space_entitlements';
+  private static readonly SPACE_TRANSACTION_QUEUE_KEY =
+    'space_transaction_queue';
   private static readonly STAKING_DEDICATED_STAKING_STATS_KEY =
     'staking_dedicated_staking_stats';
   private static readonly STAKING_DEFI_VAULT_STATS_KEY =
@@ -334,15 +336,19 @@ export class CacheRouter {
   static getTransfersCacheDir(args: {
     chainId: string;
     safeAddress: string;
-    onlyErc20: boolean;
-    onlyErc721: boolean;
+    onlyErc20?: boolean;
+    onlyErc721?: boolean;
     limit?: number;
     offset?: number;
     to?: string;
+    from?: string;
+    tokenAddress?: string;
+    executionDateGte?: string;
+    executionDateLte?: string;
   }): CacheDir {
     return new CacheDir(
       CacheRouter.getTransfersCacheKey(args),
-      `${args.onlyErc20}_${args.onlyErc721}_${args.limit}_${args.offset}_${args.to}`,
+      `${args.onlyErc20}_${args.onlyErc721}_${args.limit}_${args.offset}_${args.to}_${args.from}_${args.tokenAddress}_${args.executionDateGte}_${args.executionDateLte}`,
     );
   }
 
@@ -459,6 +465,30 @@ export class CacheRouter {
     return new CacheDir(
       CacheRouter.getSafeQueueMultisigTransactionsCacheKey(args),
       `safe_queue_${args.nonceOrder}_${args.limit}_${args.offset}`,
+    );
+  }
+
+  static getSpaceTransactionQueueCacheKey(spaceId: number): string {
+    return `${spaceId}_${CacheRouter.SPACE_TRANSACTION_QUEUE_KEY}`;
+  }
+
+  /**
+   * One page of a Space's queue. The field covers the Safes requested, so a
+   * page cached for an earlier set of Safes is never served for a later one.
+   */
+  static getSpaceTransactionQueueCacheDir(args: {
+    spaceId: number;
+    safes: ReadonlyArray<string>;
+    limit: number;
+    offset: number;
+  }): CacheDir {
+    const hash = crypto.createHash('sha256');
+    hash.update(
+      [args.safes.toSorted().join(','), args.limit, args.offset].join('_'),
+    );
+    return new CacheDir(
+      CacheRouter.getSpaceTransactionQueueCacheKey(args.spaceId),
+      hash.digest('hex'),
     );
   }
 

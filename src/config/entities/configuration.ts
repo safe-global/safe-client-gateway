@@ -961,6 +961,13 @@ export default () => ({
       process.env.SPACES_MAX_SAFES_PER_SPACE ?? `${10}`,
       10,
     ),
+    transactionQueue: {
+      /** How many queue service pages the Space queue reads. */
+      maxPages: Number.parseInt(
+        process.env.SPACES_TRANSACTION_QUEUE_MAX_PAGES ?? `${5}`,
+        10,
+      ),
+    },
     maxSpaceCreationsPerUser: Number.parseInt(
       process.env.MAX_SPACE_CREATIONS_PER_USER ?? `${3}`,
       10,
