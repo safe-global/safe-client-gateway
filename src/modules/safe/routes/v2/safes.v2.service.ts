@@ -11,11 +11,12 @@ import {
   LoggingService,
 } from '#/logging/logging.interface';
 import { asError } from '#/logging/utils';
-import type { ZerionWalletPortfolio } from '#/modules/balances/datasources/entities/zerion-wallet-portfolio.entity';
 import { IZerionWalletPortfolioApi } from '#/modules/balances/datasources/zerion-wallet-portfolio-api.service';
 import { IBalancesRepository } from '#/modules/balances/domain/balances.repository.interface';
 import { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
 import type { Chain } from '#/modules/chains/domain/entities/chain.entity';
+import { IPortfolioRepository } from '#/modules/portfolio/domain/portfolio.repository.interface';
+import { sumPortfolioRows } from '#/modules/portfolio/domain/portfolio-totals';
 import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
 import type { Safe } from '#/modules/safe/domain/entities/safe.entity';
 import { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
@@ -36,11 +37,15 @@ type ResolvedEntry = {
   safe: Safe;
 };
 
+/** Fiat value per chain ID of one wallet, from whichever Zerion source served it. */
+type FiatByChainId = Record<string, number>;
+
 @Injectable()
 export class SafesV2Service {
   private readonly maxOverviews: number;
   private readonly zerionEnabled: boolean;
   private readonly zerionTestnetsEnabled: boolean;
+  private readonly portfolioSnapshotEnabled: boolean;
 
   constructor(
     @Inject(ISafeRepository)
@@ -55,6 +60,8 @@ export class SafesV2Service {
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
     @Inject(IZerionRepository)
     private readonly zerionRepository: IZerionRepository,
+    @Inject(IPortfolioRepository)
+    private readonly portfolioRepository: IPortfolioRepository,
   ) {
     this.maxOverviews = configurationService.getOrThrow(
       'mappings.safe.maxOverviews',
@@ -63,6 +70,9 @@ export class SafesV2Service {
       configurationService.getOrThrow<boolean>('features.zerion');
     this.zerionTestnetsEnabled = configurationService.getOrThrow<boolean>(
       'features.zerionTestnets',
+    );
+    this.portfolioSnapshotEnabled = configurationService.getOrThrow<boolean>(
+      'features.safesPortfolioSnapshot',
     );
   }
 
@@ -81,14 +91,15 @@ export class SafesV2Service {
     // stale address never spends a Zerion call or consumes the shared budget.
     const resolvedEntries = await this.resolveSafes(limitedSafes, chainsById);
 
-    // The Zerion portfolio is per-wallet and contains every chain, so fetch it
-    // once per wallet-identity instead of once per (chainId, address).
-    const portfoliosByIdentity = await this.fetchPortfoliosOncePerIdentity({
+    // A Zerion portfolio is per wallet and covers every chain, so fetch it
+    // once per wallet identity instead of once per (chainId, address).
+    const fiatByIdentity = await this.fetchFiatOncePerIdentity({
       entries: resolvedEntries.filter(({ chainId }) =>
         zerionChainNamesById.has(chainId),
       ),
       currency: args.currency,
       trusted: args.trusted,
+      zerionChainNamesById,
     });
 
     const settledOverviews = await Promise.allSettled(
@@ -99,8 +110,8 @@ export class SafesV2Service {
             safeAddress: address,
             currency: args.currency,
             trusted: args.trusted,
-            zerionChainName: zerionChainNamesById.get(chainId),
-            portfoliosByIdentity,
+            isOnZerion: zerionChainNamesById.has(chainId),
+            fiatByIdentity,
           }),
           this.safeRepository.getTransactionQueue({ chainId, safe }),
         ]);
@@ -248,16 +259,17 @@ export class SafesV2Service {
   }
 
   /**
-   * Fetches one portfolio per unique wallet-identity (address, isTestnet,
-   * currency, trusted) among the given entries. A failed fetch is
-   * omitted from the map (and logged), so every Safe on that wallet degrades
-   * together via the fallback rather than rejecting.
+   * Fetches one Zerion portfolio per unique wallet identity (address,
+   * isTestnet, currency, trusted) among the given entries, as fiat per chain
+   * ID. A failed fetch is omitted from the map (and logged), so every Safe on
+   * that wallet degrades together via the fallback rather than rejecting.
    */
-  private async fetchPortfoliosOncePerIdentity(args: {
+  private async fetchFiatOncePerIdentity(args: {
     entries: Array<ResolvedEntry>;
     currency: string;
     trusted: boolean;
-  }): Promise<Map<string, ZerionWalletPortfolio>> {
+    zerionChainNamesById: Map<string, string>;
+  }): Promise<Map<string, FiatByChainId>> {
     const { entries, currency, trusted } = args;
 
     const identities = new Map<
@@ -276,23 +288,71 @@ export class SafesV2Service {
       }
     }
 
-    const results = new Map<string, ZerionWalletPortfolio>();
+    const results = new Map<string, FiatByChainId>();
     await Promise.all(
       [...identities.entries()].map(async ([key, { address, isTestnet }]) => {
         try {
-          const portfolio = await this.zerionWalletPortfolioApi.getPortfolio({
-            address,
-            currency,
-            isTestnet,
-            trusted,
-          });
-          results.set(key, portfolio);
+          const wallet = { address, currency, isTestnet, trusted };
+          results.set(
+            key,
+            this.portfolioSnapshotEnabled
+              ? await this.getSnapshotFiatByChainId(wallet)
+              : await this.getWalletPortfolioFiatByChainId({
+                  ...wallet,
+                  zerionChainNamesById: args.zerionChainNamesById,
+                }),
+          );
         } catch (error) {
           this.logPortfolioFetchError({ address, error });
         }
       }),
     );
     return results;
+  }
+
+  /**
+   * Reads the /positions snapshot GET /v1/portfolio and the portfolio
+   * summaries cache, so this route adds no Zerion call of its own and shows
+   * the same per-chain total as those routes.
+   */
+  private async getSnapshotFiatByChainId(args: {
+    address: Address;
+    currency: string;
+    isTestnet: boolean;
+    trusted: boolean;
+  }): Promise<FiatByChainId> {
+    const snapshot = await this.portfolioRepository.getPortfolioSnapshot({
+      address: args.address,
+      fiatCode: args.currency,
+      trusted: args.trusted,
+      isTestnet: args.isTestnet,
+    });
+    return sumPortfolioRows(snapshot).byChain;
+  }
+
+  /** Reads Zerion /portfolio, re-keyed from Zerion's chain names to chain IDs. */
+  private async getWalletPortfolioFiatByChainId(args: {
+    address: Address;
+    currency: string;
+    isTestnet: boolean;
+    trusted: boolean;
+    zerionChainNamesById: Map<string, string>;
+  }): Promise<FiatByChainId> {
+    const portfolio = await this.zerionWalletPortfolioApi.getPortfolio({
+      address: args.address,
+      currency: args.currency,
+      isTestnet: args.isTestnet,
+      trusted: args.trusted,
+    });
+    const distribution =
+      portfolio.data.attributes.positions_distribution_by_chain;
+    const fiatByChainId: FiatByChainId = {};
+    for (const [chainId, name] of args.zerionChainNamesById) {
+      if (name in distribution) {
+        fiatByChainId[chainId] = distribution[name];
+      }
+    }
+    return fiatByChainId;
   }
 
   private getPortfolioIdentityKey(args: {
@@ -343,7 +403,7 @@ export class SafesV2Service {
 
   /**
    * Resolves the fiat balance for one (chain, Safe). Zerion-supported chains
-   * read the per-chain slice of the wallet's portfolio; a degraded portfolio
+   * read the per-chain value of the wallet's portfolio; a degraded portfolio
    * falls back to the balances repository. Never returns a fabricated `$0` for
    * an unknown balance.
    */
@@ -352,12 +412,12 @@ export class SafesV2Service {
     safeAddress: Address;
     currency: string;
     trusted: boolean;
-    zerionChainName: string | undefined;
-    portfoliosByIdentity: Map<string, ZerionWalletPortfolio>;
+    isOnZerion: boolean;
+    fiatByIdentity: Map<string, FiatByChainId>;
   }): Promise<number> {
-    const { chain, safeAddress, currency, trusted, zerionChainName } = args;
+    const { chain, safeAddress, currency, trusted } = args;
 
-    if (!zerionChainName) {
+    if (!args.isOnZerion) {
       return await this.getFiatBalanceFromBalancesRepository({
         chain,
         safeAddress,
@@ -372,11 +432,13 @@ export class SafesV2Service {
       currency,
       trusted,
     });
-    const portfolio = args.portfoliosByIdentity.get(key);
+    const fiatByChainId = args.fiatByIdentity.get(key);
 
-    if (portfolio) {
-      const value = this.extractChainFiatBalance(portfolio, zerionChainName);
-      if (value !== null) {
+    if (fiatByChainId) {
+      // The chain is on Zerion, so a chain missing from the portfolio is a
+      // real 0 (the wallet holds nothing there).
+      const value = fiatByChainId[chain.chainId] ?? 0;
+      if (Number.isFinite(value)) {
         return value;
       }
     }
@@ -387,22 +449,6 @@ export class SafesV2Service {
       currency,
       trusted,
     });
-  }
-
-  /**
-   * Reads the per-chain fiat value from a successful portfolio. A chain missing
-   * from the distribution is a real `0` (the wallet holds nothing there). Only
-   * a non-finite value returns null (degrade).
-   */
-  private extractChainFiatBalance(
-    portfolio: ZerionWalletPortfolio,
-    zerionChainName: string,
-  ): number | null {
-    const value =
-      portfolio.data.attributes.positions_distribution_by_chain[
-        zerionChainName
-      ] ?? 0;
-    return Number.isFinite(value) ? value : null;
   }
 
   /**
