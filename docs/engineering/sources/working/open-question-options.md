@@ -560,6 +560,12 @@ narrowed form on one review comment, reverted it on another (review comments
 (issue comment 5601447708). The narrowed form needs `as unknown as IFace` at
 the construction sites, which the repo otherwise treats as a smell.
 
+PR #3447 pulled the other way (issue comments 5930648182 and 6063271562):
+review asked to restore `as unknown as` on three partial mocks in
+`safes.v2.service.spec.ts`. The author fixed every other item on that list but
+left the casts out, and the PR merged without them. `TEST-01` already says
+never `as unknown as MockedObject<T>`, yet reviews still ask for both forms.
+
 ### Option A: Whole-Interface Mock
 
 Existing example:
@@ -608,6 +614,15 @@ PR #3443 (RL-20260923-002) went the other way. The Fastify migration renamed
 fallback. Review asked to check the deployed (Argo) value instead, and an
 added guard that threw on the old names was removed as unnecessary (review
 comment 4069930039).
+
+PR #3602 raised the same choice for a narrowed value set (review comment
+4270905319, author reply 4271006675). Moving from winston to pino replaced
+`LOG_LEVEL`'s accepted values (`http`, `verbose` and `silly` dropped, `fatal`
+and `trace` added) with no mapping. Review asked to confirm no environment sets
+a dropped level. The author answered that logs would at worst move level, but
+`RootConfigurationSchema` rejects an unknown `LOG_LEVEL`, so such a value fails
+validation at boot. Whichever option wins should cover narrowing an env var's
+accepted values as well as renaming it.
 
 ### Option A: Fallback For One Release
 
@@ -908,3 +923,105 @@ Trade-off: every write path carries a clear, and propose needs one added.
 
 Open until someone confirms which upstreams publish write events; whichever
 wins should be stated in `CACHE-01`.
+
+## OQ-CHANGE-01 What Gates Changes Only The Built Image Exercises
+
+Question: when a change can only fail in the production image (package.json
+`imports` targets, a Dockerfile `COPY`, the emit layout), must PR CI build and
+boot that image, or is the devstaging boot after merge the gate?
+
+In PR #3551 review found that no PR job resolves the `default` targets of the
+new `#/` imports map or builds the production image, so a wrong target or a
+missing `COPY package.json` would merge green and first crash on devstaging
+with `MODULE_NOT_FOUND` (review comments 4228368345 and 4228368364). Review
+proposed a `require.resolve` sweep over `dist/` and a filtered image smoke job,
+and called skipping fine "if devstaging is considered the gate". The author
+prototyped the sweep and declined both, treating devstaging as the gate
+(replies 4231089290 and 4231090052); the PR merged that way. `CHANGE-03` says
+CI steps fail loudly, but not which environment must catch what.
+
+### Option A: Devstaging Boot Is The Gate
+
+Existing example: PR #3551 as merged; no PR job builds or boots the production
+image.
+
+Choose this when:
+
+- The failure is loud (the container exits on boot) and devstaging deploys
+  every merge before production.
+- The guard would be more script than the risk warrants.
+
+Trade-off: a broken image is found after merge, so main stays undeployable
+until a follow-up fix lands.
+
+### Option B: PR CI Smokes The Image For Packaging Changes
+
+A job filtered to `Dockerfile`, `package.json` and `tsconfig*.json` builds the
+production target and resolves the entrypoint inside it, as review sketched:
+
+```sh
+docker build --target production -t cgw:pr .
+docker run --rm cgw:pr node -e "require.resolve('#/app.module')"
+```
+
+Choose this when:
+
+- A broken image on main blocks deploys for everyone, or devstaging does not
+  deploy every merge.
+
+Trade-off: one more image build on PRs that touch packaging files.
+
+Open until the team decides; whichever wins should be stated in `CHANGE-03`.
+
+## OQ-MOD-04 Importing Another Module's TypeORM Entity
+
+Question: may a module import another module's TypeORM entity from its
+`datasources/` (for a foreign key or a row lock), or must every cross-module
+import go through that module's `domain/`?
+
+`docs/agents/module-structure.md` ("Cross-module imports via domain only") says
+a module never imports another module's `datasources/*`. In PR #3375 an
+architecture-check bot flagged `members.utils.ts` importing the spaces module's
+`Space` entity from `datasources/` to lock the space row (issue comment
+5407265344). The author rejected it (issue comment 5423616162): `spaces/domain`
+holds only a type, which disappears at runtime, while TypeORM needs the class;
+the users module already imports that entity for the `space_id` foreign key;
+and the rule is aimed at `routes/*` imports, so it is "better fixed in
+`module-structure.md`". The PR merged with the import.
+
+### Option A: Allow Entity Imports Across A Foreign Key
+
+Existing examples:
+
+- `src/modules/users/datasources/entities/member.entity.db.ts` (imports `Space`
+  for the `space_id` relation)
+- `src/modules/users/domain/members/utils/members.utils.ts`
+  (`lockSpaceForAdminChange`)
+
+Choose this when:
+
+- The two tables are joined by a foreign key, so the ORM mapping already
+  couples the modules.
+
+Trade-off: the guide needs a second named exception beside guards, scoped to
+`datasources/entities/*.entity.db.ts`.
+
+### Option B: The Owning Module Exposes The Operation Through `domain/`
+
+Move the lock into the spaces module and expose it on its repository
+interface:
+
+```ts
+// spaces.repository.interface.ts
+lockForAdminChange(entityManager: EntityManager, spaceId: Space['id']): Promise<void>;
+```
+
+Choose this when:
+
+- Only the owning module should know how its rows are queried or locked.
+
+Trade-off: the lock-ordering rule (user rows before space rows) is split across
+two modules, and the foreign-key mapping still imports the entity.
+
+Open until the team decides; whichever wins should be stated in
+`docs/agents/module-structure.md`.

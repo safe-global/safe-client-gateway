@@ -158,3 +158,85 @@ production secrets. A standalone check for a new field either re-fires
 locally (defeating the guard) or duplicates the env gating. One
 extendable list keeps every conditionally required var in one place,
 with per-field conditions and messages.
+
+## CONFIG-05 — Services that must match share one compose anchor
+
+Source: PR #3453 (RL-20261009-001)
+
+### Avoid
+
+Two database services that each carry their own image and startup block,
+so a version bump lands on one of them:
+
+```yaml
+services:
+  db:
+    image: postgres:18-alpine
+    entrypoint: [/bin/sh, -c, "<install TLS files; exec entrypoint>", sh]
+    command: [postgres, -c, ssl=on, -c, hba_file=/db_config/pg_hba.conf]
+  db-test:
+    image: postgres:14-alpine
+    entrypoint: [/bin/sh, -c, "<install TLS files; exec entrypoint>", sh]
+    command: [postgres, -c, ssl=on, -c, hba_file=/db_config/pg_hba.conf]
+```
+
+### Prefer
+
+```yaml
+x-postgres: &postgres
+  image: postgres:18-alpine
+  entrypoint: [/bin/sh, -c, "<install TLS files; exec entrypoint>", sh]
+  command: [postgres, -c, ssl=on, -c, hba_file=/db_config/pg_hba.conf]
+
+services:
+  db:
+    <<: *postgres
+    volumes: [db-data:/var/lib/postgresql, ./db_config/test:/db_config:ro]
+  db-test:
+    <<: *postgres
+    volumes: [./db_config/test:/db_config:ro]
+```
+
+### Why
+
+Tests that run on another major than local dev prove less than they appear
+to. One anchor makes the image and startup the same by construction. Keep
+`volumes` per service: a merge key replaces lists rather than merging them.
+
+## CHANGE-03 — Subpath imports give every tool a `types` target
+
+Source: PR #3551 (RL-20261009-005)
+
+### Avoid
+
+A custom condition only some tools are told about. Biome does not know
+`source`, falls through to `default` (absent in the CI lint job), and its
+type-aware rules silently lose cross-module types:
+
+```json
+"imports": {
+  "#/*": {
+    "source": "./src/*.ts",
+    "default": "./dist/src/*.js"
+  }
+}
+```
+
+### Prefer
+
+```json
+"imports": {
+  "#/*": {
+    "types": "./src/*.ts",
+    "source": "./src/*.ts",
+    "default": "./dist/src/*.js"
+  }
+}
+```
+
+### Why
+
+`types` is a condition every TypeScript-aware tool understands, and Node
+ignores it at runtime. Without it, rules such as `noFloatingPromises` stop
+firing for new violations through `#/` while whole-tree lint counts stay the
+same, so nothing shows the loss.

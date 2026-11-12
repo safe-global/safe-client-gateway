@@ -284,15 +284,17 @@ Boot the real:
 - The repository / datasource under test.
 - Direct DB collaborators of the unit under test (other repositories the code reads).
 
-Mock the:
+Fake or mock the:
 
-- `IConfigurationService` (boot config from `configuration()` test factory, but mock the service that vends it so individual tests can override per-key).
+- `IConfigurationService`: use `FakeConfigurationService` and `set` the keys the spec reads, with values from the `configuration()` test factory. It throws on an unset key like the real service; a hand-rolled `getOrThrow` double does not.
 - `ILoggingService` (same no-op shape as unit specs).
 
 ```ts
-const mockConfigurationService = jest.mocked({
-  getOrThrow: jest.fn(),
-} as jest.MockedObjectDeep<IConfigurationService>);
+const fakeConfigurationService = new FakeConfigurationService();
+fakeConfigurationService.set(
+  'spaces.maxSpaceCreationsPerUser',
+  testConfiguration.spaces.maxSpaceCreationsPerUser,
+);
 ```
 
 Use `Builder<T>` for entity fixtures the same way you do in unit specs.
