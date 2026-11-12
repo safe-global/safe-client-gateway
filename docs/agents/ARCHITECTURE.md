@@ -133,6 +133,7 @@ A shared schema library (`src/validation/entities/schemas/`) backs common primit
 - `NumericStringSchema` — a base-10 numeric string, explicitly rejecting hex-looking values.
 - `HexSchema` — a `0x`-prefixed hex string (viem's `isHex`).
 - `BooleanStringSchema` — a query-string boolean, exactly `true` or `false`, parsed to a `boolean`.
+- `FiatCodeSchema` — a three-letter currency code, upper-cased; which codes are supported is checked by the caller.
 - `UuidSchema` — validates a UUID and casts it to Node's `UUID` type.
 - `RedirectUrlSchema` — bounds length (2048 chars) and rejects control characters; used to validate post-login redirect targets.
 
