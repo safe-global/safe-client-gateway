@@ -26,6 +26,7 @@ import { IJwtService } from '#/datasources/jwt/jwt.service.interface';
 import { NetworkResponseError } from '#/datasources/network/entities/network.error.entity';
 import type { INetworkService } from '#/datasources/network/network.service.interface';
 import { NetworkService } from '#/datasources/network/network.service.interface';
+import { SAFE_QUEUE_SERVICE_MAX_LIMIT } from '#/domain/common/constants';
 import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
 import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
 import type { Chain } from '#/modules/chains/domain/entities/chain.entity';
@@ -408,7 +409,7 @@ describe('SpaceTransactionsController', () => {
       ]);
     });
 
-    it('rejects a limit that is not an integer from 1 to 100', async () => {
+    it('rejects a limit that is not a positive integer', async () => {
       const { accessToken, spaceUuid } = await createSpaceForSignerFixture({
         app,
         jwtService,
@@ -418,7 +419,6 @@ describe('SpaceTransactionsController', () => {
       for (const limit of [
         '0',
         '-1',
-        faker.number.int({ min: 101 }).toString(),
         faker.number.float({ min: 1, max: 99, fractionDigits: 2 }).toFixed(2),
         faker.word.noun(),
       ]) {
@@ -430,40 +430,59 @@ describe('SpaceTransactionsController', () => {
       }
     });
 
-    it('rejects a limit combined with a filter or a search, without reading the queue', async () => {
+    it('reads the whole queue when a limit comes with a filter, and limits the matches', async () => {
       const { accessToken, spaceUuid } = await createSpaceForSignerFixture({
         app,
         jwtService,
         postgresDatabaseService,
       });
-      const chain = uniqueChain();
-      const deployed = safeBuilder().build();
+      const [chain, otherChain] = [uniqueChain(), uniqueChain()];
+      const first = await safeAwaitingSignature(chain);
+      const second = await safeAwaitingSignature(otherChain);
       await addSafesFixture({
         app,
         spaceUuid,
         accessToken,
-        safes: [{ chainId: chain.chainId, address: deployed.address }],
+        safes: [
+          { chainId: chain.chainId, address: first.safe.address },
+          { chainId: otherChain.chainId, address: second.safe.address },
+        ],
       }).then((response) => expect(response.status).toBe(HttpStatus.CREATED));
-      mockUpstreams({ chain, deployed: [deployed] });
-      const limit = faker.number.int({ min: 1, max: 100 });
+      mockUpstreams({
+        chain,
+        deployed: [first.safe],
+        otherChains: [{ chain: otherChain, deployed: [second.safe] }],
+        queue: [first.transaction, second.transaction],
+      });
 
-      for (const query of [
-        { status: 'sign' },
-        { safes: `${chain.chainId}:${deployed.address}` },
-        { chainIds: chain.chainId },
-        { signers: getAddress(faker.finance.ethereumAddress()) },
-        { conflicting: 'true' },
-        { stale: 'false' },
-        { search: faker.word.noun() },
-      ]) {
-        await request(app.getHttpServer())
-          .get(`/v1/spaces/${spaceUuid}/transactions/queued`)
-          .query({ ...query, limit })
-          .set('Cookie', [`access_token=${accessToken}`])
-          .expect(HttpStatus.UNPROCESSABLE_ENTITY);
-      }
+      await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceUuid}/transactions/queued`)
+        .query({ chainIds: otherChain.chainId, limit: 1 })
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(HttpStatus.OK)
+        .expect(({ body }) => {
+          expect(Object.keys(body.results)).toEqual([second.safe.address]);
+          // The counts cover the whole queue, not just the limited results
+          expect(body.counts.chains).toEqual(
+            expect.arrayContaining([
+              { chainId: chain.chainId, count: 1 },
+              { chainId: otherChain.chainId, count: 1 },
+            ]),
+          );
+        });
 
-      expect(queueRequests()).toHaveLength(0);
+      expect(queueRequests()).toEqual([
+        [
+          expect.objectContaining({
+            networkRequest: expect.objectContaining({
+              params: expect.objectContaining({
+                limit: SAFE_QUEUE_SERVICE_MAX_LIMIT,
+                offset: 0,
+              }),
+            }),
+          }),
+        ],
+      ]);
     });
 
     it('filters the cached queue without querying it again', async () => {

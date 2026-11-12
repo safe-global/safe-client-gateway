@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { HttpStatus, Inject, Injectable } from '@nestjs/common';
-import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
+import { Inject, Injectable } from '@nestjs/common';
 import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '#/modules/auth/utils/assert-authenticated.utils';
 import { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
@@ -12,14 +11,14 @@ import type { SpaceQueuedItemPage } from '#/modules/transactions/routes/entities
 import {
   filterSpaceQueue,
   getSpaceQueueCounts,
+  limitSpaceQueue,
   type SpaceQueueFilters,
   type SpaceQueueSearch,
+  someFiltersSet,
 } from '#/modules/transactions/routes/helpers/space-queue.helper';
 import { TransactionsService } from '#/modules/transactions/routes/transactions.service';
 import { IMembersRepository } from '#/modules/users/domain/members/members.repository.interface';
 import { IWalletsRepository } from '#/modules/wallets/domain/wallets.repository.interface';
-
-const isDefined = (value: unknown): boolean => value !== undefined;
 
 @Injectable()
 export class SpaceTransactionsService {
@@ -49,17 +48,13 @@ export class SpaceTransactionsService {
     const userId = getAuthenticatedUserIdOrFail(args.authPayload);
     await assertMember(this.membersRepository, args.spaceId, userId);
 
-    // The filters and counts run on the queue read: on a limited read, they
-    // would miss the transactions left unread.
-    if (
-      args.limit !== undefined &&
-      (args.search || Object.values(args.filters ?? {}).some(isDefined))
-    ) {
-      throw new HttpExceptionNoLog(
-        'limit cannot be combined with a filter or a search',
-        HttpStatus.UNPROCESSABLE_ENTITY,
-      );
-    }
+    // The filters and counts run on the queue read, so a filtered queue is
+    // read whole and only then limited. Unfiltered, the read itself stops at
+    // the limit.
+    const isFiltered = someFiltersSet({
+      ...args.filters,
+      search: args.search,
+    });
 
     const [spaceSafes, wallets] = await Promise.all([
       this.spaceSafesRepository.findBySpaceId(args.spaceId),
@@ -72,7 +67,7 @@ export class SpaceTransactionsService {
         chainId,
         safeAddress: address,
       })),
-      limit: args.limit,
+      limit: isFiltered ? undefined : args.limit,
     });
 
     // "sign" is the caller's own: a wallet linked to the authenticated user
@@ -89,15 +84,21 @@ export class SpaceTransactionsService {
         : undefined,
     };
 
+    const filtered = filterSpaceQueue({
+      results: queue.results,
+      unavailableSafes: queue.unavailableSafes,
+      filters,
+      signers,
+      now,
+    });
+
     return {
       ...queue,
-      ...filterSpaceQueue({
-        results: queue.results,
-        unavailableSafes: queue.unavailableSafes,
-        filters,
-        signers,
-        now,
-      }),
+      unavailableSafes: filtered.unavailableSafes,
+      results:
+        isFiltered && args.limit !== undefined
+          ? limitSpaceQueue({ results: filtered.results, limit: args.limit })
+          : filtered.results,
       counts: getSpaceQueueCounts({
         results: queue.results,
         filters,

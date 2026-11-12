@@ -324,6 +324,59 @@ describe('TransactionsService', () => {
       expect(actual.count).toBe(count);
     });
 
+    it('reads the pages a limit past one page spans, the last one cut to the limit', async () => {
+      const chainId = faker.string.numeric({ length: 3 });
+      const safe = safeBuilder().with('nonce', 0).build();
+      mockSafeRepository.getSafe.mockResolvedValue(safe);
+      const pageCount = maxPages - 1;
+      const limit = faker.number.int({
+        min: (pageCount - 1) * SAFE_QUEUE_SERVICE_MAX_LIMIT + 1,
+        max: pageCount * SAFE_QUEUE_SERVICE_MAX_LIMIT - 1,
+      });
+      mockSafeRepository.getTransactionQueueForSafes.mockResolvedValue(
+        queuePage([], maxPages * SAFE_QUEUE_SERVICE_MAX_LIMIT),
+      );
+
+      await target.getTransactionQueueForSafes({
+        spaceId,
+        safes: [{ chainId, safeAddress: safe.address }],
+        limit,
+      });
+
+      expect(
+        mockSafeRepository.getTransactionQueueForSafes.mock.calls.map(
+          ([args]) => [args.offset, args.limit],
+        ),
+      ).toEqual(
+        Array.from({ length: pageCount }, (_, page) => [
+          page * SAFE_QUEUE_SERVICE_MAX_LIMIT,
+          page === pageCount - 1
+            ? limit - page * SAFE_QUEUE_SERVICE_MAX_LIMIT
+            : SAFE_QUEUE_SERVICE_MAX_LIMIT,
+        ]),
+      );
+    });
+
+    it('reads no more than the maximum number of pages, whatever the limit', async () => {
+      const chainId = faker.string.numeric({ length: 3 });
+      const safe = safeBuilder().with('nonce', 0).build();
+      mockSafeRepository.getSafe.mockResolvedValue(safe);
+      const count = maxPages * SAFE_QUEUE_SERVICE_MAX_LIMIT * 2;
+      mockSafeRepository.getTransactionQueueForSafes.mockResolvedValue(
+        queuePage([], count),
+      );
+
+      await target.getTransactionQueueForSafes({
+        spaceId,
+        safes: [{ chainId, safeAddress: safe.address }],
+        limit: faker.number.int({ min: count, max: count * 2 }),
+      });
+
+      expect(
+        mockSafeRepository.getTransactionQueueForSafes,
+      ).toHaveBeenCalledTimes(maxPages);
+    });
+
     it('reports Safes that cannot be loaded as unavailable and leaves them out of the queue', async () => {
       const chainId = faker.string.numeric({ length: 3 });
       const safe = safeBuilder().build();

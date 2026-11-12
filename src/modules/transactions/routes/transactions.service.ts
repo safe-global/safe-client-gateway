@@ -536,8 +536,8 @@ export class TransactionsService {
    * The merged queue of several Safes, in nonce order and grouped by Safe
    * address and chain, read up to `spaces.transactionQueue.maxPages` pages of
    * the queue service. With a `limit`, only the first `limit` transactions by
-   * nonce, across every Safe, are read, in one page. Each Safe's transactions
-   * are mapped against that Safe.
+   * nonce, across every Safe, are read. Each Safe's transactions are mapped
+   * against that Safe.
    */
   async getTransactionQueueForSafes(args: {
     spaceId: number;
@@ -604,7 +604,7 @@ export class TransactionsService {
   /**
    * The merged queue, one queue service page at a time: the first page gives
    * the count, and the remaining pages, up to `maxSpaceQueuePages` in all, are
-   * fetched together. A `limit` reads its first page alone.
+   * fetched together. A `limit` stops the read at its `limit`th transaction.
    */
   private async getQueueOfSafes(args: {
     spaceId: number;
@@ -624,19 +624,25 @@ export class TransactionsService {
         limit,
         offset,
       });
-    if (args.limit !== undefined) {
-      const page = await getPage(0, args.limit);
-      return { count: page.count, transactions: page.results };
-    }
-    const firstPage = await getPage(0);
+    const limit = args.limit ?? Number.POSITIVE_INFINITY;
+    const firstPage = await getPage(
+      0,
+      Math.min(limit, SAFE_QUEUE_SERVICE_MAX_LIMIT),
+    );
     const pageCount = Math.min(
-      Math.ceil((firstPage.count ?? 0) / SAFE_QUEUE_SERVICE_MAX_LIMIT),
+      Math.ceil(
+        Math.min(firstPage.count ?? 0, limit) / SAFE_QUEUE_SERVICE_MAX_LIMIT,
+      ),
       this.maxSpaceQueuePages,
     );
     const nextPages = await Promise.all(
-      Array.from({ length: Math.max(pageCount - 1, 0) }, (_, index) =>
-        getPage((index + 1) * SAFE_QUEUE_SERVICE_MAX_LIMIT),
-      ),
+      Array.from({ length: Math.max(pageCount - 1, 0) }, (_, index) => {
+        const offset = (index + 1) * SAFE_QUEUE_SERVICE_MAX_LIMIT;
+        return getPage(
+          offset,
+          Math.min(limit - offset, SAFE_QUEUE_SERVICE_MAX_LIMIT),
+        );
+      }),
     );
     return {
       count: firstPage.count,

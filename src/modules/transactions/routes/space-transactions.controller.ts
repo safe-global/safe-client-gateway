@@ -17,7 +17,6 @@ import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.en
 import { AuthGuard } from '#/modules/auth/routes/guards/auth.guard';
 import type { Space } from '#/modules/spaces/domain/entities/space.entity';
 import {
-  SPACE_QUEUE_LIMIT_MAX,
   SPACE_QUEUE_SEARCH_MAX_LENGTH,
   SpaceQueueChainIdsSchema,
   SpaceQueueLimitSchema,
@@ -111,8 +110,8 @@ export class SpaceTransactionsController {
     type: Number,
     required: false,
     minimum: 1,
-    maximum: SPACE_QUEUE_LIMIT_MAX,
-    description: `Read only the first transactions of the queue, by nonce across every Safe (not by age), at most ${SPACE_QUEUE_LIMIT_MAX}. \`count\` stays the size of the whole queue; \`counts\` cover only the transactions read. A conflict group cut by the limit is returned in part. Cannot be combined with a filter or \`search\`.`,
+    description:
+      'Return only the first transactions of the queue, by nonce across every Safe (not by age), up to the transactions an unlimited request returns. Without a filter or `search`, only that many are read: `counts` cover only those, and a conflict group cut by the limit is returned in part. With a filter or `search`, the whole queue is read and filtered first, so `counts` cover the whole queue and a conflict group is kept whole, which can return a few more than `limit`. `count` is always the size of the whole queue.',
     example: 4,
   })
   @ApiOkResponse({
@@ -125,7 +124,7 @@ export class SpaceTransactionsController {
   @ApiNotFoundResponse({ description: 'Space not found' })
   @ApiUnprocessableEntityResponse({
     description:
-      'Unknown status, invalid CAIP-10 address, chain ID or signer address, non-boolean flag, too long search, invalid limit, or limit combined with a filter or search',
+      'Unknown status, invalid CAIP-10 address, chain ID or signer address, non-boolean flag, too long search or invalid limit',
   })
   @Get('queued')
   public async getTransactionQueue(
