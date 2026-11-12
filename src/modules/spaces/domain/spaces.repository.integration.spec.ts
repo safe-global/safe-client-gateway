@@ -725,7 +725,7 @@ describe('SpacesRepository', () => {
     });
   });
 
-  describe('findOneByUserIdOrFail', () => {
+  describe('findOneByUserId', () => {
     it('should find a space by user id', async () => {
       const userStatus = faker.helpers.arrayElement(UserStatusKeys);
       const spaceName = nameBuilder();
