@@ -150,6 +150,7 @@ export const RootConfigurationSchema = z
     FF_SAFE_SHIELD_CORE_DISABLED: z.string().optional(),
     FF_SAFENET: z.string().optional(),
     FF_GUARD_POLICIES: z.string().optional(),
+    FF_SAFES_PORTFOLIO_SNAPSHOT: z.string().optional(),
     SAFENET_CONSENSUS_ADDRESS: AddressSchema.optional(),
     SAFENET_ORACLE_ADDRESS: AddressSchema.optional(),
     SAFENET_RPC_URI: z.url().optional(),

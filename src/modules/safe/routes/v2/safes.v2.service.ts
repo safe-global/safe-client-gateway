@@ -40,6 +40,14 @@ type ResolvedEntry = {
 /** Fiat value per chain ID of one wallet, from whichever Zerion source served it. */
 type FiatByChainId = Record<string, number>;
 
+/** One Zerion portfolio request: a wallet in one environment, currency and token filter. */
+type WalletIdentity = {
+  address: Address;
+  currency: string;
+  isTestnet: boolean;
+  trusted: boolean;
+};
+
 @Injectable()
 export class SafesV2Service {
   private readonly maxOverviews: number;
@@ -315,12 +323,9 @@ export class SafesV2Service {
    * summaries cache, so this route adds no Zerion call of its own and shows
    * the same per-chain total as those routes.
    */
-  private async getSnapshotFiatByChainId(args: {
-    address: Address;
-    currency: string;
-    isTestnet: boolean;
-    trusted: boolean;
-  }): Promise<FiatByChainId> {
+  private async getSnapshotFiatByChainId(
+    args: WalletIdentity,
+  ): Promise<FiatByChainId> {
     const snapshot = await this.portfolioRepository.getPortfolioSnapshot({
       address: args.address,
       fiatCode: args.currency,
@@ -331,13 +336,9 @@ export class SafesV2Service {
   }
 
   /** Reads Zerion /portfolio, re-keyed from Zerion's chain names to chain IDs. */
-  private async getWalletPortfolioFiatByChainId(args: {
-    address: Address;
-    currency: string;
-    isTestnet: boolean;
-    trusted: boolean;
-    zerionChainNamesById: Map<string, string>;
-  }): Promise<FiatByChainId> {
+  private async getWalletPortfolioFiatByChainId(
+    args: WalletIdentity & { zerionChainNamesById: Map<string, string> },
+  ): Promise<FiatByChainId> {
     const portfolio = await this.zerionWalletPortfolioApi.getPortfolio({
       address: args.address,
       currency: args.currency,
@@ -355,12 +356,7 @@ export class SafesV2Service {
     return fiatByChainId;
   }
 
-  private getPortfolioIdentityKey(args: {
-    address: Address;
-    isTestnet: boolean;
-    currency: string;
-    trusted: boolean;
-  }): string {
+  private getPortfolioIdentityKey(args: WalletIdentity): string {
     return `${args.address}_${args.isTestnet}_${args.currency}_${args.trusted}`;
   }
 
