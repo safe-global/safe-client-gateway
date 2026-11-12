@@ -41,9 +41,9 @@ describe('PortfolioRepository', () => {
       hGet: vi.fn(),
       hSet: vi.fn(),
       deleteByKey: vi.fn(),
-      getInvalidationTimeMs: vi.fn(),
+      getCounter: vi.fn(),
     } as MockedObject<ICacheService>;
-    mockCacheService.getInvalidationTimeMs.mockResolvedValue(null);
+    mockCacheService.getCounter.mockResolvedValue(null);
 
     mockConfigService = {
       get: vi.fn(),
@@ -122,6 +122,7 @@ describe('PortfolioRepository', () => {
           cacheDir,
           expect.any(String),
           defaultCacheTtl,
+          undefined,
         );
 
         const cachedValue = JSON.parse(mockCacheService.hSet.mock.calls[0][1]);
@@ -687,6 +688,7 @@ describe('PortfolioRepository', () => {
           expiresAt: result.expiresAt,
         }),
         defaultCacheTtl,
+        undefined,
       );
     });
 
@@ -694,7 +696,7 @@ describe('PortfolioRepository', () => {
       const clearedAt =
         Date.now() -
         faker.number.int({ min: 1, max: settleSeconds - 5 }) * 1_000;
-      mockCacheService.getInvalidationTimeMs.mockResolvedValue(clearedAt);
+      mockCacheService.getCounter.mockResolvedValue(clearedAt);
       mockCacheService.hGet.mockResolvedValue(null);
       mockPortfolioApi.getPortfolio.mockResolvedValue(
         rawify(portfolioBuilder().build()),
@@ -702,19 +704,20 @@ describe('PortfolioRepository', () => {
 
       const result = await repository.getPortfolioSnapshot(args);
 
-      expect(mockCacheService.getInvalidationTimeMs).toHaveBeenCalledWith(
-        CacheRouter.getPortfolioCacheKey({ address }),
+      expect(mockCacheService.getCounter).toHaveBeenCalledWith(
+        CacheRouter.getPortfolioClearedAtCacheKey({ address }),
       );
       expect(result.expiresAt).toBe(clearedAt + settleSeconds * 1_000);
       expect(mockCacheService.hSet).toHaveBeenCalledWith(
         cacheDir,
         expect.any(String),
         Math.ceil((result.expiresAt - result.fetchedAt) / 1_000),
+        0,
       );
     });
 
     it('keeps the full TTL once the settle window is over', async () => {
-      mockCacheService.getInvalidationTimeMs.mockResolvedValue(
+      mockCacheService.getCounter.mockResolvedValue(
         Date.now() -
           (settleSeconds + faker.number.int({ min: 1, max: 600 })) * 1_000,
       );
@@ -730,6 +733,7 @@ describe('PortfolioRepository', () => {
         cacheDir,
         expect.any(String),
         defaultCacheTtl,
+        undefined,
       );
     });
 
