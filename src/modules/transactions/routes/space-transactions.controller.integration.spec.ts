@@ -7,6 +7,7 @@ import type { INestApplication } from '@nestjs/common';
 import { HttpStatus } from '@nestjs/common';
 import type postgres from 'postgres';
 import request from 'supertest';
+import { type Address, getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
 import { TestDbFactory } from '#/__tests__/db.factory';
 import {
@@ -30,8 +31,12 @@ import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.b
 import type { Chain } from '#/modules/chains/domain/entities/chain.entity';
 import { NotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/notifications.repository.module';
 import { TestNotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/test.notification.repository.module';
+import { multisigTransactionBuilder } from '#/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
 import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
+import { Operation } from '#/modules/safe/domain/entities/operation.entity';
 import type { Safe } from '#/modules/safe/domain/entities/safe.entity';
+import { safeQueueMultisigTransactionBuilder } from '#/modules/safe-queue/entities/__tests__/queue-multisig-transaction.builder';
+import type { SafeQueueMultisigTransactionEntity } from '#/modules/safe-queue/entities/multisig-transaction.entity';
 import { SpacesCreationRateLimitGuard } from '#/modules/spaces/routes/guards/spaces-creation-rate-limit.guard';
 import { rawify } from '#/validation/entities/raw.entity';
 
@@ -128,27 +133,39 @@ describe('SpaceTransactionsController', () => {
       .build();
   }
 
-  function mockUpstreams(args: { chain: Chain; deployed: Array<Safe> }): void {
+  function mockUpstreams(args: {
+    chain: Chain;
+    deployed: Array<Safe>;
+    /** Other chains, each with its own deployed Safes */
+    otherChains?: Array<{ chain: Chain; deployed: Array<Safe> }>;
+    queue?: Array<SafeQueueMultisigTransactionEntity>;
+  }): void {
+    const chains = [
+      { chain: args.chain, deployed: args.deployed },
+      ...(args.otherChains ?? []),
+    ];
+    const queue = args.queue ?? [];
     networkService.get.mockImplementation(({ url }) => {
-      if (url === `${safeConfigUrl}/api/v1/chains/${args.chain.chainId}`) {
-        return Promise.resolve({ data: rawify(args.chain), status: 200 });
-      }
-      const deployedSafe = args.deployed.find(
-        (safe) =>
-          url ===
-          `${args.chain.transactionService}/api/v1/safes/${safe.address}`,
-      );
-      if (deployedSafe) {
-        return Promise.resolve({ data: rawify(deployedSafe), status: 200 });
-      }
-      if (url.startsWith(`${args.chain.transactionService}/api/v1/safes/`)) {
-        return Promise.reject(
-          new NetworkResponseError(
-            new URL(url),
-            { status: HttpStatus.NOT_FOUND } as Response,
-            { message: 'Not found' },
-          ),
+      for (const { chain, deployed } of chains) {
+        if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+          return Promise.resolve({ data: rawify(chain), status: 200 });
+        }
+        const deployedSafe = deployed.find(
+          (safe) =>
+            url === `${chain.transactionService}/api/v1/safes/${safe.address}`,
         );
+        if (deployedSafe) {
+          return Promise.resolve({ data: rawify(deployedSafe), status: 200 });
+        }
+        if (url.startsWith(`${chain.transactionService}/api/v1/safes/`)) {
+          return Promise.reject(
+            new NetworkResponseError(
+              new URL(url),
+              { status: HttpStatus.NOT_FOUND } as Response,
+              { message: 'Not found' },
+            ),
+          );
+        }
       }
       if (
         url.startsWith(`${queueBaseUri}/api/v1/multisig-transactions/queue`)
@@ -156,10 +173,10 @@ describe('SpaceTransactionsController', () => {
         return Promise.resolve({
           data: rawify(
             pageBuilder()
-              .with('count', 0)
+              .with('count', queue.length)
               .with('next', null)
               .with('previous', null)
-              .with('results', [])
+              .with('results', queue)
               .build(),
           ),
           status: 200,
@@ -167,6 +184,45 @@ describe('SpaceTransactionsController', () => {
       }
       return Promise.reject(new Error(`No matching rule for url: ${url}`));
     });
+  }
+
+  /** A deployed Safe of a single owner, with one transaction it has yet to sign. */
+  async function safeAwaitingSignature(chain: Chain): Promise<{
+    safe: Safe;
+    owner: Address;
+    transaction: SafeQueueMultisigTransactionEntity;
+  }> {
+    const owner = getAddress(faker.finance.ethereumAddress());
+    const safe = safeBuilder()
+      .with('owners', [owner])
+      .with('threshold', 1)
+      .build();
+    // Signed by no one; built through the builder for a valid safeTxHash
+    const pending = await multisigTransactionBuilder()
+      .with('safe', safe.address)
+      .with('nonce', safe.nonce)
+      .with('data', null)
+      .with('gasToken', null)
+      .with('operation', Operation.CALL)
+      .buildWithConfirmations({ chainId: chain.chainId, safe, signers: [] });
+    const transaction = safeQueueMultisigTransactionBuilder()
+      .with('safeTxHash', pending.safeTxHash)
+      .with('chainId', chain.chainId)
+      .with('safe', safe.address)
+      .with('nonce', pending.nonce)
+      .with('to', pending.to)
+      .with('value', pending.value)
+      .with('data', pending.data)
+      .with('operation', pending.operation)
+      .with('safeTxGas', pending.safeTxGas?.toString() ?? null)
+      .with('baseGas', pending.baseGas?.toString() ?? null)
+      .with('gasPrice', pending.gasPrice)
+      .with('gasToken', pending.gasToken)
+      .with('refundReceiver', pending.refundReceiver)
+      .with('txHash', null)
+      .with('confirmations', [])
+      .build();
+    return { safe, owner, transaction };
   }
 
   describe('GET /v1/spaces/:spaceId/transactions/queued', () => {
@@ -227,6 +283,8 @@ describe('SpaceTransactionsController', () => {
             conflicting: 0,
             stale: 0,
             safes: [],
+            chains: [],
+            signers: [],
           },
         });
     });
@@ -272,6 +330,8 @@ describe('SpaceTransactionsController', () => {
             conflicting: 0,
             stale: 0,
             safes: [],
+            chains: [],
+            signers: [],
           },
         });
 
@@ -287,7 +347,7 @@ describe('SpaceTransactionsController', () => {
       );
     });
 
-    it('rejects an unknown status, an invalid Safe and a non-boolean flag', async () => {
+    it('rejects an unknown status, an invalid Safe, chain ID or signer and a non-boolean flag', async () => {
       const { accessToken, spaceUuid } = await createSpaceForSignerFixture({
         app,
         jwtService,
@@ -297,6 +357,8 @@ describe('SpaceTransactionsController', () => {
       for (const query of [
         { status: faker.word.noun() },
         { safes: faker.finance.ethereumAddress() },
+        { chainIds: faker.word.noun() },
+        { signers: faker.word.noun() },
         { conflicting: faker.word.noun() },
         { stale: faker.word.noun() },
       ]) {
@@ -333,12 +395,79 @@ describe('SpaceTransactionsController', () => {
         .query({
           status: 'sign,execute',
           safes: `${chain.chainId}:${deployed.address}`,
+          chainIds: chain.chainId,
+          signers: faker.finance.ethereumAddress(),
           conflicting: 'true',
           stale: 'false',
         })
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(HttpStatus.OK);
 
+      expect(queueRequests()).toHaveLength(1);
+    });
+
+    it('returns only the transactions of the selected chains and still awaiting the selected signers', async () => {
+      const { accessToken, spaceUuid } = await createSpaceForSignerFixture({
+        app,
+        jwtService,
+        postgresDatabaseService,
+      });
+      const [chain, otherChain] = [uniqueChain(), uniqueChain()];
+      const first = await safeAwaitingSignature(chain);
+      const second = await safeAwaitingSignature(otherChain);
+      await addSafesFixture({
+        app,
+        spaceUuid,
+        accessToken,
+        safes: [
+          { chainId: chain.chainId, address: first.safe.address },
+          { chainId: otherChain.chainId, address: second.safe.address },
+        ],
+      }).then((response) => expect(response.status).toBe(HttpStatus.CREATED));
+      mockUpstreams({
+        chain,
+        deployed: [first.safe],
+        otherChains: [{ chain: otherChain, deployed: [second.safe] }],
+        queue: [first.transaction, second.transaction],
+      });
+
+      const all = await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceUuid}/transactions/queued`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(HttpStatus.OK);
+      const byChain = await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceUuid}/transactions/queued`)
+        .query({ chainIds: chain.chainId })
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(HttpStatus.OK);
+      const bySigner = await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceUuid}/transactions/queued`)
+        .query({ signers: second.owner })
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(HttpStatus.OK);
+
+      expect(all.body.results).toEqual({
+        [first.safe.address]: { [chain.chainId]: expect.any(Array) },
+        [second.safe.address]: { [otherChain.chainId]: expect.any(Array) },
+      });
+      expect(byChain.body.results).toEqual({
+        [first.safe.address]: all.body.results[first.safe.address],
+      });
+      expect(byChain.body.counts.chains).toEqual(
+        expect.arrayContaining([
+          { chainId: chain.chainId, count: 1 },
+          { chainId: otherChain.chainId, count: 1 },
+        ]),
+      );
+      expect(bySigner.body.results).toEqual({
+        [second.safe.address]: all.body.results[second.safe.address],
+      });
+      expect(bySigner.body.counts.signers).toEqual(
+        expect.arrayContaining([
+          { address: first.owner, count: 1 },
+          { address: second.owner, count: 1 },
+        ]),
+      );
       expect(queueRequests()).toHaveLength(1);
     });
 

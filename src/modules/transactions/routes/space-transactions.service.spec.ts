@@ -130,6 +130,8 @@ describe('SpaceTransactionsService', () => {
         conflicting: 0,
         stale: 0,
         safes: [],
+        chains: [],
+        signers: [],
       },
     });
     expect(mockMembersRepository.findOne).toHaveBeenCalledWith({

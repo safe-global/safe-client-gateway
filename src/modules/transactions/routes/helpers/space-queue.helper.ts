@@ -42,6 +42,9 @@ export type SpaceQueueSearch = {
 export type SpaceQueueFilters = {
   statuses?: SpaceQueueStatuses;
   safes?: Array<ChainSafeAddress>;
+  chainIds?: Array<string>;
+  /** Keep the transactions still awaiting one of these signers */
+  signers?: Array<Address>;
   conflicting?: boolean;
   stale?: boolean;
   search?: SpaceQueueSearch;
@@ -188,29 +191,93 @@ const getGroups = (args: {
   return groups;
 };
 
+type CountTallies = {
+  counts: SpaceQueueCounts;
+  chains: Map<string, number>;
+  signers: Map<string, { address: Address; count: number }>;
+};
+
+/** Which filters a transaction passes. */
+type FilterMatches = {
+  /** The search is not a facet: it narrows every count */
+  search: boolean;
+  status: boolean;
+  safe: boolean;
+  chain: boolean;
+  signer: boolean;
+};
+
+// Faceted: each count applies every filter but its own, so a menu tells how
+// many transactions picking one of its options would show.
+const tallyTransaction = (args: {
+  tallies: CountTallies;
+  chainId: string;
+  traits: TransactionTraits;
+  passes: FilterMatches;
+}): number => {
+  const { tallies, chainId, traits, passes } = args;
+  // Every signer stays listed, like every chain and Safe, with 0 when no
+  // transaction awaiting them passes the other filters or the search
+  for (const { value } of traits.missingSigners) {
+    const key = value.toLowerCase();
+    const signer = tallies.signers.get(key) ?? {
+      address: value as Address,
+      count: 0,
+    };
+    if (passes.search && passes.status && passes.safe && passes.chain) {
+      signer.count++;
+    }
+    tallies.signers.set(key, signer);
+  }
+  if (!passes.search) {
+    return 0;
+  }
+  if (passes.status && passes.safe && passes.signer) {
+    tallies.chains.set(chainId, (tallies.chains.get(chainId) ?? 0) + 1);
+  }
+  if (passes.safe && passes.chain && passes.signer) {
+    tallies.counts.total++;
+    tallies.counts[traits.status]++;
+    if (traits.conflicting) {
+      tallies.counts.conflicting++;
+    }
+    if (traits.stale) {
+      tallies.counts.stale++;
+    }
+  }
+  // What this transaction adds to its Safe count
+  return passes.status && passes.chain && passes.signer ? 1 : 0;
+};
+
 export const getSpaceQueueCounts = (args: {
   results: SpaceQueueItems;
   filters: SpaceQueueFilters;
   signers: ReadonlyArray<string>;
   now: number;
 }): SpaceQueueCounts => {
-  const counts: SpaceQueueCounts = {
-    total: 0,
-    execute: 0,
-    sign: 0,
-    blocked: 0,
-    waiting: 0,
-    conflicting: 0,
-    stale: 0,
-    safes: [],
+  const tallies: CountTallies = {
+    counts: {
+      total: 0,
+      execute: 0,
+      sign: 0,
+      blocked: 0,
+      waiting: 0,
+      conflicting: 0,
+      stale: 0,
+      safes: [],
+      chains: [],
+      signers: [],
+    },
+    chains: new Map(),
+    signers: new Map(),
   };
-  // Faceted: each count applies every filter but its own, so a menu tells how
-  // many transactions picking one of its options would show.
   for (const [safeAddress, chains] of Object.entries(args.results)) {
     for (const [chainId, items] of Object.entries(chains)) {
       const safe = { chainId, safeAddress: safeAddress as Address };
-      const isSafeSelected = isSelected(safe, args.filters.safes);
       const safeMatches = safeMatchesSearch(safe, args.filters.search);
+      const passesSafe = isSelected(safe, args.filters.safes);
+      const passesChain = isChainIncluded(chainId, args.filters.chainIds);
+      tallies.chains.set(chainId, tallies.chains.get(chainId) ?? 0);
       let count = 0;
       for (const group of getGroups({
         items,
@@ -218,30 +285,31 @@ export const getSpaceQueueCounts = (args: {
         now: args.now,
       })) {
         for (const traits of group.traits) {
-          // The search is not a facet: it narrows every count
-          if (!inSearch(traits, args.filters, safeMatches)) {
-            continue;
-          }
-          if (matches(traits, args.filters)) {
-            count++;
-          }
-          if (!isSafeSelected) {
-            continue;
-          }
-          counts.total++;
-          counts[traits.status]++;
-          if (traits.conflicting) {
-            counts.conflicting++;
-          }
-          if (traits.stale) {
-            counts.stale++;
-          }
+          count += tallyTransaction({
+            tallies,
+            chainId,
+            traits,
+            passes: {
+              search: inSearch(traits, args.filters, safeMatches),
+              status: matches(traits, args.filters),
+              safe: passesSafe,
+              chain: passesChain,
+              signer: awaitsSigner(traits, args.filters.signers),
+            },
+          });
         }
       }
-      counts.safes.push({ ...safe, count });
+      tallies.counts.safes.push({ ...safe, count });
     }
   }
-  return counts;
+  return {
+    ...tallies.counts,
+    chains: Array.from(tallies.chains, ([chainId, count]) => ({
+      chainId,
+      count,
+    })),
+    signers: Array.from(tallies.signers.values()),
+  };
 };
 
 const matches = (
@@ -251,6 +319,20 @@ const matches = (
   (!filters.statuses || filters.statuses.includes(traits.status)) &&
   (!filters.conflicting || traits.conflicting) &&
   (!filters.stale || traits.stale);
+
+const awaitsSigner = (
+  traits: TransactionTraits,
+  signers: SpaceQueueFilters['signers'],
+): boolean =>
+  !signers ||
+  traits.missingSigners.some(({ value }) =>
+    signers.some((signer) => isSameAddress(signer, value)),
+  );
+
+const isChainIncluded = (
+  chainId: string,
+  chainIds: SpaceQueueFilters['chainIds'],
+): boolean => !chainIds || chainIds.includes(chainId);
 
 const isSelected = (
   safe: SpaceQueueSafe,
@@ -263,7 +345,7 @@ const isSelected = (
   );
 
 /**
- * The queue narrowed to the selected Safes and to the transactions matching
+ * The queue narrowed to the selected Safes and chains and to the transactions matching
  * the filters. A matching transaction keeps its whole conflict group and the
  * label it sits under, so the client still sees why it is blocked or in
  * conflict.
@@ -280,7 +362,12 @@ export const filterSpaceQueue = (args: {
   for (const [safeAddress, chains] of Object.entries(args.results)) {
     for (const [chainId, items] of Object.entries(chains)) {
       const safe = { chainId, safeAddress: safeAddress as Address };
-      if (!isSelected(safe, args.filters.safes)) {
+      if (
+        !(
+          isSelected(safe, args.filters.safes) &&
+          isChainIncluded(chainId, args.filters.chainIds)
+        )
+      ) {
         continue;
       }
       const safeMatches = safeMatchesSearch(safe, args.filters.search);
@@ -299,6 +386,7 @@ export const filterSpaceQueue = (args: {
           !group.traits.some(
             (traits) =>
               matches(traits, args.filters) &&
+              awaitsSigner(traits, args.filters.signers) &&
               inSearch(traits, args.filters, safeMatches),
           )
         ) {
@@ -319,8 +407,10 @@ export const filterSpaceQueue = (args: {
 
   return {
     results,
-    unavailableSafes: args.unavailableSafes.filter((safe) =>
-      isSelected(safe, args.filters.safes),
+    unavailableSafes: args.unavailableSafes.filter(
+      (safe) =>
+        isSelected(safe, args.filters.safes) &&
+        isChainIncluded(safe.chainId, args.filters.chainIds),
     ),
   };
 };

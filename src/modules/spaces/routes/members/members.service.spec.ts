@@ -529,6 +529,10 @@ describe('MembersService', () => {
   });
 
   describe('renewInvite', () => {
+    beforeEach(() => {
+      membersRepositoryMock.renewInvite.mockResolvedValue(true);
+    });
+
     it('should throw a 403 when the caller is not an active admin', async () => {
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
       const spaceId = faker.number.int({ min: 1 });
@@ -628,6 +632,7 @@ describe('MembersService', () => {
         expect(membersRepositoryMock.renewInvite).toHaveBeenCalledWith({
           memberId: targetMember.id,
           inviteExpiresAt: new Date(now.getTime() + INVITE_TTL_MS),
+          notRenewedSince: new Date(now.getTime() - 60_000),
           spaceId,
           spaceUuid,
           targetUserId: userId,
@@ -754,6 +759,33 @@ describe('MembersService', () => {
       await service.renewInvite({ authPayload, spaceId, userId });
 
       expect(membersRepositoryMock.renewInvite).toHaveBeenCalledTimes(1);
+      expect(
+        spaceInviteEmailServiceMock.enqueueRenewalEmail,
+      ).not.toHaveBeenCalled();
+    });
+
+    it('should throw 429 and not enqueue an email when the invite was renewed recently', async () => {
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const spaceId = faker.number.int({ min: 1 });
+      const userId = faker.number.int({ min: 1 });
+      const targetMember = memberBuilder().with('status', 'INVITED').build();
+      const adminMember = memberBuilder()
+        .with('role', 'ADMIN')
+        .with('status', 'ACTIVE')
+        .build();
+
+      membersRepositoryMock.findOne.mockResolvedValue(adminMember);
+      membersRepositoryMock.findOneOrFail.mockResolvedValue(targetMember);
+      membersRepositoryMock.renewInvite.mockResolvedValue(false);
+
+      await expect(
+        service.renewInvite({ authPayload, spaceId, userId }),
+      ).rejects.toThrow(
+        new HttpExceptionNoLog(
+          'Invitation was renewed recently. Try again later.',
+          HttpStatus.TOO_MANY_REQUESTS,
+        ),
+      );
       expect(
         spaceInviteEmailServiceMock.enqueueRenewalEmail,
       ).not.toHaveBeenCalled();

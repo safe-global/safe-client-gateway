@@ -12,12 +12,15 @@ import {
   ApiUnauthorizedResponse,
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
+import type { Address } from 'viem';
 import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
 import { AuthGuard } from '#/modules/auth/routes/guards/auth.guard';
 import type { Space } from '#/modules/spaces/domain/entities/space.entity';
 import {
   SPACE_QUEUE_SEARCH_MAX_LENGTH,
+  SpaceQueueChainIdsSchema,
   SpaceQueueSearchSchema,
+  SpaceQueueSignersSchema,
   SpaceQueueStatus,
   type SpaceQueueStatuses,
   SpaceQueueStatusesSchema,
@@ -68,6 +71,21 @@ export class SpaceTransactionsController {
     example: '11155111:0x0000000000000000000000000000000000000000',
   })
   @ApiQuery({
+    name: 'chainIds',
+    type: String,
+    required: false,
+    description: 'Keep the transactions on these chains, comma-separated',
+    example: '1,137',
+  })
+  @ApiQuery({
+    name: 'signers',
+    type: String,
+    required: false,
+    description:
+      'Keep the transactions still awaiting a signature from one of these addresses, comma-separated',
+    example: '0x0000000000000000000000000000000000000000',
+  })
+  @ApiQuery({
     name: 'conflicting',
     type: Boolean,
     required: false,
@@ -96,7 +114,7 @@ export class SpaceTransactionsController {
   @ApiNotFoundResponse({ description: 'Space not found' })
   @ApiUnprocessableEntityResponse({
     description:
-      'Unknown status, invalid CAIP-10 address, non-boolean flag or too long search',
+      'Unknown status, invalid CAIP-10 address, chain ID or signer address, non-boolean flag or too long search',
   })
   @Get('queued')
   public async getTransactionQueue(
@@ -106,6 +124,10 @@ export class SpaceTransactionsController {
     statuses?: SpaceQueueStatuses,
     @Query('safes', new ValidationPipe(Caip10AddressesSchema.optional()))
     safes?: Caip10Addresses,
+    @Query('chainIds', new ValidationPipe(SpaceQueueChainIdsSchema.optional()))
+    chainIds?: Array<string>,
+    @Query('signers', new ValidationPipe(SpaceQueueSignersSchema.optional()))
+    signers?: Array<Address>,
     @Query('conflicting', new ValidationPipe(BooleanStringSchema.optional()))
     conflicting?: boolean,
     @Query('stale', new ValidationPipe(BooleanStringSchema.optional()))
@@ -122,6 +144,8 @@ export class SpaceTransactionsController {
           chainId,
           safeAddress: address,
         })),
+        chainIds,
+        signers,
         conflicting,
         stale,
       },
