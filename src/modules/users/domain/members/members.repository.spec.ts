@@ -13,10 +13,10 @@ import { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity'
 import { createMockSpaceAuditRepository } from '#/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
 import { spaceBuilder } from '#/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
 import type { ISpacesRepository } from '#/modules/spaces/domain/spaces.repository.interface';
-import { InviteType } from '#/modules/spaces/routes/members/entities/invite-users.dto.entity';
 import { memberBuilder } from '#/modules/users/datasources/entities/__tests__/member.entity.db.builder';
 import { Member as DbMember } from '#/modules/users/datasources/entities/member.entity.db';
 import { createMockUserEncryptionService } from '#/modules/users/domain/__tests__/user-encryption.service.mock';
+import { InviteType } from '#/modules/users/domain/entities/invite-user.entity';
 import { createMockMemberEncryptionService } from '#/modules/users/domain/members/__tests__/member-encryption.service.mock';
 import type { MemberEncryptionService } from '#/modules/users/domain/members/member-encryption.service';
 import { MembersRepository } from '#/modules/users/domain/members/members.repository';
@@ -118,7 +118,7 @@ describe('MembersRepository', () => {
 
       await expect(
         target.inviteUsers({
-          authPayload,
+          actorUserId: Number(authPayload.sub),
           spaceId: space.id,
           users: [userToInvite],
           inviteExpiresAt,
@@ -167,7 +167,7 @@ describe('MembersRepository', () => {
       entityManager.findOne.mockResolvedValue(existingMember);
 
       await target.inviteUsers({
-        authPayload,
+        actorUserId: Number(authPayload.sub),
         spaceId: space.id,
         users: [userToInvite],
         inviteExpiresAt,
@@ -220,7 +220,7 @@ describe('MembersRepository', () => {
 
       await expect(
         target.inviteUsers({
-          authPayload,
+          actorUserId: Number(authPayload.sub),
           spaceId: space.id,
           users: [userToInvite],
           inviteExpiresAt,
@@ -251,7 +251,7 @@ describe('MembersRepository', () => {
 
       await expect(
         target.inviteUsers({
-          authPayload,
+          actorUserId: Number(authPayload.sub),
           spaceId: space.id,
           users: [userToInvite],
           inviteExpiresAt,
@@ -285,7 +285,7 @@ describe('MembersRepository', () => {
 
       await expect(
         target.inviteUsers({
-          authPayload,
+          actorUserId: Number(authPayload.sub),
           spaceId: space.id,
           users: [userToInvite],
           inviteExpiresAt,
@@ -315,7 +315,7 @@ describe('MembersRepository', () => {
       entityManager.findOne.mockResolvedValue(null);
 
       await target.inviteUsers({
-        authPayload,
+        actorUserId: Number(authPayload.sub),
         spaceId: space.id,
         users: [userToInvite],
         inviteExpiresAt,
@@ -349,7 +349,7 @@ describe('MembersRepository', () => {
       entityManager.findOne.mockResolvedValue(null);
 
       await target.inviteUsers({
-        authPayload,
+        actorUserId: Number(authPayload.sub),
         spaceId: space.id,
         users: [userToInvite],
         inviteExpiresAt,
@@ -383,7 +383,7 @@ describe('MembersRepository', () => {
       entityManager.findOne.mockResolvedValue(existingMember);
 
       await target.inviteUsers({
-        authPayload,
+        actorUserId: Number(authPayload.sub),
         spaceId: space.id,
         users: [userToInvite],
         inviteExpiresAt,

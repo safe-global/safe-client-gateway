@@ -1,11 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
-import {
-  BadRequestException,
-  ForbiddenException,
-  NotFoundException,
-} from '@nestjs/common';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import type { MockedObject } from 'vitest';
 import { oidcAuthPayloadDtoBuilder } from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
@@ -15,6 +11,7 @@ import type {
   Survey,
   SurveyPage,
 } from '#/modules/surveys/domain/entities/survey.entity';
+import { InvalidSurveySelectionsError } from '#/modules/surveys/domain/errors/invalid-survey-selections.error';
 import type {
   ISurveysRepository,
   UpsertedSurveyResponse,
@@ -152,7 +149,7 @@ describe('SurveysService', () => {
           slug: 'onboarding',
           body: { selections: { use_cases: ['hold_assets'] } },
         }),
-      ).rejects.toBeInstanceOf(BadRequestException);
+      ).rejects.toBeInstanceOf(InvalidSurveySelectionsError);
       expect(surveysRepositoryMock.upsertResponse).not.toHaveBeenCalled();
     });
 
@@ -173,7 +170,7 @@ describe('SurveysService', () => {
             },
           },
         }),
-      ).rejects.toBeInstanceOf(BadRequestException);
+      ).rejects.toBeInstanceOf(InvalidSurveySelectionsError);
       expect(surveysRepositoryMock.upsertResponse).not.toHaveBeenCalled();
     });
 
@@ -191,7 +188,7 @@ describe('SurveysService', () => {
             selections: { use_cases: ['hold_assets', 'totally_made_up'] },
           },
         }),
-      ).rejects.toBeInstanceOf(BadRequestException);
+      ).rejects.toBeInstanceOf(InvalidSurveySelectionsError);
     });
 
     it('rejects more than one selection on a single-select page with 400', async () => {
@@ -208,7 +205,7 @@ describe('SurveysService', () => {
             selections: { team_size: ['one_to_five', 'six_to_twenty'] },
           },
         }),
-      ).rejects.toBeInstanceOf(BadRequestException);
+      ).rejects.toBeInstanceOf(InvalidSurveySelectionsError);
     });
 
     it('accepts exactly one selection on a single-select page', async () => {
