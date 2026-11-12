@@ -125,6 +125,28 @@ describe('Workspace setup without billing', () => {
       .expect(200);
   }
 
+  it('applies a setup without a plan at once', async () => {
+    const accessToken = await signIn();
+
+    const { body: created } = await request(app.getHttpServer())
+      .post('/v1/spaces/setup')
+      .set('Cookie', [`access_token=${accessToken}`])
+      .send(setupBody(null))
+      .expect(201);
+
+    expect(created).toEqual({
+      spaceId: expect.any(String),
+      checkoutUrl: null,
+    });
+    const { body: spaces } = await listSpaces(accessToken);
+    expect(spaces).toEqual([
+      expect.objectContaining({
+        uuid: created.spaceId,
+        setupStatus: 'applied',
+      }),
+    ]);
+  });
+
   it('refuses a setup with a plan, and writes nothing', async () => {
     const accessToken = await signIn();
 

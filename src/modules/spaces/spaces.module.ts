@@ -21,6 +21,7 @@ import { AddressBookTagsRepository } from '#/modules/spaces/domain/address-books
 import { IAddressBookTagsRepository } from '#/modules/spaces/domain/address-books/address-book-tags.repository.interface';
 import { SpaceAuditModule } from '#/modules/spaces/domain/audit/space-audit.module';
 import { SpaceSafesRepositoryModule } from '#/modules/spaces/domain/safes/space-safes-repository.module';
+import { ISpaceSetupApplier } from '#/modules/spaces/domain/setup/space-setup-applier.interface';
 import { SpaceSetupsRepository } from '#/modules/spaces/domain/setup/space-setups.repository';
 import { ISpaceSetupsRepository } from '#/modules/spaces/domain/setup/space-setups.repository.interface';
 import { SpaceEncryptionService } from '#/modules/spaces/domain/space-encryption.service';
@@ -38,6 +39,7 @@ import { SpaceInviteEmailService } from '#/modules/spaces/routes/members/space-i
 import { SpaceSafesController } from '#/modules/spaces/routes/safes/space-safes.controller';
 import { SpaceSafesService } from '#/modules/spaces/routes/safes/space-safes.service';
 import { SpaceSetupService } from '#/modules/spaces/routes/setup/space-setup.service';
+import { SpaceSetupApplyService } from '#/modules/spaces/routes/setup/space-setup-apply.service';
 import { SpacesController } from '#/modules/spaces/routes/spaces.controller';
 import { SpacesService } from '#/modules/spaces/routes/spaces.service';
 import { SurveysRepositoryModule } from '#/modules/surveys/domain/surveys-repository.module';
@@ -91,6 +93,8 @@ import { SpaceIdPipe } from '#/routes/common/pipes/space-id.pipe';
     SpaceInviteEmailService,
     SpaceEncryptionService,
     SpaceSetupService,
+    SpaceSetupApplyService,
+    { provide: ISpaceSetupApplier, useExisting: SpaceSetupApplyService },
     { provide: ISpaceSetupsRepository, useClass: SpaceSetupsRepository },
     {
       provide: ISpacesRepository,
@@ -116,6 +120,7 @@ import { SpaceIdPipe } from '#/routes/common/pipes/space-id.pipe';
     IAddressBookItemsRepository,
     IAddressBookRequestsRepository,
     ISpaceSetupsRepository,
+    ISpaceSetupApplier,
     SpaceIdPipe,
   ],
 })

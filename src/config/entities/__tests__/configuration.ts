@@ -531,6 +531,9 @@ export default (): ReturnType<typeof configuration> => ({
     invite: {
       ttlMs: faker.number.int({ min: 60_000, max: 7 * 24 * 60 * 60 * 1000 }),
     },
+    setup: {
+      applyLeaseSeconds: faker.number.int({ min: 60, max: 300 }),
+    },
     rateLimit: {
       creation: {
         max: faker.number.int({ min: 100, max: 200 }),

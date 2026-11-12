@@ -13,13 +13,16 @@ import {
   TestAppProvider,
 } from '#/__tests__/test-app.provider';
 import { createTestModule } from '#/__tests__/testing-module';
+import { grantEntitlements } from '#/__tests__/util/space-fixtures';
 import { IConfigurationService } from '#/config/configuration.service.interface';
 import configuration from '#/config/entities/__tests__/configuration';
 import {
   paymentLinkBuilder,
   trialPaymentLinkBuilder,
 } from '#/datasources/billing-api/entities/__tests__/payment-link.builder';
+import { subscriptionBuilder } from '#/datasources/billing-api/entities/__tests__/subscription.builder';
 import type { PaymentLink } from '#/datasources/billing-api/entities/payment-link.entity';
+import { stripDashes } from '#/datasources/billing-api/upstream-customer-id.util';
 import type { FakeCacheService } from '#/datasources/cache/__tests__/fake.cache.service';
 import { CacheService } from '#/datasources/cache/cache.service.interface';
 import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
@@ -30,12 +33,20 @@ import {
 } from '#/datasources/network/network.service.interface';
 import { nameBuilder } from '#/domain/common/entities/name.builder';
 import { siweAuthPayloadDtoBuilder } from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import {
+  webhookEventBuilder,
+  webhookEventCustomerBuilder,
+} from '#/modules/billing/domain/entities/__tests__/webhook-event.builder';
+import { BillingWebhookAuthGuard } from '#/modules/billing/routes/guards/billing-webhook-auth.guard';
+import { EntitlementsService } from '#/modules/entitlements/routes/entitlements.service';
 import { NotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/notifications.repository.module';
 import { TestNotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/test.notification.repository.module';
+import { SpaceSafe } from '#/modules/spaces/datasources/safes/entities/space-safes.entity.db';
 import { SpaceSetup } from '#/modules/spaces/datasources/setup/entities/space-setup.entity.db';
 import { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
 import { spaceSetupSafeBuilder } from '#/modules/spaces/domain/setup/entities/__tests__/space-setup.builder';
 import { SPACE_SETUP_CHECKOUT_FAILED_MESSAGE } from '#/modules/spaces/domain/setup/errors/space-setup-checkout-failed.error';
+import { ISpaceSetupApplier } from '#/modules/spaces/domain/setup/space-setup-applier.interface';
 import { createSpaceSetupDtoBuilder } from '#/modules/spaces/routes/entities/__tests__/create-space-setup.dto.builder';
 import type { CreateSpaceSetupDto } from '#/modules/spaces/routes/entities/space-setup.dto.entity';
 import { SpacesCreationRateLimitGuard } from '#/modules/spaces/routes/guards/spaces-creation-rate-limit.guard';
@@ -45,9 +56,12 @@ import {
   emptyBillingServiceState,
   mockBillingService,
 } from '#/modules/spaces/routes/setup/__tests__/billing-service.mock';
+import { Member } from '#/modules/users/datasources/entities/member.entity.db';
 
 const MAX_SPACE_CREATIONS = 3;
 const SEATS = 2;
+// Short, so a spec can outwait the lease of a setup stuck in APPLYING.
+const APPLY_LEASE_SECONDS = 1;
 
 /**
  * The Workspace setup end to end: the routes, the real repositories and the
@@ -63,6 +77,8 @@ describe('Workspace setup', () => {
   let postLoginRedirectUri: string;
 
   let billing: BillingServiceState;
+  let spaceSetupApplier: ISpaceSetupApplier;
+  let entitlementsService: EntitlementsService;
   let fakeCacheService: FakeCacheService;
 
   const testDatabaseName = `test_${randomUUID().replaceAll('-', '')}`;
@@ -99,6 +115,7 @@ describe('Workspace setup', () => {
       spaces: {
         ...defaultConfiguration.spaces,
         maxSpaceCreationsPerUser: MAX_SPACE_CREATIONS,
+        setup: { applyLeaseSeconds: APPLY_LEASE_SECONDS },
       },
       billing: {
         ...defaultConfiguration.billing,
@@ -118,6 +135,11 @@ describe('Workspace setup', () => {
           originalGuard: SpacesCreationRateLimitGuard,
           testGuard: { canActivate: (): true => true },
         },
+        // Webhook origin authentication has its own suite.
+        {
+          originalGuard: BillingWebhookAuthGuard,
+          testGuard: { canActivate: (): true => true },
+        },
       ],
       modules: [
         {
@@ -131,6 +153,9 @@ describe('Workspace setup', () => {
     networkService = moduleFixture.get(NetworkService);
     postgresDatabaseService = moduleFixture.get(PostgresDatabaseService);
     fakeCacheService = moduleFixture.get<FakeCacheService>(CacheService);
+    spaceSetupApplier =
+      moduleFixture.get<ISpaceSetupApplier>(ISpaceSetupApplier);
+    entitlementsService = moduleFixture.get(EntitlementsService);
     const configurationService = moduleFixture.get<IConfigurationService>(
       IConfigurationService,
     );
@@ -164,6 +189,20 @@ describe('Workspace setup', () => {
     };
     billing.catalog.push(plan);
     return plan;
+  }
+
+  /** The billing service now lists a trial for the Workspace. */
+  function startTrial(spaceUuid: string): void {
+    billing.subscriptionsByCustomer.set(stripDashes(spaceUuid), [
+      subscriptionBuilder()
+        .with('status', 'trialing')
+        .with('upstreamCustomerId', stripDashes(spaceUuid))
+        .with('metadata', {
+          planCode: 'BUS-10-A',
+          FEATURE_SAFE_SEATS: `${SEATS}`,
+        })
+        .build(),
+    ]);
   }
 
   async function signIn(): Promise<string> {
@@ -366,6 +405,33 @@ describe('Workspace setup', () => {
   });
 
   describe('GET /v1/spaces/:id/setup', () => {
+    it('applies the setup once the billing service lists the trial', async () => {
+      const accessToken = await signIn();
+      const body = setupBody(offerTrialPlan());
+      const { body: created } = await postSetup(accessToken, body).expect(201);
+      startTrial(created.spaceId);
+
+      await getSetup(accessToken, created.spaceId)
+        .expect(200)
+        .expect(({ body: setup }) => expect(setup.status).toBe('applied'));
+
+      const space = await request(app.getHttpServer())
+        .get(`/v1/spaces/${created.spaceId}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200);
+      expect(space.body).toEqual(
+        expect.objectContaining({ safeCount: 1, setupStatus: 'applied' }),
+      );
+      expect(space.body.members).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            status: 'INVITED',
+            name: body.invites[0].name,
+          }),
+        ]),
+      );
+    });
+
     it('answers 404 for a Workspace created without a setup', async () => {
       const accessToken = await signIn();
       const { body: space } = await request(app.getHttpServer())
@@ -419,6 +485,156 @@ describe('Workspace setup', () => {
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(200);
       expect(space.body.name).toBe(body.name);
+    });
+
+    it('answers 409 once the trial has started and the setup is applied', async () => {
+      const accessToken = await signIn();
+      const plan = offerTrialPlan();
+      const { body: created } = await postSetup(
+        accessToken,
+        setupBody(plan),
+      ).expect(201);
+      startTrial(created.spaceId);
+      await getSetup(accessToken, created.spaceId).expect(200);
+
+      await request(app.getHttpServer())
+        .put(`/v1/spaces/${created.spaceId}/setup`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send(setupBody(plan))
+        .expect(409);
+    });
+  });
+
+  describe('billing webhook', () => {
+    it('applies the pending setup when the trial starts', async () => {
+      const accessToken = await signIn();
+      const { body: created } = await postSetup(
+        accessToken,
+        setupBody(offerTrialPlan()),
+      ).expect(201);
+      startTrial(created.spaceId);
+      const event = webhookEventBuilder()
+        .with('type', 'checkout.session.completed')
+        .build();
+
+      await request(app.getHttpServer())
+        .post('/v1/billing/webhooks')
+        .send({
+          ...event,
+          data: {
+            ...event.data,
+            planId: null,
+            metadata: null,
+            customer: webhookEventCustomerBuilder()
+              .with('upstreamCustomerId', stripDashes(created.spaceId))
+              .build(),
+          },
+        })
+        .expect(202);
+
+      const spaces = await request(app.getHttpServer())
+        .get('/v1/spaces')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200);
+      expect(spaces.body).toEqual([
+        expect.objectContaining({ safeCount: 1, setupStatus: 'applied' }),
+      ]);
+    });
+  });
+
+  describe('apply', () => {
+    /**
+     * A pending setup of a new Workspace, with one Safe and one invite, whose
+     * plan grants the seats its Safe takes.
+     */
+    async function pendingSetup(): Promise<number> {
+      const accessToken = await signIn();
+      const { body: created } = await postSetup(
+        accessToken,
+        setupBody(offerTrialPlan()),
+      ).expect(201);
+      const space = await (
+        await postgresDatabaseService.getRepository(Space)
+      ).findOneByOrFail({ uuid: created.spaceId });
+      await grantEntitlements({
+        entitlementsService,
+        spaceId: space.id,
+        entitlements: [{ featureKey: 'safe_seats', quota: SEATS }],
+      });
+      return space.id;
+    }
+
+    async function setupStatus(spaceId: number): Promise<string> {
+      const row = await (
+        await postgresDatabaseService.getRepository(SpaceSetup)
+      ).findOneByOrFail({ spaceId });
+      return row.status;
+    }
+
+    async function countWrites(
+      spaceId: number,
+    ): Promise<{ safes: number; invites: number }> {
+      const [safes, invites] = await Promise.all([
+        (await postgresDatabaseService.getRepository(SpaceSafe)).countBy({
+          space: { id: spaceId },
+        }),
+        (await postgresDatabaseService.getRepository(Member)).countBy({
+          space: { id: spaceId },
+          status: 'INVITED',
+        }),
+      ]);
+      return { safes, invites };
+    }
+
+    async function markApplying(spaceId: number): Promise<void> {
+      await (await postgresDatabaseService.getRepository(SpaceSetup)).update(
+        { spaceId },
+        { status: 'APPLYING' },
+      );
+    }
+
+    it('writes the Safes and invites once when two applies run together', async () => {
+      const spaceId = await pendingSetup();
+
+      await Promise.all([
+        spaceSetupApplier.apply(spaceId),
+        spaceSetupApplier.apply(spaceId),
+      ]);
+
+      await expect(countWrites(spaceId)).resolves.toEqual({
+        safes: 1,
+        invites: 1,
+      });
+      await expect(setupStatus(spaceId)).resolves.toBe('APPLIED');
+    });
+
+    it('leaves a setup another apply holds within its lease', async () => {
+      const spaceId = await pendingSetup();
+      await markApplying(spaceId);
+
+      await spaceSetupApplier.apply(spaceId);
+
+      await expect(countWrites(spaceId)).resolves.toEqual({
+        safes: 0,
+        invites: 0,
+      });
+      await expect(setupStatus(spaceId)).resolves.toBe('APPLYING');
+    });
+
+    it('takes over a setup stuck in APPLYING once its lease has run out', async () => {
+      const spaceId = await pendingSetup();
+      await markApplying(spaceId);
+      await new Promise((resolve) =>
+        setTimeout(resolve, (APPLY_LEASE_SECONDS + 1) * 1_000),
+      );
+
+      await spaceSetupApplier.apply(spaceId);
+
+      await expect(countWrites(spaceId)).resolves.toEqual({
+        safes: 1,
+        invites: 1,
+      });
+      await expect(setupStatus(spaceId)).resolves.toBe('APPLIED');
     });
   });
 });

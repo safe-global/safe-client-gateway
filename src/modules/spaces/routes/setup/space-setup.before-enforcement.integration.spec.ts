@@ -227,6 +227,24 @@ describe('Workspace setup before enforcement', () => {
       });
   });
 
+  it('applies the setup at once when no plan is given', async () => {
+    const accessToken = await signIn();
+    mockBillingWithTrialCatalog();
+
+    const { body: created } = await request(app.getHttpServer())
+      .post('/v1/spaces/setup')
+      .set('Cookie', [`access_token=${accessToken}`])
+      .send(setupBody(null))
+      .expect(201);
+
+    expect(created.checkoutUrl).toBeNull();
+    expect(networkService.post).not.toHaveBeenCalled();
+    const { body: space } = await getSpace(accessToken, created.spaceId);
+    expect(space).toEqual(
+      expect.objectContaining({ setupStatus: 'applied', safeCount: 1 }),
+    );
+  });
+
   it('refuses a plan the trial plans do not offer, and writes nothing', async () => {
     const accessToken = await signIn();
     mockBillingWithTrialCatalog();

@@ -21,6 +21,7 @@ import { spaceSetupBuilder } from '#/modules/spaces/domain/setup/entities/__test
 import type { SpaceSetup } from '#/modules/spaces/domain/setup/entities/space-setup.entity';
 import { PlanNotOfferedError } from '#/modules/spaces/domain/setup/errors/plan-not-offered.error';
 import { SpaceSetupCheckoutFailedError } from '#/modules/spaces/domain/setup/errors/space-setup-checkout-failed.error';
+import type { ISpaceSetupApplier } from '#/modules/spaces/domain/setup/space-setup-applier.interface';
 import type { ISpaceSetupBilling } from '#/modules/spaces/domain/setup/space-setup-billing.interface';
 import type { ISpaceSetupsRepository } from '#/modules/spaces/domain/setup/space-setups.repository.interface';
 import type { ISpacesRepository } from '#/modules/spaces/domain/spaces.repository.interface';
@@ -35,8 +36,8 @@ import { fakeUuid } from '#/validation/entities/schemas/__tests__/uuid.builder';
 
 /**
  * The service only coordinates; the rules it applies have their own specs.
- * These cover which branch runs and the 502 that carries the new Workspace's
- * id.
+ * These cover which branch runs: checkout or apply, reconcile on read and on
+ * replace, and the 502 that carries the new Workspace's id.
  */
 describe('SpaceSetupService', () => {
   const entityManager = {} as EntityManager;
@@ -44,6 +45,7 @@ describe('SpaceSetupService', () => {
   let spacesRepository: MockedObject<ISpacesRepository>;
   let membersRepository: MockedObject<IMembersRepository>;
   let spaceSetupsRepository: MockedObject<ISpaceSetupsRepository>;
+  let applier: MockedObject<ISpaceSetupApplier>;
   let billing: MockedObject<ISpaceSetupBilling>;
   let loggingService: MockedObject<ILoggingService>;
   let authPayload: AuthPayload;
@@ -115,6 +117,7 @@ describe('SpaceSetupService', () => {
     const surveysRepository = {
       findActiveBySlugOrFail: vi.fn(),
     } as MockedObject<ISurveysRepository>;
+    applier = { apply: vi.fn() };
     billing = {
       isAvailable: vi.fn().mockReturnValue(true),
       isEnforced: vi.fn().mockReturnValue(true),
@@ -139,6 +142,7 @@ describe('SpaceSetupService', () => {
       spaceSafesRepository,
       spaceSetupsRepository,
       surveysRepository,
+      applier,
       billing,
       configurationService,
       loggingService,
@@ -175,14 +179,16 @@ describe('SpaceSetupService', () => {
           payload: expect.objectContaining({ safes: body.safes }),
         }),
       );
+      expect(applier.apply).not.toHaveBeenCalled();
     });
 
-    it('starts no checkout for a setup without a plan', async () => {
+    it('applies a setup without a plan at once', async () => {
       billing.isEnforced.mockReturnValue(false);
 
       await expect(
         target.create({ authPayload, body: form(null) }),
       ).resolves.toEqual({ spaceId: space.uuid, checkoutUrl: null });
+      expect(applier.apply).toHaveBeenCalledWith(space.id);
       expect(billing.createCheckoutSession).not.toHaveBeenCalled();
     });
 
@@ -229,12 +235,47 @@ describe('SpaceSetupService', () => {
   });
 
   describe('get', () => {
-    it('returns the stored setup', async () => {
+    it('applies a setup whose trial is live before reading it', async () => {
+      storedSetup();
+      billing.syncSubscription.mockResolvedValue(true);
+
+      await target.get({ spaceId: space.id, authPayload });
+
+      expect(billing.syncSubscription).toHaveBeenCalledWith({
+        spaceId: space.id,
+        spaceUuid: space.uuid,
+      });
+      expect(applier.apply).toHaveBeenCalledWith(space.id);
+    });
+
+    it('leaves a setup whose trial has not started', async () => {
       storedSetup();
 
       const result = await target.get({ spaceId: space.id, authPayload });
 
       expect(result.status).toBe('pending');
+      expect(applier.apply).not.toHaveBeenCalled();
+    });
+
+    it('applies a pending setup without a plan, asking billing nothing', async () => {
+      storedSetup({ paymentLinkId: null });
+
+      await target.get({ spaceId: space.id, authPayload });
+
+      expect(applier.apply).toHaveBeenCalledWith(space.id);
+      expect(billing.syncSubscription).not.toHaveBeenCalled();
+    });
+
+    it('returns the stored setup when the reconcile fails', async () => {
+      storedSetup();
+      billing.syncSubscription.mockRejectedValue(new Error('timeout'));
+
+      const result = await target.get({ spaceId: space.id, authPayload });
+
+      expect(result.status).toBe('pending');
+      expect(loggingService.warn).toHaveBeenCalledWith(
+        expect.stringContaining('timeout'),
+      );
     });
 
     it('answers 404 when the space has no setup', async () => {
@@ -276,6 +317,20 @@ describe('SpaceSetupService', () => {
       );
     });
 
+    it('applies a setup whose trial is live, then refuses to replace it', async () => {
+      storedSetup();
+      billing.syncSubscription.mockResolvedValue(true);
+      spaceSetupsRepository.findBySpaceId.mockResolvedValue(
+        spaceSetupBuilder().with('status', 'APPLIED').build(),
+      );
+
+      await expect(
+        target.update({ spaceId: space.id, authPayload, body: form(null) }),
+      ).rejects.toThrow(ConflictException);
+      expect(applier.apply).toHaveBeenCalledWith(space.id);
+      expect(spaceSetupsRepository.replace).not.toHaveBeenCalled();
+    });
+
     it('refuses to replace a setup another request claimed meanwhile', async () => {
       storedSetup();
       spaceSetupsRepository.findBySpaceIdForUpdate.mockResolvedValue(
@@ -289,6 +344,19 @@ describe('SpaceSetupService', () => {
       ).rejects.toThrow(ConflictException);
       expect(spaceSetupsRepository.replace).not.toHaveBeenCalled();
       expect(billing.createCheckoutSession).not.toHaveBeenCalled();
+    });
+
+    it('applies the new form at once when it has no plan', async () => {
+      storedSetup();
+      billing.isEnforced.mockReturnValue(false);
+
+      await expect(
+        target.update({ spaceId: space.id, authPayload, body: form(null) }),
+      ).resolves.toEqual({ spaceId: space.uuid, checkoutUrl: null });
+      expect(spaceSetupsRepository.replace).toHaveBeenCalledWith(
+        expect.objectContaining({ paymentLinkId: null }),
+      );
+      expect(applier.apply).toHaveBeenCalledWith(space.id);
     });
   });
 });
