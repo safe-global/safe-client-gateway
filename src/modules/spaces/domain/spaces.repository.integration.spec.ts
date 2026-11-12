@@ -222,6 +222,7 @@ describe('SpacesRepository', () => {
       });
 
       expect(space).toEqual({
+        id: expect.any(Number),
         uuid: expect.any(String),
         name,
       });
@@ -296,6 +297,7 @@ describe('SpacesRepository', () => {
           status: spaceStatus,
         }),
       ).resolves.toEqual({
+        id: expect.any(Number),
         uuid: expect.any(String),
         name,
       });
@@ -356,6 +358,7 @@ describe('SpacesRepository', () => {
           status: 'ACTIVE',
         }),
       ).resolves.toEqual({
+        id: expect.any(Number),
         uuid: expect.any(String),
         name: expect.any(String),
       });
@@ -377,6 +380,7 @@ describe('SpacesRepository', () => {
       });
 
       expect(space).toEqual({
+        id: expect.any(Number),
         uuid: expect.any(String),
         name: spaceName,
       });

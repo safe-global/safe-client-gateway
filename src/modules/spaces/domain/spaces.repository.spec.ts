@@ -124,7 +124,7 @@ describe('SpacesRepository', () => {
       const result = await target.create({ userId, name, status: 'ACTIVE' });
 
       // The caller gets the plaintext back, not the ciphertext.
-      expect(result).toStrictEqual({ uuid: spaceUuid, name });
+      expect(result).toStrictEqual({ id: spaceId, uuid: spaceUuid, name });
       expect(
         spaceEncryptionService.encryptSpaceName,
       ).toHaveBeenCalledExactlyOnceWith(spaceId, name);
@@ -153,7 +153,7 @@ describe('SpacesRepository', () => {
 
       const result = await target.create({ userId, name, status: 'ACTIVE' });
 
-      expect(result).toStrictEqual({ uuid: spaceUuid, name });
+      expect(result).toStrictEqual({ id: spaceId, uuid: spaceUuid, name });
       expect(entityManager.update).not.toHaveBeenCalled();
       expect(spaceAuditRepository.record).toHaveBeenCalledExactlyOnceWith(
         entityManager,

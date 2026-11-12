@@ -27,12 +27,12 @@ import { SpaceAuditEventType } from '#/modules/spaces/domain/audit/entities/spac
 import { ISpaceAuditRepository } from '#/modules/spaces/domain/audit/space-audit.repository.interface';
 import type { Space } from '#/modules/spaces/domain/entities/space.entity';
 import { ISpacesRepository } from '#/modules/spaces/domain/spaces.repository.interface';
+import { Member as DbMember } from '#/modules/users/datasources/entities/member.entity.db';
+import type { Invitation } from '#/modules/users/domain/entities/invitation.entity';
 import {
   InviteType,
   type InviteUserInput,
-} from '#/modules/spaces/routes/members/entities/invite-users.dto.entity';
-import { Member as DbMember } from '#/modules/users/datasources/entities/member.entity.db';
-import type { Invitation } from '#/modules/users/domain/entities/invitation.entity';
+} from '#/modules/users/domain/entities/invite-user.entity';
 import type { Member } from '#/modules/users/domain/entities/member.entity';
 import type { User } from '#/modules/users/domain/entities/user.entity';
 import { MemberEncryptionService } from '#/modules/users/domain/members/member-encryption.service';
@@ -216,12 +216,12 @@ export class MembersRepository implements IMembersRepository {
   }
 
   public async inviteUsers(args: {
-    authPayload: AuthPayload;
+    actorUserId: User['id'];
     spaceId: Space['id'];
     users: Array<InviteUserInput>;
     inviteExpiresAt: Date;
   }): Promise<Array<Invitation>> {
-    const userId = getAuthenticatedUserIdOrFail(args.authPayload);
+    const userId = args.actorUserId;
 
     const space = await this.spacesRepository.findOneOrFail({
       where: { id: args.spaceId },

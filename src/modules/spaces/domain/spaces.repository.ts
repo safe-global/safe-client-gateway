@@ -7,6 +7,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
+  type EntityManager,
   type FindOptionsRelations,
   type FindOptionsSelect,
   type FindOptionsWhere,
@@ -60,7 +61,8 @@ export class SpacesRepository implements ISpacesRepository {
     userId: number;
     name: string;
     status: keyof typeof SpaceStatus;
-  }): Promise<Pick<Space, 'uuid' | 'name'>> {
+    entityManager?: EntityManager;
+  }): Promise<Pick<Space, 'id' | 'uuid' | 'name'>> {
     const isLimited = await this.isLimited(args.userId);
     if (isLimited) {
       throw new ForbiddenException(
@@ -85,45 +87,57 @@ export class SpacesRepository implements ISpacesRepository {
 
     space.members = [member];
 
-    return await this.postgresDatabaseService.transaction(
-      async (entityManager) => {
-        const insertResult = await entityManager.save(space);
+    const run = async (
+      entityManager: EntityManager,
+    ): Promise<Pick<Space, 'id' | 'uuid' | 'name'>> => {
+      const insertResult = await entityManager.save(space);
 
-        const encryptedName =
-          await this.spaceEncryptionService.encryptSpaceName(
-            insertResult.id,
-            args.name,
-          );
-        if (encryptedName !== args.name) {
-          await entityManager.update(Space, insertResult.id, {
-            name: encryptedName,
-          });
-        }
-        const encryptedMemberName =
-          await this.memberEncryptionService.encryptName(
-            insertResult.id,
-            member.name,
-          );
-        if (encryptedMemberName !== member.name) {
-          await entityManager.update(Member, insertResult.members[0].id, {
-            name: encryptedMemberName,
-          });
-        }
-
-        await this.spaceAuditRepository.record(entityManager, {
-          spaceId: insertResult.id,
-          spaceUuid: insertResult.uuid,
-          eventType: SpaceAuditEventType.SPACE_CREATED,
-          actorUserId: args.userId,
-          payload: { name: args.name },
+      const encryptedName = await this.spaceEncryptionService.encryptSpaceName(
+        insertResult.id,
+        args.name,
+      );
+      if (encryptedName !== args.name) {
+        await entityManager.update(Space, insertResult.id, {
+          name: encryptedName,
         });
+      }
+      const encryptedMemberName =
+        await this.memberEncryptionService.encryptName(
+          insertResult.id,
+          member.name,
+        );
+      if (encryptedMemberName !== member.name) {
+        await entityManager.update(Member, insertResult.members[0].id, {
+          name: encryptedMemberName,
+        });
+      }
 
-        return {
-          uuid: insertResult.uuid,
-          name: args.name,
-        };
-      },
-    );
+      await this.spaceAuditRepository.record(entityManager, {
+        spaceId: insertResult.id,
+        spaceUuid: insertResult.uuid,
+        eventType: SpaceAuditEventType.SPACE_CREATED,
+        actorUserId: args.userId,
+        payload: { name: args.name },
+      });
+
+      return {
+        id: insertResult.id,
+        uuid: insertResult.uuid,
+        name: args.name,
+      };
+    };
+
+    return await this.inTransaction(args.entityManager, run);
+  }
+
+  /** Runs `run` in the caller's transaction when given, else in its own. */
+  private async inTransaction<T>(
+    entityManager: EntityManager | undefined,
+    run: (entityManager: EntityManager) => Promise<T>,
+  ): Promise<T> {
+    return entityManager
+      ? await run(entityManager)
+      : await this.postgresDatabaseService.transaction(run);
   }
 
   public async findOneOrFail(
@@ -246,65 +260,68 @@ export class SpacesRepository implements ISpacesRepository {
       Pick<Space, 'name' | 'status' | 'experimentalFeatures'>
     >;
     actorUserId: number;
+    entityManager?: EntityManager;
   }): Promise<Pick<Space, 'uuid'>> {
-    return await this.postgresDatabaseService.transaction(
-      async (entityManager) => {
-        // Old values are read inside the transaction to keep the diff exact.
-        const current = await entityManager.findOne(Space, {
-          where: { id: args.id },
-          select: {
-            id: true,
-            uuid: true,
-            name: true,
-            status: true,
-            experimentalFeatures: true,
-          },
+    const run = async (
+      entityManager: EntityManager,
+    ): Promise<Pick<Space, 'uuid'>> => {
+      // Old values are read inside the transaction to keep the diff exact.
+      const current = await entityManager.findOne(Space, {
+        where: { id: args.id },
+        select: {
+          id: true,
+          uuid: true,
+          name: true,
+          status: true,
+          experimentalFeatures: true,
+        },
+      });
+      if (!current) {
+        throw new NotFoundException('Workspace not found.');
+      }
+
+      const { name } = args.updatePayload;
+      const currentName =
+        name !== undefined
+          ? await this.spaceEncryptionService.decryptSpaceName(
+              args.id,
+              current.name,
+            )
+          : current.name;
+      const encryptedName =
+        name !== undefined
+          ? await this.spaceEncryptionService.encryptSpaceName(args.id, name)
+          : undefined;
+
+      await entityManager
+        .createQueryBuilder()
+        .update(Space)
+        .set({
+          ...args.updatePayload,
+          ...(encryptedName !== undefined && { name: encryptedName }),
+        })
+        .where({ id: args.id })
+        .execute();
+
+      const diff = this.diffSpaceUpdate({
+        current,
+        currentName,
+        updatePayload: args.updatePayload,
+      });
+      if (diff) {
+        await this.spaceAuditRepository.record(entityManager, {
+          spaceId: current.id,
+          spaceUuid: current.uuid,
+          eventType: SpaceAuditEventType.SPACE_UPDATED,
+          actorUserId: args.actorUserId,
+          payload: diff,
         });
-        if (!current) {
-          throw new NotFoundException('Workspace not found.');
-        }
+      }
 
-        const { name } = args.updatePayload;
-        const currentName =
-          name !== undefined
-            ? await this.spaceEncryptionService.decryptSpaceName(
-                args.id,
-                current.name,
-              )
-            : current.name;
-        const encryptedName =
-          name !== undefined
-            ? await this.spaceEncryptionService.encryptSpaceName(args.id, name)
-            : undefined;
+      return { uuid: current.uuid };
+    };
 
-        await entityManager
-          .createQueryBuilder()
-          .update(Space)
-          .set({
-            ...args.updatePayload,
-            ...(encryptedName !== undefined && { name: encryptedName }),
-          })
-          .where({ id: args.id })
-          .execute();
-
-        const diff = this.diffSpaceUpdate({
-          current,
-          currentName,
-          updatePayload: args.updatePayload,
-        });
-        if (diff) {
-          await this.spaceAuditRepository.record(entityManager, {
-            spaceId: current.id,
-            spaceUuid: current.uuid,
-            eventType: SpaceAuditEventType.SPACE_UPDATED,
-            actorUserId: args.actorUserId,
-            payload: diff,
-          });
-        }
-
-        return { uuid: current.uuid };
-      },
-    );
+    return await this.inTransaction(args.entityManager, run);
   }
 
   /**

@@ -54,6 +54,12 @@ export function createMockSpaceEncryptionService(): MockedObject<SpaceEncryption
     decryptAuditPayload: vi.fn((_spaceId: number, payload: string) =>
       Promise.resolve(JSON.parse(payload)),
     ),
+    encryptSetupPayload: vi.fn((_spaceId: number, payload: unknown) =>
+      Promise.resolve(JSON.stringify(payload)),
+    ),
+    decryptSetupPayload: vi.fn((_spaceId: number, payload: string) =>
+      Promise.resolve(JSON.parse(payload)),
+    ),
     encryptTagName: vi.fn((_spaceId: number, name: string) =>
       Promise.resolve(name),
     ),

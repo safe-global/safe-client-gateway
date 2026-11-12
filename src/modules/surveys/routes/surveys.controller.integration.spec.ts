@@ -166,6 +166,42 @@ describe('SurveysController', () => {
     }
   });
 
+  describe('GET /v1/surveys/:slug', () => {
+    it('returns the active survey, as the state endpoint does, to a user with no space', async () => {
+      const admin = await seedAdminWithSpace();
+      const { accessToken } = await seedOutsider();
+      const { body: state } = await request(app.getHttpServer())
+        .get(`/v1/spaces/${admin.spaceUuid}/surveys/${ONBOARDING_SLUG}/state`)
+        .set('Cookie', [`access_token=${admin.accessToken}`])
+        .expect(200);
+
+      await request(app.getHttpServer())
+        .get(`/v1/surveys/${ONBOARDING_SLUG}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200)
+        .expect(({ body }) => {
+          expect(body).toEqual(state.survey);
+        });
+    });
+
+    it('returns 404 for a slug with no active survey', async () => {
+      const { accessToken } = await seedOutsider();
+
+      await request(app.getHttpServer())
+        .get('/v1/surveys/no-such-survey')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(404);
+    });
+
+    it('rejects requests without an access token', async () => {
+      await request(app.getHttpServer())
+        .get(`/v1/surveys/${ONBOARDING_SLUG}`)
+        .expect((res) => {
+          expect([401, 403]).toContain(res.status);
+        });
+    });
+  });
+
   describe('GET /v1/spaces/:spaceId/surveys/:slug/state', () => {
     it('returns survey definition with null surveyResponse when admin has not submitted', async () => {
       const { accessToken, spaceUuid } = await seedAdminWithSpace();
