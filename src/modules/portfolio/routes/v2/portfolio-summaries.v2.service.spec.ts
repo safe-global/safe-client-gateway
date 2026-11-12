@@ -5,7 +5,6 @@ import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
 import { ZodError } from 'zod';
 import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
-import { LimitReachedError } from '#/datasources/network/entities/errors/limit-reached.error';
 import { LogType } from '#/domain/common/entities/log-type.entity';
 import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
 import { getNumberString } from '#/domain/common/utils/utils';
@@ -499,32 +498,6 @@ describe('PortfolioSummariesV2Service', () => {
     expect(mockPortfolioRepository.getPortfolioSnapshot).not.toHaveBeenCalled();
     expect(mockLoggingService.warn).toHaveBeenCalledWith(
       expect.objectContaining({ type: LogType.ZerionChainListError }),
-    );
-  });
-
-  it('logs an over-budget snapshot at debug and falls back', async () => {
-    const address = getAddress(faker.finance.ethereumAddress());
-    mockPortfolioRepository.getPortfolioSnapshot.mockRejectedValue(
-      new LimitReachedError(),
-    );
-    mockBalancesRepository.getBalances.mockResolvedValue([]);
-
-    const [summary] = await service.getSummaries({
-      safes: [{ chainId: mainnetChainId, address }],
-      currency,
-      trusted: false,
-    });
-
-    expect(summary.source).toBe('tx_service');
-    expect(mockLoggingService.debug).toHaveBeenCalledWith(
-      expect.objectContaining({
-        type: LogType.PortfolioRequestError,
-        event: 'Portfolio over budget',
-        safeAddress: address,
-      }),
-    );
-    expect(mockLoggingService.warn).not.toHaveBeenCalledWith(
-      expect.objectContaining({ type: LogType.PortfolioRequestError }),
     );
   });
 

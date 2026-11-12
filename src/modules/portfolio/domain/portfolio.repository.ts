@@ -24,7 +24,6 @@ import type { TokenBalance } from '#/modules/portfolio/domain/entities/token-bal
 import type { IPortfolioRepository } from '#/modules/portfolio/domain/portfolio.repository.interface';
 import { IPortfolioApi } from '#/modules/portfolio/interfaces/portfolio-api.interface';
 import { ZerionCacheService } from '#/modules/zerion/datasources/zerion-cache.service';
-import { IZerionRepository } from '#/modules/zerion/domain/zerion.repository.interface';
 
 /**
  * Portfolio repository.
@@ -42,8 +41,6 @@ export class PortfolioRepository implements IPortfolioRepository {
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
     private readonly zerionCache: ZerionCacheService,
-    @Inject(IZerionRepository)
-    private readonly zerionRepository: IZerionRepository,
   ) {
     this.cacheExpirationSeconds = this.configurationService.getOrThrow<number>(
       'portfolio.cache.ttlSeconds',
@@ -81,7 +78,7 @@ export class PortfolioRepository implements IPortfolioRepository {
     // Entries cached before timestamps existed fail the parse and are refetched.
     const snapshot = cached.success
       ? cached.data
-      : await this._fetchAndCacheWithinBudget({ ...args, cacheDir });
+      : await this._fetchAndCache({ ...args, cacheDir });
     // The GET /v1/portfolio defaults, so the totals match the Assets page.
     return {
       ...this._applyFilters(snapshot, {
@@ -110,21 +107,6 @@ export class PortfolioRepository implements IPortfolioRepository {
   private async _getCached(cacheDir: CacheDir): Promise<unknown> {
     const cached = await this.cacheService.hGet(cacheDir);
     return cached ? JSON.parse(cached) : null;
-  }
-
-  /**
-   * Summaries are public and batched, so unlike the Assets page a miss spends the shared Zerion budget.
-   *
-   * @throws {LimitReachedError} When the budget is exhausted
-   */
-  private async _fetchAndCacheWithinBudget(
-    args: PortfolioSnapshotArgs & { cacheDir: CacheDir },
-  ): Promise<PortfolioSnapshot> {
-    await this.zerionRepository.assertWithinBudget({
-      datasource: 'portfolio_snapshot',
-      address: args.address,
-    });
-    return await this._fetchAndCache(args);
   }
 
   private async _fetchAndCache(args: {

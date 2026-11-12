@@ -34,8 +34,7 @@ export interface IPortfolioRepository {
 
   /**
    * Gets the cached portfolio GET /v1/portfolio serves, with the trusted and
-   * dust filters applied and the entry's fetch and expiry times. A miss
-   * spends the shared Zerion budget before fetching.
+   * dust filters applied and the entry's fetch and expiry times.
    *
    * @param {Object} args - Snapshot parameters
    * @param {Address} args.address - The wallet address
@@ -43,7 +42,6 @@ export interface IPortfolioRepository {
    * @param {boolean} args.trusted - Whether to count trusted tokens only
    * @param {boolean} args.isTestnet - Whether to read the testnet portfolio
    * @returns {Promise<PortfolioSnapshot>} The filtered snapshot
-   * @throws {LimitReachedError} On a miss when the shared Zerion budget is exhausted
    */
   getPortfolioSnapshot(args: PortfolioSnapshotArgs): Promise<PortfolioSnapshot>;
 

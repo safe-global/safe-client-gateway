@@ -3,7 +3,6 @@ import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import type { Address } from 'viem';
 import { ZodError } from 'zod';
 import { IConfigurationService } from '#/config/configuration.service.interface';
-import { LimitReachedError } from '#/datasources/network/entities/errors/limit-reached.error';
 import { LogType } from '#/domain/common/entities/log-type.entity';
 import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
 import {
@@ -87,7 +86,7 @@ export class PortfolioSummariesV2Service {
     const requested = this.dedupe(args.safes).slice(0, this.maxSafes);
     const chainsById = await this.resolveChains(requested);
     // Validate every Safe before any Zerion call, so a non-Safe address never
-    // spends a paid call or the shared budget.
+    // spends a paid call.
     const safes = (await this.resolveSafes(requested, chainsById)).map(
       (safe): PortfolioSummaryRequest => ({
         ...safe,
@@ -257,11 +256,7 @@ export class PortfolioSummariesV2Service {
     return `${safe.address}_${safe.chain.isTestnet}`;
   }
 
-  /**
-   * Schema drift is an error (a contract break to investigate); being over
-   * the Zerion budget is expected and already recorded by the limiter;
-   * anything else is a warning.
-   */
+  /** Schema drift is an error (a contract break to investigate); anything else is a warning. */
   private logSnapshotError(args: { address: Address; error: unknown }): void {
     const { address, error } = args;
     if (error instanceof ZodError) {
@@ -271,13 +266,6 @@ export class PortfolioSummariesV2Service {
         event: 'Portfolio schema drift',
         safeAddress: address,
         detail: error.message,
-      });
-    } else if (error instanceof LimitReachedError) {
-      this.loggingService.debug({
-        type: LogType.PortfolioRequestError,
-        source: 'PortfolioSummariesV2Service',
-        event: 'Portfolio over budget',
-        safeAddress: address,
       });
     } else {
       this.loggingService.warn({
