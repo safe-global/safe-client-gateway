@@ -19,9 +19,11 @@ import { IConfigurationService } from '#/config/configuration.service.interface'
 import configuration from '#/config/entities/__tests__/configuration';
 import { TestCacheModule } from '#/datasources/cache/__tests__/test.cache.module';
 import { TestNetworkModule } from '#/datasources/network/__tests__/test.network.module';
+import { TestSafeInternalNetworkModule } from '#/datasources/network/__tests__/test.safe-internal.network.module';
 import { TestTxAuthNetworkModule } from '#/datasources/network/__tests__/test.tx-auth.network.module';
 import type { INetworkService } from '#/datasources/network/network.service.interface';
 import { NetworkService } from '#/datasources/network/network.service.interface';
+import { SafeInternalNetworkModule } from '#/datasources/network/safe-internal.network.module';
 import { TxAuthNetworkModule } from '#/datasources/network/tx-auth.network.module';
 import { SignatureType } from '#/domain/common/entities/signature-type.entity';
 import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
@@ -42,6 +44,8 @@ import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisi
 import { safeAppBuilder } from '#/modules/safe-apps/domain/entities/__tests__/safe-app.builder';
 import { TestSafeQueueModule } from '#/modules/safe-queue/__tests__/test.safe-queue.module';
 import { SafeQueueModule } from '#/modules/safe-queue/safe-queue.module';
+import { TestSpaceSafesRepositoryModule } from '#/modules/spaces/domain/safes/__tests__/test.space-safes-repository.module';
+import { SpaceSafesRepositoryModule } from '#/modules/spaces/domain/safes/space-safes-repository.module';
 import { tokenBuilder } from '#/modules/tokens/domain/__tests__/token.builder';
 import { addConfirmationDtoBuilder } from '#/modules/transactions/routes/__tests__/entities/add-confirmation.dto.builder';
 import { TransactionsModule } from '#/modules/transactions/transactions.module';
@@ -78,8 +82,12 @@ describe('Add transaction confirmations - Transactions Controller', () => {
     })
       .overrideModule(TxAuthNetworkModule)
       .useModule(TestTxAuthNetworkModule)
+      .overrideModule(SafeInternalNetworkModule)
+      .useModule(TestSafeInternalNetworkModule)
       .overrideModule(SafeQueueModule)
       .useModule(TestSafeQueueModule)
+      .overrideModule(SpaceSafesRepositoryModule)
+      .useModule(TestSpaceSafesRepositoryModule)
       .compile();
 
     const configurationService = moduleFixture.get<IConfigurationService>(

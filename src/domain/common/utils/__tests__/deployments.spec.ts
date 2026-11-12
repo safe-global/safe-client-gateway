@@ -2,10 +2,13 @@
 
 import { getAddress } from 'viem';
 import {
+  getAllMultiSendDeployments,
   getAllowanceModuleAbi,
   getAllowanceModuleDeployments,
   getExtensibleFallbackHandlerVersions,
   getFallbackHandlerVersions,
+  getMultiSendCallOnlyDeployments,
+  getMultiSendDeployments,
   getSafeL2SingletonVersions,
   getSafeMigrationVersions,
   getSafeSingletonVersions,
@@ -113,6 +116,29 @@ describe('deployments', () => {
           address: EXTENSIBLE_FALLBACK_HANDLER_150,
         }),
       ).toBe(false);
+    });
+  });
+
+  describe('getAllMultiSendDeployments', () => {
+    it('should return the MultiSend and MultiSendCallOnly addresses of every version deployed on the chain', () => {
+      const SEPOLIA_CHAIN_ID = '11155111';
+      const all = getAllMultiSendDeployments({ chainId: SEPOLIA_CHAIN_ID });
+
+      for (const version of ['1.3.0', '1.4.1', '1.5.0']) {
+        expect(all).toEqual(
+          expect.arrayContaining([
+            ...getMultiSendDeployments({ chainId: SEPOLIA_CHAIN_ID, version }),
+            ...getMultiSendCallOnlyDeployments({
+              chainId: SEPOLIA_CHAIN_ID,
+              version,
+            }),
+          ]),
+        );
+      }
+    });
+
+    it('should return nothing on a chain without a deployment', () => {
+      expect(getAllMultiSendDeployments({ chainId: '4294967295' })).toEqual([]);
     });
   });
 

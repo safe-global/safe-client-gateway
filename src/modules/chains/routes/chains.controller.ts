@@ -7,6 +7,7 @@ import {
   ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
+import { ChainIdSchema } from '#/modules/chains/domain/entities/schemas/chain-id.schema';
 import { ChainsService } from '#/modules/chains/routes/chains.service';
 import { AboutChain } from '#/modules/chains/routes/entities/about-chain.entity';
 import {
@@ -22,6 +23,7 @@ import { PaginationDataDecorator } from '#/routes/common/decorators/pagination.d
 import { RouteUrlDecorator } from '#/routes/common/decorators/route.url.decorator';
 import type { Page } from '#/routes/common/entities/page.entity';
 import type { PaginationData } from '#/routes/common/pagination/pagination.data';
+import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
 @ApiTags('chains')
 @Controller({
@@ -70,7 +72,9 @@ export class ChainsController {
     description: 'Chain details retrieved successfully',
   })
   @Get('/:chainId')
-  getChain(@Param('chainId') chainId: string): Promise<Chain> {
+  getChain(
+    @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
+  ): Promise<Chain> {
     return this.chainsService.getChain(chainId);
   }
 
@@ -90,7 +94,9 @@ export class ChainsController {
     description: 'Chain information retrieved successfully',
   })
   @Get('/:chainId/about')
-  getAboutChain(@Param('chainId') chainId: string): Promise<AboutChain> {
+  getAboutChain(
+    @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
+  ): Promise<AboutChain> {
     return this.chainsService.getAboutChain(chainId);
   }
 
@@ -110,7 +116,9 @@ export class ChainsController {
     description: 'Chain backbone information retrieved successfully',
   })
   @Get('/:chainId/about/backbone')
-  getBackbone(@Param('chainId') chainId: string): Promise<Backbone> {
+  getBackbone(
+    @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
+  ): Promise<Backbone> {
     return this.chainsService.getBackbone(chainId);
   }
 
@@ -132,7 +140,7 @@ export class ChainsController {
   })
   @Get('/:chainId/about/master-copies')
   getMasterCopies(
-    @Param('chainId') chainId: string,
+    @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
   ): Promise<Array<MasterCopy>> {
     return this.chainsService.getMasterCopies(chainId);
   }
@@ -154,7 +162,7 @@ export class ChainsController {
   })
   @Get('/:chainId/about/indexing')
   getIndexingStatus(
-    @Param('chainId') chainId: string,
+    @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
   ): Promise<IndexingStatus> {
     return this.chainsService.getIndexingStatus(chainId);
   }
@@ -163,7 +171,9 @@ export class ChainsController {
   @ApiParam({ name: 'chainId', type: 'string', example: '1' })
   @ApiOkResponse({ type: GasPriceResponse })
   @Get('/:chainId/gas-price')
-  getGasPrice(@Param('chainId') chainId: string): Promise<GasPriceResponse> {
+  getGasPrice(
+    @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
+  ): Promise<GasPriceResponse> {
     return this.chainsService.getGasPrice(chainId);
   }
 }

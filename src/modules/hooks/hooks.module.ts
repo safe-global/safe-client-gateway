@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Module } from '@nestjs/common';
+import { CounterfactualSafesRepositoryModule } from '#/modules/counterfactual-safes/domain/counterfactual-safes-repository.module';
 import { EventCacheHelperModule } from '#/modules/hooks/domain/helpers/event-cache.helper.module';
 import { HooksRepository } from '#/modules/hooks/domain/hooks.repository';
 import { IHooksRepository } from '#/modules/hooks/domain/hooks.repository.interface';
@@ -10,6 +11,7 @@ import { QueuesRepositoryModule } from '#/modules/queues/domain/queues-repositor
 
 @Module({
   imports: [
+    CounterfactualSafesRepositoryModule,
     EventCacheHelperModule,
     PushNotificationModule,
     QueuesRepositoryModule,

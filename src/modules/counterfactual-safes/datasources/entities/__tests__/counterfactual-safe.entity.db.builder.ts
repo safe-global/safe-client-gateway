@@ -29,5 +29,6 @@ export function counterfactualSafeBuilder(): IBuilder<CounterfactualSafe> {
     .with('payment', null)
     .with('paymentReceiver', getAddress(faker.finance.ethereumAddress()))
     .with('createdAt', new Date())
-    .with('updatedAt', new Date());
+    .with('updatedAt', new Date())
+    .with('deployedAt', null);
 }

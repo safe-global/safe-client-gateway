@@ -30,7 +30,7 @@ sequenceDiagram
     participant Up as Upstream API
 
     C->>F: HTTP request
-    F->>F: apply trustProxy, body-size limit, proto-poisoning guard
+    F->>F: apply trustProxy, body-size limit, proto-poisoning guard, strip x-safe-* headers
     F->>G: dispatch to route
     G->>V: request authorized
     V->>Ctrl: per-param parsed value
@@ -55,6 +55,8 @@ sequenceDiagram
 Fastify is the HTTP platform (`src/app.provider.ts`).
 `trustProxy` is read from configuration (`httpServer.trustProxy` — a comma-separated subnet/preset list; hop counts are rejected), and the body-size limit is parsed from `httpServer.bodyLimit` (`parseBodyLimit`).
 The custom body parser preserves Fastify's default prototype-poisoning protection (`onProtoPoisoning`/`onConstructorPoisoning`) while restoring Express-compatible empty-body handling for requests with no payload.
+An `onRequest` hook drops every inbound `x-safe-*` header before Nest middleware runs, since Safe services trust those headers for attribution.
+`configureFastifyAdapter` applies the hook and the body parsers to both the app and `createTestApplication`.
 
 Guards (`@UseGuards`) run next — see the guard inventory under AuthN/AuthZ below.
 Each `@Param`/`@Query`/`@Body` argument is independently validated through a `ValidationPipe` (`src/validation/pipes/validation.pipe.ts`) wrapping a Zod schema; a failed parse throws `ZodErrorWithCode`, not a generic `BadRequestException`.
@@ -130,6 +132,7 @@ A shared schema library (`src/validation/entities/schemas/`) backs common primit
 - `AddressSchema` — parses and checksums addresses via viem's `getAddress`, rejecting anything that fails checksum/format validation.
 - `NumericStringSchema` — a base-10 numeric string, explicitly rejecting hex-looking values.
 - `HexSchema` — a `0x`-prefixed hex string (viem's `isHex`).
+- `BooleanStringSchema` — a query-string boolean, exactly `true` or `false`, parsed to a `boolean`.
 - `UuidSchema` — validates a UUID and casts it to Node's `UUID` type.
 - `RedirectUrlSchema` — bounds length (2048 chars) and rejects control characters; used to validate post-login redirect targets.
 
@@ -152,8 +155,9 @@ flowchart TD
     end
 
     subgraph Invalidate["Invalidation path"]
-        J["Transaction or Config Service event"] -->|AMQP exchange| K["QueuesRepository subscribe"]
+        J["Transaction Service event"] -->|"AMQP topic exchange (#)"| K["QueuesRepository subscribe"]
         K --> L["HooksRepository onEvent"]
+        P["Config Service event"] -->|"POST /hooks/events"| L
         L --> M["EventCacheHelper"]
         M --> N["repository clear call"]
         N --> O["cacheService deleteByKey, sets invalidationTimeMs marker"]
@@ -177,10 +181,11 @@ TTLs are never hard-coded at the call site; they come from `expirationTimeInSeco
 Every stored TTL is randomly deviated by `expirationTimeInSeconds.deviatePercent` (±10% by default) via `deviateRandomlyByPercentage` (`src/domain/common/utils/number.ts`), so identically-configured keys do not all expire at the same instant and stampede the upstream service.
 
 Cache invalidation is event-driven.
-The Transaction Service (and Config Service) publish events to an AMQP fanout exchange; CGW's `queues` module subscribes and hands each message to `HooksRepository` (`src/modules/hooks/domain/hooks.repository.ts`), which parses it against `EventSchema` and delegates to `EventCacheHelper` (`src/modules/hooks/domain/helpers/event-cache.helper.ts`).
+The Transaction Service publishes events to an AMQP topic exchange; CGW's `queues` module binds its queue to it with routing key `#` and subscribes and hands each message to `HooksRepository` (`src/modules/hooks/domain/hooks.repository.ts`), which parses it against `EventSchema` and delegates to `EventCacheHelper` (`src/modules/hooks/domain/helpers/event-cache.helper.ts`).
 `EventCacheHelper` maps each event type (`PENDING_MULTISIG_TRANSACTION`, `EXECUTED_MULTISIG_TRANSACTION`, `INCOMING_TOKEN`, `CHAIN_UPDATE`, and so on) to targeted deletes: the specific repository `clear*` calls that event affects, each of which ultimately calls `cacheService.deleteByKey`.
 An executed multisig transaction, for example, clears the safe's collectibles, transfers, multisig transactions and Safe info in one pass.
 A same-effect HTTP fallback exists at `POST /hooks/events` (`src/modules/hooks/routes/hooks.controller.ts`, guarded by `BasicAuthGuard`), gated by the `features.hookHttpPostEvent` flag.
+Config Service events (`CHAIN_UPDATE`, `SAFE_APPS_UPDATE`) always use this endpoint; the flag only gates Transaction Service events.
 
 ## Persistence
 
@@ -201,7 +206,7 @@ Running migrations on startup is retried (`db.migrator.numberOfRetries`, default
 
 ## Async work
 
-Background work runs on BullMQ queues backed by Redis, each declared with config-driven retry `attempts` and `backoff` (never hard-coded): csv-export (`src/modules/csv-export/v1/`), push notifications (`src/modules/notifications/domain/push/`), and SES email (`src/modules/email/ses/`).
+Background work runs on BullMQ queues backed by Redis, each declared with config-driven retry `attempts` and `backoff` (never hard-coded): csv-export (`src/modules/csv-export/v1/`), push notifications (`src/modules/notifications/domain/push/`), SES email (`src/modules/email/ses/`), and Safenet checks (`src/modules/safenet/`).
 Each queue has its own `@Processor`/`WorkerHost` consumer (e.g. `CsvExportConsumer` in `src/modules/csv-export/v1/consumers/csv-export.consumer.ts`) and its own `removeOnComplete`/`removeOnFail` retention config.
 The BullMQ connection itself is registered once, globally, in `src/app.module.ts` (`BullModule.forRootAsync`, pointed at `redis.host`/`redis.port`) — individual queue modules register a named queue against that shared connection rather than opening their own.
 
@@ -259,6 +264,16 @@ All three filters are registered globally as `APP_FILTER`s in `src/app.module.ts
 All outbound HTTP goes through `INetworkService` (`src/datasources/network/network.service.interface.ts`) — there is no direct `fetch`/HTTP client usage inside a datasource.
 Requests default to a 5-second timeout (`httpClient.requestTimeout`) with no automatic retries.
 A circuit breaker (`src/datasources/circuit-breaker/`) is opt-in per request via a `circuitBreaker.key`, and trips after `circuitBreaker.threshold` consecutive failures within `circuitBreaker.rollingWindow`. While HALF_OPEN it admits at most as many concurrent probes as the number of failures that would re-open it (`threshold × halfOpenFailureRateThreshold / 100`) and rejects the rest, so a hanging upstream never receives a burst of probes that each wait out the full request timeout.
+
+There is more than one `INetworkService` instance:
+
+- **Global (`NetworkModule`).** Third-party APIs use this one.
+- **Module-scoped, for Safe services.** These replace the global instance for every provider in the module that imports them, and send the current request ID as `x-safe-req-id`, the same value logged as `request_id` (32 lowercase hex characters, the format APISIX uses):
+  - `SafeInternalNetworkModule`
+  - `TxAuthNetworkModule`, which also adds Transaction Service auth
+  - `SafeQueueModule`, which also adds queue-service auth
+- **No caller-supplied `x-safe-*`.** Every instance drops `x-safe-*` headers set by a caller.
+- **Guard.** `src/datasources/network/network-wiring.integration.spec.ts` pins which providers get a module-scoped instance.
 
 Per-chain external APIs share a common shape: `IApiManager<T>` (`src/domain/interfaces/api.manager.interface.ts`) declares `getApi(chainId)`/`destroyApi(chainId)`, and is implemented once per API family — `IBalancesApiManager`, `ITransactionApiManager`, `IStakingApiManager`, `IBlockchainApiManager`, and others.
 The rest of the codebase asks its manager for "the client for this chain" rather than juggling per-chain client instances itself.

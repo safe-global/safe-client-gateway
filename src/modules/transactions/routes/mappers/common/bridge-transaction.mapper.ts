@@ -248,7 +248,13 @@ export class BridgeTransactionMapper {
         return {
           toAmount: null,
           toToken: null,
-          fees: null,
+          fees: args.decoded.fees
+            ? {
+                integratorFee: args.decoded.fees.integratorFee.toString(),
+                lifiFee: args.decoded.fees.lifiFee.toString(),
+                tokenAddress: args.decoded.fees.tokenAddress,
+              }
+            : null,
           explorerUrl: null,
           status: status.status,
           substatus: status.substatus,

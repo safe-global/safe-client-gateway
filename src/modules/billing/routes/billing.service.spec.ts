@@ -100,6 +100,7 @@ const AFTER_ENFORCEMENT = '2026-11-01T00:00:00Z';
 describe('BillingService', () => {
   let service: BillingService;
   let postLoginRedirectUri: string;
+  let fakeConfigurationService: FakeConfigurationService;
 
   function withinRedirectOrigin(): string {
     return new URL(faker.system.filePath(), postLoginRedirectUri).toString();
@@ -121,10 +122,34 @@ describe('BillingService', () => {
     );
   }
 
+  function createBillingService(
+    configurationService: FakeConfigurationService,
+  ): BillingService {
+    return new BillingService(
+      billingRepositoryMock,
+      membersRepositoryMock,
+      configurationService,
+      subscriptionSyncServiceMock,
+      subscriptionsRepositoryMock,
+      spacesRepositoryMock,
+      spaceSafesRepositoryMock,
+      loggingServiceMock,
+    );
+  }
+
+  /** Rebuilds the service with the grace claim window already closed. */
+  function closeGraceClaimWindow(): void {
+    fakeConfigurationService.set(
+      'entitlements.gracePeriodClaimEndsAt',
+      faker.date.past(),
+    );
+    service = createBillingService(fakeConfigurationService);
+  }
+
   beforeEach(() => {
     vi.resetAllMocks();
     postLoginRedirectUri = faker.internet.url();
-    const fakeConfigurationService = new FakeConfigurationService();
+    fakeConfigurationService = new FakeConfigurationService();
     fakeConfigurationService.set(
       'auth.postLoginRedirectUri',
       postLoginRedirectUri,
@@ -133,6 +158,10 @@ describe('BillingService', () => {
     fakeConfigurationService.set(
       'entitlements.enforcementStartsAt',
       new Date(ENFORCEMENT_STARTS_AT),
+    );
+    fakeConfigurationService.set(
+      'entitlements.gracePeriodClaimEndsAt',
+      faker.date.future(),
     );
 
     // Defaults for the specs that are not about the offer filter: a workspace
@@ -152,16 +181,7 @@ describe('BillingService', () => {
       memberBuilder().with('role', 'ADMIN').with('status', 'ACTIVE').build(),
     );
 
-    service = new BillingService(
-      billingRepositoryMock,
-      membersRepositoryMock,
-      fakeConfigurationService,
-      subscriptionSyncServiceMock,
-      subscriptionsRepositoryMock,
-      spacesRepositoryMock,
-      spaceSafesRepositoryMock,
-      loggingServiceMock,
-    );
+    service = createBillingService(fakeConfigurationService);
   });
 
   describe('constructor', () => {
@@ -169,26 +189,33 @@ describe('BillingService', () => {
     // and `RootConfigurationSchema` rejects a non-ISO env value at boot. What
     // is still worth asserting here is that a missing key is not tolerated.
     it('should throw when entitlements.enforcementStartsAt is not configured', () => {
-      const fakeConfigurationService = new FakeConfigurationService();
-      fakeConfigurationService.set(
+      const configurationService = new FakeConfigurationService();
+      configurationService.set(
         'auth.postLoginRedirectUri',
         faker.internet.url(),
       );
-      fakeConfigurationService.set('application.isProduction', false);
+      configurationService.set('application.isProduction', false);
 
-      expect(
-        () =>
-          new BillingService(
-            billingRepositoryMock,
-            membersRepositoryMock,
-            fakeConfigurationService,
-            subscriptionSyncServiceMock,
-            subscriptionsRepositoryMock,
-            spacesRepositoryMock,
-            spaceSafesRepositoryMock,
-            loggingServiceMock,
-          ),
-      ).toThrow('No value set for key entitlements.enforcementStartsAt');
+      expect(() => createBillingService(configurationService)).toThrow(
+        'No value set for key entitlements.enforcementStartsAt',
+      );
+    });
+
+    it('should throw when entitlements.gracePeriodClaimEndsAt is not configured', () => {
+      const configurationService = new FakeConfigurationService();
+      configurationService.set(
+        'auth.postLoginRedirectUri',
+        faker.internet.url(),
+      );
+      configurationService.set('application.isProduction', false);
+      configurationService.set(
+        'entitlements.enforcementStartsAt',
+        new Date(ENFORCEMENT_STARTS_AT),
+      );
+
+      expect(() => createBillingService(configurationService)).toThrow(
+        'No value set for key entitlements.gracePeriodClaimEndsAt',
+      );
     });
   });
 
@@ -511,6 +538,25 @@ describe('BillingService', () => {
       expect(result).toEqual([trialLink]);
     });
 
+    it('should offer only the standard trial link to a space created before the enforcement date once the claim window closed', async () => {
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const graceLink = trialPaymentLinkBuilder(true).build();
+      const trialLink = trialPaymentLinkBuilder(false).build();
+      const paidLink = paymentLinkBuilder().build();
+      closeGraceClaimWindow();
+      membersRepositoryMock.findOne.mockResolvedValue(memberBuilder().build());
+      spaceCreatedAt(BEFORE_ENFORCEMENT);
+      mockCatalog([graceLink, trialLink, paidLink]);
+
+      const result = await service.getSpacePaymentLinks({
+        spaceId: faker.number.int(),
+        spaceUuid: fakeUuid(),
+        authPayload,
+      });
+
+      expect(result).toEqual([trialLink]);
+    });
+
     it('should offer only paid links to a space that has ever subscribed', async () => {
       const spaceId = faker.number.int();
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
@@ -657,6 +703,28 @@ describe('BillingService', () => {
       // The legacy grace, which a post-enforcement workspace is not entitled to.
       const graceLink = trialPaymentLinkBuilder(true).build();
       spaceCreatedAt(AFTER_ENFORCEMENT);
+      mockCatalog([graceLink]);
+
+      await expect(
+        service.createCheckoutUrl({
+          paymentLinkId: graceLink.id,
+          spaceId: faker.number.int(),
+          spaceUuid: fakeUuid(),
+          authPayload,
+          returnUrl: withinRedirectOrigin(),
+        }),
+      ).rejects.toThrow(ForbiddenException);
+
+      expect(
+        billingRepositoryMock.createCheckoutSession,
+      ).not.toHaveBeenCalled();
+    });
+
+    it('should throw when checking out the legacy grace link once the claim window closed', async () => {
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const graceLink = trialPaymentLinkBuilder(true).build();
+      closeGraceClaimWindow();
+      spaceCreatedAt(BEFORE_ENFORCEMENT);
       mockCatalog([graceLink]);
 
       await expect(

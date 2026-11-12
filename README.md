@@ -17,10 +17,11 @@ It provides UI-oriented mappings and data structures for easier integration with
 - [Client Gateway OpenAPI specification](https://safe-client.safe.global/api)
 - [Deploying the service](https://github.com/safe-global/safe-infrastructure)
 - [Billing webhook authentication & token generation](./src/modules/billing/README.md)
+- [Safenet payer and sponsored checks](./src/modules/safenet/README.md)
 
 ## Requirements
 
-- Node.js v26.10.0 (>= 26.10.0 is required) ([Node.js Release Schedule](https://nodejs.org/en/about/previous-releases)) – https://nodejs.org/en/
+- Node.js v26.12.1 (>= 26.12.1 is required) ([Node.js Release Schedule](https://nodejs.org/en/about/previous-releases)) – https://nodejs.org/en/
 - Docker Compose – https://docs.docker.com/compose/
 
 ## Installation
@@ -172,11 +173,6 @@ yarn run start:dev
 # production mode
 yarn run start:prod
 ```
-
-## Safenet payer
-
-`FF_SAFENET` enables the Safenet payer and defaults to false.
-Set the Consensus, Oracle, and payer Safe variables listed in `.env.sample.json`.
 
 ## Test
 

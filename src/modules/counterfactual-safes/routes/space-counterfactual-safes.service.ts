@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { Inject, Injectable } from '@nestjs/common';
+import { IsNull } from 'typeorm';
 import {
   type ILoggingService,
   LoggingService,
@@ -49,6 +50,7 @@ export class SpaceCounterfactualSafesService {
     const whereClause = spaceSafes.map((safe) => ({
       chainId: safe.chainId,
       address: safe.address,
+      deployedAt: IsNull(),
     }));
 
     const counterfactualSafes = await this.counterfactualSafesRepository.find({

@@ -8,6 +8,7 @@ import {
 } from '#/logging/logging.interface';
 import { PolicyIndexerApi } from '#/modules/policies/datasources/policy-indexer-api.service';
 import {
+  PolicyIndexerConfigurationRootSchema,
   PolicyIndexerGuardEnforcedPolicySchema,
   type PolicyIndexerGuardPolicyKind,
   PolicyIndexerMetaSchema,
@@ -42,6 +43,7 @@ export class PolicyIndexerRepository implements IPolicyIndexerRepository {
         allowances: [],
         delegates: [],
         guardPolicyBindings: [],
+        roots: [],
       };
     }
 
@@ -71,6 +73,11 @@ export class PolicyIndexerRepository implements IPolicyIndexerRepository {
         PolicyIndexerGuardEnforcedPolicySchema,
         response.GuardPolicyBinding,
         'GuardPolicyBinding',
+      ),
+      roots: this.parseRows(
+        PolicyIndexerConfigurationRootSchema,
+        response.ConfigurationRoot,
+        'ConfigurationRoot',
       ),
     };
   }

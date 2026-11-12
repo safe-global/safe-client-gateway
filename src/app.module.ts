@@ -64,9 +64,11 @@ import { SafeModule } from '#/modules/safe/safe.module';
 import { SafeAppsModule } from '#/modules/safe-apps/safe-apps.module';
 import { SafeShieldModule } from '#/modules/safe-shield/safe-shield.module';
 import { SpaceSafeShieldModule } from '#/modules/safe-shield/space-safe-shield.module';
+import { SafenetChecksModule } from '#/modules/safenet/safenet-checks.module';
 import { SpacesModule } from '#/modules/spaces/spaces.module';
 import { SurveysModule } from '#/modules/surveys/surveys.module';
 import { TargetedMessagingModule } from '#/modules/targeted-messaging/targeted-messaging.module';
+import { SpaceTransactionsModule } from '#/modules/transactions/space-transactions.module';
 import { TransactionsModule } from '#/modules/transactions/transactions.module';
 import { UsersModule } from '#/modules/users/users.module';
 import { DataSourceErrorFilter } from '#/routes/common/filters/data-source-error.filter';
@@ -86,7 +88,9 @@ export class AppModule implements NestModule {
       email: isEmailFeatureEnabled,
       zerionPositions: isZerionPositionsFeatureEnabled,
       billingService: isBillingServiceFeatureEnabled,
+      safenet: isSafenetFeatureEnabled,
       sesEmail: isSesEmailFeatureEnabled,
+      safeQueueService: isSafeQueueServiceFeatureEnabled,
     } = configFactory().features;
 
     return {
@@ -124,12 +128,19 @@ export class AppModule implements NestModule {
               ...(isSesEmailFeatureEnabled ? [SesEmailModule] : []),
               CounterfactualSafesModule,
               SpaceSafeShieldModule,
+              ...(isSafeQueueServiceFeatureEnabled
+                ? [SpaceTransactionsModule]
+                : []),
               PoliciesModule,
               SurveysModule,
             ]
           : []),
         ...(isBillingServiceFeatureEnabled && isUsersFeatureEnabled
-          ? [EntitlementsRoutesModule, SpaceRelayModule]
+          ? [
+              EntitlementsRoutesModule,
+              SpaceRelayModule,
+              ...(isSafenetFeatureEnabled ? [SafenetChecksModule] : []),
+            ]
           : []),
         OwnersModule,
         RelayModule,
@@ -147,7 +158,8 @@ export class AppModule implements NestModule {
           global: true,
           middleware: {
             generateId: true,
-            idGenerator: () => crypto.randomUUID(),
+            // 32 lowercase hex characters, the same format as APISIX request IDs
+            idGenerator: () => crypto.randomUUID().replaceAll('-', ''),
           },
         }),
         ConfigurationModule.register(configFactory),

@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
+  ApiExtraModels,
   ApiForbiddenResponse,
   ApiOkResponse,
   ApiOperation,
@@ -20,8 +21,15 @@ import {
 } from '@nestjs/swagger';
 import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
 import { AuthGuard } from '#/modules/auth/routes/guards/auth.guard';
+import type { PendingPolicy } from '#/modules/policies/domain/entities/pending-policy.entity';
 import { PolicyType } from '#/modules/policies/domain/entities/policy-type.entity';
-import { PendingPolicyDto } from '#/modules/policies/routes/entities/pending-policy.dto.entity';
+import {
+  PendingDelayedGuardPoliciesDto,
+  PendingGuardInstallationDto,
+  PendingImmediateGuardPoliciesDto,
+  PendingPolicyDto,
+  PendingPolicySchema,
+} from '#/modules/policies/routes/entities/pending-policy.dto.entity';
 import { ActivePolicyDto } from '#/modules/policies/routes/entities/policy.dto.entity';
 import {
   type PolicyTypes,
@@ -30,6 +38,7 @@ import {
 import { PoliciesService } from '#/modules/policies/routes/policies.service';
 import { Auth } from '#/routes/common/auth/auth.decorator';
 import { SpaceIdPipe } from '#/routes/common/pipes/space-id.pipe';
+import { BooleanStringSchema } from '#/validation/entities/schemas/boolean-string.schema';
 import {
   type Caip10Addresses,
   Caip10AddressesSchema,
@@ -115,7 +124,7 @@ export class SpacePoliciesController {
   @ApiOperation({
     summary: 'Get the pending policy changes on Safes in a Space',
     description:
-      'Returns the spending-limit changes in the transaction queue of every Safe in the Space. Detects only direct AllowanceModule calls and calls found one level inside a MultiSend batch, and only against known AllowanceModule deployments (@safe-global/safe-modules-deployments) - a change made through a nested MultiSend, a custom batching contract, a Safe module bypassing the owner queue, or an unofficial AllowanceModule fork is not detected.',
+      'Returns the pending policy changes of every Safe in the Space. Queued calls are detected only when made directly or one level inside a MultiSend batch, and only against known AllowanceModule and SafePolicyGuard deployments - a change made through a nested MultiSend, a custom batching contract, or a Safe module bypassing the owner queue is not detected.',
   })
   @ApiParam({
     name: 'spaceId',
@@ -136,14 +145,29 @@ export class SpacePoliciesController {
     isArray: true,
     enum: Object.values(PolicyType),
     description:
-      'The policy types to report, comma-separated. Only `spending-limit` yields pending items today; other types are accepted and return none.',
+      'The policy types to report, comma-separated. `spending-limit` returns queued AllowanceModule changes. A guard type (`allow`, `deny`, `cosigner`, `erc20-transfer`, `multisend`, `native-transfer`) returns the delayed `SafePolicyGuard` configurations that may set a policy of that type. `proposer` and `recovery` return none.',
     example: 'spending-limit',
   })
-  @ApiOkResponse({ type: PendingPolicyDto, isArray: true })
+  @ApiQuery({
+    name: 'include_guard_installation',
+    required: false,
+    type: Boolean,
+    default: false,
+    description:
+      'Also report the queued `setGuard` and `setModuleGuard` calls that install, replace or remove a `SafePolicyGuard` on each Safe, as `guard-installation` items.',
+    example: true,
+  })
+  @ApiExtraModels(
+    PendingPolicyDto,
+    PendingGuardInstallationDto,
+    PendingImmediateGuardPoliciesDto,
+    PendingDelayedGuardPoliciesDto,
+  )
+  @ApiOkResponse({ schema: { type: 'array', items: PendingPolicySchema } })
   @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @ApiUnprocessableEntityResponse({
     description:
-      'Invalid CAIP-10 address, a Safe outside this space, or a missing or unknown policy type',
+      'Invalid CAIP-10 address, a Safe outside this space, a missing or unknown policy type, or an `include_guard_installation` value other than `true` or `false`',
   })
   @ApiForbiddenResponse({
     description:
@@ -160,11 +184,17 @@ export class SpacePoliciesController {
     types: PolicyTypes,
     @Query('safes', new ValidationPipe(Caip10AddressesSchema.optional()))
     safes?: Caip10Addresses,
-  ): Promise<Array<PendingPolicyDto>> {
+    @Query(
+      'include_guard_installation',
+      new ValidationPipe(BooleanStringSchema.optional()),
+    )
+    includeGuardInstallation?: boolean,
+  ): Promise<Array<PendingPolicy>> {
     return await this.policiesService.getSpacePendingPolicies({
       spaceId,
       safes,
       types,
+      includeGuardInstallation,
       authPayload,
     });
   }

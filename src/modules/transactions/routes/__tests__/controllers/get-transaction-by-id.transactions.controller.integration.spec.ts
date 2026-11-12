@@ -5,7 +5,7 @@ import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import { APP_FILTER } from '@nestjs/core';
 import request from 'supertest';
-import type { Address } from 'viem';
+import type { Address, Hash } from 'viem';
 import { getAddress } from 'viem';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import type { MockedObject } from 'vitest';
@@ -101,7 +101,7 @@ describe('Get by id - Transactions Controller', () => {
   });
   it('Failure: Config API fails', async () => {
     const chainId = faker.string.numeric();
-    const id = `module_${faker.string.uuid()}`;
+    const id = `module_${getAddress(faker.finance.ethereumAddress())}_${faker.string.alphanumeric()}`;
     const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chainId}`;
     networkService.get.mockImplementation(({ url }) => {
       if (url === getChainUrl) {
@@ -129,7 +129,7 @@ describe('Get by id - Transactions Controller', () => {
     const chain = chainBuilder().build();
     const safe = safeBuilder().build();
     const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
-    const moduleTransactionId = faker.string.uuid();
+    const moduleTransactionId = faker.string.alphanumeric();
     const getModuleTransactionUrl = `${chain.transactionService}/api/v1/module-transaction/${moduleTransactionId}`;
     networkService.get.mockImplementation(({ url }) => {
       switch (url) {
@@ -175,7 +175,7 @@ describe('Get by id - Transactions Controller', () => {
     const chainId = faker.string.numeric();
     const chain = chainBuilder().with('chainId', chainId).build();
     const safe = safeBuilder().build();
-    const id = faker.string.uuid();
+    const id = faker.string.alphanumeric();
     const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
     const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
     const getModuleTransactionUrl = `${chain.transactionService}/api/v1/module-transaction/${id}`;
@@ -218,7 +218,7 @@ describe('Get by id - Transactions Controller', () => {
       .with('trustedForDelegateCall', false)
       .build();
     const contractPage = pageBuilder().with('results', [contract]).build();
-    const moduleTransactionId = faker.string.uuid();
+    const moduleTransactionId = faker.string.alphanumeric();
     const moduleTransaction = moduleTransactionBuilder()
       .with('safe', getAddress(safe.address))
       .with('data', null)
@@ -298,7 +298,7 @@ describe('Get by id - Transactions Controller', () => {
     const chainId = faker.string.numeric();
     const chain = chainBuilder().with('chainId', chainId).build();
     const safe = safeBuilder().build();
-    const id = faker.string.uuid();
+    const id = faker.string.alphanumeric();
     const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
     const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
     const getTransferUrl = `${chain.transactionService}/api/v1/transfer/${id}`;
@@ -336,7 +336,7 @@ describe('Get by id - Transactions Controller', () => {
     const safe = safeBuilder().build();
     const contract = contractBuilder().build();
     const contractPage = pageBuilder().with('results', [contract]).build();
-    const transferId = faker.string.uuid();
+    const transferId = faker.string.alphanumeric();
     const transfer = nativeTokenTransferBuilder()
       .with('transferId', transferId)
       .with('to', safe.address)
@@ -400,7 +400,7 @@ describe('Get by id - Transactions Controller', () => {
     const chainId = faker.string.numeric();
     const chain = chainBuilder().with('chainId', chainId).build();
     const safe = safeBuilder().build();
-    const txHash = faker.string.hexadecimal();
+    const txHash = faker.string.hexadecimal({ length: 64 });
     const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
     const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
     const getMultisigTransactionUrl = `${chain.transactionService}/api/v2/multisig-transactions/${txHash}/`;
@@ -951,7 +951,9 @@ describe('Get by id - Transactions Controller', () => {
   it('should throw a 502 if the Safe and Safe of the transaction do not match', async () => {
     const chain = chainBuilder().build();
     const safe = safeBuilder().build();
-    const tx = multisigTransactionBuilder().build();
+    const tx = multisigTransactionBuilder()
+      .with('safeTxHash', faker.string.hexadecimal({ length: 64 }) as Hash)
+      .build();
     const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
     const getSafeUrl = `${chain.transactionService}/api/v1/safes/${safe.address}`;
     const getMultisigTransactionUrl = `${chain.transactionService}/api/v2/multisig-transactions/${tx.safeTxHash}/`;
@@ -981,6 +983,19 @@ describe('Get by id - Transactions Controller', () => {
         error: 'Bad Request',
         statusCode: 400,
       });
+  });
+
+  it('should, when the id is not a transaction ID, return 422 without calling upstream', async () => {
+    const chain = chainBuilder().build();
+
+    await request(app.getHttpServer())
+      .get(`/v1/chains/${chain.chainId}/transactions/not-a-transaction-id`)
+      .expect(422)
+      .expect(({ body }) => {
+        expect(body).toMatchObject({ statusCode: 422, path: [] });
+      });
+
+    expect(networkService.get).not.toHaveBeenCalled();
   });
 
   describe('Verification', () => {

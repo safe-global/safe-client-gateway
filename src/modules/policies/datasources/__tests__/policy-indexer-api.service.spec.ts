@@ -76,6 +76,7 @@ function requestWith(groups: Array<ReturnType<typeof pairGroup>>): object {
         delegates: groups,
         guardPolicyBindings: groups,
         guardPolicyKinds: [...guardPolicyKinds],
+        roots: groups,
       },
     }),
   });
@@ -172,6 +173,7 @@ describe('PolicyIndexerApi', () => {
         'SafeAllowance',
         'SafeDelegate',
         'GuardPolicyBinding',
+        'ConfigurationRoot(',
       ]) {
         expect(mockNetworkService.post).toHaveBeenCalledWith(
           expect.objectContaining({
@@ -209,6 +211,26 @@ describe('PolicyIndexerApi', () => {
           pairGroup(SEPOLIA, sepoliaOne, sepoliaTwo),
           pairGroup(POLYGON, polygon),
         ]),
+      );
+    });
+
+    it('should filter out guard policies and roots when no guard kinds are asked for', async () => {
+      const safe = safeRef(SEPOLIA);
+
+      await target.getState({ safes: [safe], guardPolicyKinds: [] });
+
+      expect(mockNetworkService.post).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            variables: {
+              allowances: [pairGroup(SEPOLIA, safe)],
+              delegates: [pairGroup(SEPOLIA, safe)],
+              guardPolicyBindings: [],
+              guardPolicyKinds: [],
+              roots: [],
+            },
+          }),
+        }),
       );
     });
   });

@@ -9,6 +9,34 @@ import { Origin } from '#/modules/fees/domain/entities/origin.entity';
 const address = getAddress(faker.finance.ethereumAddress());
 
 describe('CacheRouter', () => {
+  describe('Safenet checks daily counter key', () => {
+    const spaceId = faker.number.int({ min: 1 });
+    const day = '2026-10-21';
+
+    it('differs per workspace and per UTC day', () => {
+      const key = CacheRouter.getSafenetChecksRateLimitCacheKey({
+        spaceId,
+        day,
+      });
+
+      expect(
+        CacheRouter.getSafenetChecksRateLimitCacheKey({
+          spaceId: spaceId + 1,
+          day,
+        }),
+      ).not.toBe(key);
+      expect(
+        CacheRouter.getSafenetChecksRateLimitCacheKey({
+          spaceId,
+          day: '2026-10-22',
+        }),
+      ).not.toBe(key);
+      expect(
+        CacheRouter.getSafenetChecksRateLimitCacheKey({ spaceId, day }),
+      ).toBe(key);
+    });
+  });
+
   describe('portfolio cache keys', () => {
     it('should use distinct keys for positions and wallet portfolio endpoints', () => {
       const portfolioDir = CacheRouter.getPortfolioCacheDir({
@@ -319,6 +347,62 @@ describe('CacheRouter', () => {
       });
 
       expect(dir1.field).toBe(dir2.field);
+    });
+  });
+
+  describe('getSpaceTransactionQueueCacheDir', () => {
+    const spaceId = faker.number.int({ min: 1 });
+    const safes = [
+      `${getAddress(faker.finance.ethereumAddress())}:1`,
+      `${getAddress(faker.finance.ethereumAddress())}:1:10`,
+    ];
+    const limit = faker.number.int({ min: 1, max: 100 });
+    const offset = faker.number.int({ min: 0, max: 500 });
+
+    it('keys every page of a Space under the key its clear deletes', () => {
+      const dir = CacheRouter.getSpaceTransactionQueueCacheDir({
+        spaceId,
+        safes,
+        limit,
+        offset,
+      });
+
+      expect(dir.key).toBe(
+        CacheRouter.getSpaceTransactionQueueCacheKey(spaceId),
+      );
+    });
+
+    it('does not depend on the order of the Safes', () => {
+      const dir = CacheRouter.getSpaceTransactionQueueCacheDir({
+        spaceId,
+        safes,
+        limit,
+        offset,
+      });
+      const reversed = CacheRouter.getSpaceTransactionQueueCacheDir({
+        spaceId,
+        safes: safes.toReversed(),
+        limit,
+        offset,
+      });
+
+      expect(reversed.field).toBe(dir.field);
+    });
+
+    it('produces distinct fields for distinct pages and sets of Safes', () => {
+      const pages: Array<
+        Parameters<typeof CacheRouter.getSpaceTransactionQueueCacheDir>[0]
+      > = [
+        { spaceId, safes, limit: 10, offset: 0 },
+        { spaceId, safes, limit: 10, offset: 10 },
+        { spaceId, safes, limit: 20, offset: 0 },
+        { spaceId, safes: safes.slice(1), limit: 10, offset: 0 },
+      ];
+      const fields = pages.map(
+        (page) => CacheRouter.getSpaceTransactionQueueCacheDir(page).field,
+      );
+
+      expect(new Set(fields).size).toBe(fields.length);
     });
   });
 
