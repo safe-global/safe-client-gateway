@@ -142,6 +142,23 @@ export class BillingService {
   }
 
   /**
+   * The general trial plans a Workspace created now is offered: the same
+   * filter as for an existing Workspace that has never subscribed, so the
+   * links offered before and after it exists are the same ones. No negotiated
+   * link: those are made for one Workspace's id.
+   */
+  public async listTrialPlans(): Promise<Array<PaymentLink>> {
+    const generalLinks = await this.billingRepository.listPaymentLinks();
+    const createdNow = new Date();
+    const eligibility: SpaceOfferEligibility = {
+      isOfferedGracePeriod: this.isOfferedGracePeriod(createdNow),
+      hasEverSubscribed: false,
+      activePlanId: null,
+    };
+    return generalLinks.filter((link) => isOfferedToSpace(link, eligibility));
+  }
+
+  /**
    * Starts a checkout for a workspace payment link.
    *
    * Admin-only, and gated by `ElevationGuard`.
@@ -375,7 +392,7 @@ export class BillingService {
    * negotiated for one customer is not subject to the general enforcement
    * rule. Space-specific wins on a shared id.
    */
-  private async listOfferedPaymentLinks(args: {
+  public async listOfferedPaymentLinks(args: {
     spaceId: Space['id'];
     spaceUuid: Space['uuid'];
   }): Promise<Array<PaymentLink>> {
@@ -416,18 +433,24 @@ export class BillingService {
     ]);
 
     return {
-      isOfferedGracePeriod:
-        predatesEnforcement({
-          createdAt: spaceCreatedAt,
-          startsAt: this.enforcementStartsAt,
-        }) &&
-        isGracePeriodClaimOpen({
-          now: new Date(),
-          endsAt: this.gracePeriodClaimEndsAt,
-        }),
+      isOfferedGracePeriod: this.isOfferedGracePeriod(spaceCreatedAt),
       hasEverSubscribed: subscription.hasEverSubscribed,
       activePlanId: subscription.activePlanId,
     };
+  }
+
+  /** A Workspace created before enforcement, while the grace is claimable. */
+  private isOfferedGracePeriod(spaceCreatedAt: Date): boolean {
+    return (
+      predatesEnforcement({
+        createdAt: spaceCreatedAt,
+        startsAt: this.enforcementStartsAt,
+      }) &&
+      isGracePeriodClaimOpen({
+        now: new Date(),
+        endsAt: this.gracePeriodClaimEndsAt,
+      })
+    );
   }
 
   /**

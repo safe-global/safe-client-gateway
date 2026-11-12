@@ -53,6 +53,12 @@ export class SurveysService {
     };
   }
 
+  /** The active survey for `slug`, which needs no Workspace to read. */
+  public async getActiveSurvey(slug: Survey['slug']): Promise<SurveyDto> {
+    const survey = await this.surveysRepository.findActiveBySlugOrFail(slug);
+    return this.toSurveyDto(survey);
+  }
+
   public async submitResponse(args: {
     authPayload: AuthPayload;
     spaceId: Space['id'];

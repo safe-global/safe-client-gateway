@@ -108,6 +108,18 @@ export class BillingController {
     });
   }
 
+  @ApiOperation({
+    summary: 'Get the trial plans for a new space',
+    description:
+      'The general trial payment links a space that does not exist yet is offered: the standard trial, no negotiated links. Same shape as the payment links of a space.',
+  })
+  @ApiOkResponse({ type: PaymentLink, isArray: true })
+  @UseGuards(AuthGuard)
+  @Get('/trial-plans')
+  public async getTrialPlans(): Promise<Array<PaymentLink>> {
+    return await this.billingService.listTrialPlans();
+  }
+
   @ApiOperation({ summary: 'Get a plan by id' })
   @ApiOkResponse({ type: Plan })
   @UseGuards(AuthGuard)
