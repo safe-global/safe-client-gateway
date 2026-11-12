@@ -936,20 +936,27 @@ async function main(): Promise<void> {
 	const previousPrs: Array<FixPr> = fs.existsSync(fixPrsPath)
 		? (JSON.parse(fs.readFileSync(fixPrsPath, "utf-8")).prs ?? [])
 		: [];
-	// Refresh unmerged ones: they may have been merged or closed since.
+	// Refresh still-open ones: they may have been merged or closed since. A
+	// failed lookup keeps the previous state rather than aborting the run.
 	const keptPrs = previousPrs
 		.filter((pr) => !fetchedNumbers.has(pr.number))
 		.map((pr) => {
 			if (pr.merged_at) return { ...pr, state: "merged" as const };
-			const current = gh(`pulls/${pr.number}`) as {
-				state: string;
-				merged_at: string | null;
-			};
-			return {
-				...pr,
-				merged_at: current.merged_at,
-				state: prState(current),
-			};
+			if (pr.state === "closed") return pr;
+			try {
+				const current = gh(`pulls/${pr.number}`) as {
+					state: string;
+					merged_at: string | null;
+				};
+				return {
+					...pr,
+					merged_at: current.merged_at,
+					state: prState(current),
+				};
+			} catch {
+				console.warn(`    Warning: could not refresh PR #${pr.number}`);
+				return { ...pr, state: pr.state ?? "open" };
+			}
 		});
 	const fixPrs = [...fetchedPrs, ...keptPrs];
 	console.log(`Found ${fixPrs.length} test-related PRs`);
