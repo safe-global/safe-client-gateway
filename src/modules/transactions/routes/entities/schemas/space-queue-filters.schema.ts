@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
 import { SAFE_QUEUE_SERVICE_MAX_LIMIT } from '#/domain/common/constants';
+import { ChainIdSchema } from '#/modules/chains/domain/entities/schemas/chain-id.schema';
+import { AddressSchema } from '#/validation/entities/schemas/address.schema';
 
 export const SpaceQueueStatus = {
   Execute: 'execute',
@@ -28,6 +30,16 @@ export const SpaceQueueSearchSchema = z
   .trim()
   .max(SPACE_QUEUE_SEARCH_MAX_LENGTH)
   .transform((value) => value.toLowerCase() || undefined);
+
+export const SpaceQueueChainIdsSchema = z
+  .string()
+  .transform((value) => value.split(','))
+  .pipe(z.array(ChainIdSchema).nonempty());
+
+export const SpaceQueueSignersSchema = z
+  .string()
+  .transform((value) => value.split(','))
+  .pipe(z.array(AddressSchema).nonempty());
 
 /** At most one queue service page */
 export const SPACE_QUEUE_LIMIT_MAX = SAFE_QUEUE_SERVICE_MAX_LIMIT;

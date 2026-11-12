@@ -130,6 +130,8 @@ describe('SpaceTransactionsService', () => {
         conflicting: 0,
         stale: 0,
         safes: [],
+        chains: [],
+        signers: [],
       },
     });
     expect(mockMembersRepository.findOne).toHaveBeenCalledWith({
@@ -351,6 +353,16 @@ describe('SpaceTransactionsService', () => {
               },
             ],
           },
+        },
+      ],
+      [
+        'chainIds',
+        { filters: { chainIds: [faker.string.numeric({ length: 3 })] } },
+      ],
+      [
+        'signers',
+        {
+          filters: { signers: [getAddress(faker.finance.ethereumAddress())] },
         },
       ],
       ['conflicting', { filters: { conflicting: true } }],
