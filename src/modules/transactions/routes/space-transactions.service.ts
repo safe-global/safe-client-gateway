@@ -48,9 +48,6 @@ export class SpaceTransactionsService {
     const userId = getAuthenticatedUserIdOrFail(args.authPayload);
     await assertMember(this.membersRepository, args.spaceId, userId);
 
-    // The filters and counts run on the queue read, so a filtered queue is
-    // read whole and only then limited. Unfiltered, the read itself stops at
-    // the limit.
     const isFiltered = someFiltersSet({
       ...args.filters,
       search: args.search,
