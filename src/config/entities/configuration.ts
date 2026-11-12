@@ -466,6 +466,8 @@ export default () => ({
       process.env.FF_ZERION_TESTNETS_ENABLED?.toLowerCase() === 'true',
     zerionPositions:
       process.env.FF_ZERION_POSITIONS_DISABLED?.toLowerCase() !== 'true',
+    safesPortfolioSnapshot:
+      process.env.FF_SAFES_PORTFOLIO_SNAPSHOT?.toLowerCase() === 'true',
     debugLogs: process.env.FF_DEBUG_LOGS?.toLowerCase() === 'true',
     configHooksDebugLogs:
       process.env.FF_CONFIG_HOOKS_DEBUG_LOGS?.toLowerCase() === 'true',

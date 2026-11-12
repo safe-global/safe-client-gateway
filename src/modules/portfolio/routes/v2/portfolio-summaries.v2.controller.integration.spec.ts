@@ -15,6 +15,7 @@ import configuration from '#/config/entities/__tests__/configuration';
 import type { INetworkService } from '#/datasources/network/network.service.interface';
 import { NetworkService } from '#/datasources/network/network.service.interface';
 import { getNumberString } from '#/domain/common/utils/utils';
+import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
 import {
   zerionAttributesBuilder,
   zerionBalanceBuilder,
@@ -100,7 +101,11 @@ describe('PortfolioSummariesV2Controller', () => {
     const moduleFixture = await createTestModule({
       config: () => ({
         ...defaultConfiguration,
-        features: { ...defaultConfiguration.features, zerion: true },
+        features: {
+          ...defaultConfiguration.features,
+          zerion: true,
+          safesPortfolioSnapshot: true,
+        },
         mappings: {
           ...defaultConfiguration.mappings,
           safe: { ...defaultConfiguration.mappings.safe, maxOverviews: 10 },
@@ -154,6 +159,17 @@ describe('PortfolioSummariesV2Controller', () => {
       if (chain) {
         const safe = safeBuilder().with('address', args.address).build();
         return Promise.resolve({ data: rawify(safe), status: 200 });
+      }
+      const queueOf = args.chains.find(
+        ({ transactionService }) =>
+          url ===
+          `${transactionService}/api/v2/safes/${args.address}/multisig-transactions/`,
+      );
+      if (queueOf) {
+        return Promise.resolve({
+          data: rawify(pageBuilder().with('results', []).build()),
+          status: 200,
+        });
       }
       if (url === `${zerionBaseUri}/v1/chains`) {
         return Promise.resolve({
@@ -350,6 +366,55 @@ describe('PortfolioSummariesV2Controller', () => {
       );
     },
   );
+
+  it('gives GET /v2/safes the same per-chain totals from the same Zerion call', async () => {
+    const address = getAddress(faker.finance.ethereumAddress());
+    const chains = Object.values(networks).map((chainId) =>
+      chainBuilder()
+        .with('chainId', String(chainId))
+        .with('isTestnet', false)
+        .build(),
+    );
+    const getPositions = mockUpstreams({
+      chains,
+      address,
+      rows: [
+        zerionRow(firstNetwork, fiat()),
+        zerionRow(firstNetwork, fiat(), { type: PositionType.deposit }),
+        zerionRow(secondNetwork, fiat()),
+      ],
+    });
+    const query = {
+      safes: chains.map(({ chainId }) => `${chainId}:${address}`).join(','),
+      currency: faker.helpers.arrayElement(currencies),
+      trusted: String(faker.datatype.boolean()),
+    };
+
+    const { body: summaries } = await request(app.getHttpServer())
+      .get('/v2/portfolio/summaries')
+      .query(query)
+      .expect(200);
+    const { body: overviews } = await request(app.getHttpServer())
+      .get('/v2/safes')
+      .query(query)
+      .expect(200);
+
+    expect(overviews).toHaveLength(chains.length);
+    for (const summary of summaries) {
+      expect(overviews).toContainEqual(
+        expect.objectContaining({
+          chainId: summary.chainId,
+          fiatTotal: summary.fiatTotal,
+        }),
+      );
+    }
+    expect(getPositions).toHaveBeenCalledTimes(1);
+    expect(networkService.get).not.toHaveBeenCalledWith(
+      expect.objectContaining({
+        url: `${zerionBaseUri}/v1/wallets/${address}/portfolio`,
+      }),
+    );
+  });
 
   it('rejects a trusted value that is not a boolean', async () => {
     await request(app.getHttpServer())

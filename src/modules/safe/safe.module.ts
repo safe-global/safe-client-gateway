@@ -6,6 +6,7 @@ import { ChainsModule } from '#/modules/chains/chains.module';
 import { ContractsModule } from '#/modules/contracts/contracts.module';
 import { DelegatesV3RepositoryModule } from '#/modules/delegate/domain/v3/delegates.v3.repository.interface';
 import { MessagesModule } from '#/modules/messages/messages.module';
+import { PortfolioModule } from '#/modules/portfolio/portfolio.module';
 import { SafeRepository } from '#/modules/safe/domain/safe.repository';
 import { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
 import { SafesController } from '#/modules/safe/routes/safes.controller';
@@ -24,6 +25,7 @@ import { AddressInfoModule } from '#/routes/common/address-info/address-info.mod
     BalancesModule,
     ChainsModule,
     MessagesModule,
+    PortfolioModule,
     TransactionApiManagerModule,
     DelegatesV3RepositoryModule,
     ContractsModule,

@@ -238,6 +238,7 @@ export default (): ReturnType<typeof configuration> => ({
     zerion: false,
     zerionTestnets: false,
     zerionPositions: false,
+    safesPortfolioSnapshot: false,
     debugLogs: false,
     configHooksDebugLogs: false,
     auth: false,
