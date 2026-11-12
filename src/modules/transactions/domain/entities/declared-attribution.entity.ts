@@ -7,15 +7,15 @@ export const DECLARED_APP_URL_MAX_LENGTH = 2048;
 
 /**
  * Channels wallet clients declare. Documentation only: any string is accepted
- * and forwarded, and the queue service maps values it does not know to `unknown`.
+ * and forwarded.
  */
 export const KnownDeclaredChannels = [
-  'native-transfer',
-  'native-batch',
-  'safe-app',
-  'wallet-connect',
-  'widget',
-  'direct',
+  'NATIVE_TRANSFER',
+  'NATIVE_BATCH',
+  'SAFE_APP',
+  'WALLET_CONNECT',
+  'WIDGET',
+  'DIRECT',
 ] as const;
 
 /** Removes NUL characters and cuts the value to `maxLength` characters. */
