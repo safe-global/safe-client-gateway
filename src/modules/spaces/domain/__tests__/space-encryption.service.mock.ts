@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { MockedObject } from 'vitest';
+import { normalizeTagNameKey } from '#/modules/spaces/domain/address-books/entities/address-book-tag.entity';
 import type { SpaceEncryptionService } from '#/modules/spaces/domain/space-encryption.service';
 
 /**
@@ -52,6 +53,16 @@ export function createMockSpaceEncryptionService(): MockedObject<SpaceEncryption
     ),
     decryptAuditPayload: vi.fn((_spaceId: number, payload: string) =>
       Promise.resolve(JSON.parse(payload)),
+    ),
+    encryptTagName: vi.fn((_spaceId: number, name: string) =>
+      Promise.resolve(name),
+    ),
+    tagNameIndex: vi.fn(
+      (spaceId: number, name: string) =>
+        `${spaceId}:${normalizeTagNameKey(name)}`,
+    ),
+    decryptTagNames: vi.fn((_spaceId: number, tags: Array<{ name: string }>) =>
+      Promise.resolve(tags),
     ),
   } as MockedObject<SpaceEncryptionService>;
 }

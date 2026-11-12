@@ -18,8 +18,12 @@ RUN apt-get update \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Activate Corepack so Yarn 4.14.1 (pinned in .yarnrc.yml) resolves the
-# project-managed release on first install.
-RUN corepack enable
+# Node >= 25 dropped bundled Corepack; install the version pinned in package.json.
+# Remove the base image's global pnpm first: its bins collide with Corepack's shims.
+COPY package.json /tmp/corepack-pin/package.json
+RUN npm uninstall --global pnpm \
+    && npm install --global "corepack@$(node -p 'require("/tmp/corepack-pin/package.json").devDependencies.corepack')" \
+    && corepack enable \
+    && rm -rf /tmp/corepack-pin
 
 USER node

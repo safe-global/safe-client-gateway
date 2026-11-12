@@ -1,11 +1,15 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
-import { ForbiddenException } from '@nestjs/common';
+import { ForbiddenException, HttpStatus } from '@nestjs/common';
+import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
+import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
+import type { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository.interface';
 import {
   assertAdmin,
   assertMember,
+  assertSafeInSpace,
 } from '#/modules/spaces/domain/space-assert.utils';
 import { memberBuilder } from '#/modules/users/datasources/entities/__tests__/member.entity.db.builder';
 import type { IMembersRepository } from '#/modules/users/domain/members/members.repository.interface';
@@ -13,6 +17,10 @@ import type { IMembersRepository } from '#/modules/users/domain/members/members.
 const membersRepositoryMock = {
   findOne: vi.fn(),
 } as MockedObject<IMembersRepository>;
+
+const spaceSafesRepositoryMock = {
+  existsInSpace: vi.fn(),
+} as MockedObject<ISpaceSafesRepository>;
 
 describe('space-assert.utils', () => {
   beforeEach(() => {
@@ -104,6 +112,39 @@ describe('space-assert.utils', () => {
         ),
       ).rejects.toThrow(
         new ForbiddenException('User is not a member of this workspace'),
+      );
+    });
+  });
+
+  describe('assertSafeInSpace', () => {
+    const args = {
+      spaceId: faker.number.int(),
+      chainId: faker.string.numeric(),
+      address: getAddress(faker.finance.ethereumAddress()),
+    };
+
+    it('should resolve when the Safe is in the space', async () => {
+      spaceSafesRepositoryMock.existsInSpace.mockResolvedValue(true);
+
+      await expect(
+        assertSafeInSpace(spaceSafesRepositoryMock, args),
+      ).resolves.toBeUndefined();
+
+      expect(
+        spaceSafesRepositoryMock.existsInSpace,
+      ).toHaveBeenCalledExactlyOnceWith(args);
+    });
+
+    it('should throw an unlogged 403 when the Safe is not in the space', async () => {
+      spaceSafesRepositoryMock.existsInSpace.mockResolvedValue(false);
+
+      await expect(
+        assertSafeInSpace(spaceSafesRepositoryMock, args),
+      ).rejects.toThrow(
+        new HttpExceptionNoLog(
+          'Safe is not in this workspace',
+          HttpStatus.FORBIDDEN,
+        ),
       );
     });
   });

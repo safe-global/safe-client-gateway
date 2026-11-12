@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import { ForbiddenException } from '@nestjs/common';
+import { ForbiddenException, HttpStatus } from '@nestjs/common';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
+import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
 import { siweAuthPayloadDtoBuilder } from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
 import type { IEntitlementEnforcement } from '#/modules/entitlements/domain/entitlement-enforcement.interface';
@@ -53,7 +54,7 @@ describe('SpaceSafeShieldService', () => {
   });
 
   describe('analyzeRecipient', () => {
-    it('rejects a non-member before revealing the plan or the Safe registry', async () => {
+    it('rejects a non-member before revealing the Safe registry or the plan', async () => {
       membersRepository.findOne.mockResolvedValue(null);
 
       await expect(
@@ -72,7 +73,7 @@ describe('SpaceSafeShieldService', () => {
       expect(spaceSafesRepository.existsInSpace).not.toHaveBeenCalled();
     });
 
-    it('rejects a Space without the copilot_scans entitlement before checking the Safe registry', async () => {
+    it('rejects a Space without the copilot_scans entitlement', async () => {
       const notGranted = new FeatureNotGrantedError('copilot_scans');
       entitlementEnforcement.assertFeatureGranted.mockRejectedValue(notGranted);
 
@@ -92,10 +93,9 @@ describe('SpaceSafeShieldService', () => {
         spaceId,
         featureKey: 'copilot_scans',
       });
-      expect(spaceSafesRepository.existsInSpace).not.toHaveBeenCalled();
     });
 
-    it('rejects a Safe not registered to the Space', async () => {
+    it('rejects a Safe not registered to the Space before checking the entitlement', async () => {
       spaceSafesRepository.existsInSpace.mockResolvedValue(false);
 
       await expect(
@@ -106,8 +106,16 @@ describe('SpaceSafeShieldService', () => {
           recipientAddress: getAddress(faker.finance.ethereumAddress()),
           authPayload,
         }),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toThrow(
+        new HttpExceptionNoLog(
+          'Safe is not in this workspace',
+          HttpStatus.FORBIDDEN,
+        ),
+      );
 
+      expect(
+        entitlementEnforcement.assertFeatureGranted,
+      ).not.toHaveBeenCalled();
       expect(safeShieldAnalysis.analyzeRecipient).not.toHaveBeenCalled();
     });
 
@@ -151,7 +159,7 @@ describe('SpaceSafeShieldService', () => {
       operation: 0 as const,
     };
 
-    it('rejects a non-member before revealing the plan or the Safe registry', async () => {
+    it('rejects a non-member before revealing the Safe registry or the plan', async () => {
       membersRepository.findOne.mockResolvedValue(null);
 
       await expect(

@@ -337,4 +337,74 @@ describe('SpaceEncryptionService', () => {
       ).resolves.toStrictEqual(payload);
     });
   });
+
+  describe('tag names', () => {
+    it('encrypts a tag name under the space context', async () => {
+      const name = faker.word.noun();
+
+      await expect(target.encryptTagName(spaceId, name)).resolves.toBe(
+        `enc:${name}`,
+      );
+      expect(fieldCryptoService.encrypt).toHaveBeenCalledWith(name, {
+        spaceId: String(spaceId),
+      });
+    });
+
+    it('decrypts tag names under the space context', async () => {
+      const tags = [
+        { id: faker.number.int({ min: 1 }), name: faker.word.noun() },
+      ];
+
+      await expect(target.decryptTagNames(spaceId, tags)).resolves.toEqual([
+        { id: tags[0].id, name: `dec:${tags[0].name}` },
+      ]);
+      expect(fieldCryptoService.decrypt).toHaveBeenCalledWith(tags[0].name, {
+        spaceId: String(spaceId),
+      });
+    });
+
+    it('scopes the blind index to the space and normalises the name', () => {
+      const name = faker.word.noun();
+
+      expect(target.tagNameIndex(spaceId, ` ${name.toUpperCase()}  `)).toBe(
+        'index-token',
+      );
+      expect(fieldCryptoService.blindIndex).toHaveBeenCalledWith(
+        `${spaceId}:${name.toLowerCase()}`,
+      );
+    });
+
+    it('collapses inner runs of spaces, so names that render the same share an index', () => {
+      fieldCryptoService.blindIndex.mockImplementation(
+        (value: string) => `hmac:${value}`,
+      );
+
+      expect(target.tagNameIndex(spaceId, '  Vendor   Ops ')).toBe(
+        target.tagNameIndex(spaceId, 'vendor ops'),
+      );
+      expect(target.tagNameIndex(spaceId, 'vendor ops')).toBe(
+        `hmac:${spaceId}:vendor ops`,
+      );
+    });
+
+    it('normalises the name as TagNameSchema does, invisible characters included', () => {
+      const name = faker.word.noun();
+      fieldCryptoService.blindIndex.mockImplementation(
+        (value: string) => `hmac:${value}`,
+      );
+
+      expect(target.tagNameIndex(spaceId, `${name}\u200B`)).toBe(
+        target.tagNameIndex(spaceId, name),
+      );
+    });
+
+    it('falls back to the normalised plaintext when no index key is configured', () => {
+      const name = faker.word.noun();
+      fieldCryptoService.blindIndex.mockReturnValue(null);
+
+      expect(target.tagNameIndex(spaceId, ` ${name.toUpperCase()}  `)).toBe(
+        `${spaceId}:${name.toLowerCase()}`,
+      );
+    });
+  });
 });

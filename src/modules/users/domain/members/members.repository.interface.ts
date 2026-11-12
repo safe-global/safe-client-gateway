@@ -50,15 +50,17 @@ export interface IMembersRepository {
   /**
    * Refreshes the expiry of an existing invite. Callers are responsible for
    * loading the member and enforcing that it is still pending.
+   * Returns false, writing nothing, if the member row changed after notRenewedSince.
    */
   renewInvite(args: {
     memberId: Member['id'];
     inviteExpiresAt: Date;
+    notRenewedSince: Date;
     spaceId: Space['id'];
     spaceUuid: UUID;
     targetUserId: User['id'];
     actorUserId: User['id'];
-  }): Promise<void>;
+  }): Promise<boolean>;
 
   /**
    * Accepts a pending space invite for the authenticated user.
