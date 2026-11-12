@@ -2,13 +2,14 @@
 
 import { faker } from '@faker-js/faker';
 import {
-  ForbiddenException,
+  HttpStatus,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { MoreThan } from 'typeorm';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
+import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
 import {
   oidcAuthPayloadDtoBuilder,
   siweAuthPayloadDtoBuilder,
@@ -990,7 +991,12 @@ describe('SpacesService', () => {
           updatePayload: { name: faker.word.noun() },
           authPayload,
         }),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toThrow(
+        new HttpExceptionNoLog(
+          'User is not an admin of this workspace',
+          HttpStatus.FORBIDDEN,
+        ),
+      );
     });
   });
 
@@ -1026,7 +1032,12 @@ describe('SpacesService', () => {
           id: faker.number.int(),
           authPayload,
         }),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toThrow(
+        new HttpExceptionNoLog(
+          'User is not an admin of this workspace',
+          HttpStatus.FORBIDDEN,
+        ),
+      );
     });
   });
 });

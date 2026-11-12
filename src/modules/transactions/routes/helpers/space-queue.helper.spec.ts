@@ -16,8 +16,10 @@ import { TransactionStatus } from '#/modules/transactions/routes/entities/transa
 import {
   filterSpaceQueue,
   getSpaceQueueCounts,
+  limitSpaceQueue,
   SPACE_QUEUE_STALE_AFTER_MS,
   type SpaceQueueSearch,
+  someFiltersSet,
 } from '#/modules/transactions/routes/helpers/space-queue.helper';
 import { AddressInfo } from '#/routes/common/entities/address-info.entity';
 
@@ -756,6 +758,98 @@ describe('space-queue.helper', () => {
         { chainId, safeAddress: safeA, count: 1 },
         { chainId: otherChainId, safeAddress: safeA, count: 0 },
       ]);
+    });
+  });
+
+  describe('someFiltersSet', () => {
+    it('is false when every filter is unset', () => {
+      expect(someFiltersSet({})).toBe(false);
+      expect(someFiltersSet({ statuses: undefined, search: undefined })).toBe(
+        false,
+      );
+    });
+
+    it('is true when one filter is set, even to false', () => {
+      expect(someFiltersSet({ stale: false })).toBe(true);
+      expect(someFiltersSet({ search: faker.word.noun() })).toBe(true);
+    });
+  });
+
+  describe('limitSpaceQueue', () => {
+    const awaiting = (nonce: number, conflictType?: ConflictType) =>
+      queuedTransaction({
+        status: TransactionStatus.AwaitingConfirmations,
+        nonce,
+        conflictType,
+      });
+
+    it('keeps the first transactions by nonce across Safes, with their labels', () => {
+      const nonce = faker.number.int({ min: 0, max: 100 });
+      const next = new LabelQueuedItem(LabelItem.Next);
+      const queued = new LabelQueuedItem(LabelItem.Queued);
+      const first = awaiting(nonce);
+      const third = awaiting(nonce + 2);
+      const second = awaiting(nonce + 1);
+
+      const actual = limitSpaceQueue({
+        results: {
+          [safeA]: { [chainId]: [next, first, queued, third] },
+          [safeB]: { [chainId]: [next, second] },
+        },
+        limit: 2,
+      });
+
+      expect(actual).toEqual({
+        [safeA]: { [chainId]: [next, first] },
+        [safeB]: { [chainId]: [next, second] },
+      });
+    });
+
+    it('keeps a conflict group whole, past the limit', () => {
+      const nonce = faker.number.int({ min: 0, max: 100 });
+      const next = new LabelQueuedItem(LabelItem.Next);
+      const queued = new LabelQueuedItem(LabelItem.Queued);
+      const lone = awaiting(nonce);
+      const header = new ConflictHeaderQueuedItem(nonce + 1);
+      const conflictFirst = awaiting(nonce + 1, ConflictType.HasNext);
+      const conflictEnd = awaiting(nonce + 1, ConflictType.End);
+      const items = [
+        next,
+        lone,
+        queued,
+        header,
+        conflictFirst,
+        conflictEnd,
+        awaiting(nonce + 2),
+      ];
+
+      const actual = limitSpaceQueue({
+        results: { [safeA]: { [chainId]: items } },
+        limit: 2,
+      });
+
+      expect(actual).toEqual({
+        [safeA]: {
+          [chainId]: [next, lone, queued, header, conflictFirst, conflictEnd],
+        },
+      });
+    });
+
+    it('returns a queue shorter than the limit as it is', () => {
+      const nonce = faker.number.int({ min: 0, max: 100 });
+      const items = [
+        new LabelQueuedItem(LabelItem.Next),
+        awaiting(nonce),
+        new LabelQueuedItem(LabelItem.Queued),
+        awaiting(nonce + 1),
+      ];
+
+      const actual = limitSpaceQueue({
+        results: { [safeA]: { [chainId]: items } },
+        limit: faker.number.int({ min: 2, max: 100 }),
+      });
+
+      expect(actual).toEqual({ [safeA]: { [chainId]: items } });
     });
   });
 });
