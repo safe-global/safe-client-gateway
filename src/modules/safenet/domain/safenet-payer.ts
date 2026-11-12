@@ -233,6 +233,7 @@ export class SafenetPayer {
       this.cache.getCounter(key),
     ]);
     const cachedNonce = BigInt(counter ?? 0);
+    // biome-ignore lint/complexity/useMathMinMax: Math.max does not accept bigint
     return onchainNonce > cachedNonce ? onchainNonce : cachedNonce;
   }
 

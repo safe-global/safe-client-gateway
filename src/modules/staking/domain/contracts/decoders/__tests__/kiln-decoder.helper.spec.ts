@@ -78,7 +78,7 @@ describe('KilnDecoder', () => {
       ).toStrictEqual(depositEventEvent.build());
     });
 
-    it('returns null if the data is not a DepositEvent', () => {
+    it('returns null if the data is another Kiln event', () => {
       const { data, topics } = withdrawalEventBuilder().encode();
 
       expect(kilnDecoder.decodeDepositEvent({ data, topics })).toBe(null);
@@ -108,7 +108,7 @@ describe('KilnDecoder', () => {
       ).toStrictEqual(withdrawalEvent.build());
     });
 
-    it('returns null if the data is not a Withdrawal', () => {
+    it('returns null if the data is another Kiln event', () => {
       const { data, topics } = depositEventEventBuilder().encode();
 
       expect(kilnDecoder.decodeWithdrawal({ data, topics })).toBe(null);
