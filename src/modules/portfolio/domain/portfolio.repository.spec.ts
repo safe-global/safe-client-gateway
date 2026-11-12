@@ -27,6 +27,7 @@ describe('PortfolioRepository', () => {
   let mockZerionCache: MockedObject<ZerionCacheService>;
 
   const defaultCacheTtl = 30;
+  const settleSeconds = 20;
   const defaultDustThreshold = 0.001;
 
   beforeEach(() => {
@@ -40,13 +41,18 @@ describe('PortfolioRepository', () => {
       hGet: vi.fn(),
       hSet: vi.fn(),
       deleteByKey: vi.fn(),
+      getInvalidationTimeMs: vi.fn(),
     } as MockedObject<ICacheService>;
+    mockCacheService.getInvalidationTimeMs.mockResolvedValue(null);
 
     mockConfigService = {
       get: vi.fn(),
       getOrThrow: vi.fn().mockImplementation((key: string) => {
         if (key === 'portfolio.cache.ttlSeconds') {
           return defaultCacheTtl;
+        }
+        if (key === 'portfolio.cache.settleSeconds') {
+          return settleSeconds;
         }
         if (key === 'portfolio.filters.dustThresholdUsd') {
           return defaultDustThreshold;
@@ -680,6 +686,49 @@ describe('PortfolioRepository', () => {
           fetchedAt: result.fetchedAt,
           expiresAt: result.expiresAt,
         }),
+        defaultCacheTtl,
+      );
+    });
+
+    it('keeps a snapshot fetched just after a clear only until the settle window ends', async () => {
+      const clearedAt =
+        Date.now() -
+        faker.number.int({ min: 1, max: settleSeconds - 5 }) * 1_000;
+      mockCacheService.getInvalidationTimeMs.mockResolvedValue(clearedAt);
+      mockCacheService.hGet.mockResolvedValue(null);
+      mockPortfolioApi.getPortfolio.mockResolvedValue(
+        rawify(portfolioBuilder().build()),
+      );
+
+      const result = await repository.getPortfolioSnapshot(args);
+
+      expect(mockCacheService.getInvalidationTimeMs).toHaveBeenCalledWith(
+        CacheRouter.getPortfolioCacheKey({ address }),
+      );
+      expect(result.expiresAt).toBe(clearedAt + settleSeconds * 1_000);
+      expect(mockCacheService.hSet).toHaveBeenCalledWith(
+        cacheDir,
+        expect.any(String),
+        Math.ceil((result.expiresAt - result.fetchedAt) / 1_000),
+      );
+    });
+
+    it('keeps the full TTL once the settle window is over', async () => {
+      mockCacheService.getInvalidationTimeMs.mockResolvedValue(
+        Date.now() -
+          (settleSeconds + faker.number.int({ min: 1, max: 600 })) * 1_000,
+      );
+      mockCacheService.hGet.mockResolvedValue(null);
+      mockPortfolioApi.getPortfolio.mockResolvedValue(
+        rawify(portfolioBuilder().build()),
+      );
+
+      const result = await repository.getPortfolioSnapshot(args);
+
+      expect(result.expiresAt).toBe(result.fetchedAt + defaultCacheTtl * 1_000);
+      expect(mockCacheService.hSet).toHaveBeenCalledWith(
+        cacheDir,
+        expect.any(String),
         defaultCacheTtl,
       );
     });
