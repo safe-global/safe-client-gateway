@@ -1,12 +1,12 @@
 {
-  "generated_at": "2026-10-16T09:00:11.116Z",
+  "generated_at": "2026-11-12T15:34:12.839Z",
   "summary": {
-    "total_commits": 3017,
-    "flaky_commits": 145,
-    "flakiness_rate": 4.8,
+    "total_commits": 3464,
+    "flaky_commits": 146,
+    "flakiness_rate": 4.2,
     "period": {
       "from": "2026-01-16",
-      "to": "2026-10-16"
+      "to": "2026-11-12"
     }
   },
   "weekly_trend": [
@@ -300,7 +300,31 @@
     },
     {
       "week": "2026-10-12",
-      "commits": 133,
+      "commits": 165,
+      "flaky": 0,
+      "rate": 0
+    },
+    {
+      "week": "2026-10-19",
+      "commits": 205,
+      "flaky": 0,
+      "rate": 0
+    },
+    {
+      "week": "2026-10-26",
+      "commits": 110,
+      "flaky": 1,
+      "rate": 0.9
+    },
+    {
+      "week": "2026-11-02",
+      "commits": 33,
+      "flaky": 0,
+      "rate": 0
+    },
+    {
+      "week": "2026-11-09",
+      "commits": 67,
       "flaky": 0,
       "rate": 0
     }
@@ -368,13 +392,10 @@
     },
     {
       "file": "src/datasources/job-queue/__tests__/job-queue.service.integration.spec.ts",
-      "failure_count": 10,
-      "last_failure": "2026-06-08T11:06:17Z",
-      "status": "fixed",
-      "fix_pr": {
-        "number": 3139,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/3139"
-      }
+      "failure_count": 11,
+      "last_failure": "2026-10-29T14:14:10Z",
+      "status": "open",
+      "fix_pr": null
     },
     {
       "file": "src/modules/notifications/routes/v2/notifications.controller.integration.spec.ts",
@@ -575,7 +596,7 @@
       "file": "src/modules/notifications/routes/v1/notifications.controller.integration.spec.ts",
       "failure_count": 1,
       "last_failure": "2026-09-21T12:10:08Z",
-      "status": "in_review",
+      "status": "fixed",
       "fix_pr": {
         "number": 3617,
         "url": "https://github.com/safe-global/safe-client-gateway/pull/3617"

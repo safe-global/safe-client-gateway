@@ -1,14 +1,36 @@
 {
-  "generated_at": "2026-10-16T09:00:11.116Z",
+  "generated_at": "2026-11-12T15:34:12.839Z",
   "prs": [
+    {
+      "number": 3594,
+      "title": "fix(db): make the v2 migrator lock acquisition atomic",
+      "url": "https://github.com/safe-global/safe-client-gateway/pull/3594",
+      "merged_at": null,
+      "state": "open",
+      "tests_fixed": [
+        "src/datasources/db/v2/database-migrator.service.integration.spec.ts",
+        "src/modules/surveys/routes/surveys.controller.integration.spec.ts",
+        "src/modules/transactions/routes/__tests__/controllers/preview-transaction.transactions.controller.integration.spec.ts"
+      ]
+    },
     {
       "number": 3617,
       "title": "fix(tests): expect one upsert per registration with safes in v1 notifications spec",
       "url": "https://github.com/safe-global/safe-client-gateway/pull/3617",
-      "merged_at": null,
-      "state": "open",
+      "merged_at": "2026-11-12T15:14:13Z",
+      "state": "merged",
       "tests_fixed": [
         "src/modules/notifications/routes/v1/notifications.controller.integration.spec.ts"
+      ]
+    },
+    {
+      "number": 3692,
+      "title": "test(policies): fuzz the delayed guard policies mapper",
+      "url": "https://github.com/safe-global/safe-client-gateway/pull/3692",
+      "merged_at": null,
+      "state": "closed",
+      "tests_fixed": [
+        "src/modules/policies/routes/mappers/__tests__/delayed-guard-policies.mapper.fuzz.spec.ts"
       ]
     },
     {
@@ -23,18 +45,6 @@
         "src/modules/notifications/routes/v2/notifications.controller.integration.spec.ts",
         "src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts",
         "src/modules/transactions/routes/helpers/transaction-verifier.helper.spec.ts"
-      ]
-    },
-    {
-      "number": 3594,
-      "title": "fix(db): make the v2 migrator lock acquisition atomic",
-      "url": "https://github.com/safe-global/safe-client-gateway/pull/3594",
-      "merged_at": null,
-      "state": "open",
-      "tests_fixed": [
-        "src/datasources/db/v2/database-migrator.service.integration.spec.ts",
-        "src/modules/surveys/routes/surveys.controller.integration.spec.ts",
-        "src/modules/transactions/routes/__tests__/controllers/preview-transaction.transactions.controller.integration.spec.ts"
       ]
     },
     {

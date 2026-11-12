@@ -1,14 +1,14 @@
 # Flaky Test Baseline Report
 
-Generated: 2026-10-16T09:00:11.126Z | Period: 2026-01-16 to 2026-10-16
+Generated: 2026-11-12T15:34:12.841Z | Period: 2026-01-16 to 2026-11-12
 
 ## Summary
 
 | Metric | Value |
 |--------|-------|
-| Total unique commits | 3017 |
-| Flaky commits (pass + fail on same SHA) | 145 |
-| Flakiness rate | 4.8% |
+| Total unique commits | 3464 |
+| Flaky commits (pass + fail on same SHA) | 146 |
+| Flakiness rate | 4.2% |
 
 Since 2026-06-04 a commit also counts as flaky when a failed attempt was recovered by re-running the same workflow run (GitHub reports only the final attempt, so this signal needs a per-attempt lookup). Earlier weeks lack that signal and understate flakiness.
 
@@ -64,7 +64,11 @@ Since 2026-06-04 a commit also counts as flaky when a failed attempt was recover
 | 2026-09-21 | 182 | 3 | 1.6% |
 | 2026-09-28 | 109 | 0 | 0% |
 | 2026-10-05 | 152 | 1 | 0.7% |
-| 2026-10-12 | 133 | 0 | 0% |
+| 2026-10-12 | 165 | 0 | 0% |
+| 2026-10-19 | 205 | 0 | 0% |
+| 2026-10-26 | 110 | 1 | 0.9% |
+| 2026-11-02 | 33 | 0 | 0% |
+| 2026-11-09 | 67 | 0 | 0% |
 
 ```text
 Weekly CI flakiness rate %  ·  n = unique commits  ·  weeks with n<10 omitted
@@ -107,12 +111,16 @@ Weekly CI flakiness rate %  ·  n = unique commits  ·  weeks with n<10 omitted
 09-21   1.6%  n=182  ███
 09-28   0.0%  n=109  ▏
 10-05   0.7%  n=152  █
-10-12   0.0%  n=133  ▏
+10-12   0.0%  n=165  ▏
+10-19   0.0%  n=205  ▏
+10-26   0.9%  n=110  ██
+11-02   0.0%  n=33   ▏
+11-09   0.0%  n=67   ▏
 ```
 
 ## Clean Streak
 
-133 commits without a flake since the last flaky week — rate is below 2.3% at 95% confidence. Target <1% at 95% needs a **300-commit** streak (167 to go).
+100 commits without a flake since the last flaky week — rate is below 3.0% at 95% confidence. Target <1% at 95% needs a **300-commit** streak (200 to go).
 
 ## Flaky Test Leaderboard
 
@@ -124,7 +132,7 @@ Weekly CI flakiness rate %  ·  n = unique commits  ·  weeks with n<10 omitted
 | `src/modules/targeted-messaging/datasources/targeted-messaging.datasource.integration.spec.ts` | 12 | 2026-02-01 | Fixed | [#2891](https://github.com/safe-global/safe-client-gateway/pull/2891) |
 | `src/modules/transactions/routes/__tests__/controllers/propose-transaction.transactions.controller.integration.spec.ts` | 12 | 2026-06-26 | Fixed | [#3242](https://github.com/safe-global/safe-client-gateway/pull/3242) |
 | `src/datasources/cache/redis.cache.service.integration.spec.ts` | 11 | 2026-06-18 | Fixed | [#3136](https://github.com/safe-global/safe-client-gateway/pull/3136) |
-| `src/datasources/job-queue/__tests__/job-queue.service.integration.spec.ts` | 10 | 2026-06-08 | Fixed | [#3139](https://github.com/safe-global/safe-client-gateway/pull/3139) |
+| `src/datasources/job-queue/__tests__/job-queue.service.integration.spec.ts` | 11 | 2026-10-29 | Open | - |
 | `src/modules/notifications/routes/v2/notifications.controller.integration.spec.ts` | 10 | 2026-09-11 | Fixed | [#3572](https://github.com/safe-global/safe-client-gateway/pull/3572) |
 | `src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts` | 10 | 2026-08-19 | Fixed | [#3572](https://github.com/safe-global/safe-client-gateway/pull/3572) |
 | `src/modules/transactions/routes/helpers/transaction-verifier.helper.spec.ts` | 10 | 2026-10-09 | Fixed | [#3572](https://github.com/safe-global/safe-client-gateway/pull/3572) |
@@ -146,13 +154,14 @@ Weekly CI flakiness rate %  ·  n = unique commits  ·  weeks with n<10 omitted
 | `src/modules/safe-apps/routes/safe-apps.controller.integration.spec.ts` | 1 | 2026-02-11 | Fixed | [#3242](https://github.com/safe-global/safe-client-gateway/pull/3242) |
 | `src/modules/auth/routes/auth.controller.integration.spec.ts` | 1 | 2026-04-15 | Fixed | [#3136](https://github.com/safe-global/safe-client-gateway/pull/3136) |
 | `src/domain/common/entities/name.builder.spec.ts` | 1 | 2026-07-03 | Open | - |
-| `src/modules/notifications/routes/v1/notifications.controller.integration.spec.ts` | 1 | 2026-09-21 | Fix in review | [#3617](https://github.com/safe-global/safe-client-gateway/pull/3617) |
+| `src/modules/notifications/routes/v1/notifications.controller.integration.spec.ts` | 1 | 2026-09-21 | Fixed | [#3617](https://github.com/safe-global/safe-client-gateway/pull/3617) |
 
 ## Fix PRs
 
-- [#3617](https://github.com/safe-global/safe-client-gateway/pull/3617) - fix(tests): expect one upsert per registration with safes in v1 notifications spec (Open)
-- [#3572](https://github.com/safe-global/safe-client-gateway/pull/3572) - fix(tests): stop signature, chain ID and JWT test flakes (Merged)
 - [#3594](https://github.com/safe-global/safe-client-gateway/pull/3594) - fix(db): make the v2 migrator lock acquisition atomic (Open)
+- [#3617](https://github.com/safe-global/safe-client-gateway/pull/3617) - fix(tests): expect one upsert per registration with safes in v1 notifications spec (Merged)
+- [#3692](https://github.com/safe-global/safe-client-gateway/pull/3692) - test(policies): fuzz the delayed guard policies mapper (Closed)
+- [#3572](https://github.com/safe-global/safe-client-gateway/pull/3572) - fix(tests): stop signature, chain ID and JWT test flakes (Merged)
 - [#3560](https://github.com/safe-global/safe-client-gateway/pull/3560) - build: migrate runtime, tooling and tests from node to bun (Open)
 - [#3558](https://github.com/safe-global/safe-client-gateway/pull/3558) - perf(relay): boot the relay controller spec's app once per file (Merged)
 - [#3552](https://github.com/safe-global/safe-client-gateway/pull/3552) - perf: share the unit-test module cache across spec files (Merged)
@@ -184,6 +193,7 @@ Weekly CI flakiness rate %  ·  n = unique commits  ·  weeks with n<10 omitted
 
 ## Still-Open Flaky Tests
 
+- `src/datasources/job-queue/__tests__/job-queue.service.integration.spec.ts` (11 failures, last 2026-10-29)
 - `src/modules/transactions/routes/mappers/common/transaction-data.mapper.spec.ts` (9 failures, last 2026-06-15)
 - `src/modules/users/domain/__tests__/user-identity-resolver.service.spec.ts` (2 failures, last 2026-05-19)
 - `src/modules/transactions/routes/__tests__/controllers/preview-transaction-cow-swap.transactions.controller.spec.ts` (1 failures, last 2026-01-29)
