@@ -35,6 +35,7 @@ import { AuthModule } from '#/modules/auth/auth.module';
 import { OidcAuthModule } from '#/modules/auth/oidc/oidc-auth.module';
 import { BalancesModule } from '#/modules/balances/balances.module';
 import { BillingModule } from '#/modules/billing/billing.module';
+import { SpaceSetupBillingModule } from '#/modules/billing/space-setup-billing.module';
 import { ChainsModule } from '#/modules/chains/chains.module';
 import { FeatureFlagsModule } from '#/modules/chains/feature-flags/feature-flags.module';
 import { CollectiblesModule } from '#/modules/collectibles/collectibles.module';
@@ -65,6 +66,7 @@ import { SafeAppsModule } from '#/modules/safe-apps/safe-apps.module';
 import { SafeShieldModule } from '#/modules/safe-shield/safe-shield.module';
 import { SpaceSafeShieldModule } from '#/modules/safe-shield/space-safe-shield.module';
 import { SafenetChecksModule } from '#/modules/safenet/safenet-checks.module';
+import { UnavailableSpaceSetupBillingModule } from '#/modules/spaces/domain/setup/unavailable-space-setup-billing.module';
 import { SpacesModule } from '#/modules/spaces/spaces.module';
 import { SurveysModule } from '#/modules/surveys/surveys.module';
 import { TargetedMessagingModule } from '#/modules/targeted-messaging/targeted-messaging.module';
@@ -102,7 +104,10 @@ export class AppModule implements NestModule {
         ...(isAuthFeatureEnabled ? [AuthModule] : []),
         ...(isOidcAuthFeatureEnabled ? [OidcAuthModule] : []),
         BalancesModule,
-        ...(isBillingServiceFeatureEnabled ? [BillingModule] : []),
+        // ISpaceSetupBilling: the billing service, or the special case without it.
+        ...(isBillingServiceFeatureEnabled
+          ? [BillingModule, SpaceSetupBillingModule]
+          : [UnavailableSpaceSetupBillingModule]),
         ...(isZerionPositionsFeatureEnabled ? [PositionsModule] : []),
         PortfolioModule,
         ChainsModule,

@@ -24,5 +24,7 @@ import { UsersModule } from '#/modules/users/users.module';
   ],
   controllers: [BillingController],
   providers: [BillingAuthService, BillingService, BillingWebhookAuthGuard],
+  // For SpaceSetupBillingModule, which aliases it as ISpaceSetupBilling.
+  exports: [BillingService],
 })
 export class BillingModule {}

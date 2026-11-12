@@ -46,13 +46,21 @@ import {
 import type { CheckoutSession } from '#/modules/billing/routes/entities/checkout-session.entity';
 import { toCheckoutSessionDto } from '#/modules/billing/routes/entities/checkout-session.entity';
 import type { CheckoutSessionResult } from '#/modules/billing/routes/entities/checkout-session-result.entity';
-import { GRACE_PERIOD_METADATA_KEY } from '#/modules/entitlements/domain/entitlements.constants';
-import { predatesEnforcement } from '#/modules/entitlements/domain/entitlements.rules';
+import {
+  GRACE_PERIOD_METADATA_KEY,
+  isActiveSubscriptionStatus,
+} from '#/modules/entitlements/domain/entitlements.constants';
+import {
+  isEnforcementActive,
+  predatesEnforcement,
+} from '#/modules/entitlements/domain/entitlements.rules';
 import { parseSafeSeatQuota } from '#/modules/entitlements/domain/feature-package.mapper';
 import { ISubscriptionSyncService } from '#/modules/entitlements/domain/subscription-sync.service.interface';
 import { ISubscriptionsRepository } from '#/modules/entitlements/domain/subscriptions.repository.interface';
 import type { Space } from '#/modules/spaces/domain/entities/space.entity';
 import { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository.interface';
+import type { ISpaceSetupBilling } from '#/modules/spaces/domain/setup/space-setup-billing.interface';
+import { ISpaceSetupsRepository } from '#/modules/spaces/domain/setup/space-setups.repository.interface';
 import {
   assertAdmin,
   assertMember,
@@ -61,7 +69,7 @@ import { ISpacesRepository } from '#/modules/spaces/domain/spaces.repository.int
 import { IMembersRepository } from '#/modules/users/domain/members/members.repository.interface';
 
 @Injectable()
-export class BillingService {
+export class BillingService implements ISpaceSetupBilling {
   private readonly redirectConfig: RedirectConfig;
   private readonly enforcementStartsAt: Date;
   private readonly gracePeriodClaimEndsAt: Date;
@@ -81,6 +89,8 @@ export class BillingService {
     private readonly spacesRepository: ISpacesRepository,
     @Inject(ISpaceSafesRepository)
     private readonly spaceSafesRepository: ISpaceSafesRepository,
+    @Inject(ISpaceSetupsRepository)
+    private readonly spaceSetupsRepository: ISpaceSetupsRepository,
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
   ) {
@@ -156,6 +166,57 @@ export class BillingService {
       activePlanId: null,
     };
     return generalLinks.filter((link) => isOfferedToSpace(link, eligibility));
+  }
+
+  public async createCheckoutSession(args: {
+    paymentLinkId: string;
+    spaceUuid: Space['uuid'];
+    returnUrl: string;
+  }): Promise<CheckoutSessionResult> {
+    return await this.billingRepository.createCheckoutSession({
+      paymentLinkId: args.paymentLinkId,
+      upstreamCustomerId: args.spaceUuid,
+      returnUrl: args.returnUrl,
+    });
+  }
+
+  public isAvailable(): boolean {
+    return true;
+  }
+
+  public isEnforced(): boolean {
+    return isEnforcementActive({
+      now: new Date(),
+      startsAt: this.enforcementStartsAt,
+    });
+  }
+
+  /**
+   * Reads the subscription past the cache, so a poll after checkout sees the
+   * trial as soon as the billing service has it, and stores it when live.
+   */
+  public async syncSubscription(args: {
+    spaceId: Space['id'];
+    spaceUuid: Space['uuid'];
+  }): Promise<boolean> {
+    await this.billingRepository.clearSubscriptions({
+      upstreamCustomerId: args.spaceUuid,
+    });
+    const subscriptions =
+      await this.billingRepository.getSubscriptionsByCustomerId({
+        upstreamCustomerId: args.spaceUuid,
+        status: 'all',
+      });
+    const isLive = subscriptions.some((subscription) =>
+      isActiveSubscriptionStatus(subscription.status),
+    );
+    if (isLive) {
+      await this.subscriptionSyncService.syncSpace({
+        spaceId: args.spaceId,
+        upstreamCustomerId: args.spaceUuid,
+      });
+    }
+    return isLive;
   }
 
   /**
@@ -529,7 +590,7 @@ export class BillingService {
 
   /**
    * Refuses a plan whose `FEATURE_SAFE_SEATS` is below the workspace's
-   * current Safe count
+   * current Safe count, the Safes its pending setup will add included
    */
   private async assertSafeSeatCapacity(args: {
     spaceId: Space['id'];
@@ -543,14 +604,27 @@ export class BillingService {
       return;
     }
 
-    const used = await this.spaceSafesRepository.countSeatsBySpaceId(
-      args.spaceId,
-    );
-    if (used > quota) {
+    const [held, pending] = await Promise.all([
+      this.spaceSafesRepository.countSeatsBySpaceId(args.spaceId),
+      this.countPendingSetupSeats(args.spaceId),
+    ]);
+    if (held + pending > quota) {
       throw new ConflictException(
         "This plan doesn't offer enough Safe seats for the workspace's current Safes",
       );
     }
+  }
+
+  /** Seats the pending setup's Safes would add to the ones already held. */
+  private async countPendingSetupSeats(spaceId: Space['id']): Promise<number> {
+    const setup = await this.spaceSetupsRepository.findBySpaceId(spaceId);
+    if (setup?.status !== 'PENDING' || setup.payload.safes.length === 0) {
+      return 0;
+    }
+    return await this.spaceSafesRepository.countNewSeats({
+      spaceId,
+      addresses: setup.payload.safes.map((safe) => safe.address),
+    });
   }
 
   private validateReturnUrl(returnUrl: string): string {
