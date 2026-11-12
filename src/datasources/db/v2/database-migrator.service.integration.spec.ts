@@ -90,6 +90,7 @@ describe('PostgresDatabaseService', () => {
     vi.spyOn(postgresDatabaseService, 'transaction').mockImplementation((fn) =>
       fn(mockEntityManager),
     );
+    connection.showMigrations.mockResolvedValue(true);
   });
 
   afterEach(() => {
@@ -125,6 +126,22 @@ describe('PostgresDatabaseService', () => {
       expect(connection.runMigrations).toHaveBeenCalled();
 
       expect(connection.query).toHaveBeenCalledWith(truncateLockQuery);
+    });
+
+    it('Should not take the lock if no migration is pending', async () => {
+      connection.showMigrations.mockResolvedValue(false);
+
+      await databaseMigratorService.migrate();
+
+      expect(mockEntityManager.query).not.toHaveBeenCalledWith(
+        insertLockQuery,
+        [1],
+      );
+      expect(connection.runMigrations).not.toHaveBeenCalled();
+      expect(connection.query).not.toHaveBeenCalledWith(truncateLockQuery);
+      expect(mockLoggingService.info).toHaveBeenCalledWith(
+        'Migrations: No migrations to execute.',
+      );
     });
 
     it('Should throw an error if retries are exhausted', async () => {
