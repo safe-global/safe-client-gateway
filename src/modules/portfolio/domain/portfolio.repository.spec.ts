@@ -737,6 +737,66 @@ describe('PortfolioRepository', () => {
       );
     });
 
+    it('shares one Zerion call between concurrent misses for the same entry', async () => {
+      const portfolio = portfolioBuilder().build();
+      mockCacheService.hGet.mockResolvedValue(null);
+      let resolveFetch: (
+        value: Awaited<ReturnType<IPortfolioApi['getPortfolio']>>,
+      ) => void = () => {};
+      mockPortfolioApi.getPortfolio.mockReturnValue(
+        new Promise((resolve) => {
+          resolveFetch = resolve;
+        }),
+      );
+
+      const reads = Promise.all([
+        repository.getPortfolioSnapshot(args),
+        repository.getPortfolioSnapshot(args),
+        repository.getPortfolio({ ...args, chainIds: undefined }),
+      ]);
+      await vi.waitFor(() =>
+        expect(mockPortfolioApi.getPortfolio).toHaveBeenCalledTimes(1),
+      );
+      resolveFetch(rawify(portfolio));
+      const [first, second] = await reads;
+
+      expect(mockPortfolioApi.getPortfolio).toHaveBeenCalledTimes(1);
+      expect(second.fetchedAt).toBe(first.fetchedAt);
+    });
+
+    it('fetches again once the shared call has settled', async () => {
+      mockCacheService.hGet.mockResolvedValue(null);
+      mockPortfolioApi.getPortfolio.mockResolvedValue(
+        rawify(portfolioBuilder().build()),
+      );
+
+      await repository.getPortfolioSnapshot(args);
+      await repository.getPortfolioSnapshot(args);
+
+      expect(mockPortfolioApi.getPortfolio).toHaveBeenCalledTimes(2);
+    });
+
+    it('gives every concurrent reader the error and retries on the next miss', async () => {
+      mockCacheService.hGet.mockResolvedValue(null);
+      const error = new Error('Zerion down');
+      mockPortfolioApi.getPortfolio.mockRejectedValueOnce(error);
+
+      const results = await Promise.allSettled([
+        repository.getPortfolioSnapshot(args),
+        repository.getPortfolioSnapshot(args),
+      ]);
+      mockPortfolioApi.getPortfolio.mockResolvedValue(
+        rawify(portfolioBuilder().build()),
+      );
+      await repository.getPortfolioSnapshot(args);
+
+      expect(results).toEqual([
+        { status: 'rejected', reason: error },
+        { status: 'rejected', reason: error },
+      ]);
+      expect(mockPortfolioApi.getPortfolio).toHaveBeenCalledTimes(2);
+    });
+
     it('stores the snapshot in the entry GET /v1/portfolio reads', async () => {
       const portfolio = portfolioBuilder().build();
       let stored: string | null = null;

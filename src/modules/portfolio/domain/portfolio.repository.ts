@@ -35,6 +35,11 @@ export class PortfolioRepository implements IPortfolioRepository {
   private readonly cacheExpirationSeconds: number;
   private readonly settleSeconds: number;
   private readonly dustThresholdUsd: number;
+  /** Fetches in progress in this process, by cache entry. */
+  private readonly inFlightFetches = new Map<
+    string,
+    Promise<PortfolioSnapshot>
+  >();
 
   constructor(
     @Inject(IPortfolioApi) private readonly portfolioApi: IPortfolioApi,
@@ -113,7 +118,39 @@ export class PortfolioRepository implements IPortfolioRepository {
     return cached ? JSON.parse(cached) : null;
   }
 
-  private async _fetchAndCache(args: {
+  /**
+   * Fetches and caches the portfolio. Concurrent misses for the same entry
+   * share one fetch, so a page that asks several routes at once on an empty
+   * cache pays for one Zerion call, not one per route.
+   *
+   * @param args - The wallet, filters and the cache entry to fill
+   * @returns The fetched portfolio with its times
+   */
+  private _fetchAndCache(args: {
+    address: Address;
+    fiatCode: string;
+    trusted?: boolean;
+    isTestnet?: boolean;
+    sync?: boolean;
+    cacheDir: CacheDir;
+  }): Promise<PortfolioSnapshot> {
+    const key = `${args.cacheDir.key}|${args.cacheDir.field}|${args.sync ? 'sync' : ''}`;
+    const inFlight = this.inFlightFetches.get(key);
+    if (inFlight) {
+      return inFlight;
+    }
+    const fetch = this._fetchAndCacheOnce(args).finally(() => {
+      this.inFlightFetches.delete(key);
+    });
+    this.inFlightFetches.set(key, fetch);
+    return fetch;
+  }
+
+  /**
+   * @param args - The wallet, filters and the cache entry to fill
+   * @returns The fetched portfolio with its times
+   */
+  private async _fetchAndCacheOnce(args: {
     address: Address;
     fiatCode: string;
     trusted?: boolean;
