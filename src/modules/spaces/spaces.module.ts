@@ -11,6 +11,7 @@ import { AddressBookItemTag } from '#/modules/spaces/datasources/address-books/e
 import { AddressBookRequest } from '#/modules/spaces/datasources/address-books/entities/address-book-request.entity.db';
 import { AddressBookTag } from '#/modules/spaces/datasources/address-books/entities/address-book-tag.entity.db';
 import { SpaceSafe } from '#/modules/spaces/datasources/safes/entities/space-safes.entity.db';
+import { SpaceSetup } from '#/modules/spaces/datasources/setup/entities/space-setup.entity.db';
 import { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
 import { AddressBookItemsRepository } from '#/modules/spaces/domain/address-books/address-book-items.repository';
 import { IAddressBookItemsRepository } from '#/modules/spaces/domain/address-books/address-book-items.repository.interface';
@@ -20,6 +21,8 @@ import { AddressBookTagsRepository } from '#/modules/spaces/domain/address-books
 import { IAddressBookTagsRepository } from '#/modules/spaces/domain/address-books/address-book-tags.repository.interface';
 import { SpaceAuditModule } from '#/modules/spaces/domain/audit/space-audit.module';
 import { SpaceSafesRepositoryModule } from '#/modules/spaces/domain/safes/space-safes-repository.module';
+import { SpaceSetupsRepository } from '#/modules/spaces/domain/setup/space-setups.repository';
+import { ISpaceSetupsRepository } from '#/modules/spaces/domain/setup/space-setups.repository.interface';
 import { SpaceEncryptionService } from '#/modules/spaces/domain/space-encryption.service';
 import { SpacesRepository } from '#/modules/spaces/domain/spaces.repository';
 import { ISpacesRepository } from '#/modules/spaces/domain/spaces.repository.interface';
@@ -54,6 +57,7 @@ import { SpaceIdPipe } from '#/routes/common/pipes/space-id.pipe';
       AddressBookRequest,
       AddressBookTag,
       AddressBookItemTag,
+      SpaceSetup,
     ]),
     forwardRef(() => AuthModule),
     forwardRef(() => UsersModule),
@@ -83,6 +87,7 @@ import { SpaceIdPipe } from '#/routes/common/pipes/space-id.pipe';
     MembersService,
     SpaceInviteEmailService,
     SpaceEncryptionService,
+    { provide: ISpaceSetupsRepository, useClass: SpaceSetupsRepository },
     {
       provide: ISpacesRepository,
       useClass: SpacesRepository,
@@ -106,6 +111,7 @@ import { SpaceIdPipe } from '#/routes/common/pipes/space-id.pipe';
     SpaceSafesRepositoryModule,
     IAddressBookItemsRepository,
     IAddressBookRequestsRepository,
+    ISpaceSetupsRepository,
     SpaceIdPipe,
   ],
 })
