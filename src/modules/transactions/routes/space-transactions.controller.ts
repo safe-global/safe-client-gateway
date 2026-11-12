@@ -19,6 +19,7 @@ import type { Space } from '#/modules/spaces/domain/entities/space.entity';
 import {
   SPACE_QUEUE_SEARCH_MAX_LENGTH,
   SpaceQueueChainIdsSchema,
+  SpaceQueueLimitSchema,
   SpaceQueueSearchSchema,
   SpaceQueueSignersSchema,
   SpaceQueueStatus,
@@ -104,6 +105,15 @@ export class SpaceTransactionsController {
     description: `Keep the transactions whose Safe (address or Space address book name), network name, status, or a signer still to sign (address or name) contains this text, ignoring case. Unlike the filters, it narrows every count. At most ${SPACE_QUEUE_SEARCH_MAX_LENGTH} characters.`,
     example: 'treasury',
   })
+  @ApiQuery({
+    name: 'limit',
+    type: Number,
+    required: false,
+    minimum: 1,
+    description:
+      'Return only the first transactions of the queue, by nonce across every Safe (not by age), up to the transactions an unlimited request returns. Without a filter or `search`, only that many are read: `counts` cover only those, and a conflict group cut by the limit is returned in part. With a filter or `search`, the whole queue is read and filtered first, so `counts` cover the whole queue and a conflict group is kept whole, which can return a few more than `limit`. `count` is always the size of the whole queue.',
+    example: 4,
+  })
   @ApiOkResponse({
     type: SpaceQueuedItemPage,
     description: 'Queue of the Safes in the Space',
@@ -114,7 +124,7 @@ export class SpaceTransactionsController {
   @ApiNotFoundResponse({ description: 'Space not found' })
   @ApiUnprocessableEntityResponse({
     description:
-      'Unknown status, invalid CAIP-10 address, chain ID or signer address, non-boolean flag or too long search',
+      'Unknown status, invalid CAIP-10 address, chain ID or signer address, non-boolean flag, too long search or invalid limit',
   })
   @Get('queued')
   public async getTransactionQueue(
@@ -134,6 +144,8 @@ export class SpaceTransactionsController {
     stale?: boolean,
     @Query('search', new ValidationPipe(SpaceQueueSearchSchema.optional()))
     search?: string,
+    @Query('limit', new ValidationPipe(SpaceQueueLimitSchema.optional()))
+    limit?: number,
   ): Promise<SpaceQueuedItemPage> {
     return await this.spaceTransactionsService.getTransactionQueue({
       spaceId,
@@ -150,6 +162,7 @@ export class SpaceTransactionsController {
         stale,
       },
       search,
+      limit,
     });
   }
 }
