@@ -33,6 +33,7 @@ import { ZerionCacheService } from '#/modules/zerion/datasources/zerion-cache.se
 @Injectable()
 export class PortfolioRepository implements IPortfolioRepository {
   private readonly cacheExpirationSeconds: number;
+  private readonly settleSeconds: number;
   private readonly dustThresholdUsd: number;
 
   constructor(
@@ -44,6 +45,9 @@ export class PortfolioRepository implements IPortfolioRepository {
   ) {
     this.cacheExpirationSeconds = this.configurationService.getOrThrow<number>(
       'portfolio.cache.ttlSeconds',
+    );
+    this.settleSeconds = this.configurationService.getOrThrow<number>(
+      'portfolio.cache.settleSeconds',
     );
     this.dustThresholdUsd = this.configurationService.getOrThrow<number>(
       'portfolio.filters.dustThresholdUsd',
@@ -125,17 +129,48 @@ export class PortfolioRepository implements IPortfolioRepository {
       sync: args.sync,
     });
     const fetchedAt = Date.now();
+    const expiresAt = await this._getExpiresAt({
+      address: args.address,
+      fetchedAt,
+    });
     const snapshot: PortfolioSnapshot = {
       ...PortfolioSchema.parse(rawPortfolio),
       fetchedAt,
-      expiresAt: fetchedAt + this.cacheExpirationSeconds * 1_000,
+      expiresAt,
     };
     await this.cacheService.hSet(
       args.cacheDir,
       JSON.stringify(snapshot),
-      this.cacheExpirationSeconds,
+      Math.ceil((expiresAt - fetchedAt) / 1_000),
     );
     return snapshot;
+  }
+
+  /**
+   * A transaction clears the cache before Zerion may have indexed it, so a
+   * portfolio fetched within the settle window after a clear is only kept
+   * until that window ends. The next read after it refetches the settled
+   * balance, at most one extra Zerion call per clear.
+   *
+   * @param args.address - The wallet address
+   * @param args.fetchedAt - When the portfolio was fetched, in epoch ms
+   * @returns When the cached portfolio expires, in epoch ms
+   */
+  private async _getExpiresAt(args: {
+    address: Address;
+    fetchedAt: number;
+  }): Promise<number> {
+    const expiresAt = args.fetchedAt + this.cacheExpirationSeconds * 1_000;
+    const clearedAt = await this.cacheService.getInvalidationTimeMs(
+      CacheRouter.getPortfolioCacheKey({ address: args.address }),
+    );
+    if (clearedAt === null) {
+      return expiresAt;
+    }
+    const settledAt = clearedAt + this.settleSeconds * 1_000;
+    return settledAt > args.fetchedAt
+      ? Math.min(expiresAt, settledAt)
+      : expiresAt;
   }
 
   /**
