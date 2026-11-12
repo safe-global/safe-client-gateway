@@ -764,6 +764,27 @@ describe('PortfolioRepository', () => {
       expect(second.fetchedAt).toBe(first.fetchedAt);
     });
 
+    it.each([
+      [
+        'another address',
+        { address: getAddress(faker.finance.ethereumAddress()) },
+      ],
+      ['another currency', { fiatCode: `${args.fiatCode}X` }],
+      ['a sync request', { sync: true }],
+    ])('does not share a call with %s', async (_, other) => {
+      mockCacheService.hGet.mockResolvedValue(null);
+      mockPortfolioApi.getPortfolio.mockResolvedValue(
+        rawify(portfolioBuilder().build()),
+      );
+
+      await Promise.all([
+        repository.getPortfolio(args),
+        repository.getPortfolio({ ...args, ...other }),
+      ]);
+
+      expect(mockPortfolioApi.getPortfolio).toHaveBeenCalledTimes(2);
+    });
+
     it('fetches again once the shared call has settled', async () => {
       mockCacheService.hGet.mockResolvedValue(null);
       mockPortfolioApi.getPortfolio.mockResolvedValue(
@@ -778,7 +799,7 @@ describe('PortfolioRepository', () => {
 
     it('gives every concurrent reader the error and retries on the next miss', async () => {
       mockCacheService.hGet.mockResolvedValue(null);
-      const error = new Error('Zerion down');
+      const error = new Error(faker.lorem.sentence());
       mockPortfolioApi.getPortfolio.mockRejectedValueOnce(error);
 
       const results = await Promise.allSettled([
