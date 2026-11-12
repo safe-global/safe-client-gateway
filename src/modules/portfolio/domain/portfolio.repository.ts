@@ -129,7 +129,7 @@ export class PortfolioRepository implements IPortfolioRepository {
       sync: args.sync,
     });
     const fetchedAt = Date.now();
-    const expiresAt = await this._getExpiresAt({
+    const { expiresAt, isSettling } = await this._getExpiry({
       address: args.address,
       fetchedAt,
     });
@@ -142,6 +142,8 @@ export class PortfolioRepository implements IPortfolioRepository {
       args.cacheDir,
       JSON.stringify(snapshot),
       Math.ceil((expiresAt - fetchedAt) / 1_000),
+      // No jitter in the settle window, so the entry never outlives it.
+      isSettling ? 0 : undefined,
     );
     return snapshot;
   }
@@ -154,23 +156,25 @@ export class PortfolioRepository implements IPortfolioRepository {
    *
    * @param args.address - The wallet address
    * @param args.fetchedAt - When the portfolio was fetched, in epoch ms
-   * @returns When the cached portfolio expires, in epoch ms
+   * @returns When the cached portfolio expires, in epoch ms, and whether that
+   * was cut to the end of the settle window
    */
-  private async _getExpiresAt(args: {
+  private async _getExpiry(args: {
     address: Address;
     fetchedAt: number;
-  }): Promise<number> {
+  }): Promise<{ expiresAt: number; isSettling: boolean }> {
     const expiresAt = args.fetchedAt + this.cacheExpirationSeconds * 1_000;
-    const clearedAt = await this.cacheService.getInvalidationTimeMs(
-      CacheRouter.getPortfolioCacheKey({ address: args.address }),
+    const clearedAt = await this.cacheService.getCounter(
+      CacheRouter.getPortfolioClearedAtCacheKey({ address: args.address }),
     );
-    if (clearedAt === null) {
-      return expiresAt;
+    const settledAt =
+      clearedAt === null ? null : clearedAt + this.settleSeconds * 1_000;
+    if (settledAt === null || settledAt <= args.fetchedAt) {
+      return { expiresAt, isSettling: false };
     }
-    const settledAt = clearedAt + this.settleSeconds * 1_000;
-    return settledAt > args.fetchedAt
-      ? Math.min(expiresAt, settledAt)
-      : expiresAt;
+    return settledAt < expiresAt
+      ? { expiresAt: settledAt, isSettling: true }
+      : { expiresAt, isSettling: false };
   }
 
   /**
