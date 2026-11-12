@@ -42,7 +42,9 @@ export class MaliciousAddressScanner {
     addresses: Array<string>,
   ): Promise<Set<string>> {
     const chain = getBlockaidChainName(chainId);
-    if (!(chain && addresses.length)) return new Set();
+    if (!(chain && addresses.length)) {
+      return new Set();
+    }
 
     const unique = [...new Set(addresses.map((a) => a.toLowerCase()))];
     const malicious = new Set<string>();
@@ -51,8 +53,11 @@ export class MaliciousAddressScanner {
     await Promise.all(
       unique.map(async (address) => {
         const cached = await this.readCache(chainId, address);
-        if (cached === 'malicious') malicious.add(address);
-        else if (cached === null) toScan.push(address);
+        if (cached === 'malicious') {
+          malicious.add(address);
+        } else if (cached === null) {
+          toScan.push(address);
+        }
       }),
     );
 
@@ -62,8 +67,12 @@ export class MaliciousAddressScanner {
       await Promise.all(
         batch.map(async (address) => {
           const isMalicious = verdicts.get(address);
-          if (isMalicious === undefined) return;
-          if (isMalicious) malicious.add(address);
+          if (isMalicious === undefined) {
+            return;
+          }
+          if (isMalicious) {
+            malicious.add(address);
+          }
           await this.writeCache(
             chainId,
             address,

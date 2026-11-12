@@ -35,4 +35,6 @@ export const RowLocationSchema = z.object({
 export const ROW_FIELDS = [
   'SafeAllowance',
   'SafeDelegate',
+  'GuardPolicyBinding',
+  'ConfigurationRoot',
 ] as const satisfies ReadonlyArray<keyof PolicyIndexerRows>;

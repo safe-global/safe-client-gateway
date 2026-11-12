@@ -70,9 +70,12 @@ export class TransferMapper {
         isTransferTransactionInfo(transaction.txInfo) ||
         isSwapTransferTransactionInfo(transaction.txInfo)
       )
-    )
+    ) {
       return true;
-    if (!isErc20Transfer(transaction.txInfo.transferInfo)) return true;
+    }
+    if (!isErc20Transfer(transaction.txInfo.transferInfo)) {
+      return true;
+    }
 
     return Number(transaction.txInfo.transferInfo.value) > 0;
   }
@@ -83,9 +86,12 @@ export class TransferMapper {
         isTransferTransactionInfo(transaction.txInfo) ||
         isSwapTransferTransactionInfo(transaction.txInfo)
       )
-    )
+    ) {
       return true;
-    if (!isErc20Transfer(transaction.txInfo.transferInfo)) return true;
+    }
+    if (!isErc20Transfer(transaction.txInfo.transferInfo)) {
+      return true;
+    }
 
     return !!transaction.txInfo.transferInfo.trusted;
   }

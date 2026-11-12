@@ -17,22 +17,30 @@ class TestLoggingService implements ILoggingService {
   }
 
   debug(message: unknown): void {
-    if (this.isSilent) return;
+    if (this.isSilent) {
+      return;
+    }
     console.debug(message);
   }
 
   error(message: unknown): void {
-    if (this.isSilent) return;
+    if (this.isSilent) {
+      return;
+    }
     console.error(message);
   }
 
   info(message: unknown): void {
-    if (this.isSilent) return;
+    if (this.isSilent) {
+      return;
+    }
     console.info(message);
   }
 
   warn(message: unknown): void {
-    if (this.isSilent) return;
+    if (this.isSilent) {
+      return;
+    }
     console.warn(message);
   }
 }

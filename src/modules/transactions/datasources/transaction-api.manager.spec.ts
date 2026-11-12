@@ -67,19 +67,31 @@ describe('Transaction API Manager Tests', () => {
     const ownersTtlSeconds = faker.number.int();
     const ownerTimeout = faker.number.int();
     configurationServiceMock.getOrThrow.mockImplementation((key) => {
-      if (key === 'safeTransaction.useVpcUrl') return useVpcUrl;
-      if (key === 'expirationTimeInSeconds.default')
+      if (key === 'safeTransaction.useVpcUrl') {
+        return useVpcUrl;
+      }
+      if (key === 'expirationTimeInSeconds.default') {
         return expirationTimeInSeconds;
-      if (key === 'expirationTimeInSeconds.indexing')
+      }
+      if (key === 'expirationTimeInSeconds.indexing') {
         return indexingExpirationTimeInSeconds;
-      if (key === 'expirationTimeInSeconds.notFound.default')
+      }
+      if (key === 'expirationTimeInSeconds.notFound.default') {
         return notFoundExpireTimeSeconds;
-      if (key === 'expirationTimeInSeconds.notFound.token')
+      }
+      if (key === 'expirationTimeInSeconds.notFound.token') {
         return notFoundExpireTimeSeconds;
-      if (key === 'owners.ownersTtlSeconds') return ownersTtlSeconds;
-      if (key === 'httpClient.ownersTimeout') return ownerTimeout;
+      }
+      if (key === 'owners.ownersTtlSeconds') {
+        return ownersTtlSeconds;
+      }
+      if (key === 'httpClient.ownersTimeout') {
+        return ownerTimeout;
+      }
       // TODO: Remove after Vault decoding has been released
-      if (key === 'application.isProduction') return true;
+      if (key === 'application.isProduction') {
+        return true;
+      }
 
       throw new Error(`Unexpected key: ${key}`);
     });

@@ -21,7 +21,9 @@ describe('FeatureFlagService', () => {
   beforeEach(() => {
     vi.resetAllMocks();
     mockConfigurationService.getOrThrow.mockImplementation((key: string) => {
-      if (key === 'safeConfig.cgwServiceKey') return 'CGW';
+      if (key === 'safeConfig.cgwServiceKey') {
+        return 'CGW';
+      }
       throw new Error(`Unexpected key: ${key}`);
     });
     target = new FeatureFlagService(

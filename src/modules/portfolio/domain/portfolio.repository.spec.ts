@@ -43,9 +43,12 @@ describe('PortfolioRepository', () => {
     mockConfigService = {
       get: vi.fn(),
       getOrThrow: vi.fn().mockImplementation((key: string) => {
-        if (key === 'portfolio.cache.ttlSeconds') return defaultCacheTtl;
-        if (key === 'portfolio.filters.dustThresholdUsd')
+        if (key === 'portfolio.cache.ttlSeconds') {
+          return defaultCacheTtl;
+        }
+        if (key === 'portfolio.filters.dustThresholdUsd') {
           return defaultDustThreshold;
+        }
         throw new Error(`Unexpected config key: ${key}`);
       }),
     } as unknown as MockedObject<IConfigurationService>;

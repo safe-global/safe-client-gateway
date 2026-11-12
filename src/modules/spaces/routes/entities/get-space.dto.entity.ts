@@ -3,6 +3,10 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { getStringEnumKeys } from '#/domain/common/utils/enum';
 import type { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
+import {
+  type ExperimentalFeature,
+  ExperimentalFeatures,
+} from '#/modules/spaces/domain/entities/experimental-feature.entity';
 import type { Member } from '#/modules/users/datasources/entities/member.entity.db';
 import { User } from '#/modules/users/datasources/entities/users.entity.db';
 import {
@@ -70,4 +74,12 @@ export class GetSpaceResponse {
     example: 5,
   })
   public safeCount!: number;
+
+  @ApiProperty({
+    type: String,
+    isArray: true,
+    enum: ExperimentalFeatures,
+    description: 'Experimental features this Workspace has opted into.',
+  })
+  public experimentalFeatures!: Array<ExperimentalFeature>;
 }

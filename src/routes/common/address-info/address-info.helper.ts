@@ -94,7 +94,9 @@ export class AddressInfoHelper {
       addresses.map((address) => this.getOrDefault(chainId, address, sources)),
     ).then((results) =>
       results.map((result) => {
-        if (result.status === 'fulfilled') return result.value;
+        if (result.status === 'fulfilled') {
+          return result.value;
+        }
         throw new Error('Error processing address collection');
       }),
     );

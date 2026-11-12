@@ -29,7 +29,9 @@ export class UserIdentityResolverService {
     userIds: ReadonlyArray<number>,
   ): Promise<Map<number, string>> {
     const unique = [...new Set(userIds)];
-    if (unique.length === 0) return new Map();
+    if (unique.length === 0) {
+      return new Map();
+    }
 
     const [users, wallets] = await Promise.all([
       this.usersRepository.find({ id: In(unique) }),

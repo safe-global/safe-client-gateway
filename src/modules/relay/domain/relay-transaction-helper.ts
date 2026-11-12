@@ -46,7 +46,9 @@ export class RelayTransactionHelper {
 
   isValidExecTransactionCall(args: { to: Address; data: Hex }): boolean {
     const decoded = this.decodeExecTransaction(args.data);
-    if (!decoded) return false;
+    if (!decoded) {
+      return false;
+    }
     return this.isValidDecodedExecTransaction({ to: args.to, decoded });
   }
 

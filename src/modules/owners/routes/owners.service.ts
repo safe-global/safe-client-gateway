@@ -36,13 +36,17 @@ export class OwnersService {
     ownerAddress: Address;
   }): Promise<SafeList> {
     const safeList = await this.safeRepository.getSafesByOwner(args);
-    if (!this.maliciousFilterEnabled) return safeList;
+    if (!this.maliciousFilterEnabled) {
+      return safeList;
+    }
 
     const malicious = await this.maliciousAddressScanner.getMaliciousAddresses(
       args.chainId,
       safeList.safes,
     );
-    if (malicious.size === 0) return safeList;
+    if (malicious.size === 0) {
+      return safeList;
+    }
     return { safes: unionStrip(safeList.safes, malicious) };
   }
 
@@ -77,7 +81,9 @@ export class OwnersService {
 
     const results = await Promise.all(
       Object.entries(safesByChainId).map(async ([chainId, addresses]) => {
-        if (addresses === null) return [chainId, null] as const;
+        if (addresses === null) {
+          return [chainId, null] as const;
+        }
 
         const stripped = new Set<string>();
         if (this.maliciousFilterEnabled) {
@@ -86,17 +92,23 @@ export class OwnersService {
               chainId,
               addresses,
             );
-          for (const address of malicious) stripped.add(address);
+          for (const address of malicious) {
+            stripped.add(address);
+          }
         }
         if (opts.useHeuristic) {
           const poisoned = await this.detectPoisonedAddresses(
             chainId,
             addresses,
           );
-          for (const address of poisoned) stripped.add(address.toLowerCase());
+          for (const address of poisoned) {
+            stripped.add(address.toLowerCase());
+          }
         }
 
-        if (stripped.size === 0) return [chainId, addresses] as const;
+        if (stripped.size === 0) {
+          return [chainId, addresses] as const;
+        }
         return [chainId, unionStrip(addresses, stripped)] as const;
       }),
     );
@@ -110,7 +122,9 @@ export class OwnersService {
     const poisoned = new Set<string>();
     const pairs = findSimilarAddressPairs(addresses);
 
-    if (pairs.length === 0) return poisoned;
+    if (pairs.length === 0) {
+      return poisoned;
+    }
 
     await Promise.allSettled(
       pairs.map(async ([i, j]) => {

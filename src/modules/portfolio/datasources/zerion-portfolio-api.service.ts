@@ -124,7 +124,8 @@ export class ZerionPortfolioApi implements IPortfolioApi {
     sync?: boolean;
   }): Promise<Array<ZerionBalance>> {
     try {
-      const url = `${this.baseUri}/v1/wallets/${args.address}/positions`;
+      // Trailing slash is required: without it Zerion answers with a 301.
+      const url = `${this.baseUri}/v1/wallets/${args.address}/positions/`;
       const params: Record<string, string> = {
         currency: args.fiatCode.toLowerCase(),
         sort: 'value',
@@ -254,15 +255,21 @@ export class ZerionPortfolioApi implements IPortfolioApi {
     const tokenBalances = await Promise.all(
       positions.map(async (position): Promise<TokenBalance | null> => {
         const networkName = position.relationships?.chain?.data?.id;
-        if (!networkName) return null;
+        if (!networkName) {
+          return null;
+        }
 
         const chainId = await this._mapNetworkToChainId(networkName, isTestnet);
-        if (!chainId) return null;
+        if (!chainId) {
+          return null;
+        }
 
         const impl = position.attributes.fungible_info.implementations.find(
           (i) => i.chain_id === networkName,
         );
-        if (!impl) return null;
+        if (!impl) {
+          return null;
+        }
 
         if (impl.address !== null && !isAddress(impl.address)) {
           return null;
@@ -401,15 +408,21 @@ export class ZerionPortfolioApi implements IPortfolioApi {
     const appPositions = await Promise.all(
       positions.map(async (position): Promise<AppPosition | null> => {
         const networkName = position.relationships?.chain?.data?.id;
-        if (!networkName) return null;
+        if (!networkName) {
+          return null;
+        }
 
         const chainId = await this._mapNetworkToChainId(networkName, isTestnet);
-        if (!chainId) return null;
+        if (!chainId) {
+          return null;
+        }
 
         const impl = position.attributes.fungible_info.implementations.find(
           (i) => i.chain_id === networkName,
         );
-        if (!impl) return null;
+        if (!impl) {
+          return null;
+        }
 
         if (impl.address !== null && !isAddress(impl.address)) {
           return null;

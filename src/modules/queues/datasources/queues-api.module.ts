@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { hostname } from 'node:os';
 import { Module } from '@nestjs/common';
 import amqp, {
   type AmqpConnectionManager,
@@ -16,14 +17,17 @@ export interface QueueConsumer {
   channel: ChannelWrapper;
 }
 
-function queueConsumerFactory(
+// The Safe Transaction Service publishes to a topic exchange with routing key
+// `{chainId}.{type}.{address}`. `#` matches every event.
+const ALL_EVENTS_ROUTING_KEY = '#';
+
+export function queueConsumerFactory(
   configurationService: IConfigurationService,
 ): QueueConsumer {
+  const serviceName = configurationService.getOrThrow<string>('about.name');
   const amqpUrl = configurationService.getOrThrow<string>('amqp.url');
   const exchangeName =
     configurationService.getOrThrow<string>('amqp.exchange.name');
-  const exchangeMode =
-    configurationService.getOrThrow<string>('amqp.exchange.mode');
   const queue = configurationService.getOrThrow<string>('amqp.queue');
   const prefetch = configurationService.getOrThrow<number>('amqp.prefetch');
   const heartbeatIntervalInSeconds = configurationService.getOrThrow<number>(
@@ -36,15 +40,21 @@ function queueConsumerFactory(
   const connection = amqp.connect(amqpUrl, {
     heartbeatIntervalInSeconds,
     reconnectTimeInSeconds,
+    connectionOptions: {
+      // Shown by RabbitMQ in the management UI and logs to identify this connection
+      clientProperties: { connection_name: `${serviceName}@${hostname()}` },
+    },
   });
   const channel = connection.createChannel({
     json: true,
     setup: async (ch: Channel) => {
-      await ch.assertExchange(exchangeName, exchangeMode, { durable: true });
+      // Must match the Safe Transaction Service declaration, otherwise the
+      // broker rejects it with PRECONDITION_FAILED.
+      await ch.assertExchange(exchangeName, 'topic', { durable: true });
       await ch.assertQueue(queue, { durable: true });
       // Note: Using consumer (not channel) prefetch (https://www.rabbitmq.com/docs/consumer-prefetch)
       await ch.prefetch(prefetch);
-      await ch.bindQueue(queue, exchangeName, '');
+      await ch.bindQueue(queue, exchangeName, ALL_EVENTS_ROUTING_KEY);
     },
   });
   return { connection, channel };

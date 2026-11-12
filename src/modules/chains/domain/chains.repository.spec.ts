@@ -54,8 +54,9 @@ describe('ChainsRepository', () => {
     vi.resetAllMocks();
 
     mockConfigurationService.getOrThrow.mockImplementation((key) => {
-      if (key === 'safeConfig.chains.maxSequentialPages')
+      if (key === 'safeConfig.chains.maxSequentialPages') {
         return maxSequentialPages;
+      }
     });
 
     target = new ChainsRepository(

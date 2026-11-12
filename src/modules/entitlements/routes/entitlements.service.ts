@@ -138,6 +138,8 @@ export class EntitlementsService implements IEntitlementEnforcement {
       sponsored_transactions: null,
       // NULL: policies were never gated before now, so the plan decides from the start.
       policies: null,
+      // NULL: Safenet checks were never sponsored before now, so the plan decides from the start.
+      safenet_checks: null,
     };
   }
 
@@ -857,8 +859,12 @@ export class EntitlementsService implements IEntitlementEnforcement {
     storedEventAt: Date | null,
     triggerEventAt: Date | null,
   ): Date | null {
-    if (storedEventAt === null) return triggerEventAt;
-    if (triggerEventAt === null) return storedEventAt;
+    if (storedEventAt === null) {
+      return triggerEventAt;
+    }
+    if (triggerEventAt === null) {
+      return storedEventAt;
+    }
     return storedEventAt > triggerEventAt ? storedEventAt : triggerEventAt;
   }
 

@@ -27,7 +27,9 @@ export class SafeAppInfoMapper {
     safeTxHash: string,
   ): Promise<SafeAppInfo | null> {
     const originUrl = this.getOriginUrl(origin, safeTxHash);
-    if (!originUrl) return null;
+    if (!originUrl) {
+      return null;
+    }
 
     const [safeApp] = await this.safeAppsRepository.getSafeApps({
       chainId,
@@ -56,7 +58,9 @@ export class SafeAppInfoMapper {
     origin: string | null,
     safeTxHash: string,
   ): string | null {
-    if (!origin) return null;
+    if (!origin) {
+      return null;
+    }
     const { originUrl } = parseOrigin(origin);
     if (!originUrl) {
       this.loggingService.debug(

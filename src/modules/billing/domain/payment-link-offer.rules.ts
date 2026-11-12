@@ -4,7 +4,8 @@ import { GRACE_PERIOD_METADATA_KEY } from '#/modules/entitlements/domain/entitle
 
 /** What the offer filter needs to know about the workspace. */
 export type SpaceOfferEligibility = {
-  createdBeforeEnforcement: boolean;
+  /** Created before enforcement, while the grace claim window is still open. */
+  isOfferedGracePeriod: boolean;
   hasEverSubscribed: boolean;
   activePlanId: string | null;
 };
@@ -41,6 +42,14 @@ export function offersPlan(link: PaymentLink, planId: string): boolean {
   return link.lineItems?.some((item) => item.price.id === planId) ?? false;
 }
 
+/** Whether pre-enforcement workspaces can still claim the legacy grace. */
+export function isGracePeriodClaimOpen(args: {
+  now: Date;
+  endsAt: Date;
+}): boolean {
+  return args.now < args.endsAt;
+}
+
 /** Whether the workspace is offered this link. */
 export function isOfferedToSpace(
   link: PaymentLink,
@@ -52,9 +61,9 @@ export function isOfferedToSpace(
     // Already subscribed once: trials are off the table.
     case isTrial && args.hasEverSubscribed:
       return false;
-    // Never subscribed: offer only the trial matching this enforcement side.
+    // Never subscribed: the legacy grace while claimable, else the standard trial.
     case isTrial:
-      return gracePeriodOf(link) === args.createdBeforeEnforcement;
+      return gracePeriodOf(link) === args.isOfferedGracePeriod;
     // Never subscribed: no paid link until a plan is picked first.
     case !args.hasEverSubscribed:
       return false;

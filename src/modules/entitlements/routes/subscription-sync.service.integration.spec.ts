@@ -147,7 +147,9 @@ describe('Billing webhook → entitlements materialization', () => {
 
   afterEach(async () => {
     networkService.get.mockReset();
-    if (seededSpaceIds.length === 0) return;
+    if (seededSpaceIds.length === 0) {
+      return;
+    }
     // Deleting the spaces cascades through subscriptions and their
     // entitlements, so nothing this suite wrote outlives the test.
     const spaceRepo = await postgresDatabaseService.getRepository(Space);

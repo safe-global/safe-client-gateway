@@ -102,6 +102,31 @@ const GATED_ROUTES: Array<Route> = [
     path: (id) =>
       `/v1/spaces/${id}/address-book/${getAddress(faker.finance.ethereumAddress())}`,
   },
+  // Tags are shared by the whole Workspace, so any member's tag edit is gated
+  // even though members (not only admins) may make it.
+  {
+    name: 'POST /v1/spaces/:spaceId/address-book/tags',
+    method: 'post',
+    path: (id) => `/v1/spaces/${id}/address-book/tags`,
+    body: { name: faker.word.noun() },
+  },
+  {
+    name: 'PUT /v1/spaces/:spaceId/address-book/tags',
+    method: 'put',
+    path: (id) => `/v1/spaces/${id}/address-book/tags`,
+    body: { items: [] },
+  },
+  {
+    name: 'PATCH /v1/spaces/:spaceId/address-book/tags/:tagId',
+    method: 'patch',
+    path: (id) => `/v1/spaces/${id}/address-book/tags/1`,
+    body: { name: faker.word.noun() },
+  },
+  {
+    name: 'DELETE /v1/spaces/:spaceId/address-book/tags/:tagId',
+    method: 'delete',
+    path: (id) => `/v1/spaces/${id}/address-book/tags/1`,
+  },
   {
     name: 'PUT /v1/spaces/:spaceId/address-book/requests/:requestId/approve',
     method: 'put',
@@ -236,6 +261,17 @@ const UNGATED_ROUTES: Array<Route> = [
     name: 'POST /v1/spaces/:spaceId/members/:userId/invite/renew',
     method: 'post',
     path: (id) => `/v1/spaces/${id}/members/1/invite/renew`,
+  },
+  // Like proposing a contact, storing a policy configuration request only
+  // stores a proposal: nothing takes effect until the Safe owners sign it
+  // on-chain. A row must hash to its root, and the per-Space cap bounds how
+  // many a stolen session can store.
+  {
+    name: 'POST /v1/spaces/:spaceId/chains/:chainId/safes/:safeAddress/policies/requests',
+    method: 'post',
+    path: (id) =>
+      `/v1/spaces/${id}/chains/11155111/safes/${getAddress(faker.finance.ethereumAddress())}/policies/requests`,
+    body: {},
   },
   {
     name: 'POST /v1/spaces/:spaceId/address-book/requests (propose contact)',

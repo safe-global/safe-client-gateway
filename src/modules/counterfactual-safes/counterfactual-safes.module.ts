@@ -1,13 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { forwardRef, Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { PostgresDatabaseModuleV2 } from '#/datasources/db/v2/postgres-database.module';
 import { AuthModule } from '#/modules/auth/auth.module';
-import { CounterfactualSafe } from '#/modules/counterfactual-safes/datasources/entities/counterfactual-safe.entity.db';
-import { CounterfactualSafeUser } from '#/modules/counterfactual-safes/datasources/entities/counterfactual-safe-user.entity.db';
-import { CounterfactualSafesRepository } from '#/modules/counterfactual-safes/domain/counterfactual-safes.repository';
-import { ICounterfactualSafesRepository } from '#/modules/counterfactual-safes/domain/counterfactual-safes.repository.interface';
+import { CounterfactualSafesRepositoryModule } from '#/modules/counterfactual-safes/domain/counterfactual-safes-repository.module';
 import { CounterfactualSafesController } from '#/modules/counterfactual-safes/routes/counterfactual-safes.controller';
 import { CounterfactualSafesService } from '#/modules/counterfactual-safes/routes/counterfactual-safes.service';
 import { SpaceCounterfactualSafesController } from '#/modules/counterfactual-safes/routes/space-counterfactual-safes.controller';
@@ -18,8 +13,7 @@ import { UsersModule } from '#/modules/users/users.module';
 
 @Module({
   imports: [
-    PostgresDatabaseModuleV2,
-    TypeOrmModule.forFeature([CounterfactualSafe, CounterfactualSafeUser]),
+    CounterfactualSafesRepositoryModule,
     forwardRef(() => AuthModule),
     forwardRef(() => UsersModule),
     forwardRef(() => SpacesModule),
@@ -29,14 +23,7 @@ import { UsersModule } from '#/modules/users/users.module';
     CounterfactualSafesController,
     SpaceCounterfactualSafesController,
   ],
-  providers: [
-    CounterfactualSafesService,
-    SpaceCounterfactualSafesService,
-    {
-      provide: ICounterfactualSafesRepository,
-      useClass: CounterfactualSafesRepository,
-    },
-  ],
-  exports: [ICounterfactualSafesRepository],
+  providers: [CounterfactualSafesService, SpaceCounterfactualSafesService],
+  exports: [CounterfactualSafesRepositoryModule],
 })
 export class CounterfactualSafesModule {}

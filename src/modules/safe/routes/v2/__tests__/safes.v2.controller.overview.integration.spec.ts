@@ -456,16 +456,18 @@ describe('Safes V2 Controller Overview', () => {
       const tokenAddress = getAddress(faker.finance.ethereumAddress());
 
       testNetworkService.get.mockImplementation(({ url }: { url: string }) => {
-        if (url === `${testSafeConfigUrl}/api/v1/chains/${chain.chainId}`)
+        if (url === `${testSafeConfigUrl}/api/v1/chains/${chain.chainId}`) {
           return Promise.resolve({ data: rawify(chain), status: 200 });
+        }
         if (
           url === `${chain.transactionService}/api/v1/safes/${safeInfo.address}`
-        )
+        ) {
           return Promise.resolve({ data: rawify(safeInfo), status: 200 });
+        }
         if (
           url ===
           `${chain.transactionService}/api/v1/safes/${safeInfo.address}/balances/`
-        )
+        ) {
           return Promise.resolve({
             data: rawify([
               balanceBuilder()
@@ -476,31 +478,35 @@ describe('Safes V2 Controller Overview', () => {
             ]),
             status: 200,
           });
-        if (url === `${testPricesProviderUrl}/simple/price`)
+        }
+        if (url === `${testPricesProviderUrl}/simple/price`) {
           return Promise.resolve({
             data: rawify({
               [chain.pricesProvider.nativeCoin as string]: { usd: 100 },
             }),
             status: 200,
           });
+        }
         if (
           url ===
           `${testPricesProviderUrl}/simple/token_price/${chain.pricesProvider.chainName}`
-        )
+        ) {
           return Promise.resolve({
             data: rawify({ [tokenAddress]: { usd: 10 } }),
             status: 200,
           });
+        }
         if (
           url ===
           `${chain.transactionService}/api/v2/safes/${safeInfo.address}/multisig-transactions/`
-        )
+        ) {
           return Promise.resolve({
             data: rawify(
               pageBuilder().with('results', []).with('count', 0).build(),
             ),
             status: 200,
           });
+        }
         if (url === `${zerionBaseUri}/v1/chains`) {
           return Promise.resolve({
             data: rawify(zerionChainsResponse),

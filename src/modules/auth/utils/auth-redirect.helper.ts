@@ -25,7 +25,9 @@ export function buildAuth0LogoutBaseUrl(
   const domain = configurationService.get<string>(`${key}.domain`);
   const clientId = configurationService.get<string>(`${key}.clientId`);
 
-  if (!(domain && clientId?.trim())) return null;
+  if (!(domain && clientId?.trim())) {
+    return null;
+  }
 
   try {
     const url = new URL(AUTH0_LOGOUT_PATH, `https://${domain}`);
@@ -89,11 +91,15 @@ export function resolveAndValidateRedirectUrl(
   config: RedirectConfig,
   redirectUrl?: string,
 ): string {
-  if (!redirectUrl) return config.postLoginRedirectUri;
+  if (!redirectUrl) {
+    return config.postLoginRedirectUri;
+  }
 
   try {
     const target = new URL(redirectUrl, config.postLoginRedirectUri);
-    if (!isAllowedRedirectUrl(target, config)) throw new Error();
+    if (!isAllowedRedirectUrl(target, config)) {
+      throw new Error();
+    }
     return target.toString();
   } catch {
     throw new BadRequestException(

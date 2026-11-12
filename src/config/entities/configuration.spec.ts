@@ -105,3 +105,29 @@ describe('configuration - entitlements.enforcementStartsAt', () => {
     },
   );
 });
+
+describe('configuration - entitlements.gracePeriodClaimEndsAt', () => {
+  const ENV_KEY = 'ENTITLEMENTS_GRACE_PERIOD_CLAIM_ENDS_AT';
+  const original = process.env[ENV_KEY];
+
+  afterEach(() => {
+    if (original === undefined) {
+      delete process.env[ENV_KEY];
+    } else {
+      process.env[ENV_KEY] = original;
+    }
+  });
+
+  // Unlike enforcementStartsAt, this is rarely overridden, so a bad value
+  // falls back instead of failing boot.
+  it.each(['the fifth of december', '2026-13-45T00:00:00Z', ''])(
+    'falls back to the default when set to %s',
+    (value) => {
+      process.env[ENV_KEY] = value;
+
+      expect(configuration().entitlements.gracePeriodClaimEndsAt).toStrictEqual(
+        new Date('2026-12-05T12:30:00Z'),
+      );
+    },
+  );
+});

@@ -1499,10 +1499,14 @@ describe('UsersRepository', () => {
         if (key === 'encryption.indexKey') {
           return wrappedIndexKey;
         }
-        if (key === 'encryption.kms.keyId') return keyId;
+        if (key === 'encryption.kms.keyId') {
+          return keyId;
+        }
       });
       configurationService.getOrThrow.mockImplementation((key: string) => {
-        if (key === 'encryption.enabled') return true;
+        if (key === 'encryption.enabled') {
+          return true;
+        }
         if (key === 'encryption.kms.accessKeyId') {
           return accessKeyId;
         }

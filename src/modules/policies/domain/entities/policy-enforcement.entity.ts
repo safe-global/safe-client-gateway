@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { Address } from 'viem';
+import type { Address, Hex } from 'viem';
+import type { PolicyOperation } from '#/modules/policies/domain/entities/policy-operation.entity';
 import { PolicyEnforcementKind } from '#/modules/policies/domain/entities/policy-type.entity';
 
 /**
@@ -25,9 +26,21 @@ export type ModuleEnforcement = {
   moduleAddress: Address;
 };
 
+/**
+ * The calls a guard based policies governs - the key the `SafePolicyGuard` looks the
+ * policy up by. A fallback binding has `target` and `selector` zeroed and
+ * covers every call that no specific policy matches.
+ */
+export type PolicyAccess = {
+  target: Address;
+  selector: Hex;
+  operation: PolicyOperation;
+};
+
 export type GuardEnforcement = {
   via: typeof PolicyEnforcementKind.Guard;
   guards: GuardSlots;
+  access: PolicyAccess;
 };
 
 /**
@@ -56,8 +69,11 @@ export function moduleEnforcement(moduleAddress: Address): ModuleEnforcement {
   return { via: PolicyEnforcementKind.Module, moduleAddress };
 }
 
-export function guardEnforcement(guards: GuardSlots): GuardEnforcement {
-  return { via: PolicyEnforcementKind.Guard, guards };
+export function guardEnforcement(args: {
+  guards: GuardSlots;
+  access: PolicyAccess;
+}): GuardEnforcement {
+  return { via: PolicyEnforcementKind.Guard, ...args };
 }
 
 export function offChainEnforcement(

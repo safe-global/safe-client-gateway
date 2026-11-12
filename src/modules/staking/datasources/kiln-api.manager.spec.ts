@@ -43,13 +43,24 @@ describe('KilnApiManager', () => {
 
   function mockConfig(widget: 'staking' | 'earn'): void {
     configurationService.getOrThrow.mockImplementation((key) => {
-      if (key === `${widget}.mainnet.baseUri`) return mainnetBaseUri;
-      if (key === `${widget}.mainnet.apiKey`) return mainnetApiKey;
-      if (key === `${widget}.testnet.baseUri`) return testnetBaseUri;
-      if (key === `${widget}.testnet.apiKey`) return testnetApiKey;
-      if (key === 'expirationTimeInSeconds.staking') return faker.number.int();
-      if (key === 'expirationTimeInSeconds.notFound.default')
+      if (key === `${widget}.mainnet.baseUri`) {
+        return mainnetBaseUri;
+      }
+      if (key === `${widget}.mainnet.apiKey`) {
+        return mainnetApiKey;
+      }
+      if (key === `${widget}.testnet.baseUri`) {
+        return testnetBaseUri;
+      }
+      if (key === `${widget}.testnet.apiKey`) {
+        return testnetApiKey;
+      }
+      if (key === 'expirationTimeInSeconds.staking') {
         return faker.number.int();
+      }
+      if (key === 'expirationTimeInSeconds.notFound.default') {
+        return faker.number.int();
+      }
 
       throw new Error(`Unexpected key: ${key}`);
     });

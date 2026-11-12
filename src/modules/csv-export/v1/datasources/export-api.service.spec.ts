@@ -35,9 +35,12 @@ describe('ExportApi', () => {
     vi.resetAllMocks();
 
     mockConfigurationService.getOrThrow.mockImplementation((key) => {
-      if (key === 'expirationTimeInSeconds.default') return defaultExpiration;
-      if (key === 'expirationTimeInSeconds.notFound.default')
+      if (key === 'expirationTimeInSeconds.default') {
+        return defaultExpiration;
+      }
+      if (key === 'expirationTimeInSeconds.notFound.default') {
         return defaultNotFoundExpiration;
+      }
       throw new Error(`Unexpected key: ${key}`);
     });
     const httpErrorFactory = new HttpErrorFactory();

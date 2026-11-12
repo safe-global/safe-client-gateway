@@ -292,7 +292,7 @@ export class CsvExportService {
       .filter((p) => !params.get(p))
       .join(', ');
 
-    if (missing)
+    if (missing) {
       this.loggingService.warn({
         type: LogType.TxnExportFetchRequestError,
         chainId,
@@ -300,6 +300,7 @@ export class CsvExportService {
         pageCount,
         message: `nextUrl is missing required parameter(s): ${missing}. URL: ${nextUrl}`,
       });
+    }
 
     const newLimit = Number(params.get('limit') ?? currentLimit);
     const newOffset = Number(params.get('offset') ?? currentOffset + newLimit);

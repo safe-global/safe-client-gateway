@@ -61,6 +61,8 @@ export class CacheRouter {
   private static readonly SAFE_KEY = 'safe';
   private static readonly SINGLETONS_KEY = 'singletons';
   private static readonly SPACE_ENTITLEMENTS_KEY = 'space_entitlements';
+  private static readonly SPACE_TRANSACTION_QUEUE_KEY =
+    'space_transaction_queue';
   private static readonly STAKING_DEDICATED_STAKING_STATS_KEY =
     'staking_dedicated_staking_stats';
   private static readonly STAKING_DEFI_VAULT_STATS_KEY =
@@ -108,6 +110,25 @@ export class CacheRouter {
   private static readonly GAS_PRICE_KEY = 'gas_price';
   private static readonly RELAY_FEE_PREVIEW_KEY = 'relay_fee_preview';
   private static readonly GTF_FEE_PREVIEW_KEY = 'gtf_fee_preview';
+  private static readonly SAFENET_PAYER_NONCE_KEY = 'safenet_payer_nonce';
+  private static readonly SAFENET_CHECKS_KEY = 'safenet_checks';
+
+  static getSafenetPayerNonceCacheKey(args: {
+    chainId: string;
+    safeAddress: Address;
+  }): string {
+    const address = args.safeAddress.toLowerCase();
+    return `${CacheRouter.SAFENET_PAYER_NONCE_KEY}_${args.chainId}_${address}`;
+  }
+
+  static getSafenetChecksRateLimitCacheKey(args: {
+    spaceId: number;
+    day: string;
+  }): string {
+    return CacheRouter.getRateLimitCacheKey(
+      `${CacheRouter.SAFENET_CHECKS_KEY}_${args.spaceId}_${args.day}`,
+    );
+  }
 
   static getAuthNonceCacheKey(nonce: string): string {
     return `${CacheRouter.AUTH_NONCE_KEY}_${nonce}`;
@@ -315,15 +336,19 @@ export class CacheRouter {
   static getTransfersCacheDir(args: {
     chainId: string;
     safeAddress: string;
-    onlyErc20: boolean;
-    onlyErc721: boolean;
+    onlyErc20?: boolean;
+    onlyErc721?: boolean;
     limit?: number;
     offset?: number;
     to?: string;
+    from?: string;
+    tokenAddress?: string;
+    executionDateGte?: string;
+    executionDateLte?: string;
   }): CacheDir {
     return new CacheDir(
       CacheRouter.getTransfersCacheKey(args),
-      `${args.onlyErc20}_${args.onlyErc721}_${args.limit}_${args.offset}_${args.to}`,
+      `${args.onlyErc20}_${args.onlyErc721}_${args.limit}_${args.offset}_${args.to}_${args.from}_${args.tokenAddress}_${args.executionDateGte}_${args.executionDateLte}`,
     );
   }
 
@@ -440,6 +465,30 @@ export class CacheRouter {
     return new CacheDir(
       CacheRouter.getSafeQueueMultisigTransactionsCacheKey(args),
       `safe_queue_${args.nonceOrder}_${args.limit}_${args.offset}`,
+    );
+  }
+
+  static getSpaceTransactionQueueCacheKey(spaceId: number): string {
+    return `${spaceId}_${CacheRouter.SPACE_TRANSACTION_QUEUE_KEY}`;
+  }
+
+  /**
+   * One page of a Space's queue. The field covers the Safes requested, so a
+   * page cached for an earlier set of Safes is never served for a later one.
+   */
+  static getSpaceTransactionQueueCacheDir(args: {
+    spaceId: number;
+    safes: ReadonlyArray<string>;
+    limit: number;
+    offset: number;
+  }): CacheDir {
+    const hash = crypto.createHash('sha256');
+    hash.update(
+      [args.safes.toSorted().join(','), args.limit, args.offset].join('_'),
+    );
+    return new CacheDir(
+      CacheRouter.getSpaceTransactionQueueCacheKey(args.spaceId),
+      hash.digest('hex'),
     );
   }
 
@@ -1365,8 +1414,12 @@ export class CacheRouter {
   static getPolicyIndexerStateCacheDir(args: {
     chainId: string;
     safeAddress: Address;
+    guardPolicyKinds: ReadonlyArray<string>;
   }): CacheDir {
-    return new CacheDir(CacheRouter.getPolicyIndexerStateCacheKey(args), '');
+    return new CacheDir(
+      CacheRouter.getPolicyIndexerStateCacheKey(args),
+      [...args.guardPolicyKinds].sort().join(','),
+    );
   }
 
   static getPolicyIndexerStateCacheKey(args: {

@@ -26,6 +26,7 @@ import { PaginationDataDecorator } from '#/routes/common/decorators/pagination.d
 import { RouteUrlDecorator } from '#/routes/common/decorators/route.url.decorator';
 import type { PaginationData } from '#/routes/common/pagination/pagination.data';
 import { AddressSchema } from '#/validation/entities/schemas/address.schema';
+import { OpaqueIdSchema } from '#/validation/entities/schemas/opaque-id.schema';
 import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
 @ApiTags('community')
@@ -52,7 +53,9 @@ export class CommunityController {
 
   @ApiOkResponse({ type: Campaign })
   @Get('/campaigns/:resourceId')
-  getCampaignById(@Param('resourceId') resourceId: string): Promise<Campaign> {
+  getCampaignById(
+    @Param('resourceId', new ValidationPipe(OpaqueIdSchema)) resourceId: string,
+  ): Promise<Campaign> {
     return this.communityService.getCampaignById(resourceId);
   }
 
@@ -60,7 +63,7 @@ export class CommunityController {
   @ApiQuery({ name: 'cursor', required: false, type: String })
   @ApiQuery({ name: 'holder', required: false, type: String })
   getCampaignActivities(
-    @Param('resourceId') resourceId: string,
+    @Param('resourceId', new ValidationPipe(OpaqueIdSchema)) resourceId: string,
     @RouteUrlDecorator() routeUrl: URL,
     @PaginationDataDecorator() paginationData: PaginationData,
     @Query('holder', new ValidationPipe(AddressSchema.optional()))
@@ -82,7 +85,7 @@ export class CommunityController {
   })
   @Get('/campaigns/:resourceId/leaderboard')
   getCampaignLeaderboard(
-    @Param('resourceId') resourceId: string,
+    @Param('resourceId', new ValidationPipe(OpaqueIdSchema)) resourceId: string,
     @RouteUrlDecorator() routeUrl: URL,
     @PaginationDataDecorator() paginationData: PaginationData,
   ): Promise<CampaignRankPage> {
@@ -96,7 +99,7 @@ export class CommunityController {
   @ApiOkResponse({ type: CampaignRank })
   @Get('/campaigns/:resourceId/leaderboard/:safeAddress')
   getCampaignRank(
-    @Param('resourceId') resourceId: string,
+    @Param('resourceId', new ValidationPipe(OpaqueIdSchema)) resourceId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,
   ): Promise<CampaignRank> {

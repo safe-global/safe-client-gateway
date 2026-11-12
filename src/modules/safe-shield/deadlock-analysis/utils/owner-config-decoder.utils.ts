@@ -38,7 +38,9 @@ export function groupOwnerConfigsByTarget(
   const groups = new Map<Address, Array<BaseDataDecoded>>();
 
   for (const tx of transactions) {
-    if (!isOwnerConfigTransaction(tx.dataDecoded)) continue;
+    if (!isOwnerConfigTransaction(tx.dataDecoded)) {
+      continue;
+    }
 
     const normalizedAddress = getAddress(tx.to);
     // dataDecoded is guaranteed non-null by isOwnerConfigTransaction check above

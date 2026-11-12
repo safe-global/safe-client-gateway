@@ -90,7 +90,9 @@ export class SwapOrderHelper {
       args.orderUid,
     );
 
-    if (order.kind === OrderKind.Unknown) throw new Error('Unknown order kind');
+    if (order.kind === OrderKind.Unknown) {
+      throw new Error('Unknown order kind');
+    }
 
     return {
       ...order,

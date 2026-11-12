@@ -32,8 +32,9 @@ const scannerMock = {
 function buildService(maliciousFilterEnabled: boolean): OwnersService {
   const configurationServiceMock = {
     getOrThrow: vi.fn((key: string) => {
-      if (key === 'features.ownersMaliciousFilter')
+      if (key === 'features.ownersMaliciousFilter') {
         return maliciousFilterEnabled;
+      }
       throw new Error(`Unexpected configuration key: ${key}`);
     }),
   } as unknown as IConfigurationService;

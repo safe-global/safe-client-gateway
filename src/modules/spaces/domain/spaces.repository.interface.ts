@@ -60,7 +60,9 @@ export interface ISpacesRepository {
 
   update(args: {
     id: Space['id'];
-    updatePayload: Partial<Pick<Space, 'name' | 'status'>>;
+    updatePayload: Partial<
+      Pick<Space, 'name' | 'status' | 'experimentalFeatures'>
+    >;
     actorUserId: number;
   }): Promise<Pick<Space, 'uuid'>>;
 

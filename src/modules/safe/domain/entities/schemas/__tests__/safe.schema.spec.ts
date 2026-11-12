@@ -176,7 +176,7 @@ describe('Safe Schemas', () => {
       ]);
     });
 
-    it.each(['modules' as const, 'version' as const])(
+    it.each(['modules' as const, 'version' as const, 'moduleGuard' as const])(
       'should allow optional %s, defaulting to null',
       (field) => {
         const safe = safeBuilder().build();

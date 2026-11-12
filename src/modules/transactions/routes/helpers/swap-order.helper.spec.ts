@@ -54,7 +54,9 @@ describe('Swap Order Helper tests', () => {
   beforeEach(() => {
     vi.resetAllMocks();
     configurationServiceMock.getOrThrow.mockImplementation((key) => {
-      if (key === 'swaps.explorerBaseUri') return explorerBaseUrl;
+      if (key === 'swaps.explorerBaseUri') {
+        return explorerBaseUrl;
+      }
       throw new Error(`Key ${key} not found.`);
     });
 
@@ -84,8 +86,12 @@ describe('Swap Order Helper tests', () => {
       );
       swapsRepositoryMock.getOrder.mockResolvedValue(order);
       tokenRepositoryMock.getToken.mockImplementation(({ address }) => {
-        if (address === order.buyToken) return Promise.resolve(buyToken);
-        if (address === order.sellToken) return Promise.resolve(sellToken);
+        if (address === order.buyToken) {
+          return Promise.resolve(buyToken);
+        }
+        if (address === order.sellToken) {
+          return Promise.resolve(sellToken);
+        }
         return Promise.reject(new Error(`Token ${address} not found.`));
       });
 

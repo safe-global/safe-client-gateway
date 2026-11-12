@@ -48,7 +48,9 @@ export function extractContracts(
   > = new Map();
 
   for (const tx of transactions) {
-    if (isNonContractInteraction(tx, erc20Decoder)) continue;
+    if (isNonContractInteraction(tx, erc20Decoder)) {
+      continue;
+    }
 
     const contract: Address = getAddress(tx.to);
     const isDelegateCall = tx.operation === 1;

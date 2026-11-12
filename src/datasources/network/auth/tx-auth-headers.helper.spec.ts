@@ -17,8 +17,12 @@ describe('getTxAuthHeaders', () => {
   it('should return Authorization header when TX auth is enabled', () => {
     const apiKey = 'test-api-key-123';
     mockConfigService.getOrThrow.mockImplementation((key: string) => {
-      if (key === 'application.isDevelopment') return true;
-      if (key === 'safeTransaction.useVpcUrl') return false;
+      if (key === 'application.isDevelopment') {
+        return true;
+      }
+      if (key === 'safeTransaction.useVpcUrl') {
+        return false;
+      }
       throw new Error(`Unexpected key: ${key}`);
     });
     mockConfigService.get.mockReturnValue(apiKey);
@@ -74,8 +78,12 @@ describe('getTxAuthHeaders', () => {
     'should return undefined when $description',
     ({ isDevelopment, useVpcUrl, apiKey }) => {
       mockConfigService.getOrThrow.mockImplementation((key: string) => {
-        if (key === 'application.isDevelopment') return isDevelopment;
-        if (key === 'safeTransaction.useVpcUrl') return useVpcUrl;
+        if (key === 'application.isDevelopment') {
+          return isDevelopment;
+        }
+        if (key === 'safeTransaction.useVpcUrl') {
+          return useVpcUrl;
+        }
         throw new Error(`Unexpected key: ${key}`);
       });
       mockConfigService.get.mockReturnValue(apiKey);

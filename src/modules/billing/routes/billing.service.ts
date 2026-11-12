@@ -34,6 +34,7 @@ import type { SafeRef } from '#/modules/billing/domain/entities/safe-ref.entity'
 import type { WebhookEvent } from '#/modules/billing/domain/entities/webhook-event.entity';
 import type { SpaceOfferEligibility } from '#/modules/billing/domain/payment-link-offer.rules';
 import {
+  isGracePeriodClaimOpen,
   isOfferedToSpace,
   isUnclassifiedTrialLink,
   offersPlan,
@@ -63,6 +64,7 @@ import { IMembersRepository } from '#/modules/users/domain/members/members.repos
 export class BillingService {
   private readonly redirectConfig: RedirectConfig;
   private readonly enforcementStartsAt: Date;
+  private readonly gracePeriodClaimEndsAt: Date;
 
   public constructor(
     @Inject(IBillingRepository)
@@ -85,6 +87,9 @@ export class BillingService {
     this.redirectConfig = getRedirectConfig(this.configurationService);
     this.enforcementStartsAt = this.configurationService.getOrThrow<Date>(
       'entitlements.enforcementStartsAt',
+    );
+    this.gracePeriodClaimEndsAt = this.configurationService.getOrThrow<Date>(
+      'entitlements.gracePeriodClaimEndsAt',
     );
   }
 
@@ -411,10 +416,15 @@ export class BillingService {
     ]);
 
     return {
-      createdBeforeEnforcement: predatesEnforcement({
-        createdAt: spaceCreatedAt,
-        startsAt: this.enforcementStartsAt,
-      }),
+      isOfferedGracePeriod:
+        predatesEnforcement({
+          createdAt: spaceCreatedAt,
+          startsAt: this.enforcementStartsAt,
+        }) &&
+        isGracePeriodClaimOpen({
+          now: new Date(),
+          endsAt: this.gracePeriodClaimEndsAt,
+        }),
       hasEverSubscribed: subscription.hasEverSubscribed,
       activePlanId: subscription.activePlanId,
     };
