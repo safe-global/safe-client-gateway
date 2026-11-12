@@ -101,7 +101,9 @@ describe('JobQueueService & TestJobConsumer integration', () => {
 
     await service.addJob(JobType.TEST_JOB, data);
 
-    await waitUntil(() => consumer.handledJobs.length === 1);
+    // handledJobs is filled when process() starts; progress and completed
+    // events only fire after it, so wait for the terminal event.
+    await waitUntil(() => consumer.completedJobs.length === 1);
 
     const processedJob = consumer.handledJobs[0];
     expect(processedJob.name).toBe(JobType.TEST_JOB);
