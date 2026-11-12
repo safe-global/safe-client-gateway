@@ -399,6 +399,7 @@ describe('PortfolioSummariesV2Controller', () => {
       .query(query)
       .expect(200);
 
+    expect(summaries).toHaveLength(chains.length);
     expect(overviews).toHaveLength(chains.length);
     for (const summary of summaries) {
       expect(overviews).toContainEqual(

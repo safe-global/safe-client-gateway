@@ -466,6 +466,10 @@ export default () => ({
       process.env.FF_ZERION_TESTNETS_ENABLED?.toLowerCase() === 'true',
     zerionPositions:
       process.env.FF_ZERION_POSITIONS_DISABLED?.toLowerCase() !== 'true',
+    // Owner: One Balance Contract (WA-2826). Values /v2/safes from the cached
+    // /positions snapshot the portfolio routes read. Remove the flag, and the
+    // Zerion /portfolio path in `SafesV2Service`, once it is on in every
+    // environment and the web sends the same `trusted` value to every route.
     safesPortfolioSnapshot:
       process.env.FF_SAFES_PORTFOLIO_SNAPSHOT?.toLowerCase() === 'true',
     debugLogs: process.env.FF_DEBUG_LOGS?.toLowerCase() === 'true',

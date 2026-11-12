@@ -474,6 +474,53 @@ describe('SafesV2Service', () => {
       ).toBeCloseTo(walletOnPolygon, 6);
     });
 
+    it('reads a separate snapshot for the same address on a testnet', async () => {
+      fakeConfigurationService.set('features.zerionTestnets', true);
+      service = buildService();
+      mockChainsRepository.getChain.mockImplementation((chainId: string) =>
+        Promise.resolve(buildChain(chainId, chainId === '11155111')),
+      );
+      const address = getAddress(faker.finance.ethereumAddress());
+      const currency = faker.finance.currencyCode();
+      const trusted = faker.datatype.boolean();
+      const [onMainnet, onTestnet] = [fiat(), fiat()];
+      mockPortfolioRepository.getPortfolioSnapshot.mockImplementation(
+        ({ isTestnet }) =>
+          Promise.resolve(
+            portfolioSnapshotBuilder()
+              .with('tokenBalances', [
+                isTestnet
+                  ? token({ chainId: '11155111', value: onTestnet })
+                  : token({ chainId: '1', value: onMainnet }),
+              ])
+              .with('positionBalances', [])
+              .build(),
+          ),
+      );
+
+      const result = await service.getSafeOverview({
+        currency,
+        addresses: [
+          { chainId: '1', address },
+          { chainId: '11155111', address },
+        ],
+        trusted,
+      });
+
+      expect(
+        mockPortfolioRepository.getPortfolioSnapshot,
+      ).toHaveBeenCalledTimes(2);
+      expect(mockPortfolioRepository.getPortfolioSnapshot).toHaveBeenCalledWith(
+        { address, fiatCode: currency, trusted, isTestnet: true },
+      );
+      expect(
+        Number(result.find(({ chainId }) => chainId === '1')?.fiatTotal),
+      ).toBeCloseTo(onMainnet, 6);
+      expect(
+        Number(result.find(({ chainId }) => chainId === '11155111')?.fiatTotal),
+      ).toBeCloseTo(onTestnet, 6);
+    });
+
     it('returns a real $0 for a Zerion chain with no rows in the snapshot', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
       mockPortfolioRepository.getPortfolioSnapshot.mockResolvedValue(
