@@ -33,6 +33,7 @@ describe('PortfolioApiService', () => {
     mockDomainService = {
       getPortfolio: vi.fn(),
       clearZerionCaches: vi.fn(),
+      getClearedAt: vi.fn(),
     } as MockedObject<IDomainPortfolioService>;
 
     mockChainsRepository = {
@@ -51,7 +52,6 @@ describe('PortfolioApiService', () => {
 
     mockCacheService = {
       increment: vi.fn(),
-      getCounter: vi.fn(),
     } as MockedObject<ICacheService>;
 
     const configurationService = new FakeConfigurationService();
@@ -254,7 +254,7 @@ describe('PortfolioApiService', () => {
         safeBuilder().with('address', address).build(),
       );
       mockCacheService.increment.mockResolvedValue(1);
-      mockCacheService.getCounter.mockResolvedValue(null);
+      mockDomainService.getClearedAt.mockResolvedValue(null);
 
       await service.clearZerionCaches({ chainId, address });
 
@@ -284,7 +284,7 @@ describe('PortfolioApiService', () => {
 
       await service.clearZerionCaches({ chainId, address });
 
-      expect(mockCacheService.getCounter).not.toHaveBeenCalled();
+      expect(mockDomainService.getClearedAt).not.toHaveBeenCalled();
       expect(mockDomainService.clearZerionCaches).not.toHaveBeenCalled();
     });
 
@@ -295,16 +295,14 @@ describe('PortfolioApiService', () => {
         safeBuilder().with('address', address).build(),
       );
       mockCacheService.increment.mockResolvedValue(1);
-      mockCacheService.getCounter.mockResolvedValue(
+      mockDomainService.getClearedAt.mockResolvedValue(
         Date.now() -
           faker.number.int({ min: 0, max: (recentClearSeconds - 1) * 1_000 }),
       );
 
       await service.clearZerionCaches({ chainId, address });
 
-      expect(mockCacheService.getCounter).toHaveBeenCalledWith(
-        CacheRouter.getPortfolioClearedAtCacheKey({ address }),
-      );
+      expect(mockDomainService.getClearedAt).toHaveBeenCalledWith({ address });
       expect(mockDomainService.clearZerionCaches).not.toHaveBeenCalled();
     });
 
@@ -315,7 +313,7 @@ describe('PortfolioApiService', () => {
         safeBuilder().with('address', address).build(),
       );
       mockCacheService.increment.mockResolvedValue(1);
-      mockCacheService.getCounter.mockResolvedValue(
+      mockDomainService.getClearedAt.mockResolvedValue(
         Date.now() -
           faker.number.int({
             min: (recentClearSeconds + 1) * 1_000,

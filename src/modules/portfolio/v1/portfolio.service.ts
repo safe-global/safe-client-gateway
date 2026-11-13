@@ -92,9 +92,9 @@ export class PortfolioApiService {
    * @returns True if the last clear is younger than the window
    */
   private async _wasClearedRecently(address: Address): Promise<boolean> {
-    const clearedAt = await this.cacheService.getCounter(
-      CacheRouter.getPortfolioClearedAtCacheKey({ address }),
-    );
+    const clearedAt = await this.domainPortfolioService.getClearedAt({
+      address,
+    });
     return (
       clearedAt !== null &&
       Date.now() - clearedAt < this.recentClearSeconds * 1_000

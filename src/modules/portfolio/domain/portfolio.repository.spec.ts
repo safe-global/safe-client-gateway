@@ -633,6 +633,31 @@ describe('PortfolioRepository', () => {
         );
       });
     });
+
+    describe('getClearedAt', () => {
+      it('returns the time the caches were last cleared', async () => {
+        const clearedAt = faker.date.recent().getTime();
+        mockCacheService.getCounter.mockResolvedValue(clearedAt);
+
+        const result = await repository.getClearedAt({ address });
+
+        expect(result).toBe(clearedAt);
+        expect(mockCacheService.getCounter).toHaveBeenCalledWith(
+          CacheRouter.getPortfolioClearedAtCacheKey({ address }),
+        );
+      });
+
+      it.each([
+        ['null', null],
+        ['0, as Redis reads a missing key', 0],
+      ])('returns null when the key reads %s', async (_, value) => {
+        mockCacheService.getCounter.mockResolvedValue(value);
+
+        const result = await repository.getClearedAt({ address });
+
+        expect(result).toBeNull();
+      });
+    });
   });
 
   describe('getPortfolioSnapshot', () => {

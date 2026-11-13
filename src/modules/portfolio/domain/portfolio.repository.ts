@@ -201,9 +201,7 @@ export class PortfolioRepository implements IPortfolioRepository {
     fetchedAt: number;
   }): Promise<{ expiresAt: number; isSettling: boolean }> {
     const expiresAt = args.fetchedAt + this.cacheExpirationSeconds * 1_000;
-    const clearedAt = await this.cacheService.getCounter(
-      CacheRouter.getPortfolioClearedAtCacheKey({ address: args.address }),
-    );
+    const clearedAt = await this.getClearedAt({ address: args.address });
     const settledAt =
       clearedAt === null
         ? null
@@ -214,6 +212,23 @@ export class PortfolioRepository implements IPortfolioRepository {
     return settledAt < expiresAt
       ? { expiresAt: settledAt, isSettling: true }
       : { expiresAt, isSettling: false };
+  }
+
+  /**
+   * When the address's Zerion caches were last cleared. The only reader of
+   * the clear-time key, so the settle window and the clear route agree.
+   *
+   * @param {{ address: Address }} args - Lookup parameters
+   * @returns {Promise<number | null>} The clear time in epoch ms, or null
+   */
+  public async getClearedAt(args: {
+    address: Address;
+  }): Promise<number | null> {
+    const clearedAt = await this.cacheService.getCounter(
+      CacheRouter.getPortfolioClearedAtCacheKey({ address: args.address }),
+    );
+    // Redis reads a missing key as 0, which is never a real clear time
+    return clearedAt || null;
   }
 
   /**
