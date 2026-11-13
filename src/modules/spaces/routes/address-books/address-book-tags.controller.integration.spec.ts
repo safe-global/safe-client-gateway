@@ -1066,7 +1066,7 @@ describe('AddressBooksController tags', () => {
     const memberAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
     const member = {
       role: 'MEMBER',
-      name: faker.person.firstName(),
+      name: nameBuilder(),
       address: memberAuthPayloadDto.signer_address,
     };
     const inviteResponse = await request(app.getHttpServer())
@@ -1086,7 +1086,7 @@ describe('AddressBooksController tags', () => {
     spaceId: string;
     adminAccessToken: string;
   }): Promise<{ memberAccessToken: string }> => {
-    const memberName = faker.person.firstName();
+    const memberName = nameBuilder();
     const memberAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
     const inviteResponse = await request(app.getHttpServer())
       .post(`/v1/spaces/${args.spaceId}/members/invite`)
