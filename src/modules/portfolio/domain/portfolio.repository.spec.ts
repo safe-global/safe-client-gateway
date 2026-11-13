@@ -800,7 +800,6 @@ describe('PortfolioRepository', () => {
         { address: getAddress(faker.finance.ethereumAddress()) },
       ],
       ['another currency', { fiatCode: `${args.fiatCode}X` }],
-      ['a sync request', { sync: true }],
     ])('does not share a call with %s', async (_, other) => {
       mockCacheService.hGet.mockResolvedValue(null);
       mockPortfolioApi.getPortfolio.mockResolvedValue(
@@ -815,15 +814,27 @@ describe('PortfolioRepository', () => {
       expect(mockPortfolioApi.getPortfolio).toHaveBeenCalledTimes(2);
     });
 
-    it('shares one Zerion call between concurrent sync reads', async () => {
-      mockPortfolioApi.getPortfolio.mockResolvedValue(
-        rawify(portfolioBuilder().build()),
+    it('shares one Zerion call between sync and plain reads of the same entry', async () => {
+      mockCacheService.hGet.mockResolvedValue(null);
+      let resolveFetch: (
+        value: Awaited<ReturnType<IPortfolioApi['getPortfolio']>>,
+      ) => void = () => {};
+      mockPortfolioApi.getPortfolio.mockReturnValue(
+        new Promise((resolve) => {
+          resolveFetch = resolve;
+        }),
       );
 
-      await Promise.all([
+      const reads = Promise.all([
         repository.getPortfolio({ ...args, sync: true }),
+        repository.getPortfolio(args),
         repository.getPortfolio({ ...args, sync: true }),
       ]);
+      await vi.waitFor(() =>
+        expect(mockPortfolioApi.getPortfolio).toHaveBeenCalledTimes(1),
+      );
+      resolveFetch(rawify(portfolioBuilder().build()));
+      await reads;
 
       expect(mockPortfolioApi.getPortfolio).toHaveBeenCalledTimes(1);
     });
