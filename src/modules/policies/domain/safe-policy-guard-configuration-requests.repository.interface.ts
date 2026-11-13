@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import type { Hex } from 'viem';
 import type { PolicyConfigurationRequest } from '#/modules/policies/domain/entities/policy-configuration-request.entity';
 import type { SafePolicyGuardConfiguration } from '#/modules/policies/domain/entities/safe-policy-guard-configuration.entity';
 import type { SafeRef } from '#/modules/policies/domain/entities/safe-ref.entity';
@@ -17,6 +18,12 @@ export interface ISafePolicyGuardConfigurationRequestsRepository {
   create(
     args: Omit<PolicyConfigurationRequest, 'id' | 'createdAt'>,
   ): Promise<void>;
+
+  /** The roots stored for {@link args.safe} in one Space. */
+  findRootsBySafe(args: {
+    spaceId: number;
+    safe: SafeRef;
+  }): Promise<Array<Hex>>;
 
   /** The configurations stored for {@link args.safes} in one Space, oldest first. */
   findBySafes(args: {

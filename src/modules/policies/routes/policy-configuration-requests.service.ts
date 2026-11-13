@@ -106,16 +106,16 @@ export class PolicyConfigurationRequestsService {
     safe: SafeRef;
     root: Hex;
   }): Promise<void> {
-    const stored = await this.configurationRequestsRepository.findBySafes({
+    const stored = await this.configurationRequestsRepository.findRootsBySafe({
       spaceId: args.spaceId,
-      safes: [args.safe],
+      safe: args.safe,
     });
-    if (stored.some(({ root }) => root === args.root)) {
+    if (stored.includes(args.root)) {
       return;
     }
 
     const closed = await this.closedRootsOf(args.safe);
-    const active = stored.filter(({ root }) => !closed.has(root));
+    const active = stored.filter((root) => !closed.has(root));
     if (active.length >= this.maxPerSpaceSafe) {
       throw new HttpExceptionNoLog(
         `This Safe only allows a maximum of ${this.maxPerSpaceSafe} active policy configuration requests in this space.`,

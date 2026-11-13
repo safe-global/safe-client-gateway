@@ -399,4 +399,41 @@ describe('SafePolicyGuardConfigurationRequestsRepository', () => {
       ).resolves.toStrictEqual([]);
     });
   });
+
+  describe('findRootsBySafe', () => {
+    it('should return the stored roots of the given Safe only', async () => {
+      const first = storableRequest();
+      const second = storableRequest({ safeAddress: first.safeAddress });
+      for (const request of [first, second, storableRequest()]) {
+        await repository.create(request);
+      }
+
+      const roots = await repository.findRootsBySafe({
+        spaceId,
+        safe: { chainId: first.chainId, address: first.safeAddress },
+      });
+
+      expect(roots.toSorted()).toStrictEqual(
+        [first.root, second.root].toSorted(),
+      );
+    });
+
+    it('should match the Safe by its blind index when encryption is enabled', async () => {
+      const request = storableRequest();
+      encryptionService.safeAddressIndex.mockReturnValue(
+        faker.string.hexadecimal({ length: 64 }),
+      );
+      encryptionService.encryptSafeAddress.mockResolvedValue(
+        `kms:v1:${faker.string.alphanumeric(32)}`,
+      );
+      await repository.create(request);
+
+      await expect(
+        repository.findRootsBySafe({
+          spaceId,
+          safe: { chainId: request.chainId, address: request.safeAddress },
+        }),
+      ).resolves.toStrictEqual([request.root]);
+    });
+  });
 });

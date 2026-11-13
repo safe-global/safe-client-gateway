@@ -9,12 +9,10 @@ import type { ILoggingService } from '#/logging/logging.interface';
 import { siweAuthPayloadDtoBuilder } from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
 import { policyConfigurationBuilder } from '#/modules/policies/domain/entities/__tests__/policy-configuration.builder';
-import { safePolicyGuardConfigurationBuilder } from '#/modules/policies/domain/entities/__tests__/safe-policy-guard-configuration.builder';
 import { policyIndexerConfigurationRootBuilder } from '#/modules/policies/domain/entities/indexer/__tests__/configuration-root.builder';
 import { policyIndexerResponseBuilder } from '#/modules/policies/domain/entities/indexer/__tests__/policy-indexer-state.builder';
 import type { PolicyIndexerConfigurationRoot } from '#/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 import type { PolicyConfiguration } from '#/modules/policies/domain/entities/policy-configuration.entity';
-import type { SafePolicyGuardConfiguration } from '#/modules/policies/domain/entities/safe-policy-guard-configuration.entity';
 import type { IPolicyIndexerRepository } from '#/modules/policies/domain/policy-indexer.repository.interface';
 import type { ISafePolicyGuardConfigurationRequestsRepository } from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository.interface';
 import {
@@ -29,7 +27,7 @@ import type { IMembersRepository } from '#/modules/users/domain/members/members.
 
 describe('PolicyConfigurationRequestsService', () => {
   const configurationRequestsRepository: MockedObject<ISafePolicyGuardConfigurationRequestsRepository> =
-    { create: vi.fn(), findBySafes: vi.fn() };
+    { create: vi.fn(), findRootsBySafe: vi.fn(), findBySafes: vi.fn() };
   const membersRepository: MockedObject<Pick<IMembersRepository, 'findOne'>> = {
     findOne: vi.fn(),
   };
@@ -87,7 +85,7 @@ describe('PolicyConfigurationRequestsService', () => {
     membersRepository.findOne.mockResolvedValue(memberBuilder().build());
     spaceSafesRepository.existsInSpace.mockResolvedValue(true);
     configurationRequestsRepository.create.mockResolvedValue();
-    configurationRequestsRepository.findBySafes.mockResolvedValue([]);
+    configurationRequestsRepository.findRootsBySafe.mockResolvedValue([]);
     policyIndexerRepository.getState.mockResolvedValue(
       policyIndexerResponseBuilder().build(),
     );
@@ -183,15 +181,13 @@ describe('PolicyConfigurationRequestsService', () => {
       HttpStatus.BAD_REQUEST,
     );
 
-    /** Stores {@link maxPerSpaceSafe} configurations for the Safe. */
-    function fillCap(): Array<SafePolicyGuardConfiguration> {
-      const stored = Array.from({ length: maxPerSpaceSafe }, () =>
-        safePolicyGuardConfigurationBuilder()
-          .with('chainId', safe.chainId)
-          .with('safeAddress', safe.address)
-          .build(),
+    /** Stores {@link maxPerSpaceSafe} roots for the Safe. */
+    function fillCap(): Array<Hex> {
+      const stored = Array.from(
+        { length: maxPerSpaceSafe },
+        () => validPayload().root,
       );
-      configurationRequestsRepository.findBySafes.mockResolvedValue(stored);
+      configurationRequestsRepository.findRootsBySafe.mockResolvedValue(stored);
       return stored;
     }
 
@@ -214,22 +210,22 @@ describe('PolicyConfigurationRequestsService', () => {
       await expect(
         target.create({ ...request, payload: validPayload() }),
       ).rejects.toThrow(capError);
-      expect(configurationRequestsRepository.findBySafes).toHaveBeenCalledWith({
-        spaceId,
-        safes: [safe],
-      });
+      expect(
+        configurationRequestsRepository.findRootsBySafe,
+      ).toHaveBeenCalledWith({ spaceId, safe });
       expect(configurationRequestsRepository.create).not.toHaveBeenCalled();
     });
 
     it('should accept a stored root again at the maximum', async () => {
-      const [{ root, configurations }] = fillCap();
+      const payload = validPayload();
+      configurationRequestsRepository.findRootsBySafe.mockResolvedValue([
+        payload.root,
+        ...fillCap().slice(1),
+      ]);
 
       await expect(
-        target.create({
-          ...request,
-          payload: { root, configurations: [configurations[0]] },
-        }),
-      ).resolves.toStrictEqual({ root });
+        target.create({ ...request, payload }),
+      ).resolves.toStrictEqual({ root: payload.root });
       expect(policyIndexerRepository.getState).not.toHaveBeenCalled();
     });
 
@@ -240,7 +236,7 @@ describe('PolicyConfigurationRequestsService', () => {
     ])(
       'should not count a root that is %s on-chain',
       async (_, status, expiresIn) => {
-        const [{ root: closed }] = fillCap();
+        const [closed] = fillCap();
         policyIndexerRepository.getState.mockResolvedValue(
           policyIndexerResponseBuilder()
             .with('roots', [onChain(closed, status, nowSeconds + expiresIn)])
@@ -263,7 +259,7 @@ describe('PolicyConfigurationRequestsService', () => {
     );
 
     it('should count a root that can still be applied', async () => {
-      const [{ root: open }] = fillCap();
+      const [open] = fillCap();
       policyIndexerRepository.getState.mockResolvedValue(
         policyIndexerResponseBuilder()
           .with('roots', [onChain(open, 'PENDING', nowSeconds + 1)])
@@ -276,7 +272,7 @@ describe('PolicyConfigurationRequestsService', () => {
     });
 
     it('should count a root closed on one guard but open on another', async () => {
-      const [{ root }] = fillCap();
+      const [root] = fillCap();
       policyIndexerRepository.getState.mockResolvedValue(
         policyIndexerResponseBuilder()
           .with('roots', [
