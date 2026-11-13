@@ -56,6 +56,7 @@
 | [`SEC-02`](#sec-02) | Bounded sensitive fields | general / security |
 | [`SEC-03`](#sec-03) | CI and dependency intake are privilege boundaries | general / security |
 | [`CACHE-03`](#cache-03) | Cached payload shape is canonical once | general / cache |
+| [`CACHE-04`](#cache-04) | Upstream reads cached and cleared with their source | cache |
 | [`DATA-01`](#data-01) | Aggregates match returned items and signed values | general / data |
 | [`TX-01`](#tx-01) | Decode what the transaction executes | transactions |
 | [`RESILIENCE-01`](#resilience-01) | Resilience policy semantics | resilience |
@@ -389,10 +390,10 @@ value.
 <a id="mod-01"></a>
 ### `MOD-01` Behavior in the right module
 
-> **general** · modules · ↩ `RL-20260128-002` · `RL-20260608-002` · `RL-20260608-003` · `RL-20260710-004` · `RL-20260707-003` · `RL-20260717-003` · `RL-20260922-001` · `RL-20260925-004` · `RL-20261016-005`
+> **general** · modules · ↩ `RL-20260128-002` · `RL-20260608-002` · `RL-20260608-003` · `RL-20260710-004` · `RL-20260707-003` · `RL-20260717-003` · `RL-20260922-001` · `RL-20260925-004` · `RL-20261016-005` · `RL-20261110-003`
 
 **📜 Rule**\
-New API/product behavior belongs in the matching module shape; do not bolt routes onto unrelated modules; do not bypass an existing feature flag by importing a gated module unconditionally. Default-off feature modules stay scoped: not `@Global()`, not registered in the shared test module — override only in the specs that exercise them. Domain services depend on a feature-scoped orchestration service, not on generic infrastructure services (email, queues) directly. One upstream service maps to one module, one config section (topic name, no `-service` suffix), and one namespace/cache prefix. Provider-specific calls live in that provider's API service — no parallel clients, and generic clients do not own business tunables. Never bypass `NetworkService` with a raw `fetch` — extend the shared client (e.g. plain-text response bodies) so logging and circuit breakers stay in the path. A Space-scoped route (`spaces/:spaceId/...`) lives in the module that owns the capability and imports `SpacesModule` for the membership assertion; Spaces does not host other features' routes.
+New API/product behavior belongs in the matching module shape; do not bolt routes onto unrelated modules; do not bypass an existing feature flag by importing a gated module unconditionally. Default-off feature modules stay scoped: not `@Global()`, not registered in the shared test module — override only in the specs that exercise them. Domain services depend on a feature-scoped orchestration service, not on generic infrastructure services (email, queues) directly. One upstream service maps to one module, one config section (topic name, no `-service` suffix), and one namespace/cache prefix. Provider-specific calls live in that provider's API service — no parallel clients, and generic clients do not own business tunables. Never bypass `NetworkService` with a raw `fetch` — extend the shared client (e.g. plain-text response bodies) so logging and circuit breakers stay in the path, and pass query values as `networkRequest.params`, never a hand-built query string. A Space-scoped route (`spaces/:spaceId/...`) lives in the module that owns the capability and imports `SpacesModule` for the membership assertion; Spaces does not host other features' routes.
 
 **✅ Check**\
 > Does new API/product behavior live in the right module?
@@ -3220,13 +3221,13 @@ wrapping and keeps the fixture type-checked against the real response type.
 <a id="test-02"></a>
 ### `TEST-02` Right test layer (pyramid)
 
-> **general** · tests · 1 example · ↩ `RL-20260506-001` · `RL-20260508-001` · `RL-20260529-004` · `RL-20260810-002` · `RL-20260922-005` · `RL-20261002-003`
+> **general** · tests · 1 example · ↩ `RL-20260506-001` · `RL-20260508-001` · `RL-20260529-004` · `RL-20260810-002` · `RL-20260922-005` · `RL-20261002-003` · `RL-20261112-001`
 
 **📜 Rule**\
-Test business logic with unit tests; test wiring and contracts with integration/e2e. Push negative paths and branch coverage to the lowest layer that can prove the property: schema/zod rules → schema unit (`*.dto.entity.spec.ts` or similar); service/repository branches (auth assertions, affected=0, error mapping) → service/repo unit; route wiring + global filter mappings (`NotFoundException → 404`, `ForbiddenException → 403`, validation → 422) → integration/e2e. End-to-end tests prove wiring once per route, not once per branch — one representative 4xx mapping smoke per route is enough; do not duplicate per-branch negatives at higher layers. Layout still applies: `*.spec.ts` for unit (no Postgres/Redis/RabbitMQ, no Nest bootstrap), `*.integration.spec.ts` for DB/Nest-bootstrapped, `*.e2e-spec.ts` for full HTTP flow. Tests in `src/__tests__/` are reserved for shared resources. Test private methods through public callers; extract a helper if direct testing is required. Decision rule: "Can I test this meaningfully without starting the app, database, network, or framework?" If yes, it is a unit test. A test that restates a constant the same diff introduced proves nothing beyond the tests that exercise it.
+Test business logic with unit tests; test wiring and contracts with integration/e2e. Push negative paths and branch coverage to the lowest layer that can prove the property: schema/zod rules → schema unit (`*.dto.entity.spec.ts` or similar); service/repository branches (auth assertions, affected=0, error mapping) → service/repo unit; route wiring + global filter mappings (`NotFoundException → 404`, `ForbiddenException → 403`, validation → 422) → integration/e2e. End-to-end tests prove wiring once per route, not once per branch — one representative 4xx mapping smoke per route is enough; do not duplicate per-branch negatives at higher layers. Layout still applies: `*.spec.ts` for unit (no Postgres/Redis/RabbitMQ, no Nest bootstrap), `*.integration.spec.ts` for DB/Nest-bootstrapped, `*.e2e-spec.ts` for full HTTP flow. CI does not run `*.e2e-spec.ts`, so a change to a route's status, body or timing greps the e2e specs that call it and fixes them in the same PR. Tests in `src/__tests__/` are reserved for shared resources. Test private methods through public callers; extract a helper if direct testing is required. Decision rule: "Can I test this meaningfully without starting the app, database, network, or framework?" If yes, it is a unit test. A test that restates a constant the same diff introduced proves nothing beyond the tests that exercise it.
 
 **✅ Check**\
-> Does each assertion live at the lowest layer that can prove it, and did I avoid duplicating the same scenario across unit, integration, and e2e?
+> Does each assertion live at the lowest layer that can prove it, did I avoid duplicating the same scenario across unit, integration, and e2e, and did I fix the e2e specs my change breaks, which CI does not run?
 
 <details>
 <summary><strong>💡 Example</strong> — <code>examples/testing.md</code> § <em>test-02-suffix-matches-the-test-layer</em></summary>
@@ -3278,16 +3279,16 @@ runs can stay fast and integration runs stay reproducible.
 <a id="test-04"></a>
 ### `TEST-04` Cover security paths
 
-> **general** · tests · 1 example · ↩ `RL-20260506-004` · `RL-20251223-002` · `RL-20251219-001` · `RL-20260615-001` · `RL-20260826-001` · `RL-20261002-005`
+> **general** · tests · 2 examples · ↩ `RL-20260506-004` · `RL-20251223-002` · `RL-20251219-001` · `RL-20260615-001` · `RL-20260826-001` · `RL-20261002-005`
 
 **📜 Rule**\
-Security-sensitive paths and error scenarios have explicit negative-path coverage. HTML/free-text user input has sanitizer tests with `<script>` and entity-encoded payloads. Negative authorization tests isolate exactly one denial factor — an ACTIVE non-admin for role checks, a pending member for status checks — so the rejection cannot come from an unrelated condition. Positive authorization tests include the least-privileged role that should pass (an ACTIVE `MEMBER`), not only the admin the fixture creates. When the argument for an abstraction is that it prevents a mistake, the enforcement is the test that catches the mistake — a required parameter only forces passing something, not the right thing.
+Security-sensitive paths and error scenarios have explicit negative-path coverage. HTML/free-text user input has sanitizer tests with `<script>` and entity-encoded payloads. Negative authorization tests isolate exactly one denial factor — an ACTIVE non-admin for role checks, a pending member for status checks — so the rejection cannot come from an unrelated condition — and assert the denial message, since a reordered check can return the same status. Positive authorization tests include the least-privileged role that should pass (an ACTIVE `MEMBER`), not only the admin the fixture creates. When the argument for an abstraction is that it prevents a mistake, the enforcement is the test that catches the mistake — a required parameter only forces passing something, not the right thing.
 
 **✅ Check**\
 > Are security and negative paths covered, and is the least-privileged allowed role tested?
 
 <details>
-<summary><strong>💡 Example</strong> — <code>examples/testing.md</code> § <em>test-04-when-a-required-field-is-added-to-config-update-every-fixture</em></summary>
+<summary><strong>💡 Example 1 of 2</strong> — <code>examples/testing.md</code> § <em>test-04-when-a-required-field-is-added-to-config-update-every-fixture</em></summary>
 
 <br>
 
@@ -3331,6 +3332,40 @@ on the new field rather than the intended `LOG_LEVEL` problem, so the test
 silently asserts the wrong thing and looks green for the wrong reason.
 
 <sub>Source: <a href="examples/testing.md#test-04-when-a-required-field-is-added-to-config-update-every-fixture">examples/testing.md#test-04-when-a-required-field-is-added-to-config-update-every-fixture</a></sub>
+
+</details>
+
+<details>
+<summary><strong>💡 Example 2 of 2</strong> — <code>examples/testing.md</code> § <em>test-04-assert-which-check-denied-not-only-the-status</em></summary>
+
+<br>
+
+**TEST-04 — Assert which check denied, not only the status**
+
+Source: PR #3623 (RL-20260615-001)
+
+### Avoid
+
+```ts
+expect(response.status).toBe(HttpStatus.FORBIDDEN);
+```
+
+### Prefer
+
+```ts
+expect(response.status).toBe(HttpStatus.FORBIDDEN);
+expect(response.body).toMatchObject({
+  message: 'User is not a member of this workspace',
+});
+```
+
+### Why
+
+The Safe-in-Workspace check also answers 403, and it ran first for a Safe
+outside the Workspace. Checking the message keeps the test on the member check
+when the order of checks changes.
+
+<sub>Source: <a href="examples/testing.md#test-04-assert-which-check-denied-not-only-the-status">examples/testing.md#test-04-assert-which-check-denied-not-only-the-status</a></sub>
 
 </details>
 
@@ -3426,16 +3461,16 @@ Implementation-selection changes (provider, mapper, datasource) need full-pipeli
 <a id="test-08"></a>
 ### `TEST-08` Test names match assertions
 
-> **general** · tests · 2 examples · ↩ `RL-20260602-005` · `RL-20260615-002` · `RL-20260702-001` · `RL-20260729-001` · `RL-20260812-001` · `RL-20260907-001` · `RL-20260923-001` · `RL-20260928-003` · `RL-20261002-009` · `RL-20261014-003` · `RL-20261014-008`
+> **general** · tests · 4 examples · ↩ `RL-20260602-005` · `RL-20260615-002` · `RL-20260702-001` · `RL-20260729-001` · `RL-20260812-001` · `RL-20260907-001` · `RL-20260923-001` · `RL-20260928-003` · `RL-20261002-009` · `RL-20261014-003` · `RL-20261014-008`
 
 **📜 Rule**\
-Test descriptions and generated data reflect the actual assertion: `it('should return false when there is no source swap')` not `'when bridging to a different chain'`. Avoid redundant `expect(success).toBe(true); if (success) { ... }`. Fixture values reflect domain semantics even when unasserted — an admin's `invitedBy` is `null`, not a random int. Test helpers are named after the state they produce (`createActiveMember` vs `createPendingMember`), with the same terminology used across specs. Invalid-input fixtures are invalid by construction (a literal or constructive generator), never a random sample that is only usually invalid. Removing a key from a schema does not fail specs that still set it — a stripping parser silently drops it — so grep the old key across specs and fixtures as part of the removal. A negative invariant is asserted negatively and over the whole collection, never by positively asserting some other value at index 0. Test data derives from the source of truth, except when that constant is what the test pins — then the cases are written out literally, with a comment saying why. A test named for a path (a cache hit, a flag-on branch) asserts the precondition that puts it there, with fake clocks set before fixtures that stamp time. When an assertion is about a field, pin that field in the fixture (`.with('flag', true)`) instead of asserting back whatever faker generated.
+Test descriptions and generated data reflect the actual assertion: `it('should return false when there is no source swap')` not `'when bridging to a different chain'`. Avoid redundant `expect(success).toBe(true); if (success) { ... }`. Fixture values reflect domain semantics even when unasserted — an admin's `invitedBy` is `null`, not a random int. Test helpers are named after the state they produce (`createActiveMember` vs `createPendingMember`), with the same terminology used across specs. Invalid-input fixtures are invalid by construction (a literal or constructive generator), never a random sample that is only usually invalid. Removing a key from a schema does not fail specs that still set it — a stripping parser silently drops it — so grep the old key across specs and fixtures as part of the removal. A negative invariant is asserted negatively and over the whole collection, never by positively asserting some other value at index 0. Test data derives from the source of truth, except when that constant is what the test pins — then the cases are written out literally, with a comment saying why. A test named for a path (a cache hit, a flag-on branch) asserts the precondition that puts it there, with fake clocks set before fixtures that stamp time. When an assertion is about a field, pin that field in the fixture (`.with('flag', true)`) instead of asserting back whatever faker generated; a scenario that needs a value the test configuration randomizes pins it in its config override.
 
 **✅ Check**\
 > Do test names, fixtures, and generated data match the assertions and the domain semantics?
 
 <details>
-<summary><strong>💡 Example 1 of 2</strong> — <code>examples/testing.md</code> § <em>test-08-assert-a-negative-invariant-negatively-over-the-whole-collection</em></summary>
+<summary><strong>💡 Example 1 of 4</strong> — <code>examples/testing.md</code> § <em>test-08-assert-a-negative-invariant-negatively-over-the-whole-collection</em></summary>
 
 <br>
 
@@ -3480,7 +3515,7 @@ than letting it stand in for the negative.
 </details>
 
 <details>
-<summary><strong>💡 Example 2 of 2</strong> — <code>examples/testing.md</code> § <em>test-08-pin-the-field-the-assertion-is-about</em></summary>
+<summary><strong>💡 Example 2 of 4</strong> — <code>examples/testing.md</code> § <em>test-08-pin-the-field-the-assertion-is-about</em></summary>
 
 <br>
 
@@ -3517,6 +3552,87 @@ case it covers, and its meaning changes with the seed. Pin the field the
 assertion is about and leave faker on the fields the test does not reason about.
 
 <sub>Source: <a href="examples/testing.md#test-08-pin-the-field-the-assertion-is-about">examples/testing.md#test-08-pin-the-field-the-assertion-is-about</a></sub>
+
+</details>
+
+<details>
+<summary><strong>💡 Example 3 of 4</strong> — <code>examples/testing.md</code> § <em>test-08-assert-the-parse-succeeded-before-its-value</em></summary>
+
+<br>
+
+**TEST-08 — Assert the parse succeeded before its value**
+
+Source: PR #3593 (RL-20261002-009)
+
+### Avoid
+
+```ts
+const result = BooleanStringSchema.safeParse('false');
+
+expect(result.success && result.data).toBe(false);
+```
+
+### Prefer
+
+```ts
+const result = BooleanStringSchema.safeParse('false');
+
+expect(result.success).toBe(true);
+expect(result.success && result.data).toBe(false);
+```
+
+### Why
+
+`result.success && result.data` is `false` when the parse fails too, so the
+case passes against a schema that rejects `'false'`. Asserting `success` first
+puts the test on the path its name claims.
+
+<sub>Source: <a href="examples/testing.md#test-08-assert-the-parse-succeeded-before-its-value">examples/testing.md#test-08-assert-the-parse-succeeded-before-its-value</a></sub>
+
+</details>
+
+<details>
+<summary><strong>💡 Example 4 of 4</strong> — <code>examples/testing.md</code> § <em>test-08-pin-a-randomized-test-config-value-the-scenario-needs</em></summary>
+
+<br>
+
+**TEST-08 — Pin a randomized test-config value the scenario needs**
+
+Source: PR #3742 (RL-20260923-001)
+
+### Avoid
+
+```ts
+const moduleFixture = await createTestModule({
+  config: () => ({
+    ...defaultConfiguration,
+    features: { ...defaultConfiguration.features, zerion: true },
+  }),
+});
+```
+
+### Prefer
+
+```ts
+const moduleFixture = await createTestModule({
+  config: () => ({
+    ...defaultConfiguration,
+    features: { ...defaultConfiguration.features, zerion: true },
+    mappings: {
+      ...defaultConfiguration.mappings,
+      safe: { ...defaultConfiguration.mappings.safe, maxOverviews: 10 },
+    },
+  }),
+});
+```
+
+### Why
+
+The test configuration draws `maxOverviews` from 1 to 5. A two-chain scenario
+needs at least 2, so it failed whenever the draw was 1. A value the scenario
+depends on is pinned in its own config override.
+
+<sub>Source: <a href="examples/testing.md#test-08-pin-a-randomized-test-config-value-the-scenario-needs">examples/testing.md#test-08-pin-a-randomized-test-config-value-the-scenario-needs</a></sub>
 
 </details>
 
@@ -4112,6 +4228,21 @@ and the bug only reproduces under cache-warm conditions.
 <sub>Source: <a href="examples/cache.md#cache-03-normalize-cached-payloads-exactly-once">examples/cache.md#cache-03-normalize-cached-payloads-exactly-once</a></sub>
 
 </details>
+
+---
+
+## 📂 cache
+
+<a id="cache-04"></a>
+### `CACHE-04` Upstream reads cached and cleared with their source
+
+> cache · ↩ `RL-20261110-001` · `RL-20261110-002`
+
+**📜 Rule**\
+A new route that calls an upstream on every request ships with its cache (`CacheRouter` key, TTL from config) in the same PR, or stays behind its own default-off feature flag until the cache lands. A cache built over data another cache already holds (a per-Space queue page over per-Safe queues) is cleared everywhere that source is cleared: the same hook events and any eager clear on a CGW write path (`deleteTransaction`).
+
+**✅ Check**\
+> Does a new upstream-backed route have a cache, or a default-off flag until it does, and is a derived cache cleared on every path that clears its source?
 
 ---
 

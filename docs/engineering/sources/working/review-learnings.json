@@ -567,7 +567,8 @@
     "sourceWindowId": "CLOSED-20251211-20251218",
     "prNumbers": [
       2845,
-      3451
+      3451,
+      3593
     ],
     "prState": "merged",
     "reviewCommentIds": [
@@ -576,9 +577,13 @@
       4094180585,
       4094644246
     ],
-    "reviewIds": [],
-    "issueCommentIds": [],
-    "learning": "When a feature PR also includes an unrelated test infrastructure fix (faker seed reset, race-condition shim, lint-only edits), split that fix into its own PR. The mixed scope hides whichever of the two the review actually verified, and bisecting later treats the feature commit as the cause of any regression in the unrelated cleanup. A cousin in #3451: a local setup script with plain-text default credentials was committed with a feature PR by accident; review asked whether it belonged in the repo and the author removed it. Check the file list for files the change does not need before opening the PR.",
+    "reviewIds": [
+      5664478973
+    ],
+    "issueCommentIds": [
+      6437906841
+    ],
+    "learning": "When a feature PR also includes an unrelated test infrastructure fix (faker seed reset, race-condition shim, lint-only edits), split that fix into its own PR. The mixed scope hides whichever of the two the review actually verified, and bisecting later treats the feature commit as the cause of any regression in the unrelated cleanup. A cousin in #3451: a local setup script with plain-text default credentials was committed with a feature PR by accident; review asked whether it belonged in the repo and the author removed it. Check the file list for files the change does not need before opening the PR. Recurred in #3593: a route PR also rewrote and moved an agent-guide bullet the route did not need, adding advice existing code contradicts; the hunk was dropped, to go in its own docs PR if wanted (83ca426).",
     "ruleIds": [
       "CHANGE-02"
     ]
@@ -1477,7 +1482,8 @@
     "title": "Role-authorization test used a pending member, conflating two denial factors",
     "sourceWindowId": "CLOSED-20260609-20260616",
     "prNumbers": [
-      3156
+      3156,
+      3623
     ],
     "prState": "merged",
     "reviewCommentIds": [
@@ -1485,9 +1491,14 @@
       3401294926,
       3402240546
     ],
-    "reviewIds": [],
-    "issueCommentIds": [],
-    "learning": "Tests meant to prove a non-admin MEMBER is rejected used an invited (pending) member; once content access became ACTIVE-only, the 403/404 could stem from the pending status rather than the missing ADMIN role, reducing the tests' signal. Negative authorization tests must isolate exactly one denial factor — an ACTIVE non-admin for role checks, a pending member for status checks.",
+    "reviewIds": [
+      5613962962,
+      5663966343
+    ],
+    "issueCommentIds": [
+      6419434608
+    ],
+    "learning": "Tests meant to prove a non-admin MEMBER is rejected used an invited (pending) member; once content access became ACTIVE-only, the 403/404 could stem from the pending status rather than the missing ADMIN role, reducing the tests' signal. Negative authorization tests must isolate exactly one denial factor — an ACTIVE non-admin for role checks, a pending member for status checks. Recurred in #3623: once the Safe-in-Workspace check ran before the entitlement check, the non-member tests, which sent a Safe outside the Workspace, got their 403 from that check, so a broken member check would still pass. The author made both assert the member-check message (eaec283b0).",
     "ruleIds": [
       "TEST-04"
     ]
@@ -2349,7 +2360,8 @@
       3284,
       3454,
       3530,
-      3564
+      3564,
+      3744
     ],
     "prState": "closed",
     "reviewCommentIds": [
@@ -2368,14 +2380,16 @@
       4156258986,
       4156260416,
       4269066725,
-      4269538521
+      4269538521,
+      4551055937,
+      4551204523
     ],
     "reviewIds": [],
     "issueCommentIds": [
       5771773279,
       5773979339
     ],
-    "learning": "A passkeys module declared its error class, error-id union, input/output interfaces, and parsing helpers inside the service files; review asked for one exported object per file — errors under `domain/errors/`, types under `domain/entities/`, helpers in a dedicated helpers file — and for standalone functions used by a single class to become private methods of that class. The author applied all of it. Keep one exported class/type per file and fold single-consumer functions into the class. Recurred in #3284, where an `Authenticator` type declared inline in the OIDC service file drew \"it's getting crowded, we can extract it to a types file\"; the author moved it. Recurred in #3454 as a folder-placement variant: a new guard sat in a module-root `guards/` and a new error in a module-root `errors/`, while the same PR filed the equivalent entitlements error under `domain/errors/` and its filter under `domain/exception-filters/`. The author moved the guard to `routes/guards/` and the error/filter under `domain/`, matching the sibling module. Recurred in #3530: an error file also exported the error code and reason constants, and a manager file declared a local type alias; review asked to keep only the error in its file, and the author moved the constants and types to entity files. Recurred in #3564: review asked that everything outside the `SafenetPayer` class leave its file, and the author moved the constants to `safenet.constants.ts`, the types to `entities/safenet-payer.entity.ts` and the error to `errors/`.",
+    "learning": "A passkeys module declared its error class, error-id union, input/output interfaces, and parsing helpers inside the service files; review asked for one exported object per file — errors under `domain/errors/`, types under `domain/entities/`, helpers in a dedicated helpers file — and for standalone functions used by a single class to become private methods of that class. The author applied all of it. Keep one exported class/type per file and fold single-consumer functions into the class. Recurred in #3284, where an `Authenticator` type declared inline in the OIDC service file drew \"it's getting crowded, we can extract it to a types file\"; the author moved it. Recurred in #3454 as a folder-placement variant: a new guard sat in a module-root `guards/` and a new error in a module-root `errors/`, while the same PR filed the equivalent entitlements error under `domain/errors/` and its filter under `domain/exception-filters/`. The author moved the guard to `routes/guards/` and the error/filter under `domain/`, matching the sibling module. Recurred in #3530: an error file also exported the error code and reason constants, and a manager file declared a local type alias; review asked to keep only the error in its file, and the author moved the constants and types to entity files. Recurred in #3564: review asked that everything outside the `SafenetPayer` class leave its file, and the author moved the constants to `safenet.constants.ts`, the types to `entities/safenet-payer.entity.ts` and the error to `errors/`. Recurred in #3744: a generic `isDefined` predicate declared at the top of a service file moved to the feature's `space-queue.helper.ts`, named for what the caller asks: `someFiltersSet` (03fcd9bed).",
     "ruleIds": [
       "STYLE-01"
     ]
@@ -3085,18 +3099,22 @@
     "title": "Guide rule inverted against the code after a merge from main",
     "prNumbers": [
       3328,
-      3446
+      3446,
+      3623
     ],
     "prState": "merged",
     "reviewCommentIds": [],
-    "reviewIds": [],
+    "reviewIds": [
+      5613962962
+    ],
     "issueCommentIds": [
       5217063856,
       5217161301,
       5728882578,
-      5728917270
+      5728917270,
+      6419434608
     ],
-    "learning": "A merge from main pulled in the field-encryption refactor, which deleted the per-field `EmailEncryptionService` and centralised the mechanics into a shared `KmsEncryptionService` with thin per-module wrappers. The security guide still cited the deleted files as canonical, still said the pattern was 'implemented once today', and still told authors to write a new per-field service 'rather than extending or parameterizing this one' — the exact shape the merged code had adopted. A stale doc path is a broken link; a stale doc rule actively pushes the next author the wrong way. A merge that changes a pattern the guides document updates those guides in the same PR, and the check is whether the rule still describes the code, not whether the paths resolve. Recurred in #3446: the diff deleted two guards while `nestjs-patterns.md` still stated the old guard tally and claimed all of them sat under `routes/guards/`; the author corrected it in the same PR.",
+    "learning": "A merge from main pulled in the field-encryption refactor, which deleted the per-field `EmailEncryptionService` and centralised the mechanics into a shared `KmsEncryptionService` with thin per-module wrappers. The security guide still cited the deleted files as canonical, still said the pattern was 'implemented once today', and still told authors to write a new per-field service 'rather than extending or parameterizing this one' — the exact shape the merged code had adopted. A stale doc path is a broken link; a stale doc rule actively pushes the next author the wrong way. A merge that changes a pattern the guides document updates those guides in the same PR, and the check is whether the rule still describes the code, not whether the paths resolve. Recurred in #3446: the diff deleted two guards while `nestjs-patterns.md` still stated the old guard tally and claimed all of them sat under `routes/guards/`; the author corrected it in the same PR. Recurred in #3623: a new non-negotiable said every Safe-in-Workspace check goes through `assertSafeInSpace`, while `PoliciesService.spaceSafes` keeps its own batch check returning 422 on purpose; the security guide now names that exception next to the relayer (eaec283b0).",
     "ruleIds": [
       "PR-02"
     ],
@@ -3686,16 +3704,22 @@
     "id": "RL-20260923-001",
     "title": "E2E assertion echoed whatever boolean the builder randomized",
     "prNumbers": [
-      3485
+      3485,
+      3742
     ],
     "prState": "merged",
-    "reviewCommentIds": [],
-    "reviewIds": [],
+    "reviewCommentIds": [
+      4538182672,
+      4538207063
+    ],
+    "reviewIds": [
+      5859118269
+    ],
     "issueCommentIds": [
       5796706177,
       5796901732
     ],
-    "learning": "An e2e spec for a new `hasPaymentMethod` field asserted the response equaled the builder's random `faker.datatype.boolean()`, so the assertion passed for either value and said nothing about which case it covered. The author pinned the builder with `.with('hasPaymentMethod', true)` and asserted `true`. When an assertion is about a field, pin that field in the fixture; faker stays on the fields the test does not reason about.",
+    "learning": "An e2e spec for a new `hasPaymentMethod` field asserted the response equaled the builder's random `faker.datatype.boolean()`, so the assertion passed for either value and said nothing about which case it covered. The author pinned the builder with `.with('hasPaymentMethod', true)` and asserted `true`. When an assertion is about a field, pin that field in the fixture; faker stays on the fields the test does not reason about. Recurred in #3742 through the test configuration: a two-chain summaries test failed about one run in three because the test config draws `mappings.safe.maxOverviews` from 1 to 5, and a 1 cut the second chain. The spec now pins `maxOverviews: 10` in its config override (82e31b2).",
     "ruleIds": [
       "TEST-08"
     ],
@@ -4007,16 +4031,22 @@
     "title": "One failed address decryption failed the whole members response",
     "sourceWindowId": "CLOSED-20260924-20261002",
     "prNumbers": [
-      3531
+      3531,
+      3621,
+      3742
     ],
     "prState": "merged",
     "reviewCommentIds": [
       4154124637,
-      4154450675
+      4154450675,
+      4336813572,
+      4338831915,
+      4540120788,
+      4541439511
     ],
     "reviewIds": [],
     "issueCommentIds": [],
-    "learning": "A members endpoint decrypted each member's wallet address inside one `Promise.all`, so a single KMS failure failed the request. Review asked whether that was intended or whether the failing addresses could be skipped; the author returned the others and logged the failure. Per-item enrichment that one row can fail does not take the response down: settle per item and log the skipped row by its identifiers.",
+    "learning": "A members endpoint decrypted each member's wallet address inside one `Promise.all`, so a single KMS failure failed the request. Review asked whether that was intended or whether the failing addresses could be skipped; the author returned the others and logged the failure. Per-item enrichment that one row can fail does not take the response down: settle per item and log the skipped row by its identifiers. Recurred in #3621: an error from the queue service failed the whole Space queue; the author logged it as a warning and returned those Safes in `unavailableSafes`, as a `getSafe` failure already was (6c8efdb9a). In #3742 a failed per-Safe lookup was skipped but logged without the Safe; review asked whether it logged the address, and the author added `safeAddress` and `chainId` as log fields.",
     "ruleIds": [
       "PERF-01",
       "LOG-01"
@@ -4094,14 +4124,20 @@
       3393,
       3451,
       3523,
-      3531
+      3531,
+      3742,
+      3621
     ],
     "prState": "merged",
     "reviewCommentIds": [
       4093821468,
-      4095565077
+      4095565077,
+      4540536951,
+      4541439910
     ],
-    "reviewIds": [],
+    "reviewIds": [
+      5613962588
+    ],
     "issueCommentIds": [
       5715183373,
       5716482690,
@@ -4110,7 +4146,7 @@
       5915217515,
       5926692854
     ],
-    "learning": "Four PRs removed code with no live case. In #3531 `member.user ?` guards and a documented \"loaded without the relation\" branch covered a state both callers load away. In #3393 a context field was filtered and passed to an assembler that never read it. In #3523 a filter kept a status local after narrowing to one error type. In #3451 a spec wrapped builders in local helper functions that saved nothing. All were deleted. Code for a case no caller can produce is not defensive; it is a second reading of the code that is never exercised.",
+    "learning": "Four PRs removed code with no live case. In #3531 `member.user ?` guards and a documented \"loaded without the relation\" branch covered a state both callers load away. In #3393 a context field was filtered and passed to an assembler that never read it. In #3523 a filter kept a status local after narrowing to one error type. In #3451 a spec wrapped builders in local helper functions that saved nothing. All were deleted. Code for a case no caller can produce is not defensive; it is a second reading of the code that is never exercised. Recurred in #3742: a spec-local `randomAddress()` wrapper around `getAddress(faker.finance.ethereumAddress())` was inlined, as the rest of the repo writes it. In #3621 the queue client took a `nonceOrder` its one caller always passed as `'asc'`; the parameter was dropped and the client sends `asc` itself.",
     "ruleIds": [
       "PR-01",
       "STYLE-01"
@@ -4332,18 +4368,24 @@
     "sourceWindowId": "CLOSED-20261001-20261009",
     "prNumbers": [
       3536,
-      3491
+      3491,
+      3593
     ],
     "prState": "merged",
     "reviewCommentIds": [
       4165424706,
       4104770204
     ],
-    "reviewIds": [],
-    "issueCommentIds": [
-      5952062301
+    "reviewIds": [
+      5616348654,
+      5616711481
     ],
-    "learning": "In #3536 a test named for usage resuming 'even with cached limits' never hit a cached grant: the fixture stamped the invalidation time on the real clock and `setSystemTime` then moved before it, so every call recomputed; the author agreed it should be fixed. In #3491 an integration test meant for the queue-service path never mocked that service or flipped its flag, so it ran the tx-service path. A test named for a path asserts the precondition that puts it there (the key is cached, the flag is on), and fake clocks are set before fixtures that stamp time.",
+    "issueCommentIds": [
+      5952062301,
+      6344094090,
+      6437256829
+    ],
+    "learning": "In #3536 a test named for usage resuming 'even with cached limits' never hit a cached grant: the fixture stamped the invalidation time on the real clock and `setSystemTime` then moved before it, so every call recomputed; the author agreed it should be fixed. In #3491 an integration test meant for the queue-service path never mocked that service or flipped its flag, so it ran the tx-service path. A test named for a path asserts the precondition that puts it there (the key is cached, the flag is on), and fake clocks are set before fixtures that stamp time. Recurred in #3593: `expect(result.success && result.data).toBe(false)` in the case for parsing `'false'` also passed when the parse failed; the author asserted `result.success` first (da93dcd) and checked the old spec passed against a schema that accepts only `'true'`.",
     "ruleIds": [
       "TEST-08"
     ]
@@ -4371,18 +4413,21 @@
     "title": "Comments restating a type or helper",
     "sourceWindowId": "CLOSED-20261001-20261009",
     "prNumbers": [
-      3526
+      3526,
+      3744
     ],
     "prState": "merged",
     "reviewCommentIds": [
       4141285519,
       4141976141,
       4144330752,
-      4144351846
+      4144351846,
+      4551635676,
+      4551756170
     ],
     "reviewIds": [],
     "issueCommentIds": [],
-    "learning": "Review asked to drop a doc comment on a spending-limit type, and the author removed it (be268b9d). The author's own review notes asked for another complex comment to be simplified or its helper removed, and a key-helper comment deleted; both landed. A comment that restates a type or helper is deleted, and a helper that needs a long comment is simplified or removed.",
+    "learning": "Review asked to drop a doc comment on a spending-limit type, and the author removed it (be268b9d). The author's own review notes asked for another complex comment to be simplified or its helper removed, and a key-helper comment deleted; both landed. A comment that restates a type or helper is deleted, and a helper that needs a long comment is simplified or removed. Recurred in #3744: a three-line comment restating the filter-then-limit branch beneath it was called valueless and removed.",
     "ruleIds": [
       "STYLE-01"
     ]
@@ -4432,20 +4477,23 @@
     "prNumbers": [
       3526,
       3534,
-      3564
+      3564,
+      3621
     ],
     "prState": "merged",
     "reviewCommentIds": [
       4141422188,
       4142365692,
       4269104713,
-      4269539295
+      4269539295,
+      4336624367,
+      4338831169
     ],
     "reviewIds": [],
     "issueCommentIds": [
       5948083024
     ],
-    "learning": "`getTokenMetadata` collected chain ids, deduped ERC-20s, fetched both and joined them in one body; review suggested one function per step, and the author split it into `nativeCurrencyChainIds`, `erc20TokensToFetch`, `fetchNativeTokens` and `fetchErc20Tokens` (4e95eae2). In #3534 a per-workspace response mapper had also taken on the request-wide unpublished-feature warning; after a bot review the author moved that into `warnUnpublished` and restored the single-workspace mapper (32aac11c). A function running several sequential steps splits into one named helper per step, and a per-item mapper does not own request-wide side effects. Recurred in #3564: a roughly 40-line `propose` that prepared, relayed, waited, confirmed and recorded the nonce was called hard to follow, and the author split it into `prepare` → `relayPayload` → `waitForInclusion` → `confirmExecution` → `recordNonce` with no behaviour change.",
+    "learning": "`getTokenMetadata` collected chain ids, deduped ERC-20s, fetched both and joined them in one body; review suggested one function per step, and the author split it into `nativeCurrencyChainIds`, `erc20TokensToFetch`, `fetchNativeTokens` and `fetchErc20Tokens` (4e95eae2). In #3534 a per-workspace response mapper had also taken on the request-wide unpublished-feature warning; after a bot review the author moved that into `warnUnpublished` and restored the single-workspace mapper (32aac11c). A function running several sequential steps splits into one named helper per step, and a per-item mapper does not own request-wide side effects. Recurred in #3564: a roughly 40-line `propose` that prepared, relayed, waited, confirmed and recorded the nonce was called hard to follow, and the author split it into `prepare` → `relayPayload` → `waitForInclusion` → `confirmExecution` → `recordNonce` with no behaviour change. In #3621 the per-address chain grouping inside the queue fetch became its own `getChainIdsBySafe` on request (6c8efdb9a).",
     "ruleIds": [
       "STYLE-01"
     ]
@@ -4780,7 +4828,10 @@
       3375,
       3449,
       3600,
-      3564
+      3564,
+      3742,
+      3743,
+      3615
     ],
     "prState": "merged",
     "reviewCommentIds": [
@@ -4793,13 +4844,23 @@
       4275729234,
       4280177180,
       4269241948,
-      4269539878
+      4269539878,
+      4537548484,
+      4538142304,
+      4540415598,
+      4541220211
     ],
-    "reviewIds": [],
+    "reviewIds": [
+      5858307683,
+      5861932819,
+      5613962270,
+      5663878324,
+      5681094122
+    ],
     "issueCommentIds": [
       5397492625
     ],
-    "learning": "In #3375 a bot review noted the last-admin rejection cases did not assert that no `MEMBER_LEFT` audit row was recorded; a follow-up commit held the audit mock and asserted `not.toHaveBeenCalled()` on both rejection paths, checked by moving the guard below the audit loop (9809d693a2). In #3449 the `&& spendingLimitsRequested` gate that keeps spending limits out of a guard-only response, and the per-Safe filter on guard bindings, could both be dropped with CI green: no spec requested a guard-only set and every guard test used one Safe. The author added guard-only and multi-Safe cases (1138ce2d, 2686553d). Each gate or filter has a case that fails when it is removed. Recurred in #3600: the check consumer's `@Processor({ maxStalledCount: 0 })` and the queue service's `setGlobalConcurrency(1)` were the only things stopping a maybe-paid job from running twice, and no test would notice either going away; the author added a spec that reads the processor metadata and one that asserts the concurrency call. In #3564 the payer's keep-polling branch had no pending-status case; the author added one.",
+    "learning": "In #3375 a bot review noted the last-admin rejection cases did not assert that no `MEMBER_LEFT` audit row was recorded; a follow-up commit held the audit mock and asserted `not.toHaveBeenCalled()` on both rejection paths, checked by moving the guard below the audit loop (9809d693a2). In #3449 the `&& spendingLimitsRequested` gate that keeps spending limits out of a guard-only response, and the per-Safe filter on guard bindings, could both be dropped with CI green: no spec requested a guard-only set and every guard test used one Safe. The author added guard-only and multi-Safe cases (1138ce2d, 2686553d). Each gate or filter has a case that fails when it is removed. Recurred in #3600: the check consumer's `@Processor({ maxStalledCount: 0 })` and the queue service's `setGlobalConcurrency(1)` were the only things stopping a maybe-paid job from running twice, and no test would notice either going away; the author added a spec that reads the processor metadata and one that asserts the concurrency call. In #3564 the payer's keep-polling branch had no pending-status case; the author added one. Recurred in #3742: the `trusted` query default could be hard-coded to `true` with every controller and unit test still green; the author added `trusted=false` and invalid-value (422) cases over HTTP and checked the first fails on the hard-coded line (86ce107). In #3743 an integration test sent `chainIds` and `signers` but asserted only the 200; a test with queued transactions on two chains now checks the filtered results and counts (604eda00e). In #3615 nothing asserted that a refused invite renewal records no audit entry, and the test meant to prove a renewal restarts the cooldown passed without it, because the insert had already stamped `updated_at` inside the window; both were rewritten to fail when the behaviour goes.",
     "ruleIds": [
       "TEST-09"
     ]
@@ -4870,16 +4931,19 @@
     "title": "Second Safe-scoping filter copied the first's body",
     "sourceWindowId": "CLOSED-20261008-20261016",
     "prNumbers": [
-      3449
+      3449,
+      3621
     ],
     "prState": "merged",
     "reviewCommentIds": [
       4269287809,
-      4270825466
+      4270825466,
+      4336773978,
+      4338831567
     ],
     "reviewIds": [],
     "issueCommentIds": [],
-    "learning": "`getGuardPolicyBindingsBySafe` repeated `getAllowancesBySafe` for another row type. Review proposed one predicate over `{ chainId, safe }`; the author replaced both methods with `isScopedToSafe(row, safe)` used by two `filter` calls (2686553d). When a second row type needs the same scoping, the predicate is shared rather than the method copied.",
+    "learning": "`getGuardPolicyBindingsBySafe` repeated `getAllowancesBySafe` for another row type. Review proposed one predicate over `{ chainId, safe }`; the author replaced both methods with `isScopedToSafe(row, safe)` used by two `filter` calls (2686553d). When a second row type needs the same scoping, the predicate is shared rather than the method copied. Recurred in #3621: `getChainSafeKey` in the Safe repository and `getQueueSafeKey` in the transactions service were the same function; both now import one helper from `safe/domain/helpers/chain-safe-key.helper.ts` (6c8efdb9a).",
     "ruleIds": [
       "REUSE-01"
     ]
@@ -5183,7 +5247,8 @@
     "prNumbers": [
       3564,
       3596,
-      3450
+      3450,
+      3593
     ],
     "prState": "merged",
     "reviewCommentIds": [
@@ -5201,9 +5266,13 @@
       4313075269,
       4313284899
     ],
-    "reviewIds": [],
-    "issueCommentIds": [],
-    "learning": "In #3564 `maybePaid()` built an error but its name did not say so (it became `SafenetPayerMaybePaidError`); an inline `'0x'` argument became `NO_EXTRA_DATA`, after the ABI parameter it fills; and `NO_GAS`, which also carried the operation and refund fields, became `NO_REFUND_EXEC_ARGS`. In #3596 `safenetChecksPerDay` held a TTL in seconds and was renamed `expirationTimeInSeconds.safenetDailyCheckCounter`, and `getJobData`, which asserted the Safe and the transaction, became `assertPayableTransaction`. In #3450 a repository serving only `SafePolicyGuard` configuration requests was renamed `SafePolicyGuardConfigurationRequestsRepository`. A name states what the thing is and does, including that it throws and how far it reaches.",
+    "reviewIds": [
+      5613961799
+    ],
+    "issueCommentIds": [
+      6342809524
+    ],
+    "learning": "In #3564 `maybePaid()` built an error but its name did not say so (it became `SafenetPayerMaybePaidError`); an inline `'0x'` argument became `NO_EXTRA_DATA`, after the ABI parameter it fills; and `NO_GAS`, which also carried the operation and refund fields, became `NO_REFUND_EXEC_ARGS`. In #3596 `safenetChecksPerDay` held a TTL in seconds and was renamed `expirationTimeInSeconds.safenetDailyCheckCounter`, and `getJobData`, which asserted the Safe and the transaction, became `assertPayableTransaction`. In #3450 a repository serving only `SafePolicyGuard` configuration requests was renamed `SafePolicyGuardConfigurationRequestsRepository`. A name states what the thing is and does, including that it throws and how far it reaches. Recurred in #3593: a route returning only the transfers a Safe sent was named `/transfers`, like the Transaction Service endpoint that returns both directions; it became `/outgoing-transfers` (`getOutgoingTransfers`) before the wallet started calling it (c52ab08).",
     "ruleIds": [
       "NAME-01"
     ]
@@ -5552,20 +5621,22 @@
     "sourceWindowId": "CLOSED-20261022-20261030",
     "prNumbers": [
       3659,
-      3619
+      3619,
+      3621
     ],
     "prState": "merged",
     "reviewCommentIds": [],
     "reviewIds": [
       5613963601,
-      5663877988
+      5663877988,
+      5613962588
     ],
     "issueCommentIds": [
       6367101169,
       6340543837,
       6468877702
     ],
-    "learning": "In #3659 the new `types` description named only `proposer` as returning nothing although `recovery` does too, and did not say every guard type returns the same guard-installation items; rewritten (3884c1019). In #3619 the new `tags` field gave `PUT /address-book` new 422 outcomes with no `@ApiUnprocessableEntityResponse` and a stale 400 text, and a guide line reference to the rate-limited guard pointed at the wrong line after the controller grew; both fixed in the merged diff. Swagger descriptions and response decorators cover every outcome the route now has, and guide references follow the code they cite.",
+    "learning": "In #3659 the new `types` description named only `proposer` as returning nothing although `recovery` does too, and did not say every guard type returns the same guard-installation items; rewritten (3884c1019). In #3619 the new `tags` field gave `PUT /address-book` new 422 outcomes with no `@ApiUnprocessableEntityResponse` and a stale 400 text, and a guide line reference to the rate-limited guard pointed at the wrong line after the controller grew; both fixed in the merged diff. Swagger descriptions and response decorators cover every outcome the route now has, and guide references follow the code they cite. Recurred in #3621: the Space queue route answers 404 for an unknown Space UUID through `SpaceIdPipe` but declared no 404; `@ApiNotFoundResponse` was added.",
     "ruleIds": [
       "PR-02"
     ]
@@ -5724,6 +5795,91 @@
     "learning": "`mergeHeaders` assigned `Object.entries({...})` filtered to drop `x-safe-*` headers to a variable named `headers`; review asked for a name that says it holds `[name, value]` pairs, and only the allowed ones. The author restructured it so the merged diff builds an object with `Object.fromEntries` and names it `allowedHeaders`. A variable is named for what it holds, its shape and any filter applied, not for the concept it came from.",
     "ruleIds": [
       "NAME-01"
+    ]
+  },
+  {
+    "id": "RL-20261112-001",
+    "title": "Behaviour change left e2e specs stale, and CI does not run them",
+    "sourceWindowId": "CLOSED-20261105-20261113",
+    "prNumbers": [
+      3624,
+      3615
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [
+      5712257306,
+      5862462944,
+      5613962270
+    ],
+    "issueCommentIds": [],
+    "learning": "In #3624 `assertMember` and `assertAdmin` started throwing `HttpExceptionNoLog`, which drops the `error` field and changes the 403 message, but two `space-safes.controller.e2e-spec.ts` expectations still asserted the old body; CI stayed green because it does not run `*.e2e-spec.ts`. The author updated them. In #3615 a new invite-renewal cooldown turned an existing e2e renew test into a 429, again with CI green; the test was reworked. A change to a route's status, body or timing greps the e2e specs that call the route and fixes them in the same PR.",
+    "ruleIds": [
+      "TEST-02"
+    ]
+  },
+  {
+    "id": "RL-20261110-001",
+    "title": "New upstream-backed route was about to ship without a cache",
+    "sourceWindowId": "CLOSED-20261105-20261113",
+    "prNumbers": [
+      3621
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4336981341,
+      4338832641,
+      4347286307
+    ],
+    "reviewIds": [
+      5599451984,
+      5601591467
+    ],
+    "issueCommentIds": [
+      6338665366
+    ],
+    "learning": "The Space transaction queue called the queue service on every request with no cache, behind flags already on in production, so merging would release it uncached. Review asked for the cache with its invalidation in the same PR, or a dedicated default-off flag until then; a second reviewer called the cache a hard requirement. The author first added a flag, then the cache: a per-Space key, TTL from the default expiration config, cleared on the queue events and when Space Safes change (9edff8086). A route that reads an upstream per request does not reach a release uncached.",
+    "ruleIds": [
+      "CACHE-04"
+    ]
+  },
+  {
+    "id": "RL-20261110-002",
+    "title": "Aggregate cache not cleared on a write path that clears its source",
+    "sourceWindowId": "CLOSED-20261105-20261113",
+    "prNumbers": [
+      3621
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4348356751,
+      4348415053
+    ],
+    "reviewIds": [
+      5613962588
+    ],
+    "issueCommentIds": [],
+    "learning": "`deleteTransaction` clears the per-Safe queue at once in case the event is lost, but the new per-Space queue was cleared only from the event handlers, so a late or lost delete event left the deleted transaction in the Space queue until its TTL. The merged code moved the Space clear into `SafeRepository` and calls it from `deleteTransaction` as well. A cache built over data another cache holds is cleared everywhere that source is cleared.",
+    "ruleIds": [
+      "CACHE-04"
+    ]
+  },
+  {
+    "id": "RL-20261110-003",
+    "title": "Upstream query string built by hand instead of through the request params",
+    "sourceWindowId": "CLOSED-20261105-20261113",
+    "prNumbers": [
+      3621
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [
+      5613962588
+    ],
+    "issueCommentIds": [],
+    "learning": "The queue client appended `?${query.toString()}` to the URL for `safes`, `nonceOrder`, `limit` and `offset`. Review pointed to the shared URL builder; the merged client passes them as `networkRequest.params` on the `CacheFirstDataSource` call. Query values go through the shared client's params, so encoding and the request path stay in one place.",
+    "ruleIds": [
+      "MOD-01"
     ]
   }
 ]

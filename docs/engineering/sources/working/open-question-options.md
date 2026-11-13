@@ -900,6 +900,12 @@ eager clears are dead weight, and if not, propose has the same gap that
 delete covers. It is also unconfirmed whether the queue service publishes
 those events to the exchange.
 
+PR #3621 (RL-20261110-002) adds a case: a per-Space queue cache was first
+cleared only from events, and review asked that `deleteTransaction` clear it
+too, since it already clears the per-Safe queue eagerly. `CACHE-04` now
+requires a derived cache to follow its source either way; this question stays
+about the source.
+
 ### Option A: Events Only
 
 Existing example:
@@ -1136,3 +1142,51 @@ as a status or kind and the type no longer documents the allowed values.
 
 Open until the team decides; whichever wins should be stated in `TYPE-02` or
 `TYPE-06`.
+
+## OQ-MOD-05 A Business Identifier In An Upstream Client's Cache Key
+
+Question: may an upstream client take a business identifier such as `spaceId`
+only to key and clear the cache of a read it merges across several entities?
+
+`MOD-01` says generic clients do not own business tunables. In PR #3621 (review
+comment 4348375122) a reviewer cited the repo's R-015 against
+`SafeQueueService.getTransactionQueueForSafes` taking a `spaceId` for its cache
+key and `clearSpaceTransactionQueue`. The author replied (4513530352) that the
+team had agreed to keep one merged, nonce-ordered request per Space, cached per
+Space. A later review (5664061514) proposed a per-Safe key instead; the author
+answered (issue comment 6739361247) that a cached page mixes several Safes and
+a change to any one moves the offsets of every later page. It merged with the
+Space key.
+
+### Option A: The Client Keys The Merged Read By The Business Scope
+
+Existing example:
+
+- `src/modules/safe-queue/safe-queue.service.ts`
+  (`getTransactionQueueForSafes({ spaceId, safes, limit, offset })`,
+  `clearSpaceTransactionQueue({ spaceId })`)
+
+Choose this when:
+
+- One upstream request returns a page that mixes entities, so no per-entity
+  key can hold it.
+
+Trade-off: the client knows a product concept, and invalidation needs a lookup
+from the entity to its Spaces on every queue event.
+
+### Option B: The Client Keys Only What It Sends Upstream
+
+Key the cache by the Safe, field by chains, limit and offset, and clear it
+from `clearAllTransactions`, which every queue event and `deleteTransaction`
+already reach.
+
+Choose this when:
+
+- The upstream can be asked one entity at a time without breaking paging, so
+  a change to one Safe leaves the others cached.
+
+Trade-off: one request per Safe (up to 100 per Space read) instead of one
+merged request, and the merge and paging move into CGW.
+
+Open until the team decides; whichever wins should be stated in `MOD-01` or
+`CACHE-02`.

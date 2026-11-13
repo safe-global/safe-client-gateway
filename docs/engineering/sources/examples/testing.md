@@ -333,3 +333,91 @@ const waitForBlockedQuery = async (): Promise<void> => {
 The sleep costs its full length on every run and only shows the call had not
 finished yet, not why. Polling returns as soon as the block happens and
 asserts the lock wait itself.
+
+## TEST-08 — Assert the parse succeeded before its value
+
+Source: PR #3593 (RL-20261002-009)
+
+### Avoid
+
+```ts
+const result = BooleanStringSchema.safeParse('false');
+
+expect(result.success && result.data).toBe(false);
+```
+
+### Prefer
+
+```ts
+const result = BooleanStringSchema.safeParse('false');
+
+expect(result.success).toBe(true);
+expect(result.success && result.data).toBe(false);
+```
+
+### Why
+
+`result.success && result.data` is `false` when the parse fails too, so the
+case passes against a schema that rejects `'false'`. Asserting `success` first
+puts the test on the path its name claims.
+
+## TEST-08 — Pin a randomized test-config value the scenario needs
+
+Source: PR #3742 (RL-20260923-001)
+
+### Avoid
+
+```ts
+const moduleFixture = await createTestModule({
+  config: () => ({
+    ...defaultConfiguration,
+    features: { ...defaultConfiguration.features, zerion: true },
+  }),
+});
+```
+
+### Prefer
+
+```ts
+const moduleFixture = await createTestModule({
+  config: () => ({
+    ...defaultConfiguration,
+    features: { ...defaultConfiguration.features, zerion: true },
+    mappings: {
+      ...defaultConfiguration.mappings,
+      safe: { ...defaultConfiguration.mappings.safe, maxOverviews: 10 },
+    },
+  }),
+});
+```
+
+### Why
+
+The test configuration draws `maxOverviews` from 1 to 5. A two-chain scenario
+needs at least 2, so it failed whenever the draw was 1. A value the scenario
+depends on is pinned in its own config override.
+
+## TEST-04 — Assert which check denied, not only the status
+
+Source: PR #3623 (RL-20260615-001)
+
+### Avoid
+
+```ts
+expect(response.status).toBe(HttpStatus.FORBIDDEN);
+```
+
+### Prefer
+
+```ts
+expect(response.status).toBe(HttpStatus.FORBIDDEN);
+expect(response.body).toMatchObject({
+  message: 'User is not a member of this workspace',
+});
+```
+
+### Why
+
+The Safe-in-Workspace check also answers 403, and it ran first for a Safe
+outside the Workspace. Checking the message keeps the test on the member check
+when the order of checks changes.
