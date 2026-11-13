@@ -16,6 +16,8 @@ export const KnownDeclaredChannels = [
   'WALLET_CONNECT',
   'WIDGET',
   'DIRECT',
+  'MCP',
+  'CLI',
 ] as const;
 
 /** Removes NUL characters and cuts the value to `maxLength` characters. */
