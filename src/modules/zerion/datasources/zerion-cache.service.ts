@@ -34,11 +34,13 @@ export class ZerionCacheService {
   constructor(
     @Inject(CacheService) private readonly cacheService: ICacheService,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
-    @Inject(IConfigurationService) configurationService: IConfigurationService,
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
   ) {
-    this.afterTransactionTtlSeconds = configurationService.getOrThrow<number>(
-      'portfolio.cache.afterTransactionTtlSeconds',
-    );
+    this.afterTransactionTtlSeconds =
+      this.configurationService.getOrThrow<number>(
+        'portfolio.cache.afterTransactionTtlSeconds',
+      );
   }
 
   /**
