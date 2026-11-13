@@ -7,27 +7,27 @@ import type { INestApplication } from '@nestjs/common';
 import { HttpStatus } from '@nestjs/common';
 import type postgres from 'postgres';
 import { getAddress } from 'viem';
-import { TestDbFactory } from '@/__tests__/db.factory';
+import { TestDbFactory } from '#/__tests__/db.factory';
 import {
   initTestApplication,
   TestAppProvider,
-} from '@/__tests__/test-app.provider';
-import { createTestModule } from '@/__tests__/testing-module';
+} from '#/__tests__/test-app.provider';
+import { createTestModule } from '#/__tests__/testing-module';
 import {
   addSafes as addSafesFixture,
   createSpaceForSigner as createSpaceForSignerFixture,
   grantEntitlements,
   safePayload,
-} from '@/__tests__/util/space-fixtures';
-import configuration from '@/config/entities/__tests__/configuration';
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
-import { QUOTA_EXCEEDED_ERROR_CODE } from '@/modules/entitlements/domain/errors/quota-exceeded.error';
-import { EntitlementsService } from '@/modules/entitlements/routes/entitlements.service';
-import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
-import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
-import { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
-import { SpacesCreationRateLimitGuard } from '@/modules/spaces/routes/guards/spaces-creation-rate-limit.guard';
+} from '#/__tests__/util/space-fixtures';
+import configuration from '#/config/entities/__tests__/configuration';
+import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
+import { IJwtService } from '#/datasources/jwt/jwt.service.interface';
+import { QUOTA_EXCEEDED_ERROR_CODE } from '#/modules/entitlements/domain/errors/quota-exceeded.error';
+import { EntitlementsService } from '#/modules/entitlements/routes/entitlements.service';
+import { NotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/notifications.repository.module';
+import { TestNotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/test.notification.repository.module';
+import { SpaceSafe } from '#/modules/spaces/datasources/safes/entities/space-safes.entity.db';
+import { SpacesCreationRateLimitGuard } from '#/modules/spaces/routes/guards/spaces-creation-rate-limit.guard';
 
 /**
  * The seat limit end to end: the route, the real entitlements service and the

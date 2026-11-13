@@ -3,28 +3,28 @@
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import type { ILoggingService } from '@/logging/logging.interface';
-import { erc20TransferBuilder } from '@/modules/safe/domain/entities/__tests__/erc20-transfer.builder';
-import { erc721TransferBuilder } from '@/modules/safe/domain/entities/__tests__/erc721-transfer.builder';
-import { nativeTokenTransferBuilder } from '@/modules/safe/domain/entities/__tests__/native-token-transfer.builder';
-import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
+import type { ILoggingService } from '#/logging/logging.interface';
+import { erc20TransferBuilder } from '#/modules/safe/domain/entities/__tests__/erc20-transfer.builder';
+import { erc721TransferBuilder } from '#/modules/safe/domain/entities/__tests__/erc721-transfer.builder';
+import { nativeTokenTransferBuilder } from '#/modules/safe/domain/entities/__tests__/native-token-transfer.builder';
+import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
 import {
   erc20TokenBuilder,
   erc721TokenBuilder,
   tokenBuilder,
-} from '@/modules/tokens/domain/__tests__/token.builder';
-import type { TokenRepository } from '@/modules/tokens/domain/token.repository';
+} from '#/modules/tokens/domain/__tests__/token.builder';
+import type { TokenRepository } from '#/modules/tokens/domain/token.repository';
 import {
   TransferDirection,
   TransferTransactionInfo,
-} from '@/modules/transactions/routes/entities/transfer-transaction-info.entity';
-import { Erc20Transfer } from '@/modules/transactions/routes/entities/transfers/erc20-transfer.entity';
-import { Erc721Transfer } from '@/modules/transactions/routes/entities/transfers/erc721-transfer.entity';
-import { NativeCoinTransfer } from '@/modules/transactions/routes/entities/transfers/native-coin-transfer.entity';
-import type { SwapTransferInfoMapper } from '@/modules/transactions/routes/mappers/transfers/swap-transfer-info.mapper';
-import { TransferInfoMapper } from '@/modules/transactions/routes/mappers/transfers/transfer-info.mapper';
-import type { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
-import { AddressInfo } from '@/routes/common/entities/address-info.entity';
+} from '#/modules/transactions/routes/entities/transfer-transaction-info.entity';
+import { Erc20Transfer } from '#/modules/transactions/routes/entities/transfers/erc20-transfer.entity';
+import { Erc721Transfer } from '#/modules/transactions/routes/entities/transfers/erc721-transfer.entity';
+import { NativeCoinTransfer } from '#/modules/transactions/routes/entities/transfers/native-coin-transfer.entity';
+import type { SwapTransferInfoMapper } from '#/modules/transactions/routes/mappers/transfers/swap-transfer-info.mapper';
+import { TransferInfoMapper } from '#/modules/transactions/routes/mappers/transfers/transfer-info.mapper';
+import type { AddressInfoHelper } from '#/routes/common/address-info/address-info.helper';
+import { AddressInfo } from '#/routes/common/entities/address-info.entity';
 
 // Note: we mock this as there is a dedicated test for this mapper
 const swapTransferInfoMapper = vi.mocked({

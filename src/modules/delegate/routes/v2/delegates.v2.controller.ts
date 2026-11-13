@@ -20,20 +20,22 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import type { Address } from 'viem';
-import { CreateDelegateDto } from '@/modules/delegate/routes/entities/create-delegate.dto.entity';
-import type { Delegate } from '@/modules/delegate/routes/entities/delegate.entity';
-import { DelegatePage } from '@/modules/delegate/routes/entities/delegate.page.entity';
-import type { GetDelegateDto } from '@/modules/delegate/routes/entities/get-delegate.dto.entity';
-import { CreateDelegateDtoSchema } from '@/modules/delegate/routes/entities/schemas/create-delegate.dto.schema';
-import { GetDelegateDtoSchema } from '@/modules/delegate/routes/entities/schemas/get-delegate.dto.schema';
-import { DelegatesV2Service } from '@/modules/delegate/routes/v2/delegates.v2.service';
-import { DeleteDelegateV2Dto } from '@/modules/delegate/routes/v2/entities/delete-delegate.v2.dto.entity';
-import { DeleteDelegateV2DtoSchema } from '@/modules/delegate/routes/v2/entities/schemas/delete-delegate.v2.dto.schema';
-import { PaginationDataDecorator } from '@/routes/common/decorators/pagination.data.decorator';
-import { RouteUrlDecorator } from '@/routes/common/decorators/route.url.decorator';
-import type { Page } from '@/routes/common/entities/page.entity';
-import type { PaginationData } from '@/routes/common/pagination/pagination.data';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+import { ChainIdSchema } from '#/modules/chains/domain/entities/schemas/chain-id.schema';
+import { CreateDelegateDto } from '#/modules/delegate/routes/entities/create-delegate.dto.entity';
+import type { Delegate } from '#/modules/delegate/routes/entities/delegate.entity';
+import { DelegatePage } from '#/modules/delegate/routes/entities/delegate.page.entity';
+import type { GetDelegateDto } from '#/modules/delegate/routes/entities/get-delegate.dto.entity';
+import { CreateDelegateDtoSchema } from '#/modules/delegate/routes/entities/schemas/create-delegate.dto.schema';
+import { GetDelegateDtoSchema } from '#/modules/delegate/routes/entities/schemas/get-delegate.dto.schema';
+import { DelegatesV2Service } from '#/modules/delegate/routes/v2/delegates.v2.service';
+import { DeleteDelegateV2Dto } from '#/modules/delegate/routes/v2/entities/delete-delegate.v2.dto.entity';
+import { DeleteDelegateV2DtoSchema } from '#/modules/delegate/routes/v2/entities/schemas/delete-delegate.v2.dto.schema';
+import { PaginationDataDecorator } from '#/routes/common/decorators/pagination.data.decorator';
+import { RouteUrlDecorator } from '#/routes/common/decorators/route.url.decorator';
+import type { Page } from '#/routes/common/entities/page.entity';
+import type { PaginationData } from '#/routes/common/pagination/pagination.data';
+import { AddressSchema } from '#/validation/entities/schemas/address.schema';
+import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
 @ApiTags('delegates')
 @Controller({ version: '2' })
@@ -88,7 +90,7 @@ export class DelegatesV2Controller {
   })
   @Get('chains/:chainId/delegates')
   getDelegates(
-    @Param('chainId') chainId: string,
+    @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
     @RouteUrlDecorator() routeUrl: URL,
     @Query(new ValidationPipe(GetDelegateDtoSchema))
     getDelegateDto: GetDelegateDto,
@@ -129,7 +131,7 @@ export class DelegatesV2Controller {
   @HttpCode(200)
   @Post('chains/:chainId/delegates')
   async postDelegate(
-    @Param('chainId') chainId: string,
+    @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
     @Body(new ValidationPipe(CreateDelegateDtoSchema))
     createDelegateDto: CreateDelegateDto,
   ): Promise<void> {
@@ -166,8 +168,9 @@ export class DelegatesV2Controller {
   })
   @Delete('chains/:chainId/delegates/:delegateAddress')
   deleteDelegate(
-    @Param('chainId') chainId: string,
-    @Param('delegateAddress') delegateAddress: Address,
+    @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
+    @Param('delegateAddress', new ValidationPipe(AddressSchema))
+    delegateAddress: Address,
     @Body(new ValidationPipe(DeleteDelegateV2DtoSchema))
     deleteDelegateV2Dto: DeleteDelegateV2Dto,
   ): Promise<unknown> {

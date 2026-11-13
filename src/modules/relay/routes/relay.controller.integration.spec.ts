@@ -9,16 +9,18 @@ import type { MockedObject } from 'vitest';
 import {
   getDeploymentVersionsByChainIds,
   RELAY_SUPPORTED_CHAIN_IDS,
-} from '@/__tests__/deployments.helper';
+} from '#/__tests__/deployments.helper';
 import {
   initTestApplication,
   TestAppProvider,
-} from '@/__tests__/test-app.provider';
-import { createTestModule } from '@/__tests__/testing-module';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import configuration from '@/config/entities/__tests__/configuration';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import { NetworkService } from '@/datasources/network/network.service.interface';
+} from '#/__tests__/test-app.provider';
+import { createTestModule } from '#/__tests__/testing-module';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import configuration from '#/config/entities/__tests__/configuration';
+import type { FakeCacheService } from '#/datasources/cache/__tests__/fake.cache.service';
+import { CacheService } from '#/datasources/cache/cache.service.interface';
+import type { INetworkService } from '#/datasources/network/network.service.interface';
+import { NetworkService } from '#/datasources/network/network.service.interface';
 import {
   getMultiSendCallOnlyDeployments,
   getMultiSendDeployments,
@@ -26,20 +28,21 @@ import {
   getSafeL2SingletonDeployments,
   getSafeSingletonDeployments,
   getSignerFactoryDeployments,
-} from '@/domain/common/utils/deployments';
+} from '#/domain/common/utils/deployments';
+import { ITransactionApiManager } from '#/domain/interfaces/transaction-api.manager.interface';
 import {
   execTransactionFromModuleEncoder,
   executeNextTxEncoder,
-} from '@/modules/alerts/domain/contracts/__tests__/encoders/delay-modifier-encoder.builder';
-import { BalancesService } from '@/modules/balances/routes/balances.service';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { relayerBuilder } from '@/modules/chains/domain/entities/__tests__/relayer.builder';
-import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
-import type { Relayer } from '@/modules/chains/domain/entities/relayer.entity';
+} from '#/modules/alerts/domain/contracts/__tests__/encoders/delay-modifier-encoder.builder';
+import { BalancesService } from '#/modules/balances/routes/balances.service';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
+import { relayerBuilder } from '#/modules/chains/domain/entities/__tests__/relayer.builder';
+import type { Chain } from '#/modules/chains/domain/entities/chain.entity';
+import type { Relayer } from '#/modules/chains/domain/entities/relayer.entity';
 import {
   multiSendEncoder,
   multiSendTransactionsEncoder,
-} from '@/modules/contracts/domain/__tests__/encoders/multi-send-encoder.builder';
+} from '#/modules/contracts/domain/__tests__/encoders/multi-send-encoder.builder';
 import {
   addOwnerWithThresholdEncoder,
   changeThresholdEncoder,
@@ -51,19 +54,19 @@ import {
   setGuardEncoder,
   setupEncoder,
   swapOwnerEncoder,
-} from '@/modules/contracts/domain/__tests__/encoders/safe-encoder.builder';
+} from '#/modules/contracts/domain/__tests__/encoders/safe-encoder.builder';
 import {
   erc20ApproveEncoder,
   erc20TransferEncoder,
   erc20TransferFromEncoder,
-} from '@/modules/relay/domain/contracts/__tests__/encoders/erc20-encoder.builder';
-import { createProxyWithNonceEncoder } from '@/modules/relay/domain/contracts/__tests__/encoders/proxy-factory-encoder.builder';
-import { createSignerEncoder } from '@/modules/relay/domain/contracts/__tests__/encoders/signer-factory-encoder.builder';
-import { GasPaymentOption } from '@/modules/relay/domain/entities/gas-payment-option.entity';
-import type { NoFeeCampaignConfiguration } from '@/modules/relay/domain/entities/relay.configuration';
-import { RelayerType } from '@/modules/relay/domain/entities/relayer-type.entity';
-import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
-import { rawify } from '@/validation/entities/raw.entity';
+} from '#/modules/relay/domain/contracts/__tests__/encoders/erc20-encoder.builder';
+import { createProxyWithNonceEncoder } from '#/modules/relay/domain/contracts/__tests__/encoders/proxy-factory-encoder.builder';
+import { createSignerEncoder } from '#/modules/relay/domain/contracts/__tests__/encoders/signer-factory-encoder.builder';
+import { GasPaymentOption } from '#/modules/relay/domain/entities/gas-payment-option.entity';
+import type { NoFeeCampaignConfiguration } from '#/modules/relay/domain/entities/relay.configuration';
+import { RelayerType } from '#/modules/relay/domain/entities/relayer-type.entity';
+import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
+import { rawify } from '#/validation/entities/raw.entity';
 
 const allSupportedChainIds = RELAY_SUPPORTED_CHAIN_IDS;
 const noFeeCampaignChains = Object.keys(
@@ -146,13 +149,14 @@ describe('Relay controller', () => {
   let configurationService: MockedObject<IConfigurationService>;
   let networkService: MockedObject<INetworkService>;
   let balancesService: MockedObject<BalancesService>;
+  let getTokenBalance: MockedObject<BalancesService>['getTokenBalance'];
+  let cacheService: FakeCacheService;
+  let transactionApiManager: ITransactionApiManager;
   let safeConfigUrl: string;
   let relayUrl: string;
   let relayLimit: number;
 
-  beforeEach(async () => {
-    vi.resetAllMocks();
-
+  beforeAll(async () => {
     const defaultConfiguration = configuration();
     const testConfiguration = (): typeof defaultConfiguration => ({
       ...defaultConfiguration,
@@ -172,12 +176,29 @@ describe('Relay controller', () => {
     relayLimit = configurationService.getOrThrow('relay.limit');
     networkService = moduleFixture.get(NetworkService);
     balancesService = moduleFixture.get(BalancesService);
+    getTokenBalance = balancesService.getTokenBalance;
+    cacheService = moduleFixture.get(CacheService);
+    transactionApiManager = moduleFixture.get(ITransactionApiManager);
 
     app = await new TestAppProvider().provide(moduleFixture);
     await initTestApplication(app);
   });
 
-  afterEach(async () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    networkService.get.mockReset();
+    networkService.post.mockReset();
+    networkService.patch.mockReset();
+    networkService.postForm.mockReset();
+    networkService.delete.mockReset();
+    balancesService.getTokenBalance = getTokenBalance;
+    cacheService.clear();
+    for (const chainId of allSupportedChainIds) {
+      transactionApiManager.destroyApi(chainId);
+    }
+  });
+
+  afterAll(async () => {
     await app?.close();
   });
 

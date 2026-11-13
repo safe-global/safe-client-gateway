@@ -6,7 +6,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import type { FastifyReply } from 'fastify';
-import { SafeShieldCoreDisabledError } from '@/modules/safe-shield/domain/errors/safe-shield-core-disabled.error';
+import { SafeShieldCoreDisabledError } from '#/modules/safe-shield/domain/errors/safe-shield-core-disabled.error';
 
 /**
  * Registered on the disabled Core routes so the rejection never reaches

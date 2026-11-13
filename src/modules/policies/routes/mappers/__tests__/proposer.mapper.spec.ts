@@ -1,35 +1,32 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import { delegateBuilder } from '@/modules/delegate/domain/entities/__tests__/delegate.builder';
-import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
+import { delegateBuilder } from '#/modules/delegate/domain/entities/__tests__/delegate.builder';
+import type { Delegate } from '#/modules/delegate/domain/entities/delegate.entity';
 import type {
   ActivePolicy,
   ProposerPolicyData,
-} from '@/modules/policies/domain/entities/active-policy.entity';
-import { OffChainSource } from '@/modules/policies/domain/entities/policy-enforcement.entity';
+} from '#/modules/policies/domain/entities/active-policy.entity';
+import { OffChainSource } from '#/modules/policies/domain/entities/policy-enforcement.entity';
 import {
   PolicyEnforcementKind,
   PolicyType,
-} from '@/modules/policies/domain/entities/policy-type.entity';
-import type { SafeRef } from '@/modules/policies/domain/entities/safe-ref.entity';
-import { ProposerMapper } from '@/modules/policies/routes/mappers/proposer.mapper';
+} from '#/modules/policies/domain/entities/policy-type.entity';
+import type { SafeRef } from '#/modules/policies/domain/entities/safe-ref.entity';
+import { ProposerMapper } from '#/modules/policies/routes/mappers/proposer.mapper';
 
 const SEPOLIA = '11155111';
 
 /**
  * The proposer configuration of {@link policy}.
  *
- * `ActivePolicy.data` is a union across policy types and the discriminating
- * `type` sits on the policy rather than on the data, so the shape is narrowed
- * here by the field only a proposer policy carries.
+ * `ActivePolicy.data` is a union across policy types, and the discriminating
+ * `type` sits on the policy rather than on the data, so it cannot be narrowed
+ * structurally - `StatelessPolicyData` is `Record<string, never>` and answers to
+ * every `in` check. Every policy this mapper builds is a proposer policy.
  */
 function proposerData(policy: ActivePolicy): ProposerPolicyData {
-  if (!('proposers' in policy.data)) {
-    throw new Error(`Expected a proposer policy, got ${policy.type}`);
-  }
-
-  return policy.data;
+  return policy.data as ProposerPolicyData;
 }
 
 describe('ProposerMapper', () => {

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { TenderlySimulationResponseSchema } from '@/modules/relay/datasources/schemas/tenderly-simulation.schema';
+import { TenderlySimulationResponseSchema } from '#/modules/relay/datasources/schemas/tenderly-simulation.schema';
 
 describe('TenderlySimulationResponseSchema', () => {
   it('parses a minimal successful response with no transaction_info', () => {

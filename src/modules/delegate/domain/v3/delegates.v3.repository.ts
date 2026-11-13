@@ -2,16 +2,16 @@
 
 import { Inject, Injectable } from '@nestjs/common';
 import type { Address } from 'viem';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { Page } from '@/domain/entities/page.entity';
-import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
-import { DelegatePageSchema } from '@/modules/delegate/domain/entities/schemas/delegate.schema';
-import { IDelegatesV3Repository } from '@/modules/delegate/domain/v3/delegates.v3.repository.interface';
-import { SafeQueueDelegatePageSchema } from '@/modules/safe-queue/entities/delegate.entity';
-import { clearBothCacheLayers } from '@/modules/safe-queue/helpers/clear-cache-layers.helper';
-import { ISafeQueueService } from '@/modules/safe-queue/safe-queue.interface';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { Page } from '#/domain/entities/page.entity';
+import { ITransactionApiManager } from '#/domain/interfaces/transaction-api.manager.interface';
+import { ILoggingService, LoggingService } from '#/logging/logging.interface';
+import { Delegate } from '#/modules/delegate/domain/entities/delegate.entity';
+import { DelegatePageSchema } from '#/modules/delegate/domain/entities/schemas/delegate.schema';
+import { IDelegatesV3Repository } from '#/modules/delegate/domain/v3/delegates.v3.repository.interface';
+import { SafeQueueDelegatePageSchema } from '#/modules/safe-queue/entities/delegate.entity';
+import { clearBothCacheLayers } from '#/modules/safe-queue/helpers/clear-cache-layers.helper';
+import { ISafeQueueService } from '#/modules/safe-queue/safe-queue.interface';
 
 @Injectable()
 export class DelegatesV3Repository implements IDelegatesV3Repository {

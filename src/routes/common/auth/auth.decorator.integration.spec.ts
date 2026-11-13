@@ -12,23 +12,23 @@ import request from 'supertest';
 import {
   initTestApplication,
   TestAppProvider,
-} from '@/__tests__/test-app.provider';
-import { ConfigurationModule } from '@/config/configuration.module';
-import configuration from '@/config/entities/__tests__/configuration';
-import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
-import { CacheModule } from '@/datasources/cache/cache.module';
-import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
-import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
-import { AuthModule } from '@/modules/auth/auth.module';
-import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+} from '#/__tests__/test-app.provider';
+import { ConfigurationModule } from '#/config/configuration.module';
+import configuration from '#/config/entities/__tests__/configuration';
+import { TestCacheModule } from '#/datasources/cache/__tests__/test.cache.module';
+import { CacheModule } from '#/datasources/cache/cache.module';
+import { IJwtService } from '#/datasources/jwt/jwt.service.interface';
+import { TestLoggingModule } from '#/logging/__tests__/test.logging.module';
+import { AuthModule } from '#/modules/auth/auth.module';
+import { siweAuthPayloadDtoBuilder } from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import {
   AuthPayload,
   type AuthPayloadDto,
-} from '@/modules/auth/domain/entities/auth-payload.entity';
-import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
-import { TestUsersModule } from '@/modules/users/__tests__/test.users.module';
-import { UsersModule } from '@/modules/users/users.module';
-import { Auth } from '@/routes/common/auth/auth.decorator';
+} from '#/modules/auth/domain/entities/auth-payload.entity';
+import { AuthGuard } from '#/modules/auth/routes/guards/auth.guard';
+import { TestUsersModule } from '#/modules/users/__tests__/test.users.module';
+import { UsersModule } from '#/modules/users/users.module';
+import { Auth } from '#/routes/common/auth/auth.decorator';
 
 describe('Auth decorator', () => {
   let app: INestApplication<Server>;

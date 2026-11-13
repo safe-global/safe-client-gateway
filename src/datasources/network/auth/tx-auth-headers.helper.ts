@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { IConfigurationService } from '@/config/configuration.service.interface';
-import { getServiceAuthHeaders } from '@/datasources/network/auth/service-auth-headers.helper';
+import type { IConfigurationService } from '#/config/configuration.service.interface';
+import { getServiceAuthHeaders } from '#/datasources/network/auth/service-auth-headers.helper';
 
 /**
  * Returns Transaction Service auth headers when running in development

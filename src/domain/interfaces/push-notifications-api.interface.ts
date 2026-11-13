@@ -1,4 +1,5 @@
-import type { FirebaseNotification } from '@/datasources/push-notifications-api/entities/firebase-notification.entity';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { FirebaseNotification } from '#/datasources/push-notifications-api/entities/firebase-notification.entity';
 
 export const IPushNotificationsApi = Symbol('IPushNotificationsApi');
 

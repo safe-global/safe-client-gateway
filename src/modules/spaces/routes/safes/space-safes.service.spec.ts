@@ -1,28 +1,29 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
-import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
+import { HttpStatus, UnauthorizedException } from '@nestjs/common';
 import type { EntityManager } from 'typeorm';
 import { Equal } from 'typeorm';
 import type { Address } from 'viem';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import type { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
+import type { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
+import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
 import {
   oidcAuthPayloadDtoBuilder,
   siweAuthPayloadDtoBuilder,
-} from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import type { IEntitlementEnforcement } from '@/modules/entitlements/domain/entitlement-enforcement.interface';
-import { QuotaExceededError } from '@/modules/entitlements/domain/errors/quota-exceeded.error';
-import type { IAddressBookItemsRepository } from '@/modules/spaces/domain/address-books/address-book-items.repository.interface';
-import { spaceBuilder } from '@/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
-import type { PreparedSpaceSafe } from '@/modules/spaces/domain/safes/entities/space-safe.entity';
-import type { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
-import { SpaceSafesService } from '@/modules/spaces/routes/safes/space-safes.service';
-import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
-import type { Member } from '@/modules/users/domain/entities/member.entity';
-import type { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
+} from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import type { IEntitlementEnforcement } from '#/modules/entitlements/domain/entitlement-enforcement.interface';
+import { QuotaExceededError } from '#/modules/entitlements/domain/errors/quota-exceeded.error';
+import type { IAddressBookItemsRepository } from '#/modules/spaces/domain/address-books/address-book-items.repository.interface';
+import { spaceBuilder } from '#/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
+import type { PreparedSpaceSafe } from '#/modules/spaces/domain/safes/entities/space-safe.entity';
+import type { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository.interface';
+import { SpaceSafesService } from '#/modules/spaces/routes/safes/space-safes.service';
+import { memberBuilder } from '#/modules/users/datasources/entities/__tests__/member.entity.db.builder';
+import type { Member } from '#/modules/users/domain/entities/member.entity';
+import type { IMembersRepository } from '#/modules/users/domain/members/members.repository.interface';
 
 const addr = (): Address => getAddress(faker.finance.ethereumAddress());
 
@@ -155,7 +156,12 @@ describe('SpaceSafesService', () => {
             authPayload,
             payload: [],
           }),
-        ).rejects.toThrow(ForbiddenException);
+        ).rejects.toThrow(
+          new HttpExceptionNoLog(
+            'User is not an admin of this workspace',
+            HttpStatus.FORBIDDEN,
+          ),
+        );
       },
     );
 
@@ -411,7 +417,12 @@ describe('SpaceSafesService', () => {
 
         await expect(
           service.get(faker.number.int(), authPayload),
-        ).rejects.toThrow(ForbiddenException);
+        ).rejects.toThrow(
+          new HttpExceptionNoLog(
+            'User is not a member of this workspace',
+            HttpStatus.FORBIDDEN,
+          ),
+        );
 
         expect(spaceSafesRepositoryMock.findBySpaceId).not.toHaveBeenCalled();
       },
@@ -559,7 +570,12 @@ describe('SpaceSafesService', () => {
             authPayload,
             payload: [],
           }),
-        ).rejects.toThrow(ForbiddenException);
+        ).rejects.toThrow(
+          new HttpExceptionNoLog(
+            'User is not an admin of this workspace',
+            HttpStatus.FORBIDDEN,
+          ),
+        );
       },
     );
   });

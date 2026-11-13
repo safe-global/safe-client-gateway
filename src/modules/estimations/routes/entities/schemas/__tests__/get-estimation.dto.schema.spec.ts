@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
-import { getEstimationDtoBuilder } from '@/modules/estimations/routes/entities/__tests__/get-estimation.dto.builder';
-import { GetEstimationDtoSchema } from '@/modules/estimations/routes/entities/schemas/get-estimation.dto.schema';
+import { getEstimationDtoBuilder } from '#/modules/estimations/routes/entities/__tests__/get-estimation.dto.builder';
+import { GetEstimationDtoSchema } from '#/modules/estimations/routes/entities/schemas/get-estimation.dto.schema';
 
 describe('GetEstimationDtoSchema', () => {
   it('should validate a valid GetEstimationDto', () => {

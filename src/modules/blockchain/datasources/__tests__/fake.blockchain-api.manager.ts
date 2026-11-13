@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Injectable } from '@nestjs/common';
-import type { IBlockchainApiManager } from '@/domain/interfaces/blockchain-api.manager.interface';
+import type { IBlockchainApiManager } from '#/domain/interfaces/blockchain-api.manager.interface';
 
 @Injectable()
 export class FakeBlockchainApiManager implements IBlockchainApiManager {
   getApi = vi.fn();
+
+  getUncachedApi = vi.fn();
 
   destroyApi = vi.fn();
 }

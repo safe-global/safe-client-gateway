@@ -6,50 +6,52 @@ import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
+  HttpStatus,
   NotFoundException,
   UnauthorizedException,
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
+import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
 import {
   checkoutSessionBuilder,
   checkoutSessionResultBuilder,
-} from '@/datasources/billing-api/entities/__tests__/checkout-session.builder';
+} from '#/datasources/billing-api/entities/__tests__/checkout-session.builder';
 import {
   paymentLinkBuilder,
   paymentLinkPricedAt,
   trialPaymentLinkBuilder,
-} from '@/datasources/billing-api/entities/__tests__/payment-link.builder';
-import { planBuilder } from '@/datasources/billing-api/entities/__tests__/plan.builder';
-import { subscriptionBuilder } from '@/datasources/billing-api/entities/__tests__/subscription.builder';
+} from '#/datasources/billing-api/entities/__tests__/payment-link.builder';
+import { planBuilder } from '#/datasources/billing-api/entities/__tests__/plan.builder';
+import { subscriptionBuilder } from '#/datasources/billing-api/entities/__tests__/subscription.builder';
 import {
   subscriptionUpdatePreviewBuilder,
   updateSubscriptionResultBuilder,
-} from '@/datasources/billing-api/entities/__tests__/subscription-update.builder';
-import type { PaymentLink } from '@/datasources/billing-api/entities/payment-link.entity';
-import type { Subscription } from '@/datasources/billing-api/entities/subscription.entity';
-import type { ILoggingService } from '@/logging/logging.interface';
+} from '#/datasources/billing-api/entities/__tests__/subscription-update.builder';
+import type { PaymentLink } from '#/datasources/billing-api/entities/payment-link.entity';
+import type { Subscription } from '#/datasources/billing-api/entities/subscription.entity';
+import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
+import type { ILoggingService } from '#/logging/logging.interface';
 import {
   oidcAuthPayloadDtoBuilder,
   siweAuthPayloadDtoBuilder,
-} from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import type { IBillingRepository } from '@/modules/billing/domain/billing.repository.interface';
-import { webhookEventBuilder } from '@/modules/billing/domain/entities/__tests__/webhook-event.builder';
-import { SAFES_REMOVED_PLAN_UNCHANGED_MESSAGE } from '@/modules/billing/domain/subscription.constants';
-import { BillingService } from '@/modules/billing/routes/billing.service';
-import { toCheckoutSessionDto } from '@/modules/billing/routes/entities/checkout-session.entity';
-import { spaceSubscriptionBuilder } from '@/modules/entitlements/domain/entities/__tests__/space-subscription.builder';
-import type { ISubscriptionSyncService } from '@/modules/entitlements/domain/subscription-sync.service.interface';
-import type { ISubscriptionsRepository } from '@/modules/entitlements/domain/subscriptions.repository.interface';
-import type { Space } from '@/modules/spaces/domain/entities/space.entity';
-import type { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
-import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
-import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
-import type { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
-import { fakeUuid } from '@/validation/entities/schemas/__tests__/uuid.builder';
+} from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import type { IBillingRepository } from '#/modules/billing/domain/billing.repository.interface';
+import { webhookEventBuilder } from '#/modules/billing/domain/entities/__tests__/webhook-event.builder';
+import { SAFES_REMOVED_PLAN_UNCHANGED_MESSAGE } from '#/modules/billing/domain/subscription.constants';
+import { BillingService } from '#/modules/billing/routes/billing.service';
+import { toCheckoutSessionDto } from '#/modules/billing/routes/entities/checkout-session.entity';
+import { spaceSubscriptionBuilder } from '#/modules/entitlements/domain/entities/__tests__/space-subscription.builder';
+import type { ISubscriptionSyncService } from '#/modules/entitlements/domain/subscription-sync.service.interface';
+import type { ISubscriptionsRepository } from '#/modules/entitlements/domain/subscriptions.repository.interface';
+import type { Space } from '#/modules/spaces/domain/entities/space.entity';
+import type { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository.interface';
+import type { ISpacesRepository } from '#/modules/spaces/domain/spaces.repository.interface';
+import { memberBuilder } from '#/modules/users/datasources/entities/__tests__/member.entity.db.builder';
+import type { IMembersRepository } from '#/modules/users/domain/members/members.repository.interface';
+import { fakeUuid } from '#/validation/entities/schemas/__tests__/uuid.builder';
 
 const billingRepositoryMock = {
   getPlan: vi.fn(),
@@ -100,6 +102,7 @@ const AFTER_ENFORCEMENT = '2026-11-01T00:00:00Z';
 describe('BillingService', () => {
   let service: BillingService;
   let postLoginRedirectUri: string;
+  let fakeConfigurationService: FakeConfigurationService;
 
   function withinRedirectOrigin(): string {
     return new URL(faker.system.filePath(), postLoginRedirectUri).toString();
@@ -121,10 +124,34 @@ describe('BillingService', () => {
     );
   }
 
+  function createBillingService(
+    configurationService: FakeConfigurationService,
+  ): BillingService {
+    return new BillingService(
+      billingRepositoryMock,
+      membersRepositoryMock,
+      configurationService,
+      subscriptionSyncServiceMock,
+      subscriptionsRepositoryMock,
+      spacesRepositoryMock,
+      spaceSafesRepositoryMock,
+      loggingServiceMock,
+    );
+  }
+
+  /** Rebuilds the service with the grace claim window already closed. */
+  function closeGraceClaimWindow(): void {
+    fakeConfigurationService.set(
+      'entitlements.gracePeriodClaimEndsAt',
+      faker.date.past(),
+    );
+    service = createBillingService(fakeConfigurationService);
+  }
+
   beforeEach(() => {
     vi.resetAllMocks();
     postLoginRedirectUri = faker.internet.url();
-    const fakeConfigurationService = new FakeConfigurationService();
+    fakeConfigurationService = new FakeConfigurationService();
     fakeConfigurationService.set(
       'auth.postLoginRedirectUri',
       postLoginRedirectUri,
@@ -133,6 +160,10 @@ describe('BillingService', () => {
     fakeConfigurationService.set(
       'entitlements.enforcementStartsAt',
       new Date(ENFORCEMENT_STARTS_AT),
+    );
+    fakeConfigurationService.set(
+      'entitlements.gracePeriodClaimEndsAt',
+      faker.date.future(),
     );
 
     // Defaults for the specs that are not about the offer filter: a workspace
@@ -152,16 +183,7 @@ describe('BillingService', () => {
       memberBuilder().with('role', 'ADMIN').with('status', 'ACTIVE').build(),
     );
 
-    service = new BillingService(
-      billingRepositoryMock,
-      membersRepositoryMock,
-      fakeConfigurationService,
-      subscriptionSyncServiceMock,
-      subscriptionsRepositoryMock,
-      spacesRepositoryMock,
-      spaceSafesRepositoryMock,
-      loggingServiceMock,
-    );
+    service = createBillingService(fakeConfigurationService);
   });
 
   describe('constructor', () => {
@@ -169,26 +191,33 @@ describe('BillingService', () => {
     // and `RootConfigurationSchema` rejects a non-ISO env value at boot. What
     // is still worth asserting here is that a missing key is not tolerated.
     it('should throw when entitlements.enforcementStartsAt is not configured', () => {
-      const fakeConfigurationService = new FakeConfigurationService();
-      fakeConfigurationService.set(
+      const configurationService = new FakeConfigurationService();
+      configurationService.set(
         'auth.postLoginRedirectUri',
         faker.internet.url(),
       );
-      fakeConfigurationService.set('application.isProduction', false);
+      configurationService.set('application.isProduction', false);
 
-      expect(
-        () =>
-          new BillingService(
-            billingRepositoryMock,
-            membersRepositoryMock,
-            fakeConfigurationService,
-            subscriptionSyncServiceMock,
-            subscriptionsRepositoryMock,
-            spacesRepositoryMock,
-            spaceSafesRepositoryMock,
-            loggingServiceMock,
-          ),
-      ).toThrow('No value set for key entitlements.enforcementStartsAt');
+      expect(() => createBillingService(configurationService)).toThrow(
+        'No value set for key entitlements.enforcementStartsAt',
+      );
+    });
+
+    it('should throw when entitlements.gracePeriodClaimEndsAt is not configured', () => {
+      const configurationService = new FakeConfigurationService();
+      configurationService.set(
+        'auth.postLoginRedirectUri',
+        faker.internet.url(),
+      );
+      configurationService.set('application.isProduction', false);
+      configurationService.set(
+        'entitlements.enforcementStartsAt',
+        new Date(ENFORCEMENT_STARTS_AT),
+      );
+
+      expect(() => createBillingService(configurationService)).toThrow(
+        'No value set for key entitlements.gracePeriodClaimEndsAt',
+      );
     });
   });
 
@@ -212,7 +241,7 @@ describe('BillingService', () => {
       'should return subscriptions for %s space members',
       async (_label, builder) => {
         const spaceId = faker.number.int();
-        const spaceUuid = faker.string.uuid();
+        const spaceUuid = fakeUuid();
         const authPayload = new AuthPayload(builder().build());
         const subscriptions = [subscriptionBuilder().build()];
         membersRepositoryMock.findOne.mockResolvedValue(
@@ -242,7 +271,7 @@ describe('BillingService', () => {
       await expect(
         service.getSubscriptions({
           spaceId: faker.number.int(),
-          spaceUuid: faker.string.uuid(),
+          spaceUuid: fakeUuid(),
           authPayload: new AuthPayload(),
         }),
       ).rejects.toThrow(UnauthorizedException);
@@ -259,10 +288,15 @@ describe('BillingService', () => {
       await expect(
         service.getSubscriptions({
           spaceId: faker.number.int(),
-          spaceUuid: faker.string.uuid(),
+          spaceUuid: fakeUuid(),
           authPayload,
         }),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toThrow(
+        new HttpExceptionNoLog(
+          'User is not a member of this workspace',
+          HttpStatus.FORBIDDEN,
+        ),
+      );
 
       expect(
         billingRepositoryMock.getSubscriptionsByCustomerId,
@@ -287,7 +321,7 @@ describe('BillingService', () => {
   describe('getSessionUrl', () => {
     it('should return the session url for a space admin', async () => {
       const spaceId = faker.number.int();
-      const spaceUuid = faker.string.uuid();
+      const spaceUuid = fakeUuid();
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
       const returnUrl = withinRedirectOrigin();
       const sessionUrl = faker.internet.url();
@@ -314,11 +348,16 @@ describe('BillingService', () => {
       await expect(
         service.getSessionUrl({
           spaceId: faker.number.int(),
-          spaceUuid: faker.string.uuid(),
+          spaceUuid: fakeUuid(),
           authPayload,
           returnUrl: withinRedirectOrigin(),
         }),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toThrow(
+        new HttpExceptionNoLog(
+          'User is not an admin of this workspace',
+          HttpStatus.FORBIDDEN,
+        ),
+      );
 
       expect(
         billingRepositoryMock.getCustomerSessionUrl,
@@ -331,7 +370,7 @@ describe('BillingService', () => {
       await expect(
         service.getSessionUrl({
           spaceId: faker.number.int(),
-          spaceUuid: faker.string.uuid(),
+          spaceUuid: fakeUuid(),
           authPayload,
           returnUrl: faker.internet.url(),
         }),
@@ -346,7 +385,7 @@ describe('BillingService', () => {
   describe('getSpacePaymentLinks', () => {
     it('should merge space-specific and general payment links for a space member', async () => {
       const spaceId = faker.number.int();
-      const spaceUuid = faker.string.uuid();
+      const spaceUuid = fakeUuid();
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
       const spaceLink = paymentLinkBuilder().build();
       const generalLink = paymentLinkBuilder().build();
@@ -376,7 +415,7 @@ describe('BillingService', () => {
 
     it('should prefer the space-specific link when the same id is present in both lists', async () => {
       const spaceId = faker.number.int();
-      const spaceUuid = faker.string.uuid();
+      const spaceUuid = fakeUuid();
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
       const sharedId = faker.string.uuid();
       const spaceLink = paymentLinkBuilder().with('id', sharedId).build();
@@ -400,7 +439,7 @@ describe('BillingService', () => {
 
     it('should always offer a space-specific link, regardless of the enforcement filter', async () => {
       const spaceId = faker.number.int();
-      const spaceUuid = faker.string.uuid();
+      const spaceUuid = fakeUuid();
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
       // A negotiated trial with no gracePeriod tag: the general catalog filter
       // would drop it, but a space-specific link is not subject to it.
@@ -428,10 +467,15 @@ describe('BillingService', () => {
       await expect(
         service.getSpacePaymentLinks({
           spaceId: faker.number.int(),
-          spaceUuid: faker.string.uuid(),
+          spaceUuid: fakeUuid(),
           authPayload,
         }),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toThrow(
+        new HttpExceptionNoLog(
+          'User is not a member of this workspace',
+          HttpStatus.FORBIDDEN,
+        ),
+      );
 
       expect(billingRepositoryMock.listPaymentLinks).not.toHaveBeenCalled();
     });
@@ -448,7 +492,7 @@ describe('BillingService', () => {
 
       const result = await service.getSpacePaymentLinks({
         spaceId: faker.number.int(),
-        spaceUuid: faker.string.uuid(),
+        spaceUuid: fakeUuid(),
         authPayload,
       });
 
@@ -465,7 +509,7 @@ describe('BillingService', () => {
 
       await service.getSpacePaymentLinks({
         spaceId: faker.number.int(),
-        spaceUuid: faker.string.uuid(),
+        spaceUuid: fakeUuid(),
         authPayload,
       });
 
@@ -485,7 +529,7 @@ describe('BillingService', () => {
 
       const result = await service.getSpacePaymentLinks({
         spaceId: faker.number.int(),
-        spaceUuid: faker.string.uuid(),
+        spaceUuid: fakeUuid(),
         authPayload,
       });
 
@@ -504,7 +548,26 @@ describe('BillingService', () => {
 
       const result = await service.getSpacePaymentLinks({
         spaceId: faker.number.int(),
-        spaceUuid: faker.string.uuid(),
+        spaceUuid: fakeUuid(),
+        authPayload,
+      });
+
+      expect(result).toEqual([trialLink]);
+    });
+
+    it('should offer only the standard trial link to a space created before the enforcement date once the claim window closed', async () => {
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const graceLink = trialPaymentLinkBuilder(true).build();
+      const trialLink = trialPaymentLinkBuilder(false).build();
+      const paidLink = paymentLinkBuilder().build();
+      closeGraceClaimWindow();
+      membersRepositoryMock.findOne.mockResolvedValue(memberBuilder().build());
+      spaceCreatedAt(BEFORE_ENFORCEMENT);
+      mockCatalog([graceLink, trialLink, paidLink]);
+
+      const result = await service.getSpacePaymentLinks({
+        spaceId: faker.number.int(),
+        spaceUuid: fakeUuid(),
         authPayload,
       });
 
@@ -526,7 +589,7 @@ describe('BillingService', () => {
 
       const result = await service.getSpacePaymentLinks({
         spaceId,
-        spaceUuid: faker.string.uuid(),
+        spaceUuid: fakeUuid(),
         authPayload,
       });
 
@@ -553,7 +616,7 @@ describe('BillingService', () => {
 
       const result = await service.getSpacePaymentLinks({
         spaceId,
-        spaceUuid: faker.string.uuid(),
+        spaceUuid: fakeUuid(),
         authPayload,
       });
 
@@ -571,7 +634,7 @@ describe('BillingService', () => {
       await expect(
         service.getSpacePaymentLinks({
           spaceId: faker.number.int(),
-          spaceUuid: faker.string.uuid(),
+          spaceUuid: fakeUuid(),
           authPayload,
         }),
       ).rejects.toThrow(NotFoundException);
@@ -582,7 +645,7 @@ describe('BillingService', () => {
     it('should return the checkout session result for a space admin', async () => {
       const paymentLinkId = faker.string.uuid();
       const spaceId = faker.number.int();
-      const spaceUuid = faker.string.uuid();
+      const spaceUuid = fakeUuid();
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
       const returnUrl = withinRedirectOrigin();
       const checkoutSessionResult = checkoutSessionResultBuilder().build();
@@ -623,11 +686,16 @@ describe('BillingService', () => {
         service.createCheckoutUrl({
           paymentLinkId: faker.string.uuid(),
           spaceId: faker.number.int(),
-          spaceUuid: faker.string.uuid(),
+          spaceUuid: fakeUuid(),
           authPayload,
           returnUrl: withinRedirectOrigin(),
         }),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toThrow(
+        new HttpExceptionNoLog(
+          'User is not an admin of this workspace',
+          HttpStatus.FORBIDDEN,
+        ),
+      );
 
       expect(
         billingRepositoryMock.createCheckoutSession,
@@ -641,7 +709,7 @@ describe('BillingService', () => {
         service.createCheckoutUrl({
           paymentLinkId: faker.string.uuid(),
           spaceId: faker.number.int(),
-          spaceUuid: faker.string.uuid(),
+          spaceUuid: fakeUuid(),
           authPayload,
           returnUrl: faker.internet.url(),
         }),
@@ -663,7 +731,29 @@ describe('BillingService', () => {
         service.createCheckoutUrl({
           paymentLinkId: graceLink.id,
           spaceId: faker.number.int(),
-          spaceUuid: faker.string.uuid(),
+          spaceUuid: fakeUuid(),
+          authPayload,
+          returnUrl: withinRedirectOrigin(),
+        }),
+      ).rejects.toThrow(ForbiddenException);
+
+      expect(
+        billingRepositoryMock.createCheckoutSession,
+      ).not.toHaveBeenCalled();
+    });
+
+    it('should throw when checking out the legacy grace link once the claim window closed', async () => {
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const graceLink = trialPaymentLinkBuilder(true).build();
+      closeGraceClaimWindow();
+      spaceCreatedAt(BEFORE_ENFORCEMENT);
+      mockCatalog([graceLink]);
+
+      await expect(
+        service.createCheckoutUrl({
+          paymentLinkId: graceLink.id,
+          spaceId: faker.number.int(),
+          spaceUuid: fakeUuid(),
           authPayload,
           returnUrl: withinRedirectOrigin(),
         }),
@@ -675,7 +765,7 @@ describe('BillingService', () => {
     });
 
     it('should check out a payment link the space is offered', async () => {
-      const spaceUuid = faker.string.uuid();
+      const spaceUuid = fakeUuid();
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
       const returnUrl = withinRedirectOrigin();
       const graceLink = trialPaymentLinkBuilder(true).build();
@@ -720,7 +810,7 @@ describe('BillingService', () => {
         service.createCheckoutUrl({
           paymentLinkId,
           spaceId: faker.number.int(),
-          spaceUuid: faker.string.uuid(),
+          spaceUuid: fakeUuid(),
           authPayload,
           returnUrl: withinRedirectOrigin(),
         }),
@@ -733,7 +823,7 @@ describe('BillingService', () => {
 
     it("should check out a plan whose seats cover the workspace's current Safes", async () => {
       const paymentLinkId = faker.string.uuid();
-      const spaceUuid = faker.string.uuid();
+      const spaceUuid = fakeUuid();
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
       const checkoutSessionResult = checkoutSessionResultBuilder().build();
       const paymentLink = paymentLinkBuilder()
@@ -781,7 +871,7 @@ describe('BillingService', () => {
       const result = await service.createCheckoutUrl({
         paymentLinkId,
         spaceId: faker.number.int(),
-        spaceUuid: faker.string.uuid(),
+        spaceUuid: fakeUuid(),
         authPayload,
         returnUrl: withinRedirectOrigin(),
       });
@@ -903,7 +993,12 @@ describe('BillingService', () => {
           planId,
           authPayload,
         }),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toThrow(
+        new HttpExceptionNoLog(
+          'User is not an admin of this workspace',
+          HttpStatus.FORBIDDEN,
+        ),
+      );
 
       expect(
         billingRepositoryMock.previewSubscriptionUpdate,
@@ -1030,7 +1125,12 @@ describe('BillingService', () => {
           planId,
           authPayload,
         }),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toThrow(
+        new HttpExceptionNoLog(
+          'User is not an admin of this workspace',
+          HttpStatus.FORBIDDEN,
+        ),
+      );
 
       expect(billingRepositoryMock.updateSubscription).not.toHaveBeenCalled();
     });

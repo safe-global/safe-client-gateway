@@ -5,6 +5,7 @@ export enum JobType {
   PUSH_NOTIFICATION_EVENT = 'push-notification-event',
   PUSH_NOTIFICATION_DELIVERY = 'push-notification-delivery',
   SEND_EMAIL = 'send-email',
+  SAFENET_CHECK = 'safenet-check',
 }
 
 export type JobTypeName = (typeof JobType)[keyof typeof JobType];

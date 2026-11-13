@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { Address } from 'viem';
 import { z } from 'zod';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import { AddressSchema } from '#/validation/entities/schemas/address.schema';
 
 /**
  * Schema for targeted safe entry that supports both legacy and chain-specific formats.

@@ -6,9 +6,9 @@ import {
   Injectable,
   type PipeTransform,
 } from '@nestjs/common';
-import { UUID_REGEX } from '@/domain/common/constants';
-import type { Space } from '@/modules/spaces/domain/entities/space.entity';
-import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
+import { UUID_REGEX } from '#/domain/common/constants';
+import type { Space } from '#/modules/spaces/domain/entities/space.entity';
+import { ISpacesRepository } from '#/modules/spaces/domain/spaces.repository.interface';
 
 /**
  * Shared 400 message for malformed Space identifiers.

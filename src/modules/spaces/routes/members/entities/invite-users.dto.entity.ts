@@ -2,17 +2,17 @@
 import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 import type { Address } from 'viem';
 import { z } from 'zod';
-import { makeNameSchema } from '@/domain/common/schemas/name.schema';
-import { getStringEnumKeys } from '@/domain/common/utils/enum';
+import { makeNameSchema } from '#/domain/common/schemas/name.schema';
+import { getStringEnumKeys } from '#/domain/common/utils/enum';
 import {
   MEMBER_NAME_MAX_LENGTH,
   MemberRole,
-} from '@/modules/users/domain/entities/member.entity';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+} from '#/modules/users/domain/entities/member.entity';
+import { AddressSchema } from '#/validation/entities/schemas/address.schema';
 import {
   type EmailAddress,
   EmailAddressSchema,
-} from '@/validation/entities/schemas/email-address.schema';
+} from '#/validation/entities/schemas/email-address.schema';
 
 export const InviteType = {
   Wallet: 'wallet',

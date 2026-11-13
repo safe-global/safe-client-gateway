@@ -3,12 +3,12 @@
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import { CacheRouter } from '@/datasources/cache/cache.router';
-import type { ICacheService } from '@/datasources/cache/cache.service.interface';
-import { LogType } from '@/domain/common/entities/log-type.entity';
-import type { ILoggingService } from '@/logging/logging.interface';
-import { TransactionEventType } from '@/modules/hooks/routes/entities/event-type.entity';
-import { ZerionCacheService } from '@/modules/zerion/datasources/zerion-cache.service';
+import { CacheRouter } from '#/datasources/cache/cache.router';
+import type { ICacheService } from '#/datasources/cache/cache.service.interface';
+import { LogType } from '#/domain/common/entities/log-type.entity';
+import type { ILoggingService } from '#/logging/logging.interface';
+import { TransactionEventType } from '#/modules/hooks/routes/entities/event-type.entity';
+import { ZerionCacheService } from '#/modules/zerion/datasources/zerion-cache.service';
 
 const mockCacheService = vi.mocked({
   deleteByKey: vi.fn(),

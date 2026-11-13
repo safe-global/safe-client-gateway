@@ -1,36 +1,36 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { CacheRouter } from '@/datasources/cache/cache.router';
+import { CacheRouter } from '#/datasources/cache/cache.router';
 import {
   CacheService,
   type ICacheService,
-} from '@/datasources/cache/cache.service.interface';
-import { isForeignKeyViolationError } from '@/datasources/errors/helpers/is-foreign-key-violation-error.helper';
-import { fromSecondsTimestamp } from '@/domain/common/utils/time';
+} from '#/datasources/cache/cache.service.interface';
+import { isForeignKeyViolationError } from '#/datasources/errors/helpers/is-foreign-key-violation-error.helper';
+import { fromSecondsTimestamp } from '#/domain/common/utils/time';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import { IBillingRepository } from '@/modules/billing/domain/billing.repository.interface';
+} from '#/logging/logging.interface';
+import { IBillingRepository } from '#/modules/billing/domain/billing.repository.interface';
 import {
   isPaymentLinkEventType,
   triggersSubscriptionSync,
   WALLET_WEB_CUSTOMER_GROUP,
   type WebhookEvent,
-} from '@/modules/billing/domain/entities/webhook-event.entity';
-import type { FeatureType } from '@/modules/entitlements/domain/entities/feature.entity';
-import type { MaterializedSubscription } from '@/modules/entitlements/domain/entities/materialized-subscription.entity';
-import { IFeaturesRepository } from '@/modules/entitlements/domain/features.repository.interface';
+} from '#/modules/billing/domain/entities/webhook-event.entity';
+import type { FeatureType } from '#/modules/entitlements/domain/entities/feature.entity';
+import type { MaterializedSubscription } from '#/modules/entitlements/domain/entities/materialized-subscription.entity';
+import { IFeaturesRepository } from '#/modules/entitlements/domain/features.repository.interface';
 import {
   mapEventToSubscription,
   mapUpstreamSubscriptions,
-} from '@/modules/entitlements/domain/subscription.mapper';
-import type { ISubscriptionSyncService } from '@/modules/entitlements/domain/subscription-sync.service.interface';
-import { ISubscriptionsRepository } from '@/modules/entitlements/domain/subscriptions.repository.interface';
-import { EntitlementsService } from '@/modules/entitlements/routes/entitlements.service';
-import type { Space } from '@/modules/spaces/domain/entities/space.entity';
-import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
-import { UuidSchema } from '@/validation/entities/schemas/uuid.schema';
+} from '#/modules/entitlements/domain/subscription.mapper';
+import type { ISubscriptionSyncService } from '#/modules/entitlements/domain/subscription-sync.service.interface';
+import { ISubscriptionsRepository } from '#/modules/entitlements/domain/subscriptions.repository.interface';
+import { EntitlementsService } from '#/modules/entitlements/routes/entitlements.service';
+import type { Space } from '#/modules/spaces/domain/entities/space.entity';
+import { ISpacesRepository } from '#/modules/spaces/domain/spaces.repository.interface';
+import { UuidSchema } from '#/validation/entities/schemas/uuid.schema';
 
 /**
  * Materializes upstream subscription state on billing webhooks.

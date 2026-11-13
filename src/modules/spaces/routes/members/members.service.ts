@@ -1,24 +1,27 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { ConflictException, Inject } from '@nestjs/common';
+import { ConflictException, HttpStatus, Inject } from '@nestjs/common';
 import type { Address } from 'viem';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
-import type { Space } from '@/modules/spaces/domain/entities/space.entity';
-import { assertAdmin } from '@/modules/spaces/domain/space-assert.utils';
-import type { AcceptInviteDto } from '@/modules/spaces/routes/members/entities/accept-invite.dto.entity';
-import type { Invitation } from '@/modules/spaces/routes/members/entities/invitation.entity';
-import type { InviteUsersDto } from '@/modules/spaces/routes/members/entities/invite-users.dto.entity';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
+import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import { getAuthenticatedUserIdOrFail } from '#/modules/auth/utils/assert-authenticated.utils';
+import type { Space } from '#/modules/spaces/domain/entities/space.entity';
+import { assertAdmin } from '#/modules/spaces/domain/space-assert.utils';
+import type { AcceptInviteDto } from '#/modules/spaces/routes/members/entities/accept-invite.dto.entity';
+import type { Invitation } from '#/modules/spaces/routes/members/entities/invitation.entity';
+import type { InviteUsersDto } from '#/modules/spaces/routes/members/entities/invite-users.dto.entity';
 import type {
   MemberDto,
   MembersDto,
-} from '@/modules/spaces/routes/members/entities/members.dto.entity';
-import type { UpdateMemberAliasDto } from '@/modules/spaces/routes/members/entities/update-member-name.dto.entity';
-import type { UpdateRoleDto } from '@/modules/spaces/routes/members/entities/update-role.dto.entity';
-import { SpaceInviteEmailService } from '@/modules/spaces/routes/members/space-invite-email.service';
-import type { User } from '@/modules/users/domain/entities/user.entity';
-import { MemberEncryptionService } from '@/modules/users/domain/members/member-encryption.service';
-import { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
+} from '#/modules/spaces/routes/members/entities/members.dto.entity';
+import type { UpdateMemberAliasDto } from '#/modules/spaces/routes/members/entities/update-member-name.dto.entity';
+import type { UpdateRoleDto } from '#/modules/spaces/routes/members/entities/update-role.dto.entity';
+import { SpaceInviteEmailService } from '#/modules/spaces/routes/members/space-invite-email.service';
+import type { User } from '#/modules/users/domain/entities/user.entity';
+import { MemberEncryptionService } from '#/modules/users/domain/members/member-encryption.service';
+import { IMembersRepository } from '#/modules/users/domain/members/members.repository.interface';
+
+const RENEW_INVITE_COOLDOWN_MS = 60_000;
 
 export class MembersService {
   private readonly maxInvites: number;
@@ -108,14 +111,21 @@ export class MembersService {
       args.spaceId,
       name,
     );
-    await this.membersRepository.renewInvite({
+    const renewed = await this.membersRepository.renewInvite({
       memberId: id,
       inviteExpiresAt: new Date(Date.now() + this.inviteTtlMs),
+      notRenewedSince: new Date(Date.now() - RENEW_INVITE_COOLDOWN_MS),
       spaceId: args.spaceId,
       spaceUuid: space.uuid,
       targetUserId: args.userId,
       actorUserId,
     });
+    if (!renewed) {
+      throw new HttpExceptionNoLog(
+        'Invitation was renewed recently. Try again later.',
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
 
     if (user.email) {
       await this.spaceInviteEmailService.enqueueRenewalEmail({

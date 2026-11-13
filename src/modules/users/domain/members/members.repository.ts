@@ -14,35 +14,41 @@ import type {
   FindOptionsRelations,
   FindOptionsWhere,
 } from 'typeorm';
-import { In, IsNull } from 'typeorm';
+import { In, IsNull, LessThanOrEqual } from 'typeorm';
 import { type Address, getAddress } from 'viem';
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { isUniqueConstraintError } from '@/datasources/errors/helpers/is-unique-constraint-error.helper';
-import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-error';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
-import { Space as DbSpace } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
-import { SpaceAuditEventType } from '@/modules/spaces/domain/audit/entities/space-audit-event.entity';
-import { ISpaceAuditRepository } from '@/modules/spaces/domain/audit/space-audit.repository.interface';
-import type { Space } from '@/modules/spaces/domain/entities/space.entity';
-import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
+import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
+import { isUniqueConstraintError } from '#/datasources/errors/helpers/is-unique-constraint-error.helper';
+import { UniqueConstraintError } from '#/datasources/errors/unique-constraint-error';
+import { ILoggingService, LoggingService } from '#/logging/logging.interface';
+import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import { getAuthenticatedUserIdOrFail } from '#/modules/auth/utils/assert-authenticated.utils';
+import { Space as DbSpace } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
+import { SpaceAuditEventType } from '#/modules/spaces/domain/audit/entities/space-audit-event.entity';
+import { ISpaceAuditRepository } from '#/modules/spaces/domain/audit/space-audit.repository.interface';
+import type { Space } from '#/modules/spaces/domain/entities/space.entity';
+import { ISpacesRepository } from '#/modules/spaces/domain/spaces.repository.interface';
 import {
   InviteType,
   type InviteUserInput,
-} from '@/modules/spaces/routes/members/entities/invite-users.dto.entity';
-import { Member as DbMember } from '@/modules/users/datasources/entities/member.entity.db';
-import type { Invitation } from '@/modules/users/domain/entities/invitation.entity';
-import type { Member } from '@/modules/users/domain/entities/member.entity';
-import type { User } from '@/modules/users/domain/entities/user.entity';
-import { MemberEncryptionService } from '@/modules/users/domain/members/member-encryption.service';
-import type { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
-import { activeOrPendingMemberWhere } from '@/modules/users/domain/members/utils/members.utils';
-import { UserEncryptionService } from '@/modules/users/domain/user-encryption.service';
-import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
-import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
-import { WalletEncryptionService } from '@/modules/wallets/domain/wallet-encryption.service';
-import { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
+} from '#/modules/spaces/routes/members/entities/invite-users.dto.entity';
+import { Member as DbMember } from '#/modules/users/datasources/entities/member.entity.db';
+import type { Invitation } from '#/modules/users/domain/entities/invitation.entity';
+import type { Member } from '#/modules/users/domain/entities/member.entity';
+import type { User } from '#/modules/users/domain/entities/user.entity';
+import { MemberEncryptionService } from '#/modules/users/domain/members/member-encryption.service';
+import type { IMembersRepository } from '#/modules/users/domain/members/members.repository.interface';
+import {
+  activeOrPendingMemberWhere,
+  isActiveAdmin,
+  isLastActiveAdminOfSpace,
+  lockSpaceForAdminChange,
+  lockUserForAdminChange,
+} from '#/modules/users/domain/members/utils/members.utils';
+import { UserEncryptionService } from '#/modules/users/domain/user-encryption.service';
+import { IUsersRepository } from '#/modules/users/domain/users.repository.interface';
+import { Wallet } from '#/modules/wallets/datasources/entities/wallets.entity.db';
+import { WalletEncryptionService } from '#/modules/wallets/domain/wallet-encryption.service';
+import { IWalletsRepository } from '#/modules/wallets/domain/wallets.repository.interface';
 
 @Injectable()
 export class MembersRepository implements IMembersRepository {
@@ -396,24 +402,36 @@ export class MembersRepository implements IMembersRepository {
   public async renewInvite(args: {
     memberId: Member['id'];
     inviteExpiresAt: Date;
+    notRenewedSince: Date;
     spaceId: Space['id'];
     spaceUuid: UUID;
     targetUserId: User['id'];
     actorUserId: User['id'];
-  }): Promise<void> {
-    await this.postgresDatabaseService.transaction(async (entityManager) => {
-      await entityManager.update(DbMember, args.memberId, {
-        inviteExpiresAt: args.inviteExpiresAt,
-      });
+  }): Promise<boolean> {
+    return await this.postgresDatabaseService.transaction(
+      async (entityManager) => {
+        const { affected } = await entityManager.update(
+          DbMember,
+          {
+            id: args.memberId,
+            updatedAt: LessThanOrEqual(args.notRenewedSince),
+          },
+          { inviteExpiresAt: args.inviteExpiresAt },
+        );
+        if (!affected) {
+          return false;
+        }
 
-      await this.spaceAuditRepository.record(entityManager, {
-        spaceId: args.spaceId,
-        spaceUuid: args.spaceUuid,
-        eventType: SpaceAuditEventType.MEMBER_INVITE_RENEWED,
-        actorUserId: args.actorUserId,
-        payload: { targetUserId: args.targetUserId },
-      });
-    });
+        await this.spaceAuditRepository.record(entityManager, {
+          spaceId: args.spaceId,
+          spaceUuid: args.spaceUuid,
+          eventType: SpaceAuditEventType.MEMBER_INVITE_RENEWED,
+          actorUserId: args.actorUserId,
+          payload: { targetUserId: args.targetUserId },
+        });
+        return true;
+      },
+    );
   }
 
   public async acceptInvite(args: {
@@ -541,11 +559,22 @@ export class MembersRepository implements IMembersRepository {
     return memberWithAddress;
   }
 
-  private findActiveAdminsOrFail(spaceId: Space['id']): Promise<Array<Member>> {
-    return this.findOrFail({
+  // Skips `findOrFail`'s email decryption to keep KMS calls out of the lock.
+  private async findActiveAdminsForUpdateOrFail(
+    entityManager: EntityManager,
+    spaceId: Space['id'],
+  ): Promise<Array<DbMember>> {
+    const members = await entityManager.find(DbMember, {
+      select: { id: true, role: true, status: true, user: { id: true } },
       where: { space: { id: spaceId }, role: 'ADMIN', status: 'ACTIVE' },
       relations: { user: true },
     });
+
+    if (members.length === 0) {
+      throw new NotFoundException('No members found.');
+    }
+
+    return members;
   }
 
   public async updateRole(args: {
@@ -554,21 +583,25 @@ export class MembersRepository implements IMembersRepository {
     userId: User['id'];
     role: Member['role'];
   }): Promise<void> {
-    // A space must keep at least one active admin. The caller verified the
-    // actor is one, so demoting someone else can never remove the last admin;
-    // the admin list is only loaded for a self-demotion.
-    const isSelf = args.actorUserId === args.userId;
-    if (isSelf && args.role !== 'ADMIN') {
-      const activeAdmins = await this.findActiveAdminsOrFail(args.spaceId);
-      this.assertIsNotLastAdmin({ members: activeAdmins, userId: args.userId });
-    }
-
     await this.postgresDatabaseService.transaction(async (entityManager) => {
+      // Serializes with an in-flight deletion of the target's account.
+      await lockUserForAdminChange(entityManager, args.userId);
+      await lockSpaceForAdminChange(entityManager, args.spaceId);
+
       const member = await entityManager.findOne(DbMember, {
+        select: { id: true, role: true, status: true },
         where: { user: { id: args.userId }, space: { id: args.spaceId } },
       });
       if (!member) {
         throw new NotFoundException('Member not found.');
+      }
+
+      if (args.role !== 'ADMIN') {
+        await this.assertTargetIsNotLastAdmin(entityManager, {
+          member,
+          spaceId: args.spaceId,
+          userId: args.userId,
+        });
       }
 
       await entityManager.update(DbMember, member.id, { role: args.role });
@@ -641,19 +674,22 @@ export class MembersRepository implements IMembersRepository {
     userId: User['id'];
     spaceId: Space['id'];
   }): Promise<void> {
-    // Same as `updateRole`: only a self-removal can hit the last admin.
-    if (args.actorUserId === args.userId) {
-      const activeAdmins = await this.findActiveAdminsOrFail(args.spaceId);
-      this.assertIsNotLastAdmin({ members: activeAdmins, userId: args.userId });
-    }
-
     await this.postgresDatabaseService.transaction(async (entityManager) => {
+      await lockSpaceForAdminChange(entityManager, args.spaceId);
+
       const member = await entityManager.findOne(DbMember, {
+        select: { id: true, role: true, status: true },
         where: { user: { id: args.userId }, space: { id: args.spaceId } },
       });
       if (!member) {
         throw new NotFoundException('Member not found.');
       }
+
+      await this.assertTargetIsNotLastAdmin(entityManager, {
+        member,
+        spaceId: args.spaceId,
+        userId: args.userId,
+      });
 
       await entityManager.delete(DbMember, member.id);
 
@@ -677,17 +713,21 @@ export class MembersRepository implements IMembersRepository {
   }): Promise<void> {
     const userId = getAuthenticatedUserIdOrFail(args.authPayload);
 
-    const activeAdmins = await this.findActiveAdminsOrFail(args.spaceId);
-
-    this.assertIsNotLastAdmin({ members: activeAdmins, userId });
-
     await this.postgresDatabaseService.transaction(async (entityManager) => {
+      await lockSpaceForAdminChange(entityManager, args.spaceId);
+
       const member = await entityManager.findOne(DbMember, {
         where: { user: { id: userId }, space: { id: args.spaceId } },
       });
       if (!member) {
         throw new NotFoundException('Member not found.');
       }
+
+      await this.assertTargetIsNotLastAdmin(entityManager, {
+        member,
+        spaceId: args.spaceId,
+        userId,
+      });
 
       await entityManager.delete(DbMember, member.id);
 
@@ -705,21 +745,28 @@ export class MembersRepository implements IMembersRepository {
     });
   }
 
-  private assertIsNotLastAdmin(args: {
-    members: Array<DbMember>;
-    userId: User['id'];
-  }): void {
+  // Runs under the space lock, so two concurrent changes cannot both pass.
+  private async assertTargetIsNotLastAdmin(
+    entityManager: EntityManager,
+    args: {
+      member: DbMember;
+      spaceId: Space['id'];
+      userId: User['id'];
+    },
+  ): Promise<void> {
+    if (!isActiveAdmin(args.member)) {
+      return;
+    }
+
+    const activeAdmins = await this.findActiveAdminsForUpdateOrFail(
+      entityManager,
+      args.spaceId,
+    );
     if (
-      args.members.length === 1 &&
-      args.members[0].user.id === args.userId &&
-      this.isActiveAdmin(args.members[0])
+      isLastActiveAdminOfSpace({ members: activeAdmins, userId: args.userId })
     ) {
       throw new ConflictException('Cannot remove last admin.');
     }
-  }
-
-  private isActiveAdmin(member: DbMember): boolean {
-    return member.role === 'ADMIN' && member.status === 'ACTIVE';
   }
 
   /**

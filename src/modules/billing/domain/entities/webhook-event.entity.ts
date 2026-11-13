@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
-import { StripeMetadataSchema } from '@/datasources/billing-api/entities/metadata.entity';
-import { withDashes } from '@/datasources/billing-api/upstream-customer-id.util';
+import { StripeMetadataSchema } from '#/datasources/billing-api/entities/metadata.entity';
+import { withDashes } from '#/datasources/billing-api/upstream-customer-id.util';
 
 /** Customer group of the Safe{Wallet} web app, the only one entitlements track. */
 export const WALLET_WEB_CUSTOMER_GROUP = 'wallet_web';

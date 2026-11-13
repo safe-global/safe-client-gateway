@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
-import { SubscriptionStatusSchema } from '@/datasources/billing-api/entities/subscription.entity';
-import { RowSchema } from '@/datasources/db/v2/entities/row.entity';
-import { SubscriptionEntitlementSchema } from '@/modules/entitlements/domain/entities/subscription-entitlement.entity';
+import { SubscriptionStatusSchema } from '#/datasources/billing-api/entities/subscription.entity';
+import { RowSchema } from '#/datasources/db/v2/entities/row.entity';
+import { SubscriptionEntitlementSchema } from '#/modules/entitlements/domain/entities/subscription-entitlement.entity';
 
 export type SpaceSubscription = z.infer<typeof SpaceSubscriptionSchema>;
 

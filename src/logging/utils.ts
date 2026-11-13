@@ -7,11 +7,13 @@ import {
   getRouteParam,
   getRoutePath,
   type RequestLike,
-} from '@/routes/common/http/http-request.utils';
+} from '#/routes/common/http/http-request.utils';
 
 const HEADER_IP_ADDRESS = 'X-Real-IP';
 const HEADER_SAFE_APP_USER_AGENT = 'Safe-App-User-Agent';
 const HEADER_ORIGIN = 'Origin';
+const HEADER_USER_AGENT = 'User-Agent';
+const HEADER_REFERER = 'Referer';
 
 export function formatRouteLogMessage(
   statusCode: number,
@@ -29,6 +31,8 @@ export function formatRouteLogMessage(
   status_code: number;
   detail: string | null;
   origin: string | null;
+  user_agent: string | null;
+  referer: string | null;
 } {
   const clientIp = getHeader(request, HEADER_IP_ADDRESS) ?? null;
   const safeAppUserAgent =
@@ -36,6 +40,8 @@ export function formatRouteLogMessage(
   const chainIdParam = getRouteParam(request, 'chainId');
   const chainId = typeof chainIdParam === 'string' ? chainIdParam : null;
   const origin = getHeader(request, HEADER_ORIGIN) ?? null;
+  const userAgent = getHeader(request, HEADER_USER_AGENT) ?? null;
+  const referer = getRefererOrigin(getHeader(request, HEADER_REFERER));
 
   return {
     chain_id: chainId,
@@ -50,7 +56,23 @@ export function formatRouteLogMessage(
     status_code: statusCode,
     detail: detail ?? null,
     origin,
+    user_agent: userAgent,
+    referer,
   };
+}
+
+/**
+ * Reduces a `Referer` to its origin.
+ *
+ * @param referer - The raw `Referer` header value
+ * @returns The origin, or null if absent, unparsable or opaque
+ */
+function getRefererOrigin(referer: string | undefined): string | null {
+  if (!referer) {
+    return null;
+  }
+  const origin = URL.parse(referer)?.origin;
+  return origin && origin !== 'null' ? origin : null;
 }
 
 /**

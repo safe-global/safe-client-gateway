@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Module } from '@nestjs/common';
-import { AuthModule } from '@/modules/auth/auth.module';
-import { ChainsModule } from '@/modules/chains/chains.module';
-import { EntitlementsModule } from '@/modules/entitlements/entitlements.module';
-import { RelayApiModule } from '@/modules/relay/datasources/relay-api.module';
-import { RelayDomainModule } from '@/modules/relay/domain/relay.domain.module';
-import { WorkspaceRelayer } from '@/modules/relay/domain/relayers/workspace.relayer';
-import { SpaceRelayController } from '@/modules/relay/routes/space-relay.controller';
-import { SpaceRelayService } from '@/modules/relay/routes/space-relay.service';
-import { SpacesModule } from '@/modules/spaces/spaces.module';
-import { UsersModule } from '@/modules/users/users.module';
+import { AuthModule } from '#/modules/auth/auth.module';
+import { ChainsModule } from '#/modules/chains/chains.module';
+import { EntitlementsModule } from '#/modules/entitlements/entitlements.module';
+import { RelayApiModule } from '#/modules/relay/datasources/relay-api.module';
+import { RelayDomainModule } from '#/modules/relay/domain/relay.domain.module';
+import { WorkspaceRelayer } from '#/modules/relay/domain/relayers/workspace.relayer';
+import { SpaceRelayController } from '#/modules/relay/routes/space-relay.controller';
+import { SpaceRelayService } from '#/modules/relay/routes/space-relay.service';
+import { SpacesModule } from '#/modules/spaces/spaces.module';
+import { UsersModule } from '#/modules/users/users.module';
 
 /**
  * Relaying at a workspace's expense, kept apart from `RelayModule` because its

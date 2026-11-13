@@ -3,8 +3,8 @@
 /* Minimal types for fields actually used from simulation.assets_diffs (Blockaid) */
 
 import { z } from 'zod';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { HexSchema } from '@/validation/entities/schemas/hex.schema';
+import { AddressSchema } from '#/validation/entities/schemas/address.schema';
+import { HexSchema } from '#/validation/entities/schemas/hex.schema';
 
 export const AssetTypeSchema = z.enum([
   'NATIVE',

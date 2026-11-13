@@ -10,19 +10,19 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import type { Address } from 'viem';
-import { FeePreviewResponse } from '@/modules/fees/routes/entities/fee-preview-response.entity';
-import { FeePreviewTransactionDto } from '@/modules/fees/routes/entities/fee-preview-transaction.dto.entity';
-import { GasToken } from '@/modules/fees/routes/entities/gas-token.entity';
-import { GasTokenPage } from '@/modules/fees/routes/entities/gas-token-page.entity';
-import { FeePreviewTransactionDtoSchema } from '@/modules/fees/routes/entities/schemas/fee-preview-transaction.dto.schema';
-import { FeesService } from '@/modules/fees/routes/fees.service';
-import { PaginationDataDecorator } from '@/routes/common/decorators/pagination.data.decorator';
-import { RouteUrlDecorator } from '@/routes/common/decorators/route.url.decorator';
-import type { Page } from '@/routes/common/entities/page.entity';
-import type { PaginationData } from '@/routes/common/pagination/pagination.data';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+import { FeePreviewResponse } from '#/modules/fees/routes/entities/fee-preview-response.entity';
+import { FeePreviewTransactionDto } from '#/modules/fees/routes/entities/fee-preview-transaction.dto.entity';
+import { GasToken } from '#/modules/fees/routes/entities/gas-token.entity';
+import { GasTokenPage } from '#/modules/fees/routes/entities/gas-token-page.entity';
+import { FeePreviewTransactionDtoSchema } from '#/modules/fees/routes/entities/schemas/fee-preview-transaction.dto.schema';
+import { FeesService } from '#/modules/fees/routes/fees.service';
+import { PaginationDataDecorator } from '#/routes/common/decorators/pagination.data.decorator';
+import { RouteUrlDecorator } from '#/routes/common/decorators/route.url.decorator';
+import type { Page } from '#/routes/common/entities/page.entity';
+import type { PaginationData } from '#/routes/common/pagination/pagination.data';
+import { AddressSchema } from '#/validation/entities/schemas/address.schema';
+import { NumericStringSchema } from '#/validation/entities/schemas/numeric-string.schema';
+import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
 @ApiTags('fees')
 @Controller({

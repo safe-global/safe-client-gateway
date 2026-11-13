@@ -1,5 +1,6 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import { HexBytesSchema } from '@/validation/entities/schemas/hexbytes.schema';
+import { HexBytesSchema } from '#/validation/entities/schemas/hexbytes.schema';
 
 describe('HexBytesSchema', () => {
   it('should return true if the value is a valid hex bytes', () => {

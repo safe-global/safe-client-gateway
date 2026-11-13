@@ -7,9 +7,9 @@ import request from 'supertest';
 import {
   createTestApplication,
   initTestApplication,
-} from '@/__tests__/test-app.provider';
-import { PaginationDataDecorator } from '@/routes/common/decorators/pagination.data.decorator';
-import { PaginationData } from '@/routes/common/pagination/pagination.data';
+} from '#/__tests__/test-app.provider';
+import { PaginationDataDecorator } from '#/routes/common/decorators/pagination.data.decorator';
+import { PaginationData } from '#/routes/common/pagination/pagination.data';
 
 describe('PaginationDataDecorator', () => {
   let app: INestApplication<Server>;

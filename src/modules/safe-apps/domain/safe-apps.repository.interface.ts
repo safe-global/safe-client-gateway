@@ -1,4 +1,5 @@
-import type { SafeApp } from '@/modules/safe-apps/domain/entities/safe-app.entity';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { SafeApp } from '#/modules/safe-apps/domain/entities/safe-app.entity';
 
 export const ISafeAppsRepository = Symbol('ISafeAppsRepository');
 

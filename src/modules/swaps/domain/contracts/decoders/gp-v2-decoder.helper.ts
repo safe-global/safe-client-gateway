@@ -4,20 +4,20 @@ import type { Address, Hex } from 'viem';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import { AbiDecoder } from '@/modules/contracts/domain/decoders/abi-decoder.helper';
+} from '#/logging/logging.interface';
+import { AbiDecoder } from '#/modules/contracts/domain/decoders/abi-decoder.helper';
 import {
   BuyTokenBalance,
   OrderKind,
   SellTokenBalance,
-} from '@/modules/swaps/domain/entities/order.entity';
+} from '#/modules/swaps/domain/entities/order.entity';
 
 /**
  * Taken from CoW contracts:
  *
  * @see https://github.com/cowprotocol/contracts/blob/1465e69f6935b3ef9ce45d4878e44f0335ef8531/deployments/arbitrumOne/GPv2Settlement.json
  *
- * TODO: We should locate this in @/abis/... but we will need to refactor the /scripts/generate-abis.js
+ * TODO: We should locate this in #/abis/... but we will need to refactor the /scripts/generate-abis.js
  * to handle ABIs that are present (or alternatively install the @cowprotocol/contracts package and generate
  * the ABIs from there)
  */

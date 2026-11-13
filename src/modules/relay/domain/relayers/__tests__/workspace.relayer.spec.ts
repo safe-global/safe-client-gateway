@@ -5,31 +5,31 @@ import { HttpStatus } from '@nestjs/common';
 import type { Address, Hex } from 'viem';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import { LogType } from '@/domain/common/entities/log-type.entity';
-import { DataSourceError } from '@/domain/errors/data-source.error';
-import type { IRelayApi } from '@/domain/interfaces/relay-api.interface';
-import type { ITenderlySimulationApi } from '@/domain/interfaces/tenderly-simulation-api.interface';
-import type { ILoggingService } from '@/logging/logging.interface';
-import type { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { relayerBuilder } from '@/modules/chains/domain/entities/__tests__/relayer.builder';
-import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
+import { LogType } from '#/domain/common/entities/log-type.entity';
+import { DataSourceError } from '#/domain/errors/data-source.error';
+import type { IRelayApi } from '#/domain/interfaces/relay-api.interface';
+import type { ITenderlySimulationApi } from '#/domain/interfaces/tenderly-simulation-api.interface';
+import type { ILoggingService } from '#/logging/logging.interface';
+import type { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
+import { relayerBuilder } from '#/modules/chains/domain/entities/__tests__/relayer.builder';
+import type { Chain } from '#/modules/chains/domain/entities/chain.entity';
 import type {
   ConsumedQuota,
   IEntitlementEnforcement,
-} from '@/modules/entitlements/domain/entitlement-enforcement.interface';
-import { QuotaExceededError } from '@/modules/entitlements/domain/errors/quota-exceeded.error';
-import { GasPaymentOption } from '@/modules/relay/domain/entities/gas-payment-option.entity';
-import { RelayerType } from '@/modules/relay/domain/entities/relayer-type.entity';
-import { GasPaymentOptionUnavailableError } from '@/modules/relay/domain/errors/gas-payment-option-unavailable.error';
-import { RelaySimulationFailedError } from '@/modules/relay/domain/errors/relay-simulation-failed.error';
-import { RelaySimulationIndeterminateError } from '@/modules/relay/domain/errors/relay-simulation-indeterminate.error';
-import type { LimitAddressesMapper } from '@/modules/relay/domain/limit-addresses.mapper';
-import { RelaySimulationService } from '@/modules/relay/domain/relay-simulation.service';
-import type { RelayTransactionHelper } from '@/modules/relay/domain/relay-transaction-helper';
-import { WorkspaceRelayer } from '@/modules/relay/domain/relayers/workspace.relayer';
-import type { Space } from '@/modules/spaces/domain/entities/space.entity';
-import type { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
+} from '#/modules/entitlements/domain/entitlement-enforcement.interface';
+import { QuotaExceededError } from '#/modules/entitlements/domain/errors/quota-exceeded.error';
+import { GasPaymentOption } from '#/modules/relay/domain/entities/gas-payment-option.entity';
+import { RelayerType } from '#/modules/relay/domain/entities/relayer-type.entity';
+import { GasPaymentOptionUnavailableError } from '#/modules/relay/domain/errors/gas-payment-option-unavailable.error';
+import { RelaySimulationFailedError } from '#/modules/relay/domain/errors/relay-simulation-failed.error';
+import { RelaySimulationIndeterminateError } from '#/modules/relay/domain/errors/relay-simulation-indeterminate.error';
+import type { LimitAddressesMapper } from '#/modules/relay/domain/limit-addresses.mapper';
+import { RelaySimulationService } from '#/modules/relay/domain/relay-simulation.service';
+import type { RelayTransactionHelper } from '#/modules/relay/domain/relay-transaction-helper';
+import { WorkspaceRelayer } from '#/modules/relay/domain/relayers/workspace.relayer';
+import type { Space } from '#/modules/spaces/domain/entities/space.entity';
+import type { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository.interface';
 
 const mockLimitAddressesMapper = vi.mocked({
   resolveTarget: vi.fn(),

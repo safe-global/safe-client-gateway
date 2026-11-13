@@ -10,21 +10,21 @@ import {
   parseAbi,
 } from 'viem';
 import type { MockedObject } from 'vitest';
-import { truncateAddress } from '@/domain/common/utils/utils';
-import type { ILoggingService } from '@/logging/logging.interface';
+import { truncateAddress } from '#/domain/common/utils/utils';
+import type { ILoggingService } from '#/logging/logging.interface';
 
-import { HumanDescriptionApi } from '@/modules/human-description/datasources/human-description-api.service';
-import { HumanDescriptionRepository } from '@/modules/human-description/domain/human-description.repository';
-import { multisigTransactionBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
-import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
-import type { SafeAppInfoMapper } from '@/modules/safe-apps/mappers/safe-app-info.mapper';
-import { tokenBuilder } from '@/modules/tokens/domain/__tests__/token.builder';
-import type { Token } from '@/modules/tokens/domain/entities/token.entity';
-import type { TokenRepository } from '@/modules/tokens/domain/token.repository';
-import { MAX_UINT256 } from '@/modules/transactions/routes/constants';
-import { SafeAppInfo } from '@/modules/transactions/routes/entities/safe-app-info.entity';
-import { HumanDescriptionMapper } from '@/modules/transactions/routes/mappers/common/human-description.mapper';
-import { AddressInfo } from '@/routes/common/entities/address-info.entity';
+import { HumanDescriptionApi } from '#/modules/human-description/datasources/human-description-api.service';
+import { HumanDescriptionRepository } from '#/modules/human-description/domain/human-description.repository';
+import { multisigTransactionBuilder } from '#/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
+import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
+import type { SafeAppInfoMapper } from '#/modules/safe-apps/mappers/safe-app-info.mapper';
+import { tokenBuilder } from '#/modules/tokens/domain/__tests__/token.builder';
+import type { Token } from '#/modules/tokens/domain/entities/token.entity';
+import type { TokenRepository } from '#/modules/tokens/domain/token.repository';
+import { MAX_UINT256 } from '#/modules/transactions/routes/constants';
+import { SafeAppInfo } from '#/modules/transactions/routes/entities/safe-app-info.entity';
+import { HumanDescriptionMapper } from '#/modules/transactions/routes/mappers/common/human-description.mapper';
+import { AddressInfo } from '#/routes/common/entities/address-info.entity';
 
 const tokenRepository = vi.mocked({
   getToken: vi.fn(),

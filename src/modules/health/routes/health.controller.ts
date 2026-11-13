@@ -1,7 +1,8 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Controller, Get } from '@nestjs/common';
 import { ApiExcludeController, ApiOkResponse } from '@nestjs/swagger';
-import { Health } from '@/modules/health/routes/entities/health.entity';
-import { HealthService } from '@/modules/health/routes/health.service';
+import { Health } from '#/modules/health/routes/entities/health.entity';
+import { HealthService } from '#/modules/health/routes/health.service';
 
 @Controller({ path: 'health' })
 @ApiExcludeController()

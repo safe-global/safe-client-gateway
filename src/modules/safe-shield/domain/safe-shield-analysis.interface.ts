@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { Address, Hex } from 'viem';
-import type { Operation } from '@/modules/safe/domain/entities/operation.entity';
+import type { Operation } from '#/modules/safe/domain/entities/operation.entity';
 import type {
   CounterpartyAnalysisResponse,
   SingleRecipientAnalysisResponse,
-} from '@/modules/safe-shield/entities/analysis-responses.entity';
+} from '#/modules/safe-shield/entities/analysis-responses.entity';
 
 export const ISafeShieldAnalysis = Symbol('ISafeShieldAnalysis');
 

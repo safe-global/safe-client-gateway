@@ -9,7 +9,7 @@ import {
   PortfolioErc20Token,
   PortfolioErc721Token,
   PortfolioNativeToken,
-} from '@/modules/portfolio/v1/entities/portfolio-token.entity';
+} from '#/modules/portfolio/v1/entities/portfolio-token.entity';
 
 @ApiExtraModels(PortfolioNativeToken, PortfolioErc20Token, PortfolioErc721Token)
 export class TokenBalance {

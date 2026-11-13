@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { backboneBuilder } from '@/modules/backbone/domain/entities/__tests__/backbone.builder';
-import { BackboneSchema } from '@/modules/backbone/domain/entities/schemas/backbone.schema';
+import { backboneBuilder } from '#/modules/backbone/domain/entities/__tests__/backbone.builder';
+import { BackboneSchema } from '#/modules/backbone/domain/entities/schemas/backbone.schema';
 
 describe('BackboneSchema', () => {
   it('should validate a valid backbone', () => {

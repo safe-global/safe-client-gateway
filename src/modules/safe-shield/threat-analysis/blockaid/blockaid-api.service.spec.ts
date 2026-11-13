@@ -2,15 +2,15 @@
 
 import type Blockaid from '@blockaid/client';
 import type { JsonRpcScanResponse } from '@blockaid/client/resources/evm/json-rpc';
-// import { GUARD_STORAGE_POSITION } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.constants';
+// import { GUARD_STORAGE_POSITION } from '#/modules/safe-shield/threat-analysis/blockaid/blockaid-api.constants';
 import { faker } from '@faker-js/faker';
 import type { Address } from 'viem';
 import type { MockedObject } from 'vitest';
-import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
-import type { ILoggingService } from '@/logging/logging.interface';
-import { ReportEvent } from '@/modules/safe-shield/entities/dtos/report-false-result.dto';
-import { BlockaidApi } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.service';
-import type { BlockaidScanResponse } from '@/modules/safe-shield/threat-analysis/blockaid/schemas/blockaid-scan-response.schema';
+import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
+import type { ILoggingService } from '#/logging/logging.interface';
+import { ReportEvent } from '#/modules/safe-shield/entities/dtos/report-false-result.dto';
+import { BlockaidApi } from '#/modules/safe-shield/threat-analysis/blockaid/blockaid-api.service';
+import type { BlockaidScanResponse } from '#/modules/safe-shield/threat-analysis/blockaid/schemas/blockaid-scan-response.schema';
 
 const createMockWithResponse = (
   data: JsonRpcScanResponse,

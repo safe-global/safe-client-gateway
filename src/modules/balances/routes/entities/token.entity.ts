@@ -5,7 +5,7 @@ import type {
   Erc20Token as DomainErc20Token,
   Erc721Token as DomainErc721Token,
   NativeToken as DomainNativeToken,
-} from '@/modules/tokens/domain/entities/token.entity';
+} from '#/modules/tokens/domain/entities/token.entity';
 
 class BaseToken {
   @ApiProperty()

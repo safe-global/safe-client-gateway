@@ -9,12 +9,13 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import type { Address } from 'viem';
-import { EstimationResponse } from '@/modules/estimations/routes/entities/estimation-response.entity';
-import { GetEstimationDto } from '@/modules/estimations/routes/entities/get-estimation.dto.entity';
-import { GetEstimationDtoSchema } from '@/modules/estimations/routes/entities/schemas/get-estimation.dto.schema';
-import { EstimationsService } from '@/modules/estimations/routes/estimations.service';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+import { ChainIdSchema } from '#/modules/chains/domain/entities/schemas/chain-id.schema';
+import { EstimationResponse } from '#/modules/estimations/routes/entities/estimation-response.entity';
+import { GetEstimationDto } from '#/modules/estimations/routes/entities/get-estimation.dto.entity';
+import { GetEstimationDtoSchema } from '#/modules/estimations/routes/entities/schemas/get-estimation.dto.schema';
+import { EstimationsService } from '#/modules/estimations/routes/estimations.service';
+import { AddressSchema } from '#/validation/entities/schemas/address.schema';
+import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
 @ApiTags('estimations')
 @Controller({
@@ -56,7 +57,7 @@ export class EstimationsController {
   @HttpCode(200)
   @Post('chains/:chainId/safes/:address/multisig-transactions/estimations')
   getEstimation(
-    @Param('chainId') chainId: string,
+    @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
     @Param('address', new ValidationPipe(AddressSchema)) address: Address,
     @Body(new ValidationPipe(GetEstimationDtoSchema))
     getEstimationDto: GetEstimationDto,

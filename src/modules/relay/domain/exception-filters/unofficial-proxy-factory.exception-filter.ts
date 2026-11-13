@@ -6,7 +6,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import type { FastifyReply } from 'fastify';
-import { UnofficialProxyFactoryError } from '@/modules/relay/domain/errors/unofficial-proxy-factory.error';
+import { UnofficialProxyFactoryError } from '#/modules/relay/domain/errors/unofficial-proxy-factory.error';
 
 @Catch(UnofficialProxyFactoryError)
 export class UnofficialProxyFactoryExceptionFilter implements ExceptionFilter {

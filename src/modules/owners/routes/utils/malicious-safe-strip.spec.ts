@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import { unionStrip } from '@/modules/owners/routes/utils/malicious-safe-strip';
+import { unionStrip } from '#/modules/owners/routes/utils/malicious-safe-strip';
 
 const lowerAddress = (): string =>
   faker.finance.ethereumAddress().toLowerCase();

@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
-import { ChainApiManager } from '@/datasources/common/chain-api.manager';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { CacheFirstDataSource } from '#/datasources/cache/cache.first.data.source';
+import { ChainApiManager } from '#/datasources/common/chain-api.manager';
+import { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
 import {
   type INetworkService,
   NetworkService,
-} from '@/datasources/network/network.service.interface';
-import type { IBridgeApiFactory } from '@/domain/interfaces/bridge-api.factory.interface';
-import type { IBridgeApi } from '@/domain/interfaces/bridge-api.inferface';
-import { LifiBridgeApi } from '@/modules/bridge/datasources/lifi-api.service';
+} from '#/datasources/network/network.service.interface';
+import type { IBridgeApiFactory } from '#/domain/interfaces/bridge-api.factory.interface';
+import type { IBridgeApi } from '#/domain/interfaces/bridge-api.inferface';
+import { LifiBridgeApi } from '#/modules/bridge/datasources/lifi-api.service';
 
 @Injectable()
 export class BridgeApiFactory

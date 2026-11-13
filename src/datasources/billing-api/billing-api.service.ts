@@ -1,42 +1,42 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
-import { IConfigurationService } from '@/config/configuration.service.interface';
+import { IConfigurationService } from '#/config/configuration.service.interface';
 import type {
   CheckoutSession,
   CheckoutSessionResult,
-} from '@/datasources/billing-api/entities/checkout-session.entity';
-import type { PaymentLinksResult } from '@/datasources/billing-api/entities/payment-link.entity';
-import type { Plan } from '@/datasources/billing-api/entities/plan.entity';
+} from '#/datasources/billing-api/entities/checkout-session.entity';
+import type { PaymentLinksResult } from '#/datasources/billing-api/entities/payment-link.entity';
+import type { Plan } from '#/datasources/billing-api/entities/plan.entity';
 import type {
   SubscriptionStatusFilter,
   SubscriptionsResult,
-} from '@/datasources/billing-api/entities/subscription.entity';
+} from '#/datasources/billing-api/entities/subscription.entity';
 import type {
   SubscriptionUpdatePreview,
   UpdateSubscriptionResult,
-} from '@/datasources/billing-api/entities/subscription-update.entity';
-import { DEFAULT_PRORATION_BEHAVIOR } from '@/datasources/billing-api/entities/subscription-update.entity';
-import { stripDashes } from '@/datasources/billing-api/upstream-customer-id.util';
-import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
-import { CacheRouter } from '@/datasources/cache/cache.router';
+} from '#/datasources/billing-api/entities/subscription-update.entity';
+import { DEFAULT_PRORATION_BEHAVIOR } from '#/datasources/billing-api/entities/subscription-update.entity';
+import { stripDashes } from '#/datasources/billing-api/upstream-customer-id.util';
+import { CacheFirstDataSource } from '#/datasources/cache/cache.first.data.source';
+import { CacheRouter } from '#/datasources/cache/cache.router';
 import {
   CacheService,
   type ICacheService,
-} from '@/datasources/cache/cache.service.interface';
-import type { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import type { NetworkRequest } from '@/datasources/network/entities/network.request.entity';
+} from '#/datasources/cache/cache.service.interface';
+import type { CacheDir } from '#/datasources/cache/entities/cache-dir.entity';
+import { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
+import type { NetworkRequest } from '#/datasources/network/entities/network.request.entity';
 import {
   type INetworkService,
   NetworkService,
-} from '@/datasources/network/network.service.interface';
-import type { IBillingApi } from '@/domain/interfaces/billing-api.interface';
+} from '#/datasources/network/network.service.interface';
+import type { IBillingApi } from '#/domain/interfaces/billing-api.interface';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import type { Raw } from '@/validation/entities/raw.entity';
-import { rawify } from '@/validation/entities/raw.entity';
+} from '#/logging/logging.interface';
+import type { Raw } from '#/validation/entities/raw.entity';
+import { rawify } from '#/validation/entities/raw.entity';
 
 @Injectable()
 export class BillingApi implements IBillingApi {

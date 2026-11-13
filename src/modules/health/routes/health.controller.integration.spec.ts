@@ -7,13 +7,13 @@ import type { MockedObject } from 'vitest';
 import {
   initTestApplication,
   TestAppProvider,
-} from '@/__tests__/test-app.provider';
-import { createTestModule } from '@/__tests__/testing-module';
-import configuration from '@/config/entities/__tests__/configuration';
-import type { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
-import { CacheService } from '@/datasources/cache/cache.service.interface';
-import type { IQueueReadiness } from '@/domain/interfaces/queue-readiness.interface';
-import { QueueReadiness } from '@/domain/interfaces/queue-readiness.interface';
+} from '#/__tests__/test-app.provider';
+import { createTestModule } from '#/__tests__/testing-module';
+import configuration from '#/config/entities/__tests__/configuration';
+import type { FakeCacheService } from '#/datasources/cache/__tests__/fake.cache.service';
+import { CacheService } from '#/datasources/cache/cache.service.interface';
+import type { IQueueReadiness } from '#/domain/interfaces/queue-readiness.interface';
+import { QueueReadiness } from '#/domain/interfaces/queue-readiness.interface';
 
 describe('Health Controller tests', () => {
   let app: INestApplication<Server>;

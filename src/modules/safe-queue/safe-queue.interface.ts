@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import type { Address, Hex } from 'viem';
-import type { Page } from '@/domain/entities/page.entity';
-import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
-import type { SafeQueueMessage } from '@/modules/safe-queue/entities/message.entity';
-import type { SafeQueueMultisigTransactionEntity } from '@/modules/safe-queue/entities/multisig-transaction.entity';
-import type { ProposeTransactionDto } from '@/modules/transactions/domain/entities/propose-transaction.dto.entity';
-import type { Raw } from '@/validation/entities/raw.entity';
+import type { Page } from '#/domain/entities/page.entity';
+import type { Delegate } from '#/modules/delegate/domain/entities/delegate.entity';
+import type { ChainSafeAddress } from '#/modules/safe/domain/entities/chain-safe-address.entity';
+import type { SafeQueueMessage } from '#/modules/safe-queue/entities/message.entity';
+import type { SafeQueueMultisigTransactionEntity } from '#/modules/safe-queue/entities/multisig-transaction.entity';
+import type { ProposeTransactionDto } from '#/modules/transactions/domain/entities/propose-transaction.dto.entity';
+import type { Raw } from '#/validation/entities/raw.entity';
 
 export const ISafeQueueService = Symbol('ISafeQueueService');
 
@@ -40,6 +41,15 @@ export interface ISafeQueueService {
     nonceOrder?: 'asc' | 'desc';
     limit?: number;
     offset?: number;
+  }): Promise<Raw<Page<SafeQueueMultisigTransactionEntity>>>;
+
+  // Cached per Space: a queue event of one of its Safes reaches the entry
+  // through clearSpaceTransactionQueue.
+  getTransactionQueueForSafes(args: {
+    spaceId: number;
+    safes: ReadonlyArray<ChainSafeAddress>;
+    limit: number;
+    offset: number;
   }): Promise<Raw<Page<SafeQueueMultisigTransactionEntity>>>;
 
   postConfirmation(args: {
@@ -126,6 +136,8 @@ export interface ISafeQueueService {
     chainId: string;
     safeAddress: Address;
   }): Promise<void>;
+
+  clearSpaceTransactionQueue(args: { spaceId: number }): Promise<void>;
 
   clearMessagesBySafe(args: {
     chainId: string;

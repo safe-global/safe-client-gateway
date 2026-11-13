@@ -4,9 +4,9 @@ import { faker } from '@faker-js/faker';
 import type postgres from 'postgres';
 import type { Address } from 'viem';
 import { getAddress } from 'viem';
-import { TestDbFactory } from '@/__tests__/db.factory';
-import { PostgresDatabaseMigrator } from '@/datasources/db/v1/postgres-database.migrator';
-import { DeviceType } from '@/modules/notifications/domain/v2/entities/device-type.entity';
+import { TestDbFactory } from '#/__tests__/db.factory';
+import { PostgresDatabaseMigrator } from '#/datasources/db/v1/postgres-database.migrator';
+import { DeviceType } from '#/modules/notifications/domain/v2/entities/device-type.entity';
 
 type PushNotificationDevicesRow = {
   id: number;

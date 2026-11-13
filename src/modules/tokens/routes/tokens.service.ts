@@ -2,10 +2,10 @@
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import uniqBy from 'lodash/uniqBy';
 import type { Address } from 'viem';
-import { DataSourceError } from '@/domain/errors/data-source.error';
-import { asError } from '@/logging/utils';
-import type { Token } from '@/modules/tokens/domain/entities/token.entity';
-import { ITokenRepository } from '@/modules/tokens/domain/token.repository.interface';
+import { DataSourceError } from '#/domain/errors/data-source.error';
+import { asError } from '#/logging/utils';
+import type { Token } from '#/modules/tokens/domain/entities/token.entity';
+import { ITokenRepository } from '#/modules/tokens/domain/token.repository.interface';
 
 const isNotFound = (error: unknown): boolean =>
   error instanceof DataSourceError && error.code === HttpStatus.NOT_FOUND;

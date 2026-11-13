@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
-import { TransactionBaseSchema } from '@/domain/common/schemas/transaction-base.schema';
-import { Operation } from '@/modules/safe/domain/entities/operation.entity';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { HexSchema } from '@/validation/entities/schemas/hex.schema';
+import { TransactionBaseSchema } from '#/domain/common/schemas/transaction-base.schema';
+import { Operation } from '#/modules/safe/domain/entities/operation.entity';
+import { AddressSchema } from '#/validation/entities/schemas/address.schema';
+import { HexSchema } from '#/validation/entities/schemas/hex.schema';
 import {
   NullableAddressSchema,
   NullableHexSchema,
-} from '@/validation/entities/schemas/nullable.schema';
-import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
-import { SignatureSchema } from '@/validation/entities/schemas/signature.schema';
+} from '#/validation/entities/schemas/nullable.schema';
+import { NumericStringSchema } from '#/validation/entities/schemas/numeric-string.schema';
+import { SignatureSchema } from '#/validation/entities/schemas/signature.schema';
 
 export const MAX_ORIGIN_DTO_LENGTH = 2048;
 export const MAX_NESTED_NOTES_LENGTH = 200;

@@ -1,19 +1,19 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import type { Page } from '@/domain/entities/page.entity';
-import { IBackboneRepository } from '@/modules/backbone/domain/backbone.repository.interface';
-import type { Backbone } from '@/modules/backbone/domain/entities/backbone.entity';
-import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
-import { AboutChain } from '@/modules/chains/routes/entities/about-chain.entity';
-import { Chain } from '@/modules/chains/routes/entities/chain.entity';
-import type { GasPriceResponse } from '@/modules/chains/routes/entities/gas-price-response.entity';
-import { IndexingStatus } from '@/modules/chains/routes/entities/indexing-status.entity';
-import type { MasterCopy } from '@/modules/chains/routes/entities/master-copy.entity';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import type { Page } from '#/domain/entities/page.entity';
+import { IBackboneRepository } from '#/modules/backbone/domain/backbone.repository.interface';
+import type { Backbone } from '#/modules/backbone/domain/entities/backbone.entity';
+import { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
+import { AboutChain } from '#/modules/chains/routes/entities/about-chain.entity';
+import { Chain } from '#/modules/chains/routes/entities/chain.entity';
+import type { GasPriceResponse } from '#/modules/chains/routes/entities/gas-price-response.entity';
+import { IndexingStatus } from '#/modules/chains/routes/entities/indexing-status.entity';
+import type { MasterCopy } from '#/modules/chains/routes/entities/master-copy.entity';
 import {
   cursorUrlFromLimitAndOffset,
   type PaginationData,
-} from '@/routes/common/pagination/pagination.data';
+} from '#/routes/common/pagination/pagination.data';
 
 @Injectable()
 export class ChainsService {

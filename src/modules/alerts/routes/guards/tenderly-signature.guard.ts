@@ -6,8 +6,8 @@ import {
   Inject,
   Injectable,
 } from '@nestjs/common';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import type { HttpRequest } from '@/routes/common/http/http-request.utils';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import type { HttpRequest } from '#/routes/common/http/http-request.utils';
 
 @Injectable()
 export class TenderlySignatureGuard implements CanActivate {

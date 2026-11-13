@@ -2,13 +2,13 @@
 import { ApiProperty } from '@nestjs/swagger';
 import type { Address } from 'viem';
 import { z } from 'zod';
-import { getStringEnumKeys } from '@/domain/common/utils/enum';
-import { ChainIdSchema } from '@/modules/chains/domain/entities/schemas/chain-id.schema';
+import { getStringEnumKeys } from '#/domain/common/utils/enum';
+import { ChainIdSchema } from '#/modules/chains/domain/entities/schemas/chain-id.schema';
 import {
   ADDRESS_BOOK_NAME_MAX_LENGTH,
   AddressBookItemSchema,
-} from '@/modules/spaces/domain/address-books/entities/address-book-item.entity';
-import { AddressBookRequestStatus } from '@/modules/spaces/domain/address-books/entities/address-book-request.entity';
+} from '#/modules/spaces/domain/address-books/entities/address-book-item.entity';
+import { AddressBookRequestStatus } from '#/modules/spaces/domain/address-books/entities/address-book-request.entity';
 
 export class AddressBookRequestItemDto {
   @ApiProperty()

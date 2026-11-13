@@ -8,7 +8,7 @@ import {
 import {
   PermanentEmailError,
   TransientEmailError,
-} from '@/modules/email/ses/domain/errors/email.errors';
+} from '#/modules/email/ses/domain/errors/email.errors';
 
 export class SesEmailErrorMapper {
   static fromSesError(

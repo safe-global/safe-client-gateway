@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import type { Address, Hex } from 'viem';
-import { LogType } from '@/domain/common/entities/log-type.entity';
-import type { TenderlySimulationResult } from '@/domain/interfaces/tenderly-simulation-api.interface';
-import { ITenderlySimulationApi } from '@/domain/interfaces/tenderly-simulation-api.interface';
+import { LogType } from '#/domain/common/entities/log-type.entity';
+import type { TenderlySimulationResult } from '#/domain/interfaces/tenderly-simulation-api.interface';
+import { ITenderlySimulationApi } from '#/domain/interfaces/tenderly-simulation-api.interface';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import type { SimulatedRelayer } from '@/modules/relay/domain/entities/relayer-type.entity';
-import { RelaySimulationFailedError } from '@/modules/relay/domain/errors/relay-simulation-failed.error';
-import { RelaySimulationIndeterminateError } from '@/modules/relay/domain/errors/relay-simulation-indeterminate.error';
-import { SIMULATION_SENDER_SENTINEL } from '@/modules/relay/domain/relay.constants';
+} from '#/logging/logging.interface';
+import type { SimulatedRelayer } from '#/modules/relay/domain/entities/relayer-type.entity';
+import { RelaySimulationFailedError } from '#/modules/relay/domain/errors/relay-simulation-failed.error';
+import { RelaySimulationIndeterminateError } from '#/modules/relay/domain/errors/relay-simulation-indeterminate.error';
+import { SIMULATION_SENDER_SENTINEL } from '#/modules/relay/domain/relay.constants';
 
 /**
  * The pre-relay Tenderly check, shared by every relayer that pays for what it

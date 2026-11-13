@@ -1,19 +1,19 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
-import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
+import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
 import {
   lockEventItemBuilder,
   unlockEventItemBuilder,
   withdrawEventItemBuilder,
-} from '@/modules/community/domain/entities/__tests__/locking-event.builder';
+} from '#/modules/community/domain/entities/__tests__/locking-event.builder';
 import {
   LockEventItemSchema,
   LockingEventPageSchema,
   LockingEventSchema,
   UnlockEventItemSchema,
   WithdrawEventItemSchema,
-} from '@/modules/community/domain/entities/schemas/locking-event.schema';
+} from '#/modules/community/domain/entities/schemas/locking-event.schema';
 
 describe('Locking event schemas', () => {
   describe('LockingEventItemSchema', () => {

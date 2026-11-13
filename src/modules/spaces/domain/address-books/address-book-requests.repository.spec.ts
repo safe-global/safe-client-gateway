@@ -4,12 +4,12 @@ import { faker } from '@faker-js/faker';
 import { NotFoundException } from '@nestjs/common';
 import { getAddress } from 'viem';
 import type { Mock, MockedObject } from 'vitest';
-import type { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { AddressBookRequest as DbAddressBookRequest } from '@/modules/spaces/datasources/address-books/entities/address-book-request.entity.db';
-import { createMockSpaceEncryptionService } from '@/modules/spaces/domain/__tests__/space-encryption.service.mock';
-import { AddressBookRequestsRepository } from '@/modules/spaces/domain/address-books/address-book-requests.repository';
-import { createMockSpaceAuditRepository } from '@/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
-import { SpaceAuditEventType } from '@/modules/spaces/domain/audit/entities/space-audit-event.entity';
+import type { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
+import { AddressBookRequest as DbAddressBookRequest } from '#/modules/spaces/datasources/address-books/entities/address-book-request.entity.db';
+import { createMockSpaceEncryptionService } from '#/modules/spaces/domain/__tests__/space-encryption.service.mock';
+import { AddressBookRequestsRepository } from '#/modules/spaces/domain/address-books/address-book-requests.repository';
+import { createMockSpaceAuditRepository } from '#/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
+import { SpaceAuditEventType } from '#/modules/spaces/domain/audit/entities/space-audit-event.entity';
 
 describe('AddressBookRequestsRepository', () => {
   const spaceId = faker.number.int({ min: 1, max: 100_000 });

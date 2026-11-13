@@ -1,7 +1,8 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import type { IBuilder } from '@/__tests__/builder';
-import { Builder } from '@/__tests__/builder';
-import type { GasPriceOracle } from '@/modules/chains/domain/entities/gas-price-oracle.entity';
+import type { IBuilder } from '#/__tests__/builder';
+import { Builder } from '#/__tests__/builder';
+import type { GasPriceOracle } from '#/modules/chains/domain/entities/gas-price-oracle.entity';
 
 export function gasPriceOracleBuilder(): IBuilder<GasPriceOracle> {
   return new Builder<GasPriceOracle>()

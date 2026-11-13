@@ -1,7 +1,8 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Controller, Get } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { AboutService } from '@/modules/about/routes/about.service';
-import { About } from '@/modules/about/routes/entities/about.entity';
+import { AboutService } from '#/modules/about/routes/about.service';
+import { About } from '#/modules/about/routes/entities/about.entity';
 
 @ApiTags('about')
 @Controller({ path: 'about' })

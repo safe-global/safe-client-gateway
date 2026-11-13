@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Module } from '@nestjs/common';
-import { DelegateRepositoryModule } from '@/modules/delegate/domain/delegate.repository.interface';
-import { DelegatesV2RepositoryModule } from '@/modules/delegate/domain/v2/delegates.v2.repository.interface';
-import { DelegatesV3RepositoryModule } from '@/modules/delegate/domain/v3/delegates.v3.repository.interface';
-import { DelegatesModule as DelegatesRoutesModule } from '@/modules/delegate/routes/delegates.module';
-import { DelegatesV2Module as DelegatesV2RoutesModule } from '@/modules/delegate/routes/v2/delegates.v2.module';
-import { DelegatesV3Module as DelegatesV3RoutesModule } from '@/modules/delegate/routes/v3/delegates.v3.module';
+import { DelegateRepositoryModule } from '#/modules/delegate/domain/delegate.repository.interface';
+import { DelegatesV2RepositoryModule } from '#/modules/delegate/domain/v2/delegates.v2.repository.interface';
+import { DelegatesV3RepositoryModule } from '#/modules/delegate/domain/v3/delegates.v3.repository.interface';
+import { DelegatesModule as DelegatesRoutesModule } from '#/modules/delegate/routes/delegates.module';
+import { DelegatesV2Module as DelegatesV2RoutesModule } from '#/modules/delegate/routes/v2/delegates.v2.module';
+import { DelegatesV3Module as DelegatesV3RoutesModule } from '#/modules/delegate/routes/v3/delegates.v3.module';
 
 @Module({
   imports: [

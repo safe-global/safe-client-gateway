@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { EntityManager } from 'typeorm';
-import type { Space } from '@/modules/spaces/domain/entities/space.entity';
+import type { Space } from '#/modules/spaces/domain/entities/space.entity';
 
 export const ISpaceFeatureUsageRepository = Symbol(
   'ISpaceFeatureUsageRepository',

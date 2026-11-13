@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
-import { balanceBuilder } from '@/modules/balances/domain/entities/__tests__/balance.builder';
+import { balanceBuilder } from '#/modules/balances/domain/entities/__tests__/balance.builder';
 import {
   BalanceSchema,
   Erc20BalanceSchema,
   NativeBalanceSchema,
-} from '@/modules/balances/domain/entities/balance.entity';
+} from '#/modules/balances/domain/entities/balance.entity';
 
 describe('Balance entity schemas', () => {
   describe('NativeBalanceSchema', () => {

@@ -20,19 +20,19 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
-import { SurveySlugSchema } from '@/modules/surveys/domain/entities/survey.entity';
+import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import { AuthGuard } from '#/modules/auth/routes/guards/auth.guard';
+import { SurveySlugSchema } from '#/modules/surveys/domain/entities/survey.entity';
 import {
   SubmitSurveyResponseDto,
   SubmitSurveyResponseDtoSchema,
   SurveyResponseResultDto,
-} from '@/modules/surveys/routes/entities/submit-survey-response.dto.entity';
-import { SurveyStateDto } from '@/modules/surveys/routes/entities/survey-state.dto.entity';
-import { SurveysService } from '@/modules/surveys/routes/surveys.service';
-import { Auth } from '@/routes/common/auth/auth.decorator';
-import { SpaceIdPipe } from '@/routes/common/pipes/space-id.pipe';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+} from '#/modules/surveys/routes/entities/submit-survey-response.dto.entity';
+import { SurveyStateDto } from '#/modules/surveys/routes/entities/survey-state.dto.entity';
+import { SurveysService } from '#/modules/surveys/routes/surveys.service';
+import { Auth } from '#/routes/common/auth/auth.decorator';
+import { SpaceIdPipe } from '#/routes/common/pipes/space-id.pipe';
+import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
 @ApiTags('surveys')
 @Controller({ path: 'spaces', version: '1' })

@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiProperty } from '@nestjs/swagger';
-import { GasPaymentOption } from '@/modules/relay/domain/entities/gas-payment-option.entity';
+import { GasPaymentOption } from '#/modules/relay/domain/entities/gas-payment-option.entity';
 import {
   GAS_PAYMENT_OPTION_UNAVAILABLE_CODE,
   GAS_PAYMENT_OPTION_UNAVAILABLE_REASONS,
   type GasPaymentOptionUnavailableReason,
-} from '@/modules/relay/domain/entities/gas-payment-option-unavailable.entity';
+} from '#/modules/relay/domain/entities/gas-payment-option-unavailable.entity';
 
 export class GasPaymentOptionUnavailableResponse {
   @ApiProperty({ enum: [GAS_PAYMENT_OPTION_UNAVAILABLE_CODE] })

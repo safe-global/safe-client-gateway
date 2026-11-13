@@ -1,8 +1,9 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import type { IBuilder } from '@/__tests__/builder';
-import { Builder } from '@/__tests__/builder';
-import type { RpcUri } from '@/modules/chains/domain/entities/rpc-uri.entity';
-import { RpcUriAuthentication } from '@/modules/chains/domain/entities/rpc-uri-authentication.entity';
+import type { IBuilder } from '#/__tests__/builder';
+import { Builder } from '#/__tests__/builder';
+import type { RpcUri } from '#/modules/chains/domain/entities/rpc-uri.entity';
+import { RpcUriAuthentication } from '#/modules/chains/domain/entities/rpc-uri-authentication.entity';
 
 export function rpcUriBuilder(): IBuilder<RpcUri> {
   return new Builder<RpcUri>()

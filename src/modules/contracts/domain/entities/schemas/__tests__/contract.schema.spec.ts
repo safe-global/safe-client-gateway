@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
-import { contractBuilder } from '@/modules/contracts/domain/entities/__tests__/contract.builder';
-import { ContractSchema } from '@/modules/contracts/domain/entities/schemas/contract.schema';
+import { contractBuilder } from '#/modules/contracts/domain/entities/__tests__/contract.builder';
+import { ContractSchema } from '#/modules/contracts/domain/entities/schemas/contract.schema';
 
 describe('ContractSchema', () => {
   it('should validate a valid contract', () => {

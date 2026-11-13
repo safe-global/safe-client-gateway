@@ -13,22 +13,22 @@ import {
   getSchemaPath,
 } from '@nestjs/swagger';
 import type { Address } from 'viem';
-import { ChainIdSchema } from '@/modules/chains/domain/entities/schemas/chain-id.schema';
-import type { Token } from '@/modules/tokens/domain/entities/token.entity';
+import { ChainIdSchema } from '#/modules/chains/domain/entities/schemas/chain-id.schema';
+import type { Token } from '#/modules/tokens/domain/entities/token.entity';
 import {
   Erc20TokenMetadata,
   Erc721TokenMetadata,
   NativeTokenMetadata,
-} from '@/modules/tokens/routes/entities/token.dto.entity';
+} from '#/modules/tokens/routes/entities/token.dto.entity';
 import {
   MAX_TOKEN_ADDRESSES,
   type TokenAddresses,
   TokenAddressesSchema,
-} from '@/modules/tokens/routes/entities/token-addresses.dto.entity';
-import { TokensRateLimitGuard } from '@/modules/tokens/routes/guards/tokens-rate-limit.guard';
-import { TokensService } from '@/modules/tokens/routes/tokens.service';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+} from '#/modules/tokens/routes/entities/token-addresses.dto.entity';
+import { TokensRateLimitGuard } from '#/modules/tokens/routes/guards/tokens-rate-limit.guard';
+import { TokensService } from '#/modules/tokens/routes/tokens.service';
+import { AddressSchema } from '#/validation/entities/schemas/address.schema';
+import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
 const TOKEN_SCHEMA = {
   oneOf: [

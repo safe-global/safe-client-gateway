@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Injectable } from '@nestjs/common';
-import type { BaseDataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
-import { Operation } from '@/modules/safe/domain/entities/operation.entity';
+import type { BaseDataDecoded } from '#/modules/data-decoder/domain/v2/entities/data-decoded.entity';
+import { Operation } from '#/modules/safe/domain/entities/operation.entity';
 
 @Injectable()
 export class DataDecodedParamHelper {
@@ -10,7 +10,9 @@ export class DataDecodedParamHelper {
   private readonly SAFE_TRANSFER_FROM_METHOD = 'safeTransferFrom';
 
   getFromParam(dataDecoded: BaseDataDecoded | null, fallback: string): string {
-    if (!dataDecoded?.parameters) return fallback;
+    if (!dataDecoded?.parameters) {
+      return fallback;
+    }
 
     switch (dataDecoded.method) {
       case this.TRANSFER_FROM_METHOD:
@@ -24,7 +26,9 @@ export class DataDecodedParamHelper {
   }
 
   getToParam(dataDecoded: BaseDataDecoded | null, fallback: string): string {
-    if (!dataDecoded?.parameters) return fallback;
+    if (!dataDecoded?.parameters) {
+      return fallback;
+    }
 
     switch (dataDecoded.method) {
       case this.TRANSFER_METHOD: {
@@ -42,7 +46,9 @@ export class DataDecodedParamHelper {
   }
 
   getValueParam(dataDecoded: BaseDataDecoded | null, fallback: string): string {
-    if (!dataDecoded?.parameters) return fallback;
+    if (!dataDecoded?.parameters) {
+      return fallback;
+    }
 
     switch (dataDecoded.method) {
       case this.TRANSFER_METHOD: {
@@ -63,12 +69,16 @@ export class DataDecodedParamHelper {
     dataDecoded: BaseDataDecoded | null,
     position: number,
   ): unknown {
-    if (!dataDecoded?.parameters?.length) return null;
+    if (!dataDecoded?.parameters?.length) {
+      return null;
+    }
     return dataDecoded.parameters[position]?.value ?? null;
   }
 
   hasNestedDelegate(dataDecoded: BaseDataDecoded): boolean {
-    if (!dataDecoded.parameters) return false;
+    if (!dataDecoded.parameters) {
+      return false;
+    }
     return dataDecoded.parameters.some(
       (param) =>
         Array.isArray(param.valueDecoded) &&

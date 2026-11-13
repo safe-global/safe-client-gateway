@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { getAddress, zeroAddress } from 'viem';
-import type { IBuilder } from '@/__tests__/builder';
-import { Builder } from '@/__tests__/builder';
+import type { IBuilder } from '#/__tests__/builder';
+import { Builder } from '#/__tests__/builder';
 import type {
   RelayCost,
   TxDataResponse,
   TxFeesResponse,
-} from '@/modules/fees/domain/entities/tx-fees-response.entity';
+} from '#/modules/fees/domain/entities/tx-fees-response.entity';
 
 export function txDataResponseBuilder(): IBuilder<TxDataResponse> {
   return new Builder<TxDataResponse>()

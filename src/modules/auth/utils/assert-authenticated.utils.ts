@@ -4,7 +4,7 @@ import { UnauthorizedException } from '@nestjs/common';
 import type {
   AuthenticatedAuthPayload,
   AuthPayload,
-} from '@/modules/auth/domain/entities/auth-payload.entity';
+} from '#/modules/auth/domain/entities/auth-payload.entity';
 
 /**
  * Asserts that the given {@link AuthPayload} is authenticated.

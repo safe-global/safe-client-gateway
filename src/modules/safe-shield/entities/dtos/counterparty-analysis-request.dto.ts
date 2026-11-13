@@ -2,8 +2,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 import type { Address, Hex } from 'viem';
 import type { z } from 'zod';
-import { Operation } from '@/modules/safe/domain/entities/operation.entity';
-import type { CounterpartyAnalysisRequestSchema } from '@/modules/safe-shield/entities/analysis-requests.entity';
+import { Operation } from '#/modules/safe/domain/entities/operation.entity';
+import type { CounterpartyAnalysisRequestSchema } from '#/modules/safe-shield/entities/analysis-requests.entity';
 
 export class CounterpartyAnalysisRequestDto
   implements z.infer<typeof CounterpartyAnalysisRequestSchema>

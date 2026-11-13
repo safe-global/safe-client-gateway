@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import { type Address, getAddress, isAddressEqual } from 'viem';
-import type { Transfer as DomainTransfer } from '@/modules/safe/domain/entities/transfer.entity';
-import type { Order } from '@/modules/swaps/domain/entities/order.entity';
-import { ISwapsRepository } from '@/modules/swaps/domain/swaps.repository';
-import type { TransferDirection } from '@/modules/transactions/routes/entities/transfer-transaction-info.entity';
-import type { Transfer } from '@/modules/transactions/routes/entities/transfers/transfer.entity';
-import { GPv2OrderHelper } from '@/modules/transactions/routes/helpers/gp-v2-order.helper';
-import { SwapAppsHelper } from '@/modules/transactions/routes/helpers/swap-apps.helper';
-import { SwapOrderHelper } from '@/modules/transactions/routes/helpers/swap-order.helper';
-import { SwapTransferTransactionInfo } from '@/modules/transactions/routes/swap-transfer-transaction-info.entity';
-import type { AddressInfo } from '@/routes/common/entities/address-info.entity';
+import type { Transfer as DomainTransfer } from '#/modules/safe/domain/entities/transfer.entity';
+import type { Order } from '#/modules/swaps/domain/entities/order.entity';
+import { ISwapsRepository } from '#/modules/swaps/domain/swaps.repository';
+import type { TransferDirection } from '#/modules/transactions/routes/entities/transfer-transaction-info.entity';
+import type { Transfer } from '#/modules/transactions/routes/entities/transfers/transfer.entity';
+import { GPv2OrderHelper } from '#/modules/transactions/routes/helpers/gp-v2-order.helper';
+import { SwapAppsHelper } from '#/modules/transactions/routes/helpers/swap-apps.helper';
+import { SwapOrderHelper } from '#/modules/transactions/routes/helpers/swap-order.helper';
+import { SwapTransferTransactionInfo } from '#/modules/transactions/routes/swap-transfer-transaction-info.entity';
+import type { AddressInfo } from '#/routes/common/entities/address-info.entity';
 
 @Injectable()
 export class SwapTransferInfoMapper {

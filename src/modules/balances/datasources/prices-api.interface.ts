@@ -1,6 +1,7 @@
-import type { AssetPrice } from '@/modules/balances/datasources/entities/asset-price.entity';
-import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
-import type { Raw } from '@/validation/entities/raw.entity';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { AssetPrice } from '#/modules/balances/datasources/entities/asset-price.entity';
+import type { Chain } from '#/modules/chains/domain/entities/chain.entity';
+import type { Raw } from '#/validation/entities/raw.entity';
 
 export const IPricesApi = Symbol('IPricesApi');
 

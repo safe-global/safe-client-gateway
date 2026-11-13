@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { z } from 'zod';
-import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
+import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
 import {
   buildLenientPageSchema,
   buildPageSchema,
-} from '@/domain/entities/schemas/page.schema.factory';
+} from '#/domain/entities/schemas/page.schema.factory';
 
 describe('Page schema factory', () => {
   describe('buildPageSchema', () => {

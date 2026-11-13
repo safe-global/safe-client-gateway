@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import { CHAIN_ID_MAXLENGTH } from '@/routes/common/constants';
+import { CHAIN_ID_MAXLENGTH } from '#/routes/common/constants';
 import {
   Caip10AddressesSchema,
   Caip10AddressSchema,
-} from '@/validation/entities/schemas/caip-10-addresses.schema';
+} from '#/validation/entities/schemas/caip-10-addresses.schema';
 
 describe('Caip10AddressSchema', () => {
   it('should split a chain id and a checksummed address', () => {

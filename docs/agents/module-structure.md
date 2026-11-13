@@ -80,9 +80,9 @@ This applies in both directions: neither a module's `routes/` nor its `datasourc
 
 **Why:** importing another module's `routes/*` drags HTTP-layer concerns (controllers, DTOs, guards) into code that has no business depending on them, and it means a change to another module's controller or DTO shape can break a module that has nothing to do with HTTP.
 
-**Canonical example:** `src/modules/balances/routes/balances.service.ts` imports `IChainsRepository` from `@/modules/chains/domain/chains.repository.interface` — the `chains` module is reached only through its `domain/`.
+**Canonical example:** `src/modules/balances/routes/balances.service.ts` imports `IChainsRepository` from `#/modules/chains/domain/chains.repository.interface` — the `chains` module is reached only through its `domain/`.
 
-**Anti-example:** `src/modules/billing/routes/billing.controller.ts` imports `@/modules/spaces/routes/pipes/space-id.pipe` and `@/modules/auth/routes/decorators/auth.decorator`; `src/modules/notifications/domain/v2/entities/notification.entity.ts` imports from `@/modules/hooks/routes/entities/event-type.entity`. Neither is precedent — do not imitate.
+**Anti-example:** `src/modules/billing/routes/billing.controller.ts` imports `#/modules/spaces/routes/pipes/space-id.pipe` and `#/modules/auth/routes/decorators/auth.decorator`; `src/modules/notifications/domain/v2/entities/notification.entity.ts` imports from `#/modules/hooks/routes/entities/event-type.entity`. Neither is precedent — do not imitate.
 
 ### Frozen legacy trees
 
@@ -116,11 +116,11 @@ This applies in both directions: neither a module's `routes/` nor its `datasourc
 
 ### Imports
 
-**Rule:** Always import via the `@/` path alias; never use a relative parent (`../`) import.
+**Rule:** Always import via the `#/` path alias; never use a relative parent (`../`) import.
 
 **Why:** an alias import survives a file being moved to a different directory; a relative parent import breaks the moment either endpoint moves, which is what keeps refactors cheap and keeps a file movable without a cascade of path edits.
 
-**Canonical example:** the `@/*` → `./src/*` mapping in `tsconfig.json` is what every module's imports resolve through.
+**Canonical example:** the `#/*` entry in `package.json`'s `imports` field is what every module's imports resolve through — to `./src/*.ts` under the `source` condition (`tsc` via `customConditions`, Vitest via `resolve.conditions`) and to `./dist/src/*.js` for Node at runtime, with more specific `#/abis/*` and `#/*.json` entries beside it. A pattern maps one file exactly, so a directory import names its `index` (`#/modules/human-description/datasources/json/index`).
 
 **Anti-example:** `src/modules/safe-shield/entities/__tests__/builders/analysis-requests.builder.ts` imports its entity via `../../analysis-requests.entity` — one of only a handful of violations — do not imitate.
 

@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Injectable } from '@nestjs/common';
-import type { DataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
-import type { ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
+import type { DataDecoded } from '#/modules/data-decoder/domain/v2/entities/data-decoded.entity';
+import type { ModuleTransaction } from '#/modules/safe/domain/entities/module-transaction.entity';
 import {
   MODULE_TRANSACTION_PREFIX,
   TRANSACTION_ID_SEPARATOR,
-} from '@/modules/transactions/routes/constants';
-import { ModuleExecutionInfo } from '@/modules/transactions/routes/entities/module-execution-info.entity';
-import { Transaction } from '@/modules/transactions/routes/entities/transaction.entity';
-import { MultisigTransactionInfoMapper } from '@/modules/transactions/routes/mappers/common/transaction-info.mapper';
-import { ModuleTransactionStatusMapper } from '@/modules/transactions/routes/mappers/module-transactions/module-transaction-status.mapper';
-import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
+} from '#/modules/transactions/routes/constants';
+import { ModuleExecutionInfo } from '#/modules/transactions/routes/entities/module-execution-info.entity';
+import { Transaction } from '#/modules/transactions/routes/entities/transaction.entity';
+import { MultisigTransactionInfoMapper } from '#/modules/transactions/routes/mappers/common/transaction-info.mapper';
+import { ModuleTransactionStatusMapper } from '#/modules/transactions/routes/mappers/module-transactions/module-transaction-status.mapper';
+import { AddressInfoHelper } from '#/routes/common/address-info/address-info.helper';
 
 @Injectable()
 export class ModuleTransactionMapper {

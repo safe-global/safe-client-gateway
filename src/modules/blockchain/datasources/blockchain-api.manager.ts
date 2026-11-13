@@ -4,22 +4,23 @@ import {
   type Chain,
   createPublicClient,
   custom,
+  http,
   type PublicClient,
   RpcRequestError,
 } from 'viem';
 import { getHttpRpcClient } from 'viem/utils';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { CacheRouter } from '@/datasources/cache/cache.router';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { CacheRouter } from '#/datasources/cache/cache.router';
 import {
   CacheService,
   type ICacheService,
-} from '@/datasources/cache/cache.service.interface';
-import { ChainApiManager } from '@/datasources/common/chain-api.manager';
-import type { IBlockchainApiManager } from '@/domain/interfaces/blockchain-api.manager.interface';
-import { IConfigApi } from '@/domain/interfaces/config-api.interface';
-import type { Chain as DomainChain } from '@/modules/chains/domain/entities/chain.entity';
-import { RpcUriAuthentication } from '@/modules/chains/domain/entities/rpc-uri-authentication.entity';
-import { ChainSchema } from '@/modules/chains/domain/entities/schemas/chain.schema';
+} from '#/datasources/cache/cache.service.interface';
+import { ChainApiManager } from '#/datasources/common/chain-api.manager';
+import type { IBlockchainApiManager } from '#/domain/interfaces/blockchain-api.manager.interface';
+import { IConfigApi } from '#/domain/interfaces/config-api.interface';
+import type { Chain as DomainChain } from '#/modules/chains/domain/entities/chain.entity';
+import { RpcUriAuthentication } from '#/modules/chains/domain/entities/rpc-uri-authentication.entity';
+import { ChainSchema } from '#/modules/chains/domain/entities/schemas/chain.schema';
 
 @Injectable()
 export class BlockchainApiManager
@@ -50,12 +51,25 @@ export class BlockchainApiManager
     return this.getOrCreateApi(chainId);
   }
 
-  protected async createApi(chainId: string): Promise<PublicClient> {
-    const chain = await this.configApi
-      .getChain(chainId)
-      .then(ChainSchema.parse);
+  async getUncachedApi(args: {
+    chainId: string;
+    rpcUri?: string;
+  }): Promise<PublicClient> {
+    const chain = await this.getDomainChain(args.chainId);
 
-    return this._createCachedRpcClient(chain);
+    return createPublicClient({
+      chain: this.formatChain(chain),
+      // Without a URL, viem uses the chain's configured RPC.
+      transport: http(args.rpcUri),
+    });
+  }
+
+  protected async createApi(chainId: string): Promise<PublicClient> {
+    return this._createCachedRpcClient(await this.getDomainChain(chainId));
+  }
+
+  private getDomainChain(chainId: string): Promise<DomainChain> {
+    return this.configApi.getChain(chainId).then(ChainSchema.parse);
   }
 
   override destroyApi(chainId: string): void {

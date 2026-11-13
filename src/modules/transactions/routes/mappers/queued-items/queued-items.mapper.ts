@@ -1,19 +1,19 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import groupBy from 'lodash/groupBy';
-import type { Page } from '@/domain/entities/page.entity';
-import { IDataDecoderRepository } from '@/modules/data-decoder/domain/v2/data-decoder.repository.interface';
-import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
-import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
-import { ConflictType } from '@/modules/transactions/routes/entities/conflict-type.entity';
-import type { QueuedItem } from '@/modules/transactions/routes/entities/queued-item.entity';
-import { ConflictHeaderQueuedItem } from '@/modules/transactions/routes/entities/queued-items/conflict-header-queued-item.entity';
+import type { Page } from '#/domain/entities/page.entity';
+import { IDataDecoderRepository } from '#/modules/data-decoder/domain/v2/data-decoder.repository.interface';
+import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
+import type { Safe } from '#/modules/safe/domain/entities/safe.entity';
+import { ConflictType } from '#/modules/transactions/routes/entities/conflict-type.entity';
+import type { QueuedItem } from '#/modules/transactions/routes/entities/queued-item.entity';
+import { ConflictHeaderQueuedItem } from '#/modules/transactions/routes/entities/queued-items/conflict-header-queued-item.entity';
 import {
   LabelItem,
   LabelQueuedItem,
-} from '@/modules/transactions/routes/entities/queued-items/label-queued-item.entity';
-import { TransactionQueuedItem } from '@/modules/transactions/routes/entities/queued-items/transaction-queued-item.entity';
-import { MultisigTransactionMapper } from '@/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction.mapper';
+} from '#/modules/transactions/routes/entities/queued-items/label-queued-item.entity';
+import { TransactionQueuedItem } from '#/modules/transactions/routes/entities/queued-items/transaction-queued-item.entity';
+import { MultisigTransactionMapper } from '#/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction.mapper';
 
 class TransactionGroup {
   nonce!: number;
@@ -80,21 +80,25 @@ export class QueuedItemsMapper {
     isEdgeGroup: boolean,
     transactionGroup: TransactionGroup,
   ): Promise<Array<TransactionQueuedItem>> {
+    const decodedTransactions = await Promise.all(
+      transactionGroup.transactions.map(async (transaction) => ({
+        transaction,
+        dataDecoded: await this.dataDecoderRepository.getTransactionDataDecoded(
+          { chainId, transaction },
+        ),
+      })),
+    );
+
     // Prefetch tokens and contracts to avoid multiple parallel requests for the same address
     await this.mapper.prefetchAddressInfos({
       chainId: chainId,
-      transactions: transactionGroup.transactions,
+      transactions: decodedTransactions,
     });
 
     return Promise.all(
-      transactionGroup.transactions.map(async (transaction, idx) => {
+      decodedTransactions.map(async ({ transaction, dataDecoded }, idx) => {
         const isFirstInGroup = idx === 0;
         const isLastInGroup = idx === transactionGroup.transactions.length - 1;
-        const dataDecoded =
-          await this.dataDecoderRepository.getTransactionDataDecoded({
-            chainId,
-            transaction,
-          });
         return new TransactionQueuedItem(
           await this.mapper.mapTransaction(
             chainId,

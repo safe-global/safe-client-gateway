@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { Address } from 'viem';
-import type { Portfolio } from '@/modules/portfolio/domain/entities/portfolio.entity';
+import type { Portfolio } from '#/modules/portfolio/domain/entities/portfolio.entity';
+import type {
+  PortfolioSnapshot,
+  PortfolioSnapshotArgs,
+} from '#/modules/portfolio/domain/entities/portfolio-snapshot.entity';
 
 export const IPortfolioRepository = Symbol('IPortfolioRepository');
 
@@ -27,6 +31,19 @@ export interface IPortfolioRepository {
     isTestnet?: boolean;
     sync?: boolean;
   }): Promise<Portfolio>;
+
+  /**
+   * Gets the cached portfolio GET /v1/portfolio serves, with the trusted and
+   * dust filters applied and the entry's fetch and expiry times.
+   *
+   * @param {Object} args - Snapshot parameters
+   * @param {Address} args.address - The wallet address
+   * @param {string} args.fiatCode - The fiat currency code (e.g., 'USD', 'EUR')
+   * @param {boolean} args.trusted - Whether to count trusted tokens only
+   * @param {boolean} args.isTestnet - Whether to read the testnet portfolio
+   * @returns {Promise<PortfolioSnapshot>} The filtered snapshot
+   */
+  getPortfolioSnapshot(args: PortfolioSnapshotArgs): Promise<PortfolioSnapshot>;
 
   /**
    * Clears the cached portfolio data for a given wallet address.

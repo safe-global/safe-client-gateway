@@ -5,9 +5,9 @@ import { Inject, Injectable, type NestMiddleware } from '@nestjs/common';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import { formatRouteLogMessage } from '@/logging/utils';
-import type { RequestLike } from '@/routes/common/http/http-request.utils';
+} from '#/logging/logging.interface';
+import { formatRouteLogMessage } from '#/logging/utils';
+import type { RequestLike } from '#/routes/common/http/http-request.utils';
 
 /**
  * Middleware which logs requests that resulted in 404. Request side effects

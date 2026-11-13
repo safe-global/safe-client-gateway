@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import { DateStringSchema } from '@/validation/entities/schemas/date-string.schema';
+import { DateStringSchema } from '#/validation/entities/schemas/date-string.schema';
 
 describe('DateStringSchema', () => {
   it('should validate a valid ISO date string', () => {

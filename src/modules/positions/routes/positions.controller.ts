@@ -9,10 +9,11 @@ import {
 } from '@nestjs/common';
 import { ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
 import type { Address } from 'viem';
-import { Protocol } from '@/modules/positions/routes/entities/protocol.entity';
-import { PositionsService } from '@/modules/positions/routes/positions.service';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+import { ChainIdSchema } from '#/modules/chains/domain/entities/schemas/chain-id.schema';
+import { Protocol } from '#/modules/positions/routes/entities/protocol.entity';
+import { PositionsService } from '#/modules/positions/routes/positions.service';
+import { AddressSchema } from '#/validation/entities/schemas/address.schema';
+import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
 @ApiTags('positions')
 @Controller({
@@ -41,7 +42,7 @@ export class PositionsController {
   })
   @Get('chains/:chainId/safes/:safeAddress/positions/:fiatCode')
   getPositions(
-    @Param('chainId') chainId: string,
+    @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,
     @Param('fiatCode') fiatCode: string,

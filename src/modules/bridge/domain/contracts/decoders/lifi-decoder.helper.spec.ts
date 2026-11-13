@@ -1,16 +1,22 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import type { Hex } from 'viem';
-import { decodeFunctionData, getAddress } from 'viem';
+import {
+  decodeFunctionData,
+  encodeFunctionData,
+  getAddress,
+  zeroAddress,
+} from 'viem';
 import {
   bridgeDataStructBuilder,
+  feeDistributionStructBuilder,
   startBridgeTokensViaAcrossV3Encoder,
   swapAndStartBridgeTokensViaAcrossV3Encoder,
   swapDataStructBuilder,
   swapTokensMultiV3ERC20ToERC20Encoder,
   swapTokensSingleV3ERC20ToERC20Encoder,
-} from '@/modules/bridge/domain/contracts/decoders/__tests__/across-v3-encoder.builder';
-import { LiFiDecoder } from '@/modules/bridge/domain/contracts/decoders/lifi-decoder.helper';
+} from '#/modules/bridge/domain/contracts/decoders/__tests__/across-v3-encoder.builder';
+import { LiFiDecoder } from '#/modules/bridge/domain/contracts/decoders/lifi-decoder.helper';
 
 // Note: whilst the LiFi Diamond contract has multiple facets, the function signatures have
 // common parameters. This means that we can safely rely on AcrossV3 for these tests.
@@ -918,6 +924,169 @@ describe('LiFiDecoder', () => {
         },
       });
     });
+
+    it('should decode native fees forwarded by the FeeForwarder', () => {
+      const lifiDistribution = feeDistributionStructBuilder().build();
+      const integratorDistribution = feeDistributionStructBuilder().build();
+      const swapData = swapDataStructBuilder().build();
+      const transaction = swapAndStartBridgeTokensViaAcrossV3Encoder().with(
+        'swapData',
+        [
+          swapDataStructBuilder()
+            .with(
+              'callData',
+              encodeFunctionData({
+                abi: LiFiDecoder.FeeForwarderAbi,
+                functionName: 'forwardNativeFees',
+                args: [[lifiDistribution, integratorDistribution]],
+              }),
+            )
+            .build(),
+          swapData,
+        ],
+      );
+      const args = transaction.build();
+      const data = transaction.encode();
+
+      const result = target.decodeBridgeAndMaybeSwap(data);
+
+      expect(result).toStrictEqual({
+        transactionId: args.bridgeData.transactionId.toLowerCase(),
+        toAddress: args.bridgeData.receiver,
+        fromToken: swapData.sendingAssetId,
+        fromAmount: swapData.fromAmount,
+        bridge: args.bridgeData.bridge,
+        toChain: args.bridgeData.destinationChainId,
+        fees: {
+          tokenAddress: zeroAddress,
+          integratorFee: integratorDistribution.amount,
+          lifiFee: lifiDistribution.amount,
+          integratorAddress: integratorDistribution.recipient,
+        },
+      });
+    });
+
+    it('should decode ERC-20 fees forwarded by the FeeForwarder', () => {
+      const tokenAddress = getAddress(faker.finance.ethereumAddress());
+      const lifiDistribution = feeDistributionStructBuilder().build();
+      const integratorDistribution = feeDistributionStructBuilder().build();
+      const transaction = swapAndStartBridgeTokensViaAcrossV3Encoder().with(
+        'swapData',
+        [
+          swapDataStructBuilder()
+            .with(
+              'callData',
+              encodeFunctionData({
+                abi: LiFiDecoder.FeeForwarderAbi,
+                functionName: 'forwardERC20Fees',
+                args: [
+                  tokenAddress,
+                  [lifiDistribution, integratorDistribution],
+                ],
+              }),
+            )
+            .build(),
+        ],
+      );
+      const data = transaction.encode();
+
+      const result = target.decodeBridgeAndMaybeSwap(data);
+
+      expect(result.fees).toStrictEqual({
+        tokenAddress,
+        integratorFee: integratorDistribution.amount,
+        lifiFee: lifiDistribution.amount,
+        integratorAddress: integratorDistribution.recipient,
+      });
+    });
+
+    it('should sum the integrator fees forwarded by the FeeForwarder', () => {
+      const lifiDistribution = feeDistributionStructBuilder().build();
+      const integratorDistributions = faker.helpers.multiple(
+        () => feeDistributionStructBuilder().build(),
+        { count: { min: 2, max: 5 } },
+      );
+      const transaction = swapAndStartBridgeTokensViaAcrossV3Encoder().with(
+        'swapData',
+        [
+          swapDataStructBuilder()
+            .with(
+              'callData',
+              encodeFunctionData({
+                abi: LiFiDecoder.FeeForwarderAbi,
+                functionName: 'forwardNativeFees',
+                args: [[lifiDistribution, ...integratorDistributions]],
+              }),
+            )
+            .build(),
+        ],
+      );
+      const data = transaction.encode();
+
+      const result = target.decodeBridgeAndMaybeSwap(data);
+
+      expect(result.fees).toStrictEqual({
+        tokenAddress: zeroAddress,
+        integratorFee: integratorDistributions.reduce(
+          (total, { amount }) => total + amount,
+          0n,
+        ),
+        lifiFee: lifiDistribution.amount,
+        integratorAddress: integratorDistributions[0].recipient,
+      });
+    });
+
+    it('should decode only the LiFi fee if the FeeForwarder has no integrator distribution', () => {
+      const lifiDistribution = feeDistributionStructBuilder().build();
+      const transaction = swapAndStartBridgeTokensViaAcrossV3Encoder().with(
+        'swapData',
+        [
+          swapDataStructBuilder()
+            .with(
+              'callData',
+              encodeFunctionData({
+                abi: LiFiDecoder.FeeForwarderAbi,
+                functionName: 'forwardNativeFees',
+                args: [[lifiDistribution]],
+              }),
+            )
+            .build(),
+        ],
+      );
+      const data = transaction.encode();
+
+      const result = target.decodeBridgeAndMaybeSwap(data);
+
+      expect(result.fees).toStrictEqual({
+        tokenAddress: zeroAddress,
+        integratorFee: 0n,
+        lifiFee: lifiDistribution.amount,
+        integratorAddress: zeroAddress,
+      });
+    });
+
+    it('should return null fees if the FeeForwarder has no distributions', () => {
+      const transaction = swapAndStartBridgeTokensViaAcrossV3Encoder().with(
+        'swapData',
+        [
+          swapDataStructBuilder()
+            .with(
+              'callData',
+              encodeFunctionData({
+                abi: LiFiDecoder.FeeForwarderAbi,
+                functionName: 'forwardNativeFees',
+                args: [[]],
+              }),
+            )
+            .build(),
+        ],
+      );
+      const data = transaction.encode();
+
+      const result = target.decodeBridgeAndMaybeSwap(data);
+
+      expect(result.fees).toBeNull();
+    });
   });
 
   describe('decodeSwap', () => {
@@ -980,6 +1149,37 @@ describe('LiFiDecoder', () => {
         fromAmount: args.swapData[0].fromAmount,
         toAmount: args.minAmountOut,
         fees: null,
+      });
+    });
+
+    it('should decode fees forwarded by the FeeForwarder', () => {
+      const lifiDistribution = feeDistributionStructBuilder().build();
+      const integratorDistribution = feeDistributionStructBuilder().build();
+      const transaction = swapTokensMultiV3ERC20ToERC20Encoder().with(
+        'swapData',
+        [
+          swapDataStructBuilder()
+            .with(
+              'callData',
+              encodeFunctionData({
+                abi: LiFiDecoder.FeeForwarderAbi,
+                functionName: 'forwardNativeFees',
+                args: [[lifiDistribution, integratorDistribution]],
+              }),
+            )
+            .build(),
+          swapDataStructBuilder().build(),
+        ],
+      );
+      const data = transaction.encode();
+
+      const result = target.decodeSwap(data);
+
+      expect(result.fees).toStrictEqual({
+        tokenAddress: zeroAddress,
+        integratorFee: integratorDistribution.amount,
+        lifiFee: lifiDistribution.amount,
+        integratorAddress: integratorDistribution.recipient,
       });
     });
   });

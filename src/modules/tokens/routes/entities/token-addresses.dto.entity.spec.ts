@@ -4,7 +4,7 @@ import { getAddress } from 'viem';
 import {
   MAX_TOKEN_ADDRESSES,
   TokenAddressesSchema,
-} from '@/modules/tokens/routes/entities/token-addresses.dto.entity';
+} from '#/modules/tokens/routes/entities/token-addresses.dto.entity';
 
 describe('TokenAddressesSchema', () => {
   it('splits a comma-separated list into checksummed addresses, preserving order', () => {

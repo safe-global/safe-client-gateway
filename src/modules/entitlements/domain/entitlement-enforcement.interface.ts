@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
-import type { FeatureKey } from '@/modules/entitlements/domain/entities/feature.entity';
+import type { FeatureKey } from '#/modules/entitlements/domain/entities/feature.entity';
 import type {
   BinaryFeature,
   StockMeteredFeature,
-} from '@/modules/entitlements/domain/entitlements.constants';
-import type { UsageKey } from '@/modules/entitlements/domain/space-feature-usage.repository.interface';
-import type { Space } from '@/modules/spaces/domain/entities/space.entity';
+} from '#/modules/entitlements/domain/entitlements.constants';
+import type { UsageKey } from '#/modules/entitlements/domain/space-feature-usage.repository.interface';
+import type { Space } from '#/modules/spaces/domain/entities/space.entity';
 
 export const IEntitlementEnforcement = Symbol('IEntitlementEnforcement');
 

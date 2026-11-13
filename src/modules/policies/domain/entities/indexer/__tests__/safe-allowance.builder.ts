@@ -2,12 +2,12 @@
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import type { z } from 'zod';
-import { Builder, type IBuilder } from '@/__tests__/builder';
+import { Builder, type IBuilder } from '#/__tests__/builder';
 import type {
   PolicyIndexerSafeAllowance,
   PolicyIndexerSafeAllowanceSchema,
   PolicyIndexerSafeDelegateSchema,
-} from '@/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
+} from '#/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 
 /**
  * Builders for the Policy Indexer's rows **as served**, not as parsed: `chainId`

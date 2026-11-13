@@ -5,8 +5,8 @@ import type { Job, Queue } from 'bullmq';
 import type {
   JobData,
   JobTypeName,
-} from '@/datasources/job-queue/types/job-types';
-import type { IJobQueueService } from '@/domain/interfaces/job-queue.interface';
+} from '#/datasources/job-queue/types/job-types';
+import type { IJobQueueService } from '#/domain/interfaces/job-queue.interface';
 
 @Injectable()
 export class JobQueueService implements IJobQueueService {

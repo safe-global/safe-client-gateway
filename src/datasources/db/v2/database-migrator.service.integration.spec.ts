@@ -5,14 +5,15 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Test, type TestingModule } from '@nestjs/testing';
 import type { DataSource } from 'typeorm';
 import type { MockedObject } from 'vitest';
-import { ConfigurationModule } from '@/config/configuration.module';
-import configuration from '@/config/entities/__tests__/configuration';
-import { mockPostgresDataSource } from '@/datasources/db/v2/__tests__/postgresql-datasource.mock';
-import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { TestPostgresDatabaseModuleV2 } from '@/datasources/db/v2/test.postgres-database.module';
-import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
-import type { ILoggingService } from '@/logging/logging.interface';
+import { ConfigurationModule } from '#/config/configuration.module';
+import configuration from '#/config/entities/__tests__/configuration';
+import { mockEntityManager } from '#/datasources/db/v2/__tests__/entity-manager.mock';
+import { mockPostgresDataSource } from '#/datasources/db/v2/__tests__/postgresql-datasource.mock';
+import { DatabaseMigrator } from '#/datasources/db/v2/database-migrator.service';
+import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
+import { TestPostgresDatabaseModuleV2 } from '#/datasources/db/v2/test.postgres-database.module';
+import { TestLoggingModule } from '#/logging/__tests__/test.logging.module';
+import type { ILoggingService } from '#/logging/logging.interface';
 
 const mockLoggingService = {
   debug: vi.fn(),
@@ -85,7 +86,12 @@ describe('PostgresDatabaseService', () => {
     await moduleRef.close();
   });
 
-  beforeEach(() => {});
+  beforeEach(() => {
+    vi.spyOn(postgresDatabaseService, 'transaction').mockImplementation((fn) =>
+      fn(mockEntityManager),
+    );
+    connection.showMigrations.mockResolvedValue(true);
+  });
 
   afterEach(() => {
     vi.resetAllMocks();
@@ -108,14 +114,61 @@ describe('PostgresDatabaseService', () => {
       await databaseMigratorService.migrate();
 
       expect(connection.runMigrations).toHaveBeenCalled();
-      expect(connection.query).toHaveBeenCalledWith(insertLockQuery, [1]);
+      expect(mockEntityManager.query).toHaveBeenNthCalledWith(
+        1,
+        'SELECT pg_advisory_xact_lock($1)',
+        [expect.any(Number)],
+      );
+      expect(mockEntityManager.query).toHaveBeenCalledWith(
+        insertLockQuery,
+        [1],
+      );
       expect(connection.runMigrations).toHaveBeenCalled();
 
       expect(connection.query).toHaveBeenCalledWith(truncateLockQuery);
     });
 
+    it('Should not take the lock if no migration is pending', async () => {
+      connection.showMigrations.mockResolvedValue(false);
+
+      await databaseMigratorService.migrate();
+
+      expect(mockEntityManager.query).not.toHaveBeenCalledWith(
+        insertLockQuery,
+        [1],
+      );
+      expect(connection.runMigrations).not.toHaveBeenCalled();
+      expect(connection.query).not.toHaveBeenCalledWith(truncateLockQuery);
+      expect(mockLoggingService.info).toHaveBeenCalledWith(
+        'Migrations: No migrations to execute.',
+      );
+    });
+
+    it('Should start without migrating once another instance has finished', async () => {
+      mockEntityManager.query
+        .mockResolvedValueOnce(undefined)
+        .mockResolvedValueOnce(undefined)
+        .mockResolvedValueOnce([{ id: 1, status: 1 }]);
+      connection.showMigrations.mockResolvedValue(false);
+
+      await databaseMigratorService.migrate();
+
+      expect(connection.showMigrations).toHaveBeenCalledTimes(1);
+      expect(mockEntityManager.query).not.toHaveBeenCalledWith(
+        insertLockQuery,
+        [1],
+      );
+      expect(connection.runMigrations).not.toHaveBeenCalled();
+      expect(mockLoggingService.info).toHaveBeenCalledWith(
+        'Migrations: Running in another instance...',
+      );
+      expect(mockLoggingService.info).toHaveBeenLastCalledWith(
+        'Migrations: No migrations to execute.',
+      );
+    });
+
     it('Should throw an error if retries are exhausted', async () => {
-      connection.query.mockResolvedValue([{ id: 1, status: 1 }]);
+      mockEntityManager.query.mockResolvedValue([{ id: 1, status: 1 }]);
 
       await expect(databaseMigratorService.migrate()).rejects.toThrow(
         'Migrations: Migrations are still running in another instance!',
@@ -140,11 +193,11 @@ describe('PostgresDatabaseService', () => {
         'Migration Error',
       );
 
-      expect(connection.query).toHaveBeenNthCalledWith(4, truncateLockQuery);
+      expect(connection.query).toHaveBeenCalledWith(truncateLockQuery);
     });
 
     it('Should not truncate locks if retries are exhausted', async () => {
-      connection.query.mockResolvedValue([{ id: 1, status: 1 }]);
+      mockEntityManager.query.mockResolvedValue([{ id: 1, status: 1 }]);
 
       await expect(databaseMigratorService.migrate()).rejects.toThrow(
         'Migrations: Migrations are still running in another instance!',

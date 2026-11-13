@@ -3,23 +3,23 @@ import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { Inject, Injectable, type OnModuleInit } from '@nestjs/common';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import type { FileStorageType } from '@/config/entities/schemas/configuration.schema';
-import { CacheRouter } from '@/datasources/cache/cache.router';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import type { FileStorageType } from '#/config/entities/schemas/configuration.schema';
+import { CacheRouter } from '#/datasources/cache/cache.router';
 import {
   CacheService,
   type ICacheService,
-} from '@/datasources/cache/cache.service.interface';
-import { MAX_TTL } from '@/datasources/cache/constants';
-import { ICloudStorageApiService } from '@/datasources/storage/cloud-storage-api.service';
-import { ITargetedMessagingDatasource } from '@/domain/interfaces/targeted-messaging.datasource.interface';
+} from '#/datasources/cache/cache.service.interface';
+import { MAX_TTL } from '#/datasources/cache/constants';
+import { ICloudStorageApiService } from '#/datasources/storage/cloud-storage-api.service';
+import { ITargetedMessagingDatasource } from '#/domain/interfaces/targeted-messaging.datasource.interface';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import { asError } from '@/logging/utils';
-import { OutreachFileSchema } from '@/modules/targeted-messaging/datasources/entities/outreach-file.entity';
-import type { Outreach } from '@/modules/targeted-messaging/domain/entities/outreach.entity';
+} from '#/logging/logging.interface';
+import { asError } from '#/logging/utils';
+import { OutreachFileSchema } from '#/modules/targeted-messaging/datasources/entities/outreach-file.entity';
+import type { Outreach } from '#/modules/targeted-messaging/domain/entities/outreach.entity';
 
 @Injectable()
 export class OutreachFileProcessor implements OnModuleInit {

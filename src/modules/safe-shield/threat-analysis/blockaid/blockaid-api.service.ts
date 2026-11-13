@@ -8,22 +8,22 @@ import type {
 } from '@blockaid/client/resources/evm/json-rpc';
 import { Inject, Injectable } from '@nestjs/common';
 import { type Address, numberToHex } from 'viem';
-import { IConfigurationService } from '@/config/configuration.service.interface';
+import { IConfigurationService } from '#/config/configuration.service.interface';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import type { ReportEvent } from '@/modules/safe-shield/entities/dtos/report-false-result.dto';
+} from '#/logging/logging.interface';
+import type { ReportEvent } from '#/modules/safe-shield/entities/dtos/report-false-result.dto';
 import {
   BLOCKAID_REQUEST_ID_HEADER,
   BLOCKAID_SCAN_DOMAIN,
-} from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.constants';
-import type { IBlockaidApi } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.interface';
-import { BlockaidScanLogSchema } from '@/modules/safe-shield/threat-analysis/blockaid/schemas/blockaid-scan-log.schema';
+} from '#/modules/safe-shield/threat-analysis/blockaid/blockaid-api.constants';
+import type { IBlockaidApi } from '#/modules/safe-shield/threat-analysis/blockaid/blockaid-api.interface';
+import { BlockaidScanLogSchema } from '#/modules/safe-shield/threat-analysis/blockaid/schemas/blockaid-scan-log.schema';
 import {
   type BlockaidScanResponse,
   BlockaidScanResponseSchema,
-} from '@/modules/safe-shield/threat-analysis/blockaid/schemas/blockaid-scan-response.schema';
+} from '#/modules/safe-shield/threat-analysis/blockaid/schemas/blockaid-scan-response.schema';
 
 @Injectable()
 export class BlockaidApi implements IBlockaidApi {

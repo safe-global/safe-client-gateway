@@ -13,43 +13,45 @@ import type { MockedObject } from 'vitest';
 import {
   initTestApplication,
   TestAppProvider,
-} from '@/__tests__/test-app.provider';
-import { ConfigurationModule } from '@/config/configuration.module';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import configuration from '@/config/entities/__tests__/configuration';
-import { TestBlocklistModule } from '@/config/entities/__tests__/test.blocklist.module';
-import { IBlocklistService } from '@/config/entities/blocklist.interface';
-import { TestCacheModule } from '@/datasources/cache/__tests__/test.cache.module';
-import { TestNetworkModule } from '@/datasources/network/__tests__/test.network.module';
-import { TestTxAuthNetworkModule } from '@/datasources/network/__tests__/test.tx-auth.network.module';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import { NetworkService } from '@/datasources/network/network.service.interface';
-import { TxAuthNetworkModule } from '@/datasources/network/tx-auth.network.module';
-import { SignatureType } from '@/domain/common/entities/signature-type.entity';
-import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
-import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
+} from '#/__tests__/test-app.provider';
+import { ConfigurationModule } from '#/config/configuration.module';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import configuration from '#/config/entities/__tests__/configuration';
+import { TestCacheModule } from '#/datasources/cache/__tests__/test.cache.module';
+import { TestNetworkModule } from '#/datasources/network/__tests__/test.network.module';
+import { TestSafeInternalNetworkModule } from '#/datasources/network/__tests__/test.safe-internal.network.module';
+import { TestTxAuthNetworkModule } from '#/datasources/network/__tests__/test.tx-auth.network.module';
+import type { INetworkService } from '#/datasources/network/network.service.interface';
+import { NetworkService } from '#/datasources/network/network.service.interface';
+import { SafeInternalNetworkModule } from '#/datasources/network/safe-internal.network.module';
+import { TxAuthNetworkModule } from '#/datasources/network/tx-auth.network.module';
+import { SignatureType } from '#/domain/common/entities/signature-type.entity';
+import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
+import { TestLoggingModule } from '#/logging/__tests__/test.logging.module';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { contractBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/contract.builder';
-import { dataDecodedBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
+} from '#/logging/logging.interface';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
+import { contractBuilder } from '#/modules/data-decoder/domain/v2/entities/__tests__/contract.builder';
+import { dataDecodedBuilder } from '#/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
 import {
   toJson as multisigToJson,
   multisigTransactionBuilder,
-} from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
-import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
-import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
-import { safeAppBuilder } from '@/modules/safe-apps/domain/entities/__tests__/safe-app.builder';
-import { TestSafeQueueModule } from '@/modules/safe-queue/__tests__/test.safe-queue.module';
-import { SafeQueueModule } from '@/modules/safe-queue/safe-queue.module';
-import { tokenBuilder } from '@/modules/tokens/domain/__tests__/token.builder';
-import { addConfirmationDtoBuilder } from '@/modules/transactions/routes/__tests__/entities/add-confirmation.dto.builder';
-import { TransactionsModule } from '@/modules/transactions/transactions.module';
-import { GlobalErrorFilter } from '@/routes/common/filters/global-error.filter';
-import { ZodErrorFilter } from '@/routes/common/filters/zod-error.filter';
-import { rawify } from '@/validation/entities/raw.entity';
+} from '#/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
+import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
+import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
+import { safeAppBuilder } from '#/modules/safe-apps/domain/entities/__tests__/safe-app.builder';
+import { TestSafeQueueModule } from '#/modules/safe-queue/__tests__/test.safe-queue.module';
+import { SafeQueueModule } from '#/modules/safe-queue/safe-queue.module';
+import { TestSpaceSafesRepositoryModule } from '#/modules/spaces/domain/safes/__tests__/test.space-safes-repository.module';
+import { SpaceSafesRepositoryModule } from '#/modules/spaces/domain/safes/space-safes-repository.module';
+import { tokenBuilder } from '#/modules/tokens/domain/__tests__/token.builder';
+import { addConfirmationDtoBuilder } from '#/modules/transactions/routes/__tests__/entities/add-confirmation.dto.builder';
+import { TransactionsModule } from '#/modules/transactions/transactions.module';
+import { GlobalErrorFilter } from '#/routes/common/filters/global-error.filter';
+import { ZodErrorFilter } from '#/routes/common/filters/zod-error.filter';
+import { rawify } from '#/validation/entities/raw.entity';
 
 describe('Add transaction confirmations - Transactions Controller', () => {
   let app: INestApplication<Server>;
@@ -57,7 +59,6 @@ describe('Add transaction confirmations - Transactions Controller', () => {
   let safeDecoderUrl: string;
   let networkService: MockedObject<INetworkService>;
   let loggingService: MockedObject<ILoggingService>;
-  let blocklistService: MockedObject<IBlocklistService>;
 
   async function initApp(config: typeof configuration): Promise<void> {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -65,7 +66,6 @@ describe('Add transaction confirmations - Transactions Controller', () => {
         // feature
         TransactionsModule,
         // common
-        TestBlocklistModule,
         TestCacheModule,
         ConfigurationModule.register(config),
         TestLoggingModule,
@@ -82,8 +82,12 @@ describe('Add transaction confirmations - Transactions Controller', () => {
     })
       .overrideModule(TxAuthNetworkModule)
       .useModule(TestTxAuthNetworkModule)
+      .overrideModule(SafeInternalNetworkModule)
+      .useModule(TestSafeInternalNetworkModule)
       .overrideModule(SafeQueueModule)
       .useModule(TestSafeQueueModule)
+      .overrideModule(SpaceSafesRepositoryModule)
+      .useModule(TestSpaceSafesRepositoryModule)
       .compile();
 
     const configurationService = moduleFixture.get<IConfigurationService>(
@@ -93,7 +97,6 @@ describe('Add transaction confirmations - Transactions Controller', () => {
     safeDecoderUrl = configurationService.getOrThrow('safeDataDecoder.baseUri');
     networkService = moduleFixture.get(NetworkService);
     loggingService = moduleFixture.get(LoggingService);
-    blocklistService = moduleFixture.get(IBlocklistService);
 
     // TODO: Override module to avoid spying
     vi.spyOn(loggingService, 'error');
@@ -594,78 +597,6 @@ describe('Add transaction confirmations - Transactions Controller', () => {
         expect(loggingService.error).not.toHaveBeenCalled();
       },
     );
-
-    it('should throw and log if a signer is blocked', async () => {
-      const chain = chainBuilder().build();
-      const privateKey = generatePrivateKey();
-      const signer = privateKeyToAccount(privateKey);
-
-      const defaultConfiguration = configuration();
-      const testConfiguration = (): ReturnType<typeof configuration> => ({
-        ...defaultConfiguration,
-        features: {
-          ...defaultConfiguration.features,
-        },
-      });
-      await initApp(testConfiguration);
-
-      vi.spyOn(blocklistService, 'getBlocklist').mockReturnValue([
-        signer.address,
-      ]);
-
-      const safe = safeBuilder().with('owners', [signer.address]).build();
-      const transaction = multisigToJson(
-        await multisigTransactionBuilder()
-          .with('safe', safe.address)
-          .with('nonce', safe.nonce)
-          .with('isExecuted', false)
-          .buildWithConfirmations({
-            signers: [signer],
-            chainId: chain.chainId,
-            safe,
-          }),
-      ) as MultisigTransaction;
-      const addConfirmationDto = addConfirmationDtoBuilder()
-        .with('signature', transaction.confirmations?.[0].signature as Address)
-        .build();
-      networkService.get.mockImplementation(({ url }) => {
-        const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
-        const getMultisigTransactionUrl = `${chain.transactionService}/api/v2/multisig-transactions/${transaction.safeTxHash}/`;
-        const getSafeUrl = `${chain.transactionService}/api/v1/safes/${transaction.safe}`;
-        switch (url) {
-          case getChainUrl:
-            return Promise.resolve({ data: rawify(chain), status: 200 });
-          case getMultisigTransactionUrl:
-            return Promise.resolve({ data: rawify(transaction), status: 200 });
-          case getSafeUrl:
-            return Promise.resolve({ data: rawify(safe), status: 200 });
-          default:
-            return Promise.reject(new Error(`Could not match ${url}`));
-        }
-      });
-
-      await request(app.getHttpServer())
-        .post(
-          `/v1/chains/${chain.chainId}/transactions/${transaction.safeTxHash}/confirmations`,
-        )
-        .send(addConfirmationDto)
-        .expect(502)
-        .expect({
-          message: 'Unauthorized address',
-          statusCode: 502,
-        });
-
-      expect(loggingService.error).toHaveBeenCalledWith({
-        event: 'Unauthorized address',
-        chainId: chain.chainId,
-        safeAddress: safe.address,
-        safeVersion: safe.version,
-        safeTxHash: transaction.safeTxHash,
-        blockedAddress: signer.address,
-        type: 'TRANSACTION_VALIDITY',
-        source: 'API',
-      });
-    });
 
     it('should throw if eth_sign is disabled', async () => {
       const defaultConfiguration = configuration();

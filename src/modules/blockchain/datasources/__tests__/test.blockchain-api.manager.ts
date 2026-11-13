@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Module } from '@nestjs/common';
-import { IBlockchainApiManager } from '@/domain/interfaces/blockchain-api.manager.interface';
-import { FakeBlockchainApiManager } from '@/modules/blockchain/datasources/__tests__/fake.blockchain-api.manager';
-import { FakeBlockchainRepository } from '@/modules/blockchain/domain/__tests__/fake.blockchain.repository';
-import { IBlockchainRepository } from '@/modules/blockchain/domain/blockchain.repository.interface';
+import { IBlockchainApiManager } from '#/domain/interfaces/blockchain-api.manager.interface';
+import { FakeBlockchainApiManager } from '#/modules/blockchain/datasources/__tests__/fake.blockchain-api.manager';
+import { FakeBlockchainRepository } from '#/modules/blockchain/domain/__tests__/fake.blockchain.repository';
+import { IBlockchainRepository } from '#/modules/blockchain/domain/blockchain.repository.interface';
 
 @Module({
   providers: [

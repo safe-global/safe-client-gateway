@@ -10,7 +10,7 @@ import {
   pendingReceivingInfoBuilder,
   successStatusDataBuilder,
   transferMetadataBuilder,
-} from '@/modules/bridge/domain/entities/__tests__/bridge-status.builder';
+} from '#/modules/bridge/domain/entities/__tests__/bridge-status.builder';
 import {
   BaseStatusDataSchema,
   BaseTransactionInfoSchema,
@@ -20,7 +20,7 @@ import {
   PendingReceivingInfoSchema,
   SuccessStatusDataSchema,
   TransferMetadataSchema,
-} from '@/modules/bridge/domain/entities/bridge-status.entity';
+} from '#/modules/bridge/domain/entities/bridge-status.entity';
 
 describe('BridgeStatusSchema', () => {
   describe('BaseStatusDataSchema', () => {

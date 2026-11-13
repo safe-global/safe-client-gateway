@@ -5,13 +5,13 @@ import type {
   FindOptionsSelect,
   FindOptionsWhere,
 } from 'typeorm';
-import type { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
-import type { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
+import type { SpaceSafe } from '#/modules/spaces/datasources/safes/entities/space-safes.entity.db';
+import type { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
 import type {
   PreparedSpaceSafe,
   SpaceSafesBySpaceId,
-} from '@/modules/spaces/domain/safes/entities/space-safe.entity';
-import type { SpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository';
+} from '#/modules/spaces/domain/safes/entities/space-safe.entity';
+import type { SpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository';
 
 export const ISpaceSafesRepository = Symbol('ISpaceSafesRepository');
 
@@ -63,6 +63,15 @@ export interface ISpaceSafesRepository {
   findOrFail(
     args: Parameters<SpaceSafesRepository['find']>[0],
   ): Promise<Array<SpaceSafe>>;
+
+  /**
+   * The spaces holding this Safe on this chain, matched through the blind
+   * index the way {@link existsInSpace} matches it within one space.
+   */
+  findSpaceIdsBySafe(safe: {
+    chainId: SpaceSafe['chainId'];
+    address: SpaceSafe['address'];
+  }): Promise<Array<Space['id']>>;
 
   /** Whether the space holds this Safe: the membership a caller spending the
    * workspace's allowance on it must prove. */

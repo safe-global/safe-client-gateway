@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiProperty } from '@nestjs/swagger';
 import { z } from 'zod';
-import { getStringEnumKeys } from '@/domain/common/utils/enum';
+import { getStringEnumKeys } from '#/domain/common/utils/enum';
 import {
   SpaceAuditEventType,
   SpaceAuditEventTypeSchema,
-} from '@/modules/spaces/domain/audit/entities/space-audit-event.entity';
-import { Page } from '@/routes/common/entities/page.entity';
-import { DateStringSchema } from '@/validation/entities/schemas/date-string.schema';
+} from '#/modules/spaces/domain/audit/entities/space-audit-event.entity';
+import { Page } from '#/routes/common/entities/page.entity';
+import { DateStringSchema } from '#/validation/entities/schemas/date-string.schema';
 
 /** `event_type` arrives as one comma-separated query param. */
 export const SpaceAuditEventTypesQuerySchema = z

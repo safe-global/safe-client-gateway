@@ -9,28 +9,28 @@ import type postgres from 'postgres';
 import request from 'supertest';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import { TestDbFactory } from '@/__tests__/db.factory';
+import { TestDbFactory } from '#/__tests__/db.factory';
 import {
   initTestApplication,
   TestAppProvider,
-} from '@/__tests__/test-app.provider';
-import { createTestModule } from '@/__tests__/testing-module';
+} from '#/__tests__/test-app.provider';
+import { createTestModule } from '#/__tests__/testing-module';
 import {
   addSafes as addSafesFixture,
   createSpaceForSigner as createSpaceForSignerFixture,
   grantEntitlements,
-} from '@/__tests__/util/space-fixtures';
-import configuration from '@/config/entities/__tests__/configuration';
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import { NetworkService } from '@/datasources/network/network.service.interface';
-import { FEATURE_NOT_GRANTED_ERROR_CODE } from '@/modules/entitlements/domain/errors/feature-not-granted.error';
-import { EntitlementsService } from '@/modules/entitlements/routes/entitlements.service';
-import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
-import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
-import { counterpartyAnalysisRequestDtoBuilder } from '@/modules/safe-shield/entities/__tests__/builders/analysis-requests.builder';
-import { SpacesCreationRateLimitGuard } from '@/modules/spaces/routes/guards/spaces-creation-rate-limit.guard';
+} from '#/__tests__/util/space-fixtures';
+import configuration from '#/config/entities/__tests__/configuration';
+import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
+import { IJwtService } from '#/datasources/jwt/jwt.service.interface';
+import type { INetworkService } from '#/datasources/network/network.service.interface';
+import { NetworkService } from '#/datasources/network/network.service.interface';
+import { FEATURE_NOT_GRANTED_ERROR_CODE } from '#/modules/entitlements/domain/errors/feature-not-granted.error';
+import { EntitlementsService } from '#/modules/entitlements/routes/entitlements.service';
+import { NotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/notifications.repository.module';
+import { TestNotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/test.notification.repository.module';
+import { counterpartyAnalysisRequestDtoBuilder } from '#/modules/safe-shield/entities/__tests__/builders/analysis-requests.builder';
+import { SpacesCreationRateLimitGuard } from '#/modules/spaces/routes/guards/spaces-creation-rate-limit.guard';
 
 describe('SpaceSafeShieldController', () => {
   let app: INestApplication<Server>;
@@ -147,19 +147,21 @@ describe('SpaceSafeShieldController', () => {
           jwtService,
           postgresDatabaseService,
         });
-      // No entitlement granted: a member-check bug that let this through
-      // would surface as a 402, not a 200, and still prove the leak.
       const safe = {
         chainId: '1',
         address: getAddress(faker.finance.ethereumAddress()),
       };
 
-      await request(app.getHttpServer())
+      const response = await request(app.getHttpServer())
         .get(
           `/v1/spaces/${spaceUuid}/chains/${safe.chainId}/security/${safe.address}/recipient/${getAddress(faker.finance.ethereumAddress())}`,
         )
-        .set('Cookie', [`access_token=${strangerAccessToken}`])
-        .expect(HttpStatus.FORBIDDEN);
+        .set('Cookie', [`access_token=${strangerAccessToken}`]);
+
+      expect(response.status).toBe(HttpStatus.FORBIDDEN);
+      expect(response.body).toMatchObject({
+        message: 'User is not a member of this workspace',
+      });
     });
 
     it('rejects with 402 when the Space has no copilot_scans entitlement', async () => {
@@ -303,20 +305,22 @@ describe('SpaceSafeShieldController', () => {
           jwtService,
           postgresDatabaseService,
         });
-      // No entitlement granted: a member-check bug that let this through
-      // would surface as a 402, not a 200, and still prove the leak.
       const safe = {
         chainId: '1',
         address: getAddress(faker.finance.ethereumAddress()),
       };
 
-      await request(app.getHttpServer())
+      const response = await request(app.getHttpServer())
         .post(
           `/v1/spaces/${spaceUuid}/chains/${safe.chainId}/security/${safe.address}/counterparty-analysis`,
         )
         .set('Cookie', [`access_token=${strangerAccessToken}`])
-        .send(counterpartyAnalysisRequestDtoBuilder().build())
-        .expect(HttpStatus.FORBIDDEN);
+        .send(counterpartyAnalysisRequestDtoBuilder().build());
+
+      expect(response.status).toBe(HttpStatus.FORBIDDEN);
+      expect(response.body).toMatchObject({
+        message: 'User is not a member of this workspace',
+      });
     });
 
     it('rejects with 402 when the Space has no copilot_scans entitlement', async () => {

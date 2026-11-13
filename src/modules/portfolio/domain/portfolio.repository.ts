@@ -1,23 +1,29 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import type { Address } from 'viem';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { CacheRouter } from '@/datasources/cache/cache.router';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { CacheRouter } from '#/datasources/cache/cache.router';
 import {
   CacheService,
   type ICacheService,
-} from '@/datasources/cache/cache.service.interface';
-import { getNumberString } from '@/domain/common/utils/utils';
-import type { AppBalance } from '@/modules/portfolio/domain/entities/app-balance.entity';
-import type { AppPosition } from '@/modules/portfolio/domain/entities/app-position.entity';
+} from '#/datasources/cache/cache.service.interface';
+import type { CacheDir } from '#/datasources/cache/entities/cache-dir.entity';
+import { getNumberString } from '#/domain/common/utils/utils';
+import type { AppBalance } from '#/modules/portfolio/domain/entities/app-balance.entity';
+import type { AppPosition } from '#/modules/portfolio/domain/entities/app-position.entity';
 import {
   type Portfolio,
   PortfolioSchema,
-} from '@/modules/portfolio/domain/entities/portfolio.entity';
-import type { TokenBalance } from '@/modules/portfolio/domain/entities/token-balance.entity';
-import type { IPortfolioRepository } from '@/modules/portfolio/domain/portfolio.repository.interface';
-import { IPortfolioApi } from '@/modules/portfolio/interfaces/portfolio-api.interface';
-import { ZerionCacheService } from '@/modules/zerion/datasources/zerion-cache.service';
+} from '#/modules/portfolio/domain/entities/portfolio.entity';
+import {
+  type PortfolioSnapshot,
+  type PortfolioSnapshotArgs,
+  PortfolioSnapshotSchema,
+} from '#/modules/portfolio/domain/entities/portfolio-snapshot.entity';
+import type { TokenBalance } from '#/modules/portfolio/domain/entities/token-balance.entity';
+import type { IPortfolioRepository } from '#/modules/portfolio/domain/portfolio.repository.interface';
+import { IPortfolioApi } from '#/modules/portfolio/interfaces/portfolio-api.interface';
+import { ZerionCacheService } from '#/modules/zerion/datasources/zerion-cache.service';
 
 /**
  * Portfolio repository.
@@ -53,38 +59,83 @@ export class PortfolioRepository implements IPortfolioRepository {
     isTestnet?: boolean;
     sync?: boolean;
   }): Promise<Portfolio> {
-    const cacheDir = CacheRouter.getPortfolioCacheDir({
+    const cacheDir = this._getCacheDir(args);
+    // If sync is true, we bypass the cache and fetch the portfolio from the API
+    const cached = args.sync ? null : await this._getCached(cacheDir);
+    const portfolio = PortfolioSchema.parse(
+      cached ?? (await this._fetchAndCache({ ...args, cacheDir })),
+    );
+    return this._applyFilters(portfolio, args);
+  }
+
+  public async getPortfolioSnapshot(
+    args: PortfolioSnapshotArgs,
+  ): Promise<PortfolioSnapshot> {
+    const cacheDir = this._getCacheDir(args);
+    const cached = PortfolioSnapshotSchema.safeParse(
+      await this._getCached(cacheDir),
+    );
+    // Entries cached before timestamps existed fail the parse and are refetched.
+    const snapshot = cached.success
+      ? cached.data
+      : await this._fetchAndCache({ ...args, cacheDir });
+    // The GET /v1/portfolio defaults, so the totals match the Assets page.
+    return {
+      ...this._applyFilters(snapshot, {
+        trusted: args.trusted,
+        excludeDust: true,
+      }),
+      fetchedAt: snapshot.fetchedAt,
+      expiresAt: snapshot.expiresAt,
+    };
+  }
+
+  private _getCacheDir(args: {
+    address: Address;
+    fiatCode: string;
+    trusted?: boolean;
+    isTestnet?: boolean;
+  }): CacheDir {
+    return CacheRouter.getPortfolioCacheDir({
       address: args.address,
       fiatCode: args.fiatCode,
       trusted: args.trusted,
       isTestnet: args.isTestnet,
     });
+  }
 
-    // If sync is true, we bypass the cache and fetch the portfolio from the API
-    const cached = args.sync ? null : await this.cacheService.hGet(cacheDir);
-    let portfolio: Portfolio;
+  private async _getCached(cacheDir: CacheDir): Promise<unknown> {
+    const cached = await this.cacheService.hGet(cacheDir);
+    return cached ? JSON.parse(cached) : null;
+  }
 
-    if (cached) {
-      portfolio = PortfolioSchema.parse(JSON.parse(cached));
-    } else {
-      const rawPortfolio = await this.portfolioApi.getPortfolio({
-        address: args.address,
-        fiatCode: args.fiatCode,
-        trusted: args.trusted,
-        isTestnet: args.isTestnet,
-        sync: args.sync,
-      });
-
-      portfolio = PortfolioSchema.parse(rawPortfolio);
-
-      await this.cacheService.hSet(
-        cacheDir,
-        JSON.stringify(portfolio),
-        this.cacheExpirationSeconds,
-      );
-    }
-
-    return this._applyFilters(portfolio, args);
+  private async _fetchAndCache(args: {
+    address: Address;
+    fiatCode: string;
+    trusted?: boolean;
+    isTestnet?: boolean;
+    sync?: boolean;
+    cacheDir: CacheDir;
+  }): Promise<PortfolioSnapshot> {
+    const rawPortfolio = await this.portfolioApi.getPortfolio({
+      address: args.address,
+      fiatCode: args.fiatCode,
+      trusted: args.trusted,
+      isTestnet: args.isTestnet,
+      sync: args.sync,
+    });
+    const fetchedAt = Date.now();
+    const snapshot: PortfolioSnapshot = {
+      ...PortfolioSchema.parse(rawPortfolio),
+      fetchedAt,
+      expiresAt: fetchedAt + this.cacheExpirationSeconds * 1_000,
+    };
+    await this.cacheService.hSet(
+      args.cacheDir,
+      JSON.stringify(snapshot),
+      this.cacheExpirationSeconds,
+    );
+    return snapshot;
   }
 
   /**
@@ -172,7 +223,9 @@ export class PortfolioRepository implements IPortfolioRepository {
     const filteredGroups = app.groups
       .map((group) => {
         const filteredItems = group.items.filter(positionFilter);
-        if (filteredItems.length === 0) return null;
+        if (filteredItems.length === 0) {
+          return null;
+        }
         return {
           ...group,
           items: filteredItems,
@@ -180,7 +233,9 @@ export class PortfolioRepository implements IPortfolioRepository {
       })
       .filter((group): group is NonNullable<typeof group> => group !== null);
 
-    if (filteredGroups.length === 0) return null;
+    if (filteredGroups.length === 0) {
+      return null;
+    }
 
     const allFilteredPositions = filteredGroups.flatMap((group) => group.items);
     const sum = this._sumBalances(allFilteredPositions);
@@ -233,7 +288,9 @@ export class PortfolioRepository implements IPortfolioRepository {
    */
   private _filterDustPositions(portfolio: Portfolio): Portfolio {
     const isDustFree = (item: { balanceFiat?: string }): boolean => {
-      if (!item.balanceFiat) return true;
+      if (!item.balanceFiat) {
+        return true;
+      }
       const value = Math.abs(Number(item.balanceFiat));
       return value >= this.dustThresholdUsd;
     };

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import { chainUpdateEventBuilder } from '@/modules/hooks/routes/entities/__tests__/chain-update.builder';
-import type { ConfigEventType } from '@/modules/hooks/routes/entities/event-type.entity';
-import { ChainUpdateEventSchema } from '@/modules/hooks/routes/entities/schemas/chain-update.schema';
+import { chainUpdateEventBuilder } from '#/modules/hooks/routes/entities/__tests__/chain-update.builder';
+import type { ConfigEventType } from '#/modules/hooks/routes/entities/event-type.entity';
+import { ChainUpdateEventSchema } from '#/modules/hooks/routes/entities/schemas/chain-update.schema';
 
 describe('ChainUpdateEventSchema', () => {
   it('should validate a valid chain event', () => {

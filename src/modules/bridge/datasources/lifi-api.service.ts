@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { Hash } from 'viem';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
-import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
-import { CacheRouter } from '@/datasources/cache/cache.router';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import type { IBridgeApi } from '@/domain/interfaces/bridge-api.inferface';
-import type { BridgeChainPage } from '@/modules/bridge/domain/entities/bridge-chain.entity';
-import type { BridgeName } from '@/modules/bridge/domain/entities/bridge-name.entity';
-import type { BridgeStatus } from '@/modules/bridge/domain/entities/bridge-status.entity';
-import type { Raw } from '@/validation/entities/raw.entity';
+import type { IConfigurationService } from '#/config/configuration.service.interface';
+import type { CacheFirstDataSource } from '#/datasources/cache/cache.first.data.source';
+import { CacheRouter } from '#/datasources/cache/cache.router';
+import { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
+import type { INetworkService } from '#/datasources/network/network.service.interface';
+import type { IBridgeApi } from '#/domain/interfaces/bridge-api.inferface';
+import type { BridgeChainPage } from '#/modules/bridge/domain/entities/bridge-chain.entity';
+import type { BridgeName } from '#/modules/bridge/domain/entities/bridge-name.entity';
+import type { BridgeStatus } from '#/modules/bridge/domain/entities/bridge-status.entity';
+import type { Raw } from '#/validation/entities/raw.entity';
 
 export class LifiBridgeApi implements IBridgeApi {
   public static readonly LIFI_API_HEADER = 'x-lifi-api-key';

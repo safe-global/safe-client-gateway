@@ -1,5 +1,6 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable, type OnModuleDestroy } from '@nestjs/common';
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
+import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
 
 @Injectable()
 export class DatabaseShutdownHook implements OnModuleDestroy {

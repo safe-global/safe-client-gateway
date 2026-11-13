@@ -6,8 +6,8 @@ import type { Mock } from 'vitest';
 import {
   QUOTA_EXCEEDED_ERROR_CODE,
   QuotaExceededError,
-} from '@/modules/entitlements/domain/errors/quota-exceeded.error';
-import { QuotaExceededExceptionFilter } from '@/modules/entitlements/domain/exception-filters/quota-exceeded.exception-filter';
+} from '#/modules/entitlements/domain/errors/quota-exceeded.error';
+import { QuotaExceededExceptionFilter } from '#/modules/entitlements/domain/exception-filters/quota-exceeded.exception-filter';
 
 function buildMockHost(): {
   host: ArgumentsHost;

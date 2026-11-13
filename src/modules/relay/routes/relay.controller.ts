@@ -23,23 +23,23 @@ import {
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
 import type { Address, Hex } from 'viem';
-import { RelayCalldataExceptionFilters } from '@/modules/relay/domain/exception-filters/relay-calldata.exception-filters';
-import { RelayLimitReachedExceptionFilter } from '@/modules/relay/domain/exception-filters/relay-limit-reached.exception-filter';
-import { RelayerNotAvailableExceptionFilter } from '@/modules/relay/domain/exception-filters/relayer-not-available.exception-filter';
-import { SafeTxHashMismatchExceptionFilter } from '@/modules/relay/domain/exception-filters/safe-tx-hash-mismatch.exception-filter';
-import { GasPaymentOptionUnavailableResponse } from '@/modules/relay/routes/entities/gas-payment-option-unavailable-response.entity';
-import { RelayDto } from '@/modules/relay/routes/entities/relay.dto.entity';
-import { Relay } from '@/modules/relay/routes/entities/relay.entity';
-import { RelayErrorResponse } from '@/modules/relay/routes/entities/relay-error-response.entity';
-import { RelayTaskStatus } from '@/modules/relay/routes/entities/relay-task-status.entity';
-import { RelaysRemaining } from '@/modules/relay/routes/entities/relays-remaining.entity';
-import { RelayDtoSchema } from '@/modules/relay/routes/entities/schemas/relay.dto.schema';
-import { RelayService } from '@/modules/relay/routes/relay.service';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { HexSchema } from '@/validation/entities/schemas/hex.schema';
-import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
-import { OpaqueIdSchema } from '@/validation/entities/schemas/opaque-id.schema';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+import { RelayCalldataExceptionFilters } from '#/modules/relay/domain/exception-filters/relay-calldata.exception-filters';
+import { RelayLimitReachedExceptionFilter } from '#/modules/relay/domain/exception-filters/relay-limit-reached.exception-filter';
+import { RelayerNotAvailableExceptionFilter } from '#/modules/relay/domain/exception-filters/relayer-not-available.exception-filter';
+import { SafeTxHashMismatchExceptionFilter } from '#/modules/relay/domain/exception-filters/safe-tx-hash-mismatch.exception-filter';
+import { GasPaymentOptionUnavailableResponse } from '#/modules/relay/routes/entities/gas-payment-option-unavailable-response.entity';
+import { RelayDto } from '#/modules/relay/routes/entities/relay.dto.entity';
+import { Relay } from '#/modules/relay/routes/entities/relay.entity';
+import { RelayErrorResponse } from '#/modules/relay/routes/entities/relay-error-response.entity';
+import { RelayTaskStatus } from '#/modules/relay/routes/entities/relay-task-status.entity';
+import { RelaysRemaining } from '#/modules/relay/routes/entities/relays-remaining.entity';
+import { RelayDtoSchema } from '#/modules/relay/routes/entities/schemas/relay.dto.schema';
+import { RelayService } from '#/modules/relay/routes/relay.service';
+import { AddressSchema } from '#/validation/entities/schemas/address.schema';
+import { HexSchema } from '#/validation/entities/schemas/hex.schema';
+import { NumericStringSchema } from '#/validation/entities/schemas/numeric-string.schema';
+import { OpaqueIdSchema } from '#/validation/entities/schemas/opaque-id.schema';
+import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
 @ApiTags('relay')
 @Controller({

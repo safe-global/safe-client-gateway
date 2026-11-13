@@ -1,31 +1,31 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import type { Address, Hex } from 'viem';
-import { IConfigApi } from '@/domain/interfaces/config-api.interface';
+import { IConfigApi } from '#/domain/interfaces/config-api.interface';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import { asError } from '@/logging/utils';
-import { ChainSchema } from '@/modules/chains/domain/entities/schemas/chain.schema';
-import type { Operation } from '@/modules/safe/domain/entities/operation.entity';
-import type { ISafeShieldAnalysis } from '@/modules/safe-shield/domain/safe-shield-analysis.interface';
-import type { ThreatAnalysisRequest } from '@/modules/safe-shield/entities/analysis-requests.entity';
-import { CommonStatus } from '@/modules/safe-shield/entities/analysis-result.entity';
+} from '#/logging/logging.interface';
+import { asError } from '#/logging/utils';
+import { ChainSchema } from '#/modules/chains/domain/entities/schemas/chain.schema';
+import type { Operation } from '#/modules/safe/domain/entities/operation.entity';
+import type { ISafeShieldAnalysis } from '#/modules/safe-shield/domain/safe-shield-analysis.interface';
+import type { ThreatAnalysisRequest } from '#/modules/safe-shield/entities/analysis-requests.entity';
+import { CommonStatus } from '#/modules/safe-shield/entities/analysis-result.entity';
 import {
   COMMON_DESCRIPTION_MAPPING,
   COMMON_SEVERITY_MAPPING,
-} from '@/modules/safe-shield/entities/common-status.constants';
-import type { ReportFalseResultRequest } from '@/modules/safe-shield/entities/dtos/report-false-result.dto';
+} from '#/modules/safe-shield/entities/common-status.constants';
+import type { ReportFalseResultRequest } from '#/modules/safe-shield/entities/dtos/report-false-result.dto';
 import {
   ContractStatusGroup,
   DeadlockStatusGroup,
   RecipientStatusGroup,
-} from '@/modules/safe-shield/entities/status-group.entity';
-import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
-import { FF_RISK_MITIGATION } from '@/modules/safe-shield/threat-analysis/blockaid/blockaid-api.constants';
-import type { TransactionInfo } from '@/modules/transactions/routes/entities/transaction-info.entity';
-import { TransactionsService } from '@/modules/transactions/routes/transactions.service';
+} from '#/modules/safe-shield/entities/status-group.entity';
+import type { DecodedTransactionData } from '#/modules/safe-shield/entities/transaction-data.entity';
+import { FF_RISK_MITIGATION } from '#/modules/safe-shield/threat-analysis/blockaid/blockaid-api.constants';
+import type { TransactionInfo } from '#/modules/transactions/routes/entities/transaction-info.entity';
+import { TransactionsService } from '#/modules/transactions/routes/transactions.service';
 import { ContractAnalysisService } from './contract-analysis/contract-analysis.service';
 import { DeadlockAnalysisService } from './deadlock-analysis/deadlock-analysis.service';
 import type {

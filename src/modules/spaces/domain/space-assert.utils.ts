@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
-import { ForbiddenException } from '@nestjs/common';
-import type { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
-import type { Member } from '@/modules/users/domain/entities/member.entity';
-import type { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
+import { HttpStatus } from '@nestjs/common';
+import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
+import type { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
+import type { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository.interface';
+import type { Member } from '#/modules/users/domain/entities/member.entity';
+import type { IMembersRepository } from '#/modules/users/domain/members/members.repository.interface';
 
 /**
  * Asserts the caller is an ACTIVE ADMIN of the space. Non-members, pending
@@ -24,7 +26,10 @@ export async function assertAdmin(
   });
 
   if (!admin) {
-    throw new ForbiddenException('User is not an admin of this workspace');
+    throw new HttpExceptionNoLog(
+      'User is not an admin of this workspace',
+      HttpStatus.FORBIDDEN,
+    );
   }
 
   return admin;
@@ -49,8 +54,28 @@ export async function assertMember(
   });
 
   if (!member) {
-    throw new ForbiddenException('User is not a member of this workspace');
+    throw new HttpExceptionNoLog(
+      'User is not a member of this workspace',
+      HttpStatus.FORBIDDEN,
+    );
   }
 
   return member;
+}
+
+/**
+ * Asserts the Safe belongs to the space. Call it after {@link assertMember},
+ * so a non-member cannot probe which Safes a space holds, and before any
+ * entitlement check, so a disallowed request never reaches the plan.
+ */
+export async function assertSafeInSpace(
+  spaceSafesRepository: ISpaceSafesRepository,
+  args: Parameters<ISpaceSafesRepository['existsInSpace']>[0],
+): Promise<void> {
+  if (!(await spaceSafesRepository.existsInSpace(args))) {
+    throw new HttpExceptionNoLog(
+      'Safe is not in this workspace',
+      HttpStatus.FORBIDDEN,
+    );
+  }
 }

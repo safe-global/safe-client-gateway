@@ -7,15 +7,15 @@ import {
   SubstatusesDone,
   SubstatusesFailed,
   SubstatusesPending,
-} from '@/modules/bridge/domain/entities/bridge-status.entity';
-import { BridgeFee } from '@/modules/transactions/routes/entities/bridge/fees.entity';
-import { TokenInfo } from '@/modules/transactions/routes/entities/swaps/token-info.entity';
+} from '#/modules/bridge/domain/entities/bridge-status.entity';
+import { BridgeFee } from '#/modules/transactions/routes/entities/bridge/fees.entity';
+import { TokenInfo } from '#/modules/transactions/routes/entities/swaps/token-info.entity';
 import {
   isTransactionInfoOfType,
   TransactionInfo,
   TransactionInfoType,
-} from '@/modules/transactions/routes/entities/transaction-info.entity';
-import { AddressInfo } from '@/routes/common/entities/address-info.entity';
+} from '#/modules/transactions/routes/entities/transaction-info.entity';
+import { AddressInfo } from '#/routes/common/entities/address-info.entity';
 
 @ApiExtraModels(BridgeFee)
 export class SwapTransactionInfo extends TransactionInfo {

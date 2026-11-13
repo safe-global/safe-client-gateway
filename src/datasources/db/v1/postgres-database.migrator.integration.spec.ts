@@ -3,8 +3,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { faker } from '@faker-js/faker';
 import type postgres from 'postgres';
-import { TestDbFactory } from '@/__tests__/db.factory';
-import { PostgresDatabaseMigrator } from '@/datasources/db/v1/postgres-database.migrator';
+import { TestDbFactory } from '#/__tests__/db.factory';
+import { PostgresDatabaseMigrator } from '#/datasources/db/v1/postgres-database.migrator';
 
 const folder = path.join(__dirname, 'migrations');
 const migrations: Array<{

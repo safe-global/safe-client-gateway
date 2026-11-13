@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import { campaignBuilder } from '@/modules/community/domain/entities/__tests__/campaign.builder';
-import { CampaignSchema } from '@/modules/community/domain/entities/campaign.entity';
+import { campaignBuilder } from '#/modules/community/domain/entities/__tests__/campaign.builder';
+import { CampaignSchema } from '#/modules/community/domain/entities/campaign.entity';
 
 describe('CampaignSchema', () => {
   it('should validate a valid campaign', () => {

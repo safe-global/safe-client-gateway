@@ -10,14 +10,15 @@ import {
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import type { Address } from 'viem';
-import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
-import { AddRecoveryModuleDto } from '@/modules/recovery/routes/entities/add-recovery-module.dto.entity';
-import { AddRecoveryModuleDtoSchema } from '@/modules/recovery/routes/entities/schemas/add-recovery-module.dto.schema';
-import { RecoveryService } from '@/modules/recovery/routes/recovery.service';
-import { Auth } from '@/routes/common/auth/auth.decorator';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import { AuthGuard } from '#/modules/auth/routes/guards/auth.guard';
+import { ChainIdSchema } from '#/modules/chains/domain/entities/schemas/chain-id.schema';
+import { AddRecoveryModuleDto } from '#/modules/recovery/routes/entities/add-recovery-module.dto.entity';
+import { AddRecoveryModuleDtoSchema } from '#/modules/recovery/routes/entities/schemas/add-recovery-module.dto.schema';
+import { RecoveryService } from '#/modules/recovery/routes/recovery.service';
+import { Auth } from '#/routes/common/auth/auth.decorator';
+import { AddressSchema } from '#/validation/entities/schemas/address.schema';
+import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
 @ApiTags('recovery')
 @Controller({
@@ -31,7 +32,7 @@ export class RecoveryController {
   @Post()
   @UseGuards(AuthGuard)
   addRecoveryModule(
-    @Param('chainId') chainId: string,
+    @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,
     @Body(new ValidationPipe(AddRecoveryModuleDtoSchema))
@@ -50,7 +51,7 @@ export class RecoveryController {
   @Delete('/:moduleAddress')
   @UseGuards(AuthGuard)
   deleteRecoveryModule(
-    @Param('chainId') chainId: string,
+    @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
     @Param('moduleAddress', new ValidationPipe(AddressSchema))
     moduleAddress: Address,
     @Param('safeAddress', new ValidationPipe(AddressSchema))

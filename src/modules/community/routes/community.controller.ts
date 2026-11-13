@@ -10,23 +10,24 @@ import {
 } from '@nestjs/common';
 import { ApiBody, ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
 import type { Address } from 'viem';
-import { EligibilityRequestSchema } from '@/modules/community/domain/entities/eligibility-request.entity';
-import { CommunityService } from '@/modules/community/routes/community.service';
-import { Campaign } from '@/modules/community/routes/entities/campaign.entity';
-import { CampaignPage } from '@/modules/community/routes/entities/campaign.page.entity';
-import type { CampaignActivityPage } from '@/modules/community/routes/entities/campaign-activity.page.entity';
-import { CampaignRank } from '@/modules/community/routes/entities/campaign-rank.entity';
-import { CampaignRankPage } from '@/modules/community/routes/entities/campaign-rank.page.entity';
-import { Eligibility } from '@/modules/community/routes/entities/eligibility.entity';
-import { EligibilityRequest } from '@/modules/community/routes/entities/eligibility-request.entity';
-import { LockingEventPage } from '@/modules/community/routes/entities/locking-event.page.entity';
-import { LockingRank } from '@/modules/community/routes/entities/locking-rank.entity';
-import { LockingRankPage } from '@/modules/community/routes/entities/locking-rank.page.entity';
-import { PaginationDataDecorator } from '@/routes/common/decorators/pagination.data.decorator';
-import { RouteUrlDecorator } from '@/routes/common/decorators/route.url.decorator';
-import type { PaginationData } from '@/routes/common/pagination/pagination.data';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+import { EligibilityRequestSchema } from '#/modules/community/domain/entities/eligibility-request.entity';
+import { CommunityService } from '#/modules/community/routes/community.service';
+import { Campaign } from '#/modules/community/routes/entities/campaign.entity';
+import { CampaignPage } from '#/modules/community/routes/entities/campaign.page.entity';
+import type { CampaignActivityPage } from '#/modules/community/routes/entities/campaign-activity.page.entity';
+import { CampaignRank } from '#/modules/community/routes/entities/campaign-rank.entity';
+import { CampaignRankPage } from '#/modules/community/routes/entities/campaign-rank.page.entity';
+import { Eligibility } from '#/modules/community/routes/entities/eligibility.entity';
+import { EligibilityRequest } from '#/modules/community/routes/entities/eligibility-request.entity';
+import { LockingEventPage } from '#/modules/community/routes/entities/locking-event.page.entity';
+import { LockingRank } from '#/modules/community/routes/entities/locking-rank.entity';
+import { LockingRankPage } from '#/modules/community/routes/entities/locking-rank.page.entity';
+import { PaginationDataDecorator } from '#/routes/common/decorators/pagination.data.decorator';
+import { RouteUrlDecorator } from '#/routes/common/decorators/route.url.decorator';
+import type { PaginationData } from '#/routes/common/pagination/pagination.data';
+import { AddressSchema } from '#/validation/entities/schemas/address.schema';
+import { OpaqueIdSchema } from '#/validation/entities/schemas/opaque-id.schema';
+import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
 @ApiTags('community')
 @Controller({
@@ -52,7 +53,9 @@ export class CommunityController {
 
   @ApiOkResponse({ type: Campaign })
   @Get('/campaigns/:resourceId')
-  getCampaignById(@Param('resourceId') resourceId: string): Promise<Campaign> {
+  getCampaignById(
+    @Param('resourceId', new ValidationPipe(OpaqueIdSchema)) resourceId: string,
+  ): Promise<Campaign> {
     return this.communityService.getCampaignById(resourceId);
   }
 
@@ -60,7 +63,7 @@ export class CommunityController {
   @ApiQuery({ name: 'cursor', required: false, type: String })
   @ApiQuery({ name: 'holder', required: false, type: String })
   getCampaignActivities(
-    @Param('resourceId') resourceId: string,
+    @Param('resourceId', new ValidationPipe(OpaqueIdSchema)) resourceId: string,
     @RouteUrlDecorator() routeUrl: URL,
     @PaginationDataDecorator() paginationData: PaginationData,
     @Query('holder', new ValidationPipe(AddressSchema.optional()))
@@ -82,7 +85,7 @@ export class CommunityController {
   })
   @Get('/campaigns/:resourceId/leaderboard')
   getCampaignLeaderboard(
-    @Param('resourceId') resourceId: string,
+    @Param('resourceId', new ValidationPipe(OpaqueIdSchema)) resourceId: string,
     @RouteUrlDecorator() routeUrl: URL,
     @PaginationDataDecorator() paginationData: PaginationData,
   ): Promise<CampaignRankPage> {
@@ -96,7 +99,7 @@ export class CommunityController {
   @ApiOkResponse({ type: CampaignRank })
   @Get('/campaigns/:resourceId/leaderboard/:safeAddress')
   getCampaignRank(
-    @Param('resourceId') resourceId: string,
+    @Param('resourceId', new ValidationPipe(OpaqueIdSchema)) resourceId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,
   ): Promise<CampaignRank> {

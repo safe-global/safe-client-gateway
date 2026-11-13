@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import type { IBuilder } from '@/__tests__/builder';
-import { Builder } from '@/__tests__/builder';
-import type { IndexingStatus } from '@/modules/indexing/domain/entities/indexing-status.entity';
+import type { IBuilder } from '#/__tests__/builder';
+import { Builder } from '#/__tests__/builder';
+import type { IndexingStatus } from '#/modules/indexing/domain/entities/indexing-status.entity';
 
 export function indexingStatusBuilder(): IBuilder<IndexingStatus> {
   return new Builder<IndexingStatus>()

@@ -5,12 +5,12 @@ import { type Address, getAddress } from 'viem';
 import {
   oidcAuthPayloadDtoBuilder,
   siweAuthPayloadDtoBuilder,
-} from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+} from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import {
   AuthMethod,
   AuthPayload,
   AuthPayloadDtoSchema,
-} from '@/modules/auth/domain/entities/auth-payload.entity';
+} from '#/modules/auth/domain/entities/auth-payload.entity';
 
 describe('AuthPayload entity', () => {
   describe('SIWE', () => {

@@ -3,24 +3,25 @@ import { faker } from '@faker-js/faker';
 import type { Hex } from 'viem';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import type { ILoggingService } from '@/logging/logging.interface';
+import { getAllMultiSendDeployments } from '#/domain/common/utils/deployments';
+import type { ILoggingService } from '#/logging/logging.interface';
 import {
   addDelegateEncoder,
   setAllowanceEncoder,
-} from '@/modules/contracts/domain/__tests__/encoders/allowance-module-encoder.builder';
+} from '#/modules/contracts/domain/__tests__/encoders/allowance-module-encoder.builder';
 import {
   multiSendEncoder,
   multiSendTransactionsEncoder,
-} from '@/modules/contracts/domain/__tests__/encoders/multi-send-encoder.builder';
-import { enableModuleEncoder } from '@/modules/contracts/domain/__tests__/encoders/safe-encoder.builder';
-import { AllowanceModuleDecoder } from '@/modules/contracts/domain/decoders/allowance-module-decoder.helper';
-import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
-import { SafeDecoder } from '@/modules/contracts/domain/decoders/safe-decoder.helper';
-import { tokenMetadataKey } from '@/modules/policies/domain/utils/token-metadata-key.utils';
-import { PendingSpendingLimitMapper } from '@/modules/policies/routes/mappers/pending-spending-limit.mapper';
-import { multisigTransactionBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
-import { Operation } from '@/modules/safe/domain/entities/operation.entity';
-import { erc20TokenBuilder } from '@/modules/tokens/domain/__tests__/token.builder';
+} from '#/modules/contracts/domain/__tests__/encoders/multi-send-encoder.builder';
+import { enableModuleEncoder } from '#/modules/contracts/domain/__tests__/encoders/safe-encoder.builder';
+import { AllowanceModuleDecoder } from '#/modules/contracts/domain/decoders/allowance-module-decoder.helper';
+import { MultiSendDecoder } from '#/modules/contracts/domain/decoders/multi-send-decoder.helper';
+import { SafeDecoder } from '#/modules/contracts/domain/decoders/safe-decoder.helper';
+import { tokenMetadataKey } from '#/modules/policies/domain/utils/token-metadata-key.utils';
+import { PendingSpendingLimitMapper } from '#/modules/policies/routes/mappers/pending-spending-limit.mapper';
+import { multisigTransactionBuilder } from '#/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
+import { Operation } from '#/modules/safe/domain/entities/operation.entity';
+import { erc20TokenBuilder } from '#/modules/tokens/domain/__tests__/token.builder';
 
 // Sepolia's only AllowanceModule deployment (v0.1.0), per @safe-global/safe-modules-deployments.
 const SEPOLIA_CHAIN_ID = '11155111';
@@ -29,6 +30,13 @@ const SEPOLIA_ALLOWANCE_MODULE = getAddress(
 );
 // No AllowanceModule has ever been deployed here.
 const CHAIN_ID_WITHOUT_ALLOWANCE_MODULE = '999999999';
+
+/** An official MultiSend or MultiSendCallOnly deployment on Sepolia. */
+function randomSepoliaMultiSendAddress(): `0x${string}` {
+  return faker.helpers.arrayElement(
+    getAllMultiSendDeployments({ chainId: SEPOLIA_CHAIN_ID }),
+  );
+}
 
 const mockLoggingService = {
   warn: vi.fn(),
@@ -84,6 +92,7 @@ describe('PendingSpendingLimitMapper', () => {
         confirmations: transaction.confirmations?.length ?? 0,
         confirmationsRequired: transaction.confirmationsRequired,
         proposedAt: Math.floor(transaction.submissionDate.getTime() / 1000),
+        proposer: transaction.proposer,
         data: {
           module: SEPOLIA_ALLOWANCE_MODULE,
           changes: [
@@ -130,8 +139,8 @@ describe('PendingSpendingLimitMapper', () => {
       .with('transactions', batchedTransactions)
       .encode();
     const transaction = multisigTransactionBuilder()
-      .with('to', getAddress(faker.finance.ethereumAddress()))
-      .with('operation', Operation.CALL)
+      .with('to', randomSepoliaMultiSendAddress())
+      .with('operation', Operation.DELEGATE)
       .with('data', data)
       .build();
 
@@ -174,8 +183,8 @@ describe('PendingSpendingLimitMapper', () => {
       .with('transactions', batchedTransactions)
       .encode();
     const transaction = multisigTransactionBuilder()
-      .with('to', getAddress(faker.finance.ethereumAddress()))
-      .with('operation', Operation.CALL)
+      .with('to', randomSepoliaMultiSendAddress())
+      .with('operation', Operation.DELEGATE)
       .with('data', data)
       .build();
 
@@ -285,8 +294,8 @@ describe('PendingSpendingLimitMapper', () => {
     ]);
     const data = multiSendEncoder().with('transactions', outerBatch).encode();
     const transaction = multisigTransactionBuilder()
-      .with('to', getAddress(faker.finance.ethereumAddress()))
-      .with('operation', Operation.CALL)
+      .with('to', randomSepoliaMultiSendAddress())
+      .with('operation', Operation.DELEGATE)
       .with('data', data)
       .build();
 

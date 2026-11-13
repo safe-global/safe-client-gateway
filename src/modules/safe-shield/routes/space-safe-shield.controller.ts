@@ -22,19 +22,19 @@ import {
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import type { Address } from 'viem';
-import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
-import { ChainIdSchema } from '@/modules/chains/domain/entities/schemas/chain-id.schema';
-import { FeatureNotGrantedExceptionFilter } from '@/modules/entitlements/domain/exception-filters/feature-not-granted.exception-filter';
-import { CounterpartyAnalysisRequestSchema } from '@/modules/safe-shield/entities/analysis-requests.entity';
-import { CounterpartyAnalysisDto } from '@/modules/safe-shield/entities/dtos/counterparty-analysis.dto';
-import { CounterpartyAnalysisRequestDto } from '@/modules/safe-shield/entities/dtos/counterparty-analysis-request.dto';
-import { SingleRecipientAnalysisDto } from '@/modules/safe-shield/entities/dtos/single-recipient-analysis.dto';
-import type { Space } from '@/modules/spaces/domain/entities/space.entity';
-import { Auth } from '@/routes/common/auth/auth.decorator';
-import { SpaceIdPipe } from '@/routes/common/pipes/space-id.pipe';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import { AuthGuard } from '#/modules/auth/routes/guards/auth.guard';
+import { ChainIdSchema } from '#/modules/chains/domain/entities/schemas/chain-id.schema';
+import { FeatureNotGrantedExceptionFilter } from '#/modules/entitlements/domain/exception-filters/feature-not-granted.exception-filter';
+import { CounterpartyAnalysisRequestSchema } from '#/modules/safe-shield/entities/analysis-requests.entity';
+import { CounterpartyAnalysisDto } from '#/modules/safe-shield/entities/dtos/counterparty-analysis.dto';
+import { CounterpartyAnalysisRequestDto } from '#/modules/safe-shield/entities/dtos/counterparty-analysis-request.dto';
+import { SingleRecipientAnalysisDto } from '#/modules/safe-shield/entities/dtos/single-recipient-analysis.dto';
+import type { Space } from '#/modules/spaces/domain/entities/space.entity';
+import { Auth } from '#/routes/common/auth/auth.decorator';
+import { SpaceIdPipe } from '#/routes/common/pipes/space-id.pipe';
+import { AddressSchema } from '#/validation/entities/schemas/address.schema';
+import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 import { SpaceSafeShieldService } from './space-safe-shield.service';
 
 @ApiTags('safe-shield')

@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
-import { pooledStakingStatsBuilder } from '@/modules/staking/datasources/entities/__tests__/pooled-staking-stats.entity.builder';
-import type { PooledStakingStats } from '@/modules/staking/datasources/entities/pooled-staking-stats.entity';
-import { PooledStakingStatsSchema } from '@/modules/staking/datasources/entities/pooled-staking-stats.entity';
+import { pooledStakingStatsBuilder } from '#/modules/staking/datasources/entities/__tests__/pooled-staking-stats.entity.builder';
+import type { PooledStakingStats } from '#/modules/staking/datasources/entities/pooled-staking-stats.entity';
+import { PooledStakingStatsSchema } from '#/modules/staking/datasources/entities/pooled-staking-stats.entity';
 
 describe('PooledStakingSchema', () => {
   it('should validate a PooledStakingStats object', () => {

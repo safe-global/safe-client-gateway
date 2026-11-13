@@ -5,11 +5,11 @@ import { getAbiItem, toFunctionSelector } from 'viem';
 import {
   KilnAbi,
   KilnDecoder,
-} from '@/modules/staking/domain/contracts/decoders/kiln-decoder.helper';
+} from '#/modules/staking/domain/contracts/decoders/kiln-decoder.helper';
 import {
   TransactionFinder,
   TransactionFinderModule,
-} from '@/modules/transactions/routes/helpers/transaction-finder.helper';
+} from '#/modules/transactions/routes/helpers/transaction-finder.helper';
 
 @Injectable()
 export class KilnNativeStakingHelper {

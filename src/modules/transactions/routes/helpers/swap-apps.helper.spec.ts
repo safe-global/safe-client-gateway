@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { MockedObject } from 'vitest';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
-import { fullAppDataBuilder } from '@/modules/swaps/domain/entities/__tests__/full-app-data.builder';
-import { SwapAppsHelper } from '@/modules/transactions/routes/helpers/swap-apps.helper';
+import type { IConfigurationService } from '#/config/configuration.service.interface';
+import { fullAppDataBuilder } from '#/modules/swaps/domain/entities/__tests__/full-app-data.builder';
+import { SwapAppsHelper } from '#/modules/transactions/routes/helpers/swap-apps.helper';
 
 const configurationService = {
   getOrThrow: vi.fn(),
@@ -18,7 +18,9 @@ describe('SwapAppsHelper', () => {
   describe('Restricting disabled', () => {
     beforeEach(() => {
       configurationServiceMock.getOrThrow.mockImplementation((key) => {
-        if (key === 'swaps.restrictApps') return false;
+        if (key === 'swaps.restrictApps') {
+          return false;
+        }
         throw new Error(`Key ${key} not found.`);
       });
     });
@@ -41,7 +43,9 @@ describe('SwapAppsHelper', () => {
   describe('Restricting enabled', () => {
     beforeEach(() => {
       configurationServiceMock.getOrThrow.mockImplementation((key) => {
-        if (key === 'swaps.restrictApps') return true;
+        if (key === 'swaps.restrictApps') {
+          return true;
+        }
         throw new Error(`Key ${key} not found.`);
       });
     });

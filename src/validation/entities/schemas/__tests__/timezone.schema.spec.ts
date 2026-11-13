@@ -1,4 +1,5 @@
-import { TimezoneSchema } from '@/validation/entities/schemas/timezone.schema';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { TimezoneSchema } from '#/validation/entities/schemas/timezone.schema';
 
 describe('TimezoneSchema()', () => {
   it('Should return true if the timezone is valid', () => {

@@ -1,7 +1,52 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
-import type { FindOptionsWhere } from 'typeorm';
+import type { EntityManager, FindOptionsWhere } from 'typeorm';
 import { MoreThan } from 'typeorm';
+import { Space as DbSpace } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
+import type { Member } from '#/modules/users/datasources/entities/member.entity.db';
+import { User as DbUser } from '#/modules/users/datasources/entities/users.entity.db';
+
+// Lock order to avoid deadlocks: user rows, then space rows by ascending id.
+export async function lockUserForAdminChange(
+  entityManager: EntityManager,
+  userId: DbUser['id'],
+): Promise<void> {
+  await entityManager.findOne(DbUser, {
+    where: { id: userId },
+    select: { id: true },
+    lock: { mode: 'pessimistic_write' },
+  });
+}
+export async function lockSpaceForAdminChange(
+  entityManager: EntityManager,
+  spaceId: DbSpace['id'],
+): Promise<void> {
+  await entityManager.findOne(DbSpace, {
+    where: { id: spaceId },
+    select: { id: true },
+    lock: { mode: 'pessimistic_write' },
+  });
+}
+
+type ActiveAdminCandidate = Pick<Member, 'role' | 'status'> & {
+  user: Pick<DbUser, 'id'>;
+};
+
+export function isActiveAdmin(
+  member: Pick<Member, 'role' | 'status'>,
+): boolean {
+  return member.role === 'ADMIN' && member.status === 'ACTIVE';
+}
+
+// `members` must all belong to one space.
+export function isLastActiveAdminOfSpace(args: {
+  members: Array<ActiveAdminCandidate>;
+  userId: DbUser['id'];
+}): boolean {
+  const activeAdmins = args.members.filter(isActiveAdmin);
+
+  return activeAdmins.length === 1 && activeAdmins[0].user.id === args.userId;
+}
 
 /**
  * Single source of truth for the "active or pending" membership rule: an OR of

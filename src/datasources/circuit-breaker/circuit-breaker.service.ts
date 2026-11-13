@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { CircuitState } from '@/datasources/circuit-breaker/enums/circuit-state.enum';
-import { CircuitBreakerException } from '@/datasources/circuit-breaker/exceptions/circuit-breaker.exception';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { CircuitState } from '#/datasources/circuit-breaker/enums/circuit-state.enum';
+import { CircuitBreakerException } from '#/datasources/circuit-breaker/exceptions/circuit-breaker.exception';
 import type {
   ICircuit,
   ICircuitConfig,
-} from '@/datasources/circuit-breaker/interfaces/circuit-breaker.interface';
-import { LogType } from '@/domain/common/entities/log-type.entity';
+} from '#/datasources/circuit-breaker/interfaces/circuit-breaker.interface';
+import { LogType } from '#/domain/common/entities/log-type.entity';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
+} from '#/logging/logging.interface';
 
 /**
  * Circuit Breaker Service

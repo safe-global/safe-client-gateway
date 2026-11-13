@@ -2,9 +2,9 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import type { Address } from 'viem';
 import { z } from 'zod';
-import { ChainIdSchema } from '@/modules/chains/domain/entities/schemas/chain-id.schema';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { OpaqueIdSchema } from '@/validation/entities/schemas/opaque-id.schema';
+import { ChainIdSchema } from '#/modules/chains/domain/entities/schemas/chain-id.schema';
+import { AddressSchema } from '#/validation/entities/schemas/address.schema';
+import { OpaqueIdSchema } from '#/validation/entities/schemas/opaque-id.schema';
 
 const RemovedSafeSchema = z.object({
   chainId: ChainIdSchema,

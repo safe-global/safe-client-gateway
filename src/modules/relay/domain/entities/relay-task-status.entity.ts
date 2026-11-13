@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
-import { HexSchema } from '@/validation/entities/schemas/hex.schema';
+import { HexSchema } from '#/validation/entities/schemas/hex.schema';
 
 const RelayTaskStatusReceiptSchema = z
   .object({

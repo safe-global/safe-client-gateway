@@ -2,12 +2,12 @@
 
 import type { Address } from 'viem';
 import { z } from 'zod';
-import { RowSchema } from '@/datasources/db/v2/entities/row.entity';
-import type { CounterfactualSafe as DbCounterfactualSafe } from '@/modules/counterfactual-safes/datasources/entities/counterfactual-safe.entity.db';
-import { UserSchema } from '@/modules/users/domain/entities/user.entity';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { HexSchema } from '@/validation/entities/schemas/hex.schema';
-import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
+import { RowSchema } from '#/datasources/db/v2/entities/row.entity';
+import type { CounterfactualSafe as DbCounterfactualSafe } from '#/modules/counterfactual-safes/datasources/entities/counterfactual-safe.entity.db';
+import { UserSchema } from '#/modules/users/domain/entities/user.entity';
+import { AddressSchema } from '#/validation/entities/schemas/address.schema';
+import { HexSchema } from '#/validation/entities/schemas/hex.schema';
+import { NumericStringSchema } from '#/validation/entities/schemas/numeric-string.schema';
 
 export type CounterfactualSafe = z.infer<typeof CounterfactualSafeSchema>;
 
@@ -27,6 +27,7 @@ export const CounterfactualSafeSchema: z.ZodType<
     paymentToken: DbCounterfactualSafe['paymentToken'];
     payment: DbCounterfactualSafe['payment'];
     paymentReceiver: DbCounterfactualSafe['paymentReceiver'];
+    deployedAt: DbCounterfactualSafe['deployedAt'];
     creator?: DbCounterfactualSafe['creator'];
   }
 > = RowSchema.extend({
@@ -44,6 +45,7 @@ export const CounterfactualSafeSchema: z.ZodType<
   paymentToken: (AddressSchema as z.ZodType<Address>).nullable(),
   payment: z.string().nullable(),
   paymentReceiver: (AddressSchema as z.ZodType<Address>).nullable(),
+  deployedAt: z.date().nullable(),
   creator: z
     .lazy(() => UserSchema)
     .nullable()

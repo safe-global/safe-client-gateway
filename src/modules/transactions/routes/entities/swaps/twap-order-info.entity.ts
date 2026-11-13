@@ -10,12 +10,12 @@ import {
   OrderClass,
   OrderKind,
   OrderStatus,
-} from '@/modules/swaps/domain/entities/order.entity';
-import { TokenInfo } from '@/modules/transactions/routes/entities/swaps/token-info.entity';
+} from '#/modules/swaps/domain/entities/order.entity';
+import { TokenInfo } from '#/modules/transactions/routes/entities/swaps/token-info.entity';
 import {
   TransactionInfo,
   TransactionInfoType,
-} from '@/modules/transactions/routes/entities/transaction-info.entity';
+} from '#/modules/transactions/routes/entities/transaction-info.entity';
 
 export enum DurationType {
   Auto = 'AUTO',

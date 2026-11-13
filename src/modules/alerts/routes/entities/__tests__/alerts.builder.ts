@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress, type Hash } from 'viem';
-import type { IBuilder } from '@/__tests__/builder';
-import { Builder } from '@/__tests__/builder';
+import type { IBuilder } from '#/__tests__/builder';
+import { Builder } from '#/__tests__/builder';
 import type {
   Alert,
   AlertLog,
   AlertTransaction,
-} from '@/modules/alerts/routes/entities/alert.dto.entity';
-import { EventType } from '@/modules/alerts/routes/entities/alert.dto.entity';
+} from '#/modules/alerts/routes/entities/alert.dto.entity';
+import { EventType } from '#/modules/alerts/routes/entities/alert.dto.entity';
 
 export function alertLogBuilder(): IBuilder<AlertLog> {
   return new Builder<AlertLog>()

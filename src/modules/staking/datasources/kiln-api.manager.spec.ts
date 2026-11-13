@@ -2,19 +2,19 @@
 import { faker } from '@faker-js/faker';
 import { Test } from '@nestjs/testing';
 import type { MockedObject } from 'vitest';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { CacheFirstDataSource } from '#/datasources/cache/cache.first.data.source';
 import {
   CacheService,
   type ICacheService,
-} from '@/datasources/cache/cache.service.interface';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import { IConfigApi } from '@/domain/interfaces/config-api.interface';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { EarnApiManager } from '@/modules/earn/datasources/earn-api.manager';
-import { KilnApi } from '@/modules/staking/datasources/kiln-api.service';
-import { StakingApiManager } from '@/modules/staking/datasources/staking-api.manager';
-import { rawify } from '@/validation/entities/raw.entity';
+} from '#/datasources/cache/cache.service.interface';
+import { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
+import { IConfigApi } from '#/domain/interfaces/config-api.interface';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
+import { EarnApiManager } from '#/modules/earn/datasources/earn-api.manager';
+import { KilnApi } from '#/modules/staking/datasources/kiln-api.service';
+import { StakingApiManager } from '#/modules/staking/datasources/staking-api.manager';
+import { rawify } from '#/validation/entities/raw.entity';
 
 const configurationService = {
   getOrThrow: vi.fn(),
@@ -43,13 +43,24 @@ describe('KilnApiManager', () => {
 
   function mockConfig(widget: 'staking' | 'earn'): void {
     configurationService.getOrThrow.mockImplementation((key) => {
-      if (key === `${widget}.mainnet.baseUri`) return mainnetBaseUri;
-      if (key === `${widget}.mainnet.apiKey`) return mainnetApiKey;
-      if (key === `${widget}.testnet.baseUri`) return testnetBaseUri;
-      if (key === `${widget}.testnet.apiKey`) return testnetApiKey;
-      if (key === 'expirationTimeInSeconds.staking') return faker.number.int();
-      if (key === 'expirationTimeInSeconds.notFound.default')
+      if (key === `${widget}.mainnet.baseUri`) {
+        return mainnetBaseUri;
+      }
+      if (key === `${widget}.mainnet.apiKey`) {
+        return mainnetApiKey;
+      }
+      if (key === `${widget}.testnet.baseUri`) {
+        return testnetBaseUri;
+      }
+      if (key === `${widget}.testnet.apiKey`) {
+        return testnetApiKey;
+      }
+      if (key === 'expirationTimeInSeconds.staking') {
         return faker.number.int();
+      }
+      if (key === 'expirationTimeInSeconds.notFound.default') {
+        return faker.number.int();
+      }
 
       throw new Error(`Unexpected key: ${key}`);
     });

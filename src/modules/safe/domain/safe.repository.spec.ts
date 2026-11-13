@@ -1,49 +1,52 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
+import { HttpStatus } from '@nestjs/common';
 import type { Address, Hex } from 'viem';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
+import type { IConfigurationService } from '#/config/configuration.service.interface';
 import {
   SAFE_QUEUE_SERVICE_MAX_LIMIT,
   SAFE_TRANSACTION_SERVICE_MAX_LIMIT,
-} from '@/domain/common/constants';
-import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
-import type { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
-import type { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
-import type { ILoggingService } from '@/logging/logging.interface';
-import type { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
+} from '#/domain/common/constants';
+import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
+import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
+import type { ITransactionApi } from '#/domain/interfaces/transaction-api.interface';
+import type { ITransactionApiManager } from '#/domain/interfaces/transaction-api.manager.interface';
+import type { ILoggingService } from '#/logging/logging.interface';
+import type { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
 import {
   ethereumTransactionBuilder,
   toJson as ethereumTransactionToJson,
-} from '@/modules/safe/domain/entities/__tests__/ethereum-transaction.builder';
+} from '#/modules/safe/domain/entities/__tests__/ethereum-transaction.builder';
 import {
   moduleTransactionBuilder,
   toJson as moduleTransactionToJson,
-} from '@/modules/safe/domain/entities/__tests__/module-transaction.builder';
+} from '#/modules/safe/domain/entities/__tests__/module-transaction.builder';
 import {
   multisigTransactionBuilder,
   toJson as multisigTransactionToJson,
-} from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
-import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
-import type { SafeV2 } from '@/modules/safe/domain/entities/safe.entity';
-import { SafeRepository } from '@/modules/safe/domain/safe.repository';
-import { createMockSafeQueueService } from '@/modules/safe-queue/__tests__/safe-queue-service.mock';
+} from '#/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
+import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
+import type { SafeV2 } from '#/modules/safe/domain/entities/safe.entity';
+import { SafeRepository } from '#/modules/safe/domain/safe.repository';
+import { createMockSafeQueueService } from '#/modules/safe-queue/__tests__/safe-queue-service.mock';
 import {
   safeQueueConfirmationBuilder,
   safeQueueMultisigTransactionBuilder,
-} from '@/modules/safe-queue/entities/__tests__/queue-multisig-transaction.builder';
-import type { SafeQueueMultisigTransactionEntity } from '@/modules/safe-queue/entities/multisig-transaction.entity';
-import { buildOrigin } from '@/modules/safe-queue/helpers/origin.helper';
-import { mapSafeQueueToMultisigTransaction } from '@/modules/safe-queue/mappers/transaction.mapper';
+} from '#/modules/safe-queue/entities/__tests__/queue-multisig-transaction.builder';
+import type { SafeQueueMultisigTransactionEntity } from '#/modules/safe-queue/entities/multisig-transaction.entity';
+import { buildOrigin } from '#/modules/safe-queue/helpers/origin.helper';
+import { mapSafeQueueToMultisigTransaction } from '#/modules/safe-queue/mappers/transaction.mapper';
+import type { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository.interface';
 import {
   nestedTransactionDtoBuilder,
   proposeTransactionDtoBuilder,
-} from '@/modules/transactions/routes/entities/__tests__/propose-transaction.dto.builder';
-import type { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers/transaction-verifier.helper';
-import { rawify } from '@/validation/entities/raw.entity';
+} from '#/modules/transactions/routes/entities/__tests__/propose-transaction.dto.builder';
+import type { TransactionVerifierHelper } from '#/modules/transactions/routes/helpers/transaction-verifier.helper';
+import { rawify } from '#/validation/entities/raw.entity';
 
 const mockTransactionApiManager = {
   getApi: vi.fn(),
@@ -85,12 +88,17 @@ const mockConfigurationService = {
 
 const mockSafeQueueService = createMockSafeQueueService();
 
+const mockSpaceSafesRepository = {
+  findSpaceIdsBySafe: vi.fn(),
+} as MockedObject<ISpaceSafesRepository>;
+
 describe('SafeRepository', () => {
   let repository: SafeRepository;
   const maxSequentialPages = 5;
 
   function createRepository(opts: {
     safeQueueEnabled: boolean;
+    usersEnabled?: boolean;
   }): SafeRepository {
     mockConfigurationService.getOrThrow.mockImplementation((key: string) => {
       if (key === 'safeConfig.safes.maxSequentialPages') {
@@ -98,6 +106,9 @@ describe('SafeRepository', () => {
       }
       if (key === 'features.safeQueueService') {
         return opts.safeQueueEnabled;
+      }
+      if (key === 'features.users') {
+        return opts.usersEnabled ?? false;
       }
       throw new Error(`Unexpected key: ${key}`);
     });
@@ -108,6 +119,7 @@ describe('SafeRepository', () => {
       mockTransactionVerifier,
       mockConfigurationService,
       mockSafeQueueService,
+      mockSpaceSafesRepository,
     );
   }
 
@@ -1105,6 +1117,29 @@ describe('SafeRepository', () => {
       expect(result.confirmationsRequired).toBe(safe.threshold);
       expect(mockTransactionApi.getMultisigTransaction).not.toHaveBeenCalled();
     });
+
+    it('should throw a 404 when the not-executed queue record is on a different chain', async () => {
+      const queueTx = safeQueueMultisigTransactionBuilder()
+        .with('chainId', `${Number(chainId) + 1}`)
+        .with('safe', safeAddress)
+        .with('txHash', null)
+        .build();
+      mockSafeQueueService.getMultisigTransaction.mockResolvedValue(
+        rawify(queueTx),
+      );
+
+      await expect(
+        repository.getMultiSigTransaction({
+          chainId,
+          safeTransactionHash: queueTx.safeTxHash,
+        }),
+      ).rejects.toThrow(
+        new HttpExceptionNoLog('Transaction not found', HttpStatus.NOT_FOUND),
+      );
+
+      expect(mockTransactionApi.getMultisigTransaction).not.toHaveBeenCalled();
+      expect(mockTransactionApi.getSafe).not.toHaveBeenCalled();
+    });
   });
 
   describe('getMultisigTransactions', () => {
@@ -1409,6 +1444,43 @@ describe('SafeRepository', () => {
       expect(mockSafeQueueService.clearAllTransactions).not.toHaveBeenCalled();
     });
 
+    it('should clear the queue of every Space holding the Safe', async () => {
+      const repo = createRepository({
+        safeQueueEnabled: true,
+        usersEnabled: true,
+      });
+      const tx = multisigTransactionBuilder().with('safe', safeAddress).build();
+      const spaceIds = faker.helpers.multiple(
+        () => faker.number.int({ min: 1 }),
+        { count: { min: 1, max: 3 } },
+      );
+      mockTransactionApi.getMultisigTransaction.mockResolvedValue(
+        rawify(multisigTransactionToJson(tx)),
+      );
+      mockSafeQueueService.deleteTransaction.mockResolvedValue(undefined);
+      mockSpaceSafesRepository.findSpaceIdsBySafe.mockResolvedValue(spaceIds);
+
+      await repo.deleteTransaction({
+        chainId,
+        safeTxHash: tx.safeTxHash,
+        signature: faker.string.hexadecimal({ length: 16 }),
+      });
+      // Flush microtasks so the fire-and-forget cache-clear chain runs
+      await new Promise((resolve) => setImmediate(resolve));
+
+      expect(
+        mockSpaceSafesRepository.findSpaceIdsBySafe,
+      ).toHaveBeenCalledExactlyOnceWith({ chainId, address: tx.safe });
+      expect(
+        mockSafeQueueService.clearSpaceTransactionQueue,
+      ).toHaveBeenCalledTimes(spaceIds.length);
+      for (const spaceId of spaceIds) {
+        expect(
+          mockSafeQueueService.clearSpaceTransactionQueue,
+        ).toHaveBeenCalledWith({ spaceId });
+      }
+    });
+
     it('should invalidate the queue cache so executed/deleted transactions disappear from the queue', async () => {
       const safeAddress = getAddress(faker.finance.ethereumAddress());
 
@@ -1687,6 +1759,149 @@ describe('SafeRepository', () => {
       expect(mockTransactionApi.clearMultisigTransaction).toHaveBeenCalledWith(
         queueTx.safeTxHash,
       );
+    });
+  });
+
+  describe('getTransactionQueueForSafes', () => {
+    const spaceId = faker.number.int({ min: 1 });
+
+    it('should list the queue of every Safe in nonce order, pairing each transaction with its chain', async () => {
+      const chainId = faker.string.numeric({ length: 3 });
+      const otherChainId = faker.string.numeric({ length: 4 });
+      const safe = safeBuilder().build();
+      const otherSafe = safeBuilder().build();
+      const limit = faker.number.int({ min: 1, max: 50 });
+      const offset = faker.number.int({ min: 0, max: 50 });
+      const tx = safeQueueMultisigTransactionBuilder()
+        .with('chainId', chainId)
+        .with('safe', safe.address)
+        .with('txHash', null)
+        .build();
+      const otherTx = safeQueueMultisigTransactionBuilder()
+        .with('chainId', otherChainId)
+        .with('safe', otherSafe.address)
+        .with('txHash', null)
+        .build();
+      mockSafeQueueService.getTransactionQueueForSafes.mockResolvedValue(
+        rawify(
+          pageBuilder()
+            .with('count', 2)
+            .with('next', null)
+            .with('previous', null)
+            .with('results', [tx, otherTx])
+            .build(),
+        ),
+      );
+
+      const actual = await repository.getTransactionQueueForSafes({
+        spaceId,
+        safes: [
+          { chainId, safe },
+          { chainId: otherChainId, safe: otherSafe },
+        ],
+        limit,
+        offset,
+      });
+
+      expect(
+        mockSafeQueueService.getTransactionQueueForSafes,
+      ).toHaveBeenCalledWith({
+        spaceId,
+        safes: [
+          { chainId, safeAddress: safe.address },
+          { chainId: otherChainId, safeAddress: otherSafe.address },
+        ],
+        limit,
+        offset,
+      });
+      expect(actual.count).toBe(2);
+      expect(actual.results).toEqual([
+        {
+          chainId,
+          transaction: expect.objectContaining({
+            safeTxHash: tx.safeTxHash,
+            safe: safe.address,
+          }),
+        },
+        {
+          chainId: otherChainId,
+          transaction: expect.objectContaining({
+            safeTxHash: otherTx.safeTxHash,
+            safe: otherSafe.address,
+          }),
+        },
+      ]);
+    });
+
+    it('should drop a transaction whose Safe and chain were not requested', async () => {
+      const chainId = faker.string.numeric({ length: 3 });
+      const safe = safeBuilder().build();
+      const unrequested = safeQueueMultisigTransactionBuilder()
+        .with('chainId', faker.string.numeric({ length: 4 }))
+        .with('safe', safe.address)
+        .with('txHash', null)
+        .build();
+      mockSafeQueueService.getTransactionQueueForSafes.mockResolvedValue(
+        rawify(
+          pageBuilder()
+            .with('count', 1)
+            .with('next', null)
+            .with('previous', null)
+            .with('results', [unrequested])
+            .build(),
+        ),
+      );
+
+      const actual = await repository.getTransactionQueueForSafes({
+        spaceId,
+        safes: [{ chainId, safe }],
+        limit: faker.number.int({ min: 1, max: 50 }),
+        offset: faker.number.int({ min: 0, max: 50 }),
+      });
+
+      expect(actual.results).toEqual([]);
+    });
+  });
+
+  describe('clearSpaceTransactionQueues', () => {
+    const chainId = faker.string.numeric();
+    const address = getAddress(faker.finance.ethereumAddress());
+
+    it('should clear the queue of every Space holding the Safe', async () => {
+      const repo = createRepository({
+        safeQueueEnabled: true,
+        usersEnabled: true,
+      });
+      const spaceIds = faker.helpers.multiple(
+        () => faker.number.int({ min: 1 }),
+        { count: { min: 1, max: 3 } },
+      );
+      mockSpaceSafesRepository.findSpaceIdsBySafe.mockResolvedValue(spaceIds);
+
+      await repo.clearSpaceTransactionQueues({ chainId, address });
+
+      expect(
+        mockSpaceSafesRepository.findSpaceIdsBySafe,
+      ).toHaveBeenCalledExactlyOnceWith({ chainId, address });
+      expect(
+        mockSafeQueueService.clearSpaceTransactionQueue,
+      ).toHaveBeenCalledTimes(spaceIds.length);
+      for (const spaceId of spaceIds) {
+        expect(
+          mockSafeQueueService.clearSpaceTransactionQueue,
+        ).toHaveBeenCalledWith({ spaceId });
+      }
+    });
+
+    it('should not look up Spaces while the Space queue is not served', async () => {
+      await repository.clearSpaceTransactionQueues({ chainId, address });
+
+      expect(
+        mockSpaceSafesRepository.findSpaceIdsBySafe,
+      ).not.toHaveBeenCalled();
+      expect(
+        mockSafeQueueService.clearSpaceTransactionQueue,
+      ).not.toHaveBeenCalled();
     });
   });
 

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Module } from '@nestjs/common';
-import { INDEX_KEY_LENGTH } from '@/datasources/kms/encryption.constants';
-import { IKmsService } from '@/datasources/kms/kms.service.interface';
+import { INDEX_KEY_LENGTH } from '#/datasources/kms/encryption.constants';
+import { IKmsService } from '#/datasources/kms/kms.service.interface';
 
 /**
  * The fixed data key this double hands out. Wrapping is the identity, so

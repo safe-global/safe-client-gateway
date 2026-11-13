@@ -4,21 +4,21 @@ import { faker } from '@faker-js/faker';
 import { NotFoundException } from '@nestjs/common';
 import { type Address, getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import type { EarnRepository } from '@/modules/earn/domain/earn.repository';
-import { defiMorphoExtraRewardBuilder } from '@/modules/staking/datasources/entities/__tests__/defi-morpho-extra-reward.entity.builder';
-import { defiVaultStakeBuilder } from '@/modules/staking/datasources/entities/__tests__/defi-vault-state.entity.builder';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
+import type { EarnRepository } from '#/modules/earn/domain/earn.repository';
+import { defiMorphoExtraRewardBuilder } from '#/modules/staking/datasources/entities/__tests__/defi-morpho-extra-reward.entity.builder';
+import { defiVaultStakeBuilder } from '#/modules/staking/datasources/entities/__tests__/defi-vault-state.entity.builder';
 import {
   defiVaultAdditionalRewardBuilder,
   defiVaultStatsBuilder,
-} from '@/modules/staking/datasources/entities/__tests__/defi-vault-stats.entity.builder';
-import { deploymentBuilder } from '@/modules/staking/datasources/entities/__tests__/deployment.entity.builder';
-import { tokenBuilder } from '@/modules/tokens/domain/__tests__/token.builder';
-import type { ITokenRepository } from '@/modules/tokens/domain/token.repository.interface';
-import { TokenInfo } from '@/modules/transactions/routes/entities/swaps/token-info.entity';
-import { TransactionInfoType } from '@/modules/transactions/routes/entities/transaction-info.entity';
-import { VaultInfo } from '@/modules/transactions/routes/entities/vaults/vault-info.entity';
-import { VaultTransactionMapper } from '@/modules/transactions/routes/mappers/common/vault-transaction.mapper';
+} from '#/modules/staking/datasources/entities/__tests__/defi-vault-stats.entity.builder';
+import { deploymentBuilder } from '#/modules/staking/datasources/entities/__tests__/deployment.entity.builder';
+import { tokenBuilder } from '#/modules/tokens/domain/__tests__/token.builder';
+import type { ITokenRepository } from '#/modules/tokens/domain/token.repository.interface';
+import { TokenInfo } from '#/modules/transactions/routes/entities/swaps/token-info.entity';
+import { TransactionInfoType } from '#/modules/transactions/routes/entities/transaction-info.entity';
+import { VaultInfo } from '#/modules/transactions/routes/entities/vaults/vault-info.entity';
+import { VaultTransactionMapper } from '#/modules/transactions/routes/mappers/common/vault-transaction.mapper';
 
 const mockEarnRepository = vi.mocked({
   getDeployment: vi.fn(),

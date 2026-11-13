@@ -6,14 +6,14 @@ import {
   fingerprintLocationSpoofingBuilder,
   fingerprintUnsealedDataBuilder,
   fingerprintVpnBuilder,
-} from '@/datasources/locking-api/entities/__tests__/fingerprint-unsealed-data.entity.builder';
+} from '#/datasources/locking-api/entities/__tests__/fingerprint-unsealed-data.entity.builder';
 import {
   FingerprintIpDataSchema,
   FingerprintIpInfoSchema,
   FingerprintLocationSpoofingSchema,
   FingerprintUnsealedDataSchema,
   FingerprintVpnSchema,
-} from '@/datasources/locking-api/entities/fingerprint-unsealed-data.entity';
+} from '#/datasources/locking-api/entities/fingerprint-unsealed-data.entity';
 
 describe('FingerprintUnsealedData schemas', () => {
   describe('FingerprintUnsealedDataEntity', () => {

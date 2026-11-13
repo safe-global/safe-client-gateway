@@ -2,9 +2,9 @@
 
 import { Inject, Injectable } from '@nestjs/common';
 import { In } from 'typeorm';
-import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
-import { WalletEncryptionService } from '@/modules/wallets/domain/wallet-encryption.service';
-import { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
+import { IUsersRepository } from '#/modules/users/domain/users.repository.interface';
+import { WalletEncryptionService } from '#/modules/wallets/domain/wallet-encryption.service';
+import { IWalletsRepository } from '#/modules/wallets/domain/wallets.repository.interface';
 
 @Injectable()
 export class UserIdentityResolverService {
@@ -29,7 +29,9 @@ export class UserIdentityResolverService {
     userIds: ReadonlyArray<number>,
   ): Promise<Map<number, string>> {
     const unique = [...new Set(userIds)];
-    if (unique.length === 0) return new Map();
+    if (unique.length === 0) {
+      return new Map();
+    }
 
     const [users, wallets] = await Promise.all([
       this.usersRepository.find({ id: In(unique) }),

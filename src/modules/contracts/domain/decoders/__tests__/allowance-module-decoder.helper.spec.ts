@@ -5,8 +5,8 @@ import {
   removeDelegateEncoder,
   resetAllowanceEncoder,
   setAllowanceEncoder,
-} from '@/modules/contracts/domain/__tests__/encoders/allowance-module-encoder.builder';
-import { AllowanceModuleDecoder } from '@/modules/contracts/domain/decoders/allowance-module-decoder.helper';
+} from '#/modules/contracts/domain/__tests__/encoders/allowance-module-encoder.builder';
+import { AllowanceModuleDecoder } from '#/modules/contracts/domain/decoders/allowance-module-decoder.helper';
 
 describe('AllowanceModuleDecoder', () => {
   let target: AllowanceModuleDecoder;

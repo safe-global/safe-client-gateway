@@ -2,8 +2,8 @@
 import { faker } from '@faker-js/faker';
 import type { Address } from 'viem';
 import { getAddress } from 'viem';
-import { defiVaultStakeBuilder } from '@/modules/staking/datasources/entities/__tests__/defi-vault-state.entity.builder';
-import { DefiVaultStakeSchema } from '@/modules/staking/datasources/entities/defi-vault-stake.entity';
+import { defiVaultStakeBuilder } from '#/modules/staking/datasources/entities/__tests__/defi-vault-state.entity.builder';
+import { DefiVaultStakeSchema } from '#/modules/staking/datasources/entities/defi-vault-stake.entity';
 
 describe('DefiVaultStakeSchema', () => {
   it('should validate a DefiVaultStake', () => {

@@ -2,11 +2,11 @@
 
 import { faker } from '@faker-js/faker';
 import type { MockedObject } from 'vitest';
-import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import type { ILoggingService } from '@/logging/logging.interface';
-import { CaptchaService } from '@/routes/captcha/captcha.service';
-import { rawify } from '@/validation/entities/raw.entity';
+import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
+import type { INetworkService } from '#/datasources/network/network.service.interface';
+import type { ILoggingService } from '#/logging/logging.interface';
+import { CaptchaService } from '#/routes/captcha/captcha.service';
+import { rawify } from '#/validation/entities/raw.entity';
 
 const mockNetworkService = vi.mocked({
   post: vi.fn(),

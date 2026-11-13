@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
-import { getStringEnumKeys } from '@/domain/common/utils/enum';
-import { SpaceStatus } from '@/modules/spaces/domain/entities/space.entity';
-import { MemberRole } from '@/modules/users/domain/entities/member.entity';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
+import { getStringEnumKeys } from '#/domain/common/utils/enum';
+import { SpaceStatus } from '#/modules/spaces/domain/entities/space.entity';
+import { MemberRole } from '#/modules/users/domain/entities/member.entity';
+import { AddressSchema } from '#/validation/entities/schemas/address.schema';
+import { NumericStringSchema } from '#/validation/entities/schemas/numeric-string.schema';
 
 /**
  * Event taxonomy of the append-only space audit log.
@@ -32,6 +32,10 @@ export enum SpaceAuditEventType {
   ADDRESS_BOOK_DELETED = 'ADDRESS_BOOK_DELETED',
   ADDRESS_BOOK_REQUEST_CREATED = 'ADDRESS_BOOK_REQUEST_CREATED',
   ADDRESS_BOOK_REQUEST_REJECTED = 'ADDRESS_BOOK_REQUEST_REJECTED',
+  ADDRESS_BOOK_TAGS_UPDATED = 'ADDRESS_BOOK_TAGS_UPDATED',
+  ADDRESS_BOOK_TAG_CREATED = 'ADDRESS_BOOK_TAG_CREATED',
+  ADDRESS_BOOK_TAG_RENAMED = 'ADDRESS_BOOK_TAG_RENAMED',
+  ADDRESS_BOOK_TAG_DELETED = 'ADDRESS_BOOK_TAG_DELETED',
 }
 
 export const SpaceAuditEventTypeSchema = z.enum(
@@ -43,6 +47,7 @@ const UserIdSchema = z.number().int().positive();
 const SpaceFieldsSchema = z.object({
   name: z.string().optional(),
   status: z.enum(getStringEnumKeys(SpaceStatus)).optional(),
+  experimentalFeatures: z.array(z.string()).optional(),
 });
 
 const SpaceSafeSchema = z.object({
@@ -158,6 +163,44 @@ export const AddressBookRequestRejectedEventSchema = z.object({
   payload: AddressBookEntrySchema,
 });
 
+export const AddressBookTagsUpdatedEventSchema = z.object({
+  eventType: z.literal(SpaceAuditEventType.ADDRESS_BOOK_TAGS_UPDATED),
+  payload: z.object({
+    changes: z.array(
+      z.object({
+        address: AddressSchema,
+        oldTags: z.array(z.string()),
+        newTags: z.array(z.string()),
+      }),
+    ),
+  }),
+});
+
+export const AddressBookTagCreatedEventSchema = z.object({
+  eventType: z.literal(SpaceAuditEventType.ADDRESS_BOOK_TAG_CREATED),
+  payload: z.object({
+    name: z.string(),
+    color: z.string(),
+  }),
+});
+
+export const AddressBookTagRenamedEventSchema = z.object({
+  eventType: z.literal(SpaceAuditEventType.ADDRESS_BOOK_TAG_RENAMED),
+  payload: z.object({
+    oldName: z.string(),
+    newName: z.string(),
+    merged: z.boolean(),
+  }),
+});
+
+export const AddressBookTagDeletedEventSchema = z.object({
+  eventType: z.literal(SpaceAuditEventType.ADDRESS_BOOK_TAG_DELETED),
+  payload: z.object({
+    name: z.string(),
+    contactCount: z.number().int().nonnegative(),
+  }),
+});
+
 export const SpaceAuditEventSchema = z.discriminatedUnion('eventType', [
   SpaceCreatedEventSchema,
   SpaceUpdatedEventSchema,
@@ -176,6 +219,10 @@ export const SpaceAuditEventSchema = z.discriminatedUnion('eventType', [
   AddressBookDeletedEventSchema,
   AddressBookRequestCreatedEventSchema,
   AddressBookRequestRejectedEventSchema,
+  AddressBookTagsUpdatedEventSchema,
+  AddressBookTagCreatedEventSchema,
+  AddressBookTagRenamedEventSchema,
+  AddressBookTagDeletedEventSchema,
 ]);
 
 export type SpaceAuditEvent = z.infer<typeof SpaceAuditEventSchema>;

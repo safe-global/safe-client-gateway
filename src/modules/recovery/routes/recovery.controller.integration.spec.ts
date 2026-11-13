@@ -10,30 +10,30 @@ import type { MockedObject } from 'vitest';
 import {
   initTestApplication,
   TestAppProvider,
-} from '@/__tests__/test-app.provider';
-import { createTestModule } from '@/__tests__/testing-module';
-import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import configuration from '@/config/entities/__tests__/configuration';
-import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
-import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import { NetworkService } from '@/datasources/network/network.service.interface';
+} from '#/__tests__/test-app.provider';
+import { createTestModule } from '#/__tests__/testing-module';
+import { checkGuardIsApplied } from '#/__tests__/util/check-guard';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import configuration from '#/config/entities/__tests__/configuration';
+import { IJwtService } from '#/datasources/jwt/jwt.service.interface';
+import { NetworkResponseError } from '#/datasources/network/entities/network.error.entity';
+import type { INetworkService } from '#/datasources/network/network.service.interface';
+import { NetworkService } from '#/datasources/network/network.service.interface';
 import {
   ALERTS_API_CONFIGURATION_MODULE,
   ALERTS_CONFIGURATION_MODULE,
   AlertsApiConfigurationModule,
   AlertsConfigurationModule,
-} from '@/modules/alerts/alerts.module';
-import alertsApiConfiguration from '@/modules/alerts/datasources/configuration/__tests__/alerts-api.configuration';
-import alertsConfiguration from '@/modules/alerts/routes/configuration/__tests__/alerts.configuration';
-import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { addRecoveryModuleDtoBuilder } from '@/modules/recovery/routes/entities/__tests__/add-recovery-module.dto.builder';
-import { RecoveryController } from '@/modules/recovery/routes/recovery.controller';
-import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
-import { rawify } from '@/validation/entities/raw.entity';
+} from '#/modules/alerts/alerts.module';
+import alertsApiConfiguration from '#/modules/alerts/datasources/configuration/__tests__/alerts-api.configuration';
+import alertsConfiguration from '#/modules/alerts/routes/configuration/__tests__/alerts.configuration';
+import { siweAuthPayloadDtoBuilder } from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { AuthGuard } from '#/modules/auth/routes/guards/auth.guard';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
+import { addRecoveryModuleDtoBuilder } from '#/modules/recovery/routes/entities/__tests__/add-recovery-module.dto.builder';
+import { RecoveryController } from '#/modules/recovery/routes/recovery.controller';
+import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
+import { rawify } from '#/validation/entities/raw.entity';
 
 describe('Recovery Controller', () => {
   let app: INestApplication<Server>;

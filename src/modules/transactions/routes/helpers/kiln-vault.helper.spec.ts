@@ -4,19 +4,19 @@ import { faker } from '@faker-js/faker';
 import { shuffle } from 'lodash';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import type { ILoggingService } from '@/logging/logging.interface';
+import type { ILoggingService } from '#/logging/logging.interface';
 import {
   multiSendEncoder,
   multiSendTransactionsEncoder,
-} from '@/modules/contracts/domain/__tests__/encoders/multi-send-encoder.builder';
-import { execTransactionEncoder } from '@/modules/contracts/domain/__tests__/encoders/safe-encoder.builder';
-import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
+} from '#/modules/contracts/domain/__tests__/encoders/multi-send-encoder.builder';
+import { execTransactionEncoder } from '#/modules/contracts/domain/__tests__/encoders/safe-encoder.builder';
+import { MultiSendDecoder } from '#/modules/contracts/domain/decoders/multi-send-decoder.helper';
 import {
   erc4262DepositEncoder,
   erc4262WithdrawEncoder,
-} from '@/modules/transactions/routes/__tests__/encoders/erc4262-encoder.builder';
-import { KilnVaultHelper } from '@/modules/transactions/routes/helpers/kiln-vault.helper';
-import { TransactionFinder } from '@/modules/transactions/routes/helpers/transaction-finder.helper';
+} from '#/modules/transactions/routes/__tests__/encoders/erc4262-encoder.builder';
+import { KilnVaultHelper } from '#/modules/transactions/routes/helpers/kiln-vault.helper';
+import { TransactionFinder } from '#/modules/transactions/routes/helpers/transaction-finder.helper';
 
 const mockLoggingService = {
   warn: vi.fn(),

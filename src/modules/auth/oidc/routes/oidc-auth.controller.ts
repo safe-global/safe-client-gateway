@@ -19,27 +19,27 @@ import {
 } from '@nestjs/swagger';
 import type { FastifyReply } from 'fastify';
 import { z } from 'zod';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
-import { asError } from '@/logging/utils';
-import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { Authenticator } from '@/modules/auth/oidc/routes/entities/authenticator.entity';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { ILoggingService, LoggingService } from '#/logging/logging.interface';
+import { asError } from '#/logging/utils';
+import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import { Authenticator } from '#/modules/auth/oidc/routes/entities/authenticator.entity';
 import {
   type OidcConnection,
   OidcConnectionSchema,
-} from '@/modules/auth/oidc/routes/entities/oidc-connection.entity';
-import { OidcAuthRateLimitGuard } from '@/modules/auth/oidc/routes/guards/oidc-auth-rate-limit.guard';
-import { OidcAuthService } from '@/modules/auth/oidc/routes/oidc-auth.service';
-import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
+} from '#/modules/auth/oidc/routes/entities/oidc-connection.entity';
+import { OidcAuthRateLimitGuard } from '#/modules/auth/oidc/routes/guards/oidc-auth-rate-limit.guard';
+import { OidcAuthService } from '#/modules/auth/oidc/routes/oidc-auth.service';
+import { AuthGuard } from '#/modules/auth/routes/guards/auth.guard';
 import {
   ACCESS_TOKEN_COOKIE_NAME,
   getClearCookieOptions,
   getSetCookieOptions,
-} from '@/modules/auth/utils/auth-cookie.utils';
-import { Auth } from '@/routes/common/auth/auth.decorator';
-import type { HttpRequest } from '@/routes/common/http/http-request.utils';
-import { RedirectUrlSchema } from '@/validation/entities/schemas/redirect-url.schema';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+} from '#/modules/auth/utils/auth-cookie.utils';
+import { Auth } from '#/routes/common/auth/auth.decorator';
+import type { HttpRequest } from '#/routes/common/http/http-request.utils';
+import { RedirectUrlSchema } from '#/validation/entities/schemas/redirect-url.schema';
+import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
 /**
  * The OidcAuthController handles OIDC (Auth0) authentication:

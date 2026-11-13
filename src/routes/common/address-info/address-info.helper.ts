@@ -4,12 +4,12 @@ import type { Address } from 'viem';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import type { ContractsRepository } from '@/modules/contracts/domain/contracts.repository';
-import { IContractsRepository } from '@/modules/contracts/domain/contracts.repository.interface';
-import type { TokenRepository } from '@/modules/tokens/domain/token.repository';
-import { ITokenRepository } from '@/modules/tokens/domain/token.repository.interface';
-import { AddressInfo } from '@/routes/common/entities/address-info.entity';
+} from '#/logging/logging.interface';
+import type { ContractsRepository } from '#/modules/contracts/domain/contracts.repository';
+import { IContractsRepository } from '#/modules/contracts/domain/contracts.repository.interface';
+import type { TokenRepository } from '#/modules/tokens/domain/token.repository';
+import { ITokenRepository } from '#/modules/tokens/domain/token.repository.interface';
+import { AddressInfo } from '#/routes/common/entities/address-info.entity';
 
 export type Source = 'CONTRACT' | 'TOKEN';
 
@@ -94,7 +94,9 @@ export class AddressInfoHelper {
       addresses.map((address) => this.getOrDefault(chainId, address, sources)),
     ).then((results) =>
       results.map((result) => {
-        if (result.status === 'fulfilled') return result.value;
+        if (result.status === 'fulfilled') {
+          return result.value;
+        }
         throw new Error('Error processing address collection');
       }),
     );

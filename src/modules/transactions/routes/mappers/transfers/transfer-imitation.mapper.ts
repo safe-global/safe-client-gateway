@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject } from '@nestjs/common';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import type { TransactionInfo } from '@/modules/transactions/routes/entities/transaction-info.entity';
-import type { TransactionItem } from '@/modules/transactions/routes/entities/transaction-item.entity';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import type { TransactionInfo } from '#/modules/transactions/routes/entities/transaction-info.entity';
+import type { TransactionItem } from '#/modules/transactions/routes/entities/transaction-item.entity';
 import {
   isTransferTransactionInfo,
   TransferDirection,
   type TransferTransactionInfo,
-} from '@/modules/transactions/routes/entities/transfer-transaction-info.entity';
+} from '#/modules/transactions/routes/entities/transfer-transaction-info.entity';
 import {
   type Erc20Transfer,
   isErc20Transfer,
-} from '@/modules/transactions/routes/entities/transfers/erc20-transfer.entity';
-import { isSwapTransferTransactionInfo } from '@/modules/transactions/routes/swap-transfer-transaction-info.entity';
+} from '#/modules/transactions/routes/entities/transfers/erc20-transfer.entity';
+import { isSwapTransferTransactionInfo } from '#/modules/transactions/routes/swap-transfer-transaction-info.entity';
 
 type Erc20TransferTransactionInfo = Omit<
   TransferTransactionInfo,

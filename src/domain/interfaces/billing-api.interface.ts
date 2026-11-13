@@ -2,18 +2,18 @@
 import type {
   CheckoutSession,
   CheckoutSessionResult,
-} from '@/datasources/billing-api/entities/checkout-session.entity';
-import type { PaymentLinksResult } from '@/datasources/billing-api/entities/payment-link.entity';
-import type { Plan } from '@/datasources/billing-api/entities/plan.entity';
+} from '#/datasources/billing-api/entities/checkout-session.entity';
+import type { PaymentLinksResult } from '#/datasources/billing-api/entities/payment-link.entity';
+import type { Plan } from '#/datasources/billing-api/entities/plan.entity';
 import type {
   SubscriptionStatusFilter,
   SubscriptionsResult,
-} from '@/datasources/billing-api/entities/subscription.entity';
+} from '#/datasources/billing-api/entities/subscription.entity';
 import type {
   SubscriptionUpdatePreview,
   UpdateSubscriptionResult,
-} from '@/datasources/billing-api/entities/subscription-update.entity';
-import type { Raw } from '@/validation/entities/raw.entity';
+} from '#/datasources/billing-api/entities/subscription-update.entity';
+import type { Raw } from '#/validation/entities/raw.entity';
 
 export const IBillingApi = Symbol('IBillingApi');
 

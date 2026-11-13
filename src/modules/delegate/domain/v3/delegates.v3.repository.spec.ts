@@ -4,18 +4,18 @@ import { faker } from '@faker-js/faker';
 import type { Address } from 'viem';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
-import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
-import type { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
-import type { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
-import type { ILoggingService } from '@/logging/logging.interface';
-import { delegateBuilder } from '@/modules/delegate/domain/entities/__tests__/delegate.builder';
-import { DelegatePageSchema } from '@/modules/delegate/domain/entities/schemas/delegate.schema';
-import { DelegatesV3Repository } from '@/modules/delegate/domain/v3/delegates.v3.repository';
-import { safeQueueDelegateBuilder } from '@/modules/safe-queue/entities/__tests__/safe-queue-delegate.builder';
-import type { SafeQueueDelegate } from '@/modules/safe-queue/entities/delegate.entity';
-import type { ISafeQueueService } from '@/modules/safe-queue/safe-queue.interface';
-import { rawify } from '@/validation/entities/raw.entity';
+import type { IConfigurationService } from '#/config/configuration.service.interface';
+import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
+import type { ITransactionApi } from '#/domain/interfaces/transaction-api.interface';
+import type { ITransactionApiManager } from '#/domain/interfaces/transaction-api.manager.interface';
+import type { ILoggingService } from '#/logging/logging.interface';
+import { delegateBuilder } from '#/modules/delegate/domain/entities/__tests__/delegate.builder';
+import { DelegatePageSchema } from '#/modules/delegate/domain/entities/schemas/delegate.schema';
+import { DelegatesV3Repository } from '#/modules/delegate/domain/v3/delegates.v3.repository';
+import { safeQueueDelegateBuilder } from '#/modules/safe-queue/entities/__tests__/safe-queue-delegate.builder';
+import type { SafeQueueDelegate } from '#/modules/safe-queue/entities/delegate.entity';
+import type { ISafeQueueService } from '#/modules/safe-queue/safe-queue.interface';
+import { rawify } from '#/validation/entities/raw.entity';
 
 const mockTransactionApiManager = {
   getApi: vi.fn(),

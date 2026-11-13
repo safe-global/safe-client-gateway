@@ -6,16 +6,16 @@ import {
   dataDecodedBuilder,
   dataDecodedParameterBuilder,
   multisendBuilder,
-} from '@/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
-import type { DataDecodedAccuracy } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
+} from '#/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
+import type { DataDecodedAccuracy } from '#/modules/data-decoder/domain/v2/entities/data-decoded.entity';
 import {
   BaseDataDecodedSchema,
   DataDecodedParameterSchema,
   DataDecodedSchema,
   MultisendSchema,
   ValueDecodedSchema,
-} from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
-import type { Operation } from '@/modules/safe/domain/entities/operation.entity';
+} from '#/modules/data-decoder/domain/v2/entities/data-decoded.entity';
+import type { Operation } from '#/modules/safe/domain/entities/operation.entity';
 
 describe('DataDecoded', () => {
   describe('MultisendSchema', () => {

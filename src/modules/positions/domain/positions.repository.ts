@@ -2,13 +2,13 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { Address } from 'viem';
 import { z } from 'zod';
-import { IPositionsApi } from '@/domain/interfaces/positions-api.interface';
-import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
+import { IPositionsApi } from '#/domain/interfaces/positions-api.interface';
+import type { Chain } from '#/modules/chains/domain/entities/chain.entity';
 import {
   type Position,
   PositionsSchema,
-} from '@/modules/positions/domain/entities/position.entity';
-import type { IPositionsRepository } from '@/modules/positions/domain/positions.repository.interface';
+} from '#/modules/positions/domain/entities/position.entity';
+import type { IPositionsRepository } from '#/modules/positions/domain/positions.repository.interface';
 
 @Injectable()
 export class PositionsRepository implements IPositionsRepository {

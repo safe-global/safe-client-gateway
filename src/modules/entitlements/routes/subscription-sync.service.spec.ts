@@ -3,27 +3,27 @@ import { faker } from '@faker-js/faker';
 import { NotFoundException } from '@nestjs/common';
 import { QueryFailedError } from 'typeorm';
 import type { MockedObject } from 'vitest';
-import { subscriptionBuilder } from '@/datasources/billing-api/entities/__tests__/subscription.builder';
-import { CacheRouter } from '@/datasources/cache/cache.router';
-import type { ICacheService } from '@/datasources/cache/cache.service.interface';
-import { toSecondsTimestamp } from '@/domain/common/utils/time';
-import type { ILoggingService } from '@/logging/logging.interface';
-import type { IBillingRepository } from '@/modules/billing/domain/billing.repository.interface';
+import { subscriptionBuilder } from '#/datasources/billing-api/entities/__tests__/subscription.builder';
+import { CacheRouter } from '#/datasources/cache/cache.router';
+import type { ICacheService } from '#/datasources/cache/cache.service.interface';
+import { toSecondsTimestamp } from '#/domain/common/utils/time';
+import type { ILoggingService } from '#/logging/logging.interface';
+import type { IBillingRepository } from '#/modules/billing/domain/billing.repository.interface';
 import {
   webhookEventBuilder,
   webhookEventCustomerBuilder,
-} from '@/modules/billing/domain/entities/__tests__/webhook-event.builder';
-import type { WebhookEvent } from '@/modules/billing/domain/entities/webhook-event.entity';
-import { WALLET_WEB_CUSTOMER_GROUP } from '@/modules/billing/domain/entities/webhook-event.entity';
-import { featureBuilder } from '@/modules/entitlements/domain/entities/__tests__/feature.builder';
-import type { Feature } from '@/modules/entitlements/domain/entities/feature.entity';
-import { FeatureType } from '@/modules/entitlements/domain/entities/feature.entity';
-import type { IFeaturesRepository } from '@/modules/entitlements/domain/features.repository.interface';
-import type { ISubscriptionsRepository } from '@/modules/entitlements/domain/subscriptions.repository.interface';
-import { EntitlementsService } from '@/modules/entitlements/routes/entitlements.service';
-import { SubscriptionSyncService } from '@/modules/entitlements/routes/subscription-sync.service';
-import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
-import { fakeUuid } from '@/validation/entities/schemas/__tests__/uuid.builder';
+} from '#/modules/billing/domain/entities/__tests__/webhook-event.builder';
+import type { WebhookEvent } from '#/modules/billing/domain/entities/webhook-event.entity';
+import { WALLET_WEB_CUSTOMER_GROUP } from '#/modules/billing/domain/entities/webhook-event.entity';
+import { featureBuilder } from '#/modules/entitlements/domain/entities/__tests__/feature.builder';
+import type { Feature } from '#/modules/entitlements/domain/entities/feature.entity';
+import { FeatureType } from '#/modules/entitlements/domain/entities/feature.entity';
+import type { IFeaturesRepository } from '#/modules/entitlements/domain/features.repository.interface';
+import type { ISubscriptionsRepository } from '#/modules/entitlements/domain/subscriptions.repository.interface';
+import { EntitlementsService } from '#/modules/entitlements/routes/entitlements.service';
+import { SubscriptionSyncService } from '#/modules/entitlements/routes/subscription-sync.service';
+import type { ISpacesRepository } from '#/modules/spaces/domain/spaces.repository.interface';
+import { fakeUuid } from '#/validation/entities/schemas/__tests__/uuid.builder';
 
 const FEATURES: Array<Feature> = [
   featureBuilder()

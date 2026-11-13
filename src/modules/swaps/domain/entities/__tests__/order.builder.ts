@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress, type Hex } from 'viem';
-import type { IBuilder } from '@/__tests__/builder';
-import { Builder } from '@/__tests__/builder';
-import type { Order } from '@/modules/swaps/domain/entities/order.entity';
+import type { IBuilder } from '#/__tests__/builder';
+import { Builder } from '#/__tests__/builder';
+import type { Order } from '#/modules/swaps/domain/entities/order.entity';
 import {
   BuyTokenBalance,
   OrderClass,
   OrderKind,
   OrderStatus,
   SellTokenBalance,
-} from '@/modules/swaps/domain/entities/order.entity';
+} from '#/modules/swaps/domain/entities/order.entity';
 
 export function orderBuilder(): IBuilder<Order> {
   const executedFee = faker.number.bigInt({ min: 1 });

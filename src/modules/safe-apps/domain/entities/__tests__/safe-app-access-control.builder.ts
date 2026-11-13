@@ -1,8 +1,9 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import type { IBuilder } from '@/__tests__/builder';
-import { Builder } from '@/__tests__/builder';
-import type { SafeAppAccessControl } from '@/modules/safe-apps/domain/entities/safe-app-access-control.entity';
-import { SafeAppAccessControlPolicies } from '@/modules/safe-apps/domain/entities/safe-app-access-control.entity';
+import type { IBuilder } from '#/__tests__/builder';
+import { Builder } from '#/__tests__/builder';
+import type { SafeAppAccessControl } from '#/modules/safe-apps/domain/entities/safe-app-access-control.entity';
+import { SafeAppAccessControlPolicies } from '#/modules/safe-apps/domain/entities/safe-app-access-control.entity';
 
 export function safeAppAccessControlBuilder(): IBuilder<SafeAppAccessControl> {
   return new Builder<SafeAppAccessControl>()

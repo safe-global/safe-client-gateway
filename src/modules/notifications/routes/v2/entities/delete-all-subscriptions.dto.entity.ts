@@ -2,7 +2,7 @@
 import type { UUID } from 'node:crypto';
 import { ApiProperty } from '@nestjs/swagger';
 import type { Address } from 'viem';
-import type { DeleteAllSubscriptionsDto as DomainDeleteAllSubscriptionsDto } from '@/modules/notifications/domain/v2/entities/delete-all-subscriptions.dto.entity';
+import type { DeleteAllSubscriptionsDto as DomainDeleteAllSubscriptionsDto } from '#/modules/notifications/domain/v2/entities/delete-all-subscriptions.dto.entity';
 
 export class DeleteAllSubscriptionItemDto {
   @ApiProperty()

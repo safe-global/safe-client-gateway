@@ -15,10 +15,11 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import type { Address } from 'viem';
-import { BalancesService } from '@/modules/balances/routes/balances.service';
-import { Balances } from '@/modules/balances/routes/entities/balances.entity';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+import { BalancesService } from '#/modules/balances/routes/balances.service';
+import { Balances } from '#/modules/balances/routes/entities/balances.entity';
+import { ChainIdSchema } from '#/modules/chains/domain/entities/schemas/chain-id.schema';
+import { AddressSchema } from '#/validation/entities/schemas/address.schema';
+import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
 @ApiTags('balances')
 @Controller({
@@ -70,7 +71,7 @@ export class BalancesController {
   })
   @Get('chains/:chainId/safes/:safeAddress/balances/:fiatCode')
   getBalances(
-    @Param('chainId') chainId: string,
+    @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,
     @Param('fiatCode') fiatCode: string,

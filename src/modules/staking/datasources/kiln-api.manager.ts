@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject } from '@nestjs/common';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { CacheFirstDataSource } from '#/datasources/cache/cache.first.data.source';
 import {
   CacheService,
   type ICacheService,
-} from '@/datasources/cache/cache.service.interface';
-import { ChainApiManager } from '@/datasources/common/chain-api.manager';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import { IConfigApi } from '@/domain/interfaces/config-api.interface';
-import type { IStakingApi } from '@/domain/interfaces/staking-api.interface';
-import type { IStakingApiManager } from '@/domain/interfaces/staking-api.manager.interface';
-import { ChainSchema } from '@/modules/chains/domain/entities/schemas/chain.schema';
-import { KilnApi } from '@/modules/staking/datasources/kiln-api.service';
+} from '#/datasources/cache/cache.service.interface';
+import { ChainApiManager } from '#/datasources/common/chain-api.manager';
+import { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
+import { IConfigApi } from '#/domain/interfaces/config-api.interface';
+import type { IStakingApi } from '#/domain/interfaces/staking-api.interface';
+import type { IStakingApiManager } from '#/domain/interfaces/staking-api.manager.interface';
+import { ChainSchema } from '#/modules/chains/domain/entities/schemas/chain.schema';
+import { KilnApi } from '#/modules/staking/datasources/kiln-api.service';
 
 /**
  * Manages per-chain {@link KilnApi} instances for a given widget deployment.

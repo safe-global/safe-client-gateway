@@ -41,7 +41,7 @@ This applies whether the datasource is module-owned (`src/modules/*/datasources/
 
 **Why:** enforcement is opt-in per route, so a sensitive route that simply omits the guard is silently unprotected — the failure mode is absence, which no test on the route itself can catch. The two tables in that spec exist so the omission fails CI instead: every gated route is asserted to reject a session with no fresh factor, and every ungated one is asserted not to, which makes gating or un-gating a route a deliberate edit rather than a side effect of touching a controller.
 
-**Canonical example:** `src/modules/spaces/routes/members/members.controller.ts` guards `POST /:spaceId/members/invite` with `@UseGuards(AuthGuard, ElevationGuard)`; `src/modules/spaces/routes/address-books/address-books.controller.ts:116` shows the rate-limited form, `@UseGuards(AuthGuard, ElevationGuard, SpacesAddressBookRateLimitGuard)`.
+**Canonical example:** `src/modules/spaces/routes/members/members.controller.ts` guards `POST /:spaceId/members/invite` with `@UseGuards(AuthGuard, ElevationGuard)`; `src/modules/spaces/routes/address-books/address-books.controller.ts:135` shows the rate-limited form, `@UseGuards(AuthGuard, ElevationGuard, SpacesAddressBookRateLimitGuard)`.
 
 **Anti-example:** `POST /v1/spaces` is ungated on purpose — creating a Workspace has no prior state to tamper with, and a challenge there would land mid-onboarding. That is a recorded entry in the ungated table, not an omission; do not read it as licence to skip the guard on a route that mutates existing state.
 
@@ -49,13 +49,13 @@ This applies whether the datasource is module-owned (`src/modules/*/datasources/
 
 ### Workspace authorization through the shared assertions only
 
-**Rule:** A Workspace-scoped handler checks the caller with `assertMember` or `assertAdmin` from `src/modules/spaces/domain/space-assert.utils.ts`, called from the route service with the injected `IMembersRepository` — never a private `assertActiveAdmin`, an inline `findOne({ role: 'ADMIN' })`, or a membership filter inside a repository query. Repositories receive the resolved `userId` and do data access only. Both helpers return the membership row, so "member, and is it an admin?" is one `assertMember` call plus `.role`. Rejections are 403, never 404.
+**Rule:** A Workspace-scoped handler checks the caller with `assertMember` or `assertAdmin` from `src/modules/spaces/domain/space-assert.utils.ts`, called from the route service with the injected `IMembersRepository` — never a private `assertActiveAdmin`, an inline `findOne({ role: 'ADMIN' })`, or a membership filter inside a repository query. Repositories receive the resolved `userId` and do data access only. Both helpers return the membership row, so "member, and is it an admin?" is one `assertMember` call plus `.role`. A handler acting on one of the Workspace's Safes also calls `assertSafeInSpace` from the same file, after `assertMember` and before any entitlement check; entitlement checks stay in the route service, since metered ones need the request's own count. Rejections are 403, never 404.
 
-**Why:** the same predicate had grown five implementations with three different messages and one 404; a fix to one copy silently misses the others.
+**Why:** the same predicate had grown five implementations with three different messages and one 404; a fix to one copy silently misses the others. Running the Safe check before membership would let a non-member probe which Safes a Workspace holds; running an entitlement first would answer, or charge quota for, a request the caller was never allowed to make.
 
-**Canonical example:** `src/modules/spaces/routes/address-books/address-books.service.ts` asserts, then hands `userId` to the repository; `src/modules/spaces/routes/audit/space-audit.service.ts`'s `assertViewer` shows the one-query `assertMember(...).role === 'ADMIN'` form.
+**Canonical example:** `src/modules/spaces/routes/address-books/address-books.service.ts` asserts, then hands `userId` to the repository; `src/modules/spaces/routes/audit/space-audit.service.ts`'s `assertViewer` shows the one-query `assertMember(...).role === 'ADMIN'` form. `src/modules/safe-shield/routes/space-safe-shield.service.ts`'s `assertGated` shows the Safe-scoped form: `assertMember`, then `assertSafeInSpace`, then the entitlement.
 
-**Anti-example:** a service-level `private async assertActiveAdmin(...)` running its own query, or a repository method taking `authPayload` to filter the space by `members: { user: { id } }`. The last-admin rule in `src/modules/users/domain/members/members.repository.ts` stays in the repository because it needs the whole admin list, but it is a 409 conflict check, not authorization — the route service still calls `assertAdmin` before it.
+**Anti-example:** a service-level `private async assertActiveAdmin(...)` running its own query, a repository method taking `authPayload` to filter the space by `members: { user: { id } }`, or an inline `existsInSpace` check throwing its own 403 (a branch on the boolean, like the relayer's gas-payment choice, is not authorization). A listing that validates several requested Safes in one query and returns 422, like `PoliciesService.spaceSafes`, is input validation, not this check. The last-admin rule in `src/modules/users/domain/members/members.repository.ts` stays in the repository because it needs the whole admin list, but it is a 409 conflict check, not authorization — the route service still calls `assertAdmin` before it.
 
 ### Ownership by signature recovery only
 
@@ -108,6 +108,14 @@ The same single-use nonce lifecycle is described in `docs/agents/ARCHITECTURE.md
 
 `trustProxy` itself (`httpServer.trustProxy` in configuration) is a comma-separated subnet/preset list — it bounds which upstream addresses Fastify trusts before it stops adjusting `request.ip`, which is what keeps the value trustworthy in the first place. Hop counts are rejected at startup: they ignore the connecting address entirely.
 
+### `x-safe-*` headers are never client input
+
+**Rule:** `x-safe-*` is a reserved header namespace. CGW drops every inbound `x-safe-*` header at the HTTP edge, so code never reads one from a request. Outbound, only a module-scoped Safe-service `NetworkService` sets one, through its `contextHeaders`.
+
+**Why:** Safe services such as queue-service trust `x-safe-*` headers for attribution (for example `x-safe-req-id` in `request_event`). A client-supplied value would let a caller forge that attribution.
+
+**Canonical example:** the `onRequest` hook in `configureFastifyAdapter` (`src/app.provider.ts`) deletes them from `request.raw.headers`. `FetchNetworkService.mergeHeaders` drops any caller-set `x-safe-*` header before adding its context headers.
+
 ### Constant-time secret comparison
 
 **Rule:** Compare a token, HMAC, or digest only with `crypto.timingSafeEqual`; never compare a secret with `===`/`==`. `timingSafeEqual` requires equal-length buffers, so handle a length mismatch one of two ways: treat it as comparison failure (the canonical guard below wraps the call in try/catch for exactly this), or hash both sides to a fixed length first when inputs can legitimately vary in length.
@@ -159,7 +167,7 @@ The same base-class design is described in `docs/agents/ARCHITECTURE.md`'s AuthN
 
 **Canonical example:** `src/datasources/kms/encryption.constants.ts` documents the on-disk contract as immutable: the `kms:v1:` prefix, the envelope blob layout (wrapped data key + IV + ciphertext + GCM tag), and the blind-index HMAC label and key length. `src/datasources/kms/kms-encryption.service.ts` is the single, domain-free implementation of the mechanics: `encrypt`/`decrypt` pass the caller-supplied `encryptionContext` to KMS as AAD (and bind it again locally as GCM AAD) so a value can't be transplanted to another owner, and `blindIndex` computes a keyed HMAC over the normalised plaintext for lookups without ever decrypting stored rows. `src/modules/users/domain/user-encryption.service.ts` shows how a module consumes it: a thin wrapper that binds the owning row's id into the context — `this.kmsEncryption.encrypt(email, { userId: String(userId) })` — and adds batch helpers, but implements no crypto of its own.
 
-The pattern is implemented today for `users.email`, wallet addresses, member names/aliases, and the `spaces` module's names, Safe addresses, address-book entries, and audit payloads — each via its own thin wrapper (`UserEncryptionService`, `WalletEncryptionService`, `MemberEncryptionService`, `SpaceEncryptionService`). A new PII column gets the same shape: extend the owning module's wrapper (or add one if the module has none) to bind that entity's `encryptionContext` and delegate to `KmsEncryptionService` — never reimplement the envelope or blind-index mechanics per field, and never alter the constants, which are a frozen on-disk contract.
+The pattern is implemented today for `users.email`, wallet addresses, member names/aliases, and the `spaces` module's names, Safe addresses, address-book entries and tag names, and audit payloads — each via its own thin wrapper (`UserEncryptionService`, `WalletEncryptionService`, `MemberEncryptionService`, `SpaceEncryptionService`). A new PII column gets the same shape: extend the owning module's wrapper (or add one if the module has none) to bind that entity's `encryptionContext` and delegate to `KmsEncryptionService` — never reimplement the envelope or blind-index mechanics per field, and never alter the constants, which are a frozen on-disk contract.
 
 ### Sanitize user text
 
@@ -183,9 +191,9 @@ Outside production, the same allowlist also accepts `localhost`/`127.0.0.1`/`[::
 
 ### Domain freshness in verifiers
 
-**Rule:** Proposal and confirmation verification rejects a nonce below the Safe's current on-chain nonce, an already-executed transaction, and a blocklisted signer, each via `HttpExceptionNoLog` rather than a silently-swallowed rejection or a generic 500.
+**Rule:** Proposal and confirmation verification rejects a nonce below the Safe's current on-chain nonce, and an already-executed transaction, each via `HttpExceptionNoLog` rather than a silently-swallowed rejection or a generic 500.
 
-**Why:** PR #2408 — a stale-nonce/already-executed transaction could be replayed through verification; PRs #2399/#2405 — a blocklisted signer's confirmation was accepted.
+**Why:** PR #2408 — a stale-nonce/already-executed transaction could be replayed through verification.
 
 **Canonical example:** `src/modules/transactions/routes/helpers/transaction-verifier.helper.ts` — `verifyConfirmation` throws `HttpExceptionNoLog(ErrorMessage.InvalidNonce, ...)` when `transaction.isExecuted || transaction.nonce < safe.nonce`:
 
@@ -194,8 +202,6 @@ if (args.transaction.isExecuted || args.transaction.nonce < args.safe.nonce) {
   throw new HttpExceptionNoLog(ErrorMessage.InvalidNonce, code);
 }
 ```
-
-`verifyApiSignatures`, `verifyProposalSignature`, and `verifyConfirmationSignature` each separately throw `HttpExceptionNoLog(ErrorMessage.BlockedAddress, ...)` when a recovered signer address is found in `this.blocklist` (backed by `IBlocklistService`), before the signature is even checked against the Safe's owners.
 
 ### Structured logging only
 

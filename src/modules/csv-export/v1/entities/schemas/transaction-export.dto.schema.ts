@@ -1,5 +1,6 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
-import { DateStringSchema } from '@/validation/entities/schemas/date-string.schema';
+import { DateStringSchema } from '#/validation/entities/schemas/date-string.schema';
 
 export const TransactionExportDtoSchema = z
   .object({

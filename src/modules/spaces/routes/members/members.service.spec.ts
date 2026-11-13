@@ -3,33 +3,34 @@
 import { faker } from '@faker-js/faker';
 import {
   ConflictException,
-  ForbiddenException,
+  HttpStatus,
   NotFoundException,
 } from '@nestjs/common';
 import { type Address, getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
+import type { IConfigurationService } from '#/config/configuration.service.interface';
+import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
 import {
   oidcAuthPayloadDtoBuilder,
   siweAuthPayloadDtoBuilder,
-} from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import type { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
+} from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import type { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
 import {
   emailInviteUserDtoBuilder,
   walletInviteUserDtoBuilder,
-} from '@/modules/spaces/routes/members/entities/__tests__/invite-user.dto.builder';
-import type { InviteUsersDto } from '@/modules/spaces/routes/members/entities/invite-users.dto.entity';
-import { MembersService } from '@/modules/spaces/routes/members/members.service';
-import type { SpaceInviteEmailService } from '@/modules/spaces/routes/members/space-invite-email.service';
-import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
-import { userBuilder } from '@/modules/users/datasources/entities/__tests__/users.entity.db.builder';
-import type { Member } from '@/modules/users/domain/entities/member.entity';
-import { createMockMemberEncryptionService } from '@/modules/users/domain/members/__tests__/member-encryption.service.mock';
-import type { MemberEncryptionService } from '@/modules/users/domain/members/member-encryption.service';
-import type { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
-import { fakeEmailAddress } from '@/validation/entities/schemas/__tests__/email-address.builder';
-import { fakeUuid } from '@/validation/entities/schemas/__tests__/uuid.builder';
+} from '#/modules/spaces/routes/members/entities/__tests__/invite-user.dto.builder';
+import type { InviteUsersDto } from '#/modules/spaces/routes/members/entities/invite-users.dto.entity';
+import { MembersService } from '#/modules/spaces/routes/members/members.service';
+import type { SpaceInviteEmailService } from '#/modules/spaces/routes/members/space-invite-email.service';
+import { memberBuilder } from '#/modules/users/datasources/entities/__tests__/member.entity.db.builder';
+import { userBuilder } from '#/modules/users/datasources/entities/__tests__/users.entity.db.builder';
+import type { Member } from '#/modules/users/domain/entities/member.entity';
+import { createMockMemberEncryptionService } from '#/modules/users/domain/members/__tests__/member-encryption.service.mock';
+import type { MemberEncryptionService } from '#/modules/users/domain/members/member-encryption.service';
+import type { IMembersRepository } from '#/modules/users/domain/members/members.repository.interface';
+import { fakeEmailAddress } from '#/validation/entities/schemas/__tests__/email-address.builder';
+import { fakeUuid } from '#/validation/entities/schemas/__tests__/uuid.builder';
 
 const MAX_INVITES = 10;
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
@@ -402,7 +403,7 @@ describe('MembersService', () => {
       ['SIWE', siweAuthPayloadDtoBuilder],
       ['OIDC', oidcAuthPayloadDtoBuilder],
     ] as const)(
-      'should throw ForbiddenException when the %s caller is not an active admin',
+      'should throw a 403 when the %s caller is not an active admin',
       async (_label, builder) => {
         const authPayload = new AuthPayload(builder().build());
         const spaceId = faker.number.int({ min: 1 });
@@ -413,7 +414,10 @@ describe('MembersService', () => {
         await expect(
           service.inviteUser({ authPayload, spaceId, inviteUsersDto }),
         ).rejects.toThrow(
-          new ForbiddenException('User is not an admin of this workspace'),
+          new HttpExceptionNoLog(
+            'User is not an admin of this workspace',
+            HttpStatus.FORBIDDEN,
+          ),
         );
         expect(membersRepositoryMock.inviteUsers).not.toHaveBeenCalled();
       },
@@ -525,7 +529,11 @@ describe('MembersService', () => {
   });
 
   describe('renewInvite', () => {
-    it('should throw ForbiddenException when the caller is not an active admin', async () => {
+    beforeEach(() => {
+      membersRepositoryMock.renewInvite.mockResolvedValue(true);
+    });
+
+    it('should throw a 403 when the caller is not an active admin', async () => {
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
       const spaceId = faker.number.int({ min: 1 });
       const userId = faker.number.int({ min: 1 });
@@ -535,7 +543,10 @@ describe('MembersService', () => {
       await expect(
         service.renewInvite({ authPayload, spaceId, userId }),
       ).rejects.toThrow(
-        new ForbiddenException('User is not an admin of this workspace'),
+        new HttpExceptionNoLog(
+          'User is not an admin of this workspace',
+          HttpStatus.FORBIDDEN,
+        ),
       );
       expect(membersRepositoryMock.findOneOrFail).not.toHaveBeenCalled();
       expect(membersRepositoryMock.renewInvite).not.toHaveBeenCalled();
@@ -621,6 +632,7 @@ describe('MembersService', () => {
         expect(membersRepositoryMock.renewInvite).toHaveBeenCalledWith({
           memberId: targetMember.id,
           inviteExpiresAt: new Date(now.getTime() + INVITE_TTL_MS),
+          notRenewedSince: new Date(now.getTime() - 60_000),
           spaceId,
           spaceUuid,
           targetUserId: userId,
@@ -751,6 +763,33 @@ describe('MembersService', () => {
         spaceInviteEmailServiceMock.enqueueRenewalEmail,
       ).not.toHaveBeenCalled();
     });
+
+    it('should throw 429 and not enqueue an email when the invite was renewed recently', async () => {
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const spaceId = faker.number.int({ min: 1 });
+      const userId = faker.number.int({ min: 1 });
+      const targetMember = memberBuilder().with('status', 'INVITED').build();
+      const adminMember = memberBuilder()
+        .with('role', 'ADMIN')
+        .with('status', 'ACTIVE')
+        .build();
+
+      membersRepositoryMock.findOne.mockResolvedValue(adminMember);
+      membersRepositoryMock.findOneOrFail.mockResolvedValue(targetMember);
+      membersRepositoryMock.renewInvite.mockResolvedValue(false);
+
+      await expect(
+        service.renewInvite({ authPayload, spaceId, userId }),
+      ).rejects.toThrow(
+        new HttpExceptionNoLog(
+          'Invitation was renewed recently. Try again later.',
+          HttpStatus.TOO_MANY_REQUESTS,
+        ),
+      );
+      expect(
+        spaceInviteEmailServiceMock.enqueueRenewalEmail,
+      ).not.toHaveBeenCalled();
+    });
   });
 
   describe.each([
@@ -769,7 +808,7 @@ describe('MembersService', () => {
         membersRepositoryMock.removeUser,
     ],
   ] as const)('%s', (_name, call, repositoryMethod) => {
-    it('should throw ForbiddenException when the caller is not an active admin', async () => {
+    it('should throw a 403 when the caller is not an active admin', async () => {
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
       const spaceId = faker.number.int({ min: 1 });
       const userId = faker.number.int({ min: 1 });
@@ -777,7 +816,10 @@ describe('MembersService', () => {
       membersRepositoryMock.findOne.mockResolvedValue(null);
 
       await expect(call({ authPayload, spaceId, userId })).rejects.toThrow(
-        new ForbiddenException('User is not an admin of this workspace'),
+        new HttpExceptionNoLog(
+          'User is not an admin of this workspace',
+          HttpStatus.FORBIDDEN,
+        ),
       );
       expect(repositoryMethod()).not.toHaveBeenCalled();
     });

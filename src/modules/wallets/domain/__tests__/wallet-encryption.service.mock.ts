@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { MockedObject } from 'vitest';
-import type { WalletEncryptionService } from '@/modules/wallets/domain/wallet-encryption.service';
+import type { WalletEncryptionService } from '#/modules/wallets/domain/wallet-encryption.service';
 
 /**
  * A passthrough {@link WalletEncryptionService} double for repository tests.

@@ -9,11 +9,11 @@ import type {
   InsertResult,
 } from 'typeorm';
 import type { Address } from 'viem';
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import type { User } from '@/modules/users/domain/entities/user.entity';
-import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
-import { WalletEncryptionService } from '@/modules/wallets/domain/wallet-encryption.service';
-import type { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
+import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
+import type { User } from '#/modules/users/domain/entities/user.entity';
+import { Wallet } from '#/modules/wallets/datasources/entities/wallets.entity.db';
+import { WalletEncryptionService } from '#/modules/wallets/domain/wallet-encryption.service';
+import type { IWalletsRepository } from '#/modules/wallets/domain/wallets.repository.interface';
 
 @Injectable()
 export class WalletsRepository implements IWalletsRepository {

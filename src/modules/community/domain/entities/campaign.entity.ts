@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
-import { buildPageSchema } from '@/domain/entities/schemas/page.schema.factory';
-import { ActivityMetadataSchema } from '@/modules/community/domain/entities/activity-metadata.entity';
+import { buildPageSchema } from '#/domain/entities/schemas/page.schema.factory';
+import { ActivityMetadataSchema } from '#/modules/community/domain/entities/activity-metadata.entity';
 import {
   NullableCoercedDateSchema,
   NullableNumericStringSchema,
   NullableStringSchema,
-} from '@/validation/entities/schemas/nullable.schema';
+} from '#/validation/entities/schemas/nullable.schema';
 
 export type Campaign = z.infer<typeof CampaignSchema>;
 

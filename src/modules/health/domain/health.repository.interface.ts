@@ -1,4 +1,5 @@
-import type { HealthEntity } from '@/modules/health/domain/entities/health.entity';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { HealthEntity } from '#/modules/health/domain/entities/health.entity';
 
 export const IHealthRepository = Symbol('IHealthRepository');
 

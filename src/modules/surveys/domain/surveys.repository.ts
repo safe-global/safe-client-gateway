@@ -1,19 +1,19 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import type { Space } from '@/modules/spaces/domain/entities/space.entity';
-import { Survey as DbSurvey } from '@/modules/surveys/datasources/entities/survey.entity.db';
-import { SurveyResponse as DbSurveyResponse } from '@/modules/surveys/datasources/entities/survey-response.entity.db';
-import type { Survey } from '@/modules/surveys/domain/entities/survey.entity';
+import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
+import type { Space } from '#/modules/spaces/domain/entities/space.entity';
+import { Survey as DbSurvey } from '#/modules/surveys/datasources/entities/survey.entity.db';
+import { SurveyResponse as DbSurveyResponse } from '#/modules/surveys/datasources/entities/survey-response.entity.db';
+import type { Survey } from '#/modules/surveys/domain/entities/survey.entity';
 import type {
   SurveyResponse,
   SurveyResponseSelections,
-} from '@/modules/surveys/domain/entities/survey-response.entity';
+} from '#/modules/surveys/domain/entities/survey-response.entity';
 import type {
   ISurveysRepository,
   UpsertedSurveyResponse,
-} from '@/modules/surveys/domain/surveys.repository.interface';
-import type { User } from '@/modules/users/domain/entities/user.entity';
+} from '#/modules/surveys/domain/surveys.repository.interface';
+import type { User } from '#/modules/users/domain/entities/user.entity';
 
 @Injectable()
 export class SurveysRepository implements ISurveysRepository {

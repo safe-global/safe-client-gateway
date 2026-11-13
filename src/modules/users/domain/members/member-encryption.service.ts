@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Injectable } from '@nestjs/common';
-import { KmsEncryptionService } from '@/datasources/kms/kms-encryption.service';
+import { KmsEncryptionService } from '#/datasources/kms/kms-encryption.service';
 
 @Injectable()
 export class MemberEncryptionService {

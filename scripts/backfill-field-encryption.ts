@@ -10,6 +10,7 @@
  *   space_safes.address               + address_index
  *   space_address_book_items.address  + address_index
  *   space_address_book_items.name
+ *   space_address_book_tags.name      (name_index is not recomputed)
  *   address_book_requests.address     + address_index
  *   address_book_requests.name
  *   members.name, members.alias
@@ -74,15 +75,15 @@
  *   audit reader (decryptAuditPayload) uses to decrypt and re-parse it.
  */
 import { DataSource } from 'typeorm';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
-import configuration from '@/config/entities/configuration';
-import { postgresConfig } from '@/config/entities/postgres.config';
-import { AwsKmsService } from '@/datasources/kms/aws-kms.service';
+import type { IConfigurationService } from '#/config/configuration.service.interface';
+import configuration from '#/config/entities/configuration';
+import { postgresConfig } from '#/config/entities/postgres.config';
+import { AwsKmsService } from '#/datasources/kms/aws-kms.service';
 import {
   ENCRYPTION_PREFIX,
   ENCRYPTION_VERSION,
-} from '@/datasources/kms/encryption.constants';
-import { KmsEncryptionService } from '@/datasources/kms/kms-encryption.service';
+} from '#/datasources/kms/encryption.constants';
+import { KmsEncryptionService } from '#/datasources/kms/kms-encryption.service';
 
 const BATCH_SIZE = 500;
 // Bounds concurrent KMS Encrypt calls per batch; KMS comfortably handles this,
@@ -162,6 +163,14 @@ const TABLES: Array<TableSpec> = [
       },
       { column: 'name' },
     ],
+  },
+  // Only the name: name_index is a Workspace-scoped HMAC from
+  // SpaceEncryptionService.tagNameIndex, not this script's blind index.
+  {
+    table: 'space_address_book_tags',
+    scopeColumn: 'space_id',
+    scopeKey: 'spaceId',
+    columns: [{ column: 'name' }],
   },
   {
     table: 'address_book_requests',

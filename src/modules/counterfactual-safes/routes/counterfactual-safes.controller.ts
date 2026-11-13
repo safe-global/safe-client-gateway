@@ -20,18 +20,18 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
-import { CounterfactualSafesService } from '@/modules/counterfactual-safes/routes/counterfactual-safes.service';
-import { CounterfactualSafesSchema } from '@/modules/counterfactual-safes/routes/entities/counterfactual-safe.dto.entity';
-import { CreateCounterfactualSafesDto } from '@/modules/counterfactual-safes/routes/entities/create-counterfactual-safe.dto.entity';
+import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import { AuthGuard } from '#/modules/auth/routes/guards/auth.guard';
+import { CounterfactualSafesService } from '#/modules/counterfactual-safes/routes/counterfactual-safes.service';
+import { CounterfactualSafesSchema } from '#/modules/counterfactual-safes/routes/entities/counterfactual-safe.dto.entity';
+import { CreateCounterfactualSafesDto } from '#/modules/counterfactual-safes/routes/entities/create-counterfactual-safe.dto.entity';
 import {
   DeleteCounterfactualSafesDto,
   DeleteCounterfactualSafesSchema,
-} from '@/modules/counterfactual-safes/routes/entities/delete-counterfactual-safe.dto.entity';
-import { GetCounterfactualSafesResponse } from '@/modules/counterfactual-safes/routes/entities/get-counterfactual-safe.dto.entity';
-import { Auth } from '@/routes/common/auth/auth.decorator';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+} from '#/modules/counterfactual-safes/routes/entities/delete-counterfactual-safe.dto.entity';
+import { GetCounterfactualSafesResponse } from '#/modules/counterfactual-safes/routes/entities/get-counterfactual-safe.dto.entity';
+import { Auth } from '#/routes/common/auth/auth.decorator';
+import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
 @ApiTags('counterfactual-safes')
 @Controller({

@@ -9,23 +9,23 @@ import type { MockedObject } from 'vitest';
 import {
   initTestApplication,
   TestAppProvider,
-} from '@/__tests__/test-app.provider';
-import { createTestModule } from '@/__tests__/testing-module';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import configuration from '@/config/entities/__tests__/configuration';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import { NetworkService } from '@/datasources/network/network.service.interface';
-import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
-import { balanceBuilder } from '@/modules/balances/domain/entities/__tests__/balance.builder';
-import { balanceTokenBuilder } from '@/modules/balances/domain/entities/__tests__/balance.token.builder';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
+} from '#/__tests__/test-app.provider';
+import { createTestModule } from '#/__tests__/testing-module';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import configuration from '#/config/entities/__tests__/configuration';
+import type { INetworkService } from '#/datasources/network/network.service.interface';
+import { NetworkService } from '#/datasources/network/network.service.interface';
+import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
+import { balanceBuilder } from '#/modules/balances/domain/entities/__tests__/balance.builder';
+import { balanceTokenBuilder } from '#/modules/balances/domain/entities/__tests__/balance.token.builder';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
 import {
   multisigTransactionBuilder,
   toJson as multisigTransactionToJson,
-} from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
-import { confirmationBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction-confirmation.builder';
-import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
-import { rawify } from '@/validation/entities/raw.entity';
+} from '#/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
+import { confirmationBuilder } from '#/modules/safe/domain/entities/__tests__/multisig-transaction-confirmation.builder';
+import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
+import { rawify } from '#/validation/entities/raw.entity';
 
 /** Zerion's chain list keyed by network name, as served by GET /v1/chains. */
 const zerionChains = (
@@ -456,16 +456,18 @@ describe('Safes V2 Controller Overview', () => {
       const tokenAddress = getAddress(faker.finance.ethereumAddress());
 
       testNetworkService.get.mockImplementation(({ url }: { url: string }) => {
-        if (url === `${testSafeConfigUrl}/api/v1/chains/${chain.chainId}`)
+        if (url === `${testSafeConfigUrl}/api/v1/chains/${chain.chainId}`) {
           return Promise.resolve({ data: rawify(chain), status: 200 });
+        }
         if (
           url === `${chain.transactionService}/api/v1/safes/${safeInfo.address}`
-        )
+        ) {
           return Promise.resolve({ data: rawify(safeInfo), status: 200 });
+        }
         if (
           url ===
           `${chain.transactionService}/api/v1/safes/${safeInfo.address}/balances/`
-        )
+        ) {
           return Promise.resolve({
             data: rawify([
               balanceBuilder()
@@ -476,31 +478,35 @@ describe('Safes V2 Controller Overview', () => {
             ]),
             status: 200,
           });
-        if (url === `${testPricesProviderUrl}/simple/price`)
+        }
+        if (url === `${testPricesProviderUrl}/simple/price`) {
           return Promise.resolve({
             data: rawify({
               [chain.pricesProvider.nativeCoin as string]: { usd: 100 },
             }),
             status: 200,
           });
+        }
         if (
           url ===
           `${testPricesProviderUrl}/simple/token_price/${chain.pricesProvider.chainName}`
-        )
+        ) {
           return Promise.resolve({
             data: rawify({ [tokenAddress]: { usd: 10 } }),
             status: 200,
           });
+        }
         if (
           url ===
           `${chain.transactionService}/api/v2/safes/${safeInfo.address}/multisig-transactions/`
-        )
+        ) {
           return Promise.resolve({
             data: rawify(
               pageBuilder().with('results', []).with('count', 0).build(),
             ),
             status: 200,
           });
+        }
         if (url === `${zerionBaseUri}/v1/chains`) {
           return Promise.resolve({
             data: rawify(zerionChainsResponse),

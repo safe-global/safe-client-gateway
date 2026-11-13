@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { Address } from 'viem';
 import { z } from 'zod';
-import { RowSchema } from '@/datasources/db/v2/entities/row.entity';
-import { getStringEnumKeys } from '@/domain/common/utils/enum';
-import type { Member } from '@/modules/users/domain/entities/member.entity';
-import { MemberSchema } from '@/modules/users/domain/entities/member.entity';
-import type { Wallet } from '@/modules/wallets/domain/entities/wallet.entity';
-import { WalletSchema } from '@/modules/wallets/domain/entities/wallet.entity';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import type { EmailAddress } from '@/validation/entities/schemas/email-address.schema';
-import { EmailAddressSchema } from '@/validation/entities/schemas/email-address.schema';
+import { RowSchema } from '#/datasources/db/v2/entities/row.entity';
+import { getStringEnumKeys } from '#/domain/common/utils/enum';
+import type { Member } from '#/modules/users/domain/entities/member.entity';
+import { MemberSchema } from '#/modules/users/domain/entities/member.entity';
+import type { Wallet } from '#/modules/wallets/domain/entities/wallet.entity';
+import { WalletSchema } from '#/modules/wallets/domain/entities/wallet.entity';
+import { AddressSchema } from '#/validation/entities/schemas/address.schema';
+import type { EmailAddress } from '#/validation/entities/schemas/email-address.schema';
+import { EmailAddressSchema } from '#/validation/entities/schemas/email-address.schema';
 
 export enum UserStatus {
   PENDING = 0,

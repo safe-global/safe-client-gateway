@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { subscriptionPlanBuilder } from '@/datasources/billing-api/entities/__tests__/plan.builder';
-import { subscriptionBuilder } from '@/datasources/billing-api/entities/__tests__/subscription.builder';
-import { webhookEventBuilder } from '@/modules/billing/domain/entities/__tests__/webhook-event.builder';
-import type { WebhookEvent } from '@/modules/billing/domain/entities/webhook-event.entity';
-import { FeatureType } from '@/modules/entitlements/domain/entities/feature.entity';
+import { subscriptionPlanBuilder } from '#/datasources/billing-api/entities/__tests__/plan.builder';
+import { subscriptionBuilder } from '#/datasources/billing-api/entities/__tests__/subscription.builder';
+import { webhookEventBuilder } from '#/modules/billing/domain/entities/__tests__/webhook-event.builder';
+import type { WebhookEvent } from '#/modules/billing/domain/entities/webhook-event.entity';
+import { FeatureType } from '#/modules/entitlements/domain/entities/feature.entity';
 import {
   mapEventToSubscription,
   mapUpstreamSubscriptions,
-} from '@/modules/entitlements/domain/subscription.mapper';
+} from '#/modules/entitlements/domain/subscription.mapper';
 
 const featureTypeByKey: Map<string, FeatureType> = new Map([
   ['security_hub', FeatureType.Binary],

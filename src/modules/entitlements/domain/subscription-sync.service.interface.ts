@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { WebhookEvent } from '@/modules/billing/domain/entities/webhook-event.entity';
+import type { WebhookEvent } from '#/modules/billing/domain/entities/webhook-event.entity';
 
 export const ISubscriptionSyncService = Symbol('ISubscriptionSyncService');
 

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { SubscriptionStatus } from '@/datasources/billing-api/entities/subscription.entity';
+import type { SubscriptionStatus } from '#/datasources/billing-api/entities/subscription.entity';
 
 /**
  * Statuses whose plan the upstream will move. Not

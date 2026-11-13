@@ -51,7 +51,7 @@ export class ChainsModule {}
 
 ```typescript
 import { Injectable } from '@nestjs/common';
-import { IFeatureFlagService } from '@/modules/chains/feature-flags/feature-flag.service.interface';
+import { IFeatureFlagService } from '#/modules/chains/feature-flags/feature-flag.service.interface';
 
 @Injectable()
 export class MyService {
@@ -93,7 +93,7 @@ if (useNewApi) {
 
 ```typescript
 import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
-import { IFeatureFlagService } from '@/modules/chains/feature-flags/feature-flag.service.interface';
+import { IFeatureFlagService } from '#/modules/chains/feature-flags/feature-flag.service.interface';
 
 @Injectable()
 export class FeatureFlagGuard implements CanActivate {
@@ -121,7 +121,7 @@ import {
   CallHandler,
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
-import { IFeatureFlagService } from '@/modules/chains/feature-flags/feature-flag.service.interface';
+import { IFeatureFlagService } from '#/modules/chains/feature-flags/feature-flag.service.interface';
 
 @Injectable()
 export class FeatureFlagInterceptor implements NestInterceptor {

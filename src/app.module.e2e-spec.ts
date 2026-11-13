@@ -2,8 +2,8 @@
 import {
   createTestApplication,
   initTestApplication,
-} from '@/__tests__/test-app.provider';
-import { createBaseTestModule } from '@/__tests__/testing-module';
+} from '#/__tests__/test-app.provider';
+import { createBaseTestModule } from '#/__tests__/testing-module';
 
 describe('Application bootstrap', () => {
   it('should init the app', async () => {

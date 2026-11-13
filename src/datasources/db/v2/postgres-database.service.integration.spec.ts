@@ -4,14 +4,14 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
-import { ConfigurationModule } from '@/config/configuration.module';
-import configuration from '@/config/entities/__tests__/configuration';
-import { postgresConfig } from '@/config/entities/postgres.config';
-import { DatabaseInitializeHook } from '@/datasources/db/v2/database-initialize.hook';
-import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
-import { DatabaseShutdownHook } from '@/datasources/db/v2/database-shutdown.hook';
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
+import { ConfigurationModule } from '#/config/configuration.module';
+import configuration from '#/config/entities/__tests__/configuration';
+import { postgresConfig } from '#/config/entities/postgres.config';
+import { DatabaseInitializeHook } from '#/datasources/db/v2/database-initialize.hook';
+import { DatabaseMigrator } from '#/datasources/db/v2/database-migrator.service';
+import { DatabaseShutdownHook } from '#/datasources/db/v2/database-shutdown.hook';
+import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
+import { TestLoggingModule } from '#/logging/__tests__/test.logging.module';
 
 describe('PostgresDatabaseService', () => {
   let moduleRef: TestingModule;

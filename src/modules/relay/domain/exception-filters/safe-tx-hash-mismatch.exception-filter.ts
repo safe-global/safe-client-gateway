@@ -2,7 +2,7 @@
 import type { ArgumentsHost } from '@nestjs/common';
 import { Catch, ExceptionFilter, HttpStatus } from '@nestjs/common';
 import type { FastifyReply } from 'fastify';
-import { SafeTxHashMismatchError } from '@/modules/relay/domain/errors/safe-tx-hash-mismatch.error';
+import { SafeTxHashMismatchError } from '#/modules/relay/domain/errors/safe-tx-hash-mismatch.error';
 
 @Catch(SafeTxHashMismatchError)
 export class SafeTxHashMismatchExceptionFilter implements ExceptionFilter {

@@ -2,9 +2,9 @@
 import { faker } from '@faker-js/faker';
 import type { Hex } from 'viem';
 import { encodeFunctionData, getAddress } from 'viem';
-import { Builder } from '@/__tests__/builder';
-import type { IEncoder } from '@/__tests__/encoder-builder';
-import { getAllowanceModuleAbi } from '@/domain/common/utils/deployments';
+import { Builder } from '#/__tests__/builder';
+import type { IEncoder } from '#/__tests__/encoder-builder';
+import { getAllowanceModuleAbi } from '#/domain/common/utils/deployments';
 
 const AllowanceModuleAbi = getAllowanceModuleAbi();
 

@@ -2,10 +2,10 @@
 
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import type { IBuilder } from '@/__tests__/builder';
-import { Builder } from '@/__tests__/builder';
-import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
-import type { Submission } from '@/modules/targeted-messaging/domain/entities/submission.entity';
+import type { IBuilder } from '#/__tests__/builder';
+import { Builder } from '#/__tests__/builder';
+import { DB_MAX_SAFE_INTEGER } from '#/domain/common/constants';
+import type { Submission } from '#/modules/targeted-messaging/domain/entities/submission.entity';
 
 export function submissionBuilder(): IBuilder<Submission> {
   return new Builder<Submission>()

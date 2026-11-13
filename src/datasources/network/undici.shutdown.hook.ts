@@ -4,8 +4,8 @@ import type { Agent } from 'undici';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import { asError } from '@/logging/utils';
+} from '#/logging/logging.interface';
+import { asError } from '#/logging/utils';
 
 export const UndiciAgent = Symbol('UndiciAgent');
 

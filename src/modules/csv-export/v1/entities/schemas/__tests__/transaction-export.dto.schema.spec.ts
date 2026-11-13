@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import { TransactionExportDtoSchema } from '@/modules/csv-export/v1/entities/schemas/transaction-export.dto.schema';
+import { TransactionExportDtoSchema } from '#/modules/csv-export/v1/entities/schemas/transaction-export.dto.schema';
 
 describe('TransactionExportDtoSchema', () => {
   it('should validate a valid TransactionExportDto with all fields', () => {

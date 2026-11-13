@@ -9,7 +9,7 @@ import {
   Erc20Token,
   Erc721Token,
   NativeToken,
-} from '@/modules/balances/routes/entities/token.entity';
+} from '#/modules/balances/routes/entities/token.entity';
 
 @ApiExtraModels(NativeToken, Erc20Token, Erc721Token)
 export class Balance {

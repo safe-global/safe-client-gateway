@@ -6,10 +6,10 @@ import type { Address } from 'viem';
 import type {
   JobData,
   JobResponse,
-} from '@/datasources/job-queue/types/job-types';
-import type { FirebaseNotification } from '@/datasources/push-notifications-api/entities/firebase-notification.entity';
-import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
-import type { Event } from '@/modules/hooks/routes/entities/event.entity';
+} from '#/datasources/job-queue/types/job-types';
+import type { FirebaseNotification } from '#/datasources/push-notifications-api/entities/firebase-notification.entity';
+import type { Delegate } from '#/modules/delegate/domain/entities/delegate.entity';
+import type { Event } from '#/modules/hooks/routes/entities/event.entity';
 
 export interface PushNotificationEventJobData extends JobData {
   event: Event;

@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { fakeJson } from '@/__tests__/faker';
-import { erc20TransferBuilder } from '@/modules/safe/domain/entities/__tests__/erc20-transfer.builder';
-import { erc721TransferBuilder } from '@/modules/safe/domain/entities/__tests__/erc721-transfer.builder';
-import { nativeTokenTransferBuilder } from '@/modules/safe/domain/entities/__tests__/native-token-transfer.builder';
-import { TransferSchema } from '@/modules/safe/domain/entities/transfer.entity';
+import { fakeJson } from '#/__tests__/faker';
+import { erc20TransferBuilder } from '#/modules/safe/domain/entities/__tests__/erc20-transfer.builder';
+import { erc721TransferBuilder } from '#/modules/safe/domain/entities/__tests__/erc721-transfer.builder';
+import { nativeTokenTransferBuilder } from '#/modules/safe/domain/entities/__tests__/native-token-transfer.builder';
+import { TransferSchema } from '#/modules/safe/domain/entities/transfer.entity';
 
 describe('TransferSchema', () => {
   it.each([

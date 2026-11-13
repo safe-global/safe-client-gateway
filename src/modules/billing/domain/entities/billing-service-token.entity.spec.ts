@@ -5,7 +5,7 @@ import {
   SERVICE_ACCESS_PERMISSION_TYPE,
   SERVICE_ACCESS_ROLE,
   SERVICE_USER_TYPE,
-} from '@/modules/billing/domain/entities/billing-service-token.entity';
+} from '#/modules/billing/domain/entities/billing-service-token.entity';
 
 describe('BillingServiceTokenSchema', () => {
   const baseClaims = {

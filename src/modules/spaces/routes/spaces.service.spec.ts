@@ -2,33 +2,35 @@
 
 import { faker } from '@faker-js/faker';
 import {
-  ForbiddenException,
+  HttpStatus,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { MoreThan } from 'typeorm';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
+import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
 import {
   oidcAuthPayloadDtoBuilder,
   siweAuthPayloadDtoBuilder,
-} from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { createMockSpaceEncryptionService } from '@/modules/spaces/domain/__tests__/space-encryption.service.mock';
-import { spaceBuilder } from '@/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
-import type { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
-import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
-import { SpacesService } from '@/modules/spaces/routes/spaces.service';
-import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
-import { userBuilder } from '@/modules/users/datasources/entities/__tests__/users.entity.db.builder';
-import { createMockMemberEncryptionService } from '@/modules/users/domain/members/__tests__/member-encryption.service.mock';
-import type { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
-import type { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
-import type { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
-import { createMockWalletEncryptionService } from '@/modules/wallets/domain/__tests__/wallet-encryption.service.mock';
-import type { WalletEncryptionService } from '@/modules/wallets/domain/wallet-encryption.service';
-import type { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
-import { fakeUuid } from '@/validation/entities/schemas/__tests__/uuid.builder';
+} from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import { createMockSpaceEncryptionService } from '#/modules/spaces/domain/__tests__/space-encryption.service.mock';
+import { spaceBuilder } from '#/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
+import { ExperimentalFeatures } from '#/modules/spaces/domain/entities/experimental-feature.entity';
+import type { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository.interface';
+import type { ISpacesRepository } from '#/modules/spaces/domain/spaces.repository.interface';
+import { SpacesService } from '#/modules/spaces/routes/spaces.service';
+import { memberBuilder } from '#/modules/users/datasources/entities/__tests__/member.entity.db.builder';
+import { userBuilder } from '#/modules/users/datasources/entities/__tests__/users.entity.db.builder';
+import { createMockMemberEncryptionService } from '#/modules/users/domain/members/__tests__/member-encryption.service.mock';
+import type { IMembersRepository } from '#/modules/users/domain/members/members.repository.interface';
+import type { IUsersRepository } from '#/modules/users/domain/users.repository.interface';
+import type { Wallet } from '#/modules/wallets/datasources/entities/wallets.entity.db';
+import { createMockWalletEncryptionService } from '#/modules/wallets/domain/__tests__/wallet-encryption.service.mock';
+import type { WalletEncryptionService } from '#/modules/wallets/domain/wallet-encryption.service';
+import type { IWalletsRepository } from '#/modules/wallets/domain/wallets.repository.interface';
+import { fakeUuid } from '#/validation/entities/schemas/__tests__/uuid.builder';
 
 const spacesRepositoryMock = {
   create: vi.fn(),
@@ -119,6 +121,7 @@ describe('SpacesService', () => {
         {
           uuid: mockSpace.uuid,
           name: space.name,
+          experimentalFeatures: mockSpace.experimentalFeatures,
           members: [member],
           memberCount: 1,
           safeCount: 3,
@@ -131,6 +134,40 @@ describe('SpacesService', () => {
               inviteExpiresAt: true,
             }),
           }),
+        }),
+      );
+    });
+
+    it('should return the space experimental features', async () => {
+      const features = [faker.helpers.arrayElement(ExperimentalFeatures)];
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      const user = userBuilder().with('id', Number(authPayload.sub)).build();
+      const space = spaceBuilder().build();
+      const member = memberBuilder()
+        .with('user', user)
+        .with('space', space)
+        .build();
+
+      membersRepositoryMock.find.mockResolvedValue([member]);
+
+      const mockSpace = spaceBuilder()
+        .with('id', space.id)
+        .with('name', space.name)
+        .with('members', [member])
+        .with('experimentalFeatures', features)
+        .build();
+
+      spacesRepositoryMock.find.mockResolvedValue([mockSpace]);
+      spaceSafesRepositoryMock.countSeatsBySpaceIds.mockResolvedValue(
+        new Map([[space.id, 0]]),
+      );
+
+      const result = await service.getActiveOrInvitedSpaces(authPayload);
+
+      expect(result[0].experimentalFeatures).toStrictEqual(features);
+      expect(spacesRepositoryMock.find).toHaveBeenCalledWith(
+        expect.objectContaining({
+          select: expect.objectContaining({ experimentalFeatures: true }),
         }),
       );
     });
@@ -954,7 +991,12 @@ describe('SpacesService', () => {
           updatePayload: { name: faker.word.noun() },
           authPayload,
         }),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toThrow(
+        new HttpExceptionNoLog(
+          'User is not an admin of this workspace',
+          HttpStatus.FORBIDDEN,
+        ),
+      );
     });
   });
 
@@ -990,7 +1032,12 @@ describe('SpacesService', () => {
           id: faker.number.int(),
           authPayload,
         }),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toThrow(
+        new HttpExceptionNoLog(
+          'User is not an admin of this workspace',
+          HttpStatus.FORBIDDEN,
+        ),
+      );
     });
   });
 });

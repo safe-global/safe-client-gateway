@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { SubscriptionStatus } from '@/datasources/billing-api/entities/subscription.entity';
+import type { SubscriptionStatus } from '#/datasources/billing-api/entities/subscription.entity';
 import {
   FEATURE_KEYS,
   FeatureType,
   SAFE_SEATS_FEATURE_KEY,
-} from '@/modules/entitlements/domain/entities/feature.entity';
+} from '#/modules/entitlements/domain/entities/feature.entity';
 
 export const DAY_IN_MS = 24 * 60 * 60 * 1_000;
 
@@ -35,6 +35,7 @@ export function isStockMeteredFeatureKey(
 export const BINARY_FEATURES = [
   'copilot_scans',
   'policies',
+  'safenet_checks',
 ] as const satisfies ReadonlyArray<(typeof FEATURE_KEYS)[number]>;
 
 export type BinaryFeature = (typeof BINARY_FEATURES)[number];
@@ -86,7 +87,9 @@ export function isActiveSubscriptionStatus(
  * at all.
  */
 export function ordersAfter(stamp: Date | null, mark: Date | null): boolean {
-  if (stamp === null) return false;
+  if (stamp === null) {
+    return false;
+  }
   return mark === null || stamp > mark;
 }
 

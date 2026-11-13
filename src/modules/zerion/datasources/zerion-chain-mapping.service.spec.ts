@@ -3,13 +3,13 @@
 import { faker } from '@faker-js/faker';
 import { numberToHex } from 'viem';
 import type { MockedObject } from 'vitest';
-import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
-import { CacheRouter } from '@/datasources/cache/cache.router';
-import type { ICacheService } from '@/datasources/cache/cache.service.interface';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import type { ILoggingService } from '@/logging/logging.interface';
-import { ZerionChainMappingService } from '@/modules/zerion/datasources/zerion-chain-mapping.service';
-import { rawify } from '@/validation/entities/raw.entity';
+import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
+import { CacheRouter } from '#/datasources/cache/cache.router';
+import type { ICacheService } from '#/datasources/cache/cache.service.interface';
+import type { INetworkService } from '#/datasources/network/network.service.interface';
+import type { ILoggingService } from '#/logging/logging.interface';
+import { ZerionChainMappingService } from '#/modules/zerion/datasources/zerion-chain-mapping.service';
+import { rawify } from '#/validation/entities/raw.entity';
 
 const mockCacheService = vi.mocked({
   hGet: vi.fn(),

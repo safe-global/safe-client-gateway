@@ -16,16 +16,16 @@ import request from 'supertest';
 import {
   initTestApplication,
   TestAppProvider,
-} from '@/__tests__/test-app.provider';
-import { ConfigurationModule } from '@/config/configuration.module';
-import configuration from '@/config/entities/__tests__/configuration';
-import { HttpExceptionNoLog } from '@/domain/common/errors/http-exception-no-log.error';
-import { TestLoggingModule } from '@/logging/__tests__/test.logging.module';
+} from '#/__tests__/test-app.provider';
+import { ConfigurationModule } from '#/config/configuration.module';
+import configuration from '#/config/entities/__tests__/configuration';
+import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
+import { TestLoggingModule } from '#/logging/__tests__/test.logging.module';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import { GlobalErrorFilter } from '@/routes/common/filters/global-error.filter';
+} from '#/logging/logging.interface';
+import { GlobalErrorFilter } from '#/routes/common/filters/global-error.filter';
 
 @Controller({})
 class TestController {

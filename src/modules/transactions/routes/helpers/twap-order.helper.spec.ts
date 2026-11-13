@@ -3,21 +3,21 @@
 import { faker } from '@faker-js/faker';
 import { getAddress, zeroAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
-import type { ILoggingService } from '@/logging/logging.interface';
+import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
+import type { ILoggingService } from '#/logging/logging.interface';
 import {
   multiSendEncoder,
   multiSendTransactionsEncoder,
-} from '@/modules/contracts/domain/__tests__/encoders/multi-send-encoder.builder';
-import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
+} from '#/modules/contracts/domain/__tests__/encoders/multi-send-encoder.builder';
+import { MultiSendDecoder } from '#/modules/contracts/domain/decoders/multi-send-decoder.helper';
 import {
   conditionalOrderParamsBuilder,
   createWithContextEncoder,
   staticInputEncoder,
-} from '@/modules/swaps/domain/contracts/__tests__/encoders/composable-cow-encoder.builder';
-import { ComposableCowDecoder } from '@/modules/swaps/domain/contracts/decoders/composable-cow-decoder.helper';
-import { TransactionFinder } from '@/modules/transactions/routes/helpers/transaction-finder.helper';
-import { TwapOrderHelper } from '@/modules/transactions/routes/helpers/twap-order.helper';
+} from '#/modules/swaps/domain/contracts/__tests__/encoders/composable-cow-encoder.builder';
+import { ComposableCowDecoder } from '#/modules/swaps/domain/contracts/decoders/composable-cow-decoder.helper';
+import { TransactionFinder } from '#/modules/transactions/routes/helpers/transaction-finder.helper';
+import { TwapOrderHelper } from '#/modules/transactions/routes/helpers/twap-order.helper';
 
 const mockLoggingService = {
   warn: vi.fn(),

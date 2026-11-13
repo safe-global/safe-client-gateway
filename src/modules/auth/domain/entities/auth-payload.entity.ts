@@ -2,9 +2,9 @@
 
 import type { Address } from 'viem';
 import { z } from 'zod';
-import { JwtClaimsSchema } from '@/datasources/jwt/jwt-claims.entity';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
+import { JwtClaimsSchema } from '#/datasources/jwt/jwt-claims.entity';
+import { AddressSchema } from '#/validation/entities/schemas/address.schema';
+import { NumericStringSchema } from '#/validation/entities/schemas/numeric-string.schema';
 
 export const AuthMethod = {
   Siwe: 'siwe',

@@ -44,7 +44,7 @@ providers: [
 
 **Why:** a globally-scoped provider registered inside a feature module applies to every route in the application while looking local, so its blast radius is invisible at the place it is declared. Keeping the global layer in one file makes the whole cross-cutting stack readable in one screen.
 
-**Canonical example:** `src/app.module.ts` registers the entire global layer — three `APP_INTERCEPTOR`s (`RouteLoggerInterceptor`, `CacheControlInterceptor`, `NullResponseInterceptor`), one `APP_GUARD` (`BlocklistGuard`), three `APP_FILTER`s (`GlobalErrorFilter`, `DataSourceErrorFilter`, `ZodErrorFilter`) — and applies `ClsMiddleware` before `NotFoundLoggerMiddleware` through `configure(consumer)`, because the CLS middleware generates the request ids the logger later reads. `src/modules/chains/chains.module.ts` is the feature-module counterpart: imports, one `useClass` binding, two route services, two controllers, one export.
+**Canonical example:** `src/app.module.ts` registers the entire global layer — three `APP_INTERCEPTOR`s (`RouteLoggerInterceptor`, `CacheControlInterceptor`, `NullResponseInterceptor`), three `APP_FILTER`s (`GlobalErrorFilter`, `DataSourceErrorFilter`, `ZodErrorFilter`) — and applies `ClsMiddleware` before `NotFoundLoggerMiddleware` through `configure(consumer)`, because the CLS middleware generates the request ids the logger later reads. `src/modules/chains/chains.module.ts` is the feature-module counterpart: imports, one `useClass` binding, two route services, two controllers, one export.
 
 ## Guards: request admission only
 

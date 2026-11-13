@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
-import type { IBuilder } from '@/__tests__/builder';
-import { Builder } from '@/__tests__/builder';
-import type { Survey } from '@/modules/surveys/datasources/entities/survey.entity.db';
+import type { IBuilder } from '#/__tests__/builder';
+import { Builder } from '#/__tests__/builder';
+import type { Survey } from '#/modules/surveys/datasources/entities/survey.entity.db';
 
 export function surveyBuilder(): IBuilder<Survey> {
   return new Builder<Survey>()

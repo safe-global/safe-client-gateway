@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 /**
  * Number of hex characters to compare at the start and end of an address.
  */
@@ -22,7 +23,9 @@ function similarityKey(address: string): string {
  * the same first and last {@link MATCHING_HEX_LENGTH} hex characters (after 0x).
  */
 export function areSimilarAddresses(a: string, b: string): boolean {
-  if (a.toLowerCase() === b.toLowerCase()) return false;
+  if (a.toLowerCase() === b.toLowerCase()) {
+    return false;
+  }
   return similarityKey(a) === similarityKey(b);
 }
 
@@ -51,7 +54,9 @@ export function findSimilarAddressPairs(
   // Generate pairs within each group
   const pairs: Array<[number, number]> = [];
   for (const indices of groups.values()) {
-    if (indices.length < 2) continue;
+    if (indices.length < 2) {
+      continue;
+    }
     for (let a = 0; a < indices.length; a++) {
       for (let b = a + 1; b < indices.length; b++) {
         // Skip identical addresses (same key doesn't guarantee different address)

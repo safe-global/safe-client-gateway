@@ -1,4 +1,5 @@
-import { HumanDescriptionApi } from '@/modules/human-description/datasources/human-description-api.service';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { HumanDescriptionApi } from '#/modules/human-description/datasources/human-description-api.service';
 
 describe('HumanDescriptionAPI', () => {
   it('should return descriptions from json', () => {

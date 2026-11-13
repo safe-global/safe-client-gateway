@@ -2,11 +2,11 @@
 
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import type { IBuilder } from '@/__tests__/builder';
-import { Builder } from '@/__tests__/builder';
-import type { PushNotificationDeliveryJobData } from '@/modules/notifications/domain/push/entities/push-notification-job-data.entity';
-import { NotificationType } from '@/modules/notifications/domain/v2/entities/notification.entity';
-import { fakeUuid } from '@/validation/entities/schemas/__tests__/uuid.builder';
+import type { IBuilder } from '#/__tests__/builder';
+import { Builder } from '#/__tests__/builder';
+import type { PushNotificationDeliveryJobData } from '#/modules/notifications/domain/push/entities/push-notification-job-data.entity';
+import { NotificationType } from '#/modules/notifications/domain/v2/entities/notification.entity';
+import { fakeUuid } from '#/validation/entities/schemas/__tests__/uuid.builder';
 
 export function pushNotificationDeliveryJobDataBuilder(): IBuilder<PushNotificationDeliveryJobData> {
   const notificationType = faker.helpers.enumValue(NotificationType);

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { z } from 'zod';
-import type { OutreachBaseSchema } from '@/modules/targeted-messaging/domain/entities/outreach.entity';
+import type { OutreachBaseSchema } from '#/modules/targeted-messaging/domain/entities/outreach.entity';
 
 export class UpdateOutreachDto implements z.infer<typeof OutreachBaseSchema> {
   name: string;

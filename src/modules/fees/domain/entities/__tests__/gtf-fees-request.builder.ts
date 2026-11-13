@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { getAddress, zeroAddress } from 'viem';
-import type { IBuilder } from '@/__tests__/builder';
-import { Builder } from '@/__tests__/builder';
-import type { GtfFeesRequest } from '@/modules/fees/domain/entities/gtf-fees-request.entity';
-import { Origin } from '@/modules/fees/domain/entities/origin.entity';
-import { Operation } from '@/modules/safe/domain/entities/operation.entity';
+import type { IBuilder } from '#/__tests__/builder';
+import { Builder } from '#/__tests__/builder';
+import type { GtfFeesRequest } from '#/modules/fees/domain/entities/gtf-fees-request.entity';
+import { Origin } from '#/modules/fees/domain/entities/origin.entity';
+import { Operation } from '#/modules/safe/domain/entities/operation.entity';
 
 export function gtfFeesRequestBuilder(): IBuilder<GtfFeesRequest> {
   return new Builder<GtfFeesRequest>()

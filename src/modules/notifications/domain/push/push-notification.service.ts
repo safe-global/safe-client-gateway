@@ -2,34 +2,34 @@
 import { Inject, Injectable } from '@nestjs/common';
 import uniqBy from 'lodash/uniqBy';
 import type { Address } from 'viem';
-import { JobType } from '@/datasources/job-queue/types/job-types';
-import { LogType } from '@/domain/common/entities/log-type.entity';
-import { IJobQueueService } from '@/domain/interfaces/job-queue.interface';
+import { JobType } from '#/datasources/job-queue/types/job-types';
+import { LogType } from '#/domain/common/entities/log-type.entity';
+import { IJobQueueService } from '#/domain/interfaces/job-queue.interface';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import { asError } from '@/logging/utils';
-import type { Delegate } from '@/modules/delegate/domain/entities/delegate.entity';
-import { IDelegatesV3Repository } from '@/modules/delegate/domain/v3/delegates.v3.repository.interface';
-import type { Event } from '@/modules/hooks/routes/entities/event.entity';
-import { TransactionEventType } from '@/modules/hooks/routes/entities/event-type.entity';
-import type { IncomingEtherEvent } from '@/modules/hooks/routes/entities/schemas/incoming-ether.schema';
-import type { IncomingTokenEvent } from '@/modules/hooks/routes/entities/schemas/incoming-token.schema';
-import type { MessageCreatedEvent } from '@/modules/hooks/routes/entities/schemas/message-created.schema';
-import type { PendingTransactionEvent } from '@/modules/hooks/routes/entities/schemas/pending-transaction.schema';
-import type { MessageConfirmation } from '@/modules/messages/domain/entities/message-confirmation.entity';
-import { IMessagesRepository } from '@/modules/messages/domain/messages.repository.interface';
+} from '#/logging/logging.interface';
+import { asError } from '#/logging/utils';
+import type { Delegate } from '#/modules/delegate/domain/entities/delegate.entity';
+import { IDelegatesV3Repository } from '#/modules/delegate/domain/v3/delegates.v3.repository.interface';
+import type { Event } from '#/modules/hooks/routes/entities/event.entity';
+import { TransactionEventType } from '#/modules/hooks/routes/entities/event-type.entity';
+import type { IncomingEtherEvent } from '#/modules/hooks/routes/entities/schemas/incoming-ether.schema';
+import type { IncomingTokenEvent } from '#/modules/hooks/routes/entities/schemas/incoming-token.schema';
+import type { MessageCreatedEvent } from '#/modules/hooks/routes/entities/schemas/message-created.schema';
+import type { PendingTransactionEvent } from '#/modules/hooks/routes/entities/schemas/pending-transaction.schema';
+import type { MessageConfirmation } from '#/modules/messages/domain/entities/message-confirmation.entity';
+import { IMessagesRepository } from '#/modules/messages/domain/messages.repository.interface';
 import {
   type EventToNotify,
   NOTIFIABLE_EVENT_TYPES,
-} from '@/modules/notifications/domain/push/entities/event-to-notify.entity';
+} from '#/modules/notifications/domain/push/entities/event-to-notify.entity';
 import type {
   PushNotificationDeliveryJobData,
   PushNotificationJobResponse,
   ResolvedSubscriber,
-} from '@/modules/notifications/domain/push/entities/push-notification-job-data.entity';
-import type { IPushNotificationService } from '@/modules/notifications/domain/push/push-notification.service.interface';
+} from '#/modules/notifications/domain/push/entities/push-notification-job-data.entity';
+import type { IPushNotificationService } from '#/modules/notifications/domain/push/push-notification.service.interface';
 import {
   type ConfirmationRequestNotification,
   type IncomingEtherNotification,
@@ -37,11 +37,11 @@ import {
   type MessageConfirmationNotification,
   type Notification,
   NotificationType,
-} from '@/modules/notifications/domain/v2/entities/notification.entity';
-import { INotificationsRepositoryV2 } from '@/modules/notifications/domain/v2/notifications.repository.interface';
-import type { Confirmation } from '@/modules/safe/domain/entities/multisig-transaction.entity';
-import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
-import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
+} from '#/modules/notifications/domain/v2/entities/notification.entity';
+import { INotificationsRepositoryV2 } from '#/modules/notifications/domain/v2/notifications.repository.interface';
+import type { Confirmation } from '#/modules/safe/domain/entities/multisig-transaction.entity';
+import type { Safe } from '#/modules/safe/domain/entities/safe.entity';
+import { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
 
 @Injectable()
 export class PushNotificationService implements IPushNotificationService {

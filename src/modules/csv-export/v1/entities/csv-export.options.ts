@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { CastingContext } from 'csv-stringify';
-import type { CsvOptions } from '@/modules/csv-export/csv-utils/csv.service';
-import { escapeCsvFormula } from '@/modules/csv-export/csv-utils/escape-csv-formula';
+import type { CsvOptions } from '#/modules/csv-export/csv-utils/csv.service';
+import { escapeCsvFormula } from '#/modules/csv-export/csv-utils/escape-csv-formula';
 
 // Numeric columns: not user-controlled, may start with '-', so not escaped.
 const NUMERIC_COLUMNS: ReadonlySet<string | number> = new Set([

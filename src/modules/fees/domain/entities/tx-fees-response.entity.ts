@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { NonNegativeNumericStringSchema } from '@/validation/entities/schemas/non-negative-numeric-string.schema';
+import { AddressSchema } from '#/validation/entities/schemas/address.schema';
+import { NonNegativeNumericStringSchema } from '#/validation/entities/schemas/non-negative-numeric-string.schema';
 
 export type TxDataResponse = z.infer<typeof TxDataResponseSchema>;
 

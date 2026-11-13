@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
-import { SubscriptionStatusSchema } from '@/datasources/billing-api/entities/subscription.entity';
+import { SubscriptionStatusSchema } from '#/datasources/billing-api/entities/subscription.entity';
 
 /**
  * One entry of a purchased feature package, mapped from the upstream

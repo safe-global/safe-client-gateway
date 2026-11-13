@@ -3,11 +3,11 @@ import {
   zerionAttributesBuilder,
   zerionBalanceBuilder,
   zerionChangesBuilder,
-} from '@/modules/balances/datasources/entities/__tests__/zerion-balance.entity.builder';
+} from '#/modules/balances/datasources/entities/__tests__/zerion-balance.entity.builder';
 import {
   getZerionHeaders,
   normalizeZerionBalances,
-} from '@/modules/balances/datasources/zerion-api.helpers';
+} from '#/modules/balances/datasources/zerion-api.helpers';
 
 describe('getZerionHeaders', () => {
   describe('when isTestnet is false (mainnet)', () => {

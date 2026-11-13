@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { EntityManager } from 'typeorm';
-import type { SpaceSubscription } from '@/modules/entitlements/datasources/entities/space-subscription.entity.db';
-import type { SubscriptionValues } from '@/modules/entitlements/domain/entities/space-subscription.entity';
-import type { Space } from '@/modules/spaces/domain/entities/space.entity';
+import type { SpaceSubscription } from '#/modules/entitlements/datasources/entities/space-subscription.entity.db';
+import type { SubscriptionValues } from '#/modules/entitlements/domain/entities/space-subscription.entity';
+import type { Space } from '#/modules/spaces/domain/entities/space.entity';
 
 export const ISubscriptionsRepository = Symbol('ISubscriptionsRepository');
 

@@ -8,16 +8,16 @@ import type { MockedObject } from 'vitest';
 import {
   initTestApplication,
   TestAppProvider,
-} from '@/__tests__/test-app.provider';
-import { createTestModule } from '@/__tests__/testing-module';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import { NetworkService } from '@/datasources/network/network.service.interface';
-import { limitAndOffsetUrlFactory } from '@/domain/entities/__tests__/page.builder';
-import { gasTokenBuilder } from '@/modules/fees/domain/entities/__tests__/gas-token.builder';
-import { PaginationData } from '@/routes/common/pagination/pagination.data';
-import { rawify } from '@/validation/entities/raw.entity';
+} from '#/__tests__/test-app.provider';
+import { createTestModule } from '#/__tests__/testing-module';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { NetworkResponseError } from '#/datasources/network/entities/network.error.entity';
+import type { INetworkService } from '#/datasources/network/network.service.interface';
+import { NetworkService } from '#/datasources/network/network.service.interface';
+import { limitAndOffsetUrlFactory } from '#/domain/entities/__tests__/page.builder';
+import { gasTokenBuilder } from '#/modules/fees/domain/entities/__tests__/gas-token.builder';
+import { PaginationData } from '#/routes/common/pagination/pagination.data';
+import { rawify } from '#/validation/entities/raw.entity';
 
 describe('Fees Controller - gas tokens', () => {
   let app: INestApplication<Server>;

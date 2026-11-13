@@ -2,31 +2,31 @@
 
 import { faker } from '@faker-js/faker';
 import type { MockedObject } from 'vitest';
-import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
-import { BillingApi } from '@/datasources/billing-api/billing-api.service';
+import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
+import { BillingApi } from '#/datasources/billing-api/billing-api.service';
 import {
   checkoutSessionBuilder,
   checkoutSessionResultBuilder,
-} from '@/datasources/billing-api/entities/__tests__/checkout-session.builder';
-import { paymentLinkBuilder } from '@/datasources/billing-api/entities/__tests__/payment-link.builder';
-import { planBuilder } from '@/datasources/billing-api/entities/__tests__/plan.builder';
-import { subscriptionBuilder } from '@/datasources/billing-api/entities/__tests__/subscription.builder';
+} from '#/datasources/billing-api/entities/__tests__/checkout-session.builder';
+import { paymentLinkBuilder } from '#/datasources/billing-api/entities/__tests__/payment-link.builder';
+import { planBuilder } from '#/datasources/billing-api/entities/__tests__/plan.builder';
+import { subscriptionBuilder } from '#/datasources/billing-api/entities/__tests__/subscription.builder';
 import {
   subscriptionUpdatePreviewBuilder,
   updateSubscriptionResultBuilder,
-} from '@/datasources/billing-api/entities/__tests__/subscription-update.builder';
-import { DEFAULT_PRORATION_BEHAVIOR } from '@/datasources/billing-api/entities/subscription-update.entity';
-import { stripDashes } from '@/datasources/billing-api/upstream-customer-id.util';
-import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
-import { CacheRouter } from '@/datasources/cache/cache.router';
-import type { ICacheService } from '@/datasources/cache/cache.service.interface';
-import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import { DataSourceError } from '@/domain/errors/data-source.error';
-import type { ILoggingService } from '@/logging/logging.interface';
-import { rawify } from '@/validation/entities/raw.entity';
+} from '#/datasources/billing-api/entities/__tests__/subscription-update.builder';
+import { DEFAULT_PRORATION_BEHAVIOR } from '#/datasources/billing-api/entities/subscription-update.entity';
+import { stripDashes } from '#/datasources/billing-api/upstream-customer-id.util';
+import type { CacheFirstDataSource } from '#/datasources/cache/cache.first.data.source';
+import { CacheRouter } from '#/datasources/cache/cache.router';
+import type { ICacheService } from '#/datasources/cache/cache.service.interface';
+import { CacheDir } from '#/datasources/cache/entities/cache-dir.entity';
+import { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
+import { NetworkResponseError } from '#/datasources/network/entities/network.error.entity';
+import type { INetworkService } from '#/datasources/network/network.service.interface';
+import { DataSourceError } from '#/domain/errors/data-source.error';
+import type { ILoggingService } from '#/logging/logging.interface';
+import { rawify } from '#/validation/entities/raw.entity';
 
 const mockNetworkService = vi.mocked({
   get: vi.fn(),

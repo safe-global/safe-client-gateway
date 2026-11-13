@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Module } from '@nestjs/common';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import { PolicyIndexerApi } from '@/modules/policies/datasources/policy-indexer-api.service';
-import { PolicyIndexerRepository } from '@/modules/policies/domain/policy-indexer.repository';
-import { IPolicyIndexerRepository } from '@/modules/policies/domain/policy-indexer.repository.interface';
+import { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
+import { SafeInternalNetworkModule } from '#/datasources/network/safe-internal.network.module';
+import { PolicyIndexerApi } from '#/modules/policies/datasources/policy-indexer-api.service';
+import { PolicyIndexerRepository } from '#/modules/policies/domain/policy-indexer.repository';
+import { IPolicyIndexerRepository } from '#/modules/policies/domain/policy-indexer.repository.interface';
 
 /**
  * Standalone module for {@link IPolicyIndexerRepository} so that
@@ -13,6 +14,7 @@ import { IPolicyIndexerRepository } from '@/modules/policies/domain/policy-index
  * {@link AuthModule}).
  */
 @Module({
+  imports: [SafeInternalNetworkModule],
   providers: [
     HttpErrorFactory,
     PolicyIndexerApi,

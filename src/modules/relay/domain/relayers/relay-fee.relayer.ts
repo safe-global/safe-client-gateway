@@ -1,25 +1,25 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import type { Address, Hex } from 'viem';
-import { LogType } from '@/domain/common/entities/log-type.entity';
-import { IFeeServiceApi } from '@/domain/interfaces/fee-service-api.interface';
-import { IRelayApi } from '@/domain/interfaces/relay-api.interface';
+import { LogType } from '#/domain/common/entities/log-type.entity';
+import { IFeeServiceApi } from '#/domain/interfaces/fee-service-api.interface';
+import { IRelayApi } from '#/domain/interfaces/relay-api.interface';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
+} from '#/logging/logging.interface';
 import {
   type Relay,
   RelaySchema,
-} from '@/modules/relay/domain/entities/relay.entity';
-import type { RelayEligibility } from '@/modules/relay/domain/entities/relay-eligibility.entity';
-import { RelayTxDeniedError } from '@/modules/relay/domain/errors/relay-tx-denied.error';
-import { SafeTxHashMismatchError } from '@/modules/relay/domain/errors/safe-tx-hash-mismatch.error';
-import { UnofficialProxyFactoryError } from '@/modules/relay/domain/errors/unofficial-proxy-factory.error';
-import type { IRelayer } from '@/modules/relay/domain/interfaces/relayer.interface';
-import { RelaySimulationService } from '@/modules/relay/domain/relay-simulation.service';
-import { RelayTransactionHelper } from '@/modules/relay/domain/relay-transaction-helper';
-import { SafeTransaction } from '@/modules/transactions/domain/entities/safe-transaction.entity';
+} from '#/modules/relay/domain/entities/relay.entity';
+import type { RelayEligibility } from '#/modules/relay/domain/entities/relay-eligibility.entity';
+import { RelayTxDeniedError } from '#/modules/relay/domain/errors/relay-tx-denied.error';
+import { SafeTxHashMismatchError } from '#/modules/relay/domain/errors/safe-tx-hash-mismatch.error';
+import { UnofficialProxyFactoryError } from '#/modules/relay/domain/errors/unofficial-proxy-factory.error';
+import type { IRelayer } from '#/modules/relay/domain/interfaces/relayer.interface';
+import { RelaySimulationService } from '#/modules/relay/domain/relay-simulation.service';
+import { RelayTransactionHelper } from '#/modules/relay/domain/relay-transaction-helper';
+import { SafeTransaction } from '#/modules/transactions/domain/entities/safe-transaction.entity';
 
 @Injectable()
 export class RelayFeeRelayer implements IRelayer {

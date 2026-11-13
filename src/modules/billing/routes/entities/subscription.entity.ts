@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import type { StripeMetadata } from '@/datasources/billing-api/entities/metadata.entity';
-import type { Subscription as DomainSubscription } from '@/datasources/billing-api/entities/subscription.entity';
-import { SubscriptionStatuses } from '@/datasources/billing-api/entities/subscription.entity';
-import { SubscriptionPlan } from '@/modules/billing/routes/entities/plan.entity';
+import type { StripeMetadata } from '#/datasources/billing-api/entities/metadata.entity';
+import type { Subscription as DomainSubscription } from '#/datasources/billing-api/entities/subscription.entity';
+import { SubscriptionStatuses } from '#/datasources/billing-api/entities/subscription.entity';
+import { SubscriptionPlan } from '#/modules/billing/routes/entities/plan.entity';
 
 export class Subscription implements DomainSubscription {
   @ApiProperty()

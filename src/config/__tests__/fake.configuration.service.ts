@@ -1,4 +1,5 @@
-import type { IConfigurationService } from '@/config/configuration.service.interface';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { IConfigurationService } from '#/config/configuration.service.interface';
 
 export class FakeConfigurationService implements IConfigurationService {
   private configuration: Record<string, unknown> = {};

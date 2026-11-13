@@ -2,18 +2,17 @@
 
 import { faker } from '@faker-js/faker';
 import { get } from 'lodash';
-import { type Address, getAddress } from 'viem';
+import { type Address, getAddress, type Hex } from 'viem';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import type { MockedObject } from 'vitest';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
-import configuration from '@/config/entities/__tests__/configuration';
-import type { IBlocklistService } from '@/config/entities/blocklist.interface';
-import { SignatureType } from '@/domain/common/entities/signature-type.entity';
-import { HttpExceptionNoLog } from '@/domain/common/errors/http-exception-no-log.error';
-import type { ILoggingService } from '@/logging/logging.interface';
-import { messageBuilder } from '@/modules/messages/domain/entities/__tests__/message.builder';
-import { MessageVerifierHelper } from '@/modules/messages/domain/helpers/message-verifier.helper';
-import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
+import type { IConfigurationService } from '#/config/configuration.service.interface';
+import configuration from '#/config/entities/__tests__/configuration';
+import { SignatureType } from '#/domain/common/entities/signature-type.entity';
+import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
+import type { ILoggingService } from '#/logging/logging.interface';
+import { messageBuilder } from '#/modules/messages/domain/entities/__tests__/message.builder';
+import { MessageVerifierHelper } from '#/modules/messages/domain/helpers/message-verifier.helper';
+import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
 
 const mockConfigurationService = vi.mocked({
   getOrThrow: vi.fn(),
@@ -22,11 +21,6 @@ const mockConfigurationService = vi.mocked({
 const mockLoggingRepository = vi.mocked({
   error: vi.fn(),
 } as MockedObject<ILoggingService>);
-
-const mockBlocklistService = vi.mocked({
-  getBlocklist: vi.fn(),
-  clearCache: vi.fn(),
-} as MockedObject<IBlocklistService>);
 
 describe('MessageVerifierHelper', () => {
   let target: MessageVerifierHelper;
@@ -39,13 +33,11 @@ describe('MessageVerifierHelper', () => {
     target = new MessageVerifierHelper(
       mockConfigurationService,
       mockLoggingRepository,
-      mockBlocklistService,
     );
   }
 
   beforeEach(() => {
     vi.resetAllMocks();
-    mockBlocklistService.getBlocklist.mockReturnValue([]);
 
     initTarget(configuration);
   });
@@ -295,7 +287,10 @@ describe('MessageVerifierHelper', () => {
             safe,
             signatureType,
           });
-        const v = message.confirmations[0].signature?.slice(-2);
+        const signature = message.confirmations[0].signature;
+        // Replace one hex digit in the r component with 'g' (invalid hex char)
+        const invalidSignature =
+          `${signature.slice(0, 65)}g${signature.slice(66)}` as Hex;
 
         expect(() => {
           return target.verifyUpdate({
@@ -303,59 +298,13 @@ describe('MessageVerifierHelper', () => {
             safe,
             message: message.message,
             messageHash: message.messageHash,
-            signature: `0x${'-'.repeat(128)}${v}`,
+            signature: invalidSignature,
           });
         }).toThrow('Could not recover address');
 
         expect(mockLoggingRepository.error).not.toHaveBeenCalled();
       },
     );
-
-    it('should throw and log if the recovered address is blocked', async () => {
-      const chainId = faker.string.numeric();
-      const privateKey = generatePrivateKey();
-      const signer = privateKeyToAccount(privateKey);
-
-      mockBlocklistService.getBlocklist.mockReturnValue([signer.address]);
-
-      const defaultConfiguration = configuration();
-      const testConfiguration = (): ReturnType<typeof configuration> => {
-        return {
-          ...defaultConfiguration,
-        };
-      };
-      initTarget(testConfiguration);
-      const safe = safeBuilder().with('owners', [signer.address]).build();
-      const message = await messageBuilder()
-        .with('safe', safe.address)
-        .buildWithConfirmations({
-          chainId,
-          signers: [signer],
-          safe,
-        });
-
-      expect(() => {
-        return target.verifyCreation({
-          chainId,
-          safe,
-          message: message.message,
-          signature: message.confirmations[0].signature,
-        });
-      }).toThrow(new HttpExceptionNoLog('Unauthorized address', 422));
-
-      expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
-      expect(mockLoggingRepository.error).toHaveBeenNthCalledWith(1, {
-        event: 'Unauthorized address',
-        chainId,
-        safeAddress: safe.address,
-        safeVersion: safe.version,
-        messageHash: message.messageHash,
-        signature: message.confirmations[0].signature,
-        blockedAddress: signer.address,
-        type: 'MESSAGE_VALIDITY',
-        source: 'PROPOSAL',
-      });
-    });
 
     it('should throw and log if the recovered address is not an owner', async () => {
       const chainId = faker.string.numeric();
@@ -695,7 +644,10 @@ describe('MessageVerifierHelper', () => {
             safe,
             signatureType,
           });
-        const v = message.confirmations[0].signature?.slice(-2);
+        const signature = message.confirmations[0].signature;
+        // Replace one hex digit in the r component with 'g' (invalid hex char)
+        const invalidSignature =
+          `${signature.slice(0, 65)}g${signature.slice(66)}` as Hex;
 
         expect(() => {
           return target.verifyUpdate({
@@ -703,64 +655,13 @@ describe('MessageVerifierHelper', () => {
             safe,
             message: message.message,
             messageHash: message.messageHash,
-            signature: `0x${'-'.repeat(128)}${v}`,
+            signature: invalidSignature,
           });
         }).toThrow('Could not recover address');
 
         expect(mockLoggingRepository.error).not.toHaveBeenCalled();
       },
     );
-
-    it('should throw and log if the recovered address is blocked', async () => {
-      const chainId = faker.string.numeric();
-      const privateKey = generatePrivateKey();
-      const signer = privateKeyToAccount(privateKey);
-
-      mockBlocklistService.getBlocklist.mockReturnValue([signer.address]);
-
-      const defaultConfiguration = configuration();
-      const testConfiguration = (): ReturnType<typeof configuration> => {
-        return {
-          ...defaultConfiguration,
-          features: {
-            ...defaultConfiguration.features,
-            ethSign: true,
-          },
-        };
-      };
-      initTarget(testConfiguration);
-      const safe = safeBuilder().with('owners', [signer.address]).build();
-      const message = await messageBuilder()
-        .with('safe', safe.address)
-        .buildWithConfirmations({
-          chainId,
-          signers: [signer],
-          safe,
-        });
-
-      expect(() => {
-        return target.verifyUpdate({
-          chainId,
-          safe,
-          message: message.message,
-          messageHash: message.messageHash,
-          signature: message.confirmations[0].signature,
-        });
-      }).toThrow(new HttpExceptionNoLog('Unauthorized address', 422));
-
-      expect(mockLoggingRepository.error).toHaveBeenCalledTimes(1);
-      expect(mockLoggingRepository.error).toHaveBeenNthCalledWith(1, {
-        event: 'Unauthorized address',
-        chainId,
-        safeAddress: safe.address,
-        safeVersion: safe.version,
-        messageHash: message.messageHash,
-        signature: message.confirmations[0].signature,
-        blockedAddress: signer.address,
-        type: 'MESSAGE_VALIDITY',
-        source: 'CONFIRMATION',
-      });
-    });
 
     it('should throw and log if the recovered address is not an owner', async () => {
       const chainId = faker.string.numeric();

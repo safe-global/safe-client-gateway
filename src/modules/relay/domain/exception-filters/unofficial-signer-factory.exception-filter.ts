@@ -7,7 +7,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import type { FastifyReply } from 'fastify';
-import { UnofficialSignerFactoryError } from '@/modules/relay/domain/errors/unofficial-signer-factory.error';
+import { UnofficialSignerFactoryError } from '#/modules/relay/domain/errors/unofficial-signer-factory.error';
 
 @Catch(UnofficialSignerFactoryError)
 export class UnofficialSignerFactoryExceptionFilter implements ExceptionFilter {

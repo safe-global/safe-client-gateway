@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { getDeploymentVersionsByChainIds } from '@/__tests__/deployments.helper';
+import { getDeploymentVersionsByChainIds } from '#/__tests__/deployments.helper';
 
 describe('Deployments helper', () => {
   describe('getDeploymentVersionsByChainIds', () => {

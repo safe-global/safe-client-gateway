@@ -8,9 +8,9 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import type { Address } from 'viem';
-import { databaseAddressTransformer } from '@/domain/common/transformers/database-address.transformer';
-import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
-import type { AddressBookDbItem as DomainAddressBookItem } from '@/modules/spaces/domain/address-books/entities/address-book-item.db.entity';
+import { databaseAddressTransformer } from '#/domain/common/transformers/database-address.transformer';
+import { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
+import type { AddressBookDbItem as DomainAddressBookItem } from '#/modules/spaces/domain/address-books/entities/address-book-item.db.entity';
 
 @Entity('space_address_book_items')
 // Split partial-unique indexes by encryption mode (TypeORM @Unique cannot

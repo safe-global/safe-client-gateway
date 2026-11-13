@@ -5,11 +5,11 @@ import { zeroAddress } from 'viem';
 import type {
   GtfFeeBreakdown,
   GtfFeesResponse,
-} from '@/modules/fees/domain/entities/gtf-fees-response.entity';
+} from '#/modules/fees/domain/entities/gtf-fees-response.entity';
 import type {
   RelayCost,
   TxFeesResponse,
-} from '@/modules/fees/domain/entities/tx-fees-response.entity';
+} from '#/modules/fees/domain/entities/tx-fees-response.entity';
 
 export class FeePreviewTxData {
   @ApiProperty({ description: 'Chain ID', example: '1' })

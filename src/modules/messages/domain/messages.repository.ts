@@ -2,28 +2,28 @@
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import maxBy from 'lodash/maxBy';
 import type { Address, Hash, Hex } from 'viem';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { SAFE_QUEUE_SERVICE_MAX_LIMIT } from '@/domain/common/constants';
-import { HttpExceptionNoLog } from '@/domain/common/errors/http-exception-no-log.error';
-import { Page } from '@/domain/entities/page.entity';
-import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
-import { ILoggingService, LoggingService } from '@/logging/logging.interface';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { SAFE_QUEUE_SERVICE_MAX_LIMIT } from '#/domain/common/constants';
+import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
+import { Page } from '#/domain/entities/page.entity';
+import { ITransactionApiManager } from '#/domain/interfaces/transaction-api.manager.interface';
+import { ILoggingService, LoggingService } from '#/logging/logging.interface';
 import {
   Message,
   MessagePageSchema,
   MessageSchema,
-} from '@/modules/messages/domain/entities/message.entity';
-import { TypedData } from '@/modules/messages/domain/entities/typed-data.entity';
-import { MessageVerifierHelper } from '@/modules/messages/domain/helpers/message-verifier.helper';
-import { IMessagesRepository } from '@/modules/messages/domain/messages.repository.interface';
-import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
+} from '#/modules/messages/domain/entities/message.entity';
+import { TypedData } from '#/modules/messages/domain/entities/typed-data.entity';
+import { MessageVerifierHelper } from '#/modules/messages/domain/helpers/message-verifier.helper';
+import { IMessagesRepository } from '#/modules/messages/domain/messages.repository.interface';
+import { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
 import {
   SafeQueueMessagePageSchema,
   SafeQueueMessageSchema,
-} from '@/modules/safe-queue/entities/message.entity';
-import { clearBothCacheLayers } from '@/modules/safe-queue/helpers/clear-cache-layers.helper';
-import { mapSafeQueueMessageToMessage } from '@/modules/safe-queue/mappers/message.mapper';
-import { ISafeQueueService } from '@/modules/safe-queue/safe-queue.interface';
+} from '#/modules/safe-queue/entities/message.entity';
+import { clearBothCacheLayers } from '#/modules/safe-queue/helpers/clear-cache-layers.helper';
+import { mapSafeQueueMessageToMessage } from '#/modules/safe-queue/mappers/message.mapper';
+import { ISafeQueueService } from '#/modules/safe-queue/safe-queue.interface';
 
 @Injectable()
 export class MessagesRepository implements IMessagesRepository {

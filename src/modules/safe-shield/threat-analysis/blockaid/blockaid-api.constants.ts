@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { Severity } from '@/modules/safe-shield/entities/severity.entity';
+import type { Severity } from '#/modules/safe-shield/entities/severity.entity';
 
 export const GUARD_STORAGE_POSITION =
   '0x4a204f620c8c5ccdca3fd54d003badd85ba500436a431f0cbda4f558c93c34c8';
@@ -126,10 +126,14 @@ export const prepareDescription = (
  * @returns {string | undefined} The mapped error message if an error code is found and mapped, the original error string if no error code is found or code is not in mapping, or undefined if error is undefined or empty
  */
 export const prepareErrorMessage = (error?: string): string | undefined => {
-  if (!error) return undefined;
+  if (!error) {
+    return undefined;
+  }
 
   const match = error.match(/GS\d{3}/);
-  if (!match) return error;
+  if (!match) {
+    return error;
+  }
 
   return ERROR_MAPPING[match[0]] ?? error;
 };

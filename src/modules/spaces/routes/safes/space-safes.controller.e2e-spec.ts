@@ -8,20 +8,20 @@ import { type Address, getAddress } from 'viem';
 import {
   initTestApplication,
   TestAppProvider,
-} from '@/__tests__/test-app.provider';
-import { createTestModule } from '@/__tests__/testing-module';
-import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
-import configuration from '@/config/entities/__tests__/configuration';
-import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
-import { nameBuilder } from '@/domain/common/entities/name.builder';
-import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
-import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
-import { SpacesCreationRateLimitGuard } from '@/modules/spaces/routes/guards/spaces-creation-rate-limit.guard';
-import { SpaceSafesController } from '@/modules/spaces/routes/safes/space-safes.controller';
-import { CHAIN_ID_MAXLENGTH } from '@/routes/common/constants';
+} from '#/__tests__/test-app.provider';
+import { createTestModule } from '#/__tests__/testing-module';
+import { checkGuardIsApplied } from '#/__tests__/util/check-guard';
+import configuration from '#/config/entities/__tests__/configuration';
+import { IJwtService } from '#/datasources/jwt/jwt.service.interface';
+import { nameBuilder } from '#/domain/common/entities/name.builder';
+import { siweAuthPayloadDtoBuilder } from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { AuthGuard } from '#/modules/auth/routes/guards/auth.guard';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
+import { NotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/notifications.repository.module';
+import { TestNotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/test.notification.repository.module';
+import { SpacesCreationRateLimitGuard } from '#/modules/spaces/routes/guards/spaces-creation-rate-limit.guard';
+import { SpaceSafesController } from '#/modules/spaces/routes/safes/space-safes.controller';
+import { CHAIN_ID_MAXLENGTH } from '#/routes/common/constants';
 
 // Shortest chainId the schema rejects.
 const chainIdMinLength = CHAIN_ID_MAXLENGTH + 1;
@@ -331,8 +331,7 @@ describe('SpaceSafesController', () => {
         })
         .expect(403)
         .expect({
-          error: 'Forbidden',
-          message: 'User is not an admin of this space',
+          message: 'User is not an admin of this workspace',
           statusCode: 403,
         });
     });
@@ -383,8 +382,7 @@ describe('SpaceSafesController', () => {
         })
         .expect(403)
         .expect({
-          error: 'Forbidden',
-          message: 'User is not an admin of this space',
+          message: 'User is not an admin of this workspace',
           statusCode: 403,
         });
     });
@@ -439,8 +437,7 @@ describe('SpaceSafesController', () => {
         })
         .expect(403)
         .expect({
-          error: 'Forbidden',
-          message: 'User is not an admin of this space',
+          message: 'User is not an admin of this workspace',
           statusCode: 403,
         });
     });
@@ -832,8 +829,7 @@ describe('SpaceSafesController', () => {
         .set('Cookie', [`access_token=${userAccessToken}`])
         .expect(403)
         .expect({
-          error: 'Forbidden',
-          message: 'User is not a member of this space',
+          message: 'User is not a member of this workspace',
           statusCode: 403,
         });
     });
@@ -864,8 +860,7 @@ describe('SpaceSafesController', () => {
         .set('Cookie', [`access_token=${nonMemberAccessToken}`])
         .expect(403)
         .expect({
-          error: 'Forbidden',
-          message: 'User is not a member of this space',
+          message: 'User is not a member of this workspace',
           statusCode: 403,
         });
     });
@@ -1108,8 +1103,7 @@ describe('SpaceSafesController', () => {
         .send(spaceSafes)
         .expect(403)
         .expect({
-          error: 'Forbidden',
-          message: 'User is not an admin of this space',
+          message: 'User is not an admin of this workspace',
           statusCode: 403,
         });
     });
@@ -1174,8 +1168,7 @@ describe('SpaceSafesController', () => {
         .send(spaceSafes)
         .expect(403)
         .expect({
-          message: 'User is not an admin of this space',
-          error: 'Forbidden',
+          message: 'User is not an admin of this workspace',
           statusCode: 403,
         });
     });
@@ -1235,8 +1228,7 @@ describe('SpaceSafesController', () => {
         .send(spaceSafes)
         .expect(403)
         .expect({
-          message: 'User is not an admin of this space',
-          error: 'Forbidden',
+          message: 'User is not an admin of this workspace',
           statusCode: 403,
         });
     });

@@ -3,14 +3,14 @@
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import { User as DbUser } from '@/modules/users/datasources/entities/users.entity.db';
-import { UserIdentityResolverService } from '@/modules/users/domain/user-identity-resolver/user-identity-resolver.service';
-import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
-import { Wallet as DbWallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
-import { createMockWalletEncryptionService } from '@/modules/wallets/domain/__tests__/wallet-encryption.service.mock';
-import type { WalletEncryptionService } from '@/modules/wallets/domain/wallet-encryption.service';
-import { IWalletsRepository } from '@/modules/wallets/domain/wallets.repository.interface';
-import { fakeEmailAddress } from '@/validation/entities/schemas/__tests__/email-address.builder';
+import { User as DbUser } from '#/modules/users/datasources/entities/users.entity.db';
+import { UserIdentityResolverService } from '#/modules/users/domain/user-identity-resolver/user-identity-resolver.service';
+import { IUsersRepository } from '#/modules/users/domain/users.repository.interface';
+import { Wallet as DbWallet } from '#/modules/wallets/datasources/entities/wallets.entity.db';
+import { createMockWalletEncryptionService } from '#/modules/wallets/domain/__tests__/wallet-encryption.service.mock';
+import type { WalletEncryptionService } from '#/modules/wallets/domain/wallet-encryption.service';
+import { IWalletsRepository } from '#/modules/wallets/domain/wallets.repository.interface';
+import { fakeEmailAddress } from '#/validation/entities/schemas/__tests__/email-address.builder';
 
 const mockUsersRepository = vi.mocked({
   find: vi.fn(),

@@ -5,9 +5,9 @@ import {
   KMSClient,
   SignCommand,
 } from '@aws-sdk/client-kms';
-import { resolveAwsCredentials } from '@/datasources/common/utils/aws-credentials.utils';
-import type { KmsSignerConfig } from '@/datasources/kms/entities/kms-signer-config.entity';
-import type { IKmsSigner } from '@/datasources/kms/kms-signer.interface';
+import { resolveAwsCredentials } from '#/datasources/common/utils/aws-credentials.utils';
+import type { KmsSignerConfig } from '#/datasources/kms/entities/kms-signer-config.entity';
+import type { IKmsSigner } from '#/datasources/kms/kms-signer.interface';
 
 /**
  * Signs billing webhook tokens with an asymmetric AWS KMS key

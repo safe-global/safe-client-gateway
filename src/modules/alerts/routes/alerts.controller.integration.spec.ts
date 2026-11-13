@@ -11,42 +11,42 @@ import {
   createTestApplication,
   initTestApplication,
   TestAppProvider,
-} from '@/__tests__/test-app.provider';
-import { createTestModule } from '@/__tests__/testing-module';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import configuration from '@/config/entities/__tests__/configuration';
-import { getMultiSendCallOnlyDeployments } from '@/domain/common/utils/deployments';
+} from '#/__tests__/test-app.provider';
+import { createTestModule } from '#/__tests__/testing-module';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import configuration from '#/config/entities/__tests__/configuration';
+import { getMultiSendCallOnlyDeployments } from '#/domain/common/utils/deployments';
 import {
   ALERTS_API_CONFIGURATION_MODULE,
   ALERTS_CONFIGURATION_MODULE,
   AlertsApiConfigurationModule,
   AlertsConfigurationModule,
-} from '@/modules/alerts/alerts.module';
-import alertsApiConfiguration from '@/modules/alerts/datasources/configuration/__tests__/alerts-api.configuration';
-import { transactionAddedEventBuilder } from '@/modules/alerts/domain/contracts/__tests__/encoders/delay-modifier-encoder.builder';
-import alertsConfiguration from '@/modules/alerts/routes/configuration/__tests__/alerts.configuration';
+} from '#/modules/alerts/alerts.module';
+import alertsApiConfiguration from '#/modules/alerts/datasources/configuration/__tests__/alerts-api.configuration';
+import { transactionAddedEventBuilder } from '#/modules/alerts/domain/contracts/__tests__/encoders/delay-modifier-encoder.builder';
+import alertsConfiguration from '#/modules/alerts/routes/configuration/__tests__/alerts.configuration';
 import {
   alertBuilder,
   alertLogBuilder,
   alertTransactionBuilder,
-} from '@/modules/alerts/routes/entities/__tests__/alerts.builder';
-import type { Alert } from '@/modules/alerts/routes/entities/alert.dto.entity';
-import { EventType } from '@/modules/alerts/routes/entities/alert.dto.entity';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
+} from '#/modules/alerts/routes/entities/__tests__/alerts.builder';
+import type { Alert } from '#/modules/alerts/routes/entities/alert.dto.entity';
+import { EventType } from '#/modules/alerts/routes/entities/alert.dto.entity';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
 import {
   multiSendEncoder,
   multiSendTransactionsEncoder,
-} from '@/modules/contracts/domain/__tests__/encoders/multi-send-encoder.builder';
+} from '#/modules/contracts/domain/__tests__/encoders/multi-send-encoder.builder';
 import {
   addOwnerWithThresholdEncoder,
   changeThresholdEncoder,
   execTransactionEncoder,
   removeOwnerEncoder,
   swapOwnerEncoder,
-} from '@/modules/contracts/domain/__tests__/encoders/safe-encoder.builder';
-import { TestEmailApiModule } from '@/modules/email/pushwoosh/__tests__/test.email-api.module';
-import { EmailModule } from '@/modules/email/pushwoosh/pushwoosh-email.module';
-import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
+} from '#/modules/contracts/domain/__tests__/encoders/safe-encoder.builder';
+import { TestEmailApiModule } from '#/modules/email/pushwoosh/__tests__/test.email-api.module';
+import { EmailModule } from '#/modules/email/pushwoosh/pushwoosh-email.module';
+import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
 
 // The `x-tenderly-signature` header contains a cryptographic signature. The webhook request signature is
 // a HMAC SHA256 hash of concatenated signing secret, request payload, and timestamp, in this order.

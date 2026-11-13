@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
-import { FullAppDataSchema } from '@/modules/swaps/domain/entities/full-app-data.entity';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { HexSchema } from '@/validation/entities/schemas/hex.schema';
+import { FullAppDataSchema } from '#/modules/swaps/domain/entities/full-app-data.entity';
+import { AddressSchema } from '#/validation/entities/schemas/address.schema';
+import { HexSchema } from '#/validation/entities/schemas/hex.schema';
 import {
   NullableAddressSchema,
   NullableHexSchema,
   NullableNumberSchema,
-} from '@/validation/entities/schemas/nullable.schema';
+} from '#/validation/entities/schemas/nullable.schema';
 
 export type Order = z.infer<typeof OrderSchema>;
 

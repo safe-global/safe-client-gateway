@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import type { IBuilder } from '@/__tests__/builder';
-import { Builder } from '@/__tests__/builder';
-import type { TokenInfo } from '@/modules/portfolio/domain/entities/token-info.entity';
+import type { IBuilder } from '#/__tests__/builder';
+import { Builder } from '#/__tests__/builder';
+import type { TokenInfo } from '#/modules/portfolio/domain/entities/token-info.entity';
 
 export function tokenInfoBuilder(): IBuilder<TokenInfo> {
   return new Builder<TokenInfo>()

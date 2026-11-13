@@ -5,12 +5,12 @@ import {
   deletedDelegateEventBuilder,
   newDelegateEventBuilder,
   updatedDelegateEventBuilder,
-} from '@/modules/hooks/routes/entities/__tests__/delegate-events.builder';
+} from '#/modules/hooks/routes/entities/__tests__/delegate-events.builder';
 import {
   DeletedDelegateEventSchema,
   NewDelegateEventSchema,
   UpdatedDelegateEventSchema,
-} from '@/modules/hooks/routes/entities/schemas/delegate-events.schema';
+} from '#/modules/hooks/routes/entities/schemas/delegate-events.schema';
 
 describe.each([
   ['NewDelegateEventSchema', NewDelegateEventSchema, newDelegateEventBuilder],

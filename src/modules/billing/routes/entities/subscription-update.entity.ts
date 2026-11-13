@@ -4,7 +4,7 @@ import type {
   PreviewLineItem as DomainPreviewLineItem,
   SubscriptionUpdatePreview as DomainSubscriptionUpdatePreview,
   UpdateSubscriptionResult as DomainUpdateSubscriptionResult,
-} from '@/datasources/billing-api/entities/subscription-update.entity';
+} from '#/datasources/billing-api/entities/subscription-update.entity';
 
 export class PreviewLineItem implements DomainPreviewLineItem {
   @ApiProperty()

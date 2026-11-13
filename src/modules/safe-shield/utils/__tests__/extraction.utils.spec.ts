@@ -5,14 +5,14 @@ import { type Address, getAddress, type Hex } from 'viem';
 import type {
   DataDecoded,
   DataDecodedParameter,
-} from '@/modules/data-decoder/routes/entities/data-decoded.entity';
-import type { Erc20Decoder } from '@/modules/relay/domain/contracts/decoders/erc-20-decoder.helper';
-import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
+} from '#/modules/data-decoder/routes/entities/data-decoded.entity';
+import type { Erc20Decoder } from '#/modules/relay/domain/contracts/decoders/erc-20-decoder.helper';
+import type { DecodedTransactionData } from '#/modules/safe-shield/entities/transaction-data.entity';
 import {
   extractContracts,
   extractRecipient,
   extractRecipients,
-} from '@/modules/safe-shield/utils/extraction.utils';
+} from '#/modules/safe-shield/utils/extraction.utils';
 
 const mockErc20Decoder = vi.mocked(
   {
