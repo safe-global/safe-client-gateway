@@ -1081,3 +1081,58 @@ Trade-off: every read joins and reorders the rows to rebuild the list.
 
 Open until the team decides; whichever wins should be stated in `DB-05` or the
 database guide.
+
+## OQ-TYPE-04 Const-Object Enums: `as const` Or A Plain Object
+
+Question: does a const object used as an enum (`X = { A: 'a' }` with
+`type X = (typeof X)[keyof typeof X]`) carry `as const`?
+
+In PR #3656 (review comments 4338239396, 4338783889, 4338748533 and
+4338867087) and PR #3657 (review comment 4346046609) a reviewer asked to drop
+`as const` from the new pending-policy status and kind objects, matching
+`PendingSpendingLimitChangeKind` in the same file; the author did, in commits
+titled "declare the guard installation statuses without as const" and
+"declare the guard setter kinds like the spending-limit kinds". An automated
+review on #3657 then reported that without `as const` the derived type widens
+to `string`, and the reviewer answered there was nothing to fix. Elsewhere the
+repo declares these objects with `as const` (for example `RelayerType`).
+
+### Option A: Always `as const`
+
+```ts
+export const RelayerType = {
+  GTF: 'GTF',
+  RELAY_FEE: 'RELAY_FEE',
+} as const;
+
+export type RelayerType = (typeof RelayerType)[keyof typeof RelayerType];
+```
+
+Choose this when:
+
+- The derived type should be the union of the values, so a typo or an
+  unknown status fails to compile and a `switch` can be checked for
+  exhaustiveness.
+
+Trade-off: the file's older siblings that lack it need the same change, or the
+file mixes both forms.
+
+### Option B: Plain Object, Matching The Local Sibling
+
+```ts
+export const PendingGuardInstallationStatus = {
+  InSigning: 'in-signing',
+  Ready: 'ready',
+};
+```
+
+Choose this when:
+
+- Consistency with the declarations already in the file matters more than the
+  literal types.
+
+Trade-off: `(typeof X)[keyof typeof X]` is `string`, so any string type-checks
+as a status or kind and the type no longer documents the allowed values.
+
+Open until the team decides; whichever wins should be stated in `TYPE-02` or
+`TYPE-06`.

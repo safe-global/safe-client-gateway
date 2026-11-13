@@ -57,6 +57,7 @@
 | [`SEC-03`](#sec-03) | CI and dependency intake are privilege boundaries | general / security |
 | [`CACHE-03`](#cache-03) | Cached payload shape is canonical once | general / cache |
 | [`DATA-01`](#data-01) | Aggregates match returned items and signed values | general / data |
+| [`TX-01`](#tx-01) | Decode what the transaction executes | transactions |
 | [`RESILIENCE-01`](#resilience-01) | Resilience policy semantics | resilience |
 
 ---
@@ -202,7 +203,7 @@ same, so nothing shows the loss.
 <a id="change-04"></a>
 ### `CHANGE-04` External contracts versioned
 
-> **general** · scope · 1 example · ↩ `RL-20260108-001` · `RL-20251204-001` · `RL-20260729-003` · `RL-20260827-001` · `RL-20261001-003`
+> **general** · scope · 1 example · ↩ `RL-20260108-001` · `RL-20251204-001` · `RL-20260729-003` · `RL-20260827-001` · `RL-20261001-003` · `RL-20261026-002`
 
 **📜 Rule**\
 Changes to released external API contracts must be versioned or explicitly backward-compatible; renames of env vars must keep the old name as a fallback for one release. A response-shape change identifies its consuming client and lands only once that client's compatibility change is merged or confirmed on the PR. A compatibility alias has a defined life — on the next touch of that schema, check the replacement's deploy date and delete the alias rather than carrying it forward. An observability problem is not a reason to change a published contract: filter where the noise is measured. A field superseded by a new one is marked `deprecated: true` in its `@ApiProperty`, naming the replacement, in the PR that adds the replacement.
@@ -277,7 +278,7 @@ deleted with a clean PR that only touches the loader.
 <a id="pr-01"></a>
 ### `PR-01` New abstractions justified
 
-> **general** · scope · 1 example · ↩ `RL-20260626-003` · `RL-20260706-001` · `RL-20260818-001` · `RL-20260826-001` · `RL-20260707-001` · `RL-20261001-005` · `RL-20261009-010` · `RL-20261014-007`
+> **general** · scope · 1 example · ↩ `RL-20260626-003` · `RL-20260706-001` · `RL-20260818-001` · `RL-20260826-001` · `RL-20260707-001` · `RL-20261001-005` · `RL-20261009-010` · `RL-20261014-007` · `RL-20261026-006`
 
 **📜 Rule**\
 New files, providers, interfaces, helpers, factories, injection tokens, or module exports must have a real reuse, boundary, or testability reason. Do not model states whose variants change no reader's behavior — a status union where 'degraded' and 'missing' lead to the same outcome should be a plain map with absent keys. Do not stack another feature gate onto an already multi-gated path — consolidate the existing gates, and verify a new branch is actually reachable. A concrete service injection is right while there is exactly one implementation (`CaptchaGuard` precedent); introduce the interface when a real second implementation exists (e.g. a disabled-mode no-op). Bind config in dynamic modules so one service can be reused. Do not merge superficially similar security guards — coupling two security paths is worse than duplication.
@@ -338,13 +339,48 @@ catches the mistake and write that instead.
 <a id="pr-02"></a>
 ### `PR-02` Docs aligned with behavior
 
-> **general** · scope · ↩ `RL-20260128-002` · `RL-20260116-001` · `RL-20260108-002` · `RL-20260108-003` · `RL-20260623-001` · `RL-20251209-003` · `RL-20260723-006` · `RL-20260807-002` · `RL-20260820-001` · `RL-20260921-003` · `RL-20261009-008` · `RL-20261014-005` · `RL-20261016-001`
+> **general** · scope · 1 example · ↩ `RL-20260128-002` · `RL-20260116-001` · `RL-20260108-002` · `RL-20260108-003` · `RL-20260623-001` · `RL-20251209-003` · `RL-20260723-006` · `RL-20260807-002` · `RL-20260820-001` · `RL-20260921-003` · `RL-20261009-008` · `RL-20261014-005` · `RL-20261016-001` · `RL-20261026-008` · `RL-20261028-001`
 
 **📜 Rule**\
-Docs, samples, runbooks, and `.env.sample` must reflect the final behavior of the PR. Docs do not carry exact counts (test totals) that drift with every PR. Swagger descriptions do not restate enum members; let the schema or `enum` metadata carry the value list. Operator runbooks are part of the safety contract: a change that alters what is safe to do in which order rewrites them in the same PR, citing symbolic constants rather than repeating literals. A change that alters a pattern the guides document updates those guides in the same PR — including changes arriving via a merge — and the check is whether the rule still describes the code, not merely whether its paths resolve. A guide does not enumerate or restate what another guide owns — it points at the owner and declares open sets open. Module-specific docs live in that module's `README.md`; the root README links them instead of holding them.
+Docs, samples, runbooks, and `.env.sample` must reflect the final behavior of the PR. Docs do not carry exact counts (test totals) that drift with every PR. Swagger descriptions do not restate enum members; let the schema or `enum` metadata carry the value list, interpolate the constant for any limit or value set the text names, and add a response decorator for every outcome the change introduces (a new 422). Operator runbooks are part of the safety contract: a change that alters what is safe to do in which order rewrites them in the same PR, citing symbolic constants rather than repeating literals. A change that alters a pattern the guides document updates those guides in the same PR — including changes arriving via a merge — and the check is whether the rule still describes the code, not merely whether its paths resolve. A guide does not enumerate or restate what another guide owns — it points at the owner and declares open sets open. Module-specific docs live in that module's `README.md`; the root README links them instead of holding them.
 
 **✅ Check**\
 > Are docs, samples, and runbooks aligned with the final behavior?
+
+<details>
+<summary><strong>💡 Example</strong> — <code>examples/controllers-and-swagger.md</code> § <em>pr-02-swagger-text-interpolates-the-constant-it-names</em></summary>
+
+<br>
+
+**PR-02 — Swagger text interpolates the constant it names**
+
+Source: PR #3619 (RL-20261028-001)
+
+### Avoid
+
+```ts
+@ApiBadRequestResponse({
+  description: 'Invalid identifier, or the parent already has 8 items',
+})
+```
+
+### Prefer
+
+```ts
+@ApiBadRequestResponse({
+  description: `Invalid identifier, or the parent already has ${MAX_ITEMS_PER_PARENT} items`,
+})
+```
+
+### Why
+
+The limit lives in one constant. A literal in the description stays behind
+when the constant changes, and the published contract then documents the old
+value.
+
+<sub>Source: <a href="examples/controllers-and-swagger.md#pr-02-swagger-text-interpolates-the-constant-it-names">examples/controllers-and-swagger.md#pr-02-swagger-text-interpolates-the-constant-it-names</a></sub>
+
+</details>
 
 ---
 
@@ -501,7 +537,7 @@ Avoid adding or expanding `forwardRef` cycles. Treat existing cycles as local de
 <a id="name-01"></a>
 ### `NAME-01` Names reveal behavior
 
-> **general** · naming · 1 example · ↩ `RL-20260506-001` · `RL-20260602-004` · `RL-20260922-003` · `RL-20261014-009` · `RL-20261016-008`
+> **general** · naming · 1 example · ↩ `RL-20260506-001` · `RL-20260602-004` · `RL-20260922-003` · `RL-20261014-009` · `RL-20261016-008` · `RL-20261026-002`
 
 **📜 Rule**\
 Names must describe behavior honestly: throwing helpers use `assert*`/`*OrFail`; predicates do not throw; algorithm-bound helpers (`hashSha1`) advertise the algorithm; type/aliased imports drop redundant `as` aliases; magic offsets become named constants. Find-or-create and similar helpers must not encode a status or postcondition the method does not guarantee on every path (`findOrCreateByEmail`, not `findOrCreatePendingByEmail` when existing ACTIVE users are returned as-is). One concept keeps one name across code, config keys, flags, and errors — no product alias beside the module's name (`copilot*` next to `safeShield*`). API response fields are camelCase, never an upstream's snake_case.
@@ -559,7 +595,7 @@ runs can stay fast and integration runs stay reproducible.
 <a id="reuse-01"></a>
 ### `REUSE-01` Reuse existing helpers
 
-> **general** · naming · 4 examples · ↩ `RL-20260506-003` · `RL-20251216-001` · `RL-20260615-004` · `RL-20251208-001` · `RL-20260921-004` · `RL-20260925-005` · `RL-20261002-004` · `RL-20261009-011` · `RL-20261014-004` · `RL-20261019-003`
+> **general** · naming · 4 examples · ↩ `RL-20260506-003` · `RL-20251216-001` · `RL-20260615-004` · `RL-20251208-001` · `RL-20260921-004` · `RL-20260925-005` · `RL-20261002-004` · `RL-20261009-011` · `RL-20261014-004` · `RL-20261019-003` · `RL-20261028-003`
 
 **📜 Rule**\
 Before adding a small util, search the repo and well-known libraries (`viem.isAddressEqual`, `@/logging/utils.asError`, shared schemas, `safe-deployments`); reuse `LoggingService`, `*Mapper` classes, and `HttpErrorFactory` instead of bare alternates. Cross a seam with the plain value (a timeout in ms, a plaintext address), not a caller-constructed object or caller-derived key (an `AbortSignal`, a blind-index seat key), so it is built in exactly one place. A single-item read that gains a batch variant delegates to it (`(await findByIds([id])).get(id) ?? []`) instead of keeping its own query. Plan and quota gating go through the entitlements model (`assertFeatureGranted`, `assertWithinQuota` on a seeded feature), not a live billing call or a local list of plans.
@@ -770,7 +806,7 @@ type, and one set of tests covers it.
 <a id="style-01"></a>
 ### `STYLE-01` Document non-trivial code
 
-> **general** · naming · 3 examples · ↩ `RL-20260506-005` · `RL-20260128-001` · `RL-20251222-001` · `RL-20260604-004` · `RL-20260609-001` · `RL-20260713-001` · `RL-20251208-002` · `RL-20251210-001` · `RL-20260821-002` · `RL-20261001-004` · `RL-20261001-005` · `RL-20261008-001` · `RL-20261008-004` · `RL-20261009-007` · `RL-20261014-006` · `RL-20261014-010`
+> **general** · naming · 3 examples · ↩ `RL-20260506-005` · `RL-20260128-001` · `RL-20251222-001` · `RL-20260604-004` · `RL-20260609-001` · `RL-20260713-001` · `RL-20251208-002` · `RL-20251210-001` · `RL-20260821-002` · `RL-20261001-004` · `RL-20261001-005` · `RL-20261008-001` · `RL-20261008-004` · `RL-20261009-007` · `RL-20261014-006` · `RL-20261014-010` · `RL-20261026-004`
 
 **📜 Rule**\
 Public/non-trivial service and repository code is documented and free of dead branches, commented-out code, redundant comments, and `console.log`. Default flags safely (`isSafe = false` until proven), wrap event listeners with cleanup, and keep adapters' error contracts intact. Message/formatting logic beyond one branch gets a named helper in utils — no nested ternaries inside template literals. A function running several sequential steps splits into one named helper per step, and a per-item mapper does not own request-wide side effects. Destructuring return values is an accepted repo-wide pattern — do not demand named receivers; verify a claimed convention against the codebase before enforcing it. One exported class/type per file: errors under `domain/errors/` with their filters under `domain/exception-filters/`, guards under `routes/guards/` (never module-root `errors/` or `guards/`), entity types under `entities/`, helpers in a dedicated helpers file; a standalone function used by a single class becomes a private method. A comment that restates the line beneath it is deleted, and a comment offered to explain confusing code is a signal to restructure that code instead. When a key or signature drops a dimension, remove the now-unused parameter up the whole call chain. A function with no instance state does not stay a private method — that prices every test of it at the cost of testing its host. A comment describes the code as it now is — what it throws and returns — and carries no process narration (rollout plans, which ticket will do what); a flag's owning-ticket note (CONFIG-01) is the exception.
@@ -1008,16 +1044,16 @@ silently stay loose.
 <a id="type-02"></a>
 ### `TYPE-02` Schemas in entity files
 
-> **general** · types · 2 examples · ↩ `RL-20260123-002` · `RL-20260116-002` · `RL-20260619-003` · `RL-20260624-001` · `RL-20260703-003` · `RL-20260710-005` · `RL-20260717-005` · `RL-20260925-003` · `RL-20260925-006`
+> **general** · types · 3 examples · ↩ `RL-20260123-002` · `RL-20260116-002` · `RL-20260619-003` · `RL-20260624-001` · `RL-20260703-003` · `RL-20260710-005` · `RL-20260717-005` · `RL-20260925-003` · `RL-20260925-006` · `RL-20261027-001`
 
 **📜 Rule**\
-Reusable Zod schemas live in entity/schema files, not inline in services/controllers. Apply normalization (`.transform`, defaults) at the schema layer; prefer `.nullish()` over `.nullable().optional()`. Do not stack `.default(x)` after `.catch(x)` — `.catch` already handles undefined/invalid — and extract repeated fallback fragments to a shared const. Multi-condition validation uses one `superRefine` (single pass, shared computed values, all issues collected), not a chain of `.refine`s. The `z.infer` type lives next to its schema in the same `*.entity.ts` file. Enum value sets are exported `as const` arrays consumed by `z.enum([...X])` and reused by faker builders. When a sibling entity already defines the same record/metadata shape, generalize and reuse that schema instead of re-declaring it. A transform that only reshapes input `.pipe()`s into the schema that validates the result, rather than `safeParse`-ing inside the transform and re-raising its issues.
+Reusable Zod schemas live in entity/schema files, not inline in services/controllers. Apply normalization (`.transform`, defaults) at the schema layer; prefer `.nullish()` over `.nullable().optional()`. Do not stack `.default(x)` after `.catch(x)` — `.catch` already handles undefined/invalid — and extract repeated fallback fragments to a shared const. Multi-condition validation uses one `superRefine` (single pass, shared computed values, all issues collected), not a chain of `.refine`s. The `z.infer` type lives next to its schema in the same `*.entity.ts` file. Enum value sets are exported `as const` arrays consumed by `z.enum([...X])` and reused by faker builders. When a sibling entity already defines the same record/metadata shape, generalize and reuse that schema instead of re-declaring it; an inline object type repeated across signatures likewise becomes one named (generic if needed) type in the module's `domain/entities`. A transform that only reshapes input `.pipe()`s into the schema that validates the result, rather than `safeParse`-ing inside the transform and re-raising its issues.
 
 **✅ Check**\
 > Are reusable schemas in entity/schema files?
 
 <details>
-<summary><strong>💡 Example 1 of 2</strong> — <code>examples/error-handling.md</code> § <em>type-02-type-03-empty-external-error-strings-normalize-to-absence</em></summary>
+<summary><strong>💡 Example 1 of 3</strong> — <code>examples/error-handling.md</code> § <em>type-02-type-03-empty-external-error-strings-normalize-to-absence</em></summary>
 
 <br>
 
@@ -1067,7 +1103,7 @@ same notion of absence.
 </details>
 
 <details>
-<summary><strong>💡 Example 2 of 2</strong> — <code>examples/schemas-and-validation.md</code> § <em>type-02-split-then-validate-pipes-into-the-parts-schema</em></summary>
+<summary><strong>💡 Example 2 of 3</strong> — <code>examples/schemas-and-validation.md</code> § <em>type-02-split-then-validate-pipes-into-the-parts-schema</em></summary>
 
 <br>
 
@@ -1118,15 +1154,59 @@ without a hand-written re-raise loop.
 
 </details>
 
+<details>
+<summary><strong>💡 Example 3 of 3</strong> — <code>examples/schemas-and-validation.md</code> § <em>type-02-a-repeated-inline-object-type-becomes-one-named-type</em></summary>
+
+<br>
+
+**TYPE-02 — A repeated inline object type becomes one named type**
+
+Source: PR #3703 (RL-20261027-001)
+
+### Avoid
+
+```ts
+private async getMappedItems(args: {
+  items: Array<{
+    item: EntityDomain;
+    decoded: Decoded | null;
+  }>;
+}): Promise<Array<Item>> {}
+// ...the same inline shape repeated in three more signatures
+```
+
+### Prefer
+
+```ts
+// domain/entities/decoded-entity.entity.ts
+export type DecodedEntity<T extends Entity = Entity> = {
+  item: T;
+  decoded: Decoded | null;
+};
+
+private async getMappedItems(args: {
+  items: Array<DecodedEntity<EntityDomain>>;
+}): Promise<Array<Item>> {}
+```
+
+### Why
+
+One named type is one place to change when the pairing grows a field. The
+generic parameter lets callers that hold a narrower entity keep that type.
+
+<sub>Source: <a href="examples/schemas-and-validation.md#type-02-a-repeated-inline-object-type-becomes-one-named-type">examples/schemas-and-validation.md#type-02-a-repeated-inline-object-type-becomes-one-named-type</a></sub>
+
+</details>
+
 ---
 
 <a id="type-03"></a>
 ### `TYPE-03` Validate external inputs
 
-> **general** · types · 3 examples · ↩ `RL-20260116-002` · `RL-20260526-001` · `RL-20260527-001` · `RL-20260605-003` · `RL-20260612-001` · `RL-20260624-002` · `RL-20251209-002` · `RL-20260723-004` · `RL-20260729-002` · `RL-20260921-002`
+> **general** · types · 3 examples · ↩ `RL-20260116-002` · `RL-20260526-001` · `RL-20260527-001` · `RL-20260605-003` · `RL-20260612-001` · `RL-20260624-002` · `RL-20251209-002` · `RL-20260723-004` · `RL-20260729-002` · `RL-20260921-002` · `RL-20261028-006`
 
 **📜 Rule**\
-Validate token claims, external responses, queued jobs, config strings, and `.every`-style predicate results before use. Predicate return values must be honored — no silent acceptance. Normalize at the validation boundary (e.g. a Zod `.toLowerCase()`/`.transform()`) so consumers receive ready-to-use values instead of repeating normalization per call site, and `.brand<'X'>()` validated value types so a same-shaped raw string cannot bypass the schema. Normalize case on both sides before strict equality of hex/address-like strings. Numeric-string ID schemas reject zero, leading zeros, signs, and floats (`/^[1-9]\d*$/`), and test-data generators must produce values that satisfy the same constraint (`faker.string.numeric()` allows leading zeros). Prefer Zod `.overwrite()` over `.transform()` for type-preserving normalization (dedup, casing) so the schema stays introspectable. Unicode sanitization weighs legitimate-script collateral: strip only the dangerous `Cf` subset (bidi controls), keep or document ZWJ/ZWNJ, fold smart punctuation to ASCII before validation, and give "empty after sanitization" its own message. Defensive fallbacks satisfy the same schema as real values — use the domain's canonical constant (`NULL_ADDRESS`) instead of a truncated literal cast with `as Address`. A transform applied across a batch must not throw on a degenerate-but-legal value (the empty string) and take every other row down with it. Do not weaken a consumer-boundary schema to keep malformed events flowing: a field the event's meaning depends on stays required.
+Validate token claims, external responses, queued jobs, config strings, and `.every`-style predicate results before use. Predicate return values must be honored — no silent acceptance. Normalize at the validation boundary (e.g. a Zod `.toLowerCase()`/`.transform()`) so consumers receive ready-to-use values instead of repeating normalization per call site, and `.brand<'X'>()` validated value types so a same-shaped raw string cannot bypass the schema. Normalize case on both sides before strict equality of hex/address-like strings. Numeric-string ID schemas reject zero, leading zeros, signs, and floats (`/^[1-9]\d*$/`), integer id params are bounded to their column type (`.positive().max(DB_MAX_SAFE_INTEGER)` for `int4`), and test-data generators must produce values that satisfy the same constraint (`faker.string.numeric()` allows leading zeros). Prefer Zod `.overwrite()` over `.transform()` for type-preserving normalization (dedup, casing) so the schema stays introspectable. Unicode sanitization weighs legitimate-script collateral: strip only the dangerous `Cf` subset (bidi controls), keep or document ZWJ/ZWNJ, fold smart punctuation to ASCII before validation, and give "empty after sanitization" its own message. Defensive fallbacks satisfy the same schema as real values — use the domain's canonical constant (`NULL_ADDRESS`) instead of a truncated literal cast with `as Address`. A transform applied across a batch must not throw on a degenerate-but-legal value (the empty string) and take every other row down with it. Do not weaken a consumer-boundary schema to keep malformed events flowing: a field the event's meaning depends on stays required.
 
 **✅ Check**\
 > Are external responses, token claims, queued jobs, and config strings validated and normalized at the boundary (branded where it matters), and is case normalized before strict hex/address equality?
@@ -2072,10 +2152,10 @@ helps someone probing resources they cannot see.
 <a id="db-01"></a>
 ### `DB-01` Unique constraint matches lifecycle
 
-> **general** · database · ↩ `RL-20260710-011`
+> **general** · database · ↩ `RL-20260710-011` · `RL-20261028-004`
 
 **📜 Rule**\
-Unique constraints, status transitions, and races need lifecycle-aware handling: partial indexes for nullable uniques, deduplication migrations before adding constraints to existing tables, deterministic ordering for fallback rows (NULL + specific) so callers cannot pick non-deterministically. When a feature flag switches storage format (e.g. encryption), uniqueness and other invariants must hold in both modes (complementary partial unique indexes), and reverse migrations pre-check for rows the narrowed column cannot hold.
+Unique constraints, status transitions, and races need lifecycle-aware handling: partial indexes for nullable uniques, deduplication migrations before adding constraints to existing tables, deterministic ordering for fallback rows (NULL + specific) so callers cannot pick non-deterministically. When a feature flag switches storage format (e.g. encryption), uniqueness and other invariants must hold in both modes (complementary partial unique indexes), and a new encrypted column is registered in the field-encryption backfill script (`TABLES`) so rows written during a rollback get encrypted, and reverse migrations pre-check for rows the narrowed column cannot hold.
 
 **✅ Check**\
 > Do unique constraints match nullable/lifecycle behavior?
@@ -2085,10 +2165,10 @@ Unique constraints, status transitions, and races need lifecycle-aware handling:
 <a id="db-02"></a>
 ### `DB-02` Atomic state transitions
 
-> **general** · database · 1 example · ↩ `RL-20260602-002` · `RL-20260605-002` · `RL-20260819-002` · `RL-20260826-003` · `RL-20260917-001` · `RL-20261001-006` · `RL-20261009-014` · `RL-20261019-002`
+> **general** · database · 1 example · ↩ `RL-20260602-002` · `RL-20260605-002` · `RL-20260819-002` · `RL-20260826-003` · `RL-20260917-001` · `RL-20261001-006` · `RL-20261009-014` · `RL-20261019-002` · `RL-20261028-002`
 
 **📜 Rule**\
-Multi-step status transitions are atomic (single SQL/ORM bulk call or wrapped transaction); do not loop awaits to mutate N rows. Writes that must commit or roll back together must run on the same outer `EntityManager`/transaction — a find-or-create helper invoked inside a transaction must accept and thread the outer `EntityManager` rather than opening its own, or a later failure leaves orphan committed rows. Conversely, do not wrap a single-statement write in a transaction — one statement is already atomic. A staleness or ordering guard is re-checked inside the lock it protects; a value read before the lock is carried in and re-compared, never trusted. The transaction lives with the use case, expensive I/O (KMS, upstream calls) happens before the lock is taken, and any quantity being enforced on — including the set of rows to lock — is read inside it. Paths that take several row locks follow one order, documented on the lock helpers. A compensating action reverses the exact record the original wrote, carried forward from the charge — never one resolved again at refund time. A quota is charged only for the side effect that happened: claim the item atomically so a concurrent duplicate neither counts nor acts, and release the slot when the side effect fails.
+Multi-step status transitions are atomic (single SQL/ORM bulk call or wrapped transaction); do not loop awaits to mutate N rows. Writes that must commit or roll back together must run on the same outer `EntityManager`/transaction — a find-or-create helper invoked inside a transaction must accept and thread the outer `EntityManager` rather than opening its own, or a later failure leaves orphan committed rows. Conversely, do not wrap a single-statement write in a transaction — one statement is already atomic. A staleness or ordering guard is re-checked inside the lock it protects; a value read before the lock is carried in and re-compared, never trusted. The transaction lives with the use case, expensive I/O (KMS, upstream calls) happens before the lock is taken, and any quantity being enforced on — including the set of rows to lock — is read inside it. Paths that take several row locks follow one order, documented on the lock helpers; a write helper that relies on a caller-held lock takes proof of it in its signature (a `LockedSpace` only the lock returns) and says so in its doc comment. A compensating action reverses the exact record the original wrote, carried forward from the charge — never one resolved again at refund time. A quota is charged only for the side effect that happened: claim the item atomically so a concurrent duplicate neither counts nor acts, and release the slot when the side effect fails.
 
 **✅ Check**\
 > Are multi-step state transitions atomic, do helpers called inside a transaction share the outer EntityManager instead of opening their own, and do multi-row locks follow the documented order?
@@ -3041,7 +3121,7 @@ silently gives one entity another's data. A key lookup cannot misalign.
 <a id="test-01"></a>
 ### `TEST-01` Use builders and fakes
 
-> **general** · tests · 2 examples · ↩ `RL-20260506-002` · `RL-20260521-001` · `RL-20260619-005` · `RL-20260624-003` · `RL-20260623-001` · `RL-20260710-003` · `RL-20260707-002` · `RL-20260710-009` · `RL-20261002-001` · `RL-20261009-012`
+> **general** · tests · 2 examples · ↩ `RL-20260506-002` · `RL-20260521-001` · `RL-20260619-005` · `RL-20260624-003` · `RL-20260623-001` · `RL-20260710-003` · `RL-20260707-002` · `RL-20260710-009` · `RL-20261002-001` · `RL-20261009-012` · `RL-20261028-007`
 
 **📜 Rule**\
 Tests use `Builder<T>` + `.with(field, value)`, `FakeCacheService`, and project test helpers; instantiate services directly (`new FooService(mockRepo)`) instead of `Test.createTestingModule` for service unit specs; avoid `jest.mock(...)` of unused modules. `Builder.with()` mutates and returns `this`, so build a fresh builder per case — never reuse one mutable builder across multiple cases/assertions, or state leaks and tests pass for the wrong reason. Builder defaults must not randomize across semantically different, behavior-routing values (`faker.helpers.arrayElement([...enum, null])`) — pick one stable valid default and override per test. Builders enforce their own invariants by construction (run the sanitizer inside the builder) — tests must not depend on incidental faker/locale properties. Vitest: `vi.mock` factories referencing outer consts use `vi.hoisted`; `vi.resetAllMocks()` restores spy originals (unlike Jest). Type mocks `as MockedObject<T>` directly — never `as unknown as MockedObject<T>`; assert calls via `toHaveBeenNthCalledWith`, not `.mock.calls` indexing; use `FakeConfigurationService` over ad-hoc config mocks; randomize free inputs with faker but assert contract constants via their exported symbol. Mocked `Raw<T>` network payloads use the `rawify()` helper instead of an `as never` cast. Do not mock internal query-builder chains or other implementation details.
@@ -3445,10 +3525,10 @@ assertion is about and leave faker on the fields the test does not reason about.
 <a id="test-09"></a>
 ### `TEST-09` Cover edges and determinism
 
-> **general** · tests · 2 examples · ↩ `RL-20260123-001` · `RL-20260113-001` · `RL-20251223-002` · `RL-20260615-004` · `RL-20260717-004` · `RL-20251208-003` · `RL-20260810-002` · `RL-20260916-001` · `RL-20260928-004` · `RL-20261009-004` · `RL-20261009-013` · `RL-20261009-015` · `RL-20261014-001`
+> **general** · tests · 2 examples · ↩ `RL-20260123-001` · `RL-20260113-001` · `RL-20251223-002` · `RL-20260615-004` · `RL-20260717-004` · `RL-20251208-003` · `RL-20260810-002` · `RL-20260916-001` · `RL-20260928-004` · `RL-20261009-004` · `RL-20261009-013` · `RL-20261009-015` · `RL-20261014-001` · `RL-20261026-001` · `RL-20261026-007`
 
 **📜 Rule**\
-Edge cases, observability calls, cache invalidation branches, production/default config branches, and deterministic ordering need tests when they are part of the behavior. Cache-invalidation tests pair every cleared-cache assertion with a negative assertion that unrelated caches stay untouched. Merge/dedup precedence tests use distinct objects sharing the same key — identical objects pass under either precedence. Behavior added to one method of a sibling set (`get`/`post`/`delete`) is covered on every sibling, and specs written for an approach abandoned during review are deleted rather than left to pass vacuously. Every gate, scoping filter or safety setting, including a widened gated list (versions, chains, providers) and a framework option read as metadata (`@Processor({ maxStalledCount: 0 })`, a queue's global concurrency), has a case that fails when it is removed — the negative case proving it still rejects, a second owner in a per-owner fixture — not only the positive one. A concurrency test proves a call is blocked by observing the lock wait (`pg_stat_activity`), not by a fixed sleep. A claim about upstream behaviour is settled against the host the deployed service resolves (in-cluster), not a curl against the public edge.
+Edge cases, observability calls, cache invalidation branches, production/default config branches, and deterministic ordering need tests when they are part of the behavior. Cache-invalidation tests pair every cleared-cache assertion with a negative assertion that unrelated caches stay untouched. Merge/dedup precedence tests use distinct objects sharing the same key — identical objects pass under either precedence. Behavior added to one method of a sibling set (`get`/`post`/`delete`) is covered on every sibling, and specs written for an approach abandoned during review are deleted rather than left to pass vacuously. Every gate, scoping filter or safety setting, including a widened gated list (versions, chains, providers) and a framework option read as metadata (`@Processor({ maxStalledCount: 0 })`, a queue's global concurrency), has a case that fails when it is removed — the negative case proving it still rejects, a second owner in a per-owner fixture — not only the positive one. Each factor gets its own case changing exactly that input (`it.each` over the field that differs), so a broken factor cannot hide behind another. A concurrency test proves a call is blocked by observing the lock wait (`pg_stat_activity`), not by a fixed sleep. A claim about upstream behaviour is settled against the host the deployed service resolves (in-cluster), not a curl against the public edge.
 
 **✅ Check**\
 > Do tests cover edge cases, side effects, and deterministic behavior, and does every gate, filter or safety setting have a case that fails without it?
@@ -4040,13 +4120,13 @@ and the bug only reproduces under cache-warm conditions.
 <a id="data-01"></a>
 ### `DATA-01` Aggregates match returned items and signed values
 
-> **general** · data · 1 example · ↩ `RL-20260113-001` · `RL-20260612-002` · `RL-20260717-004`
+> **general** · data · 1 example · ↩ `RL-20260113-001` · `RL-20260612-002` · `RL-20260717-004` · `RL-20261026-003` · `RL-20261028-005`
 
 **📜 Rule**\
-Totals, dust filters, and aggregate fields must be computed from the same filtered items returned to clients and must preserve meaningful signed values such as debt. Pagination next/previous links derive from the clamped/normalized limit and offset actually used in the query (normalize the cursor via `setCursor`/`PaginationData`), never from the raw client cursor. Map-spread dedup keeps the LAST entry per key — when merging sources by id, put the preferred source last (or make precedence explicit).
+Totals, dust filters, and aggregate fields must be computed from the same filtered items returned to clients and must preserve meaningful signed values such as debt. Pagination next/previous links derive from the clamped/normalized limit and offset actually used in the query (normalize the cursor via `setCursor`/`PaginationData`), never from the raw client cursor. Map-spread dedup keeps the LAST entry per key — when merging sources by id, put the preferred source last (or make precedence explicit). Records merged or matched across sources are keyed by their full natural key (the row's unique key, e.g. `(guard, root)`), never a part of it, and a batch that can repeat a key is deduplicated once, before any side effect.
 
 **✅ Check**\
-> Did this add filtering, aggregate totals, or pagination links? If yes, are totals and links based on the items/values actually returned or queried?
+> Did this add filtering, aggregate totals, pagination links, or a merge/match of records by key? If yes, are totals and links based on the items/values actually returned or queried, and are records keyed by their full natural key and deduplicated before side effects?
 
 <details>
 <summary><strong>💡 Example</strong> — <code>examples/repositories-and-pagination.md</code> § <em>data-01-build-page-links-from-clamped-pagination-values</em></summary>
@@ -4100,6 +4180,21 @@ stops paging. Links must describe the page that was actually served.
 <sub>Source: <a href="examples/repositories-and-pagination.md#data-01-build-page-links-from-clamped-pagination-values">examples/repositories-and-pagination.md#data-01-build-page-links-from-clamped-pagination-values</a></sub>
 
 </details>
+
+---
+
+## 📂 transactions
+
+<a id="tx-01"></a>
+### `TX-01` Decode what the transaction executes
+
+> transactions · ↩ `RL-20261026-005`
+
+**📜 Rule**\
+A decoded call counts as a transaction's effect only when the transaction performs it: unpack a MultiSend batch only when the Safe delegatecalls an official MultiSend or MultiSendCallOnly deployment (`getAllMultiSendDeployments`), and never decide by the calldata selector alone. Specs build that exact outer operation and target.
+
+**✅ Check**\
+> Does code that reads a queued or executed transaction's effect check its operation and target against official deployments, not only the calldata selector?
 
 ---
 

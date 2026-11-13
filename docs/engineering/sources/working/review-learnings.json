@@ -368,10 +368,12 @@
   },
   {
     "id": "RL-20260108-002",
-    "title": "Provider-specific filters must be documented or removed",
+    "title": "Public params and fields must be honored on every path that accepts them, or documented or removed",
     "sourceWindowId": "CLOSED-20260108-20260115",
     "prNumbers": [
-      2840
+      2840,
+      3669,
+      3619
     ],
     "prState": "merged",
     "reviewCommentIds": [
@@ -380,11 +382,17 @@
       2669174008,
       2669180308,
       2669193798,
-      2671642118
+      2671642118,
+      4359619056,
+      4376480995
     ],
-    "reviewIds": [],
-    "issueCommentIds": [],
-    "learning": "If query parameters such as trusted/spam filters only apply on one provider path, the public contract must document that limitation or remove unsupported parameters from the endpoint.",
+    "reviewIds": [
+      5615414505
+    ],
+    "issueCommentIds": [
+      6359206744
+    ],
+    "learning": "If query parameters such as trusted/spam filters only apply on one provider path, the public contract must document that limitation or remove unsupported parameters from the endpoint. Recurred in #3669: the `types` filter dropped delayed guard-policy items but not the immediate ones merged into the same response (fixed in 7d79b825d). And in #3619: `tags` added to the shared address-book item was validated and documented on `POST /spaces/:id/safes`, whose service silently dropped it; the item was split into `AddressBookItem` and `UpsertAddressBookItem extends AddressBookItem`, so only `PUT /address-book` carries the field.",
     "ruleIds": [
       "ROUTE-01",
       "TYPE-04",
@@ -674,7 +682,8 @@
       3334,
       3373,
       3420,
-      3393
+      3393,
+      3659
     ],
     "prState": "closed",
     "reviewCommentIds": [
@@ -683,15 +692,18 @@
       3980136825,
       3980622752
     ],
-    "reviewIds": [],
+    "reviewIds": [
+      5613963601
+    ],
     "issueCommentIds": [
       5242243692,
       5370151787,
       5370217749,
       5715183373,
-      5716482690
+      5716482690,
+      6367101169
     ],
-    "learning": "Module-local constants, schemas, or helpers that no other module imports should not be `export`ed. Exporting them expands the public surface and invites accidental coupling; promote to an export only when a real consumer or test exists. Recurred in #3334: `getExtensibleFallbackHandlerDeployments` was exported with its only caller in the same file; the identically-shaped existing export was explicitly called drift rather than precedent, and the author made it private. Third occurrence, in #3373: `RhinestoneErrorResponse` was exported from a new schema file while its only consumer imported the schema alone. Fourth occurrence, in #3420: asked whether `listPlans` and `getCustomer` were dead or merely unwired, the author deleted both — \"if they are needed, we can always add them back\". Fifth occurrence, in #3393: an exported test builder nothing imported was deleted.",
+    "learning": "Module-local constants, schemas, or helpers that no other module imports should not be `export`ed. Exporting them expands the public surface and invites accidental coupling; promote to an export only when a real consumer or test exists. Recurred in #3334: `getExtensibleFallbackHandlerDeployments` was exported with its only caller in the same file; the identically-shaped existing export was explicitly called drift rather than precedent, and the author made it private. Third occurrence, in #3373: `RhinestoneErrorResponse` was exported from a new schema file while its only consumer imported the schema alone. Fourth occurrence, in #3420: asked whether `listPlans` and `getCustomer` were dead or merely unwired, the author deleted both — \"if they are needed, we can always add them back\". Fifth occurrence, in #3393: an exported test builder nothing imported was deleted. Sixth occurrence, in #3659: three DTO classes reached only through `@ApiExtraModels`/`getSchemaPath` in the same file were exported with no importer and no later stack PR named; the export was dropped (2117b360b).",
     "ruleIds": [
       "MOD-04"
     ]
@@ -2267,16 +2279,21 @@
     "title": "Ad-hoc config-service mocks where FakeConfigurationService exists",
     "sourceWindowId": "CLOSED-20260707-20260711",
     "prNumbers": [
-      3196
+      3196,
+      3619
     ],
     "prState": "merged",
     "reviewCommentIds": [
       3527347712,
       3537054009
     ],
-    "reviewIds": [],
-    "issueCommentIds": [],
-    "learning": "New specs built ad-hoc `getOrThrow`/`get` mockImplementation blocks for the configuration service while other specs use `FakeConfigurationService`; review asked for the fake for consistency (\"unclear why in one test it's mocked and in another it's faked\"). Use `FakeConfigurationService` for config in tests unless a spec genuinely needs call assertions.",
+    "reviewIds": [
+      5615414505
+    ],
+    "issueCommentIds": [
+      6359206744
+    ],
+    "learning": "New specs built ad-hoc `getOrThrow`/`get` mockImplementation blocks for the configuration service while other specs use `FakeConfigurationService`; review asked for the fake for consistency (\"unclear why in one test it's mocked and in another it's faked\"). Use `FakeConfigurationService` for config in tests unless a spec genuinely needs call assertions. Recurred in #3619: a hand-rolled `getOrThrow` mock returned the same limit for every key, so new batch-cap tests would pass even if the service read the wrong key; replaced with `FakeConfigurationService` set on `spaces.addressBooks.maxItems`.",
     "ruleIds": [
       "TEST-01"
     ]
@@ -5356,6 +5373,338 @@
     "learning": "Delayed policy configuration requests are needed only until the policy is activated on chain, but the new table kept them forever. Review asked for a retention period with automatic deletion; the author added a daily prune of rows older than `POLICIES_CONFIGURATION_REQUEST_RETENTION_DAYS` (default 60), beside the existing per-Safe row cap. Rows that users submit are bounded in count and in lifetime: a table whose rows serve a purpose that ends ships with its pruning.",
     "ruleIds": [
       "SEC-02"
+    ]
+  },
+  {
+    "id": "RL-20261027-001",
+    "title": "Inline object type repeated across four signatures instead of one named type",
+    "sourceWindowId": "CLOSED-20261022-20261030",
+    "prNumbers": [
+      3703
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4390645746,
+      4390835828
+    ],
+    "reviewIds": [
+      5669790596
+    ],
+    "issueCommentIds": [],
+    "learning": "The decode-once refactor spelled `Array<{ transaction: TransactionDomain; dataDecoded: DataDecoded | null }>` inline three times in the history mapper and once in the multisig mapper. Review asked for one named type; the author added a generic `DecodedTransaction<T extends Transaction = Transaction>` in the module's `domain/entities` and used it in every signature (5b8cd5a89). An inline object type that repeats across signatures becomes one named type next to the entities it pairs.",
+    "ruleIds": [
+      "TYPE-02"
+    ]
+  },
+  {
+    "id": "RL-20261026-001",
+    "title": "Collision test changed two key fields at once, so one broken helper could hide behind the other",
+    "sourceWindowId": "CLOSED-20261022-20261030",
+    "prNumbers": [
+      3676
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4377776026,
+      4377911556
+    ],
+    "reviewIds": [
+      5652766938
+    ],
+    "issueCommentIds": [],
+    "learning": "A repository test for the counterfactual-Safe unique key changed `paymentToken` and `payment` together, so a bug in either normalization helper could be masked by the other. Review asked for an `it.each` over the field that differs (threshold, a non-zero `paymentToken` alone, a non-zero `payment` alone); the author merged the cases (8b8918d9c) and broke each helper on purpose to confirm only its own case fails. Each factor of a match gets its own case that changes exactly that one input.",
+    "ruleIds": [
+      "TEST-09"
+    ]
+  },
+  {
+    "id": "RL-20261026-002",
+    "title": "Pending-policy types named after how a change happens, not what it changes",
+    "sourceWindowId": "CLOSED-20261022-20261030",
+    "prNumbers": [
+      3656,
+      3659,
+      3661,
+      3669
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4338525633,
+      4338749361,
+      4338741977,
+      4340679293,
+      4345934205,
+      4338045320,
+      4338050152,
+      4339002506,
+      4340678871
+    ],
+    "reviewIds": [
+      5601335381
+    ],
+    "issueCommentIds": [],
+    "learning": "Across the pending-policies stack review found `PendingGuardSetup` was not a policy setup, `ConfigureImmediately` sat among guard-setup kinds although it sets policies, `PendingQueuedPolicy`/`PendingPolicySetup`/`PendingGuardConfiguration` could not be told apart, and `StoredPolicyConfiguration` named where the data lives rather than what it is. The author renamed to what each item changes (`PendingGuardInstallation`, `PendingImmediateGuardPolicies`, `PendingDelayedGuardPolicies`, `SafePolicyGuardConfiguration`), moved the policy-setup call into its own item, and left `queued-transaction`/`PendingQueuedPolicy` untouched because the released wallet reads that wire value. A type or kind is named for the thing it represents; a released wire value keeps its name.",
+    "ruleIds": [
+      "NAME-01",
+      "CHANGE-04"
+    ]
+  },
+  {
+    "id": "RL-20261026-003",
+    "title": "Delayed guard changes keyed by root alone, though a root repeats across guards",
+    "sourceWindowId": "CLOSED-20261022-20261030",
+    "prNumbers": [
+      3657
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4359446706,
+      4359665855,
+      4360944788,
+      4361669802
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "The delayed-guard-policies mapper grouped on-chain windows and queued applies by `root`, but a root is `keccak256(configurations)` and repeats on every guard, while the indexer row is unique per `(guard, safe, root)`. Two guards with the same root kept whichever row sorted last, and an apply sent to another guard was matched with this guard's window, reporting `application-ready` for a transaction that would revert. The author re-keyed by `(guard, root)`, kept only the guard set on the Safe, and added a test that fails if the key reverts to root alone. Records merged or matched across sources are keyed by their full natural key, never a part of it.",
+    "ruleIds": [
+      "DATA-01"
+    ]
+  },
+  {
+    "id": "RL-20261026-004",
+    "title": "Status doc and rule table disagreed with resolveStatus",
+    "sourceWindowId": "CLOSED-20261022-20261030",
+    "prNumbers": [
+      3657
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4359189321
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "The doc comment on `configuration-in-signing` said a queued request yields that status whatever the on-chain state, but `resolveStatus` checks the open window first and the spec asserted the code's version. Review laid out the table the code implements and asked which was intended; the doc on the status now says a request counts only when the root has no open window. A status doc states the rule the code implements, checked against the spec that pins it.",
+    "ruleIds": [
+      "STYLE-01"
+    ]
+  },
+  {
+    "id": "RL-20261026-005",
+    "title": "MultiSend batch unpacked by calldata selector alone",
+    "sourceWindowId": "CLOSED-20261022-20261030",
+    "prNumbers": [
+      3649
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4359191705,
+      4360724741
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "`queuedCalls` unpacked a MultiSend batch whenever the calldata started with the `multiSend` selector, so a `CALL` to MultiSend (sub-calls run with MultiSend as sender) or a `DELEGATECALL` to another contract with that selector were reported as pending policy changes the transaction would not make; the specs built an outer `CALL` to a random address. The logic was inherited from the spending-limit mapper but now served guard policies too. Fixed (e6e94c872): a batch is unpacked only when the Safe delegatecalls an official MultiSend or MultiSendCallOnly deployment (`getAllMultiSendDeployments`), and specs build that shape. Read a transaction's effect from its operation and target, not its selector alone.",
+    "ruleIds": [
+      "TX-01"
+    ]
+  },
+  {
+    "id": "RL-20261026-006",
+    "title": "Pending item carried a willRevert flag no reader needed",
+    "sourceWindowId": "CLOSED-20261022-20261030",
+    "prNumbers": [
+      3656
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4338246866,
+      4338748965
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "A guard-installation change exposed `willRevert`, true when the guard already sat in the slot. Review asked whether it was needed and the author removed it (a49e09177). A field no consumer acts on is not added to a domain type or response.",
+    "ruleIds": [
+      "PR-01"
+    ]
+  },
+  {
+    "id": "RL-20261026-007",
+    "title": "Merge by kind never ran with both kinds because every case mocked one source empty",
+    "sourceWindowId": "CLOSED-20261022-20261030",
+    "prNumbers": [
+      3659
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [
+      5613963601
+    ],
+    "issueCommentIds": [
+      6367101169
+    ],
+    "learning": "The pending-policies service merged spending-limit items with guard-installation items by `kind`, but every service case mocked `GuardInstallationMapper.map` to return `[]` and the integration case requested one type, so the merge never ran with both kinds. Review asked for one integration case requesting `spending-limit` and a guard type together and asserting only the spending-limit item carries `tokenMetadata`; added (edd71be16). A merge of several sources is tested with every source returning items.",
+    "ruleIds": [
+      "TEST-09"
+    ]
+  },
+  {
+    "id": "RL-20261026-008",
+    "title": "Swagger text and guide references lagged the routes they describe",
+    "sourceWindowId": "CLOSED-20261022-20261030",
+    "prNumbers": [
+      3659,
+      3619
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [
+      5613963601,
+      5663877988
+    ],
+    "issueCommentIds": [
+      6367101169,
+      6340543837,
+      6468877702
+    ],
+    "learning": "In #3659 the new `types` description named only `proposer` as returning nothing although `recovery` does too, and did not say every guard type returns the same guard-installation items; rewritten (3884c1019). In #3619 the new `tags` field gave `PUT /address-book` new 422 outcomes with no `@ApiUnprocessableEntityResponse` and a stale 400 text, and a guide line reference to the rate-limited guard pointed at the wrong line after the controller grew; both fixed in the merged diff. Swagger descriptions and response decorators cover every outcome the route now has, and guide references follow the code they cite.",
+    "ruleIds": [
+      "PR-02"
+    ]
+  },
+  {
+    "id": "RL-20261028-001",
+    "title": "Swagger descriptions repeated limits and reserved names as literals",
+    "sourceWindowId": "CLOSED-20261022-20261030",
+    "prNumbers": [
+      3619
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4379139869,
+      4379327081,
+      4400397206,
+      4400446754
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "Tag DTO and controller descriptions spelled out `'Workspace Safe' and 'Signer'` and \"8 tags\" while `DISALLOWED_TAG_NAMES` and `MAX_TAGS_PER_WORKSPACE` held the values. Review asked to derive them; the author introduced `RESERVED_TAG_NAMES` in display casing, built the case-insensitive check and all three descriptions from it, and interpolated `MAX_TAGS_PER_WORKSPACE` in the Swagger text and a comment (c9ff55816). Description text that names a limit or a value set interpolates its constant.",
+    "ruleIds": [
+      "PR-02"
+    ]
+  },
+  {
+    "id": "RL-20261028-002",
+    "title": "Tag write helper relied on a lock its caller takes, without saying so",
+    "sourceWindowId": "CLOSED-20261022-20261030",
+    "prNumbers": [
+      3619
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4379177284,
+      4400430743
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "Review asked whether `replaceItemTags` needed the workspace tag lock. Its only caller takes `lockSpaceForTagWrites` first in the same transaction and passes a `LockedSpace` that only the lock returns; the author recorded that precondition in the helper's doc comment (c9ff55816). A write helper that relies on a caller-held lock takes proof of it in its signature and says so in its doc comment.",
+    "ruleIds": [
+      "DB-02"
+    ]
+  },
+  {
+    "id": "RL-20261028-003",
+    "title": "Tag-name normalization written twice, in the schema and in the blind index",
+    "sourceWindowId": "CLOSED-20261022-20261030",
+    "prNumbers": [
+      3619
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4379296449,
+      4400440255
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "`TagNameSchema` collapsed runs of spaces inline and `SpaceEncryptionService.tagNameIndex` repeated the rule. Review asked for one `normalizeTagNameKey`; the author used it in both places, ran `sanitizeName` in the index too so the two cannot drift, and added a test for that (c9ff55816). A normalization that two seams must agree on is one function both call.",
+    "ruleIds": [
+      "REUSE-01"
+    ]
+  },
+  {
+    "id": "RL-20261028-004",
+    "title": "New encrypted column missing from the field-encryption backfill script",
+    "sourceWindowId": "CLOSED-20261022-20261030",
+    "prNumbers": [
+      3619
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [
+      5615414505
+    ],
+    "issueCommentIds": [
+      6359206744
+    ],
+    "learning": "Tag names became a KMS-encrypted column, but `scripts/backfill-field-encryption.ts` had no `space_address_book_tags` entry in `TABLES`. A name written as plaintext during an `ENCRYPTION_ENABLED` rollback would pass `--verify` and never be encrypted, and `decryptTagNames` would then answer 500 for that Workspace once the flag was on again. The author added the table (name only, no `indexColumn`) and updated the docstring (800921924). A new encrypted column is registered in the backfill script in the same PR.",
+    "ruleIds": [
+      "DB-01"
+    ]
+  },
+  {
+    "id": "RL-20261028-005",
+    "title": "Batch with a repeated contact created tags no applied entry used",
+    "sourceWindowId": "CLOSED-20261022-20261030",
+    "prNumbers": [
+      3619
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [
+      5615414505
+    ],
+    "issueCommentIds": [
+      6359206744
+    ],
+    "learning": "`setTagsForItems` created a tag for every name in every entry while `findTagChanges` kept only the last entry per contact, so a `PUT /address-book` listing one contact twice created orphan tags, used up colour slots and could hit the 8-tag limit. The author added `lastEntryPerContact` right after resolving contacts, so only kept entries reach `resolveOrCreateTags`, with a test that fails without it (800921924). A batch that can repeat a key is deduplicated once, before any side effect.",
+    "ruleIds": [
+      "DATA-01"
+    ]
+  },
+  {
+    "id": "RL-20261028-006",
+    "title": "Integer tagId path param accepted values above the int4 column range",
+    "sourceWindowId": "CLOSED-20261022-20261030",
+    "prNumbers": [
+      3619
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [
+      5615414505
+    ],
+    "issueCommentIds": [
+      6359206744
+    ],
+    "learning": "`RowSchema.shape.id` accepts any safe integer, but `space_address_book_tags.id` is `int4`, so a `tagId` above 2147483647 reached Postgres and answered 500 (and `0` answered 404). The author added `TagIdSchema = RowSchema.shape.id.positive().max(DB_MAX_SAFE_INTEGER)` on PATCH and DELETE, with a test that both now answer 422 (800921924). An integer id param is bounded to its column type at the boundary.",
+    "ruleIds": [
+      "TYPE-03"
+    ]
+  },
+  {
+    "id": "RL-20261028-007",
+    "title": "New tables shipped without row builders",
+    "sourceWindowId": "CLOSED-20261022-20261030",
+    "prNumbers": [
+      3619
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [],
+    "reviewIds": [],
+    "issueCommentIds": [
+      6216523435
+    ],
+    "learning": "The tag tables `space_address_book_tags` and the junction `space_address_book_item_tags` arrived with a domain schema, entity, migration and DTO but no row builder; the one builder built the API-facing tag. An automated architecture check flagged it and the merged diff adds `address-book-tag.db.builder.ts` and `address-book-item-tag.db.builder.ts` beside `address-book-item.db.builder.ts`, which the PR body lists. Every new persisted shape, junction tables included, gets a builder.",
+    "ruleIds": [
+      "TEST-01"
     ]
   }
 ]

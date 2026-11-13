@@ -192,3 +192,29 @@ public async getAll(): Promise<Array<GetParentsItemsResponse>> {}
 Clients that already read the per-resource endpoint reuse the same parser, and
 the response is a documented class instead of an inline schema. An array also
 leaves room for pagination later.
+
+## PR-02 — Swagger text interpolates the constant it names
+
+Source: PR #3619 (RL-20261028-001)
+
+### Avoid
+
+```ts
+@ApiBadRequestResponse({
+  description: 'Invalid identifier, or the parent already has 8 items',
+})
+```
+
+### Prefer
+
+```ts
+@ApiBadRequestResponse({
+  description: `Invalid identifier, or the parent already has ${MAX_ITEMS_PER_PARENT} items`,
+})
+```
+
+### Why
+
+The limit lives in one constant. A literal in the description stays behind
+when the constant changes, and the published contract then documents the old
+value.

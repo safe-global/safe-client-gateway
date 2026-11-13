@@ -67,7 +67,8 @@
       "RL-20251204-001",
       "RL-20260729-003",
       "RL-20260827-001",
-      "RL-20261001-003"
+      "RL-20261001-003",
+      "RL-20261026-002"
     ]
   },
   {
@@ -88,7 +89,8 @@
       "RL-20260707-001",
       "RL-20261001-005",
       "RL-20261009-010",
-      "RL-20261014-007"
+      "RL-20261014-007",
+      "RL-20261026-006"
     ]
   },
   {
@@ -96,9 +98,11 @@
     "project": "general",
     "area": "scope",
     "title": "Docs aligned with behavior",
-    "rule": "Docs, samples, runbooks, and `.env.sample` must reflect the final behavior of the PR. Docs do not carry exact counts (test totals) that drift with every PR. Swagger descriptions do not restate enum members; let the schema or `enum` metadata carry the value list. Operator runbooks are part of the safety contract: a change that alters what is safe to do in which order rewrites them in the same PR, citing symbolic constants rather than repeating literals. A change that alters a pattern the guides document updates those guides in the same PR — including changes arriving via a merge — and the check is whether the rule still describes the code, not merely whether its paths resolve. A guide does not enumerate or restate what another guide owns — it points at the owner and declares open sets open. Module-specific docs live in that module's `README.md`; the root README links them instead of holding them.",
+    "rule": "Docs, samples, runbooks, and `.env.sample` must reflect the final behavior of the PR. Docs do not carry exact counts (test totals) that drift with every PR. Swagger descriptions do not restate enum members; let the schema or `enum` metadata carry the value list, interpolate the constant for any limit or value set the text names, and add a response decorator for every outcome the change introduces (a new 422). Operator runbooks are part of the safety contract: a change that alters what is safe to do in which order rewrites them in the same PR, citing symbolic constants rather than repeating literals. A change that alters a pattern the guides document updates those guides in the same PR — including changes arriving via a merge — and the check is whether the rule still describes the code, not merely whether its paths resolve. A guide does not enumerate or restate what another guide owns — it points at the owner and declares open sets open. Module-specific docs live in that module's `README.md`; the root README links them instead of holding them.",
     "check": "Are docs, samples, and runbooks aligned with the final behavior?",
-    "exampleRefs": [],
+    "exampleRefs": [
+      "examples/controllers-and-swagger.md#pr-02-swagger-text-interpolates-the-constant-it-names"
+    ],
     "reviewLearningIds": [
       "RL-20260128-002",
       "RL-20260116-001",
@@ -112,7 +116,9 @@
       "RL-20260921-003",
       "RL-20261009-008",
       "RL-20261014-005",
-      "RL-20261016-001"
+      "RL-20261016-001",
+      "RL-20261026-008",
+      "RL-20261028-001"
     ]
   },
   {
@@ -194,7 +200,8 @@
       "RL-20260602-004",
       "RL-20260922-003",
       "RL-20261014-009",
-      "RL-20261016-008"
+      "RL-20261016-008",
+      "RL-20261026-002"
     ]
   },
   {
@@ -220,7 +227,8 @@
       "RL-20261002-004",
       "RL-20261009-011",
       "RL-20261014-004",
-      "RL-20261019-003"
+      "RL-20261019-003",
+      "RL-20261028-003"
     ]
   },
   {
@@ -251,7 +259,8 @@
       "RL-20261008-004",
       "RL-20261009-007",
       "RL-20261014-006",
-      "RL-20261014-010"
+      "RL-20261014-010",
+      "RL-20261026-004"
     ]
   },
   {
@@ -277,11 +286,12 @@
     "project": "general",
     "area": "types",
     "title": "Schemas in entity files",
-    "rule": "Reusable Zod schemas live in entity/schema files, not inline in services/controllers. Apply normalization (`.transform`, defaults) at the schema layer; prefer `.nullish()` over `.nullable().optional()`. Do not stack `.default(x)` after `.catch(x)` — `.catch` already handles undefined/invalid — and extract repeated fallback fragments to a shared const. Multi-condition validation uses one `superRefine` (single pass, shared computed values, all issues collected), not a chain of `.refine`s. The `z.infer` type lives next to its schema in the same `*.entity.ts` file. Enum value sets are exported `as const` arrays consumed by `z.enum([...X])` and reused by faker builders. When a sibling entity already defines the same record/metadata shape, generalize and reuse that schema instead of re-declaring it. A transform that only reshapes input `.pipe()`s into the schema that validates the result, rather than `safeParse`-ing inside the transform and re-raising its issues.",
+    "rule": "Reusable Zod schemas live in entity/schema files, not inline in services/controllers. Apply normalization (`.transform`, defaults) at the schema layer; prefer `.nullish()` over `.nullable().optional()`. Do not stack `.default(x)` after `.catch(x)` — `.catch` already handles undefined/invalid — and extract repeated fallback fragments to a shared const. Multi-condition validation uses one `superRefine` (single pass, shared computed values, all issues collected), not a chain of `.refine`s. The `z.infer` type lives next to its schema in the same `*.entity.ts` file. Enum value sets are exported `as const` arrays consumed by `z.enum([...X])` and reused by faker builders. When a sibling entity already defines the same record/metadata shape, generalize and reuse that schema instead of re-declaring it; an inline object type repeated across signatures likewise becomes one named (generic if needed) type in the module's `domain/entities`. A transform that only reshapes input `.pipe()`s into the schema that validates the result, rather than `safeParse`-ing inside the transform and re-raising its issues.",
     "check": "Are reusable schemas in entity/schema files?",
     "exampleRefs": [
       "examples/error-handling.md#type-02-type-03-empty-external-error-strings-normalize-to-absence",
-      "examples/schemas-and-validation.md#type-02-split-then-validate-pipes-into-the-parts-schema"
+      "examples/schemas-and-validation.md#type-02-split-then-validate-pipes-into-the-parts-schema",
+      "examples/schemas-and-validation.md#type-02-a-repeated-inline-object-type-becomes-one-named-type"
     ],
     "reviewLearningIds": [
       "RL-20260123-002",
@@ -292,7 +302,8 @@
       "RL-20260710-005",
       "RL-20260717-005",
       "RL-20260925-003",
-      "RL-20260925-006"
+      "RL-20260925-006",
+      "RL-20261027-001"
     ]
   },
   {
@@ -300,7 +311,7 @@
     "project": "general",
     "area": "types",
     "title": "Validate external inputs",
-    "rule": "Validate token claims, external responses, queued jobs, config strings, and `.every`-style predicate results before use. Predicate return values must be honored — no silent acceptance. Normalize at the validation boundary (e.g. a Zod `.toLowerCase()`/`.transform()`) so consumers receive ready-to-use values instead of repeating normalization per call site, and `.brand<'X'>()` validated value types so a same-shaped raw string cannot bypass the schema. Normalize case on both sides before strict equality of hex/address-like strings. Numeric-string ID schemas reject zero, leading zeros, signs, and floats (`/^[1-9]\\d*$/`), and test-data generators must produce values that satisfy the same constraint (`faker.string.numeric()` allows leading zeros). Prefer Zod `.overwrite()` over `.transform()` for type-preserving normalization (dedup, casing) so the schema stays introspectable. Unicode sanitization weighs legitimate-script collateral: strip only the dangerous `Cf` subset (bidi controls), keep or document ZWJ/ZWNJ, fold smart punctuation to ASCII before validation, and give \"empty after sanitization\" its own message. Defensive fallbacks satisfy the same schema as real values — use the domain's canonical constant (`NULL_ADDRESS`) instead of a truncated literal cast with `as Address`. A transform applied across a batch must not throw on a degenerate-but-legal value (the empty string) and take every other row down with it. Do not weaken a consumer-boundary schema to keep malformed events flowing: a field the event's meaning depends on stays required.",
+    "rule": "Validate token claims, external responses, queued jobs, config strings, and `.every`-style predicate results before use. Predicate return values must be honored — no silent acceptance. Normalize at the validation boundary (e.g. a Zod `.toLowerCase()`/`.transform()`) so consumers receive ready-to-use values instead of repeating normalization per call site, and `.brand<'X'>()` validated value types so a same-shaped raw string cannot bypass the schema. Normalize case on both sides before strict equality of hex/address-like strings. Numeric-string ID schemas reject zero, leading zeros, signs, and floats (`/^[1-9]\\d*$/`), integer id params are bounded to their column type (`.positive().max(DB_MAX_SAFE_INTEGER)` for `int4`), and test-data generators must produce values that satisfy the same constraint (`faker.string.numeric()` allows leading zeros). Prefer Zod `.overwrite()` over `.transform()` for type-preserving normalization (dedup, casing) so the schema stays introspectable. Unicode sanitization weighs legitimate-script collateral: strip only the dangerous `Cf` subset (bidi controls), keep or document ZWJ/ZWNJ, fold smart punctuation to ASCII before validation, and give \"empty after sanitization\" its own message. Defensive fallbacks satisfy the same schema as real values — use the domain's canonical constant (`NULL_ADDRESS`) instead of a truncated literal cast with `as Address`. A transform applied across a batch must not throw on a degenerate-but-legal value (the empty string) and take every other row down with it. Do not weaken a consumer-boundary schema to keep malformed events flowing: a field the event's meaning depends on stays required.",
     "check": "Are external responses, token claims, queued jobs, and config strings validated and normalized at the boundary (branded where it matters), and is case normalized before strict hex/address equality?",
     "exampleRefs": [
       "examples/error-handling.md#type-02-type-03-empty-external-error-strings-normalize-to-absence",
@@ -317,7 +328,8 @@
       "RL-20251209-002",
       "RL-20260723-004",
       "RL-20260729-002",
-      "RL-20260921-002"
+      "RL-20260921-002",
+      "RL-20261028-006"
     ]
   },
   {
@@ -461,11 +473,12 @@
     "project": "general",
     "area": "database",
     "title": "Unique constraint matches lifecycle",
-    "rule": "Unique constraints, status transitions, and races need lifecycle-aware handling: partial indexes for nullable uniques, deduplication migrations before adding constraints to existing tables, deterministic ordering for fallback rows (NULL + specific) so callers cannot pick non-deterministically. When a feature flag switches storage format (e.g. encryption), uniqueness and other invariants must hold in both modes (complementary partial unique indexes), and reverse migrations pre-check for rows the narrowed column cannot hold.",
+    "rule": "Unique constraints, status transitions, and races need lifecycle-aware handling: partial indexes for nullable uniques, deduplication migrations before adding constraints to existing tables, deterministic ordering for fallback rows (NULL + specific) so callers cannot pick non-deterministically. When a feature flag switches storage format (e.g. encryption), uniqueness and other invariants must hold in both modes (complementary partial unique indexes), and a new encrypted column is registered in the field-encryption backfill script (`TABLES`) so rows written during a rollback get encrypted, and reverse migrations pre-check for rows the narrowed column cannot hold.",
     "check": "Do unique constraints match nullable/lifecycle behavior?",
     "exampleRefs": [],
     "reviewLearningIds": [
-      "RL-20260710-011"
+      "RL-20260710-011",
+      "RL-20261028-004"
     ]
   },
   {
@@ -473,7 +486,7 @@
     "project": "general",
     "area": "database",
     "title": "Atomic state transitions",
-    "rule": "Multi-step status transitions are atomic (single SQL/ORM bulk call or wrapped transaction); do not loop awaits to mutate N rows. Writes that must commit or roll back together must run on the same outer `EntityManager`/transaction — a find-or-create helper invoked inside a transaction must accept and thread the outer `EntityManager` rather than opening its own, or a later failure leaves orphan committed rows. Conversely, do not wrap a single-statement write in a transaction — one statement is already atomic. A staleness or ordering guard is re-checked inside the lock it protects; a value read before the lock is carried in and re-compared, never trusted. The transaction lives with the use case, expensive I/O (KMS, upstream calls) happens before the lock is taken, and any quantity being enforced on — including the set of rows to lock — is read inside it. Paths that take several row locks follow one order, documented on the lock helpers. A compensating action reverses the exact record the original wrote, carried forward from the charge — never one resolved again at refund time. A quota is charged only for the side effect that happened: claim the item atomically so a concurrent duplicate neither counts nor acts, and release the slot when the side effect fails.",
+    "rule": "Multi-step status transitions are atomic (single SQL/ORM bulk call or wrapped transaction); do not loop awaits to mutate N rows. Writes that must commit or roll back together must run on the same outer `EntityManager`/transaction — a find-or-create helper invoked inside a transaction must accept and thread the outer `EntityManager` rather than opening its own, or a later failure leaves orphan committed rows. Conversely, do not wrap a single-statement write in a transaction — one statement is already atomic. A staleness or ordering guard is re-checked inside the lock it protects; a value read before the lock is carried in and re-compared, never trusted. The transaction lives with the use case, expensive I/O (KMS, upstream calls) happens before the lock is taken, and any quantity being enforced on — including the set of rows to lock — is read inside it. Paths that take several row locks follow one order, documented on the lock helpers; a write helper that relies on a caller-held lock takes proof of it in its signature (a `LockedSpace` only the lock returns) and says so in its doc comment. A compensating action reverses the exact record the original wrote, carried forward from the charge — never one resolved again at refund time. A quota is charged only for the side effect that happened: claim the item atomically so a concurrent duplicate neither counts nor acts, and release the slot when the side effect fails.",
     "check": "Are multi-step state transitions atomic, do helpers called inside a transaction share the outer EntityManager instead of opening their own, and do multi-row locks follow the documented order?",
     "exampleRefs": [
       "examples/database-migrations.md#db-02-reverse-the-record-the-charge-wrote-not-a-freshly-resolved-one"
@@ -486,7 +499,8 @@
       "RL-20260917-001",
       "RL-20261001-006",
       "RL-20261009-014",
-      "RL-20261019-002"
+      "RL-20261019-002",
+      "RL-20261028-002"
     ]
   },
   {
@@ -710,7 +724,8 @@
       "RL-20260707-002",
       "RL-20260710-009",
       "RL-20261002-001",
-      "RL-20261009-012"
+      "RL-20261009-012",
+      "RL-20261028-007"
     ]
   },
   {
@@ -819,7 +834,7 @@
     "project": "general",
     "area": "tests",
     "title": "Cover edges and determinism",
-    "rule": "Edge cases, observability calls, cache invalidation branches, production/default config branches, and deterministic ordering need tests when they are part of the behavior. Cache-invalidation tests pair every cleared-cache assertion with a negative assertion that unrelated caches stay untouched. Merge/dedup precedence tests use distinct objects sharing the same key — identical objects pass under either precedence. Behavior added to one method of a sibling set (`get`/`post`/`delete`) is covered on every sibling, and specs written for an approach abandoned during review are deleted rather than left to pass vacuously. Every gate, scoping filter or safety setting, including a widened gated list (versions, chains, providers) and a framework option read as metadata (`@Processor({ maxStalledCount: 0 })`, a queue's global concurrency), has a case that fails when it is removed — the negative case proving it still rejects, a second owner in a per-owner fixture — not only the positive one. A concurrency test proves a call is blocked by observing the lock wait (`pg_stat_activity`), not by a fixed sleep. A claim about upstream behaviour is settled against the host the deployed service resolves (in-cluster), not a curl against the public edge.",
+    "rule": "Edge cases, observability calls, cache invalidation branches, production/default config branches, and deterministic ordering need tests when they are part of the behavior. Cache-invalidation tests pair every cleared-cache assertion with a negative assertion that unrelated caches stay untouched. Merge/dedup precedence tests use distinct objects sharing the same key — identical objects pass under either precedence. Behavior added to one method of a sibling set (`get`/`post`/`delete`) is covered on every sibling, and specs written for an approach abandoned during review are deleted rather than left to pass vacuously. Every gate, scoping filter or safety setting, including a widened gated list (versions, chains, providers) and a framework option read as metadata (`@Processor({ maxStalledCount: 0 })`, a queue's global concurrency), has a case that fails when it is removed — the negative case proving it still rejects, a second owner in a per-owner fixture — not only the positive one. Each factor gets its own case changing exactly that input (`it.each` over the field that differs), so a broken factor cannot hide behind another. A concurrency test proves a call is blocked by observing the lock wait (`pg_stat_activity`), not by a fixed sleep. A claim about upstream behaviour is settled against the host the deployed service resolves (in-cluster), not a curl against the public edge.",
     "check": "Do tests cover edge cases, side effects, and deterministic behavior, and does every gate, filter or safety setting have a case that fails without it?",
     "exampleRefs": [
       "examples/testing.md#test-09-cover-the-negative-paths-around-safety-critical-extraction",
@@ -838,7 +853,9 @@
       "RL-20261009-004",
       "RL-20261009-013",
       "RL-20261009-015",
-      "RL-20261014-001"
+      "RL-20261014-001",
+      "RL-20261026-001",
+      "RL-20261026-007"
     ]
   },
   {
@@ -945,15 +962,28 @@
     "project": "general",
     "area": "data",
     "title": "Aggregates match returned items and signed values",
-    "rule": "Totals, dust filters, and aggregate fields must be computed from the same filtered items returned to clients and must preserve meaningful signed values such as debt. Pagination next/previous links derive from the clamped/normalized limit and offset actually used in the query (normalize the cursor via `setCursor`/`PaginationData`), never from the raw client cursor. Map-spread dedup keeps the LAST entry per key — when merging sources by id, put the preferred source last (or make precedence explicit).",
-    "check": "Did this add filtering, aggregate totals, or pagination links? If yes, are totals and links based on the items/values actually returned or queried?",
+    "rule": "Totals, dust filters, and aggregate fields must be computed from the same filtered items returned to clients and must preserve meaningful signed values such as debt. Pagination next/previous links derive from the clamped/normalized limit and offset actually used in the query (normalize the cursor via `setCursor`/`PaginationData`), never from the raw client cursor. Map-spread dedup keeps the LAST entry per key — when merging sources by id, put the preferred source last (or make precedence explicit). Records merged or matched across sources are keyed by their full natural key (the row's unique key, e.g. `(guard, root)`), never a part of it, and a batch that can repeat a key is deduplicated once, before any side effect.",
+    "check": "Did this add filtering, aggregate totals, pagination links, or a merge/match of records by key? If yes, are totals and links based on the items/values actually returned or queried, and are records keyed by their full natural key and deduplicated before side effects?",
     "exampleRefs": [
       "examples/repositories-and-pagination.md#data-01-build-page-links-from-clamped-pagination-values"
     ],
     "reviewLearningIds": [
       "RL-20260113-001",
       "RL-20260612-002",
-      "RL-20260717-004"
+      "RL-20260717-004",
+      "RL-20261026-003",
+      "RL-20261028-005"
+    ]
+  },
+  {
+    "id": "TX-01",
+    "area": "transactions",
+    "title": "Decode what the transaction executes",
+    "rule": "A decoded call counts as a transaction's effect only when the transaction performs it: unpack a MultiSend batch only when the Safe delegatecalls an official MultiSend or MultiSendCallOnly deployment (`getAllMultiSendDeployments`), and never decide by the calldata selector alone. Specs build that exact outer operation and target.",
+    "check": "Does code that reads a queued or executed transaction's effect check its operation and target against official deployments, not only the calldata selector?",
+    "exampleRefs": [],
+    "reviewLearningIds": [
+      "RL-20261026-005"
     ]
   },
   {

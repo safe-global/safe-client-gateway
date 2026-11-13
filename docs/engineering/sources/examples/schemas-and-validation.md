@@ -359,3 +359,38 @@ Every element is already checked against the set, but without a maximum the
 endpoint still parses an arbitrarily long body before rejecting it. A list of
 distinct members can never be longer than the set, so the set's size is the
 natural bound.
+
+## TYPE-02 — A repeated inline object type becomes one named type
+
+Source: PR #3703 (RL-20261027-001)
+
+### Avoid
+
+```ts
+private async getMappedItems(args: {
+  items: Array<{
+    item: EntityDomain;
+    decoded: Decoded | null;
+  }>;
+}): Promise<Array<Item>> {}
+// ...the same inline shape repeated in three more signatures
+```
+
+### Prefer
+
+```ts
+// domain/entities/decoded-entity.entity.ts
+export type DecodedEntity<T extends Entity = Entity> = {
+  item: T;
+  decoded: Decoded | null;
+};
+
+private async getMappedItems(args: {
+  items: Array<DecodedEntity<EntityDomain>>;
+}): Promise<Array<Item>> {}
+```
+
+### Why
+
+One named type is one place to change when the pairing grows a field. The
+generic parameter lets callers that hold a narrower entity keep that type.
