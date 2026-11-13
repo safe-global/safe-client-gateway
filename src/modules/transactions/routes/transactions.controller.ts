@@ -50,7 +50,6 @@ import { TransactionItemPage } from '#/modules/transactions/routes/entities/tran
 import { TransactionPreview } from '#/modules/transactions/routes/entities/transaction-preview.entity';
 import { TransferTransactionItemPage } from '#/modules/transactions/routes/entities/transfer-transaction-item-page.entity';
 import { TransactionsService } from '#/modules/transactions/routes/transactions.service';
-import { PaginationDataDecorator } from '#/routes/common/decorators/pagination.data.decorator';
 import { RouteUrlDecorator } from '#/routes/common/decorators/route.url.decorator';
 import type { Page } from '#/routes/common/entities/page.entity';
 import type { PaginationData } from '#/routes/common/pagination/pagination.data';
@@ -58,6 +57,7 @@ import { AddressSchema } from '#/validation/entities/schemas/address.schema';
 import { BooleanStringSchema } from '#/validation/entities/schemas/boolean-string.schema';
 import { DateStringSchema } from '#/validation/entities/schemas/date-string.schema';
 import { HexSchema } from '#/validation/entities/schemas/hex.schema';
+import { PaginationCursorSchema } from '#/validation/entities/schemas/pagination-cursor.schema';
 import { TimezoneSchema } from '#/validation/entities/schemas/timezone.schema';
 import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
@@ -170,11 +170,13 @@ export class TransactionsController {
     type: MultisigTransactionPage,
     description: 'Paginated list of multisig transactions',
   })
+  @ApiUnprocessableEntityResponse({ description: 'Invalid cursor' })
   @Get('chains/:chainId/safes/:safeAddress/multisig-transactions')
   getMultisigTransactions(
     @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
     @RouteUrlDecorator() routeUrl: URL,
-    @PaginationDataDecorator() paginationData: PaginationData,
+    @Query('cursor', new ValidationPipe(PaginationCursorSchema))
+    paginationData: PaginationData,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,
     @Query('execution_date__gte') executionDateGte?: string,
@@ -287,11 +289,13 @@ export class TransactionsController {
     type: ModuleTransactionPage,
     description: 'Paginated list of module transactions',
   })
+  @ApiUnprocessableEntityResponse({ description: 'Invalid cursor' })
   @Get('chains/:chainId/safes/:safeAddress/module-transactions')
   getModuleTransactions(
     @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
     @RouteUrlDecorator() routeUrl: URL,
-    @PaginationDataDecorator() paginationData: PaginationData,
+    @Query('cursor', new ValidationPipe(PaginationCursorSchema))
+    paginationData: PaginationData,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,
     @Query('to') to?: string,
@@ -422,13 +426,15 @@ export class TransactionsController {
     type: IncomingTransferPage,
     description: 'Paginated list of incoming transfers',
   })
+  @ApiUnprocessableEntityResponse({ description: 'Invalid cursor' })
   @Get('chains/:chainId/safes/:safeAddress/incoming-transfers')
   getIncomingTransfers(
     @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
     @RouteUrlDecorator() routeUrl: URL,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,
-    @PaginationDataDecorator() paginationData: PaginationData,
+    @Query('cursor', new ValidationPipe(PaginationCursorSchema))
+    paginationData: PaginationData,
     @Query('trusted', new DefaultValuePipe(true), ParseBoolPipe)
     trusted: boolean,
     @Query('execution_date__gte') executionDateGte?: string,
@@ -637,13 +643,15 @@ export class TransactionsController {
     type: QueuedItemPage,
     description: 'Paginated list of queued transactions',
   })
+  @ApiUnprocessableEntityResponse({ description: 'Invalid cursor' })
   @Get('chains/:chainId/safes/:safeAddress/transactions/queued')
   getTransactionQueue(
     @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
     @RouteUrlDecorator() routeUrl: URL,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,
-    @PaginationDataDecorator() paginationData: PaginationData,
+    @Query('cursor', new ValidationPipe(PaginationCursorSchema))
+    paginationData: PaginationData,
     @Query('trusted', new DefaultValuePipe(true), ParseBoolPipe)
     trusted: boolean,
   ): Promise<Partial<Page<QueuedItem>>> {
@@ -711,13 +719,15 @@ export class TransactionsController {
     type: TransactionItemPage,
     description: 'Paginated list of historical transactions',
   })
+  @ApiUnprocessableEntityResponse({ description: 'Invalid cursor' })
   @Get('chains/:chainId/safes/:safeAddress/transactions/history')
   getTransactionsHistory(
     @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
     @RouteUrlDecorator() routeUrl: URL,
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,
-    @PaginationDataDecorator() paginationData: PaginationData,
+    @Query('cursor', new ValidationPipe(PaginationCursorSchema))
+    paginationData: PaginationData,
     @Query('timezone_offset', new DefaultValuePipe(0), ParseIntPipe)
     timezoneOffsetMs: number,
     @Query('trusted', new DefaultValuePipe(true), ParseBoolPipe)

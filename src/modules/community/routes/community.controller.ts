@@ -8,7 +8,13 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { ApiBody, ApiOkResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBody,
+  ApiOkResponse,
+  ApiQuery,
+  ApiTags,
+  ApiUnprocessableEntityResponse,
+} from '@nestjs/swagger';
 import type { Address } from 'viem';
 import { EligibilityRequestSchema } from '#/modules/community/domain/entities/eligibility-request.entity';
 import { CommunityService } from '#/modules/community/routes/community.service';
@@ -22,11 +28,11 @@ import { EligibilityRequest } from '#/modules/community/routes/entities/eligibil
 import { LockingEventPage } from '#/modules/community/routes/entities/locking-event.page.entity';
 import { LockingRank } from '#/modules/community/routes/entities/locking-rank.entity';
 import { LockingRankPage } from '#/modules/community/routes/entities/locking-rank.page.entity';
-import { PaginationDataDecorator } from '#/routes/common/decorators/pagination.data.decorator';
 import { RouteUrlDecorator } from '#/routes/common/decorators/route.url.decorator';
 import type { PaginationData } from '#/routes/common/pagination/pagination.data';
 import { AddressSchema } from '#/validation/entities/schemas/address.schema';
 import { OpaqueIdSchema } from '#/validation/entities/schemas/opaque-id.schema';
+import { PaginationCursorSchema } from '#/validation/entities/schemas/pagination-cursor.schema';
 import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
 @ApiTags('community')
@@ -43,10 +49,12 @@ export class CommunityController {
     required: false,
     type: String,
   })
+  @ApiUnprocessableEntityResponse({ description: 'Invalid cursor' })
   @Get('/campaigns')
   getCampaigns(
     @RouteUrlDecorator() routeUrl: URL,
-    @PaginationDataDecorator() paginationData: PaginationData,
+    @Query('cursor', new ValidationPipe(PaginationCursorSchema))
+    paginationData: PaginationData,
   ): Promise<CampaignPage> {
     return this.communityService.getCampaigns({ routeUrl, paginationData });
   }
@@ -59,13 +67,15 @@ export class CommunityController {
     return this.communityService.getCampaignById(resourceId);
   }
 
+  @ApiUnprocessableEntityResponse({ description: 'Invalid cursor' })
   @Get('/campaigns/:resourceId/activities')
   @ApiQuery({ name: 'cursor', required: false, type: String })
   @ApiQuery({ name: 'holder', required: false, type: String })
   getCampaignActivities(
     @Param('resourceId', new ValidationPipe(OpaqueIdSchema)) resourceId: string,
     @RouteUrlDecorator() routeUrl: URL,
-    @PaginationDataDecorator() paginationData: PaginationData,
+    @Query('cursor', new ValidationPipe(PaginationCursorSchema))
+    paginationData: PaginationData,
     @Query('holder', new ValidationPipe(AddressSchema.optional()))
     holder?: Address,
   ): Promise<CampaignActivityPage> {
@@ -83,11 +93,13 @@ export class CommunityController {
     required: false,
     type: String,
   })
+  @ApiUnprocessableEntityResponse({ description: 'Invalid cursor' })
   @Get('/campaigns/:resourceId/leaderboard')
   getCampaignLeaderboard(
     @Param('resourceId', new ValidationPipe(OpaqueIdSchema)) resourceId: string,
     @RouteUrlDecorator() routeUrl: URL,
-    @PaginationDataDecorator() paginationData: PaginationData,
+    @Query('cursor', new ValidationPipe(PaginationCursorSchema))
+    paginationData: PaginationData,
   ): Promise<CampaignRankPage> {
     return this.communityService.getCampaignLeaderboard({
       resourceId,
@@ -123,10 +135,12 @@ export class CommunityController {
     required: false,
     type: String,
   })
+  @ApiUnprocessableEntityResponse({ description: 'Invalid cursor' })
   @Get('/locking/leaderboard')
   getLeaderboard(
     @RouteUrlDecorator() routeUrl: URL,
-    @PaginationDataDecorator() paginationData: PaginationData,
+    @Query('cursor', new ValidationPipe(PaginationCursorSchema))
+    paginationData: PaginationData,
   ): Promise<LockingRankPage> {
     return this.communityService.getLockingLeaderboard({
       routeUrl,
@@ -149,12 +163,14 @@ export class CommunityController {
     required: false,
     type: String,
   })
+  @ApiUnprocessableEntityResponse({ description: 'Invalid cursor' })
   @Get('/locking/:safeAddress/history')
   getLockingHistory(
     @Param('safeAddress', new ValidationPipe(AddressSchema))
     safeAddress: Address,
     @RouteUrlDecorator() routeUrl: URL,
-    @PaginationDataDecorator() paginationData: PaginationData,
+    @Query('cursor', new ValidationPipe(PaginationCursorSchema))
+    paginationData: PaginationData,
   ): Promise<LockingEventPage> {
     return this.communityService.getLockingHistory({
       safeAddress,
