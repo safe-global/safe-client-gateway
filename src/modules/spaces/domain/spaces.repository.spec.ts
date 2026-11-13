@@ -2,6 +2,7 @@
 
 import { faker } from '@faker-js/faker';
 import { NotFoundException } from '@nestjs/common';
+import type { EntityManager } from 'typeorm';
 import type { Mock, MockedObject } from 'vitest';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
 import type { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
@@ -158,6 +159,25 @@ describe('SpacesRepository', () => {
       expect(spaceAuditRepository.record).toHaveBeenCalledExactlyOnceWith(
         entityManager,
         expect.objectContaining({ payload: { name } }),
+      );
+    });
+
+    it("writes in the caller's transaction when given an entity manager", async () => {
+      mockSavedSpace();
+
+      const result = await target.create({
+        userId,
+        name,
+        status: 'ACTIVE',
+        entityManager: entityManager as unknown as EntityManager,
+      });
+
+      expect(result).toStrictEqual({ id: spaceId, uuid: spaceUuid, name });
+      expect(postgresDatabaseService.transaction).not.toHaveBeenCalled();
+      expect(entityManager.save).toHaveBeenCalledOnce();
+      expect(spaceAuditRepository.record).toHaveBeenCalledExactlyOnceWith(
+        entityManager,
+        expect.objectContaining({ eventType: 'SPACE_CREATED' }),
       );
     });
   });
@@ -367,6 +387,33 @@ describe('SpacesRepository', () => {
       expect(queryBuilderSet).toHaveBeenCalledExactlyOnceWith({
         name: newCiphertext,
       });
+    });
+
+    it("writes in the caller's transaction when given an entity manager", async () => {
+      const newName = faker.lorem.words();
+      entityManager.findOne.mockResolvedValue({
+        id: spaceId,
+        uuid: spaceUuid,
+        name: faker.lorem.words(),
+        status: 'ACTIVE',
+        experimentalFeatures: [],
+      });
+
+      await target.update({
+        id: spaceId,
+        updatePayload: { name: newName },
+        actorUserId: userId,
+        entityManager: entityManager as unknown as EntityManager,
+      });
+
+      expect(postgresDatabaseService.transaction).not.toHaveBeenCalled();
+      expect(queryBuilderSet).toHaveBeenCalledExactlyOnceWith({
+        name: newName,
+      });
+      expect(spaceAuditRepository.record).toHaveBeenCalledExactlyOnceWith(
+        entityManager,
+        expect.objectContaining({ eventType: 'SPACE_UPDATED' }),
+      );
     });
   });
 
