@@ -6,6 +6,7 @@ import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.s
 import { SpaceSetup as DbSpaceSetup } from '#/modules/spaces/datasources/setup/entities/space-setup.entity.db';
 import type { Space } from '#/modules/spaces/domain/entities/space.entity';
 import {
+  type ClaimedSpaceSetup,
   type SpaceSetup,
   type SpaceSetupPayload,
   SpaceSetupPayloadSchema,
@@ -108,7 +109,7 @@ export class SpaceSetupsRepository implements ISpaceSetupsRepository {
   public async claim(args: {
     spaceId: Space['id'];
     leaseSeconds: number;
-  }): Promise<SpaceSetup | null> {
+  }): Promise<ClaimedSpaceSetup | null> {
     const claimed = await this.postgresDatabaseService.transaction(
       async (entityManager) => {
         const row = await entityManager.findOne(DbSpaceSetup, {
@@ -126,18 +127,24 @@ export class SpaceSetupsRepository implements ISpaceSetupsRepository {
         ) {
           return null;
         }
+        const claimId = randomUUID();
         await entityManager.update(
           DbSpaceSetup,
           { spaceId: args.spaceId },
-          { status: 'APPLYING', claimId: randomUUID() },
+          { status: 'APPLYING', claimId },
         );
-        return await entityManager.findOneOrFail(DbSpaceSetup, {
+        const claimedRow = await entityManager.findOneOrFail(DbSpaceSetup, {
           where: { spaceId: args.spaceId },
         });
+        return { row: claimedRow, claimId };
       },
     );
+    if (!claimed) {
+      return null;
+    }
     // Decrypted after the commit, so no KMS call holds the row lock.
-    return claimed ? await this.decrypt(claimed) : null;
+    const setup = await this.decrypt(claimed.row);
+    return { ...setup, claimId: claimed.claimId };
   }
 
   public async markApplied(args: {

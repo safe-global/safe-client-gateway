@@ -187,21 +187,27 @@ describe('SpaceSetupsRepository', () => {
 
   it('claims a pending setup under a new claim and returns it as APPLYING', async () => {
     const setup = spaceSetupBuilder().with('status', 'PENDING').build();
-    const claimed = {
-      ...setup,
-      status: 'APPLYING' as const,
-      claimId: fakeUuid(),
-    };
+    const updatedAt = faker.date.recent();
     entityManager.findOne.mockResolvedValue(stored(setup));
-    entityManager.findOneOrFail.mockResolvedValue(stored(claimed));
+    entityManager.findOneOrFail.mockResolvedValue(
+      stored({ ...setup, status: 'APPLYING', updatedAt }),
+    );
 
-    await expect(
-      target.claim({ spaceId: setup.spaceId, leaseSeconds }),
-    ).resolves.toEqual(claimed);
+    const claimed = await target.claim({
+      spaceId: setup.spaceId,
+      leaseSeconds,
+    });
+
+    expect(claimed).toEqual({
+      ...setup,
+      status: 'APPLYING',
+      updatedAt,
+      claimId: expect.any(String),
+    });
     expect(entityManager.update).toHaveBeenCalledWith(
       DbSpaceSetup,
       { spaceId: setup.spaceId },
-      { status: 'APPLYING', claimId: expect.any(String) },
+      { status: 'APPLYING', claimId: claimed?.claimId },
     );
   });
 
