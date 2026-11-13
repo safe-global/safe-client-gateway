@@ -21,7 +21,7 @@ It provides UI-oriented mappings and data structures for easier integration with
 
 ## Requirements
 
-- Node.js v26.12.1 (>= 26.12.1 is required) ([Node.js Release Schedule](https://nodejs.org/en/about/previous-releases)) – https://nodejs.org/en/
+- Node.js v26.13.1 (>= 26.13.1 is required) ([Node.js Release Schedule](https://nodejs.org/en/about/previous-releases)) – https://nodejs.org/en/
 - Docker Compose – https://docs.docker.com/compose/
 
 ## Installation
