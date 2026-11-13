@@ -131,7 +131,7 @@ describe('SurveysService', () => {
 
     it('propagates NotFoundException when the slug has no active survey', async () => {
       surveysRepositoryMock.findActiveBySlugOrFail.mockRejectedValue(
-        new NotFoundException('No active survey for slug "onboarding".'),
+        new NotFoundException(faker.lorem.sentence()),
       );
 
       await expect(

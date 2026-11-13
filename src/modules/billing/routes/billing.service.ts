@@ -392,7 +392,7 @@ export class BillingService {
    * negotiated for one customer is not subject to the general enforcement
    * rule. Space-specific wins on a shared id.
    */
-  public async listOfferedPaymentLinks(args: {
+  private async listOfferedPaymentLinks(args: {
     spaceId: Space['id'];
     spaceUuid: Space['uuid'];
   }): Promise<Array<PaymentLink>> {
