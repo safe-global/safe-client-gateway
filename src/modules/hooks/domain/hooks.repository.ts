@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable, type OnModuleInit } from '@nestjs/common';
 import type { ConsumeMessage } from 'amqplib';
+import { z } from 'zod';
 import { IConfigurationService } from '#/config/configuration.service.interface';
+import { LogType } from '#/domain/common/entities/log-type.entity';
 import {
   type ILoggingService,
   LoggingService,
@@ -16,6 +18,7 @@ import {
   TransactionEventType,
 } from '#/modules/hooks/routes/entities/event-type.entity';
 import { EventSchema } from '#/modules/hooks/routes/entities/schemas/event.schema';
+import { InvalidEventContextSchema } from '#/modules/hooks/routes/entities/schemas/invalid-event-context.schema';
 import { IPushNotificationService } from '#/modules/notifications/domain/push/push-notification.service.interface';
 import { IQueuesRepository } from '#/modules/queues/domain/queues-repository.interface';
 
@@ -45,14 +48,41 @@ export class HooksRepository implements IHooksRepository, OnModuleInit {
       this.queueName,
       async (msg: ConsumeMessage) => {
         try {
-          const content = JSON.parse(msg.content.toString());
-          const event: Event = EventSchema.parse(content);
-          await this.onEvent(event);
+          const event = this.parseEvent(msg.content.toString());
+          if (event) {
+            await this.onEvent(event);
+          }
         } catch (err) {
           this.loggingService.error(err);
         }
       },
     );
+  }
+
+  private parseEvent(body: string): Event | null {
+    let content: unknown;
+    try {
+      content = JSON.parse(body);
+    } catch (err) {
+      this.logInvalidEvent(undefined, asError(err).message);
+      return null;
+    }
+    const result = EventSchema.safeParse(content);
+    if (!result.success) {
+      this.logInvalidEvent(content, z.prettifyError(result.error));
+      return null;
+    }
+    return result.data;
+  }
+
+  private logInvalidEvent(content: unknown, reason: string): void {
+    const { type, chainId } = InvalidEventContextSchema.parse(content);
+    this.loggingService.error({
+      type: LogType.HookEventInvalid,
+      event_type: type,
+      chain_id: chainId,
+      reason,
+    });
   }
 
   async onEvent(event: Event): Promise<unknown> {

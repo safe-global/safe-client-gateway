@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
+import type { ConsumeMessage } from 'amqplib';
 import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
 import { FakeCacheService } from '#/datasources/cache/__tests__/fake.cache.service';
@@ -583,6 +584,62 @@ describe('HooksRepository (Unit)', () => {
       expect(
         mockCounterfactualSafesRepository.markAsDeployed,
       ).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('queue messages', () => {
+    async function consume(body: string): Promise<void> {
+      let onMessage: ((msg: ConsumeMessage) => Promise<void>) | undefined;
+      mockQueuesRepository.subscribe.mockImplementation((_queueName, fn) => {
+        onMessage = fn;
+        return Promise.resolve();
+      });
+      await hooksRepository.onModuleInit();
+      if (!onMessage) {
+        throw new Error('HooksRepository did not subscribe to the queue');
+      }
+      await onMessage({
+        content: Buffer.from(body),
+      } as ConsumeMessage);
+    }
+
+    it('should log a rejected event with the fields the monitor reads', async () => {
+      const type = faker.word.sample();
+      const chainId = faker.string.numeric();
+
+      await consume(JSON.stringify({ type, chainId }));
+
+      expect(mockLoggingService.error).toHaveBeenCalledWith({
+        type: 'HOOK_EVENT_INVALID',
+        event_type: type,
+        chain_id: chainId,
+        reason: expect.stringContaining('Invalid discriminator value'),
+      });
+      expect(mockPushNotificationService.enqueueEvent).not.toHaveBeenCalled();
+    });
+
+    it('should log a message that is not an event object', async () => {
+      await consume(JSON.stringify(faker.word.words()));
+
+      expect(mockLoggingService.error).toHaveBeenCalledWith({
+        type: 'HOOK_EVENT_INVALID',
+        event_type: undefined,
+        chain_id: undefined,
+        reason: expect.any(String),
+      });
+      expect(mockPushNotificationService.enqueueEvent).not.toHaveBeenCalled();
+    });
+
+    it('should log a message that is not JSON', async () => {
+      await consume(faker.word.words());
+
+      expect(mockLoggingService.error).toHaveBeenCalledWith({
+        type: 'HOOK_EVENT_INVALID',
+        event_type: undefined,
+        chain_id: undefined,
+        reason: expect.any(String),
+      });
+      expect(mockPushNotificationService.enqueueEvent).not.toHaveBeenCalled();
     });
   });
 });
