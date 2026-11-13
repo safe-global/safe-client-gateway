@@ -184,6 +184,10 @@ export default () => ({
         process.env.PORTFOLIO_CACHE_TTL_SECONDS ?? `${10}`,
         10,
       ),
+      afterTransactionTtlSeconds: Number.parseInt(
+        process.env.PORTFOLIO_CACHE_TTL_AFTER_TRANSACTION_SECONDS ?? `${120}`,
+        10,
+      ),
     },
     filters: {
       dustThresholdUsd: Number.parseFloat(

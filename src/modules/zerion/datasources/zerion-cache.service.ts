@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import type { Address } from 'viem';
+import { IConfigurationService } from '#/config/configuration.service.interface';
 import { CacheRouter } from '#/datasources/cache/cache.router';
 import {
   CacheService,
@@ -28,10 +29,19 @@ export type ZerionCacheInvalidationSource = TransactionEventType | 'refresh';
  */
 @Injectable()
 export class ZerionCacheService {
+  private readonly afterTransactionTtlSeconds: number;
+
   constructor(
     @Inject(CacheService) private readonly cacheService: ICacheService,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
-  ) {}
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
+  ) {
+    this.afterTransactionTtlSeconds =
+      this.configurationService.getOrThrow<number>(
+        'portfolio.cache.afterTransactionTtlSeconds',
+      );
+  }
 
   /**
    * Clears every Zerion-backed cache for the Safe, best-effort: a failed
@@ -50,6 +60,8 @@ export class ZerionCacheService {
       address,
       source,
     });
+    // Recorded before the deletes, so a refetch racing them still sees it.
+    await this.recordClearedAt(address, source);
     const keys = [
       CacheRouter.getZerionWalletPortfolioCacheKey({ address }),
       CacheRouter.getPortfolioCacheKey({ address }),
@@ -65,5 +77,30 @@ export class ZerionCacheService {
         );
       }
     });
+  }
+
+  /**
+   * Records when the caches were cleared, for the settle window only. Each
+   * clear overwrites it and restarts the window. Best-effort, like the deletes.
+   *
+   * @param address - The Safe address whose caches are cleared.
+   * @param source - What triggered the invalidation, for observability.
+   */
+  private async recordClearedAt(
+    address: Address,
+    source: ZerionCacheInvalidationSource,
+  ): Promise<void> {
+    try {
+      await this.cacheService.setCounter(
+        CacheRouter.getPortfolioClearedAtCacheKey({ address }),
+        Date.now(),
+        this.afterTransactionTtlSeconds,
+        0,
+      );
+    } catch (error) {
+      this.loggingService.warn(
+        `Zerion cache clear time not recorded for ${address} (source: ${source}): ${asError(error)}`,
+      );
+    }
   }
 }

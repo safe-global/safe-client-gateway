@@ -33,6 +33,7 @@ import { ZerionCacheService } from '#/modules/zerion/datasources/zerion-cache.se
 @Injectable()
 export class PortfolioRepository implements IPortfolioRepository {
   private readonly cacheExpirationSeconds: number;
+  private readonly afterTransactionTtlSeconds: number;
   private readonly dustThresholdUsd: number;
 
   constructor(
@@ -45,6 +46,10 @@ export class PortfolioRepository implements IPortfolioRepository {
     this.cacheExpirationSeconds = this.configurationService.getOrThrow<number>(
       'portfolio.cache.ttlSeconds',
     );
+    this.afterTransactionTtlSeconds =
+      this.configurationService.getOrThrow<number>(
+        'portfolio.cache.afterTransactionTtlSeconds',
+      );
     this.dustThresholdUsd = this.configurationService.getOrThrow<number>(
       'portfolio.filters.dustThresholdUsd',
     );
@@ -125,17 +130,54 @@ export class PortfolioRepository implements IPortfolioRepository {
       sync: args.sync,
     });
     const fetchedAt = Date.now();
+    const { expiresAt, isSettling } = await this._getExpiry({
+      address: args.address,
+      fetchedAt,
+    });
     const snapshot: PortfolioSnapshot = {
       ...PortfolioSchema.parse(rawPortfolio),
       fetchedAt,
-      expiresAt: fetchedAt + this.cacheExpirationSeconds * 1_000,
+      expiresAt,
     };
     await this.cacheService.hSet(
       args.cacheDir,
       JSON.stringify(snapshot),
-      this.cacheExpirationSeconds,
+      Math.ceil((expiresAt - fetchedAt) / 1_000),
+      // No jitter in the settle window, so the entry never outlives it.
+      isSettling ? 0 : undefined,
     );
     return snapshot;
+  }
+
+  /**
+   * A transaction clears the cache before Zerion may have indexed it, so a
+   * portfolio fetched within the settle window after a clear is only kept
+   * until that window ends. The next read after it refetches the settled
+   * balance, at most one extra Zerion call per clear.
+   *
+   * @param args.address - The wallet address
+   * @param args.fetchedAt - When the portfolio was fetched, in epoch ms
+   * @returns When the cached portfolio expires, in epoch ms, and whether that
+   * was cut to the end of the settle window
+   */
+  private async _getExpiry(args: {
+    address: Address;
+    fetchedAt: number;
+  }): Promise<{ expiresAt: number; isSettling: boolean }> {
+    const expiresAt = args.fetchedAt + this.cacheExpirationSeconds * 1_000;
+    const clearedAt = await this.cacheService.getCounter(
+      CacheRouter.getPortfolioClearedAtCacheKey({ address: args.address }),
+    );
+    const settledAt =
+      clearedAt === null
+        ? null
+        : clearedAt + this.afterTransactionTtlSeconds * 1_000;
+    if (settledAt === null || settledAt <= args.fetchedAt) {
+      return { expiresAt, isSettling: false };
+    }
+    return settledAt < expiresAt
+      ? { expiresAt: settledAt, isSettling: true }
+      : { expiresAt, isSettling: false };
   }
 
   /**

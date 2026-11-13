@@ -1226,6 +1226,15 @@ export class CacheRouter {
   }
 
   /**
+   * When the Zerion caches of an address were last cleared, in epoch ms. Kept
+   * for the settle window only, so a refetch right after a transaction is not
+   * cached for the full TTL.
+   */
+  static getPortfolioClearedAtCacheKey(args: { address: Address }): string {
+    return `${CacheRouter.PORTFOLIO_KEY}_${args.address}_cleared_at`;
+  }
+
+  /**
    * Cooldown counter that skips repeat portfolio cache clears for the same address.
    */
   static getPortfolioClearCooldownCacheKey(args: { address: Address }): string {
