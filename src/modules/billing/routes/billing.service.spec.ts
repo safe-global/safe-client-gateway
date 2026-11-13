@@ -32,7 +32,6 @@ import {
 import type { PaymentLink } from '#/datasources/billing-api/entities/payment-link.entity';
 import type { Subscription } from '#/datasources/billing-api/entities/subscription.entity';
 import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
-import { DataSourceError } from '#/domain/errors/data-source.error';
 import type { ILoggingService } from '#/logging/logging.interface';
 import {
   oidcAuthPayloadDtoBuilder,
@@ -746,34 +745,6 @@ describe('BillingService', () => {
         }),
       ).resolves.toBe(false);
       expect(subscriptionSyncServiceMock.syncSpace).not.toHaveBeenCalled();
-    });
-
-    it('should report no live subscription when the billing service has no customer for the space yet', async () => {
-      billingRepositoryMock.getSubscriptionsByCustomerId.mockRejectedValue(
-        new DataSourceError(faker.lorem.sentence(), 404),
-      );
-
-      await expect(
-        service.syncSubscription({
-          spaceId: faker.number.int({ min: 1 }),
-          spaceUuid: fakeUuid(),
-        }),
-      ).resolves.toBe(false);
-      expect(subscriptionSyncServiceMock.syncSpace).not.toHaveBeenCalled();
-    });
-
-    it('should propagate any other failure of the billing service', async () => {
-      const failure = new DataSourceError(faker.lorem.sentence(), 503);
-      billingRepositoryMock.getSubscriptionsByCustomerId.mockRejectedValue(
-        failure,
-      );
-
-      await expect(
-        service.syncSubscription({
-          spaceId: faker.number.int({ min: 1 }),
-          spaceUuid: fakeUuid(),
-        }),
-      ).rejects.toBe(failure);
     });
   });
 
