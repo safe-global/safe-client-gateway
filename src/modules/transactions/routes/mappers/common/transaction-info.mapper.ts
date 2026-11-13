@@ -519,7 +519,10 @@ export class MultisigTransactionInfoMapper {
       return await this.vaultTransactionMapper.mapRedeemInfo({
         chainId: args.chainId,
         to: vaultRedeemOrWithdrawTransaction.to,
-        assets: vaultRedeemOrWithdrawTransaction.assets,
+        amount:
+          vaultRedeemOrWithdrawTransaction.method === 'redeem'
+            ? { shares: vaultRedeemOrWithdrawTransaction.shares }
+            : { assets: vaultRedeemOrWithdrawTransaction.assets },
         data: vaultRedeemOrWithdrawTransaction.data,
         safeAddress: args.transaction.safe,
       });

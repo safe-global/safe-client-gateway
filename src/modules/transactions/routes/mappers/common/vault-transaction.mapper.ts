@@ -3,6 +3,7 @@ import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type { Address } from 'viem';
 import { getNumberString } from '#/domain/common/utils/utils';
 import { EarnRepository } from '#/modules/earn/domain/earn.repository';
+import type { DefiVaultStake } from '#/modules/staking/datasources/entities/defi-vault-stake.entity';
 import type {
   DefiVaultStats,
   DefiVaultStatsAdditionalReward,
@@ -29,7 +30,7 @@ export class VaultTransactionMapper {
   public async mapDepositInfo(args: {
     chainId: string;
     to: Address;
-    assets: number;
+    assets: bigint;
     data: Address;
     safeAddress: Address;
   }): Promise<VaultDepositTransactionInfo> {
@@ -56,11 +57,12 @@ export class VaultTransactionMapper {
 
     const cumulativeNrr =
       defiVaultStats.nrr + defiVaultStats.additional_rewards_nrr;
-    const expectedAnnualReward = (cumulativeNrr / 100) * args.assets;
+    // Reward projections are estimates, so float precision is acceptable here
+    const expectedAnnualReward = (cumulativeNrr / 100) * Number(args.assets);
     const expectedMonthlyReward = expectedAnnualReward / 12;
 
     return new VaultDepositTransactionInfo({
-      value: getNumberString(args.assets),
+      value: args.assets.toString(),
       fee: defiVaultStats.performance_fee,
       baseNrr: defiVaultStats.nrr,
       tokenInfo: new TokenInfo({ ...token, trusted: true }),
@@ -73,10 +75,14 @@ export class VaultTransactionMapper {
     });
   }
 
+  /**
+   * @param args.amount - `withdraw` carries assets; `redeem` carries shares,
+   * which are converted to assets at the rate of the Safe's Kiln position
+   */
   public async mapRedeemInfo(args: {
     chainId: string;
     to: Address;
-    assets: number;
+    amount: { assets: bigint } | { shares: bigint };
     data: Address;
     safeAddress: Address;
   }): Promise<VaultRedeemTransactionInfo> {
@@ -107,9 +113,13 @@ export class VaultTransactionMapper {
     ]);
 
     const currentReward = Number(stake.current_rewards);
+    const assets =
+      'assets' in args.amount
+        ? args.amount.assets
+        : this.convertSharesToAssets({ shares: args.amount.shares, stake });
 
     return new VaultRedeemTransactionInfo({
-      value: getNumberString(args.assets),
+      value: assets.toString(),
       fee: defiVaultStats.performance_fee,
       baseNrr: defiVaultStats.nrr,
       tokenInfo: new TokenInfo({ ...token, trusted: true }),
@@ -118,6 +128,19 @@ export class VaultTransactionMapper {
       additionalRewardsNrr: defiVaultStats.additional_rewards_nrr,
       additionalRewards,
     });
+  }
+
+  // Rounds down, like ERC-4626 convertToAssets. Kiln's position may lag the
+  // chain by a few blocks, so this is an estimate of the current rate.
+  private convertSharesToAssets(args: {
+    shares: bigint;
+    stake: DefiVaultStake;
+  }): bigint {
+    const sharesBalance = BigInt(args.stake.shares_balance);
+    if (sharesBalance === 0n) {
+      throw new NotFoundException('DeFi vault share price not found');
+    }
+    return (args.shares * BigInt(args.stake.current_balance)) / sharesBalance;
   }
 
   private mapVaultInfo(args: {
