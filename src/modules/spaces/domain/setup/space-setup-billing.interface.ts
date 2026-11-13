@@ -20,7 +20,7 @@ export interface ISpaceSetupBilling {
   /** The trial plans a Workspace created now is offered. */
   listTrialPlans(): Promise<Array<PaymentLink>>;
 
-  /** The payment links an existing Workspace is offered. */
+  /** The payment links an existing Workspace is offered; the caller authorizes. */
   listOfferedPaymentLinks(args: {
     spaceId: Space['id'];
     spaceUuid: Space['uuid'];

@@ -451,9 +451,10 @@ export class BillingService implements ISpaceSetupBilling {
    * The general catalog narrowed to what this workspace is entitled to, with
    * the space-specific catalog merged in on top, always offered: a link
    * negotiated for one customer is not subject to the general enforcement
-   * rule. Space-specific wins on a shared id.
+   * rule. Space-specific wins on a shared id. Authorizes nothing: callers
+   * assert membership first, as {@link getSpacePaymentLinks} does.
    */
-  private async listOfferedPaymentLinks(args: {
+  public async listOfferedPaymentLinks(args: {
     spaceId: Space['id'];
     spaceUuid: Space['uuid'];
   }): Promise<Array<PaymentLink>> {
