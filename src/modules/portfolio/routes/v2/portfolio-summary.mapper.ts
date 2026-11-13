@@ -4,11 +4,11 @@ import type { Address } from 'viem';
 import { getNumberString } from '#/domain/common/utils/utils';
 import type { Balance } from '#/modules/balances/domain/entities/balance.entity';
 import type { PortfolioSnapshot } from '#/modules/portfolio/domain/entities/portfolio-snapshot.entity';
+import { sumPortfolioRows } from '#/modules/portfolio/domain/portfolio-totals';
 import {
   PortfolioSummary,
   PortfolioSummarySnapshot,
 } from '#/modules/portfolio/routes/v2/entities/portfolio-summary.dto.entity';
-import { PositionType } from '#/modules/positions/domain/entities/position-type.entity';
 
 /** Sums the snapshot's rows, the same rows the Assets page lists, so the totals match. */
 @Injectable()
@@ -18,7 +18,7 @@ export class PortfolioSummaryMapper {
     address: Address;
     snapshot: PortfolioSnapshot;
   }): PortfolioSummary {
-    const totals = this.sumRows(args.snapshot);
+    const totals = sumPortfolioRows(args.snapshot);
     return new PortfolioSummary({
       chainId: args.chainId,
       address: args.address,
@@ -51,31 +51,6 @@ export class PortfolioSummaryMapper {
       source: 'tx_service',
       snapshot: null,
     });
-  }
-
-  private sumRows(snapshot: PortfolioSnapshot): {
-    total: number;
-    byChain: Record<string, number>;
-    byType: Record<string, number>;
-  } {
-    let total = 0;
-    const byChain: Record<string, number> = {};
-    const byType: Record<string, number> = {};
-    const add = (chainId: string, type: string, balanceFiat?: string): void => {
-      const value = Number(balanceFiat ?? 0);
-      total += value;
-      byChain[chainId] = (byChain[chainId] ?? 0) + value;
-      byType[type] = (byType[type] ?? 0) + value;
-    };
-    for (const token of snapshot.tokenBalances) {
-      add(token.tokenInfo.chainId, PositionType.wallet, token.balanceFiat);
-    }
-    for (const app of snapshot.positionBalances) {
-      for (const item of app.groups.flatMap(({ items }) => items)) {
-        add(item.tokenInfo.chainId, item.type, item.balanceFiat);
-      }
-    }
-    return { total, byChain, byType };
   }
 
   private toDecimalStrings(
