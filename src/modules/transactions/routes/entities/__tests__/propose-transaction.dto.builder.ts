@@ -4,6 +4,7 @@ import { getAddress, type Hash, type Hex } from 'viem';
 import type { IBuilder } from '#/__tests__/builder';
 import { Builder } from '#/__tests__/builder';
 import type { Operation } from '#/modules/safe/domain/entities/operation.entity';
+import { declaredAttributionBuilder } from '#/modules/transactions/domain/entities/__tests__/declared-attribution.builder';
 import type {
   NestedTransactionDto,
   ProposeTransactionDto,
@@ -40,5 +41,6 @@ export function proposeTransactionDtoBuilder(): IBuilder<ProposeTransactionDto> 
     .with('sender', getAddress(faker.finance.ethereumAddress()))
     .with('signature', faker.string.hexadecimal({ length: 130 }) as Hex)
     .with('origin', faker.word.sample())
-    .with('nestedTransaction', null);
+    .with('nestedTransaction', null)
+    .with('declared', declaredAttributionBuilder().build());
 }

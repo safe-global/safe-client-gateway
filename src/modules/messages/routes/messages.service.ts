@@ -141,6 +141,7 @@ export class MessagesService {
       message: args.createMessageDto.message,
       origin: args.createMessageDto.origin,
       signature: args.createMessageDto.signature,
+      declared: args.createMessageDto.declared,
     });
   }
 

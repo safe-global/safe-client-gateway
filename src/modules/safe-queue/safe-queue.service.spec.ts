@@ -18,6 +18,7 @@ import { delegateBuilder } from '#/modules/delegate/domain/entities/__tests__/de
 import { messageBuilder } from '#/modules/messages/domain/entities/__tests__/message.builder';
 import { safeQueueMultisigTransactionBuilder } from '#/modules/safe-queue/entities/__tests__/queue-multisig-transaction.builder';
 import { SafeQueueService } from '#/modules/safe-queue/safe-queue.service';
+import { declaredAttributionBuilder } from '#/modules/transactions/domain/entities/__tests__/declared-attribution.builder';
 import {
   nestedTransactionDtoBuilder,
   proposeTransactionDtoBuilder,
@@ -875,6 +876,119 @@ describe('SafeQueueService', () => {
     });
   });
 
+  describe('declared attribution', () => {
+    it('sends the declared attribution of a proposal to the queue service', async () => {
+      const declared = declaredAttributionBuilder().build();
+      const origin = {
+        name: faker.company.name(),
+        url: faker.internet.url({ appendSlash: false }),
+      };
+      const dto = proposeTransactionDtoBuilder()
+        .with('origin', JSON.stringify(origin))
+        .with('declared', declared)
+        .build();
+      networkService.post.mockResolvedValueOnce({
+        data: rawify(safeQueueMultisigTransactionBuilder().build()),
+        status: 201,
+      });
+
+      await service.proposeTransaction({
+        chainId,
+        safeAddress,
+        proposeTransactionDto: dto,
+      });
+
+      expect(networkService.post).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            declared,
+            originName: origin.name,
+            originUrl: origin.url,
+          }),
+        }),
+      );
+    });
+
+    it('sends null declared attribution when the proposal has none', async () => {
+      const dto = proposeTransactionDtoBuilder().with('declared', null).build();
+      networkService.post.mockResolvedValueOnce({
+        data: rawify(safeQueueMultisigTransactionBuilder().build()),
+        status: 201,
+      });
+
+      await service.proposeTransaction({
+        chainId,
+        safeAddress,
+        proposeTransactionDto: dto,
+      });
+
+      expect(networkService.post).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ declared: null }),
+        }),
+      );
+    });
+
+    it('sends the declared attribution only at the top level of a nested proposal', async () => {
+      const nested = nestedTransactionDtoBuilder().build();
+      const dto = proposeTransactionDtoBuilder()
+        .with('nestedTransaction', nested)
+        .build();
+      networkService.post.mockResolvedValueOnce({
+        data: rawify(safeQueueMultisigTransactionBuilder().build()),
+        status: 201,
+      });
+
+      await service.proposeTransaction({
+        chainId,
+        safeAddress,
+        proposeTransactionDto: dto,
+      });
+
+      expect(networkService.post).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            declared: dto.declared,
+            nestedTransaction: expect.not.objectContaining({
+              declared: expect.anything(),
+            }),
+          }),
+        }),
+      );
+    });
+
+    it('sends the declared attribution of a message to the queue service', async () => {
+      const declared = declaredAttributionBuilder().build();
+      const origin = {
+        name: faker.company.name(),
+        url: faker.internet.url({ appendSlash: false }),
+      };
+      networkService.post.mockResolvedValueOnce({
+        data: rawify({}),
+        status: 201,
+      });
+
+      await service.postMessage({
+        chainId,
+        safeAddress,
+        message: faker.lorem.sentence(),
+        signature: faker.string.hexadecimal({ length: 130 }),
+        origin: JSON.stringify(origin),
+        declared,
+      });
+
+      expect(networkService.post).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            declared,
+            originName: origin.name,
+            originUrl: origin.url,
+          }),
+        }),
+      );
+    });
+  });
+
   describe('circuit breaker', () => {
     const withCircuitBreakerKey = expect.objectContaining({
       networkRequest: expect.objectContaining({
@@ -1033,6 +1147,7 @@ describe('SafeQueueService', () => {
         message: faker.lorem.sentence(),
         signature: faker.string.hexadecimal({ length: 16 }),
         origin: null,
+        declared: declaredAttributionBuilder().build(),
       });
 
       expect(networkService.post).toHaveBeenCalledWith(withCircuitBreakerKey);

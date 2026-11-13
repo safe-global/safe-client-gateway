@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import { type Address, getAddress, type Hash, type Hex } from 'viem';
+import { getAddress, type Hash, type Hex } from 'viem';
 import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
 import { SAFE_QUEUE_SERVICE_MAX_LIMIT } from '#/domain/common/constants';
@@ -18,6 +18,7 @@ import { createMockSafeQueueService } from '#/modules/safe-queue/__tests__/safe-
 import { safeQueueMessageBuilder as buildSafeQueueMessage } from '#/modules/safe-queue/entities/__tests__/safe-queue-message.builder';
 import type { SafeQueueMessage } from '#/modules/safe-queue/entities/message.entity';
 import type { ISafeQueueService } from '#/modules/safe-queue/safe-queue.interface';
+import { declaredAttributionBuilder } from '#/modules/transactions/domain/entities/__tests__/declared-attribution.builder';
 import { rawify } from '#/validation/entities/raw.entity';
 
 function safeQueueMessageBuilder(chainId: number): SafeQueueMessage {
@@ -341,13 +342,9 @@ describe('MessagesRepository (queue service enabled)', () => {
     );
   }
 
-  function createMessageArgs(): {
-    chainId: string;
-    safeAddress: Address;
-    message: string;
-    signature: Hex;
-    origin: string | null;
-  } {
+  function createMessageArgs(): Parameters<
+    MessagesRepository['createMessage']
+  >[0] & { message: string } {
     return {
       chainId: String(faker.number.int({ min: 1, max: 1000 })),
       safeAddress: getAddress(faker.finance.ethereumAddress()),
@@ -356,6 +353,7 @@ describe('MessagesRepository (queue service enabled)', () => {
       origin: faker.datatype.boolean()
         ? faker.internet.url({ protocol: 'https', appendSlash: false })
         : null,
+      declared: declaredAttributionBuilder().build(),
     };
   }
 
@@ -379,7 +377,7 @@ describe('MessagesRepository (queue service enabled)', () => {
         message: args.message,
         signature: args.signature,
       });
-      // Enabled path forwards the args verbatim — no safeAppId injected.
+      // Enabled path forwards the args unchanged, declared attribution included.
       expect(safeQueueService.postMessage).toHaveBeenCalledWith(args);
       expect(result).toBe(posted);
 
@@ -407,6 +405,7 @@ describe('MessagesRepository (queue service enabled)', () => {
       expect(mockTransactionApiManager.getApi).toHaveBeenCalledWith(
         args.chainId,
       );
+      // The transaction service takes no declared attribution, so it's dropped.
       expect(mockTransactionApi.postMessage).toHaveBeenCalledWith({
         safeAddress: args.safeAddress,
         message: args.message,

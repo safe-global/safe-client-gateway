@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
+import omit from 'lodash/omit';
 import type { Address } from 'viem';
 import { createMessageDtoBuilder } from '#/modules/messages/routes/entities/__tests__/create-message.dto.builder';
 import { typedDataBuilder } from '#/modules/messages/routes/entities/__tests__/typed-data.builder';
@@ -209,6 +210,39 @@ describe('CreateMessageDtoSchema', () => {
           path: ['origin'],
         }),
       ]);
+    });
+  });
+
+  describe('declared attribution', () => {
+    it('should keep the declared attribution', () => {
+      const createMessageDto = createMessageDtoBuilder().build();
+
+      const result = CreateMessageDtoSchema.safeParse(createMessageDto);
+
+      expect(result.success && result.data.declared).toEqual(
+        createMessageDto.declared,
+      );
+    });
+
+    it('should default a missing declared attribution to null', () => {
+      const createMessageDto = createMessageDtoBuilder().build();
+
+      const result = CreateMessageDtoSchema.safeParse(
+        omit(createMessageDto, 'declared'),
+      );
+
+      expect(result.success && result.data.declared).toBe(null);
+    });
+
+    it('should default a non-object declared attribution to null instead of rejecting it', () => {
+      const createMessageDto = createMessageDtoBuilder().build();
+
+      const result = CreateMessageDtoSchema.safeParse({
+        ...createMessageDto,
+        declared: faker.string.alpha(),
+      });
+
+      expect(result.success && result.data.declared).toBe(null);
     });
   });
 });
