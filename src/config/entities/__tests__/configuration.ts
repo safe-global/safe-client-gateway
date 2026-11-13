@@ -99,7 +99,7 @@ export default (): ReturnType<typeof configuration> => ({
   portfolio: {
     cache: {
       ttlSeconds: faker.number.int({ min: 10, max: 300 }),
-      settleSeconds: faker.number.int({ min: 60, max: 180 }),
+      afterTransactionTtlSeconds: faker.number.int({ min: 60, max: 180 }),
     },
     filters: {
       dustThresholdUsd: faker.number.float({ min: 0.1, max: 10 }),
