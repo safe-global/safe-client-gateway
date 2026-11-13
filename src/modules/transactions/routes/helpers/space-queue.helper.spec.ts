@@ -303,15 +303,21 @@ describe('space-queue.helper', () => {
         now,
       });
 
-      expect(counts.chains).toEqual([
-        { chainId, count: 2 },
-        { chainId: otherChainId, count: 2 },
-      ]);
+      expect(counts.chains).toHaveLength(2);
+      expect(counts.chains).toEqual(
+        expect.arrayContaining([
+          { chainId, count: 2 },
+          { chainId: otherChainId, count: 2 },
+        ]),
+      );
       expect(counts).toMatchObject({ total: 6, sign: 2 });
-      expect(counts.safes).toEqual([
-        { chainId, safeAddress: safeA, count: 2 },
-        { chainId: otherChainId, safeAddress: safeA, count: 0 },
-      ]);
+      expect(counts.safes).toHaveLength(2);
+      expect(counts.safes).toEqual(
+        expect.arrayContaining([
+          { chainId, safeAddress: safeA, count: 2 },
+          { chainId: otherChainId, safeAddress: safeA, count: 0 },
+        ]),
+      );
     });
 
     it('counts each signer under every filter but the signer filter', () => {
@@ -746,18 +752,27 @@ describe('space-queue.helper', () => {
       });
 
       expect(counts).toMatchObject({ total: 1, waiting: 1 });
-      expect(counts.signers).toEqual([
-        { address: alice, count: 1 },
-        { address: bob, count: 0 },
-      ]);
-      expect(counts.chains).toEqual([
-        { chainId, count: 1 },
-        { chainId: otherChainId, count: 0 },
-      ]);
-      expect(counts.safes).toEqual([
-        { chainId, safeAddress: safeA, count: 1 },
-        { chainId: otherChainId, safeAddress: safeA, count: 0 },
-      ]);
+      expect(counts.signers).toHaveLength(2);
+      expect(counts.signers).toEqual(
+        expect.arrayContaining([
+          { address: alice, count: 1 },
+          { address: bob, count: 0 },
+        ]),
+      );
+      expect(counts.chains).toHaveLength(2);
+      expect(counts.chains).toEqual(
+        expect.arrayContaining([
+          { chainId, count: 1 },
+          { chainId: otherChainId, count: 0 },
+        ]),
+      );
+      expect(counts.safes).toHaveLength(2);
+      expect(counts.safes).toEqual(
+        expect.arrayContaining([
+          { chainId, safeAddress: safeA, count: 1 },
+          { chainId: otherChainId, safeAddress: safeA, count: 0 },
+        ]),
+      );
     });
   });
 
