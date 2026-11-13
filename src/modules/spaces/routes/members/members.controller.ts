@@ -23,6 +23,7 @@ import {
   ApiOperation,
   ApiParam,
   ApiTags,
+  ApiTooManyRequestsResponse,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { RowSchema } from '#/datasources/db/v1/entities/row.entity';
@@ -225,6 +226,9 @@ export class MembersController {
   })
   @ApiConflictResponse({
     description: 'Invitation is not in a pending state',
+  })
+  @ApiTooManyRequestsResponse({
+    description: 'Invitation was renewed recently',
   })
   @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @Post('/:spaceId/members/:userId/invite/renew')

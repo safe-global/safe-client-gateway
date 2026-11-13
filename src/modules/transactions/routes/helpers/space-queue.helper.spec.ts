@@ -16,8 +16,10 @@ import { TransactionStatus } from '#/modules/transactions/routes/entities/transa
 import {
   filterSpaceQueue,
   getSpaceQueueCounts,
+  limitSpaceQueue,
   SPACE_QUEUE_STALE_AFTER_MS,
   type SpaceQueueSearch,
+  someFiltersSet,
 } from '#/modules/transactions/routes/helpers/space-queue.helper';
 import { AddressInfo } from '#/routes/common/entities/address-info.entity';
 
@@ -48,6 +50,12 @@ const queuedTransaction = (args: {
   );
 
 const otherSigner = (): Address => getAddress(faker.finance.ethereumAddress());
+
+const missingSignersOf = (item: TransactionQueuedItem): Array<Address> =>
+  (
+    (item.transaction.executionInfo as MultisigExecutionInfo).missingSigners ??
+    []
+  ).map(({ value }) => value as Address);
 
 /** next: one executable; queued: one blocked, one to sign, one waiting, and a conflict pair (sign + waiting). */
 const buildQueue = () => {
@@ -114,10 +122,10 @@ describe('space-queue.helper', () => {
 
   describe('getSpaceQueueCounts', () => {
     it('counts each transaction under one status, plus the overlapping conflicting and stale counts', () => {
-      const { items } = buildQueue();
+      const queue = buildQueue();
 
       const counts = getSpaceQueueCounts({
-        results: { [safeA]: { [chainId]: items } },
+        results: { [safeA]: { [chainId]: queue.items } },
         filters: {},
         signers: [signer],
         now,
@@ -132,6 +140,13 @@ describe('space-queue.helper', () => {
         conflicting: 2,
         stale: 1,
         safes: [{ chainId, safeAddress: safeA, count: 6 }],
+        chains: [{ chainId, count: 6 }],
+        signers: [
+          { address: missingSignersOf(queue.sign)[0], count: 1 },
+          { address: signer, count: 2 },
+          { address: missingSignersOf(queue.waiting)[0], count: 1 },
+          { address: missingSignersOf(queue.conflictWaiting)[0], count: 1 },
+        ],
       });
     });
 
@@ -269,7 +284,76 @@ describe('space-queue.helper', () => {
         conflicting: 0,
         stale: 0,
         safes: [],
+        chains: [],
+        signers: [],
       });
+    });
+
+    it('counts each chain under every filter but the chain filter', () => {
+      const first = buildQueue();
+      const second = buildQueue();
+      const otherChainId = faker.string.numeric({ length: 4 });
+
+      const counts = getSpaceQueueCounts({
+        results: {
+          [safeA]: { [chainId]: first.items, [otherChainId]: second.items },
+        },
+        filters: { statuses: ['sign'], chainIds: [chainId] },
+        signers: [signer],
+        now,
+      });
+
+      expect(counts.chains).toEqual([
+        { chainId, count: 2 },
+        { chainId: otherChainId, count: 2 },
+      ]);
+      expect(counts).toMatchObject({ total: 6, sign: 2 });
+      expect(counts.safes).toEqual([
+        { chainId, safeAddress: safeA, count: 2 },
+        { chainId: otherChainId, safeAddress: safeA, count: 0 },
+      ]);
+    });
+
+    it('counts each signer under every filter but the signer filter', () => {
+      const queue = buildQueue();
+
+      const counts = getSpaceQueueCounts({
+        results: { [safeA]: { [chainId]: queue.items } },
+        filters: { statuses: ['sign'], signers: [signer] },
+        signers: [signer],
+        now,
+      });
+
+      expect(counts.signers).toEqual([
+        { address: missingSignersOf(queue.sign)[0], count: 1 },
+        { address: signer, count: 2 },
+        { address: missingSignersOf(queue.waiting)[0], count: 0 },
+        { address: missingSignersOf(queue.conflictWaiting)[0], count: 0 },
+      ]);
+      expect(counts).toMatchObject({ total: 2, sign: 2, waiting: 0 });
+      expect(counts.safes).toEqual([{ chainId, safeAddress: safeA, count: 2 }]);
+      expect(counts.chains).toEqual([{ chainId, count: 2 }]);
+    });
+
+    it('counts a signer once across address cases', () => {
+      const pending = queuedTransaction({
+        status: TransactionStatus.AwaitingConfirmations,
+        missingSigners: [signer],
+      });
+      const lowerCased = queuedTransaction({
+        status: TransactionStatus.AwaitingConfirmations,
+        missingSigners: [signer.toLowerCase() as Address],
+      });
+
+      const counts = getSpaceQueueCounts({
+        results: { [safeA]: { [chainId]: [pending, lowerCased] } },
+        filters: { signers: [signer.toLowerCase() as Address] },
+        signers: [],
+        now,
+      });
+
+      expect(counts.signers).toEqual([{ address: signer, count: 2 }]);
+      expect(counts.total).toBe(2);
     });
   });
 
@@ -412,6 +496,66 @@ describe('space-queue.helper', () => {
         [safeA]: { [otherChainId]: queue.items },
       });
       expect(filtered.unavailableSafes).toEqual([unavailableSafes[0]]);
+    });
+
+    it('keeps only the selected chains, and their unavailable Safes', () => {
+      const queue = buildQueue();
+      const otherChainId = faker.string.numeric({ length: 4 });
+      const unavailableSafes = [
+        { chainId: otherChainId, safeAddress: safeB },
+        { chainId, safeAddress: safeB },
+      ];
+
+      const filtered = filter(
+        { chainIds: [otherChainId] },
+        {
+          [safeA]: { [chainId]: queue.items, [otherChainId]: queue.items },
+          [safeB]: { [chainId]: queue.items },
+        },
+        unavailableSafes,
+      );
+
+      expect(filtered.results).toEqual({
+        [safeA]: { [otherChainId]: queue.items },
+      });
+      expect(filtered.unavailableSafes).toEqual([unavailableSafes[0]]);
+    });
+
+    it('keeps the transactions still awaiting one of the signers, in any case, under their label', () => {
+      const queue = buildQueue();
+      const [waitingSigner] = missingSignersOf(queue.waiting);
+
+      const { results, unavailableSafes } = filter(
+        { signers: [waitingSigner.toLowerCase() as Address] },
+        { [safeA]: { [chainId]: queue.items } },
+        [{ chainId, safeAddress: safeB }],
+      );
+
+      expect(results).toEqual({
+        [safeA]: { [chainId]: [queue.queued, queue.waiting] },
+      });
+      expect(unavailableSafes).toEqual([{ chainId, safeAddress: safeB }]);
+    });
+
+    it('leaves out the fully signed transactions when filtering by signer', () => {
+      const queue = buildQueue();
+
+      const { results } = filter(
+        { signers: [signer] },
+        { [safeA]: { [chainId]: queue.items } },
+      );
+
+      expect(results).toEqual({
+        [safeA]: {
+          [chainId]: [
+            queue.queued,
+            queue.sign,
+            queue.header,
+            queue.conflictSign,
+            queue.conflictWaiting,
+          ],
+        },
+      });
     });
   });
 
@@ -571,6 +715,141 @@ describe('space-queue.helper', () => {
           ],
         }),
       );
+    });
+
+    it('keeps listing the signers and chains the search leaves out, with a count of 0', () => {
+      const alice = getAddress(faker.finance.ethereumAddress());
+      const bob = getAddress(faker.finance.ethereumAddress());
+      const awaitingAlice = queuedTransaction({
+        status: TransactionStatus.AwaitingConfirmations,
+        missingSigners: [alice],
+      });
+      const awaitingBob = queuedTransaction({
+        status: TransactionStatus.AwaitingConfirmations,
+        missingSigners: [bob],
+      });
+      const names = new Map([
+        [alice.toLowerCase(), ['Alice']],
+        [bob.toLowerCase(), ['Bob']],
+      ]);
+
+      const counts = getSpaceQueueCounts({
+        results: {
+          [safeA]: {
+            [chainId]: [awaitingAlice],
+            [otherChainId]: [awaitingBob],
+          },
+        },
+        filters: { search: search('alice', { names }) },
+        signers: [],
+        now,
+      });
+
+      expect(counts).toMatchObject({ total: 1, waiting: 1 });
+      expect(counts.signers).toEqual([
+        { address: alice, count: 1 },
+        { address: bob, count: 0 },
+      ]);
+      expect(counts.chains).toEqual([
+        { chainId, count: 1 },
+        { chainId: otherChainId, count: 0 },
+      ]);
+      expect(counts.safes).toEqual([
+        { chainId, safeAddress: safeA, count: 1 },
+        { chainId: otherChainId, safeAddress: safeA, count: 0 },
+      ]);
+    });
+  });
+
+  describe('someFiltersSet', () => {
+    it('is false when every filter is unset', () => {
+      expect(someFiltersSet({})).toBe(false);
+      expect(someFiltersSet({ statuses: undefined, search: undefined })).toBe(
+        false,
+      );
+    });
+
+    it('is true when one filter is set, even to false', () => {
+      expect(someFiltersSet({ stale: false })).toBe(true);
+      expect(someFiltersSet({ search: faker.word.noun() })).toBe(true);
+    });
+  });
+
+  describe('limitSpaceQueue', () => {
+    const awaiting = (nonce: number, conflictType?: ConflictType) =>
+      queuedTransaction({
+        status: TransactionStatus.AwaitingConfirmations,
+        nonce,
+        conflictType,
+      });
+
+    it('keeps the first transactions by nonce across Safes, with their labels', () => {
+      const nonce = faker.number.int({ min: 0, max: 100 });
+      const next = new LabelQueuedItem(LabelItem.Next);
+      const queued = new LabelQueuedItem(LabelItem.Queued);
+      const first = awaiting(nonce);
+      const third = awaiting(nonce + 2);
+      const second = awaiting(nonce + 1);
+
+      const actual = limitSpaceQueue({
+        results: {
+          [safeA]: { [chainId]: [next, first, queued, third] },
+          [safeB]: { [chainId]: [next, second] },
+        },
+        limit: 2,
+      });
+
+      expect(actual).toEqual({
+        [safeA]: { [chainId]: [next, first] },
+        [safeB]: { [chainId]: [next, second] },
+      });
+    });
+
+    it('keeps a conflict group whole, past the limit', () => {
+      const nonce = faker.number.int({ min: 0, max: 100 });
+      const next = new LabelQueuedItem(LabelItem.Next);
+      const queued = new LabelQueuedItem(LabelItem.Queued);
+      const lone = awaiting(nonce);
+      const header = new ConflictHeaderQueuedItem(nonce + 1);
+      const conflictFirst = awaiting(nonce + 1, ConflictType.HasNext);
+      const conflictEnd = awaiting(nonce + 1, ConflictType.End);
+      const items = [
+        next,
+        lone,
+        queued,
+        header,
+        conflictFirst,
+        conflictEnd,
+        awaiting(nonce + 2),
+      ];
+
+      const actual = limitSpaceQueue({
+        results: { [safeA]: { [chainId]: items } },
+        limit: 2,
+      });
+
+      expect(actual).toEqual({
+        [safeA]: {
+          [chainId]: [next, lone, queued, header, conflictFirst, conflictEnd],
+        },
+      });
+    });
+
+    it('returns a queue shorter than the limit as it is', () => {
+      const nonce = faker.number.int({ min: 0, max: 100 });
+      const items = [
+        new LabelQueuedItem(LabelItem.Next),
+        awaiting(nonce),
+        new LabelQueuedItem(LabelItem.Queued),
+        awaiting(nonce + 1),
+      ];
+
+      const actual = limitSpaceQueue({
+        results: { [safeA]: { [chainId]: items } },
+        limit: faker.number.int({ min: 2, max: 100 }),
+      });
+
+      expect(actual).toEqual({ [safeA]: { [chainId]: items } });
     });
   });
 });

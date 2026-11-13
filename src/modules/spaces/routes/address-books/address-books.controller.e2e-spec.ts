@@ -210,7 +210,6 @@ describe('AddressBooksController', () => {
         .expect({
           statusCode: 403,
           message: 'User is not a member of this workspace',
-          error: 'Forbidden',
         });
     });
 
@@ -240,7 +239,6 @@ describe('AddressBooksController', () => {
         .expect({
           statusCode: 403,
           message: 'User is not a member of this workspace',
-          error: 'Forbidden',
         });
     });
 
@@ -703,7 +701,6 @@ describe('AddressBooksController', () => {
         .expect({
           statusCode: 403,
           message: 'User is not an admin of this workspace',
-          error: 'Forbidden',
         });
     });
 
@@ -731,7 +728,6 @@ describe('AddressBooksController', () => {
         .expect({
           statusCode: 403,
           message: 'User is not an admin of this workspace',
-          error: 'Forbidden',
         });
     });
 
@@ -850,7 +846,6 @@ describe('AddressBooksController', () => {
         .expect({
           statusCode: 403,
           message: 'User is not an admin of this workspace',
-          error: 'Forbidden',
         });
     });
 
@@ -869,7 +864,6 @@ describe('AddressBooksController', () => {
         .expect({
           statusCode: 403,
           message: 'User is not an admin of this workspace',
-          error: 'Forbidden',
         });
     });
 

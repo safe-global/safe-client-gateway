@@ -12,12 +12,16 @@ import {
   ApiUnauthorizedResponse,
   ApiUnprocessableEntityResponse,
 } from '@nestjs/swagger';
+import type { Address } from 'viem';
 import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
 import { AuthGuard } from '#/modules/auth/routes/guards/auth.guard';
 import type { Space } from '#/modules/spaces/domain/entities/space.entity';
 import {
   SPACE_QUEUE_SEARCH_MAX_LENGTH,
+  SpaceQueueChainIdsSchema,
+  SpaceQueueLimitSchema,
   SpaceQueueSearchSchema,
+  SpaceQueueSignersSchema,
   SpaceQueueStatus,
   type SpaceQueueStatuses,
   SpaceQueueStatusesSchema,
@@ -68,6 +72,21 @@ export class SpaceTransactionsController {
     example: '11155111:0x0000000000000000000000000000000000000000',
   })
   @ApiQuery({
+    name: 'chainIds',
+    type: String,
+    required: false,
+    description: 'Keep the transactions on these chains, comma-separated',
+    example: '1,137',
+  })
+  @ApiQuery({
+    name: 'signers',
+    type: String,
+    required: false,
+    description:
+      'Keep the transactions still awaiting a signature from one of these addresses, comma-separated',
+    example: '0x0000000000000000000000000000000000000000',
+  })
+  @ApiQuery({
     name: 'conflicting',
     type: Boolean,
     required: false,
@@ -86,6 +105,15 @@ export class SpaceTransactionsController {
     description: `Keep the transactions whose Safe (address or Space address book name), network name, status, or a signer still to sign (address or name) contains this text, ignoring case. Unlike the filters, it narrows every count. At most ${SPACE_QUEUE_SEARCH_MAX_LENGTH} characters.`,
     example: 'treasury',
   })
+  @ApiQuery({
+    name: 'limit',
+    type: Number,
+    required: false,
+    minimum: 1,
+    description:
+      'Return only the first transactions of the queue, by nonce across every Safe (not by age), up to the transactions an unlimited request returns. Without a filter or `search`, only that many are read: `counts` cover only those, and a conflict group cut by the limit is returned in part. With a filter or `search`, the whole queue is read and filtered first, so `counts` cover the whole queue and a conflict group is kept whole, which can return a few more than `limit`. `count` is always the size of the whole queue.',
+    example: 4,
+  })
   @ApiOkResponse({
     type: SpaceQueuedItemPage,
     description: 'Queue of the Safes in the Space',
@@ -96,7 +124,7 @@ export class SpaceTransactionsController {
   @ApiNotFoundResponse({ description: 'Space not found' })
   @ApiUnprocessableEntityResponse({
     description:
-      'Unknown status, invalid CAIP-10 address, non-boolean flag or too long search',
+      'Unknown status, invalid CAIP-10 address, chain ID or signer address, non-boolean flag, too long search or invalid limit',
   })
   @Get('queued')
   public async getTransactionQueue(
@@ -106,12 +134,18 @@ export class SpaceTransactionsController {
     statuses?: SpaceQueueStatuses,
     @Query('safes', new ValidationPipe(Caip10AddressesSchema.optional()))
     safes?: Caip10Addresses,
+    @Query('chainIds', new ValidationPipe(SpaceQueueChainIdsSchema.optional()))
+    chainIds?: Array<string>,
+    @Query('signers', new ValidationPipe(SpaceQueueSignersSchema.optional()))
+    signers?: Array<Address>,
     @Query('conflicting', new ValidationPipe(BooleanStringSchema.optional()))
     conflicting?: boolean,
     @Query('stale', new ValidationPipe(BooleanStringSchema.optional()))
     stale?: boolean,
     @Query('search', new ValidationPipe(SpaceQueueSearchSchema.optional()))
     search?: string,
+    @Query('limit', new ValidationPipe(SpaceQueueLimitSchema.optional()))
+    limit?: number,
   ): Promise<SpaceQueuedItemPage> {
     return await this.spaceTransactionsService.getTransactionQueue({
       spaceId,
@@ -122,10 +156,13 @@ export class SpaceTransactionsController {
           chainId,
           safeAddress: address,
         })),
+        chainIds,
+        signers,
         conflicting,
         stale,
       },
       search,
+      limit,
     });
   }
 }
