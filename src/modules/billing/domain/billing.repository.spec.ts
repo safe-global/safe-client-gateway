@@ -11,6 +11,7 @@ import {
 } from '#/datasources/billing-api/entities/__tests__/plan.builder';
 import { subscriptionBuilder } from '#/datasources/billing-api/entities/__tests__/subscription.builder';
 import { stripDashes } from '#/datasources/billing-api/upstream-customer-id.util';
+import { DataSourceError } from '#/domain/errors/data-source.error';
 import type { IBillingApi } from '#/domain/interfaces/billing-api.interface';
 import { BillingRepository } from '#/modules/billing/domain/billing.repository';
 import { rawify } from '#/validation/entities/raw.entity';
@@ -49,6 +50,29 @@ describe('BillingRepository', () => {
           upstreamCustomerId: faker.string.uuid(),
         }),
       ).resolves.toEqual(subscriptions);
+    });
+
+    it('should return no subscriptions while the billing service has no customer', async () => {
+      billingApiMock.getSubscriptionsByCustomerId.mockRejectedValue(
+        new DataSourceError(faker.lorem.sentence(), 404),
+      );
+
+      await expect(
+        target.getSubscriptionsByCustomerId({
+          upstreamCustomerId: faker.string.uuid(),
+        }),
+      ).resolves.toEqual([]);
+    });
+
+    it('should propagate any other failure of the billing service', async () => {
+      const failure = new DataSourceError(faker.lorem.sentence(), 503);
+      billingApiMock.getSubscriptionsByCustomerId.mockRejectedValue(failure);
+
+      await expect(
+        target.getSubscriptionsByCustomerId({
+          upstreamCustomerId: faker.string.uuid(),
+        }),
+      ).rejects.toBe(failure);
     });
 
     it('should unwrap the payment-links collection', async () => {
