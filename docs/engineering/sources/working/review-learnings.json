@@ -5706,5 +5706,24 @@
     "ruleIds": [
       "TEST-01"
     ]
+  },
+  {
+    "id": "RL-20261030-001",
+    "title": "Variable named headers held filtered header entries",
+    "sourceWindowId": "CLOSED-20261029-20261106",
+    "prNumbers": [
+      3706
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4402616277,
+      4409777553
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "`mergeHeaders` assigned `Object.entries({...})` filtered to drop `x-safe-*` headers to a variable named `headers`; review asked for a name that says it holds `[name, value]` pairs, and only the allowed ones. The author restructured it so the merged diff builds an object with `Object.fromEntries` and names it `allowedHeaders`. A variable is named for what it holds, its shape and any filter applied, not for the concept it came from.",
+    "ruleIds": [
+      "NAME-01"
+    ]
   }
 ]

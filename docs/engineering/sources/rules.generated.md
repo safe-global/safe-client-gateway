@@ -537,7 +537,7 @@ Avoid adding or expanding `forwardRef` cycles. Treat existing cycles as local de
 <a id="name-01"></a>
 ### `NAME-01` Names reveal behavior
 
-> **general** · naming · 1 example · ↩ `RL-20260506-001` · `RL-20260602-004` · `RL-20260922-003` · `RL-20261014-009` · `RL-20261016-008` · `RL-20261026-002`
+> **general** · naming · 1 example · ↩ `RL-20260506-001` · `RL-20260602-004` · `RL-20260922-003` · `RL-20261014-009` · `RL-20261016-008` · `RL-20261026-002` · `RL-20261030-001`
 
 **📜 Rule**\
 Names must describe behavior honestly: throwing helpers use `assert*`/`*OrFail`; predicates do not throw; algorithm-bound helpers (`hashSha1`) advertise the algorithm; type/aliased imports drop redundant `as` aliases; magic offsets become named constants. Find-or-create and similar helpers must not encode a status or postcondition the method does not guarantee on every path (`findOrCreateByEmail`, not `findOrCreatePendingByEmail` when existing ACTIVE users are returned as-is). One concept keeps one name across code, config keys, flags, and errors — no product alias beside the module's name (`copilot*` next to `safeShield*`). API response fields are camelCase, never an upstream's snake_case.
