@@ -2,7 +2,7 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { type FindOptionsWhere, IsNull, LessThan } from 'typeorm';
-import type { Address } from 'viem';
+import type { Address, Hex } from 'viem';
 import { IConfigurationService } from '#/config/configuration.service.interface';
 import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
 import { PolicyConfigurationRequest } from '#/modules/policies/datasources/entities/policy-configuration-request.entity.db';
@@ -137,6 +137,26 @@ export class SafePolicyGuardConfigurationRequestsRepository
             }),
           ]
         : [];
+    });
+  }
+
+  /** Deletes the request stored under {@link args.root}, matched like {@link create}. */
+  public async delete(args: {
+    spaceId: number;
+    safe: SafeRef;
+    root: Hex;
+  }): Promise<void> {
+    const repository = await this.db.getRepository(PolicyConfigurationRequest);
+    await repository.delete({
+      ...this.safeMatch({
+        spaceId: args.spaceId,
+        chainId: args.safe.chainId,
+        safeAddress: args.safe.address,
+        safeAddressIndex: this.spaceEncryptionService.safeAddressIndex(
+          args.safe.address,
+        ),
+      }),
+      root: args.root,
     });
   }
 
