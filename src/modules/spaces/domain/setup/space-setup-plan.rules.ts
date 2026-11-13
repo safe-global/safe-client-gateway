@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { PaymentLink } from '#/datasources/billing-api/entities/payment-link.entity';
 import { parseSafeSeatQuota } from '#/modules/entitlements/domain/feature-package.mapper';
+import type { Space } from '#/modules/spaces/domain/entities/space.entity';
+import type { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository.interface';
 import type { SpaceSetupSafe } from '#/modules/spaces/domain/setup/entities/space-setup.entity';
 import { BillingUnavailableError } from '#/modules/spaces/domain/setup/errors/billing-unavailable.error';
 import { NotEnoughSeatsError } from '#/modules/spaces/domain/setup/errors/not-enough-seats.error';
@@ -47,6 +49,21 @@ export function findOfferedPaymentLink(
  */
 export function countSetupSeats(safes: Array<SpaceSetupSafe>): number {
   return new Set(safes.map((safe) => safe.address.toLowerCase())).size;
+}
+
+/** Seats the Workspace holds, with the ones `safes` would add. */
+export async function countSeatsWith(
+  spaceSafesRepository: ISpaceSafesRepository,
+  args: { spaceId: Space['id']; safes: Array<SpaceSetupSafe> },
+): Promise<number> {
+  const addresses = args.safes.map((safe) => safe.address);
+  const [held, added] = await Promise.all([
+    spaceSafesRepository.countSeatsBySpaceId(args.spaceId),
+    addresses.length > 0
+      ? spaceSafesRepository.countNewSeats({ spaceId: args.spaceId, addresses })
+      : 0,
+  ]);
+  return held + added;
 }
 
 /**
