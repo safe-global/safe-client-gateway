@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import type { UUID } from 'node:crypto';
 import type { EntityManager } from 'typeorm';
 import type { Space } from '#/modules/spaces/domain/entities/space.entity';
 import type {
@@ -49,15 +50,20 @@ export interface ISpaceSetupsRepository {
   }): Promise<void>;
 
   /**
-   * Moves a claimable setup to APPLYING in a short transaction of its own, so
-   * one caller applies it. `null` when there is nothing to claim: no setup,
-   * one applied, or one another apply holds within its lease.
+   * Moves a claimable setup to APPLYING under a new `claimId`, in a short
+   * transaction of its own, so one caller applies it. `null` when there is
+   * nothing to claim: no setup, one applied, or one another apply holds
+   * within its lease.
    */
   claim(args: {
     spaceId: Space['id'];
     leaseSeconds: number;
   }): Promise<SpaceSetup | null>;
 
-  /** Moves a claimed (APPLYING) setup to APPLIED. */
-  markApplied(spaceId: Space['id']): Promise<void>;
+  /**
+   * Moves the setup to APPLIED if `claimId` still holds it.
+   *
+   * @returns false when a later claim took the setup over.
+   */
+  markApplied(args: { spaceId: Space['id']; claimId: UUID }): Promise<boolean>;
 }

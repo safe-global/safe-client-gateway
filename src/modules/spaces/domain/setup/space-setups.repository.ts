@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { randomUUID, type UUID } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
 import { type EntityManager, In } from 'typeorm';
 import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
@@ -128,22 +129,28 @@ export class SpaceSetupsRepository implements ISpaceSetupsRepository {
         await entityManager.update(
           DbSpaceSetup,
           { spaceId: args.spaceId },
-          { status: 'APPLYING' },
+          { status: 'APPLYING', claimId: randomUUID() },
         );
-        return row;
+        return await entityManager.findOneOrFail(DbSpaceSetup, {
+          where: { spaceId: args.spaceId },
+        });
       },
     );
     // Decrypted after the commit, so no KMS call holds the row lock.
     return claimed ? await this.decrypt(claimed) : null;
   }
 
-  public async markApplied(spaceId: Space['id']): Promise<void> {
+  public async markApplied(args: {
+    spaceId: Space['id'];
+    claimId: UUID;
+  }): Promise<boolean> {
     const repository =
       await this.postgresDatabaseService.getRepository(DbSpaceSetup);
-    await repository.update(
-      { spaceId, status: 'APPLYING' },
+    const result = await repository.update(
+      { spaceId: args.spaceId, status: 'APPLYING', claimId: args.claimId },
       { status: 'APPLIED', appliedAt: () => 'CURRENT_TIMESTAMP' },
     );
+    return result.affected === 1;
   }
 
   private async decrypt(row: DbSpaceSetup): Promise<SpaceSetup> {

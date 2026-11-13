@@ -8,6 +8,7 @@ import { SurveySlugSchema } from '#/modules/surveys/domain/entities/survey.entit
 import { SurveyResponseSelectionsSchema } from '#/modules/surveys/domain/entities/survey-response.entity';
 import { InviteUserSchema } from '#/modules/users/domain/entities/invite-user.entity';
 import { AddressSchema } from '#/validation/entities/schemas/address.schema';
+import { UuidSchema } from '#/validation/entities/schemas/uuid.schema';
 
 /**
  * PENDING until an apply claims it, APPLYING while one runs, APPLIED once
@@ -55,6 +56,8 @@ export const SpaceSetupSchema = RowSchema.extend({
   paymentLinkId: z.string().nullable(),
   payload: SpaceSetupPayloadSchema,
   status: z.enum(getStringEnumKeys(SpaceSetupStatus)),
+  /** Set by each claim; only the apply holding it may mark the setup applied. */
+  claimId: UuidSchema.nullable(),
   appliedAt: z.date().nullable(),
 });
 

@@ -45,6 +45,7 @@ export function spaceSetupBuilder(): IBuilder<SpaceSetup> {
     .with('paymentLinkId', faker.string.alphanumeric(16))
     .with('payload', spaceSetupPayloadBuilder().build())
     .with('status', 'PENDING')
+    .with('claimId', null)
     .with('appliedAt', null)
     .with('createdAt', faker.date.recent())
     .with('updatedAt', faker.date.recent());

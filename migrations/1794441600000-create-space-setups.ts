@@ -13,6 +13,7 @@ export class CreateSpaceSetups1794441600000 implements MigrationInterface {
         "payment_link_id" character varying(255),
         "payload" text NOT NULL,
         "status" smallint NOT NULL,
+        "claim_id" uuid,
         "applied_at" TIMESTAMP WITH TIME ZONE,
         "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
         "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
