@@ -144,6 +144,29 @@ describe('PostgresDatabaseService', () => {
       );
     });
 
+    it('Should start without migrating once another instance has finished', async () => {
+      mockEntityManager.query
+        .mockResolvedValueOnce(undefined)
+        .mockResolvedValueOnce(undefined)
+        .mockResolvedValueOnce([{ id: 1, status: 1 }]);
+      connection.showMigrations.mockResolvedValue(false);
+
+      await databaseMigratorService.migrate();
+
+      expect(connection.showMigrations).toHaveBeenCalledTimes(1);
+      expect(mockEntityManager.query).not.toHaveBeenCalledWith(
+        insertLockQuery,
+        [1],
+      );
+      expect(connection.runMigrations).not.toHaveBeenCalled();
+      expect(mockLoggingService.info).toHaveBeenCalledWith(
+        'Migrations: Running in another instance...',
+      );
+      expect(mockLoggingService.info).toHaveBeenLastCalledWith(
+        'Migrations: No migrations to execute.',
+      );
+    });
+
     it('Should throw an error if retries are exhausted', async () => {
       mockEntityManager.query.mockResolvedValue([{ id: 1, status: 1 }]);
 

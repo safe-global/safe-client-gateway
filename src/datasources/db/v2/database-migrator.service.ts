@@ -17,6 +17,12 @@ enum MigrationStatus {
   RUNNING = 1,
 }
 
+enum LockResult {
+  ACQUIRED = 'acquired',
+  BUSY = 'busy',
+  NONE_PENDING = 'none-pending',
+}
+
 @Injectable()
 export class DatabaseMigrator {
   private readonly LOCK_TABLE_NAME = '_lock';
@@ -58,11 +64,11 @@ export class DatabaseMigrator {
     while (numberOfRetries >= numberOfIterations) {
       ++numberOfIterations;
       const lock = await this.acquireLock(connection);
-      if (lock === 'none-pending') {
+      if (lock === LockResult.NONE_PENDING) {
         this.loggingService.info('Migrations: No migrations to execute.');
         break;
       }
-      if (lock === 'acquired') {
+      if (lock === LockResult.ACQUIRED) {
         await this.runMigration(connection);
         await this.truncateLocks(connection);
 
@@ -90,24 +96,22 @@ export class DatabaseMigrator {
    *
    * @param {DataSource} connection The database connection to check pending migrations on.
    *
-   * @returns {Promise<'acquired' | 'busy' | 'none-pending'>} Whether this instance should run the migrations.
+   * @returns {Promise<LockResult>} Whether this instance should run the migrations.
    */
-  private async acquireLock(
-    connection: DataSource,
-  ): Promise<'acquired' | 'busy' | 'none-pending'> {
+  private async acquireLock(connection: DataSource): Promise<LockResult> {
     return await this.databaseService.transaction(async (entityManager) => {
       await entityManager.query('SELECT pg_advisory_xact_lock($1)', [
         this.LOCK_TABLE_ADVISORY_KEY,
       ]);
       await this.createLockTableIfNotExists(entityManager);
       if (await this.lockExists(entityManager)) {
-        return 'busy';
+        return LockResult.BUSY;
       }
       if (!(await connection.showMigrations())) {
-        return 'none-pending';
+        return LockResult.NONE_PENDING;
       }
       await this.insertLock(entityManager);
-      return 'acquired';
+      return LockResult.ACQUIRED;
     });
   }
 
