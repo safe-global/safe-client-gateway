@@ -3,6 +3,7 @@ import type { UUID } from 'node:crypto';
 import type { EntityManager } from 'typeorm';
 import type { Space } from '#/modules/spaces/domain/entities/space.entity';
 import type {
+  ClaimedSpaceSetup,
   SpaceSetup,
   SpaceSetupPayload,
   SpaceSetupStatus,
@@ -58,7 +59,7 @@ export interface ISpaceSetupsRepository {
   claim(args: {
     spaceId: Space['id'];
     leaseSeconds: number;
-  }): Promise<SpaceSetup | null>;
+  }): Promise<ClaimedSpaceSetup | null>;
 
   /**
    * Moves the setup to APPLIED if `claimId` still holds it.

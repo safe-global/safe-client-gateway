@@ -64,6 +64,11 @@ export const SpaceSetupSchema = RowSchema.extend({
 /** A setup row with its payload decrypted. */
 export type SpaceSetup = z.infer<typeof SpaceSetupSchema>;
 
+/** A setup an apply holds: always under a claim. */
+export type ClaimedSpaceSetup = SpaceSetup & {
+  claimId: NonNullable<SpaceSetup['claimId']>;
+};
+
 /** A setup row as stored: the payload is the encrypted JSON blob. */
 export const SpaceSetupRowSchema = SpaceSetupSchema.extend({
   payload: z.string(),
