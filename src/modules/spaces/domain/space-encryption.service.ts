@@ -2,6 +2,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { KmsEncryptionService } from '#/datasources/kms/kms-encryption.service';
 import { normalizeTagNameKey } from '#/modules/spaces/domain/address-books/entities/address-book-tag.entity';
+import type { SpaceSetupPayload } from '#/modules/spaces/domain/setup/entities/space-setup.entity';
 
 /**
  * Space-scoped field-encryption policy for the spaces module: space names,
@@ -175,10 +176,7 @@ export class SpaceEncryptionService {
     spaceId: number,
     payload: unknown,
   ): Promise<string> {
-    return await this.kmsEncryption.encrypt(
-      JSON.stringify(payload),
-      this.context(spaceId),
-    );
+    return await this.encryptJson(spaceId, payload);
   }
 
   /**
@@ -191,10 +189,37 @@ export class SpaceEncryptionService {
     spaceId: number,
     payload: string,
   ): Promise<unknown> {
-    const json = await this.kmsEncryption.decrypt(
-      payload,
+    return await this.decryptJson(spaceId, payload);
+  }
+
+  /**
+   * Encrypts a Workspace setup payload (Safes, contacts, invitee emails) as one
+   * blob under the space scope, like {@link encryptAuditPayload}.
+   */
+  async encryptSetupPayload(
+    spaceId: number,
+    payload: SpaceSetupPayload,
+  ): Promise<string> {
+    return await this.encryptJson(spaceId, payload);
+  }
+
+  /** Reverse of {@link encryptSetupPayload}; the caller parses the result. */
+  async decryptSetupPayload(
+    spaceId: number,
+    payload: string,
+  ): Promise<unknown> {
+    return await this.decryptJson(spaceId, payload);
+  }
+
+  private async encryptJson(spaceId: number, value: unknown): Promise<string> {
+    return await this.kmsEncryption.encrypt(
+      JSON.stringify(value),
       this.context(spaceId),
     );
+  }
+
+  private async decryptJson(spaceId: number, value: string): Promise<unknown> {
+    const json = await this.kmsEncryption.decrypt(value, this.context(spaceId));
     return JSON.parse(json);
   }
 
