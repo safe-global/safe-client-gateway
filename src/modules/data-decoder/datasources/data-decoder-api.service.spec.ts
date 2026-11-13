@@ -2,10 +2,11 @@
 
 import { createHash } from 'node:crypto';
 import { faker } from '@faker-js/faker';
-import { getAddress, type Hex } from 'viem';
+import { type Address, getAddress, type Hex } from 'viem';
 import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
 import type { CacheFirstDataSource } from '#/datasources/cache/cache.first.data.source';
+import type { ICacheService } from '#/datasources/cache/cache.service.interface';
 import { CircuitBreakerKeys } from '#/datasources/circuit-breaker/circuit-breaker.keys';
 import { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
 import { NetworkResponseError } from '#/datasources/network/entities/network.error.entity';
@@ -24,6 +25,21 @@ const mockCacheFirstDataSource = vi.mocked({
   get: vi.fn(),
   post: vi.fn(),
 } as MockedObject<CacheFirstDataSource>);
+
+const mockCacheService = vi.mocked({
+  deleteByKey: vi.fn(),
+} as MockedObject<ICacheService>);
+
+function decodedDataKey(args: {
+  chainId: string;
+  data: Hex;
+  to: Address;
+}): string {
+  const hash = createHash('sha256')
+    .update(args.data.toLowerCase())
+    .digest('hex');
+  return `${args.chainId}_decoded_data_v2_${hash}_${args.to}`;
+}
 
 describe('DataDecoderApi', () => {
   const baseUrl = faker.internet.url({ appendSlash: false });
@@ -66,6 +82,7 @@ describe('DataDecoderApi', () => {
       mockConfigurationService,
       mockCacheFirstDataSource,
       httpErrorFactory,
+      mockCacheService,
     );
   });
 
@@ -90,7 +107,7 @@ describe('DataDecoderApi', () => {
       expect(mockCacheFirstDataSource.post).toHaveBeenCalledWith({
         cacheDir: {
           field: '',
-          key: `${chainId}_decoded_data_v2_${createHash('sha256').update(data).digest('hex')}_${to}`,
+          key: decodedDataKey({ chainId, data, to }),
         },
         url: getDataDecodedUrl,
         notFoundExpireTimeSeconds: decodedDataNotFoundExpireTimeSeconds,
@@ -137,7 +154,7 @@ describe('DataDecoderApi', () => {
       expect(mockCacheFirstDataSource.post).toHaveBeenCalledWith({
         cacheDir: {
           field: '',
-          key: `${chainId}_decoded_data_v2_${createHash('sha256').update(data).digest('hex')}_${to}`,
+          key: decodedDataKey({ chainId, data, to }),
         },
         url: getDataDecodedUrl,
         notFoundExpireTimeSeconds: decodedDataNotFoundExpireTimeSeconds,
@@ -180,10 +197,50 @@ describe('DataDecoderApi', () => {
       await target.getDecodedData({ data, to, chainId });
       await target.getDecodedData({ data: otherData, to, chainId });
 
-      const [first, second] = mockCacheFirstDataSource.post.mock.calls.map(
-        ([args]) => args.cacheDir.key,
+      expect(mockCacheFirstDataSource.post).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({
+          cacheDir: { key: decodedDataKey({ chainId, data, to }), field: '' },
+        }),
       );
-      expect(first).not.toBe(second);
+      expect(mockCacheFirstDataSource.post).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({
+          cacheDir: {
+            key: decodedDataKey({ chainId, data: otherData, to }),
+            field: '',
+          },
+        }),
+      );
+    });
+
+    it('should share one cache key for mixed-case calldata', async () => {
+      const to = getAddress(faker.finance.ethereumAddress());
+      const chainId = faker.string.numeric();
+      const data = faker.string.hexadecimal({
+        length: 64,
+        casing: 'lower',
+      }) as Hex;
+      const upperData = `0x${data.slice(2).toUpperCase()}` as Hex;
+      mockCacheFirstDataSource.post.mockResolvedValue(
+        rawify(dataDecodedBuilder().build()),
+      );
+
+      await target.getDecodedData({ data, to, chainId });
+      await target.getDecodedData({ data: upperData, to, chainId });
+
+      const cacheDir = {
+        key: decodedDataKey({ chainId, data, to }),
+        field: '',
+      };
+      expect(mockCacheFirstDataSource.post).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({ cacheDir }),
+      );
+      expect(mockCacheFirstDataSource.post).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({ cacheDir }),
+      );
     });
 
     it('should keep the cache key size constant for large calldata', async () => {
@@ -196,8 +253,31 @@ describe('DataDecoderApi', () => {
 
       await target.getDecodedData({ data, to, chainId });
 
-      expect(mockCacheFirstDataSource.post.mock.calls[0][0].cacheDir.key).toBe(
-        `${chainId}_decoded_data_v2_${createHash('sha256').update(data).digest('hex')}_${to}`,
+      // sha256 hex digest is 64 characters whatever the calldata length
+      expect(mockCacheFirstDataSource.post).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({
+          cacheDir: {
+            key: expect.stringMatching(
+              new RegExp(`^${chainId}_decoded_data_v2_[0-9a-f]{64}_${to}$`),
+            ),
+            field: '',
+          },
+        }),
+      );
+    });
+  });
+
+  describe('clearDecodedData', () => {
+    it('should delete the decoded data cache key', async () => {
+      const to = getAddress(faker.finance.ethereumAddress());
+      const chainId = faker.string.numeric();
+      const data = faker.string.hexadecimal() as Hex;
+
+      await target.clearDecodedData({ data, to, chainId });
+
+      expect(mockCacheService.deleteByKey).toHaveBeenCalledExactlyOnceWith(
+        decodedDataKey({ chainId, data, to }),
       );
     });
   });

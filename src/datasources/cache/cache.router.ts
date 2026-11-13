@@ -551,7 +551,10 @@ export class CacheRouter {
     to: Address;
   }): string {
     // Calldata is hashed as batched transactions can be tens of KB
-    const hash = crypto.createHash('sha256').update(args.data).digest('hex');
+    const hash = crypto
+      .createHash('sha256')
+      .update(args.data.toLowerCase())
+      .digest('hex');
     return `${args.chainId}_${CacheRouter.DECODED_DATA_KEY}_${hash}_${args.to}`;
   }
 

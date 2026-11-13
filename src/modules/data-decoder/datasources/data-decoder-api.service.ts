@@ -4,6 +4,10 @@ import type { Address } from 'viem';
 import { IConfigurationService } from '#/config/configuration.service.interface';
 import { CacheFirstDataSource } from '#/datasources/cache/cache.first.data.source';
 import { CacheRouter } from '#/datasources/cache/cache.router';
+import {
+  CacheService,
+  type ICacheService,
+} from '#/datasources/cache/cache.service.interface';
 import { CircuitBreakerKeys } from '#/datasources/circuit-breaker/circuit-breaker.keys';
 import { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
 import type { Page } from '#/domain/entities/page.entity';
@@ -30,6 +34,8 @@ export class DataDecoderApi implements IDataDecoderApi {
     @Inject(CacheFirstDataSource)
     private readonly dataSource: CacheFirstDataSource,
     private readonly httpErrorFactory: HttpErrorFactory,
+    @Inject(CacheService)
+    private readonly cacheService: ICacheService,
   ) {
     this.baseUrl = this.configurationService.getOrThrow<string>(
       'safeDataDecoder.baseUri',
@@ -83,6 +89,15 @@ export class DataDecoderApi implements IDataDecoderApi {
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
+  }
+
+  public async clearDecodedData(args: {
+    data: Address;
+    to: Address;
+    chainId: string;
+  }): Promise<void> {
+    const key = CacheRouter.getDecodedDataCacheKey(args);
+    await this.cacheService.deleteByKey(key);
   }
 
   public async getContracts(args: {
