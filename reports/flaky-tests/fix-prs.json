@@ -1,14 +1,47 @@
 {
-  "generated_at": "2026-11-12T15:34:12.839Z",
+  "generated_at": "2026-11-13T15:48:19.749Z",
   "prs": [
     {
-      "number": 3594,
-      "title": "fix(db): make the v2 migrator lock acquisition atomic",
-      "url": "https://github.com/safe-global/safe-client-gateway/pull/3594",
+      "number": 3751,
+      "title": "fix(tests): wait for job completion before asserting worker events",
+      "url": "https://github.com/safe-global/safe-client-gateway/pull/3751",
+      "merged_at": "2026-11-13T15:34:05Z",
+      "state": "merged",
+      "tests_fixed": [
+        "src/datasources/job-queue/__tests__/job-queue.service.integration.spec.ts"
+      ]
+    },
+    {
+      "number": 3761,
+      "title": "test: fix two tests that fail at random (chain order, short member names)",
+      "url": "https://github.com/safe-global/safe-client-gateway/pull/3761",
+      "merged_at": "2026-11-13T12:01:39Z",
+      "state": "merged",
+      "tests_fixed": [
+        "src/modules/spaces/routes/address-books/address-book-tags.controller.integration.spec.ts",
+        "src/modules/transactions/routes/helpers/space-queue.helper.spec.ts"
+      ]
+    },
+    {
+      "number": 3762,
+      "title": "test(spaces): give invited members valid names in the address book tags spec",
+      "url": "https://github.com/safe-global/safe-client-gateway/pull/3762",
       "merged_at": null,
       "state": "open",
       "tests_fixed": [
+        "src/modules/spaces/routes/address-books/address-book-tags.controller.integration.spec.ts"
+      ]
+    },
+    {
+      "number": 3594,
+      "title": "fix: make the v2 migrator lock acquisition atomic",
+      "url": "https://github.com/safe-global/safe-client-gateway/pull/3594",
+      "merged_at": "2026-11-13T11:34:50Z",
+      "state": "merged",
+      "tests_fixed": [
+        "src/datasources/db/v2/__tests__/postgresql-datasource.mock.spec.ts",
         "src/datasources/db/v2/database-migrator.service.integration.spec.ts",
+        "src/datasources/db/v2/database-migrator.service.spec.ts",
         "src/modules/surveys/routes/surveys.controller.integration.spec.ts",
         "src/modules/transactions/routes/__tests__/controllers/preview-transaction.transactions.controller.integration.spec.ts"
       ]
@@ -48,12 +81,23 @@
       ]
     },
     {
+      "number": 3589,
+      "title": "build(deps-dev): bump vitest from 4.1.10 to 5.0.3",
+      "url": "https://github.com/safe-global/safe-client-gateway/pull/3589",
+      "merged_at": "2026-10-12T15:31:00Z",
+      "state": "merged",
+      "tests_fixed": [
+        "src/__tests__/matchers/to-be-string-or-null.spec.ts"
+      ]
+    },
+    {
       "number": 3560,
       "title": "build: migrate runtime, tooling and tests from node to bun",
       "url": "https://github.com/safe-global/safe-client-gateway/pull/3560",
       "merged_at": null,
       "state": "open",
       "tests_fixed": [
+        "migrations/1785406836453-create-entitlements.spec.ts",
         "migrations/deprecated/__tests__/00005_notifications.integration.spec.ts",
         "migrations/deprecated/__tests__/00006_targeted_messaging.integration.spec.ts",
         "migrations/deprecated/__tests__/00007_targeted_messaging_update.integration.spec.ts",
@@ -61,18 +105,29 @@
         "migrations/deprecated/__tests__/00013_targeted_messaging_add_outreach_2.integration.spec.ts",
         "migrations/deprecated/__tests__/00014_targeted_messaging_add_chain_id.integration.spec.ts",
         "migrations/deprecated/__tests__/_all.integration.spec.ts",
+        "scripts/backfill-field-encryption.spec.ts",
         "scripts/env-json-helpers.spec.ts",
+        "scripts/generate-abis.spec.ts",
         "scripts/generate-env.spec.ts",
+        "scripts/generate-field-encryption-index-key.spec.ts",
+        "scripts/generate-token.spec.ts",
+        "scripts/test-utils.spec.ts",
         "scripts/validate-env-json.spec.ts",
         "src/__tests__/deployments.helper.spec.ts",
         "src/__tests__/matchers/to-be-string-or-null.spec.ts",
+        "src/__tests__/mocks.spec.ts",
         "src/__tests__/timezone.spec.ts",
         "src/__tests__/util/check-guard.spec.ts",
         "src/app.module.e2e.spec.ts",
+        "src/app.module.spec.ts",
         "src/app.provider.spec.ts",
         "src/config/__tests__/fake.configuration.service.spec.ts",
         "src/config/configuration.validator.spec.ts",
+        "src/config/entities/__tests__/configuration.spec.ts",
         "src/config/entities/configuration.spec.ts",
+        "src/config/entities/orm.config.spec.ts",
+        "src/config/entities/postgres.config.spec.ts",
+        "src/config/entities/schemas/configuration.schema.spec.ts",
         "src/config/nest.configuration.service.spec.ts",
         "src/datasources/billing-api/billing-api.service.spec.ts",
         "src/datasources/billing-api/upstream-customer-id.util.spec.ts",
@@ -98,13 +153,27 @@
       ]
     },
     {
+      "number": 3554,
+      "title": "perf: share the integration-test module cache and shard CI",
+      "url": "https://github.com/safe-global/safe-client-gateway/pull/3554",
+      "merged_at": "2026-10-09T15:08:09Z",
+      "state": "merged",
+      "tests_fixed": [
+        "src/config/configuration.module.spec.ts",
+        "test/shared-module-cache-setup.spec.ts",
+        "vitest.config.spec.ts"
+      ]
+    },
+    {
       "number": 3552,
       "title": "perf: share the unit-test module cache across spec files",
       "url": "https://github.com/safe-global/safe-client-gateway/pull/3552",
       "merged_at": "2026-10-09T14:57:38Z",
       "state": "merged",
       "tests_fixed": [
-        "src/logging/logging.service.spec.ts"
+        "src/logging/logging.service.spec.ts",
+        "test/shared-module-cache-setup.spec.ts",
+        "vitest.config.spec.ts"
       ]
     },
     {
@@ -121,28 +190,64 @@
         "migrations/deprecated/__tests__/00013_targeted_messaging_add_outreach_2.integration.spec.ts",
         "migrations/deprecated/__tests__/00014_targeted_messaging_add_chain_id.integration.spec.ts",
         "migrations/deprecated/__tests__/_all.integration.spec.ts",
+        "scripts/backfill-field-encryption.spec.ts",
         "scripts/env-json-helpers.spec.ts",
         "scripts/generate-env.spec.ts",
+        "scripts/generate-field-encryption-index-key.spec.ts",
+        "scripts/generate-token.spec.ts",
         "scripts/validate-env-json.spec.ts",
+        "src/__tests__/db.factory.spec.ts",
         "src/__tests__/deployments.helper.spec.ts",
         "src/__tests__/matchers/to-be-string-or-null.spec.ts",
+        "src/__tests__/redis-client.factory.spec.ts",
+        "src/__tests__/test-app.provider.spec.ts",
+        "src/__tests__/testing-module.spec.ts",
+        "src/__tests__/util/space-fixtures.spec.ts",
+        "src/app.module.e2e-spec.spec.ts",
+        "src/app.module.spec.ts",
         "src/app.provider.spec.ts",
         "src/config/__tests__/fake.configuration.service.spec.ts",
+        "src/config/configuration.module.spec.ts",
         "src/config/configuration.validator.spec.ts",
+        "src/config/entities/__tests__/configuration.spec.ts",
+        "src/config/entities/__tests__/test.blocklist.module.spec.ts",
+        "src/config/entities/blocklist.module.spec.ts",
+        "src/config/entities/blocklist.service.spec.ts",
         "src/config/entities/configuration.spec.ts",
+        "src/config/entities/orm.config.spec.ts",
+        "src/config/entities/postgres.config.spec.ts",
         "src/config/nest.configuration.service.spec.ts",
+        "src/datasources/billing-api/billing-api.module.spec.ts",
         "src/datasources/billing-api/billing-api.service.spec.ts",
+        "src/datasources/billing-api/entities/__tests__/checkout-session.builder.spec.ts",
+        "src/datasources/billing-api/entities/__tests__/payment-link.builder.spec.ts",
+        "src/datasources/billing-api/entities/__tests__/plan.builder.spec.ts",
+        "src/datasources/billing-api/entities/__tests__/subscription-update.builder.spec.ts",
+        "src/datasources/billing-api/entities/__tests__/subscription.builder.spec.ts",
+        "src/datasources/billing-api/entities/payment-link.entity.spec.ts",
+        "src/datasources/billing-api/entities/plan.entity.spec.ts",
+        "src/datasources/billing-api/entities/subscription.entity.spec.ts",
         "src/datasources/billing-api/upstream-customer-id.util.spec.ts",
         "src/datasources/cache/__tests__/fake.cache.service.spec.ts",
+        "src/datasources/cache/__tests__/test.cache.module.spec.ts",
+        "src/datasources/cache/cache.first.data.source.module.spec.ts",
         "src/datasources/cache/cache.first.data.source.spec.ts",
+        "src/datasources/cache/cache.module.spec.ts",
         "src/datasources/cache/cache.router.spec.ts",
+        "src/datasources/cache/cache.service.interface.spec.ts",
         "src/datasources/cache/redis.cache.service.integration.spec.ts",
         "src/datasources/cache/redis.cache.service.key-prefix.spec.ts",
+        "src/datasources/cache/redis.cache.service.spec.ts",
+        "src/datasources/circuit-breaker/circuit-breaker.module.spec.ts",
         "src/datasources/circuit-breaker/circuit-breaker.service.spec.ts",
+        "src/datasources/circuit-breaker/interfaces/circuit-breaker.interface.spec.ts",
         "src/datasources/common/chain-api.manager.spec.ts",
+        "src/datasources/config-api/config-api.module.spec.ts",
         "src/datasources/config-api/config-api.service.spec.ts",
+        "src/datasources/db/v1/cached-query-resolver.interface.spec.ts",
         "src/datasources/db/v1/cached-query-resolver.spec.ts",
         "src/datasources/db/v1/postgres-database.migration.hook.integration.spec.ts",
+        "src/datasources/db/v1/postgres-database.migration.hook.spec.ts",
         "src/datasources/db/v1/postgres-database.migrator.integration.spec.ts",
         "src/datasources/db/v1/postgres-database.module.integration.spec.ts"
       ]
@@ -154,12 +259,22 @@
       "merged_at": "2026-10-09T14:11:01Z",
       "state": "merged",
       "tests_fixed": [
+        "src/config/entities/__tests__/configuration.spec.ts",
+        "src/config/entities/configuration.spec.ts",
+        "src/config/entities/schemas/configuration.schema.spec.ts",
+        "src/datasources/cache/cache.router.spec.ts",
+        "src/domain/common/entities/log-type.entity.spec.ts",
         "src/modules/balances/datasources/entities/zerion-wallet-portfolio.entity.spec.ts",
+        "src/modules/portfolio/datasources/entities/zerion-chain.entity.spec.ts",
         "src/modules/portfolio/datasources/zerion-portfolio-api.service.spec.ts",
         "src/modules/positions/datasources/zerion-positions-api.service.spec.ts",
         "src/modules/safe/routes/v2/__tests__/safes.v2.controller.overview.integration.spec.ts",
         "src/modules/safe/routes/v2/safes.v2.service.spec.ts",
-        "src/modules/zerion/datasources/zerion-chain-mapping.service.spec.ts"
+        "src/modules/safe/safe.module.spec.ts",
+        "src/modules/zerion/datasources/zerion-chain-mapping.service.spec.ts",
+        "src/modules/zerion/domain/zerion.repository.interface.spec.ts",
+        "src/modules/zerion/domain/zerion.repository.spec.ts",
+        "src/modules/zerion/zerion.module.spec.ts"
       ]
     },
     {
@@ -169,8 +284,12 @@
       "merged_at": "2026-10-08T10:34:41Z",
       "state": "merged",
       "tests_fixed": [
+        "src/datasources/cache/cache.router.spec.ts",
+        "src/domain/interfaces/transaction-api.interface.spec.ts",
+        "src/modules/messages/domain/messages.repository.interface.spec.ts",
         "src/modules/messages/domain/messages.repository.spec.ts",
         "src/modules/safe/routes/safes.controller.integration.spec.ts",
+        "src/modules/safe/routes/safes.service.spec.ts",
         "src/modules/transactions/datasources/transaction-api.service.spec.ts"
       ]
     },
@@ -191,6 +310,7 @@
       "merged_at": "2026-09-30T09:12:08Z",
       "state": "merged",
       "tests_fixed": [
+        "src/modules/users/domain/users.repository.spec.ts",
         "src/modules/users/domain/users.repository.integration.spec.ts"
       ]
     },
@@ -201,6 +321,7 @@
       "merged_at": "2026-07-14T10:09:53Z",
       "state": "merged",
       "tests_fixed": [
+        "src/__tests__/test-app.provider.spec.ts",
         "src/modules/portfolio/v1/portfolio.controller.integration.spec.ts"
       ]
     },
@@ -213,6 +334,7 @@
       "tests_fixed": [
         "src/datasources/job-queue/__tests__/job-queue.service.integration.spec.ts",
         "src/datasources/network/network.module.integration.spec.ts",
+        "src/domain/common/entities/name.builder.spec.ts",
         "src/modules/alerts/routes/alerts.controller.integration.spec.ts",
         "src/modules/auth/routes/decorators/auth.decorator.integration.spec.ts",
         "src/modules/auth/routes/guards/auth.guard.integration.spec.ts",
@@ -282,8 +404,12 @@
       "merged_at": "2026-07-02T08:28:07Z",
       "state": "merged",
       "tests_fixed": [
+        "src/datasources/cache/redis.cache.service.spec.ts",
         "src/datasources/job-queue/__tests__/job-queue.service.integration.spec.ts",
-        "src/routes/common/guards/rate-limit.guard.spec.ts"
+        "src/modules/transactions/routes/mappers/common/transaction-data.mapper.spec.ts",
+        "src/routes/common/guards/rate-limit.guard.spec.ts",
+        "test/faker-setup.spec.ts",
+        "vitest.config.spec.ts"
       ]
     },
     {
@@ -295,9 +421,11 @@
       "tests_fixed": [
         "scripts/env-json-helpers.spec.ts",
         "scripts/generate-env.spec.ts",
+        "scripts/test-utils.spec.ts",
         "scripts/validate-env-json.spec.ts",
         "src/__tests__/matchers/to-be-string-or-null.spec.ts",
         "src/__tests__/timezone.spec.ts",
+        "src/config/entities/__tests__/test.blocklist.module.spec.ts",
         "src/config/nest.configuration.service.spec.ts",
         "src/datasources/cache/__tests__/fake.cache.service.spec.ts",
         "src/datasources/cache/cache.first.data.source.spec.ts",
@@ -308,25 +436,39 @@
         "src/datasources/db/v1/cached-query-resolver.spec.ts",
         "src/datasources/db/v1/postgres-database.migration.hook.integration.spec.ts",
         "src/datasources/db/v1/postgres-database.migrator.integration.spec.ts",
+        "src/datasources/db/v2/__tests__/entity-manager.mock.spec.ts",
+        "src/datasources/db/v2/__tests__/postgresql-database.service.mock.spec.ts",
+        "src/datasources/db/v2/__tests__/postgresql-datasource.mock.spec.ts",
+        "src/datasources/db/v2/__tests__/querybuilder.mock.spec.ts",
+        "src/datasources/db/v2/__tests__/repository.mock.spec.ts",
         "src/datasources/db/v2/database-migrator.service.integration.spec.ts",
         "src/datasources/db/v2/postgres-database.service.integration.spec.ts",
+        "src/datasources/db/v2/test.postgres-database.module.spec.ts",
         "src/datasources/fee-service-api/fee-service-api.service.spec.ts",
         "src/datasources/job-queue/__tests__/test.job.consumer.spec.ts",
         "src/datasources/job-queue/job-queue.service.spec.ts",
         "src/datasources/jwt/jwt.service.spec.ts",
+        "src/datasources/locking-api/__tests__/test.identity-api.module.spec.ts",
         "src/datasources/locking-api/fingerprint-api.service.spec.ts",
         "src/datasources/locking-api/locking-api.service.spec.ts",
+        "src/datasources/network/__tests__/test.network.module.spec.ts",
+        "src/datasources/network/__tests__/test.tx-auth.network.module.spec.ts",
         "src/datasources/network/auth/tx-auth-headers.helper.spec.ts",
         "src/datasources/network/fetch.network.service.spec.ts",
         "src/datasources/network/network.module.integration.spec.ts",
+        "src/datasources/push-notifications-api/__tests__/test.push-notifications-api.module.spec.ts",
         "src/datasources/push-notifications-api/firebase-cloud-messaging-api.service.spec.ts",
         "src/datasources/storage/aws-cloud-storage-api.service.spec.ts",
         "src/domain/common/entities/safe-signature.spec.ts",
         "src/logging/__tests__/logger-factory.spec.ts",
         "src/logging/logging.service.spec.ts",
+        "src/logging/utils.spec.ts",
+        "src/modules/about/routes/__tests__/get-about.e2e-spec.spec.ts",
         "src/modules/alerts/datasources/tenderly-api.service.spec.ts",
         "src/modules/alerts/domain/contracts/decoders/__tests__/delay-modifier-decoder.helper.spec.ts",
         "src/modules/alerts/routes/alerts.controller.integration.spec.ts",
+        "src/modules/auth/oidc/auth0/__tests__/auth0-jwks.helper.spec.ts",
+        "src/modules/auth/oidc/auth0/__tests__/test.auth0.module.spec.ts",
         "src/modules/auth/oidc/auth0/datasources/auth0-api.service.spec.ts",
         "src/modules/auth/oidc/auth0/domain/auth0-token.verifier.spec.ts",
         "src/modules/auth/oidc/auth0/domain/auth0.repository.spec.ts",
@@ -343,7 +485,9 @@
         "src/modules/balances/datasources/zerion-balances-api.service.spec.ts",
         "src/modules/balances/routes/__tests__/controllers/zerion-balances.controller.integration.spec.ts",
         "src/modules/balances/routes/balances.controller.integration.spec.ts",
+        "src/modules/blockchain/datasources/__tests__/fake.blockchain-api.manager.spec.ts",
         "src/modules/blockchain/datasources/blockchain-api.manager.spec.ts",
+        "src/modules/blockchain/domain/__tests__/fake.blockchain.repository.spec.ts",
         "src/modules/bridge/datasources/lifi-api.service.spec.ts",
         "src/modules/chains/domain/chains.repository.spec.ts",
         "src/modules/chains/feature-flags/feature-flag.service.integration.spec.ts",
@@ -360,6 +504,8 @@
         "src/modules/contracts/routes/contracts.controller.integration.spec.ts",
         "src/modules/contracts/routes/mappers/contract.mapper.spec.ts",
         "src/modules/counterfactual-safes/domain/counterfactual-safes.repository.integration.spec.ts",
+        "src/modules/counterfactual-safes/routes/__tests__/counterfactual-safes.controller.e2e-spec.spec.ts",
+        "src/modules/counterfactual-safes/routes/__tests__/space-counterfactual-safes.controller.e2e-spec.spec.ts",
         "src/modules/csv-export/v1/consumers/csv-export.consumer.spec.ts",
         "src/modules/csv-export/v1/csv-export.service.spec.ts",
         "src/modules/csv-export/v1/datasources/export-api.manager.spec.ts",
@@ -402,6 +548,9 @@
       "url": "https://github.com/safe-global/safe-client-gateway/pull/2992",
       "merged_at": "2026-03-26T14:57:44Z",
       "tests_fixed": [
+        "src/config/entities/__tests__/configuration.spec.ts",
+        "src/config/entities/configuration.spec.ts",
+        "src/config/entities/schemas/configuration.schema.spec.ts",
         "src/modules/auth/oidc/routes/oidc-auth.controller.integration.spec.ts",
         "src/modules/auth/oidc/routes/oidc-auth.service.spec.ts"
       ],
@@ -424,8 +573,15 @@
       "url": "https://github.com/safe-global/safe-client-gateway/pull/2944",
       "merged_at": null,
       "tests_fixed": [
+        "src/config/entities/__tests__/configuration.spec.ts",
+        "src/config/entities/configuration.spec.ts",
+        "src/modules/auth/auth.module.spec.ts",
         "src/modules/auth/datasources/__tests__/external-auth.mock.datasource.spec.ts",
-        "src/modules/auth/routes/__tests__/mock-consent.controller.spec.ts"
+        "src/modules/auth/datasources/external-auth.datasource.interface.spec.ts",
+        "src/modules/auth/datasources/external-auth.mock.datasource.spec.ts",
+        "src/modules/auth/external-auth.module.spec.ts",
+        "src/modules/auth/routes/__tests__/mock-consent.controller.spec.ts",
+        "src/modules/auth/routes/mock-consent.controller.spec.ts"
       ],
       "state": "closed"
     },
@@ -480,6 +636,8 @@
       "url": "https://github.com/safe-global/safe-client-gateway/pull/2913",
       "merged_at": "2026-02-09T15:33:44Z",
       "tests_fixed": [
+        "src/__tests__/testing-module.spec.ts",
+        "src/config/entities/__tests__/test.blocklist.module.spec.ts",
         "src/modules/messages/domain/helpers/message-verifier.helper.spec.ts",
         "src/modules/messages/routes/messages.controller.integration.spec.ts",
         "src/modules/transactions/routes/__tests__/controllers/add-transaction-confirmations.transactions.controller.integration.spec.ts",
@@ -608,7 +766,12 @@
       "url": "https://github.com/safe-global/safe-client-gateway/pull/2842",
       "merged_at": null,
       "tests_fixed": [
+        "src/modules/safe-shield/entities/__tests__/builders/analysis-result.builder.spec.ts",
+        "src/modules/safe-shield/entities/analysis-result.entity.spec.ts",
+        "src/modules/safe-shield/entities/dtos/threat-analysis.dto.spec.ts",
         "src/modules/safe-shield/safe-shield.controller.integration.spec.ts",
+        "src/modules/safe-shield/threat-analysis/blockaid/blockaid-api.constants.spec.ts",
+        "src/modules/safe-shield/threat-analysis/blockaid/blockaid-api.interface.spec.ts",
         "src/modules/safe-shield/threat-analysis/blockaid/blockaid-api.service.spec.ts",
         "src/modules/safe-shield/threat-analysis/blockaid/schemas/blockaid-scan-response.schema.spec.ts",
         "src/modules/safe-shield/threat-analysis/threat-analysis.service.spec.ts"
@@ -637,7 +800,8 @@
         "src/modules/csv-export/v1/csv-export.service.spec.ts",
         "src/routes/alerts/alerts.controller.spec.ts",
         "src/routes/auth/auth.controller.spec.ts",
-        "src/routes/users/users.controller.spec.ts"
+        "src/routes/users/users.controller.spec.ts",
+        "test/global-setup.spec.ts"
       ],
       "state": "closed"
     },
@@ -647,11 +811,20 @@
       "url": "https://github.com/safe-global/safe-client-gateway/pull/2806",
       "merged_at": "2025-11-27T10:03:53Z",
       "tests_fixed": [
+        "src/datasources/cache/cache.router.spec.ts",
         "src/modules/balances/datasources/zerion-api.helpers.spec.ts",
         "src/modules/balances/datasources/zerion-balances-api.service.spec.ts",
         "src/modules/balances/routes/__tests__/controllers/zerion-balances.controller.spec.ts",
         "src/modules/collectibles/routes/__tests__/controllers/zerion-collectibles.controller.spec.ts",
-        "src/modules/portfolio/v1/portfolio.service.spec.ts"
+        "src/modules/portfolio/datasources/zerion-portfolio-api.service.spec.ts",
+        "src/modules/portfolio/domain/portfolio.repository.interface.spec.ts",
+        "src/modules/portfolio/domain/portfolio.repository.spec.ts",
+        "src/modules/portfolio/domain/portfolio.service.interface.spec.ts",
+        "src/modules/portfolio/domain/portfolio.service.spec.ts",
+        "src/modules/portfolio/interfaces/portfolio-api.interface.spec.ts",
+        "src/modules/portfolio/v1/portfolio.module.spec.ts",
+        "src/modules/portfolio/v1/portfolio.service.spec.ts",
+        "src/modules/positions/datasources/zerion-positions-api.service.spec.ts"
       ],
       "state": "merged"
     },
@@ -662,6 +835,7 @@
       "merged_at": null,
       "tests_fixed": [
         "src/datasources/job-queue/__tests__/job-queue.service.integration.spec.ts",
+        "src/domain/chains/entities/schemas/chain-id.schema.spec.ts",
         "src/domain/spaces/spaces.repository.integration.spec.ts",
         "src/domain/users/members.repository.integration.spec.ts",
         "src/domain/users/users.repository.integration.spec.ts",

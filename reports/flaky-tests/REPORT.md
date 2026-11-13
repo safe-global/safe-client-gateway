@@ -1,13 +1,13 @@
 # Flaky Test Baseline Report
 
-Generated: 2026-11-12T15:34:12.841Z | Period: 2026-01-16 to 2026-11-12
+Generated: 2026-11-13T15:48:19.754Z | Period: 2026-01-16 to 2026-11-13
 
 ## Summary
 
 | Metric | Value |
 |--------|-------|
-| Total unique commits | 3464 |
-| Flaky commits (pass + fail on same SHA) | 146 |
+| Total unique commits | 3526 |
+| Flaky commits (pass + fail on same SHA) | 147 |
 | Flakiness rate | 4.2% |
 
 Since 2026-06-04 a commit also counts as flaky when a failed attempt was recovered by re-running the same workflow run (GitHub reports only the final attempt, so this signal needs a per-attempt lookup). Earlier weeks lack that signal and understate flakiness.
@@ -68,7 +68,7 @@ Since 2026-06-04 a commit also counts as flaky when a failed attempt was recover
 | 2026-10-19 | 205 | 0 | 0% |
 | 2026-10-26 | 110 | 1 | 0.9% |
 | 2026-11-02 | 33 | 0 | 0% |
-| 2026-11-09 | 67 | 0 | 0% |
+| 2026-11-09 | 129 | 1 | 0.8% |
 
 ```text
 Weekly CI flakiness rate %  ·  n = unique commits  ·  weeks with n<10 omitted
@@ -115,12 +115,12 @@ Weekly CI flakiness rate %  ·  n = unique commits  ·  weeks with n<10 omitted
 10-19   0.0%  n=205  ▏
 10-26   0.9%  n=110  ██
 11-02   0.0%  n=33   ▏
-11-09   0.0%  n=67   ▏
+11-09   0.8%  n=129  ██
 ```
 
 ## Clean Streak
 
-100 commits without a flake since the last flaky week — rate is below 3.0% at 95% confidence. Target <1% at 95% needs a **300-commit** streak (200 to go).
+Streak broken: the most recent week has a flake. Target <1% at 95% needs a 300-commit clean streak.
 
 ## Flaky Test Leaderboard
 
@@ -132,11 +132,11 @@ Weekly CI flakiness rate %  ·  n = unique commits  ·  weeks with n<10 omitted
 | `src/modules/targeted-messaging/datasources/targeted-messaging.datasource.integration.spec.ts` | 12 | 2026-02-01 | Fixed | [#2891](https://github.com/safe-global/safe-client-gateway/pull/2891) |
 | `src/modules/transactions/routes/__tests__/controllers/propose-transaction.transactions.controller.integration.spec.ts` | 12 | 2026-06-26 | Fixed | [#3242](https://github.com/safe-global/safe-client-gateway/pull/3242) |
 | `src/datasources/cache/redis.cache.service.integration.spec.ts` | 11 | 2026-06-18 | Fixed | [#3136](https://github.com/safe-global/safe-client-gateway/pull/3136) |
-| `src/datasources/job-queue/__tests__/job-queue.service.integration.spec.ts` | 11 | 2026-10-29 | Open | - |
+| `src/datasources/job-queue/__tests__/job-queue.service.integration.spec.ts` | 11 | 2026-10-29 | Fixed | [#3751](https://github.com/safe-global/safe-client-gateway/pull/3751) |
 | `src/modules/notifications/routes/v2/notifications.controller.integration.spec.ts` | 10 | 2026-09-11 | Fixed | [#3572](https://github.com/safe-global/safe-client-gateway/pull/3572) |
 | `src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts` | 10 | 2026-08-19 | Fixed | [#3572](https://github.com/safe-global/safe-client-gateway/pull/3572) |
 | `src/modules/transactions/routes/helpers/transaction-verifier.helper.spec.ts` | 10 | 2026-10-09 | Fixed | [#3572](https://github.com/safe-global/safe-client-gateway/pull/3572) |
-| `src/modules/transactions/routes/mappers/common/transaction-data.mapper.spec.ts` | 9 | 2026-06-15 | Open | - |
+| `src/modules/transactions/routes/mappers/common/transaction-data.mapper.spec.ts` | 9 | 2026-06-15 | Fixed | [#3139](https://github.com/safe-global/safe-client-gateway/pull/3139) |
 | `src/modules/users/domain/users.repository.integration.spec.ts` | 9 | 2026-09-24 | Fixed | [#3506](https://github.com/safe-global/safe-client-gateway/pull/3506) |
 | `src/modules/transactions/routes/__tests__/controllers/add-transaction-confirmations.transactions.controller.integration.spec.ts` | 7 | 2026-06-19 | Fixed | [#3242](https://github.com/safe-global/safe-client-gateway/pull/3242) |
 | `src/domain/common/entities/safe-signature.spec.ts` | 6 | 2026-08-17 | Fixed | [#3572](https://github.com/safe-global/safe-client-gateway/pull/3572) |
@@ -145,25 +145,31 @@ Weekly CI flakiness rate %  ·  n = unique commits  ·  weeks with n<10 omitted
 | `src/modules/auth/utils/auth-redirect.helper.spec.ts` | 3 | 2026-06-11 | Fixed | [#3162](https://github.com/safe-global/safe-client-gateway/pull/3162) |
 | `src/modules/bridge/domain/entities/bridge-name.entity.spec.ts` | 3 | 2026-07-09 | Fixed | [#3242](https://github.com/safe-global/safe-client-gateway/pull/3242) |
 | `src/modules/transactions/routes/__tests__/controllers/get-transaction-by-id.transactions.controller.integration.spec.ts` | 2 | 2026-04-10 | Fixed | [#3242](https://github.com/safe-global/safe-client-gateway/pull/3242) |
-| `src/modules/users/domain/__tests__/user-identity-resolver.service.spec.ts` | 2 | 2026-05-19 | Open | - |
-| `src/modules/surveys/routes/surveys.controller.integration.spec.ts` | 2 | 2026-08-21 | Fix in review | [#3594](https://github.com/safe-global/safe-client-gateway/pull/3594) |
-| `src/modules/transactions/routes/__tests__/controllers/preview-transaction.transactions.controller.integration.spec.ts` | 2 | 2026-09-21 | Fix in review | [#3594](https://github.com/safe-global/safe-client-gateway/pull/3594) |
-| `src/modules/transactions/routes/__tests__/controllers/preview-transaction-cow-swap.transactions.controller.spec.ts` | 1 | 2026-01-29 | Open | - |
-| `src/modules/transactions/routes/__tests__/controllers/preview-transaction-kiln.transactions.controller.spec.ts` | 1 | 2026-01-19 | Open | - |
+| `src/modules/users/domain/__tests__/user-identity-resolver.service.spec.ts` | 2 | 2026-05-19 | Removed from main | - |
+| `src/modules/surveys/routes/surveys.controller.integration.spec.ts` | 2 | 2026-08-21 | Fixed | [#3594](https://github.com/safe-global/safe-client-gateway/pull/3594) |
+| `src/modules/transactions/routes/__tests__/controllers/preview-transaction.transactions.controller.integration.spec.ts` | 2 | 2026-09-21 | Fixed | [#3594](https://github.com/safe-global/safe-client-gateway/pull/3594) |
+| `src/modules/transactions/routes/__tests__/controllers/preview-transaction-cow-swap.transactions.controller.spec.ts` | 1 | 2026-01-29 | Removed from main | - |
+| `src/modules/transactions/routes/__tests__/controllers/preview-transaction-kiln.transactions.controller.spec.ts` | 1 | 2026-01-19 | Removed from main | - |
 | `src/modules/safe-shield/safe-shield.controller.integration.spec.ts` | 1 | 2026-02-11 | Fixed | [#3242](https://github.com/safe-global/safe-client-gateway/pull/3242) |
 | `src/modules/safe-apps/routes/safe-apps.controller.integration.spec.ts` | 1 | 2026-02-11 | Fixed | [#3242](https://github.com/safe-global/safe-client-gateway/pull/3242) |
 | `src/modules/auth/routes/auth.controller.integration.spec.ts` | 1 | 2026-04-15 | Fixed | [#3136](https://github.com/safe-global/safe-client-gateway/pull/3136) |
-| `src/domain/common/entities/name.builder.spec.ts` | 1 | 2026-07-03 | Open | - |
+| `src/domain/common/entities/name.builder.spec.ts` | 1 | 2026-07-03 | Fixed | [#3242](https://github.com/safe-global/safe-client-gateway/pull/3242) |
 | `src/modules/notifications/routes/v1/notifications.controller.integration.spec.ts` | 1 | 2026-09-21 | Fixed | [#3617](https://github.com/safe-global/safe-client-gateway/pull/3617) |
+| `src/modules/transactions/routes/helpers/space-queue.helper.spec.ts` | 1 | 2026-11-12 | Fixed | [#3761](https://github.com/safe-global/safe-client-gateway/pull/3761) |
 
 ## Fix PRs
 
-- [#3594](https://github.com/safe-global/safe-client-gateway/pull/3594) - fix(db): make the v2 migrator lock acquisition atomic (Open)
+- [#3751](https://github.com/safe-global/safe-client-gateway/pull/3751) - fix(tests): wait for job completion before asserting worker events (Merged)
+- [#3761](https://github.com/safe-global/safe-client-gateway/pull/3761) - test: fix two tests that fail at random (chain order, short member names) (Merged)
+- [#3762](https://github.com/safe-global/safe-client-gateway/pull/3762) - test(spaces): give invited members valid names in the address book tags spec (Open)
+- [#3594](https://github.com/safe-global/safe-client-gateway/pull/3594) - fix: make the v2 migrator lock acquisition atomic (Merged)
 - [#3617](https://github.com/safe-global/safe-client-gateway/pull/3617) - fix(tests): expect one upsert per registration with safes in v1 notifications spec (Merged)
 - [#3692](https://github.com/safe-global/safe-client-gateway/pull/3692) - test(policies): fuzz the delayed guard policies mapper (Closed)
 - [#3572](https://github.com/safe-global/safe-client-gateway/pull/3572) - fix(tests): stop signature, chain ID and JWT test flakes (Merged)
+- [#3589](https://github.com/safe-global/safe-client-gateway/pull/3589) - build(deps-dev): bump vitest from 4.1.10 to 5.0.3 (Merged)
 - [#3560](https://github.com/safe-global/safe-client-gateway/pull/3560) - build: migrate runtime, tooling and tests from node to bun (Open)
 - [#3558](https://github.com/safe-global/safe-client-gateway/pull/3558) - perf(relay): boot the relay controller spec's app once per file (Merged)
+- [#3554](https://github.com/safe-global/safe-client-gateway/pull/3554) - perf: share the integration-test module cache and shard CI (Merged)
 - [#3552](https://github.com/safe-global/safe-client-gateway/pull/3552) - perf: share the unit-test module cache across spec files (Merged)
 - [#3551](https://github.com/safe-global/safe-client-gateway/pull/3551) - build: resolve #/ imports natively and type-check specs on TS 7 (Merged)
 - [#3447](https://github.com/safe-global/safe-client-gateway/pull/3447) - feat: derive zerion support from its chain list, excluding testnets (Merged)
@@ -190,15 +196,6 @@ Weekly CI flakiness rate %  ·  n = unique commits  ·  weeks with n<10 omitted
 - [#2737](https://github.com/safe-global/safe-client-gateway/pull/2737) - fix: eliminate test flakiness across test suite (Closed)
 - [#2806](https://github.com/safe-global/safe-client-gateway/pull/2806) - feat(portfolio): add X-Env testnet header for Zerion API requests (Merged)
 - [#2781](https://github.com/safe-global/safe-client-gateway/pull/2781) - chores(tests): address flaky tests (Closed)
-
-## Still-Open Flaky Tests
-
-- `src/datasources/job-queue/__tests__/job-queue.service.integration.spec.ts` (11 failures, last 2026-10-29)
-- `src/modules/transactions/routes/mappers/common/transaction-data.mapper.spec.ts` (9 failures, last 2026-06-15)
-- `src/modules/users/domain/__tests__/user-identity-resolver.service.spec.ts` (2 failures, last 2026-05-19)
-- `src/modules/transactions/routes/__tests__/controllers/preview-transaction-cow-swap.transactions.controller.spec.ts` (1 failures, last 2026-01-29)
-- `src/modules/transactions/routes/__tests__/controllers/preview-transaction-kiln.transactions.controller.spec.ts` (1 failures, last 2026-01-19)
-- `src/domain/common/entities/name.builder.spec.ts` (1 failures, last 2026-07-03)
 
 ---
 

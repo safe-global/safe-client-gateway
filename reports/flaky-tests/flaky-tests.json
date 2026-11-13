@@ -1,12 +1,12 @@
 {
-  "generated_at": "2026-11-12T15:34:12.839Z",
+  "generated_at": "2026-11-13T15:48:19.749Z",
   "summary": {
-    "total_commits": 3464,
-    "flaky_commits": 146,
+    "total_commits": 3526,
+    "flaky_commits": 147,
     "flakiness_rate": 4.2,
     "period": {
       "from": "2026-01-16",
-      "to": "2026-11-12"
+      "to": "2026-11-13"
     }
   },
   "weekly_trend": [
@@ -324,9 +324,9 @@
     },
     {
       "week": "2026-11-09",
-      "commits": 67,
-      "flaky": 0,
-      "rate": 0
+      "commits": 129,
+      "flaky": 1,
+      "rate": 0.8
     }
   ],
   "tests": [
@@ -394,8 +394,11 @@
       "file": "src/datasources/job-queue/__tests__/job-queue.service.integration.spec.ts",
       "failure_count": 11,
       "last_failure": "2026-10-29T14:14:10Z",
-      "status": "open",
-      "fix_pr": null
+      "status": "fixed",
+      "fix_pr": {
+        "number": 3751,
+        "url": "https://github.com/safe-global/safe-client-gateway/pull/3751"
+      }
     },
     {
       "file": "src/modules/notifications/routes/v2/notifications.controller.integration.spec.ts",
@@ -431,8 +434,11 @@
       "file": "src/modules/transactions/routes/mappers/common/transaction-data.mapper.spec.ts",
       "failure_count": 9,
       "last_failure": "2026-06-15T07:40:47Z",
-      "status": "open",
-      "fix_pr": null
+      "status": "fixed",
+      "fix_pr": {
+        "number": 3139,
+        "url": "https://github.com/safe-global/safe-client-gateway/pull/3139"
+      }
     },
     {
       "file": "src/modules/users/domain/users.repository.integration.spec.ts",
@@ -518,14 +524,14 @@
       "file": "src/modules/users/domain/__tests__/user-identity-resolver.service.spec.ts",
       "failure_count": 2,
       "last_failure": "2026-05-19T17:35:22Z",
-      "status": "open",
+      "status": "removed",
       "fix_pr": null
     },
     {
       "file": "src/modules/surveys/routes/surveys.controller.integration.spec.ts",
       "failure_count": 2,
       "last_failure": "2026-08-21T16:05:57Z",
-      "status": "in_review",
+      "status": "fixed",
       "fix_pr": {
         "number": 3594,
         "url": "https://github.com/safe-global/safe-client-gateway/pull/3594"
@@ -535,7 +541,7 @@
       "file": "src/modules/transactions/routes/__tests__/controllers/preview-transaction.transactions.controller.integration.spec.ts",
       "failure_count": 2,
       "last_failure": "2026-09-21T11:17:17Z",
-      "status": "in_review",
+      "status": "fixed",
       "fix_pr": {
         "number": 3594,
         "url": "https://github.com/safe-global/safe-client-gateway/pull/3594"
@@ -545,14 +551,14 @@
       "file": "src/modules/transactions/routes/__tests__/controllers/preview-transaction-cow-swap.transactions.controller.spec.ts",
       "failure_count": 1,
       "last_failure": "2026-01-29T14:34:55Z",
-      "status": "open",
+      "status": "removed",
       "fix_pr": null
     },
     {
       "file": "src/modules/transactions/routes/__tests__/controllers/preview-transaction-kiln.transactions.controller.spec.ts",
       "failure_count": 1,
       "last_failure": "2026-01-19T15:27:16Z",
-      "status": "open",
+      "status": "removed",
       "fix_pr": null
     },
     {
@@ -589,8 +595,11 @@
       "file": "src/domain/common/entities/name.builder.spec.ts",
       "failure_count": 1,
       "last_failure": "2026-07-03T10:39:25Z",
-      "status": "open",
-      "fix_pr": null
+      "status": "fixed",
+      "fix_pr": {
+        "number": 3242,
+        "url": "https://github.com/safe-global/safe-client-gateway/pull/3242"
+      }
     },
     {
       "file": "src/modules/notifications/routes/v1/notifications.controller.integration.spec.ts",
@@ -600,6 +609,16 @@
       "fix_pr": {
         "number": 3617,
         "url": "https://github.com/safe-global/safe-client-gateway/pull/3617"
+      }
+    },
+    {
+      "file": "src/modules/transactions/routes/helpers/space-queue.helper.spec.ts",
+      "failure_count": 1,
+      "last_failure": "2026-11-12T18:46:05Z",
+      "status": "fixed",
+      "fix_pr": {
+        "number": 3761,
+        "url": "https://github.com/safe-global/safe-client-gateway/pull/3761"
       }
     }
   ]

@@ -1,11 +1,13 @@
 {
-  "generated_at": "2026-11-12T15:34:12.839Z",
-  "last_checked_at": "2026-11-12T15:34:12.839Z",
+  "generated_at": "2026-11-13T15:48:19.749Z",
+  "last_checked_at": "2026-11-13T15:48:19.749Z",
   "period": {
     "from": "2026-01-16",
-    "to": "2026-11-12"
+    "to": "2026-11-13"
   },
   "flaky_shas": [
+    "1cb0114",
+    "834f7ee",
     "510b1fa",
     "f927a3e",
     "629c23c",
@@ -176,10 +178,26 @@
     "1efc9d3",
     "47477af",
     "dc3acbd",
-    "ab8c16f",
-    "834f7ee"
+    "ab8c16f"
   ],
   "runs": [
+    {
+      "id": 43283248573,
+      "sha": "1cb0114",
+      "branch": "claude/jolly-ride-rid9bk-single-flight",
+      "conclusion": "failure",
+      "created_at": "2026-11-12T18:46:05Z",
+      "failed_jobs": [
+        "ci / unit-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/transactions/routes/helpers/space-queue.helper.spec.ts",
+          "name": "space-queue.helper > getSpaceQueueCounts > counts each chain under every filter but the chain filter",
+          "error": "AssertionError: expected [ { chainId: '5337', count: 2 }, …(1) ] to deeply equal [ { chainId: '073', count: 2 }, …(1) ]"
+        }
+      ]
+    },
     {
       "id": 40889457219,
       "sha": "834f7ee",
