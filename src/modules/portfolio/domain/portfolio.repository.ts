@@ -43,7 +43,7 @@ type FetchArgs = {
 @Injectable()
 export class PortfolioRepository implements IPortfolioRepository {
   private readonly cacheExpirationSeconds: number;
-  private readonly settleSeconds: number;
+  private readonly afterTransactionTtlSeconds: number;
   private readonly dustThresholdUsd: number;
   /** Fetches in progress in this process, by cache entry. */
   private readonly inFlightFetches = new Map<
@@ -61,9 +61,10 @@ export class PortfolioRepository implements IPortfolioRepository {
     this.cacheExpirationSeconds = this.configurationService.getOrThrow<number>(
       'portfolio.cache.ttlSeconds',
     );
-    this.settleSeconds = this.configurationService.getOrThrow<number>(
-      'portfolio.cache.settleSeconds',
-    );
+    this.afterTransactionTtlSeconds =
+      this.configurationService.getOrThrow<number>(
+        'portfolio.cache.afterTransactionTtlSeconds',
+      );
     this.dustThresholdUsd = this.configurationService.getOrThrow<number>(
       'portfolio.filters.dustThresholdUsd',
     );
@@ -204,7 +205,9 @@ export class PortfolioRepository implements IPortfolioRepository {
       CacheRouter.getPortfolioClearedAtCacheKey({ address: args.address }),
     );
     const settledAt =
-      clearedAt === null ? null : clearedAt + this.settleSeconds * 1_000;
+      clearedAt === null
+        ? null
+        : clearedAt + this.afterTransactionTtlSeconds * 1_000;
     if (settledAt === null || settledAt <= args.fetchedAt) {
       return { expiresAt, isSettling: false };
     }

@@ -218,7 +218,11 @@ export const RootConfigurationSchema = z
       .int()
       .min(1)
       .optional(),
-    PORTFOLIO_CACHE_SETTLE_SECONDS: z.coerce.number().int().min(1).optional(),
+    PORTFOLIO_CACHE_TTL_AFTER_TRANSACTION_SECONDS: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .optional(),
     PORTFOLIO_CLEAR_COOLDOWN_SECONDS: z.coerce.number().int().min(1).optional(),
     PORTFOLIO_CLEAR_RECENT_SECONDS: z.coerce.number().int().min(1).optional(),
     PORTFOLIO_CLEAR_RATE_LIMIT_MAX: z.coerce.number().int().min(1).optional(),
