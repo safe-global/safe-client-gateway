@@ -3,6 +3,7 @@ import {
   BadGatewayException,
   ConflictException,
   ForbiddenException,
+  HttpStatus,
   Inject,
   Injectable,
   NotFoundException,
@@ -19,6 +20,7 @@ import type {
   SubscriptionUpdatePreview,
   UpdateSubscriptionResult,
 } from '#/datasources/billing-api/entities/subscription-update.entity';
+import { DataSourceError } from '#/domain/errors/data-source.error';
 import type { ILoggingService } from '#/logging/logging.interface';
 import { LoggingService } from '#/logging/logging.interface';
 import { asError } from '#/logging/utils';
@@ -203,11 +205,7 @@ export class BillingService implements ISpaceSetupBilling {
     await this.billingRepository.clearSubscriptions({
       upstreamCustomerId: args.spaceUuid,
     });
-    const subscriptions =
-      await this.billingRepository.getSubscriptionsByCustomerId({
-        upstreamCustomerId: args.spaceUuid,
-        status: 'all',
-      });
+    const subscriptions = await this.findAllSubscriptions(args.spaceUuid);
     const isLive = subscriptions.some((subscription) =>
       isActiveSubscriptionStatus(subscription.status),
     );
@@ -218,6 +216,26 @@ export class BillingService implements ISpaceSetupBilling {
       });
     }
     return isLive;
+  }
+
+  /** None while the billing service has no customer: no checkout of the space ever completed. */
+  private async findAllSubscriptions(
+    spaceUuid: Space['uuid'],
+  ): Promise<Array<Subscription>> {
+    try {
+      return await this.billingRepository.getSubscriptionsByCustomerId({
+        upstreamCustomerId: spaceUuid,
+        status: 'all',
+      });
+    } catch (error) {
+      if (
+        error instanceof DataSourceError &&
+        error.code === HttpStatus.NOT_FOUND
+      ) {
+        return [];
+      }
+      throw error;
+    }
   }
 
   /**
