@@ -1226,6 +1226,15 @@ export class CacheRouter {
   }
 
   /**
+   * Cooldown counter that skips repeat portfolio cache clears for the same address.
+   */
+  static getPortfolioClearCooldownCacheKey(args: { address: Address }): string {
+    return CacheRouter.getRateLimitCacheKey(
+      `${CacheRouter.PORTFOLIO_KEY}_clear_${args.address}`,
+    );
+  }
+
+  /**
    * Cache for full portfolio (positions endpoint). Zerion /v1/wallets/{address}/positions.
    */
   static getPortfolioCacheDir(args: {

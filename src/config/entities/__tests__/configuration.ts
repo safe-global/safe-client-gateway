@@ -109,6 +109,13 @@ export default (): ReturnType<typeof configuration> => ({
         windowSeconds: faker.number.int({ min: 100, max: 200 }),
       },
     },
+    clear: {
+      cooldownSeconds: faker.number.int({ min: 10, max: 60 }),
+      rateLimit: {
+        max: faker.number.int({ min: 100, max: 200 }),
+        windowSeconds: faker.number.int({ min: 100, max: 200 }),
+      },
+    },
   },
   blockchain: {
     infura: {
