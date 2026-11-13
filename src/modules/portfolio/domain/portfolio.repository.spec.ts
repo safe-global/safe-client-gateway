@@ -861,6 +861,49 @@ describe('PortfolioRepository', () => {
       expect(mockPortfolioApi.getPortfolio).toHaveBeenCalledTimes(2);
     });
 
+    it('keeps the full TTL, with jitter, when the window outlasts it', async () => {
+      // The default setup: a 10 s TTL against a 120 s window
+      const shortTtl = faker.number.int({
+        min: 1,
+        max: afterTransactionTtlSeconds - 6,
+      });
+      mockConfigService.getOrThrow.mockImplementation((key: string) => {
+        if (key === 'portfolio.cache.ttlSeconds') {
+          return shortTtl;
+        }
+        if (key === 'portfolio.cache.afterTransactionTtlSeconds') {
+          return afterTransactionTtlSeconds;
+        }
+        if (key === 'portfolio.filters.dustThresholdUsd') {
+          return defaultDustThreshold;
+        }
+        throw new Error(`Unexpected config key: ${key}`);
+      });
+      const shortTtlRepository = new PortfolioRepository(
+        mockPortfolioApi,
+        mockCacheService,
+        mockConfigService,
+        mockZerionCache,
+      );
+      mockCacheService.getCounter.mockResolvedValue(
+        Date.now() - faker.number.int({ min: 0, max: 4 }) * 1_000,
+      );
+      mockCacheService.hGet.mockResolvedValue(null);
+      mockPortfolioApi.getPortfolio.mockResolvedValue(
+        rawify(portfolioBuilder().build()),
+      );
+
+      const result = await shortTtlRepository.getPortfolioSnapshot(args);
+
+      expect(result.expiresAt).toBe(result.fetchedAt + shortTtl * 1_000);
+      expect(mockCacheService.hSet).toHaveBeenCalledWith(
+        cacheDir,
+        expect.any(String),
+        shortTtl,
+        undefined,
+      );
+    });
+
     it('stores the snapshot in the entry GET /v1/portfolio reads', async () => {
       const portfolio = portfolioBuilder().build();
       let stored: string | null = null;
