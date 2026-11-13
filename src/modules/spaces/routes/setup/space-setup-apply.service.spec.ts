@@ -29,6 +29,7 @@ import type { ISurveysRepository } from '#/modules/surveys/domain/surveys.reposi
 import { memberBuilder } from '#/modules/users/datasources/entities/__tests__/member.entity.db.builder';
 import type { User } from '#/modules/users/datasources/entities/users.entity.db';
 import type { IMembersRepository } from '#/modules/users/domain/members/members.repository.interface';
+import { fakeUuid } from '#/validation/entities/schemas/__tests__/uuid.builder';
 
 describe('SpaceSetupApplyService', () => {
   const leaseSeconds = faker.number.int({ min: 60, max: 300 });
@@ -101,7 +102,10 @@ describe('SpaceSetupApplyService', () => {
       .with('status', 'APPLYING')
       .with('payload', { ...spaceSetupPayloadBuilder().build(), ...payload })
       .build();
-    spaceSetupsRepository.claim.mockResolvedValue(setup);
+    spaceSetupsRepository.claim.mockResolvedValue({
+      ...setup,
+      claimId: fakeUuid(),
+    });
     return setup.spaceId;
   }
 
@@ -126,6 +130,33 @@ describe('SpaceSetupApplyService', () => {
 
     expect(spaceSafesService.addSafes).not.toHaveBeenCalled();
     expect(spaceSetupsRepository.markApplied).not.toHaveBeenCalled();
+  });
+
+  it('marks the setup applied under the claim it holds', async () => {
+    const setup = { ...spaceSetupBuilder().build(), claimId: fakeUuid() };
+    spaceSetupsRepository.claim.mockResolvedValue(setup);
+    spaceSetupsRepository.markApplied.mockResolvedValue(true);
+
+    await target.apply(setup.spaceId);
+
+    expect(spaceSetupsRepository.markApplied).toHaveBeenCalledExactlyOnceWith({
+      spaceId: setup.spaceId,
+      claimId: setup.claimId,
+    });
+    expect(loggingService.info).toHaveBeenCalledWith(
+      `Applied the setup of space ${setup.spaceId}`,
+    );
+  });
+
+  it('logs a lost claim when a later apply took the setup over', async () => {
+    const spaceId = claimed({});
+    spaceSetupsRepository.markApplied.mockResolvedValue(false);
+
+    await target.apply(spaceId);
+
+    expect(loggingService.info).toHaveBeenCalledWith(
+      `Lost the claim on the setup of space ${spaceId} to a later apply`,
+    );
   });
 
   it('claims with the configured lease', async () => {
@@ -153,7 +184,10 @@ describe('SpaceSetupApplyService', () => {
       payload: [safe],
       addressBookItems: [contact],
     });
-    expect(spaceSetupsRepository.markApplied).toHaveBeenCalledWith(spaceId);
+    expect(spaceSetupsRepository.markApplied).toHaveBeenCalledWith({
+      spaceId,
+      claimId: expect.any(String),
+    });
   });
 
   it('adds one Safe on two chains in one call', async () => {
@@ -202,7 +236,10 @@ describe('SpaceSetupApplyService', () => {
     expect(spaceSafesService.addSafes).toHaveBeenLastCalledWith(
       expect.objectContaining({ payload: [accepted] }),
     );
-    expect(spaceSetupsRepository.markApplied).toHaveBeenCalledWith(spaceId);
+    expect(spaceSetupsRepository.markApplied).toHaveBeenCalledWith({
+      spaceId,
+      claimId: expect.any(String),
+    });
   });
 
   it('leaves the setup claimed when an unexpected failure stops it', async () => {
@@ -221,7 +258,10 @@ describe('SpaceSetupApplyService', () => {
     await target.apply(spaceId);
 
     expect(spaceSafesService.addSafes).not.toHaveBeenCalled();
-    expect(spaceSetupsRepository.markApplied).toHaveBeenCalledWith(spaceId);
+    expect(spaceSetupsRepository.markApplied).toHaveBeenCalledWith({
+      spaceId,
+      claimId: expect.any(String),
+    });
   });
 
   it('stores contacts for addresses that are not among the Safes', async () => {
@@ -268,7 +308,10 @@ describe('SpaceSetupApplyService', () => {
     await target.apply(spaceId);
 
     expect(membersService.inviteAs).toHaveBeenCalledTimes(2);
-    expect(spaceSetupsRepository.markApplied).toHaveBeenCalledWith(spaceId);
+    expect(spaceSetupsRepository.markApplied).toHaveBeenCalledWith({
+      spaceId,
+      claimId: expect.any(String),
+    });
   });
 
   it('saves the survey answer, answered by the creator', async () => {
@@ -301,7 +344,10 @@ describe('SpaceSetupApplyService', () => {
     await target.apply(spaceId);
 
     expect(surveysRepository.upsertResponse).not.toHaveBeenCalled();
-    expect(spaceSetupsRepository.markApplied).toHaveBeenCalledWith(spaceId);
+    expect(spaceSetupsRepository.markApplied).toHaveBeenCalledWith({
+      spaceId,
+      claimId: expect.any(String),
+    });
   });
 
   it('skips a survey answer that no longer fits the active survey', async () => {
@@ -317,7 +363,10 @@ describe('SpaceSetupApplyService', () => {
     await target.apply(spaceId);
 
     expect(surveysRepository.upsertResponse).not.toHaveBeenCalled();
-    expect(spaceSetupsRepository.markApplied).toHaveBeenCalledWith(spaceId);
+    expect(spaceSetupsRepository.markApplied).toHaveBeenCalledWith({
+      spaceId,
+      claimId: expect.any(String),
+    });
   });
 
   it('fails without marking the setup applied when the space has no creator', async () => {

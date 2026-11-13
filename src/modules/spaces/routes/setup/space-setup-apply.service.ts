@@ -88,8 +88,15 @@ export class SpaceSetupApplyService implements ISpaceSetupApplier {
     if (survey) {
       await this.saveSurvey({ spaceId, creatorId, survey });
     }
-    await this.spaceSetupsRepository.markApplied(spaceId);
-    this.loggingService.info(`Applied the setup of space ${spaceId}`);
+    const isApplied = await this.spaceSetupsRepository.markApplied({
+      spaceId,
+      claimId: setup.claimId,
+    });
+    this.loggingService.info(
+      isApplied
+        ? `Applied the setup of space ${spaceId}`
+        : `Lost the claim on the setup of space ${spaceId} to a later apply`,
+    );
   }
 
   /** The only admin nobody invited: the setup adds no member before it. */
