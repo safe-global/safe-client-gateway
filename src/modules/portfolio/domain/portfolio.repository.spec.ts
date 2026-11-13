@@ -815,7 +815,7 @@ describe('PortfolioRepository', () => {
       expect(mockPortfolioApi.getPortfolio).toHaveBeenCalledTimes(2);
     });
 
-    it('makes its own call for every concurrent sync read', async () => {
+    it('shares one Zerion call between concurrent sync reads', async () => {
       mockPortfolioApi.getPortfolio.mockResolvedValue(
         rawify(portfolioBuilder().build()),
       );
@@ -825,7 +825,7 @@ describe('PortfolioRepository', () => {
         repository.getPortfolio({ ...args, sync: true }),
       ]);
 
-      expect(mockPortfolioApi.getPortfolio).toHaveBeenCalledTimes(2);
+      expect(mockPortfolioApi.getPortfolio).toHaveBeenCalledTimes(1);
     });
 
     it('fetches again once the shared call has settled', async () => {
