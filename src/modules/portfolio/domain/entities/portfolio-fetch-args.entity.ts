@@ -8,6 +8,5 @@ export type PortfolioFetchArgs = {
   fiatCode: string;
   trusted?: boolean;
   isTestnet?: boolean;
-  sync?: boolean;
   cacheDir: CacheDir;
 };

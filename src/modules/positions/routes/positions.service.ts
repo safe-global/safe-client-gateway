@@ -38,16 +38,14 @@ export class PositionsService {
     safeAddress: Address;
     fiatCode: string;
     refresh?: boolean;
-    sync?: boolean;
   }): Promise<Array<Protocol>> {
-    const { chainId, refresh, sync } = args;
+    const { chainId, refresh } = args;
     const chain = await this.chainsRepository.getChain(chainId);
     const refreshKey = refresh ? Date.now().toString() : '';
     const domainPositions = await this.positionsRepository.getPositions({
       ...args,
       chain,
       refresh: refreshKey,
-      sync,
     });
     const positions = domainPositions.map((position) =>
       this._mapPosition(position, chain.nativeCurrency),

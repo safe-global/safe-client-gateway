@@ -82,7 +82,6 @@ export class ZerionPositionsApi implements IPositionsApi {
     safeAddress: Address;
     fiatCode: string;
     refresh?: string;
-    sync?: boolean;
   }): Promise<Raw<Array<Position>>> {
     if (!this.fiatCodes.includes(args.fiatCode.toUpperCase())) {
       throw new DataSourceError(
@@ -125,9 +124,6 @@ export class ZerionPositionsApi implements IPositionsApi {
         currency: args.fiatCode.toLowerCase(),
         sort: 'value',
       };
-      if (args.sync) {
-        params.sync = 'true';
-      }
       const networkRequest = {
         headers: getZerionHeaders(this.apiKey, args.chain.isTestnet),
         params,

@@ -109,7 +109,6 @@ describe('PortfolioRepository', () => {
           address,
           fiatCode,
           isTestnet: undefined,
-          sync: undefined,
           trusted: undefined,
         });
 
@@ -127,26 +126,6 @@ describe('PortfolioRepository', () => {
 
         const cachedValue = JSON.parse(mockCacheService.hSet.mock.calls[0][1]);
         expect(cachedValue).toMatchObject(expect.objectContaining(portfolio));
-      });
-
-      it('should bypass cache when sync is true', async () => {
-        const freshPortfolio = portfolioBuilder().build();
-        mockPortfolioApi.getPortfolio.mockResolvedValue(rawify(freshPortfolio));
-
-        await repository.getPortfolio({
-          address,
-          fiatCode,
-          sync: true,
-        });
-
-        expect(mockCacheService.hGet).not.toHaveBeenCalled();
-        expect(mockPortfolioApi.getPortfolio).toHaveBeenCalledWith({
-          address,
-          fiatCode,
-          isTestnet: undefined,
-          trusted: undefined,
-          sync: true,
-        });
       });
     });
 
@@ -700,7 +679,6 @@ describe('PortfolioRepository', () => {
         fiatCode: args.fiatCode,
         trusted: args.trusted,
         isTestnet: args.isTestnet,
-        sync: undefined,
       });
       expect(result.fetchedAt).toBeGreaterThanOrEqual(before);
       expect(result.fetchedAt).toBeLessThanOrEqual(after);
@@ -812,31 +790,6 @@ describe('PortfolioRepository', () => {
       ]);
 
       expect(mockPortfolioApi.getPortfolio).toHaveBeenCalledTimes(2);
-    });
-
-    it('shares one Zerion call between sync and plain reads of the same entry', async () => {
-      mockCacheService.hGet.mockResolvedValue(null);
-      let resolveFetch: (
-        value: Awaited<ReturnType<IPortfolioApi['getPortfolio']>>,
-      ) => void = () => {};
-      mockPortfolioApi.getPortfolio.mockReturnValue(
-        new Promise((resolve) => {
-          resolveFetch = resolve;
-        }),
-      );
-
-      const reads = Promise.all([
-        repository.getPortfolio({ ...args, sync: true }),
-        repository.getPortfolio(args),
-        repository.getPortfolio({ ...args, sync: true }),
-      ]);
-      await vi.waitFor(() =>
-        expect(mockPortfolioApi.getPortfolio).toHaveBeenCalledTimes(1),
-      );
-      resolveFetch(rawify(portfolioBuilder().build()));
-      await reads;
-
-      expect(mockPortfolioApi.getPortfolio).toHaveBeenCalledTimes(1);
     });
 
     it('fetches again once the shared call has settled', async () => {

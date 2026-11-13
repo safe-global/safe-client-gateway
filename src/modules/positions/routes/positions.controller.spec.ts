@@ -34,7 +34,6 @@ describe('PositionsController', () => {
         safeAddress,
         fiatCode,
         false,
-        false,
       );
 
       expect(service.getPositions).toHaveBeenCalledWith({
@@ -42,7 +41,6 @@ describe('PositionsController', () => {
         safeAddress,
         fiatCode,
         refresh: false,
-        sync: false,
       });
       expect(result).toBe(mockProtocols);
     });
@@ -55,64 +53,13 @@ describe('PositionsController', () => {
 
       service.getPositions.mockResolvedValue(mockProtocols);
 
-      await controller.getPositions(
-        chainId,
-        safeAddress,
-        fiatCode,
-        true,
-        false,
-      );
+      await controller.getPositions(chainId, safeAddress, fiatCode, true);
 
       expect(service.getPositions).toHaveBeenCalledWith({
         chainId,
         safeAddress,
         fiatCode,
         refresh: true,
-        sync: false,
-      });
-    });
-
-    it('should pass sync=true to service', async () => {
-      const chainId = faker.string.numeric();
-      const safeAddress = getAddress(faker.finance.ethereumAddress());
-      const fiatCode = faker.finance.currencyCode();
-      const mockProtocols: Array<Protocol> = [];
-
-      service.getPositions.mockResolvedValue(mockProtocols);
-
-      await controller.getPositions(
-        chainId,
-        safeAddress,
-        fiatCode,
-        false,
-        true,
-      );
-
-      expect(service.getPositions).toHaveBeenCalledWith({
-        chainId,
-        safeAddress,
-        fiatCode,
-        refresh: false,
-        sync: true,
-      });
-    });
-
-    it('should pass both refresh and sync flags when both are true', async () => {
-      const chainId = faker.string.numeric();
-      const safeAddress = getAddress(faker.finance.ethereumAddress());
-      const fiatCode = faker.finance.currencyCode();
-      const mockProtocols: Array<Protocol> = [];
-
-      service.getPositions.mockResolvedValue(mockProtocols);
-
-      await controller.getPositions(chainId, safeAddress, fiatCode, true, true);
-
-      expect(service.getPositions).toHaveBeenCalledWith({
-        chainId,
-        safeAddress,
-        fiatCode,
-        refresh: true,
-        sync: true,
       });
     });
 
@@ -131,7 +78,6 @@ describe('PositionsController', () => {
         chainId,
         safeAddress,
         fiatCode,
-        false,
         false,
       );
 

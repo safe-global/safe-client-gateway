@@ -23,7 +23,6 @@ export class PortfolioService implements IPortfolioService {
     trusted?: boolean;
     excludeDust?: boolean;
     isTestnet?: boolean;
-    sync?: boolean;
   }): Promise<Portfolio> {
     return this.portfolioRepository.getPortfolio(args);
   }

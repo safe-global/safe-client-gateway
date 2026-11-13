@@ -7,17 +7,11 @@ const BooleanStringDefaultTrueSchema = z
   .optional()
   .transform((val) => val !== 'false');
 
-const BooleanStringDefaultFalseSchema = z
-  .enum(['true', 'false'])
-  .optional()
-  .transform((val) => val === 'true');
-
 export const GetPortfolioDtoSchema = z.object({
   fiatCode: z.string().optional().default('USD'),
   chainIds: ChainIdsSchema,
   trusted: BooleanStringDefaultTrueSchema,
   excludeDust: BooleanStringDefaultTrueSchema,
-  sync: BooleanStringDefaultFalseSchema,
 });
 
 export type GetPortfolioDto = z.infer<typeof GetPortfolioDtoSchema>;

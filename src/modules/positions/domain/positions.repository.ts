@@ -21,7 +21,6 @@ export class PositionsRepository implements IPositionsRepository {
     safeAddress: Address;
     fiatCode: string;
     refresh?: string;
-    sync?: boolean;
   }): Promise<Array<Position>> {
     const positions = await this.positionsApi.getPositions(args);
     return PositionsSchema.parse(positions);

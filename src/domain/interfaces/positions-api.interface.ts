@@ -12,7 +12,6 @@ export interface IPositionsApi {
     fiatCode: string;
     chain: Chain;
     refresh?: string;
-    sync?: boolean;
   }): Promise<Raw<Array<Position>>>;
 
   getFiatCodes(): Promise<Raw<Array<string>>>;

@@ -47,7 +47,6 @@ export class PortfolioApiService {
     chainIds?: Array<string>;
     trusted?: boolean;
     excludeDust?: boolean;
-    sync?: boolean;
   }): Promise<Portfolio> {
     const isTestnet = await this._areTestnetChains(args.chainIds);
     const domainPortfolio = await this.domainPortfolioService.getPortfolio({

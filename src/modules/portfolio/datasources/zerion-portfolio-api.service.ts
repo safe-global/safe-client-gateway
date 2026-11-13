@@ -91,7 +91,6 @@ export class ZerionPortfolioApi implements IPortfolioApi {
     chainIds?: Array<string>;
     trusted?: boolean;
     isTestnet?: boolean;
-    sync?: boolean;
   }): Promise<Raw<Portfolio>> {
     if (!this.fiatCodes.includes(args.fiatCode.toUpperCase())) {
       throw new DataSourceError(
@@ -121,7 +120,6 @@ export class ZerionPortfolioApi implements IPortfolioApi {
     fiatCode: string;
     trusted?: boolean;
     isTestnet?: boolean;
-    sync?: boolean;
   }): Promise<Array<ZerionBalance>> {
     try {
       // Trailing slash is required: without it Zerion answers with a 301.
@@ -134,10 +132,6 @@ export class ZerionPortfolioApi implements IPortfolioApi {
 
       if (args.trusted) {
         params['filter[trash]'] = 'only_non_trash';
-      }
-
-      if (args.sync) {
-        params.sync = 'true';
       }
 
       const networkRequest = {
@@ -168,7 +162,6 @@ export class ZerionPortfolioApi implements IPortfolioApi {
     fiatCode: string;
     trusted?: boolean;
     isTestnet?: boolean;
-    sync?: boolean;
     error: unknown;
   }): void {
     this.loggingService.error({
@@ -178,7 +171,6 @@ export class ZerionPortfolioApi implements IPortfolioApi {
       safeAddress: args.address,
       fiatCode: args.fiatCode,
       trusted: Boolean(args.trusted),
-      sync: Boolean(args.sync),
       isTestnet: Boolean(args.isTestnet),
       request_status:
         args.error instanceof NetworkResponseError

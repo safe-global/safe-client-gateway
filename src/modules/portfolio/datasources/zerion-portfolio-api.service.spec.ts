@@ -152,7 +152,6 @@ describe('ZerionPortfolioApi', () => {
             fiatCode,
             trusted,
             isTestnet: false,
-            sync: true,
           }),
         ).rejects.toBe(dataSourceError);
 
@@ -163,7 +162,6 @@ describe('ZerionPortfolioApi', () => {
           safeAddress: address,
           fiatCode,
           trusted,
-          sync: true,
           isTestnet: false,
           request_status: 401,
           detail: 'Invalid Zerion API key',

@@ -68,11 +68,9 @@ export class PortfolioRepository implements IPortfolioRepository {
     trusted?: boolean;
     excludeDust?: boolean;
     isTestnet?: boolean;
-    sync?: boolean;
   }): Promise<Portfolio> {
     const cacheDir = this._getCacheDir(args);
-    // If sync is true, we bypass the cache and fetch the portfolio from the API
-    const cached = args.sync ? null : await this._getCached(cacheDir);
+    const cached = await this._getCached(cacheDir);
     const portfolio = PortfolioSchema.parse(
       cached ?? (await this._fetchAndCache({ ...args, cacheDir })),
     );
@@ -125,8 +123,6 @@ export class PortfolioRepository implements IPortfolioRepository {
    * share one fetch, so a page that asks several routes at once on an empty
    * cache pays for one Zerion call, not one per route. A miss right after a
    * clear can join a fetch that started before it, as a write could already.
-   * Sync and plain reads share too, so one caller sending `sync` cannot add a
-   * second call or a different total for the same entry.
    *
    * @param args - The wallet, filters and the cache entry to fill
    * @returns The fetched portfolio with its times
@@ -156,7 +152,6 @@ export class PortfolioRepository implements IPortfolioRepository {
       fiatCode: args.fiatCode,
       trusted: args.trusted,
       isTestnet: args.isTestnet,
-      sync: args.sync,
     });
     const fetchedAt = Date.now();
     const { expiresAt, isSettling } = await this._getExpiry({

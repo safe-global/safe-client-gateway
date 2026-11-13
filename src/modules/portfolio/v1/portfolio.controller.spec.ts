@@ -29,7 +29,6 @@ describe('PortfolioController', () => {
         chainIds: undefined,
         trusted: true,
         excludeDust: true,
-        sync: false,
       };
       const mockPortfolio = {} as Portfolio;
 
@@ -43,7 +42,6 @@ describe('PortfolioController', () => {
         chainIds: undefined,
         trusted: true,
         excludeDust: true,
-        sync: false,
       });
       expect(result).toBe(mockPortfolio);
     });
@@ -55,7 +53,6 @@ describe('PortfolioController', () => {
         chainIds: undefined,
         trusted: true,
         excludeDust: true,
-        sync: false,
       };
 
       service.getPortfolio.mockResolvedValue({} as Portfolio);
@@ -76,7 +73,6 @@ describe('PortfolioController', () => {
         chainIds: ['1', '10', '137'],
         trusted: true,
         excludeDust: true,
-        sync: false,
       };
 
       service.getPortfolio.mockResolvedValue({} as Portfolio);
@@ -97,7 +93,6 @@ describe('PortfolioController', () => {
         chainIds: undefined,
         trusted: false,
         excludeDust: true,
-        sync: false,
       };
 
       service.getPortfolio.mockResolvedValue({} as Portfolio);
@@ -118,7 +113,6 @@ describe('PortfolioController', () => {
         chainIds: undefined,
         trusted: true,
         excludeDust: false,
-        sync: false,
       };
 
       service.getPortfolio.mockResolvedValue({} as Portfolio);
@@ -132,27 +126,6 @@ describe('PortfolioController', () => {
       );
     });
 
-    it('should pass sync=true to service', async () => {
-      const address = getAddress(faker.finance.ethereumAddress());
-      const getPortfolioDto: GetPortfolioDto = {
-        fiatCode: 'USD',
-        chainIds: undefined,
-        trusted: true,
-        excludeDust: true,
-        sync: true,
-      };
-
-      service.getPortfolio.mockResolvedValue({} as Portfolio);
-
-      await controller.getPortfolio(address, getPortfolioDto);
-
-      expect(service.getPortfolio).toHaveBeenCalledWith(
-        expect.objectContaining({
-          sync: true,
-        }),
-      );
-    });
-
     it('should pass all parameters to service', async () => {
       const address = getAddress(faker.finance.ethereumAddress());
       const getPortfolioDto: GetPortfolioDto = {
@@ -160,7 +133,6 @@ describe('PortfolioController', () => {
         chainIds: ['1', '10'],
         trusted: false,
         excludeDust: false,
-        sync: true,
       };
 
       service.getPortfolio.mockResolvedValue({} as Portfolio);
@@ -173,7 +145,6 @@ describe('PortfolioController', () => {
         chainIds: ['1', '10'],
         trusted: false,
         excludeDust: false,
-        sync: true,
       });
     });
 
@@ -184,7 +155,6 @@ describe('PortfolioController', () => {
         chainIds: undefined,
         trusted: true,
         excludeDust: true,
-        sync: false,
       };
       const mockPortfolio = {
         totalBalanceFiat: '1000',

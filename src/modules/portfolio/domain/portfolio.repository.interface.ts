@@ -19,7 +19,6 @@ export interface IPortfolioRepository {
    * @param {boolean} [args.trusted] - Optional flag to filter trusted tokens only
    * @param {boolean} [args.excludeDust] - Optional flag to exclude dust (very small value) positions
    * @param {boolean} [args.isTestnet] - Optional flag to indicate testnet chains
-   * @param {boolean} [args.sync] - Optional flag to wait for data aggregation
    * @returns {Promise<Portfolio>} A promise that resolves to the portfolio data
    */
   getPortfolio(args: {
@@ -29,7 +28,6 @@ export interface IPortfolioRepository {
     trusted?: boolean;
     excludeDust?: boolean;
     isTestnet?: boolean;
-    sync?: boolean;
   }): Promise<Portfolio>;
 
   /**

@@ -70,6 +70,7 @@ describe('Portfolio Controller', () => {
     let app: INestApplication<Server>;
     let networkService: MockedObject<INetworkService>;
     let safeConfigUrl: string;
+    let zerionBaseUri: string;
 
     function mockSafe(args: { chain: Chain; address: Address }): void {
       networkService.get.mockImplementation(({ url }) => {
@@ -112,6 +113,7 @@ describe('Portfolio Controller', () => {
         },
       });
       safeConfigUrl = defaultConfiguration.safeConfig.baseUri;
+      zerionBaseUri = defaultConfiguration.balances.providers.zerion.baseUri;
 
       const moduleFixture = await createTestModule({
         config: testConfiguration,
@@ -123,6 +125,32 @@ describe('Portfolio Controller', () => {
 
     afterEach(async () => {
       await app.close();
+    });
+
+    it('GET /v1/portfolio/:address ignores a sync param and asks Zerion without it', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const positionsUrl = `${zerionBaseUri}/v1/wallets/${address}/positions/`;
+      networkService.get.mockImplementation(({ url }) =>
+        url === positionsUrl
+          ? Promise.resolve({ data: rawify({ data: [] }), status: 200 })
+          : Promise.reject(
+              new NetworkResponseError(new URL(url), {
+                status: 404,
+              } as Response),
+            ),
+      );
+
+      await request(app.getHttpServer())
+        .get(`/v1/portfolio/${address}`)
+        .query({ sync: true })
+        .expect(200);
+
+      expect(networkService.get).toHaveBeenCalledWith({
+        url: positionsUrl,
+        networkRequest: expect.objectContaining({
+          params: expect.not.objectContaining({ sync: expect.anything() }),
+        }),
+      });
     });
 
     it('DELETE /v1/portfolio/:address clears the caches of a Safe', async () => {

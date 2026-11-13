@@ -12,7 +12,6 @@ export interface IPortfolioService {
     trusted?: boolean;
     excludeDust?: boolean;
     isTestnet?: boolean;
-    sync?: boolean;
   }): Promise<Portfolio>;
 
   clearZerionCaches(args: { address: Address }): Promise<void>;

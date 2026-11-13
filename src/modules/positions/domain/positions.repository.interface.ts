@@ -11,7 +11,6 @@ export interface IPositionsRepository {
     safeAddress: Address;
     fiatCode: string;
     refresh?: string;
-    sync?: boolean;
   }): Promise<Array<Position>>;
 
   getFiatCodes(): Promise<Array<string>>;
