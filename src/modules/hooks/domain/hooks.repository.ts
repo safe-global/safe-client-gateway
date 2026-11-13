@@ -18,15 +18,9 @@ import {
   TransactionEventType,
 } from '#/modules/hooks/routes/entities/event-type.entity';
 import { EventSchema } from '#/modules/hooks/routes/entities/schemas/event.schema';
+import { InvalidEventContextSchema } from '#/modules/hooks/routes/entities/schemas/invalid-event-context.schema';
 import { IPushNotificationService } from '#/modules/notifications/domain/push/push-notification.service.interface';
 import { IQueuesRepository } from '#/modules/queues/domain/queues-repository.interface';
-
-const InvalidEventContextSchema = z
-  .object({
-    type: z.string().optional().catch(undefined),
-    chainId: z.string().optional().catch(undefined),
-  })
-  .catch({});
 
 @Injectable()
 export class HooksRepository implements IHooksRepository, OnModuleInit {
@@ -54,13 +48,10 @@ export class HooksRepository implements IHooksRepository, OnModuleInit {
       this.queueName,
       async (msg: ConsumeMessage) => {
         try {
-          const content: unknown = JSON.parse(msg.content.toString());
-          const result = EventSchema.safeParse(content);
-          if (!result.success) {
-            this.logInvalidEvent(content, result.error);
-            return;
+          const event = this.parseEvent(msg.content.toString());
+          if (event) {
+            await this.onEvent(event);
           }
-          await this.onEvent(result.data);
         } catch (err) {
           this.loggingService.error(err);
         }
@@ -68,13 +59,29 @@ export class HooksRepository implements IHooksRepository, OnModuleInit {
     );
   }
 
-  private logInvalidEvent(content: unknown, error: z.ZodError): void {
+  private parseEvent(body: string): Event | null {
+    let content: unknown;
+    try {
+      content = JSON.parse(body);
+    } catch (err) {
+      this.logInvalidEvent(undefined, asError(err).message);
+      return null;
+    }
+    const result = EventSchema.safeParse(content);
+    if (!result.success) {
+      this.logInvalidEvent(content, z.prettifyError(result.error));
+      return null;
+    }
+    return result.data;
+  }
+
+  private logInvalidEvent(content: unknown, reason: string): void {
     const { type, chainId } = InvalidEventContextSchema.parse(content);
     this.loggingService.error({
       type: LogType.HookEventInvalid,
       event_type: type,
       chain_id: chainId,
-      reason: z.prettifyError(error),
+      reason,
     });
   }
 

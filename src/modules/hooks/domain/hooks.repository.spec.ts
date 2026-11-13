@@ -532,7 +532,7 @@ describe('HooksRepository (Unit)', () => {
   });
 
   describe('queue messages', () => {
-    async function consume(content: unknown): Promise<void> {
+    async function consume(body: string): Promise<void> {
       let onMessage: ((msg: ConsumeMessage) => Promise<void>) | undefined;
       mockQueuesRepository.subscribe.mockImplementation((_queueName, fn) => {
         onMessage = fn;
@@ -543,7 +543,7 @@ describe('HooksRepository (Unit)', () => {
         throw new Error('HooksRepository did not subscribe to the queue');
       }
       await onMessage({
-        content: Buffer.from(JSON.stringify(content)),
+        content: Buffer.from(body),
       } as ConsumeMessage);
     }
 
@@ -551,7 +551,7 @@ describe('HooksRepository (Unit)', () => {
       const type = faker.word.sample();
       const chainId = faker.string.numeric();
 
-      await consume({ type, chainId });
+      await consume(JSON.stringify({ type, chainId }));
 
       expect(mockLoggingService.error).toHaveBeenCalledWith({
         type: 'HOOK_EVENT_INVALID',
@@ -562,7 +562,19 @@ describe('HooksRepository (Unit)', () => {
       expect(mockPushNotificationService.enqueueEvent).not.toHaveBeenCalled();
     });
 
-    it('should log an event without a type or chain it cannot parse', async () => {
+    it('should log a message that is not an event object', async () => {
+      await consume(JSON.stringify(faker.word.words()));
+
+      expect(mockLoggingService.error).toHaveBeenCalledWith({
+        type: 'HOOK_EVENT_INVALID',
+        event_type: undefined,
+        chain_id: undefined,
+        reason: expect.any(String),
+      });
+      expect(mockPushNotificationService.enqueueEvent).not.toHaveBeenCalled();
+    });
+
+    it('should log a message that is not JSON', async () => {
       await consume(faker.word.words());
 
       expect(mockLoggingService.error).toHaveBeenCalledWith({
