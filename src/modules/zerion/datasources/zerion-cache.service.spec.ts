@@ -26,7 +26,7 @@ const mockLoggingService = {
 describe('ZerionCacheService', () => {
   let service: ZerionCacheService;
   const address = getAddress(faker.finance.ethereumAddress());
-  const settleSeconds = faker.number.int({ min: 60, max: 180 });
+  const afterTransactionTtlSeconds = faker.number.int({ min: 60, max: 180 });
 
   afterEach(() => {
     vi.restoreAllMocks();
@@ -35,7 +35,10 @@ describe('ZerionCacheService', () => {
   beforeEach(() => {
     vi.resetAllMocks();
     const configurationService = new FakeConfigurationService();
-    configurationService.set('portfolio.cache.settleSeconds', settleSeconds);
+    configurationService.set(
+      'portfolio.cache.afterTransactionTtlSeconds',
+      afterTransactionTtlSeconds,
+    );
     service = new ZerionCacheService(
       mockCacheService,
       mockLoggingService,
@@ -67,7 +70,7 @@ describe('ZerionCacheService', () => {
       expect(mockCacheService.setCounter).toHaveBeenCalledWith(
         CacheRouter.getPortfolioClearedAtCacheKey({ address }),
         now,
-        settleSeconds,
+        afterTransactionTtlSeconds,
         0,
       );
     });

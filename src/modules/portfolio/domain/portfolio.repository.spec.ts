@@ -27,7 +27,7 @@ describe('PortfolioRepository', () => {
   let mockZerionCache: MockedObject<ZerionCacheService>;
 
   const defaultCacheTtl = 30;
-  const settleSeconds = 20;
+  const afterTransactionTtlSeconds = 20;
   const defaultDustThreshold = 0.001;
 
   beforeEach(() => {
@@ -51,8 +51,8 @@ describe('PortfolioRepository', () => {
         if (key === 'portfolio.cache.ttlSeconds') {
           return defaultCacheTtl;
         }
-        if (key === 'portfolio.cache.settleSeconds') {
-          return settleSeconds;
+        if (key === 'portfolio.cache.afterTransactionTtlSeconds') {
+          return afterTransactionTtlSeconds;
         }
         if (key === 'portfolio.filters.dustThresholdUsd') {
           return defaultDustThreshold;
@@ -695,7 +695,8 @@ describe('PortfolioRepository', () => {
     it('keeps a snapshot fetched just after a clear only until the settle window ends', async () => {
       const clearedAt =
         Date.now() -
-        faker.number.int({ min: 1, max: settleSeconds - 5 }) * 1_000;
+        faker.number.int({ min: 1, max: afterTransactionTtlSeconds - 5 }) *
+          1_000;
       mockCacheService.getCounter.mockResolvedValue(clearedAt);
       mockCacheService.hGet.mockResolvedValue(null);
       mockPortfolioApi.getPortfolio.mockResolvedValue(
@@ -707,7 +708,9 @@ describe('PortfolioRepository', () => {
       expect(mockCacheService.getCounter).toHaveBeenCalledWith(
         CacheRouter.getPortfolioClearedAtCacheKey({ address }),
       );
-      expect(result.expiresAt).toBe(clearedAt + settleSeconds * 1_000);
+      expect(result.expiresAt).toBe(
+        clearedAt + afterTransactionTtlSeconds * 1_000,
+      );
       expect(mockCacheService.hSet).toHaveBeenCalledWith(
         cacheDir,
         expect.any(String),
@@ -719,7 +722,9 @@ describe('PortfolioRepository', () => {
     it('keeps the full TTL once the settle window is over', async () => {
       mockCacheService.getCounter.mockResolvedValue(
         Date.now() -
-          (settleSeconds + faker.number.int({ min: 1, max: 600 })) * 1_000,
+          (afterTransactionTtlSeconds +
+            faker.number.int({ min: 1, max: 600 })) *
+            1_000,
       );
       mockCacheService.hGet.mockResolvedValue(null);
       mockPortfolioApi.getPortfolio.mockResolvedValue(
