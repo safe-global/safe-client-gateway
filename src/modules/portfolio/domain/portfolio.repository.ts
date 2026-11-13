@@ -125,17 +125,14 @@ export class PortfolioRepository implements IPortfolioRepository {
    * share one fetch, so a page that asks several routes at once on an empty
    * cache pays for one Zerion call, not one per route. A miss right after a
    * clear can join a fetch that started before it, as a write could already.
-   * A sync read never joins: it asks Zerion to finish aggregating first, which
-   * can take up to 30 s, so an earlier call could miss what it waits for.
+   * Sync reads share with each other, not with plain reads, since they make a
+   * different Zerion request.
    *
    * @param args - The wallet, filters and the cache entry to fill
    * @returns The fetched portfolio with its times
    */
   private _fetchAndCache(args: PortfolioFetchArgs): Promise<PortfolioSnapshot> {
-    if (args.sync) {
-      return this._fetchAndCacheOnce(args);
-    }
-    const key = `${args.cacheDir.key}|${args.cacheDir.field}`;
+    const key = `${args.cacheDir.key}|${args.cacheDir.field}|${args.sync ? 'sync' : ''}`;
     const inFlight = this.inFlightFetches.get(key);
     if (inFlight !== undefined) {
       return inFlight;
