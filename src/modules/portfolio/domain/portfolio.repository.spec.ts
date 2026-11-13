@@ -815,6 +815,19 @@ describe('PortfolioRepository', () => {
       expect(mockPortfolioApi.getPortfolio).toHaveBeenCalledTimes(2);
     });
 
+    it('makes its own call for every concurrent sync read', async () => {
+      mockPortfolioApi.getPortfolio.mockResolvedValue(
+        rawify(portfolioBuilder().build()),
+      );
+
+      await Promise.all([
+        repository.getPortfolio({ ...args, sync: true }),
+        repository.getPortfolio({ ...args, sync: true }),
+      ]);
+
+      expect(mockPortfolioApi.getPortfolio).toHaveBeenCalledTimes(2);
+    });
+
     it('fetches again once the shared call has settled', async () => {
       mockCacheService.hGet.mockResolvedValue(null);
       mockPortfolioApi.getPortfolio.mockResolvedValue(
