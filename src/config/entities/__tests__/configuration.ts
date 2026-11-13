@@ -103,6 +103,12 @@ export default (): ReturnType<typeof configuration> => ({
     filters: {
       dustThresholdUsd: faker.number.float({ min: 0.1, max: 10 }),
     },
+    summaries: {
+      rateLimit: {
+        max: faker.number.int({ min: 100, max: 200 }),
+        windowSeconds: faker.number.int({ min: 100, max: 200 }),
+      },
+    },
   },
   blockchain: {
     infura: {
@@ -523,6 +529,9 @@ export default (): ReturnType<typeof configuration> => ({
       maxPending: faker.number.int({ min: 10, max: 20 }),
     },
     maxSafesPerSpace: faker.number.int({ min: 5, max: 10 }),
+    transactionQueue: {
+      maxPages: faker.number.int({ min: 1, max: 5 }),
+    },
     maxSpaceCreationsPerUser: faker.number.int({ min: 100, max: 200 }),
     maxInvites: faker.number.int({ min: 5, max: 10 }),
     invite: {

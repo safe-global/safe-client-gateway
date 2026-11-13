@@ -6,6 +6,7 @@ import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
+  HttpStatus,
   NotFoundException,
   UnauthorizedException,
   UnprocessableEntityException,
@@ -30,6 +31,7 @@ import {
 } from '#/datasources/billing-api/entities/__tests__/subscription-update.builder';
 import type { PaymentLink } from '#/datasources/billing-api/entities/payment-link.entity';
 import type { Subscription } from '#/datasources/billing-api/entities/subscription.entity';
+import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
 import type { ILoggingService } from '#/logging/logging.interface';
 import {
   oidcAuthPayloadDtoBuilder,
@@ -289,7 +291,12 @@ describe('BillingService', () => {
           spaceUuid: fakeUuid(),
           authPayload,
         }),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toThrow(
+        new HttpExceptionNoLog(
+          'User is not a member of this workspace',
+          HttpStatus.FORBIDDEN,
+        ),
+      );
 
       expect(
         billingRepositoryMock.getSubscriptionsByCustomerId,
@@ -345,7 +352,12 @@ describe('BillingService', () => {
           authPayload,
           returnUrl: withinRedirectOrigin(),
         }),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toThrow(
+        new HttpExceptionNoLog(
+          'User is not an admin of this workspace',
+          HttpStatus.FORBIDDEN,
+        ),
+      );
 
       expect(
         billingRepositoryMock.getCustomerSessionUrl,
@@ -458,7 +470,12 @@ describe('BillingService', () => {
           spaceUuid: fakeUuid(),
           authPayload,
         }),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toThrow(
+        new HttpExceptionNoLog(
+          'User is not a member of this workspace',
+          HttpStatus.FORBIDDEN,
+        ),
+      );
 
       expect(billingRepositoryMock.listPaymentLinks).not.toHaveBeenCalled();
     });
@@ -673,7 +690,12 @@ describe('BillingService', () => {
           authPayload,
           returnUrl: withinRedirectOrigin(),
         }),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toThrow(
+        new HttpExceptionNoLog(
+          'User is not an admin of this workspace',
+          HttpStatus.FORBIDDEN,
+        ),
+      );
 
       expect(
         billingRepositoryMock.createCheckoutSession,
@@ -971,7 +993,12 @@ describe('BillingService', () => {
           planId,
           authPayload,
         }),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toThrow(
+        new HttpExceptionNoLog(
+          'User is not an admin of this workspace',
+          HttpStatus.FORBIDDEN,
+        ),
+      );
 
       expect(
         billingRepositoryMock.previewSubscriptionUpdate,
@@ -1098,7 +1125,12 @@ describe('BillingService', () => {
           planId,
           authPayload,
         }),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toThrow(
+        new HttpExceptionNoLog(
+          'User is not an admin of this workspace',
+          HttpStatus.FORBIDDEN,
+        ),
+      );
 
       expect(billingRepositoryMock.updateSubscription).not.toHaveBeenCalled();
     });

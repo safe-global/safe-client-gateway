@@ -28,6 +28,7 @@ import type { IDelegatesV3Repository } from '#/modules/delegate/domain/v3/delega
 import { safePolicyGuardConfigurationBuilder } from '#/modules/policies/domain/entities/__tests__/safe-policy-guard-configuration.builder';
 import type {
   ActivePolicy,
+  Erc20TransferPolicyData,
   SpendingLimitAllowance,
   SpendingLimitPolicyData,
 } from '#/modules/policies/domain/entities/active-policy.entity';
@@ -583,6 +584,66 @@ describe('PoliciesService', () => {
       expect(allowance.tokenMetadata).toBeNull();
     });
 
+    it('should fetch the tokens of allowances and ERC20 transfer allowlists in one read', async () => {
+      const token = erc20TokenBuilder().build();
+      mockTokenRepository.getToken.mockResolvedValue(token);
+      mockPolicyIndexerRepository.getState.mockResolvedValue(
+        policyIndexerResponseBuilder()
+          .with('allowances', [
+            allowanceOf(safeAddress, { token: token.address }),
+          ])
+          .with('guardPolicyBindings', [
+            policyIndexerGuardEnforcedPolicyBuilder()
+              .with('chainId', SEPOLIA)
+              .with('safe', safeAddress)
+              .with('kind', 'ERC20_TRANSFER')
+              .with('target', token.address)
+              .with('state', { recipients: [] })
+              .build(),
+          ])
+          .build(),
+      );
+
+      const result = await target.getSpaceActivePolicies({
+        ...policyRequest,
+        types: [PolicyType.SpendingLimit, PolicyType.Erc20Transfer],
+      });
+
+      expect(mockTokenRepository.getToken).toHaveBeenCalledTimes(1);
+      expect(spendingLimitAllowances(result)[0].tokenMetadata).toBe(token);
+      expect(
+        result
+          .filter((policy) => policy.type === PolicyType.Erc20Transfer)
+          .map(
+            (policy) => (policy.data as Erc20TransferPolicyData).tokenMetadata,
+          ),
+      ).toStrictEqual([token]);
+    });
+
+    it('should not read tokens when neither spending limits nor allowlists are requested', async () => {
+      mockPolicyIndexerRepository.getState.mockResolvedValue(
+        policyIndexerResponseBuilder()
+          .with('allowances', [allowanceOf(safeAddress)])
+          .with('guardPolicyBindings', [
+            policyIndexerGuardEnforcedPolicyBuilder()
+              .with('chainId', SEPOLIA)
+              .with('safe', safeAddress)
+              .with('kind', 'ALLOW')
+              .with('state', null)
+              .build(),
+          ])
+          .build(),
+      );
+
+      await target.getSpaceActivePolicies({
+        ...policyRequest,
+        types: [PolicyType.Allow, PolicyType.Proposer],
+      });
+
+      expect(mockTokenRepository.getToken).not.toHaveBeenCalled();
+      expect(mockChainsRepository.getChain).not.toHaveBeenCalled();
+    });
+
     it('should report a null native-currency token when the chain cannot be read', async () => {
       mockChainsRepository.getChain.mockRejectedValue(new Error('Not found'));
 
@@ -994,15 +1055,14 @@ describe('PoliciesService', () => {
     });
 
     it('should report no spending limits when only a guard-enforced policy type is asked for', async () => {
+      const binding = policyIndexerGuardEnforcedPolicyBuilder()
+        .with('chainId', SEPOLIA)
+        .with('safe', safeAddress)
+        .build();
       mockPolicyIndexerRepository.getState.mockResolvedValue(
         policyIndexerResponseBuilder()
           .with('allowances', [allowanceOf(safeAddress)])
-          .with('guardPolicyBindings', [
-            policyIndexerGuardEnforcedPolicyBuilder()
-              .with('chainId', SEPOLIA)
-              .with('safe', safeAddress)
-              .build(),
-          ])
+          .with('guardPolicyBindings', [binding])
           .build(),
       );
 
@@ -1014,9 +1074,12 @@ describe('PoliciesService', () => {
       expect(policies.map((policy) => policy.type)).toStrictEqual([
         PolicyType.Erc20Transfer,
       ]);
-      // Token metadata is fetched for spending limits only.
-      expect(mockTokenRepository.getToken).not.toHaveBeenCalled();
-      expect(mockChainsRepository.getChain).not.toHaveBeenCalled();
+      // Only the allowlist's token is fetched, not the allowance's.
+      expect(mockTokenRepository.getToken).toHaveBeenCalledTimes(1);
+      expect(mockTokenRepository.getToken).toHaveBeenCalledWith({
+        chainId: SEPOLIA,
+        address: binding.target,
+      });
     });
 
     it('should report no guard-enforced policies when only spending limits are requested for', async () => {

@@ -207,6 +207,16 @@ export const RootConfigurationSchema = z
     // negative budget would reject every caller, so fail at boot instead.
     TOKENS_RATE_LIMIT_MAX: z.coerce.number().int().min(1).optional(),
     TOKENS_RATE_LIMIT_WINDOW_SECONDS: z.coerce.number().int().min(1).optional(),
+    PORTFOLIO_SUMMARIES_RATE_LIMIT_MAX: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .optional(),
+    PORTFOLIO_SUMMARIES_RATE_LIMIT_WINDOW_SECONDS: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .optional(),
     SAFE_CONFIG_CGW_KEY: z.string().min(1).optional(),
     LOG_LEVEL: z
       .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace'])
@@ -323,6 +333,11 @@ export const RootConfigurationSchema = z
     TARGETED_MESSAGING_FILE_STORAGE_TYPE: z.enum(['local', 'aws']).optional(),
     CSV_EXPORT_FILE_STORAGE_TYPE: z.enum(['local', 'aws']).optional(),
     SPACES_INVITE_TTL_MS: z.coerce.number().int().min(1).optional(),
+    SPACES_TRANSACTION_QUEUE_MAX_PAGES: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .optional(),
     ENCRYPTION_ENABLED: z.string().optional(),
     ENCRYPTION_INDEX_KEY: z.string().optional(),
     CSV_AWS_ACCESS_KEY_ID: z.string().optional(),

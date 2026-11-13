@@ -1032,6 +1032,33 @@ describe('Space Policies Controller', () => {
         ).toStrictEqual(token);
       });
 
+      it("should attach the token's metadata to an ERC20 transfer allowlist", async () => {
+        const token = erc20TokenBuilder().build();
+        const binding = rawIndexerGuardEnforcedPolicyBuilder()
+          .with('chainId', Number(SEPOLIA_CHAIN_ID))
+          .with('safe', safeAddress)
+          .with('guard', safePolicyGuard)
+          .with('target', token.address)
+          .with('kind', 'ERC20_TRANSFER')
+          .with('state', { recipients: [] })
+          .build();
+        mockUpstream({ tokens: [token] });
+        mockIndexer(
+          rawPolicyIndexerResponse({ GuardPolicyBinding: [binding] }),
+        );
+        const { accessToken, spaceId } = await createSpaceWithSafe({
+          withSafe: true,
+        });
+
+        const { body } = await request(app.getHttpServer())
+          .get(`/v1/spaces/${spaceId}/policies/active`)
+          .query({ types: policyTypes })
+          .set('Cookie', [`access_token=${accessToken}`])
+          .expect(200);
+
+        expect(body[0].data.tokenMetadata).toStrictEqual(token);
+      });
+
       it("should attach the chain's native currency to a native-currency spending-limit allowance", async () => {
         const allowance = anAllowance().with('token', zeroAddress).build();
         mockUpstream();

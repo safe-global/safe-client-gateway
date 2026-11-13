@@ -231,9 +231,21 @@ export class PoliciesService {
     const enforcersPerSafe = indexerRequested
       ? await this.enforcersPerSafe(safes)
       : null;
+    // One token read serves the allowances and the ERC20 transfer allowlists.
+    const tokenReferences: Array<TokenReference> = [
+      ...(state && spendingLimitsRequested ? state.allowances : []),
+      ...(state && guardPoliciesRequested
+        ? state.guardPolicyBindings
+            .filter((binding) => binding.kind === 'ERC20_TRANSFER')
+            .map((binding) => ({
+              chainId: binding.chainId,
+              token: binding.target,
+            }))
+        : []),
+    ];
     const tokenMetadata =
-      state && spendingLimitsRequested
-        ? await this.getTokenMetadata(state.allowances)
+      tokenReferences.length > 0
+        ? await this.getTokenMetadata(tokenReferences)
         : new Map<TokenMetadataKey, Token>();
     const delegatesPerSafe = proposersRequested
       ? await this.delegatesPerSafe(safes)
@@ -276,6 +288,7 @@ export class PoliciesService {
             ),
             transactionGuard: enforcers.transactionGuard,
             moduleGuard: enforcers.moduleGuard,
+            tokenMetadata,
           }),
         );
       }
