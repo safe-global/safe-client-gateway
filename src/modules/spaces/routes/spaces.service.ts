@@ -6,11 +6,18 @@ import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.en
 import { getAuthenticatedUserIdOrFail } from '#/modules/auth/utils/assert-authenticated.utils';
 import type { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
 import { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository.interface';
+import type { SpaceSetupStatus } from '#/modules/spaces/domain/setup/entities/space-setup.entity';
+import { ISpaceSetupsRepository } from '#/modules/spaces/domain/setup/space-setups.repository.interface';
 import { assertAdmin } from '#/modules/spaces/domain/space-assert.utils';
+import { activateSpaceCreator } from '#/modules/spaces/domain/space-creator.utils';
 import { SpaceEncryptionService } from '#/modules/spaces/domain/space-encryption.service';
 import { ISpacesRepository } from '#/modules/spaces/domain/spaces.repository.interface';
 import type { CreateSpaceResponse } from '#/modules/spaces/routes/entities/create-space.dto.entity';
 import type { GetSpaceResponse } from '#/modules/spaces/routes/entities/get-space.dto.entity';
+import {
+  SPACE_SETUP_STATUS_DTO,
+  type SpaceSetupStatusDto,
+} from '#/modules/spaces/routes/entities/space-setup.dto.entity';
 import type {
   UpdateSpaceDto,
   UpdateSpaceResponse,
@@ -40,6 +47,8 @@ export class SpacesService {
     private readonly spaceEncryptionService: SpaceEncryptionService,
     @Inject(MemberEncryptionService)
     private readonly memberEncryptionService: MemberEncryptionService,
+    @Inject(ISpaceSetupsRepository)
+    private readonly spaceSetupsRepository: ISpaceSetupsRepository,
   ) {}
 
   public async create(args: {
@@ -48,10 +57,10 @@ export class SpacesService {
     authPayload: AuthPayload;
   }): Promise<CreateSpaceResponse> {
     const userId = getAuthenticatedUserIdOrFail(args.authPayload);
-    await this.usersRepository.findOneOrFail({ id: userId });
-    await this.usersRepository.activateIfPending(userId);
+    await activateSpaceCreator(this.usersRepository, userId);
 
-    return await this.spacesRepository.create({ userId, ...args });
+    const space = await this.spacesRepository.create({ userId, ...args });
+    return { uuid: space.uuid, name: space.name };
   }
 
   public getActiveOrInvitedSpaces(
@@ -111,13 +120,14 @@ export class SpacesService {
     });
 
     // Seats, not rows: the repository owns what makes two rows one Safe.
-    const [invitedByNames, decryptedSpaces, seatsBySpace] = await Promise.all([
-      this.resolveInvitedByNames(spaces),
-      this.spaceEncryptionService.decryptSpaces(spaces),
-      this.spaceSafesRepository.countSeatsBySpaceIds(
-        spaces.map((space) => space.id),
-      ),
-    ]);
+    const spaceIds = spaces.map((space) => space.id);
+    const [invitedByNames, decryptedSpaces, seatsBySpace, setupStatusBySpace] =
+      await Promise.all([
+        this.resolveInvitedByNames(spaces),
+        this.spaceEncryptionService.decryptSpaces(spaces),
+        this.spaceSafesRepository.countSeatsBySpaceIds(spaceIds),
+        this.spaceSetupsRepository.findStatusesBySpaceIds(spaceIds),
+      ]);
 
     return await Promise.all(
       decryptedSpaces.map(async (space) => {
@@ -153,9 +163,16 @@ export class SpacesService {
             (member) => member.status === 'ACTIVE',
           ).length,
           safeCount: seatsBySpace.get(space.id) ?? 0,
+          setupStatus: this.toSetupStatusDto(setupStatusBySpace.get(space.id)),
         };
       }),
     );
+  }
+
+  private toSetupStatusDto(
+    status: keyof typeof SpaceSetupStatus | undefined,
+  ): SpaceSetupStatusDto | null {
+    return status ? SPACE_SETUP_STATUS_DTO[status] : null;
   }
 
   public async update(args: {

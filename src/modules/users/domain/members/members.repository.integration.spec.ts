@@ -11,6 +11,7 @@ import configuration from '#/config/entities/__tests__/configuration';
 import { postgresConfig } from '#/config/entities/postgres.config';
 import { DatabaseMigrator } from '#/datasources/db/v2/database-migrator.service';
 import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
+import { UniqueConstraintError } from '#/datasources/errors/unique-constraint-error';
 import { DB_MAX_SAFE_INTEGER } from '#/domain/common/constants';
 import { nameBuilder } from '#/domain/common/entities/name.builder';
 import { getStringEnumKeys } from '#/domain/common/utils/enum';
@@ -26,16 +27,16 @@ import { createMockSpaceEncryptionService } from '#/modules/spaces/domain/__test
 import { createMockSpaceAuditRepository } from '#/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
 import { SpaceStatus } from '#/modules/spaces/domain/entities/space.entity';
 import { SpacesRepository } from '#/modules/spaces/domain/spaces.repository';
-import {
-  InviteType,
-  type InviteUserInput,
-} from '#/modules/spaces/routes/members/entities/invite-users.dto.entity';
 import { Member } from '#/modules/users/datasources/entities/member.entity.db';
 import { User } from '#/modules/users/datasources/entities/users.entity.db';
 import {
   createEncryptingMockUserEncryptionService,
   createMockUserEncryptionService,
 } from '#/modules/users/domain/__tests__/user-encryption.service.mock';
+import {
+  InviteType,
+  type InviteUserInput,
+} from '#/modules/users/domain/entities/invite-user.entity';
 import {
   MemberRole,
   MemberStatus,
@@ -589,7 +590,7 @@ describe('MembersRepository', () => {
       );
 
       const member = await membersRepository.inviteUsers({
-        authPayload,
+        actorUserId: Number(authPayload.sub),
         spaceId,
         users,
         inviteExpiresAt,
@@ -646,7 +647,7 @@ describe('MembersRepository', () => {
       );
 
       const member = await membersRepository.inviteUsers({
-        authPayload,
+        actorUserId: Number(authPayload.sub),
         spaceId,
         users,
         inviteExpiresAt,
@@ -697,7 +698,7 @@ describe('MembersRepository', () => {
       const memberName = nameBuilder();
 
       await membersRepository.inviteUsers({
-        authPayload,
+        actorUserId: Number(authPayload.sub),
         spaceId,
         users: [
           {
@@ -784,7 +785,7 @@ describe('MembersRepository', () => {
 
       await expect(
         membersRepository.inviteUsers({
-          authPayload,
+          actorUserId: Number(authPayload.sub),
           spaceId,
           users: [
             {
@@ -824,6 +825,69 @@ describe('MembersRepository', () => {
       );
     });
 
+    it('should refuse a pending invite, and leave it unchanged, when told not to renew it', async () => {
+      const inviteExpiresAt = new Date(Date.now() + 30 * 60 * 1000);
+      const { user: owner, userId: ownerId } = await createSiweUser();
+      const inviteeAddress = getAddress(faker.finance.ethereumAddress());
+      const inviteeName = nameBuilder();
+      const invitee = await dbUserRepo.insert({ status: 'PENDING' });
+      await dbWalletRepo.insert({
+        user: invitee.generatedMaps[0],
+        address: inviteeAddress,
+      });
+      const space = await dbSpacesRepository.insert({
+        name: nameBuilder(),
+        status: 'ACTIVE',
+      });
+      const spaceId = space.generatedMaps[0].id;
+      await dbMembersRepository.insert({
+        user: owner,
+        space: space.generatedMaps[0],
+        name: nameBuilder(),
+        role: 'ADMIN',
+        status: 'ACTIVE',
+        invitedBy: null,
+      });
+      const existingInvite = await dbMembersRepository.insert({
+        user: invitee.generatedMaps[0],
+        space: space.generatedMaps[0],
+        name: inviteeName,
+        role: 'MEMBER',
+        status: 'INVITED',
+        invitedBy: ownerId,
+        inviteExpiresAt,
+      });
+
+      await expect(
+        membersRepository.inviteUsers({
+          actorUserId: ownerId,
+          spaceId,
+          users: [
+            {
+              type: InviteType.Wallet,
+              address: inviteeAddress,
+              role: 'ADMIN',
+              name: nameBuilder(),
+            },
+          ],
+          inviteExpiresAt: new Date(Date.now() + 60 * 60 * 1000),
+          onPendingInvite: 'refuse',
+        }),
+      ).rejects.toBeInstanceOf(UniqueConstraintError);
+
+      await expect(
+        dbMembersRepository.findOneOrFail({
+          where: { id: existingInvite.identifiers[0].id as Member['id'] },
+        }),
+      ).resolves.toEqual(
+        expect.objectContaining({
+          name: inviteeName,
+          role: 'MEMBER',
+          inviteExpiresAt,
+        }),
+      );
+    });
+
     it('should throw when reinviting an active member to the same space', async () => {
       const spaceName = nameBuilder();
       const adminName = nameBuilder();
@@ -859,7 +923,7 @@ describe('MembersRepository', () => {
 
       await expect(
         membersRepository.inviteUsers({
-          authPayload,
+          actorUserId: Number(authPayload.sub),
           spaceId,
           users: [
             {
@@ -912,7 +976,7 @@ describe('MembersRepository', () => {
 
       await expect(
         membersRepository.inviteUsers({
-          authPayload,
+          actorUserId: Number(authPayload.sub),
           spaceId,
           users: [
             {
@@ -949,7 +1013,7 @@ describe('MembersRepository', () => {
       const inviteName = nameBuilder();
 
       const invitations = await membersRepository.inviteUsers({
-        authPayload,
+        actorUserId: Number(authPayload.sub),
         spaceId,
         users: [
           {
@@ -996,7 +1060,7 @@ describe('MembersRepository', () => {
       const existingUserId = existingInsert.generatedMaps[0].id;
 
       const invitations = await membersRepository.inviteUsers({
-        authPayload,
+        actorUserId: Number(authPayload.sub),
         spaceId,
         users: [
           {
@@ -1024,7 +1088,7 @@ describe('MembersRepository', () => {
 
       await expect(
         membersRepository.inviteUsers({
-          authPayload,
+          actorUserId: Number(authPayload.sub),
           spaceId,
           users,
           inviteExpiresAt,
@@ -1034,11 +1098,12 @@ describe('MembersRepository', () => {
   });
 
   describe('renewInvite', () => {
-    it("should refresh the member's inviteExpiresAt, leaving the rest untouched", async () => {
+    it('should refresh the invite expiry once and refuse a second renewal within the cooldown', async () => {
       const invitedBy = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
       const inviteeName = nameBuilder();
       const expiredAt = faker.date.past();
       const renewedInviteExpiresAt = faker.date.future();
+      const notRenewedSince = faker.date.recent();
       const invitee = await dbUserRepo.insert({ status: 'PENDING' });
       const space = await dbSpacesRepository.insert({
         name: nameBuilder(),
@@ -1052,6 +1117,7 @@ describe('MembersRepository', () => {
         status: 'INVITED',
         invitedBy,
         inviteExpiresAt: expiredAt,
+        updatedAt: faker.date.past({ refDate: notRenewedSince }),
       });
       const memberId = memberInsert.identifiers[0].id as Member['id'];
       const inviteeId = invitee.identifiers[0].id as User['id'];
@@ -1062,12 +1128,13 @@ describe('MembersRepository', () => {
         membersRepository.renewInvite({
           memberId,
           inviteExpiresAt: renewedInviteExpiresAt,
+          notRenewedSince,
           spaceId,
           spaceUuid,
           targetUserId: inviteeId,
           actorUserId: invitedBy,
         }),
-      ).resolves.toBeUndefined();
+      ).resolves.toBe(true);
 
       // Only the expiry changes; status/name/role/invitedBy are untouched.
       await expect(
@@ -1081,6 +1148,23 @@ describe('MembersRepository', () => {
           invitedBy,
           inviteExpiresAt: renewedInviteExpiresAt,
         }),
+      );
+
+      await expect(
+        membersRepository.renewInvite({
+          memberId,
+          inviteExpiresAt: faker.date.future(),
+          notRenewedSince,
+          spaceId,
+          spaceUuid,
+          targetUserId: inviteeId,
+          actorUserId: invitedBy,
+        }),
+      ).resolves.toBe(false);
+      await expect(
+        dbMembersRepository.findOneOrFail({ where: { id: memberId } }),
+      ).resolves.toEqual(
+        expect.objectContaining({ inviteExpiresAt: renewedInviteExpiresAt }),
       );
     });
   });
@@ -3580,7 +3664,7 @@ describe('MembersRepository', () => {
       const inviteEmail = EmailAddressSchema.parse(faker.internet.email());
 
       const invitations = await encryptingMembersRepository.inviteUsers({
-        authPayload,
+        actorUserId: Number(authPayload.sub),
         spaceId,
         users: [
           {

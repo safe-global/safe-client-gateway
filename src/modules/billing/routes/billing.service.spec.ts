@@ -6,6 +6,7 @@ import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
+  HttpStatus,
   NotFoundException,
   UnauthorizedException,
   UnprocessableEntityException,
@@ -30,6 +31,7 @@ import {
 } from '#/datasources/billing-api/entities/__tests__/subscription-update.builder';
 import type { PaymentLink } from '#/datasources/billing-api/entities/payment-link.entity';
 import type { Subscription } from '#/datasources/billing-api/entities/subscription.entity';
+import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
 import type { ILoggingService } from '#/logging/logging.interface';
 import {
   oidcAuthPayloadDtoBuilder,
@@ -46,6 +48,11 @@ import type { ISubscriptionSyncService } from '#/modules/entitlements/domain/sub
 import type { ISubscriptionsRepository } from '#/modules/entitlements/domain/subscriptions.repository.interface';
 import type { Space } from '#/modules/spaces/domain/entities/space.entity';
 import type { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository.interface';
+import {
+  spaceSetupBuilder,
+  spaceSetupPayloadBuilder,
+} from '#/modules/spaces/domain/setup/entities/__tests__/space-setup.builder';
+import type { ISpaceSetupsRepository } from '#/modules/spaces/domain/setup/space-setups.repository.interface';
 import type { ISpacesRepository } from '#/modules/spaces/domain/spaces.repository.interface';
 import { memberBuilder } from '#/modules/users/datasources/entities/__tests__/member.entity.db.builder';
 import type { IMembersRepository } from '#/modules/users/domain/members/members.repository.interface';
@@ -69,6 +76,7 @@ const membersRepositoryMock = {
 
 const subscriptionSyncServiceMock = {
   handleWebhook: vi.fn(),
+  syncSpace: vi.fn(),
 } as MockedObject<ISubscriptionSyncService>;
 
 const subscriptionsRepositoryMock = {
@@ -81,8 +89,13 @@ const spacesRepositoryMock = {
 
 const spaceSafesRepositoryMock = {
   countSeatsBySpaceId: vi.fn(),
+  countNewSeats: vi.fn(),
   delete: vi.fn(),
 } as MockedObject<ISpaceSafesRepository>;
+
+const spaceSetupsRepositoryMock = {
+  findBySpaceId: vi.fn(),
+} as MockedObject<ISpaceSetupsRepository>;
 
 const loggingServiceMock = {
   warn: vi.fn(),
@@ -133,6 +146,7 @@ describe('BillingService', () => {
       subscriptionsRepositoryMock,
       spacesRepositoryMock,
       spaceSafesRepositoryMock,
+      spaceSetupsRepositoryMock,
       loggingServiceMock,
     );
   }
@@ -289,7 +303,12 @@ describe('BillingService', () => {
           spaceUuid: fakeUuid(),
           authPayload,
         }),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toThrow(
+        new HttpExceptionNoLog(
+          'User is not a member of this workspace',
+          HttpStatus.FORBIDDEN,
+        ),
+      );
 
       expect(
         billingRepositoryMock.getSubscriptionsByCustomerId,
@@ -345,7 +364,12 @@ describe('BillingService', () => {
           authPayload,
           returnUrl: withinRedirectOrigin(),
         }),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toThrow(
+        new HttpExceptionNoLog(
+          'User is not an admin of this workspace',
+          HttpStatus.FORBIDDEN,
+        ),
+      );
 
       expect(
         billingRepositoryMock.getCustomerSessionUrl,
@@ -458,7 +482,12 @@ describe('BillingService', () => {
           spaceUuid: fakeUuid(),
           authPayload,
         }),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toThrow(
+        new HttpExceptionNoLog(
+          'User is not a member of this workspace',
+          HttpStatus.FORBIDDEN,
+        ),
+      );
 
       expect(billingRepositoryMock.listPaymentLinks).not.toHaveBeenCalled();
     });
@@ -624,7 +653,185 @@ describe('BillingService', () => {
     });
   });
 
+  describe('listTrialPlans', () => {
+    function enforceFromNowOn(): void {
+      fakeConfigurationService.set(
+        'entitlements.enforcementStartsAt',
+        faker.date.future(),
+      );
+      service = createBillingService(fakeConfigurationService);
+    }
+
+    it('should list only the legacy grace links before enforcement starts', async () => {
+      const standardTrial = trialPaymentLinkBuilder(false).build();
+      const graceTrial = trialPaymentLinkBuilder(true).build();
+      mockCatalog([standardTrial, graceTrial, paymentLinkBuilder().build()]);
+      enforceFromNowOn();
+
+      await expect(service.listTrialPlans()).resolves.toEqual([graceTrial]);
+    });
+
+    it('should list only the standard trial links before enforcement once the claim window closed', async () => {
+      const standardTrial = trialPaymentLinkBuilder(false).build();
+      mockCatalog([standardTrial, trialPaymentLinkBuilder(true).build()]);
+      enforceFromNowOn();
+      closeGraceClaimWindow();
+
+      await expect(service.listTrialPlans()).resolves.toEqual([standardTrial]);
+    });
+
+    it('should offer a space created before enforcement the same links as its trial plans', async () => {
+      const standardTrial = trialPaymentLinkBuilder(false).build();
+      const graceTrial = trialPaymentLinkBuilder(true).build();
+      mockCatalog([standardTrial, graceTrial]);
+      enforceFromNowOn();
+      spacesRepositoryMock.findCreatedAtById.mockResolvedValue(new Date());
+      membersRepositoryMock.findOne.mockResolvedValue(memberBuilder().build());
+
+      const trialPlans = await service.listTrialPlans();
+
+      await expect(
+        service.getSpacePaymentLinks({
+          spaceId: faker.number.int({ min: 1 }),
+          spaceUuid: fakeUuid(),
+          authPayload: new AuthPayload(siweAuthPayloadDtoBuilder().build()),
+        }),
+      ).resolves.toEqual(trialPlans);
+    });
+
+    it('should list only the standard trial links of the general catalog after enforcement starts', async () => {
+      const standardTrial = trialPaymentLinkBuilder(false).build();
+      const graceTrial = trialPaymentLinkBuilder(true).build();
+      const paidLink = paymentLinkBuilder().build();
+      mockCatalog([standardTrial, graceTrial, paidLink]);
+
+      await expect(service.listTrialPlans()).resolves.toEqual([standardTrial]);
+      expect(
+        billingRepositoryMock.listPaymentLinks,
+      ).toHaveBeenCalledExactlyOnceWith();
+    });
+  });
+
+  describe('syncSubscription', () => {
+    it('should sync a trialing subscription read past the cache', async () => {
+      const spaceId = faker.number.int({ min: 1 });
+      const spaceUuid = fakeUuid();
+      billingRepositoryMock.getSubscriptionsByCustomerId.mockResolvedValue([
+        subscriptionBuilder().with('status', 'trialing').build(),
+      ]);
+
+      await expect(
+        service.syncSubscription({ spaceId, spaceUuid }),
+      ).resolves.toBe(true);
+
+      expect(billingRepositoryMock.clearSubscriptions).toHaveBeenCalledWith({
+        upstreamCustomerId: spaceUuid,
+      });
+      expect(subscriptionSyncServiceMock.syncSpace).toHaveBeenCalledWith({
+        spaceId,
+        upstreamCustomerId: spaceUuid,
+      });
+    });
+
+    it('should not sync a space with no live subscription', async () => {
+      billingRepositoryMock.getSubscriptionsByCustomerId.mockResolvedValue([
+        subscriptionBuilder().with('status', 'canceled').build(),
+      ]);
+
+      await expect(
+        service.syncSubscription({
+          spaceId: faker.number.int({ min: 1 }),
+          spaceUuid: fakeUuid(),
+        }),
+      ).resolves.toBe(false);
+      expect(subscriptionSyncServiceMock.syncSpace).not.toHaveBeenCalled();
+    });
+  });
+
   describe('createCheckoutUrl', () => {
+    it("should count the Safes of a pending setup against the plan's seats", async () => {
+      const paymentLinkId = faker.string.uuid();
+      const spaceId = faker.number.int({ min: 1 });
+      const safe = getAddress(faker.finance.ethereumAddress());
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      mockCatalog([
+        paymentLinkBuilder()
+          .with('id', paymentLinkId)
+          .with('metadata', { FEATURE_SAFE_SEATS: '1' })
+          .build(),
+      ]);
+      subscriptionsRepositoryMock.getSubscriptionSummary.mockResolvedValue({
+        hasEverSubscribed: true,
+        activePlanId: null,
+      });
+      spaceSafesRepositoryMock.countSeatsBySpaceId.mockResolvedValue(1);
+      spaceSetupsRepositoryMock.findBySpaceId.mockResolvedValue(
+        spaceSetupBuilder()
+          .with(
+            'payload',
+            spaceSetupPayloadBuilder()
+              .with('safes', [
+                { chainId: '1', address: safe },
+                { chainId: '10', address: safe },
+              ])
+              .build(),
+          )
+          .build(),
+      );
+      spaceSafesRepositoryMock.countNewSeats.mockResolvedValue(1);
+
+      await expect(
+        service.createCheckoutUrl({
+          paymentLinkId,
+          spaceId,
+          spaceUuid: fakeUuid(),
+          authPayload,
+          returnUrl: withinRedirectOrigin(),
+        }),
+      ).rejects.toThrow(ConflictException);
+
+      expect(spaceSafesRepositoryMock.countNewSeats).toHaveBeenCalledWith({
+        spaceId,
+        addresses: [safe, safe],
+      });
+      expect(
+        billingRepositoryMock.createCheckoutSession,
+      ).not.toHaveBeenCalled();
+    });
+
+    it('should not count the Safes of an applied setup again', async () => {
+      const paymentLinkId = faker.string.uuid();
+      const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
+      mockCatalog([
+        paymentLinkBuilder()
+          .with('id', paymentLinkId)
+          .with('metadata', { FEATURE_SAFE_SEATS: '1' })
+          .build(),
+      ]);
+      subscriptionsRepositoryMock.getSubscriptionSummary.mockResolvedValue({
+        hasEverSubscribed: true,
+        activePlanId: null,
+      });
+      spaceSafesRepositoryMock.countSeatsBySpaceId.mockResolvedValue(1);
+      spaceSetupsRepositoryMock.findBySpaceId.mockResolvedValue(
+        spaceSetupBuilder().with('status', 'APPLIED').build(),
+      );
+      billingRepositoryMock.createCheckoutSession.mockResolvedValue(
+        checkoutSessionResultBuilder().build(),
+      );
+
+      await service.createCheckoutUrl({
+        paymentLinkId,
+        spaceId: faker.number.int({ min: 1 }),
+        spaceUuid: fakeUuid(),
+        authPayload,
+        returnUrl: withinRedirectOrigin(),
+      });
+
+      expect(spaceSafesRepositoryMock.countNewSeats).not.toHaveBeenCalled();
+      expect(billingRepositoryMock.createCheckoutSession).toHaveBeenCalled();
+    });
+
     it('should return the checkout session result for a space admin', async () => {
       const paymentLinkId = faker.string.uuid();
       const spaceId = faker.number.int();
@@ -673,7 +880,12 @@ describe('BillingService', () => {
           authPayload,
           returnUrl: withinRedirectOrigin(),
         }),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toThrow(
+        new HttpExceptionNoLog(
+          'User is not an admin of this workspace',
+          HttpStatus.FORBIDDEN,
+        ),
+      );
 
       expect(
         billingRepositoryMock.createCheckoutSession,
@@ -971,7 +1183,12 @@ describe('BillingService', () => {
           planId,
           authPayload,
         }),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toThrow(
+        new HttpExceptionNoLog(
+          'User is not an admin of this workspace',
+          HttpStatus.FORBIDDEN,
+        ),
+      );
 
       expect(
         billingRepositoryMock.previewSubscriptionUpdate,
@@ -1098,7 +1315,12 @@ describe('BillingService', () => {
           planId,
           authPayload,
         }),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toThrow(
+        new HttpExceptionNoLog(
+          'User is not an admin of this workspace',
+          HttpStatus.FORBIDDEN,
+        ),
+      );
 
       expect(billingRepositoryMock.updateSubscription).not.toHaveBeenCalled();
     });

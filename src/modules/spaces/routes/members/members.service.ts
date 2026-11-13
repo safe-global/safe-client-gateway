@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { ConflictException, Inject } from '@nestjs/common';
+import { ConflictException, HttpStatus, Inject } from '@nestjs/common';
 import type { Address } from 'viem';
 import { IConfigurationService } from '#/config/configuration.service.interface';
+import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
 import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '#/modules/auth/utils/assert-authenticated.utils';
 import type { Space } from '#/modules/spaces/domain/entities/space.entity';
@@ -16,9 +17,17 @@ import type {
 import type { UpdateMemberAliasDto } from '#/modules/spaces/routes/members/entities/update-member-name.dto.entity';
 import type { UpdateRoleDto } from '#/modules/spaces/routes/members/entities/update-role.dto.entity';
 import { SpaceInviteEmailService } from '#/modules/spaces/routes/members/space-invite-email.service';
+import type { Invitation as DomainInvitation } from '#/modules/users/domain/entities/invitation.entity';
+import type { InviteUserInput } from '#/modules/users/domain/entities/invite-user.entity';
 import type { User } from '#/modules/users/domain/entities/user.entity';
+import { assertWithinInviteLimit } from '#/modules/users/domain/members/invite-limit.rules';
 import { MemberEncryptionService } from '#/modules/users/domain/members/member-encryption.service';
-import { IMembersRepository } from '#/modules/users/domain/members/members.repository.interface';
+import {
+  IMembersRepository,
+  type PendingInvitePolicy,
+} from '#/modules/users/domain/members/members.repository.interface';
+
+const RENEW_INVITE_COOLDOWN_MS = 60_000;
 
 export class MembersService {
   private readonly maxInvites: number;
@@ -54,20 +63,10 @@ export class MembersService {
   }): Promise<Array<Invitation>> {
     const actorUserId = getAuthenticatedUserIdOrFail(args.authPayload);
     await assertAdmin(this.membersRepository, args.spaceId, actorUserId);
-    if (args.inviteUsersDto.users.length > this.maxInvites) {
-      throw new ConflictException('Too many invites.');
-    }
-    const invitations = await this.membersRepository.inviteUsers({
-      authPayload: args.authPayload,
+    const invitations = await this.inviteAs({
+      actorUserId,
       spaceId: args.spaceId,
       users: args.inviteUsersDto.users,
-      inviteExpiresAt: new Date(Date.now() + this.inviteTtlMs),
-    });
-
-    // Only queue emails after invite creation succeeds.
-    await this.spaceInviteEmailService.enqueueInviteEmails({
-      users: args.inviteUsersDto.users,
-      spaceId: args.spaceId,
     });
 
     // The domain invitation carries the internal numeric space id for the
@@ -82,6 +81,39 @@ export class MembersService {
         invitedBy,
       }),
     );
+  }
+
+  /**
+   * Invites users on behalf of `actorUserId`, the recorded inviter, and
+   * queues their invite emails. Authorizes nothing: the caller has, as
+   * {@link inviteUser} does for a request, or the Workspace setup does for
+   * its creator.
+   */
+  public async inviteAs(args: {
+    actorUserId: User['id'];
+    spaceId: Space['id'];
+    users: Array<InviteUserInput>;
+    onPendingInvite?: PendingInvitePolicy;
+  }): Promise<Array<DomainInvitation>> {
+    assertWithinInviteLimit({
+      inviteCount: args.users.length,
+      maxInvites: this.maxInvites,
+    });
+    const invitations = await this.membersRepository.inviteUsers({
+      actorUserId: args.actorUserId,
+      spaceId: args.spaceId,
+      users: args.users,
+      inviteExpiresAt: new Date(Date.now() + this.inviteTtlMs),
+      onPendingInvite: args.onPendingInvite,
+    });
+
+    // Only queue emails after invite creation succeeds.
+    await this.spaceInviteEmailService.enqueueInviteEmails({
+      users: args.users,
+      spaceId: args.spaceId,
+    });
+
+    return invitations;
   }
 
   public async renewInvite(args: {
@@ -108,14 +140,21 @@ export class MembersService {
       args.spaceId,
       name,
     );
-    await this.membersRepository.renewInvite({
+    const renewed = await this.membersRepository.renewInvite({
       memberId: id,
       inviteExpiresAt: new Date(Date.now() + this.inviteTtlMs),
+      notRenewedSince: new Date(Date.now() - RENEW_INVITE_COOLDOWN_MS),
       spaceId: args.spaceId,
       spaceUuid: space.uuid,
       targetUserId: args.userId,
       actorUserId,
     });
+    if (!renewed) {
+      throw new HttpExceptionNoLog(
+        'Invitation was renewed recently. Try again later.',
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
 
     if (user.email) {
       await this.spaceInviteEmailService.enqueueRenewalEmail({

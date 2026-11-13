@@ -1,10 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import {
-  ForbiddenException,
-  HttpStatus,
-  Inject,
-  Injectable,
-} from '@nestjs/common';
+import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { isAddressEqual, zeroAddress } from 'viem';
 import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
 import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
@@ -19,7 +14,10 @@ import type {
 } from '#/modules/policies/routes/entities/create-policy-configuration-request.dto.entity';
 import type { Space } from '#/modules/spaces/domain/entities/space.entity';
 import { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository.interface';
-import { assertMember } from '#/modules/spaces/domain/space-assert.utils';
+import {
+  assertMember,
+  assertSafeInSpace,
+} from '#/modules/spaces/domain/space-assert.utils';
 import { IMembersRepository } from '#/modules/users/domain/members/members.repository.interface';
 
 @Injectable()
@@ -44,7 +42,12 @@ export class PolicyConfigurationRequestsService {
     payload: CreatePolicyConfigurationRequestPayload;
   }): Promise<CreatePolicyConfigurationRequestResponse> {
     const userId = getAuthenticatedUserIdOrFail(args.authPayload);
-    await this.assertSafeInSpace({ ...args, userId });
+    await assertMember(this.membersRepository, args.spaceId, userId);
+    await assertSafeInSpace(this.spaceSafesRepository, {
+      spaceId: args.spaceId,
+      chainId: args.safe.chainId,
+      address: args.safe.address,
+    });
 
     // Stored as recomputed, so a retry in another casing hits the same row.
     const root = configurationRoot(args.payload.configurations);
@@ -87,23 +90,6 @@ export class PolicyConfigurationRequestsService {
         `Unknown policy contract ${unknownPolicy.policy} on chain ${args.chainId}`,
         HttpStatus.UNPROCESSABLE_ENTITY,
       );
-    }
-  }
-
-  private async assertSafeInSpace(args: {
-    spaceId: Space['id'];
-    safe: SafeRef;
-    userId: number;
-  }): Promise<void> {
-    await assertMember(this.membersRepository, args.spaceId, args.userId);
-
-    const isInSpace = await this.spaceSafesRepository.existsInSpace({
-      spaceId: args.spaceId,
-      chainId: args.safe.chainId,
-      address: args.safe.address,
-    });
-    if (!isInSpace) {
-      throw new ForbiddenException();
     }
   }
 }

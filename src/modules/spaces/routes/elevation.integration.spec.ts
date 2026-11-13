@@ -78,6 +78,14 @@ const GATED_ROUTES: Array<Route> = [
     method: 'delete',
     path: (id) => `/v1/spaces/${id}`,
   },
+  // A stolen session could add an invite to a pending setup that the real
+  // user later starts.
+  {
+    name: 'PUT /v1/spaces/:id/setup',
+    method: 'put',
+    path: (id) => `/v1/spaces/${id}/setup`,
+    body: {},
+  },
   {
     name: 'POST /v1/spaces/:spaceId/safes',
     method: 'post',
@@ -101,6 +109,31 @@ const GATED_ROUTES: Array<Route> = [
     method: 'delete',
     path: (id) =>
       `/v1/spaces/${id}/address-book/${getAddress(faker.finance.ethereumAddress())}`,
+  },
+  // Tags are shared by the whole Workspace, so any member's tag edit is gated
+  // even though members (not only admins) may make it.
+  {
+    name: 'POST /v1/spaces/:spaceId/address-book/tags',
+    method: 'post',
+    path: (id) => `/v1/spaces/${id}/address-book/tags`,
+    body: { name: faker.word.noun() },
+  },
+  {
+    name: 'PUT /v1/spaces/:spaceId/address-book/tags',
+    method: 'put',
+    path: (id) => `/v1/spaces/${id}/address-book/tags`,
+    body: { items: [] },
+  },
+  {
+    name: 'PATCH /v1/spaces/:spaceId/address-book/tags/:tagId',
+    method: 'patch',
+    path: (id) => `/v1/spaces/${id}/address-book/tags/1`,
+    body: { name: faker.word.noun() },
+  },
+  {
+    name: 'DELETE /v1/spaces/:spaceId/address-book/tags/:tagId',
+    method: 'delete',
+    path: (id) => `/v1/spaces/${id}/address-book/tags/1`,
   },
   {
     name: 'PUT /v1/spaces/:spaceId/address-book/requests/:requestId/approve',
@@ -147,10 +180,23 @@ const UNGATED_ROUTES: Array<Route> = [
     path: () => '/v1/spaces',
     body: { name: nameBuilder() },
   },
+  // Like POST /v1/spaces: a brand-new Workspace holding only the caller's own
+  // data, created mid-onboarding.
+  {
+    name: 'POST /v1/spaces/setup',
+    method: 'post',
+    path: () => '/v1/spaces/setup',
+    body: {},
+  },
   {
     name: 'GET /v1/spaces/:id',
     method: 'get',
     path: (id) => `/v1/spaces/${id}`,
+  },
+  {
+    name: 'GET /v1/spaces/:id/setup',
+    method: 'get',
+    path: (id) => `/v1/spaces/${id}/setup`,
   },
   {
     name: 'GET /v1/spaces/entitlements',

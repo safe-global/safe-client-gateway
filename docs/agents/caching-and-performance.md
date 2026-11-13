@@ -114,6 +114,14 @@ A promise a route handler returns to Nest's own request pipeline is not "floatin
 
 This applies whether the datasource is module-owned (`src/modules/*/datasources/`) or still central (`src/datasources/*-api/`) — the network path, and the ban on a local retry loop, is the same either way.
 
+### Safe-service clients use `SafeInternalNetworkModule`
+
+**Rule:** A datasource for a Safe-operated service gets its `INetworkService` and `CacheFirstDataSource` by importing `SafeInternalNetworkModule` in place of `CacheFirstDataSourceModule`. This module never sits alongside `CacheFirstDataSourceModule`, is never re-exported, and is never imported by a module that also provides a third-party client. Add the new provider to the allowlist in `src/datasources/network/network-wiring.integration.spec.ts`.
+
+**Why:** the module replaces the global `NetworkService` for every provider of the importing module and sends `x-safe-req-id`, which links a CGW request to the Safe-service calls it causes. Importing it next to a third-party client sends our request IDs to that third party. The test network modules share one mock, so only the wiring spec catches a misplaced import.
+
+**Canonical example:** `src/datasources/config-api/config-api.module.ts`. Transaction Service and queue-service clients use `TxAuthNetworkModule` and `SafeQueueModule`, which add auth on top of the same factory.
+
 ### Perf changes ship small and measured
 
 **Rule:** A performance change is single-concern and ships with a measurement — a benchmark, a trace, a before/after metric; a multi-concern performance refactor is rejected in review and resubmitted as separate, independently reviewable PRs.
