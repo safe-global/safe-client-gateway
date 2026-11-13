@@ -190,6 +190,18 @@ export default () => ({
         process.env.PORTFOLIO_DUST_THRESHOLD_USD ?? `${0.001}`,
       ),
     },
+    summaries: {
+      rateLimit: {
+        max: Number.parseInt(
+          process.env.PORTFOLIO_SUMMARIES_RATE_LIMIT_MAX ?? `${60}`,
+          10,
+        ),
+        windowSeconds: Number.parseInt(
+          process.env.PORTFOLIO_SUMMARIES_RATE_LIMIT_WINDOW_SECONDS ?? `${60}`,
+          10,
+        ),
+      },
+    },
   },
   blockchain: {
     infura: {

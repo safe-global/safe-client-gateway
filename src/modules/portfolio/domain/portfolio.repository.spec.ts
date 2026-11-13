@@ -12,6 +12,8 @@ import { appPositionGroupBuilder } from '#/modules/portfolio/domain/entities/__t
 import { portfolioBuilder } from '#/modules/portfolio/domain/entities/__tests__/portfolio.builder';
 import { tokenBalanceBuilder } from '#/modules/portfolio/domain/entities/__tests__/token-balance.builder';
 import { tokenInfoBuilder } from '#/modules/portfolio/domain/entities/__tests__/token-info.builder';
+import { PortfolioSchema } from '#/modules/portfolio/domain/entities/portfolio.entity';
+import { PortfolioSnapshotSchema } from '#/modules/portfolio/domain/entities/portfolio-snapshot.entity';
 import { PortfolioRepository } from '#/modules/portfolio/domain/portfolio.repository';
 import type { IPortfolioApi } from '#/modules/portfolio/interfaces/portfolio-api.interface';
 import type { ZerionCacheService } from '#/modules/zerion/datasources/zerion-cache.service';
@@ -623,6 +625,121 @@ describe('PortfolioRepository', () => {
           'refresh',
         );
       });
+    });
+  });
+
+  describe('getPortfolioSnapshot', () => {
+    const address = getAddress(faker.finance.ethereumAddress());
+    const args = {
+      address,
+      fiatCode: faker.finance.currencyCode(),
+      trusted: faker.datatype.boolean(),
+      isTestnet: faker.datatype.boolean(),
+    };
+    const cacheDir = CacheRouter.getPortfolioCacheDir(args);
+
+    it('returns a cached snapshot without calling Zerion', async () => {
+      const portfolio = portfolioBuilder().build();
+      const fetchedAt = faker.date.recent().getTime();
+      const expiresAt = fetchedAt + defaultCacheTtl * 1_000;
+      mockCacheService.hGet.mockResolvedValue(
+        JSON.stringify({ ...portfolio, fetchedAt, expiresAt }),
+      );
+
+      const result = await repository.getPortfolioSnapshot(args);
+
+      expect(mockCacheService.hGet).toHaveBeenCalledWith(cacheDir);
+      expect(result.fetchedAt).toBe(fetchedAt);
+      expect(result.expiresAt).toBe(expiresAt);
+      expect(mockPortfolioApi.getPortfolio).not.toHaveBeenCalled();
+    });
+
+    it('fetches and caches the snapshot with its times on a miss', async () => {
+      const portfolio = portfolioBuilder().build();
+      mockCacheService.hGet.mockResolvedValue(null);
+      mockPortfolioApi.getPortfolio.mockResolvedValue(rawify(portfolio));
+      const before = Date.now();
+
+      const result = await repository.getPortfolioSnapshot(args);
+
+      const after = Date.now();
+      expect(mockPortfolioApi.getPortfolio).toHaveBeenCalledWith({
+        address,
+        fiatCode: args.fiatCode,
+        trusted: args.trusted,
+        isTestnet: args.isTestnet,
+        sync: undefined,
+      });
+      expect(result.fetchedAt).toBeGreaterThanOrEqual(before);
+      expect(result.fetchedAt).toBeLessThanOrEqual(after);
+      expect(result.expiresAt).toBe(result.fetchedAt + defaultCacheTtl * 1_000);
+      expect(mockCacheService.hSet).toHaveBeenCalledWith(
+        cacheDir,
+        JSON.stringify({
+          ...PortfolioSchema.parse(portfolio),
+          fetchedAt: result.fetchedAt,
+          expiresAt: result.expiresAt,
+        }),
+        defaultCacheTtl,
+      );
+    });
+
+    it('stores the snapshot in the entry GET /v1/portfolio reads', async () => {
+      const portfolio = portfolioBuilder().build();
+      let stored: string | null = null;
+      mockCacheService.hGet.mockImplementation(() => Promise.resolve(stored));
+      mockCacheService.hSet.mockImplementation((_, value) => {
+        stored = value;
+        return Promise.resolve();
+      });
+      mockPortfolioApi.getPortfolio.mockResolvedValue(rawify(portfolio));
+
+      const untrusted = { ...args, trusted: false };
+      await repository.getPortfolioSnapshot(untrusted);
+      const fromAssets = await repository.getPortfolio(untrusted);
+
+      expect(fromAssets).toEqual(portfolio);
+      expect(mockPortfolioApi.getPortfolio).toHaveBeenCalledTimes(1);
+    });
+
+    it('refetches an entry cached before snapshots carried timestamps', async () => {
+      const portfolio = portfolioBuilder().build();
+      mockCacheService.hGet.mockResolvedValue(JSON.stringify(portfolio));
+      mockPortfolioApi.getPortfolio.mockResolvedValue(rawify(portfolio));
+
+      const result = await repository.getPortfolioSnapshot(args);
+
+      expect(mockPortfolioApi.getPortfolio).toHaveBeenCalledTimes(1);
+      expect(PortfolioSnapshotSchema.safeParse(result).success).toBe(true);
+    });
+
+    it('drops untrusted tokens and dust when trusted, like GET /v1/portfolio', async () => {
+      const trusted = tokenBalanceBuilder()
+        .with('tokenInfo', tokenInfoBuilder().with('trusted', true).build())
+        .with('balanceFiat', '100')
+        .build();
+      const untrusted = tokenBalanceBuilder()
+        .with('tokenInfo', tokenInfoBuilder().with('trusted', false).build())
+        .with('balanceFiat', '50')
+        .build();
+      const dust = tokenBalanceBuilder()
+        .with('tokenInfo', tokenInfoBuilder().with('trusted', true).build())
+        .with('balanceFiat', '0.0001')
+        .build();
+      const portfolio = portfolioBuilder()
+        .with('tokenBalances', [trusted, untrusted, dust])
+        .with('positionBalances', [])
+        .build();
+      mockCacheService.hGet.mockResolvedValue(null);
+      mockPortfolioApi.getPortfolio.mockResolvedValue(rawify(portfolio));
+
+      const result = await repository.getPortfolioSnapshot({
+        ...args,
+        trusted: true,
+      });
+
+      expect(result.tokenBalances).toEqual([trusted]);
+      expect(result.totalBalanceFiat).toBe('100');
     });
   });
 });

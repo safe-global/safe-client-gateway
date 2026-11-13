@@ -103,6 +103,12 @@ export default (): ReturnType<typeof configuration> => ({
     filters: {
       dustThresholdUsd: faker.number.float({ min: 0.1, max: 10 }),
     },
+    summaries: {
+      rateLimit: {
+        max: faker.number.int({ min: 100, max: 200 }),
+        windowSeconds: faker.number.int({ min: 100, max: 200 }),
+      },
+    },
   },
   blockchain: {
     infura: {

@@ -11,6 +11,7 @@ export const mockQueryResultCache = {
 export const mockPostgresDataSource = {
   query: vi.fn(),
   runMigrations: vi.fn(),
+  showMigrations: vi.fn(),
   initialize: vi.fn(),
   queryResultCache: mockQueryResultCache,
 } as unknown as MockedObject<DataSource>;
