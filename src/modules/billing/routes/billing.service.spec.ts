@@ -641,6 +641,65 @@ describe('BillingService', () => {
     });
   });
 
+  describe('listTrialPlans', () => {
+    function enforceFromNowOn(): void {
+      fakeConfigurationService.set(
+        'entitlements.enforcementStartsAt',
+        faker.date.future(),
+      );
+      service = createBillingService(fakeConfigurationService);
+    }
+
+    it('should list only the legacy grace links before enforcement starts', async () => {
+      const standardTrial = trialPaymentLinkBuilder(false).build();
+      const graceTrial = trialPaymentLinkBuilder(true).build();
+      mockCatalog([standardTrial, graceTrial, paymentLinkBuilder().build()]);
+      enforceFromNowOn();
+
+      await expect(service.listTrialPlans()).resolves.toEqual([graceTrial]);
+    });
+
+    it('should list only the standard trial links before enforcement once the claim window closed', async () => {
+      const standardTrial = trialPaymentLinkBuilder(false).build();
+      mockCatalog([standardTrial, trialPaymentLinkBuilder(true).build()]);
+      enforceFromNowOn();
+      closeGraceClaimWindow();
+
+      await expect(service.listTrialPlans()).resolves.toEqual([standardTrial]);
+    });
+
+    it('should offer a space created before enforcement the same links as its trial plans', async () => {
+      const standardTrial = trialPaymentLinkBuilder(false).build();
+      const graceTrial = trialPaymentLinkBuilder(true).build();
+      mockCatalog([standardTrial, graceTrial]);
+      enforceFromNowOn();
+      spacesRepositoryMock.findCreatedAtById.mockResolvedValue(new Date());
+      membersRepositoryMock.findOne.mockResolvedValue(memberBuilder().build());
+
+      const trialPlans = await service.listTrialPlans();
+
+      await expect(
+        service.getSpacePaymentLinks({
+          spaceId: faker.number.int({ min: 1 }),
+          spaceUuid: fakeUuid(),
+          authPayload: new AuthPayload(siweAuthPayloadDtoBuilder().build()),
+        }),
+      ).resolves.toEqual(trialPlans);
+    });
+
+    it('should list only the standard trial links of the general catalog after enforcement starts', async () => {
+      const standardTrial = trialPaymentLinkBuilder(false).build();
+      const graceTrial = trialPaymentLinkBuilder(true).build();
+      const paidLink = paymentLinkBuilder().build();
+      mockCatalog([standardTrial, graceTrial, paidLink]);
+
+      await expect(service.listTrialPlans()).resolves.toEqual([standardTrial]);
+      expect(
+        billingRepositoryMock.listPaymentLinks,
+      ).toHaveBeenCalledExactlyOnceWith();
+    });
+  });
+
   describe('createCheckoutUrl', () => {
     it('should return the checkout session result for a space admin', async () => {
       const paymentLinkId = faker.string.uuid();
