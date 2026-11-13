@@ -15,6 +15,7 @@ import {
   type Portfolio,
   PortfolioSchema,
 } from '#/modules/portfolio/domain/entities/portfolio.entity';
+import type { PortfolioFetchArgs } from '#/modules/portfolio/domain/entities/portfolio-fetch-args.entity';
 import {
   type PortfolioSnapshot,
   type PortfolioSnapshotArgs,
@@ -30,16 +31,6 @@ import { ZerionCacheService } from '#/modules/zerion/datasources/zerion-cache.se
  * Handles caching, filtering (chainIds, trusted, excludeDust), and aggregation.
  * Filters are applied after fetching from the API.
  */
-/** What one portfolio fetch needs: the wallet, its filters and the cache entry to fill. */
-type FetchArgs = {
-  address: Address;
-  fiatCode: string;
-  trusted?: boolean;
-  isTestnet?: boolean;
-  sync?: boolean;
-  cacheDir: CacheDir;
-};
-
 @Injectable()
 export class PortfolioRepository implements IPortfolioRepository {
   private readonly cacheExpirationSeconds: number;
@@ -134,21 +125,26 @@ export class PortfolioRepository implements IPortfolioRepository {
    * share one fetch, so a page that asks several routes at once on an empty
    * cache pays for one Zerion call, not one per route. A miss right after a
    * clear can join a fetch that started before it, as a write could already.
+   * A sync read never joins: it asks Zerion to finish aggregating first, which
+   * can take up to 30 s, so an earlier call could miss what it waits for.
    *
    * @param args - The wallet, filters and the cache entry to fill
    * @returns The fetched portfolio with its times
    */
-  private _fetchAndCache(args: FetchArgs): Promise<PortfolioSnapshot> {
-    const key = `${args.cacheDir.key}|${args.cacheDir.field}|${args.sync ? 'sync' : ''}`;
+  private _fetchAndCache(args: PortfolioFetchArgs): Promise<PortfolioSnapshot> {
+    if (args.sync) {
+      return this._fetchAndCacheOnce(args);
+    }
+    const key = `${args.cacheDir.key}|${args.cacheDir.field}`;
     const inFlight = this.inFlightFetches.get(key);
-    if (inFlight) {
+    if (inFlight !== undefined) {
       return inFlight;
     }
-    const fetch = this._fetchAndCacheOnce(args).finally(() => {
+    const pendingFetch = this._fetchAndCacheOnce(args).finally(() => {
       this.inFlightFetches.delete(key);
     });
-    this.inFlightFetches.set(key, fetch);
-    return fetch;
+    this.inFlightFetches.set(key, pendingFetch);
+    return pendingFetch;
   }
 
   /**
@@ -156,7 +152,7 @@ export class PortfolioRepository implements IPortfolioRepository {
    * @returns The fetched portfolio with its times
    */
   private async _fetchAndCacheOnce(
-    args: FetchArgs,
+    args: PortfolioFetchArgs,
   ): Promise<PortfolioSnapshot> {
     const rawPortfolio = await this.portfolioApi.getPortfolio({
       address: args.address,
