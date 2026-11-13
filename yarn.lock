@@ -1768,25 +1768,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@smithy/types@npm:^4.17.2":
-  version: 4.17.2
-  resolution: "@smithy/types@npm:4.17.2"
-  dependencies:
-    tslib: "npm:^2.6.2"
-  checksum: 10/e54500bb56a12a6f92374d6095834af04f19868e5178836b21fdcbce0c0fef0570dede2a39777b9d3330075d55096db206867f73ddf4dfe530d1b392f8d0aea9
-  languageName: node
-  linkType: hard
-
-"@smithy/types@npm:^4.18.0, @smithy/types@npm:^4.19.0":
-  version: 4.19.0
-  resolution: "@smithy/types@npm:4.19.0"
-  dependencies:
-    tslib: "npm:^2.6.2"
-  checksum: 10/495a4c66aa297f2e26d5ba368107ce7ddb9802dea35fd4e89cb00d80f86171b299bab6eaf0de520bd5d06e02d51e6ea560e29d2c6a8a008d071f293548ce40d9
-  languageName: node
-  linkType: hard
-
-"@smithy/types@npm:^4.20.0":
+"@smithy/types@npm:^4.17.2, @smithy/types@npm:^4.18.0, @smithy/types@npm:^4.19.0, @smithy/types@npm:^4.20.0":
   version: 4.20.0
   resolution: "@smithy/types@npm:4.20.0"
   dependencies:
