@@ -224,7 +224,7 @@ export class SafenetPayer {
   }
 
   private async nextNonce(client: PublicClient, key: string): Promise<bigint> {
-    const [onchainNonce, counter] = await Promise.all([
+    const [onchainNonce, counter]: [bigint, number | null] = await Promise.all([
       client.readContract({
         address: this.payerSafeAddress,
         abi: safeAbi,
@@ -232,7 +232,8 @@ export class SafenetPayer {
       }),
       this.cache.getCounter(key),
     ]);
-    return BigInt(Math.max(Number(onchainNonce), counter ?? 0));
+    const cachedNonce = BigInt(counter ?? 0);
+    return onchainNonce > cachedNonce ? onchainNonce : cachedNonce;
   }
 
   private async signPayload(inner: Hex, payerNonce: bigint) {
