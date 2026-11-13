@@ -29,15 +29,15 @@ export type ZerionCacheInvalidationSource = TransactionEventType | 'refresh';
  */
 @Injectable()
 export class ZerionCacheService {
-  private readonly settleSeconds: number;
+  private readonly afterTransactionTtlSeconds: number;
 
   constructor(
     @Inject(CacheService) private readonly cacheService: ICacheService,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
     @Inject(IConfigurationService) configurationService: IConfigurationService,
   ) {
-    this.settleSeconds = configurationService.getOrThrow<number>(
-      'portfolio.cache.settleSeconds',
+    this.afterTransactionTtlSeconds = configurationService.getOrThrow<number>(
+      'portfolio.cache.afterTransactionTtlSeconds',
     );
   }
 
@@ -92,7 +92,7 @@ export class ZerionCacheService {
       await this.cacheService.setCounter(
         CacheRouter.getPortfolioClearedAtCacheKey({ address }),
         Date.now(),
-        this.settleSeconds,
+        this.afterTransactionTtlSeconds,
         0,
       );
     } catch (error) {
