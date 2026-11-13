@@ -657,13 +657,15 @@ describe('BillingService', () => {
       mockCatalog([standardTrial, graceTrial]);
       enforceFromNowOn();
       spacesRepositoryMock.findCreatedAtById.mockResolvedValue(new Date());
+      membersRepositoryMock.findOne.mockResolvedValue(memberBuilder().build());
 
       const trialPlans = await service.listTrialPlans();
 
       await expect(
-        service.listOfferedPaymentLinks({
+        service.getSpacePaymentLinks({
           spaceId: faker.number.int({ min: 1 }),
           spaceUuid: fakeUuid(),
+          authPayload: new AuthPayload(siweAuthPayloadDtoBuilder().build()),
         }),
       ).resolves.toEqual(trialPlans);
     });
