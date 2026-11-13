@@ -338,10 +338,10 @@ catches the mistake and write that instead.
 <a id="pr-02"></a>
 ### `PR-02` Docs aligned with behavior
 
-> **general** · scope · ↩ `RL-20260128-002` · `RL-20260116-001` · `RL-20260108-002` · `RL-20260108-003` · `RL-20260623-001` · `RL-20251209-003` · `RL-20260723-006` · `RL-20260807-002` · `RL-20260820-001` · `RL-20260921-003` · `RL-20261009-008` · `RL-20261014-005`
+> **general** · scope · ↩ `RL-20260128-002` · `RL-20260116-001` · `RL-20260108-002` · `RL-20260108-003` · `RL-20260623-001` · `RL-20251209-003` · `RL-20260723-006` · `RL-20260807-002` · `RL-20260820-001` · `RL-20260921-003` · `RL-20261009-008` · `RL-20261014-005` · `RL-20261016-001`
 
 **📜 Rule**\
-Docs, samples, runbooks, and `.env.sample` must reflect the final behavior of the PR. Docs do not carry exact counts (test totals) that drift with every PR. Swagger descriptions do not restate enum members; let the schema or `enum` metadata carry the value list. Operator runbooks are part of the safety contract: a change that alters what is safe to do in which order rewrites them in the same PR, citing symbolic constants rather than repeating literals. A change that alters a pattern the guides document updates those guides in the same PR — including changes arriving via a merge — and the check is whether the rule still describes the code, not merely whether its paths resolve. A guide does not enumerate or restate what another guide owns — it points at the owner and declares open sets open.
+Docs, samples, runbooks, and `.env.sample` must reflect the final behavior of the PR. Docs do not carry exact counts (test totals) that drift with every PR. Swagger descriptions do not restate enum members; let the schema or `enum` metadata carry the value list. Operator runbooks are part of the safety contract: a change that alters what is safe to do in which order rewrites them in the same PR, citing symbolic constants rather than repeating literals. A change that alters a pattern the guides document updates those guides in the same PR — including changes arriving via a merge — and the check is whether the rule still describes the code, not merely whether its paths resolve. A guide does not enumerate or restate what another guide owns — it points at the owner and declares open sets open. Module-specific docs live in that module's `README.md`; the root README links them instead of holding them.
 
 **✅ Check**\
 > Are docs, samples, and runbooks aligned with the final behavior?
@@ -353,7 +353,7 @@ Docs, samples, runbooks, and `.env.sample` must reflect the final behavior of th
 <a id="mod-01"></a>
 ### `MOD-01` Behavior in the right module
 
-> **general** · modules · ↩ `RL-20260128-002` · `RL-20260608-002` · `RL-20260608-003` · `RL-20260710-004` · `RL-20260707-003` · `RL-20260717-003` · `RL-20260922-001` · `RL-20260925-004`
+> **general** · modules · ↩ `RL-20260128-002` · `RL-20260608-002` · `RL-20260608-003` · `RL-20260710-004` · `RL-20260707-003` · `RL-20260717-003` · `RL-20260922-001` · `RL-20260925-004` · `RL-20261016-005`
 
 **📜 Rule**\
 New API/product behavior belongs in the matching module shape; do not bolt routes onto unrelated modules; do not bypass an existing feature flag by importing a gated module unconditionally. Default-off feature modules stay scoped: not `@Global()`, not registered in the shared test module — override only in the specs that exercise them. Domain services depend on a feature-scoped orchestration service, not on generic infrastructure services (email, queues) directly. One upstream service maps to one module, one config section (topic name, no `-service` suffix), and one namespace/cache prefix. Provider-specific calls live in that provider's API service — no parallel clients, and generic clients do not own business tunables. Never bypass `NetworkService` with a raw `fetch` — extend the shared client (e.g. plain-text response bodies) so logging and circuit breakers stay in the path. A Space-scoped route (`spaces/:spaceId/...`) lives in the module that owns the capability and imports `SpacesModule` for the membership assertion; Spaces does not host other features' routes.
@@ -379,13 +379,13 @@ Services do not know persistence/email uniqueness internals; repositories own DB
 <a id="mod-04"></a>
 ### `MOD-04` No private behavior leaks
 
-> **general** · modules · 2 examples · ↩ `RL-20251223-001` · `RL-20251216-002`
+> **general** · modules · 2 examples · ↩ `RL-20251223-001` · `RL-20251216-002` · `RL-20261016-004`
 
 **📜 Rule**\
-Public interfaces must not expose private helpers; do not add optional methods to shared interfaces — split with `IFooWithBar extends IFoo` instead.
+Public interfaces must not expose private helpers; do not add optional methods to shared interfaces — split with `IFooWithBar extends IFoo` instead. A module does not re-export an inner module to give one caller raw access; it adds a narrow, explicitly named method to its repository (`relayWithoutLimits()`).
 
 **✅ Check**\
-> Did I avoid exposing private helper behavior through public interfaces?
+> Did I avoid exposing private helper behavior through public interfaces or module exports?
 
 <details>
 <summary><strong>💡 Example 1 of 2</strong> — <code>examples/schemas-and-validation.md</code> § <em>mod-04-do-not-export-private-intermediate-schemas</em></summary>
@@ -501,7 +501,7 @@ Avoid adding or expanding `forwardRef` cycles. Treat existing cycles as local de
 <a id="name-01"></a>
 ### `NAME-01` Names reveal behavior
 
-> **general** · naming · 1 example · ↩ `RL-20260506-001` · `RL-20260602-004` · `RL-20260922-003` · `RL-20261014-009`
+> **general** · naming · 1 example · ↩ `RL-20260506-001` · `RL-20260602-004` · `RL-20260922-003` · `RL-20261014-009` · `RL-20261016-008`
 
 **📜 Rule**\
 Names must describe behavior honestly: throwing helpers use `assert*`/`*OrFail`; predicates do not throw; algorithm-bound helpers (`hashSha1`) advertise the algorithm; type/aliased imports drop redundant `as` aliases; magic offsets become named constants. Find-or-create and similar helpers must not encode a status or postcondition the method does not guarantee on every path (`findOrCreateByEmail`, not `findOrCreatePendingByEmail` when existing ACTIVE users are returned as-is). One concept keeps one name across code, config keys, flags, and errors — no product alias beside the module's name (`copilot*` next to `safeShield*`). API response fields are camelCase, never an upstream's snake_case.
@@ -559,10 +559,10 @@ runs can stay fast and integration runs stay reproducible.
 <a id="reuse-01"></a>
 ### `REUSE-01` Reuse existing helpers
 
-> **general** · naming · 4 examples · ↩ `RL-20260506-003` · `RL-20251216-001` · `RL-20260615-004` · `RL-20251208-001` · `RL-20260921-004` · `RL-20260925-005` · `RL-20261002-004` · `RL-20261009-011` · `RL-20261014-004`
+> **general** · naming · 4 examples · ↩ `RL-20260506-003` · `RL-20251216-001` · `RL-20260615-004` · `RL-20251208-001` · `RL-20260921-004` · `RL-20260925-005` · `RL-20261002-004` · `RL-20261009-011` · `RL-20261014-004` · `RL-20261019-003`
 
 **📜 Rule**\
-Before adding a small util, search the repo and well-known libraries (`viem.isAddressEqual`, `@/logging/utils.asError`, shared schemas, `safe-deployments`); reuse `LoggingService`, `*Mapper` classes, and `HttpErrorFactory` instead of bare alternates. Cross a seam with the plain value (a timeout in ms, a plaintext address), not a caller-constructed object or caller-derived key (an `AbortSignal`, a blind-index seat key), so it is built in exactly one place. A single-item read that gains a batch variant delegates to it (`(await findByIds([id])).get(id) ?? []`) instead of keeping its own query.
+Before adding a small util, search the repo and well-known libraries (`viem.isAddressEqual`, `@/logging/utils.asError`, shared schemas, `safe-deployments`); reuse `LoggingService`, `*Mapper` classes, and `HttpErrorFactory` instead of bare alternates. Cross a seam with the plain value (a timeout in ms, a plaintext address), not a caller-constructed object or caller-derived key (an `AbortSignal`, a blind-index seat key), so it is built in exactly one place. A single-item read that gains a batch variant delegates to it (`(await findByIds([id])).get(id) ?? []`) instead of keeping its own query. Plan and quota gating go through the entitlements model (`assertFeatureGranted`, `assertWithinQuota` on a seeded feature), not a live billing call or a local list of plans.
 
 **✅ Check**\
 > Did I reuse existing helpers, constants homes, and utilities?
@@ -1564,10 +1564,10 @@ Parser/decode generics include every field the code reads downstream. Thread the
 <a id="type-06"></a>
 ### `TYPE-06` No unsafe casts
 
-> **general** · types · 3 examples · ↩ `RL-20260506-005` · `RL-20260612-004` · `RL-20251209-001` · `RL-20251209-002` · `RL-20260819-001` · `RL-20260821-001` · `RL-20260921-004` · `RL-20261001-007` · `RL-20261008-005`
+> **general** · types · 3 examples · ↩ `RL-20260506-005` · `RL-20260612-004` · `RL-20251209-001` · `RL-20251209-002` · `RL-20260819-001` · `RL-20260821-001` · `RL-20260921-004` · `RL-20261001-007` · `RL-20261008-005` · `RL-20261016-007`
 
 **📜 Rule**\
-Avoid `as Type` casts that lie to the type system; use `Pick`/`Partial` parameter types and `unknown` with type guards. ConfigurationService generics must match the stored type, including `null`. Implementations keep the interface's declared narrow parameter types (no widening to `QueryDeepPartialEntity`), and payload type aliases derive from schemas (`z.infer<typeof Schema>['payload']`) instead of restating shapes. Type a fold through the `reduce<T>` generic or its seed rather than casting the result `as T`. A value read from configuration and returned to callers repeatedly is copied at the boundary, not left shared because something downstream happens to re-parse it. Build the real platform object (`new Response(null, { status })`) instead of casting a literal to it. Type a parameter to exactly what the method handles (`BinaryFeature`, not the whole `FeatureKey` union) so a caller cannot route in a case the method silently mishandles.
+Avoid `as Type` casts that lie to the type system; use `Pick`/`Partial` parameter types and `unknown` with type guards. ConfigurationService generics must match the stored type, including `null`. Implementations keep the interface's declared narrow parameter types (no widening to `QueryDeepPartialEntity`), and payload type aliases derive from schemas (`z.infer<typeof Schema>['payload']`) instead of restating shapes. Type a fold through the `reduce<T>` generic or its seed rather than casting the result `as T`. A value read from configuration and returned to callers repeatedly is copied at the boundary, not left shared because something downstream happens to re-parse it. Build the real platform object (`new Response(null, { status })`) instead of casting a literal to it. Type a parameter to exactly what the method handles (`BinaryFeature`, not the whole `FeatureKey` union) so a caller cannot route in a case the method silently mishandles. Take a type from its source instead of a cast (parse a valid fixture through `HexSchema` rather than `as Hex`), and declare the return type of exported functions, derived from the source of truth where one exists (an ABI).
 
 **✅ Check**\
 > Did I avoid unsafe casts, `any`, and silent type drift?
@@ -1737,10 +1737,10 @@ no caller can hand over a key built the wrong way.
 <a id="auth-05"></a>
 ### `AUTH-05` Space routes enforce membership before data access
 
-> **general** · auth · 1 example · ↩ `RL-20260520-001` · `RL-20260602-001` · `RL-20260717-002` · `RL-20260921-001` · `RL-20260928-002`
+> **general** · auth · 1 example · ↩ `RL-20260520-001` · `RL-20260602-001` · `RL-20260717-002` · `RL-20260921-001` · `RL-20260928-002` · `RL-20261019-001`
 
 **📜 Rule**\
-Every space-scoped controller is guarded with `AuthGuard`, accepts the authenticated payload, and verifies space membership/admin authorization in the route service before querying or returning space-owned data. When the membership predicate is a TypeORM `where`, remember an array `where` is OR: every clause must carry the `user: { id }` ownership filter (a single unfiltered clause leaks other spaces, or matches all rows when its scope is undefined). Centralize the predicate in a shared helper and regression-test a non-member requesting a specific space id. A space-owned resource fetched by an opaque upstream id alone (no space in the route) structurally bypasses membership checks — design the upstream contract to map the resource back to the space, or explicitly document the accepted authorization gap in the PR. Sibling routes on one resource share its authorization level: narrowing one (member → admin) narrows every sibling that can start, change, or hand out a way to manage that resource.
+Every space-scoped controller is guarded with `AuthGuard`, accepts the authenticated payload, and verifies space membership/admin authorization in the route service before querying or returning space-owned data. When the membership predicate is a TypeORM `where`, remember an array `where` is OR: every clause must carry the `user: { id }` ownership filter (a single unfiltered clause leaks other spaces, or matches all rows when its scope is undefined). Centralize the predicate in a shared helper and regression-test a non-member requesting a specific space id. A space-owned resource fetched by an opaque upstream id alone (no space in the route) structurally bypasses membership checks — design the upstream contract to map the resource back to the space, or explicitly document the accepted authorization gap in the PR. Sibling routes on one resource share its authorization level: narrowing one (member → admin) narrows every sibling that can start, change, or hand out a way to manage that resource. A workspace-scoped or workspace-charged action takes `spaceId` from the path; the server never picks the workspace itself (such as the lowest id holding the Safe).
 
 **✅ Check**\
 > Did this add or change a space-scoped route or its membership `where`? If yes, is it auth-guarded, does the service assert membership/admin before data access, and does every OR clause of the `where` carry the user filter, and do sibling routes on the same resource require the same role?
@@ -1964,16 +1964,16 @@ Validate params, query, and body at the controller via Zod schemas and `Validati
 <a id="route-03"></a>
 ### `ROUTE-03` Stable empty shapes
 
-> **general** · routes · 1 example · ↩ `RL-20260114-002` · `RL-20260615-003` · `RL-20260619-004`
+> **general** · routes · 2 examples · ↩ `RL-20260114-002` · `RL-20260615-003` · `RL-20260619-004` · `RL-20261019-005`
 
 **📜 Rule**\
-Use 403 (not 404) for permission failures with an existing resource. Empty responses use stable empty shapes. Assert membership/authorization before a guarded write — do not encode it in a WHERE clause whose `affected === 0` surfaces as 404 where siblings return 403. "Server has not implemented this" is 501, not 403; error-constructor params are typed with the enum callers pass, not `string`.
+Use 403 (not 404) for permission failures with an existing resource. Empty responses use stable empty shapes. Assert membership/authorization before a guarded write — do not encode it in a WHERE clause whose `affected === 0` surfaces as 404 where siblings return 403. "Server has not implemented this" is 501, not 403; error-constructor params are typed with the enum callers pass, not `string`. A 403 does not reveal which ownership or registration check failed (a Safe outside the workspace gets a bare `ForbiddenException()`).
 
 **✅ Check**\
 > Do empty responses use stable empty shapes?
 
 <details>
-<summary><strong>💡 Example</strong> — <code>examples/error-handling.md</code> § <em>log-01-route-03-unknown-mappings-return-absence-not-a-plausible-default</em></summary>
+<summary><strong>💡 Example 1 of 2</strong> — <code>examples/error-handling.md</code> § <em>log-01-route-03-unknown-mappings-return-absence-not-a-plausible-default</em></summary>
 
 <br>
 
@@ -2027,6 +2027,44 @@ unknown case at the boundary they own.
 
 </details>
 
+<details>
+<summary><strong>💡 Example 2 of 2</strong> — <code>examples/error-handling.md</code> § <em>route-03-a-403-does-not-say-which-check-failed</em></summary>
+
+<br>
+
+**ROUTE-03 — A 403 does not say which check failed**
+
+Source: PR #3450 (RL-20261019-005)
+
+### Avoid
+
+```ts
+if (!isInSpace) {
+  throw new ForbiddenException('Safe is not registered to this Workspace.');
+}
+```
+
+### Prefer
+
+```ts
+if (!isInSpace) {
+  throw new ForbiddenException();
+}
+
+// spec
+await expect(target.create(request)).rejects.toThrow(new ForbiddenException());
+```
+
+### Why
+
+The message tells a caller who may not belong to the workspace which Safes
+it holds. The status already says "not allowed"; naming the failed check only
+helps someone probing resources they cannot see.
+
+<sub>Source: <a href="examples/error-handling.md#route-03-a-403-does-not-say-which-check-failed">examples/error-handling.md#route-03-a-403-does-not-say-which-check-failed</a></sub>
+
+</details>
+
 ---
 
 ## 🌐 general › database
@@ -2047,10 +2085,10 @@ Unique constraints, status transitions, and races need lifecycle-aware handling:
 <a id="db-02"></a>
 ### `DB-02` Atomic state transitions
 
-> **general** · database · 1 example · ↩ `RL-20260602-002` · `RL-20260605-002` · `RL-20260819-002` · `RL-20260826-003` · `RL-20260917-001` · `RL-20261001-006` · `RL-20261009-014`
+> **general** · database · 1 example · ↩ `RL-20260602-002` · `RL-20260605-002` · `RL-20260819-002` · `RL-20260826-003` · `RL-20260917-001` · `RL-20261001-006` · `RL-20261009-014` · `RL-20261019-002`
 
 **📜 Rule**\
-Multi-step status transitions are atomic (single SQL/ORM bulk call or wrapped transaction); do not loop awaits to mutate N rows. Writes that must commit or roll back together must run on the same outer `EntityManager`/transaction — a find-or-create helper invoked inside a transaction must accept and thread the outer `EntityManager` rather than opening its own, or a later failure leaves orphan committed rows. Conversely, do not wrap a single-statement write in a transaction — one statement is already atomic. A staleness or ordering guard is re-checked inside the lock it protects; a value read before the lock is carried in and re-compared, never trusted. The transaction lives with the use case, expensive I/O (KMS, upstream calls) happens before the lock is taken, and any quantity being enforced on — including the set of rows to lock — is read inside it. Paths that take several row locks follow one order, documented on the lock helpers. A compensating action reverses the exact record the original wrote, carried forward from the charge — never one resolved again at refund time.
+Multi-step status transitions are atomic (single SQL/ORM bulk call or wrapped transaction); do not loop awaits to mutate N rows. Writes that must commit or roll back together must run on the same outer `EntityManager`/transaction — a find-or-create helper invoked inside a transaction must accept and thread the outer `EntityManager` rather than opening its own, or a later failure leaves orphan committed rows. Conversely, do not wrap a single-statement write in a transaction — one statement is already atomic. A staleness or ordering guard is re-checked inside the lock it protects; a value read before the lock is carried in and re-compared, never trusted. The transaction lives with the use case, expensive I/O (KMS, upstream calls) happens before the lock is taken, and any quantity being enforced on — including the set of rows to lock — is read inside it. Paths that take several row locks follow one order, documented on the lock helpers. A compensating action reverses the exact record the original wrote, carried forward from the charge — never one resolved again at refund time. A quota is charged only for the side effect that happened: claim the item atomically so a concurrent duplicate neither counts nor acts, and release the slot when the side effect fails.
 
 **✅ Check**\
 > Are multi-step state transitions atomic, do helpers called inside a transaction share the outer EntityManager instead of opening their own, and do multi-row locks follow the documented order?
@@ -2132,10 +2170,10 @@ Map uniqueness/constraint errors to domain errors at the repository boundary; in
 <a id="db-05"></a>
 ### `DB-05` Migrations agree with code
 
-> **general** · database · 2 examples · ↩ `RL-20260520-003` · `RL-20260506-007` · `RL-20260116-001` · `RL-20260601-001` · `RL-20260604-001` · `RL-20260713-002`
+> **general** · database · 2 examples · ↩ `RL-20260520-003` · `RL-20260506-007` · `RL-20260116-001` · `RL-20260601-001` · `RL-20260604-001` · `RL-20260713-002` · `RL-20261016-009` · `RL-20261019-004`
 
 **📜 Rule**\
-Migrations, TypeORM entities, enum transformers, FK/index choices, rollback assumptions, and repository integration tests must agree. Status backfills must preserve the runtime invariants for that status and avoid raw enum ordinals when a narrower predicate is available. Index a column only if a query actually uses it; column max length must equal the validation constant (shared as a named constant between schema and entity, never an inline literal), and an entity column limit changes only together with the migration that enforces it; unique-constraint names follow `UQ_<table>_<field>_<field>`. A migration that joins/compares an address column whose entity uses a checksum transformer (`getAddress()`) must normalize both sides (`LOWER(...)`), or same-address rows stored with different casing fail to match. New product tables use a generated integer surrogate PK with a UNIQUE constraint on the natural key; column value conversion uses TypeORM transformers, not manual mapping in the repository.
+Migrations, TypeORM entities, enum transformers, FK/index choices, rollback assumptions, and repository integration tests must agree. Status backfills must preserve the runtime invariants for that status and avoid raw enum ordinals when a narrower predicate is available. Index a column only if a query actually uses it; column max length must equal the validation constant (shared as a named constant between schema and entity, never an inline literal), and an entity column limit changes only together with the migration that enforces it; unique-constraint names follow `UQ_<table>_<field>_<field>`. A migration that joins/compares an address column whose entity uses a checksum transformer (`getAddress()`) must normalize both sides (`LOWER(...)`), or same-address rows stored with different casing fail to match. New product tables use a generated integer surrogate PK with a UNIQUE constraint on the natural key; column value conversion uses TypeORM transformers, not manual mapping in the repository. A column holding members of a closed set is checked against the current set on read, in its transformer, so a retired member never reaches a response. Byte values (hashes, roots) are stored as lowercase `0x` hex text like addresses, not `bytea`.
 
 **✅ Check**\
 > Do migrations, entities, indexes, schemas, and tests agree, and do address joins normalize case (LOWER) on both sides when one side is checksum-transformed?
@@ -2530,16 +2568,16 @@ with per-field conditions and messages.
 <a id="config-03"></a>
 ### `CONFIG-03` TTLs are config
 
-> **general** · config · 1 example · ↩ `RL-20260506-003` · `RL-20260608-004` · `RL-20260707-003` · `RL-20260911-004` · `RL-20260925-001` · `RL-20260928-001`
+> **general** · config · 2 examples · ↩ `RL-20260506-003` · `RL-20260608-004` · `RL-20260707-003` · `RL-20260911-004` · `RL-20260925-001` · `RL-20260928-001` · `RL-20261016-002`
 
 **📜 Rule**\
-TTLs/timeouts/cache settings and environment-specific URLs are configured, not hardcoded (a TODO does not ship). Follow precedents in similar repositories before introducing new hardcoded knobs. A bound that appears in the published contract (Swagger text, generated clients) stays a constant; put the tunability on something the contract does not name. A safety cap with the same value in every environment (a max-pages guard on a loop) stays a named constant.
+TTLs/timeouts/cache settings and environment-specific URLs are configured, not hardcoded (a TODO does not ship). Follow precedents in similar repositories before introducing new hardcoded knobs. A bound that appears in the published contract (Swagger text, generated clients) stays a constant; put the tunability on something the contract does not name. A safety cap with the same value in every environment (a max-pages guard on a loop) stays a named constant. A knob that is dangerous to change (queue attempts, backoff, retention) still follows the config-driven precedent: the danger becomes a `RootConfigurationSchema` bound that fails at boot, no tighter than the safety argument, never a hardcoded exception.
 
 **✅ Check**\
-> Are TTLs/timeouts/tunables configured (safety caps identical in every environment may stay constants)?
+> Are TTLs/timeouts/tunables configured, with dangerous ones bounded in the schema rather than hardcoded (safety caps identical in every environment may stay constants)?
 
 <details>
-<summary><strong>💡 Example</strong> — <code>examples/repositories-and-pagination.md</code> § <em>config-03-reuse-01-knobs-follow-the-existing-config-driven-precedent</em></summary>
+<summary><strong>💡 Example 1 of 2</strong> — <code>examples/repositories-and-pagination.md</code> § <em>config-03-reuse-01-knobs-follow-the-existing-config-driven-precedent</em></summary>
 
 <br>
 
@@ -2592,6 +2630,53 @@ TODO comment in the diff captures the author's awareness; promote it to a
 real config entry now, while the surrounding code is fresh.
 
 <sub>Source: <a href="examples/repositories-and-pagination.md#config-03-reuse-01-knobs-follow-the-existing-config-driven-precedent">examples/repositories-and-pagination.md#config-03-reuse-01-knobs-follow-the-existing-config-driven-precedent</a></sub>
+
+</details>
+
+<details>
+<summary><strong>💡 Example 2 of 2</strong> — <code>examples/configuration.md</code> § <em>config-03-a-dangerous-knob-is-a-schema-bound-not-a-hardcoded-exception</em></summary>
+
+<br>
+
+**CONFIG-03 — A dangerous knob is a schema bound, not a hardcoded exception**
+
+Source: PR #3600 (RL-20261016-002)
+
+### Avoid
+
+```ts
+// configuration.ts — no env var, plus an ARCHITECTURE.md exception
+queue: {
+  // Fixed on purpose: a shorter retention or more attempts can pay a fee twice.
+  attempts: 3,
+},
+```
+
+### Prefer
+
+```ts
+// configuration.ts — the queue precedent, current value as the default
+queue: {
+  attempts: Number.parseInt(process.env.FEATURE_QUEUE_ATTEMPTS ?? `${3}`, 10),
+},
+
+// configuration.schema.ts — the safety argument as a boot-time bound
+FEATURE_QUEUE_ATTEMPTS: z.coerce.number().int().min(1).max(10).optional(),
+FEATURE_QUEUE_REMOVE_ON_FAIL_AGE: z.coerce
+  .number()
+  .int()
+  .min(MIN_RETENTION_SECONDS)
+  .optional(),
+```
+
+### Why
+
+Every other queue reads its options from env vars, so an exception costs a
+guide paragraph and a second pattern to remember. A schema bound keeps the
+protection: a value that could pay twice fails at boot. Set the bound by what
+it protects (here only a "nothing was paid" error is retried), not tighter.
+
+<sub>Source: <a href="examples/configuration.md#config-03-a-dangerous-knob-is-a-schema-bound-not-a-hardcoded-exception">examples/configuration.md#config-03-a-dangerous-knob-is-a-schema-bound-not-a-hardcoded-exception</a></sub>
 
 </details>
 
@@ -3363,10 +3448,10 @@ assertion is about and leave faker on the fields the test does not reason about.
 > **general** · tests · 2 examples · ↩ `RL-20260123-001` · `RL-20260113-001` · `RL-20251223-002` · `RL-20260615-004` · `RL-20260717-004` · `RL-20251208-003` · `RL-20260810-002` · `RL-20260916-001` · `RL-20260928-004` · `RL-20261009-004` · `RL-20261009-013` · `RL-20261009-015` · `RL-20261014-001`
 
 **📜 Rule**\
-Edge cases, observability calls, cache invalidation branches, production/default config branches, and deterministic ordering need tests when they are part of the behavior. Cache-invalidation tests pair every cleared-cache assertion with a negative assertion that unrelated caches stay untouched. Merge/dedup precedence tests use distinct objects sharing the same key — identical objects pass under either precedence. Behavior added to one method of a sibling set (`get`/`post`/`delete`) is covered on every sibling, and specs written for an approach abandoned during review are deleted rather than left to pass vacuously. Every gate or scoping filter, including a widened gated list (versions, chains, providers), has a case that fails when it is removed — the negative case proving it still rejects, a second owner in a per-owner fixture — not only the positive one. A concurrency test proves a call is blocked by observing the lock wait (`pg_stat_activity`), not by a fixed sleep. A claim about upstream behaviour is settled against the host the deployed service resolves (in-cluster), not a curl against the public edge.
+Edge cases, observability calls, cache invalidation branches, production/default config branches, and deterministic ordering need tests when they are part of the behavior. Cache-invalidation tests pair every cleared-cache assertion with a negative assertion that unrelated caches stay untouched. Merge/dedup precedence tests use distinct objects sharing the same key — identical objects pass under either precedence. Behavior added to one method of a sibling set (`get`/`post`/`delete`) is covered on every sibling, and specs written for an approach abandoned during review are deleted rather than left to pass vacuously. Every gate, scoping filter or safety setting, including a widened gated list (versions, chains, providers) and a framework option read as metadata (`@Processor({ maxStalledCount: 0 })`, a queue's global concurrency), has a case that fails when it is removed — the negative case proving it still rejects, a second owner in a per-owner fixture — not only the positive one. A concurrency test proves a call is blocked by observing the lock wait (`pg_stat_activity`), not by a fixed sleep. A claim about upstream behaviour is settled against the host the deployed service resolves (in-cluster), not a curl against the public edge.
 
 **✅ Check**\
-> Do tests cover edge cases, side effects, and deterministic behavior, and does every gate or filter have a case that fails without it?
+> Do tests cover edge cases, side effects, and deterministic behavior, and does every gate, filter or safety setting have a case that fails without it?
 
 <details>
 <summary><strong>💡 Example 1 of 2</strong> — <code>examples/testing.md</code> § <em>test-09-cover-the-negative-paths-around-safety-critical-extraction</em></summary>
@@ -3668,16 +3753,16 @@ Redirect and callback targets are strictly validated for protocol, domain, crede
 <a id="sec-02"></a>
 ### `SEC-02` Bounded sensitive fields
 
-> **general** · security · 2 examples · ↩ `RL-20251219-001` · `RL-20260604-003`
+> **general** · security · 3 examples · ↩ `RL-20251219-001` · `RL-20260604-003` · `RL-20261016-010` · `RL-20261019-006`
 
 **📜 Rule**\
-Secrets, unverified payloads, encrypted material, and sensitive response fields are bounded and explicitly selected. Job IDs and externally exposed IDs are random UUIDs, not sequential. Filenames in shared object stores include a uniqueness suffix beyond a timestamp. Predicates that use `if (a && !a.flag)` must model the "doesn't exist" branch explicitly. Flags that persist request payloads to external/third-party services default to the least-retentive option (`save_if_fails`, not `save: true`).
+Secrets, unverified payloads, encrypted material, and sensitive response fields are bounded and explicitly selected. Job IDs and externally exposed IDs are random UUIDs, not sequential. Filenames in shared object stores include a uniqueness suffix beyond a timestamp. Predicates that use `if (a && !a.flag)` must model the "doesn't exist" branch explicitly. Flags that persist request payloads to external/third-party services default to the least-retentive option (`save_if_fails`, not `save: true`). User-submitted rows are bounded in count and lifetime: a table whose rows serve a purpose that ends ships with its pruning.
 
 **✅ Check**\
 > Are secrets, unverified payloads, and sensitive fields bounded and explicitly selected?
 
 <details>
-<summary><strong>💡 Example 1 of 2</strong> — <code>examples/auth-and-secrets.md</code> § <em>sec-02-default-headers-come-first-caller-headers-override</em></summary>
+<summary><strong>💡 Example 1 of 3</strong> — <code>examples/auth-and-secrets.md</code> § <em>sec-02-default-headers-come-first-caller-headers-override</em></summary>
 
 <br>
 
@@ -3738,7 +3823,7 @@ leaving an explicit override path open.
 </details>
 
 <details>
-<summary><strong>💡 Example 2 of 2</strong> — <code>examples/auth-and-secrets.md</code> § <em>sec-02-log-04-sensitive-request-material-never-appears-raw-in-logs-or-cache-keys</em></summary>
+<summary><strong>💡 Example 2 of 3</strong> — <code>examples/auth-and-secrets.md</code> § <em>sec-02-log-04-sensitive-request-material-never-appears-raw-in-logs-or-cache-keys</em></summary>
 
 <br>
 
@@ -3783,6 +3868,43 @@ fields that do not include `Authorization` keeps the contract pinned.
 
 </details>
 
+<details>
+<summary><strong>💡 Example 3 of 3</strong> — <code>examples/schemas-and-validation.md</code> § <em>sec-02-a-request-array-from-a-closed-set-is-capped-at-the-sets-size</em></summary>
+
+<br>
+
+**SEC-02 — A request array from a closed set is capped at the set's size**
+
+Source: PR #3613 (RL-20261016-010)
+
+### Avoid
+
+```ts
+export const Features = ['FEATURE_A'] as const;
+export const FeatureSchema = z.enum(Features);
+
+export const FeaturesSchema = z.array(FeatureSchema);
+```
+
+### Prefer
+
+```ts
+export const FeaturesSchema = z
+  .array(FeatureSchema)
+  .max(Features.length);
+```
+
+### Why
+
+Every element is already checked against the set, but without a maximum the
+endpoint still parses an arbitrarily long body before rejecting it. A list of
+distinct members can never be longer than the set, so the set's size is the
+natural bound.
+
+<sub>Source: <a href="examples/schemas-and-validation.md#sec-02-a-request-array-from-a-closed-set-is-capped-at-the-sets-size">examples/schemas-and-validation.md#sec-02-a-request-array-from-a-closed-set-is-capped-at-the-sets-size</a></sub>
+
+</details>
+
 ---
 
 <a id="sec-03"></a>
@@ -3803,10 +3925,10 @@ A workflow holding write scopes or `id-token: write` never checks out or execute
 <a id="cache-03"></a>
 ### `CACHE-03` Cached payload shape is canonical once
 
-> **general** · cache · 2 examples · ↩ `RL-20260128-001` · `RL-20260123-001` · `RL-20260121-001` · `RL-20260114-001`
+> **general** · cache · 2 examples · ↩ `RL-20260128-001` · `RL-20260123-001` · `RL-20260121-001` · `RL-20260114-001` · `RL-20261016-006`
 
 **📜 Rule**\
-Cache readers and writers must agree whether payloads are raw upstream data or normalized domain data; document expiry-only caches that have no invalidation hook.
+Cache readers and writers must agree whether payloads are raw upstream data or normalized domain data; document expiry-only caches that have no invalidation hook. A read that polls for a state change goes through the uncached client (`getUncachedApi`); a cached read, a cached not-found included, hides the change for its TTL.
 
 **✅ Check**\
 > Did this add or change a cached datasource payload? If yes, is normalization applied exactly once and are invalidation/expiry semantics documented?
@@ -3986,10 +4108,10 @@ stops paging. Links must describe the page that was actually served.
 <a id="resilience-01"></a>
 ### `RESILIENCE-01` Resilience policy semantics
 
-> resilience · 5 examples · ↩ `RL-20251215-002` · `RL-20260626-002` · `RL-20260818-001` · `RL-20260917-002` · `RL-20260924-001`
+> resilience · 5 examples · ↩ `RL-20251215-002` · `RL-20260626-002` · `RL-20260818-001` · `RL-20260917-002` · `RL-20260924-001` · `RL-20261016-003`
 
 **📜 Rule**\
-Circuit breakers, retries, and rate limiters classify failures intentionally (include network/timeout errors, not only HTTP 5xx); scope policy keys per-service (hostname or service base URL), not per full URL; do not record policy-blocked attempts as policy failures; distinguish absolute timestamps from durations in stale-cleanup math; and keep the error type observed by callers consistent regardless of whether the policy path is taken. When adding a throwing call inside an existing try/catch, extend the catch's rethrow list so intentional domain errors (e.g. `LimitReachedError` → 429) are not re-wrapped into 5xx. Fail-open plus a manual recovery path is two mechanisms for one job: a non-blocking automation fails loudly instead, and removing the recovery path means revisiting the fail-open. A caller that compensates needs "rejected" separated from "outcome unknown"; one error funnel per layer serves callers that only fail, not callers that undo. Trip and recovery thresholds are asymmetric on purpose: HALF_OPEN closes only after the full consecutive-success threshold, never the reduced reopen threshold — check the failure rates upstreams actually show before retuning either.
+Circuit breakers, retries, and rate limiters classify failures intentionally (include network/timeout errors, not only HTTP 5xx); scope policy keys per-service (hostname or service base URL), not per full URL; do not record policy-blocked attempts as policy failures; distinguish absolute timestamps from durations in stale-cleanup math; and keep the error type observed by callers consistent regardless of whether the policy path is taken. When adding a throwing call inside an existing try/catch, extend the catch's rethrow list so intentional domain errors (e.g. `LimitReachedError` → 429) are not re-wrapped into 5xx. Fail-open plus a manual recovery path is two mechanisms for one job: a non-blocking automation fails loudly instead, and removing the recovery path means revisiting the fail-open. A caller that compensates needs "rejected" separated from "outcome unknown"; one error funnel per layer serves callers that only fail, not callers that undo. Trip and recovery thresholds are asymmetric on purpose: HALF_OPEN closes only after the full consecutive-success threshold, never the reduced reopen threshold — check the failure rates upstreams actually show before retuning either. Every outbound call is bounded by a timeout, scripts included, and one layer owns retries: an SDK client called from a retrying job sets `maxAttempts: 1` (the SES client precedent).
 
 **✅ Check**\
 > For new resilience code: did I list the failure types I count, scope the key per-service, leave blocked-by-policy out of the failure counter, and make sure the policy-on path throws the same error type as the policy-off path?

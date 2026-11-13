@@ -96,7 +96,7 @@
     "project": "general",
     "area": "scope",
     "title": "Docs aligned with behavior",
-    "rule": "Docs, samples, runbooks, and `.env.sample` must reflect the final behavior of the PR. Docs do not carry exact counts (test totals) that drift with every PR. Swagger descriptions do not restate enum members; let the schema or `enum` metadata carry the value list. Operator runbooks are part of the safety contract: a change that alters what is safe to do in which order rewrites them in the same PR, citing symbolic constants rather than repeating literals. A change that alters a pattern the guides document updates those guides in the same PR — including changes arriving via a merge — and the check is whether the rule still describes the code, not merely whether its paths resolve. A guide does not enumerate or restate what another guide owns — it points at the owner and declares open sets open.",
+    "rule": "Docs, samples, runbooks, and `.env.sample` must reflect the final behavior of the PR. Docs do not carry exact counts (test totals) that drift with every PR. Swagger descriptions do not restate enum members; let the schema or `enum` metadata carry the value list. Operator runbooks are part of the safety contract: a change that alters what is safe to do in which order rewrites them in the same PR, citing symbolic constants rather than repeating literals. A change that alters a pattern the guides document updates those guides in the same PR — including changes arriving via a merge — and the check is whether the rule still describes the code, not merely whether its paths resolve. A guide does not enumerate or restate what another guide owns — it points at the owner and declares open sets open. Module-specific docs live in that module's `README.md`; the root README links them instead of holding them.",
     "check": "Are docs, samples, and runbooks aligned with the final behavior?",
     "exampleRefs": [],
     "reviewLearningIds": [
@@ -111,7 +111,8 @@
       "RL-20260820-001",
       "RL-20260921-003",
       "RL-20261009-008",
-      "RL-20261014-005"
+      "RL-20261014-005",
+      "RL-20261016-001"
     ]
   },
   {
@@ -130,7 +131,8 @@
       "RL-20260707-003",
       "RL-20260717-003",
       "RL-20260922-001",
-      "RL-20260925-004"
+      "RL-20260925-004",
+      "RL-20261016-005"
     ]
   },
   {
@@ -153,15 +155,16 @@
     "project": "general",
     "area": "modules",
     "title": "No private behavior leaks",
-    "rule": "Public interfaces must not expose private helpers; do not add optional methods to shared interfaces — split with `IFooWithBar extends IFoo` instead.",
-    "check": "Did I avoid exposing private helper behavior through public interfaces?",
+    "rule": "Public interfaces must not expose private helpers; do not add optional methods to shared interfaces — split with `IFooWithBar extends IFoo` instead. A module does not re-export an inner module to give one caller raw access; it adds a narrow, explicitly named method to its repository (`relayWithoutLimits()`).",
+    "check": "Did I avoid exposing private helper behavior through public interfaces or module exports?",
     "exampleRefs": [
       "examples/schemas-and-validation.md#mod-04-do-not-export-private-intermediate-schemas",
       "examples/schemas-and-validation.md#mod-04-do-not-export-symbols-that-are-not-consumed-externally"
     ],
     "reviewLearningIds": [
       "RL-20251223-001",
-      "RL-20251216-002"
+      "RL-20251216-002",
+      "RL-20261016-004"
     ]
   },
   {
@@ -190,7 +193,8 @@
       "RL-20260506-001",
       "RL-20260602-004",
       "RL-20260922-003",
-      "RL-20261014-009"
+      "RL-20261014-009",
+      "RL-20261016-008"
     ]
   },
   {
@@ -198,7 +202,7 @@
     "project": "general",
     "area": "naming",
     "title": "Reuse existing helpers",
-    "rule": "Before adding a small util, search the repo and well-known libraries (`viem.isAddressEqual`, `@/logging/utils.asError`, shared schemas, `safe-deployments`); reuse `LoggingService`, `*Mapper` classes, and `HttpErrorFactory` instead of bare alternates. Cross a seam with the plain value (a timeout in ms, a plaintext address), not a caller-constructed object or caller-derived key (an `AbortSignal`, a blind-index seat key), so it is built in exactly one place. A single-item read that gains a batch variant delegates to it (`(await findByIds([id])).get(id) ?? []`) instead of keeping its own query.",
+    "rule": "Before adding a small util, search the repo and well-known libraries (`viem.isAddressEqual`, `@/logging/utils.asError`, shared schemas, `safe-deployments`); reuse `LoggingService`, `*Mapper` classes, and `HttpErrorFactory` instead of bare alternates. Cross a seam with the plain value (a timeout in ms, a plaintext address), not a caller-constructed object or caller-derived key (an `AbortSignal`, a blind-index seat key), so it is built in exactly one place. A single-item read that gains a batch variant delegates to it (`(await findByIds([id])).get(id) ?? []`) instead of keeping its own query. Plan and quota gating go through the entitlements model (`assertFeatureGranted`, `assertWithinQuota` on a seeded feature), not a live billing call or a local list of plans.",
     "check": "Did I reuse existing helpers, constants homes, and utilities?",
     "exampleRefs": [
       "examples/repositories-and-pagination.md#config-03-reuse-01-knobs-follow-the-existing-config-driven-precedent",
@@ -215,7 +219,8 @@
       "RL-20260925-005",
       "RL-20261002-004",
       "RL-20261009-011",
-      "RL-20261014-004"
+      "RL-20261014-004",
+      "RL-20261019-003"
     ]
   },
   {
@@ -360,7 +365,7 @@
     "project": "general",
     "area": "types",
     "title": "No unsafe casts",
-    "rule": "Avoid `as Type` casts that lie to the type system; use `Pick`/`Partial` parameter types and `unknown` with type guards. ConfigurationService generics must match the stored type, including `null`. Implementations keep the interface's declared narrow parameter types (no widening to `QueryDeepPartialEntity`), and payload type aliases derive from schemas (`z.infer<typeof Schema>['payload']`) instead of restating shapes. Type a fold through the `reduce<T>` generic or its seed rather than casting the result `as T`. A value read from configuration and returned to callers repeatedly is copied at the boundary, not left shared because something downstream happens to re-parse it. Build the real platform object (`new Response(null, { status })`) instead of casting a literal to it. Type a parameter to exactly what the method handles (`BinaryFeature`, not the whole `FeatureKey` union) so a caller cannot route in a case the method silently mishandles.",
+    "rule": "Avoid `as Type` casts that lie to the type system; use `Pick`/`Partial` parameter types and `unknown` with type guards. ConfigurationService generics must match the stored type, including `null`. Implementations keep the interface's declared narrow parameter types (no widening to `QueryDeepPartialEntity`), and payload type aliases derive from schemas (`z.infer<typeof Schema>['payload']`) instead of restating shapes. Type a fold through the `reduce<T>` generic or its seed rather than casting the result `as T`. A value read from configuration and returned to callers repeatedly is copied at the boundary, not left shared because something downstream happens to re-parse it. Build the real platform object (`new Response(null, { status })`) instead of casting a literal to it. Type a parameter to exactly what the method handles (`BinaryFeature`, not the whole `FeatureKey` union) so a caller cannot route in a case the method silently mishandles. Take a type from its source instead of a cast (parse a valid fixture through `HexSchema` rather than `as Hex`), and declare the return type of exported functions, derived from the source of truth where one exists (an ABI).",
     "check": "Did I avoid unsafe casts, `any`, and silent type drift?",
     "exampleRefs": [
       "examples/style.md#style-01-type-06-destructuring-with-the-same-name-shadows-the-outer-binding",
@@ -376,7 +381,8 @@
       "RL-20260821-001",
       "RL-20260921-004",
       "RL-20261001-007",
-      "RL-20261008-005"
+      "RL-20261008-005",
+      "RL-20261016-007"
     ]
   },
   {
@@ -384,7 +390,7 @@
     "project": "general",
     "area": "auth",
     "title": "Space routes enforce membership before data access",
-    "rule": "Every space-scoped controller is guarded with `AuthGuard`, accepts the authenticated payload, and verifies space membership/admin authorization in the route service before querying or returning space-owned data. When the membership predicate is a TypeORM `where`, remember an array `where` is OR: every clause must carry the `user: { id }` ownership filter (a single unfiltered clause leaks other spaces, or matches all rows when its scope is undefined). Centralize the predicate in a shared helper and regression-test a non-member requesting a specific space id. A space-owned resource fetched by an opaque upstream id alone (no space in the route) structurally bypasses membership checks — design the upstream contract to map the resource back to the space, or explicitly document the accepted authorization gap in the PR. Sibling routes on one resource share its authorization level: narrowing one (member → admin) narrows every sibling that can start, change, or hand out a way to manage that resource.",
+    "rule": "Every space-scoped controller is guarded with `AuthGuard`, accepts the authenticated payload, and verifies space membership/admin authorization in the route service before querying or returning space-owned data. When the membership predicate is a TypeORM `where`, remember an array `where` is OR: every clause must carry the `user: { id }` ownership filter (a single unfiltered clause leaks other spaces, or matches all rows when its scope is undefined). Centralize the predicate in a shared helper and regression-test a non-member requesting a specific space id. A space-owned resource fetched by an opaque upstream id alone (no space in the route) structurally bypasses membership checks — design the upstream contract to map the resource back to the space, or explicitly document the accepted authorization gap in the PR. Sibling routes on one resource share its authorization level: narrowing one (member → admin) narrows every sibling that can start, change, or hand out a way to manage that resource. A workspace-scoped or workspace-charged action takes `spaceId` from the path; the server never picks the workspace itself (such as the lowest id holding the Safe).",
     "check": "Did this add or change a space-scoped route or its membership `where`? If yes, is it auth-guarded, does the service assert membership/admin before data access, and does every OR clause of the `where` carry the user filter, and do sibling routes on the same resource require the same role?",
     "exampleRefs": [
       "examples/auth-and-secrets.md#auth-05-every-or-clause-of-a-membership-where-carries-the-user-filter"
@@ -394,7 +400,8 @@
       "RL-20260602-001",
       "RL-20260717-002",
       "RL-20260921-001",
-      "RL-20260928-002"
+      "RL-20260928-002",
+      "RL-20261019-001"
     ]
   },
   {
@@ -436,15 +443,17 @@
     "project": "general",
     "area": "routes",
     "title": "Stable empty shapes",
-    "rule": "Use 403 (not 404) for permission failures with an existing resource. Empty responses use stable empty shapes. Assert membership/authorization before a guarded write — do not encode it in a WHERE clause whose `affected === 0` surfaces as 404 where siblings return 403. \"Server has not implemented this\" is 501, not 403; error-constructor params are typed with the enum callers pass, not `string`.",
+    "rule": "Use 403 (not 404) for permission failures with an existing resource. Empty responses use stable empty shapes. Assert membership/authorization before a guarded write — do not encode it in a WHERE clause whose `affected === 0` surfaces as 404 where siblings return 403. \"Server has not implemented this\" is 501, not 403; error-constructor params are typed with the enum callers pass, not `string`. A 403 does not reveal which ownership or registration check failed (a Safe outside the workspace gets a bare `ForbiddenException()`).",
     "check": "Do empty responses use stable empty shapes?",
     "exampleRefs": [
-      "examples/error-handling.md#log-01-route-03-unknown-mappings-return-absence-not-a-plausible-default"
+      "examples/error-handling.md#log-01-route-03-unknown-mappings-return-absence-not-a-plausible-default",
+      "examples/error-handling.md#route-03-a-403-does-not-say-which-check-failed"
     ],
     "reviewLearningIds": [
       "RL-20260114-002",
       "RL-20260615-003",
-      "RL-20260619-004"
+      "RL-20260619-004",
+      "RL-20261019-005"
     ]
   },
   {
@@ -464,7 +473,7 @@
     "project": "general",
     "area": "database",
     "title": "Atomic state transitions",
-    "rule": "Multi-step status transitions are atomic (single SQL/ORM bulk call or wrapped transaction); do not loop awaits to mutate N rows. Writes that must commit or roll back together must run on the same outer `EntityManager`/transaction — a find-or-create helper invoked inside a transaction must accept and thread the outer `EntityManager` rather than opening its own, or a later failure leaves orphan committed rows. Conversely, do not wrap a single-statement write in a transaction — one statement is already atomic. A staleness or ordering guard is re-checked inside the lock it protects; a value read before the lock is carried in and re-compared, never trusted. The transaction lives with the use case, expensive I/O (KMS, upstream calls) happens before the lock is taken, and any quantity being enforced on — including the set of rows to lock — is read inside it. Paths that take several row locks follow one order, documented on the lock helpers. A compensating action reverses the exact record the original wrote, carried forward from the charge — never one resolved again at refund time.",
+    "rule": "Multi-step status transitions are atomic (single SQL/ORM bulk call or wrapped transaction); do not loop awaits to mutate N rows. Writes that must commit or roll back together must run on the same outer `EntityManager`/transaction — a find-or-create helper invoked inside a transaction must accept and thread the outer `EntityManager` rather than opening its own, or a later failure leaves orphan committed rows. Conversely, do not wrap a single-statement write in a transaction — one statement is already atomic. A staleness or ordering guard is re-checked inside the lock it protects; a value read before the lock is carried in and re-compared, never trusted. The transaction lives with the use case, expensive I/O (KMS, upstream calls) happens before the lock is taken, and any quantity being enforced on — including the set of rows to lock — is read inside it. Paths that take several row locks follow one order, documented on the lock helpers. A compensating action reverses the exact record the original wrote, carried forward from the charge — never one resolved again at refund time. A quota is charged only for the side effect that happened: claim the item atomically so a concurrent duplicate neither counts nor acts, and release the slot when the side effect fails.",
     "check": "Are multi-step state transitions atomic, do helpers called inside a transaction share the outer EntityManager instead of opening their own, and do multi-row locks follow the documented order?",
     "exampleRefs": [
       "examples/database-migrations.md#db-02-reverse-the-record-the-charge-wrote-not-a-freshly-resolved-one"
@@ -476,7 +485,8 @@
       "RL-20260826-003",
       "RL-20260917-001",
       "RL-20261001-006",
-      "RL-20261009-014"
+      "RL-20261009-014",
+      "RL-20261019-002"
     ]
   },
   {
@@ -510,7 +520,7 @@
     "project": "general",
     "area": "database",
     "title": "Migrations agree with code",
-    "rule": "Migrations, TypeORM entities, enum transformers, FK/index choices, rollback assumptions, and repository integration tests must agree. Status backfills must preserve the runtime invariants for that status and avoid raw enum ordinals when a narrower predicate is available. Index a column only if a query actually uses it; column max length must equal the validation constant (shared as a named constant between schema and entity, never an inline literal), and an entity column limit changes only together with the migration that enforces it; unique-constraint names follow `UQ_<table>_<field>_<field>`. A migration that joins/compares an address column whose entity uses a checksum transformer (`getAddress()`) must normalize both sides (`LOWER(...)`), or same-address rows stored with different casing fail to match. New product tables use a generated integer surrogate PK with a UNIQUE constraint on the natural key; column value conversion uses TypeORM transformers, not manual mapping in the repository.",
+    "rule": "Migrations, TypeORM entities, enum transformers, FK/index choices, rollback assumptions, and repository integration tests must agree. Status backfills must preserve the runtime invariants for that status and avoid raw enum ordinals when a narrower predicate is available. Index a column only if a query actually uses it; column max length must equal the validation constant (shared as a named constant between schema and entity, never an inline literal), and an entity column limit changes only together with the migration that enforces it; unique-constraint names follow `UQ_<table>_<field>_<field>`. A migration that joins/compares an address column whose entity uses a checksum transformer (`getAddress()`) must normalize both sides (`LOWER(...)`), or same-address rows stored with different casing fail to match. New product tables use a generated integer surrogate PK with a UNIQUE constraint on the natural key; column value conversion uses TypeORM transformers, not manual mapping in the repository. A column holding members of a closed set is checked against the current set on read, in its transformer, so a retired member never reaches a response. Byte values (hashes, roots) are stored as lowercase `0x` hex text like addresses, not `bytea`.",
     "check": "Do migrations, entities, indexes, schemas, and tests agree, and do address joins normalize case (LOWER) on both sides when one side is checksum-transformed?",
     "exampleRefs": [
       "examples/database-migrations.md#db-05-do-not-use-the-recorded-migration-id-as-an-array-index",
@@ -522,7 +532,9 @@
       "RL-20260116-001",
       "RL-20260601-001",
       "RL-20260604-001",
-      "RL-20260713-002"
+      "RL-20260713-002",
+      "RL-20261016-009",
+      "RL-20261019-004"
     ]
   },
   {
@@ -602,10 +614,11 @@
     "project": "general",
     "area": "config",
     "title": "TTLs are config",
-    "rule": "TTLs/timeouts/cache settings and environment-specific URLs are configured, not hardcoded (a TODO does not ship). Follow precedents in similar repositories before introducing new hardcoded knobs. A bound that appears in the published contract (Swagger text, generated clients) stays a constant; put the tunability on something the contract does not name. A safety cap with the same value in every environment (a max-pages guard on a loop) stays a named constant.",
-    "check": "Are TTLs/timeouts/tunables configured (safety caps identical in every environment may stay constants)?",
+    "rule": "TTLs/timeouts/cache settings and environment-specific URLs are configured, not hardcoded (a TODO does not ship). Follow precedents in similar repositories before introducing new hardcoded knobs. A bound that appears in the published contract (Swagger text, generated clients) stays a constant; put the tunability on something the contract does not name. A safety cap with the same value in every environment (a max-pages guard on a loop) stays a named constant. A knob that is dangerous to change (queue attempts, backoff, retention) still follows the config-driven precedent: the danger becomes a `RootConfigurationSchema` bound that fails at boot, no tighter than the safety argument, never a hardcoded exception.",
+    "check": "Are TTLs/timeouts/tunables configured, with dangerous ones bounded in the schema rather than hardcoded (safety caps identical in every environment may stay constants)?",
     "exampleRefs": [
-      "examples/repositories-and-pagination.md#config-03-reuse-01-knobs-follow-the-existing-config-driven-precedent"
+      "examples/repositories-and-pagination.md#config-03-reuse-01-knobs-follow-the-existing-config-driven-precedent",
+      "examples/configuration.md#config-03-a-dangerous-knob-is-a-schema-bound-not-a-hardcoded-exception"
     ],
     "reviewLearningIds": [
       "RL-20260506-003",
@@ -613,7 +626,8 @@
       "RL-20260707-003",
       "RL-20260911-004",
       "RL-20260925-001",
-      "RL-20260928-001"
+      "RL-20260928-001",
+      "RL-20261016-002"
     ]
   },
   {
@@ -805,8 +819,8 @@
     "project": "general",
     "area": "tests",
     "title": "Cover edges and determinism",
-    "rule": "Edge cases, observability calls, cache invalidation branches, production/default config branches, and deterministic ordering need tests when they are part of the behavior. Cache-invalidation tests pair every cleared-cache assertion with a negative assertion that unrelated caches stay untouched. Merge/dedup precedence tests use distinct objects sharing the same key — identical objects pass under either precedence. Behavior added to one method of a sibling set (`get`/`post`/`delete`) is covered on every sibling, and specs written for an approach abandoned during review are deleted rather than left to pass vacuously. Every gate or scoping filter, including a widened gated list (versions, chains, providers), has a case that fails when it is removed — the negative case proving it still rejects, a second owner in a per-owner fixture — not only the positive one. A concurrency test proves a call is blocked by observing the lock wait (`pg_stat_activity`), not by a fixed sleep. A claim about upstream behaviour is settled against the host the deployed service resolves (in-cluster), not a curl against the public edge.",
-    "check": "Do tests cover edge cases, side effects, and deterministic behavior, and does every gate or filter have a case that fails without it?",
+    "rule": "Edge cases, observability calls, cache invalidation branches, production/default config branches, and deterministic ordering need tests when they are part of the behavior. Cache-invalidation tests pair every cleared-cache assertion with a negative assertion that unrelated caches stay untouched. Merge/dedup precedence tests use distinct objects sharing the same key — identical objects pass under either precedence. Behavior added to one method of a sibling set (`get`/`post`/`delete`) is covered on every sibling, and specs written for an approach abandoned during review are deleted rather than left to pass vacuously. Every gate, scoping filter or safety setting, including a widened gated list (versions, chains, providers) and a framework option read as metadata (`@Processor({ maxStalledCount: 0 })`, a queue's global concurrency), has a case that fails when it is removed — the negative case proving it still rejects, a second owner in a per-owner fixture — not only the positive one. A concurrency test proves a call is blocked by observing the lock wait (`pg_stat_activity`), not by a fixed sleep. A claim about upstream behaviour is settled against the host the deployed service resolves (in-cluster), not a curl against the public edge.",
+    "check": "Do tests cover edge cases, side effects, and deterministic behavior, and does every gate, filter or safety setting have a case that fails without it?",
     "exampleRefs": [
       "examples/testing.md#test-09-cover-the-negative-paths-around-safety-critical-extraction",
       "examples/testing.md#test-09-prove-a-lock-wait-by-observing-it-not-by-sleeping"
@@ -880,15 +894,18 @@
     "project": "general",
     "area": "security",
     "title": "Bounded sensitive fields",
-    "rule": "Secrets, unverified payloads, encrypted material, and sensitive response fields are bounded and explicitly selected. Job IDs and externally exposed IDs are random UUIDs, not sequential. Filenames in shared object stores include a uniqueness suffix beyond a timestamp. Predicates that use `if (a && !a.flag)` must model the \"doesn't exist\" branch explicitly. Flags that persist request payloads to external/third-party services default to the least-retentive option (`save_if_fails`, not `save: true`).",
+    "rule": "Secrets, unverified payloads, encrypted material, and sensitive response fields are bounded and explicitly selected. Job IDs and externally exposed IDs are random UUIDs, not sequential. Filenames in shared object stores include a uniqueness suffix beyond a timestamp. Predicates that use `if (a && !a.flag)` must model the \"doesn't exist\" branch explicitly. Flags that persist request payloads to external/third-party services default to the least-retentive option (`save_if_fails`, not `save: true`). User-submitted rows are bounded in count and lifetime: a table whose rows serve a purpose that ends ships with its pruning.",
     "check": "Are secrets, unverified payloads, and sensitive fields bounded and explicitly selected?",
     "exampleRefs": [
       "examples/auth-and-secrets.md#sec-02-default-headers-come-first-caller-headers-override",
-      "examples/auth-and-secrets.md#sec-02-log-04-sensitive-request-material-never-appears-raw-in-logs-or-cache-keys"
+      "examples/auth-and-secrets.md#sec-02-log-04-sensitive-request-material-never-appears-raw-in-logs-or-cache-keys",
+      "examples/schemas-and-validation.md#sec-02-a-request-array-from-a-closed-set-is-capped-at-the-sets-size"
     ],
     "reviewLearningIds": [
       "RL-20251219-001",
-      "RL-20260604-003"
+      "RL-20260604-003",
+      "RL-20261016-010",
+      "RL-20261019-006"
     ]
   },
   {
@@ -909,7 +926,7 @@
     "project": "general",
     "area": "cache",
     "title": "Cached payload shape is canonical once",
-    "rule": "Cache readers and writers must agree whether payloads are raw upstream data or normalized domain data; document expiry-only caches that have no invalidation hook.",
+    "rule": "Cache readers and writers must agree whether payloads are raw upstream data or normalized domain data; document expiry-only caches that have no invalidation hook. A read that polls for a state change goes through the uncached client (`getUncachedApi`); a cached read, a cached not-found included, hides the change for its TTL.",
     "check": "Did this add or change a cached datasource payload? If yes, is normalization applied exactly once and are invalidation/expiry semantics documented?",
     "exampleRefs": [
       "examples/cache.md#cache-03-document-expiry-only-caches-at-the-call-site",
@@ -919,7 +936,8 @@
       "RL-20260128-001",
       "RL-20260123-001",
       "RL-20260121-001",
-      "RL-20260114-001"
+      "RL-20260114-001",
+      "RL-20261016-006"
     ]
   },
   {
@@ -942,7 +960,7 @@
     "id": "RESILIENCE-01",
     "area": "resilience",
     "title": "Resilience policy semantics",
-    "rule": "Circuit breakers, retries, and rate limiters classify failures intentionally (include network/timeout errors, not only HTTP 5xx); scope policy keys per-service (hostname or service base URL), not per full URL; do not record policy-blocked attempts as policy failures; distinguish absolute timestamps from durations in stale-cleanup math; and keep the error type observed by callers consistent regardless of whether the policy path is taken. When adding a throwing call inside an existing try/catch, extend the catch's rethrow list so intentional domain errors (e.g. `LimitReachedError` → 429) are not re-wrapped into 5xx. Fail-open plus a manual recovery path is two mechanisms for one job: a non-blocking automation fails loudly instead, and removing the recovery path means revisiting the fail-open. A caller that compensates needs \"rejected\" separated from \"outcome unknown\"; one error funnel per layer serves callers that only fail, not callers that undo. Trip and recovery thresholds are asymmetric on purpose: HALF_OPEN closes only after the full consecutive-success threshold, never the reduced reopen threshold — check the failure rates upstreams actually show before retuning either.",
+    "rule": "Circuit breakers, retries, and rate limiters classify failures intentionally (include network/timeout errors, not only HTTP 5xx); scope policy keys per-service (hostname or service base URL), not per full URL; do not record policy-blocked attempts as policy failures; distinguish absolute timestamps from durations in stale-cleanup math; and keep the error type observed by callers consistent regardless of whether the policy path is taken. When adding a throwing call inside an existing try/catch, extend the catch's rethrow list so intentional domain errors (e.g. `LimitReachedError` → 429) are not re-wrapped into 5xx. Fail-open plus a manual recovery path is two mechanisms for one job: a non-blocking automation fails loudly instead, and removing the recovery path means revisiting the fail-open. A caller that compensates needs \"rejected\" separated from \"outcome unknown\"; one error funnel per layer serves callers that only fail, not callers that undo. Trip and recovery thresholds are asymmetric on purpose: HALF_OPEN closes only after the full consecutive-success threshold, never the reduced reopen threshold — check the failure rates upstreams actually show before retuning either. Every outbound call is bounded by a timeout, scripts included, and one layer owns retries: an SDK client called from a retrying job sets `maxAttempts: 1` (the SES client precedent).",
     "check": "For new resilience code: did I list the failure types I count, scope the key per-service, leave blocked-by-policy out of the failure counter, and make sure the policy-on path throws the same error type as the policy-off path?",
     "exampleRefs": [
       "examples/resilience.md#resilience-01-classify-failures-and-scope-the-policy-key",
@@ -956,7 +974,8 @@
       "RL-20260626-002",
       "RL-20260818-001",
       "RL-20260917-002",
-      "RL-20260924-001"
+      "RL-20260924-001",
+      "RL-20261016-003"
     ]
   }
 ]

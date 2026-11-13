@@ -142,3 +142,32 @@ the wrong chain — the response looks valid, the metric is clean, and the
 bug only shows up when a user notices their multi-chain wallet has the
 wrong totals. Returning absence forces every caller to handle the
 unknown case at the boundary they own.
+
+## ROUTE-03 — A 403 does not say which check failed
+
+Source: PR #3450 (RL-20261019-005)
+
+### Avoid
+
+```ts
+if (!isInSpace) {
+  throw new ForbiddenException('Safe is not registered to this Workspace.');
+}
+```
+
+### Prefer
+
+```ts
+if (!isInSpace) {
+  throw new ForbiddenException();
+}
+
+// spec
+await expect(target.create(request)).rejects.toThrow(new ForbiddenException());
+```
+
+### Why
+
+The message tells a caller who may not belong to the workspace which Safes
+it holds. The status already says "not allowed"; naming the failed check only
+helps someone probing resources they cannot see.

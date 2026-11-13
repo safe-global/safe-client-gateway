@@ -331,3 +331,31 @@ export const CompoundIdSchema = z
 The transform only splits; `.pipe()` hands the parts to the schema that owns
 their rules, so each part's own issue and path reach the 422 body unchanged
 without a hand-written re-raise loop.
+
+## SEC-02 — A request array from a closed set is capped at the set's size
+
+Source: PR #3613 (RL-20261016-010)
+
+### Avoid
+
+```ts
+export const Features = ['FEATURE_A'] as const;
+export const FeatureSchema = z.enum(Features);
+
+export const FeaturesSchema = z.array(FeatureSchema);
+```
+
+### Prefer
+
+```ts
+export const FeaturesSchema = z
+  .array(FeatureSchema)
+  .max(Features.length);
+```
+
+### Why
+
+Every element is already checked against the set, but without a maximum the
+endpoint still parses an arbitrarily long body before rejecting it. A list of
+distinct members can never be longer than the set, so the set's size is the
+natural bound.

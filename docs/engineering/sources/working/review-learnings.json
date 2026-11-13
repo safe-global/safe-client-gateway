@@ -2035,7 +2035,9 @@
       3392,
       3451,
       3530,
-      3393
+      3393,
+      3600,
+      3595
     ],
     "prState": "merged",
     "reviewCommentIds": [
@@ -2060,14 +2062,18 @@
       4094130636,
       4095669984,
       4095670425,
-      4095674345
+      4095674345,
+      4275729256,
+      4280177566,
+      4256952543,
+      4322639007
     ],
     "reviewIds": [],
     "issueCommentIds": [
       5715183373,
       5716482690
     ],
-    "learning": "Three PRs in one week typed test mocks as `{...} as unknown as MockedObject<T>` and reached into `.mock.calls[i][j]` for assertions; review asked each time for a direct `as MockedObject<T>` cast (the `unknown` hop is redundant and hides missing method fakes) and `toHaveBeenNthCalledWith(...)` over `.mock.calls` indexing. Type mocks as `MockedObject<T>` directly and assert calls with the matcher API. Recurred again in #3247 (plus `as never` casts on arguments — same fix: type the mock/argument properly). The same `as never` escape appeared earlier in #2831 on mocked network payloads (`data: {} as never`); the repo's answer for a `Raw<T>` payload is the `rawify()` helper, not a cast. #3420 shows the tension has not settled: the author added `MockedObject<Pick<IBillingApi, ...>>` on one review comment, reverted it on another (\"it did not add anything\", and it forced `as unknown as IBillingApi`), then restored it for a third. See OQ-TEST-01. Recurred again in #3392, #3451 and #3530: six more `as unknown as MockedObject<T>` mocks, each reduced to a direct `as MockedObject<T>` on request (one reviewer: the `unknown` \"is not needed\"). In #3393 five `mockResolvedValue(... as never)` doubles were replaced with `memberBuilder().build()` and the real return shape.",
+    "learning": "Three PRs in one week typed test mocks as `{...} as unknown as MockedObject<T>` and reached into `.mock.calls[i][j]` for assertions; review asked each time for a direct `as MockedObject<T>` cast (the `unknown` hop is redundant and hides missing method fakes) and `toHaveBeenNthCalledWith(...)` over `.mock.calls` indexing. Type mocks as `MockedObject<T>` directly and assert calls with the matcher API. Recurred again in #3247 (plus `as never` casts on arguments — same fix: type the mock/argument properly). The same `as never` escape appeared earlier in #2831 on mocked network payloads (`data: {} as never`); the repo's answer for a `Raw<T>` payload is the `rawify()` helper, not a cast. #3420 shows the tension has not settled: the author added `MockedObject<Pick<IBillingApi, ...>>` on one review comment, reverted it on another (\"it did not add anything\", and it forced `as unknown as IBillingApi`), then restored it for a third. See OQ-TEST-01. Recurred again in #3392, #3451 and #3530: six more `as unknown as MockedObject<T>` mocks, each reduced to a direct `as MockedObject<T>` on request (one reviewer: the `unknown` \"is not needed\"). In #3393 five `mockResolvedValue(... as never)` doubles were replaced with `memberBuilder().build()` and the real return shape. Recurred in #3600, where review cited R-001 for `as unknown as MockedObject<ILoggingService>`; the author dropped the hop wherever a single cast compiles and kept it on three partial third-party objects (`Queue`, `Job`, `Log`) where it does not. And in #3595, where review asked why a new repository mock took `as unknown as` while its neighbours did not; the author removed it.",
     "ruleIds": [
       "TEST-01"
     ]
@@ -2201,7 +2207,9 @@
       2831,
       3329,
       3373,
-      3374
+      3374,
+      3613,
+      3564
     ],
     "prState": "merged",
     "reviewCommentIds": [
@@ -2214,7 +2222,11 @@
       3535257009,
       2593322786,
       3748768957,
-      3748799760
+      3748799760,
+      4282907595,
+      4284093848,
+      4269036209,
+      4269537591
     ],
     "reviewIds": [],
     "issueCommentIds": [
@@ -2222,7 +2234,7 @@
       5408604495,
       5411009613
     ],
-    "learning": "Auth-service specs hardcoded issuer strings and expiry days that are free inputs (faker belongs there), while a request to randomize the token role was correctly declined — `SERVICE_ACCESS` is a mint-time contract constant, not an input; the test instead asserts against the exported constant rather than a string literal. Randomize free inputs with faker; assert contract constants via their exported symbol; never randomize what the contract pins. Seen earlier in #2831, where a spec pinned `const customTimeout = 2000` for a value the test never depends on — review asked for faker there too. Recurred in #3329 on two axes: a guard address pinned to a literal, and a `chainId` pinned to a real chain although the responses were mocked — when the collaborators are mocked, the chain id is a free input too. Two more in this window: #3373 hardcoded `{ status: 400, statusText: 'Bad Request' }` in three new specs whose assertions were about truncation and capping, while the sibling cases in the same file used faker; #3374 minted a prior-session cookie from a hand-written payload that re-typed what `oidcAuthPayloadDtoBuilder()` produces, in the same PR whose unit spec used the builder. Inconsistency inside one diff is the cheapest tell.",
+    "learning": "Auth-service specs hardcoded issuer strings and expiry days that are free inputs (faker belongs there), while a request to randomize the token role was correctly declined — `SERVICE_ACCESS` is a mint-time contract constant, not an input; the test instead asserts against the exported constant rather than a string literal. Randomize free inputs with faker; assert contract constants via their exported symbol; never randomize what the contract pins. Seen earlier in #2831, where a spec pinned `const customTimeout = 2000` for a value the test never depends on — review asked for faker there too. Recurred in #3329 on two axes: a guard address pinned to a literal, and a `chainId` pinned to a real chain although the responses were mocked — when the collaborators are mocked, the chain id is a free input too. Two more in this window: #3373 hardcoded `{ status: 400, statusText: 'Bad Request' }` in three new specs whose assertions were about truncation and capping, while the sibling cases in the same file used faker; #3374 minted a prior-session cookie from a hand-written payload that re-typed what `oidcAuthPayloadDtoBuilder()` produces, in the same PR whose unit spec used the builder. Inconsistency inside one diff is the cheapest tell. Two more: #3613 sent `['recipientAllowlist']` literals in e2e specs while the builder already picked from the exported `ExperimentalFeatures` list with faker, and the author switched the specs to the same pick; #3564 pinned `safenetNonce: 60` in the test configuration, where every neighbour uses faker, and the author moved every new Safenet entry to faker.",
     "ruleIds": [
       "TEST-01"
     ]
@@ -2319,7 +2331,8 @@
       3078,
       3284,
       3454,
-      3530
+      3530,
+      3564
     ],
     "prState": "closed",
     "reviewCommentIds": [
@@ -2336,14 +2349,16 @@
       4155618283,
       4155705823,
       4156258986,
-      4156260416
+      4156260416,
+      4269066725,
+      4269538521
     ],
     "reviewIds": [],
     "issueCommentIds": [
       5771773279,
       5773979339
     ],
-    "learning": "A passkeys module declared its error class, error-id union, input/output interfaces, and parsing helpers inside the service files; review asked for one exported object per file — errors under `domain/errors/`, types under `domain/entities/`, helpers in a dedicated helpers file — and for standalone functions used by a single class to become private methods of that class. The author applied all of it. Keep one exported class/type per file and fold single-consumer functions into the class. Recurred in #3284, where an `Authenticator` type declared inline in the OIDC service file drew \"it's getting crowded, we can extract it to a types file\"; the author moved it. Recurred in #3454 as a folder-placement variant: a new guard sat in a module-root `guards/` and a new error in a module-root `errors/`, while the same PR filed the equivalent entitlements error under `domain/errors/` and its filter under `domain/exception-filters/`. The author moved the guard to `routes/guards/` and the error/filter under `domain/`, matching the sibling module. Recurred in #3530: an error file also exported the error code and reason constants, and a manager file declared a local type alias; review asked to keep only the error in its file, and the author moved the constants and types to entity files.",
+    "learning": "A passkeys module declared its error class, error-id union, input/output interfaces, and parsing helpers inside the service files; review asked for one exported object per file — errors under `domain/errors/`, types under `domain/entities/`, helpers in a dedicated helpers file — and for standalone functions used by a single class to become private methods of that class. The author applied all of it. Keep one exported class/type per file and fold single-consumer functions into the class. Recurred in #3284, where an `Authenticator` type declared inline in the OIDC service file drew \"it's getting crowded, we can extract it to a types file\"; the author moved it. Recurred in #3454 as a folder-placement variant: a new guard sat in a module-root `guards/` and a new error in a module-root `errors/`, while the same PR filed the equivalent entitlements error under `domain/errors/` and its filter under `domain/exception-filters/`. The author moved the guard to `routes/guards/` and the error/filter under `domain/`, matching the sibling module. Recurred in #3530: an error file also exported the error code and reason constants, and a manager file declared a local type alias; review asked to keep only the error in its file, and the author moved the constants and types to entity files. Recurred in #3564: review asked that everything outside the `SafenetPayer` class leave its file, and the author moved the constants to `safenet.constants.ts`, the types to `entities/safenet-payer.entity.ts` and the error to `errors/`.",
     "ruleIds": [
       "STYLE-01"
     ]
@@ -2630,7 +2645,9 @@
       3437,
       3445,
       3454,
-      3530
+      3530,
+      3618,
+      3450
     ],
     "prState": "merged",
     "reviewCommentIds": [
@@ -2654,7 +2671,10 @@
       4144340693,
       4144743113,
       4145120033,
-      4145629674
+      4145629674,
+      4312402038,
+      4313136764,
+      4313284430
     ],
     "reviewIds": [
       4762810977
@@ -2662,9 +2682,12 @@
     "issueCommentIds": [
       4971530091,
       5771722470,
-      5773927082
+      5773927082,
+      6214987546,
+      6215344467,
+      6215461735
     ],
-    "learning": "Two separate PRs drew the same objection: in #2831 `// Use custom signal if present, otherwise use default timeout` restated the line directly beneath it, and in #2824 a reduce with conditional key names was called hard to follow — the author offered \"i will add a comment that explains it step by step\" and review answered with a concrete refactor (`reduce<ThreatIssues>`, `groups[severity] ??= []`) that removed the need for the comment. A comment that narrates the next line is deleted, and a comment proposed to explain confusing code is a signal to restructure the code instead. Recurred in #3290: a TypeORM upgrade replaced `.where('1=1')` truncates and explained the removal in a three-line comment repeated at each call site; the reviewer called it redundant three times over. The settled shape is one full rationale at a single site plus a one-line pointer at the others — repeating the explanation is as much a smell as narrating the line. Also in #3250, where a comment restated the obvious \"reject if any deployed\" half and buried the non-obvious fail-open rationale; the merged comment keeps only the why. A quieter form in #3420: a doc comment on exactly one field of a schema, twice, drew \"having only 1 prop with comments is strange unless super useful\" and both were removed. A note on one field among many reads as leftover unless it carries something the field name cannot. Two more: \"should have proper TsDoc comments or no comments\" on a bare `//` note in a datasource, and a comment on an elevation-test entry that a reviewer simply could not follow — the author agreed it \"was not saying much\" and removed it. A comment that needs its own explanation is not carrying its weight. Recurred in #3445: a bare `/** Admin-only. */` on a service method was removed as noise, and a docstring tying the method to \"a fresh second factor\" and \"the gated table of `elevation.integration.spec.ts`\" drew \"I did not understand the part about second factor and an int test\"; the author rewrote it to name the guard. In #3454 a new JSDoc claimed its class \"lives in `routes/`\" when the file did not; the location claim was dropped. A comment that points at a test file or asserts a location is one more thing that goes false. Recurred in #3530 both ways: a reviewer first asked for a comment per `switch` case, then suggested private methods with clear names instead, and the author extracted them (\"it's very clear now\"); and a rewritten comment above an `if` was called hard to understand and removed because the condition now reads directly.",
+    "learning": "Two separate PRs drew the same objection: in #2831 `// Use custom signal if present, otherwise use default timeout` restated the line directly beneath it, and in #2824 a reduce with conditional key names was called hard to follow — the author offered \"i will add a comment that explains it step by step\" and review answered with a concrete refactor (`reduce<ThreatIssues>`, `groups[severity] ??= []`) that removed the need for the comment. A comment that narrates the next line is deleted, and a comment proposed to explain confusing code is a signal to restructure the code instead. Recurred in #3290: a TypeORM upgrade replaced `.where('1=1')` truncates and explained the removal in a three-line comment repeated at each call site; the reviewer called it redundant three times over. The settled shape is one full rationale at a single site plus a one-line pointer at the others — repeating the explanation is as much a smell as narrating the line. Also in #3250, where a comment restated the obvious \"reject if any deployed\" half and buried the non-obvious fail-open rationale; the merged comment keeps only the why. A quieter form in #3420: a doc comment on exactly one field of a schema, twice, drew \"having only 1 prop with comments is strange unless super useful\" and both were removed. A note on one field among many reads as leftover unless it carries something the field name cannot. Two more: \"should have proper TsDoc comments or no comments\" on a bare `//` note in a datasource, and a comment on an elevation-test entry that a reviewer simply could not follow — the author agreed it \"was not saying much\" and removed it. A comment that needs its own explanation is not carrying its weight. Recurred in #3445: a bare `/** Admin-only. */` on a service method was removed as noise, and a docstring tying the method to \"a fresh second factor\" and \"the gated table of `elevation.integration.spec.ts`\" drew \"I did not understand the part about second factor and an int test\"; the author rewrote it to name the guard. In #3454 a new JSDoc claimed its class \"lives in `routes/`\" when the file did not; the location claim was dropped. A comment that points at a test file or asserts a location is one more thing that goes false. Recurred in #3530 both ways: a reviewer first asked for a comment per `switch` case, then suggested private methods with clear names instead, and the author extracted them (\"it's very clear now\"); and a rewritten comment above an `if` was called hard to understand and removed because the condition now reads directly. Recurred in #3618: an arch-review bot flagged a spec comment that paraphrased the `it.each` title beneath it, and a review bot asked the deliberately lenient parser to say why it differs from its throwing sibling; the follow-up commit replaced the paraphrase with that reason. And in #3450 a rationale repeated across the migration, entity, DTO and service was called hard to keep in step, and the author kept it in one place.",
     "ruleIds": [
       "STYLE-01"
     ],
@@ -3578,18 +3601,28 @@
     "id": "RL-20260922-003",
     "title": "New flag and config named after the product (Copilot) while the module is Safe Shield",
     "prNumbers": [
-      3454
+      3454,
+      3613,
+      3565
     ],
     "prState": "merged",
     "reviewCommentIds": [
       4072297412,
-      4072299589
+      4072299589,
+      4282652357,
+      4284077392,
+      4284881742,
+      4285055450,
+      4284977509,
+      4291652506,
+      4292057321,
+      4293047679
     ],
     "reviewIds": [
       5278892581
     ],
     "issueCommentIds": [],
-    "learning": "A PR added `FF_COPILOT_CORE_DISABLED` / `copilotCoreDisabled` and `Copilot*` guard and error names to the Safe Shield module; review asked to align on one name (\"I am concerned that we have 2 notions for safe shield\") and the author renamed the flag, config key, guard, and errors to Safe Shield. One concept keeps one name across code, config keys, flags, and errors; a product alias beside the module's name makes every reader and every grep ask whether they are two things.",
+    "learning": "A PR added `FF_COPILOT_CORE_DISABLED` / `copilotCoreDisabled` and `Copilot*` guard and error names to the Safe Shield module; review asked to align on one name (\"I am concerned that we have 2 notions for safe shield\") and the author renamed the flag, config key, guard, and errors to Safe Shield. One concept keeps one name across code, config keys, flags, and errors; a product alias beside the module's name makes every reader and every grep ask whether they are two things. Recurred in #3613: stored experimental-feature keys were camelCase while config-service flags are UPPER_SNAKE_CASE; review asked to align, then to use the exact config-service flag string (`POLICY_RECIPIENT_ALLOWLIST`) so the two read as one feature, and the author did. In #3565 a reviewer asked the new KMS env vars to share one prefix; the author aligned the new timeouts on the already provisioned `SAFENET_PAYER_KMS_KEY_ID` (`SAFENET_PAYER_KMS_*`) rather than renaming the deployed one.",
     "ruleIds": [
       "NAME-01"
     ],
@@ -3783,7 +3816,8 @@
     "title": "Operation values hard-coded instead of read from the existing Operation entity",
     "sourceWindowId": "CLOSED-20260924-20261002",
     "prNumbers": [
-      3391
+      3391,
+      3564
     ],
     "prState": "merged",
     "reviewCommentIds": [
@@ -3791,11 +3825,15 @@
       3987973956,
       4005047022,
       4005057680,
-      4005058324
+      4005058324,
+      4269051760,
+      4269538309,
+      4269258919,
+      4269557530
     ],
     "reviewIds": [],
     "issueCommentIds": [],
-    "learning": "A new policy entity mapped `CALL`/`DELEGATECALL` to `0 | 1` with literal comparisons. Review pointed at `src/modules/safe/domain/entities/operation.entity.ts`, which already holds the values; the author typed both helpers with `Operation` and compared against `Operation.CALL` / `Operation.DELEGATE`. Encode against the repo's existing value set rather than repeating its literals.",
+    "learning": "A new policy entity mapped `CALL`/`DELEGATECALL` to `0 | 1` with literal comparisons. Review pointed at `src/modules/safe/domain/entities/operation.entity.ts`, which already holds the values; the author typed both helpers with `Operation` and compared against `Operation.CALL` / `Operation.DELEGATE`. Encode against the repo's existing value set rather than repeating its literals. Recurred in #3564, where a Safenet entity typed `operation: 0 | 1` and its builder used `.with('operation', 0)`; both now use `Operation.CALL`.",
     "ruleIds": [
       "REUSE-01"
     ]
@@ -4086,7 +4124,8 @@
     "prNumbers": [
       3391,
       3392,
-      3531
+      3531,
+      3564
     ],
     "prState": "merged",
     "reviewCommentIds": [
@@ -4101,11 +4140,13 @@
       4004957192,
       4004957911,
       4025700914,
-      4034709112
+      4034709112,
+      4269049574,
+      4269538093
     ],
     "reviewIds": [],
     "issueCommentIds": [],
-    "learning": "In #3531 a DTO field and test types used `string` for wallet addresses; review asked for viem's `Address`, and the author changed it everywhere. In #3391 a `SafeRef` type declared `chainId: string` beside an `Address`; review asked to derive both from `ChainIdSchema` and `AddressSchema`, and the author did. In #3392 a raw builder type was written out by hand; it is now read from the schemas. Take a field's type from the project type or schema that already defines it.",
+    "learning": "In #3531 a DTO field and test types used `string` for wallet addresses; review asked for viem's `Address`, and the author changed it everywhere. In #3391 a `SafeRef` type declared `chainId: string` beside an `Address`; review asked to derive both from `ChainIdSchema` and `AddressSchema`, and the author did. In #3392 a raw builder type was written out by hand; it is now read from the schemas. Take a field's type from the project type or schema that already defines it. Recurred in #3564: a new `SafenetSafeTransaction` type restated the Safe transaction; review asked for the existing type, and the author switched to `BaseMultisigTransaction` and its builder.",
     "ruleIds": [
       "TYPE-01",
       "TYPE-06"
@@ -4373,18 +4414,21 @@
     "sourceWindowId": "CLOSED-20261001-20261009",
     "prNumbers": [
       3526,
-      3534
+      3534,
+      3564
     ],
     "prState": "merged",
     "reviewCommentIds": [
       4141422188,
-      4142365692
+      4142365692,
+      4269104713,
+      4269539295
     ],
     "reviewIds": [],
     "issueCommentIds": [
       5948083024
     ],
-    "learning": "`getTokenMetadata` collected chain ids, deduped ERC-20s, fetched both and joined them in one body; review suggested one function per step, and the author split it into `nativeCurrencyChainIds`, `erc20TokensToFetch`, `fetchNativeTokens` and `fetchErc20Tokens` (4e95eae2). In #3534 a per-workspace response mapper had also taken on the request-wide unpublished-feature warning; after a bot review the author moved that into `warnUnpublished` and restored the single-workspace mapper (32aac11c). A function running several sequential steps splits into one named helper per step, and a per-item mapper does not own request-wide side effects.",
+    "learning": "`getTokenMetadata` collected chain ids, deduped ERC-20s, fetched both and joined them in one body; review suggested one function per step, and the author split it into `nativeCurrencyChainIds`, `erc20TokensToFetch`, `fetchNativeTokens` and `fetchErc20Tokens` (4e95eae2). In #3534 a per-workspace response mapper had also taken on the request-wide unpublished-feature warning; after a bot review the author moved that into `warnUnpublished` and restored the single-workspace mapper (32aac11c). A function running several sequential steps splits into one named helper per step, and a per-item mapper does not own request-wide side effects. Recurred in #3564: a roughly 40-line `propose` that prepared, relayed, waited, confirmed and recorded the nonce was called hard to follow, and the author split it into `prepare` → `relayPayload` → `waitForInclusion` → `confirmExecution` → `recordNonce` with no behaviour change.",
     "ruleIds": [
       "STYLE-01"
     ]
@@ -4717,20 +4761,28 @@
     "sourceWindowId": "CLOSED-20261008-20261016",
     "prNumbers": [
       3375,
-      3449
+      3449,
+      3600,
+      3564
     ],
     "prState": "merged",
     "reviewCommentIds": [
       4269287801,
       4271073964,
       4269287809,
-      4270825466
+      4270825466,
+      4275729221,
+      4280176948,
+      4275729234,
+      4280177180,
+      4269241948,
+      4269539878
     ],
     "reviewIds": [],
     "issueCommentIds": [
       5397492625
     ],
-    "learning": "In #3375 a bot review noted the last-admin rejection cases did not assert that no `MEMBER_LEFT` audit row was recorded; a follow-up commit held the audit mock and asserted `not.toHaveBeenCalled()` on both rejection paths, checked by moving the guard below the audit loop (9809d693a2). In #3449 the `&& spendingLimitsRequested` gate that keeps spending limits out of a guard-only response, and the per-Safe filter on guard bindings, could both be dropped with CI green: no spec requested a guard-only set and every guard test used one Safe. The author added guard-only and multi-Safe cases (1138ce2d, 2686553d). Each gate or filter has a case that fails when it is removed.",
+    "learning": "In #3375 a bot review noted the last-admin rejection cases did not assert that no `MEMBER_LEFT` audit row was recorded; a follow-up commit held the audit mock and asserted `not.toHaveBeenCalled()` on both rejection paths, checked by moving the guard below the audit loop (9809d693a2). In #3449 the `&& spendingLimitsRequested` gate that keeps spending limits out of a guard-only response, and the per-Safe filter on guard bindings, could both be dropped with CI green: no spec requested a guard-only set and every guard test used one Safe. The author added guard-only and multi-Safe cases (1138ce2d, 2686553d). Each gate or filter has a case that fails when it is removed. Recurred in #3600: the check consumer's `@Processor({ maxStalledCount: 0 })` and the queue service's `setGlobalConcurrency(1)` were the only things stopping a maybe-paid job from running twice, and no test would notice either going away; the author added a spec that reads the processor metadata and one that asserts the concurrency call. In #3564 the payer's keep-polling branch had no pending-status case; the author added one.",
     "ruleIds": [
       "TEST-09"
     ]
@@ -4950,6 +5002,360 @@
     "learning": "A Safenet payer-configuration PR also prefixed `setCounter`'s key and dropped `NX`, which changes `RedisCacheService` behavior, together with a new integration test. Review asked to extract a bug fix into its own PR; the author moved the fix and its regression test, which fails on main, to #3610 at the bottom of the stack. A fix found while building a feature ships as its own PR with its regression test.",
     "ruleIds": [
       "CHANGE-02"
+    ]
+  },
+  {
+    "id": "RL-20261016-001",
+    "title": "Module-specific docs added to the root README instead of the module's own README",
+    "sourceWindowId": "CLOSED-20261015-20261023",
+    "prNumbers": [
+      3565,
+      3600
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4272368873,
+      4280175427,
+      4275538547,
+      4280176417
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "Two stacked Safenet PRs documented the payer, the KMS signer and the check queue in the root README. Review asked to move each section to `src/modules/safenet/README.md` (\"We can't document every module in the global readme\"); the author moved them and left the root README a link, as billing does. Module-specific behaviour and operator notes live in the module's README; the root README only points at it.",
+    "ruleIds": [
+      "PR-02"
+    ]
+  },
+  {
+    "id": "RL-20261016-002",
+    "title": "Safenet poll, KMS and queue knobs hardcoded, one of them documented as an architecture exception",
+    "sourceWindowId": "CLOSED-20261015-20261023",
+    "prNumbers": [
+      3564,
+      3565,
+      3600
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4269042429,
+      4269537841,
+      4275395610,
+      4280176092,
+      4275705823,
+      4280176656,
+      4275729248,
+      4280177371,
+      4285146800,
+      4291652816,
+      4285156314,
+      4291653004
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "In #3564 the payer's poll interval and timeout were literals; review asked whether they should be configurable, and the author moved them to `SAFENET_POLL_*` env vars with defaults. In #3565 a KMS connection timeout was a module constant; review said to move it into config with defaults, and it became `SAFENET_PAYER_KMS_*_TIMEOUT_MS`. In #3600 the check queue's attempts and retention sat in config without env vars, and ARCHITECTURE.md gained an exception saying this queue's options are fixed because a retry could pay a fee twice. Review asked to keep the standard queue shape (env vars with these values as defaults, like csv-export), drop the exception, and let `RootConfigurationSchema` enforce the safe range so a bad value fails at boot. A second reviewer then found the backoff knobs missing from the set and asked to widen the attempts maximum from 3 to 10, since only an error that proves nothing was paid is retried; the author did both. A knob that is dangerous to change still follows the config precedent: the danger becomes a schema bound, no tighter than the safety argument, not a hardcoded exception.",
+    "ruleIds": [
+      "CONFIG-03"
+    ]
+  },
+  {
+    "id": "RL-20261016-003",
+    "title": "Outbound calls left unbounded: SDK retries under a retrying queue, and a bare fetch with no timeout",
+    "sourceWindowId": "CLOSED-20261015-20261023",
+    "prNumbers": [
+      3565,
+      3595
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4275395602,
+      4280175888,
+      4248203994,
+      4257169278,
+      4322635596,
+      4322637028
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "In #3565 the KMS client kept the AWS SDK default of three attempts while BullMQ already retried the job three times, so during a KMS outage one job could make about nine calls and hold the only queue slot for minutes. Review asked for `maxAttempts: 1`, as the SES client does, and the author set it (\"BullMQ owns the retries\"). In #3595 a backfill script called a bare `fetch` with no timeout inside a `Promise.all` chunk, so one stalled connection could hang the whole run; a bot flagged it, a reviewer agreed, and the fix added a request timeout. Every outbound call is bounded in time, scripts included, and exactly one layer owns retries.",
+    "ruleIds": [
+      "RESILIENCE-01"
+    ]
+  },
+  {
+    "id": "RL-20261016-004",
+    "title": "Domain module re-exported the raw relay API module for one caller",
+    "sourceWindowId": "CLOSED-20261015-20261023",
+    "prNumbers": [
+      3565
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4275395631,
+      4280176254
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "To let the Safenet payer relay without the relayers' limits, `RelayDomainModule` exported `RelayApiModule`, which hands every importer the raw `IRelayApi`, `setRelayCount` included. Review asked for a narrow method on `RelayRepository` instead; the author removed the export and added `relayWithoutLimits()`. A module does not re-export an inner module to give one caller raw access; the unrestricted path is a named method on its repository.",
+    "ruleIds": [
+      "MOD-04"
+    ]
+  },
+  {
+    "id": "RL-20261016-005",
+    "title": "Second AWS KMS client class added beside the shared KMS signer",
+    "sourceWindowId": "CLOSED-20261015-20261023",
+    "prNumbers": [
+      3565
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4272435092,
+      4280175656
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "The Safenet payer added a whole KMS signer class. Review suggested generalizing `src/datasources/kms/aws-kms-signer.service.ts` and keeping only the Ethereum part in the new class. The author agreed it should be one KMS client and deferred the merge to a follow-up, because the existing service signs `RAW` for JWS while the payer signs a keccak `DIGEST`. Extend the shared provider client instead of adding a parallel one, and say on the PR when the merge is deferred.",
+    "ruleIds": [
+      "MOD-01"
+    ]
+  },
+  {
+    "id": "RL-20261016-006",
+    "title": "Polling for a receipt read through the cached blockchain client",
+    "sourceWindowId": "CLOSED-20261015-20261023",
+    "prNumbers": [
+      3564
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4284616950,
+      4291651319
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "The Safenet payer polled relay receipts and the payer nonce through `IBlockchainApiManager`, whose client caches. Review asked whether polling needed a no-cache path; the author found that a cached `null` receipt could delay confirmation by up to 15 s per check, and switched the payer to `getUncachedApi`. A read that waits for a state change bypasses the cache; an expiry-only cache, a cached not-found included, hides the change for its whole TTL.",
+    "ruleIds": [
+      "CACHE-03"
+    ]
+  },
+  {
+    "id": "RL-20261016-007",
+    "title": "Spec cast relayed data `as Hex`, and an exported mapper had no declared return type",
+    "sourceWindowId": "CLOSED-20261015-20261023",
+    "prNumbers": [
+      3564
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4269230689,
+      4269539597,
+      4284632474,
+      4291651475
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "A spec decoded relayed calldata with `data as Hex`; review asked for a valid hex fixture instead, and the author parsed the value through `HexSchema` so the cast went away. The same PR's exported `toSafenetConsensusTransaction` had no declared return type; the author derived one from `safenetConsensusAbi` so it cannot drift from the struct. Take a type from the value's source (a parse, an ABI) rather than a cast, and declare it on exported functions.",
+    "ruleIds": [
+      "TYPE-06"
+    ]
+  },
+  {
+    "id": "RL-20261016-008",
+    "title": "Names that hid what a value is: an error built by a function, a TTL named as a limit, a repository named wider than its scope",
+    "sourceWindowId": "CLOSED-20261015-20261023",
+    "prNumbers": [
+      3564,
+      3596,
+      3450
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4269072088,
+      4269538839,
+      4284705295,
+      4291651788,
+      4284754648,
+      4291651977,
+      4285067103,
+      4291653604,
+      4285370984,
+      4291654096,
+      4312282244,
+      4313075269,
+      4313284899
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "In #3564 `maybePaid()` built an error but its name did not say so (it became `SafenetPayerMaybePaidError`); an inline `'0x'` argument became `NO_EXTRA_DATA`, after the ABI parameter it fills; and `NO_GAS`, which also carried the operation and refund fields, became `NO_REFUND_EXEC_ARGS`. In #3596 `safenetChecksPerDay` held a TTL in seconds and was renamed `expirationTimeInSeconds.safenetDailyCheckCounter`, and `getJobData`, which asserted the Safe and the transaction, became `assertPayableTransaction`. In #3450 a repository serving only `SafePolicyGuard` configuration requests was renamed `SafePolicyGuardConfigurationRequestsRepository`. A name states what the thing is and does, including that it throws and how far it reaches.",
+    "ruleIds": [
+      "NAME-01"
+    ]
+  },
+  {
+    "id": "RL-20261016-009",
+    "title": "Stored closed-set values returned without checking they are still in the set",
+    "sourceWindowId": "CLOSED-20261015-20261023",
+    "prNumbers": [
+      3613
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4282793235,
+      4284083799
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "A Spaces column stores `experimentalFeatures` from a closed `as const` list, and a code comment noted that retiring a feature needs a migration to strip it from rows. Review asked for a check so a feature dropped from the list is never returned from a stale row; the author put it in the column's TypeORM transformer, so every read is validated rather than one service path. A column holding members of a closed set is checked against the current set on read, in its transformer.",
+    "ruleIds": [
+      "DB-05"
+    ]
+  },
+  {
+    "id": "RL-20261016-010",
+    "title": "Request-body array of a closed set had no length bound",
+    "sourceWindowId": "CLOSED-20261015-20261023",
+    "prNumbers": [
+      3613
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4282860225,
+      4284090048
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "A PATCH body accepted `experimentalFeatures` as `z.array(ExperimentalFeatureSchema)` with no maximum. Review suggested `.max(ExperimentalFeatures.length)` so the endpoint never has to validate an arbitrarily long array, and the author applied it. A request array drawn from a closed set is capped at the size of that set.",
+    "ruleIds": [
+      "SEC-02"
+    ]
+  },
+  {
+    "id": "RL-20261019-001",
+    "title": "Sponsored-check route let CGW pick which workspace pays",
+    "sourceWindowId": "CLOSED-20261015-20261023",
+    "prNumbers": [
+      3596
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4285393205,
+      4285405750,
+      4291654304,
+      4291654463,
+      4294662993,
+      4294664465,
+      4294724434,
+      4294815378
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "`POST /v1/chains/:chainId/safes/:safeAddress/safenet/checks` found the workspaces holding the Safe and charged the one with the lowest id and an eligible plan. Review called out the edge case and proposed a space-scoped route. The author agreed but deferred it past launch because the wallet call was already on `dev`; two reviewers asked to settle the route before launch instead. It became `POST /v1/spaces/:spaceId/chains/:chainId/safes/:safeAddress/safenet/checks`: the workspace in the path pays, and CGW checks membership, the chain, that the workspace holds the Safe, its plan and its daily limit, never choosing a workspace itself. A workspace-scoped or workspace-charged action takes the workspace from the path, and a route shape is settled before a client ships against it.",
+    "ruleIds": [
+      "AUTH-05"
+    ]
+  },
+  {
+    "id": "RL-20261019-002",
+    "title": "Daily check counter charged before the job existed, so races and failed enqueues burned slots",
+    "sourceWindowId": "CLOSED-20261015-20261023",
+    "prNumbers": [
+      3596
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4298244480,
+      4311229782
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "The check route ran `has()`, then incremented the daily counter, then `enqueue()`. Review pointed out the sequence is not atomic: two concurrent requests for one transaction both count against the limit, and a failed enqueue burns a slot; counting only when the add actually created the job would fix it. The author called it a good catch and fixed it in the stacked #3626: the first request claims the transaction under a short Redis key derived from the job id, so a racing request neither counts nor enqueues, and a failed `enqueue()` gives its slot back. A quota is charged only for the side effect that happened, claimed atomically, and released when the side effect fails.",
+    "ruleIds": [
+      "DB-02"
+    ]
+  },
+  {
+    "id": "RL-20261019-003",
+    "title": "Plan gating called the billing API live with a hard-coded plan list",
+    "sourceWindowId": "CLOSED-20261015-20261023",
+    "prNumbers": [
+      3596
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4285431626,
+      4291654653,
+      4294672186,
+      4297279392
+    ],
+    "reviewIds": [
+      5549844775
+    ],
+    "issueCommentIds": [],
+    "learning": "The Safenet check route fetched the workspace's subscriptions from billing on every request, compared `plan.type` against `premium` and `enterprise`, and kept its own daily counter. Review asked to use the local entitlements model that relay and Safe Shield use (`space_subscriptions`, `subscription_entitlements` and the `features` catalog, synced from billing webhooks): seed a `safenet_checks` feature, add it to `FEATURE_KEYS`, gate with `assertFeatureGranted({ spaceId, featureKey })`, and move the limit to `assertWithinQuota`. The author agreed and shipped the feature gate in #3622; #3627 then reverted to the plan check and #3628 gated on the `policies` entitlement as a stand-in for devstaging testing, but the direction stands. Plan and quota gating go through the entitlements model, not a live billing call or a local list of plans.",
+    "ruleIds": [
+      "REUSE-01"
+    ]
+  },
+  {
+    "id": "RL-20261019-004",
+    "title": "Hash column proposed as bytea against the repo-wide 0x-hex storage",
+    "sourceWindowId": "CLOSED-20261015-20261023",
+    "prNumbers": [
+      3450
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4312023478,
+      4312156500,
+      4312960468,
+      4312093597,
+      4313069565
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "A new table stored a keccak `root` as `varchar(66)`, and review asked whether it could be `bytea`. The author first agreed, then kept `varchar(66)`: CGW stores bytes as `0x` hex everywhere (addresses, `setup_data`), no column uses `bytea`, a switch would add a Buffer transformer for about 35 bytes a row, and the service always stores the root it recomputes, which is lowercase. Byte values are stored as lowercase `0x` hex text, like addresses.",
+    "ruleIds": [
+      "DB-05"
+    ]
+  },
+  {
+    "id": "RL-20261019-005",
+    "title": "403 message told the caller the Safe was not in the workspace",
+    "sourceWindowId": "CLOSED-20261015-20261023",
+    "prNumbers": [
+      3450
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4312450119,
+      4313165448,
+      4314400696
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "A policy configuration request for a Safe outside the workspace threw `ForbiddenException('Safe is not registered to this Workspace.')`. Review said this reveals too much and a plain not-allowed message suffices; the author agreed it should keep the local convention, now throws a bare `ForbiddenException()`, and the spec asserts the bare exception. A 403 does not say which ownership or registration check failed.",
+    "ruleIds": [
+      "ROUTE-03"
+    ]
+  },
+  {
+    "id": "RL-20261019-006",
+    "title": "Table for transient configuration requests had no retention",
+    "sourceWindowId": "CLOSED-20261015-20261023",
+    "prNumbers": [
+      3450
+    ],
+    "prState": "merged",
+    "reviewCommentIds": [
+      4312469988,
+      4313171109,
+      4313284662
+    ],
+    "reviewIds": [],
+    "issueCommentIds": [],
+    "learning": "Delayed policy configuration requests are needed only until the policy is activated on chain, but the new table kept them forever. Review asked for a retention period with automatic deletion; the author added a daily prune of rows older than `POLICIES_CONFIGURATION_REQUEST_RETENTION_DAYS` (default 60), beside the existing per-Safe row cap. Rows that users submit are bounded in count and in lifetime: a table whose rows serve a purpose that ends ships with its pruning.",
+    "ruleIds": [
+      "SEC-02"
     ]
   }
 ]

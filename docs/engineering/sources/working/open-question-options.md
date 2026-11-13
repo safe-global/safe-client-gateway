@@ -566,6 +566,13 @@ review asked to restore `as unknown as` on three partial mocks in
 left the casts out, and the PR merged without them. `TEST-01` already says
 never `as unknown as MockedObject<T>`, yet reviews still ask for both forms.
 
+PR #3600 added a third data point (review comments 4275729256 and
+4280177566): review asked to drop `as unknown` "where a single cast compiles",
+and the author kept it on three partial third-party objects (`MockedObject<Queue>`,
+a BullMQ `Job`, a viem `Log`) where a direct cast does not compile. The PR
+merged that way, so in practice the criterion reviewers apply is "the direct
+cast compiles", not "never".
+
 ### Option A: Whole-Interface Mock
 
 Existing example:
@@ -1025,3 +1032,52 @@ two modules, and the foreign-key mapping still imports the entity.
 
 Open until the team decides; whichever wins should be stated in
 `docs/agents/module-structure.md`.
+
+## OQ-DB-04 A List Always Read Whole: `jsonb` Column Or Child Table
+
+Question: when a row carries a list that is always written and read as one
+unit, does the list live in a `jsonb` column or in its own child table?
+
+In PR #3450 (review comments 4312019884, 4312153987, 4312355939 and
+4312484097) a reviewer proposed moving `configurations` out of
+`policy_configuration_requests` into its own table for a clearer schema. The
+author kept `jsonb`: the signing step needs the assembled JSON, the pending
+endpoint always returns the full array per root, and the policy-type filter
+runs in memory anyway, so a child table would add a join and regrouping
+without enabling any query. The reviewer agreed it brings users nothing but
+still preferred the separate table; the PR merged with `jsonb`.
+
+### Option A: `jsonb` Column
+
+Existing example:
+
+- `migrations/1781800000000-create-policy-configuration-requests.ts`
+  (`"configurations" jsonb NOT NULL`)
+
+Choose this when:
+
+- The list is always written and read whole, and no query filters, joins or
+  indexes on its elements.
+
+Trade-off: the element shape is enforced only by the application schema, and
+a later per-element query needs a migration.
+
+### Option B: Child Table
+
+```sql
+CREATE TABLE "policy_configurations" (
+  "id" integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  "request_id" uuid NOT NULL REFERENCES "policy_configuration_requests" ("id") ON DELETE CASCADE,
+  "position" integer NOT NULL
+);
+```
+
+Choose this when:
+
+- The schema itself should describe each element, or a query on elements is
+  expected.
+
+Trade-off: every read joins and reorders the rows to rebuild the list.
+
+Open until the team decides; whichever wins should be stated in `DB-05` or the
+database guide.

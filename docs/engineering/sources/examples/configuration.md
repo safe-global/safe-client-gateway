@@ -240,3 +240,41 @@ type-aware rules silently lose cross-module types:
 ignores it at runtime. Without it, rules such as `noFloatingPromises` stop
 firing for new violations through `#/` while whole-tree lint counts stay the
 same, so nothing shows the loss.
+
+## CONFIG-03 — A dangerous knob is a schema bound, not a hardcoded exception
+
+Source: PR #3600 (RL-20261016-002)
+
+### Avoid
+
+```ts
+// configuration.ts — no env var, plus an ARCHITECTURE.md exception
+queue: {
+  // Fixed on purpose: a shorter retention or more attempts can pay a fee twice.
+  attempts: 3,
+},
+```
+
+### Prefer
+
+```ts
+// configuration.ts — the queue precedent, current value as the default
+queue: {
+  attempts: Number.parseInt(process.env.FEATURE_QUEUE_ATTEMPTS ?? `${3}`, 10),
+},
+
+// configuration.schema.ts — the safety argument as a boot-time bound
+FEATURE_QUEUE_ATTEMPTS: z.coerce.number().int().min(1).max(10).optional(),
+FEATURE_QUEUE_REMOVE_ON_FAIL_AGE: z.coerce
+  .number()
+  .int()
+  .min(MIN_RETENTION_SECONDS)
+  .optional(),
+```
+
+### Why
+
+Every other queue reads its options from env vars, so an exception costs a
+guide paragraph and a second pattern to remember. A schema bound keeps the
+protection: a value that could pay twice fails at boot. Set the bound by what
+it protects (here only a "nothing was paid" error is retried), not tighter.
