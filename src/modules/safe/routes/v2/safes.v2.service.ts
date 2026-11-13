@@ -37,11 +37,11 @@ type ResolvedEntry = {
   safe: Safe;
 };
 
-/** Fiat value per chain ID of one wallet, from whichever Zerion source served it. */
+/** Fiat value per chain ID of one Safe address, from whichever Zerion source served it. */
 type FiatByChainId = Record<string, number>;
 
-/** One Zerion portfolio request: a wallet in one environment, currency and token filter. */
-type WalletIdentity = {
+/** One Zerion portfolio request: a Safe address in one environment, currency and token filter. */
+type SafeIdentity = {
   address: Address;
   currency: string;
   isTestnet: boolean;
@@ -96,11 +96,11 @@ export class SafesV2Service {
     const zerionChainNamesById = await this.resolveZerionChainNames(chainsById);
 
     // Validate each Safe before any external balance fetch, so a non-Safe or
-    // stale address never spends a Zerion call or consumes the shared budget.
+    // stale address never spends a Zerion call.
     const resolvedEntries = await this.resolveSafes(limitedSafes, chainsById);
 
-    // A Zerion portfolio is per wallet and covers every chain, so fetch it
-    // once per wallet identity instead of once per (chainId, address).
+    // A Zerion portfolio is per address and covers every chain, so fetch it
+    // once per Safe identity instead of once per (chainId, address).
     const fiatByIdentity = await this.fetchFiatOncePerIdentity({
       entries: resolvedEntries.filter(({ chainId }) =>
         zerionChainNamesById.has(chainId),
@@ -267,10 +267,10 @@ export class SafesV2Service {
   }
 
   /**
-   * Fetches one Zerion portfolio per unique wallet identity (address,
+   * Fetches one Zerion portfolio per unique Safe identity (address,
    * isTestnet, currency, trusted) among the given entries, as fiat per chain
    * ID. A failed fetch is omitted from the map (and logged), so every Safe on
-   * that wallet degrades together via the fallback rather than rejecting.
+   * that address degrades together via the fallback rather than rejecting.
    */
   private async fetchFiatOncePerIdentity(args: {
     entries: Array<ResolvedEntry>;
@@ -300,13 +300,13 @@ export class SafesV2Service {
     await Promise.all(
       [...identities.entries()].map(async ([key, { address, isTestnet }]) => {
         try {
-          const wallet = { address, currency, isTestnet, trusted };
+          const identity = { address, currency, isTestnet, trusted };
           results.set(
             key,
             this.portfolioSnapshotEnabled
-              ? await this.getSnapshotFiatByChainId(wallet)
+              ? await this.getSnapshotFiatByChainId(identity)
               : await this.getWalletPortfolioFiatByChainId({
-                  ...wallet,
+                  ...identity,
                   zerionChainNamesById: args.zerionChainNamesById,
                 }),
           );
@@ -319,12 +319,12 @@ export class SafesV2Service {
   }
 
   /**
-   * Reads the /positions snapshot GET /v1/portfolio and the portfolio
-   * summaries cache, so this route adds no Zerion call of its own and shows
-   * the same per-chain total as those routes.
+   * Reads the /positions snapshot that GET /v1/portfolio and the portfolio
+   * summaries also read, so this route adds no Zerion call of its own and
+   * shows the same per-chain total as those routes.
    */
   private async getSnapshotFiatByChainId(
-    args: WalletIdentity,
+    args: SafeIdentity,
   ): Promise<FiatByChainId> {
     const snapshot = await this.portfolioRepository.getPortfolioSnapshot({
       address: args.address,
@@ -337,7 +337,7 @@ export class SafesV2Service {
 
   /** Reads Zerion /portfolio, re-keyed from Zerion's chain names to chain IDs. */
   private async getWalletPortfolioFiatByChainId(
-    args: WalletIdentity & { zerionChainNamesById: Map<string, string> },
+    args: SafeIdentity & { zerionChainNamesById: Map<string, string> },
   ): Promise<FiatByChainId> {
     const portfolio = await this.zerionWalletPortfolioApi.getPortfolio({
       address: args.address,
@@ -356,7 +356,7 @@ export class SafesV2Service {
     return fiatByChainId;
   }
 
-  private getPortfolioIdentityKey(args: WalletIdentity): string {
+  private getPortfolioIdentityKey(args: SafeIdentity): string {
     return `${args.address}_${args.isTestnet}_${args.currency}_${args.trusted}`;
   }
 
