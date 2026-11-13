@@ -200,7 +200,7 @@ yarn run test:cov
 We use [Biome](https://biomejs.dev/) as a linter and [Prettier](https://prettier.io/) as a code formatter.
 You can run `yarn run lint` to execute Biome and `yarn run format` to execute Prettier.
 
-These checks can be automatically executed using Git hooks. If you wish to install the provided git hooks:
+These checks can be automatically executed using Git hooks. The `pre-push` hook also rejects a branch whose tip has not passed the pre-PR architecture review (see [AGENTS.md](AGENTS.md#pre-pr-architecture-review)). If you wish to install the provided git hooks:
 
 ```shell
 yarn install
