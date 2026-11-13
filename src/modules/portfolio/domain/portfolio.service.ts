@@ -31,4 +31,8 @@ export class PortfolioService implements IPortfolioService {
   public async clearZerionCaches(args: { address: Address }): Promise<void> {
     await this.portfolioRepository.clearZerionCaches(args);
   }
+
+  public getClearedAt(args: { address: Address }): Promise<number | null> {
+    return this.portfolioRepository.getClearedAt(args);
+  }
 }

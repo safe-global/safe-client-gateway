@@ -20,6 +20,7 @@ import { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface
 @Injectable()
 export class PortfolioApiService {
   private readonly clearCooldownSeconds: number;
+  private readonly recentClearSeconds: number;
 
   constructor(
     @Inject(DomainPortfolioService)
@@ -34,6 +35,9 @@ export class PortfolioApiService {
   ) {
     this.clearCooldownSeconds = configurationService.getOrThrow<number>(
       'portfolio.clear.cooldownSeconds',
+    );
+    this.recentClearSeconds = configurationService.getOrThrow<number>(
+      'portfolio.clear.recentClearSeconds',
     );
   }
 
@@ -56,7 +60,10 @@ export class PortfolioApiService {
   /**
    * Clears the Zerion caches of a Safe. The address must be a Safe on the
    * given chain, and repeat clears within the cooldown are skipped, so the
-   * route cannot be used to force paid refetches.
+   * route cannot be used to force paid refetches. A clear is also skipped when
+   * the caches were cleared moments ago: a transaction event clears them a few
+   * seconds before the client asks, and clearing again would throw away a
+   * snapshot that was paid for in between.
    */
   public async clearZerionCaches(args: {
     chainId: string;
@@ -68,12 +75,30 @@ export class PortfolioApiService {
       this.clearCooldownSeconds,
       0,
     );
-    if (clears > 1) {
+    if (clears > 1 || (await this._wasClearedRecently(args.address))) {
       return;
     }
     await this.domainPortfolioService.clearZerionCaches({
       address: args.address,
     });
+  }
+
+  /**
+   * Whether the Safe's caches were cleared, by an event or a request, within
+   * the recent-clear window. Bounded to that window, not the whole settle
+   * window, so a second transaction minutes later still gets its clear.
+   *
+   * @param address - The Safe address
+   * @returns True if the last clear is younger than the window
+   */
+  private async _wasClearedRecently(address: Address): Promise<boolean> {
+    const clearedAt = await this.domainPortfolioService.getClearedAt({
+      address,
+    });
+    return (
+      clearedAt !== null &&
+      Date.now() - clearedAt < this.recentClearSeconds * 1_000
+    );
   }
 
   /**

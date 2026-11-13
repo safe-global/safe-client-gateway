@@ -25,6 +25,7 @@ describe('PortfolioApiService', () => {
   let mockCacheService: MockedObject<ICacheService>;
   let portfolioRouteMapper: PortfolioRouteMapper;
   const clearCooldownSeconds = faker.number.int({ min: 10, max: 60 });
+  const recentClearSeconds = faker.number.int({ min: 10, max: 60 });
 
   beforeEach(() => {
     vi.resetAllMocks();
@@ -32,6 +33,7 @@ describe('PortfolioApiService', () => {
     mockDomainService = {
       getPortfolio: vi.fn(),
       clearZerionCaches: vi.fn(),
+      getClearedAt: vi.fn(),
     } as MockedObject<IDomainPortfolioService>;
 
     mockChainsRepository = {
@@ -56,6 +58,10 @@ describe('PortfolioApiService', () => {
     configurationService.set(
       'portfolio.clear.cooldownSeconds',
       clearCooldownSeconds,
+    );
+    configurationService.set(
+      'portfolio.clear.recentClearSeconds',
+      recentClearSeconds,
     );
 
     portfolioRouteMapper = new PortfolioRouteMapper();
@@ -248,6 +254,7 @@ describe('PortfolioApiService', () => {
         safeBuilder().with('address', address).build(),
       );
       mockCacheService.increment.mockResolvedValue(1);
+      mockDomainService.getClearedAt.mockResolvedValue(null);
 
       await service.clearZerionCaches({ chainId, address });
 
@@ -277,7 +284,48 @@ describe('PortfolioApiService', () => {
 
       await service.clearZerionCaches({ chainId, address });
 
+      expect(mockDomainService.getClearedAt).not.toHaveBeenCalled();
       expect(mockDomainService.clearZerionCaches).not.toHaveBeenCalled();
+    });
+
+    it('should skip a clear when the caches were cleared within the recent-clear window', async () => {
+      const chainId = faker.string.numeric();
+      const address = getAddress(faker.finance.ethereumAddress());
+      mockSafeRepository.getSafe.mockResolvedValue(
+        safeBuilder().with('address', address).build(),
+      );
+      mockCacheService.increment.mockResolvedValue(1);
+      mockDomainService.getClearedAt.mockResolvedValue(
+        Date.now() -
+          faker.number.int({ min: 0, max: (recentClearSeconds - 1) * 1_000 }),
+      );
+
+      await service.clearZerionCaches({ chainId, address });
+
+      expect(mockDomainService.getClearedAt).toHaveBeenCalledWith({ address });
+      expect(mockDomainService.clearZerionCaches).not.toHaveBeenCalled();
+    });
+
+    it('should clear when the last clear is older than the recent-clear window', async () => {
+      const chainId = faker.string.numeric();
+      const address = getAddress(faker.finance.ethereumAddress());
+      mockSafeRepository.getSafe.mockResolvedValue(
+        safeBuilder().with('address', address).build(),
+      );
+      mockCacheService.increment.mockResolvedValue(1);
+      mockDomainService.getClearedAt.mockResolvedValue(
+        Date.now() -
+          faker.number.int({
+            min: (recentClearSeconds + 1) * 1_000,
+            max: (recentClearSeconds + 120) * 1_000,
+          }),
+      );
+
+      await service.clearZerionCaches({ chainId, address });
+
+      expect(mockDomainService.clearZerionCaches).toHaveBeenCalledWith({
+        address,
+      });
     });
 
     it('should not clear or count an address that is not a Safe', async () => {
