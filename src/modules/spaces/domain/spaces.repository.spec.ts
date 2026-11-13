@@ -32,13 +32,7 @@ describe('SpacesRepository', () => {
   >;
   let memberRepository: { find: Mock };
   let queryBuilderSet: Mock;
-  let entityManager: {
-    save: Mock;
-    update: Mock;
-    findOne: Mock;
-    delete: Mock;
-    createQueryBuilder: Mock;
-  };
+  let entityManager: MockedObject<EntityManager>;
   let postgresDatabaseService: MockedObject<PostgresDatabaseService>;
   let target: SpacesRepository;
 
@@ -75,7 +69,7 @@ describe('SpacesRepository', () => {
       findOne: vi.fn(),
       delete: vi.fn(),
       createQueryBuilder: vi.fn().mockReturnValue(queryBuilder),
-    };
+    } as MockedObject<EntityManager>;
 
     // isLimited() reads the caller's uninvited memberships.
     memberRepository = { find: vi.fn().mockResolvedValue([]) };
@@ -100,15 +94,11 @@ describe('SpacesRepository', () => {
     const name = faker.lorem.words();
 
     function mockSavedSpace(): void {
-      entityManager.save.mockImplementation((space: Space) =>
-        Promise.resolve(
-          Object.assign(space, {
-            id: spaceId,
-            uuid: spaceUuid,
-            members: [Object.assign(space.members[0], { id: memberId })],
-          }),
-        ),
-      );
+      entityManager.save.mockResolvedValue({
+        id: spaceId,
+        uuid: spaceUuid,
+        members: [{ id: memberId }],
+      });
     }
 
     it('rewrites the space name and creator member name to ciphertext after save, inside the transaction', async () => {
@@ -169,7 +159,7 @@ describe('SpacesRepository', () => {
         userId,
         name,
         status: 'ACTIVE',
-        entityManager: entityManager as unknown as EntityManager,
+        entityManager,
       });
 
       expect(result).toStrictEqual({ id: spaceId, uuid: spaceUuid, name });
@@ -403,7 +393,7 @@ describe('SpacesRepository', () => {
         id: spaceId,
         updatePayload: { name: newName },
         actorUserId: userId,
-        entityManager: entityManager as unknown as EntityManager,
+        entityManager,
       });
 
       expect(postgresDatabaseService.transaction).not.toHaveBeenCalled();
