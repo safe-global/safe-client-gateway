@@ -671,6 +671,21 @@ describe('SubscriptionSyncService', () => {
         expect.stringContaining('KMS unavailable'),
       );
     });
+
+    it('acks the webhook and logs an error when the subscription read fails', async () => {
+      subscriptionsRepository.getSubscriptionSummary.mockRejectedValue(
+        new Error('database unavailable'),
+      );
+
+      await expect(
+        target.handleWebhook(webhookEvent()),
+      ).resolves.toBeUndefined();
+
+      expect(spaceSetupApplier.apply).not.toHaveBeenCalled();
+      expect(loggingService.error).toHaveBeenCalledWith(
+        expect.stringContaining('database unavailable'),
+      );
+    });
   });
 
   describe('syncSpace', () => {

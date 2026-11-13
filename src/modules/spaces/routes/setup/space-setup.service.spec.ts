@@ -192,6 +192,18 @@ describe('SpaceSetupService', () => {
       expect(billing.createCheckoutSession).not.toHaveBeenCalled();
     });
 
+    it('still answers with the Workspace when its apply fails, so a retry does not create another', async () => {
+      billing.isEnforced.mockReturnValue(false);
+      applier.apply.mockRejectedValue(new Error('KMS unavailable'));
+
+      await expect(
+        target.create({ authPayload, body: form(null) }),
+      ).resolves.toEqual({ spaceId: space.uuid, checkoutUrl: null });
+      expect(loggingService.warn).toHaveBeenCalledWith(
+        expect.stringContaining('KMS unavailable'),
+      );
+    });
+
     it('writes nothing when the rules refuse the plan', async () => {
       billing.listTrialPlans.mockResolvedValue([
         trialPaymentLinkBuilder(false).build(),

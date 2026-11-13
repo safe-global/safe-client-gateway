@@ -7,7 +7,6 @@ import {
 } from '@nestjs/common';
 import { groupBy } from 'lodash';
 import { IsNull } from 'typeorm';
-import { IConfigurationService } from '#/config/configuration.service.interface';
 import { UniqueConstraintError } from '#/datasources/errors/unique-constraint-error';
 import {
   type ILoggingService,
@@ -24,6 +23,7 @@ import type {
   SpaceSetupSurvey,
 } from '#/modules/spaces/domain/setup/entities/space-setup.entity';
 import type { ISpaceSetupApplier } from '#/modules/spaces/domain/setup/space-setup-applier.interface';
+import { SETUP_APPLY_LEASE_SECONDS } from '#/modules/spaces/domain/setup/space-setup-claim.rules';
 import { ISpaceSetupsRepository } from '#/modules/spaces/domain/setup/space-setups.repository.interface';
 import { MembersService } from '#/modules/spaces/routes/members/members.service';
 import { SpaceSafesService } from '#/modules/spaces/routes/safes/space-safes.service';
@@ -47,8 +47,6 @@ import { IMembersRepository } from '#/modules/users/domain/members/members.repos
  */
 @Injectable()
 export class SpaceSetupApplyService implements ISpaceSetupApplier {
-  private readonly applyLeaseSeconds: number;
-
   public constructor(
     @Inject(ISpaceSetupsRepository)
     private readonly spaceSetupsRepository: ISpaceSetupsRepository,
@@ -62,20 +60,14 @@ export class SpaceSetupApplyService implements ISpaceSetupApplier {
     private readonly surveysRepository: ISurveysRepository,
     private readonly spaceSafesService: SpaceSafesService,
     private readonly membersService: MembersService,
-    @Inject(IConfigurationService)
-    configurationService: IConfigurationService,
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
-  ) {
-    this.applyLeaseSeconds = configurationService.getOrThrow<number>(
-      'spaces.setup.applyLeaseSeconds',
-    );
-  }
+  ) {}
 
   public async apply(spaceId: Space['id']): Promise<void> {
     const setup = await this.spaceSetupsRepository.claim({
       spaceId,
-      leaseSeconds: this.applyLeaseSeconds,
+      leaseSeconds: SETUP_APPLY_LEASE_SECONDS,
     });
     if (!setup) {
       return;
@@ -100,16 +92,18 @@ export class SpaceSetupApplyService implements ISpaceSetupApplier {
   }
 
   /** The only admin nobody invited: the setup adds no member before it. */
-  private async findCreatorIdOrFail(spaceId: Space['id']): Promise<number> {
-    const creator = await this.membersRepository.findOne(
-      {
+  private async findCreatorIdOrFail(spaceId: Space['id']): Promise<User['id']> {
+    const [creator] = await this.membersRepository.find({
+      select: { id: true, user: { id: true } },
+      relations: { user: true },
+      where: {
         space: { id: spaceId },
         role: 'ADMIN',
         status: 'ACTIVE',
         invitedBy: IsNull(),
       },
-      { user: true },
-    );
+      take: 1,
+    });
     if (!creator) {
       throw new Error(`Space ${spaceId} has no creator to apply its setup as`);
     }
@@ -129,12 +123,14 @@ export class SpaceSetupApplyService implements ISpaceSetupApplier {
     const safesByAddress = groupBy(args.safes, (safe) =>
       safe.address.toLowerCase(),
     );
+    const addressesAddedWithContacts = new Set<string>();
 
     for (const [address, chainSafes] of Object.entries(safesByAddress)) {
       const newSafes = await this.withoutHeldSafes(args.spaceId, chainSafes);
       if (newSafes.length === 0) {
         continue;
       }
+      addressesAddedWithContacts.add(address);
       try {
         await this.spaceSafesService.addSafes({
           spaceId: args.spaceId,
@@ -153,9 +149,9 @@ export class SpaceSetupApplyService implements ISpaceSetupApplier {
       }
     }
 
-    await this.addUnmatchedContacts({
+    await this.addOtherContacts({
       ...args,
-      safeAddresses: new Set(Object.keys(safesByAddress)),
+      addressesAddedWithContacts,
     });
   }
 
@@ -171,15 +167,16 @@ export class SpaceSetupApplyService implements ISpaceSetupApplier {
     return safes.filter((_, index) => !held[index]);
   }
 
-  /** Contacts for addresses that are not among the setup's Safes. */
-  private async addUnmatchedContacts(args: {
+  /** Contacts that no Safe insert carried: other addresses, and Safes already held. */
+  private async addOtherContacts(args: {
     spaceId: Space['id'];
     creatorId: User['id'];
     addressBookItems: Array<AddressBookItem>;
-    safeAddresses: Set<string>;
+    addressesAddedWithContacts: Set<string>;
   }): Promise<void> {
     const contacts = args.addressBookItems.filter(
-      (item) => !args.safeAddresses.has(item.address.toLowerCase()),
+      (item) =>
+        !args.addressesAddedWithContacts.has(item.address.toLowerCase()),
     );
     if (contacts.length === 0) {
       return;
@@ -208,10 +205,12 @@ export class SpaceSetupApplyService implements ISpaceSetupApplier {
   }): Promise<void> {
     for (const invite of args.invites) {
       try {
+        // Refused, not renewed: a pending invite is one an earlier apply sent.
         await this.membersService.inviteAs({
           spaceId: args.spaceId,
           actorUserId: args.creatorId,
           users: [invite],
+          onPendingInvite: 'refuse',
         });
       } catch (error) {
         // Already a member, or already invited.

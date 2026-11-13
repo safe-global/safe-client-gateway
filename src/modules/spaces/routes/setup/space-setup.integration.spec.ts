@@ -47,6 +47,7 @@ import { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity
 import { spaceSetupSafeBuilder } from '#/modules/spaces/domain/setup/entities/__tests__/space-setup.builder';
 import { SPACE_SETUP_CHECKOUT_FAILED_MESSAGE } from '#/modules/spaces/domain/setup/errors/space-setup-checkout-failed.error';
 import { ISpaceSetupApplier } from '#/modules/spaces/domain/setup/space-setup-applier.interface';
+import { SETUP_APPLY_LEASE_SECONDS } from '#/modules/spaces/domain/setup/space-setup-claim.rules';
 import { createSpaceSetupDtoBuilder } from '#/modules/spaces/routes/entities/__tests__/create-space-setup.dto.builder';
 import type { CreateSpaceSetupDto } from '#/modules/spaces/routes/entities/space-setup.dto.entity';
 import { SpacesCreationRateLimitGuard } from '#/modules/spaces/routes/guards/spaces-creation-rate-limit.guard';
@@ -60,8 +61,6 @@ import { Member } from '#/modules/users/datasources/entities/member.entity.db';
 
 const MAX_SPACE_CREATIONS = 3;
 const SEATS = 2;
-// Short, so a spec can outwait the lease of a setup stuck in APPLYING.
-const APPLY_LEASE_SECONDS = 1;
 
 /**
  * The Workspace setup end to end: the routes, the real repositories and the
@@ -115,7 +114,6 @@ describe('Workspace setup', () => {
       spaces: {
         ...defaultConfiguration.spaces,
         maxSpaceCreationsPerUser: MAX_SPACE_CREATIONS,
-        setup: { applyLeaseSeconds: APPLY_LEASE_SECONDS },
       },
       billing: {
         ...defaultConfiguration.billing,
@@ -624,11 +622,14 @@ describe('Workspace setup', () => {
     it('takes over a setup stuck in APPLYING once its lease has run out', async () => {
       const spaceId = await pendingSetup();
       await markApplying(spaceId);
-      await new Promise((resolve) =>
-        setTimeout(resolve, (APPLY_LEASE_SECONDS + 1) * 1_000),
-      );
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(Date.now() + (SETUP_APPLY_LEASE_SECONDS + 1) * 1_000);
 
-      await spaceSetupApplier.apply(spaceId);
+      try {
+        await spaceSetupApplier.apply(spaceId);
+      } finally {
+        vi.useRealTimers();
+      }
 
       await expect(countWrites(spaceId)).resolves.toEqual({
         safes: 1,

@@ -979,13 +979,6 @@ export default () => ({
         10,
       ),
     },
-    setup: {
-      // How long an apply may hold a setup before another caller retries it.
-      applyLeaseSeconds: Number.parseInt(
-        process.env.SPACES_SETUP_APPLY_LEASE_SECONDS ?? `${120}`,
-        10,
-      ),
-    },
     rateLimit: {
       creation: {
         max: Number.parseInt(process.env.SPACES_RATE_LIMIT_MAX ?? `${10}`, 10),

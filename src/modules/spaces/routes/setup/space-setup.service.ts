@@ -305,19 +305,27 @@ export class SpaceSetupService {
   }
 
   /**
-   * With no plan, applies the setup now; with one, starts its checkout.
+   * With no plan, applies the setup now; with one, starts its checkout. A
+   * failed apply is logged, not thrown: the Workspace is committed, and the
+   * next read of the setup applies it.
    *
-   * @returns the checkout URL, or `null` once applied.
+   * @returns the checkout URL, or `null` without a plan.
    */
   private async finish(
     args: { spaceId: Space['id']; paymentLinkId: string | null },
     startCheckout: (paymentLinkId: string) => Promise<string>,
   ): Promise<string | null> {
-    if (args.paymentLinkId === null) {
-      await this.spaceSetupApplier.apply(args.spaceId);
-      return null;
+    if (args.paymentLinkId !== null) {
+      return await startCheckout(args.paymentLinkId);
     }
-    return await startCheckout(args.paymentLinkId);
+    try {
+      await this.spaceSetupApplier.apply(args.spaceId);
+    } catch (error) {
+      this.loggingService.warn(
+        `Could not apply the setup of space ${args.spaceId}: ${asError(error).message}`,
+      );
+    }
+    return null;
   }
 
   private async startCheckout(args: {

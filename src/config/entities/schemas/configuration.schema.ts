@@ -323,7 +323,6 @@ export const RootConfigurationSchema = z
     TARGETED_MESSAGING_FILE_STORAGE_TYPE: z.enum(['local', 'aws']).optional(),
     CSV_EXPORT_FILE_STORAGE_TYPE: z.enum(['local', 'aws']).optional(),
     SPACES_INVITE_TTL_MS: z.coerce.number().int().min(1).optional(),
-    SPACES_SETUP_APPLY_LEASE_SECONDS: z.coerce.number().int().min(1).optional(),
     SPACES_TRANSACTION_QUEUE_MAX_PAGES: z.coerce
       .number()
       .int()

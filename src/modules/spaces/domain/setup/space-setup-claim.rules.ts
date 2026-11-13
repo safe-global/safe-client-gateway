@@ -3,6 +3,9 @@ import type { SpaceSetupRow } from '#/modules/spaces/domain/setup/entities/space
 
 const MILLISECONDS_PER_SECOND = 1_000;
 
+/** Far above a normal apply (seconds), so only an apply that died loses its claim. */
+export const SETUP_APPLY_LEASE_SECONDS = 120;
+
 /**
  * Whether an apply may claim the setup: it is pending, or an earlier apply
  * claimed it more than `leaseSeconds` ago and never finished — it crashed or

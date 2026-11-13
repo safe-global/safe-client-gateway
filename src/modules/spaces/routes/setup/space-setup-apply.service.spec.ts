@@ -2,7 +2,6 @@
 import { faker } from '@faker-js/faker';
 import { NotFoundException } from '@nestjs/common';
 import type { MockedObject } from 'vitest';
-import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
 import { UniqueConstraintError } from '#/datasources/errors/unique-constraint-error';
 import type { ILoggingService } from '#/logging/logging.interface';
 import { QuotaExceededError } from '#/modules/entitlements/domain/errors/quota-exceeded.error';
@@ -15,6 +14,7 @@ import {
   spaceSetupSafeBuilder,
 } from '#/modules/spaces/domain/setup/entities/__tests__/space-setup.builder';
 import type { SpaceSetupPayload } from '#/modules/spaces/domain/setup/entities/space-setup.entity';
+import { SETUP_APPLY_LEASE_SECONDS } from '#/modules/spaces/domain/setup/space-setup-claim.rules';
 import type { ISpaceSetupsRepository } from '#/modules/spaces/domain/setup/space-setups.repository.interface';
 import {
   emailInviteUserDtoBuilder,
@@ -27,12 +27,11 @@ import { surveyBuilder } from '#/modules/surveys/datasources/entities/__tests__/
 import type { SurveyPage } from '#/modules/surveys/domain/entities/survey.entity';
 import type { ISurveysRepository } from '#/modules/surveys/domain/surveys.repository.interface';
 import { memberBuilder } from '#/modules/users/datasources/entities/__tests__/member.entity.db.builder';
-import type { User } from '#/modules/users/datasources/entities/users.entity.db';
+import { userBuilder } from '#/modules/users/datasources/entities/__tests__/users.entity.db.builder';
 import type { IMembersRepository } from '#/modules/users/domain/members/members.repository.interface';
 import { fakeUuid } from '#/validation/entities/schemas/__tests__/uuid.builder';
 
 describe('SpaceSetupApplyService', () => {
-  const leaseSeconds = faker.number.int({ min: 60, max: 300 });
   let spaceSetupsRepository: MockedObject<ISpaceSetupsRepository>;
   let spaceSafesRepository: MockedObject<ISpaceSafesRepository>;
   let addressBookItemsRepository: MockedObject<IAddressBookItemsRepository>;
@@ -45,8 +44,6 @@ describe('SpaceSetupApplyService', () => {
   let target: SpaceSetupApplyService;
 
   beforeEach(() => {
-    const configurationService = new FakeConfigurationService();
-    configurationService.set('spaces.setup.applyLeaseSeconds', leaseSeconds);
     spaceSetupsRepository = {
       claim: vi.fn(),
       markApplied: vi.fn(),
@@ -59,12 +56,14 @@ describe('SpaceSetupApplyService', () => {
     } as MockedObject<IAddressBookItemsRepository>;
     creatorId = faker.number.int({ min: 1, max: 1_000_000 });
     membersRepository = {
-      findOne: vi.fn().mockResolvedValue(
-        memberBuilder()
-          .with('user', { id: creatorId } as User)
-          .with('invitedBy', null)
-          .build(),
-      ),
+      find: vi
+        .fn()
+        .mockResolvedValue([
+          memberBuilder()
+            .with('user', userBuilder().with('id', creatorId).build())
+            .with('invitedBy', null)
+            .build(),
+        ]),
     } as MockedObject<IMembersRepository>;
     surveysRepository = {
       findActiveBySlugOrFail: vi.fn(),
@@ -91,7 +90,6 @@ describe('SpaceSetupApplyService', () => {
       surveysRepository,
       spaceSafesService,
       membersService,
-      configurationService,
       loggingService,
     );
   });
@@ -167,7 +165,7 @@ describe('SpaceSetupApplyService', () => {
 
     expect(spaceSetupsRepository.claim).toHaveBeenCalledWith({
       spaceId,
-      leaseSeconds,
+      leaseSeconds: SETUP_APPLY_LEASE_SECONDS,
     });
   });
 
@@ -264,6 +262,21 @@ describe('SpaceSetupApplyService', () => {
     });
   });
 
+  it('stores the contact of a Safe the Workspace already holds', async () => {
+    const safe = spaceSetupSafeBuilder().build();
+    const contact = contactFor(safe);
+    const spaceId = claimed({ safes: [safe], addressBookItems: [contact] });
+    spaceSafesRepository.existsInSpace.mockResolvedValue(true);
+
+    await target.apply(spaceId);
+
+    expect(addressBookItemsRepository.upsertMany).toHaveBeenCalledWith({
+      userId: creatorId,
+      spaceId,
+      addressBookItems: [contact],
+    });
+  });
+
   it('stores contacts for addresses that are not among the Safes', async () => {
     const contact = contactFor(spaceSetupSafeBuilder().build());
     const spaceId = claimed({ safes: [], addressBookItems: [contact] });
@@ -291,6 +304,7 @@ describe('SpaceSetupApplyService', () => {
         spaceId,
         actorUserId: creatorId,
         users: [invite],
+        onPendingInvite: 'refuse',
       });
     }
   });
@@ -371,7 +385,7 @@ describe('SpaceSetupApplyService', () => {
 
   it('fails without marking the setup applied when the space has no creator', async () => {
     const spaceId = claimed({});
-    membersRepository.findOne.mockResolvedValue(null);
+    membersRepository.find.mockResolvedValue([]);
 
     await expect(target.apply(spaceId)).rejects.toThrow(
       `Space ${spaceId} has no creator to apply its setup as`,

@@ -151,11 +151,10 @@ export class SubscriptionSyncService implements ISubscriptionSyncService {
    * the setup retries the apply.
    */
   private async applyPendingSetup(spaceId: Space['id']): Promise<void> {
-    if (!(await this.hasLiveSubscription(spaceId))) {
-      return;
-    }
     try {
-      await this.spaceSetupApplier.apply(spaceId);
+      if (await this.hasLiveSubscription(spaceId)) {
+        await this.spaceSetupApplier.apply(spaceId);
+      }
     } catch (error) {
       this.loggingService.error(
         `Failed to apply the pending setup of space ${spaceId}: ${asError(error).message}`,
