@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
+import type { MockedObject } from 'vitest';
 import { paymentLinkBuilder } from '#/datasources/billing-api/entities/__tests__/payment-link.builder';
 import type { PaymentLink } from '#/datasources/billing-api/entities/payment-link.entity';
+import type { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository.interface';
 import { spaceSetupSafeBuilder } from '#/modules/spaces/domain/setup/entities/__tests__/space-setup.builder';
 import { BillingUnavailableError } from '#/modules/spaces/domain/setup/errors/billing-unavailable.error';
 import { NotEnoughSeatsError } from '#/modules/spaces/domain/setup/errors/not-enough-seats.error';
@@ -10,6 +12,7 @@ import { PlanRequiredError } from '#/modules/spaces/domain/setup/errors/plan-req
 import {
   assertPlanChoice,
   assertSeatsFit,
+  countSeatsWith,
   countSetupSeats,
   findOfferedPaymentLink,
 } from '#/modules/spaces/domain/setup/space-setup-plan.rules';
@@ -96,6 +99,44 @@ describe('space setup plan rules', () => {
 
     it('counts no seat for no Safe', () => {
       expect(countSetupSeats([])).toBe(0);
+    });
+  });
+
+  describe('countSeatsWith', () => {
+    const spaceId = faker.number.int({ min: 1 });
+    let spaceSafesRepository: MockedObject<ISpaceSafesRepository>;
+
+    beforeEach(() => {
+      spaceSafesRepository = {
+        countSeatsBySpaceId: vi.fn(),
+        countNewSeats: vi.fn(),
+      } as MockedObject<ISpaceSafesRepository>;
+    });
+
+    it('adds the seats the Safes would take to the seats held', async () => {
+      const held = faker.number.int({ min: 0, max: 10 });
+      const added = faker.number.int({ min: 1, max: 10 });
+      const safes = [spaceSetupSafeBuilder().build()];
+      spaceSafesRepository.countSeatsBySpaceId.mockResolvedValue(held);
+      spaceSafesRepository.countNewSeats.mockResolvedValue(added);
+
+      await expect(
+        countSeatsWith(spaceSafesRepository, { spaceId, safes }),
+      ).resolves.toBe(held + added);
+      expect(spaceSafesRepository.countNewSeats).toHaveBeenCalledWith({
+        spaceId,
+        addresses: [safes[0].address],
+      });
+    });
+
+    it('counts only the seats held when there is no Safe to add', async () => {
+      const held = faker.number.int({ min: 0, max: 10 });
+      spaceSafesRepository.countSeatsBySpaceId.mockResolvedValue(held);
+
+      await expect(
+        countSeatsWith(spaceSafesRepository, { spaceId, safes: [] }),
+      ).resolves.toBe(held);
+      expect(spaceSafesRepository.countNewSeats).not.toHaveBeenCalled();
     });
   });
 
