@@ -865,6 +865,7 @@ describe('SpacesService', () => {
       const userId = Number(authPayload.sub);
       const name = faker.word.noun();
       const repositoryResponse = {
+        id: faker.number.int({ min: 1 }),
         uuid: fakeUuid(),
         name,
       };
@@ -898,6 +899,7 @@ describe('SpacesService', () => {
         const authPayload = new AuthPayload(builder().build());
         const userId = Number(authPayload.sub);
         const expectedResponse = {
+          id: faker.number.int({ min: 1 }),
           uuid: fakeUuid(),
           name: faker.word.noun(),
         };

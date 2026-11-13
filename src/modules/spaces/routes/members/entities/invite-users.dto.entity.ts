@@ -2,51 +2,19 @@
 import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
 import type { Address } from 'viem';
 import { z } from 'zod';
-import { makeNameSchema } from '#/domain/common/schemas/name.schema';
 import { getStringEnumKeys } from '#/domain/common/utils/enum';
+import {
+  type EmailInviteUserSchema,
+  InviteType,
+  type InviteUserInput,
+  InviteUserSchema,
+  type WalletInviteUserSchema,
+} from '#/modules/users/domain/entities/invite-user.entity';
 import {
   MEMBER_NAME_MAX_LENGTH,
   MemberRole,
 } from '#/modules/users/domain/entities/member.entity';
-import { AddressSchema } from '#/validation/entities/schemas/address.schema';
-import {
-  type EmailAddress,
-  EmailAddressSchema,
-} from '#/validation/entities/schemas/email-address.schema';
-
-export const InviteType = {
-  Wallet: 'wallet',
-  Email: 'email',
-} as const;
-
-const SharedInviteFields = {
-  role: z.enum(getStringEnumKeys(MemberRole)),
-  name: makeNameSchema({ maxLength: MEMBER_NAME_MAX_LENGTH }),
-};
-
-const WalletInviteUserSchema = z
-  .object({
-    type: z.literal(InviteType.Wallet),
-    address: AddressSchema,
-    ...SharedInviteFields,
-  })
-  .strict();
-
-const EmailInviteUserSchema = z
-  .object({
-    type: z.literal(InviteType.Email),
-    email: EmailAddressSchema,
-    ...SharedInviteFields,
-  })
-  .strict();
-
-export const InviteUserSchema = z.discriminatedUnion('type', [
-  WalletInviteUserSchema,
-  EmailInviteUserSchema,
-]);
-
-export type InviteUserInput = z.infer<typeof InviteUserSchema>;
-export type EmailInviteUserInput = z.infer<typeof EmailInviteUserSchema>;
+import type { EmailAddress } from '#/validation/entities/schemas/email-address.schema';
 
 // Defaults missing `type` to wallet so legacy clients keep working.
 // TODO: remove once wallet-1 wa-2052 ships.

@@ -7,6 +7,7 @@ import { getAuthenticatedUserIdOrFail } from '#/modules/auth/utils/assert-authen
 import type { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
 import { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository.interface';
 import { assertAdmin } from '#/modules/spaces/domain/space-assert.utils';
+import { activateSpaceCreator } from '#/modules/spaces/domain/space-creator.utils';
 import { SpaceEncryptionService } from '#/modules/spaces/domain/space-encryption.service';
 import { ISpacesRepository } from '#/modules/spaces/domain/spaces.repository.interface';
 import type { CreateSpaceResponse } from '#/modules/spaces/routes/entities/create-space.dto.entity';
@@ -48,10 +49,10 @@ export class SpacesService {
     authPayload: AuthPayload;
   }): Promise<CreateSpaceResponse> {
     const userId = getAuthenticatedUserIdOrFail(args.authPayload);
-    await this.usersRepository.findOneOrFail({ id: userId });
-    await this.usersRepository.activateIfPending(userId);
+    await activateSpaceCreator(this.usersRepository, userId);
 
-    return await this.spacesRepository.create({ userId, ...args });
+    const space = await this.spacesRepository.create({ userId, ...args });
+    return { uuid: space.uuid, name: space.name };
   }
 
   public getActiveOrInvitedSpaces(

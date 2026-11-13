@@ -6,6 +6,7 @@ import {
   Inject,
   Param,
   Post,
+  UseFilters,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -23,6 +24,7 @@ import {
 import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
 import { AuthGuard } from '#/modules/auth/routes/guards/auth.guard';
 import { SurveySlugSchema } from '#/modules/surveys/domain/entities/survey.entity';
+import { InvalidSurveySelectionsExceptionFilter } from '#/modules/surveys/domain/exception-filters/invalid-survey-selections.exception-filter';
 import {
   SubmitSurveyResponseDto,
   SubmitSurveyResponseDtoSchema,
@@ -99,6 +101,7 @@ export class SurveysController {
   @ApiNotFoundResponse({ description: 'No active survey for this slug' })
   @Post('/:spaceId/surveys/:slug/responses')
   @UseGuards(AuthGuard)
+  @UseFilters(InvalidSurveySelectionsExceptionFilter)
   public async submitResponse(
     @Auth() authPayload: AuthPayload,
     @Param('spaceId', SpaceIdPipe) spaceId: number,

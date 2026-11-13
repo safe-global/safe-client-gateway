@@ -8,9 +8,9 @@ import type {
 } from 'typeorm';
 import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
 import type { Space } from '#/modules/spaces/domain/entities/space.entity';
-import type { InviteUserInput } from '#/modules/spaces/routes/members/entities/invite-users.dto.entity';
 import type { Member as DbMember } from '#/modules/users/datasources/entities/member.entity.db';
 import type { Invitation } from '#/modules/users/domain/entities/invitation.entity';
+import type { InviteUserInput } from '#/modules/users/domain/entities/invite-user.entity';
 import type { Member } from '#/modules/users/domain/entities/member.entity';
 import type { User } from '#/modules/users/domain/entities/user.entity';
 
@@ -41,7 +41,8 @@ export interface IMembersRepository {
    * Active and declined members cannot be (re-)invited.
    */
   inviteUsers(args: {
-    authPayload: AuthPayload;
+    /** Recorded as the inviter; authorized by the caller. */
+    actorUserId: User['id'];
     spaceId: Space['id'];
     users: Array<InviteUserInput>;
     inviteExpiresAt: Date;

@@ -26,16 +26,16 @@ import { createMockSpaceEncryptionService } from '#/modules/spaces/domain/__test
 import { createMockSpaceAuditRepository } from '#/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
 import { SpaceStatus } from '#/modules/spaces/domain/entities/space.entity';
 import { SpacesRepository } from '#/modules/spaces/domain/spaces.repository';
-import {
-  InviteType,
-  type InviteUserInput,
-} from '#/modules/spaces/routes/members/entities/invite-users.dto.entity';
 import { Member } from '#/modules/users/datasources/entities/member.entity.db';
 import { User } from '#/modules/users/datasources/entities/users.entity.db';
 import {
   createEncryptingMockUserEncryptionService,
   createMockUserEncryptionService,
 } from '#/modules/users/domain/__tests__/user-encryption.service.mock';
+import {
+  InviteType,
+  type InviteUserInput,
+} from '#/modules/users/domain/entities/invite-user.entity';
 import {
   MemberRole,
   MemberStatus,
@@ -589,7 +589,7 @@ describe('MembersRepository', () => {
       );
 
       const member = await membersRepository.inviteUsers({
-        authPayload,
+        actorUserId: Number(authPayload.sub),
         spaceId,
         users,
         inviteExpiresAt,
@@ -646,7 +646,7 @@ describe('MembersRepository', () => {
       );
 
       const member = await membersRepository.inviteUsers({
-        authPayload,
+        actorUserId: Number(authPayload.sub),
         spaceId,
         users,
         inviteExpiresAt,
@@ -697,7 +697,7 @@ describe('MembersRepository', () => {
       const memberName = nameBuilder();
 
       await membersRepository.inviteUsers({
-        authPayload,
+        actorUserId: Number(authPayload.sub),
         spaceId,
         users: [
           {
@@ -784,7 +784,7 @@ describe('MembersRepository', () => {
 
       await expect(
         membersRepository.inviteUsers({
-          authPayload,
+          actorUserId: Number(authPayload.sub),
           spaceId,
           users: [
             {
@@ -859,7 +859,7 @@ describe('MembersRepository', () => {
 
       await expect(
         membersRepository.inviteUsers({
-          authPayload,
+          actorUserId: Number(authPayload.sub),
           spaceId,
           users: [
             {
@@ -912,7 +912,7 @@ describe('MembersRepository', () => {
 
       await expect(
         membersRepository.inviteUsers({
-          authPayload,
+          actorUserId: Number(authPayload.sub),
           spaceId,
           users: [
             {
@@ -949,7 +949,7 @@ describe('MembersRepository', () => {
       const inviteName = nameBuilder();
 
       const invitations = await membersRepository.inviteUsers({
-        authPayload,
+        actorUserId: Number(authPayload.sub),
         spaceId,
         users: [
           {
@@ -996,7 +996,7 @@ describe('MembersRepository', () => {
       const existingUserId = existingInsert.generatedMaps[0].id;
 
       const invitations = await membersRepository.inviteUsers({
-        authPayload,
+        actorUserId: Number(authPayload.sub),
         spaceId,
         users: [
           {
@@ -1024,7 +1024,7 @@ describe('MembersRepository', () => {
 
       await expect(
         membersRepository.inviteUsers({
-          authPayload,
+          actorUserId: Number(authPayload.sub),
           spaceId,
           users,
           inviteExpiresAt,
@@ -3600,7 +3600,7 @@ describe('MembersRepository', () => {
       const inviteEmail = EmailAddressSchema.parse(faker.internet.email());
 
       const invitations = await encryptingMembersRepository.inviteUsers({
-        authPayload,
+        actorUserId: Number(authPayload.sub),
         spaceId,
         users: [
           {
