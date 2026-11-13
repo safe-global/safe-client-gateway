@@ -29,9 +29,7 @@ export const InviteUsersDtoSchema = z.object({
   users: z.array(InviteUserSchemaWithWalletDefault).min(1),
 });
 
-export class WalletInviteUserDto
-  implements z.infer<typeof WalletInviteUserSchema>
-{
+class WalletInviteUserDto implements z.infer<typeof WalletInviteUserSchema> {
   @ApiProperty({ enum: [InviteType.Wallet] })
   public readonly type!: typeof InviteType.Wallet;
 
@@ -45,9 +43,7 @@ export class WalletInviteUserDto
   public readonly name!: string;
 }
 
-export class EmailInviteUserDto
-  implements z.infer<typeof EmailInviteUserSchema>
-{
+class EmailInviteUserDto implements z.infer<typeof EmailInviteUserSchema> {
   @ApiProperty({ enum: [InviteType.Email] })
   public readonly type!: typeof InviteType.Email;
 

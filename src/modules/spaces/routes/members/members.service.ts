@@ -17,6 +17,7 @@ import type { UpdateMemberAliasDto } from '#/modules/spaces/routes/members/entit
 import type { UpdateRoleDto } from '#/modules/spaces/routes/members/entities/update-role.dto.entity';
 import { SpaceInviteEmailService } from '#/modules/spaces/routes/members/space-invite-email.service';
 import type { Invitation as DomainInvitation } from '#/modules/users/domain/entities/invitation.entity';
+import type { InviteUserInput } from '#/modules/users/domain/entities/invite-user.entity';
 import type { User } from '#/modules/users/domain/entities/user.entity';
 import { assertWithinInviteLimit } from '#/modules/users/domain/members/invite-limit.rules';
 import { MemberEncryptionService } from '#/modules/users/domain/members/member-encryption.service';
@@ -85,7 +86,7 @@ export class MembersService {
   public async inviteAs(args: {
     actorUserId: User['id'];
     spaceId: Space['id'];
-    users: InviteUsersDto['users'];
+    users: Array<InviteUserInput>;
   }): Promise<Array<DomainInvitation>> {
     assertWithinInviteLimit({
       inviteCount: args.users.length,

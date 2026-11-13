@@ -137,7 +137,7 @@ describe('SurveysService', () => {
       ],
     };
 
-    it('rejects a missing required page id with 400', async () => {
+    it('rejects a missing required page id', async () => {
       surveysRepositoryMock.findActiveBySlugOrFail.mockResolvedValue(
         buildSurvey([multiSelectPage, singleSelectPage]),
       );
@@ -153,7 +153,7 @@ describe('SurveysService', () => {
       expect(surveysRepositoryMock.upsertResponse).not.toHaveBeenCalled();
     });
 
-    it('rejects an unknown page id with 400', async () => {
+    it('rejects an unknown page id', async () => {
       surveysRepositoryMock.findActiveBySlugOrFail.mockResolvedValue(
         buildSurvey([multiSelectPage]),
       );
@@ -174,7 +174,7 @@ describe('SurveysService', () => {
       expect(surveysRepositoryMock.upsertResponse).not.toHaveBeenCalled();
     });
 
-    it('rejects unknown selection keys within a page with 400', async () => {
+    it('rejects unknown selection keys within a page', async () => {
       surveysRepositoryMock.findActiveBySlugOrFail.mockResolvedValue(
         buildSurvey([multiSelectPage]),
       );
@@ -191,7 +191,7 @@ describe('SurveysService', () => {
       ).rejects.toBeInstanceOf(InvalidSurveySelectionsError);
     });
 
-    it('rejects more than one selection on a single-select page with 400', async () => {
+    it('rejects more than one selection on a single-select page', async () => {
       surveysRepositoryMock.findActiveBySlugOrFail.mockResolvedValue(
         buildSurvey([singleSelectPage]),
       );
