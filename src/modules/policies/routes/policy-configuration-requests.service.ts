@@ -1,10 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import {
-  BadRequestException,
-  HttpStatus,
-  Inject,
-  Injectable,
-} from '@nestjs/common';
+import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import type { Hex } from 'viem';
 import { IConfigurationService } from '#/config/configuration.service.interface';
 import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
@@ -122,15 +117,16 @@ export class PolicyConfigurationRequestsService {
     const closed = await this.closedRootsOf(args.safe);
     const active = stored.filter(({ root }) => !closed.has(root));
     if (active.length >= this.maxPerSpaceSafe) {
-      throw new BadRequestException(
+      throw new HttpExceptionNoLog(
         `This Safe only allows a maximum of ${this.maxPerSpaceSafe} active policy configuration requests in this space.`,
+        HttpStatus.BAD_REQUEST,
       );
     }
   }
 
   /**
-   * The Safe's roots that can no longer be applied. None when the indexer
-   * cannot be read, so every stored root counts.
+   * The Safe's roots that can no longer be applied on any guard. None when
+   * the indexer cannot be read, so every stored root counts.
    */
   private async closedRootsOf(safe: SafeRef): Promise<Set<Hex>> {
     try {
@@ -140,10 +136,14 @@ export class PolicyConfigurationRequestsService {
         guardPolicyKinds: guardPolicyKindsOf(GUARD_POLICY_TYPES),
       });
       const now = toSecondsTimestamp(new Date());
-      return new Set(
+      // One entry per guard and root: open on any guard keeps a root active.
+      const open = new Set(
         roots
-          .filter((root) => !isRootApplicable(root, now))
+          .filter((root) => isRootApplicable(root, now))
           .map(({ root }) => root),
+      );
+      return new Set(
+        roots.map(({ root }) => root).filter((root) => !open.has(root)),
       );
     } catch (error) {
       this.loggingService.warn({

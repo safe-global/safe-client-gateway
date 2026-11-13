@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import { BadRequestException, HttpStatus } from '@nestjs/common';
+import { HttpStatus } from '@nestjs/common';
 import { getAddress, type Hex } from 'viem';
 import type { MockedObject } from 'vitest';
 import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
@@ -178,6 +178,11 @@ describe('PolicyConfigurationRequestsService', () => {
       vi.useRealTimers();
     });
 
+    const capError = new HttpExceptionNoLog(
+      `This Safe only allows a maximum of ${maxPerSpaceSafe} active policy configuration requests in this space.`,
+      HttpStatus.BAD_REQUEST,
+    );
+
     /** Stores {@link maxPerSpaceSafe} configurations for the Safe. */
     function fillCap(): Array<SafePolicyGuardConfiguration> {
       const stored = Array.from({ length: maxPerSpaceSafe }, () =>
@@ -208,7 +213,7 @@ describe('PolicyConfigurationRequestsService', () => {
 
       await expect(
         target.create({ ...request, payload: validPayload() }),
-      ).rejects.toThrow(BadRequestException);
+      ).rejects.toThrow(capError);
       expect(configurationRequestsRepository.findBySafes).toHaveBeenCalledWith({
         spaceId,
         safes: [safe],
@@ -242,9 +247,14 @@ describe('PolicyConfigurationRequestsService', () => {
             .build(),
         );
 
+        const payload = validPayload();
+
         await expect(
-          target.create({ ...request, payload: validPayload() }),
-        ).resolves.toBeDefined();
+          target.create({ ...request, payload }),
+        ).resolves.toStrictEqual({ root: payload.root });
+        expect(configurationRequestsRepository.create).toHaveBeenCalledWith(
+          expect.objectContaining({ root: payload.root }),
+        );
         expect(policyIndexerRepository.getState).toHaveBeenCalledWith({
           safes: [safe],
           guardPolicyKinds: guardPolicyKindsOf(GUARD_POLICY_TYPES),
@@ -262,7 +272,23 @@ describe('PolicyConfigurationRequestsService', () => {
 
       await expect(
         target.create({ ...request, payload: validPayload() }),
-      ).rejects.toThrow(BadRequestException);
+      ).rejects.toThrow(capError);
+    });
+
+    it('should count a root closed on one guard but open on another', async () => {
+      const [{ root }] = fillCap();
+      policyIndexerRepository.getState.mockResolvedValue(
+        policyIndexerResponseBuilder()
+          .with('roots', [
+            onChain(root, 'APPLIED', nowSeconds + 1),
+            onChain(root, 'PENDING', nowSeconds + 1),
+          ])
+          .build(),
+      );
+
+      await expect(
+        target.create({ ...request, payload: validPayload() }),
+      ).rejects.toThrow(capError);
     });
 
     it('should count every stored root when the indexer cannot be read', async () => {
@@ -271,7 +297,7 @@ describe('PolicyConfigurationRequestsService', () => {
 
       await expect(
         target.create({ ...request, payload: validPayload() }),
-      ).rejects.toThrow(BadRequestException);
+      ).rejects.toThrow(capError);
       expect(loggingService.warn).toHaveBeenCalledWith(
         expect.objectContaining({
           message: 'Could not read the configuration roots of a Safe',
