@@ -41,7 +41,7 @@ interface FlakyTest {
 	file: string;
 	failure_count: number;
 	last_failure: string;
-	status: "open" | "in_review" | "fixed";
+	status: "open" | "in_review" | "fixed" | "removed";
 	fix_pr: { number: number; url: string } | null;
 }
 
@@ -95,6 +95,17 @@ function gh(endpoint: string, params: Record<string, string> = {}): unknown {
 		? `repos/${REPO}/${endpoint}?${query}`
 		: `repos/${REPO}/${endpoint}`;
 	return JSON.parse(ghExec(`gh api "${url}"`));
+}
+
+// Throws if `origin/main` is missing rather than marking every test removed
+execSync("git rev-parse --verify -q origin/main", { stdio: "ignore" });
+function existsOnMain(file: string): boolean {
+	try {
+		execSync(`git cat-file -e "origin/main:${file}"`, { stdio: "ignore" });
+		return true;
+	} catch {
+		return false;
+	}
 }
 
 function getDateRange(resumeAfter?: string | null): {
@@ -497,8 +508,11 @@ async function fetchTestFixPrs(): Promise<Array<FixPr>> {
 				);
 				const testFiles = [
 					...new Set([
+						// A change to `x.ts` counts for its unit spec `x.spec.ts`
 						...files
-							.map((f) => f.filename)
+							.map((f) =>
+								f.filename.replace(/(?<!\.spec)\.ts$/, ".spec.ts"),
+							)
 							.filter((f) => f.match(/\.spec\.ts$/)),
 						...markerFiles,
 					]),
@@ -636,6 +650,7 @@ function generateReport(args: {
 		open: "Open",
 		in_review: "Fix in review",
 		fixed: "Fixed",
+		removed: "Removed from main",
 	};
 	lines.push("## Flaky Test Leaderboard");
 	lines.push("");
@@ -986,7 +1001,13 @@ async function main(): Promise<void> {
 			file,
 			failure_count: count,
 			last_failure: last,
-			status: fix ? "fixed" : review ? "in_review" : "open",
+			status: fix
+				? "fixed"
+				: !existsOnMain(file)
+					? "removed"
+					: review
+						? "in_review"
+						: "open",
 			fix_pr: pr ? { number: pr.number, url: pr.url } : null,
 		};
 	});
