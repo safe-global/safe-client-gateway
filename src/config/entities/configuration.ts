@@ -466,8 +466,9 @@ export default () => ({
       process.env.FF_ZERION_TESTNETS_ENABLED?.toLowerCase() === 'true',
     zerionPositions:
       process.env.FF_ZERION_POSITIONS_DISABLED?.toLowerCase() !== 'true',
-    // /v2/safes reads the shared /positions snapshot. Remove it, with the
-    // Zerion /portfolio path, once it is on everywhere.
+    // Owner: One Balance Contract. /v2/safes reads the shared /positions
+    // snapshot. Remove it, with the Zerion /portfolio path, once it is on
+    // everywhere.
     safesPortfolioSnapshot:
       process.env.FF_SAFES_PORTFOLIO_SNAPSHOT?.toLowerCase() === 'true',
     debugLogs: process.env.FF_DEBUG_LOGS?.toLowerCase() === 'true',
