@@ -25,7 +25,6 @@ import { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes
 import type {
   SpaceSetup,
   SpaceSetupPayload,
-  SpaceSetupSafe,
   SpaceSetupSurvey,
 } from '#/modules/spaces/domain/setup/entities/space-setup.entity';
 import { SpaceSetupCheckoutFailedError } from '#/modules/spaces/domain/setup/errors/space-setup-checkout-failed.error';
@@ -35,6 +34,7 @@ import { buildSetupPayload } from '#/modules/spaces/domain/setup/space-setup-pay
 import {
   assertPlanChoice,
   assertSeatsFit,
+  countSeatsWith,
   countSetupSeats,
   findOfferedPaymentLink,
 } from '#/modules/spaces/domain/setup/space-setup-plan.rules';
@@ -195,7 +195,11 @@ export class SpaceSetupService {
           spaceId: args.spaceId,
           spaceUuid,
         }),
-      countSeats: () => this.countSeatsWith(args.spaceId, payload.safes),
+      countSeats: () =>
+        countSeatsWith(this.spaceSafesRepository, {
+          spaceId: args.spaceId,
+          safes: payload.safes,
+        }),
     });
 
     await this.replaceSetup({
@@ -268,21 +272,6 @@ export class SpaceSetupService {
       seats: await args.countSeats(),
       onInvalidQuota: (message) => this.loggingService.warn(message),
     });
-  }
-
-  /** Seats the Workspace holds, with the ones `safes` would add. */
-  private async countSeatsWith(
-    spaceId: Space['id'],
-    safes: Array<SpaceSetupSafe>,
-  ): Promise<number> {
-    const addresses = safes.map((safe) => safe.address);
-    const [held, added] = await Promise.all([
-      this.spaceSafesRepository.countSeatsBySpaceId(spaceId),
-      addresses.length > 0
-        ? this.spaceSafesRepository.countNewSeats({ spaceId, addresses })
-        : 0,
-    ]);
-    return held + added;
   }
 
   private async replaceSetup(args: {

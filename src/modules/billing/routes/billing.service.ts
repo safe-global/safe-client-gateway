@@ -60,6 +60,7 @@ import { ISubscriptionsRepository } from '#/modules/entitlements/domain/subscrip
 import type { Space } from '#/modules/spaces/domain/entities/space.entity';
 import { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository.interface';
 import type { ISpaceSetupBilling } from '#/modules/spaces/domain/setup/space-setup-billing.interface';
+import { countSeatsWith } from '#/modules/spaces/domain/setup/space-setup-plan.rules';
 import { ISpaceSetupsRepository } from '#/modules/spaces/domain/setup/space-setups.repository.interface';
 import {
   assertAdmin,
@@ -605,27 +606,16 @@ export class BillingService implements ISpaceSetupBilling {
       return;
     }
 
-    const [held, pending] = await Promise.all([
-      this.spaceSafesRepository.countSeatsBySpaceId(args.spaceId),
-      this.countPendingSetupSeats(args.spaceId),
-    ]);
-    if (held + pending > quota) {
+    const setup = await this.spaceSetupsRepository.findBySpaceId(args.spaceId);
+    const seats = await countSeatsWith(this.spaceSafesRepository, {
+      spaceId: args.spaceId,
+      safes: setup?.status === 'PENDING' ? setup.payload.safes : [],
+    });
+    if (seats > quota) {
       throw new ConflictException(
         "This plan doesn't offer enough Safe seats for the workspace's current Safes",
       );
     }
-  }
-
-  /** Seats the pending setup's Safes would add to the ones already held. */
-  private async countPendingSetupSeats(spaceId: Space['id']): Promise<number> {
-    const setup = await this.spaceSetupsRepository.findBySpaceId(spaceId);
-    if (setup?.status !== 'PENDING' || setup.payload.safes.length === 0) {
-      return 0;
-    }
-    return await this.spaceSafesRepository.countNewSeats({
-      spaceId,
-      addresses: setup.payload.safes.map((safe) => safe.address),
-    });
   }
 
   private validateReturnUrl(returnUrl: string): string {
