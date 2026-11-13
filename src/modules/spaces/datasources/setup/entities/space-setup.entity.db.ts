@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import type { UUID } from 'node:crypto';
 import { Column, Entity, PrimaryGeneratedColumn, Unique } from 'typeorm';
 import { databaseEnumTransformer } from '#/domain/common/utils/enum';
 import {
@@ -34,6 +35,9 @@ export class SpaceSetup implements DomainSpaceSetupRow {
     transformer: databaseEnumTransformer(SpaceSetupStatus),
   })
   status!: keyof typeof SpaceSetupStatus;
+
+  @Column({ name: 'claim_id', type: 'uuid', nullable: true })
+  claimId!: UUID | null;
 
   @Column({
     name: 'applied_at',

@@ -2,6 +2,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { KmsEncryptionService } from '#/datasources/kms/kms-encryption.service';
 import { normalizeTagNameKey } from '#/modules/spaces/domain/address-books/entities/address-book-tag.entity';
+import type { SpaceSetupPayload } from '#/modules/spaces/domain/setup/entities/space-setup.entity';
 
 /**
  * Space-scoped field-encryption policy for the spaces module: space names,
@@ -197,7 +198,7 @@ export class SpaceEncryptionService {
    */
   async encryptSetupPayload(
     spaceId: number,
-    payload: unknown,
+    payload: SpaceSetupPayload,
   ): Promise<string> {
     return await this.encryptJson(spaceId, payload);
   }
