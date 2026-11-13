@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
-import { BadRequestException } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
 import { DataSource, type Repository } from 'typeorm';
 import { type Address, getAddress } from 'viem';
@@ -32,7 +31,6 @@ describe('SafePolicyGuardConfigurationRequestsRepository', () => {
   let repository: SafePolicyGuardConfigurationRequestsRepository;
   let dbRepository: Repository<PolicyConfigurationRequest>;
 
-  const maxPerSafe = 3;
   const retentionDays = 60;
   /** A real Space per test: `space_id` is a foreign key to `spaces`. */
   let spaceId: number;
@@ -73,13 +71,6 @@ describe('SafePolicyGuardConfigurationRequestsRepository', () => {
       configurations,
       createdBy: faker.number.int({ min: 1, max: 1000 }),
     };
-  }
-
-  /** Stores {@link maxPerSafe} requests for one Safe in the current Space. */
-  async function fillCap(safeAddress: Address): Promise<void> {
-    for (let index = 0; index < maxPerSafe; index++) {
-      await repository.create(storableRequest({ safeAddress }));
-    }
   }
 
   /** Inserts an active Space and returns its id. */
@@ -124,9 +115,6 @@ describe('SafePolicyGuardConfigurationRequestsRepository', () => {
         }
         if (key === 'db.migrator.retryAfterMs') {
           return testConfiguration.db.migrator.retryAfterMs;
-        }
-        if (key === 'policies.maxConfigurationRequestsPerSpaceSafe') {
-          return maxPerSafe;
         }
         if (key === 'policies.configurationRequestRetentionDays') {
           return retentionDays;
@@ -272,102 +260,6 @@ describe('SafePolicyGuardConfigurationRequestsRepository', () => {
     });
   });
 
-  describe('cap', () => {
-    it('should reject a Safe at the cap', async () => {
-      const safeAddress = getAddress(faker.finance.ethereumAddress());
-      await fillCap(safeAddress);
-
-      await expect(
-        repository.create(storableRequest({ safeAddress })),
-      ).rejects.toThrow(BadRequestException);
-      await expect(dbRepository.count()).resolves.toBe(maxPerSafe);
-    });
-
-    it('should still accept a re-submission of a stored root at the cap', async () => {
-      const safeAddress = getAddress(faker.finance.ethereumAddress());
-      const requests = Array.from({ length: maxPerSafe }, () =>
-        storableRequest({ safeAddress }),
-      );
-      for (const request of requests) {
-        await repository.create(request);
-      }
-
-      await expect(repository.create(requests[0])).resolves.toBeUndefined();
-      await expect(dbRepository.count()).resolves.toBe(maxPerSafe);
-    });
-
-    it("should reject another Safe's stored root at the cap", async () => {
-      const safeAddress = getAddress(faker.finance.ethereumAddress());
-      const otherSafeRequest = storableRequest();
-      await repository.create(otherSafeRequest);
-      await fillCap(safeAddress);
-
-      await expect(
-        repository.create({ ...otherSafeRequest, safeAddress }),
-      ).rejects.toThrow(BadRequestException);
-    });
-
-    it('should not count another Safe towards the cap', async () => {
-      await fillCap(getAddress(faker.finance.ethereumAddress()));
-
-      await expect(
-        repository.create(storableRequest()),
-      ).resolves.toBeUndefined();
-    });
-
-    it('should not count the same Safe on another chain towards the cap', async () => {
-      const safeAddress = getAddress(faker.finance.ethereumAddress());
-      await fillCap(safeAddress);
-
-      await expect(
-        repository.create(storableRequest({ safeAddress, chainId: '1' })),
-      ).resolves.toBeUndefined();
-    });
-
-    it('should not count the same Safe in another Space towards the cap', async () => {
-      const safeAddress = getAddress(faker.finance.ethereumAddress());
-      await fillCap(safeAddress);
-
-      await expect(
-        repository.create(
-          storableRequest({ safeAddress, spaceId: await insertSpace() }),
-        ),
-      ).resolves.toBeUndefined();
-    });
-
-    it('should match the Safe by its blind index when encryption is enabled', async () => {
-      const safeAddress = getAddress(faker.finance.ethereumAddress());
-      encryptionService.safeAddressIndex.mockReturnValue(
-        faker.string.hexadecimal({ length: 64 }),
-      );
-      // Non-deterministic ciphertext, as KMS produces.
-      encryptionService.encryptSafeAddress.mockImplementation(() =>
-        Promise.resolve(`kms:v1:${faker.string.alphanumeric(32)}`),
-      );
-      await fillCap(safeAddress);
-
-      await expect(
-        repository.create(storableRequest({ safeAddress })),
-      ).rejects.toThrow(BadRequestException);
-    });
-
-    it('should not exceed the cap under concurrent requests', async () => {
-      const safeAddress = getAddress(faker.finance.ethereumAddress());
-      for (let index = 0; index < maxPerSafe - 1; index++) {
-        await repository.create(storableRequest({ safeAddress }));
-      }
-
-      const results = await Promise.allSettled(
-        Array.from({ length: 3 }, () =>
-          repository.create(storableRequest({ safeAddress })),
-        ),
-      );
-
-      expect(results.filter((r) => r.status === 'fulfilled')).toHaveLength(1);
-      await expect(dbRepository.count()).resolves.toBe(maxPerSafe);
-    });
-  });
-
   describe('prune', () => {
     it('should delete only the requests older than the retention', async () => {
       const expired = storableRequest();
@@ -505,6 +397,43 @@ describe('SafePolicyGuardConfigurationRequestsRepository', () => {
       await expect(
         repository.findBySafes({ spaceId, safes: [] }),
       ).resolves.toStrictEqual([]);
+    });
+  });
+
+  describe('findRootsBySafe', () => {
+    it('should return the stored roots of the given Safe only', async () => {
+      const first = storableRequest();
+      const second = storableRequest({ safeAddress: first.safeAddress });
+      for (const request of [first, second, storableRequest()]) {
+        await repository.create(request);
+      }
+
+      const roots = await repository.findRootsBySafe({
+        spaceId,
+        safe: { chainId: first.chainId, address: first.safeAddress },
+      });
+
+      expect(roots.toSorted()).toStrictEqual(
+        [first.root, second.root].toSorted(),
+      );
+    });
+
+    it('should match the Safe by its blind index when encryption is enabled', async () => {
+      const request = storableRequest();
+      encryptionService.safeAddressIndex.mockReturnValue(
+        faker.string.hexadecimal({ length: 64 }),
+      );
+      encryptionService.encryptSafeAddress.mockResolvedValue(
+        `kms:v1:${faker.string.alphanumeric(32)}`,
+      );
+      await repository.create(request);
+
+      await expect(
+        repository.findRootsBySafe({
+          spaceId,
+          safe: { chainId: request.chainId, address: request.safeAddress },
+        }),
+      ).resolves.toStrictEqual([request.root]);
     });
   });
 });
