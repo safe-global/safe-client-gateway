@@ -16,6 +16,8 @@ import type { User } from '#/modules/users/domain/entities/user.entity';
 
 export const IMembersRepository = Symbol('IMembersRepository');
 
+export type PendingInvitePolicy = 'renew' | 'refuse';
+
 export interface IMembersRepository {
   findOneOrFail(
     where: Array<FindOptionsWhere<Member>> | FindOptionsWhere<Member>,
@@ -46,6 +48,8 @@ export interface IMembersRepository {
     spaceId: Space['id'];
     users: Array<InviteUserInput>;
     inviteExpiresAt: Date;
+    /** `refuse` answers a pending invite as a duplicate instead of renewing it. Default `renew`. */
+    onPendingInvite?: PendingInvitePolicy;
   }): Promise<Array<Invitation>>;
 
   /**

@@ -22,7 +22,10 @@ import type { InviteUserInput } from '#/modules/users/domain/entities/invite-use
 import type { User } from '#/modules/users/domain/entities/user.entity';
 import { assertWithinInviteLimit } from '#/modules/users/domain/members/invite-limit.rules';
 import { MemberEncryptionService } from '#/modules/users/domain/members/member-encryption.service';
-import { IMembersRepository } from '#/modules/users/domain/members/members.repository.interface';
+import {
+  IMembersRepository,
+  type PendingInvitePolicy,
+} from '#/modules/users/domain/members/members.repository.interface';
 
 const RENEW_INVITE_COOLDOWN_MS = 60_000;
 
@@ -90,6 +93,7 @@ export class MembersService {
     actorUserId: User['id'];
     spaceId: Space['id'];
     users: Array<InviteUserInput>;
+    onPendingInvite?: PendingInvitePolicy;
   }): Promise<Array<DomainInvitation>> {
     assertWithinInviteLimit({
       inviteCount: args.users.length,
@@ -100,6 +104,7 @@ export class MembersService {
       spaceId: args.spaceId,
       users: args.users,
       inviteExpiresAt: new Date(Date.now() + this.inviteTtlMs),
+      onPendingInvite: args.onPendingInvite,
     });
 
     // Only queue emails after invite creation succeeds.

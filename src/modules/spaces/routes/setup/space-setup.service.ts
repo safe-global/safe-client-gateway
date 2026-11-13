@@ -28,6 +28,7 @@ import type {
   SpaceSetupSurvey,
 } from '#/modules/spaces/domain/setup/entities/space-setup.entity';
 import { SpaceSetupCheckoutFailedError } from '#/modules/spaces/domain/setup/errors/space-setup-checkout-failed.error';
+import { ISpaceSetupApplier } from '#/modules/spaces/domain/setup/space-setup-applier.interface';
 import { ISpaceSetupBilling } from '#/modules/spaces/domain/setup/space-setup-billing.interface';
 import { buildSetupPayload } from '#/modules/spaces/domain/setup/space-setup-payload.mapper';
 import {
@@ -57,8 +58,8 @@ const SETUP_NOT_PENDING_MESSAGE =
 
 /**
  * Coordinates a Workspace setup: the form is checked by the setup rules, the
- * Workspace and its pending setup are written together, and then the plan's
- * checkout starts. Applying the setup is not part of this service yet.
+ * Workspace and its pending setup are written together, and then either the
+ * plan's checkout starts or, with no plan, the setup is applied at once.
  */
 @Injectable()
 export class SpaceSetupService {
@@ -80,6 +81,8 @@ export class SpaceSetupService {
     private readonly spaceSetupsRepository: ISpaceSetupsRepository,
     @Inject(ISurveysRepository)
     private readonly surveysRepository: ISurveysRepository,
+    @Inject(ISpaceSetupApplier)
+    private readonly spaceSetupApplier: ISpaceSetupApplier,
     @Inject(ISpaceSetupBilling)
     private readonly billing: ISpaceSetupBilling,
     @Inject(IConfigurationService)
@@ -148,7 +151,10 @@ export class SpaceSetupService {
     return { spaceId: space.uuid, checkoutUrl };
   }
 
-  /** The setup as the client submitted it. */
+  /**
+   * The setup as the client submitted it, after reconciling it, so a lost
+   * webhook cannot leave the Workspace waiting.
+   */
   public async get(args: {
     spaceId: Space['id'];
     authPayload: AuthPayload;
@@ -156,12 +162,14 @@ export class SpaceSetupService {
     const userId = getAuthenticatedUserIdOrFail(args.authPayload);
     await assertAdmin(this.membersRepository, args.spaceId, userId);
 
+    await this.tryReconcileTrial(args.spaceId);
     return this.toSetupDto(await this.findSetupOrFail(args.spaceId));
   }
 
   /**
    * Replaces the form of a setup whose trial has not started, after a
-   * cancelled checkout, and starts a new checkout.
+   * cancelled checkout, and starts a new checkout. The setup is reconciled
+   * first, so a trial that did start is applied and refused here.
    */
   public async update(args: {
     spaceId: Space['id'];
@@ -173,6 +181,7 @@ export class SpaceSetupService {
     const returnUrl = this.validateReturnUrl(args.body.returnUrl);
     const payload = await this.buildPayload(args.body);
 
+    await this.reconcileTrial(args.spaceId);
     const setup = await this.findSetupOrFail(args.spaceId);
     if (setup.status !== 'PENDING') {
       throw new ConflictException(SETUP_NOT_PENDING_MESSAGE);
@@ -207,6 +216,38 @@ export class SpaceSetupService {
         this.startCheckout({ spaceUuid, paymentLinkId: planId, returnUrl }),
     );
     return { spaceId: spaceUuid, checkoutUrl };
+  }
+
+  /**
+   * Brings a pending setup to where it belongs: applied once nothing holds it
+   * back — it has no plan to buy, or the plan's trial is live. Writes: it
+   * stores the subscription it reads and applies the setup.
+   */
+  private async reconcileTrial(spaceId: Space['id']): Promise<void> {
+    const setup = await this.spaceSetupsRepository.findStateBySpaceId(spaceId);
+    if (!setup || setup.status === 'APPLIED') {
+      return;
+    }
+    const isReady =
+      setup.paymentLinkId === null ||
+      (await this.billing.syncSubscription({
+        spaceId,
+        spaceUuid: await this.spacesRepository.findUuidById(spaceId),
+      }));
+    if (isReady) {
+      await this.spaceSetupApplier.apply(spaceId);
+    }
+  }
+
+  /** {@link reconcileTrial}, logged rather than thrown: a read must not fail because billing is down. */
+  private async tryReconcileTrial(spaceId: Space['id']): Promise<void> {
+    try {
+      await this.reconcileTrial(spaceId);
+    } catch (error) {
+      this.loggingService.warn(
+        `Could not reconcile the setup of space ${spaceId}: ${asError(error).message}`,
+      );
+    }
   }
 
   /** The plan choice, the offered link and its seats, checked before any write. */
@@ -264,7 +305,9 @@ export class SpaceSetupService {
   }
 
   /**
-   * With a plan, starts its checkout; with none, the setup stays pending.
+   * With no plan, applies the setup now; with one, starts its checkout. A
+   * failed apply is logged, not thrown: the Workspace is committed, and the
+   * next read of the setup applies it.
    *
    * @returns the checkout URL, or `null` without a plan.
    */
@@ -272,10 +315,17 @@ export class SpaceSetupService {
     args: { spaceId: Space['id']; paymentLinkId: string | null },
     startCheckout: (paymentLinkId: string) => Promise<string>,
   ): Promise<string | null> {
-    if (args.paymentLinkId === null) {
-      return null;
+    if (args.paymentLinkId !== null) {
+      return await startCheckout(args.paymentLinkId);
     }
-    return await startCheckout(args.paymentLinkId);
+    try {
+      await this.spaceSetupApplier.apply(args.spaceId);
+    } catch (error) {
+      this.loggingService.warn(
+        `Could not apply the setup of space ${args.spaceId}: ${asError(error).message}`,
+      );
+    }
+    return null;
   }
 
   private async startCheckout(args: {

@@ -11,6 +11,7 @@ import {
   type ILoggingService,
   LoggingService,
 } from '#/logging/logging.interface';
+import { asError } from '#/logging/utils';
 import { IBillingRepository } from '#/modules/billing/domain/billing.repository.interface';
 import {
   isPaymentLinkEventType,
@@ -29,6 +30,7 @@ import type { ISubscriptionSyncService } from '#/modules/entitlements/domain/sub
 import { ISubscriptionsRepository } from '#/modules/entitlements/domain/subscriptions.repository.interface';
 import { EntitlementsService } from '#/modules/entitlements/routes/entitlements.service';
 import type { Space } from '#/modules/spaces/domain/entities/space.entity';
+import { ISpaceSetupApplier } from '#/modules/spaces/domain/setup/space-setup-applier.interface';
 import { ISpacesRepository } from '#/modules/spaces/domain/spaces.repository.interface';
 import { UuidSchema } from '#/validation/entities/schemas/uuid.schema';
 
@@ -75,6 +77,8 @@ export class SubscriptionSyncService implements ISubscriptionSyncService {
     private readonly cacheService: ICacheService,
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
+    @Inject(ISpaceSetupApplier)
+    private readonly spaceSetupApplier: ISpaceSetupApplier,
   ) {}
 
   public async handleWebhook(event: WebhookEvent): Promise<void> {
@@ -98,6 +102,7 @@ export class SubscriptionSyncService implements ISubscriptionSyncService {
 
     try {
       await this.syncSubscriptions({ event, ...space });
+      await this.applyPendingSetup(space.spaceId);
     } catch (error) {
       // Deleted between resolving the space and writing: retrying cannot fix it.
       if (
@@ -137,6 +142,31 @@ export class SubscriptionSyncService implements ISubscriptionSyncService {
       observedEventAt: authoritative.observedEventAt,
       triggerEventAt: null,
     });
+  }
+
+  /**
+   * Applies the space's pending setup once its subscription is trialing or
+   * active. A failure is logged, not thrown: the subscription is already
+   * stored, so the webhook must still be acknowledged, and the next read of
+   * the setup retries the apply.
+   */
+  private async applyPendingSetup(spaceId: Space['id']): Promise<void> {
+    try {
+      if (await this.hasLiveSubscription(spaceId)) {
+        await this.spaceSetupApplier.apply(spaceId);
+      }
+    } catch (error) {
+      this.loggingService.error(
+        `Failed to apply the pending setup of space ${spaceId}: ${asError(error).message}`,
+      );
+    }
+  }
+
+  /** Trialing or active: the statuses that hold the active plan. */
+  private async hasLiveSubscription(spaceId: Space['id']): Promise<boolean> {
+    const { activePlanId } =
+      await this.subscriptionsRepository.getSubscriptionSummary(spaceId);
+    return activePlanId !== null;
   }
 
   /**
