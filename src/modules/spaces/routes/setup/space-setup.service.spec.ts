@@ -3,7 +3,7 @@ import { faker } from '@faker-js/faker';
 import {
   BadRequestException,
   ConflictException,
-  ForbiddenException,
+  HttpStatus,
   NotFoundException,
 } from '@nestjs/common';
 import type { EntityManager } from 'typeorm';
@@ -12,6 +12,7 @@ import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.
 import { checkoutSessionResultBuilder } from '#/datasources/billing-api/entities/__tests__/checkout-session.builder';
 import { trialPaymentLinkBuilder } from '#/datasources/billing-api/entities/__tests__/payment-link.builder';
 import type { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
+import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
 import type { ILoggingService } from '#/logging/logging.interface';
 import { siweAuthPayloadDtoBuilder } from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
@@ -304,7 +305,12 @@ describe('SpaceSetupService', () => {
 
       await expect(
         target.get({ spaceId: space.id, authPayload }),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toThrow(
+        new HttpExceptionNoLog(
+          'User is not an admin of this workspace',
+          HttpStatus.FORBIDDEN,
+        ),
+      );
       expect(billing.syncSubscription).not.toHaveBeenCalled();
     });
   });
