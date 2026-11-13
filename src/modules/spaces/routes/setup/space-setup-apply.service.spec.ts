@@ -203,6 +203,28 @@ describe('SpaceSetupApplyService', () => {
     );
   });
 
+  it('stores the contact of a Safe the plan has no seat for', async () => {
+    const safe = spaceSetupSafeBuilder().build();
+    const contact = contactFor(safe);
+    const spaceId = claimed({ safes: [safe], addressBookItems: [contact] });
+    spaceSafesService.addSafes.mockRejectedValue(
+      new QuotaExceededError({
+        feature: 'safe_seats',
+        quota: 1,
+        used: 1,
+        resetsAt: null,
+      }),
+    );
+
+    await target.apply(spaceId);
+
+    expect(addressBookItemsRepository.upsertMany).toHaveBeenCalledWith({
+      userId: creatorId,
+      spaceId,
+      addressBookItems: [contact],
+    });
+  });
+
   it.each([
     [
       'a Safe the plan has no seat for',

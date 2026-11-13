@@ -111,8 +111,9 @@ export class SpaceSetupApplyService implements ISpaceSetupApplier {
   }
 
   /**
-   * One call per address, so one Safe that no longer fits skips only itself,
-   * and its contact is stored with it or not at all.
+   * One call per address, so one Safe that no longer fits skips only itself.
+   * Its contact goes in with it; a contact whose Safe was not added is stored
+   * on its own.
    */
   private async addSafes(args: {
     spaceId: Space['id'];
@@ -130,7 +131,6 @@ export class SpaceSetupApplyService implements ISpaceSetupApplier {
       if (newSafes.length === 0) {
         continue;
       }
-      addressesAddedWithContacts.add(address);
       try {
         await this.spaceSafesService.addSafes({
           spaceId: args.spaceId,
@@ -140,6 +140,7 @@ export class SpaceSetupApplyService implements ISpaceSetupApplier {
             (item) => item.address.toLowerCase() === address,
           ),
         });
+        addressesAddedWithContacts.add(address);
       } catch (error) {
         this.skipOrRethrow(error, {
           isSkippable: this.isRejectedSafe(error),
