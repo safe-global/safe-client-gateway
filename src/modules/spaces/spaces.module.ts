@@ -37,8 +37,10 @@ import { MembersService } from '#/modules/spaces/routes/members/members.service'
 import { SpaceInviteEmailService } from '#/modules/spaces/routes/members/space-invite-email.service';
 import { SpaceSafesController } from '#/modules/spaces/routes/safes/space-safes.controller';
 import { SpaceSafesService } from '#/modules/spaces/routes/safes/space-safes.service';
+import { SpaceSetupService } from '#/modules/spaces/routes/setup/space-setup.service';
 import { SpacesController } from '#/modules/spaces/routes/spaces.controller';
 import { SpacesService } from '#/modules/spaces/routes/spaces.service';
+import { SurveysRepositoryModule } from '#/modules/surveys/domain/surveys-repository.module';
 import { Member } from '#/modules/users/datasources/entities/member.entity.db';
 import { MemberEncryptionModule } from '#/modules/users/domain/members/member-encryption.module';
 import { UserIdentityResolverModule } from '#/modules/users/domain/user-identity-resolver/user-identity-resolver.module';
@@ -69,6 +71,7 @@ import { SpaceIdPipe } from '#/routes/common/pipes/space-id.pipe';
     MemberEncryptionModule,
     UserIdentityResolverModule,
     WalletsModule,
+    SurveysRepositoryModule,
   ],
   controllers: [
     AddressBooksController,
@@ -87,6 +90,7 @@ import { SpaceIdPipe } from '#/routes/common/pipes/space-id.pipe';
     MembersService,
     SpaceInviteEmailService,
     SpaceEncryptionService,
+    SpaceSetupService,
     { provide: ISpaceSetupsRepository, useClass: SpaceSetupsRepository },
     {
       provide: ISpacesRepository,

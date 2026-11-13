@@ -628,4 +628,42 @@ describe('SubscriptionSyncService', () => {
       expect(loggingService.info).not.toHaveBeenCalled();
     });
   });
+
+  describe('syncSpace', () => {
+    function upstreamTrial(): void {
+      billingRepository.getSubscriptionsByCustomerId.mockResolvedValue([
+        subscriptionBuilder().with('status', 'trialing').build(),
+      ]);
+    }
+
+    it('reads the subscriptions past the cache', async () => {
+      upstreamTrial();
+
+      await target.syncSpace({ spaceId, upstreamCustomerId: spaceUuid });
+
+      expect(billingRepository.clearSubscriptions).toHaveBeenCalledWith({
+        upstreamCustomerId: spaceUuid,
+      });
+    });
+
+    it('materializes the upstream state with no triggering event', async () => {
+      upstreamTrial();
+
+      await target.syncSpace({ spaceId, upstreamCustomerId: spaceUuid });
+
+      expect(entitlementsService.materializeAuthoritative).toHaveBeenCalledWith(
+        expect.objectContaining({ spaceId, triggerEventAt: null }),
+      );
+    });
+
+    it('materializes nothing when upstream lists no subscriptions', async () => {
+      billingRepository.getSubscriptionsByCustomerId.mockResolvedValue([]);
+
+      await target.syncSpace({ spaceId, upstreamCustomerId: spaceUuid });
+
+      expect(
+        entitlementsService.materializeAuthoritative,
+      ).not.toHaveBeenCalled();
+    });
+  });
 });

@@ -113,6 +113,32 @@ export class SubscriptionSyncService implements ISubscriptionSyncService {
     }
   }
 
+  public async syncSpace(args: {
+    spaceId: Space['id'];
+    upstreamCustomerId: string;
+  }): Promise<void> {
+    const features = await this.featuresRepository.getFeatures();
+    const authoritative = await this.readAuthoritativeState({
+      ...args,
+      featureTypeByKey: new Map(
+        features.map((feature) => [feature.key, feature.type]),
+      ),
+    });
+    if (authoritative.subscriptions.length === 0) {
+      this.loggingService.warn(
+        `Found no subscriptions upstream for space ${args.spaceId}; nothing materialized`,
+      );
+      return;
+    }
+    // Not materialized means a concurrent delivery wrote newer state.
+    await this.entitlementsService.materializeAuthoritative({
+      spaceId: args.spaceId,
+      subscriptions: authoritative.subscriptions,
+      observedEventAt: authoritative.observedEventAt,
+      triggerEventAt: null,
+    });
+  }
+
   /**
    * The space the event's customer maps to, or `null` when nothing can be
    * processed.
