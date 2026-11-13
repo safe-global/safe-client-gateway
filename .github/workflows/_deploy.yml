@@ -203,20 +203,19 @@ jobs:
             --body "Automated deploy · [CI run #${GITHUB_RUN_ID}](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID})")
 
           # --squash produces a single commit on main signed by GitHub web-flow (Verified badge).
-          # Retry with backoff: right after the branch push GitHub is still recomputing
-          # the PR's branch-policy state (require_last_push_approval / dismiss_stale_reviews_
-          # on_push recompute per push), during which even a bypass-actor merge is transiently
-          # rejected with "base branch policy prohibits the merge". So wait and re-attempt the
-          # merge WITHOUT re-pushing (a force-push would reset that settle timer). Only rebase
-          # when infra main has actually advanced (real non-fast-forward / concurrent deploy).
+          # --admin makes gh use safe-ci's ruleset bypass explicitly. Without it the merge is
+          # refused with "base branch policy prohibits the merge" on roughly one deploy in five,
+          # and the refusal persists across every retry. safe-events-service merges the same way.
+          # The retry loop stays for the other failure: infra main advancing under a concurrent
+          # deploy, in which case the branch is rebased and the merge re-attempted.
           for attempt in $(seq 1 8); do
-            if gh pr merge "$PR_URL" --squash --delete-branch \
+            if gh pr merge "$PR_URL" --squash --admin --delete-branch \
                  --subject "deploy(${ENVIRONMENT}): ${REPO} ${IMAGE_TAG}" \
                  --body ""; then
               break
             fi
             [ "$attempt" -eq 8 ] && { echo "::error::PR merge failed after 8 attempts. Open PR: ${PR_URL}"; exit 1; }
-            echo "Merge attempt ${attempt} failed — waiting 20s for the branch policy to settle"
+            echo "Merge attempt ${attempt} failed — waiting 20s before retrying"
             sleep 20
             git fetch origin
             if ! git merge-base --is-ancestor origin/main HEAD; then
