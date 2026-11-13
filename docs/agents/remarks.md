@@ -46,7 +46,7 @@ const loggingService = { debug: vi.fn() } as unknown as MockedObject<ILoggingSer
 const loggingService = { debug: vi.fn() } as MockedObject<ILoggingService>;
 ```
 
-**Spotted in:** #3247 ("nit: please ask your Claude to memo that there is no need to cast to unknown"), #3241, #3196 (three separate comments), #3214.
+**Spotted in:** #3247 ("nit: please ask your Claude to memo that there is no need to cast to unknown"), #3241, #3196 (three separate comments), #3214, #3392 ("remove unknown :)", twice), #3420 ("then we dont need to do `as unknown as IBillingApi,`"), #3451 ("idk why unknown is always added, it is not needed"), #3595 ("when other tests here use a simpler `as MockedObject<...>)`?"), #3600 ("nit: drop `as unknown`, a single `as MockedObject<ILoggingService>` compiles here.").
 **Status:** active
 
 ### R-002: `as never` to satisfy a mock signature
@@ -65,7 +65,16 @@ const mockRepository = { getSpace: vi.fn() } as MockedObject<ISpacesRepository>;
 mockRepository.getSpace.mockResolvedValue(space);
 ```
 
-**Spotted in:** #3247 ("a bit weird - why do we cast to `never`?", "looks like there are a bunch of places where it uses `never`").
+A `Raw<T>` payload returned by a mocked network call goes through `rawify()` instead of a cast:
+
+```ts
+// Don't
+fetchClientMock.mockResolvedValueOnce({ status: 200, data: {} as never });
+// Do
+fetchClientMock.mockResolvedValueOnce({ status: 200, data: rawify(campaign) });
+```
+
+**Spotted in:** #3247 ("a bit weird - why do we cast to `never`?", "looks like there are a bunch of places where it uses `never`"), #2831 ("Why are we casting the object? I see it happening further down as well.", "We could use the helper method `rawify`").
 **Status:** active
 
 ### R-003: Mocking the configuration service instead of using the fake
@@ -89,7 +98,7 @@ fakeConfigurationService.set('spaces.maxSpaceCreationsPerUser', faker.number.int
 
 ### R-004: Literal test data instead of faker
 
-**Pattern:** a hard-coded string, number, or address as a spec input, where nothing about the assertion depends on that exact value.
+**Pattern:** a hard-coded string, number, or address as a spec input, where nothing about the assertion depends on that exact value. The same remark covers a whole entity written out by hand — an object literal, a local factory, or a partial object cast to the type (`{ id } as User`) — where a builder exists or the shape is built more than once.
 
 **Why it's bad:** a literal input makes a passing test ambiguous — it may pass because the code is right, or because the code happens to special-case that value. Randomizing the input is what makes the assertion prove the general case. The exceptions are values the assertion is *about*: enum members, taxonomy strings, and boundary values.
 
@@ -104,7 +113,16 @@ const role = faker.string.alphanumeric();
 const ttl = faker.number.int({ min: 1, max: 86_400 });
 ```
 
-**Spotted in:** #3217 (five separate comments: "We should use `faker`", "Should be a random string", "We should use a random number", "Nit: We should use `faker` here as well"), #3157.
+A hand-written entity becomes a builder call; a shape with no builder yet gets one beside its entity:
+
+```ts
+// Don't
+const member = memberBuilder().with('user', { id } as User).build();
+// Do
+const member = memberBuilder().with('user', userBuilder().with('id', id).build()).build();
+```
+
+**Spotted in:** #3217 (five separate comments: "We should use `faker`", "Should be a random string", "We should use a random number", "Nit: We should use `faker` here as well"), #3157, #3329 ("Since we’re mocking the responses, we should be able to make the `chainId` random."), #2884 ("could we please create a builder as we have for SafeSchema?"), #3375 ("Could we use `UserBuilder` here?", "Here as well, we should use a `UserBuilder`?"), #3564 ("W should use faker for new props in this file"), #3613 ("It would be nice to pick from `ExperimentalFeatures` with faker, as the builder already does.").
 **Status:** active — `testing.md` owns the builders-and-faker rule; this is the shape it gets violated in.
 
 ### R-005: Asserting on `.mock.calls` instead of the matchers
@@ -145,24 +163,24 @@ await expect(service.mintToken()).rejects.toThrow(new UnauthorizedException('Inv
 
 ### R-007: Comments restating what the test already says
 
-**Pattern:** `// Arrange` / `// create a space and assert it exists` above code that reads identically.
+**Pattern:** `// Arrange` / `// create a space and assert it exists` above code that reads identically. The same remark lands outside specs: a comment above production code or on a type field that paraphrases what it annotates. So does one rationale copied to every file it touches (migration, entity, DTO, service).
 
 **Why it's bad:** a comment that paraphrases the next line has to be maintained alongside it and is wrong the moment it isn't, while adding nothing a reader of the line does not already have.
 
-**Corrected form:** delete the comment; if the test needs explanation, the `it(...)` description is the place for it.
+**Corrected form:** delete the comment; if the test needs explanation, the `it(...)` description is the place for it. In production code, a comment proposed to explain hard-to-follow code is a cue to restructure the code instead — #2824 replaced one with a typed `reduce<ThreatIssues>`. A rationale several sites share is written once, at one of them.
 
-**Spotted in:** #3290 (three comments: "I think this comment is bit redundent", "I think we don't need to explain explicitly", "here the same").
+**Spotted in:** #3290 (three comments: "I think this comment is bit redundent", "I think we don't need to explain explicitly", "here the same"), #2831 ("Nit: The comment is redundant."), #2824 ("what do you think about refactoring it like this and removing the comment"), #3526 ("This comment could be removed IMO"), #3450 ("The comment is repeated at multiple places. Will be hard to detect and update"), #3744 ("This comment doesn't add any value XD.").
 **Status:** active
 
 ### R-008: Tests that assert the framework, not the behavior
 
-**Pattern:** a spec that checks a config object has the keys it was literally just given, or that a Zod schema rejects the wrong type.
+**Pattern:** a spec that checks a config object has the keys it was literally just given, or that a Zod schema rejects the wrong type. The same remark covers a spec whose expected value is computed by the function under test (`everyGuardKind = guardPolicyKindsOf(Object.values(PolicyType))`).
 
 **Why it's bad:** the assertion restates the source rather than constraining it, so it can never fail for a reason anyone cares about while still costing maintenance on every refactor. "they dont bring much value" (#3157) is the review outcome.
 
-**Corrected form:** assert the behavior that depends on the config or the schema, not the declaration itself.
+**Corrected form:** assert the behavior that depends on the config or the schema, not the declaration itself. A test of a mapping writes its expected values out literally.
 
-**Spotted in:** #3157 ("dont hurt to have but also not sure we really need these tests :) they dont bring much value", "dont trust everything claude says :)").
+**Spotted in:** #3157 ("dont hurt to have but also not sure we really need these tests :) they dont bring much value", "dont trust everything claude says :)"), #3449 ("The only test that touches this computes its expected value with this same function").
 **Status:** active
 
 ## Types
@@ -187,7 +205,7 @@ async post<T>(url: string, body: object): Promise<Raw<T>>;
 
 ### R-010: Optional and nullable used interchangeably
 
-**Pattern:** a DTO field declared `field?: T | null` where the schema allows only one of the two, or `@ApiProperty({ nullable: true })` on a field the type says is optional.
+**Pattern:** a DTO field declared `field?: T | null` where the schema allows only one of the two, or `@ApiProperty({ nullable: true })` on a field the type says is optional. The reverse also comes up: `@ApiPropertyOptional` on a field that is always sent and only ever `null`.
 
 **Why it's bad:** `undefined` (key absent) and `null` (key present, empty) are different wire payloads, and the generated OpenAPI document is what clients build against — so a mismatch here is a contract bug that no test in this repo catches. "nullable is not optional, and i dont see `undefined` allowed on these values anywhere" (#3223).
 
@@ -200,25 +218,28 @@ safe?: `0x${string}` | null;
 // Do — pick the one the schema allows, and annotate it accordingly
 @ApiPropertyOptional({ type: String })
 safe?: `0x${string}`;
+// Do — a key that is always present but may be null
+@ApiProperty({ type: Relayer, nullable: true })
+relayer: Relayer | null;
 ```
 
-**Spotted in:** #3223 ("so its optional and nullable? something doesnt add up here", "if its optional it should be `safe?:...`", "could we please check the swagger annotations"), #3200 ("lets mark optional fields as `@ApiPropertyOptional`").
+**Spotted in:** #3223 ("so its optional and nullable? something doesnt add up here", "if its optional it should be `safe?:...`", "could we please check the swagger annotations"), #3200 ("lets mark optional fields as `@ApiPropertyOptional`"), #3105 ("According to schema I dont see `undefined` allowed"), #3163 ("is it optional? if so should be `targetUser?:`").
 **Status:** active — `api-dtos-and-validation.md` owns the schema/DTO pairing.
 
 ### R-011: A new schema where a shared one exists
 
-**Pattern:** an inline `z.string().regex(...)` or a fresh schema object that duplicates something already exported from a shared schemas module.
+**Pattern:** an inline `z.string().regex(...)` or a fresh schema object that duplicates something already exported from a shared schemas module. The same remark covers a generic shared schema used for a domain value that has its own — `NumericStringSchema` on a `:chainId` param where `ChainIdSchema` exists.
 
 **Why it's bad:** two schemas encoding one rule drift the moment only one is fixed — and the shared ones already carry the edge cases a fresh regex will miss (`NonNegativeNumericStringSchema` was itself found to accept leading zeros in #3200, a bug fixed once in the shared schema rather than in each copy).
 
-**Corrected form:** import the existing schema; if it is nearly right, generalize it in place and rename it rather than forking it.
+**Corrected form:** import the existing schema; if it is nearly right, generalize it in place and rename it rather than forking it. Use the domain-named schema even while it is an alias of a generic one, so tightening it later reaches every caller.
 
-**Spotted in:** #3200 ("`NonNegativeNumericStringSchema` wont work here?"), #3269 ("Might make sense to re-use `PaymentLinkMetadataSchema` (with a more generic name) here and other places?").
+**Spotted in:** #3200 ("`NonNegativeNumericStringSchema` wont work here?"), #3269 ("Might make sense to re-use `PaymentLinkMetadataSchema` (with a more generic name) here and other places?"), #2824 ("If it's an `eth` address we can use `HexSchema`"), #3454 ("We should use `ChainIdSchema`").
 **Status:** active
 
 ### R-012: String-literal unions instead of a `const` array
 
-**Pattern:** a Zod enum written as inline literals, with the same literals re-typed in the test builder.
+**Pattern:** a Zod enum written as inline literals, with the same literals re-typed in the test builder or in the DTO's `@ApiProperty({ enum: [...] })`. The same remark covers literals re-typed where an exported value set already exists: `operation: 0 | 1` beside `Operation`, or a DTO description that spells out the names in `DISALLOWED_TAG_NAMES`.
 
 **Why it's bad:** the schema and the builder end up with two independent lists, so adding a member to one silently leaves the other stale. A single `as const` array feeds both — `z.enum([...X])` and `faker.helpers.arrayElement(X)` — so a new member reaches the tests for free.
 
@@ -230,20 +251,22 @@ export const SubscriptionStatus = ['active', 'past_due', 'canceled'] as const;
 export const SubscriptionSchema = z.object({ status: z.enum([...SubscriptionStatus]) });
 // and in the builder
 status: faker.helpers.arrayElement(SubscriptionStatus),
+// and in the DTO
+@ApiProperty({ enum: SubscriptionStatus })
 ```
 
-**Spotted in:** #3228 (the `SubscriptionStatus` suggestion, "maybe we could set them as `const` to avoid using literals?").
+**Spotted in:** #3228 (the `SubscriptionStatus` suggestion, "maybe we could set them as `const` to avoid using literals?"), #2854 ("Can we make it an actual enum instead of hard coding it?", "it should be an actual enum and reused in multiple places"), #3564 ("We should read from the `Operation` enum."), #3619 ("dynamically derive the disallowed names from DISALLOWED_TAG_NAMES here and all other descriptions").
 **Status:** active
 
 ## Structure
 
 ### R-013: Interfaces, types, constants, and helpers inline in a service file
 
-**Pattern:** a service or guard file that also declares its interface, its constants, and two or three module-level helper functions. The same remark covers an anonymous object type written out in full at two or more signatures — the same `Array<{ transaction: ...; dataDecoded: ... }>` repeated across methods of one file or across files — instead of being named once and imported.
+**Pattern:** a service or guard file that also declares its interface, its constants, its error class or Zod schema, and two or three module-level helper functions; or an error file that also exports its codes and types. The same remark covers an anonymous object type written out in full at two or more signatures — the same `Array<{ transaction: ...; dataDecoded: ... }>` repeated across methods of one file or across files — instead of being named once and imported.
 
 **Why it's bad:** the file stops being findable by name — a reader looking for the interface has no reason to open the implementation — and a helper declared beside its one caller gets copied rather than imported by the second caller. This repo's naming convention exists precisely so each of these has a predictable path.
 
-**Corrected form:** interface to `*.interface.ts`, constants and shared types to their own file beside it, helpers to a `helpers/` module. `module-structure.md` has the naming table. A repeated inline object type becomes one named type, generic where callers narrow it, in the owning module's `domain/entities/`:
+**Corrected form:** interface to `*.interface.ts`, constants and shared types to their own file beside it, helpers to a `helpers/` module, errors to `domain/errors/`, schemas to a `*.schema.ts` file. `module-structure.md` has the naming table. A repeated inline object type becomes one named type, generic where callers narrow it, in the owning module's `domain/entities/`:
 
 ```ts
 // Don't — the same shape at every signature
@@ -256,7 +279,7 @@ export type DecodedTransaction<T extends Transaction = Transaction> = {
 transactions: Array<DecodedTransaction<MultisigTransaction>>;
 ```
 
-**Spotted in:** #3217 (three separate comments: "Interface should be extracted to another file", "Helpers should also be extracted to another file", "const and `type` should be extracted to a separate file"), #3284 ("i think its getting crowded, we can extract it to `types` file or smth"), #3703 (an inline pair type "is reused 3 times in current file and 1 time by `multisig-transaction.mapper.ts`. Maybe it is worth to extract this type and use everywhere").
+**Spotted in:** #3217 (three separate comments: "Interface should be extracted to another file", "Helpers should also be extracted to another file", "const and `type` should be extracted to a separate file"), #3284 ("i think its getting crowded, we can extract it to `types` file or smth"), #3703 (an inline pair type "is reused 3 times in current file and 1 time by `multisig-transaction.mapper.ts`. Maybe it is worth to extract this type and use everywhere"), #3078 ("Error should be extracted to another file.", "Type should be extracted to another file."), #3392 ("Should be moved to a separate schema file."), #3530 ("extract all the `const` s and `type` s to another file and only keep the error file here"), #3564 ("Everything outside the class should be extracted into external files."), #3744 ("I somehow dislike that this utility function is defined here in this file.").
 **Status:** active
 
 ### R-014: A method too large to follow
@@ -267,7 +290,7 @@ transactions: Array<DecodedTransaction<MultisigTransaction>>;
 
 **Corrected form:** extract each concern into a named method; the outer method becomes the sequence of their names.
 
-**Spotted in:** #3217 (`scripts/generate-token.ts`).
+**Spotted in:** #3217 (`scripts/generate-token.ts`), #3526 ("this function does several things one after the other"), #3530 ("it could be refactored using private methods with clear names"), #3564 ("This method is almost 40 LOC, Can we extract it to smaller functions?"), #3621 ("getChainIdsBySafe could be its own function").
 **Status:** active
 
 ### R-015: A generic API client that knows business specifics
@@ -283,26 +306,26 @@ transactions: Array<DecodedTransaction<MultisigTransaction>>;
 
 ### R-016: Duplicating a guard or helper instead of extending it
 
-**Pattern:** a new guard, auth helper, or header builder whose body is substantially an existing one with one value changed.
+**Pattern:** a new guard, auth helper, header builder, or provider client whose body is substantially an existing one with one value changed. The same remark covers a method copied for a second row type, a rule written out at two seams that must agree, and a single-item read left beside the batch variant that now runs the same query.
 
 **Why it's bad:** two copies of an auth path means a fix applied to one silently leaves the other vulnerable. The counter-argument is real and sometimes wins — merging two security paths couples them — so the remark is a question to answer in the PR description, not an automatic change.
 
-**Corrected form:** parameterize the existing one (a header name, a token source) and use it; or state in the PR body why coupling the two is worse than duplicating them, as #3217 ultimately did.
+**Corrected form:** parameterize the existing one (a header name, a token source) and use it; or state in the PR body why coupling the two is worse than duplicating them, as #3217 ultimately did. For a non-auth method, share the predicate, and have the single-item read delegate to the batch one — `(await this.findBySpaceIds([spaceId])).get(spaceId) ?? []`.
 
-**Spotted in:** #3217 ("We could use or extend the current `AuthGuard`… The code here is mostly duplicated"), #3220 ("i wonder if we can have a base function that then is implemented/extended by both queue-service and tx-service helpers as the logic is exactly the same?").
+**Spotted in:** #3217 ("We could use or extend the current `AuthGuard`… The code here is mostly duplicated"), #3220 ("i wonder if we can have a base function that then is implemented/extended by both queue-service and tx-service helpers as the logic is exactly the same?"), #3449 ("It's also the same body as `getAllowancesBySafe`. Could both use one predicate"), #3533 ("Make it (await this.findBySpaceIds([spaceId])).get(spaceId) ?? []."), #3565 ("we could generalizes `src/datasources/kms/aws-kms-signer.service.ts` and have only the Ethereum part in this class"), #3619 ("extracting a separate function e.g. normalizeTagNameKey so it can be used in other places").
 **Status:** active
 
 ## Naming
 
 ### R-017: A name that describes the mechanism instead of the thing
 
-**Pattern:** `QueueService` for a client of the transaction-queue HTTP API, in a codebase that also has real message queues (BullMQ, AMQP).
+**Pattern:** `QueueService` for a client of the transaction-queue HTTP API, in a codebase that also has real message queues (BullMQ, AMQP). The same remark covers a type or function named for how it works rather than what it is or does: `PendingQueuedPolicy`, `PendingPolicySetup` and `PendingGuardConfiguration`, told apart only by how the change happens, or `getJobData` for a function that asserts the transaction is payable.
 
 **Why it's bad:** the reader has to open the file to learn which of two unrelated concepts a name refers to, and every derived name inherits the ambiguity — module, interface, mock file, test module, cache key, and config key all had to be renamed together. This one remark was raised on at least six separate files across two PRs.
 
-**Corrected form:** `TxQueueService` / `ITxQueueService` / `test.queue-service.module.ts` / `txQueueService` config key / `tx-queue-service` circuit-breaker key.
+**Corrected form:** `TxQueueService` / `ITxQueueService` / `test.queue-service.module.ts` / `txQueueService` config key / `tx-queue-service` circuit-breaker key. Name each type or function for what it changes or does — `PendingGuardInstallation`, `PendingImmediateGuardPolicies`, `assertPayableTransaction`; a wire value a released client already reads keeps its name.
 
-**Spotted in:** #3223 ("TxQueueServiceModule maybe? :)", "ITxQueueService?", "I am still convinced we should call it `txQueueService` to not mix with a real queue", "`tx-queue-service`?"), #3220 ("would also like it to be called `test.queue-service.module.ts`", "could we please rename the file to `queue-service.mock`").
+**Spotted in:** #3223 ("TxQueueServiceModule maybe? :)", "ITxQueueService?", "I am still convinced we should call it `txQueueService` to not mix with a real queue", "`tx-queue-service`?"), #3220 ("would also like it to be called `test.queue-service.module.ts`", "could we please rename the file to `queue-service.mock`"), #3669 ("All 3 are hard to distinguish by just names and purpose of each."), #3659 ("`PendingGuardSetup` is not a policy setup actually."), #3596 ("it assers the Safe acc and the Safe tx rather than getting job data").
 **Status:** active
 
 ### R-018: Config keys named by service rather than by topic
@@ -318,13 +341,13 @@ transactions: Array<DecodedTransaction<MultisigTransaction>>;
 
 ### R-019: A feature flag that isn't shaped like one
 
-**Pattern:** a boolean config key gating a feature that is not declared as a flag, or a flag named too narrowly for what it gates (`zerionPositions` when it gates all of Zerion).
+**Pattern:** a boolean config key gating a feature that is not declared as a flag, or a flag named too narrowly for what it gates (`zerionPositions` when it gates all of Zerion), or a new flag whose comment names no owner and no removal condition.
 
 **Why it's bad:** a gate that isn't a declared flag has no removal condition and no consistent read path, so it becomes permanent config; a flag whose name is narrower than its effect gets read as safe to flip when it is not.
 
-**Corrected form:** declare it with the `FF_` prefix, read it through `features.*`, and name it for everything it gates.
+**Corrected form:** declare it with the `FF_` prefix, read it through `features.*`, name it for everything it gates, and give its mapping a comment naming the owner and the condition for removing it.
 
-**Spotted in:** #3245 ("shouldnt this be a FF like the rest?"), #3157 ("it kind of doesnt go very well with other FF defined here… just calling it `Zerion` would be confusing, what about `zerionBalances`").
+**Spotted in:** #3245 ("shouldnt this be a FF like the rest?"), #3157 ("it kind of doesnt go very well with other FF defined here… just calling it `Zerion` would be confusing, what about `zerionBalances`"), #3447 ("The flag comment needs an owner and a removal condition").
 **Status:** active — see `configuration-and-flags.md`.
 
 ## Caching and upstream calls
@@ -342,13 +365,13 @@ transactions: Array<DecodedTransaction<MultisigTransaction>>;
 
 ### R-021: A cache write with no matching invalidation
 
-**Pattern:** a new cached read, or a raised TTL, in a diff that adds no `clear*()` call and no `EventCacheHelper` wiring; or a write path that posts upstream without clearing the caches its own reads populate.
+**Pattern:** a new cached read, or a raised TTL, in a diff that adds no `clear*()` call and no `EventCacheHelper` wiring; or a write path that posts upstream without clearing the caches its own reads populate; or a hand-written cache write after a fetch (an unconditional `hSet`) that ignores an invalidation landing while the fetch was in flight.
 
 **Why it's bad:** the longer the TTL, the longer a client is served a value the service itself knows is stale — and the asymmetry is invisible in the diff that introduces it, because nothing fails. #3223 found `createMessage` and `updateMessageSignature` posting through the queue service while never clearing `getQueueMessagesBySafe` / `getQueueMessageByHash`, and found `clearMessagesBySafe/ByHash` clearing one cache layer where the transaction equivalent deliberately clears both.
 
-**Corrected form:** the CacheRouter getter, the `CacheFirstDataSource` read, the `clear*()` on every write path, and the `EventCacheHelper` wiring all land in one PR. Raising a TTL without invalidation is a deliberate, stated trade-off: #3197 raised it to 60s only, with the invalidation tracked as a follow-up, rather than to the 1h the team wanted.
+**Corrected form:** the CacheRouter getter, the `CacheFirstDataSource` read, the `clear*()` on every write path, and the `EventCacheHelper` wiring all land in one PR. Raising a TTL without invalidation is a deliberate, stated trade-off: #3197 raised it to 60s only, with the invalidation tracked as a follow-up, rather than to the 1h the team wanted. A hand-written cache-after-fetch path records the fetch start time and skips the write when the key was invalidated at or after it, as `CacheFirstDataSource` does.
 
-**Spotted in:** #3223 (two detailed findings), #3197, #3241.
+**Spotted in:** #3223 (two detailed findings), #3197, #3241, #3392 ("this unconditional `hSet` repopulates the cache with the pre-transaction response for another full TTL").
 **Status:** active — `caching-and-performance.md` owns the new-cached-call recipe.
 
 ### R-022: Sequential or partial cache clears
@@ -394,7 +417,7 @@ await Promise.allSettled([
 
 **Corrected form:** add the assertion, or state in the PR body why the route cannot carry one and what bounds the exposure instead.
 
-**Spotted in:** #3269 ("Shouldn't this function also have a `assertSpaceMember` assertion, like the other functions in this file?").
+**Spotted in:** #3269 ("Shouldn't this function also have a `assertSpaceMember` assertion, like the other functions in this file?"), #3445 ("I’m missing the same admin protection for the session URL").
 **Status:** active — `security.md` owns guard placement.
 
 ### R-025: An env var read but not validated
@@ -405,20 +428,20 @@ await Promise.allSettled([
 
 **Corrected form:** declare it in `configuration.ts` *and* `RootConfigurationSchema`, add it to `.env.sample.json`, mirror it in `__tests__/configuration.ts`, and run `yarn env:validate`.
 
-**Spotted in:** #3228 ("oh could you please also add a check for `BILLING_WEBHOOK_JWT_PUBLIC_KEY`, I forgot about it"), #3217 ("Nit: We can handle it in our validator. We should validate this env variable and transform it if it's valid.").
+**Spotted in:** #3228 ("oh could you please also add a check for `BILLING_WEBHOOK_JWT_PUBLIC_KEY`, I forgot about it"), #3217 ("Nit: We can handle it in our validator. We should validate this env variable and transform it if it's valid."), #3078 ("All these env vars should be validated"), #3447 ("Add `FF_ZERION_TESTNETS_ENABLED` to `RootConfigurationSchema`.").
 **Status:** active — non-negotiable #7; `configuration-and-flags.md` owns it.
 
 ## Hygiene
 
 ### R-026: Redundant conditions and needless intermediates
 
-**Pattern:** `if (!chain || !addresses.length)` where `!addresses.length` suffices; an `args` parameter guarded at three call sites because it is optional; a `const` used exactly once, immediately below its declaration.
+**Pattern:** `if (!chain || !addresses.length)` where `!addresses.length` suffices; an `args` parameter guarded at three call sites because it is optional; a `const` used exactly once, immediately below its declaration; a `.default(false)` after a `.catch(false)` that already covers `undefined`; a method that only forwards to a helper.
 
 **Why it's bad:** each is a small amount of code carrying no information, and together they are what makes a diff long enough that reviewers stop reading closely.
 
 **Corrected form:** the leaner expression. Biome catches part of this — in #3214 it simplified the condition to `!(chain && addresses.length)` on its own once the redundant clause was removed.
 
-**Spotted in:** #3214 ("maybe im too particular, but why not just say `!addresses.length`? So much leaner"), #3218 ("can it be simplified to… as optional fields will be `undefined` by default already"), #3228 ("nit: maybe we can lose `args` here is they are optional anyway. Less checks"), #3217 ("It's used only once on line 23, we could remove the `const`").
+**Spotted in:** #3214 ("maybe im too particular, but why not just say `!addresses.length`? So much leaner"), #3218 ("can it be simplified to… as optional fields will be `undefined` by default already"), #3228 ("nit: maybe we can lose `args` here is they are optional anyway. Less checks"), #3217 ("It's used only once on line 23, we could remove the `const`"), #2856 ("why cant we pass `error` without checking for it if its an optional field?"), #3105 ("you can skip `.default(false)` as `.catch(false)` already handles undefined"), #3375 ("I had to jump back and forth between the repository and the helper"), #3742 ("Is this wrapper required?").
 **Status:** partially solved-by-biome — biome's `complexity` rules catch some shapes; the parameter-and-intermediate cases are still human-caught.
 
 ### R-027: Debug scripts and scaffolding left in the branch
@@ -429,7 +452,7 @@ await Promise.allSettled([
 
 **Corrected form:** remove it before marking the PR ready.
 
-**Spotted in:** #3245 (`scripts/seed-fake-users.ts`, `scripts/login-as-seeded-user.ts`).
+**Spotted in:** #3245 (`scripts/seed-fake-users.ts`, `scripts/login-as-seeded-user.ts`), #2856 (a `console.log` under a TODO: "I think this is committed by mistake."), #3451 (`scripts/others/setup-space.ts`: "are you sure we should add this script to the repo?").
 **Status:** active — `commits-and-prs.md` owns the rule.
 
 ### R-028: Deferring a convention fix because the PR is large
@@ -440,18 +463,18 @@ await Promise.allSettled([
 
 **Corrected form:** fix what the PR introduces, in the PR. If the change really is too large to also carry the fix, that is R-029's problem, not a reason to merge the violation.
 
-**Spotted in:** #3245 ("This PR is already huge. Let's open another PR to rename all such keys."), #3157 ("Let's merge this rename and consolidate the feature flags in another PR."), #3294 ("Agree. I'll open another PR for that 👍").
+**Spotted in:** #3245 ("This PR is already huge. Let's open another PR to rename all such keys."), #3157 ("Let's merge this rename and consolidate the feature flags in another PR."), #3294 ("Agree. I'll open another PR for that 👍"), #3550 (a new `ordering?: string` parameter: "I'd do it in a follow up PR as it will change quite some files."), #3373 ("I will tackle this under #3372 instead").
 **Status:** active
 
 ### R-029: A PR carrying more than one concern
 
-**Pattern:** a diff that mixes a rename with a behavior change, a dependency bump with feature work, or several modules for unrelated reasons.
+**Pattern:** a diff that mixes a rename with a behavior change, a dependency bump with feature work, or several modules for unrelated reasons — including a bug fix or a flaky-test fix found while building the feature.
 
 **Why it's bad:** the review degrades to sampling, and a revert becomes all-or-nothing — #2926's 19-file performance refactor was reverted wholesale by #3034 the same day because the one bad change could not be separated from the eighteen good ones.
 
-**Corrected form:** split along the seam and land the mechanical half first. `commits-and-prs.md` has the splitting rule and the ordering.
+**Corrected form:** split along the seam and land the mechanical half first. `commits-and-prs.md` has the splitting rule and the ordering. A fix found along the way ships as its own PR with its regression test, as #3563 did with #3610.
 
-**Spotted in:** #3245, #3197 ("for the time saving lets split in 2 PRs"), #2926 → #3034.
+**Spotted in:** #3245, #3197 ("for the time saving lets split in 2 PRs"), #2926 → #3034, #2845 ("If it fixes a flaky test it should be tackled in a separate PR."), #3563 ("if it's a bug we're trying to fix, it should be extracted to a separate PR").
 **Status:** active
 
 ### R-030: An unpinned third-party GitHub Action
