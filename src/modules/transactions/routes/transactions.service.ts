@@ -535,11 +535,14 @@ export class TransactionsService {
   /**
    * The merged queue of several Safes, in nonce order and grouped by Safe
    * address and chain, read up to `spaces.transactionQueue.maxPages` pages of
-   * the queue service. Each Safe's transactions are mapped against that Safe.
+   * the queue service. With a `limit`, only the first `limit` transactions by
+   * nonce, across every Safe, are read. Each Safe's transactions are mapped
+   * against that Safe.
    */
   async getTransactionQueueForSafes(args: {
     spaceId: number;
     safes: ReadonlyArray<ChainSafeAddress>;
+    limit?: number;
   }): Promise<SpaceQueue> {
     const { requested, unavailableSafes } = this.partitionQueueSafes(
       args.safes,
@@ -558,6 +561,7 @@ export class TransactionsService {
     const queue = await this.getQueueOfSafes({
       spaceId: args.spaceId,
       safes,
+      limit: args.limit,
     }).catch((error: unknown) => {
       this.loggingService.warn({
         message: 'Failed to load the queue of the Space Safes',
@@ -600,33 +604,45 @@ export class TransactionsService {
   /**
    * The merged queue, one queue service page at a time: the first page gives
    * the count, and the remaining pages, up to `maxSpaceQueuePages` in all, are
-   * fetched together.
+   * fetched together. A `limit` stops the read at its `limit`th transaction.
    */
   private async getQueueOfSafes(args: {
     spaceId: number;
     safes: Array<ChainSafe>;
+    limit?: number;
   }): Promise<{
     count: number | null;
     transactions: Array<ChainMultisigTransaction>;
   }> {
     const getPage = (
       offset: number,
+      limit = SAFE_QUEUE_SERVICE_MAX_LIMIT,
     ): ReturnType<SafeRepository['getTransactionQueueForSafes']> =>
       this.safeRepository.getTransactionQueueForSafes({
         spaceId: args.spaceId,
         safes: args.safes,
-        limit: SAFE_QUEUE_SERVICE_MAX_LIMIT,
+        limit,
         offset,
       });
-    const firstPage = await getPage(0);
+    const limit = args.limit ?? Number.POSITIVE_INFINITY;
+    const firstPage = await getPage(
+      0,
+      Math.min(limit, SAFE_QUEUE_SERVICE_MAX_LIMIT),
+    );
     const pageCount = Math.min(
-      Math.ceil((firstPage.count ?? 0) / SAFE_QUEUE_SERVICE_MAX_LIMIT),
+      Math.ceil(
+        Math.min(firstPage.count ?? 0, limit) / SAFE_QUEUE_SERVICE_MAX_LIMIT,
+      ),
       this.maxSpaceQueuePages,
     );
     const nextPages = await Promise.all(
-      Array.from({ length: Math.max(pageCount - 1, 0) }, (_, index) =>
-        getPage((index + 1) * SAFE_QUEUE_SERVICE_MAX_LIMIT),
-      ),
+      Array.from({ length: Math.max(pageCount - 1, 0) }, (_, index) => {
+        const offset = (index + 1) * SAFE_QUEUE_SERVICE_MAX_LIMIT;
+        return getPage(
+          offset,
+          Math.min(limit - offset, SAFE_QUEUE_SERVICE_MAX_LIMIT),
+        );
+      }),
     );
     return {
       count: firstPage.count,

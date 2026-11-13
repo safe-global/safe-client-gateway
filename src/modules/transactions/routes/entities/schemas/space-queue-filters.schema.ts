@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
+import { ChainIdSchema } from '#/modules/chains/domain/entities/schemas/chain-id.schema';
+import { AddressSchema } from '#/validation/entities/schemas/address.schema';
 
 export const SpaceQueueStatus = {
   Execute: 'execute',
@@ -27,3 +29,23 @@ export const SpaceQueueSearchSchema = z
   .trim()
   .max(SPACE_QUEUE_SEARCH_MAX_LENGTH)
   .transform((value) => value.toLowerCase() || undefined);
+
+export const SpaceQueueChainIdsSchema = z
+  .string()
+  .transform((value) => value.split(','))
+  .pipe(z.array(ChainIdSchema).nonempty());
+
+export const SpaceQueueSignersSchema = z
+  .string()
+  .transform((value) => value.split(','))
+  .pipe(z.array(AddressSchema).nonempty());
+
+/**
+ * No maximum of its own: the read stops at `spaces.transactionQueue.maxPages`
+ * pages, as it does without a limit.
+ */
+export const SpaceQueueLimitSchema = z
+  .string()
+  .regex(/^\d+$/)
+  .transform(Number)
+  .pipe(z.number().int().min(1));

@@ -17,7 +17,27 @@ export class SpaceQueueSafe implements ChainSafeAddress {
 export class SpaceQueueSafeCount extends SpaceQueueSafe {
   @ApiProperty({
     description:
-      'Transactions of this Safe on this chain that match the status filters',
+      'Transactions of this Safe on this chain that match every filter but `safes`',
+  })
+  count!: number;
+}
+
+export class SpaceQueueChainCount {
+  @ApiProperty()
+  chainId!: string;
+  @ApiProperty({
+    description:
+      'Transactions on this chain that match every filter but `chainIds`',
+  })
+  count!: number;
+}
+
+export class SpaceQueueSignerCount {
+  @ApiProperty()
+  address!: Address;
+  @ApiProperty({
+    description:
+      'Transactions still awaiting this signer that match every filter but `signers`',
   })
   count!: number;
 }
@@ -25,7 +45,7 @@ export class SpaceQueueSafeCount extends SpaceQueueSafe {
 export class SpaceQueueCounts {
   @ApiProperty({
     description:
-      'Transactions of the selected Safes, the sum of execute, sign, blocked and waiting',
+      'Transactions that match every filter but the status ones, the sum of execute, sign, blocked and waiting',
   })
   total!: number;
   @ApiProperty({
@@ -54,9 +74,23 @@ export class SpaceQueueCounts {
     type: SpaceQueueSafeCount,
     isArray: true,
     description:
-      'Every Safe and chain of the queue read, with how many of its transactions match the status filters',
+      'Every Safe and chain of the queue read, with how many of its transactions match every filter but `safes`',
   })
   safes!: Array<SpaceQueueSafeCount>;
+  @ApiProperty({
+    type: SpaceQueueChainCount,
+    isArray: true,
+    description:
+      'Every chain of the queue read, with how many of its transactions match every filter but `chainIds`',
+  })
+  chains!: Array<SpaceQueueChainCount>;
+  @ApiProperty({
+    type: SpaceQueueSignerCount,
+    isArray: true,
+    description:
+      'Every signer a transaction of the queue read still awaits, with how many of those transactions match every filter but `signers`',
+  })
+  signers!: Array<SpaceQueueSignerCount>;
 }
 
 export type SpaceQueueItems = {
@@ -123,7 +157,7 @@ export class SpaceQueuedItemPage {
   @ApiProperty({
     type: SpaceQueueCounts,
     description:
-      'Faceted counts of the queue read: the status counts apply the `safes` filter but not the status filters, and `safes` applies the status filters but not the `safes` filter',
+      'Faceted counts of the queue read: each applies every filter but its own. The status counts skip the status filters (`status`, `conflicting`, `stale`); `safes`, `chains` and `signers` skip `safes`, `chainIds` and `signers`. The search narrows every count.',
   })
   counts!: SpaceQueueCounts;
 }
