@@ -211,7 +211,7 @@ Background work runs on BullMQ queues backed by Redis, each declared with config
 Each queue has its own `@Processor`/`WorkerHost` consumer (e.g. `CsvExportConsumer` in `src/modules/csv-export/v1/consumers/csv-export.consumer.ts`) and its own `removeOnComplete`/`removeOnFail` retention config.
 The BullMQ connection itself is registered once, globally, in `src/app.module.ts` (`BullModule.forRootAsync`, pointed at `redis.host`/`redis.port`) — individual queue modules register a named queue against that shared connection rather than opening their own.
 
-Crons registered via `@nestjs/schedule`'s `@Cron` are conventionally declared with `disabled: process.env.NODE_ENV === 'test'` so they do not fire during a test run — e.g. `EventCacheHelper.logUnsupportedEvents`/`clearSupportedChainsMemo` in `src/modules/hooks/domain/helpers/event-cache.helper.ts`, and `clearSignatureMemo` in `src/domain/common/entities/safe-signature.ts`.
+Crons registered via `@nestjs/schedule`'s `@Cron` are conventionally declared with `disabled: process.env.NODE_ENV === 'test'` so they do not fire during a test run — e.g. `EventCacheHelper.logUnsupportedEvents`/`clearSupportedChainsMemo` in `src/modules/hooks/domain/helpers/event-cache.helper.ts`.
 This is not yet applied everywhere: `CircuitBreakerService.cleanupStaleCircuits` (`src/datasources/circuit-breaker/circuit-breaker.service.ts`) runs unconditionally every 30 minutes.
 
 The csv-export job streams end-to-end: an async generator pages through transactions, `CsvService` serializes them to CSV, and the result streams directly into an S3 multipart upload — the full export is never buffered in memory.

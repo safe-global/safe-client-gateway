@@ -1,19 +1,40 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Cron, CronExpression } from '@nestjs/schedule';
 import { secp256k1 } from '@noble/curves/secp256k1';
-import { memoize } from 'lodash';
 import { type Address, getAddress, type Hex, hashMessage } from 'viem';
 import { publicKeyToAddress } from 'viem/utils';
 import { SignatureType } from '#/domain/common/entities/signature-type.entity';
+import { LruMap } from '#/domain/common/utils/lru-map';
 import {
   parseSignaturesByType,
   R_OR_S_HEX_LENGTH,
   SIGNATURE_HEX_LENGTH,
   V_HEX_LENGTH,
 } from '#/domain/common/utils/signatures';
-import { ADDRESS_LENGTH, HEX_PREFIX_LENGTH } from '#/routes/common/constants';
+import {
+  ADDRESS_LENGTH,
+  HEX_BYTES_LENGTH,
+  HEX_PREFIX_LENGTH,
+} from '#/routes/common/constants';
 
 const ETH_SIGN_V_OFFSET = 4;
+const HASH_HEX_LENGTH = 32 * HEX_BYTES_LENGTH; // 32 bytes in hex
+
+// A 0x-prefixed ECDSA signature followed by a 0x-prefixed hash
+const RECOVERED_ADDRESS_KEY_LENGTH =
+  HEX_PREFIX_LENGTH +
+  SIGNATURE_HEX_LENGTH +
+  HEX_PREFIX_LENGTH +
+  HASH_HEX_LENGTH;
+
+const MAX_RECOVERED_ADDRESSES = 50_000;
+
+/**
+ * The addresses recovered from ECDSA signatures, by signature and hash.
+ *
+ * Shared by every {@link SafeSignature}, as an instance does not outlive the
+ * request that verifies it.
+ */
+const recoveredAddresses = new LruMap<string, Address>(MAX_RECOVERED_ADDRESSES);
 
 export class SafeSignature {
   public signature: Hex;
@@ -65,55 +86,54 @@ export class SafeSignature {
   }
 
   get owner(): Address {
-    return this._owner();
+    try {
+      return this.recoverOwner();
+    } catch {
+      throw new Error('Could not recover address');
+    }
   }
 
-  private _owner = memoize(
-    () => {
-      try {
-        switch (this.signatureType) {
-          case SignatureType.ContractSignature:
-          case SignatureType.ApprovedHash: {
-            return getAddress(`0x${this.r.slice(ADDRESS_LENGTH * -1)}`);
-          }
-          case SignatureType.EthSign: {
-            // To differentiate signature types, eth_sign signatures have v value increased by 4
-            // @see https://docs.safe.global/advanced/smart-account-signatures#eth_sign-signature
-            const normalizedSignature: Hex = `${this.r}${this.s.slice(HEX_PREFIX_LENGTH)}${(this.v - ETH_SIGN_V_OFFSET).toString(16)}`;
-            return recoverAddress({
-              hash: hashMessage({ raw: this.hash }),
-              signature: normalizedSignature,
-            });
-          }
-          case SignatureType.Eoa: {
-            return recoverAddress({
-              hash: this.hash,
-              signature: this.signature,
-            });
-          }
-        }
-      } catch {
-        throw new Error('Could not recover address');
+  private recoverOwner(): Address {
+    switch (this.signatureType) {
+      case SignatureType.ContractSignature:
+      case SignatureType.ApprovedHash: {
+        return getAddress(`0x${this.r.slice(ADDRESS_LENGTH * -1)}`);
       }
-    },
-    () => {
-      return this.signature + this.hash;
-    },
-  );
-
-  @Cron(CronExpression.EVERY_HOUR, {
-    disabled: process.env.NODE_ENV === 'test',
-  })
-  public clearSignatureMemo(): void {
-    if (this._owner.cache.clear) {
-      this._owner.cache.clear();
+      case SignatureType.EthSign: {
+        // To differentiate signature types, eth_sign signatures have v value increased by 4
+        // @see https://docs.safe.global/advanced/smart-account-signatures#eth_sign-signature
+        const normalizedSignature: Hex = `${this.r}${this.s.slice(HEX_PREFIX_LENGTH)}${(this.v - ETH_SIGN_V_OFFSET).toString(16)}`;
+        return recoverAddress({
+          hash: hashMessage({ raw: this.hash }),
+          signature: normalizedSignature,
+        });
+      }
+      case SignatureType.Eoa: {
+        return recoverAddress({
+          hash: this.hash,
+          signature: this.signature,
+        });
+      }
     }
   }
 }
 
 function recoverAddress(args: { hash: Hex; signature: Hex }): Address {
-  const publicKey = recoverPublicKey(args);
-  return publicKeyToAddress(publicKey);
+  const key = args.signature + args.hash;
+  const memoized = recoveredAddresses.get(key);
+  if (memoized) {
+    return memoized;
+  }
+
+  const address = publicKeyToAddress(recoverPublicKey(args));
+
+  // A hash of any length recovers an address, but only one of the expected
+  // length keeps every entry, and with it the memo, at a known size
+  if (key.length === RECOVERED_ADDRESS_KEY_LENGTH) {
+    recoveredAddresses.set(key, address);
+  }
+
+  return address;
 }
 
 function recoverPublicKey(args: { hash: Hex; signature: Hex }): Hex {

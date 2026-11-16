@@ -4,6 +4,7 @@ import { shuffle } from 'lodash';
 import type { Hash, Hex } from 'viem';
 import * as viem from 'viem';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
+import * as viemUtils from 'viem/utils';
 import { SafeSignature } from '#/domain/common/entities/safe-signature';
 import { SignatureType } from '#/domain/common/entities/signature-type.entity';
 import { getSignature } from '#/domain/common/utils/__tests__/signatures.builder';
@@ -13,10 +14,13 @@ import {
 } from '#/domain/common/utils/signatures';
 
 // `vi.spyOn` cannot redefine read-only ESM named exports, so partially mock
-// viem with a spy that wraps the real `getAddress` implementation.
-vi.mock('viem', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('viem')>();
-  return { ...actual, getAddress: vi.fn(actual.getAddress) };
+// viem/utils with a spy that wraps the real `publicKeyToAddress` implementation.
+vi.mock('viem/utils', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('viem/utils')>();
+  return {
+    ...actual,
+    publicKeyToAddress: vi.fn(actual.publicKeyToAddress),
+  };
 });
 
 describe('SafeSignature', () => {
@@ -255,45 +259,64 @@ describe('SafeSignature', () => {
       },
     );
 
-    it('should memoize the owner', async () => {
-      const getAddressSpy = vi.mocked(viem.getAddress);
-      getAddressSpy.mockClear();
+    const ecdsaSignatureTypes = [SignatureType.Eoa, SignatureType.EthSign];
 
-      const privateKey = generatePrivateKey();
-      const signer = privateKeyToAccount(privateKey);
-      const hash = faker.string.hexadecimal({ length: 66 }) as Hash;
-      // Recovered via getAddress
-      const signatureType = faker.helpers.arrayElement([
-        SignatureType.ApprovedHash,
-        SignatureType.ContractSignature,
-      ]);
+    it.each(ecdsaSignatureTypes)(
+      'should recover the address of a %s signature once for every instance',
+      async (signatureType) => {
+        const publicKeyToAddressSpy = vi.mocked(viemUtils.publicKeyToAddress);
+        const signer = privateKeyToAccount(generatePrivateKey());
+        const hash = faker.string.hexadecimal({ length: 64 }) as Hash;
+        const signature = await getSignature({ signer, hash, signatureType });
+
+        expect(new SafeSignature({ signature, hash }).owner).toBe(
+          signer.address,
+        );
+        expect(new SafeSignature({ signature, hash }).owner).toBe(
+          signer.address,
+        );
+
+        expect(publicKeyToAddressSpy).toHaveBeenCalledTimes(1);
+      },
+    );
+
+    it.each(ecdsaSignatureTypes)(
+      'should recover the address of every %s signature of a hash',
+      async (signatureType) => {
+        const publicKeyToAddressSpy = vi.mocked(viemUtils.publicKeyToAddress);
+        const signers = [
+          privateKeyToAccount(generatePrivateKey()),
+          privateKeyToAccount(generatePrivateKey()),
+        ];
+        const hash = faker.string.hexadecimal({ length: 64 }) as Hash;
+
+        for (const signer of signers) {
+          const signature = await getSignature({ signer, hash, signatureType });
+
+          expect(new SafeSignature({ signature, hash }).owner).toBe(
+            signer.address,
+          );
+        }
+
+        expect(publicKeyToAddressSpy).toHaveBeenCalledTimes(signers.length);
+      },
+    );
+
+    it('should not share an address recovered from a hash that is not 32 bytes', async () => {
+      const publicKeyToAddressSpy = vi.mocked(viemUtils.publicKeyToAddress);
       const signature = await getSignature({
-        signer,
-        hash,
-        signatureType,
+        signer: privateKeyToAccount(generatePrivateKey()),
+        hash: faker.string.hexadecimal({ length: 64 }) as Hash,
+        signatureType: SignatureType.Eoa,
       });
+      const hash = faker.string.hexadecimal({
+        length: faker.helpers.arrayElement([62, 66]),
+      }) as Hash;
 
-      const safeSignature = new SafeSignature({ signature, hash });
+      const owner = new SafeSignature({ signature, hash }).owner;
 
-      expect(safeSignature.owner).toBe(signer.address);
-      expect(getAddressSpy).toHaveBeenCalledTimes(1);
-
-      expect(safeSignature.owner).toBe(signer.address);
-      expect(getAddressSpy).toHaveBeenCalledTimes(1);
-
-      const newPrivateKey = generatePrivateKey();
-      const newSigner = privateKeyToAccount(newPrivateKey);
-      safeSignature.signature = await getSignature({
-        signer: newSigner,
-        hash,
-        signatureType,
-      });
-
-      expect(safeSignature.owner).toBe(newSigner.address);
-      expect(getAddressSpy).toHaveBeenCalledTimes(2);
-
-      expect(safeSignature.owner).toBe(newSigner.address);
-      expect(getAddressSpy).toHaveBeenCalledTimes(2);
+      expect(new SafeSignature({ signature, hash }).owner).toBe(owner);
+      expect(publicKeyToAddressSpy).toHaveBeenCalledTimes(2);
     });
   });
 });

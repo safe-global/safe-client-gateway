@@ -88,11 +88,11 @@ The same discipline covers the stream's own error handling: `export` destroys th
 
 ### Bounded in-process memos
 
-**Rule:** An in-memory memoization or cache is cron-cleared via `@Cron(..., { disabled: process.env.NODE_ENV === 'test' })` (the only shape in the codebase today; a size-bounded cache would satisfy the rule equally); the shared Redis-backed cache (`CacheFirstDataSource`/`RedisCacheService`) is preferred over adding a new ad hoc in-process memo.
+**Rule:** An in-memory memoization or cache is bounded — cron-cleared via `@Cron(..., { disabled: process.env.NODE_ENV === 'test' })` on a provider, or capped in size — and is held where it outlives a request: at module level or on a singleton provider, never on an object created per request. The shared Redis-backed cache (`CacheFirstDataSource`/`RedisCacheService`) is preferred over adding a new ad hoc in-process memo.
 
-**Why:** PR #2628 removed a method-level memoization cache that had no such bound.
+**Why:** PR #2628 removed a method-level memoization cache that had no such bound. `SafeSignature`'s signer memo had the opposite defect: it was a field of an instance created for each verification, cleared by a `@Cron` on a class Nest never instantiates, so it was never read twice and every queued transaction's signatures were recovered again on every request.
 
-**Canonical example:** `src/domain/common/entities/safe-signature.ts`'s `clearSignatureMemo` and `src/modules/hooks/domain/helpers/event-cache.helper.ts`'s `clearSupportedChainsMemo` each clear a lodash `memoize` cache on their own `@Cron` (hourly and every-30-seconds respectively), both disabled in tests via `NODE_ENV === 'test'`.
+**Canonical example:** `src/modules/hooks/domain/helpers/event-cache.helper.ts`'s `clearSupportedChainsMemo` clears a lodash `memoize` cache on its own `@Cron` (every 30 seconds), disabled in tests via `NODE_ENV === 'test'`. `src/domain/common/entities/safe-signature.ts` is the size-capped shape: recovered signer addresses live in a module-level `LruMap` (`src/domain/common/utils/lru-map.ts`) of at most `MAX_RECOVERED_ADDRESSES` entries, and only a key of the expected length is stored, so the memo's memory is bounded as well as its entry count.
 
 An in-process memo is appropriate only for a cheap, synchronous re-derivation — recovering a signer address, checking chain support — never as a substitute for `CacheFirstDataSource` in front of an actual upstream call.
 
