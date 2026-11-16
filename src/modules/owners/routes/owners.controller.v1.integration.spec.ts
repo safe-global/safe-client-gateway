@@ -76,10 +76,13 @@ describe('Owners Controller (Unit)', () => {
     });
 
     it.each([
-      { chainId: faker.string.alpha() },
-      { chainId: encodeURIComponent(`../${faker.string.numeric()}`) },
+      { description: 'a non-numeric', chainId: faker.string.alpha() },
+      {
+        description: 'a path-like',
+        chainId: encodeURIComponent(`../${faker.string.numeric()}`),
+      },
     ])(
-      'Failure: chainId $chainId is rejected before any upstream request',
+      'Failure: $description chainId is rejected before any upstream request',
       async ({ chainId }) => {
         const ownerAddress = faker.finance.ethereumAddress();
 
