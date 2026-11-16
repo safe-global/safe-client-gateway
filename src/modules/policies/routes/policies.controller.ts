@@ -72,7 +72,7 @@ export class PoliciesController {
   @ApiCreatedResponse({ type: CreatePolicyConfigurationRequestResponse })
   @ApiBadRequestResponse({
     description:
-      'Invalid space identifier, or the Safe holds the maximum number of stored requests in this space',
+      'Invalid space identifier, or the Safe holds the maximum number of active requests in this space',
   })
   @ApiUnprocessableEntityResponse({
     description:
