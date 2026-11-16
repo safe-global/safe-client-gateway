@@ -211,6 +211,10 @@ export default () => ({
         process.env.PORTFOLIO_CLEAR_COOLDOWN_SECONDS ?? `${15}`,
         10,
       ),
+      recentClearSeconds: Number.parseInt(
+        process.env.PORTFOLIO_CLEAR_RECENT_SECONDS ?? `${30}`,
+        10,
+      ),
       rateLimit: {
         max: Number.parseInt(
           process.env.PORTFOLIO_CLEAR_RATE_LIMIT_MAX ?? `${10}`,

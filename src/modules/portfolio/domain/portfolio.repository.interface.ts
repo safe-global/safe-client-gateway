@@ -53,4 +53,15 @@ export interface IPortfolioRepository {
    * @returns {Promise<void>} A promise that resolves when the cache is cleared
    */
   clearZerionCaches(args: { address: Address }): Promise<void>;
+
+  /**
+   * When the wallet's Zerion caches were last cleared, by a transaction event
+   * or a refresh. The time is kept only for the post-transaction window.
+   *
+   * @param {Object} args - Lookup parameters
+   * @param {Address} args.address - The wallet address
+   * @returns {Promise<number | null>} The clear time in epoch ms, or null when
+   * there was no clear within that window
+   */
+  getClearedAt(args: { address: Address }): Promise<number | null>;
 }
