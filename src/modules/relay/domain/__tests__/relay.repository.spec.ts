@@ -9,6 +9,7 @@ import type { IRelayApi } from '#/domain/interfaces/relay-api.interface';
 import type { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
 import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
 import { relayerBuilder } from '#/modules/chains/domain/entities/__tests__/relayer.builder';
+import { relayBuilder } from '#/modules/relay/domain/entities/__tests__/relay.builder';
 import { relayTaskStatusBuilder } from '#/modules/relay/domain/entities/__tests__/relay-task-status.builder';
 import type { IRelayManager } from '#/modules/relay/domain/interfaces/relay-manager.interface';
 import type { IRelayer } from '#/modules/relay/domain/interfaces/relayer.interface';
@@ -30,11 +31,12 @@ const mockRelayer = vi.mocked({
 
 const mockRelayManager = vi.mocked({
   getRelayer: vi.fn(),
+  getFreeRelayer: vi.fn(),
 } as MockedObject<IRelayManager>);
 
 const mockChainsRepository = {
   getChain: vi.fn(),
-} as unknown as MockedObject<IChainsRepository>;
+} as MockedObject<IChainsRepository>;
 
 describe('RelayRepository', () => {
   let target: RelayRepository;
@@ -66,14 +68,14 @@ describe('RelayRepository', () => {
       const chain = chainBuilder()
         .with('relayer', relayerBuilder().build())
         .build();
-      const taskId = faker.string.alphanumeric({ length: 73 });
+      const relay = relayBuilder().build();
       mockChainsRepository.getChain.mockResolvedValue(chain);
       mockRelayManager.getRelayer.mockReturnValue(mockRelayer);
-      mockRelayer.relay.mockResolvedValue(rawify({ taskId }));
+      mockRelayer.relay.mockResolvedValue(rawify(relay));
 
       const actual = await target.relay(relayArgs(chain.chainId));
 
-      expect(actual).toStrictEqual({ taskId });
+      expect(actual).toStrictEqual(relay);
     });
 
     it('should throw if the relayer result does not match RelaySchema', async () => {
@@ -89,6 +91,72 @@ describe('RelayRepository', () => {
       await expect(target.relay(relayArgs(chain.chainId))).rejects.toThrow(
         ZodError,
       );
+    });
+  });
+
+  describe('relayWithoutLimits', () => {
+    function relayWithoutLimitsArgs(): Parameters<
+      RelayRepository['relayWithoutLimits']
+    >[0] {
+      return {
+        chainId: faker.string.numeric(),
+        to: getAddress(faker.finance.ethereumAddress()),
+        data: faker.string.hexadecimal() as Hex,
+        safeTxHash: faker.string.hexadecimal({ length: 64 }) as Hex,
+      };
+    }
+
+    it('should return the relay API result parsed against RelaySchema', async () => {
+      const args = relayWithoutLimitsArgs();
+      const relay = relayBuilder().build();
+      mockRelayApi.relay.mockResolvedValue(rawify(relay));
+
+      const actual = await target.relayWithoutLimits(args);
+
+      expect(actual).toStrictEqual(relay);
+      expect(mockRelayApi.relay).toHaveBeenCalledOnce();
+      expect(mockRelayApi.relay).toHaveBeenCalledWith(args);
+      expect(mockChainsRepository.getChain).not.toHaveBeenCalled();
+      expect(mockRelayManager.getRelayer).not.toHaveBeenCalled();
+      expect(mockRelayManager.getFreeRelayer).not.toHaveBeenCalled();
+    });
+
+    it('should throw if the relay API result does not match RelaySchema', async () => {
+      mockRelayApi.relay.mockResolvedValue(
+        rawify({ taskId: faker.number.int() }),
+      );
+
+      await expect(
+        target.relayWithoutLimits(relayWithoutLimitsArgs()),
+      ).rejects.toThrow(ZodError);
+    });
+  });
+
+  describe('getRelaysRemaining', () => {
+    it('should return the relays remaining from the free relayer of the chain', async () => {
+      const chain = chainBuilder()
+        .with('relayer', relayerBuilder().build())
+        .build();
+      const args = {
+        chainId: chain.chainId,
+        address: getAddress(faker.finance.ethereumAddress()),
+      };
+      const relaysRemaining = {
+        remaining: faker.number.int({ min: 0, max: 5 }),
+        limit: faker.number.int({ min: 5, max: 10 }),
+      };
+      mockChainsRepository.getChain.mockResolvedValue(chain);
+      mockRelayManager.getFreeRelayer.mockReturnValue(mockRelayer);
+      mockRelayer.getRelaysRemaining.mockResolvedValue(relaysRemaining);
+
+      const actual = await target.getRelaysRemaining(args);
+
+      expect(actual).toStrictEqual(relaysRemaining);
+      expect(mockChainsRepository.getChain).toHaveBeenCalledWith(chain.chainId);
+      expect(mockRelayManager.getFreeRelayer).toHaveBeenCalledWith(
+        chain.relayer,
+      );
+      expect(mockRelayer.getRelaysRemaining).toHaveBeenCalledWith(args);
     });
   });
 
