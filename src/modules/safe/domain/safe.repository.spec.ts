@@ -1465,8 +1465,6 @@ describe('SafeRepository', () => {
         safeTxHash: tx.safeTxHash,
         signature: faker.string.hexadecimal({ length: 16 }),
       });
-      // Flush microtasks so the fire-and-forget cache-clear chain runs
-      await new Promise((resolve) => setImmediate(resolve));
 
       expect(
         mockSpaceSafesRepository.findSpaceIdsBySafe,
@@ -1507,7 +1505,7 @@ describe('SafeRepository', () => {
       expect(mockSafeQueueService.clearAllTransactions).not.toHaveBeenCalled();
     });
 
-    it('should warn with chainId, safeTxHash and error when fire-and-forget cache clear fails', async () => {
+    it('should resolve and warn with chainId, safeTxHash and errors when clearing the caches fails', async () => {
       const tx = multisigTransactionBuilder().with('safe', safeAddress).build();
       const signature = faker.string.hexadecimal({ length: 16 });
       mockTransactionApi.getMultisigTransaction.mockResolvedValue(
@@ -1518,16 +1516,16 @@ describe('SafeRepository', () => {
         new Error('cache down'),
       );
 
-      await repository.deleteTransaction({
-        chainId,
-        safeTxHash: tx.safeTxHash,
-        signature,
-      });
-      // Flush microtasks so the fire-and-forget cache-clear chain runs
-      await new Promise((resolve) => setImmediate(resolve));
+      await expect(
+        repository.deleteTransaction({
+          chainId,
+          safeTxHash: tx.safeTxHash,
+          signature,
+        }),
+      ).resolves.toBeUndefined();
 
       expect(mockLoggingService.warn).toHaveBeenCalledWith(
-        `Failed to immediately clear deleted transaction from cache. chainId=${chainId}, safeTxHash=${tx.safeTxHash}, error=Error: Failed to clear multisig transaction`,
+        `Failed to clear the caches of a queued transaction. chainId=${chainId}, safeTxHash=${tx.safeTxHash}, errors=Error: Failed to clear multisig transaction`,
       );
       // The underlying cause is preserved in the repository-level debug log
       expect(mockLoggingService.debug).toHaveBeenCalledWith(
@@ -1540,7 +1538,7 @@ describe('SafeRepository', () => {
     const chainId = faker.string.numeric();
     const safeAddress = getAddress(faker.finance.ethereumAddress());
 
-    it('should propose via the queue service without explicitly clearing the queue cache (relies on TTL/upstream)', async () => {
+    it('should propose via the queue service and clear the transaction and the Safe queue caches', async () => {
       const safe = safeBuilder().with('address', safeAddress).build();
       const proposeTransactionDto = proposeTransactionDtoBuilder().build();
       mockTransactionApi.getSafe.mockResolvedValue(rawify(safe));
@@ -1560,13 +1558,24 @@ describe('SafeRepository', () => {
         safeAddress,
         proposeTransactionDto,
       });
-      expect(mockSafeQueueService.clearAllTransactions).not.toHaveBeenCalled();
       expect(
         mockSafeQueueService.clearMultisigTransaction,
-      ).not.toHaveBeenCalled();
+      ).toHaveBeenCalledExactlyOnceWith({
+        chainId,
+        safeTxHash: proposeTransactionDto.safeTxHash,
+      });
+      expect(
+        mockSafeQueueService.clearAllTransactions,
+      ).toHaveBeenCalledExactlyOnceWith({ chainId, safeAddress });
+      expect(
+        mockTransactionApi.clearMultisigTransaction,
+      ).toHaveBeenCalledExactlyOnceWith(proposeTransactionDto.safeTxHash);
+      expect(
+        mockTransactionApi.clearMultisigTransactions,
+      ).toHaveBeenCalledExactlyOnceWith(safeAddress);
     });
 
-    it('should not touch the queue cache when FF_SAFE_QUEUE_SERVICE is off', async () => {
+    it('should propose via the transaction service and only clear its caches when FF_SAFE_QUEUE_SERVICE is off', async () => {
       const repo = createRepository({ safeQueueEnabled: false });
       const safe = safeBuilder().with('address', safeAddress).build();
       const proposeTransactionDto = proposeTransactionDtoBuilder().build();
@@ -1574,7 +1583,6 @@ describe('SafeRepository', () => {
       mockTransactionApi.getMultisigTransactionWithNoCache.mockRejectedValue(
         new Error('not found'),
       );
-      mockTransactionApi.deleteTransaction.mockResolvedValue(undefined);
 
       await repo.proposeTransaction({
         chainId,
@@ -1582,11 +1590,122 @@ describe('SafeRepository', () => {
         proposeTransactionDto,
       });
 
+      expect(
+        mockTransactionApi.postMultisigTransaction,
+      ).toHaveBeenCalledExactlyOnceWith({
+        address: safeAddress,
+        data: proposeTransactionDto,
+      });
       expect(mockSafeQueueService.proposeTransaction).not.toHaveBeenCalled();
+      expect(
+        mockTransactionApi.clearMultisigTransaction,
+      ).toHaveBeenCalledExactlyOnceWith(proposeTransactionDto.safeTxHash);
+      expect(
+        mockTransactionApi.clearMultisigTransactions,
+      ).toHaveBeenCalledExactlyOnceWith(safeAddress);
       expect(mockSafeQueueService.clearAllTransactions).not.toHaveBeenCalled();
       expect(
         mockSafeQueueService.clearMultisigTransaction,
       ).not.toHaveBeenCalled();
+    });
+
+    it('should clear the queue of every Space holding the Safe', async () => {
+      const repo = createRepository({
+        safeQueueEnabled: true,
+        usersEnabled: true,
+      });
+      const safe = safeBuilder().with('address', safeAddress).build();
+      const proposeTransactionDto = proposeTransactionDtoBuilder().build();
+      const spaceIds = faker.helpers.multiple(
+        () => faker.number.int({ min: 1 }),
+        { count: { min: 1, max: 3 } },
+      );
+      mockTransactionApi.getSafe.mockResolvedValue(rawify(safe));
+      mockSafeQueueService.getMultisigTransactionWithNoCache.mockRejectedValue(
+        new Error('not found'),
+      );
+      mockSafeQueueService.proposeTransaction.mockResolvedValue(rawify({}));
+      mockSpaceSafesRepository.findSpaceIdsBySafe.mockResolvedValue(spaceIds);
+
+      await repo.proposeTransaction({
+        chainId,
+        safeAddress,
+        proposeTransactionDto,
+      });
+
+      expect(
+        mockSpaceSafesRepository.findSpaceIdsBySafe,
+      ).toHaveBeenCalledExactlyOnceWith({ chainId, address: safeAddress });
+      expect(
+        mockSafeQueueService.clearSpaceTransactionQueue,
+      ).toHaveBeenCalledTimes(spaceIds.length);
+      for (const spaceId of spaceIds) {
+        expect(
+          mockSafeQueueService.clearSpaceTransactionQueue,
+        ).toHaveBeenCalledWith({ spaceId });
+      }
+    });
+
+    it('should not clear any cache when the proposal fails', async () => {
+      const safe = safeBuilder().with('address', safeAddress).build();
+      const proposeTransactionDto = proposeTransactionDtoBuilder().build();
+      const error = new Error(faker.lorem.sentence());
+      mockTransactionApi.getSafe.mockResolvedValue(rawify(safe));
+      mockSafeQueueService.getMultisigTransactionWithNoCache.mockRejectedValue(
+        new Error('not found'),
+      );
+      mockSafeQueueService.proposeTransaction.mockRejectedValue(error);
+
+      await expect(
+        repository.proposeTransaction({
+          chainId,
+          safeAddress,
+          proposeTransactionDto,
+        }),
+      ).rejects.toThrow(error);
+
+      expect(
+        mockSafeQueueService.clearMultisigTransaction,
+      ).not.toHaveBeenCalled();
+      expect(mockSafeQueueService.clearAllTransactions).not.toHaveBeenCalled();
+      expect(
+        mockTransactionApi.clearMultisigTransaction,
+      ).not.toHaveBeenCalled();
+      expect(
+        mockTransactionApi.clearMultisigTransactions,
+      ).not.toHaveBeenCalled();
+    });
+
+    it('should return the proposal and warn when clearing the caches fails', async () => {
+      const safe = safeBuilder().with('address', safeAddress).build();
+      const proposeTransactionDto = proposeTransactionDtoBuilder().build();
+      const proposal = rawify({ safeTxHash: proposeTransactionDto.safeTxHash });
+      mockTransactionApi.getSafe.mockResolvedValue(rawify(safe));
+      mockSafeQueueService.getMultisigTransactionWithNoCache.mockRejectedValue(
+        new Error('not found'),
+      );
+      mockSafeQueueService.proposeTransaction.mockResolvedValue(proposal);
+      mockSafeQueueService.clearAllTransactions.mockRejectedValue(
+        new Error('cache down'),
+      );
+
+      await expect(
+        repository.proposeTransaction({
+          chainId,
+          safeAddress,
+          proposeTransactionDto,
+        }),
+      ).resolves.toBe(proposal);
+
+      expect(mockLoggingService.warn).toHaveBeenCalledExactlyOnceWith(
+        `Failed to clear the caches of a queued transaction. chainId=${chainId}, safeTxHash=${proposeTransactionDto.safeTxHash}, errors=Error: Failed to clear multisig transactions`,
+      );
+      expect(
+        mockSafeQueueService.clearMultisigTransaction,
+      ).toHaveBeenCalledExactlyOnceWith({
+        chainId,
+        safeTxHash: proposeTransactionDto.safeTxHash,
+      });
     });
 
     it('should forward a nested transaction to the queue service untouched', async () => {
@@ -1728,7 +1847,7 @@ describe('SafeRepository', () => {
     const chainId = faker.string.numeric();
     const safeAddress = getAddress(faker.finance.ethereumAddress());
 
-    it('should post the confirmation to the queue service and clear the transaction cache it primed', async () => {
+    it('should post the confirmation to the queue service and clear the transaction and the Safe queue caches', async () => {
       const safe = safeBuilder().with('address', safeAddress).build();
       const queueTx = safeQueueMultisigTransactionBuilder()
         .with('chainId', chainId)
@@ -1759,6 +1878,119 @@ describe('SafeRepository', () => {
       expect(mockTransactionApi.clearMultisigTransaction).toHaveBeenCalledWith(
         queueTx.safeTxHash,
       );
+      expect(
+        mockSafeQueueService.clearAllTransactions,
+      ).toHaveBeenCalledExactlyOnceWith({ chainId, safeAddress });
+      expect(
+        mockTransactionApi.clearMultisigTransactions,
+      ).toHaveBeenCalledExactlyOnceWith(safeAddress);
+    });
+
+    it('should clear the queue of every Space holding the Safe', async () => {
+      const repo = createRepository({
+        safeQueueEnabled: true,
+        usersEnabled: true,
+      });
+      const safe = safeBuilder().with('address', safeAddress).build();
+      const queueTx = safeQueueMultisigTransactionBuilder()
+        .with('chainId', chainId)
+        .with('safe', safeAddress)
+        .with('txHash', null)
+        .build();
+      const spaceIds = faker.helpers.multiple(
+        () => faker.number.int({ min: 1 }),
+        { count: { min: 1, max: 3 } },
+      );
+      mockSafeQueueService.getMultisigTransaction.mockResolvedValue(
+        rawify(queueTx),
+      );
+      mockTransactionApi.getSafe.mockResolvedValue(rawify(safe));
+      mockSafeQueueService.postConfirmation.mockResolvedValue();
+      mockSpaceSafesRepository.findSpaceIdsBySafe.mockResolvedValue(spaceIds);
+
+      await repo.addConfirmation({
+        chainId,
+        safeTxHash: queueTx.safeTxHash,
+        addConfirmationDto: {
+          signature: getAddress(faker.finance.ethereumAddress()),
+        },
+      });
+
+      expect(
+        mockSpaceSafesRepository.findSpaceIdsBySafe,
+      ).toHaveBeenCalledExactlyOnceWith({ chainId, address: safeAddress });
+      expect(
+        mockSafeQueueService.clearSpaceTransactionQueue,
+      ).toHaveBeenCalledTimes(spaceIds.length);
+      for (const spaceId of spaceIds) {
+        expect(
+          mockSafeQueueService.clearSpaceTransactionQueue,
+        ).toHaveBeenCalledWith({ spaceId });
+      }
+    });
+
+    it('should not clear any cache when posting the confirmation fails', async () => {
+      const safe = safeBuilder().with('address', safeAddress).build();
+      const queueTx = safeQueueMultisigTransactionBuilder()
+        .with('chainId', chainId)
+        .with('safe', safeAddress)
+        .with('txHash', null)
+        .build();
+      const error = new Error(faker.lorem.sentence());
+      mockSafeQueueService.getMultisigTransaction.mockResolvedValue(
+        rawify(queueTx),
+      );
+      mockTransactionApi.getSafe.mockResolvedValue(rawify(safe));
+      mockSafeQueueService.postConfirmation.mockRejectedValue(error);
+
+      await expect(
+        repository.addConfirmation({
+          chainId,
+          safeTxHash: queueTx.safeTxHash,
+          addConfirmationDto: {
+            signature: getAddress(faker.finance.ethereumAddress()),
+          },
+        }),
+      ).rejects.toThrow(error);
+
+      expect(
+        mockSafeQueueService.clearMultisigTransaction,
+      ).not.toHaveBeenCalled();
+      expect(mockSafeQueueService.clearAllTransactions).not.toHaveBeenCalled();
+    });
+
+    it('should resolve and warn when clearing the caches fails', async () => {
+      const safe = safeBuilder().with('address', safeAddress).build();
+      const queueTx = safeQueueMultisigTransactionBuilder()
+        .with('chainId', chainId)
+        .with('safe', safeAddress)
+        .with('txHash', null)
+        .build();
+      mockSafeQueueService.getMultisigTransaction.mockResolvedValue(
+        rawify(queueTx),
+      );
+      mockTransactionApi.getSafe.mockResolvedValue(rawify(safe));
+      mockSafeQueueService.postConfirmation.mockResolvedValue();
+      mockSafeQueueService.clearMultisigTransaction.mockRejectedValue(
+        new Error('cache down'),
+      );
+
+      await expect(
+        repository.addConfirmation({
+          chainId,
+          safeTxHash: queueTx.safeTxHash,
+          addConfirmationDto: {
+            signature: getAddress(faker.finance.ethereumAddress()),
+          },
+        }),
+      ).resolves.toBeUndefined();
+
+      expect(mockLoggingService.warn).toHaveBeenCalledExactlyOnceWith(
+        `Failed to clear the caches of a queued transaction. chainId=${chainId}, safeTxHash=${queueTx.safeTxHash}, errors=Error: Failed to clear multisig transaction`,
+      );
+      expect(
+        mockSafeQueueService.clearAllTransactions,
+      ).toHaveBeenCalledExactlyOnceWith({ chainId, safeAddress });
     });
   });
 
