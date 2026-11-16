@@ -4,7 +4,7 @@ import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { getAddress } from 'viem';
+import { type Address, encodeFunctionData, erc20Abi, getAddress } from 'viem';
 import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts';
 import type { MockedObject } from 'vitest';
 import {
@@ -14,6 +14,11 @@ import {
 import { createTestModule } from '#/__tests__/testing-module';
 import { IConfigurationService } from '#/config/configuration.service.interface';
 import configuration from '#/config/entities/__tests__/configuration';
+import { CacheRouter } from '#/datasources/cache/cache.router';
+import {
+  CacheService,
+  type ICacheService,
+} from '#/datasources/cache/cache.service.interface';
 import { NetworkResponseError } from '#/datasources/network/entities/network.error.entity';
 import type { INetworkService } from '#/datasources/network/network.service.interface';
 import { NetworkService } from '#/datasources/network/network.service.interface';
@@ -66,6 +71,7 @@ describe('Transactions History Controller', () => {
   let safeDecoderUrl: string | undefined;
   let networkService: MockedObject<INetworkService>;
   let configurationService: MockedObject<IConfigurationService>;
+  let cacheService: ICacheService;
 
   beforeEach(async () => {
     vi.resetAllMocks();
@@ -86,6 +92,7 @@ describe('Transactions History Controller', () => {
     safeConfigUrl = configurationService.get('safeConfig.baseUri');
     safeDecoderUrl = configurationService.get('safeDataDecoder.baseUri');
     networkService = moduleFixture.get(NetworkService);
+    cacheService = moduleFixture.get(CacheService);
 
     app = await new TestAppProvider().provide(moduleFixture);
     await initTestApplication(app);
@@ -1592,5 +1599,178 @@ describe('Transactions History Controller', () => {
           },
         });
       });
+  });
+
+  it('Should read each address of a page once from the cache', async () => {
+    const chain = chainBuilder().build();
+    const signer = privateKeyToAccount(generatePrivateKey());
+    const safe = safeBuilder().with('owners', [signer.address]).build();
+    // Incoming transfers of an untrusted token are left out of the history
+    const token = erc20TokenBuilder().with('trusted', true).build();
+    const counterparty = getAddress(faker.finance.ethereumAddress());
+    const value = faker.number.bigInt({ min: 1n });
+    const data = encodeFunctionData({
+      abi: erc20Abi,
+      functionName: 'transfer',
+      args: [counterparty, value],
+    });
+    const dataDecoded = dataDecodedBuilder()
+      .with('method', 'transfer')
+      .with('parameters', [
+        dataDecodedParameterBuilder()
+          .with('name', 'to')
+          .with('type', 'address')
+          .with('value', counterparty)
+          .build(),
+        dataDecodedParameterBuilder()
+          .with('name', 'value')
+          .with('type', 'uint256')
+          .with('value', value.toString())
+          .build(),
+      ])
+      .build();
+    const outgoing = await Promise.all(
+      [0, 1].map((nonce) =>
+        multisigTransactionBuilder()
+          .with('safe', safe.address)
+          .with('to', token.address)
+          .with('value', '0')
+          .with('data', data)
+          .with('operation', 0)
+          .with('nonce', nonce)
+          .with('isExecuted', true)
+          .with('isSuccessful', true)
+          .with('origin', null)
+          .buildWithConfirmations({
+            safe,
+            signers: [signer],
+            chainId: chain.chainId,
+          }),
+      ),
+    );
+    const incoming = [0, 1].map(() =>
+      ethereumTransactionBuilder()
+        .with('transfers', [
+          erc20TransferToJson(
+            erc20TransferBuilder()
+              .with('from', counterparty)
+              .with('to', safe.address)
+              .with('tokenAddress', token.address)
+              .with('value', faker.string.numeric({ exclude: ['0'] }))
+              .build(),
+          ) as Transfer,
+        ])
+        .build(),
+    );
+    let tokenFetches = 0;
+    networkService.get.mockImplementation(({ url }) => {
+      if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+        return Promise.resolve({ data: rawify(chain), status: 200 });
+      }
+      if (
+        url ===
+        `${chain.transactionService}/api/v2/safes/${safe.address}/all-transactions/`
+      ) {
+        return Promise.resolve({
+          data: rawify(
+            pageBuilder()
+              .with('results', [
+                ...outgoing.map(multisigTransactionToJson),
+                ...incoming.map(ethereumTransactionToJson),
+              ])
+              .build(),
+          ),
+          status: 200,
+        });
+      }
+      if (url === `${chain.transactionService}/api/v1/safes/${safe.address}`) {
+        return Promise.resolve({ data: rawify(safe), status: 200 });
+      }
+      if (
+        url === `${chain.transactionService}/api/v1/tokens/${token.address}`
+      ) {
+        tokenFetches++;
+        return Promise.resolve({ data: rawify(token), status: 200 });
+      }
+      return Promise.reject(
+        new NetworkResponseError(new URL(url), { status: 404 } as Response),
+      );
+    });
+    networkService.post.mockImplementation(({ url }) => {
+      if (url === `${safeDecoderUrl}/api/v1/data-decoder`) {
+        return Promise.resolve({ data: rawify(dataDecoded), status: 200 });
+      }
+      return Promise.reject(new Error(`Could not match ${url}`));
+    });
+    const historyUrl = `/v1/chains/${chain.chainId}/safes/${safe.address}/transactions/history/`;
+    // The first request fills the cache, fetching the token once
+    await request(app.getHttpServer()).get(historyUrl).expect(200);
+    expect(tokenFetches).toBe(1);
+    const reads = new Map<string, number>();
+    const hGet = cacheService.hGet.bind(cacheService);
+    vi.spyOn(cacheService, 'hGet').mockImplementation((cacheDir) => {
+      reads.set(cacheDir.key, (reads.get(cacheDir.key) ?? 0) + 1);
+      return hGet(cacheDir);
+    });
+
+    await request(app.getHttpServer())
+      .get(historyUrl)
+      .expect(200)
+      .then(({ body }) => {
+        const transactions = (body.results as Array<TransactionItem>).filter(
+          (item) => item.type === 'TRANSACTION',
+        );
+        const counterpartyInfo = {
+          value: counterparty,
+          name: null,
+          logoUri: null,
+        };
+        expect(transactions).toHaveLength(outgoing.length + incoming.length);
+        expect(transactions).toEqual(
+          expect.arrayContaining([
+            ...outgoing.map(() =>
+              expect.objectContaining({
+                transaction: expect.objectContaining({
+                  txInfo: expect.objectContaining({
+                    recipient: counterpartyInfo,
+                    transferInfo: expect.objectContaining({
+                      tokenAddress: token.address,
+                      tokenName: token.name,
+                    }),
+                  }),
+                }),
+              }),
+            ),
+            ...incoming.map(() =>
+              expect.objectContaining({
+                transaction: expect.objectContaining({
+                  txInfo: expect.objectContaining({
+                    sender: counterpartyInfo,
+                    transferInfo: expect.objectContaining({
+                      tokenAddress: token.address,
+                      tokenName: token.name,
+                    }),
+                  }),
+                }),
+              }),
+            ),
+          ]),
+        );
+      });
+
+    const keys = (address: Address): { token: string; contract: string } => ({
+      token: CacheRouter.getTokenCacheDir({ chainId: chain.chainId, address })
+        .key,
+      contract: CacheRouter.getContractsCacheDir({
+        chainId: chain.chainId,
+        address,
+      }).key,
+    });
+    // The token is known, so it is never looked up as a contract
+    expect(reads.get(keys(token.address).token)).toBe(1);
+    expect(reads.has(keys(token.address).contract)).toBe(false);
+    // The counterparty is neither, so it is looked up once as each
+    expect(reads.get(keys(counterparty).token)).toBe(1);
+    expect(reads.get(keys(counterparty).contract)).toBe(1);
   });
 });

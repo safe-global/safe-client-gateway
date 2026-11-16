@@ -5,33 +5,24 @@ import type { Safe } from '#/modules/safe/domain/entities/safe.entity';
 import { CreationTransactionInfo } from '#/modules/transactions/routes/entities/creation-transaction-info.entity';
 import { Transaction } from '#/modules/transactions/routes/entities/transaction.entity';
 import { TransactionStatus } from '#/modules/transactions/routes/entities/transaction-status.entity';
-import { AddressInfoHelper } from '#/routes/common/address-info/address-info.helper';
+import type { AddressLookups } from '#/routes/common/address-info/address-lookups';
 
 @Injectable()
 export class CreationTransactionMapper {
   private static readonly TRANSACTION_TYPE = 'creation';
 
-  constructor(private readonly addressInfoHelper: AddressInfoHelper) {}
-
   async mapTransaction(
-    chainId: string,
+    addressLookups: AddressLookups,
     transaction: CreationTransaction,
     safe: Safe,
   ): Promise<Transaction> {
-    const creator = await this.addressInfoHelper.getOrDefault(
-      chainId,
-      transaction.creator,
-      ['CONTRACT'],
-    );
+    const creator = await addressLookups.getOrDefault(transaction.creator, [
+      'CONTRACT',
+    ]);
     const implementation = transaction.masterCopy
-      ? await this.addressInfoHelper.getOrDefault(
-          chainId,
-          transaction.masterCopy,
-          ['CONTRACT'],
-        )
+      ? await addressLookups.getOrDefault(transaction.masterCopy, ['CONTRACT'])
       : null;
-    const factory = await this.addressInfoHelper.getOrDefault(
-      chainId,
+    const factory = await addressLookups.getOrDefault(
       transaction.factoryAddress,
       ['CONTRACT'],
     );

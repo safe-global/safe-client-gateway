@@ -15,12 +15,17 @@ import { ModuleTransactionDetailsMapper } from '#/modules/transactions/routes/ma
 import type { ModuleTransactionStatusMapper } from '#/modules/transactions/routes/mappers/module-transactions/module-transaction-status.mapper';
 import { addressInfoBuilder } from '#/routes/common/__tests__/entities/address-info.builder';
 import type { AddressInfoHelper } from '#/routes/common/address-info/address-info.helper';
+import type { AddressLookups } from '#/routes/common/address-info/address-lookups';
 
 describe('ModuleTransactionDetails mapper (Unit)', () => {
   let mapper: ModuleTransactionDetailsMapper;
 
-  const addressInfoHelper = vi.mocked({
+  const addressLookups = vi.mocked({
     getOrDefault: vi.fn(),
+  } as MockedObject<AddressLookups>);
+
+  const addressInfoHelper = vi.mocked({
+    createLookups: vi.fn(),
   } as MockedObject<AddressInfoHelper>);
 
   const statusMapper = vi.mocked({
@@ -59,7 +64,8 @@ describe('ModuleTransactionDetails mapper (Unit)', () => {
     const txInfo = transferTransactionInfoBuilder().build();
     transactionInfoMapper.mapTransactionInfo.mockResolvedValue(txInfo);
     const addressInfo = addressInfoBuilder().build();
-    addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
+    addressInfoHelper.createLookups.mockReturnValue(addressLookups);
+    addressLookups.getOrDefault.mockResolvedValue(addressInfo);
     transactionDataMapper.buildAddressInfoIndex.mockResolvedValue({});
     const trustedDelegateCallTarget = faker.datatype.boolean();
     transactionDataMapper.isTrustedDelegateCall.mockResolvedValue(
@@ -103,7 +109,8 @@ describe('ModuleTransactionDetails mapper (Unit)', () => {
     const txInfo = transferTransactionInfoBuilder().build();
     transactionInfoMapper.mapTransactionInfo.mockResolvedValue(txInfo);
     const addressInfo = addressInfoBuilder().build();
-    addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
+    addressInfoHelper.createLookups.mockReturnValue(addressLookups);
+    addressLookups.getOrDefault.mockResolvedValue(addressInfo);
     const addressInfoIndex = {
       [faker.string.sample()]: addressInfoBuilder().build(),
       [faker.string.sample()]: addressInfoBuilder().build(),

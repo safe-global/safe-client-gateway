@@ -9,9 +9,11 @@ import type { ContractsRepository } from '#/modules/contracts/domain/contracts.r
 import { IContractsRepository } from '#/modules/contracts/domain/contracts.repository.interface';
 import type { TokenRepository } from '#/modules/tokens/domain/token.repository';
 import { ITokenRepository } from '#/modules/tokens/domain/token.repository.interface';
-import { AddressInfo } from '#/routes/common/entities/address-info.entity';
-
-export type Source = 'CONTRACT' | 'TOKEN';
+import {
+  AddressLookups,
+  type Source,
+} from '#/routes/common/address-info/address-lookups';
+import type { AddressInfo } from '#/routes/common/entities/address-info.entity';
 
 @Injectable()
 export class AddressInfoHelper {
@@ -22,6 +24,21 @@ export class AddressInfoHelper {
     private readonly tokenRepository: TokenRepository,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
   ) {}
+
+  /**
+   * Returns new {@link AddressLookups} for {@link chainId}. Create one for each
+   * response that names several addresses, so that each is looked up once.
+   *
+   * @param chainId - the chain id where the addresses exist
+   */
+  createLookups(chainId: string): AddressLookups {
+    return new AddressLookups(
+      chainId,
+      this.tokenRepository,
+      this.contractsRepository,
+      this.loggingService,
+    );
+  }
 
   /**
    * Returns a promise for {@link AddressInfo} which contains the source
@@ -38,24 +55,12 @@ export class AddressInfoHelper {
    * @param address - the address of the source to which we want to retrieve its metadata
    * @param sources - a collection of {@link Source} to which we want to retrieve its metadata
    */
-
-  async get(
+  get(
     chainId: string,
     address: Address,
     sources: Array<Source>,
   ): Promise<AddressInfo> {
-    for (const source of sources) {
-      try {
-        return await this._getFromSource(chainId, address, source);
-      } catch {
-        this.loggingService.debug(
-          `Could not get address info with source=${source} for ${address}`,
-        );
-      }
-    }
-    return Promise.reject(
-      `Could not get address info from provided sources=${sources} for ${address}`,
-    );
+    return this.createLookups(chainId).get(address, sources);
   }
 
   /**
@@ -73,9 +78,7 @@ export class AddressInfoHelper {
     address: Address,
     sources: Array<Source>,
   ): Promise<AddressInfo> {
-    return this.get(chainId, address, sources).catch(
-      () => new AddressInfo(address),
-    );
+    return this.createLookups(chainId).getOrDefault(address, sources);
   }
 
   /**
@@ -90,37 +93,6 @@ export class AddressInfoHelper {
     addresses: Array<Address>,
     sources: Array<Source>,
   ): Promise<Array<AddressInfo>> {
-    return Promise.allSettled(
-      addresses.map((address) => this.getOrDefault(chainId, address, sources)),
-    ).then((results) =>
-      results.map((result) => {
-        if (result.status === 'fulfilled') {
-          return result.value;
-        }
-        throw new Error('Error processing address collection');
-      }),
-    );
-  }
-
-  private _getFromSource(
-    chainId: string,
-    address: Address,
-    source: Source,
-  ): Promise<AddressInfo> {
-    switch (source) {
-      case 'CONTRACT':
-        return this.contractsRepository
-          .getContract({ chainId, contractAddress: address })
-          .then((c) => {
-            const name = c.displayName || c.name;
-            return new AddressInfo(c.address, name, c.logoUrl);
-          });
-      case 'TOKEN':
-        return this.tokenRepository
-          .getToken({ chainId, address })
-          .then((t) => new AddressInfo(t.address, t.name, t.logoUri));
-      default:
-        return Promise.reject('Unknown source');
-    }
+    return this.createLookups(chainId).getCollection(addresses, sources);
   }
 }

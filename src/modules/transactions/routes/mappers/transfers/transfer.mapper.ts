@@ -12,6 +12,7 @@ import { isTransferTransactionInfo } from '#/modules/transactions/routes/entitie
 import { isErc20Transfer } from '#/modules/transactions/routes/entities/transfers/erc20-transfer.entity';
 import { TransferInfoMapper } from '#/modules/transactions/routes/mappers/transfers/transfer-info.mapper';
 import { isSwapTransferTransactionInfo } from '#/modules/transactions/routes/swap-transfer-transaction-info.entity';
+import type { AddressLookups } from '#/routes/common/address-info/address-lookups';
 
 @Injectable()
 export class TransferMapper {
@@ -21,12 +22,18 @@ export class TransferMapper {
     chainId: string,
     transfer: Transfer,
     safe: Safe,
+    addressLookups: AddressLookups,
   ): Promise<Transaction> {
     return new Transaction(
       `${TRANSFER_PREFIX}${TRANSACTION_ID_SEPARATOR}${safe.address}${TRANSACTION_ID_SEPARATOR}${transfer.transferId}`,
       transfer.executionDate.getTime(),
       TransactionStatus.Success,
-      await this.transferInfoMapper.mapTransferInfo(chainId, transfer, safe),
+      await this.transferInfoMapper.mapTransferInfo(
+        chainId,
+        transfer,
+        safe,
+        addressLookups,
+      ),
       null,
       null,
       null,
@@ -39,10 +46,16 @@ export class TransferMapper {
     transfers: Array<Transfer>;
     safe: Safe;
     onlyTrusted: boolean;
+    addressLookups: AddressLookups;
   }): Promise<Array<Transaction>> {
     const transactions = await Promise.all(
       args.transfers.map((transfer) =>
-        this.mapTransfer(args.chainId, transfer, args.safe),
+        this.mapTransfer(
+          args.chainId,
+          transfer,
+          args.safe,
+          args.addressLookups,
+        ),
       ),
     );
 

@@ -13,7 +13,6 @@ import {
   erc721TokenBuilder,
   tokenBuilder,
 } from '#/modules/tokens/domain/__tests__/token.builder';
-import type { TokenRepository } from '#/modules/tokens/domain/token.repository';
 import {
   TransferDirection,
   TransferTransactionInfo,
@@ -23,7 +22,7 @@ import { Erc721Transfer } from '#/modules/transactions/routes/entities/transfers
 import { NativeCoinTransfer } from '#/modules/transactions/routes/entities/transfers/native-coin-transfer.entity';
 import type { SwapTransferInfoMapper } from '#/modules/transactions/routes/mappers/transfers/swap-transfer-info.mapper';
 import { TransferInfoMapper } from '#/modules/transactions/routes/mappers/transfers/transfer-info.mapper';
-import type { AddressInfoHelper } from '#/routes/common/address-info/address-info.helper';
+import type { AddressLookups } from '#/routes/common/address-info/address-lookups';
 import { AddressInfo } from '#/routes/common/entities/address-info.entity';
 
 // Note: we mock this as there is a dedicated test for this mapper
@@ -31,13 +30,10 @@ const swapTransferInfoMapper = vi.mocked({
   mapSwapTransferInfo: vi.fn(),
 } as MockedObject<SwapTransferInfoMapper>);
 
-const addressInfoHelper = vi.mocked({
+const addressLookups = vi.mocked({
   getOrDefault: vi.fn(),
-} as MockedObject<AddressInfoHelper>);
-
-const tokenRepository = vi.mocked({
   getToken: vi.fn(),
-} as MockedObject<TokenRepository>);
+} as MockedObject<AddressLookups>);
 
 const mockLoggingService = vi.mocked({
   warn: vi.fn(),
@@ -49,12 +45,7 @@ describe('Transfer Info mapper (Unit)', () => {
 
   beforeEach(() => {
     vi.resetAllMocks();
-    mapper = new TransferInfoMapper(
-      tokenRepository,
-      swapTransferInfoMapper,
-      addressInfoHelper,
-      mockLoggingService,
-    );
+    mapper = new TransferInfoMapper(swapTransferInfoMapper, mockLoggingService);
   });
 
   it('should build an ERC20 TransferTransactionInfo', async () => {
@@ -65,10 +56,15 @@ describe('Transfer Info mapper (Unit)', () => {
     const token = erc20TokenBuilder()
       .with('address', getAddress(transfer.tokenAddress))
       .build();
-    addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
-    tokenRepository.getToken.mockResolvedValue(token);
+    addressLookups.getOrDefault.mockResolvedValue(addressInfo);
+    addressLookups.getToken.mockResolvedValue(token);
 
-    const actual = await mapper.mapTransferInfo(chainId, transfer, safe);
+    const actual = await mapper.mapTransferInfo(
+      chainId,
+      transfer,
+      safe,
+      addressLookups,
+    );
 
     expect(actual).toBeInstanceOf(TransferTransactionInfo);
     if (!(actual instanceof TransferTransactionInfo)) {
@@ -98,12 +94,17 @@ describe('Transfer Info mapper (Unit)', () => {
     const transfer = erc20TransferBuilder().build();
     const safe = safeBuilder().build();
     const addressInfo = new AddressInfo(faker.finance.ethereumAddress());
-    addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
-    tokenRepository.getToken.mockRejectedValue(
+    addressLookups.getOrDefault.mockResolvedValue(addressInfo);
+    addressLookups.getToken.mockRejectedValue(
       new Error('Failed to fetch token'),
     );
 
-    const actual = await mapper.mapTransferInfo(chainId, transfer, safe);
+    const actual = await mapper.mapTransferInfo(
+      chainId,
+      transfer,
+      safe,
+      addressLookups,
+    );
 
     expect(actual).toBeInstanceOf(TransferTransactionInfo);
     if (!(actual instanceof TransferTransactionInfo)) {
@@ -136,10 +137,15 @@ describe('Transfer Info mapper (Unit)', () => {
     const token = erc721TokenBuilder()
       .with('address', getAddress(transfer.tokenAddress))
       .build();
-    addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
-    tokenRepository.getToken.mockResolvedValue(token);
+    addressLookups.getOrDefault.mockResolvedValue(addressInfo);
+    addressLookups.getToken.mockResolvedValue(token);
 
-    const actual = await mapper.mapTransferInfo(chainId, transfer, safe);
+    const actual = await mapper.mapTransferInfo(
+      chainId,
+      transfer,
+      safe,
+      addressLookups,
+    );
 
     expect(actual).toBeInstanceOf(TransferTransactionInfo);
     if (!(actual instanceof TransferTransactionInfo)) {
@@ -168,12 +174,17 @@ describe('Transfer Info mapper (Unit)', () => {
     const transfer = erc721TransferBuilder().build();
     const safe = safeBuilder().build();
     const addressInfo = new AddressInfo(faker.finance.ethereumAddress());
-    addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
-    tokenRepository.getToken.mockRejectedValue(
+    addressLookups.getOrDefault.mockResolvedValue(addressInfo);
+    addressLookups.getToken.mockRejectedValue(
       new Error('Failed to fetch token'),
     );
 
-    const actual = await mapper.mapTransferInfo(chainId, transfer, safe);
+    const actual = await mapper.mapTransferInfo(
+      chainId,
+      transfer,
+      safe,
+      addressLookups,
+    );
 
     expect(actual).toBeInstanceOf(TransferTransactionInfo);
     if (!(actual instanceof TransferTransactionInfo)) {
@@ -203,10 +214,15 @@ describe('Transfer Info mapper (Unit)', () => {
     const safe = safeBuilder().build();
     const addressInfo = new AddressInfo(faker.finance.ethereumAddress());
     const token = tokenBuilder().build();
-    addressInfoHelper.getOrDefault.mockResolvedValue(addressInfo);
-    tokenRepository.getToken.mockResolvedValue(token);
+    addressLookups.getOrDefault.mockResolvedValue(addressInfo);
+    addressLookups.getToken.mockResolvedValue(token);
 
-    const actual = await mapper.mapTransferInfo(chainId, transfer, safe);
+    const actual = await mapper.mapTransferInfo(
+      chainId,
+      transfer,
+      safe,
+      addressLookups,
+    );
 
     expect(actual).toBeInstanceOf(TransferTransactionInfo);
     if (!(actual instanceof TransferTransactionInfo)) {

@@ -9,19 +9,18 @@ import { TransferTransactionInfo } from '#/modules/transactions/routes/entities/
 import { Erc721Transfer } from '#/modules/transactions/routes/entities/transfers/erc721-transfer.entity';
 import { DataDecodedParamHelper } from '#/modules/transactions/routes/mappers/common/data-decoded-param.helper';
 import { getTransferDirection } from '#/modules/transactions/routes/mappers/common/transfer-direction.helper';
-import { AddressInfoHelper } from '#/routes/common/address-info/address-info.helper';
+import type { AddressLookups } from '#/routes/common/address-info/address-lookups';
 import { NULL_ADDRESS } from '#/routes/common/constants';
 
 @Injectable()
 export class Erc721TransferMapper {
   constructor(
-    private readonly addressInfoHelper: AddressInfoHelper,
     private readonly dataDecodedParamHelper: DataDecodedParamHelper,
   ) {}
 
   async mapErc721Transfer(
     token: Erc721Token,
-    chainId: string,
+    addressLookups: AddressLookups,
     transaction: MultisigTransaction | ModuleTransaction,
     humanDescription: string | null,
     dataDecoded: DataDecoded | null,
@@ -35,14 +34,12 @@ export class Erc721TransferMapper {
       NULL_ADDRESS,
     );
     const direction = getTransferDirection(transaction.safe, sender, recipient);
-    const senderAddressInfo = await this.addressInfoHelper.getOrDefault(
-      chainId,
+    const senderAddressInfo = await addressLookups.getOrDefault(
       getAddress(sender),
       ['TOKEN', 'CONTRACT'],
     );
 
-    const recipientAddressInfo = await this.addressInfoHelper.getOrDefault(
-      chainId,
+    const recipientAddressInfo = await addressLookups.getOrDefault(
       getAddress(recipient),
       ['TOKEN', 'CONTRACT'],
     );

@@ -16,7 +16,7 @@ import { SetModuleGuard } from '#/modules/transactions/routes/entities/settings-
 import type { SettingsChange } from '#/modules/transactions/routes/entities/settings-changes/settings-change.entity';
 import { SwapOwner } from '#/modules/transactions/routes/entities/settings-changes/swap-owner.entity';
 import { DataDecodedParamHelper } from '#/modules/transactions/routes/mappers/common/data-decoded-param.helper';
-import { AddressInfoHelper } from '#/routes/common/address-info/address-info.helper';
+import type { AddressLookups } from '#/routes/common/address-info/address-lookups';
 import { NULL_ADDRESS } from '#/routes/common/constants';
 import { AddressInfo } from '#/routes/common/entities/address-info.entity';
 
@@ -48,12 +48,11 @@ export class SettingsChangeMapper {
   ];
 
   constructor(
-    private readonly addressInfoHelper: AddressInfoHelper,
     private readonly dataDecodedParamHelper: DataDecodedParamHelper,
   ) {}
 
   private async handleFallbackHandler(
-    chainId: string,
+    addressLookups: AddressLookups,
     dataDecoded: DataDecoded,
   ): Promise<SetFallbackHandler | null> {
     const handler: unknown = this.dataDecodedParamHelper.getValueAtPosition(
@@ -63,11 +62,9 @@ export class SettingsChangeMapper {
     if (typeof handler !== 'string') {
       return null;
     }
-    const addressInfo = await this.addressInfoHelper.getOrDefault(
-      chainId,
-      getAddress(handler),
-      ['CONTRACT'],
-    );
+    const addressInfo = await addressLookups.getOrDefault(getAddress(handler), [
+      'CONTRACT',
+    ]);
     return new SetFallbackHandler(addressInfo);
   }
 
@@ -132,7 +129,7 @@ export class SettingsChangeMapper {
   }
 
   private async handleChangeMasterCopy(
-    chainId: string,
+    addressLookups: AddressLookups,
     dataDecoded: DataDecoded,
   ): Promise<ChangeMasterCopy | null> {
     const implementation: unknown =
@@ -142,8 +139,7 @@ export class SettingsChangeMapper {
       return null;
     }
 
-    const implementationInfo = await this.addressInfoHelper.getOrDefault(
-      chainId,
+    const implementationInfo = await addressLookups.getOrDefault(
       getAddress(implementation),
       ['CONTRACT'],
     );
@@ -151,7 +147,7 @@ export class SettingsChangeMapper {
   }
 
   private async handleEnableModule(
-    chainId: string,
+    addressLookups: AddressLookups,
     dataDecoded: DataDecoded,
   ): Promise<EnableModule | null> {
     const module: unknown = this.dataDecodedParamHelper.getValueAtPosition(
@@ -163,16 +159,14 @@ export class SettingsChangeMapper {
       return null;
     }
 
-    const moduleInfo = await this.addressInfoHelper.getOrDefault(
-      chainId,
-      getAddress(module),
-      ['CONTRACT'],
-    );
+    const moduleInfo = await addressLookups.getOrDefault(getAddress(module), [
+      'CONTRACT',
+    ]);
     return new EnableModule(moduleInfo);
   }
 
   private async handleDisableModule(
-    chainId: string,
+    addressLookups: AddressLookups,
     dataDecoded: DataDecoded,
   ): Promise<DisableModule | null> {
     const module: unknown = this.dataDecodedParamHelper.getValueAtPosition(
@@ -184,11 +178,9 @@ export class SettingsChangeMapper {
       return null;
     }
 
-    const moduleInfo = await this.addressInfoHelper.getOrDefault(
-      chainId,
-      getAddress(module),
-      ['CONTRACT'],
-    );
+    const moduleInfo = await addressLookups.getOrDefault(getAddress(module), [
+      'CONTRACT',
+    ]);
     return new DisableModule(moduleInfo);
   }
 
@@ -211,7 +203,7 @@ export class SettingsChangeMapper {
    * parameter where the zero address means "remove the guard".
    */
   private async handleGuardLike<TSet, TDelete>(
-    chainId: string,
+    addressLookups: AddressLookups,
     dataDecoded: DataDecoded,
     createSet: (guard: AddressInfo) => TSet,
     createDelete: () => TDelete,
@@ -226,8 +218,7 @@ export class SettingsChangeMapper {
     }
 
     if (guardValue !== NULL_ADDRESS) {
-      const guardAddressInfo = await this.addressInfoHelper.getOrDefault(
-        chainId,
+      const guardAddressInfo = await addressLookups.getOrDefault(
         getAddress(guardValue),
         ['CONTRACT'],
       );
@@ -237,11 +228,11 @@ export class SettingsChangeMapper {
   }
 
   private handleSetGuard(
-    chainId: string,
+    addressLookups: AddressLookups,
     dataDecoded: DataDecoded,
   ): Promise<DeleteGuard | SetGuard | null> {
     return this.handleGuardLike(
-      chainId,
+      addressLookups,
       dataDecoded,
       (guard) => new SetGuard(guard),
       () => new DeleteGuard(),
@@ -249,11 +240,11 @@ export class SettingsChangeMapper {
   }
 
   private handleSetModuleGuard(
-    chainId: string,
+    addressLookups: AddressLookups,
     dataDecoded: DataDecoded,
   ): Promise<DeleteModuleGuard | SetModuleGuard | null> {
     return this.handleGuardLike(
-      chainId,
+      addressLookups,
       dataDecoded,
       (moduleGuard) => new SetModuleGuard(moduleGuard),
       () => new DeleteModuleGuard(),
@@ -262,12 +253,12 @@ export class SettingsChangeMapper {
 
   // biome-ignore lint/suspicious/useAwait: async needed to wrap non-Promise returns in Promise
   async mapSettingsChange(
-    chainId: string,
+    addressLookups: AddressLookups,
     dataDecoded: DataDecoded | null,
   ): Promise<SettingsChange | null> {
     switch (dataDecoded?.method) {
       case SettingsChangeMapper.SET_FALLBACK_HANDLER:
-        return this.handleFallbackHandler(chainId, dataDecoded);
+        return this.handleFallbackHandler(addressLookups, dataDecoded);
       case SettingsChangeMapper.ADD_OWNER_WITH_THRESHOLD:
         return this.handleAddOwnerWithThreshold(dataDecoded);
       case SettingsChangeMapper.REMOVE_OWNER:
@@ -275,17 +266,17 @@ export class SettingsChangeMapper {
       case SettingsChangeMapper.SWAP_OWNER:
         return this.handleSwapOwner(dataDecoded);
       case SettingsChangeMapper.CHANGE_MASTER_COPY:
-        return this.handleChangeMasterCopy(chainId, dataDecoded);
+        return this.handleChangeMasterCopy(addressLookups, dataDecoded);
       case SettingsChangeMapper.ENABLE_MODULE:
-        return this.handleEnableModule(chainId, dataDecoded);
+        return this.handleEnableModule(addressLookups, dataDecoded);
       case SettingsChangeMapper.DISABLE_MODULE:
-        return this.handleDisableModule(chainId, dataDecoded);
+        return this.handleDisableModule(addressLookups, dataDecoded);
       case SettingsChangeMapper.CHANGE_THRESHOLD:
         return this.handleChangeThreshold(dataDecoded);
       case SettingsChangeMapper.SET_GUARD:
-        return this.handleSetGuard(chainId, dataDecoded);
+        return this.handleSetGuard(addressLookups, dataDecoded);
       case SettingsChangeMapper.SET_MODULE_GUARD:
-        return this.handleSetModuleGuard(chainId, dataDecoded);
+        return this.handleSetModuleGuard(addressLookups, dataDecoded);
     }
 
     throw new Error(`Unknown setting method: ${dataDecoded?.method}`);

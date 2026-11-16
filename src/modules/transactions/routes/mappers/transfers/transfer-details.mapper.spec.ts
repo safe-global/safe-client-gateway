@@ -6,17 +6,22 @@ import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.build
 import { transferTransactionInfoBuilder } from '#/modules/transactions/routes/entities/__tests__/transfer-transaction-info.builder';
 import { TransferDetailsMapper } from '#/modules/transactions/routes/mappers/transfers/transfer-details.mapper';
 import type { TransferInfoMapper } from '#/modules/transactions/routes/mappers/transfers/transfer-info.mapper';
+import type { AddressInfoHelper } from '#/routes/common/address-info/address-info.helper';
 
 const transferInfoMapper = vi.mocked({
   mapTransferInfo: vi.fn(),
 } as MockedObject<TransferInfoMapper>);
+
+const addressInfoHelper = vi.mocked({
+  createLookups: vi.fn(),
+} as MockedObject<AddressInfoHelper>);
 
 describe('TransferDetails mapper (Unit)', () => {
   let mapper: TransferDetailsMapper;
 
   beforeEach(() => {
     vi.resetAllMocks();
-    mapper = new TransferDetailsMapper(transferInfoMapper);
+    mapper = new TransferDetailsMapper(transferInfoMapper, addressInfoHelper);
   });
 
   it('should return a TransactionDetails object', async () => {

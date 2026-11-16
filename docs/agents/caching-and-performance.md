@@ -96,6 +96,8 @@ The same discipline covers the stream's own error handling: `export` destroys th
 
 An in-process memo is appropriate only for a cheap, synchronous re-derivation — recovering a signer address, checking chain support — never as a substitute for `CacheFirstDataSource` in front of an actual upstream call.
 
+The rule covers a memo that outlives the call that fills it: a provider field, a module-level `memoize`. A value that one response creates, passes to its mappers as an argument and drops with the response is not one, and needs no clearing. `src/routes/common/address-info/address-lookups.ts`'s `AddressLookups` is that shape: whoever maps a page creates one through `AddressInfoHelper.createLookups`, so the page reads each token and contract once from `CacheFirstDataSource`, and the next page starts empty.
+
 ### Listener and floating-promise hygiene
 
 **Rule:** A stream or response listener is attached with `.once()`, or is explicitly removed once it has served its purpose; every floating promise — one neither awaited nor returned to a caller — ends in a `.catch()`.

@@ -14,6 +14,7 @@ import { TransactionDataMapper } from '#/modules/transactions/routes/mappers/com
 import { MultisigTransactionInfoMapper } from '#/modules/transactions/routes/mappers/common/transaction-info.mapper';
 import { ModuleTransactionStatusMapper } from '#/modules/transactions/routes/mappers/module-transactions/module-transaction-status.mapper';
 import { AddressInfoHelper } from '#/routes/common/address-info/address-info.helper';
+import type { AddressLookups } from '#/routes/common/address-info/address-lookups';
 
 @Injectable()
 export class ModuleTransactionDetailsMapper {
@@ -29,16 +30,21 @@ export class ModuleTransactionDetailsMapper {
     transaction: ModuleTransaction,
     dataDecoded: DataDecoded | null,
   ): Promise<TransactionDetails> {
+    const addressLookups = this.addressInfoHelper.createLookups(chainId);
     const [moduleAddress, txInfo, txData] = await Promise.all([
-      this.addressInfoHelper.getOrDefault(chainId, transaction.module, [
-        'CONTRACT',
-      ]),
+      addressLookups.getOrDefault(transaction.module, ['CONTRACT']),
       this.transactionInfoMapper.mapTransactionInfo(
         chainId,
         transaction,
         dataDecoded,
+        addressLookups,
       ),
-      this.mapTransactionData(chainId, transaction, dataDecoded),
+      this.mapTransactionData(
+        chainId,
+        transaction,
+        dataDecoded,
+        addressLookups,
+      ),
     ]);
 
     return {
@@ -59,6 +65,7 @@ export class ModuleTransactionDetailsMapper {
     chainId: string,
     transaction: ModuleTransaction,
     dataDecoded: DataDecoded | null,
+    addressLookups: AddressLookups,
   ): Promise<TransactionData> {
     const [
       addressInfoIndex,
@@ -73,10 +80,7 @@ export class ModuleTransactionDetailsMapper {
         transaction.to,
         dataDecoded,
       ),
-      this.addressInfoHelper.getOrDefault(chainId, transaction.to, [
-        'TOKEN',
-        'CONTRACT',
-      ]),
+      addressLookups.getOrDefault(transaction.to, ['TOKEN', 'CONTRACT']),
       this.transactionDataMapper.buildTokenInfoIndex({
         chainId,
         safeAddress: transaction.safe,

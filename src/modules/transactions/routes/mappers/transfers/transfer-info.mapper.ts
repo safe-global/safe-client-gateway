@@ -8,8 +8,6 @@ import {
 import type { Safe } from '#/modules/safe/domain/entities/safe.entity';
 import type { Transfer as DomainTransfer } from '#/modules/safe/domain/entities/transfer.entity';
 import type { Token } from '#/modules/tokens/domain/entities/token.entity';
-import type { TokenRepository } from '#/modules/tokens/domain/token.repository';
-import { ITokenRepository } from '#/modules/tokens/domain/token.repository.interface';
 import {
   type TransferDirection,
   TransferTransactionInfo,
@@ -21,15 +19,13 @@ import type { Transfer } from '#/modules/transactions/routes/entities/transfers/
 import { getTransferDirection } from '#/modules/transactions/routes/mappers/common/transfer-direction.helper';
 import { SwapTransferInfoMapper } from '#/modules/transactions/routes/mappers/transfers/swap-transfer-info.mapper';
 import type { SwapTransferTransactionInfo } from '#/modules/transactions/routes/swap-transfer-transaction-info.entity';
-import { AddressInfoHelper } from '#/routes/common/address-info/address-info.helper';
+import type { AddressLookups } from '#/routes/common/address-info/address-lookups';
 import type { AddressInfo } from '#/routes/common/entities/address-info.entity';
 
 @Injectable()
 export class TransferInfoMapper {
   constructor(
-    @Inject(ITokenRepository) private readonly tokenRepository: TokenRepository,
     private readonly swapTransferInfoMapper: SwapTransferInfoMapper,
-    private readonly addressInfoHelper: AddressInfoHelper,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
   ) {}
 
@@ -37,13 +33,14 @@ export class TransferInfoMapper {
     chainId: string,
     domainTransfer: DomainTransfer,
     safe: Safe,
+    addressLookups: AddressLookups,
   ): Promise<SwapTransferTransactionInfo | TransferTransactionInfo> {
     const { from, to } = domainTransfer;
 
     const [sender, recipient, transferInfo] = await Promise.all([
-      this.addressInfoHelper.getOrDefault(chainId, from, ['TOKEN', 'CONTRACT']),
-      this.addressInfoHelper.getOrDefault(chainId, to, ['TOKEN', 'CONTRACT']),
-      this.getTransferByType(chainId, domainTransfer),
+      addressLookups.getOrDefault(from, ['TOKEN', 'CONTRACT']),
+      addressLookups.getOrDefault(to, ['TOKEN', 'CONTRACT']),
+      this.getTransferByType(domainTransfer, addressLookups),
     ]);
 
     const direction = getTransferDirection(safe.address, from, to);
@@ -103,12 +100,12 @@ export class TransferInfoMapper {
   }
 
   private async getTransferByType(
-    chainId: string,
     domainTransfer: DomainTransfer,
+    addressLookups: AddressLookups,
   ): Promise<Transfer> {
     if (domainTransfer.type === 'ERC20_TRANSFER') {
       const { tokenAddress, value } = domainTransfer;
-      const token = await this.getToken(chainId, tokenAddress).catch(
+      const token = await this.getToken(tokenAddress, addressLookups).catch(
         () => null,
       );
       return new Erc20Transfer(
@@ -123,7 +120,7 @@ export class TransferInfoMapper {
     }
     if (domainTransfer.type === 'ERC721_TRANSFER') {
       const { tokenAddress, tokenId } = domainTransfer;
-      const token = await this.getToken(chainId, tokenAddress).catch(
+      const token = await this.getToken(tokenAddress, addressLookups).catch(
         () => null,
       );
       return new Erc721Transfer(
@@ -142,12 +139,12 @@ export class TransferInfoMapper {
   }
 
   private getToken(
-    chainId: string,
     tokenAddress: Address | null,
+    addressLookups: AddressLookups,
   ): Promise<Token> {
     if (!tokenAddress) {
       throw Error('Invalid token address for transfer');
     }
-    return this.tokenRepository.getToken({ chainId, address: tokenAddress });
+    return addressLookups.getToken(tokenAddress);
   }
 }

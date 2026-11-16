@@ -24,9 +24,14 @@ import type { MultisigTransactionExecutionDetailsMapper } from '#/modules/transa
 import type { MultisigTransactionStatusMapper } from '#/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction-status.mapper';
 import { addressInfoBuilder } from '#/routes/common/__tests__/entities/address-info.builder';
 import type { AddressInfoHelper } from '#/routes/common/address-info/address-info.helper';
+import type { AddressLookups } from '#/routes/common/address-info/address-lookups';
+
+const addressLookups = vi.mocked({
+  getOrDefault: vi.fn(),
+} as MockedObject<AddressLookups>);
 
 const addressInfoHelper = vi.mocked({
-  getOrDefault: vi.fn(),
+  createLookups: vi.fn(),
 } as MockedObject<AddressInfoHelper>);
 
 const statusMapper = vi.mocked({
@@ -136,7 +141,8 @@ describe('MultisigTransactionDetails mapper (Unit)', () => {
     transactionDataMapper.isTrustedDelegateCall.mockResolvedValue(true);
     transactionDataMapper.buildAddressInfoIndex.mockResolvedValue({});
     const to = addressInfoBuilder().build();
-    addressInfoHelper.getOrDefault.mockResolvedValue(to);
+    addressInfoHelper.createLookups.mockReturnValue(addressLookups);
+    addressLookups.getOrDefault.mockResolvedValue(to);
 
     const actual = await mapper.mapDetails(
       chainId,
@@ -202,7 +208,8 @@ describe('MultisigTransactionDetails mapper (Unit)', () => {
       addressInfoIndex,
     );
     const to = addressInfoBuilder().build();
-    addressInfoHelper.getOrDefault.mockResolvedValue(to);
+    addressInfoHelper.createLookups.mockReturnValue(addressLookups);
+    addressLookups.getOrDefault.mockResolvedValue(to);
 
     const actual = await mapper.mapDetails(
       chainId,

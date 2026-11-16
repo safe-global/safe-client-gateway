@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Injectable } from '@nestjs/common';
 import isEmpty from 'lodash/isEmpty';
-import type { Address } from 'viem';
 import type { DataDecoded } from '#/modules/data-decoder/domain/v2/entities/data-decoded.entity';
 import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
 import type { Safe } from '#/modules/safe/domain/entities/safe.entity';
@@ -19,7 +18,6 @@ import { MultisigTransactionExecutionDetailsMapper } from '#/modules/transaction
 import { MultisigTransactionNoteMapper } from '#/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction-note.mapper';
 import { MultisigTransactionStatusMapper } from '#/modules/transactions/routes/mappers/multisig-transactions/multisig-transaction-status.mapper';
 import { AddressInfoHelper } from '#/routes/common/address-info/address-info.helper';
-import type { AddressInfo } from '#/routes/common/entities/address-info.entity';
 
 @Injectable()
 export class MultisigTransactionDetailsMapper {
@@ -49,6 +47,7 @@ export class MultisigTransactionDetailsMapper {
 
     const txStatus = this.statusMapper.mapTransactionStatus(transaction, safe);
     const note = this.noteMapper.mapTxNote(transaction);
+    const addressLookups = this.addressInfoHelper.createLookups(chainId);
     const [
       isTrustedDelegateCall,
       addressInfoIndex,
@@ -74,13 +73,14 @@ export class MultisigTransactionDetailsMapper {
         chainId,
         transaction,
         dataDecoded,
+        addressLookups,
       ),
       this.multisigTransactionExecutionDetailsMapper.mapMultisigExecutionDetails(
         chainId,
         transaction,
         safe,
       ),
-      this._getRecipientAddressInfo(chainId, transaction.to),
+      addressLookups.getOrDefault(transaction.to, ['TOKEN', 'CONTRACT']),
       this.transactionDataMapper.buildTokenInfoIndex({
         chainId,
         safeAddress: transaction.safe,
@@ -109,24 +109,5 @@ export class MultisigTransactionDetailsMapper {
       safeAppInfo,
       note,
     };
-  }
-
-  /**
-   * Tries to get the {@link AddressInfo} related to the address from a Token, and
-   * fallbacks to a Contract. If none can be found, a default {@link AddressInfo}
-   * containing just the input address is returned.
-   *
-   * @param chainId - chain id to use
-   * @param address - the address of the source to which we want to retrieve its metadata
-   * @returns {@link AddressInfo} containing the address metadata
-   */
-  private async _getRecipientAddressInfo(
-    chainId: string,
-    address: Address,
-  ): Promise<AddressInfo> {
-    return await this.addressInfoHelper.getOrDefault(chainId, address, [
-      'TOKEN',
-      'CONTRACT',
-    ]);
   }
 }
