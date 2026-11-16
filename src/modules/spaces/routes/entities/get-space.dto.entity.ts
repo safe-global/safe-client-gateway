@@ -7,6 +7,10 @@ import {
   type ExperimentalFeature,
   ExperimentalFeatures,
 } from '#/modules/spaces/domain/entities/experimental-feature.entity';
+import {
+  SPACE_SETUP_STATUS_DTO_VALUES,
+  type SpaceSetupStatusDto,
+} from '#/modules/spaces/routes/entities/space-setup.dto.entity';
 import type { Member } from '#/modules/users/datasources/entities/member.entity.db';
 import { User } from '#/modules/users/datasources/entities/users.entity.db';
 import {
@@ -82,4 +86,14 @@ export class GetSpaceResponse {
     description: 'Experimental features this Workspace has opted into.',
   })
   public experimentalFeatures!: Array<ExperimentalFeature>;
+
+  @ApiProperty({
+    type: String,
+    enum: SPACE_SETUP_STATUS_DTO_VALUES,
+    nullable: true,
+    description:
+      'Status of the onboarding setup, or null for a Workspace created without one. ' +
+      'Pending until the trial starts and the setup is applied.',
+  })
+  public setupStatus!: SpaceSetupStatusDto | null;
 }

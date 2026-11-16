@@ -101,7 +101,7 @@ describe('JobQueueService & TestJobConsumer integration', () => {
 
     await service.addJob(JobType.TEST_JOB, data);
 
-    await waitUntil(() => consumer.handledJobs.length === 1);
+    await waitUntil(() => consumer.completedJobs.length === 1);
 
     const processedJob = consumer.handledJobs[0];
     expect(processedJob.name).toBe(JobType.TEST_JOB);

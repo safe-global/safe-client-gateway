@@ -1,11 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
-import {
-  BadRequestException,
-  HttpStatus,
-  NotFoundException,
-} from '@nestjs/common';
+import { HttpStatus, NotFoundException } from '@nestjs/common';
 import type { MockedObject } from 'vitest';
 import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
 import { oidcAuthPayloadDtoBuilder } from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
@@ -16,6 +12,7 @@ import type {
   Survey,
   SurveyPage,
 } from '#/modules/surveys/domain/entities/survey.entity';
+import { InvalidSurveySelectionsError } from '#/modules/surveys/domain/errors/invalid-survey-selections.error';
 import type {
   ISurveysRepository,
   UpsertedSurveyResponse,
@@ -122,6 +119,33 @@ describe('SurveysService', () => {
     });
   });
 
+  describe('getActiveSurvey', () => {
+    it('returns the active survey without reading any membership', async () => {
+      const survey = surveyBuilder().build();
+      surveysRepositoryMock.findActiveBySlugOrFail.mockResolvedValue(survey);
+
+      await expect(service.getActiveSurvey(survey.slug)).resolves.toEqual({
+        id: survey.id,
+        slug: survey.slug,
+        version: survey.version,
+        title: survey.title,
+        subtitle: survey.subtitle,
+        surveyContent: survey.surveyContent,
+      });
+      expect(membersRepositoryMock.findOne).not.toHaveBeenCalled();
+    });
+
+    it('propagates NotFoundException when the slug has no active survey', async () => {
+      surveysRepositoryMock.findActiveBySlugOrFail.mockRejectedValue(
+        new NotFoundException(faker.lorem.sentence()),
+      );
+
+      await expect(
+        service.getActiveSurvey(faker.lorem.slug()),
+      ).rejects.toBeInstanceOf(NotFoundException);
+    });
+  });
+
   describe('validateSelections (via submitResponse)', () => {
     const multiSelectPage: SurveyPage = {
       id: 'use_cases',
@@ -146,7 +170,7 @@ describe('SurveysService', () => {
       ],
     };
 
-    it('rejects a missing required page id with 400', async () => {
+    it('rejects a missing required page id', async () => {
       surveysRepositoryMock.findActiveBySlugOrFail.mockResolvedValue(
         buildSurvey([multiSelectPage, singleSelectPage]),
       );
@@ -158,11 +182,11 @@ describe('SurveysService', () => {
           slug: 'onboarding',
           body: { selections: { use_cases: ['hold_assets'] } },
         }),
-      ).rejects.toBeInstanceOf(BadRequestException);
+      ).rejects.toBeInstanceOf(InvalidSurveySelectionsError);
       expect(surveysRepositoryMock.upsertResponse).not.toHaveBeenCalled();
     });
 
-    it('rejects an unknown page id with 400', async () => {
+    it('rejects an unknown page id', async () => {
       surveysRepositoryMock.findActiveBySlugOrFail.mockResolvedValue(
         buildSurvey([multiSelectPage]),
       );
@@ -179,11 +203,11 @@ describe('SurveysService', () => {
             },
           },
         }),
-      ).rejects.toBeInstanceOf(BadRequestException);
+      ).rejects.toBeInstanceOf(InvalidSurveySelectionsError);
       expect(surveysRepositoryMock.upsertResponse).not.toHaveBeenCalled();
     });
 
-    it('rejects unknown selection keys within a page with 400', async () => {
+    it('rejects unknown selection keys within a page', async () => {
       surveysRepositoryMock.findActiveBySlugOrFail.mockResolvedValue(
         buildSurvey([multiSelectPage]),
       );
@@ -197,10 +221,10 @@ describe('SurveysService', () => {
             selections: { use_cases: ['hold_assets', 'totally_made_up'] },
           },
         }),
-      ).rejects.toBeInstanceOf(BadRequestException);
+      ).rejects.toBeInstanceOf(InvalidSurveySelectionsError);
     });
 
-    it('rejects more than one selection on a single-select page with 400', async () => {
+    it('rejects more than one selection on a single-select page', async () => {
       surveysRepositoryMock.findActiveBySlugOrFail.mockResolvedValue(
         buildSurvey([singleSelectPage]),
       );
@@ -214,7 +238,7 @@ describe('SurveysService', () => {
             selections: { team_size: ['one_to_five', 'six_to_twenty'] },
           },
         }),
-      ).rejects.toBeInstanceOf(BadRequestException);
+      ).rejects.toBeInstanceOf(InvalidSurveySelectionsError);
     });
 
     it('accepts exactly one selection on a single-select page', async () => {

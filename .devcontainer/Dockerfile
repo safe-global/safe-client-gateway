@@ -4,7 +4,7 @@
 # Production image is unchanged and lives at the repo-root Dockerfile.
 # Microsoft only publishes major-version tags for this image, so we pin by
 # digest to keep dev environments reproducible. Production currently uses
-# Node 26.12.1 and this digest ships 26.10.0; refresh the digest periodically
+# Node 26.13.1 and this digest ships 26.10.0; refresh the digest periodically
 # (or via Renovate/Dependabot) to pick up the latest 26.x patch.
 FROM mcr.microsoft.com/devcontainers/typescript-node:26-bookworm@sha256:db4af254765190d75d2510a8f11637747cc294c78c6f3f2528fac9b380d8252a
 
