@@ -580,6 +580,48 @@ describe('Transactions Controller - Safe Queue Service', () => {
     });
   });
 
+  describe('POST add confirmation while the Safe Queue Service is busy', () => {
+    it.each([429, 503])(
+      'returns the Safe Queue Service %s instead of a 404',
+      async (status) => {
+        const chain = chainBuilder().build();
+        const safeTxHash = faker.string.hexadecimal({ length: 64 });
+        const addConfirmationDto = addConfirmationDtoBuilder().build();
+        const getChainUrl = `${safeConfigUrl}/api/v1/chains/${chain.chainId}`;
+        const getQueueTransactionUrl = `${queueBaseUri}/api/v1/multisig-transactions/${safeTxHash}`;
+        const getTxServiceTransactionUrl = `${chain.transactionService}/api/v2/multisig-transactions/${safeTxHash}/`;
+        networkService.get.mockImplementation(({ url }) => {
+          switch (url) {
+            case getChainUrl:
+              return Promise.resolve({ data: rawify(chain), status: 200 });
+            case getQueueTransactionUrl:
+              return Promise.reject(
+                new NetworkResponseError(
+                  new URL(url),
+                  new Response(null, { status }),
+                  { message: faker.lorem.sentence() },
+                ),
+              );
+            case getTxServiceTransactionUrl:
+              return Promise.reject(notFoundError(url));
+            default:
+              return Promise.reject(new Error(`Could not match ${url}`));
+          }
+        });
+
+        await request(app.getHttpServer())
+          .post(
+            `/v1/chains/${chain.chainId}/transactions/${safeTxHash}/confirmations`,
+          )
+          .send(addConfirmationDto)
+          .expect(status)
+          .expect(({ body }) => expect(body).toMatchObject({ code: status }));
+
+        expect(networkService.post).not.toHaveBeenCalled();
+      },
+    );
+  });
+
   describe('DELETE transaction', () => {
     it('deletes the transaction from the Safe Queue Service', async () => {
       const chain = chainBuilder().build();

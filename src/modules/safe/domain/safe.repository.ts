@@ -62,6 +62,25 @@ import { ProposeTransactionDto } from '#/modules/transactions/domain/entities/pr
 import { TransactionVerifierHelper } from '#/modules/transactions/routes/helpers/transaction-verifier.helper';
 import { PaginationData } from '#/routes/common/pagination/pagination.data';
 
+const TRANSIENT_QUEUE_STATUSES: ReadonlyArray<number> = [
+  HttpStatus.TOO_MANY_REQUESTS,
+  HttpStatus.SERVICE_UNAVAILABLE,
+];
+
+function isTransientQueueError(error: unknown): error is DataSourceError {
+  return (
+    error instanceof DataSourceError &&
+    error.code !== undefined &&
+    TRANSIENT_QUEUE_STATUSES.includes(error.code)
+  );
+}
+
+function isNotFound(error: unknown): boolean {
+  return (
+    error instanceof DataSourceError && error.code === HttpStatus.NOT_FOUND
+  );
+}
+
 @Injectable()
 export class SafeRepository implements ISafeRepository {
   private readonly maxSequentialPages: number;
@@ -699,7 +718,11 @@ export class SafeRepository implements ISafeRepository {
       this.loggingService.warn(
         `Failed to fetch transaction from queue service. chainId=${args.chainId}, safeTxHash=${args.safeTransactionHash}, error=${error}`,
       );
-      return this.fetchTxServiceMultisig(args);
+      return this.fetchTxServiceMultisig(args).catch((txServiceError) => {
+        throw isTransientQueueError(error) && isNotFound(txServiceError)
+          ? error
+          : txServiceError;
+      });
     }
 
     if (queue.txHash !== null) {
