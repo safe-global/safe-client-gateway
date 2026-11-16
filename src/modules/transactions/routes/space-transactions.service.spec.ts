@@ -41,19 +41,17 @@ const mockWalletsRepository = vi.mocked({
   findByUser: vi.fn(),
 } as MockedObject<IWalletsRepository>);
 
-const awaitingSignatureFrom = (signer: string): TransactionQueuedItem =>
+const awaitingSignatureFrom = (
+  signer: string,
+  nonce = faker.number.int({ min: 0, max: 1_000 }),
+): TransactionQueuedItem =>
   new TransactionQueuedItem(
     new Transaction(
       faker.string.uuid(),
       Date.now(),
       TransactionStatus.AwaitingConfirmations,
       transferTransactionInfoBuilder().build(),
-      new MultisigExecutionInfo(
-        faker.number.int({ min: 0, max: 1_000 }),
-        2,
-        1,
-        [new AddressInfo(signer)],
-      ),
+      new MultisigExecutionInfo(nonce, 2, 1, [new AddressInfo(signer)]),
     ),
     ConflictType.None,
   );
@@ -297,6 +295,94 @@ describe('SpaceTransactionsService', () => {
         mockAddressBookItemsRepository.findAllBySpaceId,
       ).not.toHaveBeenCalled();
       expect(mockChainsRepository.getChain).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('limit', () => {
+    beforeEach(() => {
+      mockMembersRepository.findOne.mockResolvedValue(
+        memberBuilder().with('id', userId).build(),
+      );
+      mockSpaceSafesRepository.findBySpaceId.mockResolvedValue([]);
+    });
+
+    it('passes the limit on to the queue read and keeps the whole-queue count', async () => {
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const chainId = faker.string.numeric({ length: 3 });
+      const item = awaitingSignatureFrom(
+        getAddress(faker.finance.ethereumAddress()),
+      );
+      const limit = faker.number.int({ min: 1, max: 100 });
+      const count = faker.number.int({ min: limit + 1, max: 1_000 });
+      mockTransactionsService.getTransactionQueueForSafes.mockResolvedValue({
+        count,
+        next: null,
+        previous: null,
+        results: { [safeAddress]: { [chainId]: [item] } },
+        unavailableSafes: [],
+      });
+
+      const actual = await target.getTransactionQueue({
+        spaceId,
+        authPayload,
+        limit,
+      });
+
+      expect(
+        mockTransactionsService.getTransactionQueueForSafes,
+      ).toHaveBeenCalledWith({ spaceId, safes: [], limit });
+      expect(actual.count).toBe(count);
+      expect(actual.results).toEqual({
+        [safeAddress]: { [chainId]: [item] },
+      });
+      expect(actual.counts.total).toBe(1);
+    });
+
+    it('reads the whole queue when filtered, and keeps the first matches up to the limit', async () => {
+      const signer = getAddress(faker.finance.ethereumAddress());
+      mockWalletsRepository.findByUser.mockResolvedValue([
+        walletBuilder().with('address', signer).build(),
+      ]);
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const chainId = faker.string.numeric({ length: 3 });
+      const nonce = faker.number.int({ min: 0, max: 100 });
+      const matching = [nonce, nonce + 2, nonce + 3].map((n) =>
+        awaitingSignatureFrom(signer, n),
+      );
+      const other = awaitingSignatureFrom(
+        getAddress(faker.finance.ethereumAddress()),
+        nonce + 1,
+      );
+      const count = faker.number.int({ min: 4, max: 1_000 });
+      mockTransactionsService.getTransactionQueueForSafes.mockResolvedValue({
+        count,
+        next: null,
+        previous: null,
+        results: {
+          [safeAddress]: {
+            [chainId]: [matching[0], other, matching[1], matching[2]],
+          },
+        },
+        unavailableSafes: [],
+      });
+
+      const actual = await target.getTransactionQueue({
+        spaceId,
+        authPayload,
+        filters: { statuses: ['sign'] },
+        limit: 2,
+      });
+
+      expect(
+        mockTransactionsService.getTransactionQueueForSafes,
+      ).toHaveBeenCalledWith({ spaceId, safes: [], limit: undefined });
+      expect(actual.count).toBe(count);
+      expect(actual.results).toEqual({
+        [safeAddress]: { [chainId]: [matching[0], matching[1]] },
+      });
+      // The counts cover the whole queue read, not just the limited results
+      expect(actual.counts.total).toBe(4);
+      expect(actual.counts.sign).toBe(3);
     });
   });
 

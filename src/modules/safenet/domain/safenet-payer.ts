@@ -224,7 +224,7 @@ export class SafenetPayer {
   }
 
   private async nextNonce(client: PublicClient, key: string): Promise<bigint> {
-    const [onchainNonce, counter] = await Promise.all([
+    const [onchainNonce, counter]: [bigint, number | null] = await Promise.all([
       client.readContract({
         address: this.payerSafeAddress,
         abi: safeAbi,

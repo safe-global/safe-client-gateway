@@ -448,7 +448,7 @@ describe('MembersService', () => {
           ).resolves.toEqual([]);
           expect(membersRepositoryMock.findOne).toHaveBeenCalled();
           expect(membersRepositoryMock.inviteUsers).toHaveBeenCalledWith({
-            authPayload,
+            actorUserId: Number(authPayload.sub),
             spaceId,
             users: [],
             inviteExpiresAt: new Date(now.getTime() + INVITE_TTL_MS),

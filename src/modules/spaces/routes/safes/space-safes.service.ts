@@ -48,6 +48,25 @@ export class SpaceSafesService {
     const userId = getAuthenticatedUserIdOrFail(args.authPayload);
     await assertAdmin(this.membersRepository, args.spaceId, userId);
 
+    await this.addSafes({
+      spaceId: args.spaceId,
+      actorUserId: userId,
+      payload: args.payload,
+      addressBookItems: args.addressBookItems,
+    });
+  }
+
+  /**
+   * Adds Safes, and contacts for them, on behalf of `actorUserId`. Authorizes
+   * nothing: the caller has, as {@link create} does for a request, or the
+   * Workspace setup does for its creator.
+   */
+  public async addSafes(args: {
+    spaceId: Space['id'];
+    actorUserId: number;
+    payload: Array<CreateSpaceSafeDto>;
+    addressBookItems?: CreateSpaceSafesDto['addressBookItems'];
+  }): Promise<void> {
     // The use case owns the transaction, so the seat check and the insert it
     // admits share one. What each step needs is resolved before it opens:
     // the plan (cache and database reads) and the ciphertext (a KMS round-trip
@@ -81,13 +100,13 @@ export class SpaceSafesService {
       });
       await this.spaceSafesRepository.insertRows({
         spaceId: args.spaceId,
-        actorUserId: userId,
+        actorUserId: args.actorUserId,
         rows,
         entityManager,
       });
       if (args.addressBookItems && args.addressBookItems.length > 0) {
         await this.addressBookItemsRepository.upsertMany({
-          userId,
+          userId: args.actorUserId,
           spaceId: args.spaceId,
           addressBookItems: args.addressBookItems,
           entityManager,

@@ -7,6 +7,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import type { Address } from 'viem';
+import { ChainIdSchema } from '#/modules/chains/domain/entities/schemas/chain-id.schema';
 import { SafeList } from '#/modules/owners/routes/entities/safe-list.entity';
 import { OwnersService } from '#/modules/owners/routes/owners.service';
 import { AddressSchema } from '#/validation/entities/schemas/address.schema';
@@ -42,7 +43,7 @@ export class OwnersControllerV1 {
   })
   @Get('chains/:chainId/owners/:ownerAddress/safes')
   getSafesByOwner(
-    @Param('chainId') chainId: string,
+    @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
     @Param('ownerAddress', new ValidationPipe(AddressSchema))
     ownerAddress: Address,
   ): Promise<SafeList> {

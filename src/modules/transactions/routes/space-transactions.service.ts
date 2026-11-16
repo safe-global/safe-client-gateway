@@ -11,8 +11,10 @@ import type { SpaceQueuedItemPage } from '#/modules/transactions/routes/entities
 import {
   filterSpaceQueue,
   getSpaceQueueCounts,
+  limitSpaceQueue,
   type SpaceQueueFilters,
   type SpaceQueueSearch,
+  someFiltersSet,
 } from '#/modules/transactions/routes/helpers/space-queue.helper';
 import { TransactionsService } from '#/modules/transactions/routes/transactions.service';
 import { IMembersRepository } from '#/modules/users/domain/members/members.repository.interface';
@@ -40,9 +42,16 @@ export class SpaceTransactionsService {
     filters?: Omit<SpaceQueueFilters, 'search'>;
     /** Trimmed and lowercased */
     search?: string;
+    /** Read only the first transactions, by nonce across every Safe */
+    limit?: number;
   }): Promise<SpaceQueuedItemPage> {
     const userId = getAuthenticatedUserIdOrFail(args.authPayload);
     await assertMember(this.membersRepository, args.spaceId, userId);
+
+    const isFiltered = someFiltersSet({
+      ...args.filters,
+      search: args.search,
+    });
 
     const [spaceSafes, wallets] = await Promise.all([
       this.spaceSafesRepository.findBySpaceId(args.spaceId),
@@ -55,6 +64,7 @@ export class SpaceTransactionsService {
         chainId,
         safeAddress: address,
       })),
+      limit: isFiltered ? undefined : args.limit,
     });
 
     // "sign" is the caller's own: a wallet linked to the authenticated user
@@ -71,15 +81,21 @@ export class SpaceTransactionsService {
         : undefined,
     };
 
+    const filtered = filterSpaceQueue({
+      results: queue.results,
+      unavailableSafes: queue.unavailableSafes,
+      filters,
+      signers,
+      now,
+    });
+
     return {
       ...queue,
-      ...filterSpaceQueue({
-        results: queue.results,
-        unavailableSafes: queue.unavailableSafes,
-        filters,
-        signers,
-        now,
-      }),
+      unavailableSafes: filtered.unavailableSafes,
+      results:
+        isFiltered && args.limit !== undefined
+          ? limitSpaceQueue({ results: filtered.results, limit: args.limit })
+          : filtered.results,
       counts: getSpaceQueueCounts({
         results: queue.results,
         filters,
