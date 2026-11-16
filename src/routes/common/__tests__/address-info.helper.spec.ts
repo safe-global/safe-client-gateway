@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
+import { ClsServiceManager } from 'nestjs-cls';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
 import type { ILoggingService } from '#/logging/logging.interface';
@@ -22,6 +23,7 @@ describe('AddressInfoHelper', () => {
   const loggingService = vi.mocked({
     debug: vi.fn(),
   } as MockedObject<ILoggingService>);
+  const cls = ClsServiceManager.getClsService();
 
   beforeEach(() => {
     vi.resetAllMocks();
@@ -29,6 +31,7 @@ describe('AddressInfoHelper', () => {
       contractsRepository,
       tokenRepository,
       loggingService,
+      cls,
     );
   });
 
@@ -98,6 +101,114 @@ describe('AddressInfoHelper', () => {
         chainId,
         contractAddress: contract.address,
       });
+    });
+  });
+
+  describe('get within a request', () => {
+    it('should look an address up once', async () => {
+      const chainId = faker.string.numeric();
+      const token = tokenBuilder().build();
+      tokenRepository.getToken.mockResolvedValue(token);
+
+      const results = await cls.run(async () => [
+        await target.get(chainId, token.address, ['TOKEN']),
+        await target.get(chainId, token.address, ['TOKEN']),
+      ]);
+
+      expect(results).toEqual([
+        { value: token.address, name: token.name, logoUri: token.logoUri },
+        { value: token.address, name: token.name, logoUri: token.logoUri },
+      ]);
+      expect(tokenRepository.getToken).toHaveBeenCalledTimes(1);
+    });
+
+    it('should share a lookup that is still pending', async () => {
+      const chainId = faker.string.numeric();
+      const token = tokenBuilder().build();
+      tokenRepository.getToken.mockResolvedValue(token);
+
+      await cls.run(() =>
+        Promise.all([
+          target.get(chainId, token.address, ['TOKEN']),
+          target.get(chainId, token.address, ['TOKEN']),
+        ]),
+      );
+
+      expect(tokenRepository.getToken).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not look an address up again after it was not found', async () => {
+      const chainId = faker.string.numeric();
+      const address = getAddress(faker.finance.ethereumAddress());
+      tokenRepository.getToken.mockRejectedValue(new Error('Not found'));
+
+      const results = await cls.run(async () => [
+        await target.getOrDefault(chainId, address, ['TOKEN']),
+        await target.getOrDefault(chainId, address, ['TOKEN']),
+      ]);
+
+      expect(results).toEqual([
+        { value: address, name: null, logoUri: null },
+        { value: address, name: null, logoUri: null },
+      ]);
+      expect(tokenRepository.getToken).toHaveBeenCalledTimes(1);
+    });
+
+    it('should look up another address, chain or list of sources', async () => {
+      const chainId = faker.string.numeric();
+      const token = tokenBuilder().build();
+      const otherToken = tokenBuilder().build();
+      tokenRepository.getToken.mockResolvedValue(token);
+      contractsRepository.getContract.mockRejectedValue(new Error('Not found'));
+
+      await cls.run(async () => {
+        await target.get(chainId, token.address, ['TOKEN']);
+        await target.get(chainId, otherToken.address, ['TOKEN']);
+        await target.get(`${chainId}1`, token.address, ['TOKEN']);
+        await target.get(chainId, token.address, ['CONTRACT', 'TOKEN']);
+      });
+
+      expect(tokenRepository.getToken).toHaveBeenCalledTimes(4);
+      expect(tokenRepository.getToken).toHaveBeenNthCalledWith(1, {
+        chainId,
+        address: token.address,
+      });
+      expect(tokenRepository.getToken).toHaveBeenNthCalledWith(2, {
+        chainId,
+        address: otherToken.address,
+      });
+      expect(tokenRepository.getToken).toHaveBeenNthCalledWith(3, {
+        chainId: `${chainId}1`,
+        address: token.address,
+      });
+      expect(tokenRepository.getToken).toHaveBeenNthCalledWith(4, {
+        chainId,
+        address: token.address,
+      });
+    });
+
+    it('should look an address up again in another request', async () => {
+      const chainId = faker.string.numeric();
+      const token = tokenBuilder().build();
+      tokenRepository.getToken.mockResolvedValue(token);
+
+      await cls.run(() => target.get(chainId, token.address, ['TOKEN']));
+      await cls.run(() => target.get(chainId, token.address, ['TOKEN']));
+
+      expect(tokenRepository.getToken).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('get outside of a request', () => {
+    it('should look an address up every time', async () => {
+      const chainId = faker.string.numeric();
+      const token = tokenBuilder().build();
+      tokenRepository.getToken.mockResolvedValue(token);
+
+      await target.get(chainId, token.address, ['TOKEN']);
+      await target.get(chainId, token.address, ['TOKEN']);
+
+      expect(tokenRepository.getToken).toHaveBeenCalledTimes(2);
     });
   });
 

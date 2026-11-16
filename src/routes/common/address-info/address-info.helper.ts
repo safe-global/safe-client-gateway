@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
+import { ClsService } from 'nestjs-cls';
 import type { Address } from 'viem';
 import {
   type ILoggingService,
@@ -13,6 +14,9 @@ import { AddressInfo } from '#/routes/common/entities/address-info.entity';
 
 export type Source = 'CONTRACT' | 'TOKEN';
 
+// Key of the lookups a request has started, in its CLS store
+const REQUEST_LOOKUPS = Symbol('AddressInfoHelper.requestLookups');
+
 @Injectable()
 export class AddressInfoHelper {
   constructor(
@@ -21,6 +25,7 @@ export class AddressInfoHelper {
     @Inject(ITokenRepository)
     private readonly tokenRepository: TokenRepository,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
+    private readonly cls: ClsService,
   ) {}
 
   /**
@@ -34,28 +39,30 @@ export class AddressInfoHelper {
    * in the order they are provided. If the address info cannot be retrieved
    * from a source, the next source will be tried.
    *
+   * Within a request, the same address is looked up once for the same sources:
+   * a page of transactions names the same few addresses in most of its items.
+   *
    * @param chainId - the chain id where the source exists
    * @param address - the address of the source to which we want to retrieve its metadata
    * @param sources - a collection of {@link Source} to which we want to retrieve its metadata
    */
-
-  async get(
+  get(
     chainId: string,
     address: Address,
     sources: Array<Source>,
   ): Promise<AddressInfo> {
-    for (const source of sources) {
-      try {
-        return await this._getFromSource(chainId, address, source);
-      } catch {
-        this.loggingService.debug(
-          `Could not get address info with source=${source} for ${address}`,
-        );
-      }
+    const lookups = this._getRequestLookups();
+    if (!lookups) {
+      return this._getFromSources(chainId, address, sources);
     }
-    return Promise.reject(
-      `Could not get address info from provided sources=${sources} for ${address}`,
-    );
+
+    const key = `${chainId}_${address}_${sources.join('_')}`;
+    let lookup = lookups.get(key);
+    if (!lookup) {
+      lookup = this._getFromSources(chainId, address, sources);
+      lookups.set(key, lookup);
+    }
+    return lookup;
   }
 
   /**
@@ -99,6 +106,44 @@ export class AddressInfoHelper {
         }
         throw new Error('Error processing address collection');
       }),
+    );
+  }
+
+  /**
+   * Returns the lookups the current request has started, or `undefined`
+   * outside of a request (jobs, crons, events).
+   */
+  private _getRequestLookups(): Map<string, Promise<AddressInfo>> | undefined {
+    if (!this.cls.isActive()) {
+      return undefined;
+    }
+
+    let lookups = this.cls.get<Map<string, Promise<AddressInfo>> | undefined>(
+      REQUEST_LOOKUPS,
+    );
+    if (!lookups) {
+      lookups = new Map();
+      this.cls.set(REQUEST_LOOKUPS, lookups);
+    }
+    return lookups;
+  }
+
+  private async _getFromSources(
+    chainId: string,
+    address: Address,
+    sources: Array<Source>,
+  ): Promise<AddressInfo> {
+    for (const source of sources) {
+      try {
+        return await this._getFromSource(chainId, address, source);
+      } catch {
+        this.loggingService.debug(
+          `Could not get address info with source=${source} for ${address}`,
+        );
+      }
+    }
+    return Promise.reject(
+      `Could not get address info from provided sources=${sources} for ${address}`,
     );
   }
 
