@@ -24,7 +24,7 @@ export class CacheRouter {
   private static readonly COUNTERFACTUAL_SAFE_KEY = 'counterfactual_safe';
   private static readonly COUNTERFACTUAL_SAFES_KEY = 'counterfactual_safes';
   private static readonly CREATION_TRANSACTION_KEY = 'creation_transaction';
-  private static readonly DECODED_DATA_KEY = 'decoded_data';
+  private static readonly DECODED_DATA_KEY = 'decoded_data_v2';
   private static readonly DELEGATES_KEY = 'delegates';
   private static readonly FIREBASE_OAUTH2_TOKEN_KEY = 'firebase_oauth2_token';
   private static readonly GAS_TOKENS_KEY = 'gas_tokens';
@@ -550,7 +550,12 @@ export class CacheRouter {
     data: Address;
     to: Address;
   }): string {
-    return `${args.chainId}_${CacheRouter.DECODED_DATA_KEY}_${args.data}_${args.to}`;
+    // Calldata is hashed as batched transactions can be tens of KB
+    const hash = crypto
+      .createHash('sha256')
+      .update(args.data.toLowerCase())
+      .digest('hex');
+    return `${args.chainId}_${CacheRouter.DECODED_DATA_KEY}_${hash}_${args.to}`;
   }
 
   static getDecodedDataCacheDir(args: {
@@ -1223,6 +1228,24 @@ export class CacheRouter {
 
   static getPortfolioCacheKey(args: { address: Address }): string {
     return `${CacheRouter.PORTFOLIO_KEY}_${args.address}_zerion`;
+  }
+
+  /**
+   * When the Zerion caches of an address were last cleared, in epoch ms. Kept
+   * for the settle window only, so a refetch right after a transaction is not
+   * cached for the full TTL.
+   */
+  static getPortfolioClearedAtCacheKey(args: { address: Address }): string {
+    return `${CacheRouter.PORTFOLIO_KEY}_${args.address}_cleared_at`;
+  }
+
+  /**
+   * Cooldown counter that skips repeat portfolio cache clears for the same address.
+   */
+  static getPortfolioClearCooldownCacheKey(args: { address: Address }): string {
+    return CacheRouter.getRateLimitCacheKey(
+      `${CacheRouter.PORTFOLIO_KEY}_clear_${args.address}`,
+    );
   }
 
   /**

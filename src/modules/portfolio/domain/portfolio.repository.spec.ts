@@ -27,6 +27,7 @@ describe('PortfolioRepository', () => {
   let mockZerionCache: MockedObject<ZerionCacheService>;
 
   const defaultCacheTtl = 30;
+  const afterTransactionTtlSeconds = 20;
   const defaultDustThreshold = 0.001;
 
   beforeEach(() => {
@@ -40,13 +41,18 @@ describe('PortfolioRepository', () => {
       hGet: vi.fn(),
       hSet: vi.fn(),
       deleteByKey: vi.fn(),
+      getCounter: vi.fn(),
     } as MockedObject<ICacheService>;
+    mockCacheService.getCounter.mockResolvedValue(null);
 
     mockConfigService = {
       get: vi.fn(),
       getOrThrow: vi.fn().mockImplementation((key: string) => {
         if (key === 'portfolio.cache.ttlSeconds') {
           return defaultCacheTtl;
+        }
+        if (key === 'portfolio.cache.afterTransactionTtlSeconds') {
+          return afterTransactionTtlSeconds;
         }
         if (key === 'portfolio.filters.dustThresholdUsd') {
           return defaultDustThreshold;
@@ -116,6 +122,7 @@ describe('PortfolioRepository', () => {
           cacheDir,
           expect.any(String),
           defaultCacheTtl,
+          undefined,
         );
 
         const cachedValue = JSON.parse(mockCacheService.hSet.mock.calls[0][1]);
@@ -681,6 +688,100 @@ describe('PortfolioRepository', () => {
           expiresAt: result.expiresAt,
         }),
         defaultCacheTtl,
+        undefined,
+      );
+    });
+
+    it('keeps a snapshot fetched just after a clear only until the settle window ends', async () => {
+      const clearedAt =
+        Date.now() -
+        faker.number.int({ min: 1, max: afterTransactionTtlSeconds - 5 }) *
+          1_000;
+      mockCacheService.getCounter.mockResolvedValue(clearedAt);
+      mockCacheService.hGet.mockResolvedValue(null);
+      mockPortfolioApi.getPortfolio.mockResolvedValue(
+        rawify(portfolioBuilder().build()),
+      );
+
+      const result = await repository.getPortfolioSnapshot(args);
+
+      expect(mockCacheService.getCounter).toHaveBeenCalledWith(
+        CacheRouter.getPortfolioClearedAtCacheKey({ address }),
+      );
+      expect(result.expiresAt).toBe(
+        clearedAt + afterTransactionTtlSeconds * 1_000,
+      );
+      expect(mockCacheService.hSet).toHaveBeenCalledWith(
+        cacheDir,
+        expect.any(String),
+        Math.ceil((result.expiresAt - result.fetchedAt) / 1_000),
+        0,
+      );
+    });
+
+    it('keeps the full TTL once the settle window is over', async () => {
+      mockCacheService.getCounter.mockResolvedValue(
+        Date.now() -
+          (afterTransactionTtlSeconds +
+            faker.number.int({ min: 1, max: 600 })) *
+            1_000,
+      );
+      mockCacheService.hGet.mockResolvedValue(null);
+      mockPortfolioApi.getPortfolio.mockResolvedValue(
+        rawify(portfolioBuilder().build()),
+      );
+
+      const result = await repository.getPortfolioSnapshot(args);
+
+      expect(result.expiresAt).toBe(result.fetchedAt + defaultCacheTtl * 1_000);
+      expect(mockCacheService.hSet).toHaveBeenCalledWith(
+        cacheDir,
+        expect.any(String),
+        defaultCacheTtl,
+        undefined,
+      );
+    });
+
+    it('keeps the full TTL, with jitter, when the window outlasts it', async () => {
+      // The default setup: a 10 s TTL against a 120 s window
+      const shortTtl = faker.number.int({
+        min: 1,
+        max: afterTransactionTtlSeconds - 6,
+      });
+      mockConfigService.getOrThrow.mockImplementation((key: string) => {
+        if (key === 'portfolio.cache.ttlSeconds') {
+          return shortTtl;
+        }
+        if (key === 'portfolio.cache.afterTransactionTtlSeconds') {
+          return afterTransactionTtlSeconds;
+        }
+        if (key === 'portfolio.filters.dustThresholdUsd') {
+          return defaultDustThreshold;
+        }
+        throw new Error(`Unexpected config key: ${key}`);
+      });
+      const shortTtlRepository = new PortfolioRepository(
+        mockPortfolioApi,
+        mockCacheService,
+        mockConfigService,
+        mockZerionCache,
+      );
+      mockCacheService.getCounter.mockResolvedValue(
+        Date.now() - faker.number.int({ min: 0, max: 4 }) * 1_000,
+      );
+      mockCacheService.hGet.mockResolvedValue(null);
+      mockPortfolioApi.getPortfolio.mockResolvedValue(
+        rawify(portfolioBuilder().build()),
+      );
+
+      const result = await shortTtlRepository.getPortfolioSnapshot(args);
+
+      expect(result.expiresAt).toBe(result.fetchedAt + shortTtl * 1_000);
+      expect(mockCacheService.hSet).toHaveBeenCalledWith(
+        cacheDir,
+        expect.any(String),
+        shortTtl,
+        undefined,
       );
     });
 

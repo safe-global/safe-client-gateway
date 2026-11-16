@@ -18,6 +18,7 @@ import { outgoingTokenEventBuilder } from '#/modules/hooks/routes/entities/__tes
 import { pendingTransactionEventBuilder } from '#/modules/hooks/routes/entities/__tests__/pending-transaction.builder';
 import { reorgDetectedEventBuilder } from '#/modules/hooks/routes/entities/__tests__/reorg-detected.builder';
 import { safeAppsEventBuilder } from '#/modules/hooks/routes/entities/__tests__/safe-apps-update.builder';
+import { safeConfigUpdatedEventBuilder } from '#/modules/hooks/routes/entities/__tests__/safe-config-updated.builder';
 import { EventSchema } from '#/modules/hooks/routes/entities/schemas/event.schema';
 
 describe('EventSchema', () => {
@@ -38,6 +39,7 @@ describe('EventSchema', () => {
     pendingTransactionEventBuilder,
     reorgDetectedEventBuilder,
     safeAppsEventBuilder,
+    safeConfigUpdatedEventBuilder,
     updatedDelegateEventBuilder,
   ]) {
     const event = builder().build();
