@@ -49,8 +49,11 @@ import { PolicyType } from '#/modules/policies/domain/entities/policy-type.entit
 import type { SafeRef } from '#/modules/policies/domain/entities/safe-ref.entity';
 import type { IPolicyIndexerRepository } from '#/modules/policies/domain/policy-indexer.repository.interface';
 import type { ISafePolicyGuardConfigurationRequestsRepository } from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository.interface';
+import {
+  MAX_TRANSACTION_QUEUE_PAGES_TO_SCAN,
+  TransactionQueueReader,
+} from '#/modules/policies/domain/transaction-queue.reader';
 import { guardPolicyKindsOf } from '#/modules/policies/domain/utils/policy.utils';
-import { MAX_TRANSACTION_QUEUE_PAGES_TO_SCAN } from '#/modules/policies/domain/utils/queued-calls.utils';
 import type { DelayedGuardPoliciesMapper } from '#/modules/policies/routes/mappers/delayed-guard-policies.mapper';
 import type { GuardInstallationMapper } from '#/modules/policies/routes/mappers/guard-installation.mapper';
 import { GuardPolicyMapper } from '#/modules/policies/routes/mappers/guard-policy.mapper';
@@ -243,6 +246,10 @@ describe('PoliciesService', () => {
       mockGuardInstallationMapper,
       mockImmediateGuardPoliciesMapper,
       mockDelayedGuardPoliciesMapper,
+      new TransactionQueueReader(
+        mockSafeRepository as MockedObject<ISafeRepository>,
+        mockLoggingService,
+      ),
     );
   }
 

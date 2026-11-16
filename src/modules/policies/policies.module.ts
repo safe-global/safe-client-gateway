@@ -15,6 +15,7 @@ import { SafePolicyGuardDecoder } from '#/modules/policies/domain/contracts/deco
 import { PolicyIndexerRepositoryModule } from '#/modules/policies/domain/policy-indexer-repository.module';
 import { SafePolicyGuardConfigurationRequestsRepository } from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository';
 import { ISafePolicyGuardConfigurationRequestsRepository } from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository.interface';
+import { TransactionQueueReader } from '#/modules/policies/domain/transaction-queue.reader';
 import { DelayedGuardPoliciesMapper } from '#/modules/policies/routes/mappers/delayed-guard-policies.mapper';
 import { GuardInstallationMapper } from '#/modules/policies/routes/mappers/guard-installation.mapper';
 import { GuardPolicyMapper } from '#/modules/policies/routes/mappers/guard-policy.mapper';
@@ -63,6 +64,7 @@ import { UsersModule } from '#/modules/users/users.module';
     GuardInstallationMapper,
     ImmediateGuardPoliciesMapper,
     DelayedGuardPoliciesMapper,
+    TransactionQueueReader,
     AllowanceModuleDecoder,
     SafeDecoder,
     MultiSendDecoder,

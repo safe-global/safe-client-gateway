@@ -42,6 +42,16 @@ import {
 } from '#/modules/policies/domain/utils/queued-calls.utils';
 import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
 
+type ChangesArgs = {
+  safe: SafeRef;
+  guard: Address | null;
+  moduleGuard: Address | null;
+  transactions: ReadonlyArray<MultisigTransaction>;
+  onChainConfigurations: ReadonlyArray<PolicyIndexerConfigurationRoot>;
+  storedConfigurations: ReadonlyArray<SafePolicyGuardConfiguration>;
+  guardEnforcedPolicies: ReadonlyArray<PolicyIndexerGuardEnforcedPolicy>;
+};
+
 /**
  * Aggregates three sources of data and builds {Array<PendingDelayedGuardPolicies>}.
  * The configuration root is the key all three share, so items are grouped by it.
@@ -90,31 +100,7 @@ export class DelayedGuardPoliciesMapper {
     types: ReadonlyArray<PolicyType>;
     now: number;
   }): Array<PendingDelayedGuardPolicies> {
-    const knownGuards = [
-      ...getSafePolicyGuardDeployments(args.safe.chainId),
-      ...args.onChainConfigurations.map((root) => root.guard),
-      ...args.guardEnforcedPolicies.map((binding) => binding.guard),
-    ];
-
-    const queuedPolicyChanges = this.findQueuedConfigurationRequestOrApplyCalls(
-      {
-        safe: args.safe,
-        transactions: args.transactions,
-        knownGuards,
-      },
-    );
-
-    const changes = this.changesByGuardAndRoot({
-      enabledGuards: [args.guard, args.moduleGuard].filter(
-        (guard): guard is Address =>
-          guard !== null && !isAddressEqual(guard, zeroAddress),
-      ),
-      onChainConfigurations: args.onChainConfigurations,
-      storedConfigurations: args.storedConfigurations,
-      queued: queuedPolicyChanges,
-    });
-
-    return changes.flatMap((change) => {
+    return this.changesOf(args).flatMap((change) => {
       const item = this.toItem({ change, safe: args.safe, now: args.now });
       if (!item) {
         return [];
@@ -131,6 +117,45 @@ export class DelayedGuardPoliciesMapper {
           types: args.types,
         });
       return isRequested ? [item] : [];
+    });
+  }
+
+  /**
+   * Whether a stored root is a draft, by the rule {@link map} reports it: no
+   * change carries it on chain or in {@link args.transactions}.
+   */
+  public isDraft(
+    args: Omit<ChangesArgs, 'storedConfigurations'> & { root: Hex },
+  ): boolean {
+    return !this.changesOf({ ...args, storedConfigurations: [] }).some(
+      (change) => change.root === args.root,
+    );
+  }
+
+  /** The changes of the Safe, one per guard and root, drafts last. */
+  private changesOf(args: ChangesArgs): Array<DelayedPolicyChange> {
+    const knownGuards = [
+      ...getSafePolicyGuardDeployments(args.safe.chainId),
+      ...args.onChainConfigurations.map((root) => root.guard),
+      ...args.guardEnforcedPolicies.map((binding) => binding.guard),
+    ];
+
+    const queuedPolicyChanges = this.findQueuedConfigurationRequestOrApplyCalls(
+      {
+        safe: args.safe,
+        transactions: args.transactions,
+        knownGuards,
+      },
+    );
+
+    return this.changesByGuardAndRoot({
+      enabledGuards: [args.guard, args.moduleGuard].filter(
+        (guard): guard is Address =>
+          guard !== null && !isAddressEqual(guard, zeroAddress),
+      ),
+      onChainConfigurations: args.onChainConfigurations,
+      storedConfigurations: args.storedConfigurations,
+      queued: queuedPolicyChanges,
     });
   }
 

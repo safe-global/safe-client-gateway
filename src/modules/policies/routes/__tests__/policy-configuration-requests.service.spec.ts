@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { HttpStatus } from '@nestjs/common';
-import { getAddress, type Hex } from 'viem';
+import { type Address, getAddress, type Hex, zeroAddress } from 'viem';
 import type { MockedObject } from 'vitest';
 import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
 import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
@@ -13,19 +13,21 @@ import { MultiSendDecoder } from '#/modules/contracts/domain/decoders/multi-send
 import { requestConfigurationEncoder } from '#/modules/policies/domain/contracts/__tests__/encoders/safe-policy-guard-encoder.builder';
 import { SafePolicyGuardDecoder } from '#/modules/policies/domain/contracts/decoders/safe-policy-guard-decoder.helper';
 import { policyConfigurationBuilder } from '#/modules/policies/domain/entities/__tests__/policy-configuration.builder';
-import { safePolicyGuardConfigurationBuilder } from '#/modules/policies/domain/entities/__tests__/safe-policy-guard-configuration.builder';
 import { policyIndexerConfigurationRootBuilder } from '#/modules/policies/domain/entities/indexer/__tests__/configuration-root.builder';
+import { policyIndexerGuardEnforcedPolicyBuilder } from '#/modules/policies/domain/entities/indexer/__tests__/guard-enforced-policy.builder';
 import { policyIndexerResponseBuilder } from '#/modules/policies/domain/entities/indexer/__tests__/policy-indexer-state.builder';
 import type { PolicyIndexerConfigurationRoot } from '#/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 import type { PolicyConfiguration } from '#/modules/policies/domain/entities/policy-configuration.entity';
 import { getSafePolicyGuardDeployments } from '#/modules/policies/domain/policy-deployments.constants';
 import type { IPolicyIndexerRepository } from '#/modules/policies/domain/policy-indexer.repository.interface';
 import type { ISafePolicyGuardConfigurationRequestsRepository } from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository.interface';
+import { TransactionQueueReader } from '#/modules/policies/domain/transaction-queue.reader';
 import {
   GUARD_POLICY_TYPES,
   guardPolicyKindsOf,
 } from '#/modules/policies/domain/utils/policy.utils';
 import { configurationRoot } from '#/modules/policies/domain/utils/policy-configuration-root.utils';
+import { DelayedGuardPoliciesMapper } from '#/modules/policies/routes/mappers/delayed-guard-policies.mapper';
 import { PolicyConfigurationRequestsService } from '#/modules/policies/routes/policy-configuration-requests.service';
 import { multisigTransactionBuilder } from '#/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
 import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
@@ -56,16 +58,22 @@ describe('PolicyConfigurationRequestsService', () => {
   const safeRepository: MockedObject<
     Pick<
       ISafeRepository,
-      'getSafe' | 'getTransactionQueue' | 'getTransactionQueueMaxPageSize'
+      | 'getSafe'
+      | 'getTransactionQueue'
+      | 'getTransactionQueueMaxPageSize'
+      | 'getMultisigTransactions'
     >
   > = {
     getSafe: vi.fn(),
     getTransactionQueue: vi.fn(),
     getTransactionQueueMaxPageSize: vi.fn(),
+    getMultisigTransactions: vi.fn(),
   };
-  const loggingService: MockedObject<Pick<ILoggingService, 'warn'>> = {
-    warn: vi.fn(),
-  };
+  const loggingService: MockedObject<Pick<ILoggingService, 'warn' | 'debug'>> =
+    {
+      warn: vi.fn(),
+      debug: vi.fn(),
+    };
   const maxPerSpaceSafe = faker.number.int({ min: 2, max: 5 });
   const configurationService = new FakeConfigurationService();
   configurationService.set(
@@ -79,8 +87,15 @@ describe('PolicyConfigurationRequestsService', () => {
     spaceSafesRepository as MockedObject<ISpaceSafesRepository>,
     policyIndexerRepository as MockedObject<IPolicyIndexerRepository>,
     safeRepository as MockedObject<ISafeRepository>,
-    new MultiSendDecoder(loggingService as MockedObject<ILoggingService>),
-    new SafePolicyGuardDecoder(),
+    new TransactionQueueReader(
+      safeRepository as MockedObject<ISafeRepository>,
+      loggingService as MockedObject<ILoggingService>,
+    ),
+    new DelayedGuardPoliciesMapper(
+      new MultiSendDecoder(loggingService as MockedObject<ILoggingService>),
+      new SafePolicyGuardDecoder(),
+      loggingService as MockedObject<ILoggingService>,
+    ),
     configurationService,
     loggingService as MockedObject<ILoggingService>,
   );
@@ -333,32 +348,72 @@ describe('PolicyConfigurationRequestsService', () => {
   describe('delete', () => {
     const root = configurationRoot([policyConfigurationBuilder().build()]);
     const guard = getSafePolicyGuardDeployments(safe.chainId)[0];
+    const enabledGuard = getAddress(faker.finance.ethereumAddress());
+    const conflict = new HttpExceptionNoLog(
+      'Only a draft configuration request can be deleted',
+      HttpStatus.CONFLICT,
+    );
+
+    function page(
+      transactions: Array<MultisigTransaction>,
+    ): ReturnType<
+      ReturnType<typeof pageBuilder<MultisigTransaction>>['build']
+    > {
+      return pageBuilder<MultisigTransaction>()
+        .with('results', transactions)
+        .with('next', null)
+        .build();
+    }
 
     function queue(transactions: Array<MultisigTransaction>): void {
-      safeRepository.getTransactionQueue.mockResolvedValue(
-        pageBuilder<MultisigTransaction>()
-          .with('results', transactions)
-          .with('next', null)
+      safeRepository.getTransactionQueue.mockResolvedValue(page(transactions));
+    }
+
+    /** A transaction calling `requestConfiguration(root)` on {@link to}. */
+    function requestOf(to: Address): MultisigTransaction {
+      return multisigTransactionBuilder()
+        .with('to', to)
+        .with('operation', Operation.CALL)
+        .with(
+          'data',
+          requestConfigurationEncoder().with('configureRoot', root).encode(),
+        )
+        .build();
+    }
+
+    /** The indexer state with {@link root} on {@link onGuard}. */
+    function onChainOn(onGuard: Address): void {
+      policyIndexerRepository.getState.mockResolvedValue(
+        policyIndexerResponseBuilder()
+          .with('roots', [
+            policyIndexerConfigurationRootBuilder()
+              .with('chainId', safe.chainId)
+              .with('safe', safe.address)
+              .with('guard', onGuard)
+              .with('root', root)
+              .build(),
+          ])
           .build(),
       );
     }
 
     beforeEach(() => {
-      configurationRequestsRepository.findBySafes.mockResolvedValue([
-        safePolicyGuardConfigurationBuilder()
-          .with('chainId', safe.chainId)
-          .with('safeAddress', safe.address)
-          .with('root', root)
-          .build(),
-      ]);
+      configurationRequestsRepository.findRootsBySafe.mockResolvedValue([root]);
       configurationRequestsRepository.delete.mockResolvedValue();
       policyIndexerRepository.getState.mockResolvedValue(
         policyIndexerResponseBuilder().build(),
       );
       safeRepository.getSafe.mockResolvedValue(
-        safeBuilder().with('address', safe.address).build(),
+        safeBuilder()
+          .with('address', safe.address)
+          .with('guard', enabledGuard)
+          .with('moduleGuard', zeroAddress)
+          .build(),
       );
-      safeRepository.getTransactionQueueMaxPageSize.mockReturnValue(20);
+      safeRepository.getTransactionQueueMaxPageSize.mockReturnValue(
+        faker.number.int({ min: 1, max: 100 }),
+      );
+      safeRepository.getMultisigTransactions.mockResolvedValue(page([]));
       queue([]);
     });
 
@@ -379,45 +434,64 @@ describe('PolicyConfigurationRequestsService', () => {
       });
     });
 
-    it('should reject a root that exists on-chain', async () => {
-      policyIndexerRepository.getState.mockResolvedValue(
-        policyIndexerResponseBuilder()
-          .with('roots', [
-            policyIndexerConfigurationRootBuilder()
-              .with('chainId', safe.chainId)
-              .with('safe', safe.address)
-              .with('root', root)
-              .build(),
-          ])
-          .build(),
-      );
+    it('should reject a root on a guard the Safe has enabled', async () => {
+      onChainOn(enabledGuard);
+
       await expect(target.delete({ ...request, root })).rejects.toThrow(
-        new HttpExceptionNoLog(
-          'Only a draft configuration request can be deleted',
-          HttpStatus.CONFLICT,
-        ),
+        conflict,
       );
       expect(configurationRequestsRepository.delete).not.toHaveBeenCalled();
     });
 
+    it('should delete a root on a guard the Safe moved away from, as the pending API reports it a draft', async () => {
+      onChainOn(getAddress(faker.finance.ethereumAddress()));
+
+      await target.delete({ ...request, root });
+
+      expect(configurationRequestsRepository.delete).toHaveBeenCalled();
+    });
+
     it('should reject a root a queued transaction requests', async () => {
-      queue([
-        multisigTransactionBuilder()
-          .with('to', guard)
-          .with('operation', Operation.CALL)
-          .with(
-            'data',
-            requestConfigurationEncoder().with('configureRoot', root).encode(),
-          )
-          .build(),
-      ]);
+      queue([requestOf(guard)]);
 
       await expect(target.delete({ ...request, root })).rejects.toThrow(
-        new HttpExceptionNoLog(
-          'Only a draft configuration request can be deleted',
-          HttpStatus.CONFLICT,
-        ),
+        conflict,
       );
+      expect(configurationRequestsRepository.delete).not.toHaveBeenCalled();
+    });
+
+    it('should reject a root requested on a guard known only from its bindings', async () => {
+      const boundGuard = getAddress(faker.finance.ethereumAddress());
+      policyIndexerRepository.getState.mockResolvedValue(
+        policyIndexerResponseBuilder()
+          .with('guardPolicyBindings', [
+            policyIndexerGuardEnforcedPolicyBuilder()
+              .with('guard', boundGuard)
+              .build(),
+          ])
+          .build(),
+      );
+      queue([requestOf(boundGuard)]);
+
+      await expect(target.delete({ ...request, root })).rejects.toThrow(
+        conflict,
+      );
+      expect(configurationRequestsRepository.delete).not.toHaveBeenCalled();
+    });
+
+    it('should reject a root whose request executed before the indexer has it', async () => {
+      safeRepository.getMultisigTransactions.mockResolvedValue(
+        page([requestOf(guard)]),
+      );
+
+      await expect(target.delete({ ...request, root })).rejects.toThrow(
+        conflict,
+      );
+      expect(safeRepository.getMultisigTransactions).toHaveBeenCalledWith({
+        chainId: safe.chainId,
+        safeAddress: safe.address,
+        executed: true,
+      });
       expect(configurationRequestsRepository.delete).not.toHaveBeenCalled();
     });
 
@@ -430,25 +504,13 @@ describe('PolicyConfigurationRequestsService', () => {
       );
 
       await expect(target.delete({ ...request, root })).rejects.toThrow(
-        new HttpExceptionNoLog(
-          'Only a draft configuration request can be deleted',
-          HttpStatus.CONFLICT,
-        ),
+        conflict,
       );
       expect(configurationRequestsRepository.delete).not.toHaveBeenCalled();
     });
 
     it('should ignore a request of the root on an unknown contract', async () => {
-      queue([
-        multisigTransactionBuilder()
-          .with('to', getAddress(faker.finance.ethereumAddress()))
-          .with('operation', Operation.CALL)
-          .with(
-            'data',
-            requestConfigurationEncoder().with('configureRoot', root).encode(),
-          )
-          .build(),
-      ]);
+      queue([requestOf(getAddress(faker.finance.ethereumAddress()))]);
 
       await target.delete({ ...request, root });
 
@@ -456,7 +518,7 @@ describe('PolicyConfigurationRequestsService', () => {
     });
 
     it('should reject a root that is not stored', async () => {
-      configurationRequestsRepository.findBySafes.mockResolvedValue([]);
+      configurationRequestsRepository.findRootsBySafe.mockResolvedValue([]);
 
       await expect(target.delete({ ...request, root })).rejects.toThrow(
         new HttpExceptionNoLog(

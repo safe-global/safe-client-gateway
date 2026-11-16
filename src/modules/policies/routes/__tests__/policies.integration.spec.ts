@@ -1713,6 +1713,7 @@ describe('Space Policies Controller', () => {
           ConfigurationRoot: [
             rawIndexerConfigurationRootBuilder()
               .with('safe', safeAddress)
+              .with('guard', safePolicyGuard)
               .with('root', body.root)
               .build(),
           ],
