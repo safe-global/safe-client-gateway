@@ -15,8 +15,8 @@ import { SafeTxHashMismatchError } from '#/modules/relay/domain/errors/safe-tx-h
 import { UnofficialProxyFactoryError } from '#/modules/relay/domain/errors/unofficial-proxy-factory.error';
 import { RelaySimulationService } from '#/modules/relay/domain/relay-simulation.service';
 import type { RelayTransactionHelper } from '#/modules/relay/domain/relay-transaction-helper';
+import { RelayFeeRelayer } from '#/modules/relay/domain/relayers/relay-fee.relayer';
 import { rawify } from '#/validation/entities/raw.entity';
-import { RelayFeeRelayer } from '../relay-fee.relayer';
 
 const mockLoggingService = vi.mocked({
   info: vi.fn(),
