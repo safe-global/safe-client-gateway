@@ -46,7 +46,7 @@ const loggingService = { debug: vi.fn() } as unknown as MockedObject<ILoggingSer
 const loggingService = { debug: vi.fn() } as MockedObject<ILoggingService>;
 ```
 
-**Spotted in:** #3247 ("nit: please ask your Claude to memo that there is no need to cast to unknown"), #3241, #3196 (three separate comments), #3214, #3392 ("remove unknown :)", twice), #3420 ("then we dont need to do `as unknown as IBillingApi,`"), #3451 ("idk why unknown is always added, it is not needed"), #3595 ("when other tests here use a simpler `as MockedObject<...>)`?"), #3600 ("nit: drop `as unknown`, a single `as MockedObject<ILoggingService>` compiles here.").
+**Spotted in:** #3247 ("nit: please ask your Claude to memo that there is no need to cast to unknown"), #3241, #3196 (three separate comments), #3214, #3392 ("remove unknown :)", twice), #3420 ("then we dont need to do `as unknown as IBillingApi,`"), #3451 ("idk why unknown is always added, it is not needed"), #3595 ("when other tests here use a simpler `as MockedObject<...>)`?").
 **Status:** active
 
 ### R-002: `as never` to satisfy a mock signature
@@ -174,13 +174,13 @@ await expect(service.mintToken()).rejects.toThrow(new UnauthorizedException('Inv
 
 ### R-008: Tests that assert the framework, not the behavior
 
-**Pattern:** a spec that checks a config object has the keys it was literally just given, or that a Zod schema rejects the wrong type. The same remark covers a spec whose expected value is computed by the function under test (`everyGuardKind = guardPolicyKindsOf(Object.values(PolicyType))`).
+**Pattern:** a spec that checks a config object has the keys it was literally just given, or that a Zod schema rejects the wrong type.
 
 **Why it's bad:** the assertion restates the source rather than constraining it, so it can never fail for a reason anyone cares about while still costing maintenance on every refactor. "they dont bring much value" (#3157) is the review outcome.
 
-**Corrected form:** assert the behavior that depends on the config or the schema, not the declaration itself. A test of a mapping writes its expected values out literally.
+**Corrected form:** assert the behavior that depends on the config or the schema, not the declaration itself.
 
-**Spotted in:** #3157 ("dont hurt to have but also not sure we really need these tests :) they dont bring much value", "dont trust everything claude says :)"), #3449 ("The only test that touches this computes its expected value with this same function").
+**Spotted in:** #3157 ("dont hurt to have but also not sure we really need these tests :) they dont bring much value", "dont trust everything claude says :)").
 **Status:** active
 
 ## Types
@@ -306,13 +306,13 @@ transactions: Array<DecodedTransaction<MultisigTransaction>>;
 
 ### R-016: Duplicating a guard or helper instead of extending it
 
-**Pattern:** a new guard, auth helper, header builder, or provider client whose body is substantially an existing one with one value changed. The same remark covers a method copied for a second row type, a rule written out at two seams that must agree, and a single-item read left beside the batch variant that now runs the same query.
+**Pattern:** a new guard, auth helper, header builder, or provider client whose body is substantially an existing one with one value changed. The same remark covers a rule written out at two seams that must agree, and a single-item read left beside the batch variant that now runs the same query.
 
 **Why it's bad:** two copies of an auth path means a fix applied to one silently leaves the other vulnerable. The counter-argument is real and sometimes wins — merging two security paths couples them — so the remark is a question to answer in the PR description, not an automatic change.
 
-**Corrected form:** parameterize the existing one (a header name, a token source) and use it; or state in the PR body why coupling the two is worse than duplicating them, as #3217 ultimately did. For a non-auth method, share the predicate, and have the single-item read delegate to the batch one — `(await this.findBySpaceIds([spaceId])).get(spaceId) ?? []`.
+**Corrected form:** parameterize the existing one (a header name, a token source) and use it; or state in the PR body why coupling the two is worse than duplicating them, as #3217 ultimately did. For a non-auth read, have the single-item read delegate to the batch one — `(await this.findBySpaceIds([spaceId])).get(spaceId) ?? []`.
 
-**Spotted in:** #3217 ("We could use or extend the current `AuthGuard`… The code here is mostly duplicated"), #3220 ("i wonder if we can have a base function that then is implemented/extended by both queue-service and tx-service helpers as the logic is exactly the same?"), #3449 ("It's also the same body as `getAllowancesBySafe`. Could both use one predicate"), #3533 ("Make it (await this.findBySpaceIds([spaceId])).get(spaceId) ?? []."), #3565 ("we could generalizes `src/datasources/kms/aws-kms-signer.service.ts` and have only the Ethereum part in this class"), #3619 ("extracting a separate function e.g. normalizeTagNameKey so it can be used in other places").
+**Spotted in:** #3217 ("We could use or extend the current `AuthGuard`… The code here is mostly duplicated"), #3220 ("i wonder if we can have a base function that then is implemented/extended by both queue-service and tx-service helpers as the logic is exactly the same?"), #3533 ("Make it (await this.findBySpaceIds([spaceId])).get(spaceId) ?? []."), #3565 ("we could generalizes `src/datasources/kms/aws-kms-signer.service.ts` and have only the Ethereum part in this class"), #3619 ("extracting a separate function e.g. normalizeTagNameKey so it can be used in other places").
 **Status:** active
 
 ## Naming
