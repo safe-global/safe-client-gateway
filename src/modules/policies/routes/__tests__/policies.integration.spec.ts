@@ -1705,21 +1705,23 @@ describe('Space Policies Controller', () => {
     });
 
     it('should return 409 for a root that exists on-chain', async () => {
+      const body = payload();
       mockUpstream();
-      const { accessToken, spaceId } = await createSpaceWithSafe({
-        withSafe: true,
-      });
-      const root = await storeRequest({ accessToken, spaceId });
+      // Set before storing: the store reads the indexer state, which is cached.
       mockIndexer(
         rawPolicyIndexerResponse({
           ConfigurationRoot: [
             rawIndexerConfigurationRootBuilder()
               .with('safe', safeAddress)
-              .with('root', root)
+              .with('root', body.root)
               .build(),
           ],
         }),
       );
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+      const root = await storeRequest({ accessToken, spaceId, body });
 
       await request(app.getHttpServer())
         .delete(
