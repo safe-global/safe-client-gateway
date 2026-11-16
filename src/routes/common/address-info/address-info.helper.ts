@@ -14,8 +14,14 @@ import { AddressInfo } from '#/routes/common/entities/address-info.entity';
 
 export type Source = 'CONTRACT' | 'TOKEN';
 
+type AddressInfoLookups = Map<string, Promise<AddressInfo>>;
+
 // Key of the lookups a request has started, in its CLS store
 const REQUEST_LOOKUPS = Symbol('AddressInfoHelper.requestLookups');
+
+// A page of transactions names far fewer addresses. The cap keeps the lookups
+// bounded should a CLS context ever outlive a request.
+export const MAX_REQUEST_LOOKUPS = 1_000;
 
 @Injectable()
 export class AddressInfoHelper {
@@ -39,30 +45,33 @@ export class AddressInfoHelper {
    * in the order they are provided. If the address info cannot be retrieved
    * from a source, the next source will be tried.
    *
-   * Within a request, the same address is looked up once for the same sources:
-   * a page of transactions names the same few addresses in most of its items.
+   * Within a request, an address is looked up once for the same sources, and
+   * a lookup that failed is not tried again: a page of transactions names the
+   * same few addresses in most of its items.
    *
    * @param chainId - the chain id where the source exists
    * @param address - the address of the source to which we want to retrieve its metadata
    * @param sources - a collection of {@link Source} to which we want to retrieve its metadata
    */
-  get(
+  async get(
     chainId: string,
     address: Address,
     sources: Array<Source>,
   ): Promise<AddressInfo> {
     const lookups = this._getRequestLookups();
     if (!lookups) {
-      return this._getFromSources(chainId, address, sources);
+      return await this._getFromSources(chainId, address, sources);
     }
 
     const key = `${chainId}_${address}_${sources.join('_')}`;
     let lookup = lookups.get(key);
     if (!lookup) {
       lookup = this._getFromSources(chainId, address, sources);
-      lookups.set(key, lookup);
+      if (lookups.size < MAX_REQUEST_LOOKUPS) {
+        lookups.set(key, lookup);
+      }
     }
-    return lookup;
+    return await lookup;
   }
 
   /**
@@ -113,14 +122,12 @@ export class AddressInfoHelper {
    * Returns the lookups the current request has started, or `undefined`
    * outside of a request (jobs, crons, events).
    */
-  private _getRequestLookups(): Map<string, Promise<AddressInfo>> | undefined {
+  private _getRequestLookups(): AddressInfoLookups | undefined {
     if (!this.cls.isActive()) {
       return undefined;
     }
 
-    let lookups = this.cls.get<Map<string, Promise<AddressInfo>> | undefined>(
-      REQUEST_LOOKUPS,
-    );
+    let lookups = this.cls.get<AddressInfoLookups | undefined>(REQUEST_LOOKUPS);
     if (!lookups) {
       lookups = new Map();
       this.cls.set(REQUEST_LOOKUPS, lookups);

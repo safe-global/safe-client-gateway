@@ -88,11 +88,11 @@ The same discipline covers the stream's own error handling: `export` destroys th
 
 ### Bounded in-process memos
 
-**Rule:** An in-memory memoization or cache that outlives a request is cron-cleared via `@Cron(..., { disabled: process.env.NODE_ENV === 'test' })` (the only long-lived shape in the codebase today; a size-bounded cache would satisfy the rule equally). A memo that only has to last for one request is kept in that request's CLS store, where it ends with the request and needs no clearing. The shared Redis-backed cache (`CacheFirstDataSource`/`RedisCacheService`) is preferred over adding a new ad hoc in-process memo.
+**Rule:** An in-memory memoization or cache that outlives a request is cron-cleared via `@Cron(..., { disabled: process.env.NODE_ENV === 'test' })`, or bounded in size. A memo that only has to last for one request is kept in that request's CLS store, capped in size, where it ends with the request and needs no clearing. The shared Redis-backed cache (`CacheFirstDataSource`/`RedisCacheService`) is preferred over adding a new ad hoc in-process memo.
 
 **Why:** PR #2628 removed a method-level memoization cache that had no such bound.
 
-**Canonical example:** `src/domain/common/entities/safe-signature.ts`'s `clearSignatureMemo` and `src/modules/hooks/domain/helpers/event-cache.helper.ts`'s `clearSupportedChainsMemo` each clear a lodash `memoize` cache on their own `@Cron` (hourly and every-30-seconds respectively), both disabled in tests via `NODE_ENV === 'test'`. `src/routes/common/address-info/address-info.helper.ts` is the request-lifetime shape: it keeps the address lookups a request has started in the CLS store, so a page of transactions resolves each address once.
+**Canonical example:** `src/domain/common/entities/safe-signature.ts`'s `clearSignatureMemo` and `src/modules/hooks/domain/helpers/event-cache.helper.ts`'s `clearSupportedChainsMemo` each clear a lodash `memoize` cache on their own `@Cron` (hourly and every-30-seconds respectively), both disabled in tests via `NODE_ENV === 'test'`. `src/routes/common/address-info/address-info.helper.ts` is the request-lifetime shape: it keeps up to `MAX_REQUEST_LOOKUPS` of the address lookups a request has started in the CLS store, so a page of transactions looks an address up once for each list of sources.
 
 A long-lived in-process memo is appropriate only for a cheap, synchronous re-derivation — recovering a signer address, checking chain support — never as a substitute for `CacheFirstDataSource` in front of an actual upstream call. A request-lifetime memo may hold the result of a cached read, because it cannot outlive an invalidation by more than the request that holds it; it sits on top of `CacheFirstDataSource`, not in place of it.
 

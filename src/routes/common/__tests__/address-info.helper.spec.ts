@@ -9,7 +9,10 @@ import type { ContractsRepository } from '#/modules/contracts/domain/contracts.r
 import { contractBuilder } from '#/modules/data-decoder/domain/v2/entities/__tests__/contract.builder';
 import { tokenBuilder } from '#/modules/tokens/domain/__tests__/token.builder';
 import type { TokenRepository } from '#/modules/tokens/domain/token.repository';
-import { AddressInfoHelper } from '#/routes/common/address-info/address-info.helper';
+import {
+  AddressInfoHelper,
+  MAX_REQUEST_LOOKUPS,
+} from '#/routes/common/address-info/address-info.helper';
 
 describe('AddressInfoHelper', () => {
   let target: AddressInfoHelper;
@@ -137,7 +140,7 @@ describe('AddressInfoHelper', () => {
       expect(tokenRepository.getToken).toHaveBeenCalledTimes(1);
     });
 
-    it('should not look an address up again after it was not found', async () => {
+    it('should not look an address up again after the lookup failed', async () => {
       const chainId = faker.string.numeric();
       const address = getAddress(faker.finance.ethereumAddress());
       tokenRepository.getToken.mockRejectedValue(new Error('Not found'));
@@ -185,6 +188,29 @@ describe('AddressInfoHelper', () => {
         chainId,
         address: token.address,
       });
+    });
+
+    it('should stop remembering lookups once it holds the maximum', async () => {
+      const chainId = faker.string.numeric();
+      const token = tokenBuilder().build();
+      const addresses = faker.helpers.uniqueArray(
+        () => getAddress(faker.finance.ethereumAddress()),
+        MAX_REQUEST_LOOKUPS,
+      );
+      tokenRepository.getToken.mockResolvedValue(token);
+
+      await cls.run(async () => {
+        for (const address of addresses) {
+          await target.get(chainId, address, ['TOKEN']);
+        }
+        await target.get(chainId, addresses[0], ['TOKEN']);
+        await target.get(chainId, token.address, ['TOKEN']);
+        await target.get(chainId, token.address, ['TOKEN']);
+      });
+
+      expect(tokenRepository.getToken).toHaveBeenCalledTimes(
+        MAX_REQUEST_LOOKUPS + 2,
+      );
     });
 
     it('should look an address up again in another request', async () => {
