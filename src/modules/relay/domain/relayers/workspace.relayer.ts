@@ -140,8 +140,7 @@ export class WorkspaceRelayer {
         safeTxHash: args.safeTxHash,
       });
     } catch (error) {
-      // Only a failed call proves nothing was submitted: a reply that fails
-      // the schema still came back from a provider that accepted it.
+      // No `taskId` came back, so nothing says it was submitted.
       if (error instanceof DataSourceError) {
         await this.refundAllowance(spentQuota);
       }

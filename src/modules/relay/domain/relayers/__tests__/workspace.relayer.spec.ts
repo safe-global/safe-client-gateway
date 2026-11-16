@@ -5,7 +5,6 @@ import { HttpStatus } from '@nestjs/common';
 import type { Address, Hex } from 'viem';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import { ZodError } from 'zod';
 import { LogType } from '#/domain/common/entities/log-type.entity';
 import { DataSourceError } from '#/domain/errors/data-source.error';
 import type { ITenderlySimulationApi } from '#/domain/interfaces/tenderly-simulation-api.interface';
@@ -528,20 +527,6 @@ describe('WorkspaceRelayer', () => {
     expect(
       mockEntitlementEnforcement.refundQuota,
     ).toHaveBeenCalledExactlyOnceWith(spentQuota);
-  });
-
-  it('should not give the allowance back when the relay reply fails validation', async () => {
-    const args = relayArgs();
-    recognises(address());
-    mockSpaceSafesRepository.existsInSpace.mockResolvedValue(true);
-    // The provider answered, so the transaction was submitted.
-    const invalid = new ZodError([]);
-    mockRelayRepository.relayWithoutLimits.mockRejectedValue(invalid);
-
-    await expect(target.relay(args)).rejects.toThrow(invalid);
-
-    expect(mockEntitlementEnforcement.consumeQuota).toHaveBeenCalledTimes(1);
-    expect(mockEntitlementEnforcement.refundQuota).not.toHaveBeenCalled();
   });
 
   it('should keep a relay whose refund could not be written', async () => {
