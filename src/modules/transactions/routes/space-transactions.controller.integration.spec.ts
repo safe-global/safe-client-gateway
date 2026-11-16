@@ -26,6 +26,7 @@ import { IJwtService } from '#/datasources/jwt/jwt.service.interface';
 import { NetworkResponseError } from '#/datasources/network/entities/network.error.entity';
 import type { INetworkService } from '#/datasources/network/network.service.interface';
 import { NetworkService } from '#/datasources/network/network.service.interface';
+import { SAFE_QUEUE_SERVICE_MAX_LIMIT } from '#/domain/common/constants';
 import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
 import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
 import type { Chain } from '#/modules/chains/domain/entities/chain.entity';
@@ -136,6 +137,7 @@ describe('SpaceTransactionsController', () => {
   function mockUpstreams(args: {
     chain: Chain;
     deployed: Array<Safe>;
+    queueCount?: number;
     /** Other chains, each with its own deployed Safes */
     otherChains?: Array<{ chain: Chain; deployed: Array<Safe> }>;
     queue?: Array<SafeQueueMultisigTransactionEntity>;
@@ -173,7 +175,7 @@ describe('SpaceTransactionsController', () => {
         return Promise.resolve({
           data: rawify(
             pageBuilder()
-              .with('count', queue.length)
+              .with('count', args.queueCount ?? queue.length)
               .with('next', null)
               .with('previous', null)
               .with('results', queue)
@@ -368,6 +370,119 @@ describe('SpaceTransactionsController', () => {
           .set('Cookie', [`access_token=${accessToken}`])
           .expect(HttpStatus.UNPROCESSABLE_ENTITY);
       }
+    });
+
+    it('reads only the first `limit` transactions, in one queue page', async () => {
+      const { accessToken, spaceUuid } = await createSpaceForSignerFixture({
+        app,
+        jwtService,
+        postgresDatabaseService,
+      });
+      const chain = uniqueChain();
+      const deployed = safeBuilder().build();
+      await addSafesFixture({
+        app,
+        spaceUuid,
+        accessToken,
+        safes: [{ chainId: chain.chainId, address: deployed.address }],
+      }).then((response) => expect(response.status).toBe(HttpStatus.CREATED));
+      // Long enough that an unlimited read would fetch more pages
+      const queueCount = faker.number.int({ min: 201, max: 1_000 });
+      mockUpstreams({ chain, deployed: [deployed], queueCount });
+      const limit = faker.number.int({ min: 1, max: 100 });
+
+      await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceUuid}/transactions/queued`)
+        .query({ limit })
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(HttpStatus.OK)
+        .expect(({ body }) => expect(body.count).toBe(queueCount));
+
+      expect(queueRequests()).toEqual([
+        [
+          expect.objectContaining({
+            networkRequest: expect.objectContaining({
+              params: expect.objectContaining({ limit, offset: 0 }),
+            }),
+          }),
+        ],
+      ]);
+    });
+
+    it('rejects a limit that is not a positive integer', async () => {
+      const { accessToken, spaceUuid } = await createSpaceForSignerFixture({
+        app,
+        jwtService,
+        postgresDatabaseService,
+      });
+
+      for (const limit of [
+        '0',
+        '-1',
+        faker.number.float({ min: 1, max: 99, fractionDigits: 2 }).toFixed(2),
+        faker.word.noun(),
+      ]) {
+        await request(app.getHttpServer())
+          .get(`/v1/spaces/${spaceUuid}/transactions/queued`)
+          .query({ limit })
+          .set('Cookie', [`access_token=${accessToken}`])
+          .expect(HttpStatus.UNPROCESSABLE_ENTITY);
+      }
+    });
+
+    it('reads the whole queue when a limit comes with a filter, and limits the matches', async () => {
+      const { accessToken, spaceUuid } = await createSpaceForSignerFixture({
+        app,
+        jwtService,
+        postgresDatabaseService,
+      });
+      const [chain, otherChain] = [uniqueChain(), uniqueChain()];
+      const first = await safeAwaitingSignature(chain);
+      const second = await safeAwaitingSignature(otherChain);
+      await addSafesFixture({
+        app,
+        spaceUuid,
+        accessToken,
+        safes: [
+          { chainId: chain.chainId, address: first.safe.address },
+          { chainId: otherChain.chainId, address: second.safe.address },
+        ],
+      }).then((response) => expect(response.status).toBe(HttpStatus.CREATED));
+      mockUpstreams({
+        chain,
+        deployed: [first.safe],
+        otherChains: [{ chain: otherChain, deployed: [second.safe] }],
+        queue: [first.transaction, second.transaction],
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceUuid}/transactions/queued`)
+        .query({ chainIds: otherChain.chainId, limit: 1 })
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(HttpStatus.OK)
+        .expect(({ body }) => {
+          expect(Object.keys(body.results)).toEqual([second.safe.address]);
+          // The counts cover the whole queue, not just the limited results
+          expect(body.counts.chains).toEqual(
+            expect.arrayContaining([
+              { chainId: chain.chainId, count: 1 },
+              { chainId: otherChain.chainId, count: 1 },
+            ]),
+          );
+        });
+
+      expect(queueRequests()).toEqual([
+        [
+          expect.objectContaining({
+            networkRequest: expect.objectContaining({
+              params: expect.objectContaining({
+                limit: SAFE_QUEUE_SERVICE_MAX_LIMIT,
+                offset: 0,
+              }),
+            }),
+          }),
+        ],
+      ]);
     });
 
     it('filters the cached queue without querying it again', async () => {

@@ -46,6 +46,8 @@ providers: [
 
 **Canonical example:** `src/app.module.ts` registers the entire global layer — three `APP_INTERCEPTOR`s (`RouteLoggerInterceptor`, `CacheControlInterceptor`, `NullResponseInterceptor`), three `APP_FILTER`s (`GlobalErrorFilter`, `DataSourceErrorFilter`, `ZodErrorFilter`) — and applies `ClsMiddleware` before `NotFoundLoggerMiddleware` through `configure(consumer)`, because the CLS middleware generates the request ids the logger later reads. `src/modules/chains/chains.module.ts` is the feature-module counterpart: imports, one `useClass` binding, two route services, two controllers, one export.
 
+A token whose implementation depends on a feature flag, injected by a module that cannot import the flagged module (because that one imports it back), is provided by one of two small `@Global()` modules, and `AppModule.register` imports exactly one of them by the flag — the real implementation, or a Special Case that answers "not available". The consumer injects the token plainly, with no `@Optional()` and no `if` on its presence. Canonical example: `ISpaceSetupBilling`, provided by `SpaceSetupBillingModule` (`useExisting: BillingService`) or `UnavailableSpaceSetupBillingModule`.
+
 ## Guards: request admission only
 
 **Rule:** A guard answers one question — may this request proceed — and returns `boolean` or throws. It lives in the owning module's `routes/guards/` directory, named `*.guard.ts`. A guard never mutates domain state, never performs an upstream write, and never returns data; the one thing it may attach to the request is the verified identity, read back through a param decorator rather than by the controller reaching into the request object.

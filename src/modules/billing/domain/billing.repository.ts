@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Inject, Injectable } from '@nestjs/common';
+import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { z } from 'zod';
 import type {
   CheckoutSession,
@@ -26,6 +26,7 @@ import {
   SubscriptionUpdatePreviewSchema,
   UpdateSubscriptionResultSchema,
 } from '#/datasources/billing-api/entities/subscription-update.entity';
+import { DataSourceError } from '#/domain/errors/data-source.error';
 import { IBillingApi } from '#/domain/interfaces/billing-api.interface';
 import type { IBillingRepository } from '#/modules/billing/domain/billing.repository.interface';
 
@@ -47,17 +48,27 @@ export class BillingRepository implements IBillingRepository {
     return z.string().parse(await this.billingApi.getCustomerSessionUrl(args));
   }
 
+  /** None while the billing service has no customer: no checkout of it ever completed. */
   public async getSubscriptionsByCustomerId(args: {
     upstreamCustomerId: string;
     status?: SubscriptionStatusFilter;
   }): Promise<Array<Subscription>> {
-    // Unwrapping the envelope is part of the parse: the datasource hands over
-    // the wire shape and this is where it becomes the collection.
-    const { subscriptions } = SubscriptionsResultSchema.parse(
-      await this.billingApi.getSubscriptionsByCustomerId(args),
-    );
-
-    return subscriptions;
+    try {
+      // Unwrapping the envelope is part of the parse: the datasource hands over
+      // the wire shape and this is where it becomes the collection.
+      const { subscriptions } = SubscriptionsResultSchema.parse(
+        await this.billingApi.getSubscriptionsByCustomerId(args),
+      );
+      return subscriptions;
+    } catch (error) {
+      if (
+        error instanceof DataSourceError &&
+        error.code === HttpStatus.NOT_FOUND
+      ) {
+        return [];
+      }
+      throw error;
+    }
   }
 
   public async listPaymentLinks(

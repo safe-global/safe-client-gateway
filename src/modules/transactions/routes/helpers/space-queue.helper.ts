@@ -414,3 +414,69 @@ export const filterSpaceQueue = (args: {
     ),
   };
 };
+
+/** Whether any filter, the search included, narrows the queue. */
+export const someFiltersSet = (
+  filters: Partial<Record<keyof SpaceQueueFilters, unknown>>,
+): boolean => Object.values(filters).some((value) => value !== undefined);
+
+const getNonce = (item: TransactionQueuedItem | undefined): number =>
+  item && isMultisig(item.transaction.executionInfo)
+    ? item.transaction.executionInfo.nonce
+    : Number.POSITIVE_INFINITY;
+
+/**
+ * The first `limit` transactions of a filtered queue, by nonce across every
+ * Safe, the order of an unfiltered limited read. A conflict group is kept
+ * whole, so the last one can take the result past `limit`. A label stays with
+ * the first group under it.
+ */
+export const limitSpaceQueue = (args: {
+  results: SpaceQueueItems;
+  limit: number;
+}): SpaceQueueItems => {
+  const groups: Array<{
+    safeAddress: Address;
+    chainId: string;
+    items: Array<QueuedItem>;
+    nonce: number;
+    transactionCount: number;
+  }> = [];
+  for (const [safeAddress, chains] of Object.entries(args.results)) {
+    for (const [chainId, items] of Object.entries(chains)) {
+      let label: LabelQueuedItem | undefined;
+      // The traits are unused here: no signers or time are needed
+      for (const group of getGroups({ items, signers: [], now: 0 })) {
+        if (group.label) {
+          label = group.label;
+          continue;
+        }
+        const transactions = group.items.filter(isTransaction);
+        groups.push({
+          safeAddress: safeAddress as Address,
+          chainId,
+          items: label ? [label, ...group.items] : group.items,
+          nonce: getNonce(transactions[0]),
+          transactionCount: transactions.length,
+        });
+        label = undefined;
+      }
+    }
+  }
+
+  // Stable: each Safe's groups keep their order within a nonce
+  groups.sort((a, b) => a.nonce - b.nonce);
+
+  const results: SpaceQueueItems = {};
+  let taken = 0;
+  for (const group of groups) {
+    if (taken >= args.limit) {
+      break;
+    }
+    taken += group.transactionCount;
+    const chains = results[group.safeAddress] ?? {};
+    chains[group.chainId] = [...(chains[group.chainId] ?? []), ...group.items];
+    results[group.safeAddress] = chains;
+  }
+  return results;
+};
