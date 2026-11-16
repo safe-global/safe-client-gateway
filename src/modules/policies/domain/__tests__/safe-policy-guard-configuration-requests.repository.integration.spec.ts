@@ -418,6 +418,30 @@ describe('SafePolicyGuardConfigurationRequestsRepository', () => {
       );
     });
 
+    it('should not return the roots of another Space', async () => {
+      const request = storableRequest({ spaceId: await insertSpace() });
+      await repository.create(request);
+
+      await expect(
+        repository.findRootsBySafe({
+          spaceId,
+          safe: { chainId: request.chainId, address: request.safeAddress },
+        }),
+      ).resolves.toStrictEqual([]);
+    });
+
+    it('should not return a Safe of the same address on another chain', async () => {
+      const request = storableRequest();
+      await repository.create(request);
+
+      await expect(
+        repository.findRootsBySafe({
+          spaceId,
+          safe: { chainId: '1', address: request.safeAddress },
+        }),
+      ).resolves.toStrictEqual([]);
+    });
+
     it('should match the Safe by its blind index when encryption is enabled', async () => {
       const request = storableRequest();
       encryptionService.safeAddressIndex.mockReturnValue(
