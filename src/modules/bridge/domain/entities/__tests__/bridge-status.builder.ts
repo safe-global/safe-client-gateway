@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import type { Address, Hash, Hex } from 'viem';
-import type { IBuilder } from '@/__tests__/builder';
-import { Builder } from '@/__tests__/builder';
-import { tokenBuilder } from '@/modules/bridge/domain/entities/__tests__/token.builder';
+import type { IBuilder } from '#/__tests__/builder';
+import { Builder } from '#/__tests__/builder';
+import { tokenBuilder } from '#/modules/bridge/domain/entities/__tests__/token.builder';
 import type {
   BaseTransactionInfo,
   BridgeStatus,
@@ -13,12 +13,12 @@ import type {
   PendingStatusData,
   SuccessStatusData,
   TransferMetadata,
-} from '@/modules/bridge/domain/entities/bridge-status.entity';
+} from '#/modules/bridge/domain/entities/bridge-status.entity';
 import {
   SubstatusesDone,
   SubstatusesFailed,
   SubstatusesPending,
-} from '@/modules/bridge/domain/entities/bridge-status.entity';
+} from '#/modules/bridge/domain/entities/bridge-status.entity';
 
 export function baseStatusDataBuilder<
   T extends SuccessStatusData | FailedStatusData | PendingStatusData,

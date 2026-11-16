@@ -1,41 +1,55 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { BadRequestException, Inject, NotFoundException } from '@nestjs/common';
+import { Inject, NotFoundException } from '@nestjs/common';
+import { groupBy } from 'lodash';
 import {
   type EntityManager,
   type FindOptionsRelations,
   type FindOptionsSelect,
   type FindOptionsWhere,
+  In,
   IsNull,
 } from 'typeorm';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { getScopedRepository } from '@/datasources/db/v2/get-scoped-repository.util';
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { isUniqueConstraintError } from '@/datasources/errors/helpers/is-unique-constraint-error.helper';
-import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-error';
-import { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
-import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
-import { SpaceAuditEventType } from '@/modules/spaces/domain/audit/entities/space-audit-event.entity';
-import { ISpaceAuditRepository } from '@/modules/spaces/domain/audit/space-audit.repository.interface';
-import type { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
-import { SpaceEncryptionService } from '@/modules/spaces/domain/space-encryption.service';
+import { z } from 'zod';
+import { getScopedRepository } from '#/datasources/db/v2/get-scoped-repository.util';
+import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
+import { isUniqueConstraintError } from '#/datasources/errors/helpers/is-unique-constraint-error.helper';
+import { UniqueConstraintError } from '#/datasources/errors/unique-constraint-error';
+import { SpaceSafe } from '#/modules/spaces/datasources/safes/entities/space-safes.entity.db';
+import { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
+import { SpaceAuditEventType } from '#/modules/spaces/domain/audit/entities/space-audit-event.entity';
+import { ISpaceAuditRepository } from '#/modules/spaces/domain/audit/space-audit.repository.interface';
+import type {
+  PreparedSpaceSafe,
+  SpaceSafesBySpaceId,
+} from '#/modules/spaces/domain/safes/entities/space-safe.entity';
+import type { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository.interface';
+import { SpaceEncryptionService } from '#/modules/spaces/domain/space-encryption.service';
+
+/** Own namespace: the single-int lock key space is shared process-wide. */
+const SEAT_LOCK_NAMESPACE = 1827;
+
+/**
+ * One seat per Safe address, however many chains it is on. `address` is
+ * non-deterministic ciphertext, so equality goes through the blind index
+ * where the row has one.
+ */
+const SEAT_KEY = 'COALESCE(safe.address_index, safe.address)';
+
+/** The driver hands raw rows back untyped, so both raw reads parse. */
+const SeatCountRowsSchema = z.array(
+  z.object({ spaceId: z.coerce.number(), seats: z.coerce.number() }),
+);
+const NewSeatRowsSchema = z.tuple([z.object({ newSeats: z.coerce.number() })]);
 
 export class SpaceSafesRepository implements ISpaceSafesRepository {
-  private readonly maxSafesPerSpace: number;
-
   public constructor(
     @Inject(PostgresDatabaseService)
     private readonly postgresDatabaseService: PostgresDatabaseService,
-    @Inject(IConfigurationService)
-    private readonly configurationService: IConfigurationService,
     @Inject(ISpaceAuditRepository)
     private readonly spaceAuditRepository: ISpaceAuditRepository,
     @Inject(SpaceEncryptionService)
     private readonly spaceEncryptionService: SpaceEncryptionService,
-  ) {
-    this.maxSafesPerSpace = this.configurationService.getOrThrow<number>(
-      'spaces.maxSafesPerSpace',
-    );
-  }
+  ) {}
 
   private async findSpaceForAuditOrFail(
     entityManager: EntityManager,
@@ -51,94 +65,124 @@ export class SpaceSafesRepository implements ISpaceSafesRepository {
     return space;
   }
 
-  public async create(args: {
-    spaceId: Space['id'];
-    actorUserId: number;
+  /** Serializes seat changes for a space until this transaction ends. */
+  public async lockSeats(
+    spaceId: Space['id'],
+    entityManager: EntityManager,
+  ): Promise<void> {
+    await entityManager.query('SELECT pg_advisory_xact_lock($1, $2)', [
+      SEAT_LOCK_NAMESPACE,
+      spaceId,
+    ]);
+  }
+
+  public async encryptRows(
+    spaceId: Space['id'],
     payload: Array<{
       chainId: SpaceSafe['chainId'];
       address: SpaceSafe['address'];
-    }>;
-  }): Promise<void> {
-    // A count is enough for the limit check — findBySpaceId would decrypt
-    // every existing row (one KMS call each) just to measure the length.
-    const spaceSafeRepository =
-      await this.postgresDatabaseService.getRepository(SpaceSafe);
-    const existingCount = await spaceSafeRepository.count({
-      where: { space: { id: args.spaceId } },
-    });
-    if (existingCount + args.payload.length > this.maxSafesPerSpace) {
-      const remaining = this.maxSafesPerSpace - existingCount;
-      throw new BadRequestException(
-        remaining > 0
-          ? `This Workspace only allows a maximum of ${this.maxSafesPerSpace} Safe Accounts. You can only add up to ${remaining} more.`
-          : `This Workspace only allows a maximum of ${this.maxSafesPerSpace} Safe Accounts.`,
-      );
-    }
-
-    // The owning space id is known before every insert, so ciphertext and
-    // blind index are computed up front — no two-phase dance like spaces.name.
-    const safesToInsert = await Promise.all(
-      args.payload.map(async (safe) => ({
-        space: { id: args.spaceId },
+    }>,
+  ): Promise<Array<PreparedSpaceSafe>> {
+    // The space id is known up front, so no two-phase dance like spaces.name.
+    return await Promise.all(
+      payload.map(async (safe) => ({
+        space: { id: spaceId },
         chainId: safe.chainId,
         address: (await this.spaceEncryptionService.encryptSafeAddress(
-          args.spaceId,
+          spaceId,
           safe.address,
         )) as SpaceSafe['address'],
         addressIndex: this.spaceEncryptionService.safeAddressIndex(
           safe.address,
         ),
+        plaintextAddress: safe.address,
       })),
     );
+  }
 
-    await this.postgresDatabaseService.transaction(async (entityManager) => {
-      try {
-        // Catch-on-conflict as before; duplicates now collide on the partial
-        // unique indexes (blind index for encrypted rows, plaintext for
-        // plaintext rows when encryption is disabled).
-        await entityManager.insert(SpaceSafe, safesToInsert);
-      } catch (err) {
-        if (isUniqueConstraintError(err)) {
-          throw new UniqueConstraintError(
-            `A SpaceSafe with the same chainId and address already exists: ${err.driverError.detail}`,
-          );
-        }
-        throw err;
+  public async insertRows(args: {
+    spaceId: Space['id'];
+    actorUserId: number;
+    rows: Array<PreparedSpaceSafe>;
+    entityManager: EntityManager;
+  }): Promise<void> {
+    const { entityManager } = args;
+    const safesToInsert = args.rows.map(
+      ({ plaintextAddress: _, ...row }) => row,
+    );
+
+    try {
+      // Catch-on-conflict as before; duplicates collide on the partial unique
+      // indexes (blind index for encrypted rows, plaintext for plaintext rows
+      // when encryption is disabled).
+      await entityManager.insert(SpaceSafe, safesToInsert);
+    } catch (err) {
+      if (isUniqueConstraintError(err)) {
+        throw new UniqueConstraintError(
+          `A SpaceSafe with the same chainId and address already exists: ${err.driverError.detail}`,
+        );
       }
+      throw err;
+    }
 
-      const space = await this.findSpaceForAuditOrFail(
-        entityManager,
-        args.spaceId,
-      );
-      await this.spaceAuditRepository.record(entityManager, {
-        spaceId: space.id,
-        spaceUuid: space.uuid,
-        eventType: SpaceAuditEventType.SAFE_ADDED,
-        actorUserId: args.actorUserId,
-        payload: {
-          safes: args.payload.map((safe) => ({
-            chainId: safe.chainId,
-            address: safe.address,
-          })),
-        },
-      });
+    const space = await this.findSpaceForAuditOrFail(
+      entityManager,
+      args.spaceId,
+    );
+    await this.spaceAuditRepository.record(entityManager, {
+      spaceId: space.id,
+      spaceUuid: space.uuid,
+      eventType: SpaceAuditEventType.SAFE_ADDED,
+      actorUserId: args.actorUserId,
+      payload: {
+        safes: args.rows.map((row) => ({
+          chainId: row.chainId,
+          address: row.plaintextAddress,
+        })),
+      },
     });
   }
 
   public async findBySpaceId(
     spaceId: Space['id'],
   ): Promise<Array<Pick<SpaceSafe, 'chainId' | 'address'>>> {
+    return (await this.findBySpaceIds([spaceId])).get(spaceId) ?? [];
+  }
+
+  public async findBySpaceIds(
+    spaceIds: Array<Space['id']>,
+  ): Promise<SpaceSafesBySpaceId> {
+    if (spaceIds.length === 0) {
+      return new Map();
+    }
     const spaceSafeRepository =
       await this.postgresDatabaseService.getRepository(SpaceSafe);
 
     const spaceSafes = await spaceSafeRepository.find({
-      select: { chainId: true, address: true },
-      where: { space: { id: spaceId } },
+      where: { space: In(spaceIds) },
+      loadRelationIds: { relations: ['space'], disableMixedMap: true },
     });
-    // Repository boundary: callers receive plaintext addresses.
-    return await this.spaceEncryptionService.decryptSpaceSafes(
-      spaceId,
+    const spaceSafesBySpaceId = groupBy(
       spaceSafes,
+      (spaceSafe) => spaceSafe.space?.id,
+    );
+
+    // Repository boundary: callers receive plaintext addresses.
+    const decryptedBySpace = await Promise.all(
+      spaceIds.map(async (spaceId) => ({
+        spaceId,
+        safes: await this.spaceEncryptionService.decryptSpaceSafes(
+          spaceId,
+          (spaceSafesBySpaceId[spaceId] ?? []).map(({ chainId, address }) => ({
+            chainId,
+            address,
+          })),
+        ),
+      })),
+    );
+
+    return new Map(
+      decryptedBySpace.map(({ spaceId, safes }) => [spaceId, safes]),
     );
   }
 
@@ -154,16 +198,136 @@ export class SpaceSafesRepository implements ISpaceSafesRepository {
     return spaceSafes;
   }
 
-  public async countBySpaceId(
+  /**
+   * Matches one Safe within a space. Encryption disabled: the address is
+   * plaintext and the index NULL. Otherwise `address` is non-deterministic
+   * ciphertext and only the blind index can be compared.
+   */
+  private safeMatch(
     spaceId: Space['id'],
+    safe: { chainId: SpaceSafe['chainId']; address: SpaceSafe['address'] },
+  ): FindOptionsWhere<SpaceSafe> {
+    const addressIndex = this.spaceEncryptionService.safeAddressIndex(
+      safe.address,
+    );
+    return addressIndex === null
+      ? {
+          space: { id: spaceId },
+          chainId: safe.chainId,
+          addressIndex: IsNull(),
+          address: safe.address,
+        }
+      : {
+          space: { id: spaceId },
+          chainId: safe.chainId,
+          addressIndex,
+        };
+  }
+
+  public async findSpaceIdsBySafe(safe: {
+    chainId: SpaceSafe['chainId'];
+    address: SpaceSafe['address'];
+  }): Promise<Array<Space['id']>> {
+    const repository =
+      await this.postgresDatabaseService.getRepository(SpaceSafe);
+    const addressIndex = this.spaceEncryptionService.safeAddressIndex(
+      safe.address,
+    );
+    const spaceSafes = await repository.find({
+      where:
+        addressIndex === null
+          ? {
+              chainId: safe.chainId,
+              addressIndex: IsNull(),
+              address: safe.address,
+            }
+          : { chainId: safe.chainId, addressIndex },
+      loadRelationIds: { relations: ['space'], disableMixedMap: true },
+    });
+    return spaceSafes.flatMap(({ space }) => (space ? [space.id] : []));
+  }
+
+  public async existsInSpace(
+    args: {
+      spaceId: Space['id'];
+      chainId: SpaceSafe['chainId'];
+      address: SpaceSafe['address'];
+    },
     entityManager?: EntityManager,
-  ): Promise<number> {
+  ): Promise<boolean> {
     const repository = await getScopedRepository(
       this.postgresDatabaseService,
       SpaceSafe,
       entityManager,
     );
-    return await repository.count({ where: { space: { id: spaceId } } });
+    return await repository.exists({
+      where: this.safeMatch(args.spaceId, args),
+    });
+  }
+
+  public async countSeatsBySpaceId(
+    spaceId: Space['id'],
+    entityManager?: EntityManager,
+  ): Promise<number> {
+    const seats = await this.countSeatsBySpaceIds([spaceId], entityManager);
+    return seats.get(spaceId) ?? 0;
+  }
+
+  public async countSeatsBySpaceIds(
+    spaceIds: Array<Space['id']>,
+    entityManager?: EntityManager,
+  ): Promise<Map<Space['id'], number>> {
+    if (spaceIds.length === 0) {
+      return new Map();
+    }
+    const repository = await getScopedRepository(
+      this.postgresDatabaseService,
+      SpaceSafe,
+      entityManager,
+    );
+    const rows = await repository
+      .createQueryBuilder('safe')
+      .select('safe.space_id', 'spaceId')
+      .addSelect(`COUNT(DISTINCT ${SEAT_KEY})`, 'seats')
+      .where('safe.space_id IN (:...spaceIds)', { spaceIds })
+      .groupBy('safe.space_id')
+      .getRawMany<unknown>();
+
+    return new Map(
+      SeatCountRowsSchema.parse(rows).map((row) => [row.spaceId, row.seats]),
+    );
+  }
+
+  public async countNewSeats(
+    args: {
+      spaceId: Space['id'];
+      addresses: Array<SpaceSafe['address']>;
+    },
+    entityManager?: EntityManager,
+  ): Promise<number> {
+    // Keyed as `SEAT_KEY` keys a stored row. The Set is load-bearing: one
+    // address on several chains is one seat, and `unnest` counts duplicates.
+    const seatKeys = new Set(
+      args.addresses.map(
+        (address) =>
+          this.spaceEncryptionService.safeAddressIndex(address) ?? address,
+      ),
+    );
+    const repository = await getScopedRepository(
+      this.postgresDatabaseService,
+      SpaceSafe,
+      entityManager,
+    );
+    const result = await repository.query<unknown>(
+      `SELECT COUNT(*) AS "newSeats"
+         FROM unnest($2::text[]) AS requested(seat_key)
+        WHERE NOT EXISTS (
+              SELECT 1 FROM "${repository.metadata.tableName}" safe
+               WHERE safe.space_id = $1
+                 AND ${SEAT_KEY} = requested.seat_key)`,
+      [args.spaceId, [...seatKeys]],
+    );
+    return NewSeatRowsSchema.parse(result)[0].newSeats;
   }
 
   public async find(args: {
@@ -216,25 +380,7 @@ export class SpaceSafesRepository implements ISpaceSafesRepository {
     }>;
   }): Promise<void> {
     const findSpaceSafesWhereClause: Array<FindOptionsWhere<SpaceSafe>> =
-      args.payload.map((safe) => {
-        const addressIndex = this.spaceEncryptionService.safeAddressIndex(
-          safe.address,
-        );
-        // Encryption disabled: match plaintext with a NULL index. Otherwise
-        // match on the blind index.
-        return addressIndex === null
-          ? {
-              space: { id: args.spaceId },
-              chainId: safe.chainId,
-              addressIndex: IsNull(),
-              address: safe.address,
-            }
-          : {
-              space: { id: args.spaceId },
-              chainId: safe.chainId,
-              addressIndex,
-            };
-      });
+      args.payload.map((safe) => this.safeMatch(args.spaceId, safe));
 
     await this.postgresDatabaseService.transaction(async (entityManager) => {
       const spaceSafes = await entityManager.find(SpaceSafe, {

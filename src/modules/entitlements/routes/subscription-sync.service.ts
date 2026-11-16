@@ -1,36 +1,38 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { CacheRouter } from '@/datasources/cache/cache.router';
+import { CacheRouter } from '#/datasources/cache/cache.router';
 import {
   CacheService,
   type ICacheService,
-} from '@/datasources/cache/cache.service.interface';
-import { isForeignKeyViolationError } from '@/datasources/errors/helpers/is-foreign-key-violation-error.helper';
-import { fromSecondsTimestamp } from '@/domain/common/utils/time';
-import { IBillingApi } from '@/domain/interfaces/billing-api.interface';
+} from '#/datasources/cache/cache.service.interface';
+import { isForeignKeyViolationError } from '#/datasources/errors/helpers/is-foreign-key-violation-error.helper';
+import { fromSecondsTimestamp } from '#/domain/common/utils/time';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
+} from '#/logging/logging.interface';
+import { asError } from '#/logging/utils';
+import { IBillingRepository } from '#/modules/billing/domain/billing.repository.interface';
 import {
   isPaymentLinkEventType,
-  isSubscriptionEventType,
+  triggersSubscriptionSync,
   WALLET_WEB_CUSTOMER_GROUP,
   type WebhookEvent,
-} from '@/modules/billing/domain/entities/webhook-event.entity';
-import type { FeatureType } from '@/modules/entitlements/domain/entities/feature.entity';
-import type { MaterializedSubscription } from '@/modules/entitlements/domain/entities/materialized-subscription.entity';
-import { IFeaturesRepository } from '@/modules/entitlements/domain/features.repository.interface';
+} from '#/modules/billing/domain/entities/webhook-event.entity';
+import type { FeatureType } from '#/modules/entitlements/domain/entities/feature.entity';
+import type { MaterializedSubscription } from '#/modules/entitlements/domain/entities/materialized-subscription.entity';
+import { IFeaturesRepository } from '#/modules/entitlements/domain/features.repository.interface';
 import {
   mapEventToSubscription,
   mapUpstreamSubscriptions,
-} from '@/modules/entitlements/domain/subscription.mapper';
-import type { ISubscriptionSyncService } from '@/modules/entitlements/domain/subscription-sync.service.interface';
-import { ISubscriptionsRepository } from '@/modules/entitlements/domain/subscriptions.repository.interface';
-import { EntitlementsService } from '@/modules/entitlements/routes/entitlements.service';
-import type { Space } from '@/modules/spaces/domain/entities/space.entity';
-import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
-import { UuidSchema } from '@/validation/entities/schemas/uuid.schema';
+} from '#/modules/entitlements/domain/subscription.mapper';
+import type { ISubscriptionSyncService } from '#/modules/entitlements/domain/subscription-sync.service.interface';
+import { ISubscriptionsRepository } from '#/modules/entitlements/domain/subscriptions.repository.interface';
+import { EntitlementsService } from '#/modules/entitlements/routes/entitlements.service';
+import type { Space } from '#/modules/spaces/domain/entities/space.entity';
+import { ISpaceSetupApplier } from '#/modules/spaces/domain/setup/space-setup-applier.interface';
+import { ISpacesRepository } from '#/modules/spaces/domain/spaces.repository.interface';
+import { UuidSchema } from '#/validation/entities/schemas/uuid.schema';
 
 /**
  * Materializes upstream subscription state on billing webhooks.
@@ -61,8 +63,8 @@ import { UuidSchema } from '@/validation/entities/schemas/uuid.schema';
 @Injectable()
 export class SubscriptionSyncService implements ISubscriptionSyncService {
   public constructor(
-    @Inject(IBillingApi)
-    private readonly billingApi: IBillingApi,
+    @Inject(IBillingRepository)
+    private readonly billingRepository: IBillingRepository,
     @Inject(EntitlementsService)
     private readonly entitlementsService: EntitlementsService,
     @Inject(ISpacesRepository)
@@ -75,6 +77,8 @@ export class SubscriptionSyncService implements ISubscriptionSyncService {
     private readonly cacheService: ICacheService,
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
+    @Inject(ISpaceSetupApplier)
+    private readonly spaceSetupApplier: ISpaceSetupApplier,
   ) {}
 
   public async handleWebhook(event: WebhookEvent): Promise<void> {
@@ -84,7 +88,7 @@ export class SubscriptionSyncService implements ISubscriptionSyncService {
       );
       return;
     }
-    if (!isSubscriptionEventType(event.type)) {
+    if (!triggersSubscriptionSync(event.type)) {
       this.loggingService.debug(
         `Ignoring billing webhook event type ${event.type} (event ${event.id}): it is not about a subscription`,
       );
@@ -98,6 +102,7 @@ export class SubscriptionSyncService implements ISubscriptionSyncService {
 
     try {
       await this.syncSubscriptions({ event, ...space });
+      await this.applyPendingSetup(space.spaceId);
     } catch (error) {
       // Deleted between resolving the space and writing: retrying cannot fix it.
       if (
@@ -111,6 +116,57 @@ export class SubscriptionSyncService implements ISubscriptionSyncService {
       }
       throw error;
     }
+  }
+
+  public async syncSpace(args: {
+    spaceId: Space['id'];
+    upstreamCustomerId: string;
+  }): Promise<void> {
+    const features = await this.featuresRepository.getFeatures();
+    const authoritative = await this.readAuthoritativeState({
+      ...args,
+      featureTypeByKey: new Map(
+        features.map((feature) => [feature.key, feature.type]),
+      ),
+    });
+    if (authoritative.subscriptions.length === 0) {
+      this.loggingService.warn(
+        `Found no subscriptions upstream for space ${args.spaceId}; nothing materialized`,
+      );
+      return;
+    }
+    // Not materialized means a concurrent delivery wrote newer state.
+    await this.entitlementsService.materializeAuthoritative({
+      spaceId: args.spaceId,
+      subscriptions: authoritative.subscriptions,
+      observedEventAt: authoritative.observedEventAt,
+      triggerEventAt: null,
+    });
+  }
+
+  /**
+   * Applies the space's pending setup once its subscription is trialing or
+   * active. A failure is logged, not thrown: the subscription is already
+   * stored, so the webhook must still be acknowledged, and the next read of
+   * the setup retries the apply.
+   */
+  private async applyPendingSetup(spaceId: Space['id']): Promise<void> {
+    try {
+      if (await this.hasLiveSubscription(spaceId)) {
+        await this.spaceSetupApplier.apply(spaceId);
+      }
+    } catch (error) {
+      this.loggingService.error(
+        `Failed to apply the pending setup of space ${spaceId}: ${asError(error).message}`,
+      );
+    }
+  }
+
+  /** Trialing or active: the statuses that hold the active plan. */
+  private async hasLiveSubscription(spaceId: Space['id']): Promise<boolean> {
+    const { activePlanId } =
+      await this.subscriptionsRepository.getSubscriptionSummary(spaceId);
+    return activePlanId !== null;
   }
 
   /**
@@ -175,6 +231,7 @@ export class SubscriptionSyncService implements ISubscriptionSyncService {
       event: args.event,
       featureTypeByKey,
       onWarning: (message) => this.loggingService.warn(message),
+      onError: (message) => this.loggingService.error(message),
     });
 
     if (eventSubscription !== null && eventAt !== null) {
@@ -252,12 +309,13 @@ export class SubscriptionSyncService implements ISubscriptionSyncService {
     );
     await this.clearSubscriptionsCache(args.upstreamCustomerId);
     const subscriptions = mapUpstreamSubscriptions({
-      subscriptions: await this.billingApi.getSubscriptionsByCustomerId({
+      subscriptions: await this.billingRepository.getSubscriptionsByCustomerId({
         upstreamCustomerId: args.upstreamCustomerId,
         status: 'all',
       }),
       featureTypeByKey: args.featureTypeByKey,
       onWarning: (message) => this.loggingService.warn(message),
+      onError: (message) => this.loggingService.error(message),
     });
     return { observedEventAt, subscriptions };
   }
@@ -265,12 +323,7 @@ export class SubscriptionSyncService implements ISubscriptionSyncService {
   private async clearSubscriptionsCache(
     upstreamCustomerId: string,
   ): Promise<void> {
-    await this.cacheService.deleteByKey(
-      CacheRouter.getBillingSubscriptionsCacheDir({
-        upstreamCustomerId,
-        status: 'all',
-      }).key,
-    );
+    await this.billingRepository.clearSubscriptions({ upstreamCustomerId });
   }
 
   /**

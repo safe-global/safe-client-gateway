@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
 
 export type FullAppData = z.infer<typeof FullAppDataSchema>;
@@ -9,7 +10,9 @@ export const FullAppDataSchema = z.object({
     .default(null)
     .transform((jsonString, ctx) => {
       try {
-        if (!jsonString) return null;
+        if (!jsonString) {
+          return null;
+        }
         return JSON.parse(jsonString);
       } catch {
         ctx.addIssue({

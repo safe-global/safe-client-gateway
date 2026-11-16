@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import type { IBuilder } from '@/__tests__/builder';
-import { Builder } from '@/__tests__/builder';
-import { subscriptionPlanBuilder } from '@/datasources/billing-api/entities/__tests__/plan.builder';
-import type { Subscription } from '@/datasources/billing-api/entities/subscription.entity';
-import { SubscriptionStatuses } from '@/datasources/billing-api/entities/subscription.entity';
-import { toSecondsTimestamp } from '@/domain/common/utils/time';
+import type { IBuilder } from '#/__tests__/builder';
+import { Builder } from '#/__tests__/builder';
+import { subscriptionPlanBuilder } from '#/datasources/billing-api/entities/__tests__/plan.builder';
+import type { Subscription } from '#/datasources/billing-api/entities/subscription.entity';
+import { SubscriptionStatuses } from '#/datasources/billing-api/entities/subscription.entity';
+import { toSecondsTimestamp } from '#/domain/common/utils/time';
 
 export function subscriptionBuilder(): IBuilder<Subscription> {
   return new Builder<Subscription>()
@@ -20,5 +20,6 @@ export function subscriptionBuilder(): IBuilder<Subscription> {
     .with('cancelAt', null)
     .with('currentPeriodStart', toSecondsTimestamp(faker.date.recent()))
     .with('currentPeriodEnd', toSecondsTimestamp(faker.date.soon()))
-    .with('metadata', { [faker.word.noun()]: faker.word.sample() });
+    .with('metadata', { [faker.word.noun()]: faker.word.sample() })
+    .with('hasPaymentMethod', faker.datatype.boolean());
 }

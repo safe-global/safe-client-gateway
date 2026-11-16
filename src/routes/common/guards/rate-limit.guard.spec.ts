@@ -4,8 +4,8 @@ import { faker } from '@faker-js/faker';
 import type { ExecutionContext } from '@nestjs/common';
 import { BadRequestException, HttpException, HttpStatus } from '@nestjs/common';
 import type { MockedObject } from 'vitest';
-import type { ICacheService } from '@/datasources/cache/cache.service.interface';
-import type { ILoggingService } from '@/logging/logging.interface';
+import type { ICacheService } from '#/datasources/cache/cache.service.interface';
+import type { ILoggingService } from '#/logging/logging.interface';
 import { RateLimitGuard } from './rate-limit.guard';
 
 const mockCacheService = vi.mocked({

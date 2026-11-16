@@ -8,20 +8,20 @@ import { getAddress } from 'viem';
 import {
   initTestApplication,
   TestAppProvider,
-} from '@/__tests__/test-app.provider';
-import { createTestModule } from '@/__tests__/testing-module';
-import configuration from '@/config/entities/__tests__/configuration';
-import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
-import { nameBuilder } from '@/domain/common/entities/name.builder';
+} from '#/__tests__/test-app.provider';
+import { createTestModule } from '#/__tests__/testing-module';
+import configuration from '#/config/entities/__tests__/configuration';
+import { IJwtService } from '#/datasources/jwt/jwt.service.interface';
+import { nameBuilder } from '#/domain/common/entities/name.builder';
 import {
   oidcAuthPayloadDtoBuilder,
   siweAuthPayloadDtoBuilder,
-} from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
-import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
-import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
-import { ELEVATION_REQUIRED_ERROR } from '@/routes/common/auth/elevation.guard';
-import { fakeEmailAddress } from '@/validation/entities/schemas/__tests__/email-address.builder';
+} from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { NotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/notifications.repository.module';
+import { TestNotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/test.notification.repository.module';
+import { IUsersRepository } from '#/modules/users/domain/users.repository.interface';
+import { ELEVATION_REQUIRED_ERROR } from '#/routes/common/auth/elevation.guard';
+import { fakeEmailAddress } from '#/validation/entities/schemas/__tests__/email-address.builder';
 
 // Deliberately not the production default (30 minutes), so that a guard which
 // ignored configuration and hardcoded the default would fail these tests.
@@ -78,6 +78,14 @@ const GATED_ROUTES: Array<Route> = [
     method: 'delete',
     path: (id) => `/v1/spaces/${id}`,
   },
+  // A stolen session could add an invite to a pending setup that the real
+  // user later starts.
+  {
+    name: 'PUT /v1/spaces/:id/setup',
+    method: 'put',
+    path: (id) => `/v1/spaces/${id}/setup`,
+    body: {},
+  },
   {
     name: 'POST /v1/spaces/:spaceId/safes',
     method: 'post',
@@ -102,10 +110,51 @@ const GATED_ROUTES: Array<Route> = [
     path: (id) =>
       `/v1/spaces/${id}/address-book/${getAddress(faker.finance.ethereumAddress())}`,
   },
+  // Tags are shared by the whole Workspace, so any member's tag edit is gated
+  // even though members (not only admins) may make it.
+  {
+    name: 'POST /v1/spaces/:spaceId/address-book/tags',
+    method: 'post',
+    path: (id) => `/v1/spaces/${id}/address-book/tags`,
+    body: { name: faker.word.noun() },
+  },
+  {
+    name: 'PUT /v1/spaces/:spaceId/address-book/tags',
+    method: 'put',
+    path: (id) => `/v1/spaces/${id}/address-book/tags`,
+    body: { items: [] },
+  },
+  {
+    name: 'PATCH /v1/spaces/:spaceId/address-book/tags/:tagId',
+    method: 'patch',
+    path: (id) => `/v1/spaces/${id}/address-book/tags/1`,
+    body: { name: faker.word.noun() },
+  },
+  {
+    name: 'DELETE /v1/spaces/:spaceId/address-book/tags/:tagId',
+    method: 'delete',
+    path: (id) => `/v1/spaces/${id}/address-book/tags/1`,
+  },
   {
     name: 'PUT /v1/spaces/:spaceId/address-book/requests/:requestId/approve',
     method: 'put',
     path: (id) => `/v1/spaces/${id}/address-book/requests/1/approve`,
+  },
+  // Changes what the whole Workspace is billed, so gated like the rest despite
+  // living under /v1/billing. Its sibling checkout-url route is gated below
+  // for the same reason; the Stripe portal that can cancel is not gated yet,
+  // that is pending.
+  {
+    name: 'PATCH /v1/billing/spaces/:spaceId/subscriptions/:subscriptionId',
+    method: 'patch',
+    path: (id) => `/v1/billing/spaces/${id}/subscriptions/sub_1`,
+    body: { planId: 'price_1' },
+  },
+  {
+    name: 'GET /v1/billing/spaces/:spaceId/payment-links/:paymentLinkId/checkout-url',
+    method: 'get',
+    path: (id) =>
+      `/v1/billing/spaces/${id}/payment-links/link_1/checkout-url?returnUrl=https://example.com`,
   },
 ];
 
@@ -131,10 +180,28 @@ const UNGATED_ROUTES: Array<Route> = [
     path: () => '/v1/spaces',
     body: { name: nameBuilder() },
   },
+  // Like POST /v1/spaces: a brand-new Workspace holding only the caller's own
+  // data, created mid-onboarding.
+  {
+    name: 'POST /v1/spaces/setup',
+    method: 'post',
+    path: () => '/v1/spaces/setup',
+    body: {},
+  },
   {
     name: 'GET /v1/spaces/:id',
     method: 'get',
     path: (id) => `/v1/spaces/${id}`,
+  },
+  {
+    name: 'GET /v1/spaces/:id/setup',
+    method: 'get',
+    path: (id) => `/v1/spaces/${id}/setup`,
+  },
+  {
+    name: 'GET /v1/spaces/entitlements',
+    method: 'get',
+    path: () => '/v1/spaces/entitlements',
   },
   {
     name: 'GET /v1/spaces/:spaceId/members',
@@ -142,9 +209,33 @@ const UNGATED_ROUTES: Array<Route> = [
     path: (id) => `/v1/spaces/${id}/members`,
   },
   {
+    name: 'GET /v1/spaces/safes',
+    method: 'get',
+    path: () => '/v1/spaces/safes',
+  },
+  {
     name: 'GET /v1/spaces/:spaceId/safes',
     method: 'get',
     path: (id) => `/v1/spaces/${id}/safes`,
+  },
+  {
+    name: 'POST /v1/spaces/:spaceId/chains/:chainId/relay',
+    method: 'post',
+    path: (id) => `/v1/spaces/${id}/chains/1/relay`,
+    body: {},
+  },
+  {
+    name: 'GET /v1/spaces/:spaceId/chains/:chainId/security/:safeAddress/recipient/:recipientAddress',
+    method: 'get',
+    path: (id) =>
+      `/v1/spaces/${id}/chains/1/security/${getAddress(faker.finance.ethereumAddress())}/recipient/${getAddress(faker.finance.ethereumAddress())}`,
+  },
+  {
+    name: 'POST /v1/spaces/:spaceId/chains/:chainId/security/:safeAddress/counterparty-analysis',
+    method: 'post',
+    path: (id) =>
+      `/v1/spaces/${id}/chains/1/security/${getAddress(faker.finance.ethereumAddress())}/counterparty-analysis`,
+    body: {},
   },
   {
     name: 'GET /v1/spaces/:spaceId/address-book',
@@ -192,6 +283,17 @@ const UNGATED_ROUTES: Array<Route> = [
     method: 'post',
     path: (id) => `/v1/spaces/${id}/members/1/invite/renew`,
   },
+  // Like proposing a contact, storing a policy configuration request only
+  // stores a proposal: nothing takes effect until the Safe owners sign it
+  // on-chain. A row must hash to its root, and the per-Space cap bounds how
+  // many a stolen session can store.
+  {
+    name: 'POST /v1/spaces/:spaceId/chains/:chainId/safes/:safeAddress/policies/requests',
+    method: 'post',
+    path: (id) =>
+      `/v1/spaces/${id}/chains/11155111/safes/${getAddress(faker.finance.ethereumAddress())}/policies/requests`,
+    body: {},
+  },
   {
     name: 'POST /v1/spaces/:spaceId/address-book/requests (propose contact)',
     method: 'post',
@@ -230,6 +332,16 @@ describe('Workspace step-up elevation (ElevationGuard)', () => {
         // Explicit rather than inherited: with the flag off the guard admits
         // everything, and every assertion below would pass vacuously.
         mfaStepUp: true,
+        // Without it the gated plan change below would 404.
+        billingService: true,
+      },
+      billing: {
+        ...defaultConfiguration.billing,
+        webhook: {
+          ...defaultConfiguration.billing.webhook,
+          // The app refuses to boot with the flag on and no key.
+          publicKey: 'dummy-public-key',
+        },
       },
     });
 

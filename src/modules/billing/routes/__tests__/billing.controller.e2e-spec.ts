@@ -8,32 +8,45 @@ import type { MockedObject } from 'vitest';
 import {
   initTestApplication,
   TestAppProvider,
-} from '@/__tests__/test-app.provider';
-import { createTestModule } from '@/__tests__/testing-module';
-import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import configuration from '@/config/entities/__tests__/configuration';
+} from '#/__tests__/test-app.provider';
+import { createTestModule } from '#/__tests__/testing-module';
+import { checkGuardIsApplied } from '#/__tests__/util/check-guard';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import configuration from '#/config/entities/__tests__/configuration';
 import {
   checkoutSessionBuilder,
   checkoutSessionResultBuilder,
-} from '@/datasources/billing-api/entities/__tests__/checkout-session.builder';
-import { paymentLinkBuilder } from '@/datasources/billing-api/entities/__tests__/payment-link.builder';
-import { planBuilder } from '@/datasources/billing-api/entities/__tests__/plan.builder';
-import { subscriptionBuilder } from '@/datasources/billing-api/entities/__tests__/subscription.builder';
-import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
+} from '#/datasources/billing-api/entities/__tests__/checkout-session.builder';
+import {
+  paymentLinkBuilder,
+  paymentLinkPricedAt,
+  trialPaymentLinkBuilder,
+} from '#/datasources/billing-api/entities/__tests__/payment-link.builder';
+import { planBuilder } from '#/datasources/billing-api/entities/__tests__/plan.builder';
+import { subscriptionBuilder } from '#/datasources/billing-api/entities/__tests__/subscription.builder';
+import {
+  subscriptionUpdatePreviewBuilder,
+  updateSubscriptionResultBuilder,
+} from '#/datasources/billing-api/entities/__tests__/subscription-update.builder';
+import type { PaymentLink } from '#/datasources/billing-api/entities/payment-link.entity';
+import type { Subscription } from '#/datasources/billing-api/entities/subscription.entity';
+import type { SubscriptionUpdatePreview } from '#/datasources/billing-api/entities/subscription-update.entity';
+import type { FakeCacheService } from '#/datasources/cache/__tests__/fake.cache.service';
+import { CacheService } from '#/datasources/cache/cache.service.interface';
+import { IJwtService } from '#/datasources/jwt/jwt.service.interface';
 import {
   type INetworkService,
   NetworkService,
-} from '@/datasources/network/network.service.interface';
-import { nameBuilder } from '@/domain/common/entities/name.builder';
-import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
-import { BillingController } from '@/modules/billing/routes/billing.controller';
-import { BillingWebhookAuthGuard } from '@/modules/billing/routes/guards/billing-webhook-auth.guard';
-import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
-import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
-import { SpacesCreationRateLimitGuard } from '@/modules/spaces/routes/guards/spaces-creation-rate-limit.guard';
-import { rawify } from '@/validation/entities/raw.entity';
+} from '#/datasources/network/network.service.interface';
+import { nameBuilder } from '#/domain/common/entities/name.builder';
+import { siweAuthPayloadDtoBuilder } from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { AuthGuard } from '#/modules/auth/routes/guards/auth.guard';
+import { BillingController } from '#/modules/billing/routes/billing.controller';
+import { BillingWebhookAuthGuard } from '#/modules/billing/routes/guards/billing-webhook-auth.guard';
+import { NotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/notifications.repository.module';
+import { TestNotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/test.notification.repository.module';
+import { SpacesCreationRateLimitGuard } from '#/modules/spaces/routes/guards/spaces-creation-rate-limit.guard';
+import { rawify } from '#/validation/entities/raw.entity';
 
 describe('BillingController', () => {
   let app: INestApplication<Server>;
@@ -41,6 +54,7 @@ describe('BillingController', () => {
   let networkService: MockedObject<INetworkService>;
   let billingBaseUri: string;
   let postLoginRedirectUri: string;
+  let fakeCacheService: FakeCacheService;
 
   beforeAll(async () => {
     vi.resetAllMocks();
@@ -53,6 +67,14 @@ describe('BillingController', () => {
         auth: true,
         users: true,
         billingService: true,
+      },
+      entitlements: {
+        ...defaultConfiguration.entitlements,
+        // In the past, so a workspace a spec creates now reads as
+        // post-enforcement and is offered the standard trial rather than the
+        // legacy grace. The shared default is a future date instead (safe for
+        // suites unrelated to billing: enforcement stays inactive).
+        enforcementStartsAt: new Date('2020-01-01T00:00:00Z'),
       },
       billing: {
         ...defaultConfiguration.billing,
@@ -84,6 +106,7 @@ describe('BillingController', () => {
 
     jwtService = moduleFixture.get<IJwtService>(IJwtService);
     networkService = moduleFixture.get(NetworkService);
+    fakeCacheService = moduleFixture.get<FakeCacheService>(CacheService);
     const configurationService = moduleFixture.get<IConfigurationService>(
       IConfigurationService,
     );
@@ -99,6 +122,8 @@ describe('BillingController', () => {
   afterEach(() => {
     networkService.get.mockReset();
     networkService.post.mockReset();
+    networkService.patch.mockReset();
+    fakeCacheService.clear();
   });
 
   afterAll(async () => {
@@ -124,6 +149,45 @@ describe('BillingController', () => {
     return { accessToken, spaceId: createSpaceResponse.body.uuid };
   }
 
+  /**
+   * Serves the payment-link catalog, split the way the datasource asks for it:
+   * `spaceSpecific` answers the customer-scoped call, `general` the shared one.
+   * `subscriptions` and `preview` answer the two customer-scoped reads the
+   * plan-change endpoints add on top of it.
+   */
+  function mockPaymentLinkCatalog(args: {
+    general?: Array<PaymentLink>;
+    spaceSpecific?: Array<PaymentLink>;
+    subscriptions?: Array<Subscription>;
+    preview?: SubscriptionUpdatePreview;
+  }): void {
+    networkService.get.mockImplementation(({ url, networkRequest }) => {
+      if (url === `${billingBaseUri}/api/v1/payment-links`) {
+        const customerId = (
+          networkRequest?.params as { customerId?: string } | undefined
+        )?.customerId;
+        return Promise.resolve({
+          data: rawify({
+            paymentLinks: customerId
+              ? (args.spaceSpecific ?? [])
+              : (args.general ?? []),
+          }),
+          status: 200,
+        });
+      }
+      if (args.preview && url.endsWith('/preview-update')) {
+        return Promise.resolve({ data: rawify(args.preview), status: 200 });
+      }
+      if (args.subscriptions && url.endsWith('/subscriptions')) {
+        return Promise.resolve({
+          data: rawify({ subscriptions: args.subscriptions }),
+          status: 200,
+        });
+      }
+      return Promise.reject(new Error(`Could not match ${url}`));
+    });
+  }
+
   it('should require authentication for every space/session/plan endpoint', () => {
     const endpoints = [
       BillingController.prototype.getSubscriptions,
@@ -132,6 +196,8 @@ describe('BillingController', () => {
       BillingController.prototype.getSpacePaymentLinks,
       BillingController.prototype.getCheckoutUrl,
       BillingController.prototype.getCheckoutSession,
+      BillingController.prototype.previewSubscriptionUpdate,
+      BillingController.prototype.updateSubscription,
     ];
     for (const fn of endpoints) {
       checkGuardIsApplied(AuthGuard, fn);
@@ -176,7 +242,9 @@ describe('BillingController', () => {
 
   it('GET /v1/billing/spaces/:spaceId/subscriptions returns the space subscriptions', async () => {
     const { accessToken, spaceId } = await registerAndCreateSpace();
-    const subscription = subscriptionBuilder().build();
+    const subscription = subscriptionBuilder()
+      .with('hasPaymentMethod', true)
+      .build();
     networkService.get.mockImplementation(({ url }) => {
       if (url.startsWith(`${billingBaseUri}/api/v1/customers/`)) {
         return Promise.resolve({
@@ -194,6 +262,7 @@ describe('BillingController', () => {
       .expect(({ body }) => {
         expect(body).toHaveLength(1);
         expect(body[0].id).toBe(subscription.id);
+        expect(body[0].hasPaymentMethod).toBe(true);
       });
   });
 
@@ -248,24 +317,12 @@ describe('BillingController', () => {
       .with('id', sharedId)
       .with('active', false)
       .build();
-    const onlyGeneralLink = paymentLinkBuilder().build();
+    // A never-subscribed space is not offered a plain paid link
+    const onlyGeneralLink = trialPaymentLinkBuilder(false).build();
 
-    networkService.get.mockImplementation(({ url, networkRequest }) => {
-      if (url === `${billingBaseUri}/api/v1/payment-links`) {
-        const hasCustomerId = Boolean(
-          (networkRequest?.params as { customerId?: string } | undefined)
-            ?.customerId,
-        );
-        return Promise.resolve({
-          data: rawify({
-            paymentLinks: hasCustomerId
-              ? [spaceLink]
-              : [generalLink, onlyGeneralLink],
-          }),
-          status: 200,
-        });
-      }
-      return Promise.reject(new Error(`Could not match ${url}`));
+    mockPaymentLinkCatalog({
+      general: [generalLink, onlyGeneralLink],
+      spaceSpecific: [spaceLink],
     });
 
     await request(app.getHttpServer())
@@ -283,7 +340,91 @@ describe('BillingController', () => {
       });
   });
 
+  it('GET /v1/billing/spaces/:spaceId/payment-links returns 403 without an access token', async () => {
+    const { spaceId } = await registerAndCreateSpace();
+
+    await request(app.getHttpServer())
+      .get(`/v1/billing/spaces/${spaceId}/payment-links`)
+      .expect(403);
+
+    expect(networkService.get).not.toHaveBeenCalled();
+  });
+
+  it('GET /v1/billing/spaces/:spaceId/payment-links drops the offers the space is not entitled to', async () => {
+    const { accessToken, spaceId } = await registerAndCreateSpace();
+    // The space is created now, and the test configuration's enforcement date
+    // is in the past, so it is a post-enforcement, never-subscribed
+    // workspace: only the standard trial — never the legacy grace, and no
+    // paid link until it has picked a plan.
+    const graceLink = trialPaymentLinkBuilder(true).build();
+    const trialLink = trialPaymentLinkBuilder(false).build();
+    const paidLink = paymentLinkBuilder().build();
+
+    mockPaymentLinkCatalog({ general: [graceLink, trialLink, paidLink] });
+
+    await request(app.getHttpServer())
+      .get(`/v1/billing/spaces/${spaceId}/payment-links`)
+      .set('Cookie', [`access_token=${accessToken}`])
+      .expect(200)
+      .expect(({ body }) => {
+        expect(body.map((link: { id: string }) => link.id)).toEqual([
+          trialLink.id,
+        ]);
+      });
+  });
+
+  it('GET /v1/billing/spaces/:spaceId/payment-links does not return the payment link url', async () => {
+    const { accessToken, spaceId } = await registerAndCreateSpace();
+    const spaceLink = paymentLinkBuilder().build();
+    const upstreamLink = { ...spaceLink, url: faker.internet.url() };
+
+    mockPaymentLinkCatalog({ spaceSpecific: [upstreamLink] });
+
+    await request(app.getHttpServer())
+      .get(`/v1/billing/spaces/${spaceId}/payment-links`)
+      .set('Cookie', [`access_token=${accessToken}`])
+      .expect(200)
+      .expect(({ body }) => {
+        expect(body).toEqual([expect.objectContaining({ id: spaceLink.id })]);
+        expect(body[0]).not.toHaveProperty('url');
+      });
+  });
+
+  it('GET /v1/billing/spaces/:spaceId/payment-links always offers a space-specific link', async () => {
+    const { accessToken, spaceId } = await registerAndCreateSpace();
+    // Negotiated for this customer, untagged: the general-catalog enforcement
+    // filter would drop it, but a space-specific link is not subject to it.
+    const negotiatedLink = paymentLinkBuilder()
+      .with('trialPeriodDays', faker.number.int({ min: 1, max: 365 }))
+      .build();
+
+    mockPaymentLinkCatalog({ spaceSpecific: [negotiatedLink] });
+
+    await request(app.getHttpServer())
+      .get(`/v1/billing/spaces/${spaceId}/payment-links`)
+      .set('Cookie', [`access_token=${accessToken}`])
+      .expect(200)
+      .expect(({ body }) => {
+        expect(body.map((link: { id: string }) => link.id)).toEqual([
+          negotiatedLink.id,
+        ]);
+      });
+  });
+
   describe('GET /v1/billing/spaces/:spaceId/payment-links/:paymentLinkId/checkout-url', () => {
+    it('returns 403 without an access token', async () => {
+      const { spaceId } = await registerAndCreateSpace();
+
+      await request(app.getHttpServer())
+        .get(
+          `/v1/billing/spaces/${spaceId}/payment-links/${faker.string.alphanumeric(20)}/checkout-url`,
+        )
+        .query({ returnUrl: postLoginRedirectUri })
+        .expect(403);
+
+      expect(networkService.post).not.toHaveBeenCalled();
+    });
+
     it('returns 422 for a malformed paymentLinkId', async () => {
       const { accessToken, spaceId } = await registerAndCreateSpace();
 
@@ -314,6 +455,12 @@ describe('BillingController', () => {
       const { accessToken, spaceId } = await registerAndCreateSpace();
       const paymentLinkId = faker.string.alphanumeric(20);
       const checkoutSessionResult = checkoutSessionResultBuilder().build();
+      // The standard trial, which a post-enforcement never-subscribed space is
+      // offered — so the checkout is not rejected by the offer filter.
+      const offeredLink = trialPaymentLinkBuilder(false)
+        .with('id', paymentLinkId)
+        .build();
+      mockPaymentLinkCatalog({ general: [offeredLink] });
       networkService.post.mockImplementation(({ url }) => {
         if (
           url ===
@@ -337,6 +484,25 @@ describe('BillingController', () => {
         .expect(({ body }) => {
           expect(body.sessionId).toBe(checkoutSessionResult.sessionId);
         });
+    });
+
+    it('returns 403 for a payment link the space is not offered', async () => {
+      const { accessToken, spaceId } = await registerAndCreateSpace();
+      // The legacy grace, which a space created now is not entitled to.
+      const graceLink = trialPaymentLinkBuilder(true)
+        .with('id', faker.string.alphanumeric(20))
+        .build();
+      mockPaymentLinkCatalog({ general: [graceLink] });
+
+      await request(app.getHttpServer())
+        .get(
+          `/v1/billing/spaces/${spaceId}/payment-links/${graceLink.id}/checkout-url`,
+        )
+        .query({ returnUrl: postLoginRedirectUri })
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(403);
+
+      expect(networkService.post).not.toHaveBeenCalled();
     });
   });
 
@@ -375,6 +541,262 @@ describe('BillingController', () => {
           expect(body.id).toBe(sessionId);
           expect(body.url).toBeNull();
         });
+    });
+  });
+
+  describe('plan change', () => {
+    /**
+     * A space created here is post-enforcement and never subscribed, so the
+     * standard trial is the only link the offer filter hands it — and so the
+     * only plan these specs can target. Offer rules: `billing.service.spec.ts`.
+     */
+    function offeredLinkPricedAt(planId: string): PaymentLink {
+      return trialPaymentLinkBuilder(false)
+        .with('lineItems', paymentLinkPricedAt(planId).build().lineItems)
+        .build();
+    }
+
+    it('GET .../preview-update returns the prorated quote', async () => {
+      const { accessToken, spaceId } = await registerAndCreateSpace();
+      const planId = faker.string.alphanumeric(20);
+      const subscription = subscriptionBuilder()
+        .with('status', 'active')
+        .build();
+      const preview = subscriptionUpdatePreviewBuilder().build();
+      mockPaymentLinkCatalog({
+        general: [offeredLinkPricedAt(planId)],
+        subscriptions: [subscription],
+        preview,
+      });
+
+      await request(app.getHttpServer())
+        .get(
+          `/v1/billing/spaces/${spaceId}/subscriptions/${subscription.id}/preview-update`,
+        )
+        .query({ planId })
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200)
+        // The whole body: the endpoint passes the quote through unchanged.
+        .expect(({ body }) => {
+          expect(body).toEqual(preview);
+        });
+    });
+
+    it('GET .../preview-update returns 403 for a plan the space is not offered', async () => {
+      const { accessToken, spaceId } = await registerAndCreateSpace();
+      const subscription = subscriptionBuilder()
+        .with('status', 'active')
+        .build();
+      mockPaymentLinkCatalog({
+        general: [offeredLinkPricedAt(faker.string.alphanumeric(20))],
+        subscriptions: [subscription],
+      });
+
+      await request(app.getHttpServer())
+        .get(
+          `/v1/billing/spaces/${spaceId}/subscriptions/${subscription.id}/preview-update`,
+        )
+        .query({ planId: faker.string.alphanumeric(20) })
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(403);
+    });
+
+    it('GET .../preview-update returns 404 for a subscription of another customer', async () => {
+      const { accessToken, spaceId } = await registerAndCreateSpace();
+      const planId = faker.string.alphanumeric(20);
+      mockPaymentLinkCatalog({
+        general: [offeredLinkPricedAt(planId)],
+        subscriptions: [],
+      });
+
+      await request(app.getHttpServer())
+        .get(
+          `/v1/billing/spaces/${spaceId}/subscriptions/${faker.string.alphanumeric(20)}/preview-update`,
+        )
+        .query({ planId })
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(404);
+    });
+
+    it('GET .../preview-update returns 422 for a malformed subscriptionId', async () => {
+      const { accessToken, spaceId } = await registerAndCreateSpace();
+      await request(app.getHttpServer())
+        .get(
+          `/v1/billing/spaces/${spaceId}/subscriptions/${encodeURIComponent('not valid!!')}/preview-update`,
+        )
+        .query({ planId: faker.string.alphanumeric(20) })
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(422);
+    });
+
+    it('PATCH .../subscriptions/:subscriptionId moves the plan and sends the derived payment link', async () => {
+      const { accessToken, spaceId } = await registerAndCreateSpace();
+      const planId = faker.string.alphanumeric(20);
+      const offeredLink = offeredLinkPricedAt(planId);
+      const subscription = subscriptionBuilder()
+        .with('status', 'active')
+        .build();
+      mockPaymentLinkCatalog({
+        general: [offeredLink],
+        subscriptions: [subscription],
+      });
+      networkService.patch.mockResolvedValue({
+        data: rawify(
+          updateSubscriptionResultBuilder()
+            .with('subscriptionId', subscription.id)
+            .build(),
+        ),
+        status: 200,
+      });
+
+      await request(app.getHttpServer())
+        .patch(`/v1/billing/spaces/${spaceId}/subscriptions/${subscription.id}`)
+        .send({ planId })
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200)
+        .expect(({ body }) => {
+          expect(body).toEqual({
+            subscriptionId: subscription.id,
+            success: true,
+          });
+        });
+
+      expect(networkService.patch).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: {
+            planId,
+            paymentLinkId: offeredLink.id,
+            prorationBehavior: 'always_invoice',
+          },
+        }),
+      );
+    });
+
+    it('PATCH .../subscriptions/:subscriptionId ignores a prorationBehavior sent by the caller', async () => {
+      const { accessToken, spaceId } = await registerAndCreateSpace();
+      const planId = faker.string.alphanumeric(20);
+      const subscription = subscriptionBuilder()
+        .with('status', 'active')
+        .build();
+      mockPaymentLinkCatalog({
+        general: [offeredLinkPricedAt(planId)],
+        subscriptions: [subscription],
+      });
+      networkService.patch.mockResolvedValue({
+        data: rawify(
+          updateSubscriptionResultBuilder()
+            .with('subscriptionId', subscription.id)
+            .build(),
+        ),
+        status: 200,
+      });
+
+      await request(app.getHttpServer())
+        .patch(`/v1/billing/spaces/${spaceId}/subscriptions/${subscription.id}`)
+        .send({ planId, prorationBehavior: 'none' })
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200);
+
+      expect(networkService.patch).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            prorationBehavior: 'always_invoice',
+          }),
+        }),
+      );
+    });
+
+    it('PATCH .../subscriptions/:subscriptionId returns 403 for a paymentLinkId the space is not offered', async () => {
+      const { accessToken, spaceId } = await registerAndCreateSpace();
+      const planId = faker.string.alphanumeric(20);
+      const subscription = subscriptionBuilder()
+        .with('status', 'active')
+        .build();
+      mockPaymentLinkCatalog({
+        general: [offeredLinkPricedAt(planId)],
+        subscriptions: [subscription],
+      });
+
+      await request(app.getHttpServer())
+        .patch(`/v1/billing/spaces/${spaceId}/subscriptions/${subscription.id}`)
+        .send({ planId, paymentLinkId: faker.string.alphanumeric(20) })
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(403);
+
+      expect(networkService.patch).not.toHaveBeenCalled();
+    });
+
+    it('PATCH .../subscriptions/:subscriptionId returns 409 when already on that plan', async () => {
+      const { accessToken, spaceId } = await registerAndCreateSpace();
+      const planId = faker.string.alphanumeric(20);
+      const subscription = subscriptionBuilder()
+        .with('status', 'active')
+        .build();
+      mockPaymentLinkCatalog({
+        general: [offeredLinkPricedAt(planId)],
+        subscriptions: [
+          { ...subscription, plan: { ...subscription.plan, id: planId } },
+        ],
+      });
+
+      await request(app.getHttpServer())
+        .patch(`/v1/billing/spaces/${spaceId}/subscriptions/${subscription.id}`)
+        .send({ planId })
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(409);
+
+      expect(networkService.patch).not.toHaveBeenCalled();
+    });
+
+    it('PATCH .../subscriptions/:subscriptionId returns 422 for a malformed removedSafes entry', async () => {
+      const { accessToken, spaceId } = await registerAndCreateSpace();
+      await request(app.getHttpServer())
+        .patch(
+          `/v1/billing/spaces/${spaceId}/subscriptions/${faker.string.alphanumeric(20)}`,
+        )
+        .send({
+          planId: faker.string.alphanumeric(20),
+          removedSafes: [
+            { chainId: faker.string.numeric(), address: faker.word.noun() },
+          ],
+        })
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(422);
+
+      expect(networkService.patch).not.toHaveBeenCalled();
+    });
+
+    it('PATCH .../subscriptions/:subscriptionId returns 422 without a planId', async () => {
+      const { accessToken, spaceId } = await registerAndCreateSpace();
+      await request(app.getHttpServer())
+        .patch(
+          `/v1/billing/spaces/${spaceId}/subscriptions/${faker.string.alphanumeric(20)}`,
+        )
+        .send({})
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(422);
+
+      expect(networkService.patch).not.toHaveBeenCalled();
+    });
+
+    it('PATCH .../subscriptions/:subscriptionId returns 403 for someone who is not a member of the space', async () => {
+      const { spaceId } = await registerAndCreateSpace();
+      const otherAccessToken = jwtService.sign(
+        siweAuthPayloadDtoBuilder().build(),
+      );
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${otherAccessToken}`]);
+
+      await request(app.getHttpServer())
+        .patch(
+          `/v1/billing/spaces/${spaceId}/subscriptions/${faker.string.alphanumeric(20)}`,
+        )
+        .send({ planId: faker.string.alphanumeric(20) })
+        .set('Cookie', [`access_token=${otherAccessToken}`])
+        .expect(403);
+
+      expect(networkService.patch).not.toHaveBeenCalled();
     });
   });
 });

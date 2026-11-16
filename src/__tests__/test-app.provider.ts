@@ -6,26 +6,22 @@ import {
 } from '@nestjs/platform-fastify';
 import { TestingModule } from '@nestjs/testing';
 import {
-  configureFastifyBodyParsers,
+  configureFastifyAdapter,
   configureShutdownHooks,
   configureVersioning,
   createFastifyAdapter,
   DEFAULT_CONFIGURATION,
   FASTIFY_ROUTER_OPTIONS,
-} from '@/app.provider';
-import { IConfigurationService } from '@/config/configuration.service.interface';
+} from '#/app.provider';
+import { IConfigurationService } from '#/config/configuration.service.interface';
 
 export type TestApplication = NestFastifyApplication;
 
 export function createTestApplication(module: TestingModule): TestApplication {
   const app = module.createNestApplication<NestFastifyApplication>(
-    // Match production route matching (trailing slash + long composite ids)
-    // and body parsing (empty JSON bodies allowed) so tests don't pass against
-    // behaviour the deployed app never exhibits. trustProxy/bodyLimit are
-    // intentionally left at Fastify defaults: this lightweight helper has no
-    // guaranteed configuration service, and those settings don't affect
-    // routing.
-    configureFastifyBodyParsers(
+    // Match production routing, body parsing and header stripping. trustProxy
+    // and bodyLimit stay at Fastify defaults, as no configuration is available.
+    configureFastifyAdapter(
       new FastifyAdapter({ routerOptions: FASTIFY_ROUTER_OPTIONS }),
     ),
   );

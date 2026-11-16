@@ -3,18 +3,18 @@ import { Inject, Injectable } from '@nestjs/common';
 import { groupBy } from 'lodash';
 import type { Address } from 'viem';
 import type { z } from 'zod';
-import { getNumberString } from '@/domain/common/utils/utils';
-import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
-import type { NativeCurrency } from '@/modules/chains/domain/entities/native.currency.entity';
+import { getNumberString } from '#/domain/common/utils/utils';
+import { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
+import type { NativeCurrency } from '#/modules/chains/domain/entities/native.currency.entity';
 import type {
   ApplicationMetadataSchema,
   Position as DomainPosition,
-} from '@/modules/positions/domain/entities/position.entity';
-import { IPositionsRepository } from '@/modules/positions/domain/positions.repository.interface';
-import type { Position } from '@/modules/positions/routes/entities/position.entity';
-import type { PositionGroup } from '@/modules/positions/routes/entities/position-group.entity';
-import type { Protocol } from '@/modules/positions/routes/entities/protocol.entity';
-import { NULL_ADDRESS } from '@/routes/common/constants';
+} from '#/modules/positions/domain/entities/position.entity';
+import { IPositionsRepository } from '#/modules/positions/domain/positions.repository.interface';
+import type { Position } from '#/modules/positions/routes/entities/position.entity';
+import type { PositionGroup } from '#/modules/positions/routes/entities/position-group.entity';
+import type { Protocol } from '#/modules/positions/routes/entities/protocol.entity';
+import { NULL_ADDRESS } from '#/routes/common/constants';
 
 const DUST_THRESHOLD_USD = 0.01;
 

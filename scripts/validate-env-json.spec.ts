@@ -41,8 +41,8 @@ describe('validate-env-json', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.spyOn(console, 'log').mockImplementation();
-    vi.spyOn(console, 'error').mockImplementation();
+    vi.spyOn(console, 'log').mockReturnValue(undefined);
+    vi.spyOn(console, 'error').mockReturnValue(undefined);
   });
 
   afterEach(() => {
@@ -199,7 +199,9 @@ describe('validate-env-json', () => {
         },
       ];
 
-      const mockConsoleError = vi.spyOn(console, 'error').mockImplementation();
+      const mockConsoleError = vi
+        .spyOn(console, 'error')
+        .mockReturnValue(undefined);
 
       const result = checkDuplicates(envVars);
 
@@ -296,7 +298,9 @@ describe('validate-env-json', () => {
         },
       ];
 
-      const mockConsoleError = vi.spyOn(console, 'error').mockImplementation();
+      const mockConsoleError = vi
+        .spyOn(console, 'error')
+        .mockReturnValue(undefined);
 
       const result = checkDuplicates(envVars);
 

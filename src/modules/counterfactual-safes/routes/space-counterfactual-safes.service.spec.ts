@@ -1,18 +1,19 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
+import { IsNull } from 'typeorm';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import type { ILoggingService } from '@/logging/logging.interface';
-import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { counterfactualSafeBuilder } from '@/modules/counterfactual-safes/datasources/entities/__tests__/counterfactual-safe.entity.db.builder';
-import type { ICounterfactualSafesRepository } from '@/modules/counterfactual-safes/domain/counterfactual-safes.repository.interface';
-import { SpaceCounterfactualSafesService } from '@/modules/counterfactual-safes/routes/space-counterfactual-safes.service';
-import type { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
-import type { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
-import { memberBuilder } from '@/modules/users/datasources/entities/__tests__/member.entity.db.builder';
-import type { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
+import type { ILoggingService } from '#/logging/logging.interface';
+import { siweAuthPayloadDtoBuilder } from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import { counterfactualSafeBuilder } from '#/modules/counterfactual-safes/datasources/entities/__tests__/counterfactual-safe.entity.db.builder';
+import type { ICounterfactualSafesRepository } from '#/modules/counterfactual-safes/domain/counterfactual-safes.repository.interface';
+import { SpaceCounterfactualSafesService } from '#/modules/counterfactual-safes/routes/space-counterfactual-safes.service';
+import type { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
+import type { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository.interface';
+import { memberBuilder } from '#/modules/users/datasources/entities/__tests__/member.entity.db.builder';
+import type { IMembersRepository } from '#/modules/users/domain/members/members.repository.interface';
 
 const mockMembersRepository = vi.mocked({
   findOne: vi.fn(),
@@ -86,6 +87,24 @@ describe('SpaceCounterfactualSafesService', () => {
     const returned = result.safes[chainId] ?? [];
     expect(returned).toHaveLength(1);
     expect(returned[0].address).toBe(undeployed.address);
+  });
+
+  it('queries only counterfactual safes that are not marked as deployed', async () => {
+    const safe = counterfactualSafeBuilder().build();
+
+    mockMembersRepository.findOne.mockResolvedValue(member);
+    mockSpaceSafesRepository.findBySpaceId.mockResolvedValue([
+      { chainId: safe.chainId, address: safe.address },
+    ]);
+    mockCounterfactualSafesRepository.find.mockResolvedValue([]);
+
+    await target.get(spaceId, authPayload);
+
+    expect(mockCounterfactualSafesRepository.find).toHaveBeenCalledWith({
+      where: [
+        { chainId: safe.chainId, address: safe.address, deployedAt: IsNull() },
+      ],
+    });
   });
 
   it('returns undeployed counterfactual safes', async () => {

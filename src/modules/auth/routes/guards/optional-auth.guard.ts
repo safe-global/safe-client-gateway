@@ -5,9 +5,9 @@ import {
   type ExecutionContext,
   Injectable,
 } from '@nestjs/common';
-import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
-import { ACCESS_TOKEN_COOKIE_NAME } from '@/modules/auth/utils/auth-cookie.utils';
-import type { HttpRequest } from '@/routes/common/http/http-request.utils';
+import { AuthGuard } from '#/modules/auth/routes/guards/auth.guard';
+import { ACCESS_TOKEN_COOKIE_NAME } from '#/modules/auth/utils/auth-cookie.utils';
+import type { HttpRequest } from '#/routes/common/http/http-request.utils';
 
 @Injectable()
 export class OptionalAuthGuard implements CanActivate {

@@ -1,8 +1,9 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiProperty } from '@nestjs/swagger';
 import {
   QueuedItem,
   QueuedItemType,
-} from '@/modules/transactions/routes/entities/queued-item.entity';
+} from '#/modules/transactions/routes/entities/queued-item.entity';
 
 export enum LabelItem {
   Next = 'Next',

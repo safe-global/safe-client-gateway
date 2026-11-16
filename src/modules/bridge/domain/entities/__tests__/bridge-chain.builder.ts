@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import type { IBuilder } from '@/__tests__/builder';
-import { Builder } from '@/__tests__/builder';
+import type { IBuilder } from '#/__tests__/builder';
+import { Builder } from '#/__tests__/builder';
 import type {
   BridgeChain,
   BridgeChainPage,
-} from '@/modules/bridge/domain/entities/bridge-chain.entity';
+} from '#/modules/bridge/domain/entities/bridge-chain.entity';
 
 export function bridgeChainBuilder(): IBuilder<BridgeChain> {
   return new Builder<BridgeChain>()

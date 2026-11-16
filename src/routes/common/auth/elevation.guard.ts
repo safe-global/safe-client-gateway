@@ -6,11 +6,11 @@ import {
   Inject,
   Injectable,
 } from '@nestjs/common';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { HttpExceptionNoLog } from '@/domain/common/errors/http-exception-no-log.error';
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { AUTH_PAYLOAD_REQUEST_PROPERTY } from '@/routes/common/auth/auth-payload.request';
-import type { HttpRequest } from '@/routes/common/http/http-request.utils';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
+import { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import { AUTH_PAYLOAD_REQUEST_PROPERTY } from '#/routes/common/auth/auth-payload.request';
+import type { HttpRequest } from '#/routes/common/http/http-request.utils';
 
 /**
  * Message returned when a sensitive action needs a fresh second factor.

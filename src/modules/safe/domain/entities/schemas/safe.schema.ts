@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
-import { buildPageSchema } from '@/domain/entities/schemas/page.schema.factory';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { CoercedNumberSchema } from '@/validation/entities/schemas/coerced-number.schema';
-import { NullableStringSchema } from '@/validation/entities/schemas/nullable.schema';
+import { buildPageSchema } from '#/domain/entities/schemas/page.schema.factory';
+import { AddressSchema } from '#/validation/entities/schemas/address.schema';
+import { CoercedNumberSchema } from '#/validation/entities/schemas/coerced-number.schema';
+import { NullableStringSchema } from '#/validation/entities/schemas/nullable.schema';
 
 const SafeBaseSchema = z.object({
   address: AddressSchema,
@@ -17,6 +17,8 @@ const SafeBaseSchema = z.object({
 
 export const SafeSchema = SafeBaseSchema.extend({
   modules: z.array(AddressSchema).nullish().default(null),
+  /** Served since Safe v1.5.0 added the slot; absent from older responses. */
+  moduleGuard: AddressSchema.nullish().default(null),
   version: NullableStringSchema,
 });
 

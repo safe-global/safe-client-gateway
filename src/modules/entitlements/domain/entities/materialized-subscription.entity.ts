@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
-import { SubscriptionStatusSchema } from '@/datasources/billing-api/entities/subscription.entity';
+import { SubscriptionStatusSchema } from '#/datasources/billing-api/entities/subscription.entity';
 
 /**
  * One entry of a purchased feature package, mapped from the upstream
@@ -28,6 +28,7 @@ export const MaterializedSubscriptionSchema = z.object({
   status: SubscriptionStatusSchema,
   planId: z.string(),
   planName: z.string().nullable(),
+  planCode: z.string().nullable(),
   currentPeriodStart: z.date().nullable(),
   currentPeriodEnd: z.date().nullable(),
   entitlements: z.array(ParsedEntitlementSchema).nullable(),

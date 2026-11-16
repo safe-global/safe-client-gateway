@@ -5,11 +5,11 @@ import {
   _TypedDataDomainSchema,
   type TypedData,
   TypedDataSchema,
-} from '@/modules/messages/domain/entities/typed-data.entity';
+} from '#/modules/messages/domain/entities/typed-data.entity';
 import {
   typedDataBuilder,
   typedDataDomainBuilder,
-} from '@/modules/messages/routes/entities/__tests__/typed-data.builder';
+} from '#/modules/messages/routes/entities/__tests__/typed-data.builder';
 
 describe('TypedDataSchema', () => {
   it('should validate TypedData', () => {
@@ -110,6 +110,21 @@ describe('TypedDataSchema', () => {
       const result = _TypedDataDomainSchema.safeParse(domain);
 
       expect(result.success && result.data.verifyingContract).toBe(
+        getAddress(nonChecksummedAddress),
+      );
+    });
+
+    it('should keep and checksum the safe', () => {
+      const nonChecksummedAddress = faker.finance
+        .ethereumAddress()
+        .toLowerCase() as Address;
+      const domain = typedDataDomainBuilder()
+        .with('safe', nonChecksummedAddress)
+        .build();
+
+      const result = _TypedDataDomainSchema.safeParse(domain);
+
+      expect(result.success && result.data.safe).toBe(
         getAddress(nonChecksummedAddress),
       );
     });

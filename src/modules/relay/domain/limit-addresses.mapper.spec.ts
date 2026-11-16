@@ -11,7 +11,7 @@ import type { MockedObject } from 'vitest';
 import {
   getDeploymentVersionsByChainIds,
   RELAY_SUPPORTED_CHAIN_IDS,
-} from '@/__tests__/deployments.helper';
+} from '#/__tests__/deployments.helper';
 import {
   getMultiSendCallOnlyDeployments,
   getMultiSendDeployments,
@@ -19,17 +19,17 @@ import {
   getSafeL2SingletonDeployments,
   getSafeSingletonDeployments,
   getSignerFactoryDeployments,
-} from '@/domain/common/utils/deployments';
-import type { ILoggingService } from '@/logging/logging.interface';
+} from '#/domain/common/utils/deployments';
+import type { ILoggingService } from '#/logging/logging.interface';
 import {
   execTransactionFromModuleEncoder,
   executeNextTxEncoder,
-} from '@/modules/alerts/domain/contracts/__tests__/encoders/delay-modifier-encoder.builder';
-import { DelayModifierDecoder } from '@/modules/alerts/domain/contracts/decoders/delay-modifier-decoder.helper';
+} from '#/modules/alerts/domain/contracts/__tests__/encoders/delay-modifier-encoder.builder';
+import { DelayModifierDecoder } from '#/modules/alerts/domain/contracts/decoders/delay-modifier-decoder.helper';
 import {
   multiSendEncoder,
   multiSendTransactionsEncoder,
-} from '@/modules/contracts/domain/__tests__/encoders/multi-send-encoder.builder';
+} from '#/modules/contracts/domain/__tests__/encoders/multi-send-encoder.builder';
 import {
   addOwnerWithThresholdEncoder,
   changeThresholdEncoder,
@@ -41,23 +41,23 @@ import {
   setGuardEncoder,
   setupEncoder,
   swapOwnerEncoder,
-} from '@/modules/contracts/domain/__tests__/encoders/safe-encoder.builder';
-import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
-import { SafeDecoder } from '@/modules/contracts/domain/decoders/safe-decoder.helper';
+} from '#/modules/contracts/domain/__tests__/encoders/safe-encoder.builder';
+import { MultiSendDecoder } from '#/modules/contracts/domain/decoders/multi-send-decoder.helper';
+import { SafeDecoder } from '#/modules/contracts/domain/decoders/safe-decoder.helper';
 import {
   erc20ApproveEncoder,
   erc20TransferEncoder,
   erc20TransferFromEncoder,
-} from '@/modules/relay/domain/contracts/__tests__/encoders/erc20-encoder.builder';
-import { createProxyWithNonceEncoder } from '@/modules/relay/domain/contracts/__tests__/encoders/proxy-factory-encoder.builder';
-import { createSignerEncoder } from '@/modules/relay/domain/contracts/__tests__/encoders/signer-factory-encoder.builder';
-import { Erc20Decoder } from '@/modules/relay/domain/contracts/decoders/erc-20-decoder.helper';
-import { ProxyFactoryDecoder } from '@/modules/relay/domain/contracts/decoders/proxy-factory-decoder.helper';
-import { SignerFactoryDecoder } from '@/modules/relay/domain/contracts/decoders/signer-factory-decoder.helper';
-import { LimitAddressesMapper } from '@/modules/relay/domain/limit-addresses.mapper';
-import { RelayTransactionHelper } from '@/modules/relay/domain/relay-transaction-helper';
-import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
-import type { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
+} from '#/modules/relay/domain/contracts/__tests__/encoders/erc20-encoder.builder';
+import { createProxyWithNonceEncoder } from '#/modules/relay/domain/contracts/__tests__/encoders/proxy-factory-encoder.builder';
+import { createSignerEncoder } from '#/modules/relay/domain/contracts/__tests__/encoders/signer-factory-encoder.builder';
+import { Erc20Decoder } from '#/modules/relay/domain/contracts/decoders/erc-20-decoder.helper';
+import { ProxyFactoryDecoder } from '#/modules/relay/domain/contracts/decoders/proxy-factory-decoder.helper';
+import { SignerFactoryDecoder } from '#/modules/relay/domain/contracts/decoders/signer-factory-decoder.helper';
+import { LimitAddressesMapper } from '#/modules/relay/domain/limit-addresses.mapper';
+import { RelayTransactionHelper } from '#/modules/relay/domain/relay-transaction-helper';
+import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
+import type { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
 
 const supportedChainIds = RELAY_SUPPORTED_CHAIN_IDS;
 
@@ -1637,6 +1637,165 @@ describe('LimitAddressesMapper', () => {
       ).rejects.toThrow(
         'SafeWebAuthnSignerFactory contract is not official. Only official SafeWebAuthnSignerFactory contracts are supported.',
       );
+    });
+  });
+
+  // `addresses` is what every case above asserts; this is the other half of
+  // the result — whether a Safe was recognised at all, which is what decides
+  // who a relay can be attributed to.
+  describe('resolveTarget', () => {
+    // Derived, never listed: what is deployed where changes, and a chain
+    // without the deployment a case needs would fail on an empty dataset
+    // rather than on the behaviour under test.
+    const chainWith = (
+      hasDeployment: (chainId: (typeof supportedChainIds)[number]) => boolean,
+    ): (typeof supportedChainIds)[number] =>
+      faker.helpers.arrayElement(supportedChainIds.filter(hasDeployment));
+
+    const chainId = chainWith(
+      (candidate) =>
+        SAFE_VERSIONS[candidate].some((version) =>
+          PROXY_FACTORY_VERSIONS[candidate].includes(version),
+        ) && MULTI_SEND_CALL_ONLY_VERSIONS[candidate].length > 0,
+    );
+
+    it('should name the Safe an execTransaction acts on', async () => {
+      const safe = safeBuilder().build();
+      const safeAddress = getAddress(safe.address);
+      mockSafeRepository.getSafe.mockResolvedValue(safe);
+
+      await expect(
+        target.resolveTarget({
+          version: faker.helpers.arrayElement(SAFE_VERSIONS[chainId]),
+          chainId,
+          data: execTransactionEncoder().encode(),
+          to: safeAddress,
+        }),
+      ).resolves.toStrictEqual({
+        safe: safeAddress,
+        addresses: [safeAddress],
+      });
+    });
+
+    it('should name the Safe being recovered', async () => {
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      const data = execTransactionFromModuleEncoder()
+        .with('to', safeAddress)
+        .with(
+          'data',
+          execTransactionEncoder()
+            .with('data', addOwnerWithThresholdEncoder().encode())
+            .encode(),
+        )
+        .encode();
+      mockSafeRepository.getSafesByModule.mockResolvedValue({
+        safes: [safeAddress],
+      });
+
+      await expect(
+        target.resolveTarget({
+          version: faker.system.semver(),
+          chainId,
+          data,
+          // DelayModifier
+          to: getAddress(faker.finance.ethereumAddress()),
+        }),
+      ).resolves.toStrictEqual({
+        safe: safeAddress,
+        addresses: [safeAddress],
+      });
+    });
+
+    it('should name the Safe a batch acts on, not the MultiSend', async () => {
+      const version = faker.helpers.arrayElement(
+        MULTI_SEND_CALL_ONLY_VERSIONS[chainId],
+      );
+      const safe = safeBuilder().build();
+      const safeAddress = getAddress(safe.address);
+      const data = multiSendEncoder()
+        .with(
+          'transactions',
+          multiSendTransactionsEncoder([
+            {
+              operation: 0,
+              to: safeAddress,
+              value: BigInt(0),
+              data: execTransactionEncoder().encode(),
+            },
+          ]),
+        )
+        .encode();
+      mockSafeRepository.getSafe.mockResolvedValue(safe);
+
+      // The call is addressed to MultiSend; the Safe is the one inside it.
+      await expect(
+        target.resolveTarget({
+          version,
+          chainId,
+          data,
+          to: faker.helpers.arrayElement(
+            getMultiSendCallOnlyDeployments({ version, chainId }),
+          ),
+        }),
+      ).resolves.toStrictEqual({
+        safe: safeAddress,
+        addresses: [safeAddress],
+      });
+    });
+
+    it('should name no Safe when one is being created', async () => {
+      const version = faker.helpers.arrayElement(
+        PROXY_FACTORY_VERSIONS[chainId].filter((candidate) =>
+          SAFE_VERSIONS[chainId].includes(candidate),
+        ),
+      );
+      const owners = [
+        getAddress(faker.finance.ethereumAddress()),
+        getAddress(faker.finance.ethereumAddress()),
+      ];
+      const data = createProxyWithNonceEncoder()
+        .with(
+          'singleton',
+          faker.helpers.arrayElement(
+            getSafeSingletonDeployments({ version, chainId }),
+          ),
+        )
+        .with('initializer', setupEncoder().with('owners', owners).encode())
+        .encode();
+
+      // The owners are limited, but none of them is the Safe: it does not
+      // exist yet, so the call cannot be attributed to one.
+      await expect(
+        target.resolveTarget({
+          version,
+          chainId,
+          data,
+          to: faker.helpers.arrayElement(
+            getProxyFactoryDeployments({ version, chainId }),
+          ),
+        }),
+      ).resolves.toStrictEqual({ safe: null, addresses: owners });
+    });
+
+    it('should name no Safe when deploying a passkey signer', async () => {
+      // Its own chain: the signer factory is only deployed on some of them.
+      const signerChainId = chainWith(
+        (candidate) =>
+          getSignerFactoryDeployments({ chainId: candidate }).length > 0,
+      );
+      const resolved = await target.resolveTarget({
+        version: faker.helpers.arrayElement(SAFE_VERSIONS[signerChainId]),
+        chainId: signerChainId,
+        data: createSignerEncoder().encode(),
+        to: getAddress(
+          faker.helpers.arrayElement(
+            getSignerFactoryDeployments({ chainId: signerChainId }),
+          ),
+        ),
+      });
+
+      expect(resolved.safe).toBeNull();
+      expect(resolved.addresses).toHaveLength(1);
     });
   });
 });

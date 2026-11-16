@@ -4,14 +4,14 @@ import { secp256k1 } from '@noble/curves/secp256k1';
 import { memoize } from 'lodash';
 import { type Address, getAddress, type Hex, hashMessage } from 'viem';
 import { publicKeyToAddress } from 'viem/utils';
-import { SignatureType } from '@/domain/common/entities/signature-type.entity';
+import { SignatureType } from '#/domain/common/entities/signature-type.entity';
 import {
   parseSignaturesByType,
   R_OR_S_HEX_LENGTH,
   SIGNATURE_HEX_LENGTH,
   V_HEX_LENGTH,
-} from '@/domain/common/utils/signatures';
-import { ADDRESS_LENGTH, HEX_PREFIX_LENGTH } from '@/routes/common/constants';
+} from '#/domain/common/utils/signatures';
+import { ADDRESS_LENGTH, HEX_PREFIX_LENGTH } from '#/routes/common/constants';
 
 const ETH_SIGN_V_OFFSET = 4;
 

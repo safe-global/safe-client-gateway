@@ -1,7 +1,8 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   calculateTimezoneOffset,
   convertToTimezone,
-} from '@/modules/transactions/routes/helpers/timezone.helper';
+} from '#/modules/transactions/routes/helpers/timezone.helper';
 
 describe('Intl', () => {
   it('Should ensure Intl timezone is enabled on server', () => {

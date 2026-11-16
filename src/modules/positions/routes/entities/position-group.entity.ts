@@ -1,5 +1,6 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
-import { Position } from '@/modules/positions/routes/entities/position.entity';
+import { Position } from '#/modules/positions/routes/entities/position.entity';
 
 @ApiExtraModels(Position)
 export class PositionGroup {

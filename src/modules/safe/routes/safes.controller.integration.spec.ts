@@ -9,39 +9,39 @@ import type { MockedObject } from 'vitest';
 import {
   initTestApplication,
   TestAppProvider,
-} from '@/__tests__/test-app.provider';
-import { createTestModule } from '@/__tests__/testing-module';
-import { IConfigurationService } from '@/config/configuration.service.interface';
+} from '#/__tests__/test-app.provider';
+import { createTestModule } from '#/__tests__/testing-module';
+import { IConfigurationService } from '#/config/configuration.service.interface';
 import {
   UNAVAILABLE_FOR_LEGAL_REASONS_MESSAGE,
   UNAVAILABLE_FOR_LEGAL_REASONS_STATUS,
-} from '@/datasources/errors/constants';
-import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import { NetworkService } from '@/datasources/network/network.service.interface';
-import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { singletonBuilder } from '@/modules/chains/domain/entities/__tests__/singleton.builder';
-import { contractBuilder } from '@/modules/data-decoder/domain/v2/entities/__tests__/contract.builder';
+} from '#/datasources/errors/constants';
+import { NetworkResponseError } from '#/datasources/network/entities/network.error.entity';
+import type { INetworkService } from '#/datasources/network/network.service.interface';
+import { NetworkService } from '#/datasources/network/network.service.interface';
+import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
+import { singletonBuilder } from '#/modules/chains/domain/entities/__tests__/singleton.builder';
+import { contractBuilder } from '#/modules/data-decoder/domain/v2/entities/__tests__/contract.builder';
 import {
   messageBuilder,
   toJson as messageToJson,
-} from '@/modules/messages/domain/entities/__tests__/message.builder';
+} from '#/modules/messages/domain/entities/__tests__/message.builder';
 import {
   erc721TransferBuilder,
   toJson as erc721TransferToJson,
-} from '@/modules/safe/domain/entities/__tests__/erc721-transfer.builder';
+} from '#/modules/safe/domain/entities/__tests__/erc721-transfer.builder';
 import {
   moduleTransactionBuilder,
   toJson as moduleTransactionToJson,
-} from '@/modules/safe/domain/entities/__tests__/module-transaction.builder';
+} from '#/modules/safe/domain/entities/__tests__/module-transaction.builder';
 import {
   multisigTransactionBuilder,
   toJson as multisigTransactionToJson,
-} from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
-import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
-import { NULL_ADDRESS } from '@/routes/common/constants';
-import { rawify } from '@/validation/entities/raw.entity';
+} from '#/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
+import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
+import { NULL_ADDRESS } from '#/routes/common/constants';
+import { rawify } from '#/validation/entities/raw.entity';
 
 describe('Safes Controller', () => {
   let app: INestApplication<Server>;
@@ -679,16 +679,19 @@ describe('Safes Controller', () => {
                   multisigTransactionToJson(
                     multisigTransactionBuilder()
                       .with('modified', new Date('2020-09-18T03:52:02Z'))
+                      .with('confirmations', [])
                       .build(),
                   ),
                   multisigTransactionToJson(
                     multisigTransactionBuilder()
                       .with('modified', new Date('2020-09-16T03:52:02Z'))
+                      .with('confirmations', [])
                       .build(),
                   ),
                   multisigTransactionToJson(
                     multisigTransactionBuilder()
                       .with('modified', new Date('2020-09-14T03:52:02Z'))
+                      .with('confirmations', [])
                       .build(),
                   ),
                 ])
@@ -1812,17 +1815,7 @@ describe('Safes Controller', () => {
       .with('results', [
         messageToJson(
           messageBuilder()
-            .with('modified', new Date('2023-03-12T12:29:06Z'))
-            .build(),
-        ),
-        messageToJson(
-          messageBuilder()
             .with('modified', new Date('2023-07-12T12:29:06Z'))
-            .build(),
-        ),
-        messageToJson(
-          messageBuilder()
-            .with('modified', new Date('2023-02-12T12:29:06Z'))
             .build(),
         ),
       ])
@@ -1874,6 +1867,13 @@ describe('Safes Controller', () => {
           messagesTag: '1689164946',
         }),
       );
+
+    expect(networkService.get).toHaveBeenCalledWith({
+      url: `${chain.transactionService}/api/v1/safes/${safeInfo.address}/messages/`,
+      networkRequest: expect.objectContaining({
+        params: { ordering: '-modified', limit: 1, offset: undefined },
+      }),
+    });
   });
 
   it('messagesTag is null if there are no messages', async () => {

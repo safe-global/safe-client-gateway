@@ -7,8 +7,8 @@ import {
 } from '@nestjs/swagger';
 import type { Address } from 'viem';
 import type { z } from 'zod';
-import type { CreateMessageDtoSchema } from '@/modules/messages/routes/entities/schemas/create-message.dto.schema';
-import { TypedData } from '@/modules/messages/routes/entities/typed-data.entity';
+import type { CreateMessageDtoSchema } from '#/modules/messages/routes/entities/schemas/create-message.dto.schema';
+import { TypedData } from '#/modules/messages/routes/entities/typed-data.entity';
 
 @ApiExtraModels(TypedData)
 export class CreateMessageDto
@@ -18,6 +18,7 @@ export class CreateMessageDto
     oneOf: [{ type: 'string' }, { $ref: getSchemaPath(TypedData) }],
   })
   message!: string | TypedData;
+  /** @deprecated Send the SafeApp identity inside `origin` ({ name, url }). The server resolves it by URL; this value is accepted for backwards compatibility but ignored. */
   @ApiPropertyOptional({ type: Number, nullable: true, deprecated: true })
   safeAppId!: number | null;
   @ApiProperty()

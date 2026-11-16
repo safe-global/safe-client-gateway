@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import type { Address } from 'viem';
-import { ITargetedMessagingDatasource } from '@/domain/interfaces/targeted-messaging.datasource.interface';
-import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
-import type { Outreach } from '@/modules/targeted-messaging/domain/entities/outreach.entity';
-import type { Submission } from '@/modules/targeted-messaging/domain/entities/submission.entity';
-import type { TargetedSafe } from '@/modules/targeted-messaging/domain/entities/targeted-safe.entity';
-import type { ITargetedMessagingRepository } from '@/modules/targeted-messaging/domain/targeted-messaging.repository.interface';
+import { ITargetedMessagingDatasource } from '#/domain/interfaces/targeted-messaging.datasource.interface';
+import { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
+import type { Outreach } from '#/modules/targeted-messaging/domain/entities/outreach.entity';
+import type { Submission } from '#/modules/targeted-messaging/domain/entities/submission.entity';
+import type { TargetedSafe } from '#/modules/targeted-messaging/domain/entities/targeted-safe.entity';
+import type { ITargetedMessagingRepository } from '#/modules/targeted-messaging/domain/targeted-messaging.repository.interface';
 
 @Injectable()
 export class TargetedMessagingRepository

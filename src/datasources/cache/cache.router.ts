@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import crypto from 'node:crypto';
 import type { Address, Hash } from 'viem';
-import type { SubscriptionStatusFilter } from '@/datasources/billing-api/entities/subscription.entity';
-import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
-import type { BaseDataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
-import { Origin } from '@/modules/fees/domain/entities/origin.entity';
-import type { ExtractedContract } from '@/modules/safe-shield/entities/extracted-contract.entity';
-import type { TransactionInfo } from '@/modules/transactions/routes/entities/transaction-info.entity';
+import type { SubscriptionStatusFilter } from '#/datasources/billing-api/entities/subscription.entity';
+import { CacheDir } from '#/datasources/cache/entities/cache-dir.entity';
+import type { BaseDataDecoded } from '#/modules/data-decoder/domain/v2/entities/data-decoded.entity';
+import { Origin } from '#/modules/fees/domain/entities/origin.entity';
+import type { ExtractedContract } from '#/modules/safe-shield/entities/extracted-contract.entity';
+import type { TransactionInfo } from '#/modules/transactions/routes/entities/transaction-info.entity';
 
 export class CacheRouter {
   private static readonly ACCOUNT_DATA_SETTINGS_KEY = 'account_data_settings';
@@ -24,7 +24,7 @@ export class CacheRouter {
   private static readonly COUNTERFACTUAL_SAFE_KEY = 'counterfactual_safe';
   private static readonly COUNTERFACTUAL_SAFES_KEY = 'counterfactual_safes';
   private static readonly CREATION_TRANSACTION_KEY = 'creation_transaction';
-  private static readonly DECODED_DATA_KEY = 'decoded_data';
+  private static readonly DECODED_DATA_KEY = 'decoded_data_v2';
   private static readonly DELEGATES_KEY = 'delegates';
   private static readonly FIREBASE_OAUTH2_TOKEN_KEY = 'firebase_oauth2_token';
   private static readonly GAS_TOKENS_KEY = 'gas_tokens';
@@ -37,14 +37,20 @@ export class CacheRouter {
   private static readonly MODULE_TRANSACTIONS_KEY = 'module_transactions';
   private static readonly MULTISIG_TRANSACTION_KEY = 'multisig_transaction';
   private static readonly MULTISIG_TRANSACTIONS_KEY = 'multisig_transactions';
+  private static readonly SAFE_QUEUE_DELEGATES_KEY = 'safe_queue_delegates';
+  private static readonly SAFE_QUEUE_MESSAGE_KEY = 'safe_queue_message';
+  private static readonly SAFE_QUEUE_MESSAGES_KEY = 'safe_queue_messages';
+  private static readonly SAFE_QUEUE_MULTISIG_TRANSACTION_KEY =
+    'safe_queue_multisig_transaction';
+  private static readonly SAFE_QUEUE_MULTISIG_TRANSACTIONS_KEY =
+    'safe_queue_multisig_transactions';
   private static readonly NATIVE_COIN_PRICE_KEY = 'native_coin_price';
   private static readonly OWNERS_SAFE_KEY = 'owner_safes';
-  private static readonly BILLING_CUSTOMER_KEY = 'billing_customer';
   private static readonly BILLING_PAYMENT_LINKS_KEY = 'billing_payment_links';
   private static readonly BILLING_PLAN_KEY = 'billing_plan';
-  private static readonly BILLING_PLANS_KEY = 'billing_plans';
   private static readonly BILLING_SUBSCRIPTIONS_KEY = 'billing_subscriptions';
   private static readonly RATE_LIMIT_KEY = 'rate_limit';
+  private static readonly POLICY_INDEXER_STATE_KEY = 'policy_indexer_state';
   private static readonly RELAY_KEY = 'relay';
   private static readonly RPC_REQUESTS_KEY = 'rpc_requests';
   private static readonly SAFE_APPS_KEY = 'safe_apps';
@@ -54,6 +60,9 @@ export class CacheRouter {
   private static readonly SAFE_FIAT_CODES_KEY = 'safe_fiat_codes';
   private static readonly SAFE_KEY = 'safe';
   private static readonly SINGLETONS_KEY = 'singletons';
+  private static readonly SPACE_ENTITLEMENTS_KEY = 'space_entitlements';
+  private static readonly SPACE_TRANSACTION_QUEUE_KEY =
+    'space_transaction_queue';
   private static readonly STAKING_DEDICATED_STAKING_STATS_KEY =
     'staking_dedicated_staking_stats';
   private static readonly STAKING_DEFI_VAULT_STATS_KEY =
@@ -89,7 +98,7 @@ export class CacheRouter {
   private static readonly ZERION_BALANCES_KEY = 'zerion_balances';
   private static readonly ZERION_COLLECTIBLES_KEY = 'zerion_collectibles';
   private static readonly ZERION_POSITIONS_KEY = 'zerion_positions';
-  private static readonly ZERION_CHAINS_KEY = 'zerion_chains';
+  private static readonly ZERION_CHAINS_KEY = 'zerion_indexed_chains';
   private static readonly PORTFOLIO_KEY = 'portfolio';
   private static readonly ZERION_WALLET_PORTFOLIO_KEY =
     'zerion_wallet_portfolio';
@@ -101,6 +110,25 @@ export class CacheRouter {
   private static readonly GAS_PRICE_KEY = 'gas_price';
   private static readonly RELAY_FEE_PREVIEW_KEY = 'relay_fee_preview';
   private static readonly GTF_FEE_PREVIEW_KEY = 'gtf_fee_preview';
+  private static readonly SAFENET_PAYER_NONCE_KEY = 'safenet_payer_nonce';
+  private static readonly SAFENET_CHECKS_KEY = 'safenet_checks';
+
+  static getSafenetPayerNonceCacheKey(args: {
+    chainId: string;
+    safeAddress: Address;
+  }): string {
+    const address = args.safeAddress.toLowerCase();
+    return `${CacheRouter.SAFENET_PAYER_NONCE_KEY}_${args.chainId}_${address}`;
+  }
+
+  static getSafenetChecksRateLimitCacheKey(args: {
+    spaceId: number;
+    day: string;
+  }): string {
+    return CacheRouter.getRateLimitCacheKey(
+      `${CacheRouter.SAFENET_CHECKS_KEY}_${args.spaceId}_${args.day}`,
+    );
+  }
 
   static getAuthNonceCacheKey(nonce: string): string {
     return `${CacheRouter.AUTH_NONCE_KEY}_${nonce}`;
@@ -221,6 +249,11 @@ export class CacheRouter {
     return new CacheDir(`${chainId}_${CacheRouter.SINGLETONS_KEY}`, '');
   }
 
+  /** What the Space's plan grants. Never holds usage. */
+  static getSpaceEntitlementsCacheDir(spaceId: number): CacheDir {
+    return new CacheDir(`${spaceId}_${CacheRouter.SPACE_ENTITLEMENTS_KEY}`, '');
+  }
+
   static getCollectiblesCacheDir(args: {
     chainId: string;
     safeAddress: Address;
@@ -264,6 +297,28 @@ export class CacheRouter {
     );
   }
 
+  static getSafeQueueDelegatesCacheKey(args: {
+    chainId: string;
+    safeAddress?: Address;
+  }): string {
+    return `${args.chainId}_${CacheRouter.SAFE_QUEUE_DELEGATES_KEY}_${args.safeAddress}`;
+  }
+
+  static getSafeQueueDelegatesCacheDir(args: {
+    chainId: string;
+    safeAddress?: Address;
+    delegate?: Address;
+    delegator?: Address;
+    label?: string;
+    limit?: number;
+    offset?: number;
+  }): CacheDir {
+    return new CacheDir(
+      CacheRouter.getSafeQueueDelegatesCacheKey(args),
+      `${args.delegate}_${args.delegator}_${args.label}_${args.limit}_${args.offset}`,
+    );
+  }
+
   static getFirebaseOAuth2TokenCacheDir(): CacheDir {
     return new CacheDir(CacheRouter.FIREBASE_OAUTH2_TOKEN_KEY, '');
   }
@@ -281,15 +336,19 @@ export class CacheRouter {
   static getTransfersCacheDir(args: {
     chainId: string;
     safeAddress: string;
-    onlyErc20: boolean;
-    onlyErc721: boolean;
+    onlyErc20?: boolean;
+    onlyErc721?: boolean;
     limit?: number;
     offset?: number;
     to?: string;
+    from?: string;
+    tokenAddress?: string;
+    executionDateGte?: string;
+    executionDateLte?: string;
   }): CacheDir {
     return new CacheDir(
       CacheRouter.getTransfersCacheKey(args),
-      `${args.onlyErc20}_${args.onlyErc721}_${args.limit}_${args.offset}_${args.to}`,
+      `${args.onlyErc20}_${args.onlyErc721}_${args.limit}_${args.offset}_${args.to}_${args.from}_${args.tokenAddress}_${args.executionDateGte}_${args.executionDateLte}`,
     );
   }
 
@@ -389,6 +448,50 @@ export class CacheRouter {
     return `${args.chainId}_${CacheRouter.MULTISIG_TRANSACTIONS_KEY}_${args.safeAddress}`;
   }
 
+  static getSafeQueueMultisigTransactionsCacheKey(args: {
+    chainId: string;
+    safeAddress: Address;
+  }): string {
+    return `${args.chainId}_${CacheRouter.SAFE_QUEUE_MULTISIG_TRANSACTIONS_KEY}_${args.safeAddress}`;
+  }
+
+  static getSafeQueuedTransactionsCacheDir(args: {
+    chainId: string;
+    safeAddress: Address;
+    nonceOrder?: 'asc' | 'desc';
+    limit?: number;
+    offset?: number;
+  }): CacheDir {
+    return new CacheDir(
+      CacheRouter.getSafeQueueMultisigTransactionsCacheKey(args),
+      `safe_queue_${args.nonceOrder}_${args.limit}_${args.offset}`,
+    );
+  }
+
+  static getSpaceTransactionQueueCacheKey(spaceId: number): string {
+    return `${spaceId}_${CacheRouter.SPACE_TRANSACTION_QUEUE_KEY}`;
+  }
+
+  /**
+   * One page of a Space's queue. The field covers the Safes requested, so a
+   * page cached for an earlier set of Safes is never served for a later one.
+   */
+  static getSpaceTransactionQueueCacheDir(args: {
+    spaceId: number;
+    safes: ReadonlyArray<string>;
+    limit: number;
+    offset: number;
+  }): CacheDir {
+    const hash = crypto.createHash('sha256');
+    hash.update(
+      [args.safes.toSorted().join(','), args.limit, args.offset].join('_'),
+    );
+    return new CacheDir(
+      CacheRouter.getSpaceTransactionQueueCacheKey(args.spaceId),
+      hash.digest('hex'),
+    );
+  }
+
   static getMultisigTransactionCacheDir(args: {
     chainId: string;
     safeTransactionHash: string;
@@ -401,6 +504,35 @@ export class CacheRouter {
     safeTransactionHash: string;
   }): string {
     return `${args.chainId}_${CacheRouter.MULTISIG_TRANSACTION_KEY}_${args.safeTransactionHash}`;
+  }
+
+  static getSafeQueueMultisigTransactionCacheKey(args: {
+    chainId: string;
+    safeTransactionHash: string;
+  }): string {
+    return `${args.chainId}_${CacheRouter.SAFE_QUEUE_MULTISIG_TRANSACTION_KEY}_${args.safeTransactionHash}`;
+  }
+
+  static getSafeQueueMultisigTransactionCacheDir(args: {
+    chainId: string;
+    safeTransactionHash: string;
+  }): CacheDir {
+    return new CacheDir(
+      CacheRouter.getSafeQueueMultisigTransactionCacheKey(args),
+      '',
+    );
+  }
+
+  static getSafeQueueMultisigTransactionsBatchCacheDir(args: {
+    chainId: string;
+    safeTxHashes: ReadonlyArray<string>;
+  }): CacheDir {
+    const hash = crypto.createHash('sha256');
+    hash.update(args.safeTxHashes.join('_'));
+    return new CacheDir(
+      `${args.chainId}_${CacheRouter.SAFE_QUEUE_MULTISIG_TRANSACTION_KEY}_batch`,
+      hash.digest('hex'),
+    );
   }
 
   static getCreationTransactionCacheDir(args: {
@@ -418,7 +550,12 @@ export class CacheRouter {
     data: Address;
     to: Address;
   }): string {
-    return `${args.chainId}_${CacheRouter.DECODED_DATA_KEY}_${args.data}_${args.to}`;
+    // Calldata is hashed as batched transactions can be tens of KB
+    const hash = crypto
+      .createHash('sha256')
+      .update(args.data.toLowerCase())
+      .digest('hex');
+    return `${args.chainId}_${CacheRouter.DECODED_DATA_KEY}_${hash}_${args.to}`;
   }
 
   static getDecodedDataCacheDir(args: {
@@ -548,6 +685,23 @@ export class CacheRouter {
     return new CacheDir(CacheRouter.getMessageByHashCacheKey(args), '');
   }
 
+  static getSafeQueueMessageByHashCacheKey(args: {
+    chainId: string;
+    messageHash: string;
+  }): string {
+    return `${args.chainId}_${CacheRouter.SAFE_QUEUE_MESSAGE_KEY}_${args.messageHash}`;
+  }
+
+  static getSafeQueueMessageByHashCacheDir(args: {
+    chainId: string;
+    messageHash: string;
+  }): CacheDir {
+    return new CacheDir(
+      CacheRouter.getSafeQueueMessageByHashCacheKey(args),
+      '',
+    );
+  }
+
   static getMessagesBySafeCacheKey(args: {
     chainId: string;
     safeAddress: Address;
@@ -558,11 +712,31 @@ export class CacheRouter {
   static getMessagesBySafeCacheDir(args: {
     chainId: string;
     safeAddress: Address;
+    ordering?: string;
     limit?: number;
     offset?: number;
   }): CacheDir {
     return new CacheDir(
       CacheRouter.getMessagesBySafeCacheKey(args),
+      `${args.ordering}_${args.limit}_${args.offset}`,
+    );
+  }
+
+  static getSafeQueueMessagesBySafeCacheKey(args: {
+    chainId: string;
+    safeAddress: Address;
+  }): string {
+    return `${args.chainId}_${CacheRouter.SAFE_QUEUE_MESSAGES_KEY}_${args.safeAddress}`;
+  }
+
+  static getSafeQueueMessagesBySafeCacheDir(args: {
+    chainId: string;
+    safeAddress: Address;
+    limit?: number;
+    offset?: number;
+  }): CacheDir {
+    return new CacheDir(
+      CacheRouter.getSafeQueueMessagesBySafeCacheKey(args),
       `${args.limit}_${args.offset}`,
     );
   }
@@ -1057,6 +1231,24 @@ export class CacheRouter {
   }
 
   /**
+   * When the Zerion caches of an address were last cleared, in epoch ms. Kept
+   * for the settle window only, so a refetch right after a transaction is not
+   * cached for the full TTL.
+   */
+  static getPortfolioClearedAtCacheKey(args: { address: Address }): string {
+    return `${CacheRouter.PORTFOLIO_KEY}_${args.address}_cleared_at`;
+  }
+
+  /**
+   * Cooldown counter that skips repeat portfolio cache clears for the same address.
+   */
+  static getPortfolioClearCooldownCacheKey(args: { address: Address }): string {
+    return CacheRouter.getRateLimitCacheKey(
+      `${CacheRouter.PORTFOLIO_KEY}_clear_${args.address}`,
+    );
+  }
+
+  /**
    * Cache for full portfolio (positions endpoint). Zerion /v1/wallets/{address}/positions.
    */
   static getPortfolioCacheDir(args: {
@@ -1205,19 +1397,17 @@ export class CacheRouter {
     );
   }
 
-  static getBillingPlansCacheDir(): CacheDir {
-    return new CacheDir(CacheRouter.BILLING_PLANS_KEY, '');
-  }
-
   static getBillingPlanCacheDir(planId: string): CacheDir {
     return new CacheDir(`${planId}_${CacheRouter.BILLING_PLAN_KEY}`, '');
   }
 
-  static getBillingCustomerCacheDir(upstreamCustomerId: string): CacheDir {
-    return new CacheDir(
-      `${upstreamCustomerId}_${CacheRouter.BILLING_CUSTOMER_KEY}`,
-      '',
-    );
+  /**
+   * The key, not a dir: the status filter is the hash *field*, so deleting this
+   * key drops every filter cached for the customer at once. A caller that needs
+   * one filter gone on its own cannot use this.
+   */
+  static getBillingSubscriptionsCacheKey(upstreamCustomerId: string): string {
+    return `${upstreamCustomerId}_${CacheRouter.BILLING_SUBSCRIPTIONS_KEY}`;
   }
 
   static getBillingSubscriptionsCacheDir(args: {
@@ -1225,7 +1415,7 @@ export class CacheRouter {
     status: SubscriptionStatusFilter;
   }): CacheDir {
     return new CacheDir(
-      `${args.upstreamCustomerId}_${CacheRouter.BILLING_SUBSCRIPTIONS_KEY}`,
+      CacheRouter.getBillingSubscriptionsCacheKey(args.upstreamCustomerId),
       args.status,
     );
   }
@@ -1235,5 +1425,30 @@ export class CacheRouter {
       CacheRouter.BILLING_PAYMENT_LINKS_KEY,
       upstreamCustomerId ?? '',
     );
+  }
+
+  /**
+   * The policy state of one Safe, as read from the Policy Indexer.
+   *
+   * Keyed per Safe even though the indexer is queried for many at once: a set-
+   * keyed entry could not be invalidated when one Safe's policies change, and a
+   * Safe's own key is what `clearPolicyIndexerState` deletes.
+   */
+  static getPolicyIndexerStateCacheDir(args: {
+    chainId: string;
+    safeAddress: Address;
+    guardPolicyKinds: ReadonlyArray<string>;
+  }): CacheDir {
+    return new CacheDir(
+      CacheRouter.getPolicyIndexerStateCacheKey(args),
+      [...args.guardPolicyKinds].sort().join(','),
+    );
+  }
+
+  static getPolicyIndexerStateCacheKey(args: {
+    chainId: string;
+    safeAddress: Address;
+  }): string {
+    return `${args.chainId}_${CacheRouter.POLICY_INDEXER_STATE_KEY}_${args.safeAddress}`;
   }
 }

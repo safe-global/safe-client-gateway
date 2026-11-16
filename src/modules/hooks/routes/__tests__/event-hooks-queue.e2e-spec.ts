@@ -4,21 +4,21 @@ import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import type { ChannelWrapper } from 'amqp-connection-manager';
 import { getAddress } from 'viem';
-import { amqpClientFactory } from '@/__tests__/amqp-client.factory';
-import { redisClientFactory } from '@/__tests__/redis-client.factory';
+import { amqpClientFactory } from '#/__tests__/amqp-client.factory';
+import { redisClientFactory } from '#/__tests__/redis-client.factory';
 import {
   initTestApplication,
   TestAppProvider,
-} from '@/__tests__/test-app.provider';
-import { createBaseTestModule } from '@/__tests__/testing-module';
-import { retry } from '@/__tests__/util/retry';
-import configuration from '@/config/entities/configuration';
-import type { RedisClientType } from '@/datasources/cache/cache.module';
-import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
-import { TestPushNotificationsApiModule } from '@/datasources/push-notifications-api/__tests__/test.push-notifications-api.module';
-import { PushNotificationsApiModule } from '@/datasources/push-notifications-api/push-notifications-api.module';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { TEST_SAFE } from '@/routes/common/__tests__/constants';
+} from '#/__tests__/test-app.provider';
+import { createBaseTestModule } from '#/__tests__/testing-module';
+import { retry } from '#/__tests__/util/retry';
+import configuration from '#/config/entities/configuration';
+import type { RedisClientType } from '#/datasources/cache/cache.module';
+import { CacheDir } from '#/datasources/cache/entities/cache-dir.entity';
+import { TestPushNotificationsApiModule } from '#/datasources/push-notifications-api/__tests__/test.push-notifications-api.module';
+import { PushNotificationsApiModule } from '#/datasources/push-notifications-api/push-notifications-api.module';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
+import { TEST_SAFE } from '#/routes/common/__tests__/constants';
 
 describe('Events queue processing e2e tests', () => {
   let app: INestApplication<Server>;

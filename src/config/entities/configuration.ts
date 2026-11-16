@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { RelayRules } from '@/modules/relay/domain/entities/relay.configuration';
+import type { RelayRules } from '#/modules/relay/domain/entities/relay.configuration';
 
 // Custom configuration for the application
 
@@ -12,11 +12,11 @@ export default () => ({
   amqp: {
     url: process.env.AMQP_URL || 'amqp://localhost:5672',
     exchange: {
-      name: process.env.AMQP_EXCHANGE_NAME || 'safe-transaction-service-events',
-      // The Safe Transaction Service AMQP Exchange mode defaults to 'fanout'.
-      // https://www.rabbitmq.com/tutorials/amqp-concepts#exchange-fanout
-      // A fanout exchange routes messages to all of the queues that are bound to it and the routing key is ignored.
-      mode: process.env.AMQP_EXCHANGE_MODE || 'fanout',
+      // Topic exchange of the Safe Transaction Service.
+      // https://www.rabbitmq.com/tutorials/amqp-concepts#exchange-topic
+      name:
+        process.env.AMQP_EXCHANGE_NAME ||
+        'safe-transaction-service-events-with-topics',
     },
     queue: process.env.AMQP_QUEUE || 'safe-client-gateway',
     // The AMQP Prefetch value defaults to 0.
@@ -64,6 +64,10 @@ export default () => ({
     ),
     postLoginRedirectUri: process.env.AUTH_POST_LOGIN_REDIRECT_URI,
     allowedRedirectDomain: process.env.AUTH_ALLOWED_REDIRECT_DOMAIN,
+    allowedSiweDomains:
+      process.env.AUTH_ALLOWED_SIWE_DOMAINS?.split(',')
+        .map((domain) => domain.trim())
+        .filter((domain) => domain.length > 0) ?? [],
     auth0: {
       domain: process.env.AUTH0_DOMAIN,
       clientId: process.env.AUTH0_CLIENT_ID,
@@ -180,18 +184,50 @@ export default () => ({
         process.env.PORTFOLIO_CACHE_TTL_SECONDS ?? `${10}`,
         10,
       ),
+      afterTransactionTtlSeconds: Number.parseInt(
+        process.env.PORTFOLIO_CACHE_TTL_AFTER_TRANSACTION_SECONDS ?? `${120}`,
+        10,
+      ),
     },
     filters: {
       dustThresholdUsd: Number.parseFloat(
         process.env.PORTFOLIO_DUST_THRESHOLD_USD ?? `${0.001}`,
       ),
     },
+    summaries: {
+      rateLimit: {
+        max: Number.parseInt(
+          process.env.PORTFOLIO_SUMMARIES_RATE_LIMIT_MAX ?? `${60}`,
+          10,
+        ),
+        windowSeconds: Number.parseInt(
+          process.env.PORTFOLIO_SUMMARIES_RATE_LIMIT_WINDOW_SECONDS ?? `${60}`,
+          10,
+        ),
+      },
+    },
+    clear: {
+      cooldownSeconds: Number.parseInt(
+        process.env.PORTFOLIO_CLEAR_COOLDOWN_SECONDS ?? `${15}`,
+        10,
+      ),
+      recentClearSeconds: Number.parseInt(
+        process.env.PORTFOLIO_CLEAR_RECENT_SECONDS ?? `${30}`,
+        10,
+      ),
+      rateLimit: {
+        max: Number.parseInt(
+          process.env.PORTFOLIO_CLEAR_RATE_LIMIT_MAX ?? `${10}`,
+          10,
+        ),
+        windowSeconds: Number.parseInt(
+          process.env.PORTFOLIO_CLEAR_RATE_LIMIT_WINDOW_SECONDS ?? `${60}`,
+          10,
+        ),
+      },
+    },
   },
   blockchain: {
-    blocklistEnabled: process.env.BLOCKLIST_ENABLED?.toLowerCase() !== 'false',
-    blocklistSecretData: process.env.BLOCKLIST_ENCRYPTED_DATA,
-    blocklistSecretKey: process.env.BLOCKLIST_SECRET_KEY,
-    blocklistSecretSalt: process.env.BLOCKLIST_SECRET_SALT,
     infura: {
       apiKey: process.env.INFURA_API_KEY,
     },
@@ -378,12 +414,18 @@ export default () => ({
       process.env.EXPIRATION_TIME_RPC_SECONDS ?? `${15}`,
       10,
     ),
+    safenetNonce: 60,
+    safenetDailyCheckCounter: 24 * 60 * 60,
     hoodi: Number.parseInt(
       process.env.HOODI_EXPIRATION_TIME_SECONDS ?? `${60}`,
       10,
     ),
     indexing: Number.parseInt(
       process.env.EXPIRATION_TIME_INDEXING_SECONDS ?? `${5}`,
+      10,
+    ),
+    policyIndexer: Number.parseInt(
+      process.env.POLICY_INDEXER_EXPIRE_TIME_SECONDS ?? `${60}`,
       10,
     ),
     staking: Number.parseInt(
@@ -398,6 +440,14 @@ export default () => ({
       process.env.EXPIRATION_TIME_BILLING_SECONDS ?? `${30}`,
       10,
     ),
+    entitlements: Number.parseInt(
+      process.env.EXPIRATION_TIME_ENTITLEMENTS_SECONDS ?? `${300}`,
+      10,
+    ),
+    decodedData: Number.parseInt(
+      process.env.EXPIRATION_TIME_DECODED_DATA_SECONDS ?? `${3600}`,
+      10,
+    ),
     notFound: {
       default: Number.parseInt(
         process.env.DEFAULT_NOT_FOUND_EXPIRE_TIME_SECONDS ?? `${30}`,
@@ -407,35 +457,32 @@ export default () => ({
         process.env.CONTRACT_NOT_FOUND_EXPIRE_TIME_SECONDS ?? `${60}`,
         10,
       ),
+      decodedData: Number.parseInt(
+        process.env.DECODED_DATA_NOT_FOUND_EXPIRE_TIME_SECONDS ?? `${900}`,
+        10,
+      ),
       token: Number.parseInt(
         process.env.TOKEN_NOT_FOUND_EXPIRE_TIME_SECONDS ?? `${60}`,
         10,
       ),
     },
   },
-  express: {
-    // Controls the maximum request body size for the Fastify JSON parser. A
-    // bare number is interpreted as bytes; a string accepts an optional unit
-    // suffix (b, kb, mb, gb, tb, pb — case-insensitive), e.g. '1mb'. Parsed by
-    // `parseBodyLimit` in `src/app.provider.ts`. Defaults to '1mb'.
-    // TODO(fastify-rename): the `express.*` namespace and `EXPRESS_*` env vars
-    // are retained for backwards compatibility after the Express->Fastify
-    // migration; rename deferred to avoid a breaking configuration change.
-    jsonLimit: process.env.EXPRESS_JSON_LIMIT ?? '1mb',
-    // Express `trust proxy` value: resolves req.ip from the X-Forwarded-For
-    // header set by upstream proxies instead of the direct socket address.
-    // A comma-separated list of trusted subnets/presets, or an integer hop
-    // count ("0" disables it). `||` (not `??`) so an empty value falls back to
-    // the default rather than disabling it.
-    // https://expressjs.com/en/guide/behind-proxies.html
-    trustProxy: process.env.EXPRESS_TRUST_PROXY || 'loopback, uniquelocal',
-  },
   features: {
     email: process.env.FF_EMAIL?.toLowerCase() === 'true',
     sesEmail: process.env.FF_SES_EMAIL?.toLowerCase() === 'true',
     zerion: process.env.FF_ZERION_ENABLED?.toLowerCase() === 'true',
+    // Zerion reports the real fiat price of testnet assets, which is zero. We
+    // keep this off to serve testnets from the transaction service with
+    // simulated prices (CoinGecko mainnet prices).
+    zerionTestnets:
+      process.env.FF_ZERION_TESTNETS_ENABLED?.toLowerCase() === 'true',
     zerionPositions:
       process.env.FF_ZERION_POSITIONS_DISABLED?.toLowerCase() !== 'true',
+    // Owner: One Balance Contract. /v2/safes reads the shared /positions
+    // snapshot. Remove it, with the Zerion /portfolio path, once it is on
+    // everywhere.
+    safesPortfolioSnapshot:
+      process.env.FF_SAFES_PORTFOLIO_SNAPSHOT?.toLowerCase() === 'true',
     debugLogs: process.env.FF_DEBUG_LOGS?.toLowerCase() === 'true',
     configHooksDebugLogs:
       process.env.FF_CONFIG_HOOKS_DEBUG_LOGS?.toLowerCase() === 'true',
@@ -484,6 +531,19 @@ export default () => ({
     // step-up round-trip. Remove the flag, and the branch in `ElevationGuard`,
     // once the wallet-monorepo work (WA-2726) has shipped everywhere.
     mfaStepUp: process.env.FF_MFA_STEP_UP?.toLowerCase() === 'true',
+    // Owner: Copilot plan gating (PLA-1964). Temporary disable of Core's
+    // recipient-check and counterparty-analysis while the plan-gated Space
+    // endpoints take over; the ticket does not yet set a removal condition
+    // for the flag or `SafeShieldCoreGatingGuard` — see PLA-1964 for status.
+    safeShieldCoreDisabled:
+      process.env.FF_SAFE_SHIELD_CORE_DISABLED?.toLowerCase() === 'true',
+    safeQueueService:
+      process.env.FF_SAFE_QUEUE_SERVICE?.toLowerCase() === 'true',
+    // Safe Labs: remove after the KMS-backed payer rollout is complete.
+    safenet: process.env.FF_SAFENET?.toLowerCase() === 'true',
+    // Hides every SafePolicyGuard policy from the active and pending policy
+    // endpoints while the guard flow is unreleased.
+    guardPolicies: process.env.FF_GUARD_POLICIES?.toLowerCase() === 'true',
   },
   httpClient: {
     // Timeout in milliseconds to be used for the HTTP client.
@@ -496,6 +556,21 @@ export default () => ({
       process.env.HTTP_CLIENT_REQUEST_TIMEOUT_MILLISECONDS_OWNERS ?? `${5_000}`,
       10,
     ),
+  },
+  httpServer: {
+    // Maximum inbound request body size, applied to the JSON and urlencoded
+    // parsers. A bare number is interpreted as bytes; a string accepts an
+    // optional unit suffix (b, kb, mb, gb, tb, pb — case-insensitive), e.g.
+    // '1mb'. Parsed by `parseBodyLimit` in `src/app.provider.ts`.
+    bodyLimit: process.env.HTTP_SERVER_BODY_LIMIT ?? '1mb',
+    // Fastify `trustProxy` value: resolves request.ip from the
+    // X-Forwarded-For header set by upstream proxies instead of the direct
+    // socket address. A comma-separated list of trusted subnets/presets; "0"
+    // disables it and integer hop counts are rejected by `parseTrustProxy`.
+    // `||` (not `??`) so an empty value falls back to the default rather than
+    // disabling it.
+    // https://fastify.dev/docs/latest/Reference/Server/#trustproxy
+    trustProxy: process.env.HTTP_SERVER_TRUST_PROXY || 'loopback, uniquelocal',
   },
   undici: {
     // Maximum number of connections per origin. Defaults to 100.
@@ -539,7 +614,9 @@ export default () => ({
       process.env.CIRCUIT_BREAKER_ROLLING_WINDOW ?? `${60_000}`,
       10,
     ), // 60 seconds
-    // Percentage of threshold used in HALF_OPEN state (0–100)
+    // Percentage of threshold used in HALF_OPEN state (0–100). The resulting
+    // count is both the number of failures that re-open the circuit and the
+    // maximum number of probe requests allowed in flight at once.
     halfOpenFailureRateThreshold: Number.parseInt(
       process.env.CIRCUIT_BREAKER_HALF_OPEN_FAILURE_RATE_THRESHOLD ?? `${30}`,
       10,
@@ -548,6 +625,16 @@ export default () => ({
   jwt: {
     issuer: process.env.JWT_ISSUER,
     secret: process.env.JWT_SECRET,
+  },
+  entitlements: {
+    // When enforcement goes live; workspaces created before it predate it.
+    enforcementStartsAt: parseEnforcementStartsAt(
+      process.env.ENTITLEMENTS_ENFORCEMENT_STARTS_AT,
+    ),
+    // When pre-enforcement workspaces stop being offered the legacy grace.
+    gracePeriodClaimEndsAt: parseGracePeriodClaimEndsAt(
+      process.env.ENTITLEMENTS_GRACE_PERIOD_CLAIM_ENDS_AT,
+    ),
   },
   billing: {
     baseUri:
@@ -775,6 +862,14 @@ export default () => ({
       ),
     },
   },
+  safeQueueService: {
+    baseUri:
+      process.env.SAFE_QUEUE_SERVICE_BASE_URI ||
+      'https://api.safe.global/queue',
+    useVpcUrl:
+      process.env.USE_SAFE_QUEUE_SERVICE_VPC_URL?.toLowerCase() === 'true',
+    apiKey: process.env.SAFE_QUEUE_SERVICE_API_KEY,
+  },
   safeConfig: {
     baseUri:
       process.env.SAFE_CONFIG_BASE_URI || 'https://safe-config.safe.global/',
@@ -792,6 +887,23 @@ export default () => ({
     },
     cgwServiceKey: process.env.SAFE_CONFIG_CGW_KEY || 'CGW',
   },
+  policies: {
+    /** How many delayed configuration requests CGW stores per Safe and Space. */
+    maxConfigurationRequestsPerSpaceSafe: Number.parseInt(
+      process.env.POLICIES_MAX_CONFIGURATION_REQUESTS_PER_SPACE_SAFE ??
+        `${100}`,
+      10,
+    ),
+    /** How long a stored configuration request is kept before it is pruned. */
+    configurationRequestRetentionDays: Number.parseInt(
+      process.env.POLICIES_CONFIGURATION_REQUEST_RETENTION_DAYS ?? `${60}`,
+      10,
+    ),
+    indexer: {
+      baseUri: process.env.POLICY_INDEXER_BASE_URI || 'POLICY_INDEXER_BASE_URI',
+    },
+    batchSize: Number.parseInt(process.env.POLICY_BATCH_SIZE ?? `${1}`, 10),
+  },
   safeDataDecoder: {
     baseUri:
       process.env.SAFE_DATA_DECODER_BASE_URI ||
@@ -801,11 +913,81 @@ export default () => ({
     useVpcUrl: process.env.USE_TX_SERVICE_VPC_URL?.toLowerCase() === 'true',
     apiKey: process.env.TX_SERVICE_API_KEY,
   },
+  safenet: {
+    consensusAddress: process.env.SAFENET_CONSENSUS_ADDRESS,
+    oracleAddress: process.env.SAFENET_ORACLE_ADDRESS,
+    rpcUri: process.env.SAFENET_RPC_URI,
+    payer: {
+      safeAddress: process.env.SAFENET_PAYER_SAFE_ADDRESS,
+      kms: {
+        keyId: process.env.SAFENET_PAYER_KMS_KEY_ID,
+        webIdentityTokenFile: process.env.AWS_WEB_IDENTITY_TOKEN_FILE,
+        // A hung KMS call would hold the only safenet-checks queue slot, so every call is bounded.
+        connectionTimeoutMs: Number.parseInt(
+          process.env.SAFENET_PAYER_KMS_CONNECTION_TIMEOUT_MS ?? `${5_000}`,
+          10,
+        ),
+        requestTimeoutMs: Number.parseInt(
+          process.env.SAFENET_PAYER_KMS_REQUEST_TIMEOUT_MS ?? `${10_000}`,
+          10,
+        ),
+      },
+    },
+    pollIntervalMs: Number.parseInt(
+      process.env.SAFENET_POLL_INTERVAL_MS ?? `${1_000}`,
+      10,
+    ),
+    pollTimeoutMs: Number.parseInt(
+      process.env.SAFENET_POLL_TIMEOUT_MS ?? `${120_000}`,
+      10,
+    ),
+    checksPerSpacePerDay: Number.parseInt(
+      process.env.SAFENET_CHECKS_PER_SPACE_PER_DAY ?? '100',
+      10,
+    ),
+    // The schema bounds the attempts to 1-10 and the retention ages to 30 days or more.
+    queue: {
+      attempts: Number.parseInt(
+        process.env.SAFENET_CHECKS_QUEUE_ATTEMPTS ?? `${3}`,
+        10,
+      ),
+      backoff: {
+        type: process.env.SAFENET_CHECKS_QUEUE_BACKOFF_TYPE || 'exponential',
+        delay: Number.parseInt(
+          process.env.SAFENET_CHECKS_QUEUE_BACKOFF_DELAY ?? `${5_000}`,
+          10,
+        ),
+      },
+      removeOnComplete: {
+        age: Number.parseInt(
+          process.env.SAFENET_CHECKS_QUEUE_REMOVE_ON_COMPLETE_AGE ??
+            `${30 * 24 * 60 * 60}`,
+          10,
+        ), // 30 days
+      },
+      removeOnFail: {
+        age: Number.parseInt(
+          process.env.SAFENET_CHECKS_QUEUE_REMOVE_ON_FAIL_AGE ??
+            `${30 * 24 * 60 * 60}`,
+          10,
+        ), // 30 days
+      },
+    },
+  },
   transactions: {
     statusIndexingGracePeriodMs: Number.parseInt(
       process.env.TRANSACTION_STATUS_INDEXING_GRACE_PERIOD_MS ?? `${60 * 1000}`,
       10,
     ),
+  },
+  tokens: {
+    rateLimit: {
+      max: Number.parseInt(process.env.TOKENS_RATE_LIMIT_MAX ?? `${60}`, 10),
+      windowSeconds: Number.parseInt(
+        process.env.TOKENS_RATE_LIMIT_WINDOW_SECONDS ?? `${60}`,
+        10,
+      ),
+    },
   },
   safeWebApp: {
     baseUri: process.env.SAFE_WEB_APP_BASE_URI || 'https://app.safe.global',
@@ -828,6 +1010,13 @@ export default () => ({
       process.env.SPACES_MAX_SAFES_PER_SPACE ?? `${10}`,
       10,
     ),
+    transactionQueue: {
+      /** How many queue service pages the Space queue reads. */
+      maxPages: Number.parseInt(
+        process.env.SPACES_TRANSACTION_QUEUE_MAX_PAGES ?? `${5}`,
+        10,
+      ),
+    },
     maxSpaceCreationsPerUser: Number.parseInt(
       process.env.MAX_SPACE_CREATIONS_PER_USER ?? `${3}`,
       10,
@@ -1056,6 +1245,29 @@ export default () => ({
     secretKey: process.env.CAPTCHA_SECRET_KEY,
   },
 });
+
+// An Invalid Date here would read as "enforcement off, grace for everyone",
+// so it fails loudly instead. RootConfigurationSchema does not cover this:
+// configuration.validator skips validation entirely under NODE_ENV=test.
+const parseEnforcementStartsAt = (envValue: string | undefined): Date => {
+  const startsAt = new Date(envValue ?? '2099-01-01T00:00:00Z');
+  if (Number.isNaN(startsAt.getTime())) {
+    throw Error('ENTITLEMENTS_ENFORCEMENT_STARTS_AT is not a valid date');
+  }
+  return startsAt;
+};
+
+// 60 days after enforcement started in production (2026-10-06T12:30:00Z).
+const DEFAULT_GRACE_PERIOD_CLAIM_ENDS_AT = '2026-12-05T12:30:00Z';
+
+// Unset or invalid falls back to the default: an Invalid Date would close the window.
+const parseGracePeriodClaimEndsAt = (envValue: string | undefined): Date => {
+  const endsAt = new Date(envValue ?? DEFAULT_GRACE_PERIOD_CLAIM_ENDS_AT);
+  if (Number.isNaN(endsAt.getTime())) {
+    return new Date(DEFAULT_GRACE_PERIOD_CLAIM_ENDS_AT);
+  }
+  return endsAt;
+};
 
 // Helper function to parse relay rules from environment variable
 const parseRelayRules = (

@@ -8,16 +8,16 @@ import type { MockedObject } from 'vitest';
 import {
   initTestApplication,
   TestAppProvider,
-} from '@/__tests__/test-app.provider';
-import { createTestModule } from '@/__tests__/testing-module';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import { NetworkService } from '@/datasources/network/network.service.interface';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { safeAppBuilder } from '@/modules/safe-apps/domain/entities/__tests__/safe-app.builder';
-import { safeAppAccessControlBuilder } from '@/modules/safe-apps/domain/entities/__tests__/safe-app-access-control.builder';
-import { SafeAppAccessControlPolicies } from '@/modules/safe-apps/domain/entities/safe-app-access-control.entity';
-import { rawify } from '@/validation/entities/raw.entity';
+} from '#/__tests__/test-app.provider';
+import { createTestModule } from '#/__tests__/testing-module';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import type { INetworkService } from '#/datasources/network/network.service.interface';
+import { NetworkService } from '#/datasources/network/network.service.interface';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
+import { safeAppBuilder } from '#/modules/safe-apps/domain/entities/__tests__/safe-app.builder';
+import { safeAppAccessControlBuilder } from '#/modules/safe-apps/domain/entities/__tests__/safe-app-access-control.builder';
+import { SafeAppAccessControlPolicies } from '#/modules/safe-apps/domain/entities/safe-app-access-control.entity';
+import { rawify } from '#/validation/entities/raw.entity';
 
 describe('Safe Apps Controller', () => {
   let app: INestApplication<Server>;

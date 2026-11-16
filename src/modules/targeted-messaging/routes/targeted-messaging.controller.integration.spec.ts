@@ -9,20 +9,20 @@ import type { MockedObject } from 'vitest';
 import {
   initTestApplication,
   TestAppProvider,
-} from '@/__tests__/test-app.provider';
-import { createTestModule } from '@/__tests__/testing-module';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import { NetworkService } from '@/datasources/network/network.service.interface';
-import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
-import { ITargetedMessagingDatasource } from '@/domain/interfaces/targeted-messaging.datasource.interface';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
-import { submissionBuilder } from '@/modules/targeted-messaging/domain/entities/__tests__/submission.builder';
-import { targetedSafeBuilder } from '@/modules/targeted-messaging/domain/entities/__tests__/targeted-safe.builder';
-import { SubmissionNotFoundError } from '@/modules/targeted-messaging/domain/errors/submission-not-found.error';
-import { TargetedSafeNotFoundError } from '@/modules/targeted-messaging/domain/errors/targeted-safe-not-found.error';
-import { rawify } from '@/validation/entities/raw.entity';
+} from '#/__tests__/test-app.provider';
+import { createTestModule } from '#/__tests__/testing-module';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import type { INetworkService } from '#/datasources/network/network.service.interface';
+import { NetworkService } from '#/datasources/network/network.service.interface';
+import { DB_MAX_SAFE_INTEGER } from '#/domain/common/constants';
+import { ITargetedMessagingDatasource } from '#/domain/interfaces/targeted-messaging.datasource.interface';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
+import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
+import { submissionBuilder } from '#/modules/targeted-messaging/domain/entities/__tests__/submission.builder';
+import { targetedSafeBuilder } from '#/modules/targeted-messaging/domain/entities/__tests__/targeted-safe.builder';
+import { SubmissionNotFoundError } from '#/modules/targeted-messaging/domain/errors/submission-not-found.error';
+import { TargetedSafeNotFoundError } from '#/modules/targeted-messaging/domain/errors/targeted-safe-not-found.error';
+import { rawify } from '#/validation/entities/raw.entity';
 
 describe('TargetedMessagingController', () => {
   let app: INestApplication<Server>;

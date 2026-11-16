@@ -5,12 +5,12 @@ import {
   alertBuilder,
   alertLogBuilder,
   alertTransactionBuilder,
-} from '@/modules/alerts/routes/entities/__tests__/alerts.builder';
+} from '#/modules/alerts/routes/entities/__tests__/alerts.builder';
 import {
   AlertLogSchema,
   AlertSchema,
   AlertTransactionSchema,
-} from '@/modules/alerts/routes/entities/schemas/alerts.schema';
+} from '#/modules/alerts/routes/entities/schemas/alerts.schema';
 
 describe('Alerts schemas', () => {
   describe('AlertLogSchema', () => {

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import type configuration from '@/config/entities/configuration';
+import type configuration from '#/config/entities/configuration';
 
 export default (): ReturnType<typeof configuration> => ({
   about: {
@@ -10,7 +10,7 @@ export default (): ReturnType<typeof configuration> => ({
   },
   amqp: {
     url: faker.internet.url({ appendSlash: false }),
-    exchange: { name: faker.string.sample(), mode: faker.string.sample() },
+    exchange: { name: faker.string.sample() },
     queue: faker.string.sample(),
     prefetch: faker.number.int(),
     heartbeatIntervalInSeconds: 60,
@@ -33,6 +33,7 @@ export default (): ReturnType<typeof configuration> => ({
     elevationWindowSeconds: faker.number.int({ min: 60, max: 1_800 }),
     postLoginRedirectUri: faker.internet.url(),
     allowedRedirectDomain: undefined,
+    allowedSiweDomains: [],
     auth0: {
       domain: faker.internet.domainName(),
       clientId: faker.string.uuid(),
@@ -98,16 +99,27 @@ export default (): ReturnType<typeof configuration> => ({
   portfolio: {
     cache: {
       ttlSeconds: faker.number.int({ min: 10, max: 300 }),
+      afterTransactionTtlSeconds: faker.number.int({ min: 60, max: 180 }),
     },
     filters: {
       dustThresholdUsd: faker.number.float({ min: 0.1, max: 10 }),
     },
+    summaries: {
+      rateLimit: {
+        max: faker.number.int({ min: 100, max: 200 }),
+        windowSeconds: faker.number.int({ min: 100, max: 200 }),
+      },
+    },
+    clear: {
+      cooldownSeconds: faker.number.int({ min: 10, max: 60 }),
+      recentClearSeconds: faker.number.int({ min: 10, max: 60 }),
+      rateLimit: {
+        max: faker.number.int({ min: 100, max: 200 }),
+        windowSeconds: faker.number.int({ min: 100, max: 200 }),
+      },
+    },
   },
   blockchain: {
-    blocklistEnabled: false,
-    blocklistSecretData: faker.string.hexadecimal({ length: 64 }),
-    blocklistSecretKey: faker.string.hexadecimal({ length: 64 }),
-    blocklistSecretSalt: faker.string.hexadecimal({ length: 64 }),
     infura: {
       apiKey: faker.string.hexadecimal({ length: 32 }),
     },
@@ -197,27 +209,39 @@ export default (): ReturnType<typeof configuration> => ({
       },
     },
   },
+  entitlements: {
+    enforcementStartsAt: faker.date.future(),
+    gracePeriodClaimEndsAt: faker.date.future(),
+  },
   expirationTimeInSeconds: {
     deviatePercent: faker.number.int({ min: 10, max: 20 }),
     default: faker.number.int(),
     rpc: faker.number.int(),
+    safenetNonce: faker.number.int(),
+    safenetDailyCheckCounter: faker.number.int(),
     hoodi: faker.number.int(),
     indexing: faker.number.int(),
+    policyIndexer: faker.number.int({ min: 1, max: 60 }),
     staking: faker.number.int(),
     zerionPositions: faker.number.int(),
     billing: faker.number.int(),
+    entitlements: faker.number.int(),
+    decodedData: faker.number.int(),
     notFound: {
       default: faker.number.int(),
       contract: faker.number.int(),
+      decodedData: faker.number.int(),
       token: faker.number.int(),
     },
   },
-  express: { jsonLimit: '1mb', trustProxy: 'loopback, uniquelocal' },
+  httpServer: { bodyLimit: '1mb', trustProxy: 'loopback, uniquelocal' },
   features: {
     email: false,
     sesEmail: false,
     zerion: false,
+    zerionTestnets: false,
     zerionPositions: false,
+    safesPortfolioSnapshot: false,
     debugLogs: false,
     configHooksDebugLogs: false,
     auth: false,
@@ -245,6 +269,10 @@ export default (): ReturnType<typeof configuration> => ({
     cacheInFlightRequests: false,
     spaceAuditLog: true,
     mfaStepUp: true,
+    safeShieldCoreDisabled: false,
+    safeQueueService: false,
+    safenet: false,
+    guardPolicies: true,
   },
   httpClient: {
     requestTimeout: faker.number.int(),
@@ -427,6 +455,11 @@ export default (): ReturnType<typeof configuration> => ({
       feePreviewTtlSeconds: 60,
     },
   },
+  safeQueueService: {
+    baseUri: faker.internet.url({ appendSlash: false }),
+    useVpcUrl: false,
+    apiKey: faker.string.hexadecimal({ length: 32 }),
+  },
   safeConfig: {
     baseUri: faker.internet.url({ appendSlash: false }),
     chains: {
@@ -437,6 +470,17 @@ export default (): ReturnType<typeof configuration> => ({
     },
     cgwServiceKey: 'CGW',
   },
+  policies: {
+    maxConfigurationRequestsPerSpaceSafe: faker.number.int({
+      min: 1,
+      max: 100,
+    }),
+    configurationRequestRetentionDays: faker.number.int({ min: 1, max: 60 }),
+    indexer: {
+      baseUri: faker.internet.url({ appendSlash: false }),
+    },
+    batchSize: faker.number.int({ min: 1, max: 10 }),
+  },
   safeDataDecoder: {
     baseUri: faker.internet.url({ appendSlash: false }),
   },
@@ -444,11 +488,47 @@ export default (): ReturnType<typeof configuration> => ({
     useVpcUrl: false,
     apiKey: faker.string.hexadecimal({ length: 32 }),
   },
+  safenet: {
+    consensusAddress: faker.finance.ethereumAddress(),
+    oracleAddress: faker.finance.ethereumAddress(),
+    rpcUri: faker.internet.url(),
+    payer: {
+      safeAddress: faker.finance.ethereumAddress(),
+      kms: {
+        keyId: faker.string.uuid(),
+        webIdentityTokenFile: faker.system.filePath(),
+        connectionTimeoutMs: faker.number.int({ min: 1, max: 5_000 }),
+        requestTimeoutMs: faker.number.int({ min: 1, max: 10_000 }),
+      },
+    },
+    pollIntervalMs: faker.number.int({ min: 1, max: 1000 }),
+    pollTimeoutMs: faker.number.int({ min: 1000, max: 120_000 }),
+    checksPerSpacePerDay: faker.number.int({ min: 1, max: 100 }),
+    queue: {
+      attempts: faker.number.int({ min: 1, max: 3 }),
+      backoff: {
+        type: 'exponential',
+        delay: faker.number.int({ min: 0, max: 5000 }),
+      },
+      removeOnComplete: {
+        age: faker.number.int({ min: 2_592_000, max: 5_184_000 }),
+      },
+      removeOnFail: {
+        age: faker.number.int({ min: 2_592_000, max: 5_184_000 }),
+      },
+    },
+  },
   transactions: {
     statusIndexingGracePeriodMs: faker.number.int({
       min: 60_000,
       max: 300_000,
     }),
+  },
+  tokens: {
+    rateLimit: {
+      max: faker.number.int({ min: 100, max: 200 }),
+      windowSeconds: faker.number.int({ min: 100, max: 200 }),
+    },
   },
   safeWebApp: {
     baseUri: faker.internet.url({ appendSlash: false }),
@@ -461,6 +541,9 @@ export default (): ReturnType<typeof configuration> => ({
       maxPending: faker.number.int({ min: 10, max: 20 }),
     },
     maxSafesPerSpace: faker.number.int({ min: 5, max: 10 }),
+    transactionQueue: {
+      maxPages: faker.number.int({ min: 1, max: 5 }),
+    },
     maxSpaceCreationsPerUser: faker.number.int({ min: 100, max: 200 }),
     maxInvites: faker.number.int({ min: 5, max: 10 }),
     invite: {

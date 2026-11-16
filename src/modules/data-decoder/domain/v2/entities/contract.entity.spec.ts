@@ -5,12 +5,12 @@ import {
   abiBuilder,
   contractBuilder,
   projectBuilder,
-} from '@/modules/data-decoder/domain/v2/entities/__tests__/contract.builder';
+} from '#/modules/data-decoder/domain/v2/entities/__tests__/contract.builder';
 import {
   AbiSchema,
   ContractSchema,
   ProjectSchema,
-} from '@/modules/data-decoder/domain/v2/entities/contract.entity';
+} from '#/modules/data-decoder/domain/v2/entities/contract.entity';
 
 describe('Contract', () => {
   describe('ProjectSchema', () => {

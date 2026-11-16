@@ -1,4 +1,5 @@
-import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
 
 describe('FakeConfigurationService', () => {
   let configurationService: FakeConfigurationService;

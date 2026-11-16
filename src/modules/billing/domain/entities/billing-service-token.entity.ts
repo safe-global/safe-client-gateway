@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { z } from 'zod';
-import { JwtClaimsSchema } from '@/datasources/jwt/jwt-claims.entity';
+import { JwtClaimsSchema } from '#/datasources/jwt/jwt-claims.entity';
 
 export const SERVICE_ACCESS_ROLE = 'SERVICE_ACCESS' as const;
 export const SERVICE_ACCESS_PERMISSION_TYPE = 'SERVICE_ACCESS' as const;

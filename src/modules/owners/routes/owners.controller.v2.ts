@@ -7,11 +7,11 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import type { Address } from 'viem';
-import { OwnersService } from '@/modules/owners/routes/owners.service';
-import type { SafesByChainId } from '@/modules/safe/domain/entities/safes-by-chain-id.entity';
-import { CaptchaGuard } from '@/routes/captcha/guards/captcha.guard';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+import { OwnersService } from '#/modules/owners/routes/owners.service';
+import type { SafesByChainId } from '#/modules/safe/domain/entities/safes-by-chain-id.entity';
+import { CaptchaGuard } from '#/routes/captcha/guards/captcha.guard';
+import { AddressSchema } from '#/validation/entities/schemas/address.schema';
+import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
 @ApiTags('owners')
 @Controller({

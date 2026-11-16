@@ -1,7 +1,8 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import type { IBuilder } from '@/__tests__/builder';
-import { Builder } from '@/__tests__/builder';
-import type { BlockExplorerUriTemplate } from '@/modules/chains/domain/entities/block-explorer-uri-template.entity';
+import type { IBuilder } from '#/__tests__/builder';
+import { Builder } from '#/__tests__/builder';
+import type { BlockExplorerUriTemplate } from '#/modules/chains/domain/entities/block-explorer-uri-template.entity';
 
 export function blockExplorerUriTemplateBuilder(): IBuilder<BlockExplorerUriTemplate> {
   const explorerUrl = faker.internet.url({ appendSlash: false });

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { CircuitState } from '@/datasources/circuit-breaker/enums/circuit-state.enum';
+import type { CircuitState } from '#/datasources/circuit-breaker/enums/circuit-state.enum';
 
 /**
  * Configuration options for a circuit breaker
@@ -24,7 +24,8 @@ export interface ICircuitConfig {
 
   /**
    * Percentage of threshold used in HALF_OPEN state (0–100)
-   * E.g. 30 with threshold 10 means 3 failures reopen the circuit
+   * E.g. 30 with threshold 10 means 3 failures reopen the circuit, and at
+   * most 3 probe requests may be in flight at once while HALF_OPEN
    */
   halfOpenFailureRateThreshold: number;
 }
@@ -59,9 +60,31 @@ export interface ICircuitMetrics {
   consecutiveSuccesses: number;
 
   /**
+   * Number of requests currently in flight as HALF_OPEN probes
+   */
+  halfOpenInFlight: number;
+
+  /**
    * Timestamp of the last success or failure, used for stale circuit cleanup
    */
   lastActivityTime?: number;
+
+  /**
+   * Timestamp when the circuit first opened in the current outage.
+   * Kept across HALF_OPEN → OPEN re-trips so the outage duration can be reported
+   */
+  openedAt?: number;
+
+  /**
+   * Number of HALF_OPEN → OPEN re-trips in the current outage
+   */
+  reopenCount: number;
+
+  /**
+   * Number of requests rejected in the current outage, reported on state
+   * transitions instead of being logged per request
+   */
+  blockedRequests: number;
 }
 
 /**

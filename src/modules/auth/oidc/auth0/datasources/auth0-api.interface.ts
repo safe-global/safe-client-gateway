@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { Auth0AuthenticationMethod } from '@/modules/auth/oidc/auth0/datasources/entities/auth0-authentication-method.entity';
-import type { Auth0TokenResponse } from '@/modules/auth/oidc/auth0/datasources/entities/auth0-token-response.entity';
-import type { Raw } from '@/validation/entities/raw.entity';
+import type { Auth0AuthenticationMethod } from '#/modules/auth/oidc/auth0/datasources/entities/auth0-authentication-method.entity';
+import type { Auth0TokenResponse } from '#/modules/auth/oidc/auth0/datasources/entities/auth0-token-response.entity';
+import type { Raw } from '#/validation/entities/raw.entity';
 
 export const IAuth0Api = Symbol('IAuth0Api');
 

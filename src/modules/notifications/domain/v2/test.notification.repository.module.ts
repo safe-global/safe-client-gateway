@@ -2,8 +2,8 @@
 
 import { Module } from '@nestjs/common';
 import type { MockedObject } from 'vitest';
-import { MockNotificationRepositoryV2 } from '@/modules/notifications/domain/v2/entities/__tests__/notification.repository.mock';
-import { INotificationsRepositoryV2 } from '@/modules/notifications/domain/v2/notifications.repository.interface';
+import { MockNotificationRepositoryV2 } from '#/modules/notifications/domain/v2/entities/__tests__/notification.repository.mock';
+import { INotificationsRepositoryV2 } from '#/modules/notifications/domain/v2/notifications.repository.interface';
 
 @Module({
   providers: [

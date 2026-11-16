@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { z } from 'zod';
-import type { ThemeSchema } from '@/modules/chains/domain/entities/schemas/chain.schema';
+import type { ThemeSchema } from '#/modules/chains/domain/entities/schemas/chain.schema';
 
 export type Theme = z.infer<typeof ThemeSchema>;

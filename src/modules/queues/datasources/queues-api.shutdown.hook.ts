@@ -3,9 +3,9 @@ import { Inject, Injectable, type OnModuleDestroy } from '@nestjs/common';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import { asError } from '@/logging/utils';
-import type { QueueConsumer } from '@/modules/queues/datasources/queues-api.module';
+} from '#/logging/logging.interface';
+import { asError } from '#/logging/utils';
+import type { QueueConsumer } from '#/modules/queues/datasources/queues-api.module';
 
 @Injectable()
 export class QueuesApiShutdownHook implements OnModuleDestroy {

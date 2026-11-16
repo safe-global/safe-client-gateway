@@ -7,10 +7,10 @@ import request from 'supertest';
 import {
   createTestApplication,
   initTestApplication,
-} from '@/__tests__/test-app.provider';
-import { createTestModule } from '@/__tests__/testing-module';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import configuration from '@/config/entities/__tests__/configuration';
+} from '#/__tests__/test-app.provider';
+import { createTestModule } from '#/__tests__/testing-module';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import configuration from '#/config/entities/__tests__/configuration';
 
 describe('HooksController', () => {
   describe('Feature flag disabled (default)', () => {

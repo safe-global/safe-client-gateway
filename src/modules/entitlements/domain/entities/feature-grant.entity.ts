@@ -1,0 +1,25 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { z } from 'zod';
+
+/** What a plan grants for one feature. The only part cached; never usage. */
+const FeatureGrantSchema = z.object({
+  /** Whether the feature is granted. */
+  enabled: z.boolean(),
+  /** NULL = unlimited. Read by `assertWithinQuota`, a metered feature only. */
+  quota: z.number().int().nullable(),
+  resetsAt: z.coerce.date().nullable(),
+  /**
+   * Which counter the quota is measured against. NULL for a stock-metered
+   * feature, whose usage is a live count in another module's table.
+   */
+  counter: z
+    .object({
+      featureId: z.number().int(),
+      periodStart: z.coerce.date(),
+    })
+    .nullable(),
+});
+
+export type FeatureGrant = z.infer<typeof FeatureGrantSchema>;
+
+export const CachedGrantsSchema = z.record(z.string(), FeatureGrantSchema);

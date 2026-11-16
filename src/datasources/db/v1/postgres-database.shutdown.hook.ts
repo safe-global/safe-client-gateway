@@ -4,7 +4,7 @@ import type postgres from 'postgres';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
+} from '#/logging/logging.interface';
 
 @Injectable()
 export class PostgresDatabaseShutdownHook implements OnModuleDestroy {

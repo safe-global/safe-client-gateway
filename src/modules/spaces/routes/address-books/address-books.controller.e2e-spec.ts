@@ -5,19 +5,20 @@ import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { type Address, getAddress } from 'viem';
+import { onTestFinished } from 'vitest';
 import {
   initTestApplication,
   TestAppProvider,
-} from '@/__tests__/test-app.provider';
-import { createTestModule } from '@/__tests__/testing-module';
-import configuration from '@/config/entities/__tests__/configuration';
-import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
-import { nameBuilder } from '@/domain/common/entities/name.builder';
-import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
-import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
-import { addressBookItemBuilder } from '@/modules/spaces/domain/address-books/entities/__tests__/address-book-item.db.builder';
+} from '#/__tests__/test-app.provider';
+import { createTestModule } from '#/__tests__/testing-module';
+import configuration from '#/config/entities/__tests__/configuration';
+import { IJwtService } from '#/datasources/jwt/jwt.service.interface';
+import { nameBuilder } from '#/domain/common/entities/name.builder';
+import { siweAuthPayloadDtoBuilder } from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import { NotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/notifications.repository.module';
+import { TestNotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/test.notification.repository.module';
+import { addressBookItemBuilder } from '#/modules/spaces/domain/address-books/entities/__tests__/address-book-item.db.builder';
 
 describe('AddressBooksController', () => {
   let app: INestApplication<Server>;
@@ -68,16 +69,17 @@ describe('AddressBooksController', () => {
       ],
     });
 
-    jwtService = moduleFixture.get<IJwtService>(IJwtService);
-
-    app = await new TestAppProvider().provide(moduleFixture);
-    await initTestApplication(app);
-    return app;
+    // A local app: a test that boots its own (differently configured) app must
+    // not replace the shared one the later tests and the helpers use.
+    const testApp = await new TestAppProvider().provide(moduleFixture);
+    await initTestApplication(testApp);
+    return testApp;
   }
 
   beforeAll(async () => {
     vi.resetAllMocks();
     app = await initApp();
+    jwtService = app.get<IJwtService>(IJwtService);
   });
 
   afterAll(async () => {
@@ -94,6 +96,7 @@ describe('AddressBooksController', () => {
         .expect(200)
         .expect({
           spaceUuid: spaceId,
+          tags: [],
           data: [],
         });
     });
@@ -111,6 +114,7 @@ describe('AddressBooksController', () => {
         .expect(200)
         .expect({
           spaceUuid: spaceId,
+          tags: [],
           data: [],
         });
     });
@@ -131,11 +135,13 @@ describe('AddressBooksController', () => {
         .expect(({ body }) =>
           expect(body).toEqual({
             spaceUuid: spaceId,
+            tags: [],
             data: [
               {
                 chainIds: mockChainIds,
                 address: mockAddress,
                 name: mockName,
+                tagIds: [],
                 createdBy: signerAddress,
                 createdByUserId: userId,
                 lastUpdatedBy: signerAddress,
@@ -167,11 +173,13 @@ describe('AddressBooksController', () => {
         .expect(({ body }) =>
           expect(body).toEqual({
             spaceUuid: spaceId,
+            tags: [],
             data: [
               {
                 chainIds: mockChainIds,
                 address: mockAddress,
                 name: mockName,
+                tagIds: [],
                 createdBy: expect.any(String),
                 createdByUserId: expect.any(Number),
                 lastUpdatedBy: expect.any(String),
@@ -184,7 +192,7 @@ describe('AddressBooksController', () => {
         );
     });
 
-    it('should return a 404 if the user declined the membership', async () => {
+    it('should return a 403 if the user declined the membership', async () => {
       const { spaceId, accessToken } = await createSpace();
       const { memberAccessToken } = await createPendingMember({
         spaceId,
@@ -198,11 +206,10 @@ describe('AddressBooksController', () => {
       await request(app.getHttpServer())
         .get(`/v1/spaces/${spaceId}/address-book`)
         .set('Cookie', [`access_token=${memberAccessToken}`])
-        .expect(404)
+        .expect(403)
         .expect({
-          statusCode: 404,
-          message: 'Workspace not found.',
-          error: 'Not Found',
+          statusCode: 403,
+          message: 'User is not a member of this workspace',
         });
     });
 
@@ -210,7 +217,7 @@ describe('AddressBooksController', () => {
       const { accessToken } = await createSpace();
 
       await request(app.getHttpServer())
-        .get(`/v1/spaces/${faker.string.numeric()}/address-book`)
+        .get(`/v1/spaces/${faker.string.uuid()}/address-book`)
         .set('Cookie', [`access_token=${accessToken}`])
         .expect(404)
         .expect({
@@ -220,7 +227,7 @@ describe('AddressBooksController', () => {
         });
     });
 
-    it('should return a 404 if the user does not exist', async () => {
+    it('should return a 403 if the user does not exist', async () => {
       const { spaceId } = await createSpace();
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const nonExistentUserAccessToken = jwtService.sign(authPayloadDto);
@@ -228,11 +235,10 @@ describe('AddressBooksController', () => {
       await request(app.getHttpServer())
         .get(`/v1/spaces/${spaceId}/address-book`)
         .set('Cookie', [`access_token=${nonExistentUserAccessToken}`])
-        .expect(404)
+        .expect(403)
         .expect({
-          statusCode: 404,
-          message: 'User not found.',
-          error: 'Not Found',
+          statusCode: 403,
+          message: 'User is not a member of this workspace',
         });
     });
 
@@ -298,11 +304,13 @@ describe('AddressBooksController', () => {
         .expect(({ body }) =>
           expect(body).toEqual({
             spaceUuid: spaceId,
+            tags: [],
             data: [
               {
                 chainIds: mockChainIds,
                 address: mockAddress,
                 name: mockName,
+                tagIds: [],
                 createdBy: signerAddress,
                 createdByUserId: userId,
                 lastUpdatedBy: signerAddress,
@@ -358,11 +366,13 @@ describe('AddressBooksController', () => {
         .expect(({ body }) =>
           expect(body).toEqual({
             spaceUuid: spaceId,
+            tags: [],
             data: expect.arrayContaining([
               {
                 chainIds: utf8ChainIds,
                 address: utf8Address,
                 name: utf8Name.normalize('NFC'),
+                tagIds: [],
                 createdBy: signerAddress,
                 createdByUserId: userId,
                 lastUpdatedBy: signerAddress,
@@ -374,6 +384,7 @@ describe('AddressBooksController', () => {
                 chainIds: bidiChainIds,
                 address: bidiAddress,
                 name: strippedName,
+                tagIds: [],
                 createdBy: signerAddress,
                 createdByUserId: userId,
                 lastUpdatedBy: signerAddress,
@@ -427,11 +438,13 @@ describe('AddressBooksController', () => {
         .expect(({ body }) =>
           expect(body).toEqual({
             spaceUuid: spaceId,
+            tags: [],
             data: [
               {
                 chainIds: mockChainIds,
                 address: mockAddress,
                 name: mockName,
+                tagIds: [],
                 createdBy: expect.any(String),
                 createdByUserId: expect.any(Number),
                 lastUpdatedBy: expect.any(String),
@@ -464,11 +477,13 @@ describe('AddressBooksController', () => {
         .expect(({ body }) =>
           expect(body).toEqual({
             spaceUuid: spaceId,
+            tags: [],
             data: [
               {
                 chainIds: mockChainIds,
                 address: mockAddress,
                 name: mockNewName,
+                tagIds: [],
                 createdBy: expect.any(String),
                 createdByUserId: expect.any(Number),
                 lastUpdatedBy: expect.any(String),
@@ -521,9 +536,11 @@ describe('AddressBooksController', () => {
         .expect(({ body }) =>
           expect(body).toEqual({
             spaceUuid: spaceId,
+            tags: [],
             data: expect.arrayContaining([
               {
                 ...updatedFirstItem,
+                tagIds: [],
                 createdBy: expect.any(String),
                 createdByUserId: expect.any(Number),
                 lastUpdatedBy: expect.any(String),
@@ -533,6 +550,7 @@ describe('AddressBooksController', () => {
               },
               {
                 ...secondItem,
+                tagIds: [],
                 createdBy: expect.any(String),
                 createdByUserId: expect.any(Number),
                 lastUpdatedBy: expect.any(String),
@@ -549,6 +567,7 @@ describe('AddressBooksController', () => {
 
     it('should rate limit upsertions', async () => {
       const app = await initApp({ rateLimit: { max: 1, windowSeconds: 60 } });
+      onTestFinished(() => app.close());
       const { spaceId, accessToken } = await createSpace();
       const addressBookItem1 = addressBookItemBuilder().build();
       const addressBookItem2 = addressBookItemBuilder().build();
@@ -585,6 +604,7 @@ describe('AddressBooksController', () => {
 
     it('should return a 400 if the limit is reached', async () => {
       const app = await initApp({ maxUpsertionsPerUser: 1 });
+      onTestFinished(() => app.close());
       const { spaceId, accessToken } = await createSpace();
       const addressBookItem1 = addressBookItemBuilder().build();
       const addressBookItem2 = addressBookItemBuilder().build();
@@ -626,6 +646,7 @@ describe('AddressBooksController', () => {
 
     it('should return a 400 if the request has more than the limit', async () => {
       const app = await initApp({ maxUpsertionsPerUser: 1 });
+      onTestFinished(() => app.close());
       const { spaceId, accessToken } = await createSpace();
       const addressBookItem1 = addressBookItemBuilder().build();
       const addressBookItem2 = addressBookItemBuilder().build();
@@ -667,7 +688,7 @@ describe('AddressBooksController', () => {
         .expect(404);
     });
 
-    it('should return a 404 if the user does not exist', async () => {
+    it('should return a 403 if the user does not exist', async () => {
       const { spaceId } = await createSpace();
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
@@ -676,7 +697,11 @@ describe('AddressBooksController', () => {
         .put(`/v1/spaces/${spaceId}/address-book`)
         .set('Cookie', [`access_token=${accessToken}`])
         .send({ items: [] })
-        .expect(404);
+        .expect(403)
+        .expect({
+          statusCode: 403,
+          message: 'User is not an admin of this workspace',
+        });
     });
 
     it('should return a 403 if not authenticated', async () => {
@@ -688,7 +713,7 @@ describe('AddressBooksController', () => {
         .expect(403);
     });
 
-    it('should return a 404 if the member is not an admin', async () => {
+    it('should return a 403 if the member is not an admin', async () => {
       const { spaceId, accessToken } = await createSpace();
       const { memberAccessToken } = await createActiveMember({
         spaceId,
@@ -699,7 +724,11 @@ describe('AddressBooksController', () => {
         .put(`/v1/spaces/${spaceId}/address-book`)
         .set('Cookie', [`access_token=${memberAccessToken}`])
         .send({ items: [] })
-        .expect(404);
+        .expect(403)
+        .expect({
+          statusCode: 403,
+          message: 'User is not an admin of this workspace',
+        });
     });
 
     it('should return a 403 if the AuthPayload is empty', async () => {
@@ -735,6 +764,7 @@ describe('AddressBooksController', () => {
         .expect(({ body }) =>
           expect(body).toEqual({
             spaceUuid: spaceId,
+            tags: [],
             data: [],
           }),
         );
@@ -768,11 +798,13 @@ describe('AddressBooksController', () => {
         .expect(({ body }) =>
           expect(body).toEqual({
             spaceUuid: spaceId2,
+            tags: [],
             data: [
               {
                 address: mockAddress,
                 name: mockName,
                 chainIds: mockChainIds,
+                tagIds: [],
                 createdBy: authPayload2.signer_address,
                 createdByUserId: expect.any(Number),
                 lastUpdatedBy: authPayload2.signer_address,
@@ -801,7 +833,7 @@ describe('AddressBooksController', () => {
         });
     });
 
-    it('should return a 404 if the user does not exist', async () => {
+    it('should return a 403 if the user does not exist', async () => {
       const { spaceId } = await createSpace();
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
@@ -810,15 +842,14 @@ describe('AddressBooksController', () => {
       await request(app.getHttpServer())
         .delete(`/v1/spaces/${spaceId}/address-book/${address}`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .expect(404)
+        .expect(403)
         .expect({
-          statusCode: 404,
-          message: 'User not found.',
-          error: 'Not Found',
+          statusCode: 403,
+          message: 'User is not an admin of this workspace',
         });
     });
 
-    it('should return a 404 if the member is not an ADMIN', async () => {
+    it('should return a 403 if the member is not an ADMIN', async () => {
       const { spaceId, accessToken } = await createSpace();
       const { memberAccessToken } = await createActiveMember({
         spaceId,
@@ -829,11 +860,10 @@ describe('AddressBooksController', () => {
       await request(app.getHttpServer())
         .delete(`/v1/spaces/${spaceId}/address-book/${address}`)
         .set('Cookie', [`access_token=${memberAccessToken}`])
-        .expect(404)
+        .expect(403)
         .expect({
-          statusCode: 404,
-          message: 'Workspace not found.',
-          error: 'Not Found',
+          statusCode: 403,
+          message: 'User is not an admin of this workspace',
         });
     });
 
@@ -876,23 +906,27 @@ describe('AddressBooksController', () => {
     userId: number;
   }> => {
     const authPayloadDto = siweAuthPayloadDtoBuilder().build();
-    const accessToken = jwtService.sign(authPayloadDto);
-    const spaceName = nameBuilder();
+    const walletToken = jwtService.sign(authPayloadDto);
     const userWithWalletResponse = await request(app.getHttpServer())
       .post('/v1/users/wallet')
-      .set('Cookie', [`access_token=${accessToken}`])
+      .set('Cookie', [`access_token=${walletToken}`])
       .expect(201);
+    const userId: number = userWithWalletResponse.body.id;
+    // Sign as the user that was just created, so `sub` matches the database.
+    const accessToken = jwtService.sign({
+      ...authPayloadDto,
+      sub: userId.toString(),
+    });
     const createSpaceResponse = await request(app.getHttpServer())
       .post('/v1/spaces')
       .set('Cookie', [`access_token=${accessToken}`])
-      .send({ name: spaceName })
+      .send({ name: nameBuilder() })
       .expect(201);
-    const spaceId = createSpaceResponse.body.uuid;
     return {
-      spaceId,
+      spaceId: createSpaceResponse.body.uuid,
       accessToken,
       signerAddress: authPayloadDto.signer_address as string,
-      userId: userWithWalletResponse.body.id,
+      userId,
     };
   };
 
@@ -901,17 +935,21 @@ describe('AddressBooksController', () => {
     adminAccessToken: string;
   }): Promise<{ memberAccessToken: string }> => {
     const memberAuthPayloadDto = siweAuthPayloadDtoBuilder().build();
-    const memberAccessToken = jwtService.sign(memberAuthPayloadDto);
     const member = {
       role: 'MEMBER',
       name: faker.person.firstName(),
       address: memberAuthPayloadDto.signer_address,
     };
-    await request(app.getHttpServer())
+    const inviteResponse = await request(app.getHttpServer())
       .post(`/v1/spaces/${args.spaceId}/members/invite`)
       .set('Cookie', [`access_token=${args.adminAccessToken}`])
       .send({ users: [member] })
       .expect(201);
+    // Sign as the invited user, so `sub` matches the database.
+    const memberAccessToken = jwtService.sign({
+      ...memberAuthPayloadDto,
+      sub: inviteResponse.body[0].userId.toString(),
+    });
     return { memberAccessToken };
   };
 

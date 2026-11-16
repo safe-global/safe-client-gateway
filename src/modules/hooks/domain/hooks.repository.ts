@@ -1,18 +1,26 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable, type OnModuleInit } from '@nestjs/common';
 import type { ConsumeMessage } from 'amqplib';
-import { IConfigurationService } from '@/config/configuration.service.interface';
+import { z } from 'zod';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { LogType } from '#/domain/common/entities/log-type.entity';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import { EventCacheHelper } from '@/modules/hooks/domain/helpers/event-cache.helper';
-import type { IHooksRepository } from '@/modules/hooks/domain/hooks.repository.interface';
-import type { Event } from '@/modules/hooks/routes/entities/event.entity';
-import { ConfigEventType } from '@/modules/hooks/routes/entities/event-type.entity';
-import { EventSchema } from '@/modules/hooks/routes/entities/schemas/event.schema';
-import { IPushNotificationService } from '@/modules/notifications/domain/push/push-notification.service.interface';
-import { IQueuesRepository } from '@/modules/queues/domain/queues-repository.interface';
+} from '#/logging/logging.interface';
+import { asError } from '#/logging/utils';
+import { ICounterfactualSafesRepository } from '#/modules/counterfactual-safes/domain/counterfactual-safes.repository.interface';
+import { EventCacheHelper } from '#/modules/hooks/domain/helpers/event-cache.helper';
+import type { IHooksRepository } from '#/modules/hooks/domain/hooks.repository.interface';
+import type { Event } from '#/modules/hooks/routes/entities/event.entity';
+import {
+  ConfigEventType,
+  TransactionEventType,
+} from '#/modules/hooks/routes/entities/event-type.entity';
+import { EventSchema } from '#/modules/hooks/routes/entities/schemas/event.schema';
+import { InvalidEventContextSchema } from '#/modules/hooks/routes/entities/schemas/invalid-event-context.schema';
+import { IPushNotificationService } from '#/modules/notifications/domain/push/push-notification.service.interface';
+import { IQueuesRepository } from '#/modules/queues/domain/queues-repository.interface';
 
 @Injectable()
 export class HooksRepository implements IHooksRepository, OnModuleInit {
@@ -29,6 +37,8 @@ export class HooksRepository implements IHooksRepository, OnModuleInit {
     private readonly pushNotificationService: IPushNotificationService,
     @Inject(EventCacheHelper)
     private readonly eventCacheHelper: EventCacheHelper,
+    @Inject(ICounterfactualSafesRepository)
+    private readonly counterfactualSafesRepository: ICounterfactualSafesRepository,
   ) {
     this.queueName = this.configurationService.getOrThrow<string>('amqp.queue');
   }
@@ -38,14 +48,41 @@ export class HooksRepository implements IHooksRepository, OnModuleInit {
       this.queueName,
       async (msg: ConsumeMessage) => {
         try {
-          const content = JSON.parse(msg.content.toString());
-          const event: Event = EventSchema.parse(content);
-          await this.onEvent(event);
+          const event = this.parseEvent(msg.content.toString());
+          if (event) {
+            await this.onEvent(event);
+          }
         } catch (err) {
           this.loggingService.error(err);
         }
       },
     );
+  }
+
+  private parseEvent(body: string): Event | null {
+    let content: unknown;
+    try {
+      content = JSON.parse(body);
+    } catch (err) {
+      this.logInvalidEvent(undefined, asError(err).message);
+      return null;
+    }
+    const result = EventSchema.safeParse(content);
+    if (!result.success) {
+      this.logInvalidEvent(content, z.prettifyError(result.error));
+      return null;
+    }
+    return result.data;
+  }
+
+  private logInvalidEvent(content: unknown, reason: string): void {
+    const { type, chainId } = InvalidEventContextSchema.parse(content);
+    this.loggingService.error({
+      type: LogType.HookEventInvalid,
+      event_type: type,
+      chain_id: chainId,
+      reason,
+    });
   }
 
   async onEvent(event: Event): Promise<unknown> {
@@ -56,10 +93,38 @@ export class HooksRepository implements IHooksRepository, OnModuleInit {
       return Promise.allSettled([
         this.eventCacheHelper.onEventClearCache(event),
         this.pushNotificationService.enqueueEvent(event),
+        this.markCounterfactualSafeAsDeployed(event),
       ]).finally(() => {
         this.eventCacheHelper.onEventLog(event);
       });
     }
     return this.eventCacheHelper.onUnsupportedChainEvent(event);
+  }
+
+  private async markCounterfactualSafeAsDeployed(event: Event): Promise<void> {
+    if (event.type !== TransactionEventType.SAFE_CREATED) {
+      return;
+    }
+    const { chainId, address } = event;
+    try {
+      const isMarked = await this.counterfactualSafesRepository.markAsDeployed({
+        chainId,
+        address,
+      });
+      if (isMarked) {
+        this.loggingService.info({
+          message: 'Marked counterfactual Safe as deployed',
+          chainId,
+          address,
+        });
+      }
+    } catch (error) {
+      this.loggingService.error({
+        message: 'Failed to mark counterfactual Safe as deployed',
+        chainId,
+        address,
+        error: asError(error).message,
+      });
+    }
   }
 }

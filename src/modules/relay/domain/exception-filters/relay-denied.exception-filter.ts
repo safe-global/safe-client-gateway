@@ -7,8 +7,8 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import type { FastifyReply } from 'fastify';
-import { RelayDeniedError } from '@/modules/relay/domain/errors/relay-denied.error';
-import { RelayTxDeniedError } from '@/modules/relay/domain/errors/relay-tx-denied.error';
+import { RelayDeniedError } from '#/modules/relay/domain/errors/relay-denied.error';
+import { RelayTxDeniedError } from '#/modules/relay/domain/errors/relay-tx-denied.error';
 
 @Catch(RelayDeniedError, RelayTxDeniedError)
 export class RelayDeniedExceptionFilter implements ExceptionFilter {

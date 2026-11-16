@@ -20,23 +20,24 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import type { Address } from 'viem';
-import { DelegatesService } from '@/modules/delegate/routes/delegates.service';
-import { CreateDelegateDto } from '@/modules/delegate/routes/entities/create-delegate.dto.entity';
-import type { Delegate } from '@/modules/delegate/routes/entities/delegate.entity';
-import { DelegatePage } from '@/modules/delegate/routes/entities/delegate.page.entity';
-import { DeleteDelegateDto } from '@/modules/delegate/routes/entities/delete-delegate.dto.entity';
-import { DeleteSafeDelegateDto } from '@/modules/delegate/routes/entities/delete-safe-delegate.dto.entity';
-import type { GetDelegateDto } from '@/modules/delegate/routes/entities/get-delegate.dto.entity';
-import { CreateDelegateDtoSchema } from '@/modules/delegate/routes/entities/schemas/create-delegate.dto.schema';
-import { DeleteDelegateDtoSchema } from '@/modules/delegate/routes/entities/schemas/delete-delegate.dto.schema';
-import { DeleteSafeDelegateDtoSchema } from '@/modules/delegate/routes/entities/schemas/delete-safe-delegate.dto.schema';
-import { GetDelegateDtoSchema } from '@/modules/delegate/routes/entities/schemas/get-delegate.dto.schema';
-import { PaginationDataDecorator } from '@/routes/common/decorators/pagination.data.decorator';
-import { RouteUrlDecorator } from '@/routes/common/decorators/route.url.decorator';
-import type { Page } from '@/routes/common/entities/page.entity';
-import type { PaginationData } from '@/routes/common/pagination/pagination.data';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
-import { ValidationPipe } from '@/validation/pipes/validation.pipe';
+import { ChainIdSchema } from '#/modules/chains/domain/entities/schemas/chain-id.schema';
+import { DelegatesService } from '#/modules/delegate/routes/delegates.service';
+import { CreateDelegateDto } from '#/modules/delegate/routes/entities/create-delegate.dto.entity';
+import type { Delegate } from '#/modules/delegate/routes/entities/delegate.entity';
+import { DelegatePage } from '#/modules/delegate/routes/entities/delegate.page.entity';
+import { DeleteDelegateDto } from '#/modules/delegate/routes/entities/delete-delegate.dto.entity';
+import { DeleteSafeDelegateDto } from '#/modules/delegate/routes/entities/delete-safe-delegate.dto.entity';
+import type { GetDelegateDto } from '#/modules/delegate/routes/entities/get-delegate.dto.entity';
+import { CreateDelegateDtoSchema } from '#/modules/delegate/routes/entities/schemas/create-delegate.dto.schema';
+import { DeleteDelegateDtoSchema } from '#/modules/delegate/routes/entities/schemas/delete-delegate.dto.schema';
+import { DeleteSafeDelegateDtoSchema } from '#/modules/delegate/routes/entities/schemas/delete-safe-delegate.dto.schema';
+import { GetDelegateDtoSchema } from '#/modules/delegate/routes/entities/schemas/get-delegate.dto.schema';
+import { PaginationDataDecorator } from '#/routes/common/decorators/pagination.data.decorator';
+import { RouteUrlDecorator } from '#/routes/common/decorators/route.url.decorator';
+import type { Page } from '#/routes/common/entities/page.entity';
+import type { PaginationData } from '#/routes/common/pagination/pagination.data';
+import { AddressSchema } from '#/validation/entities/schemas/address.schema';
+import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
 @ApiTags('delegates')
 @Controller({
@@ -49,7 +50,7 @@ export class DelegatesController {
     deprecated: true,
     summary: 'Get delegates (deprecated)',
     description:
-      'Retrieves a paginated list of delegates for a specific chain. This endpoint is deprecated, please use the v2 version instead.',
+      'Retrieves a paginated list of delegates for a specific chain. This endpoint is deprecated, please use the v3 version instead.',
   })
   @ApiParam({
     name: 'chainId',
@@ -93,7 +94,7 @@ export class DelegatesController {
   })
   @Get('chains/:chainId/delegates')
   getDelegates(
-    @Param('chainId') chainId: string,
+    @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
     @RouteUrlDecorator() routeUrl: URL,
     @Query(new ValidationPipe(GetDelegateDtoSchema))
     getDelegateDto: GetDelegateDto,
@@ -111,7 +112,7 @@ export class DelegatesController {
     deprecated: true,
     summary: 'Create delegate (deprecated)',
     description:
-      'Creates a new delegate for a specific chain. This endpoint is deprecated, please use the v2 version instead.',
+      'Creates a new delegate for a specific chain. This endpoint is deprecated, please use the v3 version instead.',
   })
   @ApiParam({
     name: 'chainId',
@@ -133,7 +134,7 @@ export class DelegatesController {
   @HttpCode(200)
   @Post('chains/:chainId/delegates')
   async postDelegate(
-    @Param('chainId') chainId: string,
+    @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
     @Body(new ValidationPipe(CreateDelegateDtoSchema))
     createDelegateDto: CreateDelegateDto,
   ): Promise<void> {
@@ -144,7 +145,7 @@ export class DelegatesController {
     deprecated: true,
     summary: 'Delete delegate (deprecated)',
     description:
-      'Deletes a delegate for a specific chain and address. This endpoint is deprecated, please use the v2 version instead.',
+      'Deletes a delegate for a specific chain and address. This endpoint is deprecated, please use the v3 version instead.',
   })
   @ApiParam({
     name: 'chainId',
@@ -169,7 +170,7 @@ export class DelegatesController {
   })
   @Delete('chains/:chainId/delegates/:delegateAddress')
   deleteDelegate(
-    @Param('chainId') chainId: string,
+    @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
     @Param('delegateAddress', new ValidationPipe(AddressSchema))
     delegateAddress: Address,
     @Body(new ValidationPipe(DeleteDelegateDtoSchema))
@@ -186,7 +187,7 @@ export class DelegatesController {
     deprecated: true,
     summary: 'Delete Safe delegate (deprecated)',
     description:
-      'Removes a delegate from a specific Safe. This endpoint is deprecated, please use the v2 version instead.',
+      'Removes a delegate from a specific Safe. This endpoint is deprecated, please use the v3 version instead.',
   })
   @ApiParam({
     name: 'chainId',
@@ -216,7 +217,7 @@ export class DelegatesController {
   })
   @Delete('chains/:chainId/safes/:safeAddress/delegates/:delegateAddress')
   deleteSafeDelegate(
-    @Param('chainId') chainId: string,
+    @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
     @Body(new ValidationPipe(DeleteSafeDelegateDtoSchema))
     deleteSafeDelegateRequest: DeleteSafeDelegateDto,
   ): Promise<unknown> {

@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
-import { messageBuilder } from '@/modules/messages/domain/entities/__tests__/message.builder';
-import type { Message } from '@/modules/messages/domain/entities/message.entity';
-import { MessageSchema } from '@/modules/messages/domain/entities/message.entity';
-import { typedDataBuilder } from '@/modules/messages/routes/entities/__tests__/typed-data.builder';
+import { messageBuilder } from '#/modules/messages/domain/entities/__tests__/message.builder';
+import type { Message } from '#/modules/messages/domain/entities/message.entity';
+import { MessageSchema } from '#/modules/messages/domain/entities/message.entity';
+import { typedDataBuilder } from '#/modules/messages/routes/entities/__tests__/typed-data.builder';
 
 describe('MessageSchema', () => {
   it('should validate a Message', () => {
@@ -21,7 +21,6 @@ describe('MessageSchema', () => {
     'safe' as const,
     'messageHash' as const,
     'message' as const,
-    'proposedBy' as const,
     'confirmations' as const,
   ])('should fail when %s is missing', (key) => {
     const message = messageBuilder().build();
@@ -95,7 +94,7 @@ describe('MessageSchema', () => {
   });
 
   it.each([
-    'safeAppId' as const,
+    'proposedBy' as const,
     'preparedSignature' as const,
     'origin' as const,
   ])('should default %s to null', (key) => {
@@ -174,11 +173,6 @@ describe('MessageSchema', () => {
             }),
           ],
         ],
-      }),
-      expect.objectContaining({
-        code: 'invalid_type',
-        expected: 'string',
-        path: ['proposedBy'],
       }),
       expect.objectContaining({
         code: 'invalid_type',

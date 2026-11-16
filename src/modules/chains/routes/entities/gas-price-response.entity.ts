@@ -3,7 +3,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import type {
   GasPriceResponse as DomainGasPriceResponse,
   GasPriceResult as DomainGasPriceResult,
-} from '@/modules/chains/domain/entities/gas-price-response.entity';
+} from '#/modules/chains/domain/entities/gas-price-response.entity';
 
 class GasPriceResult implements DomainGasPriceResult {
   @ApiProperty({ description: 'Last block number', example: '23467872' })

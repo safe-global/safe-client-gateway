@@ -6,7 +6,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import type { FastifyReply } from 'fastify';
-import { UnofficialMasterCopyError } from '@/modules/relay/domain/errors/unofficial-master-copy.error';
+import { UnofficialMasterCopyError } from '#/modules/relay/domain/errors/unofficial-master-copy.error';
 
 @Catch(UnofficialMasterCopyError)
 export class UnofficialMasterCopyExceptionFilter implements ExceptionFilter {

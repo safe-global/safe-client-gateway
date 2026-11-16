@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import type { Address } from 'viem';
-import type { Page } from '@/domain/entities/page.entity';
-import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
+import type { Page } from '#/domain/entities/page.entity';
+import { ITransactionApiManager } from '#/domain/interfaces/transaction-api.manager.interface';
 import {
   type Token,
   TokenPageSchema,
   TokenSchema,
-} from '@/modules/tokens/domain/entities/token.entity';
-import type { ITokenRepository } from '@/modules/tokens/domain/token.repository.interface';
+} from '#/modules/tokens/domain/entities/token.entity';
+import type { ITokenRepository } from '#/modules/tokens/domain/token.repository.interface';
 
 @Injectable()
 export class TokenRepository implements ITokenRepository {

@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import type { EntityManager } from 'typeorm';
-import { getScopedRepository } from '@/datasources/db/v2/get-scoped-repository.util';
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { SubscriptionEntitlement } from '@/modules/entitlements/datasources/entities/subscription-entitlement.entity.db';
+import { getScopedRepository } from '#/datasources/db/v2/get-scoped-repository.util';
+import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
+import { SubscriptionEntitlement } from '#/modules/entitlements/datasources/entities/subscription-entitlement.entity.db';
 import type {
   ISubscriptionEntitlementsRepository,
   SubscriptionEntitlementValues,
-} from '@/modules/entitlements/domain/subscription-entitlements.repository.interface';
+} from '#/modules/entitlements/domain/subscription-entitlements.repository.interface';
 
 @Injectable()
 export class SubscriptionEntitlementsRepository

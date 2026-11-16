@@ -1,7 +1,8 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
-import { bridgeChainBuilder } from '@/modules/bridge/domain/entities/__tests__/bridge-chain.builder';
-import { BridgeChainSchema } from '@/modules/bridge/domain/entities/bridge-chain.entity';
+import { bridgeChainBuilder } from '#/modules/bridge/domain/entities/__tests__/bridge-chain.builder';
+import { BridgeChainSchema } from '#/modules/bridge/domain/entities/bridge-chain.entity';
 
 describe('BridgeChainSchema', () => {
   it('should validate a BridgeChain', () => {

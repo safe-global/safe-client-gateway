@@ -2,19 +2,19 @@
 import { faker } from '@faker-js/faker';
 import { getAddress, type Hash } from 'viem';
 import type { z } from 'zod';
-import type { IBuilder } from '@/__tests__/builder';
-import { Builder } from '@/__tests__/builder';
+import type { IBuilder } from '#/__tests__/builder';
+import { Builder } from '#/__tests__/builder';
 import type {
   LockEventItem,
   UnlockEventItem,
   WithdrawEventItem,
-} from '@/modules/community/domain/entities/locking-event.entity';
+} from '#/modules/community/domain/entities/locking-event.entity';
 import type {
   LockEventItemSchema,
   UnlockEventItemSchema,
   WithdrawEventItemSchema,
-} from '@/modules/community/domain/entities/schemas/locking-event.schema';
-import { LockingEventType } from '@/modules/community/domain/entities/schemas/locking-event.schema';
+} from '#/modules/community/domain/entities/schemas/locking-event.schema';
+import { LockingEventType } from '#/modules/community/domain/entities/schemas/locking-event.schema';
 
 export function lockEventItemBuilder(): IBuilder<LockEventItem> {
   return new Builder<z.infer<typeof LockEventItemSchema>>()

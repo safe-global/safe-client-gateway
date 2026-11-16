@@ -36,7 +36,7 @@ In a declared multi-PR rollout, `routes/` may land one PR ahead of its controlle
 
 **Canonical example:** `src/modules/spaces/`, `src/modules/chains/`.
 
-**Anti-example:** `src/modules/portfolio/` (route services live under `domain/`, and it versions with a module-root `v1/` instead of `routes/v2/`); `src/modules/safe-shield/` (no `domain/` or `routes/` at all — a controller at the module root plus one sub-module per analysis kind, `contract-analysis/`, `threat-analysis/`, `recipient-analysis/`, each with its own `*.module.ts`/`*.service.ts`) — do not imitate either.
+**Anti-example:** `src/modules/portfolio/` (route services live under `domain/`, and it versions with a module-root `v1/` instead of `routes/v2/`); `src/modules/safe-shield/` (its own `safe-shield.controller.ts`/`.service.ts` sit at the module root, plus one sub-module per analysis kind, `contract-analysis/`, `threat-analysis/`, `recipient-analysis/`, each with its own `*.module.ts`/`*.service.ts` — `routes/` holds only the guard and the Space-scoped controller/service added after this anti-example was written, not the module's own controller) — do not imitate either.
 
 ### Layer placement
 
@@ -76,11 +76,13 @@ This mirrors the request-lifecycle chain in `docs/agents/ARCHITECTURE.md`: `Cont
 
 This applies in both directions: neither a module's `routes/` nor its `datasources/` is a valid import target for anything outside that module.
 
+**One exception, guards.** A guard is applied by handing its class to `@UseGuards`, so a guard that gates another module's route is necessarily imported from where it lives — and it cannot live in `domain/`, being HTTP-layer by construction (`nestjs-patterns.md`'s "Guards: request admission only"). Two homes are therefore valid for a guard other modules apply: the owning module's `routes/guards/` (`src/modules/auth/routes/guards/auth.guard.ts`, applied by sixteen controllers), or `src/routes/common/` when it belongs to no feature (`src/routes/common/auth/elevation.guard.ts`). Nothing else about another module's `routes/` becomes importable: a pipe, a decorator, a DTO or a route service stays off limits, as the anti-example below shows.
+
 **Why:** importing another module's `routes/*` drags HTTP-layer concerns (controllers, DTOs, guards) into code that has no business depending on them, and it means a change to another module's controller or DTO shape can break a module that has nothing to do with HTTP.
 
-**Canonical example:** `src/modules/balances/routes/balances.service.ts` imports `IChainsRepository` from `@/modules/chains/domain/chains.repository.interface` — the `chains` module is reached only through its `domain/`.
+**Canonical example:** `src/modules/balances/routes/balances.service.ts` imports `IChainsRepository` from `#/modules/chains/domain/chains.repository.interface` — the `chains` module is reached only through its `domain/`.
 
-**Anti-example:** `src/modules/billing/routes/billing.controller.ts` imports `@/modules/spaces/routes/pipes/space-id.pipe` and `@/modules/auth/routes/decorators/auth.decorator`; `src/modules/notifications/domain/v2/entities/notification.entity.ts` imports from `@/modules/hooks/routes/entities/event-type.entity`. Neither is precedent — do not imitate.
+**Anti-example:** `src/modules/billing/routes/billing.controller.ts` imports `#/modules/spaces/routes/pipes/space-id.pipe` and `#/modules/auth/routes/decorators/auth.decorator`; `src/modules/notifications/domain/v2/entities/notification.entity.ts` imports from `#/modules/hooks/routes/entities/event-type.entity`. Neither is precedent — do not imitate.
 
 ### Frozen legacy trees
 
@@ -114,11 +116,11 @@ This applies in both directions: neither a module's `routes/` nor its `datasourc
 
 ### Imports
 
-**Rule:** Always import via the `@/` path alias; never use a relative parent (`../`) import.
+**Rule:** Always import via the `#/` path alias; never use a relative parent (`../`) import.
 
 **Why:** an alias import survives a file being moved to a different directory; a relative parent import breaks the moment either endpoint moves, which is what keeps refactors cheap and keeps a file movable without a cascade of path edits.
 
-**Canonical example:** the `@/*` → `./src/*` mapping in `tsconfig.json` is what every module's imports resolve through.
+**Canonical example:** the `#/*` entry in `package.json`'s `imports` field is what every module's imports resolve through — to `./src/*.ts` under the `source` condition (`tsc` via `customConditions`, Vitest via `resolve.conditions`) and to `./dist/src/*.js` for Node at runtime, with more specific `#/abis/*` and `#/*.json` entries beside it. A pattern maps one file exactly, so a directory import names its `index` (`#/modules/human-description/datasources/json/index`).
 
 **Anti-example:** `src/modules/safe-shield/entities/__tests__/builders/analysis-requests.builder.ts` imports its entity via `../../analysis-requests.entity` — one of only a handful of violations — do not imitate.
 
@@ -130,7 +132,7 @@ A new module has:
 
 - A `<kebab-name>.module.ts` plus the `domain/` skeleton, with `routes/`/`datasources/` present only where the module actually needs them.
 - A `Symbol`+interface pair for each repository, co-declared per the Symbol DI wiring rule.
-- A path from `src/app.module.ts` to the module: either its own entry there, or an import from a module already reachable from it. Reachability is what matters, not directness, and neither wiring is tied to whether the module declares a controller — `EntitlementsModule` is reached through `BillingModule` and `siwe` through both `AuthModule` and `UsersModule`, while the controller-bearing `delegate/routes/`, `notifications/routes/v2/`, and `csv-export/v1/` are each reached through their own parent module.
+- A path from `src/app.module.ts` to the module: either its own entry there, or an import from a module already reachable from it. Reachability is what matters, not directness, and neither wiring is tied to whether the module declares a controller — `EntitlementsModule` is reached through `SpacesModule` (and `SubscriptionSyncModule` through `BillingModule`) and `siwe` through both `AuthModule` and `UsersModule`, while the controller-bearing `delegate/routes/`, `notifications/routes/v2/`, and `csv-export/v1/` are each reached through their own parent module.
 - Test builders under `domain/entities/__tests__/` for its domain entities.
 - Specs co-located with the code they exercise.
 - Its endpoints, datasources, and migrations named in the routing table in `AGENTS.md`, so the guides that govern them are discoverable.

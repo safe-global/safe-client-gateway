@@ -1,11 +1,12 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
 import {
   Erc20BalanceSchema,
   FiatSchema,
   NativeBalanceSchema,
-} from '@/modules/balances/domain/entities/balance.entity';
-import { PositionTypeSchema } from '@/modules/positions/domain/entities/position-type.entity';
-import { NullableStringSchema } from '@/validation/entities/schemas/nullable.schema';
+} from '#/modules/balances/domain/entities/balance.entity';
+import { PositionTypeSchema } from '#/modules/positions/domain/entities/position-type.entity';
+import { NullableStringSchema } from '#/validation/entities/schemas/nullable.schema';
 
 export type Position = z.infer<typeof PositionSchema>;
 

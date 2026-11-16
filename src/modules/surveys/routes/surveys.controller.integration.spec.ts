@@ -8,22 +8,22 @@ import { getAddress } from 'viem';
 import {
   initTestApplication,
   TestAppProvider,
-} from '@/__tests__/test-app.provider';
-import { createTestModule } from '@/__tests__/testing-module';
-import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
-import configuration from '@/config/entities/__tests__/configuration';
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
-import { nameBuilder } from '@/domain/common/entities/name.builder';
-import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
-import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
-import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
-import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
-import { SurveysController } from '@/modules/surveys/routes/surveys.controller';
-import { Member } from '@/modules/users/datasources/entities/member.entity.db';
-import { User } from '@/modules/users/datasources/entities/users.entity.db';
-import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
+} from '#/__tests__/test-app.provider';
+import { createTestModule } from '#/__tests__/testing-module';
+import { checkGuardIsApplied } from '#/__tests__/util/check-guard';
+import configuration from '#/config/entities/__tests__/configuration';
+import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
+import { IJwtService } from '#/datasources/jwt/jwt.service.interface';
+import { nameBuilder } from '#/domain/common/entities/name.builder';
+import { siweAuthPayloadDtoBuilder } from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { AuthGuard } from '#/modules/auth/routes/guards/auth.guard';
+import { NotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/notifications.repository.module';
+import { TestNotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/test.notification.repository.module';
+import { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
+import { SurveysController } from '#/modules/surveys/routes/surveys.controller';
+import { Member } from '#/modules/users/datasources/entities/member.entity.db';
+import { User } from '#/modules/users/datasources/entities/users.entity.db';
+import { Wallet } from '#/modules/wallets/datasources/entities/wallets.entity.db';
 
 const ONBOARDING_SLUG = 'onboarding';
 const USE_CASES_PAGE = 'use_cases';
@@ -164,6 +164,42 @@ describe('SurveysController', () => {
     for (const fn of endpoints) {
       checkGuardIsApplied(AuthGuard, fn);
     }
+  });
+
+  describe('GET /v1/surveys/:slug', () => {
+    it('returns the active survey, as the state endpoint does, to a user with no space', async () => {
+      const admin = await seedAdminWithSpace();
+      const { accessToken } = await seedOutsider();
+      const { body: state } = await request(app.getHttpServer())
+        .get(`/v1/spaces/${admin.spaceUuid}/surveys/${ONBOARDING_SLUG}/state`)
+        .set('Cookie', [`access_token=${admin.accessToken}`])
+        .expect(200);
+
+      await request(app.getHttpServer())
+        .get(`/v1/surveys/${ONBOARDING_SLUG}`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200)
+        .expect(({ body }) => {
+          expect(body).toEqual(state.survey);
+        });
+    });
+
+    it('returns 404 for a slug with no active survey', async () => {
+      const { accessToken } = await seedOutsider();
+
+      await request(app.getHttpServer())
+        .get('/v1/surveys/no-such-survey')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(404);
+    });
+
+    it('rejects requests without an access token', async () => {
+      await request(app.getHttpServer())
+        .get(`/v1/surveys/${ONBOARDING_SLUG}`)
+        .expect((res) => {
+          expect([401, 403]).toContain(res.status);
+        });
+    });
   });
 
   describe('GET /v1/spaces/:spaceId/surveys/:slug/state', () => {

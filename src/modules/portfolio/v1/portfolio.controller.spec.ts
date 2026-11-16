@@ -3,10 +3,10 @@
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import type { GetPortfolioDto } from '@/modules/portfolio/v1/entities/get-portfolio.dto.entity';
-import type { Portfolio } from '@/modules/portfolio/v1/entities/portfolio.entity';
-import { PortfolioController } from '@/modules/portfolio/v1/portfolio.controller';
-import type { PortfolioApiService } from '@/modules/portfolio/v1/portfolio.service';
+import type { GetPortfolioDto } from '#/modules/portfolio/v1/entities/get-portfolio.dto.entity';
+import type { Portfolio } from '#/modules/portfolio/v1/entities/portfolio.entity';
+import { PortfolioController } from '#/modules/portfolio/v1/portfolio.controller';
+import type { PortfolioApiService } from '#/modules/portfolio/v1/portfolio.service';
 
 const service = {
   getPortfolio: vi.fn(),
@@ -201,24 +201,27 @@ describe('PortfolioController', () => {
   });
 
   describe('clearPortfolio', () => {
-    it('should call service with address', async () => {
+    it('should call service with chainId and address', async () => {
+      const chainId = faker.string.numeric();
       const address = getAddress(faker.finance.ethereumAddress());
 
       service.clearZerionCaches.mockResolvedValue(undefined);
 
-      await controller.clearPortfolio(address);
+      await controller.clearPortfolio(address, chainId);
 
       expect(service.clearZerionCaches).toHaveBeenCalledWith({
+        chainId,
         address,
       });
     });
 
     it('should return void', async () => {
+      const chainId = faker.string.numeric();
       const address = getAddress(faker.finance.ethereumAddress());
 
       service.clearZerionCaches.mockResolvedValue(undefined);
 
-      const result = await controller.clearPortfolio(address);
+      const result = await controller.clearPortfolio(address, chainId);
 
       expect(result).toBeUndefined();
     });

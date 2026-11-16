@@ -4,15 +4,15 @@ import { faker } from '@faker-js/faker';
 import type { Job } from 'bullmq';
 import { UnrecoverableError } from 'bullmq';
 import type { MockedObject } from 'vitest';
-import type { ILoggingService } from '@/logging/logging.interface';
-import { EmailConsumer } from '@/modules/email/ses/consumers/email.consumer';
-import { sendEmailJobDataBuilder } from '@/modules/email/ses/domain/entities/__tests__/send-email-job-data.builder';
-import type { SendEmailJobData } from '@/modules/email/ses/domain/entities/email-job-data.entity';
+import type { ILoggingService } from '#/logging/logging.interface';
+import { EmailConsumer } from '#/modules/email/ses/consumers/email.consumer';
+import { sendEmailJobDataBuilder } from '#/modules/email/ses/domain/entities/__tests__/send-email-job-data.builder';
+import type { SendEmailJobData } from '#/modules/email/ses/domain/entities/email-job-data.entity';
 import {
   PermanentEmailError,
   TransientEmailError,
-} from '@/modules/email/ses/domain/errors/email.errors';
-import type { IEmailService } from '@/modules/email/ses/domain/interfaces/email-service.interface';
+} from '#/modules/email/ses/domain/errors/email.errors';
+import type { IEmailService } from '#/modules/email/ses/domain/interfaces/email-service.interface';
 
 const mockEmailService = {
   send: vi.fn(),

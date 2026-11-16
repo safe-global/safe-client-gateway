@@ -1,39 +1,39 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable, Module } from '@nestjs/common';
 import type { Address, Hex } from 'viem';
-import { IConfigurationService } from '@/config/configuration.service.interface';
+import { IConfigurationService } from '#/config/configuration.service.interface';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import { ComposableCowDecoder } from '@/modules/swaps/domain/contracts/decoders/composable-cow-decoder.helper';
-import type { GPv2OrderParameters } from '@/modules/swaps/domain/contracts/decoders/gp-v2-decoder.helper';
+} from '#/logging/logging.interface';
+import { ComposableCowDecoder } from '#/modules/swaps/domain/contracts/decoders/composable-cow-decoder.helper';
+import type { GPv2OrderParameters } from '#/modules/swaps/domain/contracts/decoders/gp-v2-decoder.helper';
 import {
   type KnownOrder,
   OrderKind,
   OrderStatus,
-} from '@/modules/swaps/domain/entities/order.entity';
-import { ISwapsRepository } from '@/modules/swaps/domain/swaps.repository';
-import { SwapsModule } from '@/modules/swaps/swaps.module';
-import { TokenInfo } from '@/modules/transactions/routes/entities/swaps/token-info.entity';
+} from '#/modules/swaps/domain/entities/order.entity';
+import { ISwapsRepository } from '#/modules/swaps/domain/swaps.repository';
+import { SwapsModule } from '#/modules/swaps/swaps.module';
+import { TokenInfo } from '#/modules/transactions/routes/entities/swaps/token-info.entity';
 import {
   type TwapOrderInfo,
   TwapOrderTransactionInfo,
-} from '@/modules/transactions/routes/entities/swaps/twap-order-info.entity';
-import { GPv2OrderHelper } from '@/modules/transactions/routes/helpers/gp-v2-order.helper';
+} from '#/modules/transactions/routes/entities/swaps/twap-order-info.entity';
+import { GPv2OrderHelper } from '#/modules/transactions/routes/helpers/gp-v2-order.helper';
 import {
   SwapAppsHelper,
   SwapAppsHelperModule,
-} from '@/modules/transactions/routes/helpers/swap-apps.helper';
+} from '#/modules/transactions/routes/helpers/swap-apps.helper';
 import {
   SwapOrderHelper,
   SwapOrderHelperModule,
-} from '@/modules/transactions/routes/helpers/swap-order.helper';
+} from '#/modules/transactions/routes/helpers/swap-order.helper';
 import {
   TwapOrderHelper,
   TwapOrderHelperModule,
-} from '@/modules/transactions/routes/helpers/twap-order.helper';
-import { SwapOrderMapperModule } from '@/modules/transactions/routes/mappers/common/swap-order.mapper';
+} from '#/modules/transactions/routes/helpers/twap-order.helper';
+import { SwapOrderMapperModule } from '#/modules/transactions/routes/mappers/common/swap-order.mapper';
 
 @Injectable()
 export class TwapOrderMapper {

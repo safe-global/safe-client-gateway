@@ -1,5 +1,6 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Global, Module } from '@nestjs/common';
-import { CircuitBreakerService } from '@/datasources/circuit-breaker/circuit-breaker.service';
+import { CircuitBreakerService } from '#/datasources/circuit-breaker/circuit-breaker.service';
 
 /**
  * Global module that provides circuit breaker functionality across the application

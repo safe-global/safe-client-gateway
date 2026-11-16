@@ -2,15 +2,20 @@
 
 import { getAddress } from 'viem';
 import {
+  getAllMultiSendDeployments,
+  getAllowanceModuleAbi,
+  getAllowanceModuleDeployments,
   getExtensibleFallbackHandlerVersions,
   getFallbackHandlerVersions,
+  getMultiSendCallOnlyDeployments,
+  getMultiSendDeployments,
   getSafeL2SingletonVersions,
   getSafeMigrationVersions,
   getSafeSingletonVersions,
   getSafeToL2SetupVersions,
   isExtensibleFallbackHandlerDeployed,
   isFallbackHandlerDeployed,
-} from '@/domain/common/utils/deployments';
+} from '#/domain/common/utils/deployments';
 
 // Canonical 1.5.0 deployment addresses (identical across all chains)
 const EXTENSIBLE_FALLBACK_HANDLER_150 = getAddress(
@@ -111,6 +116,78 @@ describe('deployments', () => {
           address: EXTENSIBLE_FALLBACK_HANDLER_150,
         }),
       ).toBe(false);
+    });
+  });
+
+  describe('getAllMultiSendDeployments', () => {
+    it('should return the MultiSend and MultiSendCallOnly addresses of every version deployed on the chain', () => {
+      const SEPOLIA_CHAIN_ID = '11155111';
+      const all = getAllMultiSendDeployments({ chainId: SEPOLIA_CHAIN_ID });
+
+      for (const version of ['1.3.0', '1.4.1', '1.5.0']) {
+        expect(all).toEqual(
+          expect.arrayContaining([
+            ...getMultiSendDeployments({ chainId: SEPOLIA_CHAIN_ID, version }),
+            ...getMultiSendCallOnlyDeployments({
+              chainId: SEPOLIA_CHAIN_ID,
+              version,
+            }),
+          ]),
+        );
+      }
+    });
+
+    it('should return nothing on a chain without a deployment', () => {
+      expect(getAllMultiSendDeployments({ chainId: '4294967295' })).toEqual([]);
+    });
+  });
+
+  describe('getAllowanceModuleDeployments', () => {
+    it('should return the addresses of every published version deployed on the chain', () => {
+      // Gnosis Chain has both v0.1.0 and v0.1.1 of the AllowanceModule.
+      const GNOSIS_CHAIN_ID = '100';
+
+      expect(
+        getAllowanceModuleDeployments({ chainId: GNOSIS_CHAIN_ID }),
+      ).toEqual(
+        expect.arrayContaining([
+          getAddress('0xAA46724893dedD72658219405185Fb0Fc91e091C'), // v0.1.1
+          getAddress('0xCFbFaC74C26F8647cBDb8c5caf80BB5b32E43134'), // v0.1.0
+        ]),
+      );
+    });
+
+    it('should return only the versions actually deployed on the chain', () => {
+      const SEPOLIA_CHAIN_ID = '11155111';
+
+      expect(
+        getAllowanceModuleDeployments({ chainId: SEPOLIA_CHAIN_ID }),
+      ).toEqual([getAddress('0xCFbFaC74C26F8647cBDb8c5caf80BB5b32E43134')]);
+    });
+
+    it('should return an empty array for a chain with no AllowanceModule deployment', () => {
+      expect(getAllowanceModuleDeployments({ chainId: '999999999' })).toEqual(
+        [],
+      );
+    });
+  });
+
+  describe('getAllowanceModuleAbi', () => {
+    it('should include the functions the pending-policies decoder depends on', () => {
+      const abi = getAllowanceModuleAbi();
+      const functionNames = abi
+        .filter((item) => item.type === 'function')
+        .map((item) => item.name);
+
+      expect(functionNames).toEqual(
+        expect.arrayContaining([
+          'addDelegate',
+          'removeDelegate',
+          'setAllowance',
+          'resetAllowance',
+          'deleteAllowance',
+        ]),
+      );
     });
   });
 });

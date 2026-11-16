@@ -3,11 +3,11 @@
 import { faker } from '@faker-js/faker';
 import type postgres from 'postgres';
 import type { MockedObject } from 'vitest';
-import { TestDbFactory } from '@/__tests__/db.factory';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
-import { PostgresDatabaseMigrationHook } from '@/datasources/db/v1/postgres-database.migration.hook';
-import type { PostgresDatabaseMigrator } from '@/datasources/db/v1/postgres-database.migrator';
-import type { ILoggingService } from '@/logging/logging.interface';
+import { TestDbFactory } from '#/__tests__/db.factory';
+import type { IConfigurationService } from '#/config/configuration.service.interface';
+import { PostgresDatabaseMigrationHook } from '#/datasources/db/v1/postgres-database.migration.hook';
+import type { PostgresDatabaseMigrator } from '#/datasources/db/v1/postgres-database.migrator';
+import type { ILoggingService } from '#/logging/logging.interface';
 
 const migrator = vi.mocked({
   migrate: vi.fn(),
@@ -41,7 +41,9 @@ describe('PostgresDatabaseMigrationHook tests', () => {
 
   it('should not run migrations', async () => {
     configurationService.getOrThrow.mockImplementation((key) => {
-      if (key === 'application.runMigrations') return false;
+      if (key === 'application.runMigrations') {
+        return false;
+      }
     });
     target = new PostgresDatabaseMigrationHook(
       sql,
@@ -59,7 +61,9 @@ describe('PostgresDatabaseMigrationHook tests', () => {
 
   it('should run migrations', async () => {
     configurationService.getOrThrow.mockImplementation((key) => {
-      if (key === 'application.runMigrations') return true;
+      if (key === 'application.runMigrations') {
+        return true;
+      }
     });
     const executed = [
       {

@@ -3,8 +3,8 @@ import { ApiProperty } from '@nestjs/swagger';
 import {
   SettingsChange,
   SettingsChangeType,
-} from '@/modules/transactions/routes/entities/settings-changes/settings-change.entity';
-import { AddressInfo } from '@/routes/common/entities/address-info.entity';
+} from '#/modules/transactions/routes/entities/settings-changes/settings-change.entity';
+import { AddressInfo } from '#/routes/common/entities/address-info.entity';
 
 export class SwapOwner extends SettingsChange {
   @ApiProperty({ enum: [SettingsChangeType.SwapOwner] })

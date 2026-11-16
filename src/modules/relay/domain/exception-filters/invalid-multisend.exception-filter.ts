@@ -6,7 +6,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import type { FastifyReply } from 'fastify';
-import { InvalidMultiSendError } from '@/modules/relay/domain/errors/invalid-multisend.error';
+import { InvalidMultiSendError } from '#/modules/relay/domain/errors/invalid-multisend.error';
 
 @Catch(InvalidMultiSendError)
 export class InvalidMultiSendExceptionFilter implements ExceptionFilter {

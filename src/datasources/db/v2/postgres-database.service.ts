@@ -10,7 +10,7 @@ import type {
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
+} from '#/logging/logging.interface';
 
 @Injectable()
 export class PostgresDatabaseService {

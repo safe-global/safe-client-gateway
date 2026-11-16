@@ -3,27 +3,28 @@ import { faker } from '@faker-js/faker';
 import { NotFoundException } from '@nestjs/common';
 import { QueryFailedError } from 'typeorm';
 import type { MockedObject } from 'vitest';
-import { subscriptionBuilder } from '@/datasources/billing-api/entities/__tests__/subscription.builder';
-import { CacheRouter } from '@/datasources/cache/cache.router';
-import type { ICacheService } from '@/datasources/cache/cache.service.interface';
-import { toSecondsTimestamp } from '@/domain/common/utils/time';
-import type { IBillingApi } from '@/domain/interfaces/billing-api.interface';
-import type { ILoggingService } from '@/logging/logging.interface';
+import { subscriptionBuilder } from '#/datasources/billing-api/entities/__tests__/subscription.builder';
+import { CacheRouter } from '#/datasources/cache/cache.router';
+import type { ICacheService } from '#/datasources/cache/cache.service.interface';
+import { toSecondsTimestamp } from '#/domain/common/utils/time';
+import type { ILoggingService } from '#/logging/logging.interface';
+import type { IBillingRepository } from '#/modules/billing/domain/billing.repository.interface';
 import {
   webhookEventBuilder,
   webhookEventCustomerBuilder,
-} from '@/modules/billing/domain/entities/__tests__/webhook-event.builder';
-import type { WebhookEvent } from '@/modules/billing/domain/entities/webhook-event.entity';
-import { WALLET_WEB_CUSTOMER_GROUP } from '@/modules/billing/domain/entities/webhook-event.entity';
-import { featureBuilder } from '@/modules/entitlements/domain/entities/__tests__/feature.builder';
-import type { Feature } from '@/modules/entitlements/domain/entities/feature.entity';
-import { FeatureType } from '@/modules/entitlements/domain/entities/feature.entity';
-import type { IFeaturesRepository } from '@/modules/entitlements/domain/features.repository.interface';
-import type { ISubscriptionsRepository } from '@/modules/entitlements/domain/subscriptions.repository.interface';
-import { EntitlementsService } from '@/modules/entitlements/routes/entitlements.service';
-import { SubscriptionSyncService } from '@/modules/entitlements/routes/subscription-sync.service';
-import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
-import { fakeUuid } from '@/validation/entities/schemas/__tests__/uuid.builder';
+} from '#/modules/billing/domain/entities/__tests__/webhook-event.builder';
+import type { WebhookEvent } from '#/modules/billing/domain/entities/webhook-event.entity';
+import { WALLET_WEB_CUSTOMER_GROUP } from '#/modules/billing/domain/entities/webhook-event.entity';
+import { featureBuilder } from '#/modules/entitlements/domain/entities/__tests__/feature.builder';
+import type { Feature } from '#/modules/entitlements/domain/entities/feature.entity';
+import { FeatureType } from '#/modules/entitlements/domain/entities/feature.entity';
+import type { IFeaturesRepository } from '#/modules/entitlements/domain/features.repository.interface';
+import type { ISubscriptionsRepository } from '#/modules/entitlements/domain/subscriptions.repository.interface';
+import { EntitlementsService } from '#/modules/entitlements/routes/entitlements.service';
+import { SubscriptionSyncService } from '#/modules/entitlements/routes/subscription-sync.service';
+import type { ISpaceSetupApplier } from '#/modules/spaces/domain/setup/space-setup-applier.interface';
+import type { ISpacesRepository } from '#/modules/spaces/domain/spaces.repository.interface';
+import { fakeUuid } from '#/validation/entities/schemas/__tests__/uuid.builder';
 
 const FEATURES: Array<Feature> = [
   featureBuilder()
@@ -36,7 +37,7 @@ describe('SubscriptionSyncService', () => {
   const spaceId = faker.number.int({ min: 1, max: 100_000 });
   const spaceUuid = fakeUuid();
 
-  let billingApi: MockedObject<IBillingApi>;
+  let billingRepository: MockedObject<IBillingRepository>;
   let entitlementsService: MockedObject<
     Pick<
       EntitlementsService,
@@ -46,8 +47,9 @@ describe('SubscriptionSyncService', () => {
   let spacesRepository: MockedObject<Pick<ISpacesRepository, 'findIdByUuid'>>;
   let featuresRepository: MockedObject<IFeaturesRepository>;
   let subscriptionsRepository: MockedObject<
-    Pick<ISubscriptionsRepository, 'getLastEventAt'>
+    Pick<ISubscriptionsRepository, 'getLastEventAt' | 'getSubscriptionSummary'>
   >;
+  let spaceSetupApplier: MockedObject<ISpaceSetupApplier>;
   let cacheService: MockedObject<ICacheService>;
   let loggingService: MockedObject<ILoggingService>;
   let target: SubscriptionSyncService;
@@ -92,7 +94,10 @@ describe('SubscriptionSyncService', () => {
         customer: customerBuilder.build(),
         // An active payload without a package is not a complete snapshot, so
         // the baseline carries one to exercise the direct-payload path.
-        metadata: { FEATURE_SAFE_SEATS: '10' },
+        metadata: {
+          planCode: 'BUS-10-A',
+          FEATURE_SAFE_SEATS: '10',
+        },
         ...overrides?.data,
       },
     };
@@ -107,9 +112,10 @@ describe('SubscriptionSyncService', () => {
   beforeEach(() => {
     vi.resetAllMocks();
 
-    billingApi = {
+    billingRepository = {
       getSubscriptionsByCustomerId: vi.fn(),
-    } as unknown as MockedObject<IBillingApi>;
+      clearSubscriptions: vi.fn(),
+    } as MockedObject<IBillingRepository>;
     entitlementsService = {
       materializeFromEvent: vi.fn().mockResolvedValue(true),
       materializeAuthoritative: vi.fn().mockResolvedValue(true),
@@ -122,7 +128,12 @@ describe('SubscriptionSyncService', () => {
     };
     subscriptionsRepository = {
       getLastEventAt: vi.fn().mockResolvedValue(null),
+      getSubscriptionSummary: vi.fn().mockResolvedValue({
+        hasEverSubscribed: true,
+        activePlanId: null,
+      }),
     };
+    spaceSetupApplier = { apply: vi.fn() };
     cacheService = {
       deleteByKey: vi.fn(),
     } as unknown as MockedObject<ICacheService>;
@@ -134,13 +145,14 @@ describe('SubscriptionSyncService', () => {
     } as MockedObject<ILoggingService>;
 
     target = new SubscriptionSyncService(
-      billingApi,
+      billingRepository,
       entitlementsService as unknown as EntitlementsService,
       spacesRepository as unknown as ISpacesRepository,
       featuresRepository,
       subscriptionsRepository as unknown as ISubscriptionsRepository,
       cacheService,
       loggingService,
+      spaceSetupApplier,
     );
   });
 
@@ -156,24 +168,24 @@ describe('SubscriptionSyncService', () => {
       .with('status', 'canceled')
       .with('createdAt', 1)
       .build();
-    billingApi.getSubscriptionsByCustomerId.mockResolvedValue([
+    billingRepository.getSubscriptionsByCustomerId.mockResolvedValue([
       active,
       canceled,
     ]);
 
     await target.handleWebhook(partialWebhookEvent());
 
-    // The billing-api Redis cache is busted before the re-fetch.
-    expect(cacheService.deleteByKey).toHaveBeenCalledWith(
-      CacheRouter.getBillingSubscriptionsCacheDir({
+    // The billing-api Redis cache is busted before the re-fetch. The key is
+    // the billing datasource's, so invalidating it is its own call.
+    expect(billingRepository.clearSubscriptions).toHaveBeenCalledWith({
+      upstreamCustomerId: spaceUuid,
+    });
+    expect(billingRepository.getSubscriptionsByCustomerId).toHaveBeenCalledWith(
+      {
         upstreamCustomerId: spaceUuid,
         status: 'all',
-      }).key,
+      },
     );
-    expect(billingApi.getSubscriptionsByCustomerId).toHaveBeenCalledWith({
-      upstreamCustomerId: spaceUuid,
-      status: 'all',
-    });
     expect(
       entitlementsService.materializeAuthoritative,
     ).toHaveBeenCalledExactlyOnceWith({
@@ -246,25 +258,52 @@ describe('SubscriptionSyncService', () => {
     await target.handleWebhook(webhookEvent({ type }));
 
     expect(entitlementsService.materializeFromEvent).toHaveBeenCalledTimes(1);
-    expect(billingApi.getSubscriptionsByCustomerId).not.toHaveBeenCalled();
+    expect(
+      billingRepository.getSubscriptionsByCustomerId,
+    ).not.toHaveBeenCalled();
   });
 
-  // These describe a session or an invoice, never a subscription: acting on
-  // them could only re-fetch, overwriting the snapshot a
-  // `customer.subscription.*` event already materialized.
-  it.each([
-    'checkout.session.completed',
-    'invoice.payment_succeeded',
-    'invoice.payment_failed',
-  ])('acks and ignores %s without re-fetching', async (type) => {
-    await target.handleWebhook(webhookEvent({ type }));
+  // An invoice describes a charge, never a subscription.
+  it.each(['invoice.payment_succeeded', 'invoice.payment_failed'])(
+    'acks and ignores %s without re-fetching',
+    async (type) => {
+      await target.handleWebhook(webhookEvent({ type }));
+
+      expect(entitlementsService.materializeFromEvent).not.toHaveBeenCalled();
+      expect(
+        entitlementsService.materializeAuthoritative,
+      ).not.toHaveBeenCalled();
+      expect(
+        billingRepository.getSubscriptionsByCustomerId,
+      ).not.toHaveBeenCalled();
+      // Debug, not info: upstream forwards every invoice and charge it sees.
+      expect(loggingService.debug).toHaveBeenCalled();
+      expect(loggingService.info).not.toHaveBeenCalled();
+    },
+  );
+
+  // Carries no plan, so it can only be a trigger.
+  it('re-fetches upstream state on a completed checkout', async () => {
+    billingRepository.getSubscriptionsByCustomerId.mockResolvedValue([
+      subscriptionBuilder()
+        .with('status', 'active')
+        .with('metadata', { FEATURE_SAFE_SEATS: '10' })
+        .build(),
+    ]);
+
+    // As upstream forwards it: no plan, no billing period.
+    await target.handleWebhook(
+      webhookEvent({
+        type: 'checkout.session.completed',
+        data: { planId: null, currentPeriodStart: null },
+      }),
+    );
 
     expect(entitlementsService.materializeFromEvent).not.toHaveBeenCalled();
-    expect(entitlementsService.materializeAuthoritative).not.toHaveBeenCalled();
-    expect(billingApi.getSubscriptionsByCustomerId).not.toHaveBeenCalled();
-    // Debug, not info: upstream forwards every invoice and charge it sees.
-    expect(loggingService.debug).toHaveBeenCalled();
-    expect(loggingService.info).not.toHaveBeenCalled();
+    expect(billingRepository.getSubscriptionsByCustomerId).toHaveBeenCalledWith(
+      { upstreamCustomerId: spaceUuid, status: 'all' },
+    );
+    expect(entitlementsService.materializeAuthoritative).toHaveBeenCalled();
   });
 
   it('invalidates the payment links cache and skips materialization for payment_link events', async () => {
@@ -273,7 +312,9 @@ describe('SubscriptionSyncService', () => {
     expect(cacheService.deleteByKey).toHaveBeenCalledExactlyOnceWith(
       CacheRouter.getBillingPaymentLinksCacheDir().key,
     );
-    expect(billingApi.getSubscriptionsByCustomerId).not.toHaveBeenCalled();
+    expect(
+      billingRepository.getSubscriptionsByCustomerId,
+    ).not.toHaveBeenCalled();
     expect(entitlementsService.materializeFromEvent).not.toHaveBeenCalled();
     expect(entitlementsService.materializeAuthoritative).not.toHaveBeenCalled();
   });
@@ -298,7 +339,9 @@ describe('SubscriptionSyncService', () => {
       expect(
         entitlementsService.materializeAuthoritative,
       ).not.toHaveBeenCalled();
-      expect(billingApi.getSubscriptionsByCustomerId).not.toHaveBeenCalled();
+      expect(
+        billingRepository.getSubscriptionsByCustomerId,
+      ).not.toHaveBeenCalled();
     },
   );
 
@@ -334,7 +377,7 @@ describe('SubscriptionSyncService', () => {
   });
 
   it('acks and warns when materialize races a space deletion', async () => {
-    billingApi.getSubscriptionsByCustomerId.mockResolvedValue([]);
+    billingRepository.getSubscriptionsByCustomerId.mockResolvedValue([]);
     entitlementsService.materializeFromEvent.mockRejectedValue(
       new NotFoundException('Workspace not found.'),
     );
@@ -345,7 +388,7 @@ describe('SubscriptionSyncService', () => {
   });
 
   it('acks and warns when the subscriptions insert races a space deletion (FK violation)', async () => {
-    billingApi.getSubscriptionsByCustomerId.mockResolvedValue([]);
+    billingRepository.getSubscriptionsByCustomerId.mockResolvedValue([]);
     entitlementsService.materializeFromEvent.mockRejectedValue(
       new QueryFailedError(
         '',
@@ -363,7 +406,7 @@ describe('SubscriptionSyncService', () => {
   });
 
   it('propagates an unrelated query failure so the webhook is retried', async () => {
-    billingApi.getSubscriptionsByCustomerId.mockResolvedValue([]);
+    billingRepository.getSubscriptionsByCustomerId.mockResolvedValue([]);
     const error = new QueryFailedError(
       '',
       [],
@@ -376,7 +419,7 @@ describe('SubscriptionSyncService', () => {
   });
 
   it('propagates an unrelated foreign key violation', async () => {
-    billingApi.getSubscriptionsByCustomerId.mockResolvedValue([]);
+    billingRepository.getSubscriptionsByCustomerId.mockResolvedValue([]);
     const error = new QueryFailedError(
       '',
       [],
@@ -391,7 +434,7 @@ describe('SubscriptionSyncService', () => {
   });
 
   it('propagates re-fetch errors so the webhook returns 5xx and is retried', async () => {
-    billingApi.getSubscriptionsByCustomerId.mockRejectedValue(
+    billingRepository.getSubscriptionsByCustomerId.mockRejectedValue(
       new Error('billing-service down'),
     );
 
@@ -408,13 +451,19 @@ describe('SubscriptionSyncService', () => {
       data: {
         currentPeriodStart: 1_786_460_184,
         currentPeriodEnd: 1_789_138_584,
-        metadata: { planName: 'Business', FEATURE_SAFE_SEATS: '10' },
+        metadata: {
+          planName: 'Business',
+          planCode: 'BUS-10-A',
+          FEATURE_SAFE_SEATS: '10',
+        },
       },
     });
 
     await target.handleWebhook(event);
 
-    expect(billingApi.getSubscriptionsByCustomerId).not.toHaveBeenCalled();
+    expect(
+      billingRepository.getSubscriptionsByCustomerId,
+    ).not.toHaveBeenCalled();
     expect(
       entitlementsService.materializeFromEvent,
     ).toHaveBeenCalledExactlyOnceWith({
@@ -426,6 +475,7 @@ describe('SubscriptionSyncService', () => {
         status: 'active',
         planId: event.data?.planId,
         planName: 'Business',
+        planCode: 'BUS-10-A',
         currentPeriodStart: new Date(1_786_460_184_000),
         currentPeriodEnd: new Date(1_789_138_584_000),
         entitlements: [
@@ -438,6 +488,27 @@ describe('SubscriptionSyncService', () => {
         ],
       },
     });
+  });
+
+  it('logs an error when the subscription carries no plan code', async () => {
+    const event = webhookEvent({
+      type: 'customer.subscription.created',
+      data: {
+        currentPeriodStart: 1_786_460_184,
+        metadata: { FEATURE_SAFE_SEATS: '10' },
+      },
+    });
+
+    await target.handleWebhook(event);
+
+    expect(loggingService.error).toHaveBeenCalledExactlyOnceWith(
+      `Subscription ${event.data?.subscriptionId} carries no planCode in its metadata`,
+    );
+    expect(entitlementsService.materializeFromEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        subscription: expect.objectContaining({ planCode: null }),
+      }),
+    );
   });
 
   it.each([
@@ -454,12 +525,16 @@ describe('SubscriptionSyncService', () => {
     ['no feature metadata on an active payload', { metadata: null }],
   ])('falls back to the re-fetch on %s', async (_, data) => {
     const subscription = subscriptionBuilder().with('status', 'active').build();
-    billingApi.getSubscriptionsByCustomerId.mockResolvedValue([subscription]);
+    billingRepository.getSubscriptionsByCustomerId.mockResolvedValue([
+      subscription,
+    ]);
 
     await target.handleWebhook(webhookEvent({ data }));
 
     expect(entitlementsService.materializeFromEvent).not.toHaveBeenCalled();
-    expect(billingApi.getSubscriptionsByCustomerId).toHaveBeenCalledTimes(1);
+    expect(
+      billingRepository.getSubscriptionsByCustomerId,
+    ).toHaveBeenCalledTimes(1);
     expect(entitlementsService.materializeAuthoritative).toHaveBeenCalledWith({
       spaceId,
       triggerEventAt: expect.any(Date),
@@ -474,7 +549,7 @@ describe('SubscriptionSyncService', () => {
     const markedAt = new Date('2026-08-17T12:00:10.000Z');
 
     function upstreamState(): void {
-      billingApi.getSubscriptionsByCustomerId.mockResolvedValue([
+      billingRepository.getSubscriptionsByCustomerId.mockResolvedValue([
         subscriptionBuilder().with('status', 'canceled').build(),
       ]);
     }
@@ -483,7 +558,9 @@ describe('SubscriptionSyncService', () => {
       await target.handleWebhook(webhookEvent());
 
       expect(entitlementsService.materializeFromEvent).toHaveBeenCalledTimes(1);
-      expect(billingApi.getSubscriptionsByCustomerId).not.toHaveBeenCalled();
+      expect(
+        billingRepository.getSubscriptionsByCustomerId,
+      ).not.toHaveBeenCalled();
       expect(
         entitlementsService.materializeAuthoritative,
       ).not.toHaveBeenCalled();
@@ -498,7 +575,9 @@ describe('SubscriptionSyncService', () => {
 
       await target.handleWebhook(webhookEvent());
 
-      expect(billingApi.getSubscriptionsByCustomerId).toHaveBeenCalledTimes(1);
+      expect(
+        billingRepository.getSubscriptionsByCustomerId,
+      ).toHaveBeenCalledTimes(1);
       expect(
         entitlementsService.materializeAuthoritative,
       ).toHaveBeenCalledExactlyOnceWith(
@@ -510,7 +589,7 @@ describe('SubscriptionSyncService', () => {
         }),
       );
       // Neither attempt may be served the other's snapshot.
-      expect(cacheService.deleteByKey).toHaveBeenCalledTimes(2);
+      expect(billingRepository.clearSubscriptions).toHaveBeenCalledTimes(2);
       expect(loggingService.warn).not.toHaveBeenCalled();
     });
 
@@ -532,7 +611,7 @@ describe('SubscriptionSyncService', () => {
     // would retire the space's subscription on the strength of that.
     it('writes nothing and logs an error when upstream lists no subscriptions', async () => {
       entitlementsService.materializeFromEvent.mockResolvedValue(false);
-      billingApi.getSubscriptionsByCustomerId.mockResolvedValue([]);
+      billingRepository.getSubscriptionsByCustomerId.mockResolvedValue([]);
 
       await target.handleWebhook(webhookEvent());
 
@@ -555,6 +634,107 @@ describe('SubscriptionSyncService', () => {
       ).toHaveBeenCalledTimes(1);
       expect(loggingService.warn).toHaveBeenCalledTimes(1);
       expect(loggingService.info).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('pending setup', () => {
+    function liveSubscription(): void {
+      subscriptionsRepository.getSubscriptionSummary.mockResolvedValue({
+        hasEverSubscribed: true,
+        activePlanId: faker.string.alphanumeric(12),
+      });
+    }
+
+    it('applies the setup after a sync that leaves the subscription live', async () => {
+      liveSubscription();
+
+      await target.handleWebhook(webhookEvent());
+
+      expect(spaceSetupApplier.apply).toHaveBeenCalledExactlyOnceWith(spaceId);
+    });
+
+    it('does not apply the setup while no subscription is live', async () => {
+      await target.handleWebhook(webhookEvent());
+
+      expect(spaceSetupApplier.apply).not.toHaveBeenCalled();
+    });
+
+    it('acks the webhook and logs an error when the apply fails', async () => {
+      liveSubscription();
+      spaceSetupApplier.apply.mockRejectedValue(new Error('KMS unavailable'));
+
+      await expect(
+        target.handleWebhook(webhookEvent()),
+      ).resolves.toBeUndefined();
+
+      expect(loggingService.error).toHaveBeenCalledWith(
+        expect.stringContaining('KMS unavailable'),
+      );
+    });
+
+    it('acks the webhook and logs an error when the subscription read fails', async () => {
+      subscriptionsRepository.getSubscriptionSummary.mockRejectedValue(
+        new Error('database unavailable'),
+      );
+
+      await expect(
+        target.handleWebhook(webhookEvent()),
+      ).resolves.toBeUndefined();
+
+      expect(spaceSetupApplier.apply).not.toHaveBeenCalled();
+      expect(loggingService.error).toHaveBeenCalledWith(
+        expect.stringContaining('database unavailable'),
+      );
+    });
+  });
+
+  describe('syncSpace', () => {
+    function upstreamTrial(): void {
+      billingRepository.getSubscriptionsByCustomerId.mockResolvedValue([
+        subscriptionBuilder().with('status', 'trialing').build(),
+      ]);
+    }
+
+    it('reads the subscriptions past the cache', async () => {
+      upstreamTrial();
+
+      await target.syncSpace({ spaceId, upstreamCustomerId: spaceUuid });
+
+      expect(billingRepository.clearSubscriptions).toHaveBeenCalledWith({
+        upstreamCustomerId: spaceUuid,
+      });
+    });
+
+    it('materializes the upstream state with no triggering event', async () => {
+      upstreamTrial();
+
+      await target.syncSpace({ spaceId, upstreamCustomerId: spaceUuid });
+
+      expect(entitlementsService.materializeAuthoritative).toHaveBeenCalledWith(
+        expect.objectContaining({ spaceId, triggerEventAt: null }),
+      );
+    });
+
+    it('applies no setup: reconciling decides that', async () => {
+      subscriptionsRepository.getSubscriptionSummary.mockResolvedValue({
+        hasEverSubscribed: true,
+        activePlanId: faker.string.alphanumeric(12),
+      });
+      upstreamTrial();
+
+      await target.syncSpace({ spaceId, upstreamCustomerId: spaceUuid });
+
+      expect(spaceSetupApplier.apply).not.toHaveBeenCalled();
+    });
+
+    it('materializes nothing when upstream lists no subscriptions', async () => {
+      billingRepository.getSubscriptionsByCustomerId.mockResolvedValue([]);
+
+      await target.syncSpace({ spaceId, upstreamCustomerId: spaceUuid });
+
+      expect(
+        entitlementsService.materializeAuthoritative,
+      ).not.toHaveBeenCalled();
     });
   });
 });

@@ -5,32 +5,111 @@ import type {
   FindOptionsSelect,
   FindOptionsWhere,
 } from 'typeorm';
-import type { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
-import type { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
-import type { SpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository';
+import type { SpaceSafe } from '#/modules/spaces/datasources/safes/entities/space-safes.entity.db';
+import type { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
+import type {
+  PreparedSpaceSafe,
+  SpaceSafesBySpaceId,
+} from '#/modules/spaces/domain/safes/entities/space-safe.entity';
+import type { SpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository';
 
 export const ISpaceSafesRepository = Symbol('ISpaceSafesRepository');
 
 export interface ISpaceSafesRepository {
-  create(args: {
-    spaceId: Space['id'];
-    actorUserId: number;
+  /**
+   * Ciphertext, blind index and the plaintext the audit event records, for
+   * rows that are not inserted yet. Only `insertRows` reads inside it; a
+   * caller carries it from one step to the next.
+   */
+  encryptRows(
+    spaceId: Space['id'],
     payload: Array<{
       chainId: SpaceSafe['chainId'];
       address: SpaceSafe['address'];
-    }>;
+    }>,
+  ): Promise<Array<PreparedSpaceSafe>>;
+
+  /**
+   * Transaction-scoped Postgres lock serializing seat changes for a space,
+   * released when `entityManager`'s transaction ends. A caller that admits
+   * Safes against a seat count takes it first, so the count it reads is the
+   * state its insert lands on; otherwise concurrent additions each pass a
+   * stale count and overshoot a quota together.
+   */
+  lockSeats(spaceId: Space['id'], entityManager: EntityManager): Promise<void>;
+
+  /**
+   * Inserts prepared rows and records the audit event, both in the caller's
+   * transaction. Encrypting beforehand is what keeps its KMS round-trips out
+   * of that transaction and out of {@link lockSeats}'s critical section.
+   */
+  insertRows(args: {
+    spaceId: Space['id'];
+    actorUserId: number;
+    rows: Array<PreparedSpaceSafe>;
+    entityManager: EntityManager;
   }): Promise<void>;
 
   findBySpaceId(
     spaceId: Space['id'],
   ): Promise<Array<Pick<SpaceSafe, 'chainId' | 'address'>>>;
 
+  /**
+   * {@link findBySpaceId} for several spaces, in one query. Every requested
+   * space is keyed, one holding no Safes with an empty array.
+   */
+  findBySpaceIds(spaceIds: Array<Space['id']>): Promise<SpaceSafesBySpaceId>;
+
   findOrFail(
     args: Parameters<SpaceSafesRepository['find']>[0],
   ): Promise<Array<SpaceSafe>>;
 
-  countBySpaceId(
+  /**
+   * The spaces holding this Safe on this chain, matched through the blind
+   * index the way {@link existsInSpace} matches it within one space.
+   */
+  findSpaceIdsBySafe(safe: {
+    chainId: SpaceSafe['chainId'];
+    address: SpaceSafe['address'];
+  }): Promise<Array<Space['id']>>;
+
+  /** Whether the space holds this Safe: the membership a caller spending the
+   * workspace's allowance on it must prove. */
+  existsInSpace(
+    args: {
+      spaceId: Space['id'];
+      chainId: SpaceSafe['chainId'];
+      address: SpaceSafe['address'];
+    },
+    entityManager?: EntityManager,
+  ): Promise<boolean>;
+
+  /**
+   * Seats the space takes: one per Safe address, however many chains it is on.
+   * What makes two rows the same Safe is the repository's own rule, so every
+   * seat count goes through here rather than deriving it from loaded rows.
+   */
+  countSeatsBySpaceId(
     spaceId: Space['id'],
+    entityManager?: EntityManager,
+  ): Promise<number>;
+
+  /** {@link countSeatsBySpaceId} for several spaces, in one query. */
+  countSeatsBySpaceIds(
+    spaceIds: Array<Space['id']>,
+    entityManager?: EntityManager,
+  ): Promise<Map<Space['id'], number>>;
+
+  /**
+   * How many new seats `addresses` would take: one the space already holds on
+   * another chain takes none. Plaintext addresses, as the request carries
+   * them; the seat key is derived here, so a caller cannot key them wrong.
+   */
+  countNewSeats(
+    args: {
+      spaceId: Space['id'];
+      addresses: Array<SpaceSafe['address']>;
+    },
     entityManager?: EntityManager,
   ): Promise<number>;
 

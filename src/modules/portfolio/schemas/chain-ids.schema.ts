@@ -1,11 +1,14 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
-import { ChainIdSchema } from '@/modules/chains/domain/entities/schemas/chain-id.schema';
+import { ChainIdSchema } from '#/modules/chains/domain/entities/schemas/chain-id.schema';
 
 export const ChainIdsSchema = z
   .string()
   .optional()
   .transform((val) => {
-    if (!val) return undefined;
+    if (!val) {
+      return undefined;
+    }
     const ids = val
       .split(',')
       .map((id) => id.trim())

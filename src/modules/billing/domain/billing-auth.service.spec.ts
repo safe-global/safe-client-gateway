@@ -4,18 +4,18 @@ import { sign as cryptoSign, generateKeyPairSync } from 'node:crypto';
 import { faker } from '@faker-js/faker';
 import { UnauthorizedException } from '@nestjs/common';
 import type { MockedObject } from 'vitest';
-import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
-import { JWT_ES_ALGORITHM } from '@/datasources/jwt/jwt.constants';
-import { jwtClientFactory } from '@/datasources/jwt/jwt.module';
-import { JwtService } from '@/datasources/jwt/jwt.service';
-import type { ILoggingService } from '@/logging/logging.interface';
-import { DEFAULT_BILLING_SERVICE_TOKEN_SUBJECT } from '@/modules/billing/domain/billing-auth.constants';
-import { BillingAuthService } from '@/modules/billing/domain/billing-auth.service';
+import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
+import { JWT_ES_ALGORITHM } from '#/datasources/jwt/jwt.constants';
+import { jwtClientFactory } from '#/datasources/jwt/jwt.module';
+import { JwtService } from '#/datasources/jwt/jwt.service';
+import type { ILoggingService } from '#/logging/logging.interface';
+import { DEFAULT_BILLING_SERVICE_TOKEN_SUBJECT } from '#/modules/billing/domain/billing-auth.constants';
+import { BillingAuthService } from '#/modules/billing/domain/billing-auth.service';
 import {
   SERVICE_ACCESS_PERMISSION_TYPE,
   SERVICE_ACCESS_ROLE,
   SERVICE_USER_TYPE,
-} from '@/modules/billing/domain/entities/billing-service-token.entity';
+} from '#/modules/billing/domain/entities/billing-service-token.entity';
 
 const ISSUER = faker.lorem.slug();
 

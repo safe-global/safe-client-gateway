@@ -1,28 +1,28 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable, Module, NotFoundException } from '@nestjs/common';
 import type { Address, Hash } from 'viem';
-import { getNumberString } from '@/domain/common/utils/utils';
+import { getNumberString } from '#/domain/common/utils/utils';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import { ChainsModule } from '@/modules/chains/chains.module';
-import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
-import type { Deployment } from '@/modules/staking/datasources/entities/deployment.entity';
-import { StakeState } from '@/modules/staking/datasources/entities/stake.entity';
-import { KilnDecoder } from '@/modules/staking/domain/contracts/decoders/kiln-decoder.helper';
-import { IStakingRepositoryWithRewardsFee } from '@/modules/staking/domain/staking.repository.interface';
-import { StakingModule } from '@/modules/staking/staking.module';
-import { NativeStakingDepositTransactionInfo } from '@/modules/transactions/routes/entities/staking/native-staking-deposit-info.entity';
-import { NativeStakingValidatorsExitTransactionInfo } from '@/modules/transactions/routes/entities/staking/native-staking-validators-exit-info.entity';
-import { NativeStakingWithdrawTransactionInfo } from '@/modules/transactions/routes/entities/staking/native-staking-withdraw-info.entity';
-import { StakingStatus } from '@/modules/transactions/routes/entities/staking/staking.entity';
-import { TokenInfo } from '@/modules/transactions/routes/entities/swaps/token-info.entity';
+} from '#/logging/logging.interface';
+import { ChainsModule } from '#/modules/chains/chains.module';
+import { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
+import type { Deployment } from '#/modules/staking/datasources/entities/deployment.entity';
+import { StakeState } from '#/modules/staking/datasources/entities/stake.entity';
+import { KilnDecoder } from '#/modules/staking/domain/contracts/decoders/kiln-decoder.helper';
+import { IStakingRepositoryWithRewardsFee } from '#/modules/staking/domain/staking.repository.interface';
+import { StakingModule } from '#/modules/staking/staking.module';
+import { NativeStakingDepositTransactionInfo } from '#/modules/transactions/routes/entities/staking/native-staking-deposit-info.entity';
+import { NativeStakingValidatorsExitTransactionInfo } from '#/modules/transactions/routes/entities/staking/native-staking-validators-exit-info.entity';
+import { NativeStakingWithdrawTransactionInfo } from '#/modules/transactions/routes/entities/staking/native-staking-withdraw-info.entity';
+import { StakingStatus } from '#/modules/transactions/routes/entities/staking/staking.entity';
+import { TokenInfo } from '#/modules/transactions/routes/entities/swaps/token-info.entity';
 import {
   KilnNativeStakingHelper,
   KilnNativeStakingHelperModule,
-} from '@/modules/transactions/routes/helpers/kiln-native-staking.helper';
-import { NULL_ADDRESS } from '@/routes/common/constants';
+} from '#/modules/transactions/routes/helpers/kiln-native-staking.helper';
+import { NULL_ADDRESS } from '#/routes/common/constants';
 
 @Injectable()
 export class NativeStakingMapper {

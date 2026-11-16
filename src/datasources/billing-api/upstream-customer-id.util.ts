@@ -10,6 +10,8 @@ export function stripDashes(uuid: string): string {
 }
 
 export function withDashes(hex: string): string {
-  if (!/^[0-9a-f]{32}$/i.test(hex)) return hex;
+  if (!/^[0-9a-f]{32}$/i.test(hex)) {
+    return hex;
+  }
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }

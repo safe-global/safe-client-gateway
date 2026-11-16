@@ -8,9 +8,9 @@ import type { Queue } from 'bullmq';
 import {
   createTestApplication,
   initTestApplication,
-} from '@/__tests__/test-app.provider';
-import type { TestJobData } from '@/datasources/job-queue/__tests__/test.job.data';
-import { IJobQueueService } from '@/domain/interfaces/job-queue.interface';
+} from '#/__tests__/test-app.provider';
+import type { TestJobData } from '#/datasources/job-queue/__tests__/test.job.data';
+import { IJobQueueService } from '#/domain/interfaces/job-queue.interface';
 import { TestJobConsumer } from './../__tests__/test.job.consumer';
 import { JobQueueService } from './../job-queue.service';
 import { JobType } from './../types/job-types';
@@ -101,7 +101,7 @@ describe('JobQueueService & TestJobConsumer integration', () => {
 
     await service.addJob(JobType.TEST_JOB, data);
 
-    await waitUntil(() => consumer.handledJobs.length === 1);
+    await waitUntil(() => consumer.completedJobs.length === 1);
 
     const processedJob = consumer.handledJobs[0];
     expect(processedJob.name).toBe(JobType.TEST_JOB);

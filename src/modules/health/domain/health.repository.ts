@@ -3,18 +3,18 @@ import { Inject, Injectable } from '@nestjs/common';
 import {
   CacheReadiness,
   type ICacheReadiness,
-} from '@/domain/interfaces/cache-readiness.interface';
+} from '#/domain/interfaces/cache-readiness.interface';
 import {
   type IQueueReadiness,
   QueueReadiness,
-} from '@/domain/interfaces/queue-readiness.interface';
+} from '#/domain/interfaces/queue-readiness.interface';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import { HealthEntity } from '@/modules/health/domain/entities/health.entity';
-import { HealthCheckError } from '@/modules/health/domain/entities/health-error.entity';
-import type { IHealthRepository } from '@/modules/health/domain/health.repository.interface';
+} from '#/logging/logging.interface';
+import { HealthEntity } from '#/modules/health/domain/entities/health.entity';
+import { HealthCheckError } from '#/modules/health/domain/entities/health-error.entity';
+import type { IHealthRepository } from '#/modules/health/domain/health.repository.interface';
 
 @Injectable()
 export class HealthRepository implements IHealthRepository {

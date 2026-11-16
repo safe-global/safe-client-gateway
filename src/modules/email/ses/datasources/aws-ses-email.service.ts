@@ -6,10 +6,10 @@ import {
   SendEmailCommand,
 } from '@aws-sdk/client-sesv2';
 import { Inject, Injectable } from '@nestjs/common';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { resolveAwsCredentials } from '@/datasources/common/utils/aws-credentials.utils';
-import { SesEmailErrorMapper } from '@/modules/email/ses/datasources/ses-email-error.mapper';
-import { IEmailService } from '@/modules/email/ses/domain/interfaces/email-service.interface';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { resolveAwsCredentials } from '#/datasources/common/utils/aws-credentials.utils';
+import { SesEmailErrorMapper } from '#/modules/email/ses/datasources/ses-email-error.mapper';
+import { IEmailService } from '#/modules/email/ses/domain/interfaces/email-service.interface';
 
 @Injectable()
 export class AwsSesEmailService implements IEmailService {

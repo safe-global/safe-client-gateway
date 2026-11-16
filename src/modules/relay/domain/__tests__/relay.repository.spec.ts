@@ -5,15 +5,15 @@ import type { Hex } from 'viem';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
 import { ZodError } from 'zod';
-import type { IRelayApi } from '@/domain/interfaces/relay-api.interface';
-import type { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { relayerBuilder } from '@/modules/chains/domain/entities/__tests__/relayer.builder';
-import { relayTaskStatusBuilder } from '@/modules/relay/domain/entities/__tests__/relay-task-status.builder';
-import type { IRelayManager } from '@/modules/relay/domain/interfaces/relay-manager.interface';
-import type { IRelayer } from '@/modules/relay/domain/interfaces/relayer.interface';
-import { RelayRepository } from '@/modules/relay/domain/relay.repository';
-import { rawify } from '@/validation/entities/raw.entity';
+import type { IRelayApi } from '#/domain/interfaces/relay-api.interface';
+import type { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
+import { relayerBuilder } from '#/modules/chains/domain/entities/__tests__/relayer.builder';
+import { relayTaskStatusBuilder } from '#/modules/relay/domain/entities/__tests__/relay-task-status.builder';
+import type { IRelayManager } from '#/modules/relay/domain/interfaces/relay-manager.interface';
+import type { IRelayer } from '#/modules/relay/domain/interfaces/relayer.interface';
+import { RelayRepository } from '#/modules/relay/domain/relay.repository';
+import { rawify } from '#/validation/entities/raw.entity';
 
 const mockRelayApi = vi.mocked({
   relay: vi.fn(),

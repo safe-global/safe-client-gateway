@@ -2,28 +2,28 @@
 import { Injectable } from '@nestjs/common';
 import { type Address, isAddressEqual, zeroAddress } from 'viem';
 import { ZodError } from 'zod';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
-import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
-import { CacheRouter } from '@/datasources/cache/cache.router';
-import type { ICacheService } from '@/datasources/cache/cache.service.interface';
-import { mapBannedSafeError } from '@/datasources/errors/helpers/banned-safe.helper';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import { getNumberString } from '@/domain/common/utils/utils';
-import type { Page } from '@/domain/entities/page.entity';
-import type { IBalancesApi } from '@/domain/interfaces/balances-api.interface';
+import type { IConfigurationService } from '#/config/configuration.service.interface';
+import type { CacheFirstDataSource } from '#/datasources/cache/cache.first.data.source';
+import { CacheRouter } from '#/datasources/cache/cache.router';
+import type { ICacheService } from '#/datasources/cache/cache.service.interface';
+import { mapBannedSafeError } from '#/datasources/errors/helpers/banned-safe.helper';
+import { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
+import type { INetworkService } from '#/datasources/network/network.service.interface';
+import { getNumberString } from '#/domain/common/utils/utils';
+import type { Page } from '#/domain/entities/page.entity';
+import type { IBalancesApi } from '#/domain/interfaces/balances-api.interface';
 import {
   type AssetPrice,
   getAssetPricesSchema,
-} from '@/modules/balances/datasources/entities/asset-price.entity';
-import type { IPricesApi } from '@/modules/balances/datasources/prices-api.interface';
+} from '#/modules/balances/datasources/entities/asset-price.entity';
+import type { IPricesApi } from '#/modules/balances/datasources/prices-api.interface';
 import {
   type Balance,
   BalancesSchema,
-} from '@/modules/balances/domain/entities/balance.entity';
-import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
-import type { Collectible } from '@/modules/collectibles/domain/entities/collectible.entity';
-import { type Raw, rawify } from '@/validation/entities/raw.entity';
+} from '#/modules/balances/domain/entities/balance.entity';
+import type { Chain } from '#/modules/chains/domain/entities/chain.entity';
+import type { Collectible } from '#/modules/collectibles/domain/entities/collectible.entity';
+import { type Raw, rawify } from '#/validation/entities/raw.entity';
 
 @Injectable()
 export class SafeBalancesApi implements IBalancesApi {

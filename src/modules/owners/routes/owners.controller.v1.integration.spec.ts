@@ -9,15 +9,15 @@ import type { MockedObject } from 'vitest';
 import {
   initTestApplication,
   TestAppProvider,
-} from '@/__tests__/test-app.provider';
-import { createTestModule } from '@/__tests__/testing-module';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { CircuitBreakerKeys } from '@/datasources/circuit-breaker/circuit-breaker.keys';
-import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import { NetworkService } from '@/datasources/network/network.service.interface';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { rawify } from '@/validation/entities/raw.entity';
+} from '#/__tests__/test-app.provider';
+import { createTestModule } from '#/__tests__/testing-module';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { CircuitBreakerKeys } from '#/datasources/circuit-breaker/circuit-breaker.keys';
+import { NetworkResponseError } from '#/datasources/network/entities/network.error.entity';
+import type { INetworkService } from '#/datasources/network/network.service.interface';
+import { NetworkService } from '#/datasources/network/network.service.interface';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
+import { rawify } from '#/validation/entities/raw.entity';
 
 describe('Owners Controller (Unit)', () => {
   let app: INestApplication<Server>;
@@ -74,6 +74,31 @@ describe('Owners Controller (Unit)', () => {
           ),
         });
     });
+
+    it.each([
+      { description: 'a non-numeric', chainId: faker.string.alpha() },
+      {
+        description: 'a path-like',
+        chainId: encodeURIComponent(`../${faker.string.numeric()}`),
+      },
+    ])(
+      'Failure: $description chainId is rejected before any upstream request',
+      async ({ chainId }) => {
+        const ownerAddress = faker.finance.ethereumAddress();
+
+        await request(app.getHttpServer())
+          .get(`/v1/chains/${chainId}/owners/${ownerAddress}/safes`)
+          .expect(422)
+          .expect({
+            statusCode: 422,
+            code: 'custom',
+            message: 'Invalid base-10 numeric string',
+            path: [],
+          });
+
+        expect(networkService.get).not.toHaveBeenCalled();
+      },
+    );
 
     it('Failure: Config API fails', async () => {
       const chainId = faker.string.numeric();

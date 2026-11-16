@@ -5,11 +5,11 @@ import { getAddress } from 'viem';
 import {
   defiVaultAdditionalRewardBuilder,
   defiVaultStatsBuilder,
-} from '@/modules/staking/datasources/entities/__tests__/defi-vault-stats.entity.builder';
+} from '#/modules/staking/datasources/entities/__tests__/defi-vault-stats.entity.builder';
 import {
   DefiVaultStatsAdditionalRewardSchema,
   DefiVaultStatsSchema,
-} from '@/modules/staking/datasources/entities/defi-vault-stats.entity';
+} from '#/modules/staking/datasources/entities/defi-vault-stats.entity';
 
 describe('DefiVaultStatsSchema', () => {
   it('should validate a valid DefiVaultStats object', () => {

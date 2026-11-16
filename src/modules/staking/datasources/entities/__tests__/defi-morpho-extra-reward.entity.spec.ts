@@ -3,8 +3,8 @@ import { faker } from '@faker-js/faker';
 import type { Address } from 'viem';
 import { getAddress } from 'viem';
 
-import { defiMorphoExtraRewardBuilder } from '@/modules/staking/datasources/entities/__tests__/defi-morpho-extra-reward.entity.builder';
-import { DefiMorphoExtraRewardSchema } from '@/modules/staking/datasources/entities/defi-morpho-extra-reward.entity';
+import { defiMorphoExtraRewardBuilder } from '#/modules/staking/datasources/entities/__tests__/defi-morpho-extra-reward.entity.builder';
+import { DefiMorphoExtraRewardSchema } from '#/modules/staking/datasources/entities/defi-morpho-extra-reward.entity';
 
 describe('DefiMorphoExtraRewardSchema', () => {
   it('should validate a DefiMorphoExtraRewardSchema', () => {

@@ -3,8 +3,8 @@ import { ApiProperty } from '@nestjs/swagger';
 import {
   ExecutionInfo,
   ExecutionInfoType,
-} from '@/modules/transactions/routes/entities/execution-info.entity';
-import { AddressInfo } from '@/routes/common/entities/address-info.entity';
+} from '#/modules/transactions/routes/entities/execution-info.entity';
+import { AddressInfo } from '#/routes/common/entities/address-info.entity';
 
 export class ModuleExecutionInfo extends ExecutionInfo {
   @ApiProperty({ enum: [ExecutionInfoType.Module] })

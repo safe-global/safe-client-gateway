@@ -1,20 +1,20 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Injectable } from '@nestjs/common';
-import type { DataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
-import type { ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
-import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
-import { Operation } from '@/modules/safe/domain/entities/operation.entity';
-import { isMultisigTransaction } from '@/modules/safe/domain/entities/transaction.entity';
+import type { DataDecoded } from '#/modules/data-decoder/domain/v2/entities/data-decoded.entity';
+import type { ModuleTransaction } from '#/modules/safe/domain/entities/module-transaction.entity';
+import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
+import { Operation } from '#/modules/safe/domain/entities/operation.entity';
+import { isMultisigTransaction } from '#/modules/safe/domain/entities/transaction.entity';
 import {
   MULTI_SEND_METHOD_NAME,
   TRANSACTIONS_PARAMETER_NAME,
-} from '@/modules/transactions/routes/constants';
+} from '#/modules/transactions/routes/constants';
 import {
   CustomTransactionInfo,
   MultiSendTransactionInfo,
-} from '@/modules/transactions/routes/entities/custom-transaction.entity';
-import { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
-import { NULL_ADDRESS } from '@/routes/common/constants';
+} from '#/modules/transactions/routes/entities/custom-transaction.entity';
+import { AddressInfoHelper } from '#/routes/common/address-info/address-info.helper';
+import { NULL_ADDRESS } from '#/routes/common/constants';
 
 @Injectable()
 export class CustomTransactionMapper {

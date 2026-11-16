@@ -2,11 +2,11 @@
 
 import { faker } from '@faker-js/faker';
 import { getAddress, zeroAddress } from 'viem';
-import { txFeesResponseBuilder } from '@/modules/fees/domain/entities/__tests__/tx-fees-response.builder';
+import { txFeesResponseBuilder } from '#/modules/fees/domain/entities/__tests__/tx-fees-response.builder';
 import {
   TxDataResponseSchema,
   TxFeesResponseSchema,
-} from '@/modules/fees/domain/entities/tx-fees-response.entity';
+} from '#/modules/fees/domain/entities/tx-fees-response.entity';
 
 describe('TxDataResponseSchema', () => {
   it('should accept chainId as a string and keep it as string', () => {

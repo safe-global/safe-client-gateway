@@ -6,9 +6,9 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { CaptchaService } from '@/routes/captcha/captcha.service';
-import type { HttpRequest } from '@/routes/common/http/http-request.utils';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { CaptchaService } from '#/routes/captcha/captcha.service';
+import type { HttpRequest } from '#/routes/common/http/http-request.utils';
 
 @Injectable()
 export class CaptchaGuard implements CanActivate {

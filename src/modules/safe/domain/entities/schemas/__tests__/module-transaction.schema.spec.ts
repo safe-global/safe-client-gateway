@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
-import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
-import type { Page } from '@/domain/entities/page.entity';
-import { moduleTransactionBuilder } from '@/modules/safe/domain/entities/__tests__/module-transaction.builder';
-import type { ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
+import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
+import type { Page } from '#/domain/entities/page.entity';
+import { moduleTransactionBuilder } from '#/modules/safe/domain/entities/__tests__/module-transaction.builder';
+import type { ModuleTransaction } from '#/modules/safe/domain/entities/module-transaction.entity';
 import {
   ModuleTransactionPageSchema,
   ModuleTransactionSchema,
-} from '@/modules/safe/domain/entities/module-transaction.entity';
+} from '#/modules/safe/domain/entities/module-transaction.entity';
 
 describe('ModuleTransaction schemas', () => {
   describe('ModuleTransactionSchema', () => {

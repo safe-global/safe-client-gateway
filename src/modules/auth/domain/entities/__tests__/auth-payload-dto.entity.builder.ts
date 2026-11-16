@@ -2,13 +2,13 @@
 
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import type { IBuilder } from '@/__tests__/builder';
-import { Builder } from '@/__tests__/builder';
+import type { IBuilder } from '#/__tests__/builder';
+import { Builder } from '#/__tests__/builder';
 import type {
   OidcAuthPayloadDto,
   SiweAuthPayloadDto,
-} from '@/modules/auth/domain/entities/auth-payload.entity';
-import { AuthMethod } from '@/modules/auth/domain/entities/auth-payload.entity';
+} from '#/modules/auth/domain/entities/auth-payload.entity';
+import { AuthMethod } from '#/modules/auth/domain/entities/auth-payload.entity';
 
 export function siweAuthPayloadDtoBuilder(): IBuilder<SiweAuthPayloadDto> {
   return new Builder<SiweAuthPayloadDto>()

@@ -7,8 +7,8 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import type { FastifyReply } from 'fastify';
-import { NoRelayerDefinedError } from '@/modules/relay/domain/errors/no-relayer-defined.error';
-import { RelayerTypeNotImplementedError } from '@/modules/relay/domain/errors/relayer-type-not-implemented.error';
+import { NoRelayerDefinedError } from '#/modules/relay/domain/errors/no-relayer-defined.error';
+import { RelayerTypeNotImplementedError } from '#/modules/relay/domain/errors/relayer-type-not-implemented.error';
 
 @Catch(NoRelayerDefinedError, RelayerTypeNotImplementedError)
 export class RelayerNotAvailableExceptionFilter implements ExceptionFilter {

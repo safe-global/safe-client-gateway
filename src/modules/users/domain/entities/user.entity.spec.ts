@@ -2,8 +2,8 @@
 
 import { faker } from '@faker-js/faker';
 import omit from 'lodash/omit';
-import { userBuilder } from '@/modules/users/datasources/entities/__tests__/users.entity.db.builder';
-import { UserSchema } from '@/modules/users/domain/entities/user.entity';
+import { userBuilder } from '#/modules/users/datasources/entities/__tests__/users.entity.db.builder';
+import { UserSchema } from '#/modules/users/domain/entities/user.entity';
 
 describe('UserSchema', () => {
   it('should validate a valid User', () => {

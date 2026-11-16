@@ -8,17 +8,27 @@ import {
   getAbiItem,
   toFunctionSelector,
 } from 'viem';
-import type { ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
-import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
-import { KilnDecoder } from '@/modules/staking/domain/contracts/decoders/kiln-decoder.helper';
-import { Erc4262Decoder } from '@/modules/transactions/routes/decoders/erc4262-decoder.helper';
+import type { ModuleTransaction } from '#/modules/safe/domain/entities/module-transaction.entity';
+import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
+import { KilnDecoder } from '#/modules/staking/domain/contracts/decoders/kiln-decoder.helper';
+import { Erc4262Decoder } from '#/modules/transactions/routes/decoders/erc4262-decoder.helper';
 import {
   TransactionFinder,
   TransactionFinderModule,
-} from '@/modules/transactions/routes/helpers/transaction-finder.helper';
+} from '#/modules/transactions/routes/helpers/transaction-finder.helper';
 
 @Injectable()
 export class KilnVaultHelper extends Erc4262Decoder {
+  private static readonly SELECTORS = {
+    deposit: toFunctionSelector(
+      getAbiItem({ abi: erc4626Abi, name: 'deposit' }),
+    ),
+    redeem: toFunctionSelector(getAbiItem({ abi: erc4626Abi, name: 'redeem' })),
+    withdraw: toFunctionSelector(
+      getAbiItem({ abi: erc4626Abi, name: 'withdraw' }),
+    ),
+  };
+
   constructor(private readonly transactionFinder: TransactionFinder) {
     super();
   }
@@ -83,7 +93,8 @@ export class KilnVaultHelper extends Erc4262Decoder {
   // TODO: Move to generic helper as it replaces a majority of ABI methods
   private getDecodedTransaction<
     TAbi extends typeof erc4626Abi,
-    TFunctionName extends ContractFunctionName<TAbi>,
+    TFunctionName extends ContractFunctionName<TAbi> &
+      keyof typeof KilnVaultHelper.SELECTORS,
   >(args: {
     functionName: TFunctionName;
     transaction: Pick<
@@ -102,18 +113,7 @@ export class KilnVaultHelper extends Erc4262Decoder {
       return null;
     }
 
-    // On a type level, functionName can be a union {@link ContractFunctionName},
-    // whereas the value is always a string. For type-safety, we extract the first
-    // value of the union to use as the name instead of casting
-    const name = Array.isArray(args.functionName)
-      ? args.functionName[0]
-      : args.functionName;
-
-    const item = getAbiItem({
-      abi: erc4626Abi,
-      name,
-    });
-    const selector = toFunctionSelector(item);
+    const selector = KilnVaultHelper.SELECTORS[args.functionName];
     const transaction = this.transactionFinder.findTransaction(
       (transaction) => transaction.data.startsWith(selector),
       {

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { Feature } from '@/modules/entitlements/datasources/entities/feature.entity.db';
+import type { Feature } from '#/modules/entitlements/datasources/entities/feature.entity.db';
 
 export const IFeaturesRepository = Symbol('IFeaturesRepository');
 

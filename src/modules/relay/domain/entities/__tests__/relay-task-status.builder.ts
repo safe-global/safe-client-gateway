@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import type { IBuilder } from '@/__tests__/builder';
-import { Builder } from '@/__tests__/builder';
-import type { RelayTaskStatus } from '@/modules/relay/domain/entities/relay-task-status.entity';
+import type { IBuilder } from '#/__tests__/builder';
+import { Builder } from '#/__tests__/builder';
+import type { RelayTaskStatus } from '#/modules/relay/domain/entities/relay-task-status.entity';
 
 export function relayTaskStatusBuilder(): IBuilder<RelayTaskStatus> {
   return new Builder<RelayTaskStatus>()

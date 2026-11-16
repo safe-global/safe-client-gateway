@@ -8,9 +8,9 @@ import {
   PrimaryGeneratedColumn,
   Unique,
 } from 'typeorm';
-import { Feature } from '@/modules/entitlements/datasources/entities/feature.entity.db';
-import type { SpaceFeatureUsage as DomainSpaceFeatureUsage } from '@/modules/entitlements/domain/entities/space-feature-usage.entity';
-import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
+import { Feature } from '#/modules/entitlements/datasources/entities/feature.entity.db';
+import type { SpaceFeatureUsage as DomainSpaceFeatureUsage } from '#/modules/entitlements/domain/entities/space-feature-usage.entity';
+import { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
 
 // Event-type consumption counters only (e.g. gas-sponsored transactions).
 // Stock counts (seats) are live COUNTs over their own tables.

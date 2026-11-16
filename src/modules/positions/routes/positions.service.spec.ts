@@ -3,16 +3,16 @@
 import { faker } from '@faker-js/faker';
 import type { Address } from 'viem';
 import type { MockedObject } from 'vitest';
-import type { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
-import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
-import { positionBuilder } from '@/modules/positions/domain/entities/__tests__/position.builder';
-import { PositionType } from '@/modules/positions/domain/entities/position-type.entity';
-import type { IPositionsRepository } from '@/modules/positions/domain/positions.repository.interface';
-import type { Position } from '@/modules/positions/routes/entities/position.entity';
-import type { PositionGroup } from '@/modules/positions/routes/entities/position-group.entity';
-import type { Protocol } from '@/modules/positions/routes/entities/protocol.entity';
-import { PositionsService } from '@/modules/positions/routes/positions.service';
-import { NULL_ADDRESS } from '@/routes/common/constants';
+import type { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
+import type { Chain } from '#/modules/chains/domain/entities/chain.entity';
+import { positionBuilder } from '#/modules/positions/domain/entities/__tests__/position.builder';
+import { PositionType } from '#/modules/positions/domain/entities/position-type.entity';
+import type { IPositionsRepository } from '#/modules/positions/domain/positions.repository.interface';
+import type { Position } from '#/modules/positions/routes/entities/position.entity';
+import type { PositionGroup } from '#/modules/positions/routes/entities/position-group.entity';
+import type { Protocol } from '#/modules/positions/routes/entities/protocol.entity';
+import { PositionsService } from '#/modules/positions/routes/positions.service';
+import { NULL_ADDRESS } from '#/routes/common/constants';
 
 const positionsRepoMock = vi.mocked({
   getPositions: vi.fn(),

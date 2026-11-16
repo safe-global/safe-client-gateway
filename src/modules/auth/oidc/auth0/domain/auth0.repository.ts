@@ -4,12 +4,12 @@ import { Inject, Injectable } from '@nestjs/common';
 import {
   type AuthorizationUrlOptions,
   IAuth0Api,
-} from '@/modules/auth/oidc/auth0/datasources/auth0-api.interface';
-import type { Auth0AuthenticationMethod } from '@/modules/auth/oidc/auth0/datasources/entities/auth0-authentication-method.entity';
-import { Auth0TokenResponseSchema } from '@/modules/auth/oidc/auth0/datasources/entities/auth0-token-response.entity';
-import type { IAuth0Repository } from '@/modules/auth/oidc/auth0/domain/auth0.repository.interface';
-import { Auth0TokenVerifier } from '@/modules/auth/oidc/auth0/domain/auth0-token.verifier';
-import type { Auth0Token } from '@/modules/auth/oidc/auth0/domain/entities/auth0-token.entity';
+} from '#/modules/auth/oidc/auth0/datasources/auth0-api.interface';
+import type { Auth0AuthenticationMethod } from '#/modules/auth/oidc/auth0/datasources/entities/auth0-authentication-method.entity';
+import { Auth0TokenResponseSchema } from '#/modules/auth/oidc/auth0/datasources/entities/auth0-token-response.entity';
+import type { IAuth0Repository } from '#/modules/auth/oidc/auth0/domain/auth0.repository.interface';
+import { Auth0TokenVerifier } from '#/modules/auth/oidc/auth0/domain/auth0-token.verifier';
+import type { Auth0Token } from '#/modules/auth/oidc/auth0/domain/entities/auth0-token.entity';
 
 @Injectable()
 export class Auth0Repository implements IAuth0Repository {

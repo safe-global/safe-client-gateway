@@ -5,26 +5,23 @@ import { getAbiItem, toFunctionSelector } from 'viem';
 import {
   KilnAbi,
   KilnDecoder,
-} from '@/modules/staking/domain/contracts/decoders/kiln-decoder.helper';
+} from '#/modules/staking/domain/contracts/decoders/kiln-decoder.helper';
 import {
   TransactionFinder,
   TransactionFinderModule,
-} from '@/modules/transactions/routes/helpers/transaction-finder.helper';
+} from '#/modules/transactions/routes/helpers/transaction-finder.helper';
 
 @Injectable()
 export class KilnNativeStakingHelper {
-  private static readonly DEPOSIT_SIGNATURE = getAbiItem({
-    abi: KilnAbi,
-    name: 'deposit',
-  });
-  private static readonly VALIDATORS_EXIT_SIGNATURE = getAbiItem({
-    abi: KilnAbi,
-    name: 'requestValidatorsExit',
-  });
-  private static readonly WITHDRAW_SIGNATURE = getAbiItem({
-    abi: KilnAbi,
-    name: 'batchWithdrawCLFee',
-  });
+  private static readonly DEPOSIT_SELECTOR = toFunctionSelector(
+    getAbiItem({ abi: KilnAbi, name: 'deposit' }),
+  );
+  private static readonly VALIDATORS_EXIT_SELECTOR = toFunctionSelector(
+    getAbiItem({ abi: KilnAbi, name: 'requestValidatorsExit' }),
+  );
+  private static readonly WITHDRAW_SELECTOR = toFunctionSelector(
+    getAbiItem({ abi: KilnAbi, name: 'batchWithdrawCLFee' }),
+  );
 
   constructor(private readonly transactionFinder: TransactionFinder) {}
 
@@ -33,11 +30,9 @@ export class KilnNativeStakingHelper {
     data: Hex;
     value: string;
   }): { to?: Address; data: Hex; value: string } | null {
-    const selector = toFunctionSelector(
-      KilnNativeStakingHelper.DEPOSIT_SIGNATURE,
-    );
     return this.transactionFinder.findTransaction(
-      (transaction) => transaction.data.startsWith(selector),
+      (transaction) =>
+        transaction.data.startsWith(KilnNativeStakingHelper.DEPOSIT_SELECTOR),
       args,
     );
   }
@@ -47,11 +42,11 @@ export class KilnNativeStakingHelper {
     data: Hex;
     value: string;
   }): { to?: Address; data: Hex; value: string } | null {
-    const selector = toFunctionSelector(
-      KilnNativeStakingHelper.VALIDATORS_EXIT_SIGNATURE,
-    );
     return this.transactionFinder.findTransaction(
-      (transaction) => transaction.data.startsWith(selector),
+      (transaction) =>
+        transaction.data.startsWith(
+          KilnNativeStakingHelper.VALIDATORS_EXIT_SELECTOR,
+        ),
       args,
     );
   }
@@ -61,11 +56,9 @@ export class KilnNativeStakingHelper {
     data: Hex;
     value: string;
   }): { to?: Address; data: Hex; value: string } | null {
-    const selector = toFunctionSelector(
-      KilnNativeStakingHelper.WITHDRAW_SIGNATURE,
-    );
     return this.transactionFinder.findTransaction(
-      (transaction) => transaction.data.startsWith(selector),
+      (transaction) =>
+        transaction.data.startsWith(KilnNativeStakingHelper.WITHDRAW_SELECTOR),
       args,
     );
   }

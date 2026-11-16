@@ -11,11 +11,11 @@ import {
   SendingPausedException,
   TooManyRequestsException,
 } from '@aws-sdk/client-sesv2';
-import { SesEmailErrorMapper } from '@/modules/email/ses/datasources/ses-email-error.mapper';
+import { SesEmailErrorMapper } from '#/modules/email/ses/datasources/ses-email-error.mapper';
 import {
   PermanentEmailError,
   TransientEmailError,
-} from '@/modules/email/ses/domain/errors/email.errors';
+} from '#/modules/email/ses/domain/errors/email.errors';
 
 describe('SesEmailErrorMapper', () => {
   describe('transient SES errors', () => {

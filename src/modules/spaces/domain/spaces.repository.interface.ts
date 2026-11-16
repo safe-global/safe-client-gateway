@@ -1,22 +1,25 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type {
+  EntityManager,
   FindOptionsRelations,
   FindOptionsSelect,
   FindOptionsWhere,
 } from 'typeorm';
-import type { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
-import type { SpaceStatus } from '@/modules/spaces/domain/entities/space.entity';
-import type { SpacesRepository } from '@/modules/spaces/domain/spaces.repository';
-import type { User } from '@/modules/users/domain/entities/user.entity';
+import type { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
+import type { SpaceStatus } from '#/modules/spaces/domain/entities/space.entity';
+import type { SpacesRepository } from '#/modules/spaces/domain/spaces.repository';
+import type { User } from '#/modules/users/domain/entities/user.entity';
 
 export const ISpacesRepository = Symbol('ISpacesRepository');
 
 export interface ISpacesRepository {
+  /** Runs in `entityManager`'s transaction when given, else in its own. */
   create(args: {
     userId: User['id'];
     name: string;
     status: keyof typeof SpaceStatus;
-  }): Promise<Pick<Space, 'uuid' | 'name'>>;
+    entityManager?: EntityManager;
+  }): Promise<Pick<Space, 'id' | 'uuid' | 'name'>>;
 
   findOneOrFail(
     args: Parameters<SpacesRepository['findOne']>[0],
@@ -60,14 +63,21 @@ export interface ISpacesRepository {
 
   update(args: {
     id: Space['id'];
-    updatePayload: Partial<Pick<Space, 'name' | 'status'>>;
+    updatePayload: Partial<
+      Pick<Space, 'name' | 'status' | 'experimentalFeatures'>
+    >;
     actorUserId: number;
+    /** Runs in this transaction when given, else in its own. */
+    entityManager?: EntityManager;
   }): Promise<Pick<Space, 'uuid'>>;
 
   findIdByUuid(uuid: Space['uuid']): Promise<Space['id']>;
 
   // Resolves the internal numeric id to the client-facing UUID for response mapping.
   findUuidById(id: Space['id']): Promise<Space['uuid']>;
+
+  // The enforcement rules compare this against the go-live date.
+  findCreatedAtById(id: Space['id']): Promise<Space['createdAt']>;
 
   delete(args: { id: number; actorUserId: number }): Promise<void>;
 }

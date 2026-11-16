@@ -2,38 +2,38 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { Address, Hex } from 'viem';
 import type { z } from 'zod';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
-import { CacheRouter } from '@/datasources/cache/cache.router';
-import type { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { CacheFirstDataSource } from '#/datasources/cache/cache.first.data.source';
+import { CacheRouter } from '#/datasources/cache/cache.router';
+import type { CacheDir } from '#/datasources/cache/entities/cache-dir.entity';
+import { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
 import {
   type INetworkService,
   NetworkService,
-} from '@/datasources/network/network.service.interface';
-import type { IFeeServiceApi } from '@/domain/interfaces/fee-service-api.interface';
+} from '#/datasources/network/network.service.interface';
+import type { IFeeServiceApi } from '#/domain/interfaces/fee-service-api.interface';
 import {
   type CanRelayResponse,
   CanRelayResponseSchema,
-} from '@/modules/fees/domain/entities/can-relay-response.entity';
+} from '#/modules/fees/domain/entities/can-relay-response.entity';
 import {
   type GtfFeesRequest,
   GtfFeesRequestSchema,
-} from '@/modules/fees/domain/entities/gtf-fees-request.entity';
+} from '#/modules/fees/domain/entities/gtf-fees-request.entity';
 import {
   type GtfFeesResponse,
   GtfFeesResponseSchema,
-} from '@/modules/fees/domain/entities/gtf-fees-response.entity';
-import { Origin } from '@/modules/fees/domain/entities/origin.entity';
+} from '#/modules/fees/domain/entities/gtf-fees-response.entity';
+import { Origin } from '#/modules/fees/domain/entities/origin.entity';
 import {
   type TxFeesRequest,
   TxFeesRequestSchema,
-} from '@/modules/fees/domain/entities/tx-fees-request.entity';
+} from '#/modules/fees/domain/entities/tx-fees-request.entity';
 import {
   type TxFeesResponse,
   TxFeesResponseSchema,
-} from '@/modules/fees/domain/entities/tx-fees-response.entity';
-import type { RelayFeeConfiguration } from '@/modules/relay/domain/entities/relay.configuration';
+} from '#/modules/fees/domain/entities/tx-fees-response.entity';
+import type { RelayFeeConfiguration } from '#/modules/relay/domain/entities/relay.configuration';
 
 @Injectable()
 export class FeeServiceApi implements IFeeServiceApi {

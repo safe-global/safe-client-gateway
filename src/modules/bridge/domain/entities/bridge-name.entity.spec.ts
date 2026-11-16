@@ -4,7 +4,7 @@ import {
   BridgeNameSchema,
   BridgeNames,
   isBridgeName,
-} from '@/modules/bridge/domain/entities/bridge-name.entity';
+} from '#/modules/bridge/domain/entities/bridge-name.entity';
 
 describe('BridgeStatusSchema', () => {
   it('should allow a valid bridge name', () => {

@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import type { Address } from 'viem';
-import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
-import type { IDataDecodedRepository } from '@/modules/data-decoder/domain/v1/data-decoded.repository.interface';
-import type { DataDecoded } from '@/modules/data-decoder/domain/v1/entities/data-decoded.entity';
-import { DataDecodedSchema } from '@/modules/data-decoder/domain/v1/entities/schemas/data-decoded.schema';
+import { ITransactionApiManager } from '#/domain/interfaces/transaction-api.manager.interface';
+import type { IDataDecodedRepository } from '#/modules/data-decoder/domain/v1/data-decoded.repository.interface';
+import type { DataDecoded } from '#/modules/data-decoder/domain/v1/entities/data-decoded.entity';
+import { DataDecodedSchema } from '#/modules/data-decoder/domain/v1/entities/schemas/data-decoded.schema';
 
 @Injectable()
 export class DataDecodedRepository implements IDataDecodedRepository {

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { SpaceAuditEventTypesQuerySchema } from '@/modules/spaces/routes/audit/entities/space-audit-log.dto.entity';
+import { SpaceAuditEventTypesQuerySchema } from '#/modules/spaces/routes/audit/entities/space-audit-log.dto.entity';
 
 describe('SpaceAuditEventTypesQuerySchema', () => {
   it('parses a comma-separated list of event types', () => {

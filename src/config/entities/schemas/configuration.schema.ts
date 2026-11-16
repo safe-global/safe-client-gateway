@@ -1,15 +1,23 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
+import { AddressSchema } from '#/validation/entities/schemas/address.schema';
+
+// A finished check job stays at least 30 days: its ID blocks a repeated request.
+const SAFENET_CHECKS_MIN_RETENTION_SECONDS = 30 * 24 * 60 * 60;
 
 const relayRulesValidator = z
   .string()
   .refine(
     (value) => {
-      if (value === undefined || value === null || value === '') return false;
+      if (value === undefined || value === null || value === '') {
+        return false;
+      }
       try {
         const parsed = JSON.parse(value);
 
-        if (!Array.isArray(parsed)) return false;
+        if (!Array.isArray(parsed)) {
+          return false;
+        }
         return parsed.every(
           (rule: Record<string, unknown>) =>
             typeof rule === 'object' &&
@@ -96,6 +104,7 @@ export const RootConfigurationSchema = z
     AUTH_TOKEN: z.string(),
     AUTH_POST_LOGIN_REDIRECT_URI: z.url(),
     AUTH_ALLOWED_REDIRECT_DOMAIN: DomainSchema.optional(),
+    AUTH_ALLOWED_SIWE_DOMAINS: z.string().optional(),
     AUTH0_API_AUDIENCE: z.string().optional(),
     AUTH0_DOMAIN: DomainSchema.optional(),
     AUTH0_CLIENT_ID: z.string().optional(),
@@ -138,9 +147,53 @@ export const RootConfigurationSchema = z
     FF_SES_EMAIL: z.string().optional(),
     FF_BILLING_SERVICE: z.string().optional(),
     FF_MFA_STEP_UP: z.string().optional(),
-    BLOCKLIST_ENCRYPTED_DATA: z.string(),
-    BLOCKLIST_SECRET_KEY: z.string(),
-    BLOCKLIST_SECRET_SALT: z.string(),
+    FF_SAFE_SHIELD_CORE_DISABLED: z.string().optional(),
+    FF_SAFENET: z.string().optional(),
+    FF_GUARD_POLICIES: z.string().optional(),
+    FF_SAFES_PORTFOLIO_SNAPSHOT: z.string().optional(),
+    SAFENET_CONSENSUS_ADDRESS: AddressSchema.optional(),
+    SAFENET_ORACLE_ADDRESS: AddressSchema.optional(),
+    SAFENET_RPC_URI: z.url().optional(),
+    SAFENET_PAYER_SAFE_ADDRESS: AddressSchema.optional(),
+    SAFENET_POLL_INTERVAL_MS: z.coerce.number().int().min(1).optional(),
+    SAFENET_POLL_TIMEOUT_MS: z.coerce.number().int().min(1).optional(),
+    SAFENET_PAYER_KMS_KEY_ID: z.string().optional(),
+    SAFENET_PAYER_KMS_CONNECTION_TIMEOUT_MS: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .optional(),
+    SAFENET_PAYER_KMS_REQUEST_TIMEOUT_MS: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .optional(),
+    SAFENET_CHECKS_QUEUE_ATTEMPTS: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(10)
+      .optional(),
+    SAFENET_CHECKS_QUEUE_BACKOFF_TYPE: z
+      .enum(['fixed', 'exponential'])
+      .optional(),
+    SAFENET_CHECKS_QUEUE_BACKOFF_DELAY: z.coerce
+      .number()
+      .int()
+      .min(0)
+      .optional(),
+    SAFENET_CHECKS_QUEUE_REMOVE_ON_COMPLETE_AGE: z.coerce
+      .number()
+      .int()
+      .min(SAFENET_CHECKS_MIN_RETENTION_SECONDS)
+      .optional(),
+    SAFENET_CHECKS_QUEUE_REMOVE_ON_FAIL_AGE: z.coerce
+      .number()
+      .int()
+      .min(SAFENET_CHECKS_MIN_RETENTION_SECONDS)
+      .optional(),
+    SAFENET_CHECKS_PER_SPACE_PER_DAY: z.coerce.number().int().min(1).optional(),
+    FF_ZERION_TESTNETS_ENABLED: z.string().optional(),
     CGW_ENV: z.string().optional(),
     CIRCUIT_BREAKER_THRESHOLD: z.coerce.number().int().min(1).optional(),
     CIRCUIT_BREAKER_TIMEOUT: z.coerce.number().int().min(0).optional(),
@@ -151,9 +204,36 @@ export const RootConfigurationSchema = z
       .min(1)
       .max(100)
       .optional(),
+    // Per-caller bound on the unauthenticated token metadata routes. A zero or
+    // negative budget would reject every caller, so fail at boot instead.
+    TOKENS_RATE_LIMIT_MAX: z.coerce.number().int().min(1).optional(),
+    TOKENS_RATE_LIMIT_WINDOW_SECONDS: z.coerce.number().int().min(1).optional(),
+    PORTFOLIO_SUMMARIES_RATE_LIMIT_MAX: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .optional(),
+    PORTFOLIO_SUMMARIES_RATE_LIMIT_WINDOW_SECONDS: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .optional(),
+    PORTFOLIO_CACHE_TTL_AFTER_TRANSACTION_SECONDS: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .optional(),
+    PORTFOLIO_CLEAR_COOLDOWN_SECONDS: z.coerce.number().int().min(1).optional(),
+    PORTFOLIO_CLEAR_RECENT_SECONDS: z.coerce.number().int().min(1).optional(),
+    PORTFOLIO_CLEAR_RATE_LIMIT_MAX: z.coerce.number().int().min(1).optional(),
+    PORTFOLIO_CLEAR_RATE_LIMIT_WINDOW_SECONDS: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .optional(),
     SAFE_CONFIG_CGW_KEY: z.string().min(1).optional(),
     LOG_LEVEL: z
-      .enum(['error', 'warn', 'info', 'http', 'verbose', 'debug', 'silly'])
+      .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace'])
       .optional(),
     UNDICI_CONNECTIONS: z.coerce.number().int().min(1).optional(),
     UNDICI_PIPELINING: z.coerce.number().int().min(0).optional(),
@@ -176,7 +256,24 @@ export const RootConfigurationSchema = z
     EMAIL_API_APPLICATION_CODE: z.string(),
     EMAIL_API_FROM_EMAIL: z.email(),
     EMAIL_API_KEY: z.string(),
+    ENTITLEMENTS_ENFORCEMENT_STARTS_AT: z.iso.datetime().optional(),
+    ENTITLEMENTS_GRACE_PERIOD_CLAIM_ENDS_AT: z.iso.datetime().optional(),
+    DECODED_DATA_NOT_FOUND_EXPIRE_TIME_SECONDS: z.coerce
+      .number()
+      .int()
+      .min(0)
+      .optional(),
     EXPIRATION_DEVIATE_PERCENT: z.coerce.number().min(0).max(100).optional(),
+    EXPIRATION_TIME_DECODED_DATA_SECONDS: z.coerce
+      .number()
+      .int()
+      .min(0)
+      .optional(),
+    EXPIRATION_TIME_ENTITLEMENTS_SECONDS: z.coerce
+      .number()
+      .int()
+      .min(0)
+      .optional(),
     FINGERPRINT_ENCRYPTION_KEY: z.string(),
     INFURA_API_KEY: z.string(),
     JWT_ISSUER: z.string(),
@@ -190,9 +287,31 @@ export const RootConfigurationSchema = z
       .max(3599)
       .optional(),
     RELAY_PROVIDER_API_KEY: z.string(),
+    SAFE_QUEUE_SERVICE_BASE_URI: z.url().optional(),
+    SAFE_QUEUE_SERVICE_API_KEY: z.string().trim().min(1).optional(),
+    USE_SAFE_QUEUE_SERVICE_VPC_URL: z.coerce.boolean().optional(),
     // Relay-fee configuration
     FEE_SERVICE_BASE_URI: z.url().optional(),
     RELAY_FEE_PREVIEW_TTL_SECONDS: z.coerce.number().int().min(0).optional(),
+    // Policy configuration
+    POLICIES_MAX_CONFIGURATION_REQUESTS_PER_SPACE_SAFE: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .optional(),
+    POLICIES_CONFIGURATION_REQUEST_RETENTION_DAYS: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .optional(),
+    // Policy indexer configuration
+    POLICY_INDEXER_BASE_URI: z.url().optional(),
+    POLICY_INDEXER_EXPIRE_TIME_SECONDS: z.coerce
+      .number()
+      .int()
+      .min(0)
+      .optional(),
+    POLICY_BATCH_SIZE: z.coerce.number().int().min(1).optional(),
     // Safe billing service configuration
     SAFE_BILLING_SERVICE_BASE_URI: z.url().optional(),
     SAFE_BILLING_SERVICE_API_TOKEN: z.string().optional(),
@@ -238,6 +357,11 @@ export const RootConfigurationSchema = z
     TARGETED_MESSAGING_FILE_STORAGE_TYPE: z.enum(['local', 'aws']).optional(),
     CSV_EXPORT_FILE_STORAGE_TYPE: z.enum(['local', 'aws']).optional(),
     SPACES_INVITE_TTL_MS: z.coerce.number().int().min(1).optional(),
+    SPACES_TRANSACTION_QUEUE_MAX_PAGES: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .optional(),
     ENCRYPTION_ENABLED: z.string().optional(),
     ENCRYPTION_INDEX_KEY: z.string().optional(),
     CSV_AWS_ACCESS_KEY_ID: z.string().optional(),
@@ -263,6 +387,16 @@ export const RootConfigurationSchema = z
         message:
           'must not be set in production and staging environments; sign via KMS (BILLING_WEBHOOK_JWT_KMS_KEY_ID) instead',
         path: ['BILLING_WEBHOOK_JWT_PRIVATE_KEY'],
+      });
+    }
+
+    // Production binds SiWe messages to the origins it serves; staging and
+    // other environments may leave the list unset, which skips the check.
+    if (config.CGW_ENV === 'production' && !config.AUTH_ALLOWED_SIWE_DOMAINS) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'is required in the production environment',
+        path: ['AUTH_ALLOWED_SIWE_DOMAINS'],
       });
     }
 

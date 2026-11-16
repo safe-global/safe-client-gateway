@@ -6,7 +6,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import type { FastifyReply } from 'fastify';
-import { RelayLimitReachedError } from '@/modules/relay/domain/errors/relay-limit-reached.error';
+import { RelayLimitReachedError } from '#/modules/relay/domain/errors/relay-limit-reached.error';
 
 @Catch(RelayLimitReachedError)
 export class RelayLimitReachedExceptionFilter implements ExceptionFilter {

@@ -2,15 +2,16 @@
 
 import { faker } from '@faker-js/faker';
 import type { Address, Hash, Hex } from 'viem';
+import { getAddress } from 'viem';
 import type { Mocked } from 'vitest';
-import type { IBridgeRepository } from '@/modules/bridge/domain/bridge.repository.interface';
-import type { LiFiDecoder } from '@/modules/bridge/domain/contracts/decoders/lifi-decoder.helper';
-import type { BridgeStatus } from '@/modules/bridge/domain/entities/bridge-status.entity';
-import type { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
-import type { ITokenRepository } from '@/modules/tokens/domain/token.repository.interface';
-import { SwapTransactionInfo } from '@/modules/transactions/routes/entities/bridge/bridge-info.entity';
-import { TokenInfo } from '@/modules/transactions/routes/entities/swaps/token-info.entity';
-import type { AddressInfoHelper } from '@/routes/common/address-info/address-info.helper';
+import type { IBridgeRepository } from '#/modules/bridge/domain/bridge.repository.interface';
+import type { LiFiDecoder } from '#/modules/bridge/domain/contracts/decoders/lifi-decoder.helper';
+import type { BridgeStatus } from '#/modules/bridge/domain/entities/bridge-status.entity';
+import type { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
+import type { ITokenRepository } from '#/modules/tokens/domain/token.repository.interface';
+import { SwapTransactionInfo } from '#/modules/transactions/routes/entities/bridge/bridge-info.entity';
+import { TokenInfo } from '#/modules/transactions/routes/entities/swaps/token-info.entity';
+import type { AddressInfoHelper } from '#/routes/common/address-info/address-info.helper';
 import { BridgeTransactionMapper } from './bridge-transaction.mapper';
 
 describe('BridgeTransactionMapper (Unit)', () => {
@@ -393,7 +394,12 @@ describe('BridgeTransactionMapper (Unit)', () => {
         fromAmount: BigInt(1000000),
         toToken: faker.string.hexadecimal({ length: 40 }) as Address,
         minAmount: BigInt(1000000),
-        fees: null,
+        fees: {
+          tokenAddress: getAddress(faker.finance.ethereumAddress()),
+          integratorFee: faker.number.bigInt(),
+          lifiFee: faker.number.bigInt(),
+          integratorAddress: getAddress(faker.finance.ethereumAddress()),
+        },
         bridge: 'lifi',
       };
       liFiDecoder.decodeBridgeAndMaybeSwap.mockReturnValue(decoded);
@@ -440,7 +446,11 @@ describe('BridgeTransactionMapper (Unit)', () => {
         toAmount: null,
         toToken: null,
         explorerUrl: null,
-        fees: null,
+        fees: {
+          integratorFee: decoded.fees.integratorFee.toString(),
+          lifiFee: decoded.fees.lifiFee.toString(),
+          tokenAddress: decoded.fees.tokenAddress,
+        },
         humanDescription: null,
         type: 'SwapAndBridge',
       });

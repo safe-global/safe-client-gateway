@@ -6,8 +6,8 @@ import request from 'supertest';
 import {
   initTestApplication,
   TestAppProvider,
-} from '@/__tests__/test-app.provider';
-import { createTestModule } from '@/__tests__/testing-module';
+} from '#/__tests__/test-app.provider';
+import { createTestModule } from '#/__tests__/testing-module';
 
 describe('Root Controller tests', () => {
   let app: INestApplication<Server>;

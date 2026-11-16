@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import configuration from '@/config/entities/configuration';
+import configuration from '#/config/entities/configuration';
 
-describe('configuration - express.trustProxy', () => {
-  const ENV_KEY = 'EXPRESS_TRUST_PROXY';
+describe('configuration - httpServer.trustProxy', () => {
+  const ENV_KEY = 'HTTP_SERVER_TRUST_PROXY';
   const original = process.env[ENV_KEY];
 
   afterEach(() => {
@@ -16,20 +16,20 @@ describe('configuration - express.trustProxy', () => {
   it('defaults to internal subnets when unset', () => {
     delete process.env[ENV_KEY];
 
-    expect(configuration().express.trustProxy).toBe('loopback, uniquelocal');
+    expect(configuration().httpServer.trustProxy).toBe('loopback, uniquelocal');
   });
 
   it('falls back to the default when set to an empty string', () => {
     // An empty value must fall back to the default, not disable trust.
     process.env[ENV_KEY] = '';
 
-    expect(configuration().express.trustProxy).toBe('loopback, uniquelocal');
+    expect(configuration().httpServer.trustProxy).toBe('loopback, uniquelocal');
   });
 
   it('uses the provided value when set', () => {
     process.env[ENV_KEY] = '10.0.0.0/8';
 
-    expect(configuration().express.trustProxy).toBe('10.0.0.0/8');
+    expect(configuration().httpServer.trustProxy).toBe('10.0.0.0/8');
   });
 });
 
@@ -62,4 +62,72 @@ describe('configuration - features.zerion', () => {
 
     expect(configuration().features.zerion).toBe(false);
   });
+});
+
+describe('configuration - entitlements.enforcementStartsAt', () => {
+  const ENV_KEY = 'ENTITLEMENTS_ENFORCEMENT_STARTS_AT';
+  const original = process.env[ENV_KEY];
+
+  afterEach(() => {
+    if (original === undefined) {
+      delete process.env[ENV_KEY];
+    } else {
+      process.env[ENV_KEY] = original;
+    }
+  });
+
+  it('defaults far into the future when unset', () => {
+    delete process.env[ENV_KEY];
+
+    expect(configuration().entitlements.enforcementStartsAt).toStrictEqual(
+      new Date('2099-01-01T00:00:00Z'),
+    );
+  });
+
+  it('parses the provided value into a Date', () => {
+    process.env[ENV_KEY] = '2026-10-01T00:00:00Z';
+
+    expect(configuration().entitlements.enforcementStartsAt).toStrictEqual(
+      new Date('2026-10-01T00:00:00Z'),
+    );
+  });
+
+  // An Invalid Date would silently disable enforcement and offer the legacy
+  // grace to every workspace, so both failure directions are permissive.
+  it.each(['the first of october', '2026-13-45T00:00:00Z', ''])(
+    'throws when set to %s',
+    (value) => {
+      process.env[ENV_KEY] = value;
+
+      expect(() => configuration()).toThrow(
+        'ENTITLEMENTS_ENFORCEMENT_STARTS_AT is not a valid date',
+      );
+    },
+  );
+});
+
+describe('configuration - entitlements.gracePeriodClaimEndsAt', () => {
+  const ENV_KEY = 'ENTITLEMENTS_GRACE_PERIOD_CLAIM_ENDS_AT';
+  const original = process.env[ENV_KEY];
+
+  afterEach(() => {
+    if (original === undefined) {
+      delete process.env[ENV_KEY];
+    } else {
+      process.env[ENV_KEY] = original;
+    }
+  });
+
+  // Unlike enforcementStartsAt, this is rarely overridden, so a bad value
+  // falls back instead of failing boot.
+  it.each(['the fifth of december', '2026-13-45T00:00:00Z', ''])(
+    'falls back to the default when set to %s',
+    (value) => {
+      process.env[ENV_KEY] = value;
+
+      expect(configuration().entitlements.gracePeriodClaimEndsAt).toStrictEqual(
+        new Date('2026-12-05T12:30:00Z'),
+      );
+    },
+  );
 });

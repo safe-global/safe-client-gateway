@@ -1,22 +1,33 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { ConflictException, ForbiddenException, Inject } from '@nestjs/common';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
-import type { Space } from '@/modules/spaces/domain/entities/space.entity';
-import type { AcceptInviteDto } from '@/modules/spaces/routes/members/entities/accept-invite.dto.entity';
-import type { Invitation } from '@/modules/spaces/routes/members/entities/invitation.entity';
-import type { InviteUsersDto } from '@/modules/spaces/routes/members/entities/invite-users.dto.entity';
+import { ConflictException, HttpStatus, Inject } from '@nestjs/common';
+import type { Address } from 'viem';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
+import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import { getAuthenticatedUserIdOrFail } from '#/modules/auth/utils/assert-authenticated.utils';
+import type { Space } from '#/modules/spaces/domain/entities/space.entity';
+import { assertAdmin } from '#/modules/spaces/domain/space-assert.utils';
+import type { AcceptInviteDto } from '#/modules/spaces/routes/members/entities/accept-invite.dto.entity';
+import type { Invitation } from '#/modules/spaces/routes/members/entities/invitation.entity';
+import type { InviteUsersDto } from '#/modules/spaces/routes/members/entities/invite-users.dto.entity';
 import type {
   MemberDto,
   MembersDto,
-} from '@/modules/spaces/routes/members/entities/members.dto.entity';
-import type { UpdateMemberAliasDto } from '@/modules/spaces/routes/members/entities/update-member-name.dto.entity';
-import type { UpdateRoleDto } from '@/modules/spaces/routes/members/entities/update-role.dto.entity';
-import { SpaceInviteEmailService } from '@/modules/spaces/routes/members/space-invite-email.service';
-import type { User } from '@/modules/users/domain/entities/user.entity';
-import { MemberEncryptionService } from '@/modules/users/domain/members/member-encryption.service';
-import { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
+} from '#/modules/spaces/routes/members/entities/members.dto.entity';
+import type { UpdateMemberAliasDto } from '#/modules/spaces/routes/members/entities/update-member-name.dto.entity';
+import type { UpdateRoleDto } from '#/modules/spaces/routes/members/entities/update-role.dto.entity';
+import { SpaceInviteEmailService } from '#/modules/spaces/routes/members/space-invite-email.service';
+import type { Invitation as DomainInvitation } from '#/modules/users/domain/entities/invitation.entity';
+import type { InviteUserInput } from '#/modules/users/domain/entities/invite-user.entity';
+import type { User } from '#/modules/users/domain/entities/user.entity';
+import { assertWithinInviteLimit } from '#/modules/users/domain/members/invite-limit.rules';
+import { MemberEncryptionService } from '#/modules/users/domain/members/member-encryption.service';
+import {
+  IMembersRepository,
+  type PendingInvitePolicy,
+} from '#/modules/users/domain/members/members.repository.interface';
+
+const RENEW_INVITE_COOLDOWN_MS = 60_000;
 
 export class MembersService {
   private readonly maxInvites: number;
@@ -50,23 +61,55 @@ export class MembersService {
     spaceId: Space['id'];
     inviteUsersDto: InviteUsersDto;
   }): Promise<Array<Invitation>> {
-    await this.assertActiveAdmin({
-      authPayload: args.authPayload,
-      spaceId: args.spaceId,
-    });
-    if (args.inviteUsersDto.users.length > this.maxInvites) {
-      throw new ConflictException('Too many invites.');
-    }
-    const invitations = await this.membersRepository.inviteUsers({
-      authPayload: args.authPayload,
+    const actorUserId = getAuthenticatedUserIdOrFail(args.authPayload);
+    await assertAdmin(this.membersRepository, args.spaceId, actorUserId);
+    const invitations = await this.inviteAs({
+      actorUserId,
       spaceId: args.spaceId,
       users: args.inviteUsersDto.users,
+    });
+
+    // The domain invitation carries the internal numeric space id for the
+    // audit trail; the response contract exposes the UUID only.
+    return invitations.map(
+      ({ userId, spaceUuid, name, role, status, invitedBy }) => ({
+        userId,
+        spaceUuid,
+        name,
+        role,
+        status,
+        invitedBy,
+      }),
+    );
+  }
+
+  /**
+   * Invites users on behalf of `actorUserId`, the recorded inviter, and
+   * queues their invite emails. Authorizes nothing: the caller has, as
+   * {@link inviteUser} does for a request, or the Workspace setup does for
+   * its creator.
+   */
+  public async inviteAs(args: {
+    actorUserId: User['id'];
+    spaceId: Space['id'];
+    users: Array<InviteUserInput>;
+    onPendingInvite?: PendingInvitePolicy;
+  }): Promise<Array<DomainInvitation>> {
+    assertWithinInviteLimit({
+      inviteCount: args.users.length,
+      maxInvites: this.maxInvites,
+    });
+    const invitations = await this.membersRepository.inviteUsers({
+      actorUserId: args.actorUserId,
+      spaceId: args.spaceId,
+      users: args.users,
       inviteExpiresAt: new Date(Date.now() + this.inviteTtlMs),
+      onPendingInvite: args.onPendingInvite,
     });
 
     // Only queue emails after invite creation succeeds.
     await this.spaceInviteEmailService.enqueueInviteEmails({
-      users: args.inviteUsersDto.users,
+      users: args.users,
       spaceId: args.spaceId,
     });
 
@@ -78,10 +121,8 @@ export class MembersService {
     spaceId: Space['id'];
     userId: User['id'];
   }): Promise<Invitation> {
-    await this.assertActiveAdmin({
-      authPayload: args.authPayload,
-      spaceId: args.spaceId,
-    });
+    const actorUserId = getAuthenticatedUserIdOrFail(args.authPayload);
+    await assertAdmin(this.membersRepository, args.spaceId, actorUserId);
     const { id, user, name, status, role, invitedBy, space } =
       await this.membersRepository.findOneOrFail(
         {
@@ -99,14 +140,21 @@ export class MembersService {
       args.spaceId,
       name,
     );
-    await this.membersRepository.renewInvite({
+    const renewed = await this.membersRepository.renewInvite({
       memberId: id,
       inviteExpiresAt: new Date(Date.now() + this.inviteTtlMs),
+      notRenewedSince: new Date(Date.now() - RENEW_INVITE_COOLDOWN_MS),
       spaceId: args.spaceId,
       spaceUuid: space.uuid,
       targetUserId: args.userId,
-      actorUserId: getAuthenticatedUserIdOrFail(args.authPayload),
+      actorUserId,
     });
+    if (!renewed) {
+      throw new HttpExceptionNoLog(
+        'Invitation was renewed recently. Try again later.',
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
 
     if (user.email) {
       await this.spaceInviteEmailService.enqueueRenewalEmail({
@@ -152,29 +200,32 @@ export class MembersService {
     authPayload: AuthPayload;
     spaceId: Space['id'];
   }): Promise<MembersDto> {
-    const [members, activeAdmin] = await Promise.all([
-      this.membersRepository.findAuthorizedMembersOrFail({
-        authPayload: args.authPayload,
-        spaceId: args.spaceId,
-      }),
-      this.membersRepository.findActiveAdmin({
-        userId: getAuthenticatedUserIdOrFail(args.authPayload),
-        spaceId: args.spaceId,
-      }),
-    ]);
-    const isActiveAdmin = Boolean(activeAdmin);
+    const userId = getAuthenticatedUserIdOrFail(args.authPayload);
+    const members = await this.membersRepository.findAuthorizedMembersOrFail({
+      authPayload: args.authPayload,
+      spaceId: args.spaceId,
+    });
+    // The roster includes the caller's own row, so no second query is needed.
+    const isActiveAdmin = members.some(
+      (member) =>
+        member.user.id === userId &&
+        member.role === 'ADMIN' &&
+        member.status === 'ACTIVE',
+    );
     return {
-      members: members.map((member) => ({
-        ...member,
-        user: this.toMemberUser(
-          member.user,
-          // Until the member accepted the invite, only expose their email
-          // to active admins.
-          member.status === 'ACTIVE' || isActiveAdmin
-            ? member.user.email
-            : null,
-        ),
-      })),
+      members: members.map((member) => {
+        // Until the member accepts the invite, their identifiers (email,
+        // wallet address) are only exposed to active admins.
+        const isVisible = member.status === 'ACTIVE' || isActiveAdmin;
+        return {
+          ...member,
+          user: this.toMemberUser(
+            member.user,
+            isVisible ? member.user.email : null,
+            isVisible ? (member.user.address ?? null) : null,
+          ),
+        };
+      }),
     };
   }
 
@@ -188,7 +239,12 @@ export class MembersService {
     });
     return {
       ...member,
-      user: this.toMemberUser(member.user, member.user.email),
+      user: this.toMemberUser(
+        member.user,
+        // The caller reads their own row, so identifiers are not gated.
+        member.user.email,
+        member.user.address ?? null,
+      ),
     };
   }
 
@@ -196,11 +252,16 @@ export class MembersService {
    * Maps a domain user to the public shape exposed in member responses,
    * explicitly omitting sensitive fields such as `extUserId`.
    */
-  private toMemberUser(user: User, email: User['email']): MemberDto['user'] {
+  private toMemberUser(
+    user: User,
+    email: User['email'],
+    address: Address | null,
+  ): MemberDto['user'] {
     return {
       id: user.id,
       status: user.status,
       email,
+      address,
     };
   }
 
@@ -210,8 +271,10 @@ export class MembersService {
     userId: User['id'];
     updateRoleDto: UpdateRoleDto;
   }): Promise<void> {
+    const actorUserId = getAuthenticatedUserIdOrFail(args.authPayload);
+    await assertAdmin(this.membersRepository, args.spaceId, actorUserId);
     return await this.membersRepository.updateRole({
-      authPayload: args.authPayload,
+      actorUserId,
       spaceId: args.spaceId,
       userId: args.userId,
       role: args.updateRoleDto.role,
@@ -235,8 +298,10 @@ export class MembersService {
     spaceId: Space['id'];
     userId: User['id'];
   }): Promise<void> {
+    const actorUserId = getAuthenticatedUserIdOrFail(args.authPayload);
+    await assertAdmin(this.membersRepository, args.spaceId, actorUserId);
     return await this.membersRepository.removeUser({
-      authPayload: args.authPayload,
+      actorUserId,
       userId: args.userId,
       spaceId: args.spaceId,
     });
@@ -250,19 +315,5 @@ export class MembersService {
       authPayload: args.authPayload,
       spaceId: args.spaceId,
     });
-  }
-
-  private async assertActiveAdmin(args: {
-    authPayload: AuthPayload;
-    spaceId: Space['id'];
-  }): Promise<void> {
-    const userId = getAuthenticatedUserIdOrFail(args.authPayload);
-    const activeAdmin = await this.membersRepository.findActiveAdmin({
-      userId,
-      spaceId: args.spaceId,
-    });
-    if (!activeAdmin) {
-      throw new ForbiddenException('User is not an active admin.');
-    }
   }
 }

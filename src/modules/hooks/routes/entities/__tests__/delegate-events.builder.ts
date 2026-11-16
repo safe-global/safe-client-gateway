@@ -2,15 +2,15 @@
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import type { z } from 'zod';
-import type { IBuilder } from '@/__tests__/builder';
-import { Builder } from '@/__tests__/builder';
-import { TransactionEventType } from '@/modules/hooks/routes/entities/event-type.entity';
+import type { IBuilder } from '#/__tests__/builder';
+import { Builder } from '#/__tests__/builder';
+import { TransactionEventType } from '#/modules/hooks/routes/entities/event-type.entity';
 import type {
   DelegateEventPayloadSchema,
   DeletedDelegateEvent,
   NewDelegateEvent,
   UpdatedDelegateEvent,
-} from '@/modules/hooks/routes/entities/schemas/delegate-events.schema';
+} from '#/modules/hooks/routes/entities/schemas/delegate-events.schema';
 
 type DelegateEventPayload = z.infer<typeof DelegateEventPayloadSchema>;
 

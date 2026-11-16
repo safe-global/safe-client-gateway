@@ -2,13 +2,13 @@
 import {
   createTestApplication,
   initTestApplication,
-} from '@/__tests__/test-app.provider';
-import '@/__tests__/matchers/to-be-string-or-null';
+} from '#/__tests__/test-app.provider';
+import '#/__tests__/matchers/to-be-string-or-null';
 import type { Server } from 'node:net';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { expect } from 'vitest';
-import { createBaseTestModule } from '@/__tests__/testing-module';
+import { createBaseTestModule } from '#/__tests__/testing-module';
 
 describe('Get about e2e test', () => {
   let app: INestApplication<Server>;

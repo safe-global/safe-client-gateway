@@ -2,47 +2,62 @@
 
 import { randomUUID } from 'node:crypto';
 import { faker } from '@faker-js/faker';
-import { NotFoundException } from '@nestjs/common';
+import {
+  HttpStatus,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
-import { DataSource, type EntityManager, type ObjectLiteral } from 'typeorm';
+import { DataSource, type ObjectLiteral } from 'typeorm';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import configuration from '@/config/entities/__tests__/configuration';
-import { postgresConfig } from '@/config/entities/postgres.config';
-import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { nameBuilder } from '@/domain/common/entities/name.builder';
-import type { ILoggingService } from '@/logging/logging.interface';
-import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { Feature } from '@/modules/entitlements/datasources/entities/feature.entity.db';
-import { SpaceFeatureUsage } from '@/modules/entitlements/datasources/entities/space-feature-usage.entity.db';
-import { SpaceSubscription } from '@/modules/entitlements/datasources/entities/space-subscription.entity.db';
-import { SubscriptionEntitlement } from '@/modules/entitlements/datasources/entities/subscription-entitlement.entity.db';
-import { featureBuilder } from '@/modules/entitlements/domain/entities/__tests__/feature.builder';
+import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
+import configuration from '#/config/entities/__tests__/configuration';
+import { postgresConfig } from '#/config/entities/postgres.config';
+import { FakeCacheService } from '#/datasources/cache/__tests__/fake.cache.service';
+import { CacheRouter } from '#/datasources/cache/cache.router';
+import { CacheDir } from '#/datasources/cache/entities/cache-dir.entity';
+import { DatabaseMigrator } from '#/datasources/db/v2/database-migrator.service';
+import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
+import { LogType } from '#/domain/common/entities/log-type.entity';
+import { nameBuilder } from '#/domain/common/entities/name.builder';
+import type { ILoggingService } from '#/logging/logging.interface';
+import { siweAuthPayloadDtoBuilder } from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import { Feature } from '#/modules/entitlements/datasources/entities/feature.entity.db';
+import { SpaceFeatureUsage } from '#/modules/entitlements/datasources/entities/space-feature-usage.entity.db';
+import { SpaceSubscription } from '#/modules/entitlements/datasources/entities/space-subscription.entity.db';
+import { SubscriptionEntitlement } from '#/modules/entitlements/datasources/entities/subscription-entitlement.entity.db';
+import { featureBuilder } from '#/modules/entitlements/domain/entities/__tests__/feature.builder';
 import {
   materializedSubscriptionBuilder,
   parsedEntitlementBuilder,
-} from '@/modules/entitlements/domain/entities/__tests__/materialized-subscription.builder';
+} from '#/modules/entitlements/domain/entities/__tests__/materialized-subscription.builder';
 import {
   FEATURE_KEYS,
   FeatureType,
-} from '@/modules/entitlements/domain/entities/feature.entity';
-import type { MaterializedSubscription } from '@/modules/entitlements/domain/entities/materialized-subscription.entity';
-import { isStockMeteredFeature } from '@/modules/entitlements/domain/entitlements.constants';
-import { FeaturesRepository } from '@/modules/entitlements/domain/features.repository';
-import { SpaceFeatureUsageRepository } from '@/modules/entitlements/domain/space-feature-usage.repository';
-import { SubscriptionEntitlementsRepository } from '@/modules/entitlements/domain/subscription-entitlements.repository';
-import { SubscriptionsRepository } from '@/modules/entitlements/domain/subscriptions.repository';
-import { EntitlementsService } from '@/modules/entitlements/routes/entitlements.service';
-import { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
-import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
-import type { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
-import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
-import { Member } from '@/modules/users/datasources/entities/member.entity.db';
-import { User } from '@/modules/users/datasources/entities/users.entity.db';
-import type { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
-import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
+  isFeatureKey,
+} from '#/modules/entitlements/domain/entities/feature.entity';
+import type { MaterializedSubscription } from '#/modules/entitlements/domain/entities/materialized-subscription.entity';
+import type { ConsumedQuota } from '#/modules/entitlements/domain/entitlement-enforcement.interface';
+import { isStockMeteredFeature } from '#/modules/entitlements/domain/entitlements.constants';
+import { FEATURE_NOT_GRANTED_ERROR_CODE } from '#/modules/entitlements/domain/errors/feature-not-granted.error';
+import { QUOTA_EXCEEDED_ERROR_CODE } from '#/modules/entitlements/domain/errors/quota-exceeded.error';
+import { FeaturesRepository } from '#/modules/entitlements/domain/features.repository';
+import { SpaceFeatureUsageRepository } from '#/modules/entitlements/domain/space-feature-usage.repository';
+import { SubscriptionEntitlementsRepository } from '#/modules/entitlements/domain/subscription-entitlements.repository';
+import { SubscriptionsRepository } from '#/modules/entitlements/domain/subscriptions.repository';
+import { EntitlementsService } from '#/modules/entitlements/routes/entitlements.service';
+import { SpaceSafe } from '#/modules/spaces/datasources/safes/entities/space-safes.entity.db';
+import { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
+import { createMockSpaceEncryptionService } from '#/modules/spaces/domain/__tests__/space-encryption.service.mock';
+import { createMockSpaceAuditRepository } from '#/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
+import { SpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository';
+import type { ISpacesRepository } from '#/modules/spaces/domain/spaces.repository.interface';
+import { Member } from '#/modules/users/datasources/entities/member.entity.db';
+import { User } from '#/modules/users/datasources/entities/users.entity.db';
+import type { IMembersRepository } from '#/modules/users/domain/members/members.repository.interface';
+import { Wallet } from '#/modules/wallets/datasources/entities/wallets.entity.db';
 
 const mockLoggingService = {
   debug: vi.fn(),
@@ -51,9 +66,10 @@ const mockLoggingService = {
   warn: vi.fn(),
 } as MockedObject<ILoggingService>;
 
-// The suite owns its catalog: only `safe_seats` is signed off and seeded by a
-// migration, so the branches below are exercised against fixtures rather than
-// the shipped catalog. The fixtures below cover every resolution branch
+// The suite owns its catalog: only `safe_seats` and `copilot_scans` are
+// signed off and seeded by a migration, so the branches below are exercised
+// against fixtures rather than the shipped catalog. The fixtures below cover
+// every resolution branch
 // the repository implements — binary, value, stock-metered (usage is a live
 // COUNT over an existing table) and event-metered (usage is a period-keyed
 // `space_feature_usage` counter). Keys come from the real `FeatureKey` enum
@@ -81,6 +97,11 @@ const FEATURE_FIXTURES = [
     .with('freeEnabled', true)
     .with('freeQuota', FREE_SAFE_SEATS)
     .build(),
+  featureBuilder()
+    .with('key', 'copilot_scans')
+    .with('type', FeatureType.Binary)
+    .with('freeEnabled', false)
+    .build(),
   // Free-disabled by default so the "disabled admits no usage" path is
   // covered; the `consume` tests enable it explicitly.
   featureBuilder()
@@ -89,6 +110,16 @@ const FEATURE_FIXTURES = [
     .with('freeEnabled', false)
     .with('freeQuota', 0)
     .with('freePeriod', SPONSORED_PERIOD_DAYS)
+    .build(),
+  featureBuilder()
+    .with('key', 'policies')
+    .with('type', FeatureType.Binary)
+    .with('freeEnabled', false)
+    .build(),
+  featureBuilder()
+    .with('key', 'safenet_checks')
+    .with('type', FeatureType.Binary)
+    .with('freeEnabled', false)
     .build(),
   featureBuilder()
     .with('key', 'swap_fee_tier')
@@ -102,17 +133,28 @@ const FEATURE_FIXTURES = [
 // stay literal rather than faker-random.
 const FIRST_STAMP = new Date('2026-08-17T12:00:00.000Z');
 
+const ENFORCEMENT_OFF = new Date('2099-01-01T00:00:00.000Z');
+const ENFORCEMENT_ON = new Date('2020-01-01T00:00:00.000Z');
+
 describe('EntitlementsService', () => {
   let postgresDatabaseService: PostgresDatabaseService;
   // The service composes the per-table repositories; exercised here against
   // the real database so queries and derivation rules are covered end to end.
   let service: EntitlementsService;
+  // The same service with the enforcement date already past.
+  let enforcingService: EntitlementsService;
+  // Exposed because one test builds a service with no date configured.
+  let buildService: (
+    enforcementStartsAt: Date | undefined,
+  ) => EntitlementsService;
   let subscriptionsRepository: SubscriptionsRepository;
   let seededFeatureKeys: Array<string> = [];
 
   // Not faker: a fixed FAKER_SEED would hand every spec file the same name.
   const testDatabaseName = `test_${randomUUID().replaceAll('-', '')}`;
   const testConfiguration = configuration();
+
+  const fakeCacheService = new FakeCacheService();
 
   const dataSource = new DataSource({
     ...postgresConfig({
@@ -144,21 +186,27 @@ describe('EntitlementsService', () => {
       const space = await dataSource
         .getRepository(Space)
         .findOne({ where: { id }, select: { uuid: true } });
-      if (!space) throw new NotFoundException('Workspace not found.');
+      if (!space) {
+        throw new NotFoundException('Workspace not found.');
+      }
       return space.uuid;
     },
+    findCreatedAtById: async (id: Space['id']): Promise<Space['createdAt']> => {
+      const space = await dataSource
+        .getRepository(Space)
+        .findOne({ where: { id }, select: { createdAt: true } });
+      if (!space) {
+        throw new NotFoundException('Workspace not found.');
+      }
+      return space.createdAt;
+    },
   } as unknown as ISpacesRepository;
-
-  const spaceSafesRepositoryStub = {
-    countBySpaceId: async (spaceId: number, entityManager?: EntityManager) =>
-      await (entityManager ?? dataSource.manager).count(SpaceSafe, {
-        where: { space: { id: spaceId } },
-      }),
-  } as unknown as ISpaceSafesRepository;
 
   const membersRepositoryStub = {
     findOne: async (where: Parameters<IMembersRepository['findOne']>[0]) =>
       await dataSource.getRepository(Member).findOne({ where }),
+    find: async (args: Parameters<IMembersRepository['find']>[0]) =>
+      await dataSource.getRepository(Member).find(args),
   } as unknown as IMembersRepository;
 
   beforeAll(async () => {
@@ -209,17 +257,43 @@ describe('EntitlementsService', () => {
     subscriptionsRepository = new SubscriptionsRepository(
       postgresDatabaseService,
     );
-    service = new EntitlementsService(
-      new FeaturesRepository(postgresDatabaseService),
-      subscriptionsRepository,
-      new SubscriptionEntitlementsRepository(postgresDatabaseService),
-      new SpaceFeatureUsageRepository(postgresDatabaseService),
-      spacesRepositoryStub,
-      spaceSafesRepositoryStub,
-      membersRepositoryStub,
-      postgresDatabaseService,
-      mockLoggingService,
-    );
+    buildService = (
+      enforcementStartsAt: Date | undefined,
+    ): EntitlementsService => {
+      const configurationService = new FakeConfigurationService();
+      configurationService.set(
+        'entitlements.enforcementStartsAt',
+        enforcementStartsAt,
+      );
+      configurationService.set(
+        'expirationTimeInSeconds.entitlements',
+        testConfiguration.expirationTimeInSeconds.entitlements,
+      );
+      configurationService.set(
+        'spaces.maxSafesPerSpace',
+        testConfiguration.spaces.maxSafesPerSpace,
+      );
+      return new EntitlementsService(
+        new FeaturesRepository(postgresDatabaseService),
+        subscriptionsRepository,
+        new SubscriptionEntitlementsRepository(postgresDatabaseService),
+        new SpaceFeatureUsageRepository(postgresDatabaseService),
+        spacesRepositoryStub,
+        new SpaceSafesRepository(
+          postgresDatabaseService,
+          createMockSpaceAuditRepository(),
+          createMockSpaceEncryptionService(),
+        ),
+        membersRepositoryStub,
+        postgresDatabaseService,
+        fakeCacheService,
+        configurationService,
+        mockLoggingService,
+      );
+    };
+    // Enforcement is off by default here, as in production.
+    service = buildService(ENFORCEMENT_OFF);
+    enforcingService = buildService(ENFORCEMENT_ON);
   });
 
   // Pristine catalog per test: some tests mutate feature rows (changing the
@@ -240,6 +314,7 @@ describe('EntitlementsService', () => {
     await deleteAll(Wallet);
     await deleteAll(User);
     await deleteAll(Feature);
+    fakeCacheService.clear();
   });
 
   afterAll(async () => {
@@ -271,6 +346,7 @@ describe('EntitlementsService', () => {
     spaceId: number;
     featureKey: string;
     used: number;
+    periodStart?: Date;
   }): Promise<void> {
     const space = await dataSource
       .getRepository(Space)
@@ -281,7 +357,8 @@ describe('EntitlementsService', () => {
     await dataSource.getRepository(SpaceFeatureUsage).insert({
       space: { id: args.spaceId },
       feature: { id: feature.id },
-      periodStart: space.createdAt,
+      // A Free workspace's window anchors on its creation date.
+      periodStart: args.periodStart ?? space.createdAt,
       used: args.used,
     });
   }
@@ -313,6 +390,28 @@ describe('EntitlementsService', () => {
       inviteExpiresAt: null,
     });
     return userId;
+  }
+
+  async function joinSpace(args: {
+    userId: number;
+    spaceId: number;
+    status: Member['status'];
+  }): Promise<void> {
+    await dataSource.getRepository(Member).insert({
+      user: { id: args.userId },
+      space: { id: args.spaceId },
+      name: faker.person.firstName(),
+      role: 'MEMBER',
+      status: args.status,
+      inviteExpiresAt: null,
+    });
+  }
+
+  async function spaceUuidOf(spaceId: number): Promise<Space['uuid']> {
+    const space = await dataSource
+      .getRepository(Space)
+      .findOneByOrFail({ id: spaceId });
+    return space.uuid;
   }
 
   function authPayloadFor(userId: number): AuthPayload {
@@ -517,6 +616,7 @@ describe('EntitlementsService', () => {
         id: 'business',
         name: 'Business',
         cycleEndsAt: new Date('2026-08-01T00:00:00Z'),
+        status: 'active',
       });
       const byFeature = new Map(
         result.entitlements.map((entitlement) => [
@@ -536,6 +636,29 @@ describe('EntitlementsService', () => {
       });
       // Not purchased → Free defaults.
       expect(byFeature.get('pay_from_safe')).toMatchObject({ enabled: false });
+    });
+
+    it('reports a trialing subscription as the plan with its status', async () => {
+      const spaceId = await createSpace();
+      const subscription = materializedSubscriptionBuilder()
+        .with('status', 'trialing')
+        .with('entitlements', [
+          parsedEntitlementBuilder().with('featureKey', 'safe_seats').build(),
+        ])
+        .build();
+      await materializeAuthoritative({
+        spaceId,
+        subscriptions: [subscription],
+      });
+
+      const result = await service.resolveEntitlements(spaceId);
+
+      expect(result.plan).toStrictEqual({
+        id: subscription.planId,
+        name: subscription.planName,
+        cycleEndsAt: subscription.currentPeriodEnd,
+        status: 'trialing',
+      });
     });
 
     it('reports usage over the Free quota without inflating it', async () => {
@@ -630,6 +753,7 @@ describe('EntitlementsService', () => {
         .with('status', 'active')
         .with('planId', 'business')
         .with('planName', 'Business')
+        .with('planCode', 'BUS-10-A')
         .with('currentPeriodStart', new Date('2026-07-01T00:00:00Z'))
         .with('currentPeriodEnd', new Date('2026-08-01T00:00:00Z'))
         .with('entitlements', [
@@ -651,6 +775,7 @@ describe('EntitlementsService', () => {
         status: 'active',
         planId: 'business',
         planName: 'Business',
+        planCode: 'BUS-10-A',
         currentPeriodStart: new Date('2026-07-01T00:00:00Z'),
         currentPeriodEnd: new Date('2026-08-01T00:00:00Z'),
       });
@@ -1048,6 +1173,619 @@ describe('EntitlementsService', () => {
     });
   });
 
+  describe('assertWithinQuota', () => {
+    /** The static limit the service resolves from `spaces.maxSafesPerSpace`. */
+    const STATIC_SEATS = testConfiguration.spaces.maxSafesPerSpace;
+
+    function assertSeats(
+      target: EntitlementsService,
+      spaceId: number,
+      delta: number,
+    ): Promise<void> {
+      return target.assertWithinQuota({
+        spaceId,
+        featureKey: 'safe_seats',
+        delta,
+      });
+    }
+
+    async function seatSubscription(args: {
+      spaceId: number;
+      quota: number | null;
+      enabled?: boolean;
+    }): Promise<void> {
+      await materializeFromEvent({
+        spaceId: args.spaceId,
+        subscription: materializedSubscriptionBuilder()
+          .with('status', 'active')
+          .with('planId', 'business')
+          .with('entitlements', [
+            {
+              featureKey: 'safe_seats',
+              enabled: args.enabled ?? true,
+              quota: args.quota,
+              value: null,
+            },
+          ])
+          .build(),
+      });
+    }
+
+    it('refuses to construct with no enforcement date configured', () => {
+      // The date's format is guaranteed upstream — `configuration.ts` parses it
+      // and `RootConfigurationSchema` rejects a non-ISO env value at boot. A
+      // missing key must still fail loudly rather than enforce everywhere.
+      expect(() => buildService(undefined)).toThrow(
+        'No value set for key entitlements.enforcementStartsAt',
+      );
+    });
+
+    it("applies the caller's static limit before the enforcement date", async () => {
+      const spaceId = await createSpace();
+      await addSafes(spaceId, STATIC_SEATS);
+      // The plan would allow more; until the date, it does not decide.
+      await seatSubscription({ spaceId, quota: STATIC_SEATS + 5 });
+
+      await expect(assertSeats(service, spaceId, 1)).rejects.toMatchObject({
+        status: HttpStatus.PAYMENT_REQUIRED,
+        response: {
+          code: QUOTA_EXCEEDED_ERROR_CODE,
+          feature: 'safe_seats',
+          quota: STATIC_SEATS,
+          used: STATIC_SEATS,
+          resetsAt: null,
+        },
+      });
+    });
+
+    it("takes the plan's quota from the enforcement date on", async () => {
+      const spaceId = await createSpace();
+      await addSafes(spaceId, STATIC_SEATS + 2);
+      await seatSubscription({ spaceId, quota: STATIC_SEATS + 5 });
+
+      await expect(
+        assertSeats(enforcingService, spaceId, 1),
+      ).resolves.toBeUndefined();
+    });
+
+    it('rejects the whole batch when it would overshoot the quota', async () => {
+      const spaceId = await createSpace();
+      await addSafes(spaceId, 3);
+      await seatSubscription({ spaceId, quota: 4 });
+
+      await expect(
+        assertSeats(enforcingService, spaceId, 2),
+      ).rejects.toMatchObject({ response: { quota: 4, used: 3 } });
+    });
+
+    // The other flavour of metered: counted in `space_feature_usage` rather
+    // than live from another module's table.
+    async function sponsoredSubscription(args: {
+      spaceId: number;
+      quota: number | null;
+      periodStart: Date;
+    }): Promise<void> {
+      await materializeFromEvent({
+        spaceId: args.spaceId,
+        subscription: materializedSubscriptionBuilder()
+          .with('status', 'active')
+          .with('currentPeriodStart', args.periodStart)
+          .with('entitlements', [
+            {
+              featureKey: 'sponsored_transactions',
+              enabled: true,
+              quota: args.quota,
+              value: null,
+            },
+          ])
+          .build(),
+      });
+    }
+
+    function assertSponsored(spaceId: number, delta: number): Promise<void> {
+      return enforcingService.assertWithinQuota({
+        spaceId,
+        featureKey: 'sponsored_transactions',
+        delta,
+      });
+    }
+
+    it('counts an event-metered feature from its period counter', async () => {
+      const spaceId = await createSpace();
+      const periodStart = faker.date.recent();
+      const quota = faker.number.int({ min: 1, max: 10 });
+      await sponsoredSubscription({ spaceId, quota, periodStart });
+      await recordUsage({
+        spaceId,
+        featureKey: 'sponsored_transactions',
+        used: quota,
+        periodStart,
+      });
+
+      await expect(assertSponsored(spaceId, 1)).rejects.toMatchObject({
+        response: {
+          code: QUOTA_EXCEEDED_ERROR_CODE,
+          feature: 'sponsored_transactions',
+          quota,
+          used: quota,
+        },
+      });
+    });
+
+    it('admits an event-metered feature below its quota', async () => {
+      const spaceId = await createSpace();
+      const periodStart = faker.date.recent();
+      const quota = faker.number.int({ min: 2, max: 10 });
+      await sponsoredSubscription({ spaceId, quota, periodStart });
+      await recordUsage({
+        spaceId,
+        featureKey: 'sponsored_transactions',
+        used: quota - 1,
+        periodStart,
+      });
+
+      await expect(assertSponsored(spaceId, 1)).resolves.toBeUndefined();
+    });
+
+    it('ignores a counter belonging to another period', async () => {
+      const spaceId = await createSpace();
+      const periodStart = faker.date.recent();
+      const quota = faker.number.int({ min: 1, max: 10 });
+      await sponsoredSubscription({ spaceId, quota, periodStart });
+      // Spent in full, but in the window before this one.
+      await recordUsage({
+        spaceId,
+        featureKey: 'sponsored_transactions',
+        used: quota,
+        periodStart: faker.date.past(),
+      });
+
+      await expect(assertSponsored(spaceId, 1)).resolves.toBeUndefined();
+    });
+
+    it('blocks a space already over its seats, even asking for nothing', async () => {
+      const spaceId = await createSpace();
+      await addSafes(spaceId, 8);
+      await seatSubscription({ spaceId, quota: 4 });
+
+      await expect(
+        assertSeats(enforcingService, spaceId, 0),
+      ).rejects.toMatchObject({ response: { quota: 4, used: 8 } });
+    });
+
+    it('admits a space exactly at its limit consuming nothing', async () => {
+      const spaceId = await createSpace();
+      await addSafes(spaceId, 4);
+      await seatSubscription({ spaceId, quota: 4 });
+
+      // Adding a chain to a Safe it already holds takes no new seat.
+      await expect(
+        assertSeats(enforcingService, spaceId, 0),
+      ).resolves.toBeUndefined();
+      await expect(
+        assertSeats(enforcingService, spaceId, 1),
+      ).rejects.toMatchObject({ response: { quota: 4, used: 4 } });
+    });
+
+    it('grants nothing for a feature the plan switches off', async () => {
+      const spaceId = await createSpace();
+      await seatSubscription({ spaceId, quota: 20, enabled: false });
+
+      await expect(
+        assertSeats(enforcingService, spaceId, 1),
+      ).rejects.toMatchObject({ response: { quota: 0, used: 0 } });
+    });
+
+    it('falls back to the catalog Free quota with no subscription', async () => {
+      const spaceId = await createSpace();
+      await addSafes(spaceId, FREE_SAFE_SEATS);
+
+      await expect(
+        assertSeats(enforcingService, spaceId, 1),
+      ).rejects.toMatchObject({
+        response: { quota: FREE_SAFE_SEATS, used: FREE_SAFE_SEATS },
+      });
+    });
+
+    it('never blocks on an unlimited quota', async () => {
+      const spaceId = await createSpace();
+      await addSafes(spaceId, 50);
+      await seatSubscription({ spaceId, quota: null });
+
+      await expect(
+        assertSeats(enforcingService, spaceId, 10),
+      ).resolves.toBeUndefined();
+    });
+
+    it('grants no seats for a feature the plan switches off', async () => {
+      const spaceId = await createSpace();
+      await seatSubscription({ spaceId, quota: 20, enabled: false });
+
+      await expect(
+        assertSeats(enforcingService, spaceId, 1),
+      ).rejects.toMatchObject({ response: { quota: 0, used: 0 } });
+    });
+
+    it('prepares a check that admits a count still fitting the plan', async () => {
+      const spaceId = await createSpace();
+      await seatSubscription({ spaceId, quota: 4 });
+
+      const check = await enforcingService.prepareQuotaCheck({
+        spaceId,
+        featureKey: 'safe_seats',
+      });
+
+      // Pure from here on: safe inside a caller's locked transaction.
+      expect(() => check({ used: 3, delta: 1 })).not.toThrow();
+    });
+
+    it('prepares a check that rejects the count the write measures', async () => {
+      const spaceId = await createSpace();
+      await seatSubscription({ spaceId, quota: 4 });
+
+      const check = await enforcingService.prepareQuotaCheck({
+        spaceId,
+        featureKey: 'safe_seats',
+      });
+
+      expect(() => check({ used: 3, delta: 2 })).toThrow(
+        expect.objectContaining({
+          status: HttpStatus.PAYMENT_REQUIRED,
+          response: expect.objectContaining({
+            code: QUOTA_EXCEEDED_ERROR_CODE,
+            quota: 4,
+            used: 3,
+          }),
+        }),
+      );
+    });
+
+    it('serves the grant from cache but counts usage live', async () => {
+      const spaceId = await createSpace();
+      await seatSubscription({ spaceId, quota: 4 });
+      await addSafes(spaceId, 3);
+
+      await expect(
+        assertSeats(enforcingService, spaceId, 1),
+      ).resolves.toBeUndefined();
+
+      // Cached grant, fresh count: the seat added in between is seen.
+      await addSafes(spaceId, 1);
+      await expect(
+        assertSeats(enforcingService, spaceId, 1),
+      ).rejects.toMatchObject({ response: { quota: 4, used: 4 } });
+    });
+
+    it('does not cache a grant computed before an invalidation landed', async () => {
+      const spaceId = await createSpace();
+      await seatSubscription({ spaceId, quota: 4 });
+      const cacheDir = CacheRouter.getSpaceEntitlementsCacheDir(spaceId);
+      fakeCacheService.clear();
+      // Stands in for a materialization committing mid-computation: the key was
+      // dropped after this read started, so writing back would re-poison it.
+      await fakeCacheService.hSet(
+        new CacheDir(`invalidationTimeMs:${cacheDir.key}`, ''),
+        String(Date.now() + 60_000),
+        60,
+      );
+
+      await assertSeats(enforcingService, spaceId, 1);
+
+      await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeNull();
+    });
+
+    it('recomputes a cached grant this version cannot read', async () => {
+      const spaceId = await createSpace();
+      await seatSubscription({ spaceId, quota: 4 });
+      // The shape the previous version wrote: no `counter`. It outlives the
+      // deploy that added the field, and a rolling one keeps writing it.
+      await fakeCacheService.hSet(
+        CacheRouter.getSpaceEntitlementsCacheDir(spaceId),
+        JSON.stringify({ safe_seats: { quota: 1, resetsAt: null } }),
+        60,
+      );
+
+      // Recomputed, so the plan's quota answers instead of a 500.
+      await expect(
+        assertSeats(enforcingService, spaceId, 4),
+      ).resolves.toBeUndefined();
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+        expect.stringContaining('Unreadable cached entitlements'),
+      );
+    });
+
+    it('drops the cached grant when a new package is materialized', async () => {
+      const spaceId = await createSpace();
+      await addSafes(spaceId, 5);
+      await seatSubscription({ spaceId, quota: 4 });
+
+      await expect(
+        assertSeats(enforcingService, spaceId, 0),
+      ).rejects.toMatchObject({ response: { quota: 4 } });
+
+      // An upgrade lands: the previous grant must not answer for it.
+      await seatSubscription({ spaceId, quota: 20 });
+
+      await expect(
+        assertSeats(enforcingService, spaceId, 1),
+      ).resolves.toBeUndefined();
+    });
+  });
+
+  // A Binary feature's own gate: on or off, nothing to count
+  describe('assertFeatureGranted', () => {
+    function assertCopilotScans(spaceId: number): Promise<void> {
+      return enforcingService.assertFeatureGranted({
+        spaceId,
+        featureKey: 'copilot_scans',
+      });
+    }
+
+    it('rejects a Binary feature the plan does not grant, with no quota to report', async () => {
+      const spaceId = await createSpace();
+
+      await expect(assertCopilotScans(spaceId)).rejects.toMatchObject({
+        response: {
+          code: FEATURE_NOT_GRANTED_ERROR_CODE,
+          feature: 'copilot_scans',
+        },
+      });
+      expect(mockLoggingService.debug).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: LogType.FeatureNotGranted,
+          spaceId,
+          feature: 'copilot_scans',
+        }),
+      );
+    });
+
+    it('admits a Binary feature the plan grants, unlimited', async () => {
+      const spaceId = await createSpace();
+      await materializeFromEvent({
+        spaceId,
+        subscription: materializedSubscriptionBuilder()
+          .with('status', 'active')
+          .with('entitlements', [
+            {
+              featureKey: 'copilot_scans',
+              enabled: true,
+              quota: null,
+              value: null,
+            },
+          ])
+          .build(),
+      });
+
+      await expect(assertCopilotScans(spaceId)).resolves.toBeUndefined();
+    });
+
+    it('denies a Binary feature missing from the catalog, with no static limit to fall back on', async () => {
+      const spaceId = await createSpace();
+      await dataSource.getRepository(Feature).delete({ key: 'copilot_scans' });
+
+      await expect(assertCopilotScans(spaceId)).rejects.toMatchObject({
+        response: {
+          code: FEATURE_NOT_GRANTED_ERROR_CODE,
+          feature: 'copilot_scans',
+        },
+      });
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+        `Feature 'copilot_scans' has no catalog row; space ${spaceId} is denied`,
+      );
+    });
+  });
+
+  // What the relay path uses: one reserves and admits, the other gives back.
+  describe('consumeQuota / refundQuota', () => {
+    async function sponsoredPlan(args: {
+      spaceId: number;
+      quota: number | null;
+      periodStart: Date;
+    }): Promise<void> {
+      // A monthly plan: a longer cycle would split into monthly windows.
+      const currentPeriodEnd = new Date(args.periodStart);
+      currentPeriodEnd.setUTCMonth(currentPeriodEnd.getUTCMonth() + 1);
+      await materializeFromEvent({
+        spaceId: args.spaceId,
+        subscription: materializedSubscriptionBuilder()
+          .with('status', 'active')
+          .with('currentPeriodStart', args.periodStart)
+          .with('currentPeriodEnd', currentPeriodEnd)
+          .with('entitlements', [
+            {
+              featureKey: 'sponsored_transactions',
+              enabled: true,
+              quota: args.quota,
+              value: null,
+            },
+          ])
+          .build(),
+      });
+    }
+
+    /** The row itself, to see what a refund did to a period nothing reports. */
+    async function usageOf(args: {
+      spaceId: number;
+      periodStart: Date;
+    }): Promise<number> {
+      const row = await dataSource.getRepository(SpaceFeatureUsage).findOne({
+        where: {
+          space: { id: args.spaceId },
+          periodStart: args.periodStart,
+        },
+      });
+      return row?.used ?? 0;
+    }
+
+    async function usedOf(spaceId: number): Promise<number | undefined> {
+      const result = await service.resolveEntitlements(spaceId);
+      const entitlement = result.entitlements.find(
+        (candidate) => candidate.feature === 'sponsored_transactions',
+      );
+      return entitlement?.type === FeatureType.Metered
+        ? entitlement.used
+        : undefined;
+    }
+
+    function consume(spaceId: number, delta: number): Promise<ConsumedQuota> {
+      return enforcingService.consumeQuota({
+        spaceId,
+        featureKey: 'sponsored_transactions',
+        delta,
+      });
+    }
+
+    it('spends the allowance and records it', async () => {
+      const spaceId = await createSpace();
+      const delta = faker.number.int({ min: 1, max: 5 });
+      await sponsoredPlan({
+        spaceId,
+        quota: delta + 1,
+        periodStart: faker.date.recent(),
+      });
+
+      await expect(consume(spaceId, delta)).resolves.toMatchObject({
+        spaceId,
+        delta,
+      });
+
+      await expect(usedOf(spaceId)).resolves.toBe(delta);
+    });
+
+    it('accumulates across calls', async () => {
+      const spaceId = await createSpace();
+      await sponsoredPlan({
+        spaceId,
+        quota: 2,
+        periodStart: faker.date.recent(),
+      });
+
+      await consume(spaceId, 1);
+      await consume(spaceId, 1);
+
+      await expect(usedOf(spaceId)).resolves.toBe(2);
+    });
+
+    it('spends nothing when the allowance would be overshot', async () => {
+      const spaceId = await createSpace();
+      const quota = faker.number.int({ min: 1, max: 5 });
+      await sponsoredPlan({
+        spaceId,
+        quota,
+        periodStart: faker.date.recent(),
+      });
+
+      await expect(consume(spaceId, quota + 1)).rejects.toMatchObject({
+        status: HttpStatus.PAYMENT_REQUIRED,
+        response: {
+          code: QUOTA_EXCEEDED_ERROR_CODE,
+          feature: 'sponsored_transactions',
+          quota,
+          used: 0,
+        },
+      });
+      // Rolled back with the rejection.
+      await expect(usedOf(spaceId)).resolves.toBe(0);
+    });
+
+    it('gives back what was reserved but not used', async () => {
+      const spaceId = await createSpace();
+      const quota = faker.number.int({ min: 2, max: 5 });
+      await sponsoredPlan({
+        spaceId,
+        quota,
+        periodStart: faker.date.recent(),
+      });
+      const spent = await consume(spaceId, 1);
+
+      await enforcingService.refundQuota(spent);
+
+      await expect(usedOf(spaceId)).resolves.toBe(0);
+    });
+
+    it('gives it back to the period it charged, not the one now current', async () => {
+      const spaceId = await createSpace();
+      await sponsoredPlan({
+        spaceId,
+        quota: 1,
+        periodStart: new Date('2026-08-01T00:00:00Z'),
+      });
+      const spent = await consume(spaceId, 1);
+
+      // A webhook advances the billing cycle while the relay is in flight.
+      await sponsoredPlan({
+        spaceId,
+        quota: 1,
+        periodStart: new Date('2026-09-01T00:00:00Z'),
+      });
+      await enforcingService.refundQuota(spent);
+
+      // The new period is untouched — a refund into it would read as -1 and
+      // hand out a second submission against a quota of 1.
+      await expect(usedOf(spaceId)).resolves.toBe(0);
+      await expect(
+        usageOf({ spaceId, periodStart: spent.period.periodStart }),
+      ).resolves.toBe(0);
+      await expect(consume(spaceId, 1)).resolves.toMatchObject({
+        period: { periodStart: new Date('2026-09-01T00:00:00Z') },
+      });
+      await expect(consume(spaceId, 1)).rejects.toMatchObject({
+        status: HttpStatus.PAYMENT_REQUIRED,
+      });
+    });
+
+    it('records usage the plan does not cap', async () => {
+      const spaceId = await createSpace();
+      const delta = faker.number.int({ min: 1, max: 5 });
+      await sponsoredPlan({
+        spaceId,
+        quota: null,
+        periodStart: faker.date.recent(),
+      });
+
+      await consume(spaceId, delta);
+
+      // Unlimited bills nothing, but the endpoint still reports consumption.
+      await expect(usedOf(spaceId)).resolves.toBe(delta);
+    });
+
+    // This feature ignores the enforcement date in both directions.
+    it('refuses a workspace on no plan, enforcement date or not', async () => {
+      const spaceId = await createSpace();
+
+      await expect(
+        service.consumeQuota({
+          spaceId,
+          featureKey: 'sponsored_transactions',
+          delta: 1,
+        }),
+      ).rejects.toMatchObject({
+        status: HttpStatus.PAYMENT_REQUIRED,
+        response: { feature: 'sponsored_transactions', quota: 0 },
+      });
+    });
+
+    it('admits what a plan grants before the enforcement date', async () => {
+      const spaceId = await createSpace();
+      const delta = faker.number.int({ min: 1, max: 5 });
+      await sponsoredPlan({
+        spaceId,
+        quota: delta,
+        periodStart: faker.date.recent(),
+      });
+
+      // `service`, not `enforcingService`: a paying workspace must not wait
+      // for a date that exists for someone else's grandfathering.
+      await expect(
+        service.consumeQuota({
+          spaceId,
+          featureKey: 'sponsored_transactions',
+          delta,
+        }),
+      ).resolves.toMatchObject({ spaceId, delta });
+    });
+  });
+
   describe('getEntitlements', () => {
     it('returns the resolved entitlements for a member', async () => {
       const spaceId = await createSpace();
@@ -1094,6 +1832,223 @@ describe('EntitlementsService', () => {
           authPayload: authPayloadFor(outsiderUserId),
         }),
       ).rejects.toThrow('User is not a member of this workspace');
+    });
+  });
+
+  describe('monthly quota on a yearly plan', () => {
+    const currentPeriodStart = new Date('2026-01-15T10:30:00Z');
+    const currentPeriodEnd = new Date('2027-01-15T10:30:00Z');
+    const februaryWindow = new Date('2026-02-15T10:30:00Z');
+    const marchWindow = new Date('2026-03-15T10:30:00Z');
+
+    beforeEach(() => {
+      // Only `Date`: the Postgres driver relies on real timers.
+      vi.useFakeTimers({ toFake: ['Date'] });
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    async function annualPlan(spaceId: number, quota: number): Promise<void> {
+      await materializeFromEvent({
+        spaceId,
+        subscription: materializedSubscriptionBuilder()
+          .with('status', 'active')
+          .with('currentPeriodStart', currentPeriodStart)
+          .with('currentPeriodEnd', currentPeriodEnd)
+          .with('entitlements', [
+            {
+              featureKey: 'sponsored_transactions',
+              enabled: true,
+              quota,
+              value: null,
+            },
+          ])
+          .build(),
+      });
+    }
+
+    it("shows only this month's usage and when the quota resets", async () => {
+      const spaceId = await createSpace();
+      const quota = faker.number.int({ min: 2, max: 10 });
+      await annualPlan(spaceId, quota);
+      await recordUsage({
+        spaceId,
+        featureKey: 'sponsored_transactions',
+        used: quota,
+        periodStart: februaryWindow,
+      });
+      vi.setSystemTime(marchWindow);
+
+      const result = await service.resolveEntitlements(spaceId);
+
+      expect(
+        result.entitlements.find(
+          (entitlement) => entitlement.feature === 'sponsored_transactions',
+        ),
+      ).toMatchObject({
+        used: 0,
+        quota,
+        resetsAt: new Date('2026-04-15T10:30:00Z'),
+      });
+      expect(result.plan?.cycleEndsAt).toStrictEqual(currentPeriodEnd);
+    });
+
+    it('allows usage again when a new quota month starts, even with cached limits', async () => {
+      const spaceId = await createSpace();
+      const quota = faker.number.int({ min: 1, max: 10 });
+      await annualPlan(spaceId, quota);
+      vi.setSystemTime(new Date('2026-03-15T10:29:59.999Z'));
+      await recordUsage({
+        spaceId,
+        featureKey: 'sponsored_transactions',
+        used: quota,
+        periodStart: februaryWindow,
+      });
+      await expect(
+        enforcingService.assertWithinQuota({
+          spaceId,
+          featureKey: 'sponsored_transactions',
+          delta: 1,
+        }),
+      ).rejects.toMatchObject({ response: { quota, used: quota } });
+
+      vi.setSystemTime(marchWindow);
+
+      await expect(
+        enforcingService.consumeQuota({
+          spaceId,
+          featureKey: 'sponsored_transactions',
+          delta: 1,
+        }),
+      ).resolves.toMatchObject({
+        period: { periodStart: marchWindow },
+        delta: 1,
+      });
+      const usage = await dataSource.getRepository(SpaceFeatureUsage).find({
+        where: { space: { id: spaceId } },
+        order: { periodStart: 'ASC' },
+      });
+      expect(
+        usage.map(({ periodStart, used }) => ({ periodStart, used })),
+      ).toStrictEqual([
+        { periodStart: februaryWindow, used: quota },
+        { periodStart: marchWindow, used: 1 },
+      ]);
+    });
+  });
+
+  describe('getAllEntitlements', () => {
+    it("keys each active workspace's entitlements by UUID, as getEntitlements returns them", async () => {
+      const [subscribedSpaceId, freeSpaceId] = await Promise.all([
+        createSpace(),
+        createSpace(),
+      ]);
+      const userId = await addActiveMember(subscribedSpaceId);
+      await joinSpace({ userId, spaceId: freeSpaceId, status: 'ACTIVE' });
+      const purchasedSeats = parsedEntitlementBuilder()
+        .with('featureKey', 'safe_seats')
+        .build();
+      await materializeFromEvent({
+        spaceId: subscribedSpaceId,
+        subscription: materializedSubscriptionBuilder()
+          .with('status', 'active')
+          .with('entitlements', [purchasedSeats])
+          .build(),
+      });
+      const safeCount = faker.number.int({ min: 1, max: 3 });
+      await addSafes(freeSpaceId, safeCount);
+      await recordUsage({
+        spaceId: freeSpaceId,
+        featureKey: 'sponsored_transactions',
+        used: faker.number.int({ min: 1, max: 10 }),
+      });
+      const authPayload = authPayloadFor(userId);
+      const [subscribedSpaceUuid, freeSpaceUuid] = await Promise.all([
+        spaceUuidOf(subscribedSpaceId),
+        spaceUuidOf(freeSpaceId),
+      ]);
+
+      const result = await service.getAllEntitlements(authPayload);
+
+      expect(result).toStrictEqual({
+        [subscribedSpaceUuid]: await service.getEntitlements({
+          spaceId: subscribedSpaceId,
+          authPayload,
+        }),
+        [freeSpaceUuid]: await service.getEntitlements({
+          spaceId: freeSpaceId,
+          authPayload,
+        }),
+      });
+      expect(seatsOf(result[subscribedSpaceUuid])).toMatchObject({
+        quota: purchasedSeats.quota,
+        used: 0,
+      });
+      expect(result[freeSpaceUuid].plan).toBeNull();
+      expect(seatsOf(result[freeSpaceUuid])).toMatchObject({
+        quota: FREE_SAFE_SEATS,
+        used: safeCount,
+      });
+    });
+
+    it('leaves out workspaces the caller is only invited to or not in', async () => {
+      const [memberSpaceId, invitedSpaceId, otherSpaceId] = await Promise.all([
+        createSpace(),
+        createSpace(),
+        createSpace(),
+      ]);
+      const userId = await addActiveMember(memberSpaceId);
+      await joinSpace({ userId, spaceId: invitedSpaceId, status: 'INVITED' });
+      await addActiveMember(otherSpaceId);
+
+      const result = await service.getAllEntitlements(authPayloadFor(userId));
+
+      expect(Object.keys(result)).toStrictEqual([
+        await spaceUuidOf(memberSpaceId),
+      ]);
+    });
+
+    it('returns an empty object for a caller with no active workspace', async () => {
+      const userId = await dataSource
+        .getRepository(User)
+        .insert({ status: 'ACTIVE' })
+        .then((inserted) => inserted.generatedMaps[0].id as number);
+      await joinSpace({
+        userId,
+        spaceId: await createSpace(),
+        status: 'INVITED',
+      });
+
+      await expect(
+        service.getAllEntitlements(authPayloadFor(userId)),
+      ).resolves.toStrictEqual({});
+    });
+
+    it('warns about unpublished features once for the whole request', async () => {
+      const [spaceId, otherSpaceId] = await Promise.all([
+        createSpace(),
+        createSpace(),
+      ]);
+      const userId = await addActiveMember(spaceId);
+      await joinSpace({ userId, spaceId: otherSpaceId, status: 'ACTIVE' });
+
+      await service.getAllEntitlements(authPayloadFor(userId));
+
+      expect(mockLoggingService.warn).toHaveBeenCalledExactlyOnceWith(
+        `Features seeded but not published, omitted from the response: ${FEATURE_FIXTURES.map(
+          ({ key }) => key,
+        )
+          .filter((key) => !isFeatureKey(key))
+          .join(', ')}`,
+      );
+    });
+
+    it('rejects an unauthenticated caller', async () => {
+      await expect(
+        service.getAllEntitlements(new AuthPayload()),
+      ).rejects.toThrow(new UnauthorizedException('Not authenticated'));
     });
   });
 });

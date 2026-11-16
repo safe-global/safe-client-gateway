@@ -1,20 +1,20 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject } from '@nestjs/common';
 import type { Address } from 'viem';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
 import {
   type INetworkService,
   NetworkService,
-} from '@/datasources/network/network.service.interface';
-import type { Page } from '@/domain/entities/page.entity';
-import type { ILockingApi } from '@/domain/interfaces/locking-api.interface';
-import type { Campaign } from '@/modules/community/domain/entities/campaign.entity';
-import type { CampaignActivity } from '@/modules/community/domain/entities/campaign-activity.entity';
-import type { CampaignRank } from '@/modules/community/domain/entities/campaign-rank.entity';
-import type { LockingEvent } from '@/modules/community/domain/entities/locking-event.entity';
-import type { LockingRank } from '@/modules/community/domain/entities/locking-rank.entity';
-import type { Raw } from '@/validation/entities/raw.entity';
+} from '#/datasources/network/network.service.interface';
+import type { Page } from '#/domain/entities/page.entity';
+import type { ILockingApi } from '#/domain/interfaces/locking-api.interface';
+import type { Campaign } from '#/modules/community/domain/entities/campaign.entity';
+import type { CampaignActivity } from '#/modules/community/domain/entities/campaign-activity.entity';
+import type { CampaignRank } from '#/modules/community/domain/entities/campaign-rank.entity';
+import type { LockingEvent } from '#/modules/community/domain/entities/locking-event.entity';
+import type { LockingRank } from '#/modules/community/domain/entities/locking-rank.entity';
+import type { Raw } from '#/validation/entities/raw.entity';
 
 export class LockingApi implements ILockingApi {
   private readonly baseUri: string;

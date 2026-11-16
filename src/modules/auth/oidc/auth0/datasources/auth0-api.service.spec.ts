@@ -2,14 +2,14 @@
 
 import { faker } from '@faker-js/faker';
 import type { MockedObject } from 'vitest';
-import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
-import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
-import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import { Auth0Api } from '@/modules/auth/oidc/auth0/datasources/auth0-api.service';
-import { rawify } from '@/validation/entities/raw.entity';
+import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
+import { FakeCacheService } from '#/datasources/cache/__tests__/fake.cache.service';
+import { CacheDir } from '#/datasources/cache/entities/cache-dir.entity';
+import { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
+import { NetworkResponseError } from '#/datasources/network/entities/network.error.entity';
+import type { INetworkService } from '#/datasources/network/network.service.interface';
+import { Auth0Api } from '#/modules/auth/oidc/auth0/datasources/auth0-api.service';
+import { rawify } from '#/validation/entities/raw.entity';
 
 const networkService = {
   delete: vi.fn(),

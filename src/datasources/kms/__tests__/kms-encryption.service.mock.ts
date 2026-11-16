@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { MockedObject } from 'vitest';
-import type { KmsEncryptionService } from '@/datasources/kms/kms-encryption.service';
+import type { KmsEncryptionService } from '#/datasources/kms/kms-encryption.service';
 
 /**
  * A passthrough {@link KmsEncryptionService} double reproducing disabled-mode

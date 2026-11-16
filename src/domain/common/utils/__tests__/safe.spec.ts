@@ -1,34 +1,35 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import semverSatisfies from 'semver/functions/satisfies';
-import { getAddress, type Hex } from 'viem';
-import type { IBuilder } from '@/__tests__/builder';
-import { Builder } from '@/__tests__/builder';
+import { getAddress, type Hex, hashTypedData } from 'viem';
+import type { IBuilder } from '#/__tests__/builder';
+import { Builder } from '#/__tests__/builder';
 import {
   getSafeL2SingletonDeployments,
   getSafeL2SingletonVersions,
   getSafeMigrationDeployments,
   getSafeSingletonDeployments,
   getSafeSingletonVersions,
-} from '@/domain/common/utils/deployments';
-import type { BaseMultisigTransaction } from '@/domain/common/utils/safe';
+} from '#/domain/common/utils/deployments';
+import type { BaseMultisigTransaction } from '#/domain/common/utils/safe';
 import {
   _getSafeDomain,
   _getSafeTxTypesAndMessage,
   getBaseMultisigTransaction,
   getSafeMessageMessageHash,
   getSafeTxHash,
-} from '@/domain/common/utils/safe';
+} from '#/domain/common/utils/safe';
 import {
   migrateL2SingletonEncoder,
   migrateL2WithFallbackHandlerEncoder,
   migrateSingletonEncoder,
   migrateWithFallbackHandlerEncoder,
-} from '@/modules/contracts/domain/__tests__/encoders/safe-migration-encoder.builder';
-import { typedDataBuilder } from '@/modules/messages/routes/entities/__tests__/typed-data.builder';
-import { multisigTransactionBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
-import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
-import { Operation } from '@/modules/safe/domain/entities/operation.entity';
+} from '#/modules/contracts/domain/__tests__/encoders/safe-migration-encoder.builder';
+import type { TypedData } from '#/modules/messages/domain/entities/typed-data.entity';
+import { typedDataBuilder } from '#/modules/messages/routes/entities/__tests__/typed-data.builder';
+import { multisigTransactionBuilder } from '#/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
+import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
+import { Operation } from '#/modules/safe/domain/entities/operation.entity';
 
 // Audited versions only
 const DOMAIN_WITHOUT_CHAIN_ID_VERSIONS = [
@@ -114,6 +115,52 @@ describe('Safe', () => {
             safe,
           }),
         ).not.toThrow();
+      });
+
+      it('should handle typedData with a safe in its domain', () => {
+        const chainId = faker.string.numeric();
+        const version = faker.helpers.arrayElement(
+          DOMAIN_WITH_CHAIN_ID_VERSIONS,
+        );
+        const safe = safeBuilder().with('version', version).build();
+        const message: TypedData = {
+          domain: {
+            name: faker.lorem.word(),
+            version: faker.system.semver(),
+            chainId: faker.number.int(),
+            safe: getAddress(faker.finance.ethereumAddress()),
+          },
+          primaryType: 'Delegate',
+          types: {
+            EIP712Domain: [
+              { name: 'name', type: 'string' },
+              { name: 'version', type: 'string' },
+              { name: 'chainId', type: 'uint256' },
+              { name: 'safe', type: 'address' },
+            ],
+            Delegate: [
+              { name: 'delegateAddress', type: 'address' },
+              { name: 'totp', type: 'uint256' },
+              { name: 'action', type: 'string' },
+            ],
+          },
+          message: {
+            delegateAddress: getAddress(faker.finance.ethereumAddress()),
+            totp: faker.number.int(),
+            action: faker.helpers.arrayElement(['add', 'delete', 'edit']),
+          },
+        };
+
+        const result = getSafeMessageMessageHash({ chainId, message, safe });
+
+        expect(result).toBe(
+          hashTypedData({
+            domain: _getSafeDomain({ chainId, address: safe.address, version }),
+            primaryType: 'SafeMessage',
+            types: { SafeMessage: [{ name: 'message', type: 'bytes' }] },
+            message: { message: hashTypedData(message) },
+          }),
+        );
       });
 
       it.each(DOMAIN_WITHOUT_CHAIN_ID_VERSIONS)(

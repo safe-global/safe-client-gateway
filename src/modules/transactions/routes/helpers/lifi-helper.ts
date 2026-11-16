@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable, Module } from '@nestjs/common';
 import { type Address, isAddressEqual } from 'viem';
-import { BridgeModule } from '@/modules/bridge/bridge.module';
-import { IBridgeRepository } from '@/modules/bridge/domain/bridge.repository.interface';
-import { LiFiDecoder } from '@/modules/bridge/domain/contracts/decoders/lifi-decoder.helper';
-import type { ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
-import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
+import { BridgeModule } from '#/modules/bridge/bridge.module';
+import { IBridgeRepository } from '#/modules/bridge/domain/bridge.repository.interface';
+import { LiFiDecoder } from '#/modules/bridge/domain/contracts/decoders/lifi-decoder.helper';
+import type { ModuleTransaction } from '#/modules/safe/domain/entities/module-transaction.entity';
+import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
 import {
   TransactionFinder,
   TransactionFinderModule,
-} from '@/modules/transactions/routes/helpers/transaction-finder.helper';
+} from '#/modules/transactions/routes/helpers/transaction-finder.helper';
 
 @Injectable()
 export class LiFiHelper {
@@ -84,23 +84,32 @@ export class LiFiHelper {
       return null;
     }
 
+    const transaction = {
+      to: args.transaction.to,
+      data: args.transaction.data,
+      value: args.transaction.value ?? '0',
+    };
+
+    // Finding the diamond address reads the list of all LiFi chains, so it is
+    // only looked up for a transaction whose calldata passes the predicate
+    const candidate = this.transactionFinder.findTransaction(
+      ({ data }) => args.predicate(data),
+      transaction,
+    );
+    if (!candidate) {
+      return null;
+    }
+
     const diamondAddress = await this.bridgeRepository.getDiamondAddress(
       args.chainId,
     );
 
-    return this.transactionFinder.findTransaction(
-      ({ to, data }) => {
-        if (!(to && isAddressEqual(to, diamondAddress))) {
-          return false;
-        }
-        return args.predicate(data);
-      },
-      {
-        to: args.transaction.to,
-        data: args.transaction.data,
-        value: args.transaction.value ?? '0',
-      },
-    );
+    return this.transactionFinder.findTransaction(({ to, data }) => {
+      if (!(to && isAddressEqual(to, diamondAddress))) {
+        return false;
+      }
+      return args.predicate(data);
+    }, transaction);
   }
 }
 @Module({

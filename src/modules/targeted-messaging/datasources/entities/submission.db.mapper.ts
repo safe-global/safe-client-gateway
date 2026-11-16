@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { Injectable } from '@nestjs/common';
-import type { Submission as DbSubmission } from '@/modules/targeted-messaging/datasources/entities/submission.entity';
-import { convertToDate } from '@/modules/targeted-messaging/datasources/entities/utils';
-import type { Submission } from '@/modules/targeted-messaging/domain/entities/submission.entity';
-import type { TargetedSafe } from '@/modules/targeted-messaging/domain/entities/targeted-safe.entity';
+import type { Submission as DbSubmission } from '#/modules/targeted-messaging/datasources/entities/submission.entity';
+import { convertToDate } from '#/modules/targeted-messaging/datasources/entities/utils';
+import type { Submission } from '#/modules/targeted-messaging/domain/entities/submission.entity';
+import type { TargetedSafe } from '#/modules/targeted-messaging/domain/entities/targeted-safe.entity';
 
 @Injectable()
 export class SubmissionDbMapper {

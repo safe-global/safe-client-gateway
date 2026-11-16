@@ -2,18 +2,15 @@
 
 import { faker } from '@faker-js/faker';
 import type { MockedObject } from 'vitest';
-import { fakeJson } from '@/__tests__/faker';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
-import type { RedisClientType } from '@/datasources/cache/cache.module';
-import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
-import { RedisCacheService } from '@/datasources/cache/redis.cache.service';
-import type { ILoggingService } from '@/logging/logging.interface';
-
-import clearAllMocks = vi.clearAllMocks;
-
-import { redisClientFactory } from '@/__tests__/redis-client.factory';
-import { MAX_TTL } from '@/datasources/cache/constants';
-import { offsetByPercentage } from '@/domain/common/utils/number';
+import { fakeJson } from '#/__tests__/faker';
+import { redisClientFactory } from '#/__tests__/redis-client.factory';
+import type { IConfigurationService } from '#/config/configuration.service.interface';
+import type { RedisClientType } from '#/datasources/cache/cache.module';
+import { MAX_TTL } from '#/datasources/cache/constants';
+import { CacheDir } from '#/datasources/cache/entities/cache-dir.entity';
+import { RedisCacheService } from '#/datasources/cache/redis.cache.service';
+import { offsetByPercentage } from '#/domain/common/utils/number';
+import type { ILoggingService } from '#/logging/logging.interface';
 
 const mockLoggingService: MockedObject<ILoggingService> = {
   info: vi.fn(),
@@ -44,7 +41,7 @@ describe('RedisCacheService', () => {
   });
 
   beforeEach(async () => {
-    clearAllMocks();
+    vi.clearAllMocks();
     await redisClient.flushDb();
     defaultExpirationTimeInSeconds = faker.number.int({ min: 1, max: 3600 });
     defaultExpirationDeviatePercent = faker.number.int({ min: 1, max: 99 });
@@ -233,6 +230,35 @@ describe('RedisCacheService', () => {
 
     const result = await redisCacheService.getCounter(key);
     expect(result).toEqual(value);
+  });
+
+  it('a second setCounter overwrites the first', async () => {
+    const key = faker.string.alphanumeric();
+    const value = faker.number.int({ min: 100 });
+    await redisCacheService.setCounter(key, value, maxTtlDeviated);
+    await redisCacheService.setCounter(key, value + 1, maxTtlDeviated);
+
+    const result = await redisCacheService.getCounter(key);
+    expect(result).toEqual(value + 1);
+  });
+
+  it('setCounter, increment and getCounter use the same prefixed key', async () => {
+    const prefix = faker.string.alpha(8);
+    const prefixedService = new RedisCacheService(
+      redisClient,
+      mockLoggingService,
+      mockConfigurationService,
+      prefix,
+    );
+    const key = faker.string.alphanumeric();
+    const value = faker.number.int({ min: 100 });
+
+    await prefixedService.setCounter(key, value, maxTtlDeviated);
+    await prefixedService.increment(key, maxTtlDeviated);
+
+    expect(await prefixedService.getCounter(key)).toEqual(value + 1);
+    expect(await redisClient.get(`${prefix}-${key}`)).toEqual(`${value + 1}`);
+    expect(await redisClient.exists(key)).toEqual(0);
   });
 
   it('sets and gets the value of a zero-value counter', async () => {

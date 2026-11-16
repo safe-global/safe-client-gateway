@@ -3,7 +3,7 @@ import { Column, Entity, Index, PrimaryGeneratedColumn, Unique } from 'typeorm';
 import type {
   Survey as DomainSurvey,
   SurveyContent,
-} from '@/modules/surveys/domain/entities/survey.entity';
+} from '#/modules/surveys/domain/entities/survey.entity';
 
 @Entity('surveys')
 @Unique('UQ_surveys_slug_version', ['slug', 'version'])

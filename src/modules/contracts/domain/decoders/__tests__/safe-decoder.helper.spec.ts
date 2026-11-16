@@ -6,8 +6,8 @@ import {
   removeOwnerEncoder,
   setupEncoder,
   swapOwnerEncoder,
-} from '@/modules/contracts/domain/__tests__/encoders/safe-encoder.builder';
-import { SafeDecoder } from '@/modules/contracts/domain/decoders/safe-decoder.helper';
+} from '#/modules/contracts/domain/__tests__/encoders/safe-encoder.builder';
+import { SafeDecoder } from '#/modules/contracts/domain/decoders/safe-decoder.helper';
 
 describe('SafeDecoder', () => {
   let target: SafeDecoder;

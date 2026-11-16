@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
-import { createDelegateDtoBuilder } from '@/modules/delegate/routes/entities/__tests__/create-delegate.dto.builder';
-import { CreateDelegateDtoSchema } from '@/modules/delegate/routes/entities/schemas/create-delegate.dto.schema';
+import { createDelegateDtoBuilder } from '#/modules/delegate/routes/entities/__tests__/create-delegate.dto.builder';
+import { CreateDelegateDtoSchema } from '#/modules/delegate/routes/entities/schemas/create-delegate.dto.schema';
 
 describe('CreateDelegateSchema', () => {
   it('should validate a valid CreateDelegateDto', () => {

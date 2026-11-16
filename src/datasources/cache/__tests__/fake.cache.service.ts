@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { ICacheService } from '@/datasources/cache/cache.service.interface';
-import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
-import type { ICacheReadiness } from '@/domain/interfaces/cache-readiness.interface';
+import type { ICacheService } from '#/datasources/cache/cache.service.interface';
+import { CacheDir } from '#/datasources/cache/entities/cache-dir.entity';
+import type { ICacheReadiness } from '#/domain/interfaces/cache-readiness.interface';
 
 export class FakeCacheService implements ICacheService, ICacheReadiness {
   private cache: Record<string, Record<string, string> | number> = {};
@@ -26,11 +26,28 @@ export class FakeCacheService implements ICacheService, ICacheReadiness {
   async deleteByKey(key: string): Promise<number> {
     delete this.cache[key];
     await this.hSet(
-      new CacheDir(`invalidationTimeMs:${key}`, ''),
+      FakeCacheService.invalidationTimeMsCacheDir(key),
       Date.now().toString(),
       1, // non-falsy expireTimeSeconds, otherwise it wouldn't be written
     );
     return Promise.resolve(1);
+  }
+
+  async getInvalidationTimeMs(key: string): Promise<number | null> {
+    const value = await this.hGet(
+      FakeCacheService.invalidationTimeMsCacheDir(key),
+    );
+
+    if (!value) {
+      return null;
+    }
+
+    const invalidationTimeMs = Number(value);
+    return Number.isInteger(invalidationTimeMs) ? invalidationTimeMs : null;
+  }
+
+  private static invalidationTimeMsCacheDir(key: string): CacheDir {
+    return new CacheDir(`invalidationTimeMs:${key}`, '');
   }
 
   getCounter(key: string): Promise<number | null> {

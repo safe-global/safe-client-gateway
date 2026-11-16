@@ -11,26 +11,26 @@ import type { MockedObject } from 'vitest';
 import {
   initTestApplication,
   TestAppProvider,
-} from '@/__tests__/test-app.provider';
-import { createTestModule } from '@/__tests__/testing-module';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import configuration from '@/config/entities/__tests__/configuration';
-import type { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
-import { CacheService } from '@/datasources/cache/cache.service.interface';
-import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
-import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
-import { getSecondsUntil } from '@/domain/common/utils/time';
+} from '#/__tests__/test-app.provider';
+import { createTestModule } from '#/__tests__/testing-module';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import configuration from '#/config/entities/__tests__/configuration';
+import type { FakeCacheService } from '#/datasources/cache/__tests__/fake.cache.service';
+import { CacheService } from '#/datasources/cache/cache.service.interface';
+import { CacheDir } from '#/datasources/cache/entities/cache-dir.entity';
+import { IJwtService } from '#/datasources/jwt/jwt.service.interface';
+import { getSecondsUntil } from '#/domain/common/utils/time';
 import {
   oidcAuthPayloadDtoBuilder,
   siweAuthPayloadDtoBuilder,
-} from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import { TestEmailApiModule } from '@/modules/email/pushwoosh/__tests__/test.email-api.module';
-import { EmailModule } from '@/modules/email/pushwoosh/pushwoosh-email.module';
-import { siweMessageBuilder } from '@/modules/siwe/domain/entities/__tests__/siwe-message.builder';
-import { TestUsersModule } from '@/modules/users/__tests__/test.users.module';
-import { IUsersRepository } from '@/modules/users/domain/users.repository.interface';
-import { UsersModule } from '@/modules/users/users.module';
-import { fakeEmailAddress } from '@/validation/entities/schemas/__tests__/email-address.builder';
+} from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { TestEmailApiModule } from '#/modules/email/pushwoosh/__tests__/test.email-api.module';
+import { EmailModule } from '#/modules/email/pushwoosh/pushwoosh-email.module';
+import { siweMessageBuilder } from '#/modules/siwe/domain/entities/__tests__/siwe-message.builder';
+import { TestUsersModule } from '#/modules/users/__tests__/test.users.module';
+import { IUsersRepository } from '#/modules/users/domain/users.repository.interface';
+import { UsersModule } from '#/modules/users/users.module';
+import { fakeEmailAddress } from '#/validation/entities/schemas/__tests__/email-address.builder';
 
 describe('AuthController', () => {
   let app: INestApplication<Server>;

@@ -2,8 +2,8 @@
 
 import { Module } from '@nestjs/common';
 import type { MockedObject } from 'vitest';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import { IEmailApi } from '@/domain/interfaces/email-api.interface';
+import { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
+import { IEmailApi } from '#/domain/interfaces/email-api.interface';
 
 const emailApi = {
   createMessage: vi.fn(),

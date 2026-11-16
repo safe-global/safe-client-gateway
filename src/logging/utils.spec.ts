@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { asError } from '@/logging/utils';
+import { asError } from '#/logging/utils';
 
 describe('asError', () => {
   it('should return the same error if thrown is an instance of Error', () => {

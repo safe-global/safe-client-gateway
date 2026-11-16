@@ -1,35 +1,33 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { type Address, type Hash, type Hex, isAddressEqual } from 'viem';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { IBlocklistService } from '@/config/entities/blocklist.interface';
-import { LogSource } from '@/domain/common/entities/log-source.entity';
-import { LogType } from '@/domain/common/entities/log-type.entity';
-import { SafeSignature } from '@/domain/common/entities/safe-signature';
-import { SignatureType } from '@/domain/common/entities/signature-type.entity';
-import { HttpExceptionNoLog } from '@/domain/common/errors/http-exception-no-log.error';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { LogSource } from '#/domain/common/entities/log-source.entity';
+import { LogType } from '#/domain/common/entities/log-type.entity';
+import { SafeSignature } from '#/domain/common/entities/safe-signature';
+import { SignatureType } from '#/domain/common/entities/signature-type.entity';
+import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
 import {
   type BaseMultisigTransaction,
   getBaseMultisigTransaction,
   getSafeTxHash,
-} from '@/domain/common/utils/safe';
-import { parseSignaturesByType } from '@/domain/common/utils/signatures';
+} from '#/domain/common/utils/safe';
+import { parseSignaturesByType } from '#/domain/common/utils/signatures';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import { IContractsRepository } from '@/modules/contracts/domain/contracts.repository.interface';
-import { IDelegatesV2Repository } from '@/modules/delegate/domain/v2/delegates.v2.repository.interface';
-import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
-import { Operation } from '@/modules/safe/domain/entities/operation.entity';
-import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
-import type { ProposeTransactionDto } from '@/modules/transactions/domain/entities/propose-transaction.dto.entity';
+} from '#/logging/logging.interface';
+import { IContractsRepository } from '#/modules/contracts/domain/contracts.repository.interface';
+import { IDelegatesV3Repository } from '#/modules/delegate/domain/v3/delegates.v3.repository.interface';
+import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
+import { Operation } from '#/modules/safe/domain/entities/operation.entity';
+import type { Safe } from '#/modules/safe/domain/entities/safe.entity';
+import type { ProposeTransactionDto } from '#/modules/transactions/domain/entities/propose-transaction.dto.entity';
 
 enum ErrorMessage {
   MalformedHash = 'Could not calculate safeTxHash',
   HashMismatch = 'Invalid safeTxHash',
   InvalidSignature = 'Invalid signature',
-  BlockedAddress = 'Unauthorized address',
   EthSignDisabled = 'eth_sign is disabled',
   DelegateCallDisabled = 'Delegate call is disabled',
   InvalidNonce = 'Invalid nonce',
@@ -47,14 +45,12 @@ export class TransactionVerifierHelper {
   constructor(
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
-    @Inject(IDelegatesV2Repository)
-    private readonly delegatesV2Repository: IDelegatesV2Repository,
+    @Inject(IDelegatesV3Repository)
+    private readonly delegatesV3Repository: IDelegatesV3Repository,
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
     @Inject(IContractsRepository)
     private readonly contractsRepository: IContractsRepository,
-    @Inject(IBlocklistService)
-    private readonly blocklistService: IBlocklistService,
   ) {
     this.isTrustedDelegateCallEnabled = this.configurationService.getOrThrow(
       'features.trustedDelegateCall',
@@ -76,10 +72,6 @@ export class TransactionVerifierHelper {
       this.configurationService.getOrThrow(
         'features.signatureVerification.proposal',
       );
-  }
-
-  private get blocklist(): Array<Address> {
-    return this.blocklistService.getBlocklist();
   }
 
   public verifyApiTransaction(args: {
@@ -299,19 +291,6 @@ export class TransactionVerifierHelper {
         signature: confirmation.signature,
       });
 
-      const isBlocked = this.blocklist.some((blockedAddress) => {
-        return isAddressEqual(blockedAddress, signature.owner);
-      });
-      if (isBlocked) {
-        this.logBlockedAddress({
-          ...args,
-          safeTxHash: args.transaction.safeTxHash,
-          blockedAddress: signature.owner,
-          source: LogSource.Api,
-        });
-        throw new HttpExceptionNoLog(ErrorMessage.BlockedAddress, args.code);
-      }
-
       const isOwner = args.safe.owners.some((owner) => {
         return isAddressEqual(owner, signature.owner);
       });
@@ -350,19 +329,6 @@ export class TransactionVerifierHelper {
         hash: args.proposal.safeTxHash,
         signature: signatureByType,
       });
-
-      const isBlocked = this.blocklist.some((blockedAddress) => {
-        return isAddressEqual(blockedAddress, signature.owner);
-      });
-      if (isBlocked) {
-        this.logBlockedAddress({
-          ...args,
-          safeTxHash: args.proposal.safeTxHash,
-          blockedAddress: signature.owner,
-          source: LogSource.Proposal,
-        });
-        throw new HttpExceptionNoLog(ErrorMessage.BlockedAddress, args.code);
-      }
 
       const isExisting = args.transaction?.confirmations?.some(
         (confirmation) => {
@@ -403,7 +369,7 @@ export class TransactionVerifierHelper {
       return;
     }
 
-    const delegates = await this.delegatesV2Repository.getDelegates({
+    const delegates = await this.delegatesV3Repository.getDelegates({
       chainId: args.chainId,
       safeAddress: args.safe.address,
     });
@@ -435,19 +401,6 @@ export class TransactionVerifierHelper {
       signature: args.signature,
       hash: args.transaction.safeTxHash,
     });
-
-    const isBlocked = this.blocklist.some((blockedAddress) => {
-      return isAddressEqual(blockedAddress, signature.owner);
-    });
-    if (isBlocked) {
-      this.logBlockedAddress({
-        ...args,
-        safeTxHash: args.transaction.safeTxHash,
-        blockedAddress: signature.owner,
-        source: LogSource.Confirmation,
-      });
-      throw new HttpExceptionNoLog(ErrorMessage.BlockedAddress, args.code);
-    }
 
     if (
       !this.isEthSignEnabled &&
@@ -504,25 +457,6 @@ export class TransactionVerifierHelper {
       safeVersion: args.safe.version,
       safeTxHash: args.safeTxHash,
       transaction: getBaseMultisigTransaction(args.transaction),
-      type: LogType.TransactionValidity,
-      source: args.source,
-    });
-  }
-
-  private logBlockedAddress(args: {
-    chainId: string;
-    safe: Safe;
-    safeTxHash: Hash;
-    blockedAddress: Address;
-    source: LogSource;
-  }): void {
-    this.loggingService.error({
-      event: 'Unauthorized address',
-      chainId: args.chainId,
-      safeAddress: args.safe.address,
-      safeVersion: args.safe.version,
-      safeTxHash: args.safeTxHash,
-      blockedAddress: args.blockedAddress,
       type: LogType.TransactionValidity,
       source: args.source,
     });

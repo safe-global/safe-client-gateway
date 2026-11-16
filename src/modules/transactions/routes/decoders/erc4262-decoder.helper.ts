@@ -1,6 +1,7 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { Injectable } from '@nestjs/common';
 import { erc4626Abi } from 'viem';
-import { AbiDecoder } from '@/modules/contracts/domain/decoders/abi-decoder.helper';
+import { AbiDecoder } from '#/modules/contracts/domain/decoders/abi-decoder.helper';
 
 @Injectable()
 export class Erc4262Decoder extends AbiDecoder<typeof erc4626Abi> {

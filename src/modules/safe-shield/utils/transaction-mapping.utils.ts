@@ -1,8 +1,9 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import type {
   DecodedExecTransactionData,
   DecodedMultiSendTransactionData,
   DecodedTransactionData,
-} from '@/modules/safe-shield/entities/transaction-data.entity';
+} from '#/modules/safe-shield/entities/transaction-data.entity';
 
 /**
  * Checks if the decoded transaction data represents a multiSend transaction.

@@ -5,12 +5,12 @@ import { getAddress } from 'viem';
 import {
   NetworkRequestError,
   NetworkResponseError,
-} from '@/datasources/network/entities/network.error.entity';
+} from '#/datasources/network/entities/network.error.entity';
 import {
   formatRhinestoneError,
   MAX_LOGGED_UPSTREAM_ERRORS,
   MAX_LOGGED_UPSTREAM_MESSAGE_LENGTH,
-} from '@/modules/relay/datasources/helpers/rhinestone-error.helper';
+} from '#/modules/relay/datasources/helpers/rhinestone-error.helper';
 
 describe('formatRhinestoneError', () => {
   const responseError = (data?: unknown): NetworkResponseError => {

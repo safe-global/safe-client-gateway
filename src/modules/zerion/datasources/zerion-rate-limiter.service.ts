@@ -1,19 +1,19 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import type { Address } from 'viem';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { CacheRouter } from '@/datasources/cache/cache.router';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { CacheRouter } from '#/datasources/cache/cache.router';
 import {
   CacheService,
   type ICacheService,
-} from '@/datasources/cache/cache.service.interface';
-import { LimitReachedError } from '@/datasources/network/entities/errors/limit-reached.error';
-import { LogType } from '@/domain/common/entities/log-type.entity';
+} from '#/datasources/cache/cache.service.interface';
+import { LimitReachedError } from '#/datasources/network/entities/errors/limit-reached.error';
+import { LogType } from '#/domain/common/entities/log-type.entity';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import { asError } from '@/logging/utils';
+} from '#/logging/logging.interface';
+import { asError } from '#/logging/utils';
 
 type RateLimitScope = 'global' | 'per_address';
 

@@ -66,13 +66,13 @@ function getChainName(chain?: Chain): string {
 
 **Why:** an import that's only ever used as a type but isn't marked as such still looks, to a reader, like it might carry a runtime dependency; marking it `type` keeps a decorator-metadata-heavy codebase honest about which imports the emitted JavaScript actually needs.
 
-**Canonical example:** 1,112 files use `import type` today, while biome's `useImportType` rule is `"off"` — a real, unenforced convention. `src/datasources/db/v1/cached-query-resolver.ts` mixes both halves in one import statement: `import { type ILoggingService, LoggingService } from '@/logging/logging.interface';` — `ILoggingService` is type-only, `LoggingService` (the DI Symbol) is not. See module-structure.md's "Symbol DI wiring" rule for the token pattern itself.
+**Canonical example:** 1,112 files use `import type` today, while biome's `useImportType` rule is `"off"` — a real, unenforced convention. `src/datasources/db/v1/cached-query-resolver.ts` mixes both halves in one import statement: `import { type ILoggingService, LoggingService } from '#/logging/logging.interface';` — `ILoggingService` is type-only, `LoggingService` (the DI Symbol) is not. See module-structure.md's "Symbol DI wiring" rule for the token pattern itself.
 
 ```ts
 // Don't — the DI token needs to exist at runtime; type-only strips it
-import type { LoggingService } from '@/logging/logging.interface';
+import type { LoggingService } from '#/logging/logging.interface';
 // Do — the Symbol is a value; only the interface half is type-only
-import { type ILoggingService, LoggingService } from '@/logging/logging.interface';
+import { type ILoggingService, LoggingService } from '#/logging/logging.interface';
 ```
 
 ### `ILoggingService`, never `console.*`

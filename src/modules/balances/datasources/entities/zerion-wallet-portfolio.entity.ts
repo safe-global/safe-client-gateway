@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 /**
  * Schema for the Zerion wallet portfolio endpoint response.
  * Reference: https://api.zerion.io/v1/wallets/{address}/portfolio
@@ -11,7 +12,17 @@ export const ZerionWalletPortfolioTotalSchema = z.object({
 
 export const ZerionWalletPortfolioAttributesSchema = z.object({
   total: ZerionWalletPortfolioTotalSchema,
-  positions_distribution_by_chain: z.record(z.string(), z.number()),
+  // Keys are Zerion network names; lower-cased to match the chain-list mapping.
+  positions_distribution_by_chain: z
+    .record(z.string(), z.number())
+    .transform((byChain) =>
+      Object.fromEntries(
+        Object.entries(byChain).map(([network, value]) => [
+          network.toLowerCase(),
+          value,
+        ]),
+      ),
+    ),
 });
 
 export const ZerionWalletPortfolioDataSchema = z.object({

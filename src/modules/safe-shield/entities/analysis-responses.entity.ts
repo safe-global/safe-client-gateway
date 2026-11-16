@@ -2,8 +2,8 @@
 
 import type { Address } from 'viem';
 import { z } from 'zod';
-import type { RecipientStatus } from '@/modules/safe-shield/entities/recipient-status.entity';
-import { AddressSchema } from '@/validation/entities/schemas/address.schema';
+import type { RecipientStatus } from '#/modules/safe-shield/entities/recipient-status.entity';
+import { AddressSchema } from '#/validation/entities/schemas/address.schema';
 import type { AnalysisResult, CommonStatus } from './analysis-result.entity';
 import {
   type ContractAnalysisResult,

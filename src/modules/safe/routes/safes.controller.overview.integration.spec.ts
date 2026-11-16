@@ -9,24 +9,24 @@ import type { MockedObject } from 'vitest';
 import {
   initTestApplication,
   TestAppProvider,
-} from '@/__tests__/test-app.provider';
-import { createTestModule } from '@/__tests__/testing-module';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import configuration from '@/config/entities/__tests__/configuration';
-import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import { NetworkService } from '@/datasources/network/network.service.interface';
-import { pageBuilder } from '@/domain/entities/__tests__/page.builder';
-import { balanceBuilder } from '@/modules/balances/domain/entities/__tests__/balance.builder';
-import { balanceTokenBuilder } from '@/modules/balances/domain/entities/__tests__/balance.token.builder';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
+} from '#/__tests__/test-app.provider';
+import { createTestModule } from '#/__tests__/testing-module';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import configuration from '#/config/entities/__tests__/configuration';
+import { NetworkResponseError } from '#/datasources/network/entities/network.error.entity';
+import type { INetworkService } from '#/datasources/network/network.service.interface';
+import { NetworkService } from '#/datasources/network/network.service.interface';
+import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
+import { balanceBuilder } from '#/modules/balances/domain/entities/__tests__/balance.builder';
+import { balanceTokenBuilder } from '#/modules/balances/domain/entities/__tests__/balance.token.builder';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
 import {
   multisigTransactionBuilder,
   toJson as multisigTransactionToJson,
-} from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
-import { confirmationBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction-confirmation.builder';
-import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
-import { rawify } from '@/validation/entities/raw.entity';
+} from '#/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
+import { confirmationBuilder } from '#/modules/safe/domain/entities/__tests__/multisig-transaction-confirmation.builder';
+import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
+import { rawify } from '#/validation/entities/raw.entity';
 
 describe('Safes Controller Overview', () => {
   let app: INestApplication<Server>;

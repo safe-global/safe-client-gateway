@@ -1,6 +1,7 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
-import { AppPositionGroupsSchema } from '@/modules/portfolio/domain/entities/app-position.entity';
-import { FiatStringSchema } from '@/modules/portfolio/domain/entities/token-info.entity';
+import { AppPositionGroupsSchema } from '#/modules/portfolio/domain/entities/app-position.entity';
+import { FiatStringSchema } from '#/modules/portfolio/domain/entities/token-info.entity';
 
 export const AppBalanceAppInfoSchema = z.object({
   name: z.string(),

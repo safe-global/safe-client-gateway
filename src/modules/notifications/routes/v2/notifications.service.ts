@@ -2,10 +2,10 @@
 import type { UUID } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
 import type { Address } from 'viem';
-import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import type { UpsertSubscriptionsDto } from '@/modules/notifications/domain/v2/entities/upsert-subscriptions.dto.entity';
-import { INotificationsRepositoryV2 } from '@/modules/notifications/domain/v2/notifications.repository.interface';
-import type { NotificationTypeResponseDto } from '@/modules/notifications/routes/v2/entities/notification-type-response.dto.entity';
+import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import type { UpsertSubscriptionsDto } from '#/modules/notifications/domain/v2/entities/upsert-subscriptions.dto.entity';
+import { INotificationsRepositoryV2 } from '#/modules/notifications/domain/v2/notifications.repository.interface';
+import type { NotificationTypeResponseDto } from '#/modules/notifications/routes/v2/entities/notification-type-response.dto.entity';
 
 @Injectable()
 export class NotificationsServiceV2 {

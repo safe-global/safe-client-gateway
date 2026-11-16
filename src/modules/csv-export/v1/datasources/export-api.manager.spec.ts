@@ -3,12 +3,12 @@
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
-import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import type { IConfigApi } from '@/domain/interfaces/config-api.interface';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { rawify } from '@/validation/entities/raw.entity';
+import type { IConfigurationService } from '#/config/configuration.service.interface';
+import type { CacheFirstDataSource } from '#/datasources/cache/cache.first.data.source';
+import { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
+import type { IConfigApi } from '#/domain/interfaces/config-api.interface';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
+import { rawify } from '#/validation/entities/raw.entity';
 import { ExportApiManager } from './export-api.manager';
 
 const mockConfigurationService = vi.mocked({
@@ -42,10 +42,15 @@ describe('ExportApiManager', () => {
       .build();
 
     mockConfigurationService.getOrThrow.mockImplementation((key) => {
-      if (key === 'safeTransaction.useVpcUrl') return useVpcUrl;
-      if (key === 'expirationTimeInSeconds.default') return faker.number.int();
-      if (key === 'expirationTimeInSeconds.notFound.default')
+      if (key === 'safeTransaction.useVpcUrl') {
+        return useVpcUrl;
+      }
+      if (key === 'expirationTimeInSeconds.default') {
         return faker.number.int();
+      }
+      if (key === 'expirationTimeInSeconds.notFound.default') {
+        return faker.number.int();
+      }
       throw new Error(`Unexpected key: ${key}`);
     });
 

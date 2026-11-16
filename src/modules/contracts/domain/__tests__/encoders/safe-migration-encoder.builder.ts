@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { Hex } from 'viem';
 import { encodeFunctionData } from 'viem';
-import { Builder } from '@/__tests__/builder';
-import type { IEncoder } from '@/__tests__/encoder-builder';
-import SafeMigration from '@/abis/safe/v1.4.1/SafeMigration.abi';
+import { Builder } from '#/__tests__/builder';
+import type { IEncoder } from '#/__tests__/encoder-builder';
+import SafeMigration from '#/abis/safe/v1.4.1/SafeMigration.abi';
 
 // migrateL2Singleton (no args)
 

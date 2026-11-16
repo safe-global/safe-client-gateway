@@ -7,8 +7,8 @@ import {
   Unique,
 } from 'typeorm';
 import { z } from 'zod';
-import { NotificationSubscription } from '@/modules/notifications/datasources/entities/notification-subscription.entity.db';
-import { NotificationType } from '@/modules/notifications/datasources/entities/notification-type.entity.db';
+import { NotificationSubscription } from '#/modules/notifications/datasources/entities/notification-subscription.entity.db';
+import { NotificationType } from '#/modules/notifications/datasources/entities/notification-type.entity.db';
 
 export const NotificationSubscriptionNotificationTypeSchema = z.object({
   id: z.number(),

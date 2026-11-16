@@ -1,23 +1,28 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
 import { Module } from '@nestjs/common';
 import type { Address } from 'viem';
-import type { Page } from '@/domain/entities/page.entity';
-import { TransactionApiManagerModule } from '@/domain/interfaces/transaction-api.manager.interface';
-import { ChainsModule } from '@/modules/chains/chains.module';
-import { ContractsModule } from '@/modules/contracts/contracts.module';
-import { DelegatesV2RepositoryModule } from '@/modules/delegate/domain/v2/delegates.v2.repository.interface';
-import type { CreationTransaction } from '@/modules/safe/domain/entities/creation-transaction.entity';
-import type { ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
-import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
-import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
-import type { SafeList } from '@/modules/safe/domain/entities/safe-list.entity';
-import type { SafesByChainId } from '@/modules/safe/domain/entities/safes-by-chain-id.entity';
-import type { Transaction } from '@/modules/safe/domain/entities/transaction.entity';
-import type { Transfer } from '@/modules/safe/domain/entities/transfer.entity';
-import { SafeRepository } from '@/modules/safe/domain/safe.repository';
-import type { AddConfirmationDto } from '@/modules/transactions/domain/entities/add-confirmation.dto.entity';
-import type { ProposeTransactionDto } from '@/modules/transactions/domain/entities/propose-transaction.dto.entity';
-import { TransactionVerifierHelper } from '@/modules/transactions/routes/helpers/transaction-verifier.helper';
+import { Page } from '#/domain/entities/page.entity';
+import { TransactionApiManagerModule } from '#/domain/interfaces/transaction-api.manager.interface';
+import { ChainsModule } from '#/modules/chains/chains.module';
+import { ContractsModule } from '#/modules/contracts/contracts.module';
+import { DelegatesV3RepositoryModule } from '#/modules/delegate/domain/v3/delegates.v3.repository.interface';
+import type { ChainMultisigTransaction } from '#/modules/safe/domain/entities/chain-multisig-transaction.entity';
+import type { ChainSafe } from '#/modules/safe/domain/entities/chain-safe.entity';
+import { CreationTransaction } from '#/modules/safe/domain/entities/creation-transaction.entity';
+import { ModuleTransaction } from '#/modules/safe/domain/entities/module-transaction.entity';
+import { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
+import { Safe } from '#/modules/safe/domain/entities/safe.entity';
+import { SafeList } from '#/modules/safe/domain/entities/safe-list.entity';
+import { SafesByChainId } from '#/modules/safe/domain/entities/safes-by-chain-id.entity';
+import { Transaction } from '#/modules/safe/domain/entities/transaction.entity';
+import { Transfer } from '#/modules/safe/domain/entities/transfer.entity';
+import { SafeRepository } from '#/modules/safe/domain/safe.repository';
+import { SafeQueueModule } from '#/modules/safe-queue/safe-queue.module';
+import { SpaceSafesRepositoryModule } from '#/modules/spaces/domain/safes/space-safes-repository.module';
+import { AddConfirmationDto } from '#/modules/transactions/domain/entities/add-confirmation.dto.entity';
+import { ProposeTransactionDto } from '#/modules/transactions/domain/entities/propose-transaction.dto.entity';
+import { TransactionVerifierHelper } from '#/modules/transactions/routes/helpers/transaction-verifier.helper';
 
 export const ISafeRepository = Symbol('ISafeRepository');
 
@@ -107,6 +112,18 @@ export interface ISafeRepository {
   }): Promise<Page<MultisigTransaction>>;
 
   /**
+   * Returns the merged queue of several Safes, ordered by nonce, each
+   * transaction paired with its chain. Served by the Queue Service only: the
+   * Transaction Service cannot list many Safes in one request.
+   */
+  getTransactionQueueForSafes(args: {
+    spaceId: number;
+    safes: ReadonlyArray<ChainSafe>;
+    limit: number;
+    offset: number;
+  }): Promise<Page<ChainMultisigTransaction>>;
+
+  /**
    * Returns the Safe Transaction Queue sorted by modified status.
    * (from most recently modified to last)
    */
@@ -116,6 +133,16 @@ export interface ISafeRepository {
     limit?: number;
     offset?: number;
   }): Promise<Page<MultisigTransaction>>;
+
+  /**
+   * The largest `limit` a {@link getTransactionQueue} page can request.
+   *
+   * Depends on which upstream service is answering the read - the Queue
+   * Service and the Transaction Service accept different maximums - so a
+   * caller that wants every page at the largest possible page size asks the
+   * repository.
+   */
+  getTransactionQueueMaxPageSize(): number;
 
   getCreationTransaction(args: {
     chainId: string;
@@ -149,6 +176,12 @@ export interface ISafeRepository {
     safeAddress: Address;
   }): Promise<void>;
 
+  /** The queue of every Space holding the Safe. */
+  clearSpaceTransactionQueues(args: {
+    chainId: string;
+    address: Address;
+  }): Promise<void>;
+
   getMultisigTransactions(args: {
     chainId: string;
     safeAddress: Address;
@@ -174,6 +207,12 @@ export interface ISafeRepository {
     chainId: string;
     safeAddress: Address;
     limit?: number;
+    offset?: number;
+    to?: Address;
+    from?: Address;
+    tokenAddress?: Address;
+    executionDateGte?: string;
+    executionDateLte?: string;
   }): Promise<Page<Transfer>>;
 
   getSafesByOwner(args: {
@@ -228,8 +267,10 @@ export interface ISafeRepository {
   imports: [
     ChainsModule,
     TransactionApiManagerModule,
-    DelegatesV2RepositoryModule,
+    DelegatesV3RepositoryModule,
     ContractsModule,
+    SafeQueueModule,
+    SpaceSafesRepositoryModule,
   ],
   providers: [
     {

@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { ChainApiManager } from '@/datasources/common/chain-api.manager';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { ChainApiManager } from '#/datasources/common/chain-api.manager';
+import { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
 import {
   type INetworkService,
   NetworkService,
-} from '@/datasources/network/network.service.interface';
-import type { ISwapsApiFactory } from '@/domain/interfaces/swaps-api.factory';
-import type { ISwapsApi } from '@/domain/interfaces/swaps-api.interface';
-import { CowSwapApi } from '@/modules/swaps/datasources/cowswap-api.service';
+} from '#/datasources/network/network.service.interface';
+import type { ISwapsApiFactory } from '#/domain/interfaces/swaps-api.factory';
+import type { ISwapsApi } from '#/domain/interfaces/swaps-api.interface';
+import { CowSwapApi } from '#/modules/swaps/datasources/cowswap-api.service';
 
 @Injectable()
 export class SwapsApiFactory

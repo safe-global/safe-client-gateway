@@ -6,7 +6,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import type { FastifyReply } from 'fastify';
-import { EventProtocolChangedError } from '@/modules/hooks/routes/errors/event-protocol-changed.error';
+import { EventProtocolChangedError } from '#/modules/hooks/routes/errors/event-protocol-changed.error';
 
 @Catch(EventProtocolChangedError)
 export class EventProtocolChangedFilter implements ExceptionFilter {

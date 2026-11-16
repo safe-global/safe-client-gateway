@@ -4,15 +4,16 @@ import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
 import { ZodError } from 'zod';
-import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
-import { CacheRouter } from '@/datasources/cache/cache.router';
-import type { ICacheService } from '@/datasources/cache/cache.service.interface';
-import type { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import { LimitReachedError } from '@/datasources/network/entities/errors/limit-reached.error';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import type { ILoggingService } from '@/logging/logging.interface';
-import { ZerionWalletPortfolioApi } from '@/modules/balances/datasources/zerion-wallet-portfolio-api.service';
-import type { ZerionRateLimiter } from '@/modules/zerion/datasources/zerion-rate-limiter.service';
+import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
+import { CacheRouter } from '#/datasources/cache/cache.router';
+import type { ICacheService } from '#/datasources/cache/cache.service.interface';
+import type { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
+import { LimitReachedError } from '#/datasources/network/entities/errors/limit-reached.error';
+import type { INetworkService } from '#/datasources/network/network.service.interface';
+import type { ILoggingService } from '#/logging/logging.interface';
+import { ZerionWalletPortfolioApi } from '#/modules/balances/datasources/zerion-wallet-portfolio-api.service';
+import type { ZerionRateLimiter } from '#/modules/zerion/datasources/zerion-rate-limiter.service';
+import { rawify } from '#/validation/entities/raw.entity';
 
 const mockNetworkService = vi.mocked({
   get: vi.fn(),
@@ -104,7 +105,10 @@ describe('ZerionWalletPortfolioApi', () => {
   it('fetches, validates, and caches on a cache miss', async () => {
     const response = buildPortfolioResponse({ ethereum: 42, polygon: 8 });
     mockCacheService.hGet.mockResolvedValue(null);
-    mockNetworkService.get.mockResolvedValue({ data: response, status: 200 });
+    mockNetworkService.get.mockResolvedValue({
+      data: rawify(response),
+      status: 200,
+    });
 
     const result = await service.getPortfolio({
       address,
@@ -146,7 +150,7 @@ describe('ZerionWalletPortfolioApi', () => {
   it('throws ZodError on a malformed fresh 200 (never cached)', async () => {
     mockCacheService.hGet.mockResolvedValue(null);
     mockNetworkService.get.mockResolvedValue({
-      data: { data: { type: 'portfolio' } },
+      data: rawify({ data: { type: 'portfolio' } }),
       status: 200,
     });
 
@@ -159,7 +163,7 @@ describe('ZerionWalletPortfolioApi', () => {
   it('sends the testnet header and trash filter for testnet + trusted', async () => {
     mockCacheService.hGet.mockResolvedValue(null);
     mockNetworkService.get.mockResolvedValue({
-      data: buildPortfolioResponse({ ethereum: 1 }),
+      data: rawify(buildPortfolioResponse({ ethereum: 1 })),
       status: 200,
     });
 

@@ -10,9 +10,6 @@ process.env.EMAIL_API_FROM_EMAIL = 'changeme@example.com';
 process.env.EMAIL_API_KEY = 'fake-api-key';
 process.env.FINGERPRINT_ENCRYPTION_KEY = 'fake-encryption-key';
 process.env.INFURA_API_KEY = 'fake-api-key';
-process.env.BLOCKLIST_ENCRYPTED_DATA = 'fake-encrypted-data';
-process.env.BLOCKLIST_SECRET_KEY = 'fake-secret-key';
-process.env.BLOCKLIST_SECRET_SALT = 'fake-secret-salt';
 
 // For E2E tests, connect to the test database
 // `||=` so a pre-set env (e.g. from .env.test pointing at host.docker.internal)
@@ -31,8 +28,7 @@ process.env.REDIS_PORT ||= '6379';
 
 // For E2E tests, connect to the test AMQP server
 process.env.AMQP_URL ||= 'amqp://localhost:5672';
-process.env.AMQP_EXCHANGE_NAME = 'test-exchange';
-process.env.AMQP_EXCHANGE_MODE = 'fanout';
+process.env.AMQP_EXCHANGE_NAME = 'test-exchange-with-topics';
 process.env.AMQP_QUEUE = 'test-queue';
 process.env.AMQP_PREFETCH = '100';
 

@@ -5,20 +5,20 @@ import type { ConfigService } from '@nestjs/config';
 import { DataSource } from 'typeorm';
 import { type Address, getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import configuration from '@/config/entities/__tests__/configuration';
-import { postgresConfig } from '@/config/entities/postgres.config';
-import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { getStringEnumKeys } from '@/domain/common/utils/enum';
-import type { ILoggingService } from '@/logging/logging.interface';
-import { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
-import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
-import { Member } from '@/modules/users/datasources/entities/member.entity.db';
-import { User } from '@/modules/users/datasources/entities/users.entity.db';
-import { UserStatus } from '@/modules/users/domain/entities/user.entity';
-import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
-import { createMockWalletEncryptionService } from '@/modules/wallets/domain/__tests__/wallet-encryption.service.mock';
-import { WalletsRepository } from '@/modules/wallets/domain/wallets.repository';
+import configuration from '#/config/entities/__tests__/configuration';
+import { postgresConfig } from '#/config/entities/postgres.config';
+import { DatabaseMigrator } from '#/datasources/db/v2/database-migrator.service';
+import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
+import { getStringEnumKeys } from '#/domain/common/utils/enum';
+import type { ILoggingService } from '#/logging/logging.interface';
+import { SpaceSafe } from '#/modules/spaces/datasources/safes/entities/space-safes.entity.db';
+import { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
+import { Member } from '#/modules/users/datasources/entities/member.entity.db';
+import { User } from '#/modules/users/datasources/entities/users.entity.db';
+import { UserStatus } from '#/modules/users/domain/entities/user.entity';
+import { Wallet } from '#/modules/wallets/datasources/entities/wallets.entity.db';
+import { createMockWalletEncryptionService } from '#/modules/wallets/domain/__tests__/wallet-encryption.service.mock';
+import { WalletsRepository } from '#/modules/wallets/domain/wallets.repository';
 
 const mockLoggingService = {
   debug: vi.fn(),

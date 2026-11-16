@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
-import { getStringEnumKeys } from '@/domain/common/utils/enum';
+import { getStringEnumKeys } from '#/domain/common/utils/enum';
 
 /**
  * Analysis result severity levels for Safe Shield security analysis.

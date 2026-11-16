@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 export enum LogType {
   AwsCloudStorageUpload = 'AWS_S3_UPLOAD',
-  BlocklistHit = 'BLOCKLIST_HIT',
   CacheError = 'CACHE_ERROR',
   CacheEvent = 'CACHE_EVENT',
   CacheHit = 'CACHE_HIT',
@@ -19,6 +18,8 @@ export enum LogType {
   ExternalRequestCacheError = 'EXTERNAL_REQUEST_CACHE_ERROR',
   ExternalRequestCacheHit = 'EXTERNAL_REQUEST_CACHE_HIT',
   ExternalRequestCacheMiss = 'EXTERNAL_REQUEST_CACHE_MISS',
+  FeatureNotGranted = 'FEATURE_NOT_GRANTED',
+  HookEventInvalid = 'HOOK_EVENT_INVALID',
   InvalidIp = 'INVALID_IP',
   JobError = 'JOB_ERROR',
   JobEvent = 'JOB_EVENT',
@@ -33,6 +34,9 @@ export enum LogType {
   NotificationSpamTokenDropped = 'NOTIFICATION_SPAM_TOKEN_DROPPED',
   PortfolioDegradedServe = 'PORTFOLIO_DEGRADED_SERVE',
   PortfolioRequestError = 'PORTFOLIO_REQUEST_ERROR',
+  QuotaExceeded = 'QUOTA_EXCEEDED',
+  QuotaNotRefunded = 'QUOTA_NOT_REFUNDED',
+  SafeQueueServiceBatchChunkError = 'SAFE_QUEUE_SERVICE_BATCH_CHUNK_ERROR',
   RateLimit = 'RATE_LIMIT',
   TxRelayEligibility = 'TX_RELAY_ELIGIBILITY',
   TransactionPropose = 'TRANSACTION_PROPOSE',
@@ -40,4 +44,5 @@ export enum LogType {
   TxnExportFetchRequest = 'TRANSACTION_EXPORT_FETCH_REQUEST',
   TxnExportFetchRequestError = 'TRANSACTION_EXPORT_FETCH_REQUEST_ERROR',
   ZerionCacheInvalidated = 'ZERION_CACHE_INVALIDATED',
+  ZerionChainListError = 'ZERION_CHAIN_LIST_ERROR',
 }

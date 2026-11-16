@@ -5,11 +5,11 @@ import { InternalServerErrorException } from '@nestjs/common';
 import type postgres from 'postgres';
 import type { MaybeRow } from 'postgres';
 import type { MockedObject } from 'vitest';
-import { fakeJson } from '@/__tests__/faker';
-import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
-import { CachedQueryResolver } from '@/datasources/db/v1/cached-query-resolver';
-import { LogType } from '@/domain/common/entities/log-type.entity';
-import type { ILoggingService } from '@/logging/logging.interface';
+import { fakeJson } from '#/__tests__/faker';
+import { FakeCacheService } from '#/datasources/cache/__tests__/fake.cache.service';
+import { CachedQueryResolver } from '#/datasources/db/v1/cached-query-resolver';
+import { LogType } from '#/domain/common/entities/log-type.entity';
+import type { ILoggingService } from '#/logging/logging.interface';
 
 const mockLoggingService = vi.mocked({
   debug: vi.fn(),

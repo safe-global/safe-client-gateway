@@ -3,16 +3,16 @@
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
-import type { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
-import type { ICacheService } from '@/datasources/cache/cache.service.interface';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import type { IConfigApi } from '@/domain/interfaces/config-api.interface';
-import { BalancesApiManager } from '@/modules/balances/datasources/balances-api.manager';
-import type { IPricesApi } from '@/modules/balances/datasources/prices-api.interface';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { rawify } from '@/validation/entities/raw.entity';
+import type { IConfigurationService } from '#/config/configuration.service.interface';
+import type { CacheFirstDataSource } from '#/datasources/cache/cache.first.data.source';
+import type { ICacheService } from '#/datasources/cache/cache.service.interface';
+import { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
+import type { INetworkService } from '#/datasources/network/network.service.interface';
+import type { IConfigApi } from '#/domain/interfaces/config-api.interface';
+import { BalancesApiManager } from '#/modules/balances/datasources/balances-api.manager';
+import type { IPricesApi } from '#/modules/balances/datasources/prices-api.interface';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
+import { rawify } from '#/validation/entities/raw.entity';
 
 const configurationService = {
   getOrThrow: vi.fn(),
@@ -61,10 +61,16 @@ const fiatCodes = Array.from(
 beforeEach(() => {
   vi.resetAllMocks();
   configurationServiceMock.getOrThrow.mockImplementation((key) => {
-    if (key === 'safeTransaction.useVpcUrl') return false;
-    if (key === 'balances.providers.zerion.currencies') return fiatCodes;
+    if (key === 'safeTransaction.useVpcUrl') {
+      return false;
+    }
+    if (key === 'balances.providers.zerion.currencies') {
+      return fiatCodes;
+    }
     // TODO: Remove after Vault decoding has been released
-    if (key === 'application.isProduction') return true;
+    if (key === 'application.isProduction') {
+      return true;
+    }
   });
 });
 
@@ -121,14 +127,22 @@ describe('Balances API Manager Tests', () => {
       const expirationTimeInSeconds = faker.number.int();
       const notFoundExpireTimeSeconds = faker.number.int();
       configurationServiceMock.getOrThrow.mockImplementation((key) => {
-        if (key === 'safeTransaction.useVpcUrl') return useVpcUrl;
-        if (key === 'balances.providers.zerion.currencies') return fiatCodes;
-        if (key === 'expirationTimeInSeconds.default')
+        if (key === 'safeTransaction.useVpcUrl') {
+          return useVpcUrl;
+        }
+        if (key === 'balances.providers.zerion.currencies') {
+          return fiatCodes;
+        }
+        if (key === 'expirationTimeInSeconds.default') {
           return expirationTimeInSeconds;
-        if (key === 'expirationTimeInSeconds.notFound.default')
+        }
+        if (key === 'expirationTimeInSeconds.notFound.default') {
           return notFoundExpireTimeSeconds;
+        }
         // TODO: Remove after Vault decoding has been released
-        if (key === 'application.isProduction') return true;
+        if (key === 'application.isProduction') {
+          return true;
+        }
         throw new Error(`Unexpected key: ${key}`);
       });
       configApiMock.getChain.mockResolvedValue(rawify(chain));

@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
-import type { IBuilder } from '@/__tests__/builder';
-import { Builder } from '@/__tests__/builder';
-import type { CreationTransaction } from '@/modules/safe/domain/entities/creation-transaction.entity';
+import type { IBuilder } from '#/__tests__/builder';
+import { Builder } from '#/__tests__/builder';
+import type { CreationTransaction } from '#/modules/safe/domain/entities/creation-transaction.entity';
 
 export function creationTransactionBuilder(): IBuilder<CreationTransaction> {
   return new Builder<CreationTransaction>()

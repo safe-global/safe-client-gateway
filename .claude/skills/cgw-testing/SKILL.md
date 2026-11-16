@@ -16,7 +16,7 @@ Two rules that break things immediately if missed:
    await initTestApplication(app);
    ```
 
-   from `@/__tests__/test-app.provider`. A supertest request after bare `init()` crashes inside Fastify's hook runner and hangs until timeout.
+   from `#/__tests__/test-app.provider`. A supertest request after bare `init()` crashes inside Fastify's hook runner and hangs until timeout.
 
 2. **Test data comes from builders + faker.** No literal fixtures. Enum members, taxonomy strings, and assertion-boundary values are the exception.
 

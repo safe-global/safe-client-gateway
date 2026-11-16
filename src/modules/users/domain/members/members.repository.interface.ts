@@ -6,15 +6,17 @@ import type {
   FindOptionsRelations,
   FindOptionsWhere,
 } from 'typeorm';
-import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import type { Space } from '@/modules/spaces/domain/entities/space.entity';
-import type { InviteUserInput } from '@/modules/spaces/routes/members/entities/invite-users.dto.entity';
-import type { Member as DbMember } from '@/modules/users/datasources/entities/member.entity.db';
-import type { Invitation } from '@/modules/users/domain/entities/invitation.entity';
-import type { Member } from '@/modules/users/domain/entities/member.entity';
-import type { User } from '@/modules/users/domain/entities/user.entity';
+import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import type { Space } from '#/modules/spaces/domain/entities/space.entity';
+import type { Member as DbMember } from '#/modules/users/datasources/entities/member.entity.db';
+import type { Invitation } from '#/modules/users/domain/entities/invitation.entity';
+import type { InviteUserInput } from '#/modules/users/domain/entities/invite-user.entity';
+import type { Member } from '#/modules/users/domain/entities/member.entity';
+import type { User } from '#/modules/users/domain/entities/user.entity';
 
 export const IMembersRepository = Symbol('IMembersRepository');
+
+export type PendingInvitePolicy = 'renew' | 'refuse';
 
 export interface IMembersRepository {
   findOneOrFail(
@@ -33,11 +35,6 @@ export interface IMembersRepository {
 
   find(args?: FindManyOptions<DbMember>): Promise<Array<DbMember>>;
 
-  findActiveAdmin(args: {
-    userId: User['id'];
-    spaceId: Space['id'];
-  }): Promise<DbMember | null>;
-
   /**
    * Invites users to a space until the provided expiry date.
    * Existing invited members are renewed: the stored invite data is
@@ -46,24 +43,29 @@ export interface IMembersRepository {
    * Active and declined members cannot be (re-)invited.
    */
   inviteUsers(args: {
-    authPayload: AuthPayload;
+    /** Recorded as the inviter; authorized by the caller. */
+    actorUserId: User['id'];
     spaceId: Space['id'];
     users: Array<InviteUserInput>;
     inviteExpiresAt: Date;
+    /** `refuse` answers a pending invite as a duplicate instead of renewing it. Default `renew`. */
+    onPendingInvite?: PendingInvitePolicy;
   }): Promise<Array<Invitation>>;
 
   /**
    * Refreshes the expiry of an existing invite. Callers are responsible for
    * loading the member and enforcing that it is still pending.
+   * Returns false, writing nothing, if the member row changed after notRenewedSince.
    */
   renewInvite(args: {
     memberId: Member['id'];
     inviteExpiresAt: Date;
+    notRenewedSince: Date;
     spaceId: Space['id'];
     spaceUuid: UUID;
     targetUserId: User['id'];
     actorUserId: User['id'];
-  }): Promise<void>;
+  }): Promise<boolean>;
 
   /**
    * Accepts a pending space invite for the authenticated user.
@@ -95,7 +97,7 @@ export interface IMembersRepository {
   }): Promise<Member>;
 
   updateRole(args: {
-    authPayload: AuthPayload;
+    actorUserId: User['id'];
     spaceId: Space['id'];
     userId: User['id'];
     role: Member['role'];
@@ -108,7 +110,7 @@ export interface IMembersRepository {
   }): Promise<void>;
 
   removeUser(args: {
-    authPayload: AuthPayload;
+    actorUserId: User['id'];
     spaceId: Space['id'];
     userId: User['id'];
   }): Promise<void>;

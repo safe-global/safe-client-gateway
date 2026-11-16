@@ -2,44 +2,116 @@
 
 import { Inject, Injectable } from '@nestjs/common';
 import { groupBy, mapValues } from 'lodash';
-import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
-import type { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
-import type { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
-import { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
-import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
-import type { CreateSpaceSafeDto } from '@/modules/spaces/routes/safes/entities/create-space-safe.dto.entity';
-import type { DeleteSpaceSafeDto } from '@/modules/spaces/routes/safes/entities/delete-space-safe.dto.entity';
-import type { GetSpaceSafeResponse } from '@/modules/spaces/routes/safes/entities/get-space-safe.dto.entity';
+import { Equal } from 'typeorm';
+import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
+import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import { getAuthenticatedUserIdOrFail } from '#/modules/auth/utils/assert-authenticated.utils';
+import { IEntitlementEnforcement } from '#/modules/entitlements/domain/entitlement-enforcement.interface';
+import type { SpaceSafe } from '#/modules/spaces/datasources/safes/entities/space-safes.entity.db';
+import type { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
+import { IAddressBookItemsRepository } from '#/modules/spaces/domain/address-books/address-book-items.repository.interface';
+import { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository.interface';
 import {
   assertAdmin,
   assertMember,
-} from '@/modules/spaces/routes/utils/space-assert.utils';
-import { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
+} from '#/modules/spaces/domain/space-assert.utils';
+import type {
+  CreateSpaceSafeDto,
+  CreateSpaceSafesDto,
+} from '#/modules/spaces/routes/safes/entities/create-space-safe.dto.entity';
+import type { DeleteSpaceSafeDto } from '#/modules/spaces/routes/safes/entities/delete-space-safe.dto.entity';
+import type { GetSpaceSafeResponse } from '#/modules/spaces/routes/safes/entities/get-space-safe.dto.entity';
+import type { GetSpacesSafesResponse } from '#/modules/spaces/routes/safes/entities/get-spaces-safes.dto.entity';
+import { IMembersRepository } from '#/modules/users/domain/members/members.repository.interface';
 
 @Injectable()
 export class SpaceSafesService {
   public constructor(
     @Inject(ISpaceSafesRepository)
     private readonly spaceSafesRepository: ISpaceSafesRepository,
-    @Inject(ISpacesRepository)
-    private readonly spacesRepository: ISpacesRepository,
     @Inject(IMembersRepository)
     private readonly membersRepository: IMembersRepository,
+    @Inject(IEntitlementEnforcement)
+    private readonly entitlementEnforcement: IEntitlementEnforcement,
+    @Inject(PostgresDatabaseService)
+    private readonly postgresDatabaseService: PostgresDatabaseService,
+    @Inject(IAddressBookItemsRepository)
+    private readonly addressBookItemsRepository: IAddressBookItemsRepository,
   ) {}
 
   public async create(args: {
     spaceId: Space['id'];
     authPayload: AuthPayload;
     payload: Array<CreateSpaceSafeDto>;
+    addressBookItems?: CreateSpaceSafesDto['addressBookItems'];
   }): Promise<void> {
     const userId = getAuthenticatedUserIdOrFail(args.authPayload);
-    await assertAdmin(this.spacesRepository, args.spaceId, userId);
+    await assertAdmin(this.membersRepository, args.spaceId, userId);
 
-    return await this.spaceSafesRepository.create({
+    await this.addSafes({
       spaceId: args.spaceId,
       actorUserId: userId,
       payload: args.payload,
+      addressBookItems: args.addressBookItems,
+    });
+  }
+
+  /**
+   * Adds Safes, and contacts for them, on behalf of `actorUserId`. Authorizes
+   * nothing: the caller has, as {@link create} does for a request, or the
+   * Workspace setup does for its creator.
+   */
+  public async addSafes(args: {
+    spaceId: Space['id'];
+    actorUserId: number;
+    payload: Array<CreateSpaceSafeDto>;
+    addressBookItems?: CreateSpaceSafesDto['addressBookItems'];
+  }): Promise<void> {
+    // The use case owns the transaction, so the seat check and the insert it
+    // admits share one. What each step needs is resolved before it opens:
+    // the plan (cache and database reads) and the ciphertext (a KMS round-trip
+    // per Safe). Only the names are encrypted inside, so they commit with the Safes.
+    const assertSeats = await this.entitlementEnforcement.prepareQuotaCheck({
+      spaceId: args.spaceId,
+      featureKey: 'safe_seats',
+    });
+    const rows = await this.spaceSafesRepository.encryptRows(
+      args.spaceId,
+      args.payload,
+    );
+
+    await this.postgresDatabaseService.transaction(async (entityManager) => {
+      await this.spaceSafesRepository.lockSeats(args.spaceId, entityManager);
+      // The delta is 0 for a chain of a Safe already held, so a Workspace at
+      // its seat limit admits it. Sequential: both queries run on the one
+      // connection the transaction holds.
+      assertSeats({
+        used: await this.spaceSafesRepository.countSeatsBySpaceId(
+          args.spaceId,
+          entityManager,
+        ),
+        delta: await this.spaceSafesRepository.countNewSeats(
+          {
+            spaceId: args.spaceId,
+            addresses: args.payload.map(({ address }) => address),
+          },
+          entityManager,
+        ),
+      });
+      await this.spaceSafesRepository.insertRows({
+        spaceId: args.spaceId,
+        actorUserId: args.actorUserId,
+        rows,
+        entityManager,
+      });
+      if (args.addressBookItems && args.addressBookItems.length > 0) {
+        await this.addressBookItemsRepository.upsertMany({
+          userId: args.actorUserId,
+          spaceId: args.spaceId,
+          addressBookItems: args.addressBookItems,
+          entityManager,
+        });
+      }
     });
   }
 
@@ -57,13 +129,35 @@ export class SpaceSafesService {
     };
   }
 
+  public async getAll(
+    authPayload: AuthPayload,
+  ): Promise<Array<GetSpacesSafesResponse>> {
+    const userId = getAuthenticatedUserIdOrFail(authPayload);
+
+    const members = await this.membersRepository.find({
+      select: { id: true, space: { id: true, uuid: true } },
+      where: { user: Equal(userId), status: 'ACTIVE' },
+      relations: { space: true },
+    });
+    const spaceSafesBySpaceId = await this.spaceSafesRepository.findBySpaceIds(
+      members.map(({ space }) => space.id),
+    );
+
+    return members.map(({ space }) => ({
+      spaceUuid: space.uuid,
+      safes: this.transformSpaceSafesResponse(
+        spaceSafesBySpaceId.get(space.id) ?? [],
+      ),
+    }));
+  }
+
   public async delete(args: {
     spaceId: Space['id'];
     authPayload: AuthPayload;
     payload: Array<DeleteSpaceSafeDto>;
   }): Promise<void> {
     const userId = getAuthenticatedUserIdOrFail(args.authPayload);
-    await assertAdmin(this.spacesRepository, args.spaceId, userId);
+    await assertAdmin(this.membersRepository, args.spaceId, userId);
 
     await this.spaceSafesRepository.delete({
       spaceId: args.spaceId,

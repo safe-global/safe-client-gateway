@@ -11,12 +11,12 @@ import {
   getAddress,
   toHex,
 } from 'viem';
-import { Builder } from '@/__tests__/builder';
-import type { IEncoder } from '@/__tests__/encoder-builder';
+import { Builder } from '#/__tests__/builder';
+import type { IEncoder } from '#/__tests__/encoder-builder';
 import {
   KilnAbi,
   KilnDecoder,
-} from '@/modules/staking/domain/contracts/decoders/kiln-decoder.helper';
+} from '#/modules/staking/domain/contracts/decoders/kiln-decoder.helper';
 
 // deposit
 

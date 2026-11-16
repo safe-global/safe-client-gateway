@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import type { RelayTaskStatus as DomainRelayTaskStatus } from '@/modules/relay/domain/entities/relay-task-status.entity';
+import type { RelayTaskStatus as DomainRelayTaskStatus } from '#/modules/relay/domain/entities/relay-task-status.entity';
 
 class RelayTaskStatusReceipt {
   @ApiProperty({

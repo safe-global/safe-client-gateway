@@ -1,0 +1,378 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
+import type { Address, Hex } from 'viem';
+import {
+  type ActivePolicy,
+  type ActivePolicyData,
+  type CosignerPolicyData,
+  type Erc20TransferPolicyData,
+  type Erc20TransferRecipient,
+  type PolicyPermission,
+  PolicyPermissionSchema,
+  type ProposerPolicyData,
+  type SpendingLimitAllowance,
+  type SpendingLimitPolicyData,
+  type StatelessPolicyData,
+} from '#/modules/policies/domain/entities/active-policy.entity';
+import type {
+  GuardEnforcement,
+  GuardSlots,
+  ModuleEnforcement,
+  OffChainEnforcement,
+  PolicyAccess,
+  PolicyContracts,
+  PolicyEnforcement,
+} from '#/modules/policies/domain/entities/policy-enforcement.entity';
+import { PolicyOperation } from '#/modules/policies/domain/entities/policy-operation.entity';
+import {
+  PolicyEnforcementKind,
+  PolicyType,
+} from '#/modules/policies/domain/entities/policy-type.entity';
+import type { Token } from '#/modules/policies/domain/entities/token.entity';
+import type {
+  Erc20Token,
+  NativeToken,
+} from '#/modules/tokens/domain/entities/token.entity';
+
+/**
+ * Which Safe an item belongs to.
+ */
+export type SafeRefResponse = { chainId: string; address: Address };
+
+export class SafeRefDto implements SafeRefResponse {
+  @ApiProperty()
+  public readonly chainId!: string;
+  @ApiProperty({ type: String })
+  public readonly address!: Address;
+}
+
+export class PolicyContractsDto implements PolicyContracts {
+  @ApiProperty({
+    type: String,
+    description: 'The policy implementation the guard delegates to',
+  })
+  public readonly policyContract!: Address;
+  @ApiProperty({
+    type: String,
+    description: 'The SafePolicyGuard deployment',
+  })
+  public readonly safePolicyGuard!: Address;
+}
+
+export class GuardSlotsDto implements GuardSlots {
+  @ApiProperty({ type: PolicyContractsDto, required: false })
+  public readonly transactionGuard?: PolicyContracts;
+  @ApiProperty({ type: PolicyContractsDto, required: false })
+  public readonly moduleGuard?: PolicyContracts;
+}
+
+export class ModuleEnforcementDto implements ModuleEnforcement {
+  @ApiProperty({ enum: [PolicyEnforcementKind.Module] })
+  public readonly via!: typeof PolicyEnforcementKind.Module;
+  @ApiProperty({
+    type: String,
+    description: 'The module enforcing the policy',
+  })
+  public readonly moduleAddress!: Address;
+}
+
+export class PolicyAccessDto implements PolicyAccess {
+  @ApiProperty({
+    type: String,
+    description: 'The contract the governed calls target',
+  })
+  public readonly target!: Address;
+  @ApiProperty({
+    type: String,
+    description: 'The 4-byte function selector of the governed calls',
+  })
+  public readonly selector!: Hex;
+  @ApiProperty({ enum: Object.values(PolicyOperation) })
+  public readonly operation!: PolicyOperation;
+}
+
+export class GuardEnforcementDto implements GuardEnforcement {
+  @ApiProperty({ enum: [PolicyEnforcementKind.Guard] })
+  public readonly via!: typeof PolicyEnforcementKind.Guard;
+  @ApiProperty({ type: GuardSlotsDto })
+  public readonly guards!: GuardSlots;
+  @ApiProperty({
+    type: PolicyAccessDto,
+    description: 'The calls the guard applies the policy to',
+  })
+  public readonly access!: PolicyAccess;
+}
+
+export class OffChainEnforcementDto implements OffChainEnforcement {
+  @ApiProperty({
+    enum: [PolicyEnforcementKind.OffChain],
+    description:
+      'Nothing on chain enforces the policy, so it is access rather than an audited restriction',
+  })
+  public readonly via!: typeof PolicyEnforcementKind.OffChain;
+  @ApiProperty({ enum: ['delegates'], description: 'Where the grant is held' })
+  public readonly source!: 'delegates';
+}
+
+const EnforcementSchema = {
+  oneOf: [
+    { $ref: getSchemaPath(ModuleEnforcementDto) },
+    { $ref: getSchemaPath(GuardEnforcementDto) },
+    { $ref: getSchemaPath(OffChainEnforcementDto) },
+  ],
+  discriminator: {
+    propertyName: 'via',
+    mapping: {
+      [PolicyEnforcementKind.Module]: getSchemaPath(ModuleEnforcementDto),
+      [PolicyEnforcementKind.Guard]: getSchemaPath(GuardEnforcementDto),
+      [PolicyEnforcementKind.OffChain]: getSchemaPath(OffChainEnforcementDto),
+    },
+  },
+};
+
+/**
+ * Mirrors the token module's own `BaseTokenMetadata`/`*TokenMetadata` DTOs
+ * (`src/modules/tokens/routes/entities/token.dto.entity.ts`) - not imported
+ * from there directly, since a module reaches another only through its
+ * `domain/` (see `docs/agents/module-structure.md`).
+ */
+class BaseTokenMetadataDto {
+  @ApiProperty({ type: String })
+  public readonly address!: Address;
+  @ApiProperty()
+  public readonly decimals!: number;
+  @ApiProperty()
+  public readonly logoUri!: string;
+  @ApiProperty()
+  public readonly name!: string;
+  @ApiProperty()
+  public readonly symbol!: string;
+  @ApiProperty({
+    description:
+      'Whether the Transaction Service lists the token in one of its imported token lists',
+  })
+  public readonly trusted!: boolean;
+}
+
+export class NativeTokenMetadataDto
+  extends BaseTokenMetadataDto
+  implements NativeToken
+{
+  @ApiProperty({ enum: ['NATIVE_TOKEN'] })
+  public readonly type!: 'NATIVE_TOKEN';
+}
+
+export class Erc20TokenMetadataDto
+  extends BaseTokenMetadataDto
+  implements Erc20Token
+{
+  @ApiProperty({ enum: ['ERC20'] })
+  public readonly type!: 'ERC20';
+}
+
+/** ERC721 never applies: a spending limit is always a fungible amount. */
+export const SpendingLimitTokenMetadataSchema = {
+  oneOf: [
+    { $ref: getSchemaPath(NativeTokenMetadataDto) },
+    { $ref: getSchemaPath(Erc20TokenMetadataDto) },
+  ],
+  discriminator: {
+    propertyName: 'type',
+    mapping: {
+      NATIVE_TOKEN: getSchemaPath(NativeTokenMetadataDto),
+      ERC20: getSchemaPath(Erc20TokenMetadataDto),
+    },
+  },
+};
+
+@ApiExtraModels(NativeTokenMetadataDto, Erc20TokenMetadataDto)
+export class SpendingLimitAllowanceDto implements SpendingLimitAllowance {
+  @ApiProperty({
+    type: String,
+    description: 'The token the limit applies to; zero address for native',
+  })
+  public readonly tokenAddress!: Address;
+  @ApiProperty({
+    ...SpendingLimitTokenMetadataSchema,
+    nullable: true,
+    description:
+      'Metadata of `tokenAddress`; null when it could not be resolved',
+  })
+  public readonly tokenMetadata!: Token | null;
+  @ApiProperty({ description: 'Per-window ceiling, in base units' })
+  public readonly amount!: string;
+  @ApiProperty({ description: 'Spent in the current window, in base units' })
+  public readonly spent!: string;
+  @ApiProperty({ description: 'Window length in minutes; 0 never resets' })
+  public readonly resetPeriodMinutes!: number;
+  @ApiProperty({
+    type: Number,
+    nullable: true,
+    description:
+      'Minutes since the epoch of the next reset, the unit the module counts windows in; null when it never resets',
+  })
+  public readonly resetsAtMinute!: number | null;
+  @ApiProperty({
+    description:
+      'False when the reset boundary could not be recovered exactly, so `resetsAtMinute` may be up to one period out. `amount` is unaffected.',
+  })
+  public readonly resetBoundaryIsExact!: boolean;
+  @ApiProperty({
+    description:
+      "False when the spender's delegate registration was removed: nothing is spendable now, but the allowance returns to effect if the delegate is re-added",
+  })
+  public readonly isDelegateActive!: boolean;
+  @ApiProperty({
+    description: 'Unix seconds this allowance was (re-)established',
+  })
+  public readonly createdAt!: number;
+  @ApiProperty({
+    description: 'Unix seconds of the last event that changed this allowance',
+  })
+  public readonly updatedAt!: number;
+}
+
+export class SpendingLimitSpenderDto {
+  @ApiProperty({
+    type: String,
+    description: 'Name resolved by the client, never carried here',
+  })
+  public readonly spender!: Address;
+  @ApiProperty({
+    description:
+      'False when the spender is deregistered: nothing is spendable now, but the allowances survive and return if it is re-added',
+  })
+  public readonly isActive!: boolean;
+  @ApiProperty({ type: SpendingLimitAllowanceDto, isArray: true })
+  public readonly allowances!: Array<SpendingLimitAllowance>;
+}
+
+export class SpendingLimitPolicyDataDto implements SpendingLimitPolicyData {
+  @ApiProperty({
+    type: String,
+    description: 'The allowance module holding this state',
+  })
+  public readonly module!: Address;
+  @ApiProperty({ type: SpendingLimitSpenderDto, isArray: true })
+  public readonly spenders!: SpendingLimitPolicyData['spenders'];
+}
+
+export class ProposerGrantDto {
+  @ApiProperty({
+    type: String,
+    description: 'The owner that granted the proposer',
+  })
+  public readonly delegator!: Address;
+  @ApiProperty({
+    description:
+      'The label this owner gave the proposer; empty when unlabelled',
+  })
+  public readonly label!: string;
+}
+
+export class ProposerDto {
+  @ApiProperty({
+    type: String,
+    description: 'The address allowed to propose transactions',
+  })
+  public readonly proposer!: Address;
+  @ApiProperty({
+    type: ProposerGrantDto,
+    isArray: true,
+    description:
+      'The owners that granted it, each with the label they gave. The label is stored per grant, so two owners can label the same proposer differently',
+  })
+  public readonly delegatedBy!: ProposerPolicyData['proposers'][number]['delegatedBy'];
+}
+
+export class ProposerPolicyDataDto implements ProposerPolicyData {
+  @ApiProperty({ type: ProposerDto, isArray: true })
+  public readonly proposers!: ProposerPolicyData['proposers'];
+}
+
+export class Erc20TransferRecipientDto implements Erc20TransferRecipient {
+  @ApiProperty({
+    type: String,
+    description: 'An address the Safe can send this token to',
+  })
+  public readonly account!: Address;
+  @ApiProperty({
+    enum: PolicyPermissionSchema.options,
+  })
+  public readonly permission!: PolicyPermission;
+}
+
+export class Erc20TransferPolicyDataDto implements Erc20TransferPolicyData {
+  @ApiProperty({
+    type: String,
+    description: 'The ERC20 token the allowlist applies to',
+  })
+  public readonly tokenAddress!: Address;
+  @ApiProperty({
+    ...SpendingLimitTokenMetadataSchema,
+    nullable: true,
+    description:
+      'Metadata of `tokenAddress`; null when it could not be resolved',
+  })
+  public readonly tokenMetadata!: Token | null;
+  @ApiProperty({
+    type: Erc20TransferRecipientDto,
+    isArray: true,
+    description: 'The recipients of the token transfers the policy permits',
+  })
+  public readonly recipients!: Array<Erc20TransferRecipient>;
+}
+
+export class CosignerPolicyDataDto implements CosignerPolicyData {
+  @ApiProperty({
+    type: String,
+    description: 'The cosigner the policy enforces.',
+  })
+  public readonly cosignerAddress!: Address;
+}
+
+/**
+ * Allow, deny, native transfer and multisend carry no configuration.
+ */
+export class StatelessPolicyDataDto implements StatelessPolicyData {
+  [key: string]: never;
+}
+
+const PolicyDataSchema = {
+  oneOf: [
+    { $ref: getSchemaPath(SpendingLimitPolicyDataDto) },
+    { $ref: getSchemaPath(ProposerPolicyDataDto) },
+    { $ref: getSchemaPath(Erc20TransferPolicyDataDto) },
+    { $ref: getSchemaPath(CosignerPolicyDataDto) },
+    { $ref: getSchemaPath(StatelessPolicyDataDto) },
+  ],
+};
+
+@ApiExtraModels(
+  ModuleEnforcementDto,
+  GuardEnforcementDto,
+  OffChainEnforcementDto,
+  SpendingLimitPolicyDataDto,
+  ProposerPolicyDataDto,
+  Erc20TransferRecipientDto,
+  Erc20TransferPolicyDataDto,
+  CosignerPolicyDataDto,
+  StatelessPolicyDataDto,
+)
+export class ActivePolicyDto implements ActivePolicy {
+  @ApiProperty({ enum: Object.values(PolicyType) })
+  public readonly type!: PolicyType;
+  @ApiProperty(EnforcementSchema)
+  public readonly enforcement!: PolicyEnforcement;
+  @ApiProperty({
+    description: 'False when the policy is configured but not enforced',
+  })
+  public readonly enabled!: boolean;
+  @ApiProperty(PolicyDataSchema)
+  public readonly data!: ActivePolicyData;
+  @ApiProperty({
+    type: SafeRefDto,
+    description: 'The Safe the policy is in effect on',
+  })
+  public readonly safe!: SafeRefResponse;
+}

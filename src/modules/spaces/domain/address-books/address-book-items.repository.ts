@@ -1,23 +1,33 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
-import { EntityManager, type FindOptionsWhere, In, IsNull } from 'typeorm';
-import { isAddressEqual } from 'viem';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
-import { AddressBookItem as DbAddressBookItem } from '@/modules/spaces/datasources/address-books/entities/address-book-item.entity.db';
-import { IAddressBookItemsRepository } from '@/modules/spaces/domain/address-books/address-book-items.repository.interface';
-import type { AddressBookDbItem } from '@/modules/spaces/domain/address-books/entities/address-book-item.db.entity';
-import { AddressBookItem } from '@/modules/spaces/domain/address-books/entities/address-book-item.entity';
-import { SpaceAuditEventType } from '@/modules/spaces/domain/audit/entities/space-audit-event.entity';
-import { ISpaceAuditRepository } from '@/modules/spaces/domain/audit/space-audit.repository.interface';
-import { Space } from '@/modules/spaces/domain/entities/space.entity';
-import { SpaceEncryptionService } from '@/modules/spaces/domain/space-encryption.service';
-import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
-import { UpsertAddressBookItemsDto } from '@/modules/spaces/routes/address-books/entities/upsert-address-book-items.dto.entity';
-import { MemberRole } from '@/modules/users/domain/entities/member.entity';
+import {
+  BadRequestException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import {
+  EntityManager,
+  type FindOptionsWhere,
+  In,
+  IsNull,
+  type Repository,
+} from 'typeorm';
+import { type Address, isAddressEqual } from 'viem';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
+import { AddressBookItem as DbAddressBookItem } from '#/modules/spaces/datasources/address-books/entities/address-book-item.entity.db';
+import { Space as DbSpace } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
+import { IAddressBookItemsRepository } from '#/modules/spaces/domain/address-books/address-book-items.repository.interface';
+import type { AddressBookDbItem } from '#/modules/spaces/domain/address-books/entities/address-book-item.db.entity';
+import { AddressBookItem } from '#/modules/spaces/domain/address-books/entities/address-book-item.entity';
+import { SpaceAuditEventType } from '#/modules/spaces/domain/audit/entities/space-audit-event.entity';
+import { ISpaceAuditRepository } from '#/modules/spaces/domain/audit/space-audit.repository.interface';
+import { Space } from '#/modules/spaces/domain/entities/space.entity';
+import { SpaceEncryptionService } from '#/modules/spaces/domain/space-encryption.service';
+import { ISpacesRepository } from '#/modules/spaces/domain/spaces.repository.interface';
+import { UpsertAddressBookItemsDto } from '#/modules/spaces/routes/address-books/entities/upsert-address-book-items.dto.entity';
+import type { User } from '#/modules/users/domain/entities/user.entity';
 
 @Injectable()
 export class AddressBookItemsRepository implements IAddressBookItemsRepository {
@@ -39,34 +49,26 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
     );
   }
 
-  public async findAllBySpaceId(args: {
-    authPayload: AuthPayload;
-    spaceId: Space['id'];
-  }): Promise<Array<AddressBookDbItem>> {
-    const space = await this.getSpaceAs({
-      ...args,
-      memberRoleIn: ['ADMIN', 'MEMBER'],
-    });
+  public async findAllBySpaceId(
+    spaceId: Space['id'],
+  ): Promise<Array<AddressBookDbItem>> {
     const repository = await this.db.getRepository(DbAddressBookItem);
-    const items = await repository.findBy({ space: { id: space.id } });
+    const items = await repository.findBy({ space: { id: spaceId } });
     return await this.spaceEncryptionService.decryptAddressBookItems(
-      space.id,
+      spaceId,
       items,
     );
   }
 
   public async upsertMany(args: {
-    authPayload: AuthPayload;
+    userId: User['id'];
     spaceId: Space['id'];
     addressBookItems: UpsertAddressBookItemsDto['items'];
     createdByOverride?: number;
     entityManager?: EntityManager;
   }): Promise<Array<AddressBookDbItem>> {
-    const userId = getAuthenticatedUserIdOrFail(args.authPayload);
-    const space = await this.getSpaceAs({
-      ...args,
-      memberRoleIn: ['ADMIN'],
-    });
+    const { userId } = args;
+    const space = await this.findSpaceOrFail(args.spaceId, args.entityManager);
 
     const run = async (
       entityManager: EntityManager,
@@ -124,16 +126,36 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
       : await this.db.transaction(run);
   }
 
+  public async findItemIdsByAddresses(args: {
+    spaceId: Space['id'];
+    addresses: Array<Address>;
+    entityManager?: EntityManager;
+  }): Promise<Map<string, number>> {
+    const itemIds = new Map<string, number>();
+    if (args.addresses.length === 0) {
+      return itemIds;
+    }
+    const repository = args.entityManager
+      ? args.entityManager.getRepository(DbAddressBookItem)
+      : await this.db.getRepository(DbAddressBookItem);
+    const matches = await this.findMatchingItems({
+      repository,
+      spaceId: args.spaceId,
+      inputs: args.addresses.map((address) => ({ address })),
+    });
+    for (const { row, input } of matches) {
+      itemIds.set(input.address.toLowerCase(), row.id);
+    }
+    return itemIds;
+  }
+
   public async deleteByAddress(args: {
-    authPayload: AuthPayload;
+    userId: User['id'];
     spaceId: Space['id'];
     address: AddressBookDbItem['address'];
   }): Promise<void> {
-    const userId = getAuthenticatedUserIdOrFail(args.authPayload);
-    const space = await this.getSpaceAs({
-      ...args,
-      memberRoleIn: ['ADMIN'],
-    });
+    const { userId } = args;
+    const space = await this.findSpaceOrFail(args.spaceId);
 
     await this.db.transaction(async (entityManager) => {
       const addressIndex = this.spaceEncryptionService.itemAddressIndex(
@@ -172,23 +194,81 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
     });
   }
 
-  private async getSpaceAs(args: {
-    authPayload: AuthPayload;
-    spaceId: Space['id'];
-    memberRoleIn: Array<keyof typeof MemberRole>;
-  }): Promise<Space> {
-    const userId = getAuthenticatedUserIdOrFail(args.authPayload);
-
-    return await this.spacesRepository.findOneOrFail({
-      where: {
-        id: args.spaceId,
-        members: {
-          role: In(args.memberRoleIn),
-          user: { id: userId },
-          status: 'ACTIVE',
-        },
-      },
+  /**
+   * The owning space, as the insert relation and the audit identifiers.
+   *
+   * Given the caller's transaction, reads through it: a second pool connection
+   * taken while that transaction holds the space's tag lock can wait for good
+   * on a pool whose other connections all wait on that lock.
+   */
+  private async findSpaceOrFail(
+    spaceId: Space['id'],
+    entityManager?: EntityManager,
+  ): Promise<Pick<Space, 'id' | 'uuid'>> {
+    if (!entityManager) {
+      return await this.spacesRepository.findOneOrFail({
+        where: { id: spaceId },
+        select: { id: true, uuid: true },
+      });
+    }
+    const space = await entityManager.findOne(DbSpace, {
+      where: { id: spaceId },
+      select: { id: true, uuid: true },
     });
+    if (!space) {
+      throw new NotFoundException('Workspace not found.');
+    }
+    return space;
+  }
+
+  /**
+   * Loads the Space's rows whose address is one of the inputs', each paired
+   * with the first input it matches.
+   *
+   * Enabled: match encrypted rows on their blind index. Disabled: no index
+   * key, so match the stored plaintext (address_index IS NULL) directly.
+   */
+  private async findMatchingItems<T extends { address: Address }>(args: {
+    repository: Repository<DbAddressBookItem>;
+    spaceId: Space['id'];
+    inputs: Array<T>;
+  }): Promise<Array<{ row: DbAddressBookItem; input: T }>> {
+    // Compute each input's blind index once (one HMAC per input) and key a
+    // lookup by it, so the per-row match below is O(1) rather than recomputing
+    // the HMAC for every candidate on every existing row.
+    const inputByIndex = new Map<string, T>();
+    for (const input of args.inputs) {
+      const index = this.spaceEncryptionService.itemAddressIndex(input.address);
+      // Keep the first input for a given index, matching the prior `.find`.
+      if (index !== null && !inputByIndex.has(index)) {
+        inputByIndex.set(index, input);
+      }
+    }
+    const indexes = Array.from(inputByIndex.keys());
+    const where: FindOptionsWhere<DbAddressBookItem> =
+      indexes.length > 0
+        ? { space: { id: args.spaceId }, addressIndex: In(indexes) }
+        : {
+            space: { id: args.spaceId },
+            addressIndex: IsNull(),
+            address: In(args.inputs.map((input) => input.address)),
+          };
+    const rows = await args.repository.findBy(where);
+
+    const matches: Array<{ row: DbAddressBookItem; input: T }> = [];
+    for (const row of rows) {
+      // Encrypted rows match on the blind index; plaintext rows on the address.
+      const input =
+        row.addressIndex != null
+          ? inputByIndex.get(row.addressIndex)
+          : args.inputs.find((candidate) =>
+              isAddressEqual(candidate.address, row.address),
+            );
+      if (input) {
+        matches.push({ row, input });
+      }
+    }
+    return matches;
   }
 
   /**
@@ -199,7 +279,7 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
   private async updateExistingAddressBookItems(args: {
     userId: number;
     addressBookItems: Array<AddressBookItem>;
-    space: Space;
+    space: Pick<Space, 'id'>;
     entityManager: EntityManager;
   }): Promise<
     Array<{
@@ -208,45 +288,17 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
     }>
   > {
     const repository = args.entityManager.getRepository(DbAddressBookItem);
-    // Enabled: match encrypted rows on their blind index. Disabled: no index
-    // key, so match the stored plaintext (address_index IS NULL) directly.
-    // Compute each input item's blind index once (one HMAC per item) and key a
-    // lookup by it, so the per-row match below is O(1) rather than recomputing
-    // the HMAC for every candidate on every existing row.
-    const itemByIndex = new Map<string, AddressBookItem>();
-    for (const item of args.addressBookItems) {
-      const index = this.spaceEncryptionService.itemAddressIndex(item.address);
-      // Keep the first item for a given index, matching the prior `.find`.
-      if (index !== null && !itemByIndex.has(index)) {
-        itemByIndex.set(index, item);
-      }
-    }
-    const indexes = Array.from(itemByIndex.keys());
-    const where: FindOptionsWhere<DbAddressBookItem> =
-      indexes.length > 0
-        ? { space: { id: args.space.id }, addressIndex: In(indexes) }
-        : {
-            space: { id: args.space.id },
-            addressIndex: IsNull(),
-            address: In(args.addressBookItems.map((item) => item.address)),
-          };
-    const existingAddressBookItems = await repository.findBy(where);
+    const matches = await this.findMatchingItems({
+      repository,
+      spaceId: args.space.id,
+      inputs: args.addressBookItems,
+    });
 
     const updated: Array<{
       address: AddressBookItem['address'];
       audit: { address: AddressBookItem['address']; name: string };
     }> = [];
-    for (const item of existingAddressBookItems) {
-      // Encrypted rows match on the blind index; plaintext rows on the address.
-      const patch =
-        item.addressIndex != null
-          ? itemByIndex.get(item.addressIndex)
-          : args.addressBookItems.find((addressBookItem) =>
-              isAddressEqual(addressBookItem.address, item.address),
-            );
-      if (!patch) {
-        continue;
-      }
+    for (const { row, input: patch } of matches) {
       // Encrypt-on-write: rewrite the (unchanged) address and the new name
       // under the space-scoped context.
       const encrypted =
@@ -254,7 +306,7 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
           args.space.id,
           { address: patch.address, name: patch.name },
         );
-      await repository.update(item.id, {
+      await repository.update(row.id, {
         address: encrypted.address as AddressBookItem['address'],
         addressIndex: encrypted.addressIndex,
         name: encrypted.name,
@@ -277,7 +329,7 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
   private async createNewAddressBookItems(args: {
     userId: number;
     addressBookItems: Array<AddressBookItem>;
-    space: Space;
+    space: Pick<Space, 'id'>;
     entityManager: EntityManager;
     createdByOverride?: number;
   }): Promise<Array<{ address: AddressBookItem['address']; name: string }>> {
@@ -314,7 +366,7 @@ export class AddressBookItemsRepository implements IAddressBookItemsRepository {
   }
 
   private async checkItemsLimit(args: {
-    space: Space;
+    space: Pick<Space, 'id'>;
     addressBookItems: Array<AddressBookItem>;
     entityManager: EntityManager;
   }): Promise<void> {

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
-import { StripeMetadataSchema } from '@/datasources/billing-api/entities/metadata.entity';
-import { withDashes } from '@/datasources/billing-api/upstream-customer-id.util';
+import { StripeMetadataSchema } from '#/datasources/billing-api/entities/metadata.entity';
+import { withDashes } from '#/datasources/billing-api/upstream-customer-id.util';
 
 /** Customer group of the Safe{Wallet} web app, the only one entitlements track. */
 export const WALLET_WEB_CUSTOMER_GROUP = 'wallet_web';
@@ -16,13 +16,23 @@ export const WALLET_WEB_CUSTOMER_GROUP = 'wallet_web';
  */
 const SUBSCRIPTION_EVENT_TYPE_PREFIX = 'customer.subscription.';
 
+/**
+ * Sometimes the only event a new subscription produces: upstream drops
+ * `customer.subscription.created` while the customer is not resolvable yet.
+ */
+const CHECKOUT_SESSION_COMPLETED = 'checkout.session.completed';
+
 export const WebhookPaymentLinkEventTypes = [
   'payment_link.created',
   'payment_link.updated',
 ] as const;
 
-export function isSubscriptionEventType(type: string): boolean {
-  return type.startsWith(SUBSCRIPTION_EVENT_TYPE_PREFIX);
+/** Whether the event is reason to re-read the workspace's subscriptions. */
+export function triggersSubscriptionSync(type: string): boolean {
+  return (
+    type.startsWith(SUBSCRIPTION_EVENT_TYPE_PREFIX) ||
+    type === CHECKOUT_SESSION_COMPLETED
+  );
 }
 
 export function isPaymentLinkEventType(type: string): boolean {

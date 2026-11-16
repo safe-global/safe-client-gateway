@@ -1,5 +1,6 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiExtraModels, ApiProperty, getSchemaPath } from '@nestjs/swagger';
-import { Balance } from '@/modules/balances/routes/entities/balance.entity';
+import { Balance } from '#/modules/balances/routes/entities/balance.entity';
 
 @ApiExtraModels(Balance)
 export class Balances {

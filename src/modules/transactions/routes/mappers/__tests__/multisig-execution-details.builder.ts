@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import type { IBuilder } from '@/__tests__/builder';
-import { Builder } from '@/__tests__/builder';
-import { tokenBuilder } from '@/modules/tokens/domain/__tests__/token.builder';
-import { ExecutionDetailsType } from '@/modules/transactions/routes/entities/transaction-details/execution-details.entity';
+import type { IBuilder } from '#/__tests__/builder';
+import { Builder } from '#/__tests__/builder';
+import { tokenBuilder } from '#/modules/tokens/domain/__tests__/token.builder';
+import { ExecutionDetailsType } from '#/modules/transactions/routes/entities/transaction-details/execution-details.entity';
 import type {
   MultisigConfirmationDetails,
   MultisigExecutionDetails,
-} from '@/modules/transactions/routes/entities/transaction-details/multisig-execution-details.entity';
-import { addressInfoBuilder } from '@/routes/common/__tests__/entities/address-info.builder';
+} from '#/modules/transactions/routes/entities/transaction-details/multisig-execution-details.entity';
+import { addressInfoBuilder } from '#/routes/common/__tests__/entities/address-info.builder';
 
 const MIN_SIGNERS = 2;
 const MAX_SIGNERS = 5;
@@ -43,7 +43,7 @@ export function multisigExecutionDetailsBuilder(): IBuilder<MultisigExecutionDet
     .with('signers', signers)
     .with('confirmationsRequired', faker.number.int({ max: signers.length }))
     .with('confirmations', confirmations)
-    .with('rejectors', faker.helpers.arrayElements(signers, MIN_SIGNERS))
+    .with('rejectors', [])
     .with('gasTokenInfo', tokenBuilder().build())
     .with('trusted', faker.datatype.boolean())
     .with('proposer', signers[0]);

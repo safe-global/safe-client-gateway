@@ -1,7 +1,8 @@
-import type { CreationTransaction } from '@/modules/safe/domain/entities/creation-transaction.entity';
-import type { EthereumTransaction } from '@/modules/safe/domain/entities/ethereum-transaction.entity';
-import type { ModuleTransaction } from '@/modules/safe/domain/entities/module-transaction.entity';
-import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import type { CreationTransaction } from '#/modules/safe/domain/entities/creation-transaction.entity';
+import type { EthereumTransaction } from '#/modules/safe/domain/entities/ethereum-transaction.entity';
+import type { ModuleTransaction } from '#/modules/safe/domain/entities/module-transaction.entity';
+import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
 
 export type Transaction =
   | MultisigTransaction

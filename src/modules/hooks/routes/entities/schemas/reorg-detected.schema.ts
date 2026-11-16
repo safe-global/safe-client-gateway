@@ -1,6 +1,7 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
-import { TransactionEventType } from '@/modules/hooks/routes/entities/event-type.entity';
-import { NumericStringSchema } from '@/validation/entities/schemas/numeric-string.schema';
+import { TransactionEventType } from '#/modules/hooks/routes/entities/event-type.entity';
+import { NumericStringSchema } from '#/validation/entities/schemas/numeric-string.schema';
 
 export const ReorgDetectedEventSchema = z.object({
   type: z.literal(TransactionEventType.REORG_DETECTED),

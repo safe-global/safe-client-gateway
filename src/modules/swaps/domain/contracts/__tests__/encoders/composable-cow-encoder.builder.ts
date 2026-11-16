@@ -9,11 +9,11 @@ import {
   parseAbiParameters,
   toHex,
 } from 'viem';
-import type { IBuilder } from '@/__tests__/builder';
-import { Builder } from '@/__tests__/builder';
-import type { IEncoder } from '@/__tests__/encoder-builder';
-import { fakeJson } from '@/__tests__/faker';
-import { ComposableCowAbi } from '@/modules/swaps/domain/contracts/decoders/composable-cow-decoder.helper';
+import type { IBuilder } from '#/__tests__/builder';
+import { Builder } from '#/__tests__/builder';
+import type { IEncoder } from '#/__tests__/encoder-builder';
+import { fakeJson } from '#/__tests__/faker';
+import { ComposableCowAbi } from '#/modules/swaps/domain/contracts/decoders/composable-cow-decoder.helper';
 
 type StaticInputArgs = {
   sellToken: Address;

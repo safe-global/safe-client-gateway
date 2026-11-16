@@ -8,19 +8,23 @@ import { type Address, getAddress } from 'viem';
 import {
   initTestApplication,
   TestAppProvider,
-} from '@/__tests__/test-app.provider';
-import { createTestModule } from '@/__tests__/testing-module';
-import { checkGuardIsApplied } from '@/__tests__/util/check-guard';
-import configuration from '@/config/entities/__tests__/configuration';
-import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
-import { nameBuilder } from '@/domain/common/entities/name.builder';
-import { siweAuthPayloadDtoBuilder } from '@/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import { AuthGuard } from '@/modules/auth/routes/guards/auth.guard';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import { NotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/notifications.repository.module';
-import { TestNotificationsRepositoryV2Module } from '@/modules/notifications/domain/v2/test.notification.repository.module';
-import { SpacesCreationRateLimitGuard } from '@/modules/spaces/routes/guards/spaces-creation-rate-limit.guard';
-import { SpaceSafesController } from '@/modules/spaces/routes/safes/space-safes.controller';
+} from '#/__tests__/test-app.provider';
+import { createTestModule } from '#/__tests__/testing-module';
+import { checkGuardIsApplied } from '#/__tests__/util/check-guard';
+import configuration from '#/config/entities/__tests__/configuration';
+import { IJwtService } from '#/datasources/jwt/jwt.service.interface';
+import { nameBuilder } from '#/domain/common/entities/name.builder';
+import { siweAuthPayloadDtoBuilder } from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
+import { AuthGuard } from '#/modules/auth/routes/guards/auth.guard';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
+import { NotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/notifications.repository.module';
+import { TestNotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/test.notification.repository.module';
+import { SpacesCreationRateLimitGuard } from '#/modules/spaces/routes/guards/spaces-creation-rate-limit.guard';
+import { SpaceSafesController } from '#/modules/spaces/routes/safes/space-safes.controller';
+import { CHAIN_ID_MAXLENGTH } from '#/routes/common/constants';
+
+// Shortest chainId the schema rejects.
+const chainIdMinLength = CHAIN_ID_MAXLENGTH + 1;
 
 describe('SpaceSafesController', () => {
   let app: INestApplication<Server>;
@@ -147,6 +151,48 @@ describe('SpaceSafesController', () => {
           ],
         })
         .expect(201);
+    });
+
+    it('Should write addressBookItems to the space address book', async () => {
+      const authPayloadDto = siweAuthPayloadDtoBuilder().build();
+      const accessToken = jwtService.sign(authPayloadDto);
+      const chain = chainBuilder().build();
+      const address = getAddress(faker.finance.ethereumAddress());
+      const safeName = nameBuilder();
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`]);
+
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: nameBuilder() });
+      const spaceId = createSpaceResponse.body.uuid;
+
+      await request(app.getHttpServer())
+        .post(`/v1/spaces/${spaceId}/safes`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({
+          safes: [{ chainId: chain.chainId, address }],
+          addressBookItems: [
+            { name: safeName, address, chainIds: [chain.chainId] },
+          ],
+        })
+        .expect(201);
+
+      const addressBook = await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}/address-book`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200);
+
+      expect(addressBook.body.data).toEqual([
+        expect.objectContaining({
+          name: safeName,
+          address,
+          chainIds: [chain.chainId],
+        }),
+      ]);
     });
 
     it('Should fail on duplicate space safes', async () => {
@@ -285,8 +331,7 @@ describe('SpaceSafesController', () => {
         })
         .expect(403)
         .expect({
-          error: 'Forbidden',
-          message: 'User is not an admin of this space',
+          message: 'User is not an admin of this workspace',
           statusCode: 403,
         });
     });
@@ -337,8 +382,7 @@ describe('SpaceSafesController', () => {
         })
         .expect(403)
         .expect({
-          error: 'Forbidden',
-          message: 'User is not an admin of this space',
+          message: 'User is not an admin of this workspace',
           statusCode: 403,
         });
     });
@@ -393,8 +437,7 @@ describe('SpaceSafesController', () => {
         })
         .expect(403)
         .expect({
-          error: 'Forbidden',
-          message: 'User is not an admin of this space',
+          message: 'User is not an admin of this workspace',
           statusCode: 403,
         });
     });
@@ -543,7 +586,6 @@ describe('SpaceSafesController', () => {
     it('Should return a 422 if space id is bigger than the max limit', async () => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const chainIdMinLength = 79;
       const min = BigInt(`1${'0'.repeat(chainIdMinLength - 1)}`);
       const max = BigInt('9'.repeat(chainIdMinLength));
       const chain1 = chainBuilder()
@@ -571,7 +613,7 @@ describe('SpaceSafesController', () => {
         .expect({
           statusCode: 422,
           code: 'custom',
-          message: 'Value must be less than or euqal to 78',
+          message: `Value must be at most ${CHAIN_ID_MAXLENGTH} characters long`,
           path: ['safes', 0, 'chainId'],
         });
     });
@@ -787,8 +829,7 @@ describe('SpaceSafesController', () => {
         .set('Cookie', [`access_token=${userAccessToken}`])
         .expect(403)
         .expect({
-          error: 'Forbidden',
-          message: 'User is not a member of this space',
+          message: 'User is not a member of this workspace',
           statusCode: 403,
         });
     });
@@ -819,8 +860,7 @@ describe('SpaceSafesController', () => {
         .set('Cookie', [`access_token=${nonMemberAccessToken}`])
         .expect(403)
         .expect({
-          error: 'Forbidden',
-          message: 'User is not a member of this space',
+          message: 'User is not a member of this workspace',
           statusCode: 403,
         });
     });
@@ -884,6 +924,47 @@ describe('SpaceSafesController', () => {
           message: 'Invalid space identifier',
           error: 'Bad Request',
           statusCode: 400,
+        });
+    });
+  });
+
+  describe('GET /v1/spaces/safes', () => {
+    it('Should return the safes of the spaces the user is a member of, grouped by chain', async () => {
+      const accessToken = jwtService.sign(siweAuthPayloadDtoBuilder().build());
+      const safe = {
+        chainId: faker.string.numeric({ length: { min: 1, max: 4 } }),
+        address: getAddress(faker.finance.ethereumAddress()),
+      };
+
+      await request(app.getHttpServer())
+        .post('/v1/users/wallet')
+        .set('Cookie', [`access_token=${accessToken}`]);
+      const createSpaceResponse = await request(app.getHttpServer())
+        .post('/v1/spaces')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ name: nameBuilder() });
+      const spaceUuid = createSpaceResponse.body.uuid;
+      await request(app.getHttpServer())
+        .post(`/v1/spaces/${spaceUuid}/safes`)
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send({ safes: [safe] })
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .get('/v1/spaces/safes')
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(200)
+        .expect([{ spaceUuid, safes: { [safe.chainId]: [safe.address] } }]);
+    });
+
+    it('should return a 403 if not authenticated', async () => {
+      await request(app.getHttpServer())
+        .get('/v1/spaces/safes')
+        .expect(403)
+        .expect({
+          statusCode: 403,
+          message: 'Forbidden resource',
+          error: 'Forbidden',
         });
     });
   });
@@ -1022,8 +1103,7 @@ describe('SpaceSafesController', () => {
         .send(spaceSafes)
         .expect(403)
         .expect({
-          error: 'Forbidden',
-          message: 'User is not an admin of this space',
+          message: 'User is not an admin of this workspace',
           statusCode: 403,
         });
     });
@@ -1088,8 +1168,7 @@ describe('SpaceSafesController', () => {
         .send(spaceSafes)
         .expect(403)
         .expect({
-          message: 'User is not an admin of this space',
-          error: 'Forbidden',
+          message: 'User is not an admin of this workspace',
           statusCode: 403,
         });
     });
@@ -1149,8 +1228,7 @@ describe('SpaceSafesController', () => {
         .send(spaceSafes)
         .expect(403)
         .expect({
-          message: 'User is not an admin of this space',
-          error: 'Forbidden',
+          message: 'User is not an admin of this workspace',
           statusCode: 403,
         });
     });
@@ -1299,7 +1377,6 @@ describe('SpaceSafesController', () => {
     it('Should return a 422 if space id is bigger than the max limit', async () => {
       const authPayloadDto = siweAuthPayloadDtoBuilder().build();
       const accessToken = jwtService.sign(authPayloadDto);
-      const chainIdMinLength = 79;
       const min = BigInt(`1${'0'.repeat(chainIdMinLength - 1)}`);
       const max = BigInt('9'.repeat(chainIdMinLength));
       const chain1 = chainBuilder()
@@ -1327,7 +1404,7 @@ describe('SpaceSafesController', () => {
         .expect({
           statusCode: 422,
           code: 'custom',
-          message: 'Value must be less than or euqal to 78',
+          message: `Value must be at most ${CHAIN_ID_MAXLENGTH} characters long`,
           path: ['safes', 0, 'chainId'],
         });
     });

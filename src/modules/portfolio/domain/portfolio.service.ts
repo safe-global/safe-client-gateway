@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import type { Address } from 'viem';
-import type { Portfolio } from '@/modules/portfolio/domain/entities/portfolio.entity';
-import { IPortfolioRepository } from '@/modules/portfolio/domain/portfolio.repository.interface';
-import type { IPortfolioService } from '@/modules/portfolio/domain/portfolio.service.interface';
+import type { Portfolio } from '#/modules/portfolio/domain/entities/portfolio.entity';
+import { IPortfolioRepository } from '#/modules/portfolio/domain/portfolio.repository.interface';
+import type { IPortfolioService } from '#/modules/portfolio/domain/portfolio.service.interface';
 
 /**
  * Domain portfolio service.
@@ -30,5 +30,9 @@ export class PortfolioService implements IPortfolioService {
 
   public async clearZerionCaches(args: { address: Address }): Promise<void> {
     await this.portfolioRepository.clearZerionCaches(args);
+  }
+
+  public getClearedAt(args: { address: Address }): Promise<number | null> {
+    return this.portfolioRepository.getClearedAt(args);
   }
 }

@@ -1,30 +1,37 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
+import type { EntityManager } from 'typeorm';
 import { IsNull } from 'typeorm';
 import { getAddress } from 'viem';
 import type { Mock, MockedObject } from 'vitest';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
-import type { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
-import { createMockSpaceEncryptionService } from '@/modules/spaces/domain/__tests__/space-encryption.service.mock';
-import { createMockSpaceAuditRepository } from '@/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
-import { SpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository';
-import { fakeUuid } from '@/validation/entities/schemas/__tests__/uuid.builder';
+import type { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
+import { spaceSafeBuilder } from '#/modules/spaces/datasources/safes/entities/__tests__/space-safes.entity.db.builder';
+import { SpaceSafe } from '#/modules/spaces/datasources/safes/entities/space-safes.entity.db';
+import { createMockSpaceEncryptionService } from '#/modules/spaces/domain/__tests__/space-encryption.service.mock';
+import { createMockSpaceAuditRepository } from '#/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
+import { spaceBuilder } from '#/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
+import { SpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository';
+import { fakeUuid } from '#/validation/entities/schemas/__tests__/uuid.builder';
+
+const toSafe = ({
+  chainId,
+  address,
+}: SpaceSafe): Pick<SpaceSafe, 'chainId' | 'address'> => ({ chainId, address });
 
 describe('SpaceSafesRepository', () => {
   const spaceId = faker.number.int({ min: 1, max: 100_000 });
   const spaceUuid = fakeUuid();
   const actorUserId = faker.number.int({ min: 1, max: 100_000 });
-  const maxSafesPerSpace = faker.number.int({ min: 1, max: 100 });
 
-  let configurationService: MockedObject<IConfigurationService>;
   let spaceAuditRepository: ReturnType<typeof createMockSpaceAuditRepository>;
   let spaceEncryptionService: ReturnType<
     typeof createMockSpaceEncryptionService
   >;
   let spaceSafeRepository: { find: Mock; count: Mock };
   let entityManager: {
+    query: Mock;
+    getRepository: Mock;
     insert: Mock;
     find: Mock;
     remove: Mock;
@@ -36,15 +43,6 @@ describe('SpaceSafesRepository', () => {
   beforeEach(() => {
     vi.resetAllMocks();
 
-    configurationService = {
-      getOrThrow: vi.fn(),
-      get: vi.fn(),
-    } as MockedObject<IConfigurationService>;
-    configurationService.getOrThrow.mockImplementation((key: string) => {
-      if (key === 'spaces.maxSafesPerSpace') return maxSafesPerSpace;
-      throw new Error(`Unexpected config key: ${key}`);
-    });
-
     // Recreated after the reset so the passthrough implementations survive.
     spaceAuditRepository = createMockSpaceAuditRepository();
     spaceEncryptionService = createMockSpaceEncryptionService();
@@ -54,6 +52,8 @@ describe('SpaceSafesRepository', () => {
       count: vi.fn().mockResolvedValue(0),
     };
     entityManager = {
+      query: vi.fn(),
+      getRepository: vi.fn().mockReturnValue(spaceSafeRepository),
       insert: vi.fn(),
       find: vi.fn(),
       remove: vi.fn(),
@@ -69,14 +69,13 @@ describe('SpaceSafesRepository', () => {
 
     target = new SpaceSafesRepository(
       postgresDatabaseService,
-      configurationService,
       spaceAuditRepository,
       spaceEncryptionService,
     );
   });
 
-  describe('create', () => {
-    it('encrypts addresses and computes blind indexes before insert, and records the plaintext in the audit payload', async () => {
+  describe('encryptRows', () => {
+    it('encrypts each address and keeps the plaintext for the audit', async () => {
       const chainId = faker.string.numeric({ length: { min: 1, max: 6 } });
       const address = getAddress(faker.finance.ethereumAddress());
       const encryptedAddress = `kms:v1:${faker.string.alphanumeric(16)}`;
@@ -86,15 +85,63 @@ describe('SpaceSafesRepository', () => {
       );
       spaceEncryptionService.safeAddressIndex.mockReturnValue(addressIndex);
 
-      await target.create({
-        spaceId,
-        actorUserId,
-        payload: [{ chainId, address }],
-      });
+      const rows = await target.encryptRows(spaceId, [{ chainId, address }]);
 
       expect(
         spaceEncryptionService.encryptSafeAddress,
       ).toHaveBeenCalledExactlyOnceWith(spaceId, address);
+      expect(rows).toStrictEqual([
+        {
+          space: { id: spaceId },
+          chainId,
+          address: encryptedAddress,
+          addressIndex,
+          plaintextAddress: address,
+        },
+      ]);
+    });
+
+    it('passes plaintext through with a NULL index when encryption is disabled', async () => {
+      const chainId = faker.string.numeric({ length: { min: 1, max: 6 } });
+      const address = getAddress(faker.finance.ethereumAddress());
+
+      const rows = await target.encryptRows(spaceId, [{ chainId, address }]);
+
+      expect(rows).toStrictEqual([
+        {
+          space: { id: spaceId },
+          chainId,
+          address,
+          addressIndex: null,
+          plaintextAddress: address,
+        },
+      ]);
+    });
+  });
+
+  describe('insertRows', () => {
+    it('inserts the prepared rows and audits the plaintext addresses', async () => {
+      const chainId = faker.string.numeric({ length: { min: 1, max: 6 } });
+      const address = getAddress(faker.finance.ethereumAddress());
+      const encryptedAddress = `kms:v1:${faker.string.alphanumeric(16)}`;
+      const addressIndex = faker.string.hexadecimal({ length: 32 });
+
+      await target.insertRows({
+        spaceId,
+        actorUserId,
+        rows: [
+          {
+            space: { id: spaceId },
+            chainId,
+            address: encryptedAddress as SpaceSafe['address'],
+            addressIndex,
+            plaintextAddress: address,
+          },
+        ],
+        entityManager: entityManager as unknown as EntityManager,
+      });
+
+      // The plaintext travels with the row but is never inserted.
       expect(entityManager.insert).toHaveBeenCalledExactlyOnceWith(SpaceSafe, [
         {
           space: { id: spaceId },
@@ -107,60 +154,19 @@ describe('SpaceSafesRepository', () => {
         entityManager,
         expect.objectContaining({
           eventType: 'SAFE_ADDED',
-          payload: {
-            safes: [{ chainId, address }],
-          },
+          payload: { safes: [{ chainId, address }] },
         }),
       );
-    });
-
-    it('inserts plaintext with a NULL index when encryption is disabled (passthrough)', async () => {
-      const chainId = faker.string.numeric({ length: { min: 1, max: 6 } });
-      const address = getAddress(faker.finance.ethereumAddress());
-
-      await target.create({
-        spaceId,
-        actorUserId,
-        payload: [{ chainId, address }],
-      });
-
-      expect(entityManager.insert).toHaveBeenCalledExactlyOnceWith(SpaceSafe, [
-        { space: { id: spaceId }, chainId, address, addressIndex: null },
-      ]);
-    });
-
-    it('enforces the per-space limit from a count query before encrypting anything', async () => {
-      spaceSafeRepository.count.mockResolvedValue(maxSafesPerSpace);
-
-      await expect(
-        target.create({
-          spaceId,
-          actorUserId,
-          payload: [
-            {
-              chainId: faker.string.numeric({ length: { min: 1, max: 6 } }),
-              address: getAddress(faker.finance.ethereumAddress()),
-            },
-          ],
-        }),
-      ).rejects.toThrow(
-        `This Workspace only allows a maximum of ${maxSafesPerSpace} Safe Accounts.`,
-      );
-      expect(spaceEncryptionService.encryptSafeAddress).not.toHaveBeenCalled();
-      expect(entityManager.insert).not.toHaveBeenCalled();
     });
   });
 
   describe('findBySpaceId', () => {
     it('routes loaded rows through decryptSpaceSafes (repository boundary)', async () => {
-      const chainId = faker.string.numeric({ length: { min: 1, max: 6 } });
-      const rows = [
-        { chainId, address: `kms:v1:${faker.string.alphanumeric(16)}` },
-      ];
-      spaceSafeRepository.find.mockResolvedValue(rows);
-      const decrypted = [
-        { chainId, address: getAddress(faker.finance.ethereumAddress()) },
-      ];
+      const row = spaceSafeBuilder()
+        .with('space', spaceBuilder().with('id', spaceId).build())
+        .build();
+      spaceSafeRepository.find.mockResolvedValue([row]);
+      const decrypted = [toSafe(spaceSafeBuilder().build())];
       spaceEncryptionService.decryptSpaceSafes.mockResolvedValue(decrypted);
 
       await expect(target.findBySpaceId(spaceId)).resolves.toStrictEqual(
@@ -168,7 +174,71 @@ describe('SpaceSafesRepository', () => {
       );
       expect(
         spaceEncryptionService.decryptSpaceSafes,
-      ).toHaveBeenCalledExactlyOnceWith(spaceId, rows);
+      ).toHaveBeenCalledExactlyOnceWith(spaceId, [toSafe(row)]);
+    });
+  });
+
+  describe('findBySpaceIds', () => {
+    it('loads every space in one query and decrypts each space under its own context', async () => {
+      const space = spaceBuilder().build();
+      const otherSpace = spaceBuilder().build();
+      const emptySpace = spaceBuilder().build();
+      const spaceRows = [spaceSafeBuilder().with('space', space).build()];
+      const otherSpaceRows = [
+        spaceSafeBuilder().with('space', otherSpace).build(),
+        spaceSafeBuilder().with('space', otherSpace).build(),
+      ];
+      spaceSafeRepository.find.mockResolvedValue([
+        otherSpaceRows[0],
+        spaceRows[0],
+        otherSpaceRows[1],
+      ]);
+      const decrypted = [toSafe(spaceSafeBuilder().build())];
+      const otherDecrypted = [
+        toSafe(spaceSafeBuilder().build()),
+        toSafe(spaceSafeBuilder().build()),
+      ];
+      spaceEncryptionService.decryptSpaceSafes
+        .mockResolvedValueOnce(decrypted)
+        .mockResolvedValueOnce(otherDecrypted)
+        .mockResolvedValueOnce([]);
+
+      const result = await target.findBySpaceIds([
+        space.id,
+        otherSpace.id,
+        emptySpace.id,
+      ]);
+
+      expect(spaceSafeRepository.find).toHaveBeenCalledOnce();
+      expect(result).toStrictEqual(
+        new Map([
+          [space.id, decrypted],
+          [otherSpace.id, otherDecrypted],
+          [emptySpace.id, []],
+        ]),
+      );
+      expect(spaceEncryptionService.decryptSpaceSafes).toHaveBeenCalledTimes(3);
+      expect(spaceEncryptionService.decryptSpaceSafes).toHaveBeenNthCalledWith(
+        1,
+        space.id,
+        spaceRows.map(toSafe),
+      );
+      expect(spaceEncryptionService.decryptSpaceSafes).toHaveBeenNthCalledWith(
+        2,
+        otherSpace.id,
+        otherSpaceRows.map(toSafe),
+      );
+      expect(spaceEncryptionService.decryptSpaceSafes).toHaveBeenNthCalledWith(
+        3,
+        emptySpace.id,
+        [],
+      );
+    });
+
+    it('does not query when no space is requested', async () => {
+      await expect(target.findBySpaceIds([])).resolves.toStrictEqual(new Map());
+
+      expect(spaceSafeRepository.find).not.toHaveBeenCalled();
     });
   });
 
@@ -237,9 +307,10 @@ describe('SpaceSafesRepository', () => {
         address: `kms:v1:${faker.string.alphanumeric(16)}`,
       };
       entityManager.find.mockResolvedValue([row]);
-      spaceEncryptionService.decryptSpaceSafes.mockResolvedValue([
-        { chainId, address },
-      ]);
+      const decryptedSafes = [{ chainId, address }];
+      spaceEncryptionService.decryptSpaceSafes.mockResolvedValue(
+        decryptedSafes,
+      );
 
       await target.delete({
         spaceId,
@@ -258,7 +329,7 @@ describe('SpaceSafesRepository', () => {
         entityManager,
         expect.objectContaining({
           eventType: 'SAFE_REMOVED',
-          payload: { safes: [{ chainId, address }] },
+          payload: { safes: decryptedSafes },
         }),
       );
     });

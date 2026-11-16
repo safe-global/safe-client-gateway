@@ -8,8 +8,8 @@ import {
   PrimaryGeneratedColumn,
   Unique,
 } from 'typeorm';
-import { CounterfactualSafe } from '@/modules/counterfactual-safes/datasources/entities/counterfactual-safe.entity.db';
-import { User } from '@/modules/users/datasources/entities/users.entity.db';
+import { CounterfactualSafe } from '#/modules/counterfactual-safes/datasources/entities/counterfactual-safe.entity.db';
+import { User } from '#/modules/users/datasources/entities/users.entity.db';
 
 @Entity('counterfactual_safe_users')
 @Unique('UQ_CFSU_cf_safe_user', ['counterfactualSafe', 'user'])

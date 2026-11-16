@@ -1,22 +1,22 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import { hexToNumber, isHex } from 'viem';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { CacheRouter } from '@/datasources/cache/cache.router';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { CacheRouter } from '#/datasources/cache/cache.router';
 import {
   CacheService,
   type ICacheService,
-} from '@/datasources/cache/cache.service.interface';
+} from '#/datasources/cache/cache.service.interface';
 import {
   type INetworkService,
   NetworkService,
-} from '@/datasources/network/network.service.interface';
+} from '#/datasources/network/network.service.interface';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import { getZerionHeaders } from '@/modules/balances/datasources/zerion-api.helpers';
-import { ZerionChainsSchema } from '@/modules/portfolio/datasources/entities/zerion-chain.entity';
+} from '#/logging/logging.interface';
+import { getZerionHeaders } from '#/modules/balances/datasources/zerion-api.helpers';
+import { ZerionChainsSchema } from '#/modules/portfolio/datasources/entities/zerion-chain.entity';
 
 @Injectable()
 export class ZerionChainMappingService {
@@ -79,7 +79,7 @@ export class ZerionChainMappingService {
     const mapping = await this.getChainIdToNetworkMapping(isTestnet);
     const network = mapping[chainId];
     if (!network) {
-      this.loggingService.warn(
+      this.loggingService.debug(
         `Unknown chain ID for Zerion mapping: "${chainId}" (isTestnet: ${isTestnet})`,
       );
     }
@@ -104,7 +104,7 @@ export class ZerionChainMappingService {
   /**
    * Gets mapping: chain ID -> network name (for positions).
    */
-  private async getChainIdToNetworkMapping(
+  async getChainIdToNetworkMapping(
     isTestnet: boolean,
   ): Promise<Record<string, string>> {
     const cached = await this._getCachedMapping(isTestnet, 'chainIdToNetwork');
@@ -170,6 +170,12 @@ export class ZerionChainMappingService {
 
     const mapping: Record<string, string> = {};
     for (const chain of response.data) {
+      // Zerion lists chains it does not index positions for and would return
+      // empty balances for them. We omit these chains so callers fall back to
+      // tx service and prices from Coingecko.
+      if (chain.attributes.flags?.supports_positions === false) {
+        continue;
+      }
       const networkName = chain.id;
       const externalId = chain.attributes.external_id;
 

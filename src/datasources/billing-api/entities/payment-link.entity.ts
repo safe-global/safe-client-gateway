@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
-import { StripeMetadataSchema } from '@/datasources/billing-api/entities/metadata.entity';
+import { StripeMetadataSchema } from '#/datasources/billing-api/entities/metadata.entity';
 
 export type PaymentLinkPriceRecurring = z.infer<
   typeof PaymentLinkPriceRecurringSchema
@@ -32,10 +32,18 @@ export type PaymentLink = z.infer<typeof PaymentLinkSchema>;
 
 export const PaymentLinkSchema = z.object({
   id: z.string(),
-  url: z.string(),
   active: z.boolean(),
   metadata: StripeMetadataSchema,
   customText: z.record(z.string(), z.unknown()).optional(),
   afterCompletion: z.record(z.string(), z.unknown()).optional(),
   lineItems: z.array(PaymentLinkLineItemSchema).optional(),
+  /** The offer's free length; `null`/absent means the link bills immediately. */
+  trialPeriodDays: z.number().int().nullish(),
+});
+
+/** Shape of `GET /payment-links`, mirroring the upstream's `PaymentLinksResultDto`. */
+export type PaymentLinksResult = z.infer<typeof PaymentLinksResultSchema>;
+
+export const PaymentLinksResultSchema = z.object({
+  paymentLinks: z.array(PaymentLinkSchema),
 });

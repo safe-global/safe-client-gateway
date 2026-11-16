@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable, type OnModuleDestroy } from '@nestjs/common';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import type { RedisClientType } from '@/datasources/cache/cache.module';
-import type { ICacheService } from '@/datasources/cache/cache.service.interface';
-import { CacheKeyPrefix, MAX_TTL } from '@/datasources/cache/constants';
-import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
-import { LogType } from '@/domain/common/entities/log-type.entity';
-import { deviateRandomlyByPercentage } from '@/domain/common/utils/number';
-import type { ICacheReadiness } from '@/domain/interfaces/cache-readiness.interface';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import type { RedisClientType } from '#/datasources/cache/cache.module';
+import type { ICacheService } from '#/datasources/cache/cache.service.interface';
+import { CacheKeyPrefix, MAX_TTL } from '#/datasources/cache/constants';
+import { CacheDir } from '#/datasources/cache/entities/cache-dir.entity';
+import { LogType } from '#/domain/common/entities/log-type.entity';
+import { deviateRandomlyByPercentage } from '#/domain/common/utils/number';
+import type { ICacheReadiness } from '#/domain/interfaces/cache-readiness.interface';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
+} from '#/logging/logging.interface';
 
 @Injectable()
 export class RedisCacheService
@@ -97,7 +97,7 @@ export class RedisCacheService
     const result = await this.client.unlink(keyWithPrefix);
 
     await this.hSet(
-      new CacheDir(`invalidationTimeMs:${key}`, ''),
+      RedisCacheService.invalidationTimeMsCacheDir(key),
       Date.now().toString(),
       this.defaultExpirationTimeInSeconds,
       0,
@@ -105,12 +105,30 @@ export class RedisCacheService
     return result;
   }
 
+  async getInvalidationTimeMs(key: string): Promise<number | null> {
+    const value = await this.hGet(
+      RedisCacheService.invalidationTimeMsCacheDir(key),
+    );
+
+    if (!value) {
+      return null;
+    }
+
+    const invalidationTimeMs = Number(value);
+    return Number.isInteger(invalidationTimeMs) ? invalidationTimeMs : null;
+  }
+
+  private static invalidationTimeMsCacheDir(key: string): CacheDir {
+    return new CacheDir(`invalidationTimeMs:${key}`, '');
+  }
+
   async increment(
     cacheKey: string,
     expireTimeSeconds: number | undefined,
     expireDeviatePercent?: number,
   ): Promise<number> {
-    const transaction = this.client.multi().incr(cacheKey);
+    const key = this._prefixKey(cacheKey);
+    const transaction = this.client.multi().incr(key);
     if (expireTimeSeconds !== undefined && expireTimeSeconds > 0) {
       const expirationTime = this.enforceMaxRedisTTL(
         deviateRandomlyByPercentage(
@@ -119,9 +137,9 @@ export class RedisCacheService
         ),
       );
 
-      transaction.expire(cacheKey, expirationTime, 'NX');
+      transaction.expire(key, expirationTime, 'NX');
     }
-    const [incrRes] = await transaction.get(cacheKey).exec();
+    const [incrRes] = await transaction.get(key).exec();
     return Number(incrRes);
   }
 
@@ -138,9 +156,8 @@ export class RedisCacheService
       ),
     );
 
-    await this.client.set(key, value, {
+    await this.client.set(this._prefixKey(key), value, {
       EX: expirationTime,
-      NX: true,
     });
   }
 

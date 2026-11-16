@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import type { MultisigTransaction } from '@/modules/safe/domain/entities/multisig-transaction.entity';
-import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
-import { TransactionStatus } from '@/modules/transactions/routes/entities/transaction-status.entity';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
+import type { Safe } from '#/modules/safe/domain/entities/safe.entity';
+import { TransactionStatus } from '#/modules/transactions/routes/entities/transaction-status.entity';
 
 // Grace period for Transaction Service indexing lag (config: transactions.statusIndexingGracePeriodMs, default 1 min).
 @Injectable()

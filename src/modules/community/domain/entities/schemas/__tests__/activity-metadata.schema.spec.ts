@@ -1,5 +1,6 @@
-import { activityMetadataBuilder } from '@/modules/community/domain/entities/__tests__/activity-metadata.builder';
-import { ActivityMetadataSchema } from '@/modules/community/domain/entities/activity-metadata.entity';
+// SPDX-License-Identifier: FSL-1.1-MIT
+import { activityMetadataBuilder } from '#/modules/community/domain/entities/__tests__/activity-metadata.builder';
+import { ActivityMetadataSchema } from '#/modules/community/domain/entities/activity-metadata.entity';
 
 describe('ActivityMetadataSchema', () => {
   it('should validate a valid activity metadata', () => {

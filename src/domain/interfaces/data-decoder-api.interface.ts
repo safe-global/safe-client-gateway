@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { Address } from 'viem';
-import type { Page } from '@/domain/entities/page.entity';
-import type { Contract } from '@/modules/data-decoder/domain/v2/entities/contract.entity';
-import type { DataDecoded } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
-import type { Raw } from '@/validation/entities/raw.entity';
+import type { Page } from '#/domain/entities/page.entity';
+import type { Contract } from '#/modules/data-decoder/domain/v2/entities/contract.entity';
+import type { DataDecoded } from '#/modules/data-decoder/domain/v2/entities/data-decoded.entity';
+import type { Raw } from '#/validation/entities/raw.entity';
 
 export const IDataDecoderApi = Symbol('IDataDecoderApi');
 
@@ -12,6 +12,12 @@ export interface IDataDecoderApi {
     data: Address;
     to: Address;
   }): Promise<Raw<DataDecoded>>;
+
+  clearDecodedData(args: {
+    data: Address;
+    to: Address;
+    chainId: string;
+  }): Promise<void>;
 
   getContracts(args: {
     address: Address;

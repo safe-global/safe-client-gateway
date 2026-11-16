@@ -1,29 +1,30 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { NotFoundException } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
 import type { Repository } from 'typeorm';
 import { DataSource } from 'typeorm';
+import type { Address } from 'viem';
 import { getAddress, maxUint256 } from 'viem';
 import type { MockedObject } from 'vitest';
-import configuration from '@/config/entities/__tests__/configuration';
-import { postgresConfig } from '@/config/entities/postgres.config';
-import { DatabaseMigrator } from '@/datasources/db/v2/database-migrator.service';
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { UniqueConstraintError } from '@/datasources/errors/unique-constraint-error';
-import { DB_MAX_SAFE_INTEGER } from '@/domain/common/constants';
-import { getStringEnumKeys } from '@/domain/common/utils/enum';
-import type { ILoggingService } from '@/logging/logging.interface';
-import { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
-import { Space } from '@/modules/spaces/datasources/spaces/entities/space.entity.db';
-import { createMockSpaceEncryptionService } from '@/modules/spaces/domain/__tests__/space-encryption.service.mock';
-import { createMockSpaceAuditRepository } from '@/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
-import { SpaceStatus } from '@/modules/spaces/domain/entities/space.entity';
-import { SpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository';
-import { Member } from '@/modules/users/datasources/entities/member.entity.db';
-import { User } from '@/modules/users/datasources/entities/users.entity.db';
-import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
+import configuration from '#/config/entities/__tests__/configuration';
+import { postgresConfig } from '#/config/entities/postgres.config';
+import { DatabaseMigrator } from '#/datasources/db/v2/database-migrator.service';
+import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
+import { UniqueConstraintError } from '#/datasources/errors/unique-constraint-error';
+import { DB_MAX_SAFE_INTEGER } from '#/domain/common/constants';
+import { getStringEnumKeys } from '#/domain/common/utils/enum';
+import type { ILoggingService } from '#/logging/logging.interface';
+import { SpaceSafe } from '#/modules/spaces/datasources/safes/entities/space-safes.entity.db';
+import { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
+import { createMockSpaceEncryptionService } from '#/modules/spaces/domain/__tests__/space-encryption.service.mock';
+import { createMockSpaceAuditRepository } from '#/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
+import { SpaceStatus } from '#/modules/spaces/domain/entities/space.entity';
+import { SpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository';
+import { Member } from '#/modules/users/datasources/entities/member.entity.db';
+import { User } from '#/modules/users/datasources/entities/users.entity.db';
+import { Wallet } from '#/modules/wallets/datasources/entities/wallets.entity.db';
 
 const mockLoggingService = {
   debug: vi.fn(),
@@ -37,6 +38,8 @@ const SpaceStatusKeys = getStringEnumKeys(SpaceStatus);
 describe('SpaceSafesRepository', () => {
   let postgresDatabaseService: PostgresDatabaseService;
   let spaceSafesRepo: SpaceSafesRepository;
+  let auditRepository: ReturnType<typeof createMockSpaceAuditRepository>;
+  let encryptionService: ReturnType<typeof createMockSpaceEncryptionService>;
   let dbWalletRepo: Repository<Wallet>;
   let dbUserRepo: Repository<User>;
   let dbSpaceRepository: Repository<Space>;
@@ -49,6 +52,42 @@ describe('SpaceSafesRepository', () => {
   });
   const testConfiguration = configuration();
 
+  /** Encrypt then insert, the two halves `SpaceSafesService.create` sequences. */
+  async function addSafes(args: {
+    spaceId: Space['id'];
+    actorUserId: User['id'];
+    payload: Array<{ chainId: string; address: `0x${string}` }>;
+  }): Promise<void> {
+    const rows = await spaceSafesRepo.encryptRows(args.spaceId, args.payload);
+    await postgresDatabaseService.transaction(async (entityManager) =>
+      spaceSafesRepo.insertRows({
+        spaceId: args.spaceId,
+        actorUserId: args.actorUserId,
+        rows,
+        entityManager,
+      }),
+    );
+  }
+
+  /** A space holding exactly these Safes. */
+  async function spaceHolding(
+    payload: Array<{ chainId: string; address: `0x${string}` }>,
+  ): Promise<Space['id']> {
+    const space = await dbSpaceRepository.insert({
+      status: faker.helpers.arrayElement(getStringEnumKeys(SpaceStatus)),
+      name: faker.word.noun(),
+    });
+    const spaceId = space.identifiers[0].id as Space['id'];
+    if (payload.length > 0) {
+      await addSafes({
+        spaceId,
+        actorUserId: faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
+        payload,
+      });
+    }
+    return spaceId;
+  }
+
   const dataSource = new DataSource({
     ...postgresConfig({
       ...testConfiguration.db.connection.postgres,
@@ -58,8 +97,6 @@ describe('SpaceSafesRepository', () => {
     migrationsTableName: testConfiguration.db.orm.migrationsTableName,
     entities: [Member, Space, SpaceSafe, User, Wallet],
   });
-
-  const maxSafesPerSpace = 5;
 
   beforeAll(async () => {
     // Create database
@@ -96,9 +133,6 @@ describe('SpaceSafesRepository', () => {
         if (key === 'db.migrator.retryAfterMs') {
           return testConfiguration.db.migrator.retryAfterMs;
         }
-        if (key === 'spaces.maxSafesPerSpace') {
-          return maxSafesPerSpace;
-        }
       }),
     } as MockedObject<ConfigService>;
     const migrator = new DatabaseMigrator(
@@ -108,11 +142,12 @@ describe('SpaceSafesRepository', () => {
     );
     await migrator.migrate();
 
+    auditRepository = createMockSpaceAuditRepository();
+    encryptionService = createMockSpaceEncryptionService();
     spaceSafesRepo = new SpaceSafesRepository(
       postgresDatabaseService,
-      mockConfigService,
-      createMockSpaceAuditRepository(),
-      createMockSpaceEncryptionService(),
+      auditRepository,
+      encryptionService,
     );
 
     dbWalletRepo = dataSource.getRepository(Wallet);
@@ -298,7 +333,7 @@ describe('SpaceSafesRepository', () => {
         space: { id: spaceId },
       });
 
-      await spaceSafesRepo.create({
+      await addSafes({
         spaceId: spaceId,
         actorUserId: userId,
         payload: [
@@ -331,7 +366,7 @@ describe('SpaceSafesRepository', () => {
           chainId: faker.string.numeric(),
           address: getAddress(faker.finance.ethereumAddress()),
         }),
-        { count: { min: 2, max: maxSafesPerSpace } },
+        { count: { min: 2, max: 5 } },
       );
       const user = await dbUserRepo.insert({
         status: 'ACTIVE',
@@ -354,7 +389,7 @@ describe('SpaceSafesRepository', () => {
         space: { id: spaceId },
       });
 
-      await spaceSafesRepo.create({
+      await addSafes({
         spaceId: spaceId,
         actorUserId: userId,
         payload,
@@ -372,10 +407,8 @@ describe('SpaceSafesRepository', () => {
       );
     });
 
-    it('should fail if the number of SpaceSafes surpasses the limit', async () => {
-      const user = await dbUserRepo.insert({
-        status: 'ACTIVE',
-      });
+    it('undoes the inserts when the audit record fails', async () => {
+      const user = await dbUserRepo.insert({ status: 'ACTIVE' });
       const userId = user.identifiers[0].id as User['id'];
       await dbWalletRepo.insert({
         user: { id: userId },
@@ -393,82 +426,14 @@ describe('SpaceSafesRepository', () => {
         name: faker.word.noun(),
         space: { id: spaceId },
       });
-
-      // Create (maxSafesPerSpace - 1) Safes
-      await spaceSafesRepo.create({
-        spaceId: spaceId,
-        actorUserId: userId,
-        payload: faker.helpers.multiple(
-          () => ({
-            chainId: faker.string.numeric(),
-            address: getAddress(faker.finance.ethereumAddress()),
-          }),
-          { count: maxSafesPerSpace - 1 },
-        ),
-      });
-
-      // Create 2 Safes more to surpass the limit
-      await expect(
-        spaceSafesRepo.create({
-          spaceId: spaceId,
-          actorUserId: userId,
-          payload: faker.helpers.multiple(
-            () => ({
-              chainId: faker.string.numeric(),
-              address: getAddress(faker.finance.ethereumAddress()),
-            }),
-            { count: 2 },
-          ),
-        }),
-      ).rejects.toThrow(
-        new BadRequestException(
-          `This Workspace only allows a maximum of ${maxSafesPerSpace} Safe Accounts. You can only add up to 1 more.`,
-        ),
-      );
-
-      // The Space should still have (maxSafesPerSpace - 1) Safes
-      await expect(spaceSafesRepo.findBySpaceId(spaceId)).resolves.toHaveLength(
-        maxSafesPerSpace - 1,
-      );
-    });
-
-    it('should not mention remaining slots when the Space is already at the limit', async () => {
-      const user = await dbUserRepo.insert({
-        status: 'ACTIVE',
-      });
-      const userId = user.identifiers[0].id as User['id'];
-      await dbWalletRepo.insert({
-        user: { id: userId },
-        address: getAddress(faker.finance.ethereumAddress()),
-      });
-      const space = await dbSpaceRepository.insert({
-        status: faker.helpers.arrayElement(getStringEnumKeys(SpaceStatus)),
-        name: faker.word.noun(),
-      });
-      const spaceId = space.identifiers[0].id as Space['id'];
-      await dbMembersRepository.insert({
-        user: { id: userId },
-        role: 'ADMIN',
-        status: 'ACTIVE',
-        name: faker.word.noun(),
-        space: { id: spaceId },
-      });
-
-      await spaceSafesRepo.create({
-        spaceId: spaceId,
-        actorUserId: userId,
-        payload: faker.helpers.multiple(
-          () => ({
-            chainId: faker.string.numeric(),
-            address: getAddress(faker.finance.ethereumAddress()),
-          }),
-          { count: maxSafesPerSpace },
-        ),
-      });
+      const failure = new Error(faker.lorem.sentence());
+      // `insertRows` must write in the caller's transaction: this is what
+      // breaks if it ever opens one of its own.
+      auditRepository.record.mockRejectedValueOnce(failure);
 
       await expect(
-        spaceSafesRepo.create({
-          spaceId: spaceId,
+        addSafes({
+          spaceId,
           actorUserId: userId,
           payload: [
             {
@@ -477,14 +442,70 @@ describe('SpaceSafesRepository', () => {
             },
           ],
         }),
-      ).rejects.toThrow(
-        new BadRequestException(
-          `This Workspace only allows a maximum of ${maxSafesPerSpace} Safe Accounts.`,
-        ),
+      ).rejects.toThrow(failure);
+
+      await expect(spaceSafesRepo.findBySpaceId(spaceId)).resolves.toEqual([]);
+    });
+
+    it('admits no more Safes than the seat rule allows, under concurrent additions', async () => {
+      const user = await dbUserRepo.insert({ status: 'ACTIVE' });
+      const userId = user.identifiers[0].id as User['id'];
+      await dbWalletRepo.insert({
+        user: { id: userId },
+        address: getAddress(faker.finance.ethereumAddress()),
+      });
+      const space = await dbSpaceRepository.insert({
+        status: faker.helpers.arrayElement(getStringEnumKeys(SpaceStatus)),
+        name: faker.word.noun(),
+      });
+      const spaceId = space.identifiers[0].id as Space['id'];
+      await dbMembersRepository.insert({
+        user: { id: userId },
+        role: 'ADMIN',
+        status: 'ACTIVE',
+        name: faker.word.noun(),
+        space: { id: spaceId },
+      });
+
+      const quota = faker.number.int({ min: 2, max: 4 });
+      const attempts = quota + faker.number.int({ min: 2, max: 5 });
+      // The sequence the route service runs: lock, count, admit, insert.
+      // Without the lock, each of these reads the same pre-insert count and
+      // they all pass.
+      const addSafeUnderQuota = async (): Promise<void> => {
+        const rows = await spaceSafesRepo.encryptRows(spaceId, [
+          {
+            chainId: faker.string.numeric(),
+            address: getAddress(faker.finance.ethereumAddress()),
+          },
+        ]);
+        await postgresDatabaseService.transaction(async (entityManager) => {
+          await spaceSafesRepo.lockSeats(spaceId, entityManager);
+          const used = await spaceSafesRepo.countSeatsBySpaceId(
+            spaceId,
+            entityManager,
+          );
+          if (used + 1 > quota) {
+            throw new Error('seat quota exceeded');
+          }
+          await spaceSafesRepo.insertRows({
+            spaceId,
+            actorUserId: userId,
+            rows,
+            entityManager,
+          });
+        });
+      };
+
+      const results = await Promise.allSettled(
+        Array.from({ length: attempts }, addSafeUnderQuota),
       );
 
+      expect(
+        results.filter((result) => result.status === 'fulfilled'),
+      ).toHaveLength(quota);
       await expect(spaceSafesRepo.findBySpaceId(spaceId)).resolves.toHaveLength(
-        maxSafesPerSpace,
+        quota,
       );
     });
 
@@ -514,12 +535,12 @@ describe('SpaceSafesRepository', () => {
 
       await expect(
         Promise.all([
-          spaceSafesRepo.create({
+          addSafes({
             spaceId: spaceId,
             actorUserId: userId,
             payload: [{ chainId, address }],
           }),
-          spaceSafesRepo.create({
+          addSafes({
             spaceId: spaceId,
             actorUserId: userId,
             payload: [
@@ -536,6 +557,154 @@ describe('SpaceSafesRepository', () => {
           `A SpaceSafe with the same chainId and address already exists: Key (chain_id, address, space_id)=(${chainId}, ${address}, ${spaceId}) already exists.`,
         ),
       );
+    });
+  });
+
+  describe('seats', () => {
+    const chainIds = (count: number): Array<string> =>
+      faker.helpers.uniqueArray(() => faker.string.numeric(5), count);
+
+    it('counts one seat per address, however many chains it is on', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const other = getAddress(faker.finance.ethereumAddress());
+      const [first, second, third] = chainIds(3);
+      const spaceId = await spaceHolding([
+        { chainId: first, address },
+        { chainId: second, address },
+        { chainId: third, address },
+        { chainId: first, address: other },
+      ]);
+
+      await expect(spaceSafesRepo.countSeatsBySpaceId(spaceId)).resolves.toBe(
+        2,
+      );
+    });
+
+    it('frees the seat only once the last chain of the Safe is gone', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const [first, second] = chainIds(2);
+      const spaceId = await spaceHolding([
+        { chainId: first, address },
+        { chainId: second, address },
+      ]);
+
+      await dbSpaceSafesRepository.delete({ chainId: first, address });
+      await expect(spaceSafesRepo.countSeatsBySpaceId(spaceId)).resolves.toBe(
+        1,
+      );
+
+      await dbSpaceSafesRepository.delete({ chainId: second, address });
+      await expect(spaceSafesRepo.countSeatsBySpaceId(spaceId)).resolves.toBe(
+        0,
+      );
+    });
+
+    it('counts an encrypted Safe by its blind index', async () => {
+      // `address` is non-deterministic ciphertext, so the same Safe on two
+      // chains carries two different values and only the index matches. Raw
+      // inserts: the encryption service is mocked out here.
+      const spaceId = await spaceHolding([]);
+      const addressIndex = faker.string.alphanumeric(43);
+      await Promise.all(
+        chainIds(2).map((chainId) =>
+          dbSpaceSafesRepository.insert({
+            chainId,
+            address: `kms:v1:${faker.string.alphanumeric(64)}` as Address,
+            addressIndex,
+            space: { id: spaceId },
+          }),
+        ),
+      );
+
+      await expect(spaceSafesRepo.countSeatsBySpaceId(spaceId)).resolves.toBe(
+        1,
+      );
+      encryptionService.safeAddressIndex.mockReturnValueOnce(addressIndex);
+      await expect(
+        spaceSafesRepo.countNewSeats({
+          spaceId,
+          addresses: [getAddress(faker.finance.ethereumAddress())],
+        }),
+      ).resolves.toBe(0);
+    });
+
+    it('counts no seats for a space holding none', async () => {
+      await expect(
+        spaceSafesRepo.countSeatsBySpaceId(
+          faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
+        ),
+      ).resolves.toBe(0);
+    });
+
+    it('counts the seats of several spaces in one query', async () => {
+      const shared = getAddress(faker.finance.ethereumAddress());
+      const [first, second] = chainIds(2);
+      const oneSafeOnTwoChains = await spaceHolding([
+        { chainId: first, address: shared },
+        { chainId: second, address: shared },
+      ]);
+      const oneSafe = await spaceHolding([
+        {
+          chainId: first,
+          address: getAddress(faker.finance.ethereumAddress()),
+        },
+      ]);
+
+      const seats = await spaceSafesRepo.countSeatsBySpaceIds([
+        oneSafeOnTwoChains,
+        oneSafe,
+      ]);
+
+      expect(seats.get(oneSafeOnTwoChains)).toBe(1);
+      expect(seats.get(oneSafe)).toBe(1);
+    });
+
+    it('counts no seats for no spaces', async () => {
+      await expect(spaceSafesRepo.countSeatsBySpaceIds([])).resolves.toEqual(
+        new Map(),
+      );
+    });
+
+    describe('countNewSeats', () => {
+      it('adds a seat only for an address the space does not hold', async () => {
+        const held = getAddress(faker.finance.ethereumAddress());
+        const added = getAddress(faker.finance.ethereumAddress());
+        const spaceId = await spaceHolding([
+          { chainId: faker.string.numeric(5), address: held },
+        ]);
+
+        // Another chain of the held Safe, plus the same new address twice: one
+        // seat between the three of them.
+        await expect(
+          spaceSafesRepo.countNewSeats({
+            spaceId,
+            addresses: [held, added, added],
+          }),
+        ).resolves.toBe(1);
+      });
+
+      it('adds nothing for a Safe the space already holds', async () => {
+        const held = getAddress(faker.finance.ethereumAddress());
+        const spaceId = await spaceHolding([
+          { chainId: faker.string.numeric(5), address: held },
+        ]);
+
+        await expect(
+          spaceSafesRepo.countNewSeats({ spaceId, addresses: [held] }),
+        ).resolves.toBe(0);
+      });
+
+      it('counts every address as new for a space holding none', async () => {
+        const spaceId = await spaceHolding([]);
+        const addresses = faker.helpers.multiple(
+          () => getAddress(faker.finance.ethereumAddress()),
+          { count: 3 },
+        );
+
+        await expect(
+          spaceSafesRepo.countNewSeats({ spaceId, addresses }),
+        ).resolves.toBe(3);
+      });
     });
   });
 
@@ -574,6 +743,88 @@ describe('SpaceSafesRepository', () => {
           faker.number.int({ max: DB_MAX_SAFE_INTEGER }),
         ),
       ).resolves.toEqual([]);
+    });
+  });
+
+  describe('findBySpaceIds', () => {
+    it('should return the Safes of each space, keyed by space id', async () => {
+      const insertSpace = async (): Promise<Space['id']> => {
+        const space = await dbSpaceRepository.insert({
+          status: faker.helpers.arrayElement(getStringEnumKeys(SpaceStatus)),
+          name: faker.word.noun(),
+        });
+        return space.identifiers[0].id as Space['id'];
+      };
+      const buildSafes = (): Array<{ chainId: string; address: Address }> =>
+        faker.helpers.multiple(
+          () => ({
+            chainId: faker.string.numeric(),
+            address: getAddress(faker.finance.ethereumAddress()),
+          }),
+          { count: { min: 1, max: 4 } },
+        );
+      const [spaceId, otherSpaceId, emptySpaceId, unrequestedSpaceId] =
+        await Promise.all([
+          insertSpace(),
+          insertSpace(),
+          insertSpace(),
+          insertSpace(),
+        ]);
+      const spaceSafes = buildSafes();
+      const otherSpaceSafes = buildSafes();
+      await Promise.all(
+        [
+          ...spaceSafes.map((safe) => ({ ...safe, spaceId })),
+          ...otherSpaceSafes.map((safe) => ({
+            ...safe,
+            spaceId: otherSpaceId,
+          })),
+          ...buildSafes().map((safe) => ({
+            ...safe,
+            spaceId: unrequestedSpaceId,
+          })),
+        ].map(({ chainId, address, spaceId }) =>
+          dbSpaceSafesRepository.insert({
+            chainId,
+            address,
+            space: { id: spaceId },
+          }),
+        ),
+      );
+
+      const result = await spaceSafesRepo.findBySpaceIds([
+        spaceId,
+        otherSpaceId,
+        emptySpaceId,
+      ]);
+
+      expect([...result.keys()]).toEqual([spaceId, otherSpaceId, emptySpaceId]);
+      expect(result.get(spaceId)).toHaveLength(spaceSafes.length);
+      expect(result.get(spaceId)).toEqual(expect.arrayContaining(spaceSafes));
+      expect(result.get(otherSpaceId)).toHaveLength(otherSpaceSafes.length);
+      expect(result.get(otherSpaceId)).toEqual(
+        expect.arrayContaining(otherSpaceSafes),
+      );
+      expect(result.get(emptySpaceId)).toEqual([]);
+      expect(encryptionService.decryptSpaceSafes).toHaveBeenCalledTimes(3);
+      expect(encryptionService.decryptSpaceSafes).toHaveBeenCalledWith(
+        spaceId,
+        expect.arrayContaining(spaceSafes),
+      );
+      expect(encryptionService.decryptSpaceSafes).toHaveBeenCalledWith(
+        otherSpaceId,
+        expect.arrayContaining(otherSpaceSafes),
+      );
+      expect(encryptionService.decryptSpaceSafes).toHaveBeenCalledWith(
+        emptySpaceId,
+        [],
+      );
+    });
+
+    it('should return an empty map if no space is requested', async () => {
+      await expect(spaceSafesRepo.findBySpaceIds([])).resolves.toEqual(
+        new Map(),
+      );
     });
   });
 
@@ -649,25 +900,30 @@ describe('SpaceSafesRepository', () => {
       });
       const spaceId = space.identifiers[0].id as Space['id'];
       const actorUserId = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
-      await spaceSafesRepo.create({
+      await addSafes({
         spaceId: spaceId,
         actorUserId,
         payload: spaceSafes,
       });
 
-      await expect(
-        spaceSafesRepo.find({
-          where: { space: { id: spaceId } },
-        }),
-      ).resolves.toEqual(
-        spaceSafes.map(({ chainId, address }) => ({
-          id: expect.any(Number),
-          chainId,
-          address,
-          addressIndex: null,
-          createdAt: expect.any(Date),
-          updatedAt: expect.any(Date),
-        })),
+      // No `ORDER BY`, so the rows come back in whatever order the plan reads
+      // them: assert the set, like `findBySpaceId` above.
+      const found = await spaceSafesRepo.find({
+        where: { space: { id: spaceId } },
+      });
+
+      expect(found).toHaveLength(spaceSafes.length);
+      expect(found).toEqual(
+        expect.arrayContaining(
+          spaceSafes.map(({ chainId, address }) => ({
+            id: expect.any(Number),
+            chainId,
+            address,
+            addressIndex: null,
+            createdAt: expect.any(Date),
+            updatedAt: expect.any(Date),
+          })),
+        ),
       );
     });
 
@@ -683,6 +939,98 @@ describe('SpaceSafesRepository', () => {
           where: { space: { id: spaceId } },
         }),
       ).toEqual([]);
+    });
+  });
+
+  describe('findSpaceIdsBySafe', () => {
+    it('should find every space holding the Safe on its chain', async () => {
+      const safe = {
+        chainId: faker.string.numeric(),
+        address: getAddress(faker.finance.ethereumAddress()),
+      };
+      const spaceIds = [await spaceHolding([safe]), await spaceHolding([safe])];
+      await spaceHolding([]);
+
+      const actual = await spaceSafesRepo.findSpaceIdsBySafe(safe);
+
+      expect(actual.toSorted()).toEqual(spaceIds.toSorted());
+    });
+
+    it('should not find a space holding the address on another chain', async () => {
+      const safe = {
+        chainId: faker.string.numeric(),
+        address: getAddress(faker.finance.ethereumAddress()),
+      };
+      await spaceHolding([safe]);
+
+      await expect(
+        spaceSafesRepo.findSpaceIdsBySafe({
+          chainId: `${safe.chainId}1`,
+          address: safe.address,
+        }),
+      ).resolves.toEqual([]);
+    });
+  });
+
+  describe('existsInSpace', () => {
+    it('should find a Safe the space holds', async () => {
+      const safe = {
+        chainId: faker.string.numeric(),
+        address: getAddress(faker.finance.ethereumAddress()),
+      };
+      const spaceId = await spaceHolding([safe]);
+
+      await expect(
+        spaceSafesRepo.existsInSpace({ spaceId, ...safe }),
+      ).resolves.toBe(true);
+    });
+
+    it('should not find the same address on another chain', async () => {
+      const safe = {
+        chainId: faker.string.numeric(),
+        address: getAddress(faker.finance.ethereumAddress()),
+      };
+      const spaceId = await spaceHolding([safe]);
+
+      await expect(
+        spaceSafesRepo.existsInSpace({
+          spaceId,
+          chainId: `${safe.chainId}1`,
+          address: safe.address,
+        }),
+      ).resolves.toBe(false);
+    });
+
+    it('should not find a Safe held by another space', async () => {
+      const safe = {
+        chainId: faker.string.numeric(),
+        address: getAddress(faker.finance.ethereumAddress()),
+      };
+      await spaceHolding([safe]);
+      // Same Safe, a space that does not hold it: what stops a member of one
+      // workspace spending its allowance on someone else's Safe.
+      const otherSpaceId = await spaceHolding([]);
+
+      await expect(
+        spaceSafesRepo.existsInSpace({ spaceId: otherSpaceId, ...safe }),
+      ).resolves.toBe(false);
+    });
+
+    it('should not find an address the space never held', async () => {
+      const spaceId = await spaceHolding([
+        {
+          chainId: faker.string.numeric(),
+          address: getAddress(faker.finance.ethereumAddress()),
+        },
+      ]);
+
+      await expect(
+        spaceSafesRepo.existsInSpace({
+          spaceId,
+          chainId: faker.string.numeric(),
+          address: getAddress(faker.finance.ethereumAddress()),
+        }),
+      ).resolves.toBe(false);
     });
   });
 
@@ -739,7 +1087,7 @@ describe('SpaceSafesRepository', () => {
       });
       const spaceId = space.identifiers[0].id as Space['id'];
       const actorUserId = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
-      await spaceSafesRepo.create({
+      await addSafes({
         spaceId: spaceId,
         actorUserId,
         payload: spaceSafes,
@@ -803,7 +1151,7 @@ describe('SpaceSafesRepository', () => {
       });
       const spaceId = space.identifiers[0].id as Space['id'];
       const actorUserId = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
-      await spaceSafesRepo.create({
+      await addSafes({
         spaceId: spaceId,
         actorUserId,
         payload: spaceSafes,
@@ -841,7 +1189,7 @@ describe('SpaceSafesRepository', () => {
       });
       const spaceId = space.identifiers[0].id as Space['id'];
       const actorUserId = faker.number.int({ max: DB_MAX_SAFE_INTEGER });
-      await spaceSafesRepo.create({
+      await addSafes({
         spaceId: spaceId,
         actorUserId,
         payload: spaceSafes,

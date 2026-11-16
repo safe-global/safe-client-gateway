@@ -2,12 +2,12 @@
 import { faker } from '@faker-js/faker';
 import type { Address } from 'viem';
 import { getAddress } from 'viem';
-import type { IBuilder } from '@/__tests__/builder';
-import { Builder } from '@/__tests__/builder';
-import { ContractStatus } from '@/modules/safe-shield/entities/contract-status.entity';
-import { DeadlockStatus } from '@/modules/safe-shield/entities/deadlock-status.entity';
-import { RecipientStatus } from '@/modules/safe-shield/entities/recipient-status.entity';
-import { ThreatStatus } from '@/modules/safe-shield/entities/threat-status.entity';
+import type { IBuilder } from '#/__tests__/builder';
+import { Builder } from '#/__tests__/builder';
+import { ContractStatus } from '#/modules/safe-shield/entities/contract-status.entity';
+import { DeadlockStatus } from '#/modules/safe-shield/entities/deadlock-status.entity';
+import { RecipientStatus } from '#/modules/safe-shield/entities/recipient-status.entity';
+import { ThreatStatus } from '#/modules/safe-shield/entities/threat-status.entity';
 import type {
   AnalysisResult,
   ContractAnalysisResult,

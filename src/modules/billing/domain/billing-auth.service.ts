@@ -3,24 +3,24 @@
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { derToJose } from 'ecdsa-sig-formatter';
 import { z } from 'zod';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { JWT_ES_ALGORITHM } from '@/datasources/jwt/jwt.constants';
-import { jwtClientFactory } from '@/datasources/jwt/jwt.module';
-import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
-import { toSecondsTimestamp } from '@/domain/common/utils/time';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { JWT_ES_ALGORITHM } from '#/datasources/jwt/jwt.constants';
+import { jwtClientFactory } from '#/datasources/jwt/jwt.module';
+import { IJwtService } from '#/datasources/jwt/jwt.service.interface';
+import { toSecondsTimestamp } from '#/domain/common/utils/time';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import { DEFAULT_BILLING_SERVICE_TOKEN_SUBJECT } from '@/modules/billing/domain/billing-auth.constants';
+} from '#/logging/logging.interface';
+import { DEFAULT_BILLING_SERVICE_TOKEN_SUBJECT } from '#/modules/billing/domain/billing-auth.constants';
 import {
   type BillingServiceToken,
   BillingServiceTokenSchema,
   SERVICE_ACCESS_PERMISSION_TYPE,
   SERVICE_ACCESS_ROLE,
   SERVICE_USER_TYPE,
-} from '@/modules/billing/domain/entities/billing-service-token.entity';
-import type { BillingTokenClaims } from '@/modules/billing/domain/entities/billing-token-claims.entity';
+} from '#/modules/billing/domain/entities/billing-service-token.entity';
+import type { BillingTokenClaims } from '#/modules/billing/domain/entities/billing-token-claims.entity';
 
 /**
  * Owns the billing-service webhook credential lifecycle — the "receiver issues

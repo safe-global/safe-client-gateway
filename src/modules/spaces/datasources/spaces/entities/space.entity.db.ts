@@ -7,13 +7,15 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { databaseEnumTransformer } from '@/domain/common/utils/enum';
-import { SpaceSafe } from '@/modules/spaces/datasources/safes/entities/space-safes.entity.db';
+import { databaseEnumTransformer } from '#/domain/common/utils/enum';
+import { SpaceSafe } from '#/modules/spaces/datasources/safes/entities/space-safes.entity.db';
+import type { ExperimentalFeature } from '#/modules/spaces/domain/entities/experimental-feature.entity';
 import {
   type Space as DomainSpace,
   SpaceStatus,
-} from '@/modules/spaces/domain/entities/space.entity';
-import { Member } from '@/modules/users/datasources/entities/member.entity.db';
+} from '#/modules/spaces/domain/entities/space.entity';
+import { toKnownFeatures } from '#/modules/spaces/domain/experimental-features.utils';
+import { Member } from '#/modules/users/datasources/entities/member.entity.db';
 
 @Entity('spaces')
 export class Space implements DomainSpace {
@@ -42,6 +44,17 @@ export class Space implements DomainSpace {
     transformer: databaseEnumTransformer(SpaceStatus),
   })
   status!: keyof typeof SpaceStatus;
+
+  @Column({
+    name: 'experimental_features',
+    type: 'jsonb',
+    default: () => "'[]'",
+    transformer: {
+      from: (value: Array<string> | null) => value && toKnownFeatures(value),
+      to: (value: Array<ExperimentalFeature>) => value,
+    },
+  })
+  experimentalFeatures!: Array<ExperimentalFeature>;
 
   @Column({
     name: 'created_at',

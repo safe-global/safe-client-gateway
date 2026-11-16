@@ -1,10 +1,11 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import type { IBuilder } from '@/__tests__/builder';
-import { Builder } from '@/__tests__/builder';
+import type { IBuilder } from '#/__tests__/builder';
+import { Builder } from '#/__tests__/builder';
 import type {
   DataDecoded,
   DataDecodedParameter,
-} from '@/modules/data-decoder/domain/v1/entities/data-decoded.entity';
+} from '#/modules/data-decoder/domain/v1/entities/data-decoded.entity';
 
 export function dataDecodedBuilder(): IBuilder<DataDecoded> {
   return new Builder<DataDecoded>()

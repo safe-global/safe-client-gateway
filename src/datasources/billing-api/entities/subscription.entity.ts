@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { z } from 'zod';
-import { StripeMetadataSchema } from '@/datasources/billing-api/entities/metadata.entity';
-import { SubscriptionPlanSchema } from '@/datasources/billing-api/entities/plan.entity';
-import { withDashes } from '@/datasources/billing-api/upstream-customer-id.util';
+import { StripeMetadataSchema } from '#/datasources/billing-api/entities/metadata.entity';
+import { SubscriptionPlanSchema } from '#/datasources/billing-api/entities/plan.entity';
+import { withDashes } from '#/datasources/billing-api/upstream-customer-id.util';
 
 export type Subscription = z.infer<typeof SubscriptionSchema>;
 
@@ -43,4 +43,15 @@ export const SubscriptionSchema = z.object({
   currentPeriodStart: z.number().nullish(),
   currentPeriodEnd: z.number().nullish(),
   metadata: StripeMetadataSchema.nullish(),
+  hasPaymentMethod: z.boolean().optional(),
+});
+
+/**
+ * Shape of `GET /customers/{id}/subscriptions`, mirroring the upstream's
+ * `SubscriptionsResultDto`.
+ */
+export type SubscriptionsResult = z.infer<typeof SubscriptionsResultSchema>;
+
+export const SubscriptionsResultSchema = z.object({
+  subscriptions: z.array(SubscriptionSchema),
 });

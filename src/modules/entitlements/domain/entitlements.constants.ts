@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import type { SubscriptionStatus } from '@/datasources/billing-api/entities/subscription.entity';
-import { FEATURE_KEYS } from '@/modules/entitlements/domain/entities/feature.entity';
+import type { SubscriptionStatus } from '#/datasources/billing-api/entities/subscription.entity';
+import {
+  FEATURE_KEYS,
+  FeatureType,
+  SAFE_SEATS_FEATURE_KEY,
+} from '#/modules/entitlements/domain/entities/feature.entity';
 
 export const DAY_IN_MS = 24 * 60 * 60 * 1_000;
 
@@ -15,17 +19,39 @@ export const DAY_IN_MS = 24 * 60 * 60 * 1_000;
  * its counter is wired.
  */
 export const STOCK_METERED_FEATURES = [
-  'safe_seats',
+  SAFE_SEATS_FEATURE_KEY,
 ] as const satisfies ReadonlyArray<(typeof FEATURE_KEYS)[number]>;
 
 export type StockMeteredFeature = (typeof STOCK_METERED_FEATURES)[number];
 
 /** Takes the row, not the key, so a filtered array narrows without a cast. */
+export function isStockMeteredFeatureKey(
+  key: string,
+): key is StockMeteredFeature {
+  return (STOCK_METERED_FEATURES as ReadonlyArray<string>).includes(key);
+}
+
+/** Features the plan grants or does not, with no usage to measure. */
+export const BINARY_FEATURES = [
+  'copilot_scans',
+  'policies',
+  'safenet_checks',
+] as const satisfies ReadonlyArray<(typeof FEATURE_KEYS)[number]>;
+
+export type BinaryFeature = (typeof BINARY_FEATURES)[number];
+
 export function isStockMeteredFeature<T extends { key: string }>(
   feature: T,
 ): feature is T & { key: StockMeteredFeature } {
-  return (STOCK_METERED_FEATURES as ReadonlyArray<string>).includes(
-    feature.key,
+  return isStockMeteredFeatureKey(feature.key);
+}
+
+/** The other half: metered, and counted in `space_feature_usage`. */
+export function isEventMeteredFeature<T extends { key: string; type: string }>(
+  feature: T,
+): feature is T & { type: FeatureType.Metered } {
+  return (
+    feature.type === FeatureType.Metered && !isStockMeteredFeature(feature)
   );
 }
 
@@ -43,9 +69,12 @@ export const ACTIVE_SUBSCRIPTION_STATUSES = [
   'trialing',
 ] as const satisfies ReadonlyArray<SubscriptionStatus>;
 
+export type ActiveSubscriptionStatus =
+  (typeof ACTIVE_SUBSCRIPTION_STATUSES)[number];
+
 export function isActiveSubscriptionStatus(
   status: SubscriptionStatus,
-): boolean {
+): status is ActiveSubscriptionStatus {
   return (ACTIVE_SUBSCRIPTION_STATUSES as ReadonlyArray<string>).includes(
     status,
   );
@@ -58,7 +87,9 @@ export function isActiveSubscriptionStatus(
  * at all.
  */
 export function ordersAfter(stamp: Date | null, mark: Date | null): boolean {
-  if (stamp === null) return false;
+  if (stamp === null) {
+    return false;
+  }
   return mark === null || stamp > mark;
 }
 
@@ -72,6 +103,20 @@ export function ordersAfter(stamp: Date | null, mark: Date | null): boolean {
 export const FEATURE_METADATA_PREFIX = 'FEATURE_';
 
 export const PLAN_NAME_METADATA_KEY = 'planName';
+
+/**
+ * Metadata key identifying the offer a subscription was sold under, e.g.
+ * `BUS-10-A`. Upstream copies it from the payment link onto the subscription
+ * on checkout and on every plan change, so it moves with the price.
+ */
+export const PLAN_CODE_METADATA_KEY = 'planCode';
+
+/**
+ * Metadata key marking which trial a payment link offers: `'true'` for the
+ * legacy grace given to pre-enforcement workspaces, `'false'` for the standard
+ * trial. Same upstream vocabulary as `PLAN_NAME_METADATA_KEY`.
+ */
+export const GRACE_PERIOD_METADATA_KEY = 'gracePeriod';
 
 /**
  * Mirrors the `subscription_entitlements.value` column's `varchar(255)`: a

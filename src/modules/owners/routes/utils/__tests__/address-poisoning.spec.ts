@@ -1,7 +1,8 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   areSimilarAddresses,
   findSimilarAddressPairs,
-} from '@/modules/owners/routes/utils/address-poisoning';
+} from '#/modules/owners/routes/utils/address-poisoning';
 
 describe('areSimilarAddresses', () => {
   it('should return false for identical addresses', () => {

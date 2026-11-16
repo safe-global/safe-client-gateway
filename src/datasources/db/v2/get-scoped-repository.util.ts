@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import type { EntityManager, ObjectLiteral, Repository } from 'typeorm';
-import type { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
+import type { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
 
 /**
  * Repository for `entity`, bound to `entityManager`'s transaction when one is

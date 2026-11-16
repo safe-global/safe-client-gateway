@@ -1,7 +1,8 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
-import type { IBuilder } from '@/__tests__/builder';
-import { Builder } from '@/__tests__/builder';
-import type { NativeCurrency } from '@/modules/chains/domain/entities/native.currency.entity';
+import type { IBuilder } from '#/__tests__/builder';
+import { Builder } from '#/__tests__/builder';
+import type { NativeCurrency } from '#/modules/chains/domain/entities/native.currency.entity';
 
 export function nativeCurrencyBuilder(): IBuilder<NativeCurrency> {
   return new Builder<NativeCurrency>()

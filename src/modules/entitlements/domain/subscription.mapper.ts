@@ -1,25 +1,48 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+
+import type { StripeMetadata } from '#/datasources/billing-api/entities/metadata.entity';
 import {
   type Subscription,
   SubscriptionStatusSchema,
-} from '@/datasources/billing-api/entities/subscription.entity';
-import { fromSecondsTimestamp } from '@/domain/common/utils/time';
-import type { WebhookEvent } from '@/modules/billing/domain/entities/webhook-event.entity';
-import type { FeatureType } from '@/modules/entitlements/domain/entities/feature.entity';
-import type { MaterializedSubscription } from '@/modules/entitlements/domain/entities/materialized-subscription.entity';
+} from '#/datasources/billing-api/entities/subscription.entity';
+import { fromSecondsTimestamp } from '#/domain/common/utils/time';
+import type { WebhookEvent } from '#/modules/billing/domain/entities/webhook-event.entity';
+import type { FeatureType } from '#/modules/entitlements/domain/entities/feature.entity';
+import type { MaterializedSubscription } from '#/modules/entitlements/domain/entities/materialized-subscription.entity';
 import {
   isActiveSubscriptionStatus,
+  PLAN_CODE_METADATA_KEY,
   PLAN_NAME_METADATA_KEY,
-} from '@/modules/entitlements/domain/entitlements.constants';
+} from '#/modules/entitlements/domain/entitlements.constants';
 import {
   hasFeaturePackageMetadata,
   mapFeaturePackage,
-} from '@/modules/entitlements/domain/feature-package.mapper';
+} from '#/modules/entitlements/domain/feature-package.mapper';
 
 type MapperArgs = {
   featureTypeByKey: Map<string, FeatureType>;
   onWarning: (message: string) => void;
+  onError: (message: string) => void;
 };
+
+/**
+ * The offer the subscription was sold under. Every payment link carries one,
+ * so a subscription without it is stored with it unset, but not silently.
+ */
+function planCodeOf(args: {
+  upstreamSubscriptionId: string;
+  metadata: StripeMetadata | null | undefined;
+  onError: (message: string) => void;
+}): string | null {
+  const planCode = args.metadata?.[PLAN_CODE_METADATA_KEY];
+  if (!planCode) {
+    args.onError(
+      `Subscription ${args.upstreamSubscriptionId} carries no ${PLAN_CODE_METADATA_KEY} in its metadata`,
+    );
+    return null;
+  }
+  return planCode;
+}
 
 /**
  * Maps a webhook event's own subscription snapshot to its materialized shape,
@@ -74,6 +97,11 @@ export function mapEventToSubscription(
     status,
     planId,
     planName: data.metadata?.[PLAN_NAME_METADATA_KEY] ?? null,
+    planCode: planCodeOf({
+      upstreamSubscriptionId,
+      metadata: data.metadata,
+      onError: args.onError,
+    }),
     currentPeriodStart,
     currentPeriodEnd,
     entitlements: isActiveSubscriptionStatus(status)
@@ -140,6 +168,11 @@ export function mapUpstreamSubscriptions(
         : subscription.status,
       planId: subscription.plan.id,
       planName: subscription.plan.name ?? null,
+      planCode: planCodeOf({
+        upstreamSubscriptionId: subscription.id,
+        metadata: subscription.metadata,
+        onError: args.onError,
+      }),
       currentPeriodStart,
       currentPeriodEnd,
       entitlements:

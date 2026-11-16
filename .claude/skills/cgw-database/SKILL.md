@@ -10,7 +10,7 @@ Read **[docs/agents/database-and-migrations.md](../../../docs/agents/database-an
 Two rules with a real cost behind them:
 
 - **Every FK column and every column a query filters on gets a `CREATE INDEX` in the same migration.** `wallets.user_id` shipped without one and was indexed ~15 months later (#2144).
-- **Adding a constructor parameter to a repository breaks `*.integration.spec.ts` at runtime only.** Those specs hand-construct repositories, and CI's typecheck and build skip spec files — so nothing catches it until the integration job runs. Grep `new <Repo>(` across every `*.integration.spec.ts` and update all of them.
+- **Adding a constructor parameter to a repository breaks `*.integration.spec.ts`, and only `yarn typecheck` catches it.** Those specs hand-construct repositories; `yarn build` skips spec files and Vitest never type-checks. Grep `new <Repo>(` across every `*.integration.spec.ts` and update all of them.
 
 A TypeORM query-cache id is a cache: it needs paired invalidation on every write path, the same way `CacheRouter` keys do. Migrations are raw SQL, they carry the SPDX `--` header, and `SELECT *` is not used.
 

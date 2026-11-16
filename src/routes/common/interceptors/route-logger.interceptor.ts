@@ -4,10 +4,10 @@ import {
   type ExecutionContext,
   HttpException,
   HttpStatus,
+  Inject,
   Injectable,
   type NestInterceptor,
 } from '@nestjs/common';
-import { Inject } from '@nestjs/common/decorators';
 import type { FastifyReply } from 'fastify';
 import isNumber from 'lodash/isNumber';
 // biome-ignore lint/suspicious/noDeprecatedImports: only multi-callback `tap` overloads are deprecated in rxjs; we use the observer-object signature.
@@ -16,9 +16,9 @@ import { ZodError } from 'zod';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import { formatRouteLogMessage } from '@/logging/utils';
-import type { HttpRequest } from '@/routes/common/http/http-request.utils';
+} from '#/logging/logging.interface';
+import { formatRouteLogMessage } from '#/logging/utils';
+import type { HttpRequest } from '#/routes/common/http/http-request.utils';
 
 /**
  * The {@link RouteLoggerInterceptor} is an interceptor that logs the requests

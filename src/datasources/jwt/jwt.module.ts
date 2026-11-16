@@ -2,9 +2,9 @@
 
 import { Module } from '@nestjs/common';
 import jwt from 'jsonwebtoken';
-import { JwtService } from '@/datasources/jwt/jwt.service';
-import { IJwtService } from '@/datasources/jwt/jwt.service.interface';
-import { toSecondsTimestamp } from '@/domain/common/utils/time';
+import { JwtService } from '#/datasources/jwt/jwt.service';
+import { IJwtService } from '#/datasources/jwt/jwt.service.interface';
+import { toSecondsTimestamp } from '#/domain/common/utils/time';
 
 // Use inferred type
 export function jwtClientFactory() {

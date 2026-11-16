@@ -1,34 +1,34 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import type { Address, Hex } from 'viem';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { CacheRouter } from '@/datasources/cache/cache.router';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { CacheRouter } from '#/datasources/cache/cache.router';
 import {
   CacheService,
   type ICacheService,
-} from '@/datasources/cache/cache.service.interface';
-import { HttpErrorFactory } from '@/datasources/errors/http-error-factory';
+} from '#/datasources/cache/cache.service.interface';
+import { HttpErrorFactory } from '#/datasources/errors/http-error-factory';
 import {
   type INetworkService,
   NetworkService,
-} from '@/datasources/network/network.service.interface';
-import type { IRelayApi } from '@/domain/interfaces/relay-api.interface';
+} from '#/datasources/network/network.service.interface';
+import type { IRelayApi } from '#/domain/interfaces/relay-api.interface';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import { formatRhinestoneError } from '@/modules/relay/datasources/helpers/rhinestone-error.helper';
+} from '#/logging/logging.interface';
+import { formatRhinestoneError } from '#/modules/relay/datasources/helpers/rhinestone-error.helper';
 import {
   type Relay,
   type RhinestoneRelayResponse,
   RhinestoneRelayResponseSchema,
-} from '@/modules/relay/domain/entities/relay.entity';
+} from '#/modules/relay/domain/entities/relay.entity';
 import {
   type RelayTaskStatus,
   type RhinestoneTaskStatusResponse,
   RhinestoneTaskStatusResponseSchema,
-} from '@/modules/relay/domain/entities/relay-task-status.entity';
-import { type Raw, rawify } from '@/validation/entities/raw.entity';
+} from '#/modules/relay/domain/entities/relay-task-status.entity';
+import { type Raw, rawify } from '#/validation/entities/raw.entity';
 
 @Injectable()
 export class RhinestoneApi implements IRelayApi {

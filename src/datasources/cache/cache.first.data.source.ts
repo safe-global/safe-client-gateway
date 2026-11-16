@@ -1,32 +1,32 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
-import { IConfigurationService } from '@/config/configuration.service.interface';
+import { IConfigurationService } from '#/config/configuration.service.interface';
 import {
   CacheService,
   type ICacheService,
-} from '@/datasources/cache/cache.service.interface';
-import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
-import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
-import type { NetworkRequest } from '@/datasources/network/entities/network.request.entity';
+} from '#/datasources/cache/cache.service.interface';
+import { CacheDir } from '#/datasources/cache/entities/cache-dir.entity';
+import { NetworkResponseError } from '#/datasources/network/entities/network.error.entity';
+import type { NetworkRequest } from '#/datasources/network/entities/network.request.entity';
 import {
   type INetworkService,
   NetworkService,
-} from '@/datasources/network/network.service.interface';
-import { LogType } from '@/domain/common/entities/log-type.entity';
-import type { Page } from '@/domain/entities/page.entity';
+} from '#/datasources/network/network.service.interface';
+import { LogType } from '#/domain/common/entities/log-type.entity';
+import type { Page } from '#/domain/entities/page.entity';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
+} from '#/logging/logging.interface';
+import type { Safe } from '#/modules/safe/domain/entities/safe.entity';
 import {
   isCreationTransaction,
   isEthereumTransaction,
   isModuleTransaction,
   isMultisigTransaction,
   type Transaction,
-} from '@/modules/safe/domain/entities/transaction.entity';
-import type { Raw } from '@/validation/entities/raw.entity';
+} from '#/modules/safe/domain/entities/transaction.entity';
+import type { Raw } from '#/validation/entities/raw.entity';
 
 /**
  * A data source which tries to retrieve values from cache using
@@ -136,7 +136,9 @@ export class CacheFirstDataSource {
     queryFn: () => Promise<Raw<T>>;
   }): Promise<Raw<T>> {
     const cached = await this.cacheService.hGet(args.cacheDir);
-    if (cached != null) return this._getFromCachedData(args.cacheDir, cached);
+    if (cached != null) {
+      return this._getFromCachedData(args.cacheDir, cached);
+    }
 
     try {
       return await args.queryFn();
@@ -204,7 +206,12 @@ export class CacheFirstDataSource {
       data: args.data,
     });
 
-    const shouldBeCached = await this._shouldBeCached(key, startTimeMs);
+    // hSet does not write without a positive TTL, so the invalidation
+    // check is not needed in that case.
+    const isCacheable =
+      args.expireTimeSeconds !== undefined && args.expireTimeSeconds > 0;
+    const shouldBeCached =
+      isCacheable && (await this._shouldBeCached(key, startTimeMs));
     if (shouldBeCached) {
       await this.cacheService.hSet(
         args.cacheDir,
@@ -264,7 +271,9 @@ export class CacheFirstDataSource {
       new CacheDir(`invalidationTimeMs:${key}`, ''),
     );
 
-    if (!invalidationTimeMsStr) return true;
+    if (!invalidationTimeMsStr) {
+      return true;
+    }
 
     const invalidationTimeMs = Number(invalidationTimeMsStr);
     return (

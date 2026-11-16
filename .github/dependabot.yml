@@ -11,12 +11,13 @@ updates:
     cooldown:
       default-days: 7 # Aligns with minimumReleaseAge / npmMinimalAgeGate
     groups:
-      nest-js-core:
+      nest-js:
         patterns:
-          - '@nestjs/common'
-          - '@nestjs/core'
-          - '@nestjs/platform-express'
-          - '@nestjs/testing'
+          # Nest majors are only installable in lockstep: a v12 package deep-imports
+          # paths that v11 siblings do not expose. `nestjs-cls` bounds Nest by peer
+          # range, so it has to move in the same PR.
+          - '@nestjs/*'
+          - 'nestjs-cls'
       aws-sdk:
         patterns:
           - '@aws-sdk/*'

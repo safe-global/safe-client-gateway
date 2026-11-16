@@ -2,14 +2,14 @@
 import { faker } from '@faker-js/faker';
 import { getAddress, type Hex } from 'viem';
 import type { z } from 'zod';
-import type { IBuilder } from '@/__tests__/builder';
-import { Builder } from '@/__tests__/builder';
+import type { IBuilder } from '#/__tests__/builder';
+import { Builder } from '#/__tests__/builder';
 import type {
   DataDecoded,
   DataDecodedParameter,
   MultisendSchema,
-} from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
-import { DataDecodedAccuracy } from '@/modules/data-decoder/domain/v2/entities/data-decoded.entity';
+} from '#/modules/data-decoder/domain/v2/entities/data-decoded.entity';
+import { DataDecodedAccuracy } from '#/modules/data-decoder/domain/v2/entities/data-decoded.entity';
 
 export function multisendBuilder(): IBuilder<z.infer<typeof MultisendSchema>> {
   return (

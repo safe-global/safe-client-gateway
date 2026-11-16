@@ -7,24 +7,24 @@ import type { MockedObject } from 'vitest';
 import {
   getDeploymentVersionsByChainIds,
   RELAY_SUPPORTED_CHAIN_IDS,
-} from '@/__tests__/deployments.helper';
+} from '#/__tests__/deployments.helper';
 import {
   getMultiSendCallOnlyDeployments,
   getMultiSendDeployments,
   getProxyFactoryDeployments,
   getSafeL2SingletonDeployments,
   getSafeSingletonDeployments,
-} from '@/domain/common/utils/deployments';
-import type { ILoggingService } from '@/logging/logging.interface';
+} from '#/domain/common/utils/deployments';
+import type { ILoggingService } from '#/logging/logging.interface';
 import {
   execTransactionFromModuleEncoder,
   executeNextTxEncoder,
-} from '@/modules/alerts/domain/contracts/__tests__/encoders/delay-modifier-encoder.builder';
-import { DelayModifierDecoder } from '@/modules/alerts/domain/contracts/decoders/delay-modifier-decoder.helper';
+} from '#/modules/alerts/domain/contracts/__tests__/encoders/delay-modifier-encoder.builder';
+import { DelayModifierDecoder } from '#/modules/alerts/domain/contracts/decoders/delay-modifier-decoder.helper';
 import {
   multiSendEncoder,
   multiSendTransactionsEncoder,
-} from '@/modules/contracts/domain/__tests__/encoders/multi-send-encoder.builder';
+} from '#/modules/contracts/domain/__tests__/encoders/multi-send-encoder.builder';
 import {
   addOwnerWithThresholdEncoder,
   changeThresholdEncoder,
@@ -32,21 +32,21 @@ import {
   removeOwnerEncoder,
   setupEncoder,
   swapOwnerEncoder,
-} from '@/modules/contracts/domain/__tests__/encoders/safe-encoder.builder';
-import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
-import { SafeDecoder } from '@/modules/contracts/domain/decoders/safe-decoder.helper';
+} from '#/modules/contracts/domain/__tests__/encoders/safe-encoder.builder';
+import { MultiSendDecoder } from '#/modules/contracts/domain/decoders/multi-send-decoder.helper';
+import { SafeDecoder } from '#/modules/contracts/domain/decoders/safe-decoder.helper';
 import {
   erc20TransferEncoder,
   erc20TransferFromEncoder,
-} from '@/modules/relay/domain/contracts/__tests__/encoders/erc20-encoder.builder';
-import { createProxyWithNonceEncoder } from '@/modules/relay/domain/contracts/__tests__/encoders/proxy-factory-encoder.builder';
-import { Erc20Decoder } from '@/modules/relay/domain/contracts/decoders/erc-20-decoder.helper';
-import { ProxyFactoryDecoder } from '@/modules/relay/domain/contracts/decoders/proxy-factory-decoder.helper';
-import { SignerFactoryDecoder } from '@/modules/relay/domain/contracts/decoders/signer-factory-decoder.helper';
-import { InvalidMultiSendError } from '@/modules/relay/domain/errors/invalid-multisend.error';
-import { RelayTransactionHelper } from '@/modules/relay/domain/relay-transaction-helper';
-import { multisigTransactionBuilder } from '@/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
-import type { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
+} from '#/modules/relay/domain/contracts/__tests__/encoders/erc20-encoder.builder';
+import { createProxyWithNonceEncoder } from '#/modules/relay/domain/contracts/__tests__/encoders/proxy-factory-encoder.builder';
+import { Erc20Decoder } from '#/modules/relay/domain/contracts/decoders/erc-20-decoder.helper';
+import { ProxyFactoryDecoder } from '#/modules/relay/domain/contracts/decoders/proxy-factory-decoder.helper';
+import { SignerFactoryDecoder } from '#/modules/relay/domain/contracts/decoders/signer-factory-decoder.helper';
+import { InvalidMultiSendError } from '#/modules/relay/domain/errors/invalid-multisend.error';
+import { RelayTransactionHelper } from '#/modules/relay/domain/relay-transaction-helper';
+import { multisigTransactionBuilder } from '#/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
+import type { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
 
 const supportedChainIds = RELAY_SUPPORTED_CHAIN_IDS;
 
@@ -484,6 +484,66 @@ describe('RelayTransactionHelper', () => {
     });
   });
 
+  describe('hasRefundingTransaction', () => {
+    function batchOf(gasPrices: Array<bigint>): Hex {
+      const safeAddress = getAddress(faker.finance.ethereumAddress());
+      return multiSendEncoder()
+        .with(
+          'transactions',
+          multiSendTransactionsEncoder(
+            gasPrices.map((gasPrice) => ({
+              to: safeAddress,
+              value: BigInt(0),
+              data: execTransactionEncoder()
+                .with('gasPrice', gasPrice)
+                .encode(),
+              operation: 0,
+            })),
+          ),
+        )
+        .encode();
+    }
+
+    it('should return true for a refunding execTransaction', () => {
+      const data = execTransactionEncoder()
+        .with('gasPrice', faker.number.bigInt({ min: BigInt(1) }))
+        .encode();
+
+      expect(helper.hasRefundingTransaction(data)).toBe(true);
+    });
+
+    it('should return true for a batch with any refunding execTransaction', () => {
+      const data = batchOf(
+        faker.helpers.shuffle([
+          faker.number.bigInt({ min: BigInt(1) }),
+          BigInt(0),
+        ]),
+      );
+
+      expect(helper.hasRefundingTransaction(data)).toBe(true);
+    });
+
+    it('should return false for a batch of gasless execTransactions', () => {
+      const data = batchOf([BigInt(0), BigInt(0)]);
+
+      expect(helper.hasRefundingTransaction(data)).toBe(false);
+    });
+
+    it('should return false for a gasless execTransaction', () => {
+      const data = execTransactionEncoder()
+        .with('gasPrice', BigInt(0))
+        .encode();
+
+      expect(helper.hasRefundingTransaction(data)).toBe(false);
+    });
+
+    it('should return false for non-execTransaction calldata', () => {
+      const data = erc20TransferEncoder().encode();
+
+      expect(helper.hasRefundingTransaction(data)).toBe(false);
+    });
+  });
+
   describe('isOwnerManagementTransaction', () => {
     it.each([
       ['addOwnerWithThreshold', addOwnerWithThresholdEncoder],
@@ -696,7 +756,9 @@ describe('RelayTransactionHelper', () => {
         'should return true for createProxyWithNonce with official L1 singleton at version %s',
         (version) => {
           const [singleton] = getSafeSingletonDeployments({ version, chainId });
-          if (!singleton) return;
+          if (!singleton) {
+            return;
+          }
           const data = createProxyWithNonceEncoder()
             .with('singleton', singleton)
             .encode();
@@ -718,7 +780,9 @@ describe('RelayTransactionHelper', () => {
             version,
             chainId,
           });
-          if (!singleton) return;
+          if (!singleton) {
+            return;
+          }
           const data = createProxyWithNonceEncoder()
             .with('singleton', singleton)
             .encode();
@@ -859,7 +923,9 @@ describe('RelayTransactionHelper', () => {
         'should return owners from a createProxyWithNonce call with official L1 singleton at version %s',
         (version) => {
           const [singleton] = getSafeSingletonDeployments({ version, chainId });
-          if (!singleton) return;
+          if (!singleton) {
+            return;
+          }
           const owners = [
             getAddress(faker.finance.ethereumAddress()),
             getAddress(faker.finance.ethereumAddress()),
@@ -882,7 +948,9 @@ describe('RelayTransactionHelper', () => {
             version,
             chainId,
           });
-          if (!singleton) return;
+          if (!singleton) {
+            return;
+          }
           const owners = [
             getAddress(faker.finance.ethereumAddress()),
             getAddress(faker.finance.ethereumAddress()),
@@ -907,7 +975,9 @@ describe('RelayTransactionHelper', () => {
       const chainId = faker.helpers.arrayElement(supportedChainIds);
       const version = PROXY_FACTORY_VERSIONS[chainId][0];
       const [singleton] = getSafeSingletonDeployments({ version, chainId });
-      if (!singleton) return;
+      if (!singleton) {
+        return;
+      }
       // execTransaction is a valid Safe ABI function but not 'setup'
       const data = createProxyWithNonceEncoder()
         .with('singleton', singleton)

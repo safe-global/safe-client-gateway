@@ -2,19 +2,19 @@
 
 import { faker } from '@faker-js/faker';
 import type { MockedObject } from 'vitest';
-import type { IConfigurationService } from '@/config/configuration.service.interface';
-import { nameBuilder } from '@/domain/common/entities/name.builder';
-import type { ILoggingService } from '@/logging/logging.interface';
-import type { SesEmailQueueService } from '@/modules/email/ses/ses-email-queue.service';
-import { createMockSpaceEncryptionService } from '@/modules/spaces/domain/__tests__/space-encryption.service.mock';
-import { spaceBuilder } from '@/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
-import type { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
+import type { IConfigurationService } from '#/config/configuration.service.interface';
+import { nameBuilder } from '#/domain/common/entities/name.builder';
+import type { ILoggingService } from '#/logging/logging.interface';
+import type { SesEmailQueueService } from '#/modules/email/ses/ses-email-queue.service';
+import { createMockSpaceEncryptionService } from '#/modules/spaces/domain/__tests__/space-encryption.service.mock';
+import { spaceBuilder } from '#/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
+import type { ISpacesRepository } from '#/modules/spaces/domain/spaces.repository.interface';
 import {
   emailInviteUserDtoBuilder,
   walletInviteUserDtoBuilder,
-} from '@/modules/spaces/routes/members/entities/__tests__/invite-user.dto.builder';
-import { SpaceInviteEmailService } from '@/modules/spaces/routes/members/space-invite-email.service';
-import { fakeEmailAddress } from '@/validation/entities/schemas/__tests__/email-address.builder';
+} from '#/modules/spaces/routes/members/entities/__tests__/invite-user.dto.builder';
+import { SpaceInviteEmailService } from '#/modules/spaces/routes/members/space-invite-email.service';
+import { fakeEmailAddress } from '#/validation/entities/schemas/__tests__/email-address.builder';
 
 const BASE_URI = 'https://app.safe.global';
 const INVITE_URL = 'https://app.safe.global/welcome/spaces';

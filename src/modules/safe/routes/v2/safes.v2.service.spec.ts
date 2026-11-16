@@ -3,37 +3,48 @@
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
-import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
-import type { ILoggingService } from '@/logging/logging.interface';
-import type { ZerionWalletPortfolio } from '@/modules/balances/datasources/entities/zerion-wallet-portfolio.entity';
-import type { IZerionWalletPortfolioApi } from '@/modules/balances/datasources/zerion-wallet-portfolio-api.service';
-import type { IBalancesRepository } from '@/modules/balances/domain/balances.repository.interface';
-import { balanceBuilder } from '@/modules/balances/domain/entities/__tests__/balance.builder';
-import type { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
-import { balancesProviderBuilder } from '@/modules/chains/domain/entities/__tests__/balances-provider.builder';
-import { chainBuilder } from '@/modules/chains/domain/entities/__tests__/chain.builder';
-import type { Chain } from '@/modules/chains/domain/entities/chain.entity';
-import type { IFeatureFlagService } from '@/modules/chains/feature-flags/feature-flag.service.interface';
-import { safeBuilder } from '@/modules/safe/domain/entities/__tests__/safe.builder';
-import type { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
-import { SafesV2Service } from '@/modules/safe/routes/v2/safes.v2.service';
+import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
+import type { ILoggingService } from '#/logging/logging.interface';
+import type { ZerionWalletPortfolio } from '#/modules/balances/datasources/entities/zerion-wallet-portfolio.entity';
+import type { IZerionWalletPortfolioApi } from '#/modules/balances/datasources/zerion-wallet-portfolio-api.service';
+import type { IBalancesRepository } from '#/modules/balances/domain/balances.repository.interface';
+import { balanceBuilder } from '#/modules/balances/domain/entities/__tests__/balance.builder';
+import type { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
+import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
+import type { Chain } from '#/modules/chains/domain/entities/chain.entity';
+import { appBalanceBuilder } from '#/modules/portfolio/domain/entities/__tests__/app-balance.builder';
+import { appPositionBuilder } from '#/modules/portfolio/domain/entities/__tests__/app-position.builder';
+import { appPositionGroupBuilder } from '#/modules/portfolio/domain/entities/__tests__/app-position-group.builder';
+import { portfolioSnapshotBuilder } from '#/modules/portfolio/domain/entities/__tests__/portfolio-snapshot.builder';
+import { tokenBalanceBuilder } from '#/modules/portfolio/domain/entities/__tests__/token-balance.builder';
+import { tokenInfoBuilder } from '#/modules/portfolio/domain/entities/__tests__/token-info.builder';
+import type { IPortfolioRepository } from '#/modules/portfolio/domain/portfolio.repository.interface';
+import { PositionType } from '#/modules/positions/domain/entities/position-type.entity';
+import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
+import type { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
+import { SafesV2Service } from '#/modules/safe/routes/v2/safes.v2.service';
+import type { IZerionRepository } from '#/modules/zerion/domain/zerion.repository.interface';
 
 const mockSafeRepository = vi.mocked({
   getSafe: vi.fn(),
   getTransactionQueue: vi.fn(),
-} as unknown as MockedObject<ISafeRepository>);
+} as MockedObject<ISafeRepository>);
 
 const mockChainsRepository = vi.mocked({
   getChain: vi.fn(),
-} as unknown as MockedObject<IChainsRepository>);
+} as MockedObject<IChainsRepository>);
 
 const mockBalancesRepository = vi.mocked({
   getBalances: vi.fn(),
-} as unknown as MockedObject<IBalancesRepository>);
+} as MockedObject<IBalancesRepository>);
 
 const mockZerionWalletPortfolioApi = vi.mocked({
   getPortfolio: vi.fn(),
-} as unknown as MockedObject<IZerionWalletPortfolioApi>);
+} as MockedObject<IZerionWalletPortfolioApi>);
+
+const mockPortfolioRepository = vi.mocked({
+  getPortfolioSnapshot: vi.fn(),
+} as MockedObject<IPortfolioRepository>);
 
 const mockLoggingService = {
   debug: vi.fn(),
@@ -42,23 +53,18 @@ const mockLoggingService = {
   info: vi.fn(),
 } as MockedObject<ILoggingService>;
 
-const mockFeatureFlagService = vi.mocked({
-  isFeatureEnabled: vi.fn(),
-} as MockedObject<IFeatureFlagService>);
+const mockZerionRepository = vi.mocked({
+  getChainIdToNetworkMapping: vi.fn(),
+} as MockedObject<IZerionRepository>);
 
-const buildZerionChain = (
-  chainId: string,
-  chainName: string,
-  isTestnet = false,
-): Chain =>
-  chainBuilder()
-    .with('chainId', chainId)
-    .with('isTestnet', isTestnet)
-    .with(
-      'balancesProvider',
-      balancesProviderBuilder().with('chainName', chainName).build(),
-    )
-    .build();
+// Chains Zerion lists per environment, keyed by chainId; anything else is unsupported.
+const zerionNetworks: Record<'mainnet' | 'testnet', Record<string, string>> = {
+  mainnet: { '1': 'ethereum', '137': 'polygon' },
+  testnet: { '11155111': 'sepolia' },
+};
+
+const buildChain = (chainId: string, isTestnet = false): Chain =>
+  chainBuilder().with('chainId', chainId).with('isTestnet', isTestnet).build();
 
 const buildPortfolio = (
   byChain: Record<string, number>,
@@ -76,21 +82,35 @@ const buildPortfolio = (
 describe('SafesV2Service', () => {
   let service: SafesV2Service;
 
-  beforeEach(() => {
-    vi.resetAllMocks();
-    const fakeConfigurationService = new FakeConfigurationService();
-    fakeConfigurationService.set('mappings.safe.maxOverviews', 10);
-    fakeConfigurationService.set('features.zerion', true);
+  let fakeConfigurationService: FakeConfigurationService;
 
-    service = new SafesV2Service(
+  const buildService = (): SafesV2Service =>
+    new SafesV2Service(
       mockSafeRepository,
       mockChainsRepository,
       mockBalancesRepository,
       mockZerionWalletPortfolioApi,
       fakeConfigurationService,
       mockLoggingService,
-      mockFeatureFlagService,
+      mockZerionRepository,
+      mockPortfolioRepository,
     );
+
+  // Rebuilds the service, which reads the feature flags in its constructor.
+  const enableZerionTestnets = (): void => {
+    fakeConfigurationService.set('features.zerionTestnets', true);
+    service = buildService();
+  };
+
+  beforeEach(() => {
+    vi.resetAllMocks();
+    fakeConfigurationService = new FakeConfigurationService();
+    fakeConfigurationService.set('mappings.safe.maxOverviews', 10);
+    fakeConfigurationService.set('features.zerion', true);
+    fakeConfigurationService.set('features.zerionTestnets', false);
+    fakeConfigurationService.set('features.safesPortfolioSnapshot', false);
+
+    service = buildService();
 
     mockSafeRepository.getSafe.mockImplementation(({ address }) =>
       Promise.resolve(safeBuilder().with('address', address).build()),
@@ -101,14 +121,17 @@ describe('SafesV2Service', () => {
       previous: null,
       results: [],
     });
-    mockFeatureFlagService.isFeatureEnabled.mockResolvedValue(true);
+    mockZerionRepository.getChainIdToNetworkMapping.mockImplementation(
+      (isTestnet) =>
+        Promise.resolve(zerionNetworks[isTestnet ? 'testnet' : 'mainnet']),
+    );
   });
 
   it('fetches one portfolio for a multi-chain wallet and maps distinct per-chain values', async () => {
     const address = getAddress(faker.finance.ethereumAddress());
     const chains: Record<string, Chain> = {
-      '1': buildZerionChain('1', 'ethereum'),
-      '137': buildZerionChain('137', 'polygon'),
+      '1': buildChain('1'),
+      '137': buildChain('137'),
     };
     mockChainsRepository.getChain.mockImplementation((chainId: string) =>
       Promise.resolve(chains[chainId]),
@@ -133,11 +156,57 @@ describe('SafesV2Service', () => {
     expect(mockBalancesRepository.getBalances).not.toHaveBeenCalled();
   });
 
+  it('serves a testnet chain from the balances repo without touching Zerion', async () => {
+    const address = getAddress(faker.finance.ethereumAddress());
+    mockChainsRepository.getChain.mockResolvedValue(
+      buildChain('11155111', true),
+    );
+    mockBalancesRepository.getBalances.mockResolvedValue([
+      balanceBuilder().with('fiatBalance', '9').build(),
+    ]);
+
+    const result = await service.getSafeOverview({
+      currency: 'USD',
+      addresses: [{ chainId: '11155111', address }],
+      trusted: false,
+    });
+
+    expect(result[0].fiatTotal).toBe('9');
+    expect(
+      mockZerionRepository.getChainIdToNetworkMapping,
+    ).not.toHaveBeenCalled();
+    expect(mockZerionWalletPortfolioApi.getPortfolio).not.toHaveBeenCalled();
+  });
+
+  it('serves a testnet chain from Zerion once testnets are enabled', async () => {
+    enableZerionTestnets();
+    const address = getAddress(faker.finance.ethereumAddress());
+    mockChainsRepository.getChain.mockResolvedValue(
+      buildChain('11155111', true),
+    );
+    mockZerionWalletPortfolioApi.getPortfolio.mockResolvedValue(
+      buildPortfolio({ sepolia: 5 }),
+    );
+
+    const result = await service.getSafeOverview({
+      currency: 'USD',
+      addresses: [{ chainId: '11155111', address }],
+      trusted: false,
+    });
+
+    expect(result[0].fiatTotal).toBe('5');
+    expect(
+      mockZerionRepository.getChainIdToNetworkMapping,
+    ).toHaveBeenCalledExactlyOnceWith(true);
+    expect(mockBalancesRepository.getBalances).not.toHaveBeenCalled();
+  });
+
   it('fetches two portfolios for the same address across mainnet and testnet', async () => {
+    enableZerionTestnets();
     const address = getAddress(faker.finance.ethereumAddress());
     const chains: Record<string, Chain> = {
-      '1': buildZerionChain('1', 'ethereum', false),
-      '11155111': buildZerionChain('11155111', 'sepolia', true),
+      '1': buildChain('1'),
+      '11155111': buildChain('11155111', true),
     };
     mockChainsRepository.getChain.mockImplementation((chainId: string) =>
       Promise.resolve(chains[chainId]),
@@ -159,15 +228,12 @@ describe('SafesV2Service', () => {
     expect(result).toHaveLength(2);
   });
 
-  it('uses the portfolio for enabled chains and the balances repo for disabled ones, deduping getChain', async () => {
+  it('uses the portfolio for Zerion-listed chains and the balances repo for others, deduping getChain', async () => {
     const address = getAddress(faker.finance.ethereumAddress());
-    const enabled = buildZerionChain('1', 'ethereum');
-    const disabled = chainBuilder()
-      .with('chainId', '10')
-      .with('isTestnet', false)
-      .with('balancesProvider', { chainName: null, enabled: false })
-      .build();
-    const chains: Record<string, Chain> = { '1': enabled, '10': disabled };
+    const chains: Record<string, Chain> = {
+      '1': buildChain('1'),
+      '10': buildChain('10'),
+    };
     mockChainsRepository.getChain.mockImplementation((chainId: string) =>
       Promise.resolve(chains[chainId]),
     );
@@ -197,9 +263,7 @@ describe('SafesV2Service', () => {
 
   it('degrades a failed portfolio to the balances repo without dropping the Safe or fabricating $0', async () => {
     const address = getAddress(faker.finance.ethereumAddress());
-    mockChainsRepository.getChain.mockResolvedValue(
-      buildZerionChain('1', 'ethereum'),
-    );
+    mockChainsRepository.getChain.mockResolvedValue(buildChain('1'));
     mockZerionWalletPortfolioApi.getPortfolio.mockRejectedValue(
       new Error('429 Too Many Requests'),
     );
@@ -221,9 +285,7 @@ describe('SafesV2Service', () => {
 
   it('does not fetch the portfolio for a non-Safe address and drops the entry', async () => {
     const address = getAddress(faker.finance.ethereumAddress());
-    mockChainsRepository.getChain.mockResolvedValue(
-      buildZerionChain('1', 'ethereum'),
-    );
+    mockChainsRepository.getChain.mockResolvedValue(buildChain('1'));
     // Address is not a Safe — getSafe rejects.
     mockSafeRepository.getSafe.mockRejectedValue(new Error('Not a Safe'));
 
@@ -240,9 +302,7 @@ describe('SafesV2Service', () => {
 
   it('drops the Safe (never $0) when both the portfolio and the balances repo fail', async () => {
     const address = getAddress(faker.finance.ethereumAddress());
-    mockChainsRepository.getChain.mockResolvedValue(
-      buildZerionChain('1', 'ethereum'),
-    );
+    mockChainsRepository.getChain.mockResolvedValue(buildChain('1'));
     mockZerionWalletPortfolioApi.getPortfolio.mockRejectedValue(
       new Error('429'),
     );
@@ -259,17 +319,31 @@ describe('SafesV2Service', () => {
     expect(result).toHaveLength(0);
   });
 
-  it('falls back to the balances repo (not $0) for a chain with a null balancesProvider chainName even when the flag is on', async () => {
+  it('falls back to the balances repo (not $0) for a chain Zerion does not list', async () => {
     const address = getAddress(faker.finance.ethereumAddress());
-    mockChainsRepository.getChain.mockResolvedValue(
-      chainBuilder()
-        .with('chainId', '1')
-        .with('isTestnet', false)
-        .with('balancesProvider', { chainName: null, enabled: true })
-        .build(),
-    );
+    mockChainsRepository.getChain.mockResolvedValue(buildChain('10'));
     mockBalancesRepository.getBalances.mockResolvedValue([
       balanceBuilder().with('fiatBalance', '15').build(),
+    ]);
+
+    const result = await service.getSafeOverview({
+      currency: 'USD',
+      addresses: [{ chainId: '10', address }],
+      trusted: false,
+    });
+
+    expect(mockZerionWalletPortfolioApi.getPortfolio).not.toHaveBeenCalled();
+    expect(result[0].fiatTotal).toBe('15');
+  });
+
+  it('falls back to the balances repo (not $0) when the Zerion chain lookup fails', async () => {
+    const address = getAddress(faker.finance.ethereumAddress());
+    mockChainsRepository.getChain.mockResolvedValue(buildChain('1'));
+    mockZerionRepository.getChainIdToNetworkMapping.mockRejectedValue(
+      new Error('Zerion unavailable'),
+    );
+    mockBalancesRepository.getBalances.mockResolvedValue([
+      balanceBuilder().with('fiatBalance', '12').build(),
     ]);
 
     const result = await service.getSafeOverview({
@@ -279,17 +353,12 @@ describe('SafesV2Service', () => {
     });
 
     expect(mockZerionWalletPortfolioApi.getPortfolio).not.toHaveBeenCalled();
-    expect(result[0].fiatTotal).toBe('15');
+    expect(result[0].fiatTotal).toBe('12');
   });
 
   it('ignores non-finite token balances in the fallback reducer', async () => {
     const address = getAddress(faker.finance.ethereumAddress());
-    mockChainsRepository.getChain.mockResolvedValue(
-      chainBuilder()
-        .with('chainId', '1')
-        .with('balancesProvider', { chainName: null, enabled: true })
-        .build(),
-    );
+    mockChainsRepository.getChain.mockResolvedValue(buildChain('10'));
     mockBalancesRepository.getBalances.mockResolvedValue([
       balanceBuilder().with('fiatBalance', '20').build(),
       balanceBuilder().with('fiatBalance', 'not-a-number').build(),
@@ -297,7 +366,7 @@ describe('SafesV2Service', () => {
 
     const result = await service.getSafeOverview({
       currency: 'USD',
-      addresses: [{ chainId: '1', address }],
+      addresses: [{ chainId: '10', address }],
       trusted: false,
     });
 
@@ -306,9 +375,7 @@ describe('SafesV2Service', () => {
 
   it('returns a real $0 for an enabled chain absent from the portfolio distribution', async () => {
     const address = getAddress(faker.finance.ethereumAddress());
-    mockChainsRepository.getChain.mockResolvedValue(
-      buildZerionChain('1', 'ethereum'),
-    );
+    mockChainsRepository.getChain.mockResolvedValue(buildChain('1'));
     // Wallet holds nothing on ethereum — chain key absent from distribution.
     mockZerionWalletPortfolioApi.getPortfolio.mockResolvedValue(
       buildPortfolio({ polygon: 30 }),
@@ -322,5 +389,176 @@ describe('SafesV2Service', () => {
 
     expect(result[0].fiatTotal).toBe('0');
     expect(mockBalancesRepository.getBalances).not.toHaveBeenCalled();
+  });
+  describe('with features.safesPortfolioSnapshot', () => {
+    const fiat = (): number =>
+      faker.number.int({ min: 1, max: 1_000_000 }) / 100;
+
+    const token = (args: { chainId: string; value: number }) =>
+      tokenBalanceBuilder()
+        .with(
+          'tokenInfo',
+          tokenInfoBuilder().with('chainId', args.chainId).build(),
+        )
+        .with('balanceFiat', `${args.value}`)
+        .build();
+
+    const deposit = (args: { chainId: string; value: number }) =>
+      appBalanceBuilder()
+        .with('groups', [
+          appPositionGroupBuilder()
+            .with('items', [
+              appPositionBuilder()
+                .with(
+                  'tokenInfo',
+                  tokenInfoBuilder().with('chainId', args.chainId).build(),
+                )
+                .with('type', PositionType.deposit)
+                .with('balanceFiat', `${args.value}`)
+                .build(),
+            ])
+            .build(),
+        ])
+        .build();
+
+    beforeEach(() => {
+      fakeConfigurationService.set('features.safesPortfolioSnapshot', true);
+      service = buildService();
+      mockChainsRepository.getChain.mockImplementation((chainId: string) =>
+        Promise.resolve(buildChain(chainId)),
+      );
+    });
+
+    it('values each chain from one shared snapshot per wallet, with no Zerion /portfolio call', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const currency = faker.finance.currencyCode();
+      const trusted = faker.datatype.boolean();
+      const [walletOnMainnet, depositOnMainnet, walletOnPolygon] = [
+        fiat(),
+        fiat(),
+        fiat(),
+      ];
+      mockPortfolioRepository.getPortfolioSnapshot.mockResolvedValue(
+        portfolioSnapshotBuilder()
+          .with('tokenBalances', [
+            token({ chainId: '1', value: walletOnMainnet }),
+            token({ chainId: '137', value: walletOnPolygon }),
+          ])
+          .with('positionBalances', [
+            deposit({ chainId: '1', value: depositOnMainnet }),
+          ])
+          .build(),
+      );
+
+      const result = await service.getSafeOverview({
+        currency,
+        addresses: [
+          { chainId: '1', address },
+          { chainId: '137', address },
+        ],
+        trusted,
+      });
+
+      expect(
+        mockPortfolioRepository.getPortfolioSnapshot,
+      ).toHaveBeenCalledTimes(1);
+      expect(mockPortfolioRepository.getPortfolioSnapshot).toHaveBeenCalledWith(
+        { address, fiatCode: currency, trusted, isTestnet: false },
+      );
+      expect(mockZerionWalletPortfolioApi.getPortfolio).not.toHaveBeenCalled();
+      expect(
+        Number(result.find(({ chainId }) => chainId === '1')?.fiatTotal),
+      ).toBeCloseTo(walletOnMainnet + depositOnMainnet, 6);
+      expect(
+        Number(result.find(({ chainId }) => chainId === '137')?.fiatTotal),
+      ).toBeCloseTo(walletOnPolygon, 6);
+    });
+
+    it('reads a separate snapshot for the same address on a testnet', async () => {
+      fakeConfigurationService.set('features.zerionTestnets', true);
+      service = buildService();
+      mockChainsRepository.getChain.mockImplementation((chainId: string) =>
+        Promise.resolve(buildChain(chainId, chainId === '11155111')),
+      );
+      const address = getAddress(faker.finance.ethereumAddress());
+      const currency = faker.finance.currencyCode();
+      const trusted = faker.datatype.boolean();
+      const [onMainnet, onTestnet] = [fiat(), fiat()];
+      mockPortfolioRepository.getPortfolioSnapshot.mockImplementation(
+        ({ isTestnet }) =>
+          Promise.resolve(
+            portfolioSnapshotBuilder()
+              .with('tokenBalances', [
+                isTestnet
+                  ? token({ chainId: '11155111', value: onTestnet })
+                  : token({ chainId: '1', value: onMainnet }),
+              ])
+              .with('positionBalances', [])
+              .build(),
+          ),
+      );
+
+      const result = await service.getSafeOverview({
+        currency,
+        addresses: [
+          { chainId: '1', address },
+          { chainId: '11155111', address },
+        ],
+        trusted,
+      });
+
+      expect(
+        mockPortfolioRepository.getPortfolioSnapshot,
+      ).toHaveBeenCalledTimes(2);
+      expect(mockPortfolioRepository.getPortfolioSnapshot).toHaveBeenCalledWith(
+        { address, fiatCode: currency, trusted, isTestnet: true },
+      );
+      expect(
+        Number(result.find(({ chainId }) => chainId === '1')?.fiatTotal),
+      ).toBeCloseTo(onMainnet, 6);
+      expect(
+        Number(result.find(({ chainId }) => chainId === '11155111')?.fiatTotal),
+      ).toBeCloseTo(onTestnet, 6);
+    });
+
+    it('returns a real $0 for a Zerion chain with no rows in the snapshot', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      mockPortfolioRepository.getPortfolioSnapshot.mockResolvedValue(
+        portfolioSnapshotBuilder()
+          .with('tokenBalances', [token({ chainId: '1', value: fiat() })])
+          .with('positionBalances', [])
+          .build(),
+      );
+
+      const [overview] = await service.getSafeOverview({
+        currency: faker.finance.currencyCode(),
+        addresses: [{ chainId: '137', address }],
+        trusted: faker.datatype.boolean(),
+      });
+
+      expect(overview.fiatTotal).toBe('0');
+      expect(mockBalancesRepository.getBalances).not.toHaveBeenCalled();
+    });
+
+    it('falls back to the balances repo (not $0) when the snapshot fails', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const fallbackValue = fiat();
+      mockPortfolioRepository.getPortfolioSnapshot.mockRejectedValue(
+        new Error('Zerion down'),
+      );
+      mockBalancesRepository.getBalances.mockResolvedValue([
+        balanceBuilder().with('fiatBalance', `${fallbackValue}`).build(),
+      ]);
+
+      const [overview] = await service.getSafeOverview({
+        currency: faker.finance.currencyCode(),
+        addresses: [{ chainId: '1', address }],
+        trusted: faker.datatype.boolean(),
+      });
+
+      expect(Number(overview.fiatTotal)).toBeCloseTo(fallbackValue, 6);
+      expect(mockBalancesRepository.getBalances).toHaveBeenCalledTimes(1);
+      expect(mockZerionWalletPortfolioApi.getPortfolio).not.toHaveBeenCalled();
+    });
   });
 });

@@ -2,15 +2,15 @@
 
 import { faker } from '@faker-js/faker';
 import type { MockedObject } from 'vitest';
-import { fakeJson } from '@/__tests__/faker';
-import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
-import { FakeCacheService } from '@/datasources/cache/__tests__/fake.cache.service';
-import { CacheFirstDataSource } from '@/datasources/cache/cache.first.data.source';
-import type { ICacheService } from '@/datasources/cache/cache.service.interface';
-import { CacheDir } from '@/datasources/cache/entities/cache-dir.entity';
-import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import type { ILoggingService } from '@/logging/logging.interface';
+import { fakeJson } from '#/__tests__/faker';
+import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
+import { FakeCacheService } from '#/datasources/cache/__tests__/fake.cache.service';
+import { CacheFirstDataSource } from '#/datasources/cache/cache.first.data.source';
+import type { ICacheService } from '#/datasources/cache/cache.service.interface';
+import { CacheDir } from '#/datasources/cache/entities/cache-dir.entity';
+import { NetworkResponseError } from '#/datasources/network/entities/network.error.entity';
+import type { INetworkService } from '#/datasources/network/network.service.interface';
+import type { ILoggingService } from '#/logging/logging.interface';
 
 const mockLoggingService: MockedObject<ILoggingService> = {
   info: vi.fn(),
@@ -149,6 +149,54 @@ describe('CacheFirstDataSource', () => {
       expect(fakeCacheService.keyCount()).toBe(1); // only invalidation timestamp is cached
       await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeNull(); // item is not cached
     });
+
+    it.each([
+      ['zero', 0],
+      ['undefined', undefined],
+    ])(
+      'should return the network data without checking the invalidation time nor caching it if expireTimeSeconds is %s',
+      async (_, expireTimeSeconds) => {
+        const mockCache = vi.mocked({
+          hGet: vi.fn(),
+          hSet: vi.fn(),
+        } as MockedObject<ICacheService>);
+        cacheFirstDataSource = new CacheFirstDataSource(
+          mockCache,
+          mockNetworkService,
+          mockLoggingService,
+          fakeConfigurationService,
+        );
+        const targetUrl = faker.internet.url({ appendSlash: false });
+        const cacheDir = new CacheDir(faker.word.sample(), faker.word.sample());
+        const notFoundExpireTimeSeconds = faker.number.int();
+        const data = JSON.parse(fakeJson());
+        mockCache.hGet.mockResolvedValue(null);
+        mockNetworkService.get.mockImplementation(({ url }) => {
+          switch (url) {
+            case targetUrl:
+              return Promise.resolve({ data, status: 200 });
+            default:
+              return Promise.reject(`No matching rule for url: ${url}`);
+          }
+        });
+
+        const actual = await cacheFirstDataSource.get({
+          cacheDir,
+          url: targetUrl,
+          notFoundExpireTimeSeconds,
+          expireTimeSeconds,
+        });
+
+        expect(actual).toEqual(data);
+        expect(mockNetworkService.get).toHaveBeenCalledTimes(1);
+        expect(mockCache.hGet).toHaveBeenCalledTimes(1);
+        expect(mockCache.hGet).toHaveBeenCalledWith(cacheDir);
+        expect(mockCache.hGet).not.toHaveBeenCalledWith(
+          new CacheDir(`invalidationTimeMs:${cacheDir.key}`, ''),
+        );
+        expect(mockCache.hSet).not.toHaveBeenCalled();
+      },
+    );
 
     it('should return the cached data without calling the underlying network interface', async () => {
       const cacheDir = new CacheDir(faker.word.sample(), faker.word.sample());
@@ -433,6 +481,56 @@ describe('CacheFirstDataSource', () => {
       expect(fakeCacheService.keyCount()).toBe(1); // only invalidation timestamp is cached
       await expect(fakeCacheService.hGet(cacheDir)).resolves.toBeNull(); // item is not cached
     });
+
+    it.each([
+      ['zero', 0],
+      ['undefined', undefined],
+    ])(
+      'should return the network data without checking the invalidation time nor caching it if expireTimeSeconds is %s',
+      async (_, expireTimeSeconds) => {
+        const mockCache = vi.mocked({
+          hGet: vi.fn(),
+          hSet: vi.fn(),
+        } as MockedObject<ICacheService>);
+        cacheFirstDataSource = new CacheFirstDataSource(
+          mockCache,
+          mockNetworkService,
+          mockLoggingService,
+          fakeConfigurationService,
+        );
+        const targetUrl = faker.internet.url({ appendSlash: false });
+        const cacheDir = new CacheDir(faker.word.sample(), faker.word.sample());
+        const notFoundExpireTimeSeconds = faker.number.int();
+        const res = JSON.parse(fakeJson());
+        const data = JSON.parse(fakeJson());
+        mockCache.hGet.mockResolvedValue(null);
+        mockNetworkService.post.mockImplementation(({ url }) => {
+          switch (url) {
+            case targetUrl:
+              return Promise.resolve({ data: res, status: 200 });
+            default:
+              return Promise.reject(`No matching rule for url: ${url}`);
+          }
+        });
+
+        const actual = await cacheFirstDataSource.post({
+          cacheDir,
+          url: targetUrl,
+          notFoundExpireTimeSeconds,
+          expireTimeSeconds,
+          data,
+        });
+
+        expect(actual).toEqual(res);
+        expect(mockNetworkService.post).toHaveBeenCalledTimes(1);
+        expect(mockCache.hGet).toHaveBeenCalledTimes(1);
+        expect(mockCache.hGet).toHaveBeenCalledWith(cacheDir);
+        expect(mockCache.hGet).not.toHaveBeenCalledWith(
+          new CacheDir(`invalidationTimeMs:${cacheDir.key}`, ''),
+        );
+        expect(mockCache.hSet).not.toHaveBeenCalled();
+      },
+    );
 
     it('should return the cached data without calling the underlying network interface', async () => {
       const cacheDir = new CacheDir(faker.word.sample(), faker.word.sample());

@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { faker } from '@faker-js/faker';
 import {
   Body,
   Controller,
@@ -12,9 +13,9 @@ import {
 import { Test } from '@nestjs/testing';
 import type { FastifyRequest } from 'fastify';
 import request from 'supertest';
-import { createFastifyAdapter, parseBodyLimit } from '@/app.provider';
-import { FakeConfigurationService } from '@/config/__tests__/fake.configuration.service';
-import { IConfigurationService } from '@/config/configuration.service.interface';
+import { createFastifyAdapter, parseBodyLimit } from '#/app.provider';
+import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
+import { IConfigurationService } from '#/config/configuration.service.interface';
 
 @Controller()
 class ProbeController {
@@ -36,15 +37,23 @@ class ProbeController {
 
   @Delete('resource')
   deleteResource(): void {}
+
+  @Get('headers')
+  getHeaders(@Req() req: FastifyRequest): {
+    headers: FastifyRequest['headers'];
+    rawHeaders: FastifyRequest['raw']['headers'];
+  } {
+    return { headers: req.headers, rawHeaders: req.raw.headers };
+  }
 }
 
 describe('createFastifyAdapter', () => {
   let app: INestApplication;
 
-  const createApp = async (trustProxy: string, jsonLimit = '1mb') => {
+  const createApp = async (trustProxy: string, bodyLimit = '1mb') => {
     const fakeConfigurationService = new FakeConfigurationService();
-    fakeConfigurationService.set('express.trustProxy', trustProxy);
-    fakeConfigurationService.set('express.jsonLimit', jsonLimit);
+    fakeConfigurationService.set('httpServer.trustProxy', trustProxy);
+    fakeConfigurationService.set('httpServer.bodyLimit', bodyLimit);
 
     const moduleRef = await Test.createTestingModule({
       controllers: [ProbeController],
@@ -85,14 +94,10 @@ describe('createFastifyAdapter', () => {
     expect(body.ip).toBe('203.0.113.7');
   });
 
-  it('supports a numeric hop count', async () => {
-    app = await createApp('1');
-
-    const { body } = await request(app.getHttpServer())
-      .get('/ip')
-      .set('X-Forwarded-For', '203.0.113.7');
-
-    expect(body.ip).toBe('203.0.113.7');
+  it('rejects a numeric hop count', async () => {
+    await expect(createApp('1')).rejects.toThrow(
+      'Invalid trust proxy hop count: 1',
+    );
   });
 
   it('falls back to the socket address when trust proxy is disabled', async () => {
@@ -167,6 +172,30 @@ describe('createFastifyAdapter', () => {
       .set('Content-Type', 'application/json')
       .send('{"__proto__": {"polluted": true}}')
       .expect(400);
+  });
+
+  it('drops inbound x-safe-* headers in any casing', async () => {
+    app = await createApp('0');
+    const safeAppUserAgent = faker.internet.userAgent();
+    const customHeader = faker.string.alphanumeric();
+
+    const { body } = await request(app.getHttpServer())
+      .get('/headers')
+      .set('X-Safe-Req-Id', faker.string.uuid())
+      .set(`x-safe-${faker.string.alpha()}`, faker.string.alphanumeric())
+      .set('Safe-App-User-Agent', safeAppUserAgent)
+      .set('X-Custom', customHeader)
+      .expect(200);
+
+    for (const headers of [body.headers, body.rawHeaders]) {
+      expect(
+        Object.keys(headers).filter((name) => name.startsWith('x-safe-')),
+      ).toEqual([]);
+      expect(headers).toMatchObject({
+        'safe-app-user-agent': safeAppUserAgent,
+        'x-custom': customHeader,
+      });
+    }
   });
 });
 

@@ -239,13 +239,24 @@ status: faker.helpers.arrayElement(SubscriptionStatus),
 
 ### R-013: Interfaces, types, constants, and helpers inline in a service file
 
-**Pattern:** a service or guard file that also declares its interface, its constants, and two or three module-level helper functions.
+**Pattern:** a service or guard file that also declares its interface, its constants, and two or three module-level helper functions. The same remark covers an anonymous object type written out in full at two or more signatures — the same `Array<{ transaction: ...; dataDecoded: ... }>` repeated across methods of one file or across files — instead of being named once and imported.
 
 **Why it's bad:** the file stops being findable by name — a reader looking for the interface has no reason to open the implementation — and a helper declared beside its one caller gets copied rather than imported by the second caller. This repo's naming convention exists precisely so each of these has a predictable path.
 
-**Corrected form:** interface to `*.interface.ts`, constants and shared types to their own file beside it, helpers to a `helpers/` module. `module-structure.md` has the naming table.
+**Corrected form:** interface to `*.interface.ts`, constants and shared types to their own file beside it, helpers to a `helpers/` module. `module-structure.md` has the naming table. A repeated inline object type becomes one named type, generic where callers narrow it, in the owning module's `domain/entities/`:
 
-**Spotted in:** #3217 (three separate comments: "Interface should be extracted to another file", "Helpers should also be extracted to another file", "const and `type` should be extracted to a separate file"), #3284 ("i think its getting crowded, we can extract it to `types` file or smth").
+```ts
+// Don't — the same shape at every signature
+transactions: Array<{ transaction: Transaction; dataDecoded: DataDecoded | null }>;
+// Do — src/modules/transactions/domain/entities/decoded-transaction.entity.ts
+export type DecodedTransaction<T extends Transaction = Transaction> = {
+  transaction: T;
+  dataDecoded: DataDecoded | null;
+};
+transactions: Array<DecodedTransaction<MultisigTransaction>>;
+```
+
+**Spotted in:** #3217 (three separate comments: "Interface should be extracted to another file", "Helpers should also be extracted to another file", "const and `type` should be extracted to a separate file"), #3284 ("i think its getting crowded, we can extract it to `types` file or smth"), #3703 (an inline pair type "is reused 3 times in current file and 1 time by `multisig-transaction.mapper.ts`. Maybe it is worth to extract this type and use everywhere").
 **Status:** active
 
 ### R-014: A method too large to follow
@@ -453,3 +464,27 @@ await Promise.allSettled([
 
 **Spotted in:** #3294 ("it is better to pin against a hash").
 **Status:** active
+
+## Authorization
+
+### R-031: A private copy of the Workspace admin or member check
+
+**Pattern:** a `private async assertActiveAdmin(...)` in a service, an inline `membersRepository.findOne({ role: 'ADMIN', status: 'ACTIVE', ... })`, or a repository query that filters the space by the caller's membership — where `assertMember` / `assertAdmin` from `src/modules/spaces/domain/space-assert.utils.ts` would do.
+
+**Why it's bad:** every copy is another place a fix has to land, and they drift — the repo reached five implementations of one predicate, three 403 messages, and one endpoint answering 404. The helpers return the membership row, so a copy returning `void` also costs a second query when the caller needs the role.
+
+**Corrected form:**
+
+```ts
+// Don't
+private async assertActiveAdmin(...): Promise<void> {
+  const member = await this.membersRepository.findOne({ ..., status: 'ACTIVE', role: 'ADMIN' });
+  if (!member) throw new ForbiddenException('User is not an active admin.');
+}
+// Do
+const member = await assertMember(this.membersRepository, spaceId, userId);
+const callerIsAdmin = member.role === 'ADMIN'; // or assertAdmin(...) when admin is required
+```
+
+**Spotted in:** #2539, #3026, #3107, #3175 — one copy each, consolidated in one follow-up.
+**Status:** active — `security.md`'s "Workspace authorization through the shared assertions only" rule owns this.

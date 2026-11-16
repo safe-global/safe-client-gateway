@@ -1,51 +1,83 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
+import { Inject, Injectable } from '@nestjs/common';
+import { Equal } from 'typeorm';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { CacheRouter } from '#/datasources/cache/cache.router';
+import {
+  CacheService,
+  type ICacheService,
+} from '#/datasources/cache/cache.service.interface';
+import { CacheDir } from '#/datasources/cache/entities/cache-dir.entity';
+import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
+import { LogType } from '#/domain/common/entities/log-type.entity';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import type { AuthPayload } from '@/modules/auth/domain/entities/auth-payload.entity';
-import { getAuthenticatedUserIdOrFail } from '@/modules/auth/utils/assert-authenticated.utils';
-import type { Feature } from '@/modules/entitlements/datasources/entities/feature.entity.db';
-import type { SpaceSubscription } from '@/modules/entitlements/datasources/entities/space-subscription.entity.db';
-import type { SubscriptionEntitlement } from '@/modules/entitlements/datasources/entities/subscription-entitlement.entity.db';
+} from '#/logging/logging.interface';
+import { asError } from '#/logging/utils';
+import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
+import { getAuthenticatedUserIdOrFail } from '#/modules/auth/utils/assert-authenticated.utils';
+import type { Feature } from '#/modules/entitlements/datasources/entities/feature.entity.db';
+import type { SpaceSubscription } from '#/modules/entitlements/datasources/entities/space-subscription.entity.db';
+import type { SubscriptionEntitlement } from '#/modules/entitlements/datasources/entities/subscription-entitlement.entity.db';
+import type { FeatureKey } from '#/modules/entitlements/domain/entities/feature.entity';
 import {
   FeatureType,
   isFeatureKey,
-} from '@/modules/entitlements/domain/entities/feature.entity';
+} from '#/modules/entitlements/domain/entities/feature.entity';
+import type { FeatureGrant } from '#/modules/entitlements/domain/entities/feature-grant.entity';
+import { CachedGrantsSchema } from '#/modules/entitlements/domain/entities/feature-grant.entity';
 import type {
   MaterializedSubscription,
   ParsedEntitlement,
-} from '@/modules/entitlements/domain/entities/materialized-subscription.entity';
+} from '#/modules/entitlements/domain/entities/materialized-subscription.entity';
+import type {
+  PlanContext,
+  SpacePlanContext,
+} from '#/modules/entitlements/domain/entities/plan-context.entity';
 import type {
   ResolvedEntitlement,
   ResolvedEntitlements,
-} from '@/modules/entitlements/domain/entities/resolved-entitlements.entity';
-import type { StockMeteredFeature } from '@/modules/entitlements/domain/entitlements.constants';
+} from '#/modules/entitlements/domain/entities/resolved-entitlements.entity';
+import type {
+  ConsumedQuota,
+  IEntitlementEnforcement,
+} from '#/modules/entitlements/domain/entitlement-enforcement.interface';
+import type {
+  BinaryFeature,
+  StockMeteredFeature,
+} from '#/modules/entitlements/domain/entitlements.constants';
 import {
   isActiveSubscriptionStatus,
+  isEventMeteredFeature,
   isStockMeteredFeature,
+  isStockMeteredFeatureKey,
   ordersAfter,
-} from '@/modules/entitlements/domain/entitlements.constants';
+} from '#/modules/entitlements/domain/entitlements.constants';
 import {
   effectiveEntitlement,
   eventPeriodStart,
+  fitsWithinQuota,
+  hasClosedWindow,
+  isEnforcementActive,
   resetsAt,
-} from '@/modules/entitlements/domain/entitlements.rules';
-import { IFeaturesRepository } from '@/modules/entitlements/domain/features.repository.interface';
-import { ISpaceFeatureUsageRepository } from '@/modules/entitlements/domain/space-feature-usage.repository.interface';
-import { ISubscriptionEntitlementsRepository } from '@/modules/entitlements/domain/subscription-entitlements.repository.interface';
-import { ISubscriptionsRepository } from '@/modules/entitlements/domain/subscriptions.repository.interface';
+} from '#/modules/entitlements/domain/entitlements.rules';
+import { FeatureNotGrantedError } from '#/modules/entitlements/domain/errors/feature-not-granted.error';
+import { QuotaExceededError } from '#/modules/entitlements/domain/errors/quota-exceeded.error';
+import { IFeaturesRepository } from '#/modules/entitlements/domain/features.repository.interface';
+import { ISpaceFeatureUsageRepository } from '#/modules/entitlements/domain/space-feature-usage.repository.interface';
+import { ISubscriptionEntitlementsRepository } from '#/modules/entitlements/domain/subscription-entitlements.repository.interface';
+import { ISubscriptionsRepository } from '#/modules/entitlements/domain/subscriptions.repository.interface';
 import type {
   EntitlementItem,
   EntitlementsResponse,
-} from '@/modules/entitlements/routes/entities/entitlements-response.entity';
-import type { Space } from '@/modules/spaces/domain/entities/space.entity';
-import { ISpaceSafesRepository } from '@/modules/spaces/domain/safes/space-safes.repository.interface';
-import { ISpacesRepository } from '@/modules/spaces/domain/spaces.repository.interface';
-import { assertMember } from '@/modules/spaces/routes/utils/space-assert.utils';
-import { IMembersRepository } from '@/modules/users/domain/members/members.repository.interface';
+  SpacesEntitlementsResponse,
+} from '#/modules/entitlements/routes/entities/entitlements-response.entity';
+import type { Space } from '#/modules/spaces/domain/entities/space.entity';
+import { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository.interface';
+import { assertMember } from '#/modules/spaces/domain/space-assert.utils';
+import { ISpacesRepository } from '#/modules/spaces/domain/spaces.repository.interface';
+import { IMembersRepository } from '#/modules/users/domain/members/members.repository.interface';
 
 /**
  * Orchestrates the entitlements feature: reads and writes rows through the
@@ -53,7 +85,16 @@ import { IMembersRepository } from '@/modules/users/domain/members/members.repos
  * and owns the transactions spanning several tables.
  */
 @Injectable()
-export class EntitlementsService {
+export class EntitlementsService implements IEntitlementEnforcement {
+  private readonly enforcementStartsAt: Date;
+  private readonly grantsCacheTtlSeconds: number;
+  /**
+   * Exhaustive like `stockCounters`: a new published feature does not compile
+   * until its pre-enforcement limit is named, NULL saying it has none and is
+   * left to the plan. Goes away after the date.
+   */
+  private readonly preEnforcementQuotas: Record<FeatureKey, number | null>;
+
   public constructor(
     @Inject(IFeaturesRepository)
     private readonly featuresRepository: IFeaturesRepository,
@@ -71,9 +112,36 @@ export class EntitlementsService {
     private readonly membersRepository: IMembersRepository,
     @Inject(PostgresDatabaseService)
     private readonly postgresDatabaseService: PostgresDatabaseService,
+    @Inject(CacheService)
+    private readonly cacheService: ICacheService,
+    @Inject(IConfigurationService)
+    configurationService: IConfigurationService,
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
-  ) {}
+  ) {
+    this.enforcementStartsAt = configurationService.getOrThrow<Date>(
+      'entitlements.enforcementStartsAt',
+    );
+    this.grantsCacheTtlSeconds = configurationService.getOrThrow<number>(
+      'expirationTimeInSeconds.entitlements',
+    );
+    this.preEnforcementQuotas = {
+      safe_seats: configurationService.getOrThrow<number>(
+        'spaces.maxSafesPerSpace',
+      ),
+      // NULL: no Copilot scan has ever counted against a workspace before
+      // now, so the date protects no behaviour here and the plan decides
+      // from the start.
+      copilot_scans: null,
+      // NULL: nothing has ever been relayed at a workspace's expense, so the
+      // date protects no behaviour here and the plan decides from the start.
+      sponsored_transactions: null,
+      // NULL: policies were never gated before now, so the plan decides from the start.
+      policies: null,
+      // NULL: Safenet checks were never sponsored before now, so the plan decides from the start.
+      safenet_checks: null,
+    };
+  }
 
   /**
    * Resolves the workspace's entitlements.
@@ -81,51 +149,434 @@ export class EntitlementsService {
   public async resolveEntitlements(
     spaceId: Space['id'],
   ): Promise<ResolvedEntitlements> {
-    const now = new Date();
-    // Independent reads: the usage lookup below is the first step that needs
-    // their results.
+    const [resolved] = (
+      await this.resolvePlanContext(await this.loadPlanContext(spaceId))
+    ).values();
+    return resolved;
+  }
+
+  /**
+   * {@link resolveEntitlements} for several workspaces, reading each table
+   * once for all of them, keyed by workspace id.
+   */
+  private async resolvePlanContext(
+    args: PlanContext,
+  ): Promise<Map<Space['id'], ResolvedEntitlements>> {
+    const { now, features } = args;
+    const usageBySpaceId = await this.getUsageBySpaceId(args);
+
+    return new Map(
+      args.spaces.map(
+        ({ spaceId, spaceCreatedAt, activeSubscription, purchased }) => {
+          const usedByFeatureId = usageBySpaceId.get(spaceId);
+          const entitlements = features.map((feature) =>
+            this.resolveFeature({
+              feature,
+              spaceCreatedAt,
+              activeSubscription,
+              purchased: purchased.get(feature.id),
+              used: usedByFeatureId?.get(feature.id) ?? 0,
+              now,
+            }),
+          );
+
+          return [
+            spaceId,
+            {
+              plan:
+                activeSubscription &&
+                isActiveSubscriptionStatus(activeSubscription.status)
+                  ? {
+                      id: activeSubscription.planId,
+                      name: activeSubscription.planName,
+                      cycleEndsAt: activeSubscription.currentPeriodEnd,
+                      status: activeSubscription.status,
+                    }
+                  : null,
+              entitlements,
+            },
+          ] as const;
+        },
+      ),
+    );
+  }
+
+  public async assertWithinQuota(args: {
+    spaceId: Space['id'];
+    featureKey: Exclude<FeatureKey, BinaryFeature>;
+    delta: number;
+  }): Promise<void> {
+    const grant = await this.resolveGrant(args);
+    // Unlimited: nothing to count against.
+    if (grant.quota === null) {
+      return;
+    }
+    this.admit({
+      ...args,
+      grant,
+      used: await this.countFeatureUsage({ ...args, grant }),
+    });
+  }
+
+  /** A Binary feature's whole verdict: the plan grants it or it does not. */
+  public async assertFeatureGranted(args: {
+    spaceId: Space['id'];
+    featureKey: BinaryFeature;
+  }): Promise<void> {
+    const grant = await this.resolveGrant(args);
+    if (grant.enabled) {
+      return;
+    }
+    // Expected often enough (any gated action on an ungranted feature) to
+    // keep at debug.
+    this.loggingService.debug({
+      type: LogType.FeatureNotGranted,
+      spaceId: args.spaceId,
+      feature: args.featureKey,
+    });
+    throw new FeatureNotGrantedError(args.featureKey);
+  }
+
+  public async prepareQuotaCheck(args: {
+    spaceId: Space['id'];
+    featureKey: FeatureKey;
+  }): Promise<(args: { used: number; delta: number }) => void> {
+    const grant = await this.resolveGrant(args);
+    return ({ used, delta }): void =>
+      this.admit({ ...args, grant, used, delta });
+  }
+
+  public async consumeQuota(args: {
+    spaceId: Space['id'];
+    featureKey: Exclude<FeatureKey, StockMeteredFeature>;
+    delta: number;
+  }): Promise<ConsumedQuota> {
+    const grant = await this.resolveGrant(args);
+    const counter = this.getCounterOrFail({ ...args, grant });
+
+    await this.postgresDatabaseService.transaction(async (entityManager) => {
+      const total = await this.spaceFeatureUsageRepository.incrementUsage(
+        { spaceId: args.spaceId, period: counter, delta: args.delta },
+        entityManager,
+      );
+      // Admitted against what the row now holds; rejecting rolls it back.
+      this.admit({ ...args, grant, used: total - args.delta });
+    });
+
+    return { spaceId: args.spaceId, period: counter, delta: args.delta };
+  }
+
+  public async refundQuota(consumed: ConsumedQuota): Promise<void> {
+    await this.spaceFeatureUsageRepository.incrementUsage({
+      spaceId: consumed.spaceId,
+      period: consumed.period,
+      delta: -consumed.delta,
+    });
+  }
+
+  /**
+   * The counter a grant names, or a refusal. No counter means the catalog has
+   * no event-metered row for the key, so the feature cannot be measured at
+   * all: admitting on a usage we cannot read or write would leave it unmetered
+   * for as long as that lasts.
+   */
+  private getCounterOrFail(args: {
+    spaceId: Space['id'];
+    featureKey: FeatureKey;
+    grant: FeatureGrant;
+  }): NonNullable<FeatureGrant['counter']> {
+    if (args.grant.counter === null) {
+      this.loggingService.warn(
+        `Feature '${args.featureKey}' has no usage counter; space ${args.spaceId} cannot be measured against it`,
+      );
+      throw new QuotaExceededError({
+        feature: args.featureKey,
+        quota: args.grant.quota ?? 0,
+        used: 0,
+        resetsAt: args.grant.resetsAt,
+      });
+    }
+    return args.grant.counter;
+  }
+
+  /** Pure, so a caller can run it under its own lock. */
+  private admit(args: {
+    spaceId: Space['id'];
+    featureKey: FeatureKey;
+    delta: number;
+    grant: FeatureGrant;
+    used: number;
+  }): void {
+    const { grant, used } = args;
+    if (
+      grant.quota === null ||
+      fitsWithinQuota({ quota: grant.quota, used, delta: args.delta })
+    ) {
+      return;
+    }
+    // The canonical quota event, so analytics counts what the server decided.
+    this.loggingService.warn({
+      type: LogType.QuotaExceeded,
+      spaceId: args.spaceId,
+      feature: args.featureKey,
+      quota: grant.quota,
+      used,
+      requested: args.delta,
+    });
+    throw new QuotaExceededError({
+      feature: args.featureKey,
+      quota: grant.quota,
+      used,
+      resetsAt: grant.resetsAt,
+    });
+  }
+
+  /**
+   * The workspace's entitlements decide from the enforcement date on; until
+   * then the feature's static limit does, so deploying this enforces nothing.
+   * A feature with no static limit has nothing the date could break, and is
+   * decided by the plan from the day it ships.
+   */
+  private async resolveGrant(args: {
+    spaceId: Space['id'];
+    featureKey: FeatureKey;
+  }): Promise<FeatureGrant> {
+    const staticQuota = this.preEnforcementQuotas[args.featureKey];
+    const hasStaticQuota = staticQuota !== null;
+    if (
+      hasStaticQuota &&
+      !isEnforcementActive({
+        now: new Date(),
+        startsAt: this.enforcementStartsAt,
+      })
+    ) {
+      return this.staticGrant(staticQuota);
+    }
+
+    const grants = await this.getCachedGrants(args.spaceId);
+    const grant = grants[args.featureKey];
+    if (grant === undefined) {
+      this.loggingService.warn(
+        `Feature '${args.featureKey}' has no catalog row; space ${args.spaceId} ${hasStaticQuota ? 'keeps the static limit' : 'is denied'}`,
+      );
+      // A catalog gap must not block an action a static limit still covers,
+      // and must not hand out one it does not.
+      return hasStaticQuota
+        ? this.staticGrant(staticQuota)
+        : this.deniedGrant();
+    }
+    return grant;
+  }
+
+  /** A limit that predates enforcement, as a grant. */
+  private staticGrant(quota: number): FeatureGrant {
+    return { enabled: true, quota, resetsAt: null, counter: null };
+  }
+
+  /** No allowance at all: the plan simply does not grant this feature. */
+  private deniedGrant(): FeatureGrant {
+    return { enabled: false, quota: 0, resetsAt: null, counter: null };
+  }
+
+  /**
+   * Usage measured against a quota, read live so a stale count cannot gate
+   * wrongly: a stock feature counts rows in the table its own module owns,
+   * anything else reads the counter its grant names.
+   */
+  private async countFeatureUsage(args: {
+    spaceId: Space['id'];
+    featureKey: FeatureKey;
+    grant: FeatureGrant;
+  }): Promise<number> {
+    if (isStockMeteredFeatureKey(args.featureKey)) {
+      const usage = await this.stockCounters[args.featureKey]([args.spaceId]);
+      return usage.get(args.spaceId) ?? 0;
+    }
+    return await this.countEventUsage(
+      args.spaceId,
+      args.featureKey,
+      args.grant,
+    );
+  }
+
+  /** One counter, for the period its grant names. */
+  private async countEventUsage(
+    spaceId: Space['id'],
+    featureKey: FeatureKey,
+    grant: FeatureGrant,
+  ): Promise<number> {
+    const counter = this.getCounterOrFail({ spaceId, featureKey, grant });
+    const usage = await this.spaceFeatureUsageRepository.getUsageByFeatureId({
+      spaceId,
+      periods: [counter],
+    });
+    return usage.get(counter.featureId) ?? 0;
+  }
+
+  /**
+   * Cached: it only changes when a subscription is materialized (which
+   * invalidates it) or a migration reseeds the catalog. Never holds usage.
+   */
+  private async getCachedGrants(
+    spaceId: Space['id'],
+  ): Promise<Record<string, FeatureGrant>> {
+    const cacheDir = CacheRouter.getSpaceEntitlementsCacheDir(spaceId);
+    const cached = await this.cacheService.hGet(cacheDir);
+    if (cached !== null) {
+      const grants = this.readCachedGrants(spaceId, cached);
+      // A window that has since rolled over leaves these naming the previous
+      // period's counter, which nothing reads or reports any more.
+      if (grants !== null && !hasClosedWindow(grants, new Date())) {
+        return grants;
+      }
+    }
+
+    const startTimeMs = Date.now();
+    const grants = await this.computeGrants(spaceId);
+    // A materialization that committed while this was computing already
+    // dropped the key; writing back would re-poison it for the whole TTL.
+    // Same guard as `CacheFirstDataSource`'s `_shouldBeCached`.
+    if (await this.outlivesLastInvalidation(cacheDir.key, startTimeMs)) {
+      await this.cacheService.hSet(
+        cacheDir,
+        JSON.stringify(grants),
+        this.grantsCacheTtlSeconds,
+      );
+    }
+    return grants;
+  }
+
+  /**
+   * An entry this version cannot read is a miss, not a failure: a deploy that
+   * changes the grant's shape leaves the previous one under the key for the
+   * whole TTL, and a rolling one has older instances still writing it.
+   */
+  private readCachedGrants(
+    spaceId: Space['id'],
+    cached: string,
+  ): Record<string, FeatureGrant> | null {
+    try {
+      return CachedGrantsSchema.parse(JSON.parse(cached));
+    } catch (error) {
+      this.loggingService.warn(
+        `Unreadable cached entitlements for space ${spaceId}, recomputing: ${asError(error).message}`,
+      );
+      return null;
+    }
+  }
+
+  /** Read once for both consumers: the API response and the cached grants. */
+  private async loadPlanContext(spaceId: Space['id']): Promise<PlanContext> {
     const [spaceCreatedAt, features, activeSubscription] = await Promise.all([
-      this.getSpaceCreatedAtOrFail(spaceId),
+      this.spacesRepository.findCreatedAtById(spaceId),
       this.featuresRepository.getFeatures(),
       this.subscriptionsRepository.getActiveSubscriptionBySpaceId(spaceId),
     ]);
-
-    const usedByFeatureId = await this.getUsageByFeatureId({
-      spaceId,
-      spaceCreatedAt,
+    return {
+      now: new Date(),
       features,
-      activeSubscription,
-      now,
-    });
+      spaces: [
+        this.toSpacePlanContext({
+          spaceId,
+          spaceCreatedAt,
+          activeSubscription,
+        }),
+      ],
+    };
+  }
 
-    const purchasedByFeatureId = new Map(
-      (activeSubscription?.entitlements ?? []).map((entitlement) => [
-        entitlement.feature.id,
-        entitlement,
-      ]),
+  /** {@link loadPlanContext} for several workspaces, with one read per table. */
+  private async loadPlanContextOfSpaces(
+    spaces: Array<Pick<Space, 'id' | 'createdAt'>>,
+  ): Promise<PlanContext> {
+    const [features, activeSubscriptions] = await Promise.all([
+      this.featuresRepository.getFeatures(),
+      this.subscriptionsRepository.getActiveSubscriptionsBySpaceIds(
+        spaces.map(({ id }) => id),
+      ),
+    ]);
+    return {
+      now: new Date(),
+      features,
+      spaces: spaces.map((space) =>
+        this.toSpacePlanContext({
+          spaceId: space.id,
+          spaceCreatedAt: space.createdAt,
+          activeSubscription: activeSubscriptions.get(space.id) ?? null,
+        }),
+      ),
+    };
+  }
+
+  private toSpacePlanContext(
+    args: Omit<SpacePlanContext, 'purchased'>,
+  ): SpacePlanContext {
+    return {
+      ...args,
+      purchased: new Map(
+        (args.activeSubscription?.entitlements ?? []).map((entitlement) => [
+          entitlement.feature.id,
+          entitlement,
+        ]),
+      ),
+    };
+  }
+
+  /** Whether nothing invalidated the key since `startTimeMs`. */
+  private async outlivesLastInvalidation(
+    key: string,
+    startTimeMs: number,
+  ): Promise<boolean> {
+    const invalidatedAtMs = await this.cacheService.hGet(
+      new CacheDir(`invalidationTimeMs:${key}`, ''),
     );
+    return invalidatedAtMs === null || Number(invalidatedAtMs) < startTimeMs;
+  }
 
-    const entitlements = features.map((feature) =>
-      this.resolveFeature({
-        feature,
-        spaceCreatedAt,
-        activeSubscription,
-        purchased: purchasedByFeatureId.get(feature.id),
-        used: usedByFeatureId.get(feature.id) ?? 0,
-        now,
+  private async computeGrants(
+    spaceId: Space['id'],
+  ): Promise<Record<string, FeatureGrant>> {
+    const {
+      now,
+      features,
+      spaces: [{ spaceCreatedAt, activeSubscription, purchased }],
+    } = await this.loadPlanContext(spaceId);
+
+    return Object.fromEntries(
+      features.map((feature) => {
+        const effective = effectiveEntitlement({
+          feature,
+          purchased: purchased.get(feature.id),
+        });
+        return [
+          feature.key,
+          {
+            enabled: effective.enabled,
+            // A feature the plan does not grant has no allowance at all.
+            quota: effective.enabled ? effective.quota : 0,
+            // Cached; `hasClosedWindow` recomputes once it passes.
+            resetsAt: resetsAt({
+              feature,
+              spaceCreatedAt,
+              cycle: activeSubscription,
+              now,
+            }),
+            // Stock usage is counted elsewhere; nothing else is measured.
+            counter: isEventMeteredFeature(feature)
+              ? {
+                  featureId: feature.id,
+                  periodStart: eventPeriodStart({
+                    feature,
+                    spaceCreatedAt,
+                    cycle: activeSubscription,
+                    now,
+                  }),
+                }
+              : null,
+          },
+        ];
       }),
     );
-
-    return {
-      plan: activeSubscription
-        ? {
-            id: activeSubscription.planId,
-            name: activeSubscription.planName,
-            cycleEndsAt: activeSubscription.currentPeriodEnd,
-          }
-        : null,
-      entitlements,
-    };
   }
 
   /** `GET /v1/spaces/:spaceId/entitlements`: any active member can read it. */
@@ -136,10 +587,43 @@ export class EntitlementsService {
     const userId = getAuthenticatedUserIdOrFail(args.authPayload);
     await assertMember(this.membersRepository, args.spaceId, userId);
 
-    return this.toEntitlementsResponse(
-      await this.resolveEntitlements(args.spaceId),
+    const resolved = await this.resolveEntitlements(args.spaceId);
+    this.warnUnpublished([resolved]);
+    return this.toEntitlementsResponse(resolved);
+  }
+
+  /**
+   * `GET /v1/spaces/entitlements`: those of every workspace the caller is an
+   * active member of, keyed by workspace UUID.
+   */
+  public async getAllEntitlements(
+    authPayload: AuthPayload,
+  ): Promise<SpacesEntitlementsResponse> {
+    const userId = getAuthenticatedUserIdOrFail(authPayload);
+
+    const members = await this.membersRepository.find({
+      select: { id: true, space: { id: true, uuid: true, createdAt: true } },
+      where: { user: Equal(userId), status: 'ACTIVE' },
+      relations: { space: true },
+    });
+    if (members.length === 0) {
+      return {};
+    }
+    const resolved = await this.resolvePlanContext(
+      await this.loadPlanContextOfSpaces(members.map(({ space }) => space)),
+    );
+    this.warnUnpublished(resolved.values());
+
+    return Object.fromEntries(
+      members.flatMap(({ space }) => {
+        const entitlements = resolved.get(space.id);
+        return entitlements
+          ? [[space.uuid, this.toEntitlementsResponse(entitlements)] as const]
+          : [];
+      }),
     );
   }
+
   /**
    * Materializes the state an event carries in its own payload, and stamps the
    * space with that event's `created`. Applied only while it orders strictly
@@ -255,7 +739,7 @@ export class EntitlementsService {
 
     const incomingActive = activeIsh.at(0);
 
-    return await this.postgresDatabaseService.transaction(
+    const written = await this.postgresDatabaseService.transaction(
       async (entityManager) => {
         // Serializes concurrent webhooks for this space, so the mark read below
         // is what the write is actually ordered against.
@@ -302,6 +786,7 @@ export class EntitlementsService {
                   status: subscription.status,
                   planId: subscription.planId,
                   planName: subscription.planName,
+                  planCode: subscription.planCode,
                   currentPeriodStart: subscription.currentPeriodStart,
                   currentPeriodEnd: subscription.currentPeriodEnd,
                   lastEventAt,
@@ -355,6 +840,15 @@ export class EntitlementsService {
         return true;
       },
     );
+
+    // After the commit: a reader repopulating mid-transaction would cache the
+    // pre-write state.
+    if (written) {
+      await this.cacheService.deleteByKey(
+        CacheRouter.getSpaceEntitlementsCacheDir(args.spaceId).key,
+      );
+    }
+    return written;
   }
 
   private markLabel(mark: Date | null): string {
@@ -365,8 +859,12 @@ export class EntitlementsService {
     storedEventAt: Date | null,
     triggerEventAt: Date | null,
   ): Date | null {
-    if (storedEventAt === null) return triggerEventAt;
-    if (triggerEventAt === null) return storedEventAt;
+    if (storedEventAt === null) {
+      return triggerEventAt;
+    }
+    if (triggerEventAt === null) {
+      return storedEventAt;
+    }
     return storedEventAt > triggerEventAt ? storedEventAt : triggerEventAt;
   }
 
@@ -422,61 +920,71 @@ export class EntitlementsService {
     }
   }
 
-  /** Usage of every metered feature in the catalog, keyed by feature id. */
-  private async getUsageByFeatureId(args: {
-    spaceId: Space['id'];
-    spaceCreatedAt: Date;
-    features: Array<Feature>;
-    activeSubscription: SpaceSubscription | null;
-    now: Date;
-  }): Promise<Map<number, number>> {
+  /**
+   * Usage of every metered feature in the catalog, keyed by workspace id, then
+   * by feature id.
+   */
+  private async getUsageBySpaceId(
+    args: PlanContext,
+  ): Promise<Map<Space['id'], Map<number, number>>> {
     const metered = args.features.filter(
       (feature) => feature.type === FeatureType.Metered,
     );
+    const spaceIds = args.spaces.map(({ spaceId }) => spaceId);
 
     const [eventUsage, stockUsage] = await Promise.all([
       this.getEventUsage({ ...args, features: metered }),
-      this.getStockUsage(args.spaceId, metered.filter(isStockMeteredFeature)),
+      this.getStockUsage(spaceIds, metered.filter(isStockMeteredFeature)),
     ]);
 
-    return new Map([...eventUsage, ...stockUsage]);
+    return new Map(
+      spaceIds.map((spaceId) => [
+        spaceId,
+        new Map([
+          ...(eventUsage.get(spaceId) ?? []),
+          ...stockUsage.map(
+            ([featureId, usage]) =>
+              [featureId, usage.get(spaceId) ?? 0] as const,
+          ),
+        ]),
+      ]),
+    );
   }
 
   /** One query covering every event-metered feature's current period. */
-  private async getEventUsage(args: {
-    spaceId: Space['id'];
-    spaceCreatedAt: Date;
-    features: Array<Feature>;
-    activeSubscription: SpaceSubscription | null;
-    now: Date;
-  }): Promise<Map<number, number>> {
-    const eventMetered = args.features.filter(
-      (feature) => !isStockMeteredFeature(feature),
-    );
+  private async getEventUsage(
+    args: PlanContext,
+  ): Promise<Map<Space['id'], Map<number, number>>> {
+    const eventMetered = args.features.filter(isEventMeteredFeature);
 
-    return await this.spaceFeatureUsageRepository.getUsageByFeatureId({
-      spaceId: args.spaceId,
-      periods: eventMetered.map((feature) => ({
-        featureId: feature.id,
-        periodStart: eventPeriodStart({
-          feature,
-          spaceCreatedAt: args.spaceCreatedAt,
-          cycle: args.activeSubscription,
-          now: args.now,
-        }),
+    return await this.spaceFeatureUsageRepository.getUsageBySpaceIds(
+      args.spaces.map(({ spaceId, spaceCreatedAt, activeSubscription }) => ({
+        spaceId,
+        periods: eventMetered.map((feature) => ({
+          featureId: feature.id,
+          periodStart: eventPeriodStart({
+            feature,
+            spaceCreatedAt,
+            cycle: activeSubscription,
+            now: args.now,
+          }),
+        })),
       })),
-    });
+    );
   }
 
   /** One live count per stock-metered feature, run concurrently. */
   private async getStockUsage(
-    spaceId: Space['id'],
+    spaceIds: Array<Space['id']>,
     features: Array<Feature & { key: StockMeteredFeature }>,
-  ): Promise<Array<readonly [number, number]>> {
+  ): Promise<Array<readonly [number, Map<Space['id'], number>]>> {
     return await Promise.all(
       features.map(
         async (feature) =>
-          [feature.id, await this.stockCounters[feature.key](spaceId)] as const,
+          [
+            feature.id,
+            await this.stockCounters[feature.key](spaceIds),
+          ] as const,
       ),
     );
   }
@@ -489,9 +997,10 @@ export class EntitlementsService {
    */
   private readonly stockCounters: Record<
     StockMeteredFeature,
-    (spaceId: Space['id']) => Promise<number>
+    (spaceIds: Array<Space['id']>) => Promise<Map<Space['id'], number>>
   > = {
-    safe_seats: (spaceId) => this.spaceSafesRepository.countBySpaceId(spaceId),
+    safe_seats: (spaceIds) =>
+      this.spaceSafesRepository.countSeatsBySpaceIds(spaceIds),
   };
 
   /**
@@ -503,22 +1012,14 @@ export class EntitlementsService {
   private toEntitlementsResponse(
     resolved: ResolvedEntitlements,
   ): EntitlementsResponse {
-    const unpublished: Array<string> = [];
     const entitlements = resolved.entitlements.flatMap<EntitlementItem>(
       (entitlement) => {
         if (!isFeatureKey(entitlement.feature)) {
-          unpublished.push(entitlement.feature);
           return [];
         }
         return [{ ...entitlement, feature: entitlement.feature }];
       },
     );
-
-    if (unpublished.length > 0) {
-      this.loggingService.warn(
-        `Features seeded but not published, omitted from the response: ${unpublished.join(', ')}`,
-      );
-    }
 
     return {
       plan: resolved.plan
@@ -526,20 +1027,31 @@ export class EntitlementsService {
             id: resolved.plan.id,
             name: resolved.plan.name,
             cycleEndsAt: resolved.plan.cycleEndsAt,
+            status: resolved.plan.status,
           }
         : null,
       entitlements,
     };
   }
 
-  private async getSpaceCreatedAtOrFail(spaceId: Space['id']): Promise<Date> {
-    const space = await this.spacesRepository.findOne({
-      where: { id: spaceId },
-      select: { createdAt: true },
-    });
-    if (!space) {
-      throw new NotFoundException('Workspace not found.');
+  /**
+   * Logs the keys {@link toEntitlementsResponse} leaves out, once for however
+   * many workspaces were resolved: they all read the same catalog.
+   */
+  private warnUnpublished(resolved: Iterable<ResolvedEntitlements>): void {
+    const unpublished = new Set<string>();
+    for (const { entitlements } of resolved) {
+      for (const { feature } of entitlements) {
+        if (!isFeatureKey(feature)) {
+          unpublished.add(feature);
+        }
+      }
     }
-    return space.createdAt;
+
+    if (unpublished.size > 0) {
+      this.loggingService.warn(
+        `Features seeded but not published, omitted from the response: ${[...unpublished].join(', ')}`,
+      );
+    }
   }
 }

@@ -2,12 +2,12 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { merge } from 'lodash';
 import { type Address, getAddress, type Hex, zeroAddress } from 'viem';
-import { IConfigurationService } from '@/config/configuration.service.interface';
-import { CacheRouter } from '@/datasources/cache/cache.router';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { CacheRouter } from '#/datasources/cache/cache.router';
 import {
   CacheService,
   type ICacheService,
-} from '@/datasources/cache/cache.service.interface';
+} from '#/datasources/cache/cache.service.interface';
 import {
   getSafeToL2SetupVersions,
   hasCanonicalDeploymentSafeToL2Migration,
@@ -17,44 +17,44 @@ import {
   isL1SingletonDeployed,
   isL2SingletonDeployed,
   isProxyFactoryDeployed,
-} from '@/domain/common/utils/deployments';
-import { DataSourceError } from '@/domain/errors/data-source.error';
-import type { ITransactionApi } from '@/domain/interfaces/transaction-api.interface';
-import { ITransactionApiManager } from '@/domain/interfaces/transaction-api.manager.interface';
+} from '#/domain/common/utils/deployments';
+import { DataSourceError } from '#/domain/errors/data-source.error';
+import type { ITransactionApi } from '#/domain/interfaces/transaction-api.interface';
+import { ITransactionApiManager } from '#/domain/interfaces/transaction-api.manager.interface';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
-import type { Chain } from '@/modules/chains/routes/entities/chain.entity';
-import { Erc20Decoder } from '@/modules/relay/domain/contracts/decoders/erc-20-decoder.helper';
-import type { Safe } from '@/modules/safe/domain/entities/safe.entity';
-import { SafeSchema } from '@/modules/safe/domain/entities/schemas/safe.schema';
-import { TransferPageSchema } from '@/modules/safe/domain/entities/transfer.entity';
+} from '#/logging/logging.interface';
+import { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
+import type { Chain } from '#/modules/chains/routes/entities/chain.entity';
+import { Erc20Decoder } from '#/modules/relay/domain/contracts/decoders/erc-20-decoder.helper';
+import type { Safe } from '#/modules/safe/domain/entities/safe.entity';
+import { SafeSchema } from '#/modules/safe/domain/entities/schemas/safe.schema';
+import { TransferPageSchema } from '#/modules/safe/domain/entities/transfer.entity';
 import type {
   RecipientAnalysisResponse,
   RecipientAnalysisResponseWithoutIsSafe,
   SingleRecipientAnalysisResponse,
-} from '@/modules/safe-shield/entities/analysis-responses.entity';
+} from '#/modules/safe-shield/entities/analysis-responses.entity';
 import {
   type AnalysisResult,
   CommonStatus,
-} from '@/modules/safe-shield/entities/analysis-result.entity';
-import { BridgeStatus } from '@/modules/safe-shield/entities/bridge-status.entity';
-import { RecipientStatus } from '@/modules/safe-shield/entities/recipient-status.entity';
-import type { SafeCreationData } from '@/modules/safe-shield/entities/safe-creation-data.entity';
-import { RecipientStatusGroup } from '@/modules/safe-shield/entities/status-group.entity';
-import type { DecodedTransactionData } from '@/modules/safe-shield/entities/transaction-data.entity';
-import { logCacheHit, logCacheMiss } from '@/modules/safe-shield/utils/common';
-import { extractRecipients } from '@/modules/safe-shield/utils/extraction.utils';
+} from '#/modules/safe-shield/entities/analysis-result.entity';
+import { BridgeStatus } from '#/modules/safe-shield/entities/bridge-status.entity';
+import { RecipientStatus } from '#/modules/safe-shield/entities/recipient-status.entity';
+import type { SafeCreationData } from '#/modules/safe-shield/entities/safe-creation-data.entity';
+import { RecipientStatusGroup } from '#/modules/safe-shield/entities/status-group.entity';
+import type { DecodedTransactionData } from '#/modules/safe-shield/entities/transaction-data.entity';
+import { logCacheHit, logCacheMiss } from '#/modules/safe-shield/utils/common';
+import { extractRecipients } from '#/modules/safe-shield/utils/extraction.utils';
 import {
   type BridgeAndSwapTransactionInfo,
   isBridgeAndSwapTransactionInfo,
   isSwapTransactionInfo,
-} from '@/modules/transactions/routes/entities/bridge/bridge-info.entity';
-import { isSwapOrderTransactionInfo } from '@/modules/transactions/routes/entities/swaps/swap-order-info.entity';
-import type { TransactionInfo } from '@/modules/transactions/routes/entities/transaction-info.entity';
-import { TransactionsService } from '@/modules/transactions/routes/transactions.service';
+} from '#/modules/transactions/routes/entities/bridge/bridge-info.entity';
+import { isSwapOrderTransactionInfo } from '#/modules/transactions/routes/entities/swaps/swap-order-info.entity';
+import type { TransactionInfo } from '#/modules/transactions/routes/entities/transaction-info.entity';
+import { TransactionsService } from '#/modules/transactions/routes/transactions.service';
 import {
   DESCRIPTION_MAPPING,
   SEVERITY_MAPPING,

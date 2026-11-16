@@ -3,11 +3,11 @@
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import type { Mock, MockedObject } from 'vitest';
-import type { PostgresDatabaseService } from '@/datasources/db/v2/postgres-database.service';
-import { Wallet } from '@/modules/wallets/datasources/entities/wallets.entity.db';
-import { createMockWalletEncryptionService } from '@/modules/wallets/domain/__tests__/wallet-encryption.service.mock';
-import type { WalletEncryptionService } from '@/modules/wallets/domain/wallet-encryption.service';
-import { WalletsRepository } from '@/modules/wallets/domain/wallets.repository';
+import type { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
+import { Wallet } from '#/modules/wallets/datasources/entities/wallets.entity.db';
+import { createMockWalletEncryptionService } from '#/modules/wallets/domain/__tests__/wallet-encryption.service.mock';
+import type { WalletEncryptionService } from '#/modules/wallets/domain/wallet-encryption.service';
+import { WalletsRepository } from '#/modules/wallets/domain/wallets.repository';
 
 describe('WalletsRepository', () => {
   let walletRepository: {

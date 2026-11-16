@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
-import { previewTransactionDtoBuilder } from '@/modules/transactions/routes/entities/__tests__/preview-transaction.dto.builder';
-import { PreviewTransactionDtoSchema } from '@/modules/transactions/routes/entities/schemas/preview-transaction.dto.schema';
+import { previewTransactionDtoBuilder } from '#/modules/transactions/routes/entities/__tests__/preview-transaction.dto.builder';
+import { PreviewTransactionDtoSchema } from '#/modules/transactions/routes/entities/schemas/preview-transaction.dto.schema';
 
 describe('PreviewTransactionDtoSchema', () => {
   it('should validate a valid PreviewTransactionDto', () => {

@@ -8,11 +8,11 @@ import {
   Inject,
 } from '@nestjs/common';
 import { HttpAdapterHost } from '@nestjs/core';
-import { HttpExceptionNoLog } from '@/domain/common/errors/http-exception-no-log.error';
+import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
+} from '#/logging/logging.interface';
 
 @Catch()
 export class GlobalErrorFilter implements ExceptionFilter {

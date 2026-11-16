@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
 import type { MockedObject } from 'vitest';
-import { createMockKmsEncryptionService } from '@/datasources/kms/__tests__/kms-encryption.service.mock';
-import type { KmsEncryptionService } from '@/datasources/kms/kms-encryption.service';
-import { UserEncryptionService } from '@/modules/users/domain/user-encryption.service';
+import { createMockKmsEncryptionService } from '#/datasources/kms/__tests__/kms-encryption.service.mock';
+import type { KmsEncryptionService } from '#/datasources/kms/kms-encryption.service';
+import { UserEncryptionService } from '#/modules/users/domain/user-encryption.service';
 
 describe('UserEncryptionService', () => {
   let fieldCrypto: MockedObject<KmsEncryptionService>;

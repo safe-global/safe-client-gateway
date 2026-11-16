@@ -2,7 +2,11 @@
 
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
-import { SpaceAuditEventSchema } from '@/modules/spaces/domain/audit/entities/space-audit-event.entity';
+import {
+  SpaceAuditEventSchema,
+  SpaceAuditEventType,
+} from '#/modules/spaces/domain/audit/entities/space-audit-event.entity';
+import { ExperimentalFeatures } from '#/modules/spaces/domain/entities/experimental-feature.entity';
 
 describe('SpaceAuditEventSchema — plaintext addresses', () => {
   const ciphertext = 'kms:v1:abcDEF012_-';
@@ -52,5 +56,123 @@ describe('SpaceAuditEventSchema — plaintext addresses', () => {
       payload: { address: plaintext, name: faker.person.fullName() },
     });
     expect(result.success).toBe(true);
+  });
+
+  it('accepts plaintext addresses in an ADDRESS_BOOK_REQUEST_CREATED payload', () => {
+    const result = SpaceAuditEventSchema.safeParse({
+      eventType: 'ADDRESS_BOOK_REQUEST_CREATED',
+      payload: {
+        address: plaintext,
+        name: faker.person.fullName(),
+      },
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('accepts plaintext addresses in an ADDRESS_BOOK_REQUEST_REJECTED payload', () => {
+    const result = SpaceAuditEventSchema.safeParse({
+      eventType: 'ADDRESS_BOOK_REQUEST_REJECTED',
+      payload: {
+        address: plaintext,
+        name: faker.person.fullName(),
+      },
+    });
+    expect(result.success).toBe(true);
+  });
+});
+
+describe('SpaceAuditEventSchema — SPACE_UPDATED experimentalFeatures', () => {
+  it('does not inject experimentalFeatures into a name-only update', () => {
+    const payload = {
+      old: { name: faker.lorem.words() },
+      new: { name: faker.lorem.words() },
+    };
+
+    const result = SpaceAuditEventSchema.parse({
+      eventType: 'SPACE_UPDATED',
+      payload,
+    });
+
+    expect(result.payload).toStrictEqual(payload);
+  });
+
+  it('round-trips an experimentalFeatures change', () => {
+    const features = [faker.helpers.arrayElement(ExperimentalFeatures)];
+    const payload = {
+      old: { experimentalFeatures: [] },
+      new: { experimentalFeatures: features },
+    };
+
+    const result = SpaceAuditEventSchema.parse({
+      eventType: 'SPACE_UPDATED',
+      payload,
+    });
+
+    expect(result.payload).toStrictEqual(payload);
+  });
+
+  it('accepts a feature key no longer in the enum', () => {
+    const result = SpaceAuditEventSchema.safeParse({
+      eventType: 'SPACE_UPDATED',
+      payload: {
+        old: { experimentalFeatures: [faker.word.noun()] },
+        new: { experimentalFeatures: [] },
+      },
+    });
+
+    expect(result.success).toBe(true);
+  });
+});
+
+describe('SpaceAuditEventSchema — address book tag events', () => {
+  it('parses ADDRESS_BOOK_TAGS_UPDATED', () => {
+    const payload = {
+      changes: [
+        {
+          address: getAddress(faker.finance.ethereumAddress()),
+          oldTags: [faker.word.noun()],
+          newTags: [faker.word.noun(), faker.word.noun()],
+        },
+      ],
+    };
+
+    expect(
+      SpaceAuditEventSchema.parse({
+        eventType: SpaceAuditEventType.ADDRESS_BOOK_TAGS_UPDATED,
+        payload,
+      }),
+    ).toStrictEqual({
+      eventType: 'ADDRESS_BOOK_TAGS_UPDATED',
+      payload,
+    });
+  });
+
+  it('parses ADDRESS_BOOK_TAG_RENAMED', () => {
+    const payload = {
+      oldName: faker.word.noun(),
+      newName: faker.word.noun(),
+      merged: faker.datatype.boolean(),
+    };
+
+    expect(
+      SpaceAuditEventSchema.parse({
+        eventType: SpaceAuditEventType.ADDRESS_BOOK_TAG_RENAMED,
+        payload,
+      }).payload,
+    ).toStrictEqual(payload);
+  });
+
+  it('parses ADDRESS_BOOK_TAG_DELETED', () => {
+    const payload = {
+      name: faker.word.noun(),
+      contactCount: faker.number.int({ max: 500 }),
+    };
+
+    expect(
+      SpaceAuditEventSchema.parse({
+        eventType: SpaceAuditEventType.ADDRESS_BOOK_TAG_DELETED,
+        payload,
+      }).payload,
+    ).toStrictEqual(payload);
   });
 });

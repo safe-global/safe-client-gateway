@@ -2,9 +2,9 @@
 import {
   NetworkRequestError,
   NetworkResponseError,
-} from '@/datasources/network/entities/network.error.entity';
-import { asError } from '@/logging/utils';
-import { RhinestoneErrorResponseSchema } from '@/modules/relay/datasources/schemas/rhinestone-error.schema';
+} from '#/datasources/network/entities/network.error.entity';
+import { asError } from '#/logging/utils';
+import { RhinestoneErrorResponseSchema } from '#/modules/relay/datasources/schemas/rhinestone-error.schema';
 
 /**
  * Cap on how many of a Rhinestone error body's `errors[]` entries are copied

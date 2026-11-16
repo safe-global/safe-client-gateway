@@ -10,7 +10,8 @@ import {
 } from '@nestjs/platform-fastify';
 import type { SwaggerDocumentOptions } from '@nestjs/swagger';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { IConfigurationService } from '@/config/configuration.service.interface';
+import { IConfigurationService } from '#/config/configuration.service.interface';
+import { SAFE_HEADER_PREFIX } from '#/datasources/network/safe-request-id-header.helper';
 
 export function configureVersioning(app: INestApplication): void {
   app.enableVersioning({
@@ -19,7 +20,7 @@ export function configureVersioning(app: INestApplication): void {
 }
 
 // Mirrors the units accepted by the `bytes` library that Express' body-parser
-// used, so a previously valid `EXPRESS_JSON_LIMIT` keeps parsing post-migration.
+// used, so a previously valid limit keeps parsing post-migration.
 const BODY_LIMIT_UNITS = {
   b: 1,
   kb: 1024,
@@ -46,12 +47,20 @@ export const FASTIFY_ROUTER_OPTIONS = {
 };
 
 type FastifyAdapterConfiguration = {
-  jsonLimit?: string;
+  bodyLimit?: string;
   trustProxy: string;
 };
 
-export function parseTrustProxy(value: string): string | number {
-  return /^[0-9]+$/.test(value) ? Number.parseInt(value, 10) : value;
+export function parseTrustProxy(value: string): string | boolean {
+  if (!/^[0-9]+$/.test(value)) {
+    return value;
+  }
+  if (Number.parseInt(value, 10) === 0) {
+    return false;
+  }
+  throw new Error(
+    `Invalid trust proxy hop count: ${value}. Set trusted subnets or presets instead, e.g. 'loopback, uniquelocal'.`,
+  );
 }
 
 export function parseBodyLimit(value: string | undefined): number | undefined {
@@ -77,9 +86,7 @@ export function parseBodyLimit(value: string | undefined): number | undefined {
 // Fastify rejects empty JSON bodies with FST_ERR_CTP_EMPTY_JSON_BODY,
 // so restore the Express semantics while delegating non-empty bodies
 // to Fastify's default parser to keep its prototype-poisoning protection.
-export function configureFastifyBodyParsers(
-  adapter: FastifyAdapter,
-): FastifyAdapter {
+function configureFastifyBodyParsers(adapter: FastifyAdapter): FastifyAdapter {
   const instance = adapter.getInstance();
   const { bodyLimit, onConstructorPoisoning, onProtoPoisoning } =
     instance.initialConfig;
@@ -118,12 +125,37 @@ export function configureFastifyBodyParsers(
   return adapter;
 }
 
+// x-safe-* headers carry attribution that Safe services trust, so a client must
+// never be able to set one. Registered on the adapter, the hook runs before
+// Nest middleware and on every route.
+function configureSafeHeaderStripping(adapter: FastifyAdapter): void {
+  adapter.getInstance().addHook('onRequest', (request, _reply, done) => {
+    // request.headers can be a merged copy; middleware and handlers read raw
+    for (const name of Object.keys(request.raw.headers)) {
+      if (name.startsWith(SAFE_HEADER_PREFIX)) {
+        delete request.raw.headers[name];
+      }
+    }
+    done();
+  });
+}
+
+/**
+ * Applies the request handling shared by the app and its tests.
+ */
+export function configureFastifyAdapter(
+  adapter: FastifyAdapter,
+): FastifyAdapter {
+  configureSafeHeaderStripping(adapter);
+  return configureFastifyBodyParsers(adapter);
+}
+
 export function createFastifyAdapterFromConfiguration(
   config: FastifyAdapterConfiguration,
 ): FastifyAdapter {
-  const bodyLimit = parseBodyLimit(config.jsonLimit);
+  const bodyLimit = parseBodyLimit(config.bodyLimit);
 
-  return configureFastifyBodyParsers(
+  return configureFastifyAdapter(
     new FastifyAdapter({
       trustProxy: parseTrustProxy(config.trustProxy),
       routerOptions: FASTIFY_ROUTER_OPTIONS,
@@ -136,8 +168,10 @@ export function createFastifyAdapter(
   configurationService: Pick<IConfigurationService, 'get' | 'getOrThrow'>,
 ): FastifyAdapter {
   return createFastifyAdapterFromConfiguration({
-    jsonLimit: configurationService.get<string>('express.jsonLimit'),
-    trustProxy: configurationService.getOrThrow<string>('express.trustProxy'),
+    bodyLimit: configurationService.get<string>('httpServer.bodyLimit'),
+    trustProxy: configurationService.getOrThrow<string>(
+      'httpServer.trustProxy',
+    ),
   });
 }
 

@@ -10,7 +10,7 @@ Read **[docs/agents/reviewing.md](../../../docs/agents/reviewing.md)** and apply
 *When* a review happens is your process's decision (Superpowers, spec-kit, CI). *What to verify in this repo* is that doc.
 
 - **Part 1 — guideline compliance.** Map the diff against **every** row of the [AGENTS.md](../../../AGENTS.md) routing table, not just the first match; name the applicable guides in the output; verify every rule each one lists; cite violations as `file:line` plus the guide's own heading for that rule. "No guide applies" is a valid, statable outcome — a stretched match produces noise.
-- **Part 2 — deviation control.** Seven independent checks; passing one never excuses failing another. The two that fail most often: pre-commit evidence (`yarn format`, `yarn lint --fix`, `yarn test` output or a CI link — an unproven "tests pass" is a finding), and SPDX headers on every file the change touched, not just created.
+- **Part 2 — deviation control.** Seven independent checks; passing one never excuses failing another. The two that fail most often: pre-commit evidence (`yarn format`, `yarn lint --fix`, `yarn typecheck`, `yarn test` output or a CI link — an unproven "tests pass" is a finding), and SPDX headers on every file the change touched, not just created.
 
 Findings are most-severe-first, as a **numbered list** — one item each, `N. **[<rule name>](<link to the rule>)** — [<path>:<line>](<permalink>) — <one-sentence defect>. **Fix:** <the concrete change>.` Rule name and location are links, the fix gives the compliant value verbatim, and no report contains a bare `#<number>` (GitHub autolinks it to an unrelated PR). A clean review states "no findings" explicitly. Full shape: [reviewing.md](../../../docs/agents/reviewing.md)'s "Reporting format".
 

@@ -1,7 +1,8 @@
+// SPDX-License-Identifier: FSL-1.1-MIT
 import {
   deviateRandomlyByPercentage,
   offsetByPercentage,
-} from '@/domain/common/utils/number';
+} from '#/domain/common/utils/number';
 
 describe('Number Utils', () => {
   describe('deviateRandomlyByPercentage', () => {

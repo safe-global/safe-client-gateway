@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import type { StripeMetadata } from '@/datasources/billing-api/entities/metadata.entity';
-import type { Subscription as DomainSubscription } from '@/datasources/billing-api/entities/subscription.entity';
-import { SubscriptionStatuses } from '@/datasources/billing-api/entities/subscription.entity';
-import { SubscriptionPlan } from '@/modules/billing/routes/entities/plan.entity';
+import type { StripeMetadata } from '#/datasources/billing-api/entities/metadata.entity';
+import type { Subscription as DomainSubscription } from '#/datasources/billing-api/entities/subscription.entity';
+import { SubscriptionStatuses } from '#/datasources/billing-api/entities/subscription.entity';
+import { SubscriptionPlan } from '#/modules/billing/routes/entities/plan.entity';
 
 export class Subscription implements DomainSubscription {
   @ApiProperty()
@@ -30,4 +30,10 @@ export class Subscription implements DomainSubscription {
   currentPeriodEnd?: number | null;
   @ApiPropertyOptional({ type: Object, nullable: true })
   metadata?: StripeMetadata | null;
+  @ApiPropertyOptional({
+    type: Boolean,
+    description:
+      'Whether the subscription has a default payment method, or its customer does as a fallback',
+  })
+  hasPaymentMethod?: boolean;
 }

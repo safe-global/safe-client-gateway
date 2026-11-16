@@ -6,16 +6,16 @@
 
 import { getAddress, isAddress } from 'viem';
 import { z } from 'zod';
-import type { ApplicationMetadataSchema } from '@/modules/positions/domain/entities/position.entity';
-import { PositionAttributeSchema } from '@/modules/positions/domain/entities/position.entity';
+import type { ApplicationMetadataSchema } from '#/modules/positions/domain/entities/position.entity';
+import { PositionAttributeSchema } from '#/modules/positions/domain/entities/position.entity';
 import {
   PositionType,
   PositionTypeSchema,
-} from '@/modules/positions/domain/entities/position-type.entity';
+} from '#/modules/positions/domain/entities/position-type.entity';
 import {
   NullableNumberSchema,
   NullableStringSchema,
-} from '@/validation/entities/schemas/nullable.schema';
+} from '#/validation/entities/schemas/nullable.schema';
 
 export type ZerionFungibleInfo = z.infer<typeof ZerionFungibleInfoSchema>;
 

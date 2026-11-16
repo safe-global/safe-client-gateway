@@ -1,18 +1,26 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable, Optional } from '@nestjs/common';
-import { NetworkResponseError } from '@/datasources/network/entities/network.error.entity';
-import type { NetworkRequest } from '@/datasources/network/entities/network.request.entity';
-import type { NetworkResponse } from '@/datasources/network/entities/network.response.entity';
+import { NetworkResponseError } from '#/datasources/network/entities/network.error.entity';
+import type { NetworkRequest } from '#/datasources/network/entities/network.request.entity';
+import type { NetworkResponse } from '#/datasources/network/entities/network.response.entity';
 import {
   type FetchClient,
   FetchClientToken,
-} from '@/datasources/network/network.module';
-import type { INetworkService } from '@/datasources/network/network.service.interface';
-import { LogType } from '@/domain/common/entities/log-type.entity';
+} from '#/datasources/network/network.module';
+import type { INetworkService } from '#/datasources/network/network.service.interface';
+import { SAFE_HEADER_PREFIX } from '#/datasources/network/safe-request-id-header.helper';
+import { LogType } from '#/domain/common/entities/log-type.entity';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
+} from '#/logging/logging.interface';
+
+export type FetchNetworkServiceOptions = {
+  /** Sent with every request; a request's own headers take precedence */
+  defaultHeaders?: Record<string, string>;
+  /** Evaluated for every request; take precedence over all other headers */
+  contextHeaders?: () => Record<string, string>;
+};
 
 /**
  * A {@link INetworkService} which uses fetch as the main HTTP client
@@ -25,7 +33,7 @@ export class FetchNetworkService implements INetworkService {
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
     @Optional()
-    private readonly defaultHeaders?: Record<string, string>,
+    private readonly options: FetchNetworkServiceOptions = {},
   ) {}
 
   async get<T>(args: {
@@ -51,23 +59,24 @@ export class FetchNetworkService implements INetworkService {
       throw error;
     }
   }
-  private async postWithBody<T>(args: {
+  private async sendWithBody<T>(args: {
+    method: 'POST' | 'PATCH';
     url: string;
     body?: string;
     contentType: string;
     networkRequest?: NetworkRequest;
   }): Promise<NetworkResponse<T>> {
-    const { url, body, contentType, networkRequest } = args;
+    const { method, url, body, contentType, networkRequest } = args;
     const requestUrl = this.buildUrl(url, networkRequest?.params);
 
-    this.logRequest(requestUrl, 'POST');
+    this.logRequest(requestUrl, method);
     const startTimeMs = performance.now();
 
     try {
       return await this.client<T>(
         requestUrl,
         {
-          method: 'POST',
+          method,
           body,
           headers: this.mergeHeaders(networkRequest?.headers, {
             'Content-Type': contentType,
@@ -88,7 +97,22 @@ export class FetchNetworkService implements INetworkService {
     data?: object;
     networkRequest?: NetworkRequest;
   }): Promise<NetworkResponse<T>> {
-    return this.postWithBody<T>({
+    return this.sendWithBody<T>({
+      method: 'POST',
+      url: args.url,
+      body: JSON.stringify(args.data),
+      contentType: 'application/json',
+      networkRequest: args.networkRequest,
+    });
+  }
+
+  patch<T>(args: {
+    url: string;
+    data?: object;
+    networkRequest?: NetworkRequest;
+  }): Promise<NetworkResponse<T>> {
+    return this.sendWithBody<T>({
+      method: 'PATCH',
       url: args.url,
       body: JSON.stringify(args.data),
       contentType: 'application/json',
@@ -101,7 +125,8 @@ export class FetchNetworkService implements INetworkService {
     data: Record<string, string>;
     networkRequest?: NetworkRequest;
   }): Promise<NetworkResponse<T>> {
-    return this.postWithBody<T>({
+    return this.sendWithBody<T>({
+      method: 'POST',
       url: args.url,
       body: new URLSearchParams(args.data).toString(),
       contentType: 'application/x-www-form-urlencoded',
@@ -149,11 +174,18 @@ export class FetchNetworkService implements INetworkService {
     requestHeaders?: Record<string, string>,
     methodHeaders?: Record<string, string>,
   ): Record<string, string> | undefined {
-    return {
-      ...this.defaultHeaders,
-      ...methodHeaders,
-      ...requestHeaders,
-    };
+    const allowedHeaders = Object.fromEntries(
+      Object.entries({
+        ...this.options.defaultHeaders,
+        ...methodHeaders,
+        ...requestHeaders,
+      }).filter(([name]) => {
+        // Only contextHeaders may set x-safe-* headers: drop any other, in any casing
+        return !name.toLowerCase().startsWith(SAFE_HEADER_PREFIX);
+      }),
+    );
+
+    return { ...allowedHeaders, ...this.options.contextHeaders?.() };
   }
 
   private buildUrl(
@@ -163,8 +195,10 @@ export class FetchNetworkService implements INetworkService {
     const urlObject = new URL(baseUrl);
 
     for (const [key, value] of Object.entries(params)) {
-      if (value != null && value !== '') {
-        urlObject.searchParams.append(key, String(value));
+      for (const element of Array.isArray(value) ? value : [value]) {
+        if (element != null && element !== '') {
+          urlObject.searchParams.append(key, String(element));
+        }
       }
     }
 

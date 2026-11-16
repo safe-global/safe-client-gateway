@@ -5,35 +5,36 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import type { MemoizedFunction } from 'lodash';
 import memoize from 'lodash/memoize';
 import type { Address, Hex } from 'viem';
-import { CacheRouter } from '@/datasources/cache/cache.router';
+import { CacheRouter } from '#/datasources/cache/cache.router';
 import {
   CacheService,
   type ICacheService,
-} from '@/datasources/cache/cache.service.interface';
-import { MAX_TTL } from '@/datasources/cache/constants';
+} from '#/datasources/cache/cache.service.interface';
+import { MAX_TTL } from '#/datasources/cache/constants';
 import {
   type ILoggingService,
   LoggingService,
-} from '@/logging/logging.interface';
-import { IBalancesRepository } from '@/modules/balances/domain/balances.repository.interface';
-import { IBlockchainRepository } from '@/modules/blockchain/domain/blockchain.repository.interface';
-import { IChainsRepository } from '@/modules/chains/domain/chains.repository.interface';
-import { ICollectiblesRepository } from '@/modules/collectibles/domain/collectibles.repository.interface';
-import { MultiSendDecoder } from '@/modules/contracts/domain/decoders/multi-send-decoder.helper';
-import { SafeDecoder } from '@/modules/contracts/domain/decoders/safe-decoder.helper';
-import { IDelegatesV2Repository } from '@/modules/delegate/domain/v2/delegates.v2.repository.interface';
-import { EarnRepository } from '@/modules/earn/domain/earn.repository';
-import type { Event } from '@/modules/hooks/routes/entities/event.entity';
+} from '#/logging/logging.interface';
+import { IBalancesRepository } from '#/modules/balances/domain/balances.repository.interface';
+import { IBlockchainRepository } from '#/modules/blockchain/domain/blockchain.repository.interface';
+import { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
+import { ICollectiblesRepository } from '#/modules/collectibles/domain/collectibles.repository.interface';
+import { MultiSendDecoder } from '#/modules/contracts/domain/decoders/multi-send-decoder.helper';
+import { SafeDecoder } from '#/modules/contracts/domain/decoders/safe-decoder.helper';
+import { IDelegatesV3Repository } from '#/modules/delegate/domain/v3/delegates.v3.repository.interface';
+import { EarnRepository } from '#/modules/earn/domain/earn.repository';
+import type { Event } from '#/modules/hooks/routes/entities/event.entity';
 import {
   ConfigEventType,
   TransactionEventType,
-} from '@/modules/hooks/routes/entities/event-type.entity';
-import { IMessagesRepository } from '@/modules/messages/domain/messages.repository.interface';
-import { ISafeRepository } from '@/modules/safe/domain/safe.repository.interface';
-import { ISafeAppsRepository } from '@/modules/safe-apps/domain/safe-apps.repository.interface';
-import { IStakingRepositoryWithRewardsFee } from '@/modules/staking/domain/staking.repository.interface';
-import { ITransactionsRepository } from '@/modules/transactions/domain/transactions.repository.interface';
-import { ZerionCacheService } from '@/modules/zerion/datasources/zerion-cache.service';
+} from '#/modules/hooks/routes/entities/event-type.entity';
+import { IMessagesRepository } from '#/modules/messages/domain/messages.repository.interface';
+import { IPolicyIndexerRepository } from '#/modules/policies/domain/policy-indexer.repository.interface';
+import { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
+import { ISafeAppsRepository } from '#/modules/safe-apps/domain/safe-apps.repository.interface';
+import { IStakingRepositoryWithRewardsFee } from '#/modules/staking/domain/staking.repository.interface';
+import { ITransactionsRepository } from '#/modules/transactions/domain/transactions.repository.interface';
+import { ZerionCacheService } from '#/modules/zerion/datasources/zerion-cache.service';
 
 @Injectable()
 export class EventCacheHelper {
@@ -52,10 +53,12 @@ export class EventCacheHelper {
     private readonly chainsRepository: IChainsRepository,
     @Inject(ICollectiblesRepository)
     private readonly collectiblesRepository: ICollectiblesRepository,
-    @Inject(IDelegatesV2Repository)
-    private readonly delegatesRepository: IDelegatesV2Repository,
+    @Inject(IDelegatesV3Repository)
+    private readonly delegatesRepository: IDelegatesV3Repository,
     @Inject(IMessagesRepository)
     private readonly messagesRepository: IMessagesRepository,
+    @Inject(IPolicyIndexerRepository)
+    private readonly policyIndexerRepository: IPolicyIndexerRepository,
     private readonly zerionCache: ZerionCacheService,
     @Inject(ISafeAppsRepository)
     private readonly safeAppsRepository: ISafeAppsRepository,
@@ -108,6 +111,7 @@ export class EventCacheHelper {
     [TransactionEventType.MESSAGE_CONFIRMATION]:
       this.onTransactionEventMessageConfirmation.bind(this),
     [TransactionEventType.REORG_DETECTED]: () => [],
+    [TransactionEventType.SAFE_CONFIG_UPDATED]: () => [],
     [TransactionEventType.SAFE_CREATED]:
       this.onTransactionEventSafeCreated.bind(this),
     [TransactionEventType.NEW_DELEGATE]:
@@ -143,6 +147,7 @@ export class EventCacheHelper {
       case TransactionEventType.OUTGOING_ETHER:
       case TransactionEventType.INCOMING_TOKEN:
       case TransactionEventType.OUTGOING_TOKEN:
+      case TransactionEventType.SAFE_CONFIG_UPDATED:
         this._logTxEvent(event);
         break;
       case TransactionEventType.MESSAGE_CREATED:
@@ -221,11 +226,13 @@ export class EventCacheHelper {
     // A new pending multisig transaction affects:
     // queued transactions – clear multisig transactions
     // the pending transaction – clear multisig transaction
+    // the queue of every Space holding the Safe
     return [
       this.safeRepository.clearMultisigTransactions({
         chainId: event.chainId,
         safeAddress: event.address,
       }),
+      this.safeRepository.clearSpaceTransactionQueues(event),
       this.safeRepository.clearMultisigTransaction({
         chainId: event.chainId,
         safeTransactionHash: event.safeTxHash,
@@ -242,11 +249,13 @@ export class EventCacheHelper {
     // A deleted multisig transaction affects:
     // queued transactions – clear multisig transactions
     // the pending transaction – clear multisig transaction
+    // the queue of every Space holding the Safe
     return [
       this.safeRepository.clearMultisigTransactions({
         chainId: event.chainId,
         safeAddress: event.address,
       }),
+      this.safeRepository.clearSpaceTransactionQueues(event),
       this.safeRepository.clearMultisigTransaction({
         chainId: event.chainId,
         safeTransactionHash: event.safeTxHash,
@@ -263,7 +272,13 @@ export class EventCacheHelper {
     // - the list of module transactions for the safe
     // - the safe configuration
     // - the Zerion-backed portfolio caches
+    // - the policy state: an allowance transfer moves what a spending limit has
+    //   left, without changing any configuration
     return [
+      this.policyIndexerRepository.clearState({
+        chainId: event.chainId,
+        safeAddress: event.address,
+      }),
       this.zerionCache.invalidate(event.address, event.type),
       this.safeRepository.clearAllExecutedTransactions({
         chainId: event.chainId,
@@ -295,15 +310,21 @@ export class EventCacheHelper {
     >,
   ): Array<Promise<void>> {
     // A new executed multisig transaction affects:
+    // - the policy state: every policy change is a Safe transaction
     // - the collectibles that the safe has
     // - the list of all executed transactions for the safe
     // - the transfers for that safe
     // - queued transactions and history – clear multisig transactions
+    // - the queue of every Space holding the Safe
     // - the transaction executed – clear multisig transaction
     // - the safe configuration - clear safe info
     // - the stakes of a safe
     // - the Zerion-backed portfolio caches
     const promises = [
+      this.policyIndexerRepository.clearState({
+        chainId: event.chainId,
+        safeAddress: event.address,
+      }),
       this.zerionCache.invalidate(event.address, event.type),
       this.collectiblesRepository.clearCollectibles({
         chainId: event.chainId,
@@ -321,6 +342,7 @@ export class EventCacheHelper {
         chainId: event.chainId,
         safeAddress: event.address,
       }),
+      this.safeRepository.clearSpaceTransactionQueues(event),
       this.safeRepository.clearMultisigTransaction({
         chainId: event.chainId,
         safeTransactionHash: event.safeTxHash,
@@ -348,6 +370,10 @@ export class EventCacheHelper {
         this.safeRepository.clearMultisigTransactions({
           chainId: event.chainId,
           safeAddress: child.safeAddress,
+        }),
+        this.safeRepository.clearSpaceTransactionQueues({
+          chainId: event.chainId,
+          address: child.safeAddress,
         }),
         this.safeRepository.clearMultisigTransaction({
           chainId: event.chainId,
@@ -434,12 +460,14 @@ export class EventCacheHelper {
   ): Array<Promise<void>> {
     // A new confirmation for a pending transaction affects:
     // - queued transactions – clear multisig transactions
+    // - the queue of every Space holding the Safe
     // - the pending transaction – clear multisig transaction
     return [
       this.safeRepository.clearMultisigTransactions({
         chainId: event.chainId,
         safeAddress: event.address,
       }),
+      this.safeRepository.clearSpaceTransactionQueues(event),
       this.safeRepository.clearMultisigTransaction({
         chainId: event.chainId,
         safeTransactionHash: event.safeTxHash,
@@ -658,9 +686,11 @@ export class EventCacheHelper {
   private onTransactionEventSafeCreated(
     event: Extract<Event, { type: TransactionEventType.SAFE_CREATED }>,
   ): Array<Promise<void>> {
-    // A freshly indexed Safe may have been funded before deployment.
+    // A freshly indexed Safe may have been funded before deployment, and
+    // its cached 404 would keep it unavailable in the queue of a Space.
     return [
       this.safeRepository.clearIsSafe(event),
+      this.safeRepository.clearSafe(event),
       this.zerionCache.invalidate(event.address, event.type),
     ];
   }
@@ -716,7 +746,8 @@ export class EventCacheHelper {
           | TransactionEventType.INCOMING_ETHER
           | TransactionEventType.OUTGOING_ETHER
           | TransactionEventType.INCOMING_TOKEN
-          | TransactionEventType.OUTGOING_TOKEN;
+          | TransactionEventType.OUTGOING_TOKEN
+          | TransactionEventType.SAFE_CONFIG_UPDATED;
       }
     >,
   ): void {

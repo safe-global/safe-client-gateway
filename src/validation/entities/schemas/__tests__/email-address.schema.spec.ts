@@ -3,7 +3,7 @@ import { faker } from '@faker-js/faker';
 import {
   type EmailAddress,
   EmailAddressSchema,
-} from '@/validation/entities/schemas/email-address.schema';
+} from '#/validation/entities/schemas/email-address.schema';
 
 describe('EmailAddressSchema', () => {
   it('should validate a lowercase email and return it unchanged', () => {
