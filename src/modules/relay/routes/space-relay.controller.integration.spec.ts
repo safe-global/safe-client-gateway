@@ -426,6 +426,22 @@ describe('SpaceRelayController', () => {
     await expect(usedOf({ spaceId, accessToken })).resolves.toBe(1);
   });
 
+  it('should answer 503 for a malformed relay reply and give the unit back', async () => {
+    const { accessToken, spaceId } = await createSpaceForSigner();
+    const call = signerDeployment();
+    networkService.post.mockResolvedValue({
+      data: rawify({ taskId: faker.number.int() }),
+      status: 201,
+    });
+
+    await relay({ spaceId, accessToken, ...call }).expect(
+      HttpStatus.SERVICE_UNAVAILABLE,
+    );
+
+    // The Rhinestone datasource rejects the reply as a DataSourceError.
+    await expect(usedOf({ spaceId, accessToken })).resolves.toBe(0);
+  });
+
   it('should answer 409 for a refunding transaction', async () => {
     const { accessToken, spaceId } = await createSpaceForSigner();
     const safe = getAddress(faker.finance.ethereumAddress());
