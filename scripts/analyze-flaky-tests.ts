@@ -101,6 +101,148 @@ function gh(endpoint: string, params: Record<string, string> = {}): unknown {
 execSync("git rev-parse --verify -q origin/main", { stdio: "ignore" });
 const TARGET_RATE = 0.005;
 const WINDOW_WEEKS = 4;
+const TREND_SVG = "trend.svg";
+
+function windowStats(trend: Array<WeeklyTrend>, i: number, t: number) {
+	const rows = trend.slice(Math.max(0, i - WINDOW_WEEKS + 1), i + 1);
+	const n = rows.reduce((s, w) => s + w.commits, 0);
+	const k = rows.reduce((s, w) => s + w.flaky, 0);
+	return { n, k, conf: confidenceBelow(n, k, t) };
+}
+
+// Two panels on one week axis (one y-scale each): weekly flake rate bars with
+// target rate lines, and the rolling confidence of staying under each target.
+function renderTrendSvg(trend: Array<WeeklyTrend>): string {
+	const W = 960;
+	const left = 56;
+	const right = 150;
+	const plotW = W - left - right;
+	const top1 = 96;
+	const h1 = 260;
+	const top2 = top1 + h1 + 72;
+	const h2 = 170;
+	const H = top2 + h2 + 40;
+	const STEP = 5; // rate axis grid in %
+	const maxRate =
+		Math.ceil(Math.max(STEP, ...trend.map((w) => w.rate)) / STEP) * STEP;
+	const targets = [
+		{ rate: 1, cls: "ref" },
+		{ rate: 0.5, cls: "main" },
+		{ rate: 0.1, cls: "ref dash" },
+	];
+	const bw = plotW / Math.max(trend.length, 1);
+	const x = (i: number) => left + i * bw;
+	const y1 = (r: number) => top1 + h1 - (r / maxRate) * h1;
+	const y2 = (c: number) => top2 + h2 - c * h2;
+	// Right-edge labels: lift each one so close values don't overlap
+	const labels = (items: Array<{ y: number; text: string; main: boolean }>) => {
+		items.sort((a, b) => b.y - a.y);
+		for (let i = 1; i < items.length; i++) {
+			items[i].y = Math.min(items[i].y, items[i - 1].y - 14);
+		}
+		return items.map(
+			(e) =>
+				`<text ${e.main ? 'class="lbl-main" ' : ""}x="${left + plotW + 8}" y="${e.y + 4}">${e.text}</text>`,
+		);
+	};
+	const out: Array<string> = [];
+	out.push(
+		`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" font-family="-apple-system,Segoe UI,Helvetica,Arial,sans-serif">`,
+		"<style>",
+		":root{--bg:#fcfcfb;--ink:#0b0b0b;--ink2:#52514e;--grid:#e4e3df;--bar:#2a78d6;--main:#eb6834}",
+		"@media (prefers-color-scheme: dark){:root{--bg:#1a1a19;--ink:#f0efec;--ink2:#c3c2b7;--grid:#3a3a37;--bar:#3987e5;--main:#d95926}}",
+		"text{fill:var(--ink2);font-size:12px}.title{fill:var(--ink);font-size:16px;font-weight:600}.h{fill:var(--ink);font-size:13px;font-weight:600}",
+		".grid{stroke:var(--grid);stroke-width:1}.bar{fill:var(--bar)}.faint{opacity:.35}",
+		".ref{stroke:var(--ink2);stroke-width:1.5;fill:none}.dash{stroke-dasharray:5 4}.main{stroke:var(--main);stroke-width:2.5;fill:none}",
+		".lbl-main{fill:var(--main);font-weight:600}",
+		"</style>",
+		`<rect width="${W}" height="${H}" fill="var(--bg)"/>`,
+		`<text class="title" x="${left}" y="28">CGW CI flakiness by week</text>`,
+		`<text x="${left}" y="48">Target lines: <tspan class="lbl-main">━ 0.5% (target)</tspan>   ━ 1%   ╍ 0.1%   ·   faded bars: weeks with &lt;10 commits</text>`,
+		`<text class="h" x="${left}" y="${top1 - 22}">Flaky commits per week (% of commits)</text>`,
+	);
+	for (let r = 0; r <= maxRate; r += STEP) {
+		out.push(
+			`<line class="grid" x1="${left}" x2="${left + plotW}" y1="${y1(r)}" y2="${y1(r)}"/>`,
+			`<text x="${left - 8}" y="${y1(r) + 4}" text-anchor="end">${r}%</text>`,
+		);
+	}
+	trend.forEach((w, i) => {
+		const h = top1 + h1 - y1(w.rate);
+		const bx = x(i) + 1;
+		const bwid = Math.max(bw - 2, 1);
+		const tip = `<title>${w.week}: ${w.flaky}/${w.commits} commits flaky (${w.rate}%)</title>`;
+		if (h > 0) {
+			const rr = Math.min(4, bwid / 2, h);
+			out.push(
+				`<path class="bar${w.commits < 10 ? " faint" : ""}" d="M${bx} ${top1 + h1}V${y1(w.rate) + rr}q0 -${rr} ${rr} -${rr}H${bx + bwid - rr}q${rr} 0 ${rr} ${rr}V${top1 + h1}Z">${tip}</path>`,
+			);
+		}
+	});
+	for (const t of targets) {
+		out.push(
+			`<line class="${t.cls}" x1="${left}" x2="${left + plotW}" y1="${y1(t.rate)}" y2="${y1(t.rate)}"/>`,
+		);
+	}
+	out.push(
+		...labels(
+			targets.map((t) => ({
+				y: y1(t.rate),
+				text: `${t.rate}%${t.cls === "main" ? " target" : ""}`,
+				main: t.cls === "main",
+			})),
+		),
+		`<text class="h" x="${left}" y="${top2 - 14}">Confidence the flake rate is below each target (last ${WINDOW_WEEKS} weeks)</text>`,
+	);
+	for (const c of [0, 0.5, 1]) {
+		out.push(
+			`<line class="grid" x1="${left}" x2="${left + plotW}" y1="${y2(c)}" y2="${y2(c)}"/>`,
+		);
+		// 100% sits next to the 95% marker, so it stays unlabelled
+		if (c < 1) {
+			out.push(
+				`<text x="${left - 8}" y="${y2(c) + 4}" text-anchor="end">${c * 100}%</text>`,
+			);
+		}
+	}
+	out.push(
+		`<line class="ref dash" x1="${left}" x2="${left + plotW}" y1="${y2(0.95)}" y2="${y2(0.95)}" opacity=".6"/>`,
+		`<text x="${left - 8}" y="${y2(0.95) + 4}" text-anchor="end" font-size="10">95%</text>`,
+	);
+	const ends: Array<{ y: number; text: string; main: boolean }> = [];
+	for (const t of targets) {
+		const pts = trend.map((_, i) => {
+			const conf = windowStats(trend, i, t.rate / 100).conf;
+			return { cx: x(i) + bw / 2, cy: y2(conf), conf };
+		});
+		const d = pts.map((p, i) => `${i ? "L" : "M"}${p.cx.toFixed(1)} ${p.cy.toFixed(1)}`).join("");
+		out.push(`<path class="${t.cls}" d="${d}"/>`);
+		const last = pts[pts.length - 1];
+		if (last) {
+			ends.push({
+				y: last.cy,
+				text: `&lt;${t.rate}%: ${Math.round(last.conf * 100)}%`,
+				main: t.cls === "main",
+			});
+		}
+	}
+	out.push(...labels(ends));
+	let month = "";
+	trend.forEach((w, i) => {
+		const m = new Date(`${w.week}T00:00:00Z`).toLocaleString("en", {
+			month: "short",
+			timeZone: "UTC",
+		});
+		if (m === month) return;
+		month = m;
+		out.push(
+			`<text x="${x(i)}" y="${top2 + h2 + 20}">${m}</text>`,
+			`<line class="grid" x1="${x(i)}" x2="${x(i)}" y1="${top2 + h2}" y2="${top2 + h2 + 6}"/>`,
+		);
+	});
+	out.push("</svg>");
+	return `${out.join("\n")}\n`;
+}
 
 // P(rate < t) after k flaky of n commits with a uniform prior,
 // i.e. P(Binomial(n + 1, t) >= k + 1)
@@ -584,12 +726,7 @@ function generateReport(args: {
 	const lines: Array<string> = [];
 	const { period, summary, weeklyTrend, tests, prs } = args;
 	const target = `<${TARGET_RATE * 100}%`;
-	const windowAt = (i: number) => {
-		const rows = weeklyTrend.slice(Math.max(0, i - WINDOW_WEEKS + 1), i + 1);
-		const n = rows.reduce((s, w) => s + w.commits, 0);
-		const k = rows.reduce((s, w) => s + w.flaky, 0);
-		return { n, k, conf: confidenceBelow(n, k, TARGET_RATE) };
-	};
+	const windowAt = (i: number) => windowStats(weeklyTrend, i, TARGET_RATE);
 	const pct = (x: number) => `${Math.round(x * 100)}%`;
 	const latest = windowAt(weeklyTrend.length - 1);
 	// Chance a fixed test would have failed again since its fix had the fix not
@@ -645,8 +782,13 @@ function generateReport(args: {
 	);
 	lines.push("");
 
-	// Weekly trend
+	// Weekly trend: chart (written next to the report), table as the text view
 	lines.push("## Weekly Trend");
+	lines.push("");
+	lines.push(`![Weekly flake rate and confidence](${TREND_SVG})`);
+	lines.push("");
+	lines.push("<details>");
+	lines.push("<summary>Weekly numbers</summary>");
 	lines.push("");
 	lines.push(`| Week | Commits | Flaky | Rate | Confidence ${target} (${WINDOW_WEEKS} wk) |`);
 	lines.push("|------|---------|-------|------|------|");
@@ -656,30 +798,8 @@ function generateReport(args: {
 		);
 	});
 	lines.push("");
-
-	// Plain-text bar chart in a fenced block: GitHub does not render Mermaid
-	// xychart-beta, but a code block renders everywhere. Drop low-sample weeks
-	// (<10 commits) so a 1/1-commit week reading 100% doesn't flatten the trend.
-	const chartWeeks = weeklyTrend.filter((w) => w.commits >= 10);
-	if (chartWeeks.length > 1) {
-		const barWidth = 40;
-		const maxRate = Math.max(...chartWeeks.map((w) => w.rate), 1);
-		lines.push("```text");
-		lines.push(
-			"Weekly CI flakiness rate %  ·  n = unique commits  ·  weeks with n<10 omitted",
-		);
-		lines.push("");
-		for (const w of chartWeeks) {
-			const filled = Math.round((w.rate / maxRate) * barWidth);
-			const bar = "█".repeat(filled) || "▏";
-			const label = w.week.slice(5);
-			const rate = `${w.rate.toFixed(1)}%`.padStart(6);
-			const n = `n=${w.commits}`.padEnd(6);
-			lines.push(`${label} ${rate}  ${n} ${bar}`);
-		}
-		lines.push("```");
-		lines.push("");
-	}
+	lines.push("</details>");
+	lines.push("");
 
 	// Clean-streak tracker: commits accumulated in fully-clean weeks after
 	// the last week that had a flake. Conservative — clean commits within
@@ -955,9 +1075,20 @@ async function main(): Promise<void> {
 	// allGhRuns (not just new runs) because already-processed runs must still
 	// count into the rebuilt weeks.
 	const rebuildFromWeek = existing ? getWeekStart(existing.lastCheckedAt) : "";
-	const keptWeekly = (existing?.weeklyTrend ?? []).filter(
-		(w) => w.week < rebuildFromWeek,
-	);
+	// Legacy rows keyed to a Sunday came from local-time week starts and belong
+	// to the next Monday's week
+	const keptByWeek = new Map<string, WeeklyTrend>();
+	for (const w of existing?.weeklyTrend ?? []) {
+		if (w.week >= rebuildFromWeek) continue;
+		const d = new Date(`${w.week}T00:00:00Z`);
+		if (d.getUTCDay() === 0) d.setUTCDate(d.getUTCDate() + 1);
+		const week = d.toISOString().split("T")[0];
+		const commits = (keptByWeek.get(week)?.commits ?? 0) + w.commits;
+		const flaky = (keptByWeek.get(week)?.flaky ?? 0) + w.flaky;
+		const rate = commits ? Math.round((flaky / commits) * 1000) / 10 : 0;
+		keptByWeek.set(week, { week, commits, flaky, rate });
+	}
+	const keptWeekly = [...keptByWeek.values()];
 	const keptWeeks = new Set(keptWeekly.map((w) => w.week));
 	const newWeeklyMap = new Map<
 		string,
@@ -1141,6 +1272,10 @@ async function main(): Promise<void> {
 		prs: fixPrs,
 	});
 	fs.writeFileSync(path.join(OUTPUT_DIR, "REPORT.md"), report);
+	fs.writeFileSync(
+		path.join(OUTPUT_DIR, TREND_SVG),
+		renderTrendSvg(mergedWeeklyTrend),
+	);
 
 	console.log("\nDone! Files written:");
 	console.log(`  ${path.join(OUTPUT_DIR, "ci-runs.json")}`);
