@@ -202,6 +202,22 @@ export default () => ({
         ),
       },
     },
+    clear: {
+      cooldownSeconds: Number.parseInt(
+        process.env.PORTFOLIO_CLEAR_COOLDOWN_SECONDS ?? `${15}`,
+        10,
+      ),
+      rateLimit: {
+        max: Number.parseInt(
+          process.env.PORTFOLIO_CLEAR_RATE_LIMIT_MAX ?? `${10}`,
+          10,
+        ),
+        windowSeconds: Number.parseInt(
+          process.env.PORTFOLIO_CLEAR_RATE_LIMIT_WINDOW_SECONDS ?? `${60}`,
+          10,
+        ),
+      },
+    },
   },
   blockchain: {
     infura: {
