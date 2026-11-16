@@ -318,7 +318,6 @@ describe('MembersController', () => {
         .expect(403)
         .expect({
           message: 'User is not an admin of this workspace',
-          error: 'Forbidden',
           statusCode: 403,
         });
     });
@@ -374,7 +373,6 @@ describe('MembersController', () => {
         .expect(403)
         .expect({
           message: 'User is not an admin of this workspace',
-          error: 'Forbidden',
           statusCode: 403,
         });
     });
@@ -420,7 +418,6 @@ describe('MembersController', () => {
         .expect(403)
         .expect({
           message: 'User is not an admin of this workspace',
-          error: 'Forbidden',
           statusCode: 403,
         });
     });
@@ -466,7 +463,6 @@ describe('MembersController', () => {
         .expect(403)
         .expect({
           message: 'User is not an admin of this workspace',
-          error: 'Forbidden',
           statusCode: 403,
         });
     });
@@ -609,7 +605,6 @@ describe('MembersController', () => {
         .expect(403)
         .expect({
           message: 'User is not an admin of this workspace',
-          error: 'Forbidden',
           statusCode: 403,
         });
     });
@@ -1529,7 +1524,6 @@ describe('MembersController', () => {
         .expect(403)
         .expect({
           message: 'User is not an admin of this workspace',
-          error: 'Forbidden',
           statusCode: 403,
         });
     });
@@ -1567,7 +1561,6 @@ describe('MembersController', () => {
         .expect(403)
         .expect({
           message: 'User is not an admin of this workspace',
-          error: 'Forbidden',
           statusCode: 403,
         });
     });
@@ -1611,7 +1604,6 @@ describe('MembersController', () => {
         .expect(403)
         .expect({
           message: 'User is not an admin of this workspace',
-          error: 'Forbidden',
           statusCode: 403,
         });
     });
@@ -1760,7 +1752,6 @@ describe('MembersController', () => {
         .expect(403)
         .expect({
           message: 'User is not an admin of this workspace',
-          error: 'Forbidden',
           statusCode: 403,
         });
     });
@@ -1803,7 +1794,6 @@ describe('MembersController', () => {
         .expect(403)
         .expect({
           message: 'User is not an admin of this workspace',
-          error: 'Forbidden',
           statusCode: 403,
         });
     });

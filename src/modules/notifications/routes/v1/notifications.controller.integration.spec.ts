@@ -253,7 +253,14 @@ describe('Notifications Controller', () => {
         .send(registerDeviceDto)
         .expect(200);
 
-      expect(notificationServiceV2.upsertSubscriptions).toHaveBeenCalled();
+      // Registrations can have no safes, and those are not upserted
+      const safeRegistrationsWithSafe =
+        registerDeviceDto.safeRegistrations.filter(
+          (safeRegistration) => safeRegistration.safes.length > 0,
+        );
+      expect(notificationServiceV2.upsertSubscriptions).toHaveBeenCalledTimes(
+        safeRegistrationsWithSafe.length,
+      );
     });
   });
 

@@ -3,7 +3,7 @@
 import { faker } from '@faker-js/faker';
 import {
   BadRequestException,
-  ForbiddenException,
+  HttpStatus,
   UnauthorizedException,
 } from '@nestjs/common';
 import type { EntityManager } from 'typeorm';
@@ -11,6 +11,7 @@ import { type Address, getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
 import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
 import type { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
+import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
 import {
   oidcAuthPayloadDtoBuilder,
   siweAuthPayloadDtoBuilder,
@@ -186,7 +187,7 @@ describe('AddressBooksService', () => {
       });
     });
 
-    it('should throw ForbiddenException when the caller is not an active member', async () => {
+    it('should throw a 403 when the caller is not an active member', async () => {
       const spaceId = faker.number.int();
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
       membersRepositoryMock.findOne.mockResolvedValue(null);
@@ -194,7 +195,10 @@ describe('AddressBooksService', () => {
       await expect(
         service.findAllBySpaceId(authPayload, spaceId),
       ).rejects.toThrow(
-        new ForbiddenException('User is not a member of this workspace'),
+        new HttpExceptionNoLog(
+          'User is not a member of this workspace',
+          HttpStatus.FORBIDDEN,
+        ),
       );
       expect(repositoryMock.findAllBySpaceId).not.toHaveBeenCalled();
     });
@@ -305,7 +309,7 @@ describe('AddressBooksService', () => {
       );
     });
 
-    it('should throw ForbiddenException when the caller is not an admin', async () => {
+    it('should throw a 403 when the caller is not an admin', async () => {
       const spaceId = faker.number.int();
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
       membersRepositoryMock.findOne.mockResolvedValue(null);
@@ -313,7 +317,10 @@ describe('AddressBooksService', () => {
       await expect(
         service.upsertMany(authPayload, spaceId, { items: [] }),
       ).rejects.toThrow(
-        new ForbiddenException('User is not an admin of this workspace'),
+        new HttpExceptionNoLog(
+          'User is not an admin of this workspace',
+          HttpStatus.FORBIDDEN,
+        ),
       );
       expect(repositoryMock.upsertMany).not.toHaveBeenCalled();
     });
@@ -493,7 +500,7 @@ describe('AddressBooksService', () => {
       });
     });
 
-    it('should throw ForbiddenException when the caller is not an admin', async () => {
+    it('should throw a 403 when the caller is not an admin', async () => {
       const spaceId = faker.number.int();
       const address = getAddress(faker.finance.ethereumAddress());
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
@@ -502,7 +509,10 @@ describe('AddressBooksService', () => {
       await expect(
         service.deleteByAddress({ authPayload, spaceId, address }),
       ).rejects.toThrow(
-        new ForbiddenException('User is not an admin of this workspace'),
+        new HttpExceptionNoLog(
+          'User is not an admin of this workspace',
+          HttpStatus.FORBIDDEN,
+        ),
       );
       expect(repositoryMock.deleteByAddress).not.toHaveBeenCalled();
     });
@@ -568,7 +578,7 @@ describe('AddressBooksService', () => {
       ]);
     });
 
-    it('should throw ForbiddenException when the caller is not an active member', async () => {
+    it('should throw a 403 when the caller is not an active member', async () => {
       const spaceId = faker.number.int();
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
       membersRepositoryMock.findOne.mockResolvedValue(null);
@@ -583,7 +593,10 @@ describe('AddressBooksService', () => {
           ],
         }),
       ).rejects.toThrow(
-        new ForbiddenException('User is not a member of this workspace'),
+        new HttpExceptionNoLog(
+          'User is not a member of this workspace',
+          HttpStatus.FORBIDDEN,
+        ),
       );
       expect(tagsRepositoryMock.setTagsForItems).not.toHaveBeenCalled();
     });
@@ -624,7 +637,10 @@ describe('AddressBooksService', () => {
       await expect(
         service.setContactTags(authPayload, spaceId, { items }),
       ).rejects.toThrow(
-        new ForbiddenException('User is not a member of this workspace'),
+        new HttpExceptionNoLog(
+          'User is not a member of this workspace',
+          HttpStatus.FORBIDDEN,
+        ),
       );
     });
 
@@ -691,7 +707,7 @@ describe('AddressBooksService', () => {
       expect(result.tags).toEqual([tag]);
     });
 
-    it('should throw ForbiddenException when the caller is not an active member', async () => {
+    it('should throw a 403 when the caller is not an active member', async () => {
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
       membersRepositoryMock.findOne.mockResolvedValue(null);
 
@@ -702,7 +718,10 @@ describe('AddressBooksService', () => {
           dto: { name: faker.word.noun() },
         }),
       ).rejects.toThrow(
-        new ForbiddenException('User is not a member of this workspace'),
+        new HttpExceptionNoLog(
+          'User is not a member of this workspace',
+          HttpStatus.FORBIDDEN,
+        ),
       );
       expect(tagsRepositoryMock.createTag).not.toHaveBeenCalled();
     });
@@ -750,7 +769,7 @@ describe('AddressBooksService', () => {
       expect(result.tags).toEqual([{ ...tag, name }]);
     });
 
-    it('should throw ForbiddenException when the caller is not an active member', async () => {
+    it('should throw a 403 when the caller is not an active member', async () => {
       const spaceId = faker.number.int();
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
       membersRepositoryMock.findOne.mockResolvedValue(null);
@@ -763,7 +782,10 @@ describe('AddressBooksService', () => {
           dto: { name: faker.word.noun() },
         }),
       ).rejects.toThrow(
-        new ForbiddenException('User is not a member of this workspace'),
+        new HttpExceptionNoLog(
+          'User is not a member of this workspace',
+          HttpStatus.FORBIDDEN,
+        ),
       );
       expect(tagsRepositoryMock.renameTag).not.toHaveBeenCalled();
     });
@@ -802,7 +824,7 @@ describe('AddressBooksService', () => {
       });
     });
 
-    it('should throw ForbiddenException when the caller is not an active member', async () => {
+    it('should throw a 403 when the caller is not an active member', async () => {
       const authPayload = new AuthPayload(siweAuthPayloadDtoBuilder().build());
       membersRepositoryMock.findOne.mockResolvedValue(null);
 
@@ -813,7 +835,10 @@ describe('AddressBooksService', () => {
           tagId: faker.number.int(),
         }),
       ).rejects.toThrow(
-        new ForbiddenException('User is not a member of this workspace'),
+        new HttpExceptionNoLog(
+          'User is not a member of this workspace',
+          HttpStatus.FORBIDDEN,
+        ),
       );
       expect(tagsRepositoryMock.deleteTag).not.toHaveBeenCalled();
     });

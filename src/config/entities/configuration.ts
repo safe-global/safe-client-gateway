@@ -184,11 +184,43 @@ export default () => ({
         process.env.PORTFOLIO_CACHE_TTL_SECONDS ?? `${10}`,
         10,
       ),
+      afterTransactionTtlSeconds: Number.parseInt(
+        process.env.PORTFOLIO_CACHE_TTL_AFTER_TRANSACTION_SECONDS ?? `${120}`,
+        10,
+      ),
     },
     filters: {
       dustThresholdUsd: Number.parseFloat(
         process.env.PORTFOLIO_DUST_THRESHOLD_USD ?? `${0.001}`,
       ),
+    },
+    summaries: {
+      rateLimit: {
+        max: Number.parseInt(
+          process.env.PORTFOLIO_SUMMARIES_RATE_LIMIT_MAX ?? `${60}`,
+          10,
+        ),
+        windowSeconds: Number.parseInt(
+          process.env.PORTFOLIO_SUMMARIES_RATE_LIMIT_WINDOW_SECONDS ?? `${60}`,
+          10,
+        ),
+      },
+    },
+    clear: {
+      cooldownSeconds: Number.parseInt(
+        process.env.PORTFOLIO_CLEAR_COOLDOWN_SECONDS ?? `${15}`,
+        10,
+      ),
+      rateLimit: {
+        max: Number.parseInt(
+          process.env.PORTFOLIO_CLEAR_RATE_LIMIT_MAX ?? `${10}`,
+          10,
+        ),
+        windowSeconds: Number.parseInt(
+          process.env.PORTFOLIO_CLEAR_RATE_LIMIT_WINDOW_SECONDS ?? `${60}`,
+          10,
+        ),
+      },
     },
   },
   blockchain: {
@@ -408,6 +440,10 @@ export default () => ({
       process.env.EXPIRATION_TIME_ENTITLEMENTS_SECONDS ?? `${300}`,
       10,
     ),
+    decodedData: Number.parseInt(
+      process.env.EXPIRATION_TIME_DECODED_DATA_SECONDS ?? `${3600}`,
+      10,
+    ),
     notFound: {
       default: Number.parseInt(
         process.env.DEFAULT_NOT_FOUND_EXPIRE_TIME_SECONDS ?? `${30}`,
@@ -415,6 +451,10 @@ export default () => ({
       ),
       contract: Number.parseInt(
         process.env.CONTRACT_NOT_FOUND_EXPIRE_TIME_SECONDS ?? `${60}`,
+        10,
+      ),
+      decodedData: Number.parseInt(
+        process.env.DECODED_DATA_NOT_FOUND_EXPIRE_TIME_SECONDS ?? `${900}`,
         10,
       ),
       token: Number.parseInt(

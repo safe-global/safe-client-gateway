@@ -13,6 +13,12 @@ export interface IDataDecoderApi {
     to: Address;
   }): Promise<Raw<DataDecoded>>;
 
+  clearDecodedData(args: {
+    data: Address;
+    to: Address;
+    chainId: string;
+  }): Promise<void>;
+
   getContracts(args: {
     address: Address;
     chainId: string;

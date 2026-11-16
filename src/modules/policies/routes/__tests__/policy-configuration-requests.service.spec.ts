@@ -3,6 +3,7 @@ import { faker } from '@faker-js/faker';
 import { HttpStatus } from '@nestjs/common';
 import { getAddress, type Hex } from 'viem';
 import type { MockedObject } from 'vitest';
+import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
 import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
 import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
 import type { ILoggingService } from '#/logging/logging.interface';
@@ -15,6 +16,7 @@ import { policyConfigurationBuilder } from '#/modules/policies/domain/entities/_
 import { safePolicyGuardConfigurationBuilder } from '#/modules/policies/domain/entities/__tests__/safe-policy-guard-configuration.builder';
 import { policyIndexerConfigurationRootBuilder } from '#/modules/policies/domain/entities/indexer/__tests__/configuration-root.builder';
 import { policyIndexerResponseBuilder } from '#/modules/policies/domain/entities/indexer/__tests__/policy-indexer-state.builder';
+import type { PolicyIndexerConfigurationRoot } from '#/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 import type { PolicyConfiguration } from '#/modules/policies/domain/entities/policy-configuration.entity';
 import { getSafePolicyGuardDeployments } from '#/modules/policies/domain/policy-deployments.constants';
 import type { IPolicyIndexerRepository } from '#/modules/policies/domain/policy-indexer.repository.interface';
@@ -36,7 +38,12 @@ import type { IMembersRepository } from '#/modules/users/domain/members/members.
 
 describe('PolicyConfigurationRequestsService', () => {
   const configurationRequestsRepository: MockedObject<ISafePolicyGuardConfigurationRequestsRepository> =
-    { create: vi.fn(), findBySafes: vi.fn(), delete: vi.fn() };
+    {
+      create: vi.fn(),
+      findRootsBySafe: vi.fn(),
+      findBySafes: vi.fn(),
+      delete: vi.fn(),
+    };
   const membersRepository: MockedObject<Pick<IMembersRepository, 'findOne'>> = {
     findOne: vi.fn(),
   };
@@ -56,10 +63,15 @@ describe('PolicyConfigurationRequestsService', () => {
     getTransactionQueue: vi.fn(),
     getTransactionQueueMaxPageSize: vi.fn(),
   };
-
   const loggingService: MockedObject<Pick<ILoggingService, 'warn'>> = {
     warn: vi.fn(),
   };
+  const maxPerSpaceSafe = faker.number.int({ min: 2, max: 5 });
+  const configurationService = new FakeConfigurationService();
+  configurationService.set(
+    'policies.maxConfigurationRequestsPerSpaceSafe',
+    maxPerSpaceSafe,
+  );
 
   const target = new PolicyConfigurationRequestsService(
     configurationRequestsRepository,
@@ -69,6 +81,7 @@ describe('PolicyConfigurationRequestsService', () => {
     safeRepository as MockedObject<ISafeRepository>,
     new MultiSendDecoder(loggingService as MockedObject<ILoggingService>),
     new SafePolicyGuardDecoder(),
+    configurationService,
     loggingService as MockedObject<ILoggingService>,
   );
 
@@ -101,6 +114,10 @@ describe('PolicyConfigurationRequestsService', () => {
     membersRepository.findOne.mockResolvedValue(memberBuilder().build());
     spaceSafesRepository.existsInSpace.mockResolvedValue(true);
     configurationRequestsRepository.create.mockResolvedValue();
+    configurationRequestsRepository.findRootsBySafe.mockResolvedValue([]);
+    policyIndexerRepository.getState.mockResolvedValue(
+      policyIndexerResponseBuilder().build(),
+    );
   });
 
   it('should store the configurations of a root', async () => {
@@ -176,6 +193,143 @@ describe('PolicyConfigurationRequestsService', () => {
     expect(configurationRequestsRepository.create).not.toHaveBeenCalled();
   });
 
+  describe('cap', () => {
+    const now = faker.date.recent();
+    const nowSeconds = Math.floor(now.getTime() / 1_000);
+
+    beforeEach(() => {
+      vi.useFakeTimers({ now });
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    const capError = new HttpExceptionNoLog(
+      `This Safe only allows a maximum of ${maxPerSpaceSafe} active policy configuration requests in this space.`,
+      HttpStatus.BAD_REQUEST,
+    );
+
+    /** Stores {@link maxPerSpaceSafe} roots for the Safe. */
+    function fillCap(): Array<Hex> {
+      const stored = Array.from(
+        { length: maxPerSpaceSafe },
+        () => validPayload().root,
+      );
+      configurationRequestsRepository.findRootsBySafe.mockResolvedValue(stored);
+      return stored;
+    }
+
+    /** The on-chain root of a stored configuration. */
+    function onChain(
+      root: Hex,
+      status: PolicyIndexerConfigurationRoot['status'],
+      expiresAt: number,
+    ): PolicyIndexerConfigurationRoot {
+      return policyIndexerConfigurationRootBuilder()
+        .with('root', root)
+        .with('status', status)
+        .with('expiresAt', expiresAt)
+        .build();
+    }
+
+    it('should reject a new root once the Safe holds the maximum', async () => {
+      fillCap();
+
+      await expect(
+        target.create({ ...request, payload: validPayload() }),
+      ).rejects.toThrow(capError);
+      expect(
+        configurationRequestsRepository.findRootsBySafe,
+      ).toHaveBeenCalledWith({ spaceId, safe });
+      expect(configurationRequestsRepository.create).not.toHaveBeenCalled();
+    });
+
+    it('should accept a stored root again at the maximum', async () => {
+      const payload = validPayload();
+      configurationRequestsRepository.findRootsBySafe.mockResolvedValue([
+        payload.root,
+        ...fillCap().slice(1),
+      ]);
+
+      await expect(
+        target.create({ ...request, payload }),
+      ).resolves.toStrictEqual({ root: payload.root });
+      expect(policyIndexerRepository.getState).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['applied', 'APPLIED' as const, 1],
+      ['invalidated', 'INVALIDATED' as const, 1],
+      ['expired', 'PENDING' as const, 0],
+    ])(
+      'should not count a root that is %s on-chain',
+      async (_, status, expiresIn) => {
+        const [closed] = fillCap();
+        policyIndexerRepository.getState.mockResolvedValue(
+          policyIndexerResponseBuilder()
+            .with('roots', [onChain(closed, status, nowSeconds + expiresIn)])
+            .build(),
+        );
+
+        const payload = validPayload();
+
+        await expect(
+          target.create({ ...request, payload }),
+        ).resolves.toStrictEqual({ root: payload.root });
+        expect(configurationRequestsRepository.create).toHaveBeenCalledWith(
+          expect.objectContaining({ root: payload.root }),
+        );
+        expect(policyIndexerRepository.getState).toHaveBeenCalledWith({
+          safes: [safe],
+          guardPolicyKinds: guardPolicyKindsOf(GUARD_POLICY_TYPES),
+        });
+      },
+    );
+
+    it('should count a root that can still be applied', async () => {
+      const [open] = fillCap();
+      policyIndexerRepository.getState.mockResolvedValue(
+        policyIndexerResponseBuilder()
+          .with('roots', [onChain(open, 'PENDING', nowSeconds + 1)])
+          .build(),
+      );
+
+      await expect(
+        target.create({ ...request, payload: validPayload() }),
+      ).rejects.toThrow(capError);
+    });
+
+    it('should count a root closed on one guard but open on another', async () => {
+      const [root] = fillCap();
+      policyIndexerRepository.getState.mockResolvedValue(
+        policyIndexerResponseBuilder()
+          .with('roots', [
+            onChain(root, 'APPLIED', nowSeconds + 1),
+            onChain(root, 'PENDING', nowSeconds + 1),
+          ])
+          .build(),
+      );
+      await expect(
+        target.create({ ...request, payload: validPayload() }),
+      ).rejects.toThrow(capError);
+    });
+
+    it('should count every stored root when the indexer cannot be read', async () => {
+      fillCap();
+      policyIndexerRepository.getState.mockRejectedValue(new Error('down'));
+
+      await expect(
+        target.create({ ...request, payload: validPayload() }),
+      ).rejects.toThrow(capError);
+      expect(loggingService.warn).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: 'Could not read the configuration roots of a Safe',
+        }),
+      );
+    });
+  });
+
   describe('delete', () => {
     const root = configurationRoot([policyConfigurationBuilder().build()]);
     const guard = getSafePolicyGuardDeployments(safe.chainId)[0];
@@ -237,7 +391,6 @@ describe('PolicyConfigurationRequestsService', () => {
           ])
           .build(),
       );
-
       await expect(target.delete({ ...request, root })).rejects.toThrow(
         new HttpExceptionNoLog(
           'Only a draft configuration request can be deleted',

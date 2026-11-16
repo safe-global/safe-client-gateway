@@ -133,6 +133,7 @@ A shared schema library (`src/validation/entities/schemas/`) backs common primit
 - `NumericStringSchema` — a base-10 numeric string, explicitly rejecting hex-looking values.
 - `HexSchema` — a `0x`-prefixed hex string (viem's `isHex`).
 - `BooleanStringSchema` — a query-string boolean, exactly `true` or `false`, parsed to a `boolean`.
+- `FiatCodeSchema` — a three-letter currency code, upper-cased; which codes are supported is checked by the caller.
 - `UuidSchema` — validates a UUID and casts it to Node's `UUID` type.
 - `RedirectUrlSchema` — bounds length (2048 chars) and rejects control characters; used to validate post-login redirect targets.
 
@@ -254,7 +255,7 @@ It is applied by the three datasources that call the Transaction Service (`Trans
 Validation failures funnel through `ZodErrorFilter` (`src/routes/common/filters/zod-error.filter.ts`), which distinguishes the two places a Zod error can originate.
 A `ZodErrorWithCode` from a route-level `ValidationPipe` (user input) returns 422 with the parsed issue.
 A bare `ZodError` from repository/domain-layer parsing (an upstream response failing its own schema) returns a generic 502, since its detail could leak internal shape.
-`GlobalErrorFilter` (`src/routes/common/filters/global-error.filter.ts`) is the catch-all backstop for anything else: it logs server errors (5xx) and skips the log for anything thrown as `HttpExceptionNoLog` (`src/domain/common/errors/http-exception-no-log.error.ts`) — used for rejections that are expected/user-caused and would otherwise be noise.
+`GlobalErrorFilter` (`src/routes/common/filters/global-error.filter.ts`) is the catch-all backstop for anything else: it logs server errors (5xx) at `error` and every other exception at `info`, and skips the log for anything thrown as `HttpExceptionNoLog` (`src/domain/common/errors/http-exception-no-log.error.ts`) — used for rejections that are expected/user-caused and would otherwise be noise, such as the Workspace 403s from `assertMember`/`assertAdmin`/`assertSafeInSpace`. An `HttpExceptionNoLog` body carries `statusCode` and `message` but no `error` field.
 
 All three filters are registered globally as `APP_FILTER`s in `src/app.module.ts`, catch-all first — the order is load-bearing because NestJS matches filters in reverse registration order, so the later-registered, type-specific `DataSourceErrorFilter` and `ZodErrorFilter` take precedence and `GlobalErrorFilter` handles only what they do not catch.
 `MessageVerifierHelper` (`src/modules/messages/domain/helpers/message-verifier.helper.ts`) is a representative `HttpExceptionNoLog` thrower: a Safe message whose computed hash does not match the one the client asserted is a client-input problem, not an incident.

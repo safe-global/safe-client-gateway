@@ -78,6 +78,14 @@ const GATED_ROUTES: Array<Route> = [
     method: 'delete',
     path: (id) => `/v1/spaces/${id}`,
   },
+  // A stolen session could add an invite to a pending setup that the real
+  // user later starts.
+  {
+    name: 'PUT /v1/spaces/:id/setup',
+    method: 'put',
+    path: (id) => `/v1/spaces/${id}/setup`,
+    body: {},
+  },
   {
     name: 'POST /v1/spaces/:spaceId/safes',
     method: 'post',
@@ -172,10 +180,23 @@ const UNGATED_ROUTES: Array<Route> = [
     path: () => '/v1/spaces',
     body: { name: nameBuilder() },
   },
+  // Like POST /v1/spaces: a brand-new Workspace holding only the caller's own
+  // data, created mid-onboarding.
+  {
+    name: 'POST /v1/spaces/setup',
+    method: 'post',
+    path: () => '/v1/spaces/setup',
+    body: {},
+  },
   {
     name: 'GET /v1/spaces/:id',
     method: 'get',
     path: (id) => `/v1/spaces/${id}`,
+  },
+  {
+    name: 'GET /v1/spaces/:id/setup',
+    method: 'get',
+    path: (id) => `/v1/spaces/${id}/setup`,
   },
   {
     name: 'GET /v1/spaces/entitlements',

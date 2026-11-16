@@ -3,6 +3,7 @@
 import { faker } from '@faker-js/faker';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
+import { FakeConfigurationService } from '#/config/__tests__/fake.configuration.service';
 import { CacheRouter } from '#/datasources/cache/cache.router';
 import type { ICacheService } from '#/datasources/cache/cache.service.interface';
 import { LogType } from '#/domain/common/entities/log-type.entity';
@@ -12,6 +13,7 @@ import { ZerionCacheService } from '#/modules/zerion/datasources/zerion-cache.se
 
 const mockCacheService = vi.mocked({
   deleteByKey: vi.fn(),
+  setCounter: vi.fn(),
 } as MockedObject<ICacheService>);
 
 const mockLoggingService = {
@@ -24,10 +26,24 @@ const mockLoggingService = {
 describe('ZerionCacheService', () => {
   let service: ZerionCacheService;
   const address = getAddress(faker.finance.ethereumAddress());
+  const afterTransactionTtlSeconds = faker.number.int({ min: 60, max: 180 });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
 
   beforeEach(() => {
     vi.resetAllMocks();
-    service = new ZerionCacheService(mockCacheService, mockLoggingService);
+    const configurationService = new FakeConfigurationService();
+    configurationService.set(
+      'portfolio.cache.afterTransactionTtlSeconds',
+      afterTransactionTtlSeconds,
+    );
+    service = new ZerionCacheService(
+      mockCacheService,
+      mockLoggingService,
+      configurationService,
+    );
   });
 
   describe('invalidate', () => {
@@ -42,6 +58,31 @@ describe('ZerionCacheService', () => {
       );
       expect(mockCacheService.deleteByKey).toHaveBeenCalledWith(
         CacheRouter.getZerionPositionsCacheKey({ safeAddress: address }),
+      );
+    });
+
+    it('records the clear time for the settle window, restarting it on every clear', async () => {
+      const now = faker.date.recent().getTime();
+      vi.spyOn(Date, 'now').mockReturnValue(now);
+
+      await service.invalidate(address, 'refresh');
+
+      expect(mockCacheService.setCounter).toHaveBeenCalledWith(
+        CacheRouter.getPortfolioClearedAtCacheKey({ address }),
+        now,
+        afterTransactionTtlSeconds,
+        0,
+      );
+    });
+
+    it('still clears the caches when the clear time cannot be recorded', async () => {
+      mockCacheService.setCounter.mockRejectedValue(new Error('redis down'));
+
+      await service.invalidate(address, 'refresh');
+
+      expect(mockCacheService.deleteByKey).toHaveBeenCalledTimes(3);
+      expect(mockLoggingService.warn).toHaveBeenCalledWith(
+        expect.stringContaining('redis down'),
       );
     });
 

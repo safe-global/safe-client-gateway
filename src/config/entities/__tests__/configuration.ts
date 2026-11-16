@@ -99,9 +99,23 @@ export default (): ReturnType<typeof configuration> => ({
   portfolio: {
     cache: {
       ttlSeconds: faker.number.int({ min: 10, max: 300 }),
+      afterTransactionTtlSeconds: faker.number.int({ min: 60, max: 180 }),
     },
     filters: {
       dustThresholdUsd: faker.number.float({ min: 0.1, max: 10 }),
+    },
+    summaries: {
+      rateLimit: {
+        max: faker.number.int({ min: 100, max: 200 }),
+        windowSeconds: faker.number.int({ min: 100, max: 200 }),
+      },
+    },
+    clear: {
+      cooldownSeconds: faker.number.int({ min: 10, max: 60 }),
+      rateLimit: {
+        max: faker.number.int({ min: 100, max: 200 }),
+        windowSeconds: faker.number.int({ min: 100, max: 200 }),
+      },
     },
   },
   blockchain: {
@@ -211,9 +225,11 @@ export default (): ReturnType<typeof configuration> => ({
     zerionPositions: faker.number.int(),
     billing: faker.number.int(),
     entitlements: faker.number.int(),
+    decodedData: faker.number.int(),
     notFound: {
       default: faker.number.int(),
       contract: faker.number.int(),
+      decodedData: faker.number.int(),
       token: faker.number.int(),
     },
   },

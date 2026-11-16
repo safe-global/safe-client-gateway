@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
-import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
+import { HttpStatus, UnauthorizedException } from '@nestjs/common';
 import type { EntityManager } from 'typeorm';
 import { Equal } from 'typeorm';
 import type { Address } from 'viem';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
 import type { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
+import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
 import {
   oidcAuthPayloadDtoBuilder,
   siweAuthPayloadDtoBuilder,
@@ -155,7 +156,12 @@ describe('SpaceSafesService', () => {
             authPayload,
             payload: [],
           }),
-        ).rejects.toThrow(ForbiddenException);
+        ).rejects.toThrow(
+          new HttpExceptionNoLog(
+            'User is not an admin of this workspace',
+            HttpStatus.FORBIDDEN,
+          ),
+        );
       },
     );
 
@@ -411,7 +417,12 @@ describe('SpaceSafesService', () => {
 
         await expect(
           service.get(faker.number.int(), authPayload),
-        ).rejects.toThrow(ForbiddenException);
+        ).rejects.toThrow(
+          new HttpExceptionNoLog(
+            'User is not a member of this workspace',
+            HttpStatus.FORBIDDEN,
+          ),
+        );
 
         expect(spaceSafesRepositoryMock.findBySpaceId).not.toHaveBeenCalled();
       },
@@ -559,7 +570,12 @@ describe('SpaceSafesService', () => {
             authPayload,
             payload: [],
           }),
-        ).rejects.toThrow(ForbiddenException);
+        ).rejects.toThrow(
+          new HttpExceptionNoLog(
+            'User is not an admin of this workspace',
+            HttpStatus.FORBIDDEN,
+          ),
+        );
       },
     );
   });
