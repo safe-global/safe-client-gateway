@@ -89,17 +89,9 @@ export class DelayedGuardPoliciesMapper {
    * @param args.types The requested policy types.
    * @param args.now Unix seconds.
    */
-  public map(args: {
-    safe: SafeRef;
-    guard: Address | null;
-    moduleGuard: Address | null;
-    transactions: ReadonlyArray<MultisigTransaction>;
-    onChainConfigurations: ReadonlyArray<PolicyIndexerConfigurationRoot>;
-    storedConfigurations: ReadonlyArray<SafePolicyGuardConfiguration>;
-    guardEnforcedPolicies: ReadonlyArray<PolicyIndexerGuardEnforcedPolicy>;
-    types: ReadonlyArray<PolicyType>;
-    now: number;
-  }): Array<PendingDelayedGuardPolicies> {
+  public map(
+    args: ChangesArgs & { types: ReadonlyArray<PolicyType>; now: number },
+  ): Array<PendingDelayedGuardPolicies> {
     return this.changesOf(args).flatMap((change) => {
       const item = this.toItem({ change, safe: args.safe, now: args.now });
       if (!item) {

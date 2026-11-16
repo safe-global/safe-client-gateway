@@ -47,12 +47,12 @@ import type {
 } from '#/modules/policies/domain/entities/pending-policy.entity';
 import { PolicyType } from '#/modules/policies/domain/entities/policy-type.entity';
 import type { SafeRef } from '#/modules/policies/domain/entities/safe-ref.entity';
-import type { IPolicyIndexerRepository } from '#/modules/policies/domain/policy-indexer.repository.interface';
-import type { ISafePolicyGuardConfigurationRequestsRepository } from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository.interface';
 import {
   MAX_TRANSACTION_QUEUE_PAGES_TO_SCAN,
-  TransactionQueueReader,
-} from '#/modules/policies/domain/transaction-queue.reader';
+  TransactionQueueHelper,
+} from '#/modules/policies/domain/helpers/transaction-queue.helper';
+import type { IPolicyIndexerRepository } from '#/modules/policies/domain/policy-indexer.repository.interface';
+import type { ISafePolicyGuardConfigurationRequestsRepository } from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository.interface';
 import { guardPolicyKindsOf } from '#/modules/policies/domain/utils/policy.utils';
 import type { DelayedGuardPoliciesMapper } from '#/modules/policies/routes/mappers/delayed-guard-policies.mapper';
 import type { GuardInstallationMapper } from '#/modules/policies/routes/mappers/guard-installation.mapper';
@@ -246,7 +246,7 @@ describe('PoliciesService', () => {
       mockGuardInstallationMapper,
       mockImmediateGuardPoliciesMapper,
       mockDelayedGuardPoliciesMapper,
-      new TransactionQueueReader(
+      new TransactionQueueHelper(
         mockSafeRepository as MockedObject<ISafeRepository>,
         mockLoggingService,
       ),

@@ -12,9 +12,9 @@ import { asError } from '#/logging/utils';
 import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '#/modules/auth/utils/assert-authenticated.utils';
 import type { SafeRef } from '#/modules/policies/domain/entities/safe-ref.entity';
+import { TransactionQueueHelper } from '#/modules/policies/domain/helpers/transaction-queue.helper';
 import { IPolicyIndexerRepository } from '#/modules/policies/domain/policy-indexer.repository.interface';
 import { ISafePolicyGuardConfigurationRequestsRepository } from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository.interface';
-import { TransactionQueueReader } from '#/modules/policies/domain/transaction-queue.reader';
 import {
   GUARD_POLICY_TYPES,
   guardPolicyKindsOf,
@@ -50,7 +50,7 @@ export class PolicyConfigurationRequestsService {
     private readonly policyIndexerRepository: IPolicyIndexerRepository,
     @Inject(ISafeRepository)
     private readonly safeRepository: ISafeRepository,
-    private readonly transactionQueueReader: TransactionQueueReader,
+    private readonly transactionQueueHelper: TransactionQueueHelper,
     private readonly delayedGuardPoliciesMapper: DelayedGuardPoliciesMapper,
     @Inject(IConfigurationService)
     private readonly configurationService: IConfigurationService,
@@ -148,24 +148,26 @@ export class PolicyConfigurationRequestsService {
 
   /** Whether the root is a draft, by the rule the pending API reports. */
   private async isDraft(args: { safe: SafeRef; root: Hex }): Promise<boolean> {
-    // Roots are only read along with at least one guard kind.
-    const state = await this.policyIndexerRepository.getState({
-      safes: [args.safe],
-      guardPolicyKinds: guardPolicyKindsOf(GUARD_POLICY_TYPES),
-    });
+    const [state, queue, executed] = await Promise.all([
+      // Roots are only read along with at least one guard kind.
+      this.policyIndexerRepository.getState({
+        safes: [args.safe],
+        guardPolicyKinds: guardPolicyKindsOf(GUARD_POLICY_TYPES),
+      }),
+      this.transactionQueueHelper.read(args.safe),
+      // A request executed before the indexer caught up is in neither the
+      // queue nor the indexer, only in the latest executed transactions.
+      this.safeRepository.getMultisigTransactions({
+        chainId: args.safe.chainId,
+        safeAddress: args.safe.address,
+        executed: true,
+      }),
+    ]);
     // A truncated queue may hide a request, so it is not treated as a draft.
-    const { safeInfo, transactions, truncated } =
-      await this.transactionQueueReader.read(args.safe);
-    if (truncated) {
+    if (queue.truncated) {
       return false;
     }
-    // A request executed before the indexer caught up is in neither the
-    // queue nor the indexer, only in the latest executed transactions.
-    const executed = await this.safeRepository.getMultisigTransactions({
-      chainId: args.safe.chainId,
-      safeAddress: args.safe.address,
-      executed: true,
-    });
+    const { safeInfo, transactions } = queue;
 
     return this.delayedGuardPoliciesMapper.isDraft({
       safe: args.safe,

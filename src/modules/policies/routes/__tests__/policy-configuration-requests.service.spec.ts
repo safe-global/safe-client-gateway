@@ -18,10 +18,10 @@ import { policyIndexerGuardEnforcedPolicyBuilder } from '#/modules/policies/doma
 import { policyIndexerResponseBuilder } from '#/modules/policies/domain/entities/indexer/__tests__/policy-indexer-state.builder';
 import type { PolicyIndexerConfigurationRoot } from '#/modules/policies/domain/entities/indexer/policy-indexer-state.entity';
 import type { PolicyConfiguration } from '#/modules/policies/domain/entities/policy-configuration.entity';
+import { TransactionQueueHelper } from '#/modules/policies/domain/helpers/transaction-queue.helper';
 import { getSafePolicyGuardDeployments } from '#/modules/policies/domain/policy-deployments.constants';
 import type { IPolicyIndexerRepository } from '#/modules/policies/domain/policy-indexer.repository.interface';
 import type { ISafePolicyGuardConfigurationRequestsRepository } from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository.interface';
-import { TransactionQueueReader } from '#/modules/policies/domain/transaction-queue.reader';
 import {
   GUARD_POLICY_TYPES,
   guardPolicyKindsOf,
@@ -87,7 +87,7 @@ describe('PolicyConfigurationRequestsService', () => {
     spaceSafesRepository as MockedObject<ISpaceSafesRepository>,
     policyIndexerRepository as MockedObject<IPolicyIndexerRepository>,
     safeRepository as MockedObject<ISafeRepository>,
-    new TransactionQueueReader(
+    new TransactionQueueHelper(
       safeRepository as MockedObject<ISafeRepository>,
       loggingService as MockedObject<ILoggingService>,
     ),

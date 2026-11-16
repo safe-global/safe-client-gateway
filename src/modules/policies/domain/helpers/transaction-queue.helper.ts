@@ -16,7 +16,7 @@ import { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface
 export const MAX_TRANSACTION_QUEUE_PAGES_TO_SCAN = 10;
 
 @Injectable()
-export class TransactionQueueReader {
+export class TransactionQueueHelper {
   public constructor(
     @Inject(ISafeRepository)
     private readonly safeRepository: ISafeRepository,

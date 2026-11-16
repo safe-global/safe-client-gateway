@@ -29,9 +29,9 @@ import type {
   Token,
   TokenReference,
 } from '#/modules/policies/domain/entities/token.entity';
+import { TransactionQueueHelper } from '#/modules/policies/domain/helpers/transaction-queue.helper';
 import { IPolicyIndexerRepository } from '#/modules/policies/domain/policy-indexer.repository.interface';
 import { ISafePolicyGuardConfigurationRequestsRepository } from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository.interface';
-import { TransactionQueueReader } from '#/modules/policies/domain/transaction-queue.reader';
 import {
   GUARD_POLICY_TYPES,
   guardPolicyKindsOf,
@@ -99,7 +99,7 @@ export class PoliciesService {
     private readonly guardInstallationMapper: GuardInstallationMapper,
     private readonly immediateGuardPoliciesMapper: ImmediateGuardPoliciesMapper,
     private readonly delayedGuardPoliciesMapper: DelayedGuardPoliciesMapper,
-    private readonly transactionQueueReader: TransactionQueueReader,
+    private readonly transactionQueueHelper: TransactionQueueHelper,
   ) {
     this.batchSize =
       this.configurationService.getOrThrow<number>('policies.batchSize');
@@ -542,7 +542,7 @@ export class PoliciesService {
   }
 
   /**
-   * The pending policy changes of one Safe, from its queue as {@link TransactionQueueReader}
+   * The pending policy changes of one Safe, from its queue as {@link TransactionQueueHelper}
    * reads it.
    */
   private async pendingPoliciesForSafe(
@@ -550,7 +550,7 @@ export class PoliciesService {
     read: PendingRead,
   ): Promise<Array<PendingPolicy>> {
     const { safeInfo, transactions } =
-      await this.transactionQueueReader.read(safe);
+      await this.transactionQueueHelper.read(safe);
 
     const policies: Array<PendingPolicy> = [];
 
