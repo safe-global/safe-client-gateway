@@ -1,13 +1,13 @@
 # Flaky Test Baseline Report
 
-Generated: 2026-11-16T18:32:13.015Z | Period: 2026-01-16 to 2026-11-16
+Generated: 2026-11-16T18:58:26.529Z | Period: 2026-01-16 to 2026-11-16
 
 ## Summary
 
 | Metric | Value |
 |--------|-------|
-| **Confidence flake rate <0.5%** (last 4 weeks) | **8%** (3 flaky / 321 commits) |
-| Total unique commits | 3575 |
+| **Confidence flake rate <0.5%** (last 4 weeks) | **8%** (3 flaky / 323 commits) |
+| Total unique commits | 3577 |
 | Flaky commits (pass + fail on same SHA) | 148 |
 | Flakiness rate | 4.1% |
 
@@ -17,6 +17,11 @@ Confidence is the probability that the per-commit flake rate is <0.5%, given the
 
 ## Weekly Trend
 
+![Weekly flake rate and confidence](trend.svg)
+
+<details>
+<summary>Weekly numbers</summary>
+
 | Week | Commits | Flaky | Rate | Confidence <0.5% (4 wk) |
 |------|---------|-------|------|------|
 | 2026-01-12 | 7 | 1 | 14.3% | 0% |
@@ -24,12 +29,10 @@ Confidence is the probability that the per-commit flake rate is <0.5%, given the
 | 2026-01-26 | 65 | 10 | 15.4% | 0% |
 | 2026-02-02 | 74 | 4 | 5.4% | 0% |
 | 2026-02-09 | 72 | 5 | 6.9% | 0% |
-| 2026-02-15 | 1 | 1 | 100% | 0% |
-| 2026-02-16 | 79 | 3 | 3.8% | 0% |
+| 2026-02-16 | 80 | 4 | 5% | 0% |
 | 2026-02-23 | 57 | 1 | 1.8% | 0% |
 | 2026-03-02 | 71 | 5 | 7% | 0% |
-| 2026-03-08 | 3 | 0 | 0% | 0% |
-| 2026-03-09 | 44 | 1 | 2.3% | 0% |
+| 2026-03-09 | 47 | 1 | 2.1% | 0% |
 | 2026-03-16 | 31 | 3 | 9.7% | 0% |
 | 2026-03-23 | 59 | 3 | 5.1% | 0% |
 | 2026-03-30 | 38 | 2 | 5.3% | 0% |
@@ -37,23 +40,16 @@ Confidence is the probability that the per-commit flake rate is <0.5%, given the
 | 2026-04-13 | 11 | 0 | 0% | 0% |
 | 2026-04-20 | 19 | 1 | 5.3% | 0% |
 | 2026-04-27 | 109 | 9 | 8.3% | 0% |
-| 2026-05-03 | 9 | 1 | 11.1% | 0% |
-| 2026-05-04 | 129 | 7 | 5.4% | 0% |
-| 2026-05-10 | 1 | 0 | 0% | 0% |
-| 2026-05-11 | 39 | 1 | 2.6% | 0% |
-| 2026-05-17 | 1 | 0 | 0% | 0% |
-| 2026-05-18 | 79 | 9 | 11.4% | 0% |
+| 2026-05-04 | 138 | 8 | 5.8% | 0% |
+| 2026-05-11 | 40 | 1 | 2.5% | 0% |
+| 2026-05-18 | 80 | 9 | 11.3% | 0% |
 | 2026-05-25 | 60 | 4 | 6.7% | 0% |
 | 2026-06-01 | 106 | 6 | 5.7% | 0% |
-| 2026-06-07 | 3 | 0 | 0% | 0% |
-| 2026-06-08 | 80 | 9 | 11.3% | 0% |
+| 2026-06-08 | 83 | 9 | 10.8% | 0% |
 | 2026-06-15 | 66 | 12 | 18.2% | 0% |
-| 2026-06-21 | 7 | 0 | 0% | 0% |
-| 2026-06-22 | 71 | 4 | 5.6% | 0% |
-| 2026-06-28 | 3 | 0 | 0% | 0% |
-| 2026-06-29 | 81 | 3 | 3.7% | 0% |
-| 2026-07-05 | 6 | 0 | 0% | 0% |
-| 2026-07-06 | 95 | 2 | 2.1% | 0% |
+| 2026-06-22 | 78 | 4 | 5.1% | 0% |
+| 2026-06-29 | 84 | 3 | 3.6% | 0% |
+| 2026-07-06 | 101 | 2 | 2% | 0% |
 | 2026-07-13 | 102 | 1 | 1% | 0% |
 | 2026-07-20 | 74 | 2 | 2.7% | 0% |
 | 2026-07-27 | 50 | 1 | 2% | 0% |
@@ -72,60 +68,13 @@ Confidence is the probability that the per-commit flake rate is <0.5%, given the
 | 2026-10-26 | 110 | 1 | 0.9% | 61% |
 | 2026-11-02 | 33 | 0 | 0% | 73% |
 | 2026-11-09 | 136 | 2 | 1.5% | 23% |
-| 2026-11-16 | 42 | 0 | 0% | 8% |
+| 2026-11-16 | 44 | 0 | 0% | 8% |
 
-```text
-Weekly CI flakiness rate %  ·  n = unique commits  ·  weeks with n<10 omitted
-
-01-19  18.9%  n=37   ████████████████████████████████████████
-01-26  15.4%  n=65   █████████████████████████████████
-02-02   5.4%  n=74   ███████████
-02-09   6.9%  n=72   ███████████████
-02-16   3.8%  n=79   ████████
-02-23   1.8%  n=57   ████
-03-02   7.0%  n=71   ███████████████
-03-09   2.3%  n=44   █████
-03-16   9.7%  n=31   █████████████████████
-03-23   5.1%  n=59   ███████████
-03-30   5.3%  n=38   ███████████
-04-06   9.5%  n=116  ████████████████████
-04-13   0.0%  n=11   ▏
-04-20   5.3%  n=19   ███████████
-04-27   8.3%  n=109  ██████████████████
-05-04   5.4%  n=129  ███████████
-05-11   2.6%  n=39   ██████
-05-18  11.4%  n=79   ████████████████████████
-05-25   6.7%  n=60   ██████████████
-06-01   5.7%  n=106  ████████████
-06-08  11.3%  n=80   ████████████████████████
-06-15  18.2%  n=66   ███████████████████████████████████████
-06-22   5.6%  n=71   ████████████
-06-29   3.7%  n=81   ████████
-07-06   2.1%  n=95   ████
-07-13   1.0%  n=102  ██
-07-20   2.7%  n=74   ██████
-07-27   2.0%  n=50   ████
-08-03   0.0%  n=54   ▏
-08-10   0.0%  n=46   ▏
-08-17   5.6%  n=108  ████████████
-08-24   0.0%  n=75   ▏
-08-31   0.0%  n=12   ▏
-09-07   6.3%  n=48   █████████████
-09-14   2.1%  n=143  ████
-09-21   1.6%  n=182  ███
-09-28   0.0%  n=109  ▏
-10-05   0.7%  n=152  █
-10-12   0.0%  n=165  ▏
-10-19   0.0%  n=205  ▏
-10-26   0.9%  n=110  ██
-11-02   0.0%  n=33   ▏
-11-09   1.5%  n=136  ███
-11-16   0.0%  n=42   ▏
-```
+</details>
 
 ## Clean Streak
 
-42 commits without a flake since the last flaky week — rate is below 7.1% at 95% confidence. Target <0.5% at 95% needs a **600-commit** streak (558 to go).
+44 commits without a flake since the last flaky week — rate is below 6.8% at 95% confidence. Target <0.5% at 95% needs a **600-commit** streak (556 to go).
 
 ## Flaky Test Leaderboard
 
@@ -142,7 +91,7 @@ Weekly CI flakiness rate %  ·  n = unique commits  ·  weeks with n<10 omitted
 | `src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts` | 10 | 2026-08-19 | Fixed | [#3572](https://github.com/safe-global/safe-client-gateway/pull/3572) | 84% |
 | `src/modules/transactions/routes/helpers/transaction-verifier.helper.spec.ts` | 10 | 2026-10-09 | Fixed | [#3572](https://github.com/safe-global/safe-client-gateway/pull/3572) | 84% |
 | `src/modules/transactions/routes/mappers/common/transaction-data.mapper.spec.ts` | 9 | 2026-06-15 | Fixed | [#3139](https://github.com/safe-global/safe-client-gateway/pull/3139) | 100% |
-| `src/modules/users/domain/users.repository.integration.spec.ts` | 9 | 2026-09-24 | Fixed | [#3506](https://github.com/safe-global/safe-client-gateway/pull/3506) | 94% |
+| `src/modules/users/domain/users.repository.integration.spec.ts` | 9 | 2026-09-24 | Fixed | [#3506](https://github.com/safe-global/safe-client-gateway/pull/3506) | 95% |
 | `src/modules/transactions/routes/__tests__/controllers/add-transaction-confirmations.transactions.controller.integration.spec.ts` | 7 | 2026-06-19 | Fixed | [#3242](https://github.com/safe-global/safe-client-gateway/pull/3242) | 100% |
 | `src/domain/common/entities/safe-signature.spec.ts` | 6 | 2026-08-17 | Fixed | [#3572](https://github.com/safe-global/safe-client-gateway/pull/3572) | 67% |
 | `src/modules/users/domain/members.repository.integration.spec.ts` | 5 | 2026-02-01 | Fixed | [#2891](https://github.com/safe-global/safe-client-gateway/pull/2891) | 100% |
@@ -152,8 +101,8 @@ Weekly CI flakiness rate %  ·  n = unique commits  ·  weeks with n<10 omitted
 | `src/modules/transactions/routes/helpers/space-queue.helper.spec.ts` | 3 | 2026-11-13 | Fixed | [#3761](https://github.com/safe-global/safe-client-gateway/pull/3761) | 4% |
 | `src/modules/transactions/routes/__tests__/controllers/get-transaction-by-id.transactions.controller.integration.spec.ts` | 2 | 2026-04-10 | Fixed | [#3242](https://github.com/safe-global/safe-client-gateway/pull/3242) | 90% |
 | `src/modules/users/domain/__tests__/user-identity-resolver.service.spec.ts` | 2 | 2026-05-19 | Removed from main | - | - |
-| `src/modules/surveys/routes/surveys.controller.integration.spec.ts` | 2 | 2026-08-21 | Fixed | [#3594](https://github.com/safe-global/safe-client-gateway/pull/3594) | 2% |
-| `src/modules/transactions/routes/__tests__/controllers/preview-transaction.transactions.controller.integration.spec.ts` | 2 | 2026-09-21 | Fixed | [#3594](https://github.com/safe-global/safe-client-gateway/pull/3594) | 2% |
+| `src/modules/surveys/routes/surveys.controller.integration.spec.ts` | 2 | 2026-08-21 | Fixed | [#3594](https://github.com/safe-global/safe-client-gateway/pull/3594) | 3% |
+| `src/modules/transactions/routes/__tests__/controllers/preview-transaction.transactions.controller.integration.spec.ts` | 2 | 2026-09-21 | Fixed | [#3594](https://github.com/safe-global/safe-client-gateway/pull/3594) | 3% |
 | `src/modules/transactions/routes/__tests__/controllers/preview-transaction-cow-swap.transactions.controller.spec.ts` | 1 | 2026-01-29 | Removed from main | - | - |
 | `src/modules/transactions/routes/__tests__/controllers/preview-transaction-kiln.transactions.controller.spec.ts` | 1 | 2026-01-19 | Removed from main | - | - |
 | `src/modules/safe-shield/safe-shield.controller.integration.spec.ts` | 1 | 2026-02-11 | Fixed | [#3242](https://github.com/safe-global/safe-client-gateway/pull/3242) | 68% |

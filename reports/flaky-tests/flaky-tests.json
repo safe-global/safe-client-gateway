@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-11-16T18:32:13.012Z",
+  "generated_at": "2026-11-16T18:58:26.527Z",
   "summary": {
-    "total_commits": 3575,
+    "total_commits": 3577,
     "flaky_commits": 148,
     "flakiness_rate": 4.1,
     "period": {
@@ -41,16 +41,10 @@
       "rate": 6.9
     },
     {
-      "week": "2026-02-15",
-      "commits": 1,
-      "flaky": 1,
-      "rate": 100
-    },
-    {
       "week": "2026-02-16",
-      "commits": 79,
-      "flaky": 3,
-      "rate": 3.8
+      "commits": 80,
+      "flaky": 4,
+      "rate": 5
     },
     {
       "week": "2026-02-23",
@@ -65,16 +59,10 @@
       "rate": 7
     },
     {
-      "week": "2026-03-08",
-      "commits": 3,
-      "flaky": 0,
-      "rate": 0
-    },
-    {
       "week": "2026-03-09",
-      "commits": 44,
+      "commits": 47,
       "flaky": 1,
-      "rate": 2.3
+      "rate": 2.1
     },
     {
       "week": "2026-03-16",
@@ -119,40 +107,22 @@
       "rate": 8.3
     },
     {
-      "week": "2026-05-03",
-      "commits": 9,
-      "flaky": 1,
-      "rate": 11.1
-    },
-    {
       "week": "2026-05-04",
-      "commits": 129,
-      "flaky": 7,
-      "rate": 5.4
-    },
-    {
-      "week": "2026-05-10",
-      "commits": 1,
-      "flaky": 0,
-      "rate": 0
+      "commits": 138,
+      "flaky": 8,
+      "rate": 5.8
     },
     {
       "week": "2026-05-11",
-      "commits": 39,
+      "commits": 40,
       "flaky": 1,
-      "rate": 2.6
-    },
-    {
-      "week": "2026-05-17",
-      "commits": 1,
-      "flaky": 0,
-      "rate": 0
+      "rate": 2.5
     },
     {
       "week": "2026-05-18",
-      "commits": 79,
+      "commits": 80,
       "flaky": 9,
-      "rate": 11.4
+      "rate": 11.3
     },
     {
       "week": "2026-05-25",
@@ -167,16 +137,10 @@
       "rate": 5.7
     },
     {
-      "week": "2026-06-07",
-      "commits": 3,
-      "flaky": 0,
-      "rate": 0
-    },
-    {
       "week": "2026-06-08",
-      "commits": 80,
+      "commits": 83,
       "flaky": 9,
-      "rate": 11.3
+      "rate": 10.8
     },
     {
       "week": "2026-06-15",
@@ -185,40 +149,22 @@
       "rate": 18.2
     },
     {
-      "week": "2026-06-21",
-      "commits": 7,
-      "flaky": 0,
-      "rate": 0
-    },
-    {
       "week": "2026-06-22",
-      "commits": 71,
+      "commits": 78,
       "flaky": 4,
-      "rate": 5.6
-    },
-    {
-      "week": "2026-06-28",
-      "commits": 3,
-      "flaky": 0,
-      "rate": 0
+      "rate": 5.1
     },
     {
       "week": "2026-06-29",
-      "commits": 81,
+      "commits": 84,
       "flaky": 3,
-      "rate": 3.7
-    },
-    {
-      "week": "2026-07-05",
-      "commits": 6,
-      "flaky": 0,
-      "rate": 0
+      "rate": 3.6
     },
     {
       "week": "2026-07-06",
-      "commits": 95,
+      "commits": 101,
       "flaky": 2,
-      "rate": 2.1
+      "rate": 2
     },
     {
       "week": "2026-07-13",
@@ -330,7 +276,7 @@
     },
     {
       "week": "2026-11-16",
-      "commits": 42,
+      "commits": 44,
       "flaky": 0,
       "rate": 0
     }

@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 638" width="960" height="638" font-family="-apple-system,Segoe UI,Helvetica,Arial,sans-serif">
+<style>
+:root{--bg:#fcfcfb;--ink:#0b0b0b;--ink2:#52514e;--grid:#e4e3df;--bar:#2a78d6;--main:#eb6834}
+@media (prefers-color-scheme: dark){:root{--bg:#1a1a19;--ink:#f0efec;--ink2:#c3c2b7;--grid:#3a3a37;--bar:#3987e5;--main:#d95926}}
+text{fill:var(--ink2);font-size:12px}.title{fill:var(--ink);font-size:16px;font-weight:600}.h{fill:var(--ink);font-size:13px;font-weight:600}
+.grid{stroke:var(--grid);stroke-width:1}.bar{fill:var(--bar)}.faint{opacity:.35}
+.ref{stroke:var(--ink2);stroke-width:1.5;fill:none}.dash{stroke-dasharray:5 4}.main{stroke:var(--main);stroke-width:2.5;fill:none}
+.lbl-main{fill:var(--main);font-weight:600}
+</style>
+<rect width="960" height="638" fill="var(--bg)"/>
+<text class="title" x="56" y="28">CGW CI flakiness by week</text>
+<text x="56" y="48">Target lines: <tspan class="lbl-main">━ 0.5% (target)</tspan>   ━ 1%   ╍ 0.1%   ·   faded bars: weeks with &lt;10 commits</text>
+<text class="h" x="56" y="74">Flaky commits per week (% of commits)</text>
+<line class="grid" x1="56" x2="810" y1="356" y2="356"/>
+<text x="48" y="360" text-anchor="end">0%</text>
+<line class="grid" x1="56" x2="810" y1="291" y2="291"/>
+<text x="48" y="295" text-anchor="end">5%</text>
+<line class="grid" x1="56" x2="810" y1="226" y2="226"/>
+<text x="48" y="230" text-anchor="end">10%</text>
+<line class="grid" x1="56" x2="810" y1="161" y2="161"/>
+<text x="48" y="165" text-anchor="end">15%</text>
+<line class="grid" x1="56" x2="810" y1="96" y2="96"/>
+<text x="48" y="100" text-anchor="end">20%</text>
+<path class="bar faint" d="M57 356V174.09999999999997q0 -4 4 -4H67.75555555555556q4 0 4 4V356Z"><title>2026-01-12: 1/7 commits flaky (14.3%)</title></path>
+<path class="bar" d="M73.75555555555556 356V114.30000000000001q0 -4 4 -4H84.51111111111112q4 0 4 4V356Z"><title>2026-01-19: 7/37 commits flaky (18.9%)</title></path>
+<path class="bar" d="M90.51111111111112 356V159.79999999999998q0 -4 4 -4H101.26666666666668q4 0 4 4V356Z"><title>2026-01-26: 10/65 commits flaky (15.4%)</title></path>
+<path class="bar" d="M107.26666666666667 356V289.8q0 -4 4 -4H118.02222222222223q4 0 4 4V356Z"><title>2026-02-02: 4/74 commits flaky (5.4%)</title></path>
+<path class="bar" d="M124.02222222222223 356V270.3q0 -4 4 -4H134.77777777777777q4 0 4 4V356Z"><title>2026-02-09: 5/72 commits flaky (6.9%)</title></path>
+<path class="bar" d="M140.77777777777777 356V295q0 -4 4 -4H151.53333333333333q4 0 4 4V356Z"><title>2026-02-16: 4/80 commits flaky (5%)</title></path>
+<path class="bar" d="M157.53333333333333 356V336.6q0 -4 4 -4H168.2888888888889q4 0 4 4V356Z"><title>2026-02-23: 1/57 commits flaky (1.8%)</title></path>
+<path class="bar" d="M174.2888888888889 356V269q0 -4 4 -4H185.04444444444445q4 0 4 4V356Z"><title>2026-03-02: 5/71 commits flaky (7%)</title></path>
+<path class="bar" d="M191.04444444444445 356V332.7q0 -4 4 -4H201.8q4 0 4 4V356Z"><title>2026-03-09: 1/47 commits flaky (2.1%)</title></path>
+<path class="bar" d="M207.8 356V233.9q0 -4 4 -4H218.55555555555557q4 0 4 4V356Z"><title>2026-03-16: 3/31 commits flaky (9.7%)</title></path>
+<path class="bar" d="M224.55555555555557 356V293.7q0 -4 4 -4H235.31111111111113q4 0 4 4V356Z"><title>2026-03-23: 3/59 commits flaky (5.1%)</title></path>
+<path class="bar" d="M241.31111111111113 356V291.1q0 -4 4 -4H252.06666666666666q4 0 4 4V356Z"><title>2026-03-30: 2/38 commits flaky (5.3%)</title></path>
+<path class="bar" d="M258.06666666666666 356V236.5q0 -4 4 -4H268.8222222222222q4 0 4 4V356Z"><title>2026-04-06: 11/116 commits flaky (9.5%)</title></path>
+<path class="bar" d="M291.5777777777778 356V291.1q0 -4 4 -4H302.3333333333333q4 0 4 4V356Z"><title>2026-04-20: 1/19 commits flaky (5.3%)</title></path>
+<path class="bar" d="M308.33333333333337 356V252.1q0 -4 4 -4H319.0888888888889q4 0 4 4V356Z"><title>2026-04-27: 9/109 commits flaky (8.3%)</title></path>
+<path class="bar" d="M325.0888888888889 356V284.6q0 -4 4 -4H335.84444444444443q4 0 4 4V356Z"><title>2026-05-04: 8/138 commits flaky (5.8%)</title></path>
+<path class="bar" d="M341.84444444444443 356V327.5q0 -4 4 -4H352.59999999999997q4 0 4 4V356Z"><title>2026-05-11: 1/40 commits flaky (2.5%)</title></path>
+<path class="bar" d="M358.6 356V213.1q0 -4 4 -4H369.35555555555555q4 0 4 4V356Z"><title>2026-05-18: 9/80 commits flaky (11.3%)</title></path>
+<path class="bar" d="M375.35555555555555 356V272.9q0 -4 4 -4H386.1111111111111q4 0 4 4V356Z"><title>2026-05-25: 4/60 commits flaky (6.7%)</title></path>
+<path class="bar" d="M392.11111111111114 356V285.9q0 -4 4 -4H402.8666666666667q4 0 4 4V356Z"><title>2026-06-01: 6/106 commits flaky (5.7%)</title></path>
+<path class="bar" d="M408.8666666666667 356V219.6q0 -4 4 -4H419.6222222222222q4 0 4 4V356Z"><title>2026-06-08: 9/83 commits flaky (10.8%)</title></path>
+<path class="bar" d="M425.62222222222226 356V123.40000000000003q0 -4 4 -4H436.3777777777778q4 0 4 4V356Z"><title>2026-06-15: 12/66 commits flaky (18.2%)</title></path>
+<path class="bar" d="M442.3777777777778 356V293.7q0 -4 4 -4H453.1333333333333q4 0 4 4V356Z"><title>2026-06-22: 4/78 commits flaky (5.1%)</title></path>
+<path class="bar" d="M459.1333333333333 356V313.2q0 -4 4 -4H469.88888888888886q4 0 4 4V356Z"><title>2026-06-29: 3/84 commits flaky (3.6%)</title></path>
+<path class="bar" d="M475.8888888888889 356V334q0 -4 4 -4H486.64444444444445q4 0 4 4V356Z"><title>2026-07-06: 2/101 commits flaky (2%)</title></path>
+<path class="bar" d="M492.64444444444445 356V347q0 -4 4 -4H503.4q4 0 4 4V356Z"><title>2026-07-13: 1/102 commits flaky (1%)</title></path>
+<path class="bar" d="M509.40000000000003 356V324.9q0 -4 4 -4H520.1555555555556q4 0 4 4V356Z"><title>2026-07-20: 2/74 commits flaky (2.7%)</title></path>
+<path class="bar" d="M526.1555555555556 356V334q0 -4 4 -4H536.9111111111112q4 0 4 4V356Z"><title>2026-07-27: 1/50 commits flaky (2%)</title></path>
+<path class="bar" d="M576.4222222222222 356V287.2q0 -4 4 -4H587.1777777777778q4 0 4 4V356Z"><title>2026-08-17: 6/108 commits flaky (5.6%)</title></path>
+<path class="bar" d="M626.6888888888889 356V278.1q0 -4 4 -4H637.4444444444445q4 0 4 4V356Z"><title>2026-09-07: 3/48 commits flaky (6.3%)</title></path>
+<path class="bar" d="M643.4444444444445 356V332.7q0 -4 4 -4H654.2q4 0 4 4V356Z"><title>2026-09-14: 3/143 commits flaky (2.1%)</title></path>
+<path class="bar" d="M660.2 356V339.2q0 -4 4 -4H670.9555555555556q4 0 4 4V356Z"><title>2026-09-21: 3/182 commits flaky (1.6%)</title></path>
+<path class="bar" d="M693.7111111111111 356V350.9q0 -4 4 -4H704.4666666666667q4 0 4 4V356Z"><title>2026-10-05: 1/152 commits flaky (0.7%)</title></path>
+<path class="bar" d="M743.9777777777778 356V348.3q0 -4 4 -4H754.7333333333333q4 0 4 4V356Z"><title>2026-10-26: 1/110 commits flaky (0.9%)</title></path>
+<path class="bar" d="M777.4888888888889 356V340.5q0 -4 4 -4H788.2444444444445q4 0 4 4V356Z"><title>2026-11-09: 2/136 commits flaky (1.5%)</title></path>
+<line class="ref" x1="56" x2="810" y1="343" y2="343"/>
+<line class="main" x1="56" x2="810" y1="349.5" y2="349.5"/>
+<line class="ref dash" x1="56" x2="810" y1="354.7" y2="354.7"/>
+<text x="818" y="358.7">0.1%</text>
+<text class="lbl-main" x="818" y="344.7">0.5% target</text>
+<text x="818" y="330.7">1%</text>
+<text class="h" x="56" y="414">Confidence the flake rate is below each target (last 4 weeks)</text>
+<line class="grid" x1="56" x2="810" y1="598" y2="598"/>
+<text x="48" y="602" text-anchor="end">0%</text>
+<line class="grid" x1="56" x2="810" y1="513" y2="513"/>
+<text x="48" y="517" text-anchor="end">50%</text>
+<line class="grid" x1="56" x2="810" y1="428" y2="428"/>
+<line class="ref dash" x1="56" x2="810" y1="436.5" y2="436.5" opacity=".6"/>
+<text x="48" y="440.5" text-anchor="end" font-size="10">95%</text>
+<path class="ref" d="M64.4 597.5L81.1 598.0L97.9 598.0L114.6 598.0L131.4 598.0L148.2 598.0L164.9 598.0L181.7 598.0L198.4 598.0L215.2 598.0L231.9 598.0L248.7 598.0L265.4 598.0L282.2 598.0L299.0 598.0L315.7 598.0L332.5 598.0L349.2 598.0L366.0 598.0L382.7 598.0L399.5 598.0L416.2 598.0L433.0 598.0L449.8 598.0L466.5 598.0L483.3 598.0L500.0 597.8L516.8 596.0L533.5 589.7L550.3 572.0L567.0 565.7L583.8 597.2L600.6 593.7L617.3 596.0L634.1 598.0L650.8 594.0L667.6 597.0L684.3 593.7L701.1 557.6L717.8 474.2L734.6 430.2L751.4 436.2L768.1 434.0L784.9 476.5L801.6 528.9"/>
+<path class="main" d="M64.4 597.9L81.1 598.0L97.9 598.0L114.6 598.0L131.4 598.0L148.2 598.0L164.9 598.0L181.7 598.0L198.4 598.0L215.2 598.0L231.9 598.0L248.7 598.0L265.4 598.0L282.2 598.0L299.0 598.0L315.7 598.0L332.5 598.0L349.2 598.0L366.0 598.0L382.7 598.0L399.5 598.0L416.2 598.0L433.0 598.0L449.8 598.0L466.5 598.0L483.3 598.0L500.0 598.0L516.8 598.0L533.5 597.7L550.3 595.6L567.0 593.4L583.8 598.0L600.6 597.9L617.3 598.0L634.1 598.0L650.8 597.9L667.6 598.0L684.3 598.0L701.1 596.2L717.8 565.4L734.6 457.9L751.4 493.7L768.1 474.3L784.9 559.5L801.6 584.2"/>
+<path class="ref dash" d="M64.4 598.0L81.1 598.0L97.9 598.0L114.6 598.0L131.4 598.0L148.2 598.0L164.9 598.0L181.7 598.0L198.4 598.0L215.2 598.0L231.9 598.0L248.7 598.0L265.4 598.0L282.2 598.0L299.0 598.0L315.7 598.0L332.5 598.0L349.2 598.0L366.0 598.0L382.7 598.0L399.5 598.0L416.2 598.0L433.0 598.0L449.8 598.0L466.5 598.0L483.3 598.0L500.0 598.0L516.8 598.0L533.5 598.0L550.3 598.0L567.0 598.0L583.8 598.0L600.6 598.0L617.3 598.0L634.1 598.0L650.8 598.0L667.6 598.0L684.3 598.0L701.1 598.0L717.8 597.9L734.6 575.5L751.4 593.5L768.1 582.0L784.9 597.7L801.6 597.9"/>
+<text x="818" y="601.9406083848662">&lt;0.1%: 0%</text>
+<text class="lbl-main" x="818" y="587.9406083848662">&lt;0.5%: 8%</text>
+<text x="818" y="532.8712390723581">&lt;1%: 41%</text>
+<text x="56" y="618">Jan</text>
+<line class="grid" x1="56" x2="56" y1="598" y2="604"/>
+<text x="106.26666666666667" y="618">Feb</text>
+<line class="grid" x1="106.26666666666667" x2="106.26666666666667" y1="598" y2="604"/>
+<text x="173.2888888888889" y="618">Mar</text>
+<line class="grid" x1="173.2888888888889" x2="173.2888888888889" y1="598" y2="604"/>
+<text x="257.06666666666666" y="618">Apr</text>
+<line class="grid" x1="257.06666666666666" x2="257.06666666666666" y1="598" y2="604"/>
+<text x="324.0888888888889" y="618">May</text>
+<line class="grid" x1="324.0888888888889" x2="324.0888888888889" y1="598" y2="604"/>
+<text x="391.11111111111114" y="618">Jun</text>
+<line class="grid" x1="391.11111111111114" x2="391.11111111111114" y1="598" y2="604"/>
+<text x="474.8888888888889" y="618">Jul</text>
+<line class="grid" x1="474.8888888888889" x2="474.8888888888889" y1="598" y2="604"/>
+<text x="541.9111111111112" y="618">Aug</text>
+<line class="grid" x1="541.9111111111112" x2="541.9111111111112" y1="598" y2="604"/>
+<text x="625.6888888888889" y="618">Sep</text>
+<line class="grid" x1="625.6888888888889" x2="625.6888888888889" y1="598" y2="604"/>
+<text x="692.7111111111111" y="618">Oct</text>
+<line class="grid" x1="692.7111111111111" x2="692.7111111111111" y1="598" y2="604"/>
+<text x="759.7333333333333" y="618">Nov</text>
+<line class="grid" x1="759.7333333333333" x2="759.7333333333333" y1="598" y2="604"/>
+</svg>
