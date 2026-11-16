@@ -287,6 +287,52 @@ export type SafeRef = z.infer<typeof SafeRefSchema>;
 **Spotted in:** #3531 ("Should we use Address from viem instead of string here?", then "This could also use Address from viem" and "Same here :)" on two more files), #3391 ("Nit: Would be nice to infer the type from the global `ChainIdSchema`.", "Nit: Same here, we could infer the type from `AddressSchema`"), #3392 ("Nit: Can we read it from the schemas?"), #3564 ("Why are we not using the current types we have? We have Safe TX type."), #3117 (a suggestion replacing `uuid: string` with `uuid: UUID`).
 **Status:** active — `best-practices.md`'s "The project's type, not `string`" rule owns this, with `api-dtos-and-validation.md`'s "Domain types from Zod" rule for the `z.infer` side.
 
+### R-037: A parameter typed wider than what the method handles
+
+**Pattern:** a parameter whose type admits values the method does not handle: `ordering?: string` for a closed set of four values, a `FeatureKey` on a method that only checks `grant.enabled`, a `QueryDeepPartialEntity<Space>` where the interface declares `Partial<Pick<Space, 'name' | 'status'>>`.
+
+**Why it's bad:** the type is what tells the next caller what is safe to pass, so a wider one compiles a call the method silently mishandles — #3454's `assertFeatureGranted` would have admitted a metered feature with an exhausted quota. The body also has to defend against cases the narrow type rules out, which is where #3163's `typeof updatePayload.name === 'string'` checks came from.
+
+**Corrected form:**
+
+```ts
+// Don't
+assertFeatureGranted(args: { spaceId: Space['id']; featureKey: FeatureKey }): Promise<void>;
+updatePayload: QueryDeepPartialEntity<Space>;
+// Do
+assertFeatureGranted(args: { spaceId: Space['id']; featureKey: BinaryFeature }): Promise<void>;
+assertWithinQuota(args: { spaceId: Space['id']; featureKey: Exclude<FeatureKey, BinaryFeature>; delta: number }): Promise<void>;
+updatePayload: Partial<Pick<Space, 'name' | 'status'>>;
+```
+
+An implementation takes the type its interface already declares rather than widening it, as #3163's repository now does.
+
+**Spotted in:** #3550, #3454, #3163.
+**Status:** active
+
+### R-038: A variant or field nothing reads
+
+**Pattern:** a result union whose variants every reader handles the same way, or a field added to a returned shape with no consumer that acts on it.
+
+**Why it's bad:** each variant or field claims that the distinction matters, so every reader has to work out that it doesn't — and on a response it becomes contract the moment a client reads it. In #3199 a `degraded` result and a missing key both fell through to `serveDegradedBalance`, and the failure was already logged and metered where it happened.
+
+**Corrected form:**
+
+```ts
+// Don't
+type PortfolioResult =
+  | { status: 'ok'; portfolio: ZerionWalletPortfolio }
+  | { status: 'degraded' };
+portfoliosByIdentity: Map<string, PortfolioResult>;
+// Do — a failed fetch is a missing key
+portfoliosByIdentity: Map<string, ZerionWalletPortfolio>;
+```
+
+A field nothing acts on is dropped before it ships — #3656 removed `willRevert` from the pending guard-setup change.
+
+**Spotted in:** #3199, #3656.
+**Status:** active
+
 ## Structure
 
 ### R-013: Interfaces, types, constants, and helpers inline in a service file
@@ -344,6 +390,78 @@ transactions: Array<DecodedTransaction<MultisigTransaction>>;
 **Spotted in:** #3217 ("We could use or extend the current `AuthGuard`… The code here is mostly duplicated"), #3220 ("i wonder if we can have a base function that then is implemented/extended by both queue-service and tx-service helpers as the logic is exactly the same?"), #3533 ("Make it (await this.findBySpaceIds([spaceId])).get(spaceId) ?? []."), #3565 ("we could generalizes `src/datasources/kms/aws-kms-signer.service.ts` and have only the Ethereum part in this class"), #3619 ("extracting a separate function e.g. normalizeTagNameKey so it can be used in other places").
 **Status:** active
 
+### R-039: An `export` nothing outside the file imports
+
+**Pattern:** a schema, DTO class or constant exported from a file whose only consumer is that same file — or exported and used nowhere at all.
+
+**Why it's bad:** an export says something else depends on the symbol, so the next author treats it as module API: keeps it stable, or imports it in place of the one the module meant to expose. In #2856 the variant schemas were exported only because their siblings were, while every test went through the main `ThreatAnalysisResultSchema`.
+
+**Corrected form:**
+
+```ts
+// Don't
+export const FailedThreatAnalysisResultSchema = AnalysisResultBaseSchema.extend({ /* … */ });
+export class EmailInviteUserDto { /* … */ }
+// Do
+const FailedThreatAnalysisResultSchema = AnalysisResultBaseSchema.extend({ /* … */ });
+class EmailInviteUserDto { /* … */ }
+```
+
+An exported constant nothing uses is deleted — #2850 removed `MIN_FALLBACK_HANDLER_VERSION`.
+
+**Spotted in:** #2856, #3104, #2850.
+**Status:** active — a candidate for tooling rather than review: Knip's unused-exports check catches this shape, and once it runs in CI the entry flips to `solved-by-knip`. `reviewing.md`'s checklist already lists unused exports.
+
+### R-040: Query logic in the route service, business rules in the repository
+
+**Pattern:** a `find…OrFail` lookup written as a private method on a route service, or a status check that throws a business exception (`ConflictException`) from inside a repository method.
+
+**Why it's bad:** each layer ends up doing the other's job. The route service grows data access the next service cannot reuse, and the repository method stops being a plain read or write — it rejects requests on a rule its other callers may not share. #3134's `renewInvite` loaded the member, checked `INVITED` and built the response, all in the repository.
+
+**Corrected form:** a lookup and its `*OrFail` form belong to the repository; a precondition on what the row's state allows belongs to the route service.
+
+```ts
+// Don't — route service
+private async findActiveSurveyOrFail(slug: Survey['slug']): Promise<Survey> { /* … */ }
+// Don't — repository
+if (member.status !== 'INVITED') {
+  throw new ConflictException('Only a pending invitation can be renewed.');
+}
+// Do — route service
+const survey = await this.surveysRepository.findActiveBySlugOrFail(args.slug);
+const member = await this.membersRepository.findOneOrFail({ user: { id: args.userId }, space: { id: args.spaceId } });
+if (member.status !== 'INVITED') {
+  throw new ConflictException('Only a pending invitation can be renewed.');
+}
+await this.membersRepository.renewInvite({ memberId: member.id, inviteExpiresAt });
+```
+
+**Spotted in:** #3107, #3134.
+**Status:** active — see `ARCHITECTURE.md`'s layer responsibilities.
+
+### R-041: Input validated below the controller
+
+**Pattern:** a format check on a route input — a `chainId`, a numeric or UUID id — inside a datasource or repository, instead of a `ValidationPipe` on the `@Param`.
+
+**Why it's bad:** by the time the check runs, the value has already crossed the layers that trusted it, and the failure comes back as whatever that layer throws — #3397's `ConfigApi` guard answered a malformed `chainId` with a `DataSourceError` 404 where the route pipe answers 422. Every caller of the lower method also pays for a check only one route needed.
+
+**Corrected form:**
+
+```ts
+// Don't — in the datasource
+async getChain(chainId: string): Promise<Raw<Chain>> {
+  if (!ChainIdSchema.safeParse(chainId).success) {
+    throw new DataSourceError('Chain not found', HttpStatus.NOT_FOUND);
+  }
+  // …
+}
+// Do — at the route; lower layers trust their callers
+@Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
+```
+
+**Spotted in:** #3397, #3117.
+**Status:** active — non-negotiable #1; `api-dtos-and-validation.md`'s "ValidationPipe everywhere" rule owns it.
+
 ## Naming
 
 ### R-017: A name that describes the mechanism instead of the thing
@@ -396,6 +514,41 @@ safeShieldCoreDisabled: process.env.FF_SAFE_SHIELD_CORE_DISABLED?.toLowerCase() 
 
 **Spotted in:** #3454 ("I am concerned that we have 2 notions for safe shield. I think we should stick to one, and call it all s-s and not copilot"), #3613 ("I think it makes sense to even use the same string that we also use for the config-service feature flag. Then it is clear that they belong together."), #3565 ("nit: prefix `SAFENET_KMS_`").
 **Status:** active — `module-structure.md`'s "One name per concept" rule owns this.
+
+## Configuration
+
+### R-042: A hard-coded environment-specific value or tunable
+
+**Pattern:** a URL, TTL, timeout, buffer, poll interval or batch size declared as a literal constant — often under a `// TODO: make this configurable` — instead of read from configuration.
+
+**Why it's bad:** a value that differs between environments can only be right in one of them — #3135's `SPACE_INVITE_URL` pointed every invite email at `http://localhost:3001`. A tunable in code also takes a release to change, when an env var would take a restart.
+
+**Corrected form:** the environment-specific part comes from config; what is fixed stays a constant.
+
+```ts
+// Don't
+// TODO: make this configurable and environment-specific
+export const SPACE_INVITE_URL = 'http://localhost:3001/welcome/spaces';
+private static readonly MANAGEMENT_API_TOKEN_TTL_BUFFER_IN_SECONDS = 60;
+// Do
+export const SPACE_INVITE_PATH = '/welcome/spaces';
+const baseUri = this.configurationService.getOrThrow<string>('safeWebApp.baseUri');
+this.inviteUrl = new URL(SPACE_INVITE_PATH, baseUri).toString();
+// configuration.ts, with today's value as the default
+managementApiTokenTtlBufferInSeconds: Number.parseInt(
+  process.env.AUTH0_MANAGEMENT_API_TOKEN_TTL_BUFFER_IN_SECONDS ?? `${60}`,
+  10,
+),
+```
+
+Which values belong where:
+
+- **Config:** anything that differs between environments (URLs, hosts), and any tunable an operator may need to change without a release — timeouts, TTLs, poll intervals, batch sizes, queue attempts and retention.
+- **Config, bounded:** a tunable that is unsafe outside a range still goes to config, with the range enforced in `RootConfigurationSchema` so a bad value fails at boot — #3600's queue attempts are bounded to 1…10 and its retention has a 30-day minimum.
+- **A constant:** a value that is part of the published contract — #3419 kept `MAX_TOKEN_ADDRESSES` a constant because it is interpolated into the Swagger descriptions and the generated wallet client, so an env var would make the spec vary by deployment. Also a value with one right answer everywhere — #3495 kept its pending-transaction scan limit hard-coded because staging and production use the same value.
+
+**Spotted in:** #3135, #3284, #3214, #3564, #3565.
+**Status:** active — `configuration-and-flags.md`'s "One config registry" rule owns how a value enters config; `caching-and-performance.md` already requires TTLs and BullMQ `attempts`/`backoff`/retention from config.
 
 ## Caching and upstream calls
 
@@ -460,6 +613,32 @@ private static readonly ZERION_CHAINS_KEY = 'zerion_indexed_chains';
 
 **Spotted in:** #3437 ("Should we handle existing cached grants before making counter mandatory?"), #3447 ("Change the chain-list cache field (`zerion_chains`, 24h). Otherwise the old list keeps serving opBNB after deploy.").
 **Status:** active — `caching-and-performance.md`'s "A changed cached shape or meaning gets a new key" rule owns this.
+
+### R-043: Independent awaits in sequence
+
+**Pattern:** two or more independent repository or upstream calls awaited one after another, or an `await` inside a per-item loop. R-022 covers the cache-clear case.
+
+**Why it's bad:** the latencies add up for nothing. In #3451 the endpoint awaited `enabledModules()` once per Safe, so on cache misses its latency grew with the number of Safes in the Space.
+
+**Corrected form:**
+
+```ts
+// Don't
+const members = await this.membersRepository.findAuthorizedMembersOrFail({ authPayload, spaceId });
+const activeAdmin = await this.membersRepository.findActiveAdmin({ userId, spaceId });
+// Do
+const [members, activeAdmin] = await Promise.all([
+  this.membersRepository.findAuthorizedMembersOrFail({ authPayload, spaceId }),
+  this.membersRepository.findActiveAdmin({ userId, spaceId }),
+]);
+// Do — per-item upstream reads, in batches of a configured size
+const settled = await batched(safes, this.batchSize, (safe) => this.enabledModules(safe));
+```
+
+Sequential is right when the order decides the outcome: #3437 runs its three checks cheapest first, so a request it will reject never pays for the Tenderly simulation, and the same request always gets the same status — with `Promise.all`, whether it got the 403 or the 402 would depend on which check finished first.
+
+**Spotted in:** #3131, #3451.
+**Status:** active — `caching-and-performance.md`'s "Independent awaits run concurrently" and "Batch and chunk upstream calls" rules own this.
 
 ## Logging and errors
 
