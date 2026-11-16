@@ -1,10 +1,24 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { HttpStatus, Inject, Injectable } from '@nestjs/common';
+import type { Hex } from 'viem';
+import { IConfigurationService } from '#/config/configuration.service.interface';
 import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
+import { toSecondsTimestamp } from '#/domain/common/utils/time';
+import {
+  type ILoggingService,
+  LoggingService,
+} from '#/logging/logging.interface';
+import { asError } from '#/logging/utils';
 import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '#/modules/auth/utils/assert-authenticated.utils';
 import type { SafeRef } from '#/modules/policies/domain/entities/safe-ref.entity';
+import { IPolicyIndexerRepository } from '#/modules/policies/domain/policy-indexer.repository.interface';
 import { ISafePolicyGuardConfigurationRequestsRepository } from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository.interface';
+import {
+  GUARD_POLICY_TYPES,
+  guardPolicyKindsOf,
+  isRootApplicable,
+} from '#/modules/policies/domain/utils/policy.utils';
 import { configurationRoot } from '#/modules/policies/domain/utils/policy-configuration-root.utils';
 import type {
   CreatePolicyConfigurationRequestPayload,
@@ -20,6 +34,8 @@ import { IMembersRepository } from '#/modules/users/domain/members/members.repos
 
 @Injectable()
 export class PolicyConfigurationRequestsService {
+  private readonly maxPerSpaceSafe: number;
+
   public constructor(
     @Inject(ISafePolicyGuardConfigurationRequestsRepository)
     private readonly configurationRequestsRepository: ISafePolicyGuardConfigurationRequestsRepository,
@@ -27,7 +43,17 @@ export class PolicyConfigurationRequestsService {
     private readonly membersRepository: IMembersRepository,
     @Inject(ISpaceSafesRepository)
     private readonly spaceSafesRepository: ISpaceSafesRepository,
-  ) {}
+    @Inject(IPolicyIndexerRepository)
+    private readonly policyIndexerRepository: IPolicyIndexerRepository,
+    @Inject(IConfigurationService)
+    private readonly configurationService: IConfigurationService,
+    @Inject(LoggingService)
+    private readonly loggingService: ILoggingService,
+  ) {
+    this.maxPerSpaceSafe = this.configurationService.getOrThrow<number>(
+      'policies.maxConfigurationRequestsPerSpaceSafe',
+    );
+  }
 
   /**
    * Stores the configurations of a request. The root is recomputed from them
@@ -56,6 +82,8 @@ export class PolicyConfigurationRequestsService {
       );
     }
 
+    await this.assertBelowCap({ ...args, root });
+
     await this.configurationRequestsRepository.create({
       spaceId: args.spaceId,
       chainId: args.safe.chainId,
@@ -66,5 +94,65 @@ export class PolicyConfigurationRequestsService {
     });
 
     return { root };
+  }
+
+  /**
+   * Rejects a new root once the Safe holds the maximum number of active ones:
+   * stored roots that are not applied, invalidated or expired on-chain.
+   * Re-submitting a stored root is always accepted.
+   */
+  private async assertBelowCap(args: {
+    spaceId: Space['id'];
+    safe: SafeRef;
+    root: Hex;
+  }): Promise<void> {
+    const stored = await this.configurationRequestsRepository.findRootsBySafe({
+      spaceId: args.spaceId,
+      safe: args.safe,
+    });
+    if (stored.includes(args.root)) {
+      return;
+    }
+
+    const closed = await this.closedRootsOf(args.safe);
+    const active = stored.filter((root) => !closed.has(root));
+    if (active.length >= this.maxPerSpaceSafe) {
+      throw new HttpExceptionNoLog(
+        `This Safe only allows a maximum of ${this.maxPerSpaceSafe} active policy configuration requests in this space.`,
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+  }
+
+  /**
+   * The Safe's roots that can no longer be applied on any guard. None when
+   * the indexer cannot be read, so every stored root counts.
+   */
+  private async closedRootsOf(safe: SafeRef): Promise<Set<Hex>> {
+    try {
+      // Roots are only read along with at least one guard kind.
+      const { roots } = await this.policyIndexerRepository.getState({
+        safes: [safe],
+        guardPolicyKinds: guardPolicyKindsOf(GUARD_POLICY_TYPES),
+      });
+      const now = toSecondsTimestamp(new Date());
+      // One entry per guard and root: open on any guard keeps a root active.
+      const open = new Set(
+        roots
+          .filter((root) => isRootApplicable(root, now))
+          .map(({ root }) => root),
+      );
+      return new Set(
+        roots.map(({ root }) => root).filter((root) => !open.has(root)),
+      );
+    } catch (error) {
+      this.loggingService.warn({
+        message: 'Could not read the configuration roots of a Safe',
+        chainId: safe.chainId,
+        safeAddress: safe.address,
+        error: asError(error).message,
+      });
+      return new Set();
+    }
   }
 }
