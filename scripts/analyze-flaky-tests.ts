@@ -99,6 +99,34 @@ function gh(endpoint: string, params: Record<string, string> = {}): unknown {
 
 // Throws if `origin/main` is missing rather than marking every test removed
 execSync("git rev-parse --verify -q origin/main", { stdio: "ignore" });
+const TARGET_RATE = 0.005;
+const WINDOW_WEEKS = 4;
+
+// P(rate < t) after k flaky of n commits with a uniform prior,
+// i.e. P(Binomial(n + 1, t) >= k + 1)
+function confidenceBelow(n: number, k: number, t: number): number {
+	let p = (1 - t) ** (n + 1);
+	let cdf = 0;
+	for (let i = 0; i <= k; i++) {
+		cdf += p;
+		p *= ((n + 1 - i) / (i + 1)) * (t / (1 - t));
+	}
+	return Math.max(0, 1 - cdf);
+}
+
+// A failed lookup counts as included, so an unknown failure keeps a test open
+function commitIncludesPr(sha: string, prNumber: number): boolean {
+	try {
+		const pr = gh(`pulls/${prNumber}`) as { merge_commit_sha: string };
+		const cmp = gh(`compare/${pr.merge_commit_sha}...${sha}`) as {
+			status: string;
+		};
+		return cmp.status === "ahead" || cmp.status === "identical";
+	} catch {
+		return true;
+	}
+}
+
 function existsOnMain(file: string): boolean {
 	try {
 		execSync(`git cat-file -e "origin/main:${file}"`, { stdio: "ignore" });
@@ -555,6 +583,31 @@ function generateReport(args: {
 }): string {
 	const lines: Array<string> = [];
 	const { period, summary, weeklyTrend, tests, prs } = args;
+	const target = `<${TARGET_RATE * 100}%`;
+	const windowAt = (i: number) => {
+		const rows = weeklyTrend.slice(Math.max(0, i - WINDOW_WEEKS + 1), i + 1);
+		const n = rows.reduce((s, w) => s + w.commits, 0);
+		const k = rows.reduce((s, w) => s + w.flaky, 0);
+		return { n, k, conf: confidenceBelow(n, k, TARGET_RATE) };
+	};
+	const pct = (x: number) => `${Math.round(x * 100)}%`;
+	const latest = windowAt(weeklyTrend.length - 1);
+	// Chance a fixed test would have failed again since its fix had the fix not
+	// worked: its failure rate before the fix week, over the commits after it.
+	const fixConfidence = (t: FlakyTest): string => {
+		const merged = prs.find((p) => p.number === t.fix_pr?.number)?.merged_at;
+		if (t.status !== "fixed" || !merged) return "-";
+		const sum = (rows: Array<WeeklyTrend>) =>
+			rows.reduce((s, w) => s + w.commits, 0);
+		const mergeWeek = weeklyTrend.findLastIndex(
+			(w) => w.week <= merged.slice(0, 10),
+		);
+		const before = sum(weeklyTrend.slice(0, mergeWeek));
+		const after = sum(weeklyTrend.slice(mergeWeek + 1));
+		if (before === 0) return "-";
+		const rate = Math.min(1, t.failure_count / before);
+		return pct(1 - (1 - rate) ** after);
+	};
 
 	lines.push("# Flaky Test Baseline Report");
 	lines.push("");
@@ -568,6 +621,9 @@ function generateReport(args: {
 	lines.push("");
 	lines.push(`| Metric | Value |`);
 	lines.push(`|--------|-------|`);
+	lines.push(
+		`| **Confidence flake rate ${target}** (last ${WINDOW_WEEKS} weeks) | **${pct(latest.conf)}** (${latest.k} flaky / ${latest.n} commits) |`,
+	);
 	lines.push(`| Total unique commits | ${summary.total_commits} |`);
 	lines.push(
 		`| Flaky commits (pass + fail on same SHA) | ${summary.flaky_commits} |`,
@@ -581,15 +637,24 @@ function generateReport(args: {
 			"Earlier weeks lack that signal and understate flakiness.",
 	);
 	lines.push("");
+	lines.push(
+		`Confidence is the probability that the per-commit flake rate is ${target}, ` +
+			`given the flaky and total commits of the last ${WINDOW_WEEKS} weeks ` +
+			"(binomial model, uniform prior). Flakes nobody re-ran are not seen, " +
+			"so the true confidence is somewhat lower.",
+	);
+	lines.push("");
 
 	// Weekly trend
 	lines.push("## Weekly Trend");
 	lines.push("");
-	lines.push("| Week | Commits | Flaky | Rate |");
-	lines.push("|------|---------|-------|------|");
-	for (const w of weeklyTrend) {
-		lines.push(`| ${w.week} | ${w.commits} | ${w.flaky} | ${w.rate}% |`);
-	}
+	lines.push(`| Week | Commits | Flaky | Rate | Confidence ${target} (${WINDOW_WEEKS} wk) |`);
+	lines.push("|------|---------|-------|------|------|");
+	weeklyTrend.forEach((w, i) => {
+		lines.push(
+			`| ${w.week} | ${w.commits} | ${w.flaky} | ${w.rate}% | ${pct(windowAt(i).conf)} |`,
+		);
+	});
 	lines.push("");
 
 	// Plain-text bar chart in a fenced block: GitHub does not render Mermaid
@@ -619,8 +684,9 @@ function generateReport(args: {
 	// Clean-streak tracker: commits accumulated in fully-clean weeks after
 	// the last week that had a flake. Conservative — clean commits within
 	// the flake week itself are not counted. Rule of three: 0 flakes in n
-	// commits bounds the true rate below 3/n at 95% confidence; the agreed
-	// target (<1% at 95%) therefore needs a 300-commit streak.
+	// commits bounds the true rate below 3/n at 95% confidence, so the target
+	// rate needs a 3/TARGET_RATE-commit streak.
+	const needed = Math.round(3 / TARGET_RATE);
 	let cleanStreak = 0;
 	for (let i = weeklyTrend.length - 1; i >= 0; i--) {
 		if (weeklyTrend[i].flaky > 0) break;
@@ -628,19 +694,19 @@ function generateReport(args: {
 	}
 	lines.push("## Clean Streak");
 	lines.push("");
-	if (cleanStreak >= 300) {
+	if (cleanStreak >= needed) {
 		lines.push(
-			`**Target met:** ${cleanStreak} commits without a flake — the flake rate is below ${(300 / cleanStreak).toFixed(2)}% at 95% confidence (target: <1%).`,
+			`**Target met:** ${cleanStreak} commits without a flake — the flake rate is below ${(300 / cleanStreak).toFixed(2)}% at 95% confidence (target: ${target}).`,
 		);
 	} else if (cleanStreak > 0) {
 		lines.push(
 			`${cleanStreak} commits without a flake since the last flaky week — ` +
 				`rate is below ${(300 / cleanStreak).toFixed(1)}% at 95% confidence. ` +
-				`Target <1% at 95% needs a **300-commit** streak (${300 - cleanStreak} to go).`,
+				`Target ${target} at 95% needs a **${needed}-commit** streak (${needed - cleanStreak} to go).`,
 		);
 	} else {
 		lines.push(
-			"Streak broken: the most recent week has a flake. Target <1% at 95% needs a 300-commit clean streak.",
+			`Streak broken: the most recent week has a flake. Target ${target} at 95% needs a ${needed}-commit clean streak.`,
 		);
 	}
 	lines.push("");
@@ -657,14 +723,18 @@ function generateReport(args: {
 	if (tests.length === 0) {
 		lines.push("No flaky tests found.");
 	} else {
-		lines.push("| File | Failures | Last failure | Status | Fix PR |");
-		lines.push("|------|----------|--------------|--------|--------|");
+		lines.push(
+			"| File | Failures | Last failure | Status | Fix PR | Fix confidence |",
+		);
+		lines.push(
+			"|------|----------|--------------|--------|--------|----------------|",
+		);
 		for (const t of [...tests].sort(
 			(a, b) => b.failure_count - a.failure_count,
 		)) {
 			const pr = t.fix_pr ? `[#${t.fix_pr.number}](${t.fix_pr.url})` : "-";
 			lines.push(
-				`| \`${t.file}\` | ${t.failure_count} | ${t.last_failure.slice(0, 10)} | ${statusLabel[t.status]} | ${pr} |`,
+				`| \`${t.file}\` | ${t.failure_count} | ${t.last_failure.slice(0, 10)} | ${statusLabel[t.status]} | ${pr} | ${fixConfidence(t)} |`,
 			);
 		}
 	}
@@ -976,25 +1046,30 @@ async function main(): Promise<void> {
 	const fixPrs = [...fetchedPrs, ...keptPrs];
 	console.log(`Found ${fixPrs.length} test-related PRs`);
 
-	// 9. Build flaky tests list. A test counts as fixed only once a PR covering
-	// it merged after its last failure; an open covering PR means in review.
-	const lastFailure = new Map<string, string>();
-	for (const run of mergedRuns) {
-		for (const t of run.failed_tests) {
-			if (run.created_at > (lastFailure.get(t.file) ?? "")) {
-				lastFailure.set(t.file, run.created_at);
-			}
-		}
-	}
-
+	// 9. Build flaky tests list. A test counts as fixed once a covering PR merged
+	// and no later failure ran on a commit containing it (branches cut before
+	// the fix still fail); an open covering PR means in review.
 	const flakyTests: Array<FlakyTest> = Array.from(
 		mergedTestCounts.entries(),
 	).map(([file, count]) => {
-		const last = lastFailure.get(file) ?? "";
+		const failures = mergedRuns.filter((run) =>
+			run.failed_tests.some((t) => t.file === file),
+		);
+		const last = failures.reduce(
+			(max, run) => (run.created_at > max ? run.created_at : max),
+			"",
+		);
 		const covering = fixPrs.filter((pr) => pr.tests_fixed.includes(file));
 		const fix = covering
-			.filter((pr) => (pr.merged_at ?? "") > last)
-			.sort((a, b) => (a.merged_at ?? "").localeCompare(b.merged_at ?? ""))[0];
+			.filter((pr) => pr.merged_at)
+			.sort((a, b) => (a.merged_at ?? "").localeCompare(b.merged_at ?? ""))
+			.find((pr) =>
+				failures.every(
+					(run) =>
+						run.created_at <= (pr.merged_at ?? "") ||
+						!commitIncludesPr(run.sha, pr.number),
+				),
+			);
 		const review = covering.find((pr) => pr.state === "open");
 		const pr = fix ?? review;
 		return {
