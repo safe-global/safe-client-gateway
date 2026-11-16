@@ -75,6 +75,28 @@ describe('Owners Controller (Unit)', () => {
         });
     });
 
+    it.each([
+      { chainId: faker.string.alpha() },
+      { chainId: encodeURIComponent(`../${faker.string.numeric()}`) },
+    ])(
+      'Failure: chainId $chainId is rejected before any upstream request',
+      async ({ chainId }) => {
+        const ownerAddress = faker.finance.ethereumAddress();
+
+        await request(app.getHttpServer())
+          .get(`/v1/chains/${chainId}/owners/${ownerAddress}/safes`)
+          .expect(422)
+          .expect({
+            statusCode: 422,
+            code: 'custom',
+            message: 'Invalid base-10 numeric string',
+            path: [],
+          });
+
+        expect(networkService.get).not.toHaveBeenCalled();
+      },
+    );
+
     it('Failure: Config API fails', async () => {
       const chainId = faker.string.numeric();
       const ownerAddress = faker.finance.ethereumAddress();
