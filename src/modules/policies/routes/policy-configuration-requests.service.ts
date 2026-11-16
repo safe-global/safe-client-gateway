@@ -5,7 +5,10 @@ import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log
 import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '#/modules/auth/utils/assert-authenticated.utils';
 import type { SafeRef } from '#/modules/policies/domain/entities/safe-ref.entity';
-import { getPolicyTypeOfContract } from '#/modules/policies/domain/policy-deployments.constants';
+import {
+  getPolicyTypeOfContract,
+  getSafePolicyGuardDeployments,
+} from '#/modules/policies/domain/policy-deployments.constants';
 import { ISafePolicyGuardConfigurationRequestsRepository } from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository.interface';
 import { configurationRoot } from '#/modules/policies/domain/utils/policy-configuration-root.utils';
 import type {
@@ -75,11 +78,21 @@ export class PolicyConfigurationRequestsService {
     return { root };
   }
 
-  /** Each policy must be a known contract or the zero address, which removes a policy. */
+  /**
+   * The chain must have a policy engine, and each policy must be a known
+   * contract or the zero address, which removes a policy.
+   */
   private assertKnownPolicies(args: {
     chainId: string;
     configurations: CreatePolicyConfigurationRequestPayload['configurations'];
   }): void {
+    if (getSafePolicyGuardDeployments(args.chainId).length === 0) {
+      throw new HttpExceptionNoLog(
+        `Policies are not supported on chain ${args.chainId}`,
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
+    }
+
     const unknownPolicy = args.configurations.find(
       ({ policy }) =>
         !isAddressEqual(policy, zeroAddress) &&

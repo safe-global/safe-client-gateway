@@ -76,7 +76,7 @@ export class PoliciesController {
   })
   @ApiUnprocessableEntityResponse({
     description:
-      'Invalid chain ID, Safe address or body, or the configurations do not hash to the given root',
+      'Invalid chain ID, Safe address or body, the configurations do not hash to the given root, the chain has no policy engine, or a policy is neither a known policy contract on the chain nor the zero address',
   })
   @ApiUnauthorizedResponse({ description: 'Authentication required' })
   @ApiForbiddenResponse({

@@ -105,19 +105,33 @@ describe('PolicyConfigurationRequestsService', () => {
     expect(configurationRequestsRepository.create).not.toHaveBeenCalled();
   });
 
-  it('should store the removal of a policy on any chain', async () => {
+  it('should store the removal of a policy', async () => {
     const payload = validPayload(zeroAddress);
+
+    await expect(target.create({ ...request, payload })).resolves.toStrictEqual(
+      { root: payload.root },
+    );
+    expect(configurationRequestsRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({ configurations: payload.configurations }),
+    );
+  });
+
+  it('should reject the removal of a policy on a chain without a policy engine', async () => {
     const chainId = NON_POLICY_ENGINE_CHAIN_ID;
 
     await expect(
-      target.create({ ...request, safe: { ...safe, chainId }, payload }),
-    ).resolves.toStrictEqual({ root: payload.root });
-    expect(configurationRequestsRepository.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        chainId,
-        configurations: payload.configurations,
+      target.create({
+        ...request,
+        safe: { ...safe, chainId },
+        payload: validPayload(zeroAddress),
       }),
+    ).rejects.toThrow(
+      new HttpExceptionNoLog(
+        `Policies are not supported on chain ${chainId}`,
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      ),
     );
+    expect(configurationRequestsRepository.create).not.toHaveBeenCalled();
   });
 
   it('should reject an unknown policy contract without logging', async () => {
@@ -125,6 +139,28 @@ describe('PolicyConfigurationRequestsService', () => {
 
     await expect(
       target.create({ ...request, payload: validPayload(policy) }),
+    ).rejects.toThrow(
+      new HttpExceptionNoLog(
+        `Unknown policy contract ${policy} on chain ${safe.chainId}`,
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      ),
+    );
+    expect(configurationRequestsRepository.create).not.toHaveBeenCalled();
+  });
+
+  it('should reject an unknown policy contract after a known one', async () => {
+    const policy = getAddress(faker.finance.ethereumAddress());
+    const configurations: [PolicyConfiguration, ...Array<PolicyConfiguration>] =
+      [
+        policyConfigurationBuilder().with('policy', KNOWN_POLICY).build(),
+        policyConfigurationBuilder().with('policy', policy).build(),
+      ];
+
+    await expect(
+      target.create({
+        ...request,
+        payload: { root: configurationRoot(configurations), configurations },
+      }),
     ).rejects.toThrow(
       new HttpExceptionNoLog(
         `Unknown policy contract ${policy} on chain ${safe.chainId}`,
@@ -145,7 +181,7 @@ describe('PolicyConfigurationRequestsService', () => {
       }),
     ).rejects.toThrow(
       new HttpExceptionNoLog(
-        `Unknown policy contract ${KNOWN_POLICY} on chain ${chainId}`,
+        `Policies are not supported on chain ${chainId}`,
         HttpStatus.UNPROCESSABLE_ENTITY,
       ),
     );
