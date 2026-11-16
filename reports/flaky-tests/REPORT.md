@@ -1,74 +1,78 @@
 # Flaky Test Baseline Report
 
-Generated: 2026-11-13T15:48:19.754Z | Period: 2026-01-16 to 2026-11-13
+Generated: 2026-11-16T18:32:13.015Z | Period: 2026-01-16 to 2026-11-16
 
 ## Summary
 
 | Metric | Value |
 |--------|-------|
-| Total unique commits | 3526 |
-| Flaky commits (pass + fail on same SHA) | 147 |
-| Flakiness rate | 4.2% |
+| **Confidence flake rate <0.5%** (last 4 weeks) | **8%** (3 flaky / 321 commits) |
+| Total unique commits | 3575 |
+| Flaky commits (pass + fail on same SHA) | 148 |
+| Flakiness rate | 4.1% |
 
 Since 2026-06-04 a commit also counts as flaky when a failed attempt was recovered by re-running the same workflow run (GitHub reports only the final attempt, so this signal needs a per-attempt lookup). Earlier weeks lack that signal and understate flakiness.
 
+Confidence is the probability that the per-commit flake rate is <0.5%, given the flaky and total commits of the last 4 weeks (binomial model, uniform prior). Flakes nobody re-ran are not seen, so the true confidence is somewhat lower.
+
 ## Weekly Trend
 
-| Week | Commits | Flaky | Rate |
-|------|---------|-------|------|
-| 2026-01-12 | 7 | 1 | 14.3% |
-| 2026-01-19 | 37 | 7 | 18.9% |
-| 2026-01-26 | 65 | 10 | 15.4% |
-| 2026-02-02 | 74 | 4 | 5.4% |
-| 2026-02-09 | 72 | 5 | 6.9% |
-| 2026-02-15 | 1 | 1 | 100% |
-| 2026-02-16 | 79 | 3 | 3.8% |
-| 2026-02-23 | 57 | 1 | 1.8% |
-| 2026-03-02 | 71 | 5 | 7% |
-| 2026-03-08 | 3 | 0 | 0% |
-| 2026-03-09 | 44 | 1 | 2.3% |
-| 2026-03-16 | 31 | 3 | 9.7% |
-| 2026-03-23 | 59 | 3 | 5.1% |
-| 2026-03-30 | 38 | 2 | 5.3% |
-| 2026-04-06 | 116 | 11 | 9.5% |
-| 2026-04-13 | 11 | 0 | 0% |
-| 2026-04-20 | 19 | 1 | 5.3% |
-| 2026-04-27 | 109 | 9 | 8.3% |
-| 2026-05-03 | 9 | 1 | 11.1% |
-| 2026-05-04 | 129 | 7 | 5.4% |
-| 2026-05-10 | 1 | 0 | 0% |
-| 2026-05-11 | 39 | 1 | 2.6% |
-| 2026-05-17 | 1 | 0 | 0% |
-| 2026-05-18 | 79 | 9 | 11.4% |
-| 2026-05-25 | 60 | 4 | 6.7% |
-| 2026-06-01 | 106 | 6 | 5.7% |
-| 2026-06-07 | 3 | 0 | 0% |
-| 2026-06-08 | 80 | 9 | 11.3% |
-| 2026-06-15 | 66 | 12 | 18.2% |
-| 2026-06-21 | 7 | 0 | 0% |
-| 2026-06-22 | 71 | 4 | 5.6% |
-| 2026-06-28 | 3 | 0 | 0% |
-| 2026-06-29 | 81 | 3 | 3.7% |
-| 2026-07-05 | 6 | 0 | 0% |
-| 2026-07-06 | 95 | 2 | 2.1% |
-| 2026-07-13 | 102 | 1 | 1% |
-| 2026-07-20 | 74 | 2 | 2.7% |
-| 2026-07-27 | 50 | 1 | 2% |
-| 2026-08-03 | 54 | 0 | 0% |
-| 2026-08-10 | 46 | 0 | 0% |
-| 2026-08-17 | 108 | 6 | 5.6% |
-| 2026-08-24 | 75 | 0 | 0% |
-| 2026-08-31 | 12 | 0 | 0% |
-| 2026-09-07 | 48 | 3 | 6.3% |
-| 2026-09-14 | 143 | 3 | 2.1% |
-| 2026-09-21 | 182 | 3 | 1.6% |
-| 2026-09-28 | 109 | 0 | 0% |
-| 2026-10-05 | 152 | 1 | 0.7% |
-| 2026-10-12 | 165 | 0 | 0% |
-| 2026-10-19 | 205 | 0 | 0% |
-| 2026-10-26 | 110 | 1 | 0.9% |
-| 2026-11-02 | 33 | 0 | 0% |
-| 2026-11-09 | 129 | 1 | 0.8% |
+| Week | Commits | Flaky | Rate | Confidence <0.5% (4 wk) |
+|------|---------|-------|------|------|
+| 2026-01-12 | 7 | 1 | 14.3% | 0% |
+| 2026-01-19 | 37 | 7 | 18.9% | 0% |
+| 2026-01-26 | 65 | 10 | 15.4% | 0% |
+| 2026-02-02 | 74 | 4 | 5.4% | 0% |
+| 2026-02-09 | 72 | 5 | 6.9% | 0% |
+| 2026-02-15 | 1 | 1 | 100% | 0% |
+| 2026-02-16 | 79 | 3 | 3.8% | 0% |
+| 2026-02-23 | 57 | 1 | 1.8% | 0% |
+| 2026-03-02 | 71 | 5 | 7% | 0% |
+| 2026-03-08 | 3 | 0 | 0% | 0% |
+| 2026-03-09 | 44 | 1 | 2.3% | 0% |
+| 2026-03-16 | 31 | 3 | 9.7% | 0% |
+| 2026-03-23 | 59 | 3 | 5.1% | 0% |
+| 2026-03-30 | 38 | 2 | 5.3% | 0% |
+| 2026-04-06 | 116 | 11 | 9.5% | 0% |
+| 2026-04-13 | 11 | 0 | 0% | 0% |
+| 2026-04-20 | 19 | 1 | 5.3% | 0% |
+| 2026-04-27 | 109 | 9 | 8.3% | 0% |
+| 2026-05-03 | 9 | 1 | 11.1% | 0% |
+| 2026-05-04 | 129 | 7 | 5.4% | 0% |
+| 2026-05-10 | 1 | 0 | 0% | 0% |
+| 2026-05-11 | 39 | 1 | 2.6% | 0% |
+| 2026-05-17 | 1 | 0 | 0% | 0% |
+| 2026-05-18 | 79 | 9 | 11.4% | 0% |
+| 2026-05-25 | 60 | 4 | 6.7% | 0% |
+| 2026-06-01 | 106 | 6 | 5.7% | 0% |
+| 2026-06-07 | 3 | 0 | 0% | 0% |
+| 2026-06-08 | 80 | 9 | 11.3% | 0% |
+| 2026-06-15 | 66 | 12 | 18.2% | 0% |
+| 2026-06-21 | 7 | 0 | 0% | 0% |
+| 2026-06-22 | 71 | 4 | 5.6% | 0% |
+| 2026-06-28 | 3 | 0 | 0% | 0% |
+| 2026-06-29 | 81 | 3 | 3.7% | 0% |
+| 2026-07-05 | 6 | 0 | 0% | 0% |
+| 2026-07-06 | 95 | 2 | 2.1% | 0% |
+| 2026-07-13 | 102 | 1 | 1% | 0% |
+| 2026-07-20 | 74 | 2 | 2.7% | 0% |
+| 2026-07-27 | 50 | 1 | 2% | 0% |
+| 2026-08-03 | 54 | 0 | 0% | 1% |
+| 2026-08-10 | 46 | 0 | 0% | 3% |
+| 2026-08-17 | 108 | 6 | 5.6% | 0% |
+| 2026-08-24 | 75 | 0 | 0% | 0% |
+| 2026-08-31 | 12 | 0 | 0% | 0% |
+| 2026-09-07 | 48 | 3 | 6.3% | 0% |
+| 2026-09-14 | 143 | 3 | 2.1% | 0% |
+| 2026-09-21 | 182 | 3 | 1.6% | 0% |
+| 2026-09-28 | 109 | 0 | 0% | 0% |
+| 2026-10-05 | 152 | 1 | 0.7% | 1% |
+| 2026-10-12 | 165 | 0 | 0% | 19% |
+| 2026-10-19 | 205 | 0 | 0% | 82% |
+| 2026-10-26 | 110 | 1 | 0.9% | 61% |
+| 2026-11-02 | 33 | 0 | 0% | 73% |
+| 2026-11-09 | 136 | 2 | 1.5% | 23% |
+| 2026-11-16 | 42 | 0 | 0% | 8% |
 
 ```text
 Weekly CI flakiness rate %  ·  n = unique commits  ·  weeks with n<10 omitted
@@ -115,59 +119,60 @@ Weekly CI flakiness rate %  ·  n = unique commits  ·  weeks with n<10 omitted
 10-19   0.0%  n=205  ▏
 10-26   0.9%  n=110  ██
 11-02   0.0%  n=33   ▏
-11-09   0.8%  n=129  ██
+11-09   1.5%  n=136  ███
+11-16   0.0%  n=42   ▏
 ```
 
 ## Clean Streak
 
-Streak broken: the most recent week has a flake. Target <1% at 95% needs a 300-commit clean streak.
+42 commits without a flake since the last flaky week — rate is below 7.1% at 95% confidence. Target <0.5% at 95% needs a **600-commit** streak (558 to go).
 
 ## Flaky Test Leaderboard
 
-| File | Failures | Last failure | Status | Fix PR |
-|------|----------|--------------|--------|--------|
-| `src/modules/transactions/routes/__tests__/controllers/preview-transaction-kiln.transactions.controller.integration.spec.ts` | 27 | 2026-07-01 | Fixed | [#3242](https://github.com/safe-global/safe-client-gateway/pull/3242) |
-| `src/modules/transactions/routes/__tests__/controllers/preview-transaction-cow-swap.transactions.controller.integration.spec.ts` | 17 | 2026-06-19 | Fixed | [#3242](https://github.com/safe-global/safe-client-gateway/pull/3242) |
-| `src/routes/common/guards/rate-limit.guard.spec.ts` | 14 | 2026-06-30 | Fixed | [#3139](https://github.com/safe-global/safe-client-gateway/pull/3139) |
-| `src/modules/targeted-messaging/datasources/targeted-messaging.datasource.integration.spec.ts` | 12 | 2026-02-01 | Fixed | [#2891](https://github.com/safe-global/safe-client-gateway/pull/2891) |
-| `src/modules/transactions/routes/__tests__/controllers/propose-transaction.transactions.controller.integration.spec.ts` | 12 | 2026-06-26 | Fixed | [#3242](https://github.com/safe-global/safe-client-gateway/pull/3242) |
-| `src/datasources/cache/redis.cache.service.integration.spec.ts` | 11 | 2026-06-18 | Fixed | [#3136](https://github.com/safe-global/safe-client-gateway/pull/3136) |
-| `src/datasources/job-queue/__tests__/job-queue.service.integration.spec.ts` | 11 | 2026-10-29 | Fixed | [#3751](https://github.com/safe-global/safe-client-gateway/pull/3751) |
-| `src/modules/notifications/routes/v2/notifications.controller.integration.spec.ts` | 10 | 2026-09-11 | Fixed | [#3572](https://github.com/safe-global/safe-client-gateway/pull/3572) |
-| `src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts` | 10 | 2026-08-19 | Fixed | [#3572](https://github.com/safe-global/safe-client-gateway/pull/3572) |
-| `src/modules/transactions/routes/helpers/transaction-verifier.helper.spec.ts` | 10 | 2026-10-09 | Fixed | [#3572](https://github.com/safe-global/safe-client-gateway/pull/3572) |
-| `src/modules/transactions/routes/mappers/common/transaction-data.mapper.spec.ts` | 9 | 2026-06-15 | Fixed | [#3139](https://github.com/safe-global/safe-client-gateway/pull/3139) |
-| `src/modules/users/domain/users.repository.integration.spec.ts` | 9 | 2026-09-24 | Fixed | [#3506](https://github.com/safe-global/safe-client-gateway/pull/3506) |
-| `src/modules/transactions/routes/__tests__/controllers/add-transaction-confirmations.transactions.controller.integration.spec.ts` | 7 | 2026-06-19 | Fixed | [#3242](https://github.com/safe-global/safe-client-gateway/pull/3242) |
-| `src/domain/common/entities/safe-signature.spec.ts` | 6 | 2026-08-17 | Fixed | [#3572](https://github.com/safe-global/safe-client-gateway/pull/3572) |
-| `src/modules/users/domain/members.repository.integration.spec.ts` | 5 | 2026-02-01 | Fixed | [#2891](https://github.com/safe-global/safe-client-gateway/pull/2891) |
-| `src/modules/messages/domain/helpers/message-verifier.helper.spec.ts` | 5 | 2026-09-14 | Fixed | [#3572](https://github.com/safe-global/safe-client-gateway/pull/3572) |
-| `src/modules/auth/utils/auth-redirect.helper.spec.ts` | 3 | 2026-06-11 | Fixed | [#3162](https://github.com/safe-global/safe-client-gateway/pull/3162) |
-| `src/modules/bridge/domain/entities/bridge-name.entity.spec.ts` | 3 | 2026-07-09 | Fixed | [#3242](https://github.com/safe-global/safe-client-gateway/pull/3242) |
-| `src/modules/transactions/routes/__tests__/controllers/get-transaction-by-id.transactions.controller.integration.spec.ts` | 2 | 2026-04-10 | Fixed | [#3242](https://github.com/safe-global/safe-client-gateway/pull/3242) |
-| `src/modules/users/domain/__tests__/user-identity-resolver.service.spec.ts` | 2 | 2026-05-19 | Removed from main | - |
-| `src/modules/surveys/routes/surveys.controller.integration.spec.ts` | 2 | 2026-08-21 | Fixed | [#3594](https://github.com/safe-global/safe-client-gateway/pull/3594) |
-| `src/modules/transactions/routes/__tests__/controllers/preview-transaction.transactions.controller.integration.spec.ts` | 2 | 2026-09-21 | Fixed | [#3594](https://github.com/safe-global/safe-client-gateway/pull/3594) |
-| `src/modules/transactions/routes/__tests__/controllers/preview-transaction-cow-swap.transactions.controller.spec.ts` | 1 | 2026-01-29 | Removed from main | - |
-| `src/modules/transactions/routes/__tests__/controllers/preview-transaction-kiln.transactions.controller.spec.ts` | 1 | 2026-01-19 | Removed from main | - |
-| `src/modules/safe-shield/safe-shield.controller.integration.spec.ts` | 1 | 2026-02-11 | Fixed | [#3242](https://github.com/safe-global/safe-client-gateway/pull/3242) |
-| `src/modules/safe-apps/routes/safe-apps.controller.integration.spec.ts` | 1 | 2026-02-11 | Fixed | [#3242](https://github.com/safe-global/safe-client-gateway/pull/3242) |
-| `src/modules/auth/routes/auth.controller.integration.spec.ts` | 1 | 2026-04-15 | Fixed | [#3136](https://github.com/safe-global/safe-client-gateway/pull/3136) |
-| `src/domain/common/entities/name.builder.spec.ts` | 1 | 2026-07-03 | Fixed | [#3242](https://github.com/safe-global/safe-client-gateway/pull/3242) |
-| `src/modules/notifications/routes/v1/notifications.controller.integration.spec.ts` | 1 | 2026-09-21 | Fixed | [#3617](https://github.com/safe-global/safe-client-gateway/pull/3617) |
-| `src/modules/transactions/routes/helpers/space-queue.helper.spec.ts` | 1 | 2026-11-12 | Fixed | [#3761](https://github.com/safe-global/safe-client-gateway/pull/3761) |
+| File | Failures | Last failure | Status | Fix PR | Fix confidence |
+|------|----------|--------------|--------|--------|----------------|
+| `src/modules/transactions/routes/__tests__/controllers/preview-transaction-kiln.transactions.controller.integration.spec.ts` | 27 | 2026-07-01 | Fixed | [#3242](https://github.com/safe-global/safe-client-gateway/pull/3242) | 100% |
+| `src/modules/transactions/routes/__tests__/controllers/preview-transaction-cow-swap.transactions.controller.integration.spec.ts` | 17 | 2026-06-19 | Fixed | [#3242](https://github.com/safe-global/safe-client-gateway/pull/3242) | 100% |
+| `src/routes/common/guards/rate-limit.guard.spec.ts` | 14 | 2026-06-30 | Fixed | [#3139](https://github.com/safe-global/safe-client-gateway/pull/3139) | 100% |
+| `src/modules/targeted-messaging/datasources/targeted-messaging.datasource.integration.spec.ts` | 12 | 2026-02-01 | Fixed | [#2891](https://github.com/safe-global/safe-client-gateway/pull/2891) | 100% |
+| `src/modules/transactions/routes/__tests__/controllers/propose-transaction.transactions.controller.integration.spec.ts` | 12 | 2026-06-26 | Fixed | [#3242](https://github.com/safe-global/safe-client-gateway/pull/3242) | 100% |
+| `src/datasources/cache/redis.cache.service.integration.spec.ts` | 11 | 2026-06-18 | Fixed | [#3136](https://github.com/safe-global/safe-client-gateway/pull/3136) | 100% |
+| `src/datasources/job-queue/__tests__/job-queue.service.integration.spec.ts` | 11 | 2026-10-29 | Fixed | [#3751](https://github.com/safe-global/safe-client-gateway/pull/3751) | 13% |
+| `src/modules/notifications/routes/v2/notifications.controller.integration.spec.ts` | 10 | 2026-09-11 | Fixed | [#3572](https://github.com/safe-global/safe-client-gateway/pull/3572) | 84% |
+| `src/modules/safe-shield/recipient-analysis/recipient-analysis.service.spec.ts` | 10 | 2026-08-19 | Fixed | [#3572](https://github.com/safe-global/safe-client-gateway/pull/3572) | 84% |
+| `src/modules/transactions/routes/helpers/transaction-verifier.helper.spec.ts` | 10 | 2026-10-09 | Fixed | [#3572](https://github.com/safe-global/safe-client-gateway/pull/3572) | 84% |
+| `src/modules/transactions/routes/mappers/common/transaction-data.mapper.spec.ts` | 9 | 2026-06-15 | Fixed | [#3139](https://github.com/safe-global/safe-client-gateway/pull/3139) | 100% |
+| `src/modules/users/domain/users.repository.integration.spec.ts` | 9 | 2026-09-24 | Fixed | [#3506](https://github.com/safe-global/safe-client-gateway/pull/3506) | 94% |
+| `src/modules/transactions/routes/__tests__/controllers/add-transaction-confirmations.transactions.controller.integration.spec.ts` | 7 | 2026-06-19 | Fixed | [#3242](https://github.com/safe-global/safe-client-gateway/pull/3242) | 100% |
+| `src/domain/common/entities/safe-signature.spec.ts` | 6 | 2026-08-17 | Fixed | [#3572](https://github.com/safe-global/safe-client-gateway/pull/3572) | 67% |
+| `src/modules/users/domain/members.repository.integration.spec.ts` | 5 | 2026-02-01 | Fixed | [#2891](https://github.com/safe-global/safe-client-gateway/pull/2891) | 100% |
+| `src/modules/messages/domain/helpers/message-verifier.helper.spec.ts` | 5 | 2026-09-14 | Fixed | [#3572](https://github.com/safe-global/safe-client-gateway/pull/3572) | 60% |
+| `src/modules/auth/utils/auth-redirect.helper.spec.ts` | 3 | 2026-06-11 | Fixed | [#3162](https://github.com/safe-global/safe-client-gateway/pull/3162) | 99% |
+| `src/modules/bridge/domain/entities/bridge-name.entity.spec.ts` | 3 | 2026-07-09 | Fixed | [#3242](https://github.com/safe-global/safe-client-gateway/pull/3242) | 97% |
+| `src/modules/transactions/routes/helpers/space-queue.helper.spec.ts` | 3 | 2026-11-13 | Fixed | [#3761](https://github.com/safe-global/safe-client-gateway/pull/3761) | 4% |
+| `src/modules/transactions/routes/__tests__/controllers/get-transaction-by-id.transactions.controller.integration.spec.ts` | 2 | 2026-04-10 | Fixed | [#3242](https://github.com/safe-global/safe-client-gateway/pull/3242) | 90% |
+| `src/modules/users/domain/__tests__/user-identity-resolver.service.spec.ts` | 2 | 2026-05-19 | Removed from main | - | - |
+| `src/modules/surveys/routes/surveys.controller.integration.spec.ts` | 2 | 2026-08-21 | Fixed | [#3594](https://github.com/safe-global/safe-client-gateway/pull/3594) | 2% |
+| `src/modules/transactions/routes/__tests__/controllers/preview-transaction.transactions.controller.integration.spec.ts` | 2 | 2026-09-21 | Fixed | [#3594](https://github.com/safe-global/safe-client-gateway/pull/3594) | 2% |
+| `src/modules/transactions/routes/__tests__/controllers/preview-transaction-cow-swap.transactions.controller.spec.ts` | 1 | 2026-01-29 | Removed from main | - | - |
+| `src/modules/transactions/routes/__tests__/controllers/preview-transaction-kiln.transactions.controller.spec.ts` | 1 | 2026-01-19 | Removed from main | - | - |
+| `src/modules/safe-shield/safe-shield.controller.integration.spec.ts` | 1 | 2026-02-11 | Fixed | [#3242](https://github.com/safe-global/safe-client-gateway/pull/3242) | 68% |
+| `src/modules/safe-apps/routes/safe-apps.controller.integration.spec.ts` | 1 | 2026-02-11 | Fixed | [#3242](https://github.com/safe-global/safe-client-gateway/pull/3242) | 68% |
+| `src/modules/auth/routes/auth.controller.integration.spec.ts` | 1 | 2026-04-15 | Fixed | [#3136](https://github.com/safe-global/safe-client-gateway/pull/3136) | 75% |
+| `src/domain/common/entities/name.builder.spec.ts` | 1 | 2026-07-03 | Fixed | [#3242](https://github.com/safe-global/safe-client-gateway/pull/3242) | 68% |
+| `src/modules/notifications/routes/v1/notifications.controller.integration.spec.ts` | 1 | 2026-09-21 | Fixed | [#3617](https://github.com/safe-global/safe-client-gateway/pull/3617) | 1% |
 
 ## Fix PRs
 
+- [#3560](https://github.com/safe-global/safe-client-gateway/pull/3560) - build: migrate runtime, tooling and tests from node to bun (Closed)
+- [#3762](https://github.com/safe-global/safe-client-gateway/pull/3762) - test(spaces): give invited members valid names in the address book tags spec (Merged)
 - [#3751](https://github.com/safe-global/safe-client-gateway/pull/3751) - fix(tests): wait for job completion before asserting worker events (Merged)
 - [#3761](https://github.com/safe-global/safe-client-gateway/pull/3761) - test: fix two tests that fail at random (chain order, short member names) (Merged)
-- [#3762](https://github.com/safe-global/safe-client-gateway/pull/3762) - test(spaces): give invited members valid names in the address book tags spec (Open)
 - [#3594](https://github.com/safe-global/safe-client-gateway/pull/3594) - fix: make the v2 migrator lock acquisition atomic (Merged)
 - [#3617](https://github.com/safe-global/safe-client-gateway/pull/3617) - fix(tests): expect one upsert per registration with safes in v1 notifications spec (Merged)
 - [#3692](https://github.com/safe-global/safe-client-gateway/pull/3692) - test(policies): fuzz the delayed guard policies mapper (Closed)
 - [#3572](https://github.com/safe-global/safe-client-gateway/pull/3572) - fix(tests): stop signature, chain ID and JWT test flakes (Merged)
 - [#3589](https://github.com/safe-global/safe-client-gateway/pull/3589) - build(deps-dev): bump vitest from 4.1.10 to 5.0.3 (Merged)
-- [#3560](https://github.com/safe-global/safe-client-gateway/pull/3560) - build: migrate runtime, tooling and tests from node to bun (Open)
 - [#3558](https://github.com/safe-global/safe-client-gateway/pull/3558) - perf(relay): boot the relay controller spec's app once per file (Merged)
 - [#3554](https://github.com/safe-global/safe-client-gateway/pull/3554) - perf: share the integration-test module cache and shard CI (Merged)
 - [#3552](https://github.com/safe-global/safe-client-gateway/pull/3552) - perf: share the unit-test module cache across spec files (Merged)

@@ -1,12 +1,12 @@
 {
-  "generated_at": "2026-11-13T15:48:19.749Z",
+  "generated_at": "2026-11-16T18:32:13.012Z",
   "summary": {
-    "total_commits": 3526,
-    "flaky_commits": 147,
-    "flakiness_rate": 4.2,
+    "total_commits": 3575,
+    "flaky_commits": 148,
+    "flakiness_rate": 4.1,
     "period": {
       "from": "2026-01-16",
-      "to": "2026-11-13"
+      "to": "2026-11-16"
     }
   },
   "weekly_trend": [
@@ -324,9 +324,15 @@
     },
     {
       "week": "2026-11-09",
-      "commits": 129,
-      "flaky": 1,
-      "rate": 0.8
+      "commits": 136,
+      "flaky": 2,
+      "rate": 1.5
+    },
+    {
+      "week": "2026-11-16",
+      "commits": 42,
+      "flaky": 0,
+      "rate": 0
     }
   ],
   "tests": [
@@ -511,6 +517,16 @@
       }
     },
     {
+      "file": "src/modules/transactions/routes/helpers/space-queue.helper.spec.ts",
+      "failure_count": 3,
+      "last_failure": "2026-11-13T15:44:39Z",
+      "status": "fixed",
+      "fix_pr": {
+        "number": 3761,
+        "url": "https://github.com/safe-global/safe-client-gateway/pull/3761"
+      }
+    },
+    {
       "file": "src/modules/transactions/routes/__tests__/controllers/get-transaction-by-id.transactions.controller.integration.spec.ts",
       "failure_count": 2,
       "last_failure": "2026-04-10T10:00:56Z",
@@ -609,16 +625,6 @@
       "fix_pr": {
         "number": 3617,
         "url": "https://github.com/safe-global/safe-client-gateway/pull/3617"
-      }
-    },
-    {
-      "file": "src/modules/transactions/routes/helpers/space-queue.helper.spec.ts",
-      "failure_count": 1,
-      "last_failure": "2026-11-12T18:46:05Z",
-      "status": "fixed",
-      "fix_pr": {
-        "number": 3761,
-        "url": "https://github.com/safe-global/safe-client-gateway/pull/3761"
       }
     }
   ]

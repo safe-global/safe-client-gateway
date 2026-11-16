@@ -1,6 +1,68 @@
 {
-  "generated_at": "2026-11-13T15:48:19.749Z",
+  "generated_at": "2026-11-16T18:32:13.012Z",
   "prs": [
+    {
+      "number": 3560,
+      "title": "build: migrate runtime, tooling and tests from node to bun",
+      "url": "https://github.com/safe-global/safe-client-gateway/pull/3560",
+      "merged_at": null,
+      "state": "closed",
+      "tests_fixed": [
+        "migrations/1785406836453-create-entitlements.spec.ts",
+        "migrations/deprecated/__tests__/00005_notifications.integration.spec.ts",
+        "migrations/deprecated/__tests__/00006_targeted_messaging.integration.spec.ts",
+        "migrations/deprecated/__tests__/00007_targeted_messaging_update.integration.spec.ts",
+        "migrations/deprecated/__tests__/00008_targeted_messaging_add_outreach_1.integration.spec.ts",
+        "migrations/deprecated/__tests__/00013_targeted_messaging_add_outreach_2.integration.spec.ts",
+        "migrations/deprecated/__tests__/00014_targeted_messaging_add_chain_id.integration.spec.ts",
+        "migrations/deprecated/__tests__/_all.integration.spec.ts",
+        "scripts/backfill-field-encryption.spec.ts",
+        "scripts/env-json-helpers.spec.ts",
+        "scripts/generate-abis.spec.ts",
+        "scripts/generate-env.spec.ts",
+        "scripts/generate-field-encryption-index-key.spec.ts",
+        "scripts/generate-token.spec.ts",
+        "scripts/test-utils.spec.ts",
+        "scripts/validate-env-json.spec.ts",
+        "src/__tests__/deployments.helper.spec.ts",
+        "src/__tests__/matchers/to-be-string-or-null.spec.ts",
+        "src/__tests__/mocks.spec.ts",
+        "src/__tests__/timezone.spec.ts",
+        "src/__tests__/util/check-guard.spec.ts",
+        "src/app.module.e2e.spec.ts",
+        "src/app.module.spec.ts",
+        "src/app.provider.spec.ts",
+        "src/config/__tests__/fake.configuration.service.spec.ts",
+        "src/config/configuration.validator.spec.ts",
+        "src/config/entities/__tests__/configuration.spec.ts",
+        "src/config/entities/configuration.spec.ts",
+        "src/config/entities/orm.config.spec.ts",
+        "src/config/entities/postgres.config.spec.ts",
+        "src/config/entities/schemas/configuration.schema.spec.ts",
+        "src/config/nest.configuration.service.spec.ts",
+        "src/datasources/billing-api/billing-api.service.spec.ts",
+        "src/datasources/billing-api/upstream-customer-id.util.spec.ts",
+        "src/datasources/cache/__tests__/fake.cache.service.spec.ts",
+        "src/datasources/cache/cache.first.data.source.spec.ts",
+        "src/datasources/cache/cache.router.spec.ts",
+        "src/datasources/cache/redis.cache.service.integration.spec.ts",
+        "src/datasources/cache/redis.cache.service.key-prefix.spec.ts",
+        "src/datasources/circuit-breaker/circuit-breaker.service.spec.ts",
+        "src/datasources/common/chain-api.manager.spec.ts",
+        "src/datasources/config-api/config-api.service.spec.ts",
+        "src/datasources/db/v1/cached-query-resolver.spec.ts"
+      ]
+    },
+    {
+      "number": 3762,
+      "title": "test(spaces): give invited members valid names in the address book tags spec",
+      "url": "https://github.com/safe-global/safe-client-gateway/pull/3762",
+      "merged_at": "2026-11-13T16:59:18Z",
+      "state": "merged",
+      "tests_fixed": [
+        "src/modules/spaces/routes/address-books/address-book-tags.controller.integration.spec.ts"
+      ]
+    },
     {
       "number": 3751,
       "title": "fix(tests): wait for job completion before asserting worker events",
@@ -20,16 +82,6 @@
       "tests_fixed": [
         "src/modules/spaces/routes/address-books/address-book-tags.controller.integration.spec.ts",
         "src/modules/transactions/routes/helpers/space-queue.helper.spec.ts"
-      ]
-    },
-    {
-      "number": 3762,
-      "title": "test(spaces): give invited members valid names in the address book tags spec",
-      "url": "https://github.com/safe-global/safe-client-gateway/pull/3762",
-      "merged_at": null,
-      "state": "open",
-      "tests_fixed": [
-        "src/modules/spaces/routes/address-books/address-book-tags.controller.integration.spec.ts"
       ]
     },
     {
@@ -88,58 +140,6 @@
       "state": "merged",
       "tests_fixed": [
         "src/__tests__/matchers/to-be-string-or-null.spec.ts"
-      ]
-    },
-    {
-      "number": 3560,
-      "title": "build: migrate runtime, tooling and tests from node to bun",
-      "url": "https://github.com/safe-global/safe-client-gateway/pull/3560",
-      "merged_at": null,
-      "state": "open",
-      "tests_fixed": [
-        "migrations/1785406836453-create-entitlements.spec.ts",
-        "migrations/deprecated/__tests__/00005_notifications.integration.spec.ts",
-        "migrations/deprecated/__tests__/00006_targeted_messaging.integration.spec.ts",
-        "migrations/deprecated/__tests__/00007_targeted_messaging_update.integration.spec.ts",
-        "migrations/deprecated/__tests__/00008_targeted_messaging_add_outreach_1.integration.spec.ts",
-        "migrations/deprecated/__tests__/00013_targeted_messaging_add_outreach_2.integration.spec.ts",
-        "migrations/deprecated/__tests__/00014_targeted_messaging_add_chain_id.integration.spec.ts",
-        "migrations/deprecated/__tests__/_all.integration.spec.ts",
-        "scripts/backfill-field-encryption.spec.ts",
-        "scripts/env-json-helpers.spec.ts",
-        "scripts/generate-abis.spec.ts",
-        "scripts/generate-env.spec.ts",
-        "scripts/generate-field-encryption-index-key.spec.ts",
-        "scripts/generate-token.spec.ts",
-        "scripts/test-utils.spec.ts",
-        "scripts/validate-env-json.spec.ts",
-        "src/__tests__/deployments.helper.spec.ts",
-        "src/__tests__/matchers/to-be-string-or-null.spec.ts",
-        "src/__tests__/mocks.spec.ts",
-        "src/__tests__/timezone.spec.ts",
-        "src/__tests__/util/check-guard.spec.ts",
-        "src/app.module.e2e.spec.ts",
-        "src/app.module.spec.ts",
-        "src/app.provider.spec.ts",
-        "src/config/__tests__/fake.configuration.service.spec.ts",
-        "src/config/configuration.validator.spec.ts",
-        "src/config/entities/__tests__/configuration.spec.ts",
-        "src/config/entities/configuration.spec.ts",
-        "src/config/entities/orm.config.spec.ts",
-        "src/config/entities/postgres.config.spec.ts",
-        "src/config/entities/schemas/configuration.schema.spec.ts",
-        "src/config/nest.configuration.service.spec.ts",
-        "src/datasources/billing-api/billing-api.service.spec.ts",
-        "src/datasources/billing-api/upstream-customer-id.util.spec.ts",
-        "src/datasources/cache/__tests__/fake.cache.service.spec.ts",
-        "src/datasources/cache/cache.first.data.source.spec.ts",
-        "src/datasources/cache/cache.router.spec.ts",
-        "src/datasources/cache/redis.cache.service.integration.spec.ts",
-        "src/datasources/cache/redis.cache.service.key-prefix.spec.ts",
-        "src/datasources/circuit-breaker/circuit-breaker.service.spec.ts",
-        "src/datasources/common/chain-api.manager.spec.ts",
-        "src/datasources/config-api/config-api.service.spec.ts",
-        "src/datasources/db/v1/cached-query-resolver.spec.ts"
       ]
     },
     {

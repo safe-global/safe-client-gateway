@@ -1,11 +1,12 @@
 {
-  "generated_at": "2026-11-13T15:48:19.749Z",
-  "last_checked_at": "2026-11-13T15:48:19.749Z",
+  "generated_at": "2026-11-16T18:32:13.012Z",
+  "last_checked_at": "2026-11-16T18:32:13.012Z",
   "period": {
     "from": "2026-01-16",
-    "to": "2026-11-13"
+    "to": "2026-11-16"
   },
   "flaky_shas": [
+    "3231fd3",
     "1cb0114",
     "834f7ee",
     "510b1fa",
@@ -181,6 +182,28 @@
     "ab8c16f"
   ],
   "runs": [
+    {
+      "id": 43455655242,
+      "sha": "3231fd3",
+      "branch": "claude/jolly-ride-rid9bk-recent-clear",
+      "conclusion": "failure",
+      "created_at": "2026-11-13T15:44:39Z",
+      "failed_jobs": [
+        "ci / unit-tests"
+      ],
+      "failed_tests": [
+        {
+          "file": "src/modules/transactions/routes/helpers/space-queue.helper.spec.ts",
+          "name": "space-queue.helper > getSpaceQueueCounts > counts each chain under every filter but the chain filter",
+          "error": "AssertionError: expected [ { chainId: '2151', count: 2 }, …(1) ] to deeply equal [ { chainId: '045', count: 2 }, …(1) ]"
+        },
+        {
+          "file": "src/modules/transactions/routes/helpers/space-queue.helper.spec.ts",
+          "name": "space-queue.helper > search > keeps listing the signers and chains the search leaves out, with a count of 0",
+          "error": "AssertionError: expected [ { …(2) }, { …(2) } ] to deeply equal [ { …(2) }, { …(2) } ]"
+        }
+      ]
+    },
     {
       "id": 43283248573,
       "sha": "1cb0114",
