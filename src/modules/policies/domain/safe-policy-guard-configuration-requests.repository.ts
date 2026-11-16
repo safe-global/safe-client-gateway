@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { type FindOptionsWhere, IsNull, LessThan } from 'typeorm';
-import type { Address } from 'viem';
+import type { Address, Hex } from 'viem';
 import { IConfigurationService } from '#/config/configuration.service.interface';
 import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
 import { PolicyConfigurationRequest } from '#/modules/policies/datasources/entities/policy-configuration-request.entity.db';
@@ -14,12 +14,12 @@ import {
 import type { SafeRef } from '#/modules/policies/domain/entities/safe-ref.entity';
 import type { ISafePolicyGuardConfigurationRequestsRepository } from '#/modules/policies/domain/safe-policy-guard-configuration-requests.repository.interface';
 import { SpaceEncryptionService } from '#/modules/spaces/domain/space-encryption.service';
+import { HexSchema } from '#/validation/entities/schemas/hex.schema';
 
 @Injectable()
 export class SafePolicyGuardConfigurationRequestsRepository
   implements ISafePolicyGuardConfigurationRequestsRepository
 {
-  private readonly maxPerSpaceSafe: number;
   private readonly retentionDays: number;
 
   public constructor(
@@ -30,9 +30,6 @@ export class SafePolicyGuardConfigurationRequestsRepository
     @Inject(SpaceEncryptionService)
     private readonly spaceEncryptionService: SpaceEncryptionService,
   ) {
-    this.maxPerSpaceSafe = this.configurationService.getOrThrow<number>(
-      'policies.maxConfigurationRequestsPerSpaceSafe',
-    );
     this.retentionDays = this.configurationService.getOrThrow<number>(
       'policies.configurationRequestRetentionDays',
     );
@@ -50,22 +47,17 @@ export class SafePolicyGuardConfigurationRequestsRepository
     );
 
     await this.db.transaction(async (manager) => {
-      // Serialises writes per Space and Safe, so concurrent requests cannot
-      // pass the cap together.
+      // Serialises writes per Space and Safe, so a concurrent re-submission
+      // is stored once.
       await manager.query('SELECT pg_advisory_xact_lock(hashtext($1))', [
         `${args.spaceId}:${args.chainId}:${args.safeAddress}`,
       ]);
       const repository = manager.getRepository(PolicyConfigurationRequest);
       const safe = this.safeMatch({ ...args, safeAddressIndex });
 
-      // Re-submitting a stored root is a no-op, even at the cap.
+      // Re-submitting a stored root is a no-op.
       if (await repository.existsBy({ ...safe, root: args.root })) {
         return;
-      }
-      if ((await repository.countBy(safe)) >= this.maxPerSpaceSafe) {
-        throw new BadRequestException(
-          `This Safe only allows a maximum of ${this.maxPerSpaceSafe} stored policy configuration requests in this space.`,
-        );
       }
       await repository.insert({
         ...args,
@@ -85,6 +77,26 @@ export class SafePolicyGuardConfigurationRequestsRepository
 
     const repository = await this.db.getRepository(PolicyConfigurationRequest);
     await repository.delete({ createdAt: LessThan(cutoff) });
+  }
+
+  /** The roots stored for {@link args.safe} in one Space, without configurations. */
+  public async findRootsBySafe(args: {
+    spaceId: number;
+    safe: SafeRef;
+  }): Promise<Array<Hex>> {
+    const repository = await this.db.getRepository(PolicyConfigurationRequest);
+    const rows = await repository.find({
+      select: { root: true },
+      where: this.safeMatch({
+        spaceId: args.spaceId,
+        chainId: args.safe.chainId,
+        safeAddress: args.safe.address,
+        safeAddressIndex: this.spaceEncryptionService.safeAddressIndex(
+          args.safe.address,
+        ),
+      }),
+    });
+    return rows.map(({ root }) => HexSchema.parse(root));
   }
 
   /**
