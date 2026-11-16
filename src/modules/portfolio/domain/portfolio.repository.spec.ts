@@ -742,6 +742,111 @@ describe('PortfolioRepository', () => {
       );
     });
 
+    it('shares one Zerion call between concurrent misses for the same entry', async () => {
+      const portfolio = portfolioBuilder().build();
+      mockCacheService.hGet.mockResolvedValue(null);
+      let resolveFetch: (
+        value: Awaited<ReturnType<IPortfolioApi['getPortfolio']>>,
+      ) => void = () => {};
+      mockPortfolioApi.getPortfolio.mockReturnValue(
+        new Promise((resolve) => {
+          resolveFetch = resolve;
+        }),
+      );
+
+      const reads = Promise.all([
+        repository.getPortfolioSnapshot(args),
+        repository.getPortfolioSnapshot(args),
+        repository.getPortfolio({ ...args, chainIds: undefined }),
+      ]);
+      await vi.waitFor(() =>
+        expect(mockPortfolioApi.getPortfolio).toHaveBeenCalledTimes(1),
+      );
+      resolveFetch(rawify(portfolio));
+      const [first, second] = await reads;
+
+      expect(mockPortfolioApi.getPortfolio).toHaveBeenCalledTimes(1);
+      expect(second.fetchedAt).toBe(first.fetchedAt);
+    });
+
+    it.each([
+      [
+        'another address',
+        { address: getAddress(faker.finance.ethereumAddress()) },
+      ],
+      ['another currency', { fiatCode: `${args.fiatCode}X` }],
+    ])('does not share a call with %s', async (_, other) => {
+      mockCacheService.hGet.mockResolvedValue(null);
+      mockPortfolioApi.getPortfolio.mockResolvedValue(
+        rawify(portfolioBuilder().build()),
+      );
+
+      await Promise.all([
+        repository.getPortfolio(args),
+        repository.getPortfolio({ ...args, ...other }),
+      ]);
+
+      expect(mockPortfolioApi.getPortfolio).toHaveBeenCalledTimes(2);
+    });
+
+    it('shares one Zerion call between sync and plain reads of the same entry', async () => {
+      mockCacheService.hGet.mockResolvedValue(null);
+      let resolveFetch: (
+        value: Awaited<ReturnType<IPortfolioApi['getPortfolio']>>,
+      ) => void = () => {};
+      mockPortfolioApi.getPortfolio.mockReturnValue(
+        new Promise((resolve) => {
+          resolveFetch = resolve;
+        }),
+      );
+
+      const reads = Promise.all([
+        repository.getPortfolio({ ...args, sync: true }),
+        repository.getPortfolio(args),
+        repository.getPortfolio({ ...args, sync: true }),
+      ]);
+      await vi.waitFor(() =>
+        expect(mockPortfolioApi.getPortfolio).toHaveBeenCalledTimes(1),
+      );
+      resolveFetch(rawify(portfolioBuilder().build()));
+      await reads;
+
+      expect(mockPortfolioApi.getPortfolio).toHaveBeenCalledTimes(1);
+    });
+
+    it('fetches again once the shared call has settled', async () => {
+      mockCacheService.hGet.mockResolvedValue(null);
+      mockPortfolioApi.getPortfolio.mockResolvedValue(
+        rawify(portfolioBuilder().build()),
+      );
+
+      await repository.getPortfolioSnapshot(args);
+      await repository.getPortfolioSnapshot(args);
+
+      expect(mockPortfolioApi.getPortfolio).toHaveBeenCalledTimes(2);
+    });
+
+    it('gives every concurrent reader the error and retries on the next miss', async () => {
+      mockCacheService.hGet.mockResolvedValue(null);
+      const error = new Error(faker.lorem.sentence());
+      mockPortfolioApi.getPortfolio.mockRejectedValueOnce(error);
+
+      const results = await Promise.allSettled([
+        repository.getPortfolioSnapshot(args),
+        repository.getPortfolioSnapshot(args),
+      ]);
+      mockPortfolioApi.getPortfolio.mockResolvedValue(
+        rawify(portfolioBuilder().build()),
+      );
+      await repository.getPortfolioSnapshot(args);
+
+      expect(results).toEqual([
+        { status: 'rejected', reason: error },
+        { status: 'rejected', reason: error },
+      ]);
+      expect(mockPortfolioApi.getPortfolio).toHaveBeenCalledTimes(2);
+    });
+
     it('keeps the full TTL, with jitter, when the window outlasts it', async () => {
       // The default setup: a 10 s TTL against a 120 s window
       const shortTtl = faker.number.int({
