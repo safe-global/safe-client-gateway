@@ -65,14 +65,14 @@ describe('LruMap', () => {
   });
 
   it('should not drop an entry when a key is set again while full', () => {
-    const maxSize = faker.number.int({ min: 1, max: 10 });
+    const maxSize = faker.number.int({ min: 2, max: 10 });
     const entries = getEntries(maxSize);
     const map = new LruMap<string, number>(maxSize);
     for (const [key, value] of entries) {
       map.set(key, value);
     }
 
-    map.set(...entries[0]);
+    map.set(...entries[entries.length - 1]);
 
     for (const [key, value] of entries) {
       expect(map.get(key)).toBe(value);
