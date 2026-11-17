@@ -377,7 +377,6 @@ describe('MessagesRepository (queue service enabled)', () => {
         message: args.message,
         signature: args.signature,
       });
-      // Enabled path forwards the args unchanged, declared attribution included.
       expect(safeQueueService.postMessage).toHaveBeenCalledWith(args);
       expect(result).toBe(posted);
 

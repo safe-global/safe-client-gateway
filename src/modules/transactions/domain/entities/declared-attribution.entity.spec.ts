@@ -17,8 +17,11 @@ describe('DeclaredAttributionSchema', () => {
     expect(result.success && result.data).toEqual(declared);
   });
 
-  it('should default missing fields to null', () => {
-    const result = DeclaredAttributionSchema.safeParse({});
+  it.each([
+    ['missing', {}],
+    ['null', { channel: null, appName: null, appUrl: null, appId: null }],
+  ])('should default %s fields to null', (_, input) => {
+    const result = DeclaredAttributionSchema.safeParse(input);
 
     expect(result.success && result.data).toEqual({
       channel: null,
@@ -26,6 +29,17 @@ describe('DeclaredAttributionSchema', () => {
       appUrl: null,
       appId: null,
     });
+  });
+
+  it('should drop unknown keys', () => {
+    const declared = declaredAttributionBuilder().build();
+
+    const result = DeclaredAttributionSchema.safeParse({
+      ...declared,
+      [faker.string.alpha({ length: 10 })]: faker.string.alpha(),
+    });
+
+    expect(result.success && result.data).toEqual(declared);
   });
 
   it('should pass an unknown channel through', () => {
@@ -129,5 +143,16 @@ describe('DeclaredAttributionSchema', () => {
     const result = DeclaredAttributionSchema.safeParse(declared);
 
     expect(result.success && result.data.appName).toBe(`${start}${end}`);
+  });
+
+  it('should strip NUL characters before truncating', () => {
+    const value = faker.string.alpha({ length: DECLARED_APP_NAME_MAX_LENGTH });
+    const declared = declaredAttributionBuilder()
+      .with('appName', `\u0000${value}`)
+      .build();
+
+    const result = DeclaredAttributionSchema.safeParse(declared);
+
+    expect(result.success && result.data.appName).toBe(value);
   });
 });

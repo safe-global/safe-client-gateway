@@ -404,15 +404,18 @@ describe('ProposeTransactionDtoSchema', () => {
       expect(result.success && result.data.declared).toBe(null);
     });
 
-    it('should default a non-object declared attribution to null instead of rejecting it', () => {
-      const proposeTransactionDto = proposeTransactionDtoBuilder().build();
+    it.each([null, faker.string.alpha(), []])(
+      'should default a declared attribution of %j to null instead of rejecting it',
+      (declared) => {
+        const proposeTransactionDto = proposeTransactionDtoBuilder().build();
 
-      const result = ProposeTransactionDtoSchema.safeParse({
-        ...proposeTransactionDto,
-        declared: faker.string.alpha(),
-      });
+        const result = ProposeTransactionDtoSchema.safeParse({
+          ...proposeTransactionDto,
+          declared,
+        });
 
-      expect(result.success && result.data.declared).toBe(null);
-    });
+        expect(result.success && result.data.declared).toBe(null);
+      },
+    );
   });
 });

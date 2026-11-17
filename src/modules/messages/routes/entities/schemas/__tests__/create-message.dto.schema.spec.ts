@@ -234,15 +234,18 @@ describe('CreateMessageDtoSchema', () => {
       expect(result.success && result.data.declared).toBe(null);
     });
 
-    it('should default a non-object declared attribution to null instead of rejecting it', () => {
-      const createMessageDto = createMessageDtoBuilder().build();
+    it.each([null, faker.string.alpha(), []])(
+      'should default a declared attribution of %j to null instead of rejecting it',
+      (declared) => {
+        const createMessageDto = createMessageDtoBuilder().build();
 
-      const result = CreateMessageDtoSchema.safeParse({
-        ...createMessageDto,
-        declared: faker.string.alpha(),
-      });
+        const result = CreateMessageDtoSchema.safeParse({
+          ...createMessageDto,
+          declared,
+        });
 
-      expect(result.success && result.data.declared).toBe(null);
-    });
+        expect(result.success && result.data.declared).toBe(null);
+      },
+    );
   });
 });
