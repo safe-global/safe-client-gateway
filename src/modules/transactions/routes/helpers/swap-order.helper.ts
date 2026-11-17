@@ -1,9 +1,21 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable, Module } from '@nestjs/common';
-import type { Address, Hex } from 'viem';
+import {
+  type Address,
+  decodeFunctionData,
+  erc20Abi,
+  type Hex,
+  isAddressEqual,
+  size,
+  slice,
+  toFunctionSelector,
+} from 'viem';
 import { IConfigurationService } from '#/config/configuration.service.interface';
+import { getAllMultiSendDeployments } from '#/domain/common/utils/deployments';
 import { ChainsModule } from '#/modules/chains/chains.module';
 import { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
+import { MultiSendDecoder } from '#/modules/contracts/domain/decoders/multi-send-decoder.helper';
+import { Operation } from '#/modules/safe/domain/entities/operation.entity';
 import { GPv2Decoder } from '#/modules/swaps/domain/contracts/decoders/gp-v2-decoder.helper';
 import {
   type KnownOrder,
@@ -15,10 +27,24 @@ import { SwapsModule } from '#/modules/swaps/swaps.module';
 import type { Token } from '#/modules/tokens/domain/entities/token.entity';
 import { ITokenRepository } from '#/modules/tokens/domain/token.repository.interface';
 import { TokensModule } from '#/modules/tokens/tokens.module';
-import {
-  TransactionFinder,
-  TransactionFinderModule,
-} from '#/modules/transactions/routes/helpers/transaction-finder.helper';
+import { GPv2OrderHelper } from '#/modules/transactions/routes/helpers/gp-v2-order.helper';
+
+type Call = {
+  operation: Operation;
+  to: Address;
+  value: bigint;
+  data: Hex;
+};
+
+/**
+ * The calls of a transaction that only places a swap order: its presignature,
+ * plus approvals and wraps that still have to be checked against the order.
+ */
+export type SwapOrderCalls = {
+  preSignature: Hex;
+  approvedTokens: Array<Address>;
+  wraps: Array<{ token: Address; value: bigint }>;
+};
 
 @Injectable()
 export class SwapOrderHelper {
@@ -29,8 +55,18 @@ export class SwapOrderHelper {
 
   private readonly swapsExplorerBaseUri: string;
 
+  // Order UID = order digest (32 bytes) + owner (20 bytes) + validTo (4 bytes)
+  private static readonly ORDER_UID_SIZE = 56;
+  private static readonly ORDER_UID_OWNER_OFFSET = 32;
+  private static readonly ORDER_UID_OWNER_END = 52;
+  private static readonly ApproveSelector = toFunctionSelector(
+    'function approve(address spender, uint256 value)',
+  );
+  private static readonly WrapSelector =
+    toFunctionSelector('function deposit()');
+
   constructor(
-    private readonly transactionFinder: TransactionFinder,
+    private readonly multiSendDecoder: MultiSendDecoder,
     private readonly gpv2Decoder: GPv2Decoder,
     @Inject(ITokenRepository)
     private readonly tokenRepository: ITokenRepository,
@@ -47,25 +83,148 @@ export class SwapOrderHelper {
   }
 
   /**
-   * Finds the swap order in the transaction data.
-   * The swap order can be in the transaction data directly or in the data of a Multisend transaction.
+   * Finds the calls of a transaction that only places a CoW swap order.
    *
-   * @param data - The transaction data
-   * @private
-   * @returns The swap order if found, otherwise null
+   * The transaction is either the presignature itself, or a batch sent with
+   * DELEGATECALL to an official MultiSend deployment. The batch must contain
+   * exactly one presignature, and otherwise only approvals to the VaultRelayer
+   * and wraps (WETH `deposit()`), whose tokens and amounts the caller checks
+   * against the order.
+   * The presignature is a CALL without value to the Settlement contract that
+   * signs an order owned by the Safe.
+   *
+   * @param args.chainId - chain of the transaction
+   * @param args.safeAddress - Safe executing the transaction
+   * @param args.transaction - the transaction to inspect
+   * @returns the order calls, or null if the transaction does anything else
    */
-  public findSwapOrder(data: Hex): Hex | null {
-    return (
-      this.transactionFinder.findTransaction(
-        (transaction) =>
-          this.gpv2Decoder.helpers.isSetPreSignature(transaction.data),
-        {
-          data,
-          // Placeholder as we are only interested in the data
-          value: '0',
-        },
-      )?.data ?? null
+  public findSwapOrder(args: {
+    chainId: string;
+    safeAddress: Address;
+    transaction: {
+      to: Address;
+      value: string | null;
+      data: Hex;
+      operation: Operation;
+    };
+  }): SwapOrderCalls | null {
+    const calls = this.getCalls(args);
+    if (!calls) {
+      return null;
+    }
+
+    const preSignatures = calls.filter((call) =>
+      this.gpv2Decoder.helpers.isSetPreSignature(call.data),
     );
+    if (preSignatures.length !== 1) {
+      return null;
+    }
+
+    const [preSignature] = preSignatures;
+    if (!this.isOwnPreSignature(preSignature, args.safeAddress)) {
+      return null;
+    }
+
+    const orderCalls: SwapOrderCalls = {
+      preSignature: preSignature.data,
+      approvedTokens: [],
+      wraps: [],
+    };
+
+    for (const call of calls) {
+      if (call === preSignature) {
+        continue;
+      }
+      if (call.operation !== Operation.CALL) {
+        return null;
+      }
+
+      if (this.isApprovalToVaultRelayer(call)) {
+        orderCalls.approvedTokens.push(call.to);
+        continue;
+      }
+
+      if (call.data.toLowerCase() === SwapOrderHelper.WrapSelector) {
+        orderCalls.wraps.push({ token: call.to, value: call.value });
+        continue;
+      }
+
+      return null;
+    }
+
+    return orderCalls;
+  }
+
+  private getCalls(args: {
+    chainId: string;
+    transaction: {
+      to: Address;
+      value: string | null;
+      data: Hex;
+      operation: Operation;
+    };
+  }): Array<Call> | null {
+    const { to, value, data, operation } = args.transaction;
+
+    if (!this.multiSendDecoder.helpers.isMultiSend(data)) {
+      return [{ operation, to, value: BigInt(value ?? 0), data }];
+    }
+
+    const isOfficialMultiSend = getAllMultiSendDeployments({
+      chainId: args.chainId,
+    }).some((multiSend) => isAddressEqual(multiSend, to));
+    if (operation !== Operation.DELEGATE || !isOfficialMultiSend) {
+      return null;
+    }
+
+    const calls = this.multiSendDecoder.mapMultiSendTransactions(data);
+    return calls.length > 0 ? calls : null;
+  }
+
+  private isOwnPreSignature(call: Call, safeAddress: Address): boolean {
+    if (
+      call.operation !== Operation.CALL ||
+      call.value !== BigInt(0) ||
+      !isAddressEqual(call.to, GPv2OrderHelper.SettlementContractAddress)
+    ) {
+      return false;
+    }
+
+    const preSignature = this.gpv2Decoder.decodePreSignature(call.data);
+    if (
+      !preSignature?.signed ||
+      size(preSignature.orderUid) !== SwapOrderHelper.ORDER_UID_SIZE
+    ) {
+      return false;
+    }
+
+    const owner = slice(
+      preSignature.orderUid,
+      SwapOrderHelper.ORDER_UID_OWNER_OFFSET,
+      SwapOrderHelper.ORDER_UID_OWNER_END,
+    );
+    return isAddressEqual(owner, safeAddress);
+  }
+
+  private isApprovalToVaultRelayer(call: Call): boolean {
+    if (
+      call.value !== BigInt(0) ||
+      call.data.slice(0, 10).toLowerCase() !== SwapOrderHelper.ApproveSelector
+    ) {
+      return false;
+    }
+    try {
+      const { functionName, args } = decodeFunctionData({
+        abi: erc20Abi,
+        data: call.data,
+      });
+      return (
+        functionName === 'approve' &&
+        isAddressEqual(args[0], GPv2OrderHelper.VaultRelayerAddress)
+      );
+    } catch {
+      return false;
+    }
   }
 
   /**
@@ -157,8 +316,8 @@ export class SwapOrderHelper {
 }
 
 @Module({
-  imports: [ChainsModule, SwapsModule, TokensModule, TransactionFinderModule],
-  providers: [SwapOrderHelper, GPv2Decoder],
+  imports: [ChainsModule, SwapsModule, TokensModule],
+  providers: [SwapOrderHelper, GPv2Decoder, MultiSendDecoder],
   exports: [SwapOrderHelper],
 })
 export class SwapOrderHelperModule {}

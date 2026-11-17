@@ -4,7 +4,14 @@ import type { Server } from 'node:net';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { getAddress } from 'viem';
+import {
+  type Address,
+  encodePacked,
+  getAddress,
+  type Hex,
+  keccak256,
+  toBytes,
+} from 'viem';
 import type { MockedObject } from 'vitest';
 import {
   initTestApplication,
@@ -15,6 +22,7 @@ import { IConfigurationService } from '#/config/configuration.service.interface'
 import configuration from '#/config/entities/__tests__/configuration';
 import type { INetworkService } from '#/datasources/network/network.service.interface';
 import { NetworkService } from '#/datasources/network/network.service.interface';
+import { getAllMultiSendDeployments } from '#/domain/common/utils/deployments';
 import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
 import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
 import {
@@ -23,13 +31,26 @@ import {
 } from '#/modules/contracts/domain/__tests__/encoders/multi-send-encoder.builder';
 import { contractBuilder } from '#/modules/data-decoder/domain/v2/entities/__tests__/contract.builder';
 import { dataDecodedBuilder } from '#/modules/data-decoder/domain/v2/entities/__tests__/data-decoded.builder';
+import { erc20TransferEncoder } from '#/modules/relay/domain/contracts/__tests__/encoders/erc20-encoder.builder';
 import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
 import { Operation } from '#/modules/safe/domain/entities/operation.entity';
 import { setPreSignatureEncoder } from '#/modules/swaps/domain/contracts/__tests__/encoders/gp-v2-encoder.builder';
 import { orderBuilder } from '#/modules/swaps/domain/entities/__tests__/order.builder';
 import { tokenBuilder } from '#/modules/tokens/domain/__tests__/token.builder';
 import { previewTransactionDtoBuilder } from '#/modules/transactions/routes/entities/__tests__/preview-transaction.dto.builder';
+import { GPv2OrderHelper } from '#/modules/transactions/routes/helpers/gp-v2-order.helper';
 import { rawify } from '#/validation/entities/raw.entity';
+
+function orderUidOf(owner: Address): Hex {
+  return encodePacked(
+    ['bytes32', 'address', 'uint32'],
+    [
+      keccak256(toBytes(faker.string.hexadecimal({ length: 64 }))),
+      owner,
+      faker.number.int({ min: 1, max: 2 ** 32 - 1 }),
+    ],
+  );
+}
 
 describe('Preview transaction - CoW Swap - Transactions Controller', () => {
   let app: INestApplication<Server>;
@@ -82,7 +103,9 @@ describe('Preview transaction - CoW Swap - Transactions Controller', () => {
       const chain = chainBuilder().with('chainId', swapsChainId).build();
       const safe = safeBuilder().build();
       const dataDecoded = dataDecodedBuilder().build();
-      const preSignatureEncoder = setPreSignatureEncoder();
+      const preSignatureEncoder = setPreSignatureEncoder()
+        .with('orderUid', orderUidOf(safe.address))
+        .with('signed', true);
       const preSignature = preSignatureEncoder.build();
       const order = orderBuilder()
         .with('uid', preSignature.orderUid)
@@ -91,7 +114,9 @@ describe('Preview transaction - CoW Swap - Transactions Controller', () => {
       const buyToken = tokenBuilder().with('address', order.buyToken).build();
       const sellToken = tokenBuilder().with('address', order.sellToken).build();
       const previewTransactionDto = previewTransactionDtoBuilder()
+        .with('to', GPv2OrderHelper.SettlementContractAddress)
         .with('data', preSignatureEncoder.encode())
+        .with('value', '0')
         .with('operation', Operation.CALL)
         .build();
       const contractResponse = contractBuilder()
@@ -214,7 +239,9 @@ describe('Preview transaction - CoW Swap - Transactions Controller', () => {
     it('should preview a batched transaction', async () => {
       const chain = chainBuilder().with('chainId', swapsChainId).build();
       const safe = safeBuilder().build();
-      const preSignatureEncoder = setPreSignatureEncoder();
+      const preSignatureEncoder = setPreSignatureEncoder()
+        .with('orderUid', orderUidOf(safe.address))
+        .with('signed', true);
       const preSignature = preSignatureEncoder.build();
       const order = orderBuilder()
         .with('uid', preSignature.orderUid)
@@ -225,7 +252,7 @@ describe('Preview transaction - CoW Swap - Transactions Controller', () => {
       const swapTransaction = {
         operation: Operation.CALL,
         data: preSignatureEncoder.encode(),
-        to: getAddress(faker.finance.ethereumAddress()),
+        to: GPv2OrderHelper.SettlementContractAddress,
         value: BigInt(0),
       };
       const multiSendTransaction = multiSendEncoder().with(
@@ -233,12 +260,20 @@ describe('Preview transaction - CoW Swap - Transactions Controller', () => {
         multiSendTransactionsEncoder([swapTransaction]),
       );
       const previewTransactionDto = previewTransactionDtoBuilder()
+        .with(
+          'to',
+          faker.helpers.arrayElement(
+            getAllMultiSendDeployments({ chainId: swapsChainId }),
+          ),
+        )
         .with('data', multiSendTransaction.encode())
-        .with('operation', Operation.CALL)
+        .with('value', '0')
+        .with('operation', Operation.DELEGATE)
         .build();
-      const dataDecoded = dataDecodedBuilder().build();
+      const dataDecoded = dataDecodedBuilder().with('parameters', []).build();
       const contractResponse = contractBuilder()
         .with('address', previewTransactionDto.to)
+        .with('trustedForDelegateCall', true)
         .build();
       const contractPageResponse = pageBuilder()
         .with('results', [contractResponse])
@@ -354,25 +389,126 @@ describe('Preview transaction - CoW Swap - Transactions Controller', () => {
             },
             value: previewTransactionDto.value,
             operation: previewTransactionDto.operation,
-            trustedDelegateCallTarget: null,
+            trustedDelegateCallTarget: true,
             addressInfoIndex: null,
             tokenInfoIndex: null,
           },
         });
     });
 
+    it.each([
+      [
+        'a native transfer',
+        {
+          to: getAddress(faker.finance.ethereumAddress()),
+          value: faker.number.bigInt({ min: 1 }),
+          data: '0x' as Hex,
+        },
+      ],
+      [
+        'a token transfer',
+        {
+          to: getAddress(faker.finance.ethereumAddress()),
+          value: BigInt(0),
+          data: erc20TransferEncoder().encode(),
+        },
+      ],
+    ])(
+      'should not preview a swap order batched with %s as a swap order',
+      async (_, transfer) => {
+        const chain = chainBuilder().with('chainId', swapsChainId).build();
+        const safe = safeBuilder().build();
+        const preSignatureEncoder = setPreSignatureEncoder()
+          .with('orderUid', orderUidOf(safe.address))
+          .with('signed', true);
+        const order = orderBuilder()
+          .with('uid', preSignatureEncoder.build().orderUid)
+          .with('fullAppData', `{ "appCode": "${swapsVerifiedApp}" }`)
+          .build();
+        const multiSendTransaction = multiSendEncoder().with(
+          'transactions',
+          multiSendTransactionsEncoder([
+            { operation: Operation.CALL, ...transfer },
+            {
+              operation: Operation.CALL,
+              data: preSignatureEncoder.encode(),
+              to: GPv2OrderHelper.SettlementContractAddress,
+              value: BigInt(0),
+            },
+          ]),
+        );
+        const previewTransactionDto = previewTransactionDtoBuilder()
+          .with(
+            'to',
+            faker.helpers.arrayElement(
+              getAllMultiSendDeployments({ chainId: swapsChainId }),
+            ),
+          )
+          .with('data', multiSendTransaction.encode())
+          .with('value', '0')
+          .with('operation', Operation.DELEGATE)
+          .build();
+        const dataDecoded = dataDecodedBuilder().with('parameters', []).build();
+        const contractPageResponse = pageBuilder()
+          .with('results', [
+            contractBuilder().with('address', previewTransactionDto.to).build(),
+          ])
+          .build();
+        networkService.get.mockImplementation(({ url }) => {
+          if (url === `${safeConfigUrl}/api/v1/chains/${chain.chainId}`) {
+            return Promise.resolve({ data: rawify(chain), status: 200 });
+          }
+          if (url === `${swapsApiUrl}/api/v1/orders/${order.uid}`) {
+            return Promise.resolve({ data: rawify(order), status: 200 });
+          }
+          if (
+            url === `${chain.transactionService}/api/v1/safes/${safe.address}`
+          ) {
+            return Promise.resolve({ data: rawify(safe), status: 200 });
+          }
+          if (url.startsWith(`${dataDecoderUrl}/api/v1/contracts/`)) {
+            return Promise.resolve({
+              data: rawify(contractPageResponse),
+              status: 200,
+            });
+          }
+          return Promise.reject(new Error(`Could not match ${url}`));
+        });
+        networkService.post.mockImplementation(({ url }) => {
+          if (url === `${dataDecoderUrl}/api/v1/data-decoder`) {
+            return Promise.resolve({ data: rawify(dataDecoded), status: 200 });
+          }
+          return Promise.reject(new Error(`Could not match ${url}`));
+        });
+
+        await request(app.getHttpServer())
+          .post(
+            `/v1/chains/${chain.chainId}/transactions/${safe.address}/preview`,
+          )
+          .send(previewTransactionDto)
+          .expect(200)
+          .expect(({ body }) => {
+            expect(body.txInfo.type).not.toBe('SwapOrder');
+          });
+      },
+    );
+
     it('should return a "standard" transaction preview if order data is not available', async () => {
       const chain = chainBuilder().with('chainId', swapsChainId).build();
       const safe = safeBuilder().build();
       const dataDecoded = dataDecodedBuilder().build();
-      const preSignatureEncoder = setPreSignatureEncoder();
+      const preSignatureEncoder = setPreSignatureEncoder()
+        .with('orderUid', orderUidOf(safe.address))
+        .with('signed', true);
       const preSignature = preSignatureEncoder.build();
       const order = orderBuilder()
         .with('uid', preSignature.orderUid)
         .with('fullAppData', `{ "appCode": "${swapsVerifiedApp}" }`)
         .build();
       const previewTransactionDto = previewTransactionDtoBuilder()
+        .with('to', GPv2OrderHelper.SettlementContractAddress)
         .with('data', preSignatureEncoder.encode())
+        .with('value', '0')
         .with('operation', Operation.CALL)
         .build();
       const contractResponse = contractBuilder()
@@ -427,7 +563,9 @@ describe('Preview transaction - CoW Swap - Transactions Controller', () => {
       const chain = chainBuilder().with('chainId', swapsChainId).build();
       const safe = safeBuilder().build();
       const dataDecoded = dataDecodedBuilder().build();
-      const preSignatureEncoder = setPreSignatureEncoder();
+      const preSignatureEncoder = setPreSignatureEncoder()
+        .with('orderUid', orderUidOf(safe.address))
+        .with('signed', true);
       const preSignature = preSignatureEncoder.build();
       const order = orderBuilder()
         .with('uid', preSignature.orderUid)
@@ -435,7 +573,9 @@ describe('Preview transaction - CoW Swap - Transactions Controller', () => {
         .build();
       const sellToken = tokenBuilder().with('address', order.sellToken).build();
       const previewTransactionDto = previewTransactionDtoBuilder()
+        .with('to', GPv2OrderHelper.SettlementContractAddress)
         .with('data', preSignatureEncoder.encode())
+        .with('value', '0')
         .with('operation', Operation.CALL)
         .build();
       const contractResponse = contractBuilder()
@@ -500,7 +640,9 @@ describe('Preview transaction - CoW Swap - Transactions Controller', () => {
       const chain = chainBuilder().with('chainId', swapsChainId).build();
       const safe = safeBuilder().build();
       const dataDecoded = dataDecodedBuilder().build();
-      const preSignatureEncoder = setPreSignatureEncoder();
+      const preSignatureEncoder = setPreSignatureEncoder()
+        .with('orderUid', orderUidOf(safe.address))
+        .with('signed', true);
       const preSignature = preSignatureEncoder.build();
       const order = orderBuilder()
         .with('uid', preSignature.orderUid)
@@ -508,7 +650,9 @@ describe('Preview transaction - CoW Swap - Transactions Controller', () => {
         .build();
       const buyToken = tokenBuilder().with('address', order.sellToken).build();
       const previewTransactionDto = previewTransactionDtoBuilder()
+        .with('to', GPv2OrderHelper.SettlementContractAddress)
         .with('data', preSignatureEncoder.encode())
+        .with('value', '0')
         .with('operation', Operation.CALL)
         .build();
       const contractResponse = contractBuilder()
@@ -573,7 +717,9 @@ describe('Preview transaction - CoW Swap - Transactions Controller', () => {
       const chain = chainBuilder().with('chainId', swapsChainId).build();
       const safe = safeBuilder().build();
       const dataDecoded = dataDecodedBuilder().build();
-      const preSignatureEncoder = setPreSignatureEncoder();
+      const preSignatureEncoder = setPreSignatureEncoder()
+        .with('orderUid', orderUidOf(safe.address))
+        .with('signed', true);
       const preSignature = preSignatureEncoder.build();
       const order = orderBuilder()
         .with('uid', preSignature.orderUid)
@@ -583,7 +729,9 @@ describe('Preview transaction - CoW Swap - Transactions Controller', () => {
       const buyToken = tokenBuilder().with('address', order.buyToken).build();
       const sellToken = tokenBuilder().with('address', order.sellToken).build();
       const previewTransactionDto = previewTransactionDtoBuilder()
+        .with('to', GPv2OrderHelper.SettlementContractAddress)
         .with('data', preSignatureEncoder.encode())
+        .with('value', '0')
         .with('operation', Operation.CALL)
         .build();
       const contractResponse = contractBuilder()

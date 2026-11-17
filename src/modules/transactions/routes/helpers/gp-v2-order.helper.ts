@@ -6,8 +6,11 @@ import type { GPv2OrderParameters } from '#/modules/swaps/domain/contracts/decod
 
 @Injectable()
 export class GPv2OrderHelper {
-  public static readonly SettlementContractAddress =
+  public static readonly SettlementContractAddress: Address =
     '0x9008D19f58AAbD9eD0D60971565AA8510560ab41';
+
+  public static readonly VaultRelayerAddress: Address =
+    '0xC92E8bdf79f0507f65a392b0ab4667716BFE0110';
 
   // Domain
   private static readonly DomainName = 'Gnosis Protocol';

@@ -332,18 +332,23 @@ export class MultisigTransactionInfoMapper {
       return null;
     }
 
-    const orderData: Address | null = this.swapOrderHelper.findSwapOrder(
-      transaction.data,
-    );
+    const orderCalls = this.swapOrderHelper.findSwapOrder({
+      chainId,
+      safeAddress: transaction.safe,
+      transaction: {
+        to: transaction.to,
+        value: transaction.value,
+        data: transaction.data,
+        operation: transaction.operation,
+      },
+    });
 
-    if (!orderData) {
+    if (!orderCalls) {
       return null;
     }
 
     try {
-      return await this.swapOrderMapper.mapSwapOrder(chainId, {
-        data: orderData,
-      });
+      return await this.swapOrderMapper.mapSwapOrder(chainId, orderCalls);
     } catch (error) {
       // The transaction is a swap order, but we couldn't decode it successfully.
       this.loggingService.warn(error);
