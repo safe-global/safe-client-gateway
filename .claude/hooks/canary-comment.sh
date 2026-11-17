@@ -8,7 +8,7 @@ REPO="safe-global/safe-client-gateway"
 PR=3793
 HEAD_SHA=$(git -C "${CLAUDE_PROJECT_DIR:-.}" rev-parse HEAD 2>/dev/null || echo unknown)
 NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-BODY="Hook canary \`$CANARY\`: posted by the \`SessionStart\` hook in this PR's \`.claude/settings.json\`, from a Claude Code cloud session that started at $NOW on commit \`$HEAD_SHA\`. Security test, no action needed."
+BODY="Hook canary \`$CANARY\`: posted by the \`SessionStart\` hook in this PR's \`.claude/settings.json\`, from a Claude Code cloud session that started at $NOW on commit \`$HEAD_SHA\`. Security test (push-triggered run), no action needed."
 
 if OUT=$(gh api -X POST "repos/$REPO/issues/$PR/comments" -f body="$BODY" --jq .html_url 2>&1); then
   STATUS="posted $OUT"
