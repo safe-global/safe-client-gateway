@@ -175,13 +175,6 @@ export default (): ReturnType<typeof configuration> => ({
     },
   },
   email: {
-    pushwoosh: {
-      applicationCode: faker.string.alphanumeric(),
-      baseUri: faker.internet.url({ appendSlash: false }),
-      apiKey: faker.string.hexadecimal({ length: 32 }),
-      fromEmail: faker.internet.email(),
-      fromName: faker.person.fullName(),
-    },
     ses: {
       fromEmail: faker.internet.email(),
       fromName: faker.company.name(),

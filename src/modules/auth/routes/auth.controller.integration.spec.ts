@@ -24,8 +24,6 @@ import {
   oidcAuthPayloadDtoBuilder,
   siweAuthPayloadDtoBuilder,
 } from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
-import { TestEmailApiModule } from '#/modules/email/pushwoosh/__tests__/test.email-api.module';
-import { EmailModule } from '#/modules/email/pushwoosh/pushwoosh-email.module';
 import { siweMessageBuilder } from '#/modules/siwe/domain/entities/__tests__/siwe-message.builder';
 import { TestUsersModule } from '#/modules/users/__tests__/test.users.module';
 import { IUsersRepository } from '#/modules/users/domain/users.repository.interface';
@@ -45,10 +43,6 @@ describe('AuthController', () => {
     const moduleFixture: TestingModule = await createTestModule({
       config,
       modules: [
-        {
-          originalModule: EmailModule,
-          testModule: TestEmailApiModule,
-        },
         {
           originalModule: UsersModule,
           testModule: TestUsersModule,
