@@ -111,7 +111,8 @@ export class EventCacheHelper {
     [TransactionEventType.MESSAGE_CONFIRMATION]:
       this.onTransactionEventMessageConfirmation.bind(this),
     [TransactionEventType.REORG_DETECTED]: () => [],
-    [TransactionEventType.SAFE_CONFIG_UPDATED]: () => [],
+    [TransactionEventType.SAFE_CONFIG_UPDATED]:
+      this.onTransactionEventSafeConfigUpdated.bind(this),
     [TransactionEventType.SAFE_CREATED]:
       this.onTransactionEventSafeCreated.bind(this),
     [TransactionEventType.NEW_DELEGATE]:
@@ -690,8 +691,39 @@ export class EventCacheHelper {
     // its cached 404 would keep it unavailable in the queue of a Space.
     return [
       this.safeRepository.clearIsSafe(event),
-      this.safeRepository.clearSafe(event),
+      this.clearSafeAndSafesOfOwners(event),
       this.zerionCache.invalidate(event.address, event.type),
+    ];
+  }
+
+  // The event carries no owners, so they are read from the Safe once its cached 404 is gone
+  private async clearSafeAndSafesOfOwners(
+    event: Extract<Event, { type: TransactionEventType.SAFE_CREATED }>,
+  ): Promise<void> {
+    await this.safeRepository.clearSafe(event);
+    const safe = await this.safeRepository.getSafe(event);
+    await Promise.all(
+      safe.owners.map((ownerAddress) =>
+        this.safeRepository.clearSafesByOwner({
+          chainId: event.chainId,
+          ownerAddress,
+        }),
+      ),
+    );
+  }
+
+  private onTransactionEventSafeConfigUpdated(
+    event: Extract<Event, { type: TransactionEventType.SAFE_CONFIG_UPDATED }>,
+  ): Array<Promise<void>> {
+    // Only an owner change adds the Safe to or removes it from the Safes of an owner
+    if (!event.data.owner) {
+      return [];
+    }
+    return [
+      this.safeRepository.clearSafesByOwner({
+        chainId: event.chainId,
+        ownerAddress: event.data.owner,
+      }),
     ];
   }
 

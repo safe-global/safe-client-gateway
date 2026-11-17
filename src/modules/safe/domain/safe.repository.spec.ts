@@ -64,6 +64,7 @@ const mockTransactionApi = {
   postMultisigTransaction: vi.fn(),
   clearMultisigTransaction: vi.fn(),
   clearMultisigTransactions: vi.fn(),
+  clearSafesByOwner: vi.fn(),
 } as MockedObject<ITransactionApi>;
 
 const mockLoggingService = {
@@ -502,6 +503,20 @@ describe('SafeRepository', () => {
       await expect(
         repository.getAllSafesByOwnerV2({ ownerAddress }),
       ).rejects.toThrow('Failed to get chains');
+    });
+  });
+
+  describe('clearSafesByOwner', () => {
+    it('should clear the Safes of the owner on the chain', async () => {
+      const chainId = faker.string.numeric();
+      const ownerAddress = getAddress(faker.finance.ethereumAddress());
+
+      await repository.clearSafesByOwner({ chainId, ownerAddress });
+
+      expect(mockTransactionApiManager.getApi).toHaveBeenCalledWith(chainId);
+      expect(
+        mockTransactionApi.clearSafesByOwner,
+      ).toHaveBeenCalledExactlyOnceWith(ownerAddress);
     });
   });
 

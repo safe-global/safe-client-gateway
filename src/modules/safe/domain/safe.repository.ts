@@ -970,6 +970,16 @@ export class SafeRepository implements ISafeRepository {
     return SafeListSchema.parse({ safes: allAddresses });
   }
 
+  async clearSafesByOwner(args: {
+    chainId: string;
+    ownerAddress: Address;
+  }): Promise<void> {
+    const transactionService = await this.transactionApiManager.getApi(
+      args.chainId,
+    );
+    return transactionService.clearSafesByOwner(args.ownerAddress);
+  }
+
   private async getAllSafesByOwnerForChains(
     getSafesByOwnerForChain: (chainId: string) => Promise<SafeList>,
   ): Promise<SafesByChainId> {

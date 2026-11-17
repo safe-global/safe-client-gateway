@@ -642,14 +642,18 @@ export class CacheRouter {
     );
   }
 
+  static getSafesByOwnerCacheKey(args: {
+    chainId: string;
+    ownerAddress: Address;
+  }): string {
+    return `${args.chainId}_${CacheRouter.OWNERS_SAFE_KEY}_${args.ownerAddress}`;
+  }
+
   static getSafesByOwnerCacheDir(args: {
     chainId: string;
     ownerAddress: Address;
   }): CacheDir {
-    return new CacheDir(
-      `${args.chainId}_${CacheRouter.OWNERS_SAFE_KEY}_${args.ownerAddress}`,
-      '',
-    );
+    return new CacheDir(CacheRouter.getSafesByOwnerCacheKey(args), '');
   }
 
   static getSafesByOwnerV2CacheKey(args: {

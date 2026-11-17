@@ -3,7 +3,10 @@ import { faker } from '@faker-js/faker';
 import { type Address, getAddress } from 'viem';
 import { safeConfigUpdatedEventBuilder } from '#/modules/hooks/routes/entities/__tests__/safe-config-updated.builder';
 import type { TransactionEventType } from '#/modules/hooks/routes/entities/event-type.entity';
-import { SafeConfigUpdatedEventSchema } from '#/modules/hooks/routes/entities/schemas/safe-config-updated.schema';
+import {
+  SafeConfigOwnerChanges,
+  SafeConfigUpdatedEventSchema,
+} from '#/modules/hooks/routes/entities/schemas/safe-config-updated.schema';
 
 describe('SafeConfigUpdatedEventSchema', () => {
   it('should validate a Safe config updated event', () => {
@@ -73,11 +76,79 @@ describe('SafeConfigUpdatedEventSchema', () => {
     );
   });
 
+  it('should checksum the owner', () => {
+    const nonChecksummedOwner = faker.finance
+      .ethereumAddress()
+      .toLowerCase() as Address;
+    const safeConfigUpdatedEvent = safeConfigUpdatedEventBuilder()
+      .with('data', { owner: nonChecksummedOwner })
+      .build();
+
+    const result = SafeConfigUpdatedEventSchema.safeParse(
+      safeConfigUpdatedEvent,
+    );
+
+    expect(result.success && result.data.data.owner).toBe(
+      getAddress(nonChecksummedOwner),
+    );
+  });
+
+  it.each(SafeConfigOwnerChanges)(
+    'should not allow a %s change without an owner',
+    (change) => {
+      const safeConfigUpdatedEvent = safeConfigUpdatedEventBuilder()
+        .with('change', change)
+        .with('data', {})
+        .build();
+
+      const result = SafeConfigUpdatedEventSchema.safeParse(
+        safeConfigUpdatedEvent,
+      );
+
+      expect(!result.success && result.error.issues).toStrictEqual([
+        {
+          code: 'custom',
+          message: 'An owner change must include the owner',
+          path: ['data', 'owner'],
+        },
+      ]);
+    },
+  );
+
+  it('should allow a change that is not an owner change without an owner', () => {
+    const safeConfigUpdatedEvent = {
+      ...safeConfigUpdatedEventBuilder().build(),
+      change: 'CHANGED_THRESHOLD',
+      data: { threshold: faker.number.int({ min: 1 }) },
+    };
+
+    const result = SafeConfigUpdatedEventSchema.safeParse(
+      safeConfigUpdatedEvent,
+    );
+
+    expect(result.success && result.data.data).toStrictEqual({});
+  });
+
+  it('should allow a change type it does not know', () => {
+    const safeConfigUpdatedEvent = safeConfigUpdatedEventBuilder()
+      .with('change', faker.word.sample())
+      .with('data', {})
+      .build();
+
+    const result = SafeConfigUpdatedEventSchema.safeParse(
+      safeConfigUpdatedEvent,
+    );
+
+    expect(result.success).toBe(true);
+  });
+
   it.each([
     'type' as const,
     'address' as const,
     'chainId' as const,
     'txHash' as const,
+    'change' as const,
+    'data' as const,
   ])('should not allow a missing %s', (field) => {
     const safeConfigUpdatedEvent = safeConfigUpdatedEventBuilder().build();
     delete safeConfigUpdatedEvent[field];
