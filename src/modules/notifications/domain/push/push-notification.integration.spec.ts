@@ -26,6 +26,7 @@ import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
 import { ITransactionApiManager } from '#/domain/interfaces/transaction-api.manager.interface';
 import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
 import { delegateBuilder } from '#/modules/delegate/domain/entities/__tests__/delegate.builder';
+import type { Delegate } from '#/modules/delegate/domain/entities/delegate.entity';
 import { chainUpdateEventBuilder } from '#/modules/hooks/routes/entities/__tests__/chain-update.builder';
 import { deletedMultisigTransactionEventBuilder } from '#/modules/hooks/routes/entities/__tests__/deleted-multisig-transaction.builder';
 import { executedTransactionEventBuilder } from '#/modules/hooks/routes/entities/__tests__/executed-transaction.builder';
@@ -38,6 +39,7 @@ import type { IncomingEtherEvent } from '#/modules/hooks/routes/entities/schemas
 import type { IncomingTokenEvent } from '#/modules/hooks/routes/entities/schemas/incoming-token.schema';
 import { messageBuilder } from '#/modules/messages/domain/entities/__tests__/message.builder';
 import { messageConfirmationBuilder } from '#/modules/messages/domain/entities/__tests__/message-confirmation.builder';
+import type { Message } from '#/modules/messages/domain/entities/message.entity';
 import {
   addr,
   createSubscribers,
@@ -53,11 +55,57 @@ import { multisigTransactionBuilder } from '#/modules/safe/domain/entities/__tes
 import { confirmationBuilder } from '#/modules/safe/domain/entities/__tests__/multisig-transaction-confirmation.builder';
 import { nativeTokenTransferBuilder } from '#/modules/safe/domain/entities/__tests__/native-token-transfer.builder';
 import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
+import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
 import type {
   ERC20Transfer,
   NativeTokenTransfer,
 } from '#/modules/safe/domain/entities/transfer.entity';
+import { safeQueueMultisigTransactionFrom } from '#/modules/safe-queue/entities/__tests__/queue-multisig-transaction.builder';
+import { safeQueueDelegateBuilder } from '#/modules/safe-queue/entities/__tests__/safe-queue-delegate.builder';
+import { safeQueueMessageBuilder } from '#/modules/safe-queue/entities/__tests__/safe-queue-message.builder';
+import type { SafeQueueDelegate } from '#/modules/safe-queue/entities/delegate.entity';
+import type { SafeQueueMessage } from '#/modules/safe-queue/entities/message.entity';
+import type { SafeQueueMultisigTransactionEntity } from '#/modules/safe-queue/entities/multisig-transaction.entity';
 import { rawify } from '#/validation/entities/raw.entity';
+
+function toQueueDelegate(
+  delegate: Delegate,
+  chainId: string,
+): SafeQueueDelegate {
+  return safeQueueDelegateBuilder()
+    .with('chainId', chainId)
+    .with('safe', delegate.safe)
+    .with('delegate', delegate.delegate)
+    .with('delegator', delegate.delegator)
+    .with('label', delegate.label)
+    .build();
+}
+
+function toQueueMessage(message: Message, chainId: string): SafeQueueMessage {
+  return safeQueueMessageBuilder()
+    .with('chainId', Number(chainId))
+    .with('messageHash', message.messageHash)
+    .with('safe', message.safe)
+    .with('message', message.message)
+    .with('proposer', message.proposedBy)
+    .with('preparedSignature', message.preparedSignature)
+    .with('created', message.created)
+    .with('modified', message.modified)
+    .with('confirmations', message.confirmations)
+    .build();
+}
+
+/** The pending queue-service record of `transaction`, held by `safe`. */
+function toQueueTransaction(
+  transaction: MultisigTransaction,
+  chainId: string,
+  safe: Address,
+): SafeQueueMultisigTransactionEntity {
+  return safeQueueMultisigTransactionFrom(transaction, chainId)
+    .with('safe', safe)
+    .with('txHash', null)
+    .build();
+}
 
 type IncomingAssetFactory = (safeAddress: Address) => {
   event: IncomingEtherEvent | IncomingTokenEvent;
@@ -96,6 +144,7 @@ describe('Push notification queue integration', () => {
   let configurationService: IConfigurationService;
   let cacheService: FakeCacheService;
   let safeConfigUrl: string;
+  let queueBaseUri: string;
   let queue: Queue;
   let consumer: PushNotificationConsumer;
   let transactionApiManager: ITransactionApiManager;
@@ -132,6 +181,7 @@ describe('Push notification queue integration', () => {
     configurationService = moduleFixture.get(IConfigurationService);
     cacheService = moduleFixture.get(CacheService);
     safeConfigUrl = configurationService.getOrThrow('safeConfig.baseUri');
+    queueBaseUri = configurationService.getOrThrow('safeQueueService.baseUri');
     queue = moduleFixture.get(getQueueToken(PUSH_NOTIFICATION_QUEUE));
     consumer = moduleFixture.get(PushNotificationConsumer);
     transactionApiManager = moduleFixture.get(ITransactionApiManager);
@@ -442,14 +492,16 @@ describe('Push notification queue integration', () => {
         }
         if (
           url ===
-          `${chain.transactionService}/api/v2/multisig-transactions/${event.safeTxHash}/`
+          `${queueBaseUri}/api/v1/multisig-transactions/${event.safeTxHash}`
         ) {
           return Promise.resolve({
-            data: rawify(transaction),
+            data: rawify(
+              toQueueTransaction(transaction, event.chainId, event.address),
+            ),
             status: 200,
           });
         }
-        if (url === `${chain.transactionService}/api/v2/delegates/`) {
+        if (url === `${queueBaseUri}/api/v1/delegates`) {
           return Promise.resolve({
             data: rawify(pageBuilder().with('results', []).build()),
             status: 200,
@@ -506,14 +558,20 @@ describe('Push notification queue integration', () => {
         }
         if (
           url ===
-          `${chain.transactionService}/api/v2/multisig-transactions/${event.safeTxHash}/`
+          `${queueBaseUri}/api/v1/multisig-transactions/${event.safeTxHash}`
         ) {
           return Promise.resolve({
-            data: rawify(multisigTransactionBuilder().build()),
+            data: rawify(
+              toQueueTransaction(
+                multisigTransactionBuilder().build(),
+                event.chainId,
+                event.address,
+              ),
+            ),
             status: 200,
           });
         }
-        if (url === `${chain.transactionService}/api/v2/delegates/`) {
+        if (url === `${queueBaseUri}/api/v1/delegates`) {
           return Promise.resolve({
             data: rawify(pageBuilder().with('results', []).build()),
             status: 200,
@@ -575,18 +633,20 @@ describe('Push notification queue integration', () => {
         }
         if (
           url ===
-          `${chain.transactionService}/api/v2/multisig-transactions/${event.safeTxHash}/`
+          `${queueBaseUri}/api/v1/multisig-transactions/${event.safeTxHash}`
         ) {
           return Promise.resolve({
-            data: rawify(transaction),
+            data: rawify(
+              toQueueTransaction(transaction, event.chainId, event.address),
+            ),
             status: 200,
           });
         }
-        if (url === `${chain.transactionService}/api/v2/delegates/`) {
+        if (url === `${queueBaseUri}/api/v1/delegates`) {
           return Promise.resolve({
             data: rawify(
               pageBuilder()
-                .with('results', [delegate as never])
+                .with('results', [toQueueDelegate(delegate, event.chainId)])
                 .build(),
             ),
             status: 200,
@@ -656,18 +716,20 @@ describe('Push notification queue integration', () => {
         }
         if (
           url ===
-          `${chain.transactionService}/api/v2/multisig-transactions/${event.safeTxHash}/`
+          `${queueBaseUri}/api/v1/multisig-transactions/${event.safeTxHash}`
         ) {
           return Promise.resolve({
-            data: rawify(transaction),
+            data: rawify(
+              toQueueTransaction(transaction, event.chainId, event.address),
+            ),
             status: 200,
           });
         }
-        if (url === `${chain.transactionService}/api/v2/delegates/`) {
+        if (url === `${queueBaseUri}/api/v1/delegates`) {
           return Promise.resolve({
             data: rawify(
               pageBuilder()
-                .with('results', [delegate as never])
+                .with('results', [toQueueDelegate(delegate, event.chainId)])
                 .build(),
             ),
             status: 200,
@@ -724,14 +786,16 @@ describe('Push notification queue integration', () => {
         }
         if (
           url ===
-          `${chain.transactionService}/api/v2/multisig-transactions/${event.safeTxHash}/`
+          `${queueBaseUri}/api/v1/multisig-transactions/${event.safeTxHash}`
         ) {
           return Promise.resolve({
-            data: rawify(transaction),
+            data: rawify(
+              toQueueTransaction(transaction, event.chainId, event.address),
+            ),
             status: 200,
           });
         }
-        if (url === `${chain.transactionService}/api/v2/delegates/`) {
+        if (url === `${queueBaseUri}/api/v1/delegates`) {
           return Promise.resolve({
             data: rawify(pageBuilder().with('results', []).build()),
             status: 200,
@@ -791,16 +855,13 @@ describe('Push notification queue integration', () => {
         ) {
           return Promise.resolve({ data: rawify(safe), status: 200 });
         }
-        if (
-          url ===
-          `${chain.transactionService}/api/v1/messages/${event.messageHash}/`
-        ) {
+        if (url === `${queueBaseUri}/api/v1/messages/${event.messageHash}`) {
           return Promise.resolve({
-            data: rawify(message),
+            data: rawify(toQueueMessage(message, event.chainId)),
             status: 200,
           });
         }
-        if (url === `${chain.transactionService}/api/v2/delegates/`) {
+        if (url === `${queueBaseUri}/api/v1/delegates`) {
           return Promise.resolve({
             data: rawify(pageBuilder().with('results', []).build()),
             status: 200,
@@ -855,16 +916,15 @@ describe('Push notification queue integration', () => {
         ) {
           return Promise.resolve({ data: rawify(safe), status: 200 });
         }
-        if (
-          url ===
-          `${chain.transactionService}/api/v1/messages/${event.messageHash}/`
-        ) {
+        if (url === `${queueBaseUri}/api/v1/messages/${event.messageHash}`) {
           return Promise.resolve({
-            data: rawify(messageBuilder().build()),
+            data: rawify(
+              toQueueMessage(messageBuilder().build(), event.chainId),
+            ),
             status: 200,
           });
         }
-        if (url === `${chain.transactionService}/api/v2/delegates/`) {
+        if (url === `${queueBaseUri}/api/v1/delegates`) {
           return Promise.resolve({
             data: rawify(pageBuilder().with('results', []).build()),
             status: 200,
@@ -922,16 +982,13 @@ describe('Push notification queue integration', () => {
         ) {
           return Promise.resolve({ data: rawify(safe), status: 200 });
         }
-        if (
-          url ===
-          `${chain.transactionService}/api/v1/messages/${event.messageHash}/`
-        ) {
+        if (url === `${queueBaseUri}/api/v1/messages/${event.messageHash}`) {
           return Promise.resolve({
-            data: rawify(message),
+            data: rawify(toQueueMessage(message, event.chainId)),
             status: 200,
           });
         }
-        if (url === `${chain.transactionService}/api/v2/delegates/`) {
+        if (url === `${queueBaseUri}/api/v1/delegates`) {
           return Promise.resolve({
             data: rawify(pageBuilder().with('results', []).build()),
             status: 200,
@@ -992,20 +1049,17 @@ describe('Push notification queue integration', () => {
         ) {
           return Promise.resolve({ data: rawify(safe), status: 200 });
         }
-        if (
-          url ===
-          `${chain.transactionService}/api/v1/messages/${event.messageHash}/`
-        ) {
+        if (url === `${queueBaseUri}/api/v1/messages/${event.messageHash}`) {
           return Promise.resolve({
-            data: rawify(message),
+            data: rawify(toQueueMessage(message, event.chainId)),
             status: 200,
           });
         }
-        if (url === `${chain.transactionService}/api/v2/delegates/`) {
+        if (url === `${queueBaseUri}/api/v1/delegates`) {
           return Promise.resolve({
             data: rawify(
               pageBuilder()
-                .with('results', [delegate as never])
+                .with('results', [toQueueDelegate(delegate, event.chainId)])
                 .build(),
             ),
             status: 200,
@@ -1073,20 +1127,17 @@ describe('Push notification queue integration', () => {
         ) {
           return Promise.resolve({ data: rawify(safe), status: 200 });
         }
-        if (
-          url ===
-          `${chain.transactionService}/api/v1/messages/${event.messageHash}/`
-        ) {
+        if (url === `${queueBaseUri}/api/v1/messages/${event.messageHash}`) {
           return Promise.resolve({
-            data: rawify(message),
+            data: rawify(toQueueMessage(message, event.chainId)),
             status: 200,
           });
         }
-        if (url === `${chain.transactionService}/api/v2/delegates/`) {
+        if (url === `${queueBaseUri}/api/v1/delegates`) {
           return Promise.resolve({
             data: rawify(
               pageBuilder()
-                .with('results', [delegate as never])
+                .with('results', [toQueueDelegate(delegate, event.chainId)])
                 .build(),
             ),
             status: 200,
@@ -1156,22 +1207,21 @@ describe('Push notification queue integration', () => {
         ) {
           return Promise.resolve({ data: rawify(safe), status: 200 });
         }
-        if (
-          url ===
-          `${chain.transactionService}/api/v1/messages/${event.messageHash}/`
-        ) {
+        if (url === `${queueBaseUri}/api/v1/messages/${event.messageHash}`) {
           return Promise.resolve({
-            data: rawify(message),
+            data: rawify(toQueueMessage(message, event.chainId)),
             status: 200,
           });
         }
-        if (url === `${chain.transactionService}/api/v2/delegates/`) {
+        if (url === `${queueBaseUri}/api/v1/delegates`) {
           const queriedDelegate = networkRequest?.params?.delegate;
           if (queriedDelegate === delegateA) {
             return Promise.resolve({
               data: rawify(
                 pageBuilder()
-                  .with('results', [delegateObjA as never])
+                  .with('results', [
+                    toQueueDelegate(delegateObjA, event.chainId),
+                  ])
                   .build(),
               ),
               status: 200,
@@ -1181,7 +1231,9 @@ describe('Push notification queue integration', () => {
             return Promise.resolve({
               data: rawify(
                 pageBuilder()
-                  .with('results', [delegateObjB as never])
+                  .with('results', [
+                    toQueueDelegate(delegateObjB, event.chainId),
+                  ])
                   .build(),
               ),
               status: 200,
@@ -1247,16 +1299,13 @@ describe('Push notification queue integration', () => {
         ) {
           return Promise.resolve({ data: rawify(safe), status: 200 });
         }
-        if (
-          url ===
-          `${chain.transactionService}/api/v1/messages/${event.messageHash}/`
-        ) {
+        if (url === `${queueBaseUri}/api/v1/messages/${event.messageHash}`) {
           return Promise.resolve({
-            data: rawify(message),
+            data: rawify(toQueueMessage(message, event.chainId)),
             status: 200,
           });
         }
-        if (url === `${chain.transactionService}/api/v2/delegates/`) {
+        if (url === `${queueBaseUri}/api/v1/delegates`) {
           return Promise.resolve({
             data: rawify(pageBuilder().with('results', []).build()),
             status: 200,
@@ -1424,20 +1473,24 @@ describe('Push notification queue integration', () => {
         }
         if (
           url ===
-          `${chain.transactionService}/api/v2/multisig-transactions/${event.safeTxHash}/`
+          `${queueBaseUri}/api/v1/multisig-transactions/${event.safeTxHash}`
         ) {
           return Promise.resolve({
-            data: rawify(transaction),
+            data: rawify(
+              toQueueTransaction(transaction, event.chainId, event.address),
+            ),
             status: 200,
           });
         }
-        if (url === `${chain.transactionService}/api/v2/delegates/`) {
+        if (url === `${queueBaseUri}/api/v1/delegates`) {
           const queriedDelegate = networkRequest?.params?.delegate;
           if (queriedDelegate === delegateAddr) {
             return Promise.resolve({
               data: rawify(
                 pageBuilder()
-                  .with('results', [delegateObj as never])
+                  .with('results', [
+                    toQueueDelegate(delegateObj, event.chainId),
+                  ])
                   .build(),
               ),
               status: 200,
@@ -1523,22 +1576,21 @@ describe('Push notification queue integration', () => {
         ) {
           return Promise.resolve({ data: rawify(safe), status: 200 });
         }
-        if (
-          url ===
-          `${chain.transactionService}/api/v1/messages/${event.messageHash}/`
-        ) {
+        if (url === `${queueBaseUri}/api/v1/messages/${event.messageHash}`) {
           return Promise.resolve({
-            data: rawify(message),
+            data: rawify(toQueueMessage(message, event.chainId)),
             status: 200,
           });
         }
-        if (url === `${chain.transactionService}/api/v2/delegates/`) {
+        if (url === `${queueBaseUri}/api/v1/delegates`) {
           const queriedDelegate = networkRequest?.params?.delegate;
           if (queriedDelegate === delegateAddr) {
             return Promise.resolve({
               data: rawify(
                 pageBuilder()
-                  .with('results', [delegateObj as never])
+                  .with('results', [
+                    toQueueDelegate(delegateObj, event.chainId),
+                  ])
                   .build(),
               ),
               status: 200,
