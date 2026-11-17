@@ -187,12 +187,12 @@ await expect(service.mintToken()).rejects.toThrow(new UnauthorizedException('Inv
 
 **Pattern:** a `*.spec.ts` that boots a controller's Nest module, or a `*.e2e-spec.ts` whose upstream calls are all mocked — including new coverage added only as e2e.
 
-**Why it's bad:** the suffix decides which Vitest project picks the file up, and CI runs only `unit` and `integration` — so an `*.e2e-spec.ts` that is really an integration test never runs on a PR, while a module-booting `*.spec.ts` sits in the project that is meant to mock all I/O. Nothing fails; the coverage just isn't where the reader thinks it is.
+**Why it's bad:** an `*.e2e-spec.ts` that is really an integration test never runs on a PR, and a module-booting `*.spec.ts` sits in the project that is meant to mock all I/O. Nothing fails; the coverage just isn't where the reader thinks it is.
 
-**Corrected form:** name the file for what it runs against. A booted module with mocked network calls is `*.integration.spec.ts` — #3393 renamed `policies.e2e-spec.ts` to `policies.integration.spec.ts`, #3107 renamed its controller spec "from e2e to integration so CI picks it up", and #2884's `owners.controller.v3.spec.ts` landed as `owners.controller.v3.integration.spec.ts`. `*.e2e-spec.ts` is kept for a full-app smoke test.
+**Corrected form:** #3393 renamed `policies.e2e-spec.ts` to `policies.integration.spec.ts`, #3107 renamed its controller spec "from e2e to integration so CI picks it up", and #2884's `owners.controller.v3.spec.ts` landed as `owners.controller.v3.integration.spec.ts`.
 
 **Spotted in:** #2884 ("I would suggest to rename owners.controller.v3.spec.ts to be owners.controller.v3.integration.spec.ts as it is not unit but rather integration test suite"), #3107 ("becuase it is e2e test (and not integration) it wil not be run as part of CI but only on demand"), #3393 ("I think this test is more of an integration than e2e as you are mocking network calls").
-**Status:** active — `testing.md`'s Test taxonomy rule owns the suffixes; this is the shape it gets violated in.
+**Status:** active — `testing.md`'s "Test taxonomy" rule owns this.
 
 ## Types
 
@@ -273,7 +273,7 @@ status: faker.helpers.arrayElement(SubscriptionStatus),
 
 **Pattern:** an address, chain id or UUID typed `string`, or a type written out field by field, where `Address`, `UUID`, an existing entity, or `z.infer`/`z.input` of a schema already defines it. Builder row types count too.
 
-**Why it's bad:** a hand-written type is a second declaration of a shape the schema already owns, and it drifts the moment either is edited alone. A plain `string` also throws away what the type said — that the value is an address or a chain id — so the compiler stops catching a value of the wrong kind. #3564's `SafenetSafeTransaction` and its builder re-declared `BaseMultisigTransaction`.
+**Why it's bad:** the duplicate doesn't look like one in the diff — #3564's `SafenetSafeTransaction` and its builder re-declared `BaseMultisigTransaction` field by field under a new name, and a single `string` field passes unnoticed beside typed siblings.
 
 **Corrected form:**
 
@@ -289,12 +289,10 @@ address!: Address | null;
 export type RawIndexerSafeAllowance = z.input<typeof PolicyIndexerSafeAllowanceSchema>;
 ```
 
-A shape the domain already has is reused, not re-declared — #3564 dropped `SafenetSafeTransaction` for `BaseMultisigTransaction`.
-
-`` `0x${string}` `` is not a wrong type: viem's `Address` and `Hex` are that template literal type. For an address, though, prefer `Address`: `AddressSchema` parses through viem's `getAddress()`, so `z.infer<typeof AddressSchema>` is viem's `Address`, checksummed.
+#3564 dropped `SafenetSafeTransaction` for `BaseMultisigTransaction`.
 
 **Spotted in:** #3531 ("Should we use Address from viem instead of string here?", then "This could also use Address from viem" and "Same here :)" on two more files), #3391 ("Nit: Would be nice to infer the type from the global `ChainIdSchema`.", "Nit: Same here, we could infer the type from `AddressSchema`"), #3392 ("Nit: Can we read it from the schemas?"), #3564 ("Why are we not using the current types we have? We have Safe TX type."), #3117 (a suggestion replacing `uuid: string` with `uuid: UUID`).
-**Status:** active — `api-dtos-and-validation.md`'s "Domain types from Zod" rule owns the `z.infer` half.
+**Status:** active — `best-practices.md`'s "The project's type, not `string`" rule owns this, with `api-dtos-and-validation.md`'s "Domain types from Zod" rule for the `z.infer` side.
 
 ## Structure
 
@@ -392,9 +390,9 @@ transactions: Array<DecodedTransaction<MultisigTransaction>>;
 
 **Pattern:** a product alias beside the module's own name (`Copilot*` flags, guards and errors inside `safe-shield`), a stored value spelled differently from the config-service flag that gates the same feature, or env vars for one resource under two prefixes.
 
-**Why it's bad:** a search for one name misses the half that uses the other, and a reader can't tell from the names whether they are one concept or two. The split also spreads — every new file picks whichever name its author met first.
+**Why it's bad:** the diff is consistent with itself — every `Copilot*` name in #3454 matched every other — so the second name only shows against the rest of the module, the config service, or the env vars already deployed.
 
-**Corrected form:** use the name the module, flag or resource already has, everywhere:
+**Corrected form:**
 
 ```ts
 // Don't
@@ -405,10 +403,10 @@ safeShieldCoreDisabled: process.env.FF_SAFE_SHIELD_CORE_DISABLED?.toLowerCase() 
 export const ExperimentalFeatures = ['POLICY_RECIPIENT_ALLOWLIST'] as const;
 ```
 
-A name already deployed keeps its spelling and the new ones align to it — #3565 kept `SAFENET_PAYER_KMS_KEY_ID`, already set on staging, and renamed the new timeouts to match.
+#3565 kept `SAFENET_PAYER_KMS_KEY_ID`, already set on staging, and renamed the new timeouts to match.
 
 **Spotted in:** #3454 ("I am concerned that we have 2 notions for safe shield. I think we should stick to one, and call it all s-s and not copilot"), #3613 ("I think it makes sense to even use the same string that we also use for the config-service feature flag. Then it is clear that they belong together."), #3565 ("nit: prefix `SAFENET_KMS_`").
-**Status:** active — see `configuration-and-flags.md` for the flag and env var shape.
+**Status:** active — `module-structure.md`'s "One name per concept" rule owns this.
 
 ## Caching and upstream calls
 
@@ -579,9 +577,9 @@ private readCachedGrants(spaceId: Space['id'], cached: string): Record<string, F
 
 **Pattern:** a diff removing a feature, endpoint or env-driven path that keeps its env vars in `.env.sample.json` or `.devcontainer/docker-compose.yml`, or leaves sibling endpoints of the same deprecated family, and the code only they call, in place.
 
-**Why it's bad:** each leftover still reads as live — an env sample entry tells an operator to set a variable nothing reads, and a deprecated route left beside its removed siblings keeps the service, repository and datasource methods behind it alive. What a removal PR leaves behind tends to stay, because nothing about it looks dead.
+**Why it's bad:** the leftovers sit outside the diff — in `.env.sample.json`, the devcontainer, or a sibling route nobody touched — so a reviewer reading only the changed lines never sees them, and a deprecated route left beside its removed siblings keeps the service, repository and datasource methods behind it alive.
 
-**Corrected form:** follow the removal outward in the same PR — the env docs and the devcontainer, then the rest of the family down to the datasource:
+**Corrected form:**
 
 ```jsonc
 // Don't — .env.sample.json still documents what the removed code read
@@ -597,7 +595,7 @@ private readCachedGrants(spaceId: Space['id'], cached: string): Record<string, F
 #3105 deleted `RELAY_DAILY_LIMIT_CHAIN_IDS`, `RELAY_FEE_CHAIN_IDS` and `RELAY_SIMULATION_CHAIN_IDS` from both files. #3225 removed all three deprecated `/raw` routes instead of one, each with its service method, the repository and datasource methods only it called, and its orphaned entities.
 
 **Spotted in:** #3105 ("There are leftovers of the env variables RELAY_DAILY_LIMIT_CHAIN_IDS, RELAY_FEE_CHAIN_IDS, RELAY_SIMULATION_CHAIN_IDS in .env.sample.json and .devcontainer/docker-compose.yml"), #3225 ("Let's remove all `/raw` endpoints in this PR.").
-**Status:** active
+**Status:** active — `commits-and-prs.md`'s "A removal takes what only it used" rule owns this.
 
 ## Authorization
 

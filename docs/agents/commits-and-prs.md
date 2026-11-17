@@ -151,6 +151,14 @@ feat(messages): read messages through the tx-queue-service client
 
 **Why:** "This file will be removed before merging" (#3245, on `scripts/seed-fake-users.ts` and `scripts/login-as-seeded-user.ts`) is a promise a reviewer has to remember to re-check, and the transient debug-logging block in `src/datasources/cache/cache.first.data.source.ts` — which `best-practices.md` cites as the repo's live anti-example for double-casting — is what happens when nobody does.
 
+## A removal takes what only it used
+
+**Rule:** A PR that removes a feature, endpoint or env-driven path also removes what only that path used: its variables' `.env.sample.json` entries and `.devcontainer/docker-compose.yml` lines, and the service, repository and datasource methods and entities nothing else calls. Retiring one member of a deprecated family retires the rest of the family in the same PR.
+
+**Why:** a leftover still reads as live — an env sample entry tells an operator to set a variable nothing reads — and nothing flags it: `scripts/validate-env-json.ts` reports such an entry as `extraInJson` and still exits zero.
+
+**Canonical example:** #3225 removed all three deprecated `/raw` transaction routes rather than one, each with its service method, the repository and datasource methods only it called, and its orphaned entities; #3105 deleted `RELAY_DAILY_LIMIT_CHAIN_IDS`, `RELAY_FEE_CHAIN_IDS` and `RELAY_SIMULATION_CHAIN_IDS` from both `.env.sample.json` and the devcontainer in the PR that stopped the relay code reading them.
+
 ## Linking
 
 **Rule:** A PR body links the Linear issue by identifier (`WA-2402`) or full URL, and closes GitHub issues with a `Closes #NNNN` line. Commit subjects carry no issue references — the `(#NNNN)` suffix on `main` is GitHub's, added at squash time, and is never typed by hand.

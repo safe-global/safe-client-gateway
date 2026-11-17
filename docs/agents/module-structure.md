@@ -104,6 +104,14 @@ This applies in both directions: neither a module's `routes/` nor its `datasourc
 
 **Anti-example:** `src/modules/notifications/domain/v2/notifications.repository.module.ts` (dotted `<name>.repository.module.ts`, one of the competing forms) — do not imitate going forward.
 
+### One name per concept
+
+**Rule:** A concept keeps one name across its module, classes, config keys, flags, env vars and stored values: the module's own name rather than a product alias, the config-service flag's exact string for a value that pairs with it, and one prefix for every env var of one resource. A name already deployed keeps its spelling, and new names align to it.
+
+**Why:** a search for one name misses the half that uses the other, a reader cannot tell from the names whether they are one concept or two, and each new file picks whichever name its author met first.
+
+**Canonical example:** the Safe Shield core gate is `SafeShieldCoreGatingGuard` in `src/modules/safe-shield/routes/guards/safe-shield-core-gating.guard.ts`, read from `features.safeShieldCoreDisabled` / `FF_SAFE_SHIELD_CORE_DISABLED` in `src/config/entities/configuration.ts`; `src/modules/spaces/domain/entities/experimental-feature.entity.ts` stores `POLICY_RECIPIENT_ALLOWLIST`, the config-service flag's own string; and the Safenet payer's KMS variables all carry `SAFENET_PAYER_KMS_`, the prefix of the one already set on staging.
+
 ### Versioning
 
 **Rule:** A versioned controller lives in a version directory and carries the version in the filename before `controller`: `routes/vN/<name>.vN.controller.ts`, decorated with `@Controller({ version: 'N' })`. Never put the version suffix after `controller` (`*.controller.vN.ts`), never put a version directory at the module root (`<module>/v1/`), never use a versioned filename outside a version directory, and never an unversioned filename inside a version directory (`routes/vN/<name>.controller.ts`).

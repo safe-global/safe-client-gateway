@@ -161,3 +161,20 @@ saltNonce: NumericStringSchema.pipe(z.string().max(78)),
 // Do — the shared constant, so the two never drift apart
 saltNonce: NumericStringSchema.pipe(z.string().max(CHAIN_ID_MAXLENGTH)),
 ```
+
+### The project's type, not `string`
+
+**Rule:** A value the project already has a type for is typed with it, never a bare `string`: an address is viem's `Address`, a UUID is `UUID`, and a field of a schema-backed shape takes its type from that schema (`api-dtos-and-validation.md`'s "Domain types from Zod" rule owns the `z.infer` side). `` `0x${string}` `` compiles, since viem's `Address` and `Hex` are that template literal type, but an address still takes `Address`: `AddressSchema` parses through viem's `getAddress()`, so `z.infer<typeof AddressSchema>` is the checksummed `Address`.
+
+**Why:** a `string` drops what the type said about the value, so passing a chain id where an address belongs compiles; and a type written out by hand beside the schema that parses the same value drifts from it the moment either is edited alone.
+
+**Canonical example:** `src/modules/policies/domain/entities/safe-ref.entity.ts` derives `SafeRef` from `SafeRefSchema` (`ChainIdSchema` + `AddressSchema`) instead of declaring `{ chainId: string; address: Address }`, and `src/modules/spaces/routes/members/entities/members.dto.entity.ts` types the member's `address` as `Address | null`.
+
+```ts
+// Don't
+export type SafeRef = { chainId: string; address: Address };
+address!: string | null;
+// Do
+export type SafeRef = z.infer<typeof SafeRefSchema>;
+address!: Address | null;
+```
