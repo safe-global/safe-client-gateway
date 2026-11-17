@@ -3,6 +3,7 @@
 import { faker } from '@faker-js/faker';
 import {
   type Address,
+  concat,
   encodeFunctionData,
   encodePacked,
   getAddress,
@@ -422,6 +423,28 @@ describe('SwapOrderHelper.findSwapOrder', () => {
     });
 
     expect(target.findSwapOrder(single(call))).toBeNull();
+  });
+
+  it('ignores a batch whose last entry is truncated', () => {
+    const truncatedEntry = encodePacked(
+      ['uint8', 'address', 'uint256'],
+      [Operation.CALL, randomAddress(), faker.number.bigInt({ min: 1 })],
+    );
+    const args = batch([presign()]);
+    const transactions = concat([
+      multiSendTransactionsEncoder([presign()]),
+      truncatedEntry,
+    ]);
+
+    expect(
+      target.findSwapOrder({
+        ...args,
+        transaction: {
+          ...args.transaction,
+          data: multiSendEncoder().with('transactions', transactions).encode(),
+        },
+      }),
+    ).toBeNull();
   });
 
   it('ignores a batch sent to an unofficial MultiSend', () => {

@@ -2,7 +2,9 @@
 import { Inject, Injectable, Module } from '@nestjs/common';
 import {
   type Address,
+  concat,
   decodeFunctionData,
+  encodePacked,
   erc20Abi,
   type Hex,
   isAddressEqual,
@@ -178,7 +180,38 @@ export class SwapOrderHelper {
     }
 
     const calls = this.multiSendDecoder.mapMultiSendTransactions(data);
-    return calls.length > 0 ? calls : null;
+    if (calls.length === 0 || !this.isFullyDecoded(data, calls)) {
+      return null;
+    }
+    return calls;
+  }
+
+  /**
+   * Checks that the decoded calls account for every byte of the MultiSend
+   * payload. The decoder returns what it read before an error, while the
+   * MultiSend contract can still execute a malformed trailing entry.
+   */
+  private isFullyDecoded(data: Hex, calls: Array<Call>): boolean {
+    try {
+      const { args } = this.multiSendDecoder.decodeFunctionData({ data });
+      const reencoded = concat(
+        calls.map((call) =>
+          encodePacked(
+            ['uint8', 'address', 'uint256', 'uint256', 'bytes'],
+            [
+              call.operation,
+              call.to,
+              call.value,
+              BigInt(size(call.data)),
+              call.data,
+            ],
+          ),
+        ),
+      );
+      return reencoded.toLowerCase() === args[0].toLowerCase();
+    } catch {
+      return false;
+    }
   }
 
   private isOwnPreSignature(call: Call, safeAddress: Address): boolean {

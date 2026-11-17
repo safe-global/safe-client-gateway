@@ -96,7 +96,7 @@ export class SwapOrderMapper {
 
   /**
    * Checks the approvals and wraps batched with the presignature against the order:
-   * they must be for its sell token, and wraps only of a trusted token, for at most the sell amount.
+   * they must be for its sell token, and wraps only of a trusted token, for at most the sell amount plus fee.
    */
   private assertCallsMatchOrder(args: {
     orderCalls: SwapOrderCalls;
@@ -122,7 +122,7 @@ export class SwapOrderMapper {
     const isOrderWrap =
       sellToken.trusted &&
       orderCalls.wraps.every((wrap) => isSellToken(wrap.token)) &&
-      wrappedAmount <= order.sellAmount;
+      wrappedAmount <= order.sellAmount + order.feeAmount;
 
     if (!isOrderWrap) {
       throw new Error('Wrap does not match the order sell token');

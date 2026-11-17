@@ -46,6 +46,7 @@ describe('SwapOrderMapper', () => {
       .with('uid', preSignature.build().orderUid)
       .with('kind', OrderKind.Sell)
       .with('sellAmount', faker.number.bigInt({ min: 2, max: 10n ** 18n }))
+      .with('feeAmount', faker.number.bigInt({ min: 1, max: 10n ** 16n }))
       .build();
     const sellToken = tokenBuilder()
       .with('address', order.sellToken)
@@ -117,9 +118,24 @@ describe('SwapOrderMapper', () => {
     ).rejects.toThrow('Wrap does not match the order sell token');
   });
 
-  it('throws for wraps adding up to more than the sell amount', async () => {
+  it('maps an order whose wraps cover the sell amount plus the fee', async () => {
     const { order, preSignature } = setUp({ sellTokenTrusted: true });
-    const half = order.sellAmount / BigInt(2) + BigInt(1);
+
+    const actual = await target.mapSwapOrder(
+      chainId,
+      orderCalls(preSignature, {
+        wraps: [
+          { token: order.sellToken, value: order.sellAmount + order.feeAmount },
+        ],
+      }),
+    );
+
+    expect(actual.uid).toBe(order.uid);
+  });
+
+  it('throws for wraps adding up to more than the sell amount plus the fee', async () => {
+    const { order, preSignature } = setUp({ sellTokenTrusted: true });
+    const half = (order.sellAmount + order.feeAmount) / BigInt(2) + BigInt(1);
 
     await expect(
       target.mapSwapOrder(
