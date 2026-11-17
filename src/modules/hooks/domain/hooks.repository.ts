@@ -104,13 +104,7 @@ export class HooksRepository implements IHooksRepository, OnModuleInit {
     );
     if (isSupportedChainId || event.type === ConfigEventType.CHAIN_UPDATE) {
       return Promise.allSettled([
-        // Recorded only once the caches are cleared, so a client following the
-        // new tag never reads the stale entries
-        this.eventCacheHelper
-          .onEventClearCache(event)
-          .then(() =>
-            this.eventCacheHelper.onEventRecordChange(event, publishedAt),
-          ),
+        this.eventCacheHelper.onEventClearCache(event, publishedAt),
         this.pushNotificationService.enqueueEvent(event),
         this.markCounterfactualSafeAsDeployed(event),
       ]).finally(() => {

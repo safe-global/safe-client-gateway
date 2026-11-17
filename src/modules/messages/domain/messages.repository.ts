@@ -8,7 +8,6 @@ import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log
 import { Page } from '#/domain/entities/page.entity';
 import { ITransactionApiManager } from '#/domain/interfaces/transaction-api.manager.interface';
 import { ILoggingService, LoggingService } from '#/logging/logging.interface';
-import { asError } from '#/logging/utils';
 import {
   Message,
   MessagePageSchema,
@@ -18,6 +17,7 @@ import { TypedData } from '#/modules/messages/domain/entities/typed-data.entity'
 import { MessageVerifierHelper } from '#/modules/messages/domain/helpers/message-verifier.helper';
 import { IMessagesRepository } from '#/modules/messages/domain/messages.repository.interface';
 import { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
+import { ISafeQueueChangesRepository } from '#/modules/safe-queue/domain/safe-queue-changes.repository.interface';
 import {
   SafeQueueMessagePageSchema,
   SafeQueueMessageSchema,
@@ -25,7 +25,6 @@ import {
 import { clearBothCacheLayers } from '#/modules/safe-queue/helpers/clear-cache-layers.helper';
 import { mapSafeQueueMessageToMessage } from '#/modules/safe-queue/mappers/message.mapper';
 import { ISafeQueueService } from '#/modules/safe-queue/safe-queue.interface';
-import { NullableCoercedDateSchema } from '#/validation/entities/schemas/nullable.schema';
 
 @Injectable()
 export class MessagesRepository implements IMessagesRepository {
@@ -43,6 +42,8 @@ export class MessagesRepository implements IMessagesRepository {
     @Inject(LoggingService)
     private readonly loggingService: ILoggingService,
     private readonly messageVerifier: MessageVerifierHelper,
+    @Inject(ISafeQueueChangesRepository)
+    private readonly safeQueueChangesRepository: ISafeQueueChangesRepository,
   ) {
     this.safeQueueEnabled = this.configurationService.getOrThrow<boolean>(
       'features.safeQueueService',
@@ -142,41 +143,6 @@ export class MessagesRepository implements IMessagesRepository {
     return maxBy(page.results, (message) => message.modified.getTime()) ?? null;
   }
 
-  async getMessagesChangedAt(args: {
-    chainId: string;
-    safeAddress: Address;
-  }): Promise<Date | null> {
-    if (!this.safeQueueEnabled) {
-      return null;
-    }
-    try {
-      const changedAt = await this.safeQueueService.getMessagesChangedAt(args);
-      return NullableCoercedDateSchema.parse(changedAt);
-    } catch (error) {
-      this.loggingService.warn(
-        `Failed to read when the messages changed. chainId=${args.chainId}, safeAddress=${args.safeAddress}, error=${asError(error).message}`,
-      );
-      return null;
-    }
-  }
-
-  async setMessagesChangedAt(args: {
-    chainId: string;
-    safeAddress: Address;
-    changedAt: Date;
-  }): Promise<void> {
-    if (!this.safeQueueEnabled) {
-      return;
-    }
-    try {
-      await this.safeQueueService.setMessagesChangedAt(args);
-    } catch (error) {
-      this.loggingService.warn(
-        `Failed to record when the messages changed. chainId=${args.chainId}, safeAddress=${args.safeAddress}, error=${asError(error).message}`,
-      );
-    }
-  }
-
   async createMessage(args: {
     chainId: string;
     safeAddress: Address;
@@ -213,7 +179,8 @@ export class MessagesRepository implements IMessagesRepository {
       chainId: args.chainId,
       safeAddress: args.safeAddress,
     });
-    await this.setMessagesChangedAt({
+    await this.safeQueueChangesRepository.setChangedAt({
+      change: 'messages',
       chainId: args.chainId,
       safeAddress: args.safeAddress,
       changedAt: new Date(),
@@ -259,7 +226,8 @@ export class MessagesRepository implements IMessagesRepository {
       chainId: args.chainId,
       safeAddress: message.safe,
     });
-    await this.setMessagesChangedAt({
+    await this.safeQueueChangesRepository.setChangedAt({
+      change: 'messages',
       chainId: args.chainId,
       safeAddress: message.safe,
       changedAt: new Date(),

@@ -124,27 +124,6 @@ export interface ISafeRepository {
   }): Promise<Page<ChainMultisigTransaction>>;
 
   /**
-   * When the Safe's transaction queue last changed, as recorded from queue
-   * events and from writes made through this service. Null when nothing was
-   * recorded within the default cache TTL, when it cannot be read, or when the
-   * Queue Service is off: the caller then derives it from the queue itself.
-   */
-  getTransactionQueueChangedAt(args: {
-    chainId: string;
-    safeAddress: Address;
-  }): Promise<Date | null>;
-
-  /**
-   * Records when the Safe's transaction queue changed. Best-effort: a failure
-   * is logged, as the tag then falls back to the queue itself.
-   */
-  setTransactionQueueChangedAt(args: {
-    chainId: string;
-    safeAddress: Address;
-    changedAt: Date;
-  }): Promise<void>;
-
-  /**
    * Returns the Safe Transaction Queue sorted by modified status.
    * (from most recently modified to last)
    */

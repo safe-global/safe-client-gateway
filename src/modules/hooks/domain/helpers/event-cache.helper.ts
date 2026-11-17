@@ -32,6 +32,7 @@ import { IMessagesRepository } from '#/modules/messages/domain/messages.reposito
 import { IPolicyIndexerRepository } from '#/modules/policies/domain/policy-indexer.repository.interface';
 import { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
 import { ISafeAppsRepository } from '#/modules/safe-apps/domain/safe-apps.repository.interface';
+import { ISafeQueueChangesRepository } from '#/modules/safe-queue/domain/safe-queue-changes.repository.interface';
 import { IStakingRepositoryWithRewardsFee } from '#/modules/staking/domain/staking.repository.interface';
 import { ITransactionsRepository } from '#/modules/transactions/domain/transactions.repository.interface';
 import { ZerionCacheService } from '#/modules/zerion/datasources/zerion-cache.service';
@@ -76,6 +77,8 @@ export class EventCacheHelper {
     private readonly cacheService: ICacheService,
     private readonly safeDecoder: SafeDecoder,
     private readonly multiSendDecoder: MultiSendDecoder,
+    @Inject(ISafeQueueChangesRepository)
+    private readonly safeQueueChangesRepository: ISafeQueueChangesRepository,
   ) {
     this.isSupportedChainMemo = memoize(
       this.chainsRepository.isSupportedChain.bind(this.chainsRepository),
@@ -86,6 +89,7 @@ export class EventCacheHelper {
   private readonly EventTypeHandler: {
     [Type in Event['type']]: (
       event: Extract<Event, { type: Type }>,
+      changedAt: Date,
     ) => Array<Promise<void>>;
   } = {
     [TransactionEventType.PENDING_MULTISIG_TRANSACTION]:
@@ -125,65 +129,19 @@ export class EventCacheHelper {
       this.onConfigEventSafeAppsUpdate.bind(this),
   };
 
+  /**
+   * @param changedAt - when the event happened: recorded as when the queue or
+   * the messages of its Safe changed, once their caches are cleared
+   */
   public onEventClearCache<E extends Extract<Event, { type: Event['type'] }>>(
     event: E,
+    changedAt: Date,
   ): Promise<Array<void>> {
     const eventHandler = this.EventTypeHandler[event.type] as (
       event: E,
+      changedAt: Date,
     ) => Array<Promise<void>>;
-    return Promise.all(eventHandler(event));
-  }
-
-  /**
-   * Records when the queue or the messages of the Safes an event touched
-   * changed, which `txQueuedTag` and `messagesTag` are served from. Call it
-   * after {@link onEventClearCache} resolves.
-   */
-  public async onEventRecordChange(
-    event: Event,
-    changedAt: Date,
-  ): Promise<void> {
-    switch (event.type) {
-      case TransactionEventType.PENDING_MULTISIG_TRANSACTION:
-      case TransactionEventType.DELETED_MULTISIG_TRANSACTION:
-      case TransactionEventType.NEW_CONFIRMATION:
-        await this.safeRepository.setTransactionQueueChangedAt({
-          chainId: event.chainId,
-          safeAddress: event.address,
-          changedAt,
-        });
-        break;
-      case TransactionEventType.EXECUTED_MULTISIG_TRANSACTION: {
-        // Nested Safes whose transaction the execution approved got a new
-        // confirmation, so their queue changed too
-        const safeAddresses = [
-          event.address,
-          ...this.getApprovedNestedTransactions(event).map(
-            (child) => child.safeAddress,
-          ),
-        ];
-        await Promise.all(
-          safeAddresses.map((safeAddress) =>
-            this.safeRepository.setTransactionQueueChangedAt({
-              chainId: event.chainId,
-              safeAddress,
-              changedAt,
-            }),
-          ),
-        );
-        break;
-      }
-      case TransactionEventType.MESSAGE_CREATED:
-      case TransactionEventType.MESSAGE_CONFIRMATION:
-        await this.messagesRepository.setMessagesChangedAt({
-          chainId: event.chainId,
-          safeAddress: event.address,
-          changedAt,
-        });
-        break;
-      default:
-        break;
-    }
+    return Promise.all(eventHandler(event, changedAt));
   }
 
   public onEventLog(event: Event): void {
@@ -274,21 +232,19 @@ export class EventCacheHelper {
       Event,
       { type: TransactionEventType.PENDING_MULTISIG_TRANSACTION }
     >,
+    changedAt: Date,
   ): Array<Promise<void>> {
     // A new pending multisig transaction affects:
-    // queued transactions – clear multisig transactions
-    // the pending transaction – clear multisig transaction
+    // queued transactions and the pending transaction
     // the queue of every Space holding the Safe
     return [
-      this.safeRepository.clearMultisigTransactions({
+      this.clearQueueAndRecordChange({
         chainId: event.chainId,
         safeAddress: event.address,
+        safeTxHash: event.safeTxHash,
+        changedAt,
       }),
       this.safeRepository.clearSpaceTransactionQueues(event),
-      this.safeRepository.clearMultisigTransaction({
-        chainId: event.chainId,
-        safeTransactionHash: event.safeTxHash,
-      }),
     ];
   }
 
@@ -297,21 +253,19 @@ export class EventCacheHelper {
       Event,
       { type: TransactionEventType.DELETED_MULTISIG_TRANSACTION }
     >,
+    changedAt: Date,
   ): Array<Promise<void>> {
     // A deleted multisig transaction affects:
-    // queued transactions – clear multisig transactions
-    // the pending transaction – clear multisig transaction
+    // queued transactions and the pending transaction
     // the queue of every Space holding the Safe
     return [
-      this.safeRepository.clearMultisigTransactions({
+      this.clearQueueAndRecordChange({
         chainId: event.chainId,
         safeAddress: event.address,
+        safeTxHash: event.safeTxHash,
+        changedAt,
       }),
       this.safeRepository.clearSpaceTransactionQueues(event),
-      this.safeRepository.clearMultisigTransaction({
-        chainId: event.chainId,
-        safeTransactionHash: event.safeTxHash,
-      }),
     ];
   }
 
@@ -360,6 +314,7 @@ export class EventCacheHelper {
       Event,
       { type: TransactionEventType.EXECUTED_MULTISIG_TRANSACTION }
     >,
+    changedAt: Date,
   ): Array<Promise<void>> {
     // A new executed multisig transaction affects:
     // - the policy state: every policy change is a Safe transaction
@@ -390,15 +345,13 @@ export class EventCacheHelper {
         chainId: event.chainId,
         safeAddress: event.address,
       }),
-      this.safeRepository.clearMultisigTransactions({
+      this.clearQueueAndRecordChange({
         chainId: event.chainId,
         safeAddress: event.address,
+        safeTxHash: event.safeTxHash,
+        changedAt,
       }),
       this.safeRepository.clearSpaceTransactionQueues(event),
-      this.safeRepository.clearMultisigTransaction({
-        chainId: event.chainId,
-        safeTransactionHash: event.safeTxHash,
-      }),
       this.safeRepository.clearSafe({
         chainId: event.chainId,
         address: event.address,
@@ -419,17 +372,15 @@ export class EventCacheHelper {
     // and always-correct). See WA-2032 and getApprovedNestedTransactions.
     for (const child of this.getApprovedNestedTransactions(event)) {
       promises.push(
-        this.safeRepository.clearMultisigTransactions({
+        this.clearQueueAndRecordChange({
           chainId: event.chainId,
           safeAddress: child.safeAddress,
+          safeTxHash: child.safeTxHash,
+          changedAt,
         }),
         this.safeRepository.clearSpaceTransactionQueues({
           chainId: event.chainId,
           address: child.safeAddress,
-        }),
-        this.safeRepository.clearMultisigTransaction({
-          chainId: event.chainId,
-          safeTransactionHash: child.safeTxHash,
         }),
       );
     }
@@ -509,22 +460,50 @@ export class EventCacheHelper {
 
   private onTransactionEventNewConfirmation(
     event: Extract<Event, { type: TransactionEventType.NEW_CONFIRMATION }>,
+    changedAt: Date,
   ): Array<Promise<void>> {
     // A new confirmation for a pending transaction affects:
-    // - queued transactions – clear multisig transactions
+    // - queued transactions and the pending transaction
     // - the queue of every Space holding the Safe
-    // - the pending transaction – clear multisig transaction
     return [
-      this.safeRepository.clearMultisigTransactions({
+      this.clearQueueAndRecordChange({
         chainId: event.chainId,
         safeAddress: event.address,
+        safeTxHash: event.safeTxHash,
+        changedAt,
       }),
       this.safeRepository.clearSpaceTransactionQueues(event),
-      this.safeRepository.clearMultisigTransaction({
-        chainId: event.chainId,
-        safeTransactionHash: event.safeTxHash,
-      }),
     ];
+  }
+
+  /**
+   * Clears the Safe's queue and the queued transaction, then records when the
+   * queue changed. Only these clears gate the record: `txQueuedTag` follows
+   * this queue, not the Space queues or the other caches an event clears.
+   */
+  private clearQueueAndRecordChange(args: {
+    chainId: string;
+    safeAddress: Address;
+    safeTxHash: string;
+    changedAt: Date;
+  }): Promise<void> {
+    return Promise.all([
+      this.safeRepository.clearMultisigTransactions({
+        chainId: args.chainId,
+        safeAddress: args.safeAddress,
+      }),
+      this.safeRepository.clearMultisigTransaction({
+        chainId: args.chainId,
+        safeTransactionHash: args.safeTxHash,
+      }),
+    ]).then(() =>
+      this.safeQueueChangesRepository.setChangedAt({
+        change: 'transaction_queue',
+        chainId: args.chainId,
+        safeAddress: args.safeAddress,
+        changedAt: args.changedAt,
+      }),
+    );
   }
 
   private onTransactionEventIncomingEther(
@@ -667,33 +646,64 @@ export class EventCacheHelper {
 
   private onTransactionEventMessageCreated(
     event: Extract<Event, { type: TransactionEventType.MESSAGE_CREATED }>,
+    changedAt: Date,
   ): Array<Promise<void>> {
     // A message created affects:
     // - the messages associated to the Safe
     return [
-      this.messagesRepository.clearMessagesBySafe({
-        chainId: event.chainId,
-        safeAddress: event.address,
-      }),
+      this.messagesRepository
+        .clearMessagesBySafe({
+          chainId: event.chainId,
+          safeAddress: event.address,
+        })
+        .then(() =>
+          this.recordMessagesChange({
+            chainId: event.chainId,
+            safeAddress: event.address,
+            changedAt,
+          }),
+        ),
     ];
   }
 
   private onTransactionEventMessageConfirmation(
     event: Extract<Event, { type: TransactionEventType.MESSAGE_CONFIRMATION }>,
+    changedAt: Date,
   ): Array<Promise<void>> {
     // A new message confirmation affects:
     // - the message itself
     // - the messages associated to the Safe
     return [
-      this.messagesRepository.clearMessagesByHash({
-        chainId: event.chainId,
-        messageHash: event.messageHash,
-      }),
-      this.messagesRepository.clearMessagesBySafe({
-        chainId: event.chainId,
-        safeAddress: event.address,
-      }),
+      Promise.all([
+        this.messagesRepository.clearMessagesByHash({
+          chainId: event.chainId,
+          messageHash: event.messageHash,
+        }),
+        this.messagesRepository.clearMessagesBySafe({
+          chainId: event.chainId,
+          safeAddress: event.address,
+        }),
+      ]).then(() =>
+        this.recordMessagesChange({
+          chainId: event.chainId,
+          safeAddress: event.address,
+          changedAt,
+        }),
+      ),
     ];
+  }
+
+  // The messages clears log their failures instead of rejecting, so this runs
+  // once they settle
+  private recordMessagesChange(args: {
+    chainId: string;
+    safeAddress: Address;
+    changedAt: Date;
+  }): Promise<void> {
+    return this.safeQueueChangesRepository.setChangedAt({
+      change: 'messages',
+      ...args,
+    });
   }
 
   // Config Service events

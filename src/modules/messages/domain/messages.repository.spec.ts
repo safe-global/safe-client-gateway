@@ -15,6 +15,7 @@ import { MessagesRepository } from '#/modules/messages/domain/messages.repositor
 import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
 import type { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
 import { createMockSafeQueueService } from '#/modules/safe-queue/__tests__/safe-queue-service.mock';
+import type { ISafeQueueChangesRepository } from '#/modules/safe-queue/domain/safe-queue-changes.repository.interface';
 import { safeQueueMessageBuilder as buildSafeQueueMessage } from '#/modules/safe-queue/entities/__tests__/safe-queue-message.builder';
 import type { SafeQueueMessage } from '#/modules/safe-queue/entities/message.entity';
 import type { ISafeQueueService } from '#/modules/safe-queue/safe-queue.interface';
@@ -57,6 +58,11 @@ const mockMessageVerifier = {
   verifyUpdate: vi.fn(),
 } as MockedObject<MessageVerifierHelper>;
 
+const mockSafeQueueChangesRepository = {
+  getChangedAt: vi.fn(),
+  setChangedAt: vi.fn(),
+} as MockedObject<ISafeQueueChangesRepository>;
+
 describe('MessagesRepository (queue service enabled)', () => {
   let safeQueueService: MockedObject<ISafeQueueService>;
   let target: MessagesRepository;
@@ -82,6 +88,7 @@ describe('MessagesRepository (queue service enabled)', () => {
       mockConfigurationService,
       mockLoggingService,
       mockMessageVerifier,
+      mockSafeQueueChangesRepository,
     );
   });
 
@@ -342,6 +349,7 @@ describe('MessagesRepository (queue service enabled)', () => {
       mockConfigurationService,
       mockLoggingService,
       mockMessageVerifier,
+      mockSafeQueueChangesRepository,
     );
   }
 
@@ -437,27 +445,16 @@ describe('MessagesRepository (queue service enabled)', () => {
       await target.createMessage(args);
 
       expect(
-        safeQueueService.setMessagesChangedAt,
+        mockSafeQueueChangesRepository.setChangedAt,
       ).toHaveBeenCalledExactlyOnceWith({
+        change: 'messages',
         chainId: args.chainId,
         safeAddress: args.safeAddress,
         changedAt: now,
       });
       expect(safeQueueService.clearMessagesBySafe).toHaveBeenCalledBefore(
-        safeQueueService.setMessagesChangedAt,
+        mockSafeQueueChangesRepository.setChangedAt,
       );
-    });
-
-    it('records nothing when the queue service is disabled', async () => {
-      const disabledTarget = buildTargetWithQueueDisabled();
-      mockSafeRepository.getSafe.mockResolvedValue(safeBuilder().build());
-      mockTransactionApi.postMessage.mockResolvedValue(
-        rawify({ id: faker.string.uuid() }),
-      );
-
-      await disabledTarget.createMessage(createMessageArgs());
-
-      expect(safeQueueService.setMessagesChangedAt).not.toHaveBeenCalled();
     });
   });
 
@@ -548,121 +545,16 @@ describe('MessagesRepository (queue service enabled)', () => {
       });
 
       expect(
-        safeQueueService.setMessagesChangedAt,
+        mockSafeQueueChangesRepository.setChangedAt,
       ).toHaveBeenCalledExactlyOnceWith({
+        change: 'messages',
         chainId: String(chainId),
         safeAddress: message.safe,
         changedAt: now,
       });
       expect(safeQueueService.clearMessagesBySafe).toHaveBeenCalledBefore(
-        safeQueueService.setMessagesChangedAt,
+        mockSafeQueueChangesRepository.setChangedAt,
       );
-    });
-  });
-
-  describe('getMessagesChangedAt', () => {
-    const chainId = faker.string.numeric();
-    const safeAddress = getAddress(faker.finance.ethereumAddress());
-
-    it('returns when the messages changed', async () => {
-      const changedAt = faker.date.recent();
-      safeQueueService.getMessagesChangedAt.mockResolvedValue(
-        rawify(changedAt.toISOString()),
-      );
-
-      await expect(
-        target.getMessagesChangedAt({ chainId, safeAddress }),
-      ).resolves.toEqual(changedAt);
-      expect(
-        safeQueueService.getMessagesChangedAt,
-      ).toHaveBeenCalledExactlyOnceWith({ chainId, safeAddress });
-    });
-
-    it('returns null when no change was recorded', async () => {
-      safeQueueService.getMessagesChangedAt.mockResolvedValue(null);
-
-      await expect(
-        target.getMessagesChangedAt({ chainId, safeAddress }),
-      ).resolves.toBeNull();
-    });
-
-    it('returns null and warns when the recorded value is not a date', async () => {
-      safeQueueService.getMessagesChangedAt.mockResolvedValue(
-        rawify(faker.word.sample()),
-      );
-
-      await expect(
-        target.getMessagesChangedAt({ chainId, safeAddress }),
-      ).resolves.toBeNull();
-      expect(mockLoggingService.warn).toHaveBeenCalledWith(
-        expect.stringContaining(
-          `Failed to read when the messages changed. chainId=${chainId}, safeAddress=${safeAddress}`,
-        ),
-      );
-    });
-
-    it('returns null and warns when the read fails', async () => {
-      const error = new Error(faker.lorem.sentence());
-      safeQueueService.getMessagesChangedAt.mockRejectedValue(error);
-
-      await expect(
-        target.getMessagesChangedAt({ chainId, safeAddress }),
-      ).resolves.toBeNull();
-      expect(mockLoggingService.warn).toHaveBeenCalledWith(
-        `Failed to read when the messages changed. chainId=${chainId}, safeAddress=${safeAddress}, error=${error.message}`,
-      );
-    });
-
-    it('returns null without reading when the queue service is disabled', async () => {
-      const disabledTarget = buildTargetWithQueueDisabled();
-
-      await expect(
-        disabledTarget.getMessagesChangedAt({ chainId, safeAddress }),
-      ).resolves.toBeNull();
-      expect(safeQueueService.getMessagesChangedAt).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('setMessagesChangedAt', () => {
-    const chainId = faker.string.numeric();
-    const safeAddress = getAddress(faker.finance.ethereumAddress());
-
-    it('records when the messages changed', async () => {
-      const changedAt = faker.date.recent();
-
-      await target.setMessagesChangedAt({ chainId, safeAddress, changedAt });
-
-      expect(
-        safeQueueService.setMessagesChangedAt,
-      ).toHaveBeenCalledExactlyOnceWith({ chainId, safeAddress, changedAt });
-    });
-
-    it('resolves and warns when the write fails', async () => {
-      const error = new Error(faker.lorem.sentence());
-      safeQueueService.setMessagesChangedAt.mockRejectedValue(error);
-
-      await expect(
-        target.setMessagesChangedAt({
-          chainId,
-          safeAddress,
-          changedAt: faker.date.recent(),
-        }),
-      ).resolves.toBeUndefined();
-      expect(mockLoggingService.warn).toHaveBeenCalledWith(
-        `Failed to record when the messages changed. chainId=${chainId}, safeAddress=${safeAddress}, error=${error.message}`,
-      );
-    });
-
-    it('records nothing when the queue service is disabled', async () => {
-      const disabledTarget = buildTargetWithQueueDisabled();
-
-      await disabledTarget.setMessagesChangedAt({
-        chainId,
-        safeAddress,
-        changedAt: faker.date.recent(),
-      });
-
-      expect(safeQueueService.setMessagesChangedAt).not.toHaveBeenCalled();
     });
   });
 

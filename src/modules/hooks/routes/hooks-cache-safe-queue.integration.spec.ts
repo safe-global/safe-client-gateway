@@ -218,7 +218,8 @@ describe('Hook Events for Cache (safe-queue service enabled)', () => {
 
       await expect(
         fakeCacheService.hGet(
-          CacheRouter.getSafeQueueTransactionQueueChangedAtCacheDir({
+          CacheRouter.getSafeQueueChangedAtCacheDir({
+            change: 'transaction_queue',
             chainId,
             safeAddress: event.address,
           }),
@@ -302,7 +303,8 @@ describe('Hook Events for Cache (safe-queue service enabled)', () => {
 
       await expect(
         fakeCacheService.hGet(
-          CacheRouter.getSafeQueueMessagesChangedAtCacheDir({
+          CacheRouter.getSafeQueueChangedAtCacheDir({
+            change: 'messages',
             chainId,
             safeAddress: event.address,
           }),

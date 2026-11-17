@@ -28,6 +28,7 @@ import {
   SafeState,
 } from '#/modules/safe/routes/entities/safe-info.entity';
 import { SafeOverview } from '#/modules/safe/routes/entities/safe-overview.entity';
+import { ISafeQueueChangesRepository } from '#/modules/safe-queue/domain/safe-queue-changes.repository.interface';
 import { AddressInfoHelper } from '#/routes/common/address-info/address-info.helper';
 import { NULL_ADDRESS } from '#/routes/common/constants';
 import { AddressInfo } from '#/routes/common/entities/address-info.entity';
@@ -47,6 +48,8 @@ export class SafesService {
     private readonly messagesRepository: MessagesRepository,
     @Inject(IBalancesRepository)
     private readonly balancesRepository: IBalancesRepository,
+    @Inject(ISafeQueueChangesRepository)
+    private readonly safeQueueChangesRepository: ISafeQueueChangesRepository,
     @Inject(IConfigurationService) configurationService: IConfigurationService,
     @Inject(LoggingService) private readonly loggingService: ILoggingService,
   ) {
@@ -257,7 +260,8 @@ export class SafesService {
     chainId: string,
     safe: Safe,
   ): Promise<Date | null> {
-    const changedAt = await this.safeRepository.getTransactionQueueChangedAt({
+    const changedAt = await this.safeQueueChangesRepository.getChangedAt({
+      change: 'transaction_queue',
       chainId,
       safeAddress: safe.address,
     });
@@ -350,7 +354,8 @@ export class SafesService {
     chainId: string,
     safeAddress: Address,
   ): Promise<Date | null> {
-    const changedAt = await this.messagesRepository.getMessagesChangedAt({
+    const changedAt = await this.safeQueueChangesRepository.getChangedAt({
+      change: 'messages',
       chainId,
       safeAddress,
     });

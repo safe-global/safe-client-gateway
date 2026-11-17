@@ -36,6 +36,7 @@ import type { IPolicyIndexerRepository } from '#/modules/policies/domain/policy-
 import type { QueuesRepository } from '#/modules/queues/domain/queues-repository';
 import type { SafeRepository } from '#/modules/safe/domain/safe.repository';
 import type { SafeAppsRepository } from '#/modules/safe-apps/domain/safe-apps.repository';
+import type { ISafeQueueChangesRepository } from '#/modules/safe-queue/domain/safe-queue-changes.repository.interface';
 import type { StakingRepository } from '#/modules/staking/domain/staking.repository';
 import type { TransactionsRepository } from '#/modules/transactions/domain/transactions.repository';
 import type { ZerionCacheService } from '#/modules/zerion/datasources/zerion-cache.service';
@@ -68,7 +69,6 @@ const mockDelegatesRepository = vi.mocked({
 const mockMessagesRepository = vi.mocked({
   clearMessagesBySafe: vi.fn(),
   clearMessagesByHash: vi.fn(),
-  setMessagesChangedAt: vi.fn(),
 } as unknown as MockedObject<MessagesRepository>);
 
 const mockSafeAppsRepository = vi.mocked({
@@ -89,8 +89,12 @@ const mockSafeRepository = vi.mocked({
   clearSafe: vi.fn(),
   clearIsSafe: vi.fn(),
   clearSpaceTransactionQueues: vi.fn(),
-  setTransactionQueueChangedAt: vi.fn(),
 } as MockedObject<SafeRepository>);
+
+const mockSafeQueueChangesRepository = vi.mocked({
+  getChangedAt: vi.fn(),
+  setChangedAt: vi.fn(),
+} as MockedObject<ISafeQueueChangesRepository>);
 
 const mockStakingRepository = vi.mocked({
   clearApi: vi.fn(),
@@ -174,6 +178,7 @@ describe('HooksRepository (Unit)', () => {
       fakeCacheService,
       new SafeDecoder(),
       new MultiSendDecoder(mockLoggingService),
+      mockSafeQueueChangesRepository,
     );
   }
 
@@ -190,7 +195,10 @@ describe('HooksRepository (Unit)', () => {
       async (_, builder) => {
         const event = builder().build();
 
-        await buildEventCacheHelper().onEventClearCache(event);
+        await buildEventCacheHelper().onEventClearCache(
+          event,
+          faker.date.recent(),
+        );
 
         expect(
           mockSafeRepository.clearSpaceTransactionQueues,
@@ -206,6 +214,7 @@ describe('HooksRepository (Unit)', () => {
     it('should not clear the queue of a Space on an event that leaves the queue as it is', async () => {
       await buildEventCacheHelper().onEventClearCache(
         incomingTokenEventBuilder().build(),
+        faker.date.recent(),
       );
 
       expect(
@@ -216,7 +225,10 @@ describe('HooksRepository (Unit)', () => {
     it('should clear the Safe on SAFE_CREATED so a Space queue loads it', async () => {
       const event = safeCreatedEventBuilder().build();
 
-      await buildEventCacheHelper().onEventClearCache(event);
+      await buildEventCacheHelper().onEventClearCache(
+        event,
+        faker.date.recent(),
+      );
 
       expect(mockSafeRepository.clearSafe).toHaveBeenCalledWith(event);
       expect(
@@ -240,6 +252,8 @@ describe('HooksRepository (Unit)', () => {
 
     beforeEach(() => {
       mockChainsRepository.isSupportedChain.mockResolvedValue(true);
+      mockMessagesRepository.clearMessagesBySafe.mockResolvedValue();
+      mockMessagesRepository.clearMessagesByHash.mockResolvedValue();
     });
 
     afterEach(() => {
@@ -255,18 +269,13 @@ describe('HooksRepository (Unit)', () => {
         await hooksRepository.onEvent(event, publishedAt);
 
         expect(
-          mockSafeRepository.setTransactionQueueChangedAt,
-        ).toHaveBeenCalledTimes(1);
-        expect(
-          mockSafeRepository.setTransactionQueueChangedAt,
-        ).toHaveBeenCalledWith({
+          mockSafeQueueChangesRepository.setChangedAt,
+        ).toHaveBeenCalledExactlyOnceWith({
+          change: 'transaction_queue',
           chainId: event.chainId,
           safeAddress: event.address,
           changedAt: publishedAt,
         });
-        expect(
-          mockMessagesRepository.setMessagesChangedAt,
-        ).not.toHaveBeenCalled();
       },
     );
 
@@ -279,18 +288,13 @@ describe('HooksRepository (Unit)', () => {
         await hooksRepository.onEvent(event, publishedAt);
 
         expect(
-          mockMessagesRepository.setMessagesChangedAt,
-        ).toHaveBeenCalledTimes(1);
-        expect(
-          mockMessagesRepository.setMessagesChangedAt,
-        ).toHaveBeenCalledWith({
+          mockSafeQueueChangesRepository.setChangedAt,
+        ).toHaveBeenCalledExactlyOnceWith({
+          change: 'messages',
           chainId: event.chainId,
           safeAddress: event.address,
           changedAt: publishedAt,
         });
-        expect(
-          mockSafeRepository.setTransactionQueueChangedAt,
-        ).not.toHaveBeenCalled();
       },
     );
 
@@ -301,10 +305,7 @@ describe('HooksRepository (Unit)', () => {
       );
 
       expect(
-        mockSafeRepository.setTransactionQueueChangedAt,
-      ).not.toHaveBeenCalled();
-      expect(
-        mockMessagesRepository.setMessagesChangedAt,
+        mockSafeQueueChangesRepository.setChangedAt,
       ).not.toHaveBeenCalled();
     });
 
@@ -325,64 +326,107 @@ describe('HooksRepository (Unit)', () => {
 
       await hooksRepository.onEvent(event, publishedAt);
 
-      expect(
-        mockSafeRepository.setTransactionQueueChangedAt,
-      ).toHaveBeenCalledTimes(2);
-      expect(
-        mockSafeRepository.setTransactionQueueChangedAt,
-      ).toHaveBeenCalledWith({
+      expect(mockSafeQueueChangesRepository.setChangedAt).toHaveBeenCalledTimes(
+        2,
+      );
+      expect(mockSafeQueueChangesRepository.setChangedAt).toHaveBeenCalledWith({
+        change: 'transaction_queue',
         chainId: event.chainId,
         safeAddress: event.address,
         changedAt: publishedAt,
       });
-      expect(
-        mockSafeRepository.setTransactionQueueChangedAt,
-      ).toHaveBeenCalledWith({
+      expect(mockSafeQueueChangesRepository.setChangedAt).toHaveBeenCalledWith({
+        change: 'transaction_queue',
         chainId: event.chainId,
         safeAddress: childSafe,
         changedAt: publishedAt,
       });
     });
 
-    it('should record the change only once the queue caches are cleared', async () => {
-      const event = pendingTransactionEventBuilder().build();
+    it.each([
+      ['the Safe queue', mockSafeRepository.clearMultisigTransactions],
+      ['the queued transaction', mockSafeRepository.clearMultisigTransaction],
+    ])('should record the change only once %s is cleared', async (_, clear) => {
       let resolveClear: () => void = () => {};
-      mockSafeRepository.clearMultisigTransactions.mockReturnValueOnce(
+      clear.mockReturnValueOnce(
         new Promise<void>((resolve) => {
           resolveClear = resolve;
         }),
       );
 
-      const onEvent = hooksRepository.onEvent(event, faker.date.recent());
+      const onEvent = hooksRepository.onEvent(
+        pendingTransactionEventBuilder().build(),
+        faker.date.recent(),
+      );
       await vi.waitFor(() => {
-        expect(mockSafeRepository.clearMultisigTransactions).toHaveBeenCalled();
+        expect(clear).toHaveBeenCalled();
       });
 
       expect(
-        mockSafeRepository.setTransactionQueueChangedAt,
+        mockSafeQueueChangesRepository.setChangedAt,
       ).not.toHaveBeenCalled();
 
       resolveClear();
       await onEvent;
 
-      expect(
-        mockSafeRepository.setTransactionQueueChangedAt,
-      ).toHaveBeenCalledTimes(1);
+      expect(mockSafeQueueChangesRepository.setChangedAt).toHaveBeenCalledTimes(
+        1,
+      );
     });
 
-    it('should not record the change when clearing the queue caches fails', async () => {
-      mockSafeRepository.clearMultisigTransactions.mockRejectedValueOnce(
+    it.each([
+      ['the Safe queue', mockSafeRepository.clearMultisigTransactions],
+      ['the queued transaction', mockSafeRepository.clearMultisigTransaction],
+    ])(
+      'should not record the change when clearing %s fails',
+      async (_, clear) => {
+        clear.mockRejectedValueOnce(new Error(faker.lorem.sentence()));
+
+        await hooksRepository.onEvent(
+          pendingTransactionEventBuilder().build(),
+          faker.date.recent(),
+        );
+
+        expect(
+          mockSafeQueueChangesRepository.setChangedAt,
+        ).not.toHaveBeenCalled();
+      },
+    );
+
+    it('should record the change when only clearing the Space queues fails', async () => {
+      const event = pendingTransactionEventBuilder().build();
+      mockSafeRepository.clearSpaceTransactionQueues.mockRejectedValueOnce(
         new Error(faker.lorem.sentence()),
       );
 
-      await hooksRepository.onEvent(
-        pendingTransactionEventBuilder().build(),
-        faker.date.recent(),
-      );
+      await hooksRepository.onEvent(event, faker.date.recent());
 
       expect(
-        mockSafeRepository.setTransactionQueueChangedAt,
-      ).not.toHaveBeenCalled();
+        mockSafeQueueChangesRepository.setChangedAt,
+      ).toHaveBeenCalledExactlyOnceWith(
+        expect.objectContaining({
+          change: 'transaction_queue',
+          safeAddress: event.address,
+        }),
+      );
+    });
+
+    it('should record the change when an unrelated cache of an execution fails to clear', async () => {
+      const event = executedTransactionEventBuilder().build();
+      mockCollectiblesRepository.clearCollectibles.mockRejectedValueOnce(
+        new Error(faker.lorem.sentence()),
+      );
+
+      await hooksRepository.onEvent(event, faker.date.recent());
+
+      expect(
+        mockSafeQueueChangesRepository.setChangedAt,
+      ).toHaveBeenCalledExactlyOnceWith(
+        expect.objectContaining({
+          change: 'transaction_queue',
+          safeAddress: event.address,
+        }),
+      );
     });
 
     it('should record the change at the time the event is processed when none is given', async () => {
@@ -394,8 +438,9 @@ describe('HooksRepository (Unit)', () => {
       await hooksRepository.onEvent(event);
 
       expect(
-        mockSafeRepository.setTransactionQueueChangedAt,
-      ).toHaveBeenCalledWith({
+        mockSafeQueueChangesRepository.setChangedAt,
+      ).toHaveBeenCalledExactlyOnceWith({
+        change: 'transaction_queue',
         chainId: event.chainId,
         safeAddress: event.address,
         changedAt: now,
@@ -805,9 +850,8 @@ describe('HooksRepository (Unit)', () => {
 
       await consume(JSON.stringify(event), { timestamp: publishedAtSeconds });
 
-      expect(
-        mockSafeRepository.setTransactionQueueChangedAt,
-      ).toHaveBeenCalledWith({
+      expect(mockSafeQueueChangesRepository.setChangedAt).toHaveBeenCalledWith({
+        change: 'transaction_queue',
         chainId: event.chainId,
         safeAddress: event.address,
         changedAt: new Date(publishedAtSeconds * 1_000),
@@ -830,8 +874,9 @@ describe('HooksRepository (Unit)', () => {
         await consume(JSON.stringify(event), properties);
 
         expect(
-          mockSafeRepository.setTransactionQueueChangedAt,
+          mockSafeQueueChangesRepository.setChangedAt,
         ).toHaveBeenCalledWith({
+          change: 'transaction_queue',
           chainId: event.chainId,
           safeAddress: event.address,
           changedAt: now,

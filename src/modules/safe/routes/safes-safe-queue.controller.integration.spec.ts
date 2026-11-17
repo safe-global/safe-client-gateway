@@ -439,7 +439,8 @@ describe('Safes Controller (Safe Queue Service enabled)', () => {
         queuedMessages: [],
       });
       await cacheService.hSet(
-        CacheRouter.getSafeQueueTransactionQueueChangedAtCacheDir({
+        CacheRouter.getSafeQueueChangedAtCacheDir({
+          change: 'transaction_queue',
           chainId: chain.chainId,
           safeAddress: safe.address,
         }),
@@ -480,7 +481,8 @@ describe('Safes Controller (Safe Queue Service enabled)', () => {
         ],
       });
       await cacheService.hSet(
-        CacheRouter.getSafeQueueMessagesChangedAtCacheDir({
+        CacheRouter.getSafeQueueChangedAtCacheDir({
+          change: 'messages',
           chainId: chain.chainId,
           safeAddress: safe.address,
         }),

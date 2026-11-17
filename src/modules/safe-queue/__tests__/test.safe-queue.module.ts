@@ -8,6 +8,8 @@ import {
   INetworkService,
   NetworkService,
 } from '#/datasources/network/network.service.interface';
+import { SafeQueueChangesRepository } from '#/modules/safe-queue/domain/safe-queue-changes.repository';
+import { ISafeQueueChangesRepository } from '#/modules/safe-queue/domain/safe-queue-changes.repository.interface';
 import { ISafeQueueService } from '#/modules/safe-queue/safe-queue.interface';
 import { SafeQueueService } from '#/modules/safe-queue/safe-queue.service';
 
@@ -29,7 +31,11 @@ import { SafeQueueService } from '#/modules/safe-queue/safe-queue.service';
     CacheFirstDataSource,
     HttpErrorFactory,
     { provide: ISafeQueueService, useClass: SafeQueueService },
+    {
+      provide: ISafeQueueChangesRepository,
+      useClass: SafeQueueChangesRepository,
+    },
   ],
-  exports: [ISafeQueueService],
+  exports: [ISafeQueueService, ISafeQueueChangesRepository],
 })
 export class TestSafeQueueModule {}
