@@ -2,13 +2,14 @@
 
 import { faker } from '@faker-js/faker';
 import {
-  ForbiddenException,
+  HttpStatus,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { MoreThan } from 'typeorm';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
+import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
 import {
   oidcAuthPayloadDtoBuilder,
   siweAuthPayloadDtoBuilder,
@@ -18,6 +19,7 @@ import { createMockSpaceEncryptionService } from '#/modules/spaces/domain/__test
 import { spaceBuilder } from '#/modules/spaces/domain/entities/__tests__/space.entity.db.builder';
 import { ExperimentalFeatures } from '#/modules/spaces/domain/entities/experimental-feature.entity';
 import type { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository.interface';
+import type { ISpaceSetupsRepository } from '#/modules/spaces/domain/setup/space-setups.repository.interface';
 import type { ISpacesRepository } from '#/modules/spaces/domain/spaces.repository.interface';
 import { SpacesService } from '#/modules/spaces/routes/spaces.service';
 import { memberBuilder } from '#/modules/users/datasources/entities/__tests__/member.entity.db.builder';
@@ -58,6 +60,10 @@ const walletsRepositoryMock = {
   find: vi.fn(),
 } as MockedObject<IWalletsRepository>;
 
+const spaceSetupsRepositoryMock = {
+  findStatusesBySpaceIds: vi.fn(),
+} as MockedObject<ISpaceSetupsRepository>;
+
 describe('SpacesService', () => {
   let service: SpacesService;
   let walletEncryptionServiceMock: MockedObject<WalletEncryptionService>;
@@ -75,6 +81,9 @@ describe('SpacesService', () => {
     spaceEncryptionServiceMock = createMockSpaceEncryptionService();
     memberEncryptionServiceMock = createMockMemberEncryptionService();
     spaceSafesRepositoryMock.countSeatsBySpaceIds.mockResolvedValue(new Map());
+    spaceSetupsRepositoryMock.findStatusesBySpaceIds.mockResolvedValue(
+      new Map(),
+    );
     service = new SpacesService(
       usersRepositoryMock,
       spacesRepositoryMock,
@@ -84,6 +93,7 @@ describe('SpacesService', () => {
       walletEncryptionServiceMock,
       spaceEncryptionServiceMock,
       memberEncryptionServiceMock,
+      spaceSetupsRepositoryMock,
     );
   });
 
@@ -124,6 +134,7 @@ describe('SpacesService', () => {
           members: [member],
           memberCount: 1,
           safeCount: 3,
+          setupStatus: null,
         },
       ]);
       expect(spacesRepositoryMock.find).toHaveBeenCalledWith(
@@ -864,6 +875,7 @@ describe('SpacesService', () => {
       const userId = Number(authPayload.sub);
       const name = faker.word.noun();
       const repositoryResponse = {
+        id: faker.number.int({ min: 1 }),
         uuid: fakeUuid(),
         name,
       };
@@ -897,6 +909,7 @@ describe('SpacesService', () => {
         const authPayload = new AuthPayload(builder().build());
         const userId = Number(authPayload.sub);
         const expectedResponse = {
+          id: faker.number.int({ min: 1 }),
           uuid: fakeUuid(),
           name: faker.word.noun(),
         };
@@ -990,7 +1003,12 @@ describe('SpacesService', () => {
           updatePayload: { name: faker.word.noun() },
           authPayload,
         }),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toThrow(
+        new HttpExceptionNoLog(
+          'User is not an admin of this workspace',
+          HttpStatus.FORBIDDEN,
+        ),
+      );
     });
   });
 
@@ -1026,7 +1044,12 @@ describe('SpacesService', () => {
           id: faker.number.int(),
           authPayload,
         }),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toThrow(
+        new HttpExceptionNoLog(
+          'User is not an admin of this workspace',
+          HttpStatus.FORBIDDEN,
+        ),
+      );
     });
   });
 });

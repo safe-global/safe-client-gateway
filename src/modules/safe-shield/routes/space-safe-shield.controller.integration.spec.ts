@@ -147,19 +147,21 @@ describe('SpaceSafeShieldController', () => {
           jwtService,
           postgresDatabaseService,
         });
-      // No entitlement granted: a member-check bug that let this through
-      // would surface as a 402, not a 200, and still prove the leak.
       const safe = {
         chainId: '1',
         address: getAddress(faker.finance.ethereumAddress()),
       };
 
-      await request(app.getHttpServer())
+      const response = await request(app.getHttpServer())
         .get(
           `/v1/spaces/${spaceUuid}/chains/${safe.chainId}/security/${safe.address}/recipient/${getAddress(faker.finance.ethereumAddress())}`,
         )
-        .set('Cookie', [`access_token=${strangerAccessToken}`])
-        .expect(HttpStatus.FORBIDDEN);
+        .set('Cookie', [`access_token=${strangerAccessToken}`]);
+
+      expect(response.status).toBe(HttpStatus.FORBIDDEN);
+      expect(response.body).toMatchObject({
+        message: 'User is not a member of this workspace',
+      });
     });
 
     it('rejects with 402 when the Space has no copilot_scans entitlement', async () => {
@@ -303,20 +305,22 @@ describe('SpaceSafeShieldController', () => {
           jwtService,
           postgresDatabaseService,
         });
-      // No entitlement granted: a member-check bug that let this through
-      // would surface as a 402, not a 200, and still prove the leak.
       const safe = {
         chainId: '1',
         address: getAddress(faker.finance.ethereumAddress()),
       };
 
-      await request(app.getHttpServer())
+      const response = await request(app.getHttpServer())
         .post(
           `/v1/spaces/${spaceUuid}/chains/${safe.chainId}/security/${safe.address}/counterparty-analysis`,
         )
         .set('Cookie', [`access_token=${strangerAccessToken}`])
-        .send(counterpartyAnalysisRequestDtoBuilder().build())
-        .expect(HttpStatus.FORBIDDEN);
+        .send(counterpartyAnalysisRequestDtoBuilder().build());
+
+      expect(response.status).toBe(HttpStatus.FORBIDDEN);
+      expect(response.body).toMatchObject({
+        message: 'User is not a member of this workspace',
+      });
     });
 
     it('rejects with 402 when the Space has no copilot_scans entitlement', async () => {

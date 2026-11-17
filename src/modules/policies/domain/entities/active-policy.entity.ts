@@ -100,6 +100,8 @@ export type Erc20TransferRecipient = z.infer<
  */
 export type Erc20TransferPolicyData = {
   tokenAddress: Address;
+  /** Metadata of {@link tokenAddress}; `null` when it could not be resolved. */
+  tokenMetadata: Token | null;
   recipients: Array<Erc20TransferRecipient>;
 };
 

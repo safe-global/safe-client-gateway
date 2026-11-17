@@ -6,6 +6,7 @@ import { NetworkResponseError } from '#/datasources/network/entities/network.err
 import type { NetworkRequest } from '#/datasources/network/entities/network.request.entity';
 import { FetchNetworkService } from '#/datasources/network/fetch.network.service';
 import type { FetchClient } from '#/datasources/network/network.module';
+import { SAFE_REQUEST_ID_HEADER } from '#/datasources/network/safe-request-id-header.helper';
 import type { ILoggingService } from '#/logging/logging.interface';
 import { rawify } from '#/validation/entities/raw.entity';
 
@@ -123,6 +124,33 @@ describe('FetchNetworkService', () => {
         method: 'GET',
         url: expectedUrl,
       });
+    });
+
+    it(`get should append an array query param once per element`, async () => {
+      const url = faker.internet.url({ appendSlash: false });
+      const values = faker.helpers.multiple(() => faker.string.alphanumeric(), {
+        count: { min: 2, max: 5 },
+      });
+      const networkRequest: NetworkRequest = {
+        params: { values: [...values, '', null, undefined] },
+      };
+
+      await target.get({ url, networkRequest });
+
+      const expectedUrl = new URL(url);
+      for (const value of values) {
+        expectedUrl.searchParams.append('values', value);
+      }
+      expect(fetchClientMock).toHaveBeenCalledExactlyOnceWith(
+        expectedUrl.toString(),
+        {
+          method: 'GET',
+          headers: {},
+        },
+        undefined,
+        undefined,
+        undefined,
+      );
     });
 
     it(`get logs response error`, async () => {
@@ -667,7 +695,7 @@ describe('FetchNetworkService', () => {
       const targetWithHeaders = new FetchNetworkService(
         fetchClientMock,
         loggingServiceMock,
-        defaultHeaders,
+        { defaultHeaders },
       );
       const url = faker.internet.url({ appendSlash: false });
       const requestHeaders = { 'X-Custom': 'request-value' };
@@ -702,7 +730,7 @@ describe('FetchNetworkService', () => {
       const targetWithHeaders = new FetchNetworkService(
         fetchClientMock,
         loggingServiceMock,
-        defaultHeaders,
+        { defaultHeaders },
       );
       const url = faker.internet.url({ appendSlash: false });
 
@@ -732,7 +760,7 @@ describe('FetchNetworkService', () => {
       const targetWithHeaders = new FetchNetworkService(
         fetchClientMock,
         loggingServiceMock,
-        defaultHeaders,
+        { defaultHeaders },
       );
       const url = faker.internet.url({ appendSlash: false });
       const data = { foo: 'bar' };
@@ -764,7 +792,7 @@ describe('FetchNetworkService', () => {
       const targetWithEmptyHeaders = new FetchNetworkService(
         fetchClientMock,
         loggingServiceMock,
-        {},
+        { defaultHeaders: {} },
       );
       const url = faker.internet.url({ appendSlash: false });
       const requestHeaders = { 'X-Custom': 'value' };
@@ -834,7 +862,7 @@ describe('FetchNetworkService', () => {
       const targetWithHeaders = new FetchNetworkService(
         fetchClientMock,
         loggingServiceMock,
-        defaultHeaders,
+        { defaultHeaders },
       );
       const url = faker.internet.url({ appendSlash: false });
       const data = { foo: 'bar' };
@@ -862,6 +890,103 @@ describe('FetchNetworkService', () => {
             'Content-Type': 'text/plain', // request overrides method and default
           },
         },
+        undefined,
+        undefined,
+        undefined,
+      );
+    });
+  });
+
+  describe('x-safe-* headers', () => {
+    it('drops x-safe-* headers set by a caller, in any casing', async () => {
+      const url = faker.internet.url({ appendSlash: false });
+      const customHeader = faker.string.alphanumeric();
+
+      await target.get({
+        url,
+        networkRequest: {
+          headers: {
+            'X-Safe-Req-Id': faker.string.uuid(),
+            [`x-safe-${faker.string.alpha()}`]: faker.string.alphanumeric(),
+            'X-Custom': customHeader,
+          },
+        },
+      });
+
+      expect(fetchClientMock).toHaveBeenCalledWith(
+        expect.any(String),
+        { method: 'GET', headers: { 'X-Custom': customHeader } },
+        undefined,
+        undefined,
+        undefined,
+      );
+    });
+
+    it('evaluates context headers for every request', async () => {
+      const firstRequestId = faker.string.uuid();
+      const secondRequestId = faker.string.uuid();
+      const contextHeaders = vi
+        .fn<() => Record<string, string>>()
+        .mockReturnValueOnce({ [SAFE_REQUEST_ID_HEADER]: firstRequestId })
+        .mockReturnValueOnce({ [SAFE_REQUEST_ID_HEADER]: secondRequestId });
+      const targetWithContextHeaders = new FetchNetworkService(
+        fetchClientMock,
+        loggingServiceMock,
+        { contextHeaders },
+      );
+      const url = faker.internet.url({ appendSlash: false });
+      const data = { [faker.string.alpha()]: faker.string.alphanumeric() };
+
+      await targetWithContextHeaders.get({ url });
+      await targetWithContextHeaders.post({ url, data });
+
+      expect(fetchClientMock).toHaveBeenNthCalledWith(
+        1,
+        expect.any(String),
+        {
+          method: 'GET',
+          headers: { [SAFE_REQUEST_ID_HEADER]: firstRequestId },
+        },
+        undefined,
+        undefined,
+        undefined,
+      );
+      expect(fetchClientMock).toHaveBeenNthCalledWith(
+        2,
+        expect.any(String),
+        {
+          method: 'POST',
+          body: JSON.stringify(data),
+          headers: {
+            'Content-Type': 'application/json',
+            [SAFE_REQUEST_ID_HEADER]: secondRequestId,
+          },
+        },
+        undefined,
+        undefined,
+        undefined,
+      );
+    });
+
+    it('does not let a caller override context headers', async () => {
+      const requestId = faker.string.uuid();
+      const targetWithContextHeaders = new FetchNetworkService(
+        fetchClientMock,
+        loggingServiceMock,
+        {
+          contextHeaders: () => ({ [SAFE_REQUEST_ID_HEADER]: requestId }),
+        },
+      );
+      const url = faker.internet.url({ appendSlash: false });
+
+      await targetWithContextHeaders.delete({
+        url,
+        networkRequest: { headers: { 'X-Safe-Req-Id': faker.string.uuid() } },
+      });
+
+      expect(fetchClientMock).toHaveBeenCalledWith(
+        expect.any(String),
+        { method: 'DELETE', headers: { [SAFE_REQUEST_ID_HEADER]: requestId } },
         undefined,
         undefined,
         undefined,

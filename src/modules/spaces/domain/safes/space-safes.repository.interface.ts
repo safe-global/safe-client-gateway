@@ -64,6 +64,15 @@ export interface ISpaceSafesRepository {
     args: Parameters<SpaceSafesRepository['find']>[0],
   ): Promise<Array<SpaceSafe>>;
 
+  /**
+   * The spaces holding this Safe on this chain, matched through the blind
+   * index the way {@link existsInSpace} matches it within one space.
+   */
+  findSpaceIdsBySafe(safe: {
+    chainId: SpaceSafe['chainId'];
+    address: SpaceSafe['address'];
+  }): Promise<Array<Space['id']>>;
+
   /** Whether the space holds this Safe: the membership a caller spending the
    * workspace's allowance on it must prove. */
   existsInSpace(

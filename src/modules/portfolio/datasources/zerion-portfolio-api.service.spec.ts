@@ -117,7 +117,7 @@ describe('ZerionPortfolioApi', () => {
       await service.getPortfolio({ address, fiatCode: 'USD', isTestnet: true });
 
       expect(mockNetworkService.get).toHaveBeenCalledWith({
-        url: `${zerionBaseUri}/v1/wallets/${address}/positions`,
+        url: `${zerionBaseUri}/v1/wallets/${address}/positions/`,
         networkRequest: expect.objectContaining({
           headers: expect.objectContaining({ 'X-Env': 'testnet' }),
         }),
@@ -130,7 +130,7 @@ describe('ZerionPortfolioApi', () => {
         const address = getAddress(faker.finance.ethereumAddress());
         const fiatCode = 'USD';
         const sourceError = new NetworkResponseError(
-          new URL(`${zerionBaseUri}/v1/wallets/${address}/positions`),
+          new URL(`${zerionBaseUri}/v1/wallets/${address}/positions/`),
           new Response(null, { status: 401, statusText: 'Unauthorized' }),
           {
             errors: [

@@ -138,6 +138,8 @@ describe('RouteLoggerInterceptor tests', () => {
       safe_app_user_agent: null,
       status_code: 500,
       origin: null,
+      user_agent: null,
+      referer: null,
     });
     expect(mockLoggingService.info).not.toHaveBeenCalled();
     expect(mockLoggingService.debug).not.toHaveBeenCalled();
@@ -161,6 +163,8 @@ describe('RouteLoggerInterceptor tests', () => {
       safe_app_user_agent: null,
       status_code: 501,
       origin: null,
+      user_agent: null,
+      referer: null,
     });
     expect(mockLoggingService.info).not.toHaveBeenCalled();
     expect(mockLoggingService.debug).not.toHaveBeenCalled();
@@ -184,6 +188,8 @@ describe('RouteLoggerInterceptor tests', () => {
       safe_app_user_agent: null,
       status_code: 530,
       origin: null,
+      user_agent: null,
+      referer: null,
     });
     expect(mockLoggingService.info).not.toHaveBeenCalled();
     expect(mockLoggingService.debug).not.toHaveBeenCalled();
@@ -205,6 +211,8 @@ describe('RouteLoggerInterceptor tests', () => {
       safe_app_user_agent: null,
       status_code: 405,
       origin: null,
+      user_agent: null,
+      referer: null,
     });
     expect(mockLoggingService.error).not.toHaveBeenCalled();
     expect(mockLoggingService.debug).not.toHaveBeenCalled();
@@ -238,6 +246,8 @@ describe('RouteLoggerInterceptor tests', () => {
       safe_app_user_agent: null,
       status_code: 422,
       origin: null,
+      user_agent: null,
+      referer: null,
     });
     expect(mockLoggingService.error).not.toHaveBeenCalled();
     expect(mockLoggingService.debug).not.toHaveBeenCalled();
@@ -261,6 +271,8 @@ describe('RouteLoggerInterceptor tests', () => {
       safe_app_user_agent: null,
       status_code: 502,
       origin: null,
+      user_agent: null,
+      referer: null,
     });
     expect(mockLoggingService.info).not.toHaveBeenCalled();
     expect(mockLoggingService.debug).not.toHaveBeenCalled();
@@ -284,6 +296,8 @@ describe('RouteLoggerInterceptor tests', () => {
       safe_app_user_agent: null,
       status_code: 430,
       origin: null,
+      user_agent: null,
+      referer: null,
     });
     expect(mockLoggingService.error).not.toHaveBeenCalled();
     expect(mockLoggingService.debug).not.toHaveBeenCalled();
@@ -305,6 +319,8 @@ describe('RouteLoggerInterceptor tests', () => {
       safe_app_user_agent: null,
       status_code: 200,
       origin: null,
+      user_agent: null,
+      referer: null,
     });
     expect(mockLoggingService.error).not.toHaveBeenCalled();
     expect(mockLoggingService.debug).not.toHaveBeenCalled();
@@ -329,6 +345,8 @@ describe('RouteLoggerInterceptor tests', () => {
       safe_app_user_agent: null,
       status_code: 200,
       origin: null,
+      user_agent: null,
+      referer: null,
     });
     expect(mockLoggingService.error).not.toHaveBeenCalled();
     expect(mockLoggingService.debug).not.toHaveBeenCalled();
@@ -352,6 +370,8 @@ describe('RouteLoggerInterceptor tests', () => {
       safe_app_user_agent: null,
       status_code: 500,
       origin: null,
+      user_agent: null,
+      referer: null,
     });
     expect(mockLoggingService.info).not.toHaveBeenCalled();
     expect(mockLoggingService.debug).not.toHaveBeenCalled();
@@ -377,6 +397,38 @@ describe('RouteLoggerInterceptor tests', () => {
       safe_app_user_agent: safeAppUserAgentHeader,
       status_code: 200,
       origin: null,
+      user_agent: null,
+      referer: null,
     });
+  });
+
+  it('Logs the User-Agent header and the Referer origin', async () => {
+    const userAgent = faker.internet.userAgent();
+    const refererOrigin = faker.internet.url({ appendSlash: false });
+    const referer = `${refererOrigin}${faker.system.directoryPath()}?${faker.word.noun()}=${faker.string.alphanumeric()}`;
+
+    await request(app.getHttpServer())
+      .get('/test/success')
+      .set('User-Agent', userAgent)
+      .set('Referer', referer)
+      .expect(200);
+
+    expect(mockLoggingService.info).toHaveBeenCalledWith(
+      expect.objectContaining({
+        user_agent: userAgent,
+        referer: new URL(refererOrigin).origin,
+      }),
+    );
+  });
+
+  it('Logs no Referer if it is not a URL', async () => {
+    await request(app.getHttpServer())
+      .get('/test/success')
+      .set('Referer', faker.word.noun())
+      .expect(200);
+
+    expect(mockLoggingService.info).toHaveBeenCalledWith(
+      expect.objectContaining({ referer: null }),
+    );
   });
 });

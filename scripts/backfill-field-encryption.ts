@@ -10,6 +10,7 @@
  *   space_safes.address               + address_index
  *   space_address_book_items.address  + address_index
  *   space_address_book_items.name
+ *   space_address_book_tags.name      (name_index is not recomputed)
  *   address_book_requests.address     + address_index
  *   address_book_requests.name
  *   members.name, members.alias
@@ -162,6 +163,14 @@ const TABLES: Array<TableSpec> = [
       },
       { column: 'name' },
     ],
+  },
+  // Only the name: name_index is a Workspace-scoped HMAC from
+  // SpaceEncryptionService.tagNameIndex, not this script's blind index.
+  {
+    table: 'space_address_book_tags',
+    scopeColumn: 'space_id',
+    scopeKey: 'spaceId',
+    columns: [{ column: 'name' }],
   },
   {
     table: 'address_book_requests',

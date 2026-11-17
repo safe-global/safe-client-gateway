@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
-import { ForbiddenException } from '@nestjs/common';
+import { HttpStatus } from '@nestjs/common';
 import { getAddress } from 'viem';
 import type { MockedObject } from 'vitest';
+import { HttpExceptionNoLog } from '#/domain/common/errors/http-exception-no-log.error';
 import type { ILoggingService } from '#/logging/logging.interface';
 import { siweAuthPayloadDtoBuilder } from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
@@ -89,7 +90,7 @@ describe('SpaceAuditService', () => {
   });
 
   describe('getAuditLog', () => {
-    it('should throw a ForbiddenException when the viewer has no ACTIVE membership', async () => {
+    it('should throw a 403 when the viewer has no ACTIVE membership', async () => {
       membersRepository.findOne.mockResolvedValue(null);
 
       await expect(
@@ -101,7 +102,10 @@ describe('SpaceAuditService', () => {
           filters: {},
         }),
       ).rejects.toThrow(
-        new ForbiddenException('User is not a member of this workspace'),
+        new HttpExceptionNoLog(
+          'User is not a member of this workspace',
+          HttpStatus.FORBIDDEN,
+        ),
       );
 
       expect(membersRepository.findOne).toHaveBeenCalledWith({
@@ -525,12 +529,17 @@ describe('SpaceAuditService', () => {
   });
 
   describe('getAuditLogActors', () => {
-    it('should throw a ForbiddenException when the viewer has no ACTIVE membership', async () => {
+    it('should throw a 403 when the viewer has no ACTIVE membership', async () => {
       membersRepository.findOne.mockResolvedValue(null);
 
       await expect(
         service.getAuditLogActors({ authPayload, spaceId }),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toThrow(
+        new HttpExceptionNoLog(
+          'User is not a member of this workspace',
+          HttpStatus.FORBIDDEN,
+        ),
+      );
 
       expect(spaceAuditRepository.findDistinctActorIds).not.toHaveBeenCalled();
     });

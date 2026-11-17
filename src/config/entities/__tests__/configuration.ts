@@ -10,7 +10,7 @@ export default (): ReturnType<typeof configuration> => ({
   },
   amqp: {
     url: faker.internet.url({ appendSlash: false }),
-    exchange: { name: faker.string.sample(), mode: faker.string.sample() },
+    exchange: { name: faker.string.sample() },
     queue: faker.string.sample(),
     prefetch: faker.number.int(),
     heartbeatIntervalInSeconds: 60,
@@ -99,9 +99,24 @@ export default (): ReturnType<typeof configuration> => ({
   portfolio: {
     cache: {
       ttlSeconds: faker.number.int({ min: 10, max: 300 }),
+      afterTransactionTtlSeconds: faker.number.int({ min: 60, max: 180 }),
     },
     filters: {
       dustThresholdUsd: faker.number.float({ min: 0.1, max: 10 }),
+    },
+    summaries: {
+      rateLimit: {
+        max: faker.number.int({ min: 100, max: 200 }),
+        windowSeconds: faker.number.int({ min: 100, max: 200 }),
+      },
+    },
+    clear: {
+      cooldownSeconds: faker.number.int({ min: 10, max: 60 }),
+      recentClearSeconds: faker.number.int({ min: 10, max: 60 }),
+      rateLimit: {
+        max: faker.number.int({ min: 100, max: 200 }),
+        windowSeconds: faker.number.int({ min: 100, max: 200 }),
+      },
     },
   },
   blockchain: {
@@ -211,9 +226,11 @@ export default (): ReturnType<typeof configuration> => ({
     zerionPositions: faker.number.int(),
     billing: faker.number.int(),
     entitlements: faker.number.int(),
+    decodedData: faker.number.int(),
     notFound: {
       default: faker.number.int(),
       contract: faker.number.int(),
+      decodedData: faker.number.int(),
       token: faker.number.int(),
     },
   },
@@ -224,6 +241,7 @@ export default (): ReturnType<typeof configuration> => ({
     zerion: false,
     zerionTestnets: false,
     zerionPositions: false,
+    safesPortfolioSnapshot: false,
     debugLogs: false,
     configHooksDebugLogs: false,
     auth: false,
@@ -254,6 +272,7 @@ export default (): ReturnType<typeof configuration> => ({
     safeShieldCoreDisabled: false,
     safeQueueService: false,
     safenet: false,
+    guardPolicies: true,
   },
   httpClient: {
     requestTimeout: faker.number.int(),
@@ -522,6 +541,9 @@ export default (): ReturnType<typeof configuration> => ({
       maxPending: faker.number.int({ min: 10, max: 20 }),
     },
     maxSafesPerSpace: faker.number.int({ min: 5, max: 10 }),
+    transactionQueue: {
+      maxPages: faker.number.int({ min: 1, max: 5 }),
+    },
     maxSpaceCreationsPerUser: faker.number.int({ min: 100, max: 200 }),
     maxInvites: faker.number.int({ min: 5, max: 10 }),
     invite: {

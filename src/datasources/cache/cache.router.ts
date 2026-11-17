@@ -24,7 +24,7 @@ export class CacheRouter {
   private static readonly COUNTERFACTUAL_SAFE_KEY = 'counterfactual_safe';
   private static readonly COUNTERFACTUAL_SAFES_KEY = 'counterfactual_safes';
   private static readonly CREATION_TRANSACTION_KEY = 'creation_transaction';
-  private static readonly DECODED_DATA_KEY = 'decoded_data';
+  private static readonly DECODED_DATA_KEY = 'decoded_data_v2';
   private static readonly DELEGATES_KEY = 'delegates';
   private static readonly FIREBASE_OAUTH2_TOKEN_KEY = 'firebase_oauth2_token';
   private static readonly GAS_TOKENS_KEY = 'gas_tokens';
@@ -61,6 +61,8 @@ export class CacheRouter {
   private static readonly SAFE_KEY = 'safe';
   private static readonly SINGLETONS_KEY = 'singletons';
   private static readonly SPACE_ENTITLEMENTS_KEY = 'space_entitlements';
+  private static readonly SPACE_TRANSACTION_QUEUE_KEY =
+    'space_transaction_queue';
   private static readonly STAKING_DEDICATED_STAKING_STATS_KEY =
     'staking_dedicated_staking_stats';
   private static readonly STAKING_DEFI_VAULT_STATS_KEY =
@@ -334,15 +336,19 @@ export class CacheRouter {
   static getTransfersCacheDir(args: {
     chainId: string;
     safeAddress: string;
-    onlyErc20: boolean;
-    onlyErc721: boolean;
+    onlyErc20?: boolean;
+    onlyErc721?: boolean;
     limit?: number;
     offset?: number;
     to?: string;
+    from?: string;
+    tokenAddress?: string;
+    executionDateGte?: string;
+    executionDateLte?: string;
   }): CacheDir {
     return new CacheDir(
       CacheRouter.getTransfersCacheKey(args),
-      `${args.onlyErc20}_${args.onlyErc721}_${args.limit}_${args.offset}_${args.to}`,
+      `${args.onlyErc20}_${args.onlyErc721}_${args.limit}_${args.offset}_${args.to}_${args.from}_${args.tokenAddress}_${args.executionDateGte}_${args.executionDateLte}`,
     );
   }
 
@@ -462,6 +468,30 @@ export class CacheRouter {
     );
   }
 
+  static getSpaceTransactionQueueCacheKey(spaceId: number): string {
+    return `${spaceId}_${CacheRouter.SPACE_TRANSACTION_QUEUE_KEY}`;
+  }
+
+  /**
+   * One page of a Space's queue. The field covers the Safes requested, so a
+   * page cached for an earlier set of Safes is never served for a later one.
+   */
+  static getSpaceTransactionQueueCacheDir(args: {
+    spaceId: number;
+    safes: ReadonlyArray<string>;
+    limit: number;
+    offset: number;
+  }): CacheDir {
+    const hash = crypto.createHash('sha256');
+    hash.update(
+      [args.safes.toSorted().join(','), args.limit, args.offset].join('_'),
+    );
+    return new CacheDir(
+      CacheRouter.getSpaceTransactionQueueCacheKey(args.spaceId),
+      hash.digest('hex'),
+    );
+  }
+
   static getMultisigTransactionCacheDir(args: {
     chainId: string;
     safeTransactionHash: string;
@@ -520,7 +550,12 @@ export class CacheRouter {
     data: Address;
     to: Address;
   }): string {
-    return `${args.chainId}_${CacheRouter.DECODED_DATA_KEY}_${args.data}_${args.to}`;
+    // Calldata is hashed as batched transactions can be tens of KB
+    const hash = crypto
+      .createHash('sha256')
+      .update(args.data.toLowerCase())
+      .digest('hex');
+    return `${args.chainId}_${CacheRouter.DECODED_DATA_KEY}_${hash}_${args.to}`;
   }
 
   static getDecodedDataCacheDir(args: {
@@ -872,10 +907,15 @@ export class CacheRouter {
     );
   }
 
-  static getStakingDeploymentsCacheDir(
-    cacheType: 'earn' | 'staking',
-  ): CacheDir {
-    return new CacheDir(CacheRouter.STAKING_DEPLOYMENTS_KEY, cacheType);
+  // Keyed by chain: testnet chains are served by a different Kiln environment
+  static getStakingDeploymentsCacheDir(args: {
+    cacheType: 'earn' | 'staking';
+    chainId: string;
+  }): CacheDir {
+    return new CacheDir(
+      `${args.chainId}_${CacheRouter.STAKING_DEPLOYMENTS_KEY}`,
+      args.cacheType,
+    );
   }
 
   static getStakingRewardsFeeCacheDir(args: {
@@ -889,27 +929,33 @@ export class CacheRouter {
     );
   }
 
-  static getStakingNetworkStatsCacheDir(
-    cacheType: 'earn' | 'staking',
-  ): CacheDir {
-    return new CacheDir(CacheRouter.STAKING_NETWORK_STATS_KEY, cacheType);
+  static getStakingNetworkStatsCacheDir(args: {
+    cacheType: 'earn' | 'staking';
+    chainId: string;
+  }): CacheDir {
+    return new CacheDir(
+      `${args.chainId}_${CacheRouter.STAKING_NETWORK_STATS_KEY}`,
+      args.cacheType,
+    );
   }
 
-  static getStakingDedicatedStakingStatsCacheDir(
-    cacheType: 'earn' | 'staking',
-  ): CacheDir {
+  static getStakingDedicatedStakingStatsCacheDir(args: {
+    cacheType: 'earn' | 'staking';
+    chainId: string;
+  }): CacheDir {
     return new CacheDir(
-      CacheRouter.STAKING_DEDICATED_STAKING_STATS_KEY,
-      cacheType,
+      `${args.chainId}_${CacheRouter.STAKING_DEDICATED_STAKING_STATS_KEY}`,
+      args.cacheType,
     );
   }
 
   static getStakingPooledStakingStatsCacheDir(args: {
     cacheType: 'earn' | 'staking';
+    chainId: string;
     pool: Address;
   }): CacheDir {
     return new CacheDir(
-      `${CacheRouter.STAKING_POOLED_STAKING_STATS_KEY}_${args.pool}`,
+      `${args.chainId}_${CacheRouter.STAKING_POOLED_STAKING_STATS_KEY}_${args.pool}`,
       args.cacheType,
     );
   }
@@ -1193,6 +1239,24 @@ export class CacheRouter {
 
   static getPortfolioCacheKey(args: { address: Address }): string {
     return `${CacheRouter.PORTFOLIO_KEY}_${args.address}_zerion`;
+  }
+
+  /**
+   * When the Zerion caches of an address were last cleared, in epoch ms. Kept
+   * for the settle window only, so a refetch right after a transaction is not
+   * cached for the full TTL.
+   */
+  static getPortfolioClearedAtCacheKey(args: { address: Address }): string {
+    return `${CacheRouter.PORTFOLIO_KEY}_${args.address}_cleared_at`;
+  }
+
+  /**
+   * Cooldown counter that skips repeat portfolio cache clears for the same address.
+   */
+  static getPortfolioClearCooldownCacheKey(args: { address: Address }): string {
+    return CacheRouter.getRateLimitCacheKey(
+      `${CacheRouter.PORTFOLIO_KEY}_clear_${args.address}`,
+    );
   }
 
   /**

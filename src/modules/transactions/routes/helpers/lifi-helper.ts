@@ -84,23 +84,32 @@ export class LiFiHelper {
       return null;
     }
 
+    const transaction = {
+      to: args.transaction.to,
+      data: args.transaction.data,
+      value: args.transaction.value ?? '0',
+    };
+
+    // Finding the diamond address reads the list of all LiFi chains, so it is
+    // only looked up for a transaction whose calldata passes the predicate
+    const candidate = this.transactionFinder.findTransaction(
+      ({ data }) => args.predicate(data),
+      transaction,
+    );
+    if (!candidate) {
+      return null;
+    }
+
     const diamondAddress = await this.bridgeRepository.getDiamondAddress(
       args.chainId,
     );
 
-    return this.transactionFinder.findTransaction(
-      ({ to, data }) => {
-        if (!(to && isAddressEqual(to, diamondAddress))) {
-          return false;
-        }
-        return args.predicate(data);
-      },
-      {
-        to: args.transaction.to,
-        data: args.transaction.data,
-        value: args.transaction.value ?? '0',
-      },
-    );
+    return this.transactionFinder.findTransaction(({ to, data }) => {
+      if (!(to && isAddressEqual(to, diamondAddress))) {
+        return false;
+      }
+      return args.predicate(data);
+    }, transaction);
   }
 }
 @Module({

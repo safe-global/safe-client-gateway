@@ -22,6 +22,7 @@ import type { IFeaturesRepository } from '#/modules/entitlements/domain/features
 import type { ISubscriptionsRepository } from '#/modules/entitlements/domain/subscriptions.repository.interface';
 import { EntitlementsService } from '#/modules/entitlements/routes/entitlements.service';
 import { SubscriptionSyncService } from '#/modules/entitlements/routes/subscription-sync.service';
+import type { ISpaceSetupApplier } from '#/modules/spaces/domain/setup/space-setup-applier.interface';
 import type { ISpacesRepository } from '#/modules/spaces/domain/spaces.repository.interface';
 import { fakeUuid } from '#/validation/entities/schemas/__tests__/uuid.builder';
 
@@ -46,8 +47,9 @@ describe('SubscriptionSyncService', () => {
   let spacesRepository: MockedObject<Pick<ISpacesRepository, 'findIdByUuid'>>;
   let featuresRepository: MockedObject<IFeaturesRepository>;
   let subscriptionsRepository: MockedObject<
-    Pick<ISubscriptionsRepository, 'getLastEventAt'>
+    Pick<ISubscriptionsRepository, 'getLastEventAt' | 'getSubscriptionSummary'>
   >;
+  let spaceSetupApplier: MockedObject<ISpaceSetupApplier>;
   let cacheService: MockedObject<ICacheService>;
   let loggingService: MockedObject<ILoggingService>;
   let target: SubscriptionSyncService;
@@ -126,7 +128,12 @@ describe('SubscriptionSyncService', () => {
     };
     subscriptionsRepository = {
       getLastEventAt: vi.fn().mockResolvedValue(null),
+      getSubscriptionSummary: vi.fn().mockResolvedValue({
+        hasEverSubscribed: true,
+        activePlanId: null,
+      }),
     };
+    spaceSetupApplier = { apply: vi.fn() };
     cacheService = {
       deleteByKey: vi.fn(),
     } as unknown as MockedObject<ICacheService>;
@@ -145,6 +152,7 @@ describe('SubscriptionSyncService', () => {
       subscriptionsRepository as unknown as ISubscriptionsRepository,
       cacheService,
       loggingService,
+      spaceSetupApplier,
     );
   });
 
@@ -626,6 +634,107 @@ describe('SubscriptionSyncService', () => {
       ).toHaveBeenCalledTimes(1);
       expect(loggingService.warn).toHaveBeenCalledTimes(1);
       expect(loggingService.info).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('pending setup', () => {
+    function liveSubscription(): void {
+      subscriptionsRepository.getSubscriptionSummary.mockResolvedValue({
+        hasEverSubscribed: true,
+        activePlanId: faker.string.alphanumeric(12),
+      });
+    }
+
+    it('applies the setup after a sync that leaves the subscription live', async () => {
+      liveSubscription();
+
+      await target.handleWebhook(webhookEvent());
+
+      expect(spaceSetupApplier.apply).toHaveBeenCalledExactlyOnceWith(spaceId);
+    });
+
+    it('does not apply the setup while no subscription is live', async () => {
+      await target.handleWebhook(webhookEvent());
+
+      expect(spaceSetupApplier.apply).not.toHaveBeenCalled();
+    });
+
+    it('acks the webhook and logs an error when the apply fails', async () => {
+      liveSubscription();
+      spaceSetupApplier.apply.mockRejectedValue(new Error('KMS unavailable'));
+
+      await expect(
+        target.handleWebhook(webhookEvent()),
+      ).resolves.toBeUndefined();
+
+      expect(loggingService.error).toHaveBeenCalledWith(
+        expect.stringContaining('KMS unavailable'),
+      );
+    });
+
+    it('acks the webhook and logs an error when the subscription read fails', async () => {
+      subscriptionsRepository.getSubscriptionSummary.mockRejectedValue(
+        new Error('database unavailable'),
+      );
+
+      await expect(
+        target.handleWebhook(webhookEvent()),
+      ).resolves.toBeUndefined();
+
+      expect(spaceSetupApplier.apply).not.toHaveBeenCalled();
+      expect(loggingService.error).toHaveBeenCalledWith(
+        expect.stringContaining('database unavailable'),
+      );
+    });
+  });
+
+  describe('syncSpace', () => {
+    function upstreamTrial(): void {
+      billingRepository.getSubscriptionsByCustomerId.mockResolvedValue([
+        subscriptionBuilder().with('status', 'trialing').build(),
+      ]);
+    }
+
+    it('reads the subscriptions past the cache', async () => {
+      upstreamTrial();
+
+      await target.syncSpace({ spaceId, upstreamCustomerId: spaceUuid });
+
+      expect(billingRepository.clearSubscriptions).toHaveBeenCalledWith({
+        upstreamCustomerId: spaceUuid,
+      });
+    });
+
+    it('materializes the upstream state with no triggering event', async () => {
+      upstreamTrial();
+
+      await target.syncSpace({ spaceId, upstreamCustomerId: spaceUuid });
+
+      expect(entitlementsService.materializeAuthoritative).toHaveBeenCalledWith(
+        expect.objectContaining({ spaceId, triggerEventAt: null }),
+      );
+    });
+
+    it('applies no setup: reconciling decides that', async () => {
+      subscriptionsRepository.getSubscriptionSummary.mockResolvedValue({
+        hasEverSubscribed: true,
+        activePlanId: faker.string.alphanumeric(12),
+      });
+      upstreamTrial();
+
+      await target.syncSpace({ spaceId, upstreamCustomerId: spaceUuid });
+
+      expect(spaceSetupApplier.apply).not.toHaveBeenCalled();
+    });
+
+    it('materializes nothing when upstream lists no subscriptions', async () => {
+      billingRepository.getSubscriptionsByCustomerId.mockResolvedValue([]);
+
+      await target.syncSpace({ spaceId, upstreamCustomerId: spaceUuid });
+
+      expect(
+        entitlementsService.materializeAuthoritative,
+      ).not.toHaveBeenCalled();
     });
   });
 });

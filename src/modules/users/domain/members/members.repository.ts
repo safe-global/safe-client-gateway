@@ -14,7 +14,7 @@ import type {
   FindOptionsRelations,
   FindOptionsWhere,
 } from 'typeorm';
-import { In, IsNull } from 'typeorm';
+import { In, IsNull, LessThanOrEqual } from 'typeorm';
 import { type Address, getAddress } from 'viem';
 import { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
 import { isUniqueConstraintError } from '#/datasources/errors/helpers/is-unique-constraint-error.helper';
@@ -27,16 +27,19 @@ import { SpaceAuditEventType } from '#/modules/spaces/domain/audit/entities/spac
 import { ISpaceAuditRepository } from '#/modules/spaces/domain/audit/space-audit.repository.interface';
 import type { Space } from '#/modules/spaces/domain/entities/space.entity';
 import { ISpacesRepository } from '#/modules/spaces/domain/spaces.repository.interface';
+import { Member as DbMember } from '#/modules/users/datasources/entities/member.entity.db';
+import type { Invitation } from '#/modules/users/domain/entities/invitation.entity';
 import {
   InviteType,
   type InviteUserInput,
-} from '#/modules/spaces/routes/members/entities/invite-users.dto.entity';
-import { Member as DbMember } from '#/modules/users/datasources/entities/member.entity.db';
-import type { Invitation } from '#/modules/users/domain/entities/invitation.entity';
+} from '#/modules/users/domain/entities/invite-user.entity';
 import type { Member } from '#/modules/users/domain/entities/member.entity';
 import type { User } from '#/modules/users/domain/entities/user.entity';
 import { MemberEncryptionService } from '#/modules/users/domain/members/member-encryption.service';
-import type { IMembersRepository } from '#/modules/users/domain/members/members.repository.interface';
+import type {
+  IMembersRepository,
+  PendingInvitePolicy,
+} from '#/modules/users/domain/members/members.repository.interface';
 import {
   activeOrPendingMemberWhere,
   isActiveAdmin,
@@ -216,12 +219,13 @@ export class MembersRepository implements IMembersRepository {
   }
 
   public async inviteUsers(args: {
-    authPayload: AuthPayload;
+    actorUserId: User['id'];
     spaceId: Space['id'];
     users: Array<InviteUserInput>;
     inviteExpiresAt: Date;
+    onPendingInvite?: PendingInvitePolicy;
   }): Promise<Array<Invitation>> {
-    const userId = getAuthenticatedUserIdOrFail(args.authPayload);
+    const userId = args.actorUserId;
 
     const space = await this.spacesRepository.findOneOrFail({
       where: { id: args.spaceId },
@@ -300,6 +304,7 @@ export class MembersRepository implements IMembersRepository {
           userToInvite,
           invitedBy: userId,
           inviteExpiresAt: args.inviteExpiresAt,
+          onPendingInvite: args.onPendingInvite ?? 'renew',
         });
 
         await this.spaceAuditRepository.record(entityManager, {
@@ -337,6 +342,7 @@ export class MembersRepository implements IMembersRepository {
     userToInvite: InviteUserInput;
     invitedBy: number | null;
     inviteExpiresAt: Date;
+    onPendingInvite: PendingInvitePolicy;
   }): Promise<{ reinvite: boolean }> {
     const {
       entityManager,
@@ -386,7 +392,10 @@ export class MembersRepository implements IMembersRepository {
       return { reinvite: false };
     }
 
-    if (existingMember.status === 'INVITED') {
+    if (
+      existingMember.status === 'INVITED' &&
+      args.onPendingInvite === 'renew'
+    ) {
       await entityManager.update(DbMember, existingMember.id, {
         name: encryptedName,
         role,
@@ -402,24 +411,36 @@ export class MembersRepository implements IMembersRepository {
   public async renewInvite(args: {
     memberId: Member['id'];
     inviteExpiresAt: Date;
+    notRenewedSince: Date;
     spaceId: Space['id'];
     spaceUuid: UUID;
     targetUserId: User['id'];
     actorUserId: User['id'];
-  }): Promise<void> {
-    await this.postgresDatabaseService.transaction(async (entityManager) => {
-      await entityManager.update(DbMember, args.memberId, {
-        inviteExpiresAt: args.inviteExpiresAt,
-      });
+  }): Promise<boolean> {
+    return await this.postgresDatabaseService.transaction(
+      async (entityManager) => {
+        const { affected } = await entityManager.update(
+          DbMember,
+          {
+            id: args.memberId,
+            updatedAt: LessThanOrEqual(args.notRenewedSince),
+          },
+          { inviteExpiresAt: args.inviteExpiresAt },
+        );
+        if (!affected) {
+          return false;
+        }
 
-      await this.spaceAuditRepository.record(entityManager, {
-        spaceId: args.spaceId,
-        spaceUuid: args.spaceUuid,
-        eventType: SpaceAuditEventType.MEMBER_INVITE_RENEWED,
-        actorUserId: args.actorUserId,
-        payload: { targetUserId: args.targetUserId },
-      });
-    });
+        await this.spaceAuditRepository.record(entityManager, {
+          spaceId: args.spaceId,
+          spaceUuid: args.spaceUuid,
+          eventType: SpaceAuditEventType.MEMBER_INVITE_RENEWED,
+          actorUserId: args.actorUserId,
+          payload: { targetUserId: args.targetUserId },
+        });
+        return true;
+      },
+    );
   }
 
   public async acceptInvite(args: {

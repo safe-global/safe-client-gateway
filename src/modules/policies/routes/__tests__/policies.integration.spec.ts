@@ -4,7 +4,7 @@ import type { Server } from 'node:http';
 import { faker } from '@faker-js/faker';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { getAddress, zeroAddress } from 'viem';
+import { type Address, getAddress, zeroAddress } from 'viem';
 import type { MockedObject } from 'vitest';
 import {
   initTestApplication,
@@ -18,6 +18,7 @@ import { NetworkResponseError } from '#/datasources/network/entities/network.err
 import type { INetworkService } from '#/datasources/network/network.service.interface';
 import { NetworkService } from '#/datasources/network/network.service.interface';
 import { nameBuilder } from '#/domain/common/entities/name.builder';
+import { getAllMultiSendDeployments } from '#/domain/common/utils/deployments';
 import { pageBuilder } from '#/domain/entities/__tests__/page.builder';
 import { siweAuthPayloadDtoBuilder } from '#/modules/auth/domain/entities/__tests__/auth-payload-dto.entity.builder';
 import { chainBuilder } from '#/modules/chains/domain/entities/__tests__/chain.builder';
@@ -25,11 +26,22 @@ import {
   addDelegateEncoder,
   setAllowanceEncoder,
 } from '#/modules/contracts/domain/__tests__/encoders/allowance-module-encoder.builder';
+import {
+  multiSendEncoder,
+  multiSendTransactionsEncoder,
+} from '#/modules/contracts/domain/__tests__/encoders/multi-send-encoder.builder';
+import { setGuardEncoder } from '#/modules/contracts/domain/__tests__/encoders/safe-encoder.builder';
 import { delegateBuilder } from '#/modules/delegate/domain/entities/__tests__/delegate.builder';
 import type { Delegate } from '#/modules/delegate/domain/entities/delegate.entity';
 import { NotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/notifications.repository.module';
 import { TestNotificationsRepositoryV2Module } from '#/modules/notifications/domain/v2/test.notification.repository.module';
+import {
+  applyConfigurationEncoder,
+  configureImmediatelyEncoder,
+  setModuleGuardEncoder,
+} from '#/modules/policies/domain/contracts/__tests__/encoders/safe-policy-guard-encoder.builder';
 import { policyConfigurationBuilder } from '#/modules/policies/domain/entities/__tests__/policy-configuration.builder';
+import { rawIndexerConfigurationRootBuilder } from '#/modules/policies/domain/entities/indexer/__tests__/configuration-root.builder';
 import { rawIndexerGuardEnforcedPolicyBuilder } from '#/modules/policies/domain/entities/indexer/__tests__/guard-enforced-policy.builder';
 import {
   rawIndexerMetaBuilder,
@@ -45,8 +57,10 @@ import {
 } from '#/modules/policies/domain/entities/indexer/__tests__/safe-allowance.builder';
 import type { PolicyConfiguration } from '#/modules/policies/domain/entities/policy-configuration.entity';
 import { PolicyType } from '#/modules/policies/domain/entities/policy-type.entity';
+import { getSafePolicyGuardDeployments } from '#/modules/policies/domain/policy-deployments.constants';
 import { configurationRoot } from '#/modules/policies/domain/utils/policy-configuration-root.utils';
 import { multisigTransactionBuilder } from '#/modules/safe/domain/entities/__tests__/multisig-transaction.builder';
+import { confirmationBuilder } from '#/modules/safe/domain/entities/__tests__/multisig-transaction-confirmation.builder';
 import { safeBuilder } from '#/modules/safe/domain/entities/__tests__/safe.builder';
 import type { MultisigTransaction } from '#/modules/safe/domain/entities/multisig-transaction.entity';
 import { Operation } from '#/modules/safe/domain/entities/operation.entity';
@@ -56,9 +70,16 @@ import type { Token } from '#/modules/tokens/domain/entities/token.entity';
 import { rawify } from '#/validation/entities/raw.entity';
 
 const SEPOLIA_CHAIN_ID = '11155111';
+
 const DAY_IN_MINUTES = 1440;
 const MILLISECONDS_IN_MINUTE = 60_000;
 const POLYGON_CHAIN_ID = '137';
+
+function randomSepoliaMultiSendAddress(): Address {
+  return faker.helpers.arrayElement(
+    getAllMultiSendDeployments({ chainId: SEPOLIA_CHAIN_ID }),
+  );
+}
 
 describe('Space Policies Controller', () => {
   let app: INestApplication<Server>;
@@ -73,6 +94,9 @@ describe('Space Policies Controller', () => {
   const polygonSafeAddress = getAddress(faker.finance.ethereumAddress());
   const allowanceModule = getAddress(faker.finance.ethereumAddress());
   const safePolicyGuard = getAddress(faker.finance.ethereumAddress());
+  const SEPOLIA_ALLOWANCE_MODULE = getAddress(
+    '0xCFbFaC74C26F8647cBDb8c5caf80BB5b32E43134',
+  );
   const txServiceUrl = chain.transactionService;
 
   /**
@@ -134,7 +158,9 @@ describe('Space Policies Controller', () => {
       queuedTransactions?: Array<MultisigTransaction>;
       tokens?: Array<Token>;
       tokenNotFoundAddresses?: Array<string>;
+      /** The transaction-guard slot; the guard under test unless given. */
       guard?: `0x${string}`;
+      /** The module-guard slot; empty (the zero address) unless given. */
       moduleGuard?: `0x${string}`;
     } = {},
   ): void {
@@ -1006,6 +1032,33 @@ describe('Space Policies Controller', () => {
         ).toStrictEqual(token);
       });
 
+      it("should attach the token's metadata to an ERC20 transfer allowlist", async () => {
+        const token = erc20TokenBuilder().build();
+        const binding = rawIndexerGuardEnforcedPolicyBuilder()
+          .with('chainId', Number(SEPOLIA_CHAIN_ID))
+          .with('safe', safeAddress)
+          .with('guard', safePolicyGuard)
+          .with('target', token.address)
+          .with('kind', 'ERC20_TRANSFER')
+          .with('state', { recipients: [] })
+          .build();
+        mockUpstream({ tokens: [token] });
+        mockIndexer(
+          rawPolicyIndexerResponse({ GuardPolicyBinding: [binding] }),
+        );
+        const { accessToken, spaceId } = await createSpaceWithSafe({
+          withSafe: true,
+        });
+
+        const { body } = await request(app.getHttpServer())
+          .get(`/v1/spaces/${spaceId}/policies/active`)
+          .query({ types: policyTypes })
+          .set('Cookie', [`access_token=${accessToken}`])
+          .expect(200);
+
+        expect(body[0].data.tokenMetadata).toStrictEqual(token);
+      });
+
       it("should attach the chain's native currency to a native-currency spending-limit allowance", async () => {
         const allowance = anAllowance().with('token', zeroAddress).build();
         mockUpstream();
@@ -1063,10 +1116,6 @@ describe('Space Policies Controller', () => {
   });
 
   describe('GET /v1/spaces/:spaceId/policies/pending', () => {
-    const SEPOLIA_ALLOWANCE_MODULE = getAddress(
-      '0xCFbFaC74C26F8647cBDb8c5caf80BB5b32E43134',
-    );
-
     it('should detect a spending-limit change queued for a safe in the space', async () => {
       const addDelegate = addDelegateEncoder();
       const addDelegateArgs = addDelegate.build();
@@ -1283,6 +1332,318 @@ describe('Space Policies Controller', () => {
         )
         .send(payload())
         .expect(403);
+    });
+  });
+
+  describe('GET /v1/spaces/:spaceId/policies/pending - guard policies', () => {
+    const [guard] = getSafePolicyGuardDeployments(SEPOLIA_CHAIN_ID);
+    const expiry = faker.number.int({ min: 3_600, max: 86_400 });
+
+    /** A queued transaction with `confirmations` of 2 signatures. */
+    function queued(args: {
+      to: Address;
+      data: `0x${string}`;
+      confirmations: number;
+      operation?: Operation;
+    }): MultisigTransaction {
+      return multisigTransactionBuilder()
+        .with('to', args.to)
+        .with('operation', args.operation ?? Operation.CALL)
+        .with('data', args.data)
+        .with('confirmationsRequired', 2)
+        .with(
+          'confirmations',
+          Array.from({ length: args.confirmations }, () =>
+            confirmationBuilder().build(),
+          ),
+        )
+        .build();
+    }
+
+    /** A configuration root of the Sepolia Safe on {@link guard}. */
+    function aRoot(args: {
+      configurations: Array<PolicyConfiguration>;
+      readyAt: number;
+      status?: string;
+    }): ReturnType<
+      ReturnType<typeof rawIndexerConfigurationRootBuilder>['build']
+    > {
+      return rawIndexerConfigurationRootBuilder()
+        .with('chainId', Number(SEPOLIA_CHAIN_ID))
+        .with('safe', safeAddress)
+        .with('guard', guard)
+        .with('root', configurationRoot(args.configurations))
+        .with('readyAt', String(args.readyAt))
+        .with('expiresAt', String(args.readyAt + expiry))
+        .with('status', args.status ?? 'PENDING')
+        .build();
+    }
+
+    function nowInSeconds(): number {
+      return Math.floor(Date.now() / 1_000);
+    }
+
+    async function getPending(args: {
+      accessToken: string;
+      spaceId: string;
+      types: string;
+      includeGuardInstallation?: boolean;
+    }): Promise<Array<Record<string, unknown>>> {
+      const query: Record<string, string> = { types: args.types };
+      if (args.includeGuardInstallation !== undefined) {
+        query.include_guard_installation = String(
+          args.includeGuardInstallation,
+        );
+      }
+
+      const { body } = await request(app.getHttpServer())
+        .get(`/v1/spaces/${args.spaceId}/policies/pending`)
+        .query(query)
+        .set('Cookie', [`access_token=${args.accessToken}`])
+        .expect(200);
+
+      return body;
+    }
+
+    it('should report a queued guard installation batch', async () => {
+      const batch = multiSendEncoder()
+        .with(
+          'transactions',
+          multiSendTransactionsEncoder([
+            {
+              operation: Operation.CALL,
+              to: safeAddress,
+              value: BigInt(0),
+              data: setGuardEncoder().with('guard', guard).encode(),
+            },
+            {
+              operation: Operation.CALL,
+              to: safeAddress,
+              value: BigInt(0),
+              data: setModuleGuardEncoder().with('moduleGuard', guard).encode(),
+            },
+          ]),
+        )
+        .encode();
+      const transaction = queued({
+        to: randomSepoliaMultiSendAddress(),
+        operation: Operation.DELEGATE,
+        data: batch,
+        confirmations: 1,
+      });
+      mockUpstream({ guard: zeroAddress, queuedTransactions: [transaction] });
+      mockIndexer(rawPolicyIndexerResponse());
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+
+      const body = await getPending({
+        accessToken,
+        spaceId,
+        types: PolicyType.Cosigner,
+        includeGuardInstallation: true,
+      });
+
+      expect(body).toEqual([
+        {
+          kind: 'guard-installation',
+          status: 'in-signing',
+          safe: { chainId: SEPOLIA_CHAIN_ID, address: safeAddress },
+          changes: [
+            { kind: 'set-guard', from: null, to: guard },
+            { kind: 'set-module-guard', from: null, to: guard },
+          ],
+          transaction: expect.objectContaining({
+            safeTxHash: transaction.safeTxHash,
+            confirmations: 1,
+            confirmationsRequired: 2,
+          }),
+        },
+      ]);
+    });
+
+    it('should not report a queued guard installation unless requested', async () => {
+      const transaction = queued({
+        to: safeAddress,
+        data: setGuardEncoder().with('guard', guard).encode(),
+        confirmations: 1,
+      });
+      mockUpstream({ guard: zeroAddress, queuedTransactions: [transaction] });
+      mockIndexer(rawPolicyIndexerResponse());
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+
+      const body = await getPending({
+        accessToken,
+        spaceId,
+        types: PolicyType.Cosigner,
+      });
+
+      expect(body).toEqual([]);
+    });
+
+    it('should reject an include_guard_installation value that is not a boolean', async () => {
+      mockUpstream();
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+
+      await request(app.getHttpServer())
+        .get(`/v1/spaces/${spaceId}/policies/pending`)
+        .query({
+          types: PolicyType.Cosigner,
+          include_guard_installation: 'yes',
+        })
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(422);
+    });
+
+    it('should report a spending-limit change and a guard installation together, with token metadata on the spending-limit change only', async () => {
+      const token = erc20TokenBuilder().build();
+      const spendingLimit = queued({
+        to: SEPOLIA_ALLOWANCE_MODULE,
+        data: setAllowanceEncoder().with('token', token.address).encode(),
+        confirmations: 1,
+      });
+      const installation = queued({
+        to: safeAddress,
+        data: setGuardEncoder().with('guard', guard).encode(),
+        confirmations: 1,
+      });
+      mockUpstream({
+        guard: zeroAddress,
+        queuedTransactions: [spendingLimit, installation],
+        tokens: [token],
+      });
+      mockIndexer(rawPolicyIndexerResponse());
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+
+      const body = await getPending({
+        accessToken,
+        spaceId,
+        types: `${PolicyType.SpendingLimit},${PolicyType.Cosigner}`,
+        includeGuardInstallation: true,
+      });
+
+      expect(body).toEqual([
+        expect.objectContaining({
+          kind: 'queued-transaction',
+          safeTxHash: spendingLimit.safeTxHash,
+          data: expect.objectContaining({
+            changes: [
+              expect.objectContaining({
+                kind: 'set-allowance',
+                tokenMetadata: token,
+              }),
+            ],
+          }),
+        }),
+        {
+          kind: 'guard-installation',
+          status: 'in-signing',
+          safe: { chainId: SEPOLIA_CHAIN_ID, address: safeAddress },
+          changes: [{ kind: 'set-guard', from: null, to: guard }],
+          transaction: expect.objectContaining({
+            safeTxHash: installation.safeTxHash,
+          }),
+        },
+      ]);
+    });
+
+    it('should report a queued configureImmediately as immediate guard policies', async () => {
+      const configureImmediately = configureImmediatelyEncoder();
+      const transaction = queued({
+        to: guard,
+        data: configureImmediately.encode(),
+        confirmations: 2,
+      });
+      mockUpstream({ guard: zeroAddress, queuedTransactions: [transaction] });
+      mockIndexer(rawPolicyIndexerResponse());
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+
+      const body = await getPending({
+        accessToken,
+        spaceId,
+        types: PolicyType.Cosigner,
+      });
+
+      expect(body).toEqual([
+        {
+          kind: 'immediate-guard-policies',
+          status: 'ready',
+          safe: { chainId: SEPOLIA_CHAIN_ID, address: safeAddress },
+          guard,
+          configurations: configureImmediately.build().configurations,
+          transaction: expect.objectContaining({
+            safeTxHash: transaction.safeTxHash,
+            confirmations: 2,
+            confirmationsRequired: 2,
+          }),
+        },
+      ]);
+    });
+
+    it('should report the status of on-chain and stored roots', async () => {
+      const now = nowInSeconds();
+      const toApply = [policyConfigurationBuilder().build()];
+      mockUpstream({
+        guard,
+        queuedTransactions: [
+          queued({
+            to: guard,
+            data: applyConfigurationEncoder()
+              .with('configurations', toApply)
+              .encode(),
+            confirmations: 2,
+          }),
+        ],
+      });
+      mockIndexer(
+        rawPolicyIndexerResponse({
+          ConfigurationRoot: [
+            aRoot({ configurations: toApply, readyAt: now - 60 }),
+          ],
+        }),
+      );
+      const { accessToken, spaceId } = await createSpaceWithSafe({
+        withSafe: true,
+      });
+      const draft = payload();
+      await request(app.getHttpServer())
+        .post(
+          `/v1/spaces/${spaceId}/chains/${SEPOLIA_CHAIN_ID}/safes/${safeAddress}/policies/requests`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .send(draft)
+        .expect(201);
+
+      const body = await getPending({
+        accessToken,
+        spaceId,
+        types: Object.values(PolicyType).join(','),
+      });
+
+      const statuses = body
+        .filter((item) => item.kind === 'delayed-guard-policies')
+        .map((item) => ({
+          root: item.root,
+          status: item.status,
+        }));
+      expect(statuses).toEqual(
+        expect.arrayContaining([
+          {
+            root: configurationRoot(toApply),
+            status: 'application-ready',
+          },
+          { root: draft.root, status: 'draft' },
+        ]),
+      );
+      expect(statuses).toHaveLength(2);
     });
   });
 });

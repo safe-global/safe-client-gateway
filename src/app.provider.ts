@@ -11,6 +11,7 @@ import {
 import type { SwaggerDocumentOptions } from '@nestjs/swagger';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { IConfigurationService } from '#/config/configuration.service.interface';
+import { SAFE_HEADER_PREFIX } from '#/datasources/network/safe-request-id-header.helper';
 
 export function configureVersioning(app: INestApplication): void {
   app.enableVersioning({
@@ -85,9 +86,7 @@ export function parseBodyLimit(value: string | undefined): number | undefined {
 // Fastify rejects empty JSON bodies with FST_ERR_CTP_EMPTY_JSON_BODY,
 // so restore the Express semantics while delegating non-empty bodies
 // to Fastify's default parser to keep its prototype-poisoning protection.
-export function configureFastifyBodyParsers(
-  adapter: FastifyAdapter,
-): FastifyAdapter {
+function configureFastifyBodyParsers(adapter: FastifyAdapter): FastifyAdapter {
   const instance = adapter.getInstance();
   const { bodyLimit, onConstructorPoisoning, onProtoPoisoning } =
     instance.initialConfig;
@@ -126,12 +125,37 @@ export function configureFastifyBodyParsers(
   return adapter;
 }
 
+// x-safe-* headers carry attribution that Safe services trust, so a client must
+// never be able to set one. Registered on the adapter, the hook runs before
+// Nest middleware and on every route.
+function configureSafeHeaderStripping(adapter: FastifyAdapter): void {
+  adapter.getInstance().addHook('onRequest', (request, _reply, done) => {
+    // request.headers can be a merged copy; middleware and handlers read raw
+    for (const name of Object.keys(request.raw.headers)) {
+      if (name.startsWith(SAFE_HEADER_PREFIX)) {
+        delete request.raw.headers[name];
+      }
+    }
+    done();
+  });
+}
+
+/**
+ * Applies the request handling shared by the app and its tests.
+ */
+export function configureFastifyAdapter(
+  adapter: FastifyAdapter,
+): FastifyAdapter {
+  configureSafeHeaderStripping(adapter);
+  return configureFastifyBodyParsers(adapter);
+}
+
 export function createFastifyAdapterFromConfiguration(
   config: FastifyAdapterConfiguration,
 ): FastifyAdapter {
   const bodyLimit = parseBodyLimit(config.bodyLimit);
 
-  return configureFastifyBodyParsers(
+  return configureFastifyAdapter(
     new FastifyAdapter({
       trustProxy: parseTrustProxy(config.trustProxy),
       routerOptions: FASTIFY_ROUTER_OPTIONS,

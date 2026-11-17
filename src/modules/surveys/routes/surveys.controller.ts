@@ -6,6 +6,7 @@ import {
   Inject,
   Param,
   Post,
+  UseFilters,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -23,24 +24,45 @@ import {
 import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
 import { AuthGuard } from '#/modules/auth/routes/guards/auth.guard';
 import { SurveySlugSchema } from '#/modules/surveys/domain/entities/survey.entity';
+import { InvalidSurveySelectionsExceptionFilter } from '#/modules/surveys/domain/exception-filters/invalid-survey-selections.exception-filter';
 import {
   SubmitSurveyResponseDto,
   SubmitSurveyResponseDtoSchema,
   SurveyResponseResultDto,
 } from '#/modules/surveys/routes/entities/submit-survey-response.dto.entity';
-import { SurveyStateDto } from '#/modules/surveys/routes/entities/survey-state.dto.entity';
+import {
+  SurveyDto,
+  SurveyStateDto,
+} from '#/modules/surveys/routes/entities/survey-state.dto.entity';
 import { SurveysService } from '#/modules/surveys/routes/surveys.service';
 import { Auth } from '#/routes/common/auth/auth.decorator';
 import { SpaceIdPipe } from '#/routes/common/pipes/space-id.pipe';
 import { ValidationPipe } from '#/validation/pipes/validation.pipe';
 
 @ApiTags('surveys')
-@Controller({ path: 'spaces', version: '1' })
+@Controller({ version: '1' })
 export class SurveysController {
   constructor(
     @Inject(SurveysService)
     private readonly surveysService: SurveysService,
   ) {}
+
+  @ApiOperation({
+    summary: 'Get the active survey',
+    description:
+      'Returns the active survey for the slug. It needs no space, so a Workspace that does not exist yet can show it.',
+  })
+  @ApiParam({ name: 'slug', type: 'string', example: 'onboarding' })
+  @ApiOkResponse({ type: SurveyDto })
+  @ApiUnauthorizedResponse({ description: 'Not authenticated' })
+  @ApiNotFoundResponse({ description: 'No active survey for this slug' })
+  @Get('surveys/:slug')
+  @UseGuards(AuthGuard)
+  public async getActiveSurvey(
+    @Param('slug', new ValidationPipe(SurveySlugSchema)) slug: string,
+  ): Promise<SurveyDto> {
+    return await this.surveysService.getActiveSurvey(slug);
+  }
 
   @ApiOperation({
     summary: 'Get survey state for a space',
@@ -61,7 +83,7 @@ export class SurveysController {
     description: 'User is not an active admin of this space',
   })
   @ApiNotFoundResponse({ description: 'No active survey for this slug' })
-  @Get('/:spaceId/surveys/:slug/state')
+  @Get('spaces/:spaceId/surveys/:slug/state')
   @UseGuards(AuthGuard)
   public async getState(
     @Auth() authPayload: AuthPayload,
@@ -97,8 +119,9 @@ export class SurveysController {
     description: 'User is not an active admin of this space',
   })
   @ApiNotFoundResponse({ description: 'No active survey for this slug' })
-  @Post('/:spaceId/surveys/:slug/responses')
+  @Post('spaces/:spaceId/surveys/:slug/responses')
   @UseGuards(AuthGuard)
+  @UseFilters(InvalidSurveySelectionsExceptionFilter)
   public async submitResponse(
     @Auth() authPayload: AuthPayload,
     @Param('spaceId', SpaceIdPipe) spaceId: number,

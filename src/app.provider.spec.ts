@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
+import { faker } from '@faker-js/faker';
 import {
   Body,
   Controller,
@@ -36,6 +37,14 @@ class ProbeController {
 
   @Delete('resource')
   deleteResource(): void {}
+
+  @Get('headers')
+  getHeaders(@Req() req: FastifyRequest): {
+    headers: FastifyRequest['headers'];
+    rawHeaders: FastifyRequest['raw']['headers'];
+  } {
+    return { headers: req.headers, rawHeaders: req.raw.headers };
+  }
 }
 
 describe('createFastifyAdapter', () => {
@@ -163,6 +172,30 @@ describe('createFastifyAdapter', () => {
       .set('Content-Type', 'application/json')
       .send('{"__proto__": {"polluted": true}}')
       .expect(400);
+  });
+
+  it('drops inbound x-safe-* headers in any casing', async () => {
+    app = await createApp('0');
+    const safeAppUserAgent = faker.internet.userAgent();
+    const customHeader = faker.string.alphanumeric();
+
+    const { body } = await request(app.getHttpServer())
+      .get('/headers')
+      .set('X-Safe-Req-Id', faker.string.uuid())
+      .set(`x-safe-${faker.string.alpha()}`, faker.string.alphanumeric())
+      .set('Safe-App-User-Agent', safeAppUserAgent)
+      .set('X-Custom', customHeader)
+      .expect(200);
+
+    for (const headers of [body.headers, body.rawHeaders]) {
+      expect(
+        Object.keys(headers).filter((name) => name.startsWith('x-safe-')),
+      ).toEqual([]);
+      expect(headers).toMatchObject({
+        'safe-app-user-agent': safeAppUserAgent,
+        'x-custom': customHeader,
+      });
+    }
   });
 });
 

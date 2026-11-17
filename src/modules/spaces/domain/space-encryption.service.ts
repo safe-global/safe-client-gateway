@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { Inject, Injectable } from '@nestjs/common';
 import { KmsEncryptionService } from '#/datasources/kms/kms-encryption.service';
+import { normalizeTagNameKey } from '#/modules/spaces/domain/address-books/entities/address-book-tag.entity';
+import type { SpaceSetupPayload } from '#/modules/spaces/domain/setup/entities/space-setup.entity';
 
 /**
  * Space-scoped field-encryption policy for the spaces module: space names,
@@ -129,6 +131,42 @@ export class SpaceEncryptionService {
     return await this.decryptEntries(spaceId, requests);
   }
 
+  async encryptTagName(spaceId: number, name: string): Promise<string> {
+    return await this.kmsEncryption.encrypt(name, this.context(spaceId));
+  }
+
+  /**
+   * Blind index of a tag name, scoped to the space so equal names in two
+   * spaces never share a value. `blindIndex` trims and lowercases, which is
+   * what makes tag names unique regardless of case. Without an index key
+   * (environments where encryption was never configured) the name itself is
+   * plaintext, so the normalised plaintext is used as the index.
+   *
+   * Precondition: staging and production run with ENCRYPTION_ENABLED=true,
+   * which config validation ties to ENCRYPTION_INDEX_KEY, so every tag row
+   * there is written with an HMAC index from the start. An environment that
+   * adds a key after creating tags would need its tag indexes recomputed;
+   * scripts/backfill-field-encryption.ts encrypts tag names but does not
+   * recompute tag indexes.
+   */
+  tagNameIndex(spaceId: number, name: string): string {
+    // `blindIndex` only trims the ends of the whole string, so the name part is normalised here
+    const scoped = `${spaceId}:${normalizeTagNameKey(name)}`;
+    return this.kmsEncryption.blindIndex(scoped) ?? scoped;
+  }
+
+  async decryptTagNames<T extends { name: string }>(
+    spaceId: number,
+    tags: Array<T>,
+  ): Promise<Array<T>> {
+    return await Promise.all(
+      tags.map(async (tag) => ({
+        ...tag,
+        name: await this.kmsEncryption.decrypt(tag.name, this.context(spaceId)),
+      })),
+    );
+  }
+
   /**
    * Encrypts an entire audit payload as one blob: the payload is serialized to
    * JSON and encrypted under the row's space scope. Returns the plaintext JSON
@@ -138,10 +176,7 @@ export class SpaceEncryptionService {
     spaceId: number,
     payload: unknown,
   ): Promise<string> {
-    return await this.kmsEncryption.encrypt(
-      JSON.stringify(payload),
-      this.context(spaceId),
-    );
+    return await this.encryptJson(spaceId, payload);
   }
 
   /**
@@ -154,10 +189,37 @@ export class SpaceEncryptionService {
     spaceId: number,
     payload: string,
   ): Promise<unknown> {
-    const json = await this.kmsEncryption.decrypt(
-      payload,
+    return await this.decryptJson(spaceId, payload);
+  }
+
+  /**
+   * Encrypts a Workspace setup payload (Safes, contacts, invitee emails) as one
+   * blob under the space scope, like {@link encryptAuditPayload}.
+   */
+  async encryptSetupPayload(
+    spaceId: number,
+    payload: SpaceSetupPayload,
+  ): Promise<string> {
+    return await this.encryptJson(spaceId, payload);
+  }
+
+  /** Reverse of {@link encryptSetupPayload}; the caller parses the result. */
+  async decryptSetupPayload(
+    spaceId: number,
+    payload: string,
+  ): Promise<unknown> {
+    return await this.decryptJson(spaceId, payload);
+  }
+
+  private async encryptJson(spaceId: number, value: unknown): Promise<string> {
+    return await this.kmsEncryption.encrypt(
+      JSON.stringify(value),
       this.context(spaceId),
     );
+  }
+
+  private async decryptJson(spaceId: number, value: string): Promise<unknown> {
+    const json = await this.kmsEncryption.decrypt(value, this.context(spaceId));
     return JSON.parse(json);
   }
 

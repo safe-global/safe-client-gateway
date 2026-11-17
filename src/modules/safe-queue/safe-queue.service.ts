@@ -24,6 +24,7 @@ import {
 } from '#/logging/logging.interface';
 import { asError } from '#/logging/utils';
 import type { Delegate } from '#/modules/delegate/domain/entities/delegate.entity';
+import type { ChainSafeAddress } from '#/modules/safe/domain/entities/chain-safe-address.entity';
 import { SafeQueueMessage } from '#/modules/safe-queue/entities/message.entity';
 import type { SafeQueueMultisigTransactionEntity } from '#/modules/safe-queue/entities/multisig-transaction.entity';
 import {
@@ -299,6 +300,69 @@ export class SafeQueueService implements ISafeQueueService {
     } catch (error) {
       throw this.httpErrorFactory.from(error);
     }
+  }
+
+  async getTransactionQueueForSafes(args: {
+    spaceId: number;
+    safes: ReadonlyArray<ChainSafeAddress>;
+    limit: number;
+    offset: number;
+  }): Promise<Raw<Page<SafeQueueMultisigTransactionEntity>>> {
+    try {
+      // Chains sorted, so the same Safes always hash to the same cache field.
+      const safes = Array.from(
+        this.getChainIdsBySafe(args.safes),
+        ([safeAddress, chainIds]) =>
+          [safeAddress, ...chainIds.toSorted()].join(':'),
+      );
+      const limit = Math.min(args.limit, SAFE_QUEUE_SERVICE_MAX_LIMIT);
+      const cacheDir = CacheRouter.getSpaceTransactionQueueCacheDir({
+        spaceId: args.spaceId,
+        safes,
+        limit,
+        offset: args.offset,
+      });
+      const url = `${this.baseUri}/api/v1/multisig-transactions/queue`;
+      return await this.dataSource.get<
+        Page<SafeQueueMultisigTransactionEntity>
+      >({
+        cacheDir,
+        url,
+        notFoundExpireTimeSeconds: this.defaultNotFoundExpirationTimeSeconds,
+        expireTimeSeconds: this.defaultExpirationTimeInSeconds,
+        networkRequest: {
+          params: {
+            safes,
+            nonceOrder: 'asc',
+            limit,
+            offset: args.offset,
+          },
+          circuitBreaker: {
+            key: CircuitBreakerKeys.getSafeQueueServiceKey(),
+          },
+        },
+      });
+    } catch (error) {
+      throw this.httpErrorFactory.from(error);
+    }
+  }
+
+  /**
+   * The chains of each Safe address, for one `safes` value per address: the
+   * service counts values, not addresses, against its maximum.
+   */
+  private getChainIdsBySafe(
+    safes: ReadonlyArray<ChainSafeAddress>,
+  ): Map<Address, Array<string>> {
+    const chainIdsBySafe = new Map<Address, Array<string>>();
+    for (const { chainId, safeAddress } of safes) {
+      const chainIds = chainIdsBySafe.get(safeAddress) ?? [];
+      if (!chainIds.includes(chainId)) {
+        chainIds.push(chainId);
+      }
+      chainIdsBySafe.set(safeAddress, chainIds);
+    }
+    return chainIdsBySafe;
   }
 
   async postConfirmation(args: {
@@ -610,6 +674,11 @@ export class SafeQueueService implements ISafeQueueService {
       chainId: args.chainId,
       safeAddress: args.safeAddress,
     });
+    await this.cacheService.deleteByKey(key);
+  }
+
+  async clearSpaceTransactionQueue(args: { spaceId: number }): Promise<void> {
+    const key = CacheRouter.getSpaceTransactionQueueCacheKey(args.spaceId);
     await this.cacheService.deleteByKey(key);
   }
 

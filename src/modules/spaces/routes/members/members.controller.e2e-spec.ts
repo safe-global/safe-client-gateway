@@ -318,7 +318,6 @@ describe('MembersController', () => {
         .expect(403)
         .expect({
           message: 'User is not an admin of this workspace',
-          error: 'Forbidden',
           statusCode: 403,
         });
     });
@@ -374,7 +373,6 @@ describe('MembersController', () => {
         .expect(403)
         .expect({
           message: 'User is not an admin of this workspace',
-          error: 'Forbidden',
           statusCode: 403,
         });
     });
@@ -420,7 +418,6 @@ describe('MembersController', () => {
         .expect(403)
         .expect({
           message: 'User is not an admin of this workspace',
-          error: 'Forbidden',
           statusCode: 403,
         });
     });
@@ -466,7 +463,6 @@ describe('MembersController', () => {
         .expect(403)
         .expect({
           message: 'User is not an admin of this workspace',
-          error: 'Forbidden',
           statusCode: 403,
         });
     });
@@ -543,20 +539,57 @@ describe('MembersController', () => {
         .expect(201);
       const inviteeUserId = inviteResponse.body[0].userId;
 
-      await request(app.getHttpServer())
-        .post(`/v1/spaces/${spaceId}/members/${inviteeUserId}/invite/renew`)
+      // Only `Date`: the invite just armed the renewal cooldown.
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(Date.now() + 61_000);
+      try {
+        await request(app.getHttpServer())
+          .post(`/v1/spaces/${spaceId}/members/${inviteeUserId}/invite/renew`)
+          .set('Cookie', [`access_token=${accessToken}`])
+          .expect(201)
+          .expect(({ body }) =>
+            expect(body).toEqual({
+              userId: inviteeUserId,
+              spaceUuid,
+              name: inviteeName,
+              role: 'MEMBER',
+              status: 'INVITED',
+              invitedBy: userId,
+            }),
+          );
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('should throw a 429 when the invite was created within the cooldown', async () => {
+      const { accessToken, spaceId } = await createSpaceForSigner(
+        nameBuilder(),
+      );
+      const inviteResponse = await request(app.getHttpServer())
+        .post(`/v1/spaces/${spaceId}/members/invite`)
         .set('Cookie', [`access_token=${accessToken}`])
-        .expect(201)
-        .expect(({ body }) =>
-          expect(body).toEqual({
-            userId: inviteeUserId,
-            spaceUuid,
-            name: inviteeName,
-            role: 'MEMBER',
-            status: 'INVITED',
-            invitedBy: userId,
-          }),
-        );
+        .send({
+          users: [
+            {
+              role: 'MEMBER',
+              address: getAddress(faker.finance.ethereumAddress()),
+              name: faker.person.firstName(),
+            },
+          ],
+        })
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .post(
+          `/v1/spaces/${spaceId}/members/${inviteResponse.body[0].userId}/invite/renew`,
+        )
+        .set('Cookie', [`access_token=${accessToken}`])
+        .expect(429)
+        .expect({
+          message: 'Invitation was renewed recently. Try again later.',
+          statusCode: 429,
+        });
     });
 
     it('should throw a 403 if the signer is not an active admin of the space', async () => {
@@ -572,7 +605,6 @@ describe('MembersController', () => {
         .expect(403)
         .expect({
           message: 'User is not an admin of this workspace',
-          error: 'Forbidden',
           statusCode: 403,
         });
     });
@@ -1492,7 +1524,6 @@ describe('MembersController', () => {
         .expect(403)
         .expect({
           message: 'User is not an admin of this workspace',
-          error: 'Forbidden',
           statusCode: 403,
         });
     });
@@ -1530,7 +1561,6 @@ describe('MembersController', () => {
         .expect(403)
         .expect({
           message: 'User is not an admin of this workspace',
-          error: 'Forbidden',
           statusCode: 403,
         });
     });
@@ -1574,7 +1604,6 @@ describe('MembersController', () => {
         .expect(403)
         .expect({
           message: 'User is not an admin of this workspace',
-          error: 'Forbidden',
           statusCode: 403,
         });
     });
@@ -1723,7 +1752,6 @@ describe('MembersController', () => {
         .expect(403)
         .expect({
           message: 'User is not an admin of this workspace',
-          error: 'Forbidden',
           statusCode: 403,
         });
     });
@@ -1766,7 +1794,6 @@ describe('MembersController', () => {
         .expect(403)
         .expect({
           message: 'User is not an admin of this workspace',
-          error: 'Forbidden',
           statusCode: 403,
         });
     });

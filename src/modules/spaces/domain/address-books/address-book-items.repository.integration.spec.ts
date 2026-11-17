@@ -366,6 +366,50 @@ describe('AddressBookItemsRepository', () => {
     });
   });
 
+  describe('findItemIdsByAddresses', () => {
+    it('maps each lowercased address in the book to its item id and omits the others', async () => {
+      const { spaceId, authPayload } = await createSpaceAsAdmin();
+      const items = faker.helpers.multiple(
+        () => addressBookItemBuilder().build(),
+        { count: { min: 2, max: 4 } },
+      );
+      const rows = await addressBookItemsRepository.upsertMany({
+        userId: Number(authPayload.sub),
+        spaceId,
+        addressBookItems: items,
+      });
+      const unknownAddress = getAddress(faker.finance.ethereumAddress());
+
+      const actual = await addressBookItemsRepository.findItemIdsByAddresses({
+        spaceId,
+        addresses: items.map((item) => item.address).concat(unknownAddress),
+      });
+
+      expect(actual).toStrictEqual(
+        new Map(rows.map((row) => [row.address.toLowerCase(), row.id])),
+      );
+    });
+
+    it('does not return the item of another Space with the same address', async () => {
+      const { spaceId: spaceId1, authPayload: authPayload1 } =
+        await createSpaceAsAdmin();
+      const { spaceId: spaceId2 } = await createSpaceAsAdmin();
+      const item = addressBookItemBuilder().build();
+      await addressBookItemsRepository.upsertMany({
+        userId: Number(authPayload1.sub),
+        spaceId: spaceId1,
+        addressBookItems: [item],
+      });
+
+      const actual = await addressBookItemsRepository.findItemIdsByAddresses({
+        spaceId: spaceId2,
+        addresses: [item.address],
+      });
+
+      expect(actual).toStrictEqual(new Map());
+    });
+  });
+
   describe('deleteByAddress', () => {
     it('should delete an address book item by address', async () => {
       const { spaceId, authPayload } = await createSpaceAsAdmin();

@@ -1,14 +1,17 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 
 import { faker } from '@faker-js/faker';
-import { In, IsNull } from 'typeorm';
+import { NotFoundException } from '@nestjs/common';
+import { type EntityManager, In, IsNull } from 'typeorm';
 import { getAddress } from 'viem';
 import type { Mock, MockedObject } from 'vitest';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
 import type { PostgresDatabaseService } from '#/datasources/db/v2/postgres-database.service';
 import { AddressBookItem as DbAddressBookItem } from '#/modules/spaces/datasources/address-books/entities/address-book-item.entity.db';
+import { Space as DbSpace } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
 import { createMockSpaceEncryptionService } from '#/modules/spaces/domain/__tests__/space-encryption.service.mock';
 import { AddressBookItemsRepository } from '#/modules/spaces/domain/address-books/address-book-items.repository';
+import { addressBookItemBuilder } from '#/modules/spaces/domain/address-books/entities/__tests__/address-book-item.db.builder';
 import { createMockSpaceAuditRepository } from '#/modules/spaces/domain/audit/__tests__/space-audit.repository.mock';
 import type { ISpacesRepository } from '#/modules/spaces/domain/spaces.repository.interface';
 import { fakeUuid } from '#/validation/entities/schemas/__tests__/uuid.builder';
@@ -217,6 +220,86 @@ describe('AddressBookItemsRepository', () => {
           chainIds,
         }),
       ]);
+    });
+
+    it("reads the space through the caller's entity manager, taking no pooled connection", async () => {
+      const { address, name, chainIds } = addressBookItemBuilder().build();
+      entityManager.findOne.mockResolvedValue({ id: spaceId, uuid: spaceUuid });
+
+      await target.upsertMany({
+        userId,
+        spaceId,
+        addressBookItems: [{ address, name, chainIds }],
+        entityManager: entityManager as unknown as EntityManager,
+      });
+
+      expect(entityManager.findOne).toHaveBeenCalledExactlyOnceWith(DbSpace, {
+        where: { id: spaceId },
+        select: { id: true, uuid: true },
+      });
+      expect(spacesRepository.findOneOrFail).not.toHaveBeenCalled();
+      expect(db.getRepository).not.toHaveBeenCalled();
+      expect(db.transaction).not.toHaveBeenCalled();
+      expect(spaceAuditRepository.record).toHaveBeenCalledExactlyOnceWith(
+        entityManager,
+        expect.objectContaining({ spaceId, spaceUuid }),
+      );
+    });
+
+    it("throws NotFoundException when the caller's entity manager finds no space", async () => {
+      const { address, name, chainIds } = addressBookItemBuilder().build();
+      entityManager.findOne.mockResolvedValue(null);
+
+      await expect(
+        target.upsertMany({
+          userId,
+          spaceId,
+          addressBookItems: [{ address, name, chainIds }],
+          entityManager: entityManager as unknown as EntityManager,
+        }),
+      ).rejects.toThrow(new NotFoundException('Workspace not found.'));
+      expect(itemRepository.insert).not.toHaveBeenCalled();
+      expect(spaceAuditRepository.record).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('findItemIdsByAddresses', () => {
+    it('matches encrypted rows by blind index and keys the ids by lowercased address', async () => {
+      const address = getAddress(faker.finance.ethereumAddress());
+      const itemId = faker.number.int({ min: 1, max: 100_000 });
+      const addressIndex = faker.string.hexadecimal({ length: 64 });
+      spaceEncryptionService.itemAddressIndex.mockReturnValue(addressIndex);
+      itemRepository.findBy.mockResolvedValue([
+        {
+          id: itemId,
+          address: `kms:v1:${faker.string.alphanumeric(32)}`,
+          addressIndex,
+        },
+      ]);
+
+      const actual = await target.findItemIdsByAddresses({
+        spaceId,
+        addresses: [address],
+      });
+
+      expect(itemRepository.findBy).toHaveBeenCalledExactlyOnceWith({
+        space: { id: spaceId },
+        addressIndex: In([addressIndex]),
+      });
+      expect(actual).toStrictEqual(new Map([[address.toLowerCase(), itemId]]));
+    });
+
+    it('reads through the given entity manager', async () => {
+      await target.findItemIdsByAddresses({
+        spaceId,
+        addresses: [getAddress(faker.finance.ethereumAddress())],
+        entityManager: entityManager as unknown as EntityManager,
+      });
+
+      expect(entityManager.getRepository).toHaveBeenCalledExactlyOnceWith(
+        DbAddressBookItem,
+      );
+      expect(db.getRepository).not.toHaveBeenCalled();
     });
   });
 

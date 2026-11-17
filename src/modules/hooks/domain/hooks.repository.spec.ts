@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
 import { faker } from '@faker-js/faker';
+import type { ConsumeMessage } from 'amqplib';
 import type { MockedObject } from 'vitest';
 import type { IConfigurationService } from '#/config/configuration.service.interface';
 import { FakeCacheService } from '#/datasources/cache/__tests__/fake.cache.service';
@@ -18,9 +19,12 @@ import type { EarnRepository } from '#/modules/earn/domain/earn.repository';
 import { EventCacheHelper } from '#/modules/hooks/domain/helpers/event-cache.helper';
 import { HooksRepository } from '#/modules/hooks/domain/hooks.repository';
 import { chainUpdateEventBuilder } from '#/modules/hooks/routes/entities/__tests__/chain-update.builder';
+import { deletedMultisigTransactionEventBuilder } from '#/modules/hooks/routes/entities/__tests__/deleted-multisig-transaction.builder';
 import { executedTransactionEventBuilder } from '#/modules/hooks/routes/entities/__tests__/executed-transaction.builder';
 import { incomingTokenEventBuilder } from '#/modules/hooks/routes/entities/__tests__/incoming-token.builder';
 import { moduleTransactionEventBuilder } from '#/modules/hooks/routes/entities/__tests__/module-transaction.builder';
+import { newConfirmationEventBuilder } from '#/modules/hooks/routes/entities/__tests__/new-confirmation.builder';
+import { pendingTransactionEventBuilder } from '#/modules/hooks/routes/entities/__tests__/pending-transaction.builder';
 import { safeCreatedEventBuilder } from '#/modules/hooks/routes/entities/__tests__/safe-created.build';
 import type { MessagesRepository } from '#/modules/messages/domain/messages.repository';
 import type { IPushNotificationService } from '#/modules/notifications/domain/push/push-notification.service.interface';
@@ -78,6 +82,7 @@ const mockSafeRepository = vi.mocked({
   clearIncomingTransfers: vi.fn(),
   clearSafe: vi.fn(),
   clearIsSafe: vi.fn(),
+  clearSpaceTransactionQueues: vi.fn(),
 } as MockedObject<SafeRepository>);
 
 const mockStakingRepository = vi.mocked({
@@ -131,7 +136,20 @@ describe('HooksRepository (Unit)', () => {
     vi.clearAllMocks();
 
     fakeCacheService = new FakeCacheService();
-    eventCacheHelper = new EventCacheHelper(
+    eventCacheHelper = buildEventCacheHelper();
+    mockPushNotificationService.enqueueEvent.mockResolvedValue();
+    hooksRepository = new HooksRepository(
+      mockLoggingService,
+      mockQueuesRepository,
+      mockConfigurationService,
+      mockPushNotificationService,
+      eventCacheHelper,
+      mockCounterfactualSafesRepository,
+    );
+  });
+
+  function buildEventCacheHelper(): EventCacheHelper {
+    return new EventCacheHelper(
       mockBalancesRepository,
       mockBlockchainRepository,
       mockChainsRepository,
@@ -150,15 +168,54 @@ describe('HooksRepository (Unit)', () => {
       new SafeDecoder(),
       new MultiSendDecoder(mockLoggingService),
     );
-    mockPushNotificationService.enqueueEvent.mockResolvedValue();
-    hooksRepository = new HooksRepository(
-      mockLoggingService,
-      mockQueuesRepository,
-      mockConfigurationService,
-      mockPushNotificationService,
-      eventCacheHelper,
-      mockCounterfactualSafesRepository,
+  }
+
+  describe('Space transaction queue', () => {
+    const queueEvents = [
+      ['PENDING_MULTISIG_TRANSACTION', pendingTransactionEventBuilder],
+      ['NEW_CONFIRMATION', newConfirmationEventBuilder],
+      ['EXECUTED_MULTISIG_TRANSACTION', executedTransactionEventBuilder],
+      ['DELETED_MULTISIG_TRANSACTION', deletedMultisigTransactionEventBuilder],
+    ] as const;
+
+    it.each(queueEvents)(
+      'should clear the queue of every Space holding the Safe on %s',
+      async (_, builder) => {
+        const event = builder().build();
+
+        await buildEventCacheHelper().onEventClearCache(event);
+
+        expect(
+          mockSafeRepository.clearSpaceTransactionQueues,
+        ).toHaveBeenCalledWith(
+          expect.objectContaining({
+            chainId: event.chainId,
+            address: event.address,
+          }),
+        );
+      },
     );
+
+    it('should not clear the queue of a Space on an event that leaves the queue as it is', async () => {
+      await buildEventCacheHelper().onEventClearCache(
+        incomingTokenEventBuilder().build(),
+      );
+
+      expect(
+        mockSafeRepository.clearSpaceTransactionQueues,
+      ).not.toHaveBeenCalled();
+    });
+
+    it('should clear the Safe on SAFE_CREATED so a Space queue loads it', async () => {
+      const event = safeCreatedEventBuilder().build();
+
+      await buildEventCacheHelper().onEventClearCache(event);
+
+      expect(mockSafeRepository.clearSafe).toHaveBeenCalledWith(event);
+      expect(
+        mockSafeRepository.clearSpaceTransactionQueues,
+      ).not.toHaveBeenCalled();
+    });
   });
 
   it('should forget the policy state of a safe after a policy change', async () => {
@@ -527,6 +584,62 @@ describe('HooksRepository (Unit)', () => {
       expect(
         mockCounterfactualSafesRepository.markAsDeployed,
       ).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('queue messages', () => {
+    async function consume(body: string): Promise<void> {
+      let onMessage: ((msg: ConsumeMessage) => Promise<void>) | undefined;
+      mockQueuesRepository.subscribe.mockImplementation((_queueName, fn) => {
+        onMessage = fn;
+        return Promise.resolve();
+      });
+      await hooksRepository.onModuleInit();
+      if (!onMessage) {
+        throw new Error('HooksRepository did not subscribe to the queue');
+      }
+      await onMessage({
+        content: Buffer.from(body),
+      } as ConsumeMessage);
+    }
+
+    it('should log a rejected event with the fields the monitor reads', async () => {
+      const type = faker.word.sample();
+      const chainId = faker.string.numeric();
+
+      await consume(JSON.stringify({ type, chainId }));
+
+      expect(mockLoggingService.error).toHaveBeenCalledWith({
+        type: 'HOOK_EVENT_INVALID',
+        event_type: type,
+        chain_id: chainId,
+        reason: expect.stringContaining('Invalid discriminator value'),
+      });
+      expect(mockPushNotificationService.enqueueEvent).not.toHaveBeenCalled();
+    });
+
+    it('should log a message that is not an event object', async () => {
+      await consume(JSON.stringify(faker.word.words()));
+
+      expect(mockLoggingService.error).toHaveBeenCalledWith({
+        type: 'HOOK_EVENT_INVALID',
+        event_type: undefined,
+        chain_id: undefined,
+        reason: expect.any(String),
+      });
+      expect(mockPushNotificationService.enqueueEvent).not.toHaveBeenCalled();
+    });
+
+    it('should log a message that is not JSON', async () => {
+      await consume(faker.word.words());
+
+      expect(mockLoggingService.error).toHaveBeenCalledWith({
+        type: 'HOOK_EVENT_INVALID',
+        event_type: undefined,
+        chain_id: undefined,
+        reason: expect.any(String),
+      });
+      expect(mockPushNotificationService.enqueueEvent).not.toHaveBeenCalled();
     });
   });
 });

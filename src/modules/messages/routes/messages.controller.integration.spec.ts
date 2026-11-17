@@ -124,7 +124,8 @@ describe('Messages controller', () => {
 
   describe('Parameter validation', () => {
     // Every route on this controller takes chainId; an empty one must be rejected
-    // before any upstream call. POST bodies are valid so chainId is the failing pipe.
+    // before any upstream call. The Fastify adapter routes requests with an empty
+    // path parameter to the not-found handler, so they never reach the pipes.
     it.each([
       [
         'GET messages by hash',
@@ -158,13 +159,8 @@ describe('Messages controller', () => {
             )
             .send(updateMessageSignatureDtoBuilder().build()),
       ],
-    ])('Returns 422 on %s when chainId is empty', async (_name, send) => {
-      await send().expect(422).expect({
-        statusCode: 422,
-        code: 'custom',
-        message: 'Invalid base-10 numeric string',
-        path: [],
-      });
+    ])('Returns 404 on %s when chainId is empty', async (_name, send) => {
+      await send().expect(404);
 
       expect(networkService.get).not.toHaveBeenCalled();
       expect(networkService.post).not.toHaveBeenCalled();

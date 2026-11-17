@@ -2,6 +2,7 @@
 
 import { ApiProperty } from '@nestjs/swagger';
 import type { AddressBookDbItem } from '#/modules/spaces/domain/address-books/entities/address-book-item.db.entity';
+import { SpaceAddressBookTagDto } from '#/modules/spaces/routes/address-books/entities/address-book-tags.dto.entity';
 
 export class SpaceAddressBookItemDto {
   @ApiProperty({ type: String })
@@ -12,6 +13,13 @@ export class SpaceAddressBookItemDto {
 
   @ApiProperty({ type: String, isArray: true })
   public chainIds!: AddressBookDbItem['chainIds'];
+
+  @ApiProperty({
+    type: Number,
+    isArray: true,
+    description: 'IDs of the workspace tags assigned to the contact',
+  })
+  public tagIds!: Array<number>;
 
   @ApiProperty({
     type: String,
@@ -52,4 +60,11 @@ export class SpaceAddressBookDto {
 
   @ApiProperty({ type: SpaceAddressBookItemDto, isArray: true })
   public data!: Array<SpaceAddressBookItemDto>;
+
+  @ApiProperty({
+    type: SpaceAddressBookTagDto,
+    isArray: true,
+    description: 'All tags defined in the workspace address book',
+  })
+  public tags!: Array<SpaceAddressBookTagDto>;
 }

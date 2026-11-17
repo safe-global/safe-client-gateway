@@ -21,13 +21,13 @@ import { createMockSpaceEncryptionService } from '#/modules/spaces/domain/__test
 import { SpaceAuditEventType } from '#/modules/spaces/domain/audit/entities/space-audit-event.entity';
 import { SpaceAuditRepository } from '#/modules/spaces/domain/audit/space-audit.repository';
 import { SpacesRepository } from '#/modules/spaces/domain/spaces.repository';
-import {
-  InviteType,
-  type InviteUserInput,
-} from '#/modules/spaces/routes/members/entities/invite-users.dto.entity';
 import { Member } from '#/modules/users/datasources/entities/member.entity.db';
 import { User } from '#/modules/users/datasources/entities/users.entity.db';
 import { createMockUserEncryptionService } from '#/modules/users/domain/__tests__/user-encryption.service.mock';
+import {
+  InviteType,
+  type InviteUserInput,
+} from '#/modules/users/domain/entities/invite-user.entity';
 import { createMockMemberEncryptionService } from '#/modules/users/domain/members/__tests__/member-encryption.service.mock';
 import { MembersRepository } from '#/modules/users/domain/members/members.repository';
 import { UsersRepository } from '#/modules/users/domain/users.repository';
@@ -230,7 +230,7 @@ describe('SpaceAuditRepository', () => {
       where: { user: { id: invitee.userId } },
     });
     await membersRepository.inviteUsers({
-      authPayload: args.adminAuthPayload,
+      actorUserId: Number(args.adminAuthPayload.sub),
       spaceId: args.spaceId,
       users: [
         {
@@ -328,7 +328,7 @@ describe('SpaceAuditRepository', () => {
         await createSpaceWithAdmin();
 
       await membersRepository.inviteUsers({
-        authPayload: adminAuthPayload,
+        actorUserId: Number(adminAuthPayload.sub),
         spaceId,
         users: Array.from(
           { length: 3 },
@@ -368,7 +368,7 @@ describe('SpaceAuditRepository', () => {
       });
       for (const space of [spaceA, spaceB]) {
         await membersRepository.inviteUsers({
-          authPayload: space.adminAuthPayload,
+          actorUserId: Number(space.adminAuthPayload.sub),
           spaceId: space.spaceId,
           users: [
             {
@@ -496,7 +496,7 @@ describe('SpaceAuditRepository', () => {
       const { spaceId, adminAuthPayload } = await createSpaceWithAdmin();
       // 5 MEMBER_INVITED rows in ONE transaction → identical created_at.
       await membersRepository.inviteUsers({
-        authPayload: adminAuthPayload,
+        actorUserId: Number(adminAuthPayload.sub),
         spaceId,
         users: Array.from(
           { length: 5 },

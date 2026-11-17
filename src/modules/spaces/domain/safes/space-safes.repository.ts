@@ -224,6 +224,29 @@ export class SpaceSafesRepository implements ISpaceSafesRepository {
         };
   }
 
+  public async findSpaceIdsBySafe(safe: {
+    chainId: SpaceSafe['chainId'];
+    address: SpaceSafe['address'];
+  }): Promise<Array<Space['id']>> {
+    const repository =
+      await this.postgresDatabaseService.getRepository(SpaceSafe);
+    const addressIndex = this.spaceEncryptionService.safeAddressIndex(
+      safe.address,
+    );
+    const spaceSafes = await repository.find({
+      where:
+        addressIndex === null
+          ? {
+              chainId: safe.chainId,
+              addressIndex: IsNull(),
+              address: safe.address,
+            }
+          : { chainId: safe.chainId, addressIndex },
+      loadRelationIds: { relations: ['space'], disableMixedMap: true },
+    });
+    return spaceSafes.flatMap(({ space }) => (space ? [space.id] : []));
+  }
+
   public async existsInSpace(
     args: {
       spaceId: Space['id'];

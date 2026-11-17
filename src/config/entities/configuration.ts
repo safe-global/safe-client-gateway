@@ -12,11 +12,11 @@ export default () => ({
   amqp: {
     url: process.env.AMQP_URL || 'amqp://localhost:5672',
     exchange: {
-      name: process.env.AMQP_EXCHANGE_NAME || 'safe-transaction-service-events',
-      // The Safe Transaction Service AMQP Exchange mode defaults to 'fanout'.
-      // https://www.rabbitmq.com/tutorials/amqp-concepts#exchange-fanout
-      // A fanout exchange routes messages to all of the queues that are bound to it and the routing key is ignored.
-      mode: process.env.AMQP_EXCHANGE_MODE || 'fanout',
+      // Topic exchange of the Safe Transaction Service.
+      // https://www.rabbitmq.com/tutorials/amqp-concepts#exchange-topic
+      name:
+        process.env.AMQP_EXCHANGE_NAME ||
+        'safe-transaction-service-events-with-topics',
     },
     queue: process.env.AMQP_QUEUE || 'safe-client-gateway',
     // The AMQP Prefetch value defaults to 0.
@@ -184,11 +184,47 @@ export default () => ({
         process.env.PORTFOLIO_CACHE_TTL_SECONDS ?? `${10}`,
         10,
       ),
+      afterTransactionTtlSeconds: Number.parseInt(
+        process.env.PORTFOLIO_CACHE_TTL_AFTER_TRANSACTION_SECONDS ?? `${120}`,
+        10,
+      ),
     },
     filters: {
       dustThresholdUsd: Number.parseFloat(
         process.env.PORTFOLIO_DUST_THRESHOLD_USD ?? `${0.001}`,
       ),
+    },
+    summaries: {
+      rateLimit: {
+        max: Number.parseInt(
+          process.env.PORTFOLIO_SUMMARIES_RATE_LIMIT_MAX ?? `${60}`,
+          10,
+        ),
+        windowSeconds: Number.parseInt(
+          process.env.PORTFOLIO_SUMMARIES_RATE_LIMIT_WINDOW_SECONDS ?? `${60}`,
+          10,
+        ),
+      },
+    },
+    clear: {
+      cooldownSeconds: Number.parseInt(
+        process.env.PORTFOLIO_CLEAR_COOLDOWN_SECONDS ?? `${15}`,
+        10,
+      ),
+      recentClearSeconds: Number.parseInt(
+        process.env.PORTFOLIO_CLEAR_RECENT_SECONDS ?? `${30}`,
+        10,
+      ),
+      rateLimit: {
+        max: Number.parseInt(
+          process.env.PORTFOLIO_CLEAR_RATE_LIMIT_MAX ?? `${10}`,
+          10,
+        ),
+        windowSeconds: Number.parseInt(
+          process.env.PORTFOLIO_CLEAR_RATE_LIMIT_WINDOW_SECONDS ?? `${60}`,
+          10,
+        ),
+      },
     },
   },
   blockchain: {
@@ -408,6 +444,10 @@ export default () => ({
       process.env.EXPIRATION_TIME_ENTITLEMENTS_SECONDS ?? `${300}`,
       10,
     ),
+    decodedData: Number.parseInt(
+      process.env.EXPIRATION_TIME_DECODED_DATA_SECONDS ?? `${3600}`,
+      10,
+    ),
     notFound: {
       default: Number.parseInt(
         process.env.DEFAULT_NOT_FOUND_EXPIRE_TIME_SECONDS ?? `${30}`,
@@ -415,6 +455,10 @@ export default () => ({
       ),
       contract: Number.parseInt(
         process.env.CONTRACT_NOT_FOUND_EXPIRE_TIME_SECONDS ?? `${60}`,
+        10,
+      ),
+      decodedData: Number.parseInt(
+        process.env.DECODED_DATA_NOT_FOUND_EXPIRE_TIME_SECONDS ?? `${900}`,
         10,
       ),
       token: Number.parseInt(
@@ -434,6 +478,11 @@ export default () => ({
       process.env.FF_ZERION_TESTNETS_ENABLED?.toLowerCase() === 'true',
     zerionPositions:
       process.env.FF_ZERION_POSITIONS_DISABLED?.toLowerCase() !== 'true',
+    // Owner: One Balance Contract. /v2/safes reads the shared /positions
+    // snapshot. Remove it, with the Zerion /portfolio path, once it is on
+    // everywhere.
+    safesPortfolioSnapshot:
+      process.env.FF_SAFES_PORTFOLIO_SNAPSHOT?.toLowerCase() === 'true',
     debugLogs: process.env.FF_DEBUG_LOGS?.toLowerCase() === 'true',
     configHooksDebugLogs:
       process.env.FF_CONFIG_HOOKS_DEBUG_LOGS?.toLowerCase() === 'true',
@@ -492,6 +541,9 @@ export default () => ({
       process.env.FF_SAFE_QUEUE_SERVICE?.toLowerCase() === 'true',
     // Safe Labs: remove after the KMS-backed payer rollout is complete.
     safenet: process.env.FF_SAFENET?.toLowerCase() === 'true',
+    // Hides every SafePolicyGuard policy from the active and pending policy
+    // endpoints while the guard flow is unreleased.
+    guardPolicies: process.env.FF_GUARD_POLICIES?.toLowerCase() === 'true',
   },
   httpClient: {
     // Timeout in milliseconds to be used for the HTTP client.
@@ -958,6 +1010,13 @@ export default () => ({
       process.env.SPACES_MAX_SAFES_PER_SPACE ?? `${10}`,
       10,
     ),
+    transactionQueue: {
+      /** How many queue service pages the Space queue reads. */
+      maxPages: Number.parseInt(
+        process.env.SPACES_TRANSACTION_QUEUE_MAX_PAGES ?? `${5}`,
+        10,
+      ),
+    },
     maxSpaceCreationsPerUser: Number.parseInt(
       process.env.MAX_SPACE_CREATIONS_PER_USER ?? `${3}`,
       10,

@@ -18,6 +18,12 @@ export const SAFE_TRANSACTION_SERVICE_MAX_LIMIT = 200;
 export const SAFE_QUEUE_SERVICE_MAX_LIMIT = 100;
 
 /**
+ * The maximum number of `safes` values the Safe Queue Service accepts on one
+ * multi-Safe listing (`API_LIST_MULTISIG_TRANSACTIONS_FILTER_MAX_SAFES`).
+ */
+export const SAFE_QUEUE_SERVICE_MAX_SAFES = 100;
+
+/**
  * Matches a canonical UUID (8-4-4-4-12 hex), case-insensitive.
  */
 export const UUID_REGEX =

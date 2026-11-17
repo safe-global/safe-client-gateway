@@ -10,6 +10,7 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  UseFilters,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -22,6 +23,7 @@ import {
   ApiOperation,
   ApiParam,
   ApiTags,
+  ApiTooManyRequestsResponse,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 import { RowSchema } from '#/datasources/db/v1/entities/row.entity';
@@ -49,6 +51,7 @@ import {
   UpdateRoleDtoSchema,
 } from '#/modules/spaces/routes/members/entities/update-role.dto.entity';
 import { MembersService } from '#/modules/spaces/routes/members/members.service';
+import { TooManyInvitesExceptionFilter } from '#/modules/users/domain/members/exception-filters/too-many-invites.exception-filter';
 import { Auth } from '#/routes/common/auth/auth.decorator';
 import { ElevationGuard } from '#/routes/common/auth/elevation.guard';
 import { SpaceIdPipe } from '#/routes/common/pipes/space-id.pipe';
@@ -95,6 +98,7 @@ export class MembersController {
   @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @Post('/:spaceId/members/invite')
   @UseGuards(AuthGuard, ElevationGuard)
+  @UseFilters(TooManyInvitesExceptionFilter)
   public async inviteUser(
     @Auth() authPayload: AuthPayload,
     @Param('spaceId', SpaceIdPipe) spaceId: number,
@@ -222,6 +226,9 @@ export class MembersController {
   })
   @ApiConflictResponse({
     description: 'Invitation is not in a pending state',
+  })
+  @ApiTooManyRequestsResponse({
+    description: 'Invitation was renewed recently',
   })
   @ApiBadRequestResponse({ description: 'Invalid space identifier' })
   @Post('/:spaceId/members/:userId/invite/renew')

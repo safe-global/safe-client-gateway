@@ -14,6 +14,8 @@ import { DataSourceError } from '#/domain/errors/data-source.error';
 import { ITransactionApiManager } from '#/domain/interfaces/transaction-api.manager.interface';
 import { ILoggingService, LoggingService } from '#/logging/logging.interface';
 import { IChainsRepository } from '#/modules/chains/domain/chains.repository.interface';
+import type { ChainMultisigTransaction } from '#/modules/safe/domain/entities/chain-multisig-transaction.entity';
+import type { ChainSafe } from '#/modules/safe/domain/entities/chain-safe.entity';
 import { CreationTransaction } from '#/modules/safe/domain/entities/creation-transaction.entity';
 import {
   ModuleTransaction,
@@ -44,6 +46,7 @@ import {
   TransferPageSchema,
   TransferSchema,
 } from '#/modules/safe/domain/entities/transfer.entity';
+import { getChainSafeKey } from '#/modules/safe/domain/helpers/chain-safe-key.helper';
 import { getLastModified } from '#/modules/safe/domain/helpers/last-modified.helper';
 import { ISafeRepository } from '#/modules/safe/domain/safe.repository.interface';
 import {
@@ -54,6 +57,7 @@ import {
 import { buildOrigin } from '#/modules/safe-queue/helpers/origin.helper';
 import { mapSafeQueueToMultisigTransaction } from '#/modules/safe-queue/mappers/transaction.mapper';
 import { ISafeQueueService } from '#/modules/safe-queue/safe-queue.interface';
+import { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository.interface';
 import { ProposeTransactionDto } from '#/modules/transactions/domain/entities/propose-transaction.dto.entity';
 import { TransactionVerifierHelper } from '#/modules/transactions/routes/helpers/transaction-verifier.helper';
 import { PaginationData } from '#/routes/common/pagination/pagination.data';
@@ -62,6 +66,7 @@ import { PaginationData } from '#/routes/common/pagination/pagination.data';
 export class SafeRepository implements ISafeRepository {
   private readonly maxSequentialPages: number;
   private readonly safeQueueEnabled: boolean;
+  private readonly spaceTransactionQueueEnabled: boolean;
 
   constructor(
     @Inject(ITransactionApiManager)
@@ -74,6 +79,8 @@ export class SafeRepository implements ISafeRepository {
     private readonly configurationService: IConfigurationService,
     @Inject(ISafeQueueService)
     private readonly safeQueueService: ISafeQueueService,
+    @Inject(ISpaceSafesRepository)
+    private readonly spaceSafesRepository: ISpaceSafesRepository,
   ) {
     this.maxSequentialPages = this.configurationService.getOrThrow<number>(
       'safeConfig.safes.maxSequentialPages',
@@ -81,6 +88,10 @@ export class SafeRepository implements ISafeRepository {
     this.safeQueueEnabled = this.configurationService.getOrThrow<boolean>(
       'features.safeQueueService',
     );
+    // The same conditions `AppModule` serves the Space queue under.
+    this.spaceTransactionQueueEnabled =
+      this.safeQueueEnabled &&
+      this.configurationService.getOrThrow<boolean>('features.users');
   }
 
   async getSafe(args: { chainId: string; address: Address }): Promise<Safe> {
@@ -221,9 +232,10 @@ export class SafeRepository implements ISafeRepository {
       await transactionService.postConfirmation(args);
     }
 
-    await this.clearMultisigTransaction({
+    await this.clearQueuedTransactionCaches({
       chainId: args.chainId,
-      safeTransactionHash: args.safeTxHash,
+      safeAddress: transaction.safe,
+      safeTxHash: args.safeTxHash,
     });
   }
 
@@ -298,6 +310,46 @@ export class SafeRepository implements ISafeRepository {
       });
     }
     return this.getSafeQueueSortedByLastModified(args);
+  }
+
+  async getTransactionQueueForSafes(args: {
+    spaceId: number;
+    safes: ReadonlyArray<ChainSafe>;
+    limit: number;
+    offset: number;
+  }): Promise<Page<ChainMultisigTransaction>> {
+    const safesByKey = new Map(
+      args.safes.map(({ chainId, safe }) => [
+        getChainSafeKey(chainId, safe.address),
+        safe,
+      ]),
+    );
+    const page = await this.safeQueueService.getTransactionQueueForSafes({
+      spaceId: args.spaceId,
+      safes: args.safes.map(({ chainId, safe }) => ({
+        chainId,
+        safeAddress: safe.address,
+      })),
+      limit: args.limit,
+      offset: args.offset,
+    });
+    const parsed = SafeQueueMultisigTransactionPageSchema.parse(page);
+    return {
+      count: parsed.count,
+      next: parsed.next,
+      previous: parsed.previous,
+      results: parsed.results.flatMap((tx) => {
+        const safe = safesByKey.get(getChainSafeKey(tx.chainId, tx.safe));
+        return safe
+          ? [
+              {
+                chainId: tx.chainId,
+                transaction: mapSafeQueueToMultisigTransaction(tx, safe),
+              },
+            ]
+          : [];
+      }),
+    };
   }
 
   getTransactionQueueMaxPageSize(): number {
@@ -705,25 +757,46 @@ export class SafeRepository implements ISafeRepository {
       await transactionService.deleteTransaction(args);
     }
 
-    // Ensure transaction is removed from cache in case event is not received.
-    // Reuse the repository-level clears: they invalidate both the tx-service
-    // and queue cache layers and settle every layer before failing.
-    // Each reused method settles all its cache layers before rejecting, so a
-    // failure here cannot have skipped clearing the other layers.
-    Promise.all([
+    await this.clearQueuedTransactionCaches({
+      chainId: args.chainId,
+      safeAddress: safe,
+      safeTxHash: args.safeTxHash,
+    });
+  }
+
+  /**
+   * Clears what a write to a queued transaction makes stale (the transaction,
+   * the Safe's queue and the queue of every Space holding the Safe) instead of
+   * waiting for the webhook event, which may never arrive. The write already
+   * succeeded, so a failure is logged rather than thrown.
+   */
+  private async clearQueuedTransactionCaches(args: {
+    chainId: string;
+    safeAddress: Address;
+    safeTxHash: string;
+  }): Promise<void> {
+    const results = await Promise.allSettled([
       this.clearMultisigTransaction({
         chainId: args.chainId,
         safeTransactionHash: args.safeTxHash,
       }),
       this.clearMultisigTransactions({
         chainId: args.chainId,
-        safeAddress: safe,
+        safeAddress: args.safeAddress,
       }),
-    ]).catch((error) => {
+      this.clearSpaceTransactionQueues({
+        chainId: args.chainId,
+        address: args.safeAddress,
+      }),
+    ]);
+    const errors = results
+      .filter((r) => r.status === 'rejected')
+      .map((r) => r.reason);
+    if (errors.length > 0) {
       this.loggingService.warn(
-        `Failed to immediately clear deleted transaction from cache. chainId=${args.chainId}, safeTxHash=${args.safeTxHash}, error=${error}`,
+        `Failed to clear the caches of a queued transaction. chainId=${args.chainId}, safeTxHash=${args.safeTxHash}, errors=${errors}`,
       );
-    });
+    }
   }
 
   async clearMultisigTransactions(args: {
@@ -757,6 +830,25 @@ export class SafeRepository implements ISafeRepository {
       );
       throw new Error('Failed to clear multisig transactions');
     }
+  }
+
+  async clearSpaceTransactionQueues(args: {
+    chainId: string;
+    address: Address;
+  }): Promise<void> {
+    // Finding the Spaces costs a query, so skip it while the queue is not served.
+    if (!this.spaceTransactionQueueEnabled) {
+      return;
+    }
+    const spaceIds = await this.spaceSafesRepository.findSpaceIdsBySafe({
+      chainId: args.chainId,
+      address: args.address,
+    });
+    await Promise.all(
+      spaceIds.map((spaceId) =>
+        this.safeQueueService.clearSpaceTransactionQueue({ spaceId }),
+      ),
+    );
   }
 
   async getMultisigTransactions(args: {
@@ -800,7 +892,13 @@ export class SafeRepository implements ISafeRepository {
   async getTransfers(args: {
     chainId: string;
     safeAddress: Address;
-    limit?: number | undefined;
+    limit?: number;
+    offset?: number;
+    to?: Address;
+    from?: Address;
+    tokenAddress?: Address;
+    executionDateGte?: string;
+    executionDateLte?: string;
   }): Promise<Page<Transfer>> {
     const transactionService = await this.transactionApiManager.getApi(
       args.chainId,
@@ -1009,27 +1107,37 @@ export class SafeRepository implements ISafeRepository {
         : txServiceProposal,
     });
 
-    if (this.safeQueueEnabled) {
-      return await this.safeQueueService.proposeTransaction({
-        chainId: args.chainId,
-        safeAddress: args.safeAddress,
-        proposeTransactionDto: args.proposeTransactionDto,
-      });
-    }
     // The tx service has no notion of nested transactions: forwarding would
     // store the parent without its child, and the queue service's
     // conflict-on-either-hash means that parent could never gain the child
     // later. Reject rather than silently dropping the child.
-    if (args.proposeTransactionDto.nestedTransaction) {
+    if (
+      !this.safeQueueEnabled &&
+      args.proposeTransactionDto.nestedTransaction
+    ) {
       throw new HttpExceptionNoLog(
         'Nested transactions are not supported',
         HttpStatus.UNPROCESSABLE_ENTITY,
       );
     }
-    return transactionService.postMultisigTransaction({
-      address: args.safeAddress,
-      data: args.proposeTransactionDto,
+    const proposal = this.safeQueueEnabled
+      ? await this.safeQueueService.proposeTransaction({
+          chainId: args.chainId,
+          safeAddress: args.safeAddress,
+          proposeTransactionDto: args.proposeTransactionDto,
+        })
+      : await transactionService.postMultisigTransaction({
+          address: args.safeAddress,
+          data: args.proposeTransactionDto,
+        });
+
+    await this.clearQueuedTransactionCaches({
+      chainId: args.chainId,
+      safeAddress: args.safeAddress,
+      safeTxHash,
     });
+
+    return proposal;
   }
 
   async getNonces(args: {

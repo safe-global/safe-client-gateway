@@ -7,6 +7,7 @@ import {
   CacheService,
   type ICacheService,
 } from '#/datasources/cache/cache.service.interface';
+import type { CacheDir } from '#/datasources/cache/entities/cache-dir.entity';
 import { getNumberString } from '#/domain/common/utils/utils';
 import type { AppBalance } from '#/modules/portfolio/domain/entities/app-balance.entity';
 import type { AppPosition } from '#/modules/portfolio/domain/entities/app-position.entity';
@@ -14,6 +15,12 @@ import {
   type Portfolio,
   PortfolioSchema,
 } from '#/modules/portfolio/domain/entities/portfolio.entity';
+import type { PortfolioFetchArgs } from '#/modules/portfolio/domain/entities/portfolio-fetch-args.entity';
+import {
+  type PortfolioSnapshot,
+  type PortfolioSnapshotArgs,
+  PortfolioSnapshotSchema,
+} from '#/modules/portfolio/domain/entities/portfolio-snapshot.entity';
 import type { TokenBalance } from '#/modules/portfolio/domain/entities/token-balance.entity';
 import type { IPortfolioRepository } from '#/modules/portfolio/domain/portfolio.repository.interface';
 import { IPortfolioApi } from '#/modules/portfolio/interfaces/portfolio-api.interface';
@@ -27,7 +34,13 @@ import { ZerionCacheService } from '#/modules/zerion/datasources/zerion-cache.se
 @Injectable()
 export class PortfolioRepository implements IPortfolioRepository {
   private readonly cacheExpirationSeconds: number;
+  private readonly afterTransactionTtlSeconds: number;
   private readonly dustThresholdUsd: number;
+  /** Fetches in progress in this process, by cache entry. */
+  private readonly inFlightFetches = new Map<
+    string,
+    Promise<PortfolioSnapshot>
+  >();
 
   constructor(
     @Inject(IPortfolioApi) private readonly portfolioApi: IPortfolioApi,
@@ -39,6 +52,10 @@ export class PortfolioRepository implements IPortfolioRepository {
     this.cacheExpirationSeconds = this.configurationService.getOrThrow<number>(
       'portfolio.cache.ttlSeconds',
     );
+    this.afterTransactionTtlSeconds =
+      this.configurationService.getOrThrow<number>(
+        'portfolio.cache.afterTransactionTtlSeconds',
+      );
     this.dustThresholdUsd = this.configurationService.getOrThrow<number>(
       'portfolio.filters.dustThresholdUsd',
     );
@@ -53,38 +70,158 @@ export class PortfolioRepository implements IPortfolioRepository {
     isTestnet?: boolean;
     sync?: boolean;
   }): Promise<Portfolio> {
-    const cacheDir = CacheRouter.getPortfolioCacheDir({
+    const cacheDir = this._getCacheDir(args);
+    // If sync is true, we bypass the cache and fetch the portfolio from the API
+    const cached = args.sync ? null : await this._getCached(cacheDir);
+    const portfolio = PortfolioSchema.parse(
+      cached ?? (await this._fetchAndCache({ ...args, cacheDir })),
+    );
+    return this._applyFilters(portfolio, args);
+  }
+
+  public async getPortfolioSnapshot(
+    args: PortfolioSnapshotArgs,
+  ): Promise<PortfolioSnapshot> {
+    const cacheDir = this._getCacheDir(args);
+    const cached = PortfolioSnapshotSchema.safeParse(
+      await this._getCached(cacheDir),
+    );
+    // Entries cached before timestamps existed fail the parse and are refetched.
+    const snapshot = cached.success
+      ? cached.data
+      : await this._fetchAndCache({ ...args, cacheDir });
+    // The GET /v1/portfolio defaults, so the totals match the Assets page.
+    return {
+      ...this._applyFilters(snapshot, {
+        trusted: args.trusted,
+        excludeDust: true,
+      }),
+      fetchedAt: snapshot.fetchedAt,
+      expiresAt: snapshot.expiresAt,
+    };
+  }
+
+  private _getCacheDir(args: {
+    address: Address;
+    fiatCode: string;
+    trusted?: boolean;
+    isTestnet?: boolean;
+  }): CacheDir {
+    return CacheRouter.getPortfolioCacheDir({
       address: args.address,
       fiatCode: args.fiatCode,
       trusted: args.trusted,
       isTestnet: args.isTestnet,
     });
+  }
 
-    // If sync is true, we bypass the cache and fetch the portfolio from the API
-    const cached = args.sync ? null : await this.cacheService.hGet(cacheDir);
-    let portfolio: Portfolio;
+  private async _getCached(cacheDir: CacheDir): Promise<unknown> {
+    const cached = await this.cacheService.hGet(cacheDir);
+    return cached ? JSON.parse(cached) : null;
+  }
 
-    if (cached) {
-      portfolio = PortfolioSchema.parse(JSON.parse(cached));
-    } else {
-      const rawPortfolio = await this.portfolioApi.getPortfolio({
-        address: args.address,
-        fiatCode: args.fiatCode,
-        trusted: args.trusted,
-        isTestnet: args.isTestnet,
-        sync: args.sync,
-      });
-
-      portfolio = PortfolioSchema.parse(rawPortfolio);
-
-      await this.cacheService.hSet(
-        cacheDir,
-        JSON.stringify(portfolio),
-        this.cacheExpirationSeconds,
-      );
+  /**
+   * Fetches and caches the portfolio. Concurrent misses for the same entry
+   * share one fetch, so a page that asks several routes at once on an empty
+   * cache pays for one Zerion call, not one per route. A miss right after a
+   * clear can join a fetch that started before it, as a write could already.
+   * Sync and plain reads share too, so one caller sending `sync` cannot add a
+   * second call or a different total for the same entry.
+   *
+   * @param args - The wallet, filters and the cache entry to fill
+   * @returns The fetched portfolio with its times
+   */
+  private _fetchAndCache(args: PortfolioFetchArgs): Promise<PortfolioSnapshot> {
+    const key = `${args.cacheDir.key}|${args.cacheDir.field}`;
+    const inFlight = this.inFlightFetches.get(key);
+    if (inFlight !== undefined) {
+      return inFlight;
     }
+    const pendingFetch = this._fetchAndCacheOnce(args).finally(() => {
+      this.inFlightFetches.delete(key);
+    });
+    this.inFlightFetches.set(key, pendingFetch);
+    return pendingFetch;
+  }
 
-    return this._applyFilters(portfolio, args);
+  /**
+   * @param args - The wallet, filters and the cache entry to fill
+   * @returns The fetched portfolio with its times
+   */
+  private async _fetchAndCacheOnce(
+    args: PortfolioFetchArgs,
+  ): Promise<PortfolioSnapshot> {
+    const rawPortfolio = await this.portfolioApi.getPortfolio({
+      address: args.address,
+      fiatCode: args.fiatCode,
+      trusted: args.trusted,
+      isTestnet: args.isTestnet,
+      sync: args.sync,
+    });
+    const fetchedAt = Date.now();
+    const { expiresAt, isSettling } = await this._getExpiry({
+      address: args.address,
+      fetchedAt,
+    });
+    const snapshot: PortfolioSnapshot = {
+      ...PortfolioSchema.parse(rawPortfolio),
+      fetchedAt,
+      expiresAt,
+    };
+    await this.cacheService.hSet(
+      args.cacheDir,
+      JSON.stringify(snapshot),
+      Math.ceil((expiresAt - fetchedAt) / 1_000),
+      // No jitter in the settle window, so the entry never outlives it.
+      isSettling ? 0 : undefined,
+    );
+    return snapshot;
+  }
+
+  /**
+   * A transaction clears the cache before Zerion may have indexed it, so a
+   * portfolio fetched within the settle window after a clear is only kept
+   * until that window ends. The next read after it refetches the settled
+   * balance, at most one extra Zerion call per clear.
+   *
+   * @param args.address - The wallet address
+   * @param args.fetchedAt - When the portfolio was fetched, in epoch ms
+   * @returns When the cached portfolio expires, in epoch ms, and whether that
+   * was cut to the end of the settle window
+   */
+  private async _getExpiry(args: {
+    address: Address;
+    fetchedAt: number;
+  }): Promise<{ expiresAt: number; isSettling: boolean }> {
+    const expiresAt = args.fetchedAt + this.cacheExpirationSeconds * 1_000;
+    const clearedAt = await this.getClearedAt({ address: args.address });
+    const settledAt =
+      clearedAt === null
+        ? null
+        : clearedAt + this.afterTransactionTtlSeconds * 1_000;
+    if (settledAt === null || settledAt <= args.fetchedAt) {
+      return { expiresAt, isSettling: false };
+    }
+    return settledAt < expiresAt
+      ? { expiresAt: settledAt, isSettling: true }
+      : { expiresAt, isSettling: false };
+  }
+
+  /**
+   * When the address's Zerion caches were last cleared. The only reader of
+   * the clear-time key, so the settle window and the clear route agree.
+   *
+   * @param {{ address: Address }} args - Lookup parameters
+   * @returns {Promise<number | null>} The clear time in epoch ms, or null
+   */
+  public async getClearedAt(args: {
+    address: Address;
+  }): Promise<number | null> {
+    const clearedAt = await this.cacheService.getCounter(
+      CacheRouter.getPortfolioClearedAtCacheKey({ address: args.address }),
+    );
+    // Redis reads a missing key as 0, which is never a real clear time
+    return clearedAt || null;
   }
 
   /**

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: FSL-1.1-MIT
-import { ForbiddenException, Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import type { Address, Hex } from 'viem';
 import type { AuthPayload } from '#/modules/auth/domain/entities/auth-payload.entity';
 import { getAuthenticatedUserIdOrFail } from '#/modules/auth/utils/assert-authenticated.utils';
@@ -12,7 +12,10 @@ import type {
 } from '#/modules/safe-shield/entities/analysis-responses.entity';
 import type { Space } from '#/modules/spaces/datasources/spaces/entities/space.entity.db';
 import { ISpaceSafesRepository } from '#/modules/spaces/domain/safes/space-safes.repository.interface';
-import { assertMember } from '#/modules/spaces/domain/space-assert.utils';
+import {
+  assertMember,
+  assertSafeInSpace,
+} from '#/modules/spaces/domain/space-assert.utils';
 import { IMembersRepository } from '#/modules/users/domain/members/members.repository.interface';
 
 @Injectable()
@@ -66,10 +69,9 @@ export class SpaceSafeShieldService {
   }
 
   /**
-   * Checks membership, the copilot_scans entitlement, and that the Safe
-   * belongs to the Space, in that order — each gate runs only once the one
-   * before it passed, so a caller failing an earlier gate never reaches
-   * information gated by a later one.
+   * Checks membership, that the Safe belongs to the Space, and the
+   * copilot_scans entitlement, in that order: authorization before the plan,
+   * so a request the caller may not make never reaches entitlement checks.
    */
   private async assertGated(args: {
     spaceId: Space['id'];
@@ -80,18 +82,15 @@ export class SpaceSafeShieldService {
     const userId = getAuthenticatedUserIdOrFail(args.authPayload);
     await assertMember(this.membersRepository, args.spaceId, userId);
 
-    await this.entitlementEnforcement.assertFeatureGranted({
-      spaceId: args.spaceId,
-      featureKey: 'copilot_scans',
-    });
-
-    const belongs = await this.spaceSafesRepository.existsInSpace({
+    await assertSafeInSpace(this.spaceSafesRepository, {
       spaceId: args.spaceId,
       chainId: args.chainId,
       address: args.safeAddress,
     });
-    if (!belongs) {
-      throw new ForbiddenException('Safe is not registered to this Workspace.');
-    }
+
+    await this.entitlementEnforcement.assertFeatureGranted({
+      spaceId: args.spaceId,
+      featureKey: 'copilot_scans',
+    });
   }
 }

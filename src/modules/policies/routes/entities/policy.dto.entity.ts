@@ -309,6 +309,13 @@ export class Erc20TransferPolicyDataDto implements Erc20TransferPolicyData {
   })
   public readonly tokenAddress!: Address;
   @ApiProperty({
+    ...SpendingLimitTokenMetadataSchema,
+    nullable: true,
+    description:
+      'Metadata of `tokenAddress`; null when it could not be resolved',
+  })
+  public readonly tokenMetadata!: Token | null;
+  @ApiProperty({
     type: Erc20TransferRecipientDto,
     isArray: true,
     description: 'The recipients of the token transfers the policy permits',

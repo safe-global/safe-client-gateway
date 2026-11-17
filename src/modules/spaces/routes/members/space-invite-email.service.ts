@@ -11,16 +11,16 @@ import type { Space } from '#/modules/spaces/domain/entities/space.entity';
 import { SpaceEncryptionService } from '#/modules/spaces/domain/space-encryption.service';
 import { ISpacesRepository } from '#/modules/spaces/domain/spaces.repository.interface';
 import {
-  type EmailInviteUserInput,
-  InviteType,
-  type InviteUserInput,
-} from '#/modules/spaces/routes/members/entities/invite-users.dto.entity';
-import {
   renderSpaceInviteEmailHtml,
   renderSpaceInviteEmailText,
   SPACE_INVITE_EMAIL_SUBJECT,
   SPACE_INVITE_PATH,
 } from '#/modules/spaces/routes/members/templates/space-invite-email.template';
+import {
+  type EmailInviteUserInput,
+  InviteType,
+  type InviteUserInput,
+} from '#/modules/users/domain/entities/invite-user.entity';
 import type { EmailAddress } from '#/validation/entities/schemas/email-address.schema';
 
 interface InviteEmailRecipient {
