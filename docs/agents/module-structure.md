@@ -50,6 +50,14 @@ This mirrors the request-lifecycle chain in `docs/agents/ARCHITECTURE.md`: `Cont
 
 **Anti-example:** `src/modules/portfolio/domain/portfolio.service.ts` (a route-shaped service placed under `domain/`) — do not imitate.
 
+### Queries in the repository, request rules in the route service
+
+**Rule:** A lookup and its `*OrFail` form live on the repository, never as a private method on a route service. A check that rejects the request because of a row's state — a status precondition throwing `ConflictException` — lives in the route service, and the repository method it guards stays a plain read or write.
+
+**Why:** a lookup on a route service cannot be reused by the next service that needs it, and a state check inside a repository method rejects requests on a rule its other callers may not share.
+
+**Canonical example:** `SurveysRepository.findActiveBySlugOrFail` in `src/modules/surveys/domain/surveys.repository.ts`, called from `SurveysService`; `MembersService.renewInvite` in `src/modules/spaces/routes/members/members.service.ts` loads the member, throws `ConflictException` unless it is `INVITED`, then calls `membersRepository.renewInvite` to write the new expiry.
+
 ### Symbol DI wiring
 
 **Rule:** Declare `export const IFooRepository = Symbol('IFooRepository')` next to `export interface IFooRepository` in `<foo>.repository.interface.ts`. Bind it in the owning module as `{ provide: IFooRepository, useClass: FooRepository }`. Inject it as `@Inject(IFooRepository) private readonly fooRepository: IFooRepository` — the property is typed as the interface, never the concrete class.

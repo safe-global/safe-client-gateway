@@ -1,6 +1,6 @@
 ---
 name: cgw-config
-description: Use when adding or changing an environment variable, a feature flag, or any configuration read in safe-client-gateway. Covers the rule that every env var is declared in configuration.ts AND validated in RootConfigurationSchema with no fallback default for a secret, reading config via IConfigurationService.getOrThrow cached in the constructor (never process.env outside src/config/), mirroring keys in __tests__/configuration.ts, the .env.sample.json plus yarn env:validate loop, the FF_ prefix and features.* read path for flags with a removal condition, TTL key naming, and the rule against special-casing chain IDs in code. Triggers on "env var", "environment variable", "feature flag", "FF_", "config key", "configuration.ts", "TTL", "hard-coded timeout".
+description: Use when adding or changing an environment variable, a feature flag, or any configuration read in safe-client-gateway. Covers the rule that every env var is declared in configuration.ts AND validated in RootConfigurationSchema with no fallback default for a secret, reading config via IConfigurationService.getOrThrow cached in the constructor (never process.env outside src/config/), mirroring keys in __tests__/configuration.ts, the .env.sample.json plus yarn env:validate loop, the FF_ prefix and features.* read path for flags with a removal condition, which values come from config (environment-specific values and tunables, schema-bounded where a range matters) and which stay constants, TTL key naming, and the rule against special-casing chain IDs in code. Triggers on "env var", "environment variable", "feature flag", "FF_", "config key", "configuration.ts", "TTL", "hard-coded timeout".
 ---
 
 # CGW Configuration and Flags
@@ -13,6 +13,6 @@ The full loop when adding one: `configuration.ts` → `RootConfigurationSchema` 
 
 Read it back through `this.configurationService.getOrThrow<T>('path.to.key')`, called in the constructor and cached on a field. `process.env` is read only inside `src/config/`.
 
-Three recurring remarks: a hard-coded timeout, batch size, or TTL belongs in config (**cgw-remarks** R-018, with TTL keys named `*TtlSeconds`); a gate that isn't a declared `FF_` flag becomes permanent config (R-019); and a variable read but not validated is R-025.
+Four recurring remarks: a hard-coded URL, timeout, batch size, or TTL belongs in config (**cgw-remarks** R-042); a config section is named by topic, with TTL keys named `*TtlSeconds` (R-018); a gate that isn't a declared `FF_` flag becomes permanent config (R-019); and a variable read but not validated is R-025.
 
 Working inside `src/config/` auto-loads the pointer stub at `src/config/AGENTS.md`, which routes here.

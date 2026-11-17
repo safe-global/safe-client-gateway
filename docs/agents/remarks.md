@@ -291,7 +291,7 @@ export type SafeRef = z.infer<typeof SafeRefSchema>;
 
 **Pattern:** a parameter whose type admits values the method does not handle: `ordering?: string` for a closed set of four values, a `FeatureKey` on a method that only checks `grant.enabled`, a `QueryDeepPartialEntity<Space>` where the interface declares `Partial<Pick<Space, 'name' | 'status'>>`.
 
-**Why it's bad:** the type is what tells the next caller what is safe to pass, so a wider one compiles a call the method silently mishandles — #3454's `assertFeatureGranted` would have admitted a metered feature with an exhausted quota. The body also has to defend against cases the narrow type rules out, which is where #3163's `typeof updatePayload.name === 'string'` checks came from.
+**Why it's bad:** #3454's `assertFeatureGranted` would have admitted a metered feature with an exhausted quota, and #3163's `typeof updatePayload.name === 'string'` checks existed only because the parameter admitted more than the method used.
 
 **Corrected form:**
 
@@ -305,16 +305,14 @@ assertWithinQuota(args: { spaceId: Space['id']; featureKey: Exclude<FeatureKey, 
 updatePayload: Partial<Pick<Space, 'name' | 'status'>>;
 ```
 
-An implementation takes the type its interface already declares rather than widening it, as #3163's repository now does.
-
 **Spotted in:** #3550, #3454, #3163.
-**Status:** active
+**Status:** active — `best-practices.md`'s "Parameters as narrow as what the method handles" rule owns this.
 
 ### R-038: A variant or field nothing reads
 
 **Pattern:** a result union whose variants every reader handles the same way, or a field added to a returned shape with no consumer that acts on it.
 
-**Why it's bad:** each variant or field claims that the distinction matters, so every reader has to work out that it doesn't — and on a response it becomes contract the moment a client reads it. In #3199 a `degraded` result and a missing key both fell through to `serveDegradedBalance`, and the failure was already logged and metered where it happened.
+**Why it's bad:** every reader has to work out that the distinction makes no difference, and on a response the field becomes contract the moment a client reads it. In #3199 a `degraded` result and a missing key both fell through to `serveDegradedBalance`, and the failure was already logged and metered where it happened.
 
 **Corrected form:**
 
@@ -328,10 +326,10 @@ portfoliosByIdentity: Map<string, PortfolioResult>;
 portfoliosByIdentity: Map<string, ZerionWalletPortfolio>;
 ```
 
-A field nothing acts on is dropped before it ships — #3656 removed `willRevert` from the pending guard-setup change.
+#3656 removed `willRevert` from the pending guard-setup change before it shipped.
 
 **Spotted in:** #3199, #3656.
-**Status:** active
+**Status:** active — `reviewing.md`'s "No speculative abstractions, unused exports, or dead code introduced" check owns this.
 
 ## Structure
 
@@ -410,15 +408,15 @@ class EmailInviteUserDto { /* … */ }
 An exported constant nothing uses is deleted — #2850 removed `MIN_FALLBACK_HANDLER_VERSION`.
 
 **Spotted in:** #2856, #3104, #2850.
-**Status:** active — a candidate for tooling rather than review: Knip's unused-exports check catches this shape, and once it runs in CI the entry flips to `solved-by-knip`. `reviewing.md`'s checklist already lists unused exports.
+**Status:** active — `reviewing.md`'s "No speculative abstractions, unused exports, or dead code introduced" check owns this. A candidate for tooling rather than review: Knip's unused-exports check catches this shape, and once it runs in CI the entry flips to `solved-by-knip`.
 
 ### R-040: Query logic in the route service, business rules in the repository
 
 **Pattern:** a `find…OrFail` lookup written as a private method on a route service, or a status check that throws a business exception (`ConflictException`) from inside a repository method.
 
-**Why it's bad:** each layer ends up doing the other's job. The route service grows data access the next service cannot reuse, and the repository method stops being a plain read or write — it rejects requests on a rule its other callers may not share. #3134's `renewInvite` loaded the member, checked `INVITED` and built the response, all in the repository.
+**Why it's bad:** each layer ends up doing the other's job — #3134's `renewInvite` loaded the member, checked `INVITED` and built the response, all in the repository, while #3107's survey lookup sat on the route service.
 
-**Corrected form:** a lookup and its `*OrFail` form belong to the repository; a precondition on what the row's state allows belongs to the route service.
+**Corrected form:**
 
 ```ts
 // Don't — route service
@@ -437,13 +435,13 @@ await this.membersRepository.renewInvite({ memberId: member.id, inviteExpiresAt 
 ```
 
 **Spotted in:** #3107, #3134.
-**Status:** active — see `ARCHITECTURE.md`'s layer responsibilities.
+**Status:** active — `module-structure.md`'s "Queries in the repository, request rules in the route service" rule owns this.
 
 ### R-041: Input validated below the controller
 
 **Pattern:** a format check on a route input — a `chainId`, a numeric or UUID id — inside a datasource or repository, instead of a `ValidationPipe` on the `@Param`.
 
-**Why it's bad:** by the time the check runs, the value has already crossed the layers that trusted it, and the failure comes back as whatever that layer throws — #3397's `ConfigApi` guard answered a malformed `chainId` with a `DataSourceError` 404 where the route pipe answers 422. Every caller of the lower method also pays for a check only one route needed.
+**Why it's bad:** the failure comes back as whatever the lower layer throws — #3397's `ConfigApi` guard answered a malformed `chainId` with a `DataSourceError` 404 where the route pipe answers 422 — and every caller of the lower method pays for a check only one route needed.
 
 **Corrected form:**
 
@@ -455,12 +453,12 @@ async getChain(chainId: string): Promise<Raw<Chain>> {
   }
   // …
 }
-// Do — at the route; lower layers trust their callers
+// Do — at the route
 @Param('chainId', new ValidationPipe(ChainIdSchema)) chainId: string,
 ```
 
 **Spotted in:** #3397, #3117.
-**Status:** active — non-negotiable #1; `api-dtos-and-validation.md`'s "ValidationPipe everywhere" rule owns it.
+**Status:** active — `api-dtos-and-validation.md`'s "ValidationPipe everywhere" rule owns this (non-negotiable #1).
 
 ## Naming
 
@@ -521,9 +519,9 @@ safeShieldCoreDisabled: process.env.FF_SAFE_SHIELD_CORE_DISABLED?.toLowerCase() 
 
 **Pattern:** a URL, TTL, timeout, buffer, poll interval or batch size declared as a literal constant — often under a `// TODO: make this configurable` — instead of read from configuration.
 
-**Why it's bad:** a value that differs between environments can only be right in one of them — #3135's `SPACE_INVITE_URL` pointed every invite email at `http://localhost:3001`. A tunable in code also takes a release to change, when an env var would take a restart.
+**Why it's bad:** #3135's `SPACE_INVITE_URL` would have pointed every invite email at `http://localhost:3001`, though its own TODO said it should be configurable — the TODO is what a reviewer sees, and it reads as already handled.
 
-**Corrected form:** the environment-specific part comes from config; what is fixed stays a constant.
+**Corrected form:**
 
 ```ts
 // Don't
@@ -541,14 +539,10 @@ managementApiTokenTtlBufferInSeconds: Number.parseInt(
 ),
 ```
 
-Which values belong where:
-
-- **Config:** anything that differs between environments (URLs, hosts), and any tunable an operator may need to change without a release — timeouts, TTLs, poll intervals, batch sizes, queue attempts and retention.
-- **Config, bounded:** a tunable that is unsafe outside a range still goes to config, with the range enforced in `RootConfigurationSchema` so a bad value fails at boot — #3600's queue attempts are bounded to 1…10 and its retention has a 30-day minimum.
-- **A constant:** a value that is part of the published contract — #3419 kept `MAX_TOKEN_ADDRESSES` a constant because it is interpolated into the Swagger descriptions and the generated wallet client, so an env var would make the spec vary by deployment. Also a value with one right answer everywhere — #3495 kept its pending-transaction scan limit hard-coded because staging and production use the same value.
+Two PRs settled the other way, and the guide rule says why: #3419 kept `MAX_TOKEN_ADDRESSES` a constant because it is part of the published contract, and #3495 kept its pending-transaction scan limit hard-coded because staging and production use the same value.
 
 **Spotted in:** #3135, #3284, #3214, #3564, #3565.
-**Status:** active — `configuration-and-flags.md`'s "One config registry" rule owns how a value enters config; `caching-and-performance.md` already requires TTLs and BullMQ `attempts`/`backoff`/retention from config.
+**Status:** active — `configuration-and-flags.md`'s "Environment-specific values and tunables come from config" rule owns this.
 
 ## Caching and upstream calls
 
@@ -618,7 +612,7 @@ private static readonly ZERION_CHAINS_KEY = 'zerion_indexed_chains';
 
 **Pattern:** two or more independent repository or upstream calls awaited one after another, or an `await` inside a per-item loop. R-022 covers the cache-clear case.
 
-**Why it's bad:** the latencies add up for nothing. In #3451 the endpoint awaited `enabledModules()` once per Safe, so on cache misses its latency grew with the number of Safes in the Space.
+**Why it's bad:** in #3451 the endpoint awaited `enabledModules()` once per Safe, so on cache misses its latency grew with the number of Safes in the Space.
 
 **Corrected form:**
 
@@ -635,10 +629,10 @@ const [members, activeAdmin] = await Promise.all([
 const settled = await batched(safes, this.batchSize, (safe) => this.enabledModules(safe));
 ```
 
-Sequential is right when the order decides the outcome: #3437 runs its three checks cheapest first, so a request it will reject never pays for the Tenderly simulation, and the same request always gets the same status — with `Promise.all`, whether it got the 403 or the 402 would depend on which check finished first.
+#3437 kept its three relay checks sequential on purpose, because their order decides the outcome; the guide rule covers that case.
 
 **Spotted in:** #3131, #3451.
-**Status:** active — `caching-and-performance.md`'s "Independent awaits run concurrently" and "Batch and chunk upstream calls" rules own this.
+**Status:** active — `caching-and-performance.md`'s "Independent awaits run concurrently" rule owns this, with "Batch and chunk upstream calls" for the batch size.
 
 ## Logging and errors
 

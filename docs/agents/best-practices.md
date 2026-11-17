@@ -183,3 +183,18 @@ export type SafeRef = z.infer<typeof SafeRefSchema>;
 address!: Address | null;
 export type RawIndexerSafeAllowance = z.input<typeof PolicyIndexerSafeAllowanceSchema>;
 ```
+
+### Parameters as narrow as what the method handles
+
+**Rule:** A parameter's type admits only the values the method handles: a closed set is a union or enum, not `string`; a method that handles one kind of a key takes that kind, not the whole key type. An implementation takes the type its interface declares rather than widening it.
+
+**Why:** the type is what tells the next caller what is safe to pass, so a wider one compiles a call the method silently mishandles, and the body has to defend against cases the narrow type would have ruled out.
+
+**Canonical example:** `src/modules/entitlements/domain/entitlement-enforcement.interface.ts` splits feature keys by kind — `assertFeatureGranted` takes `BinaryFeature`, `assertWithinQuota` takes `Exclude<FeatureKey, BinaryFeature>` — so a metered feature cannot reach the method that only checks `grant.enabled`. `SpacesRepository.update` takes the interface's `Partial<Pick<Space, 'name' | 'status' | 'experimentalFeatures'>>`, not TypeORM's `QueryDeepPartialEntity<Space>`.
+
+```ts
+// Don't
+assertFeatureGranted(args: { spaceId: Space['id']; featureKey: FeatureKey }): Promise<void>;
+// Do
+assertFeatureGranted(args: { spaceId: Space['id']; featureKey: BinaryFeature }): Promise<void>;
+```
